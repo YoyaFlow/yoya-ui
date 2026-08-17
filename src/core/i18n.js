@@ -1,0 +1,262 @@
+import { VTextNode } from './view-node.js';
+
+/**
+ * I18n 是最小国际化管理器：负责语言、词典、订阅通知和文本翻译。
+ */
+export class I18n {
+  constructor(options = {}) {
+    this._language = options.language || 'zh-CN';
+    this._fallbackLanguage = options.fallbackLanguage || this._language;
+    this._messages = {};
+    this._listeners = new Set();
+
+    this.registerMessages(options.messages || {});
+  }
+
+  getLanguage() {
+    return this._language;
+  }
+
+  setLanguage(language) {
+    if (!language || language === this._language) {
+      return this;
+    }
+
+    this._language = language;
+    this._notify();
+    return this;
+  }
+
+  getFallbackLanguage() {
+    return this._fallbackLanguage;
+  }
+
+  setFallbackLanguage(language) {
+    if (!language) {
+      return this;
+    }
+
+    this._fallbackLanguage = language;
+    this._notify();
+    return this;
+  }
+
+  /**
+   * 注册或增量合并某个语言的词典。
+   */
+  register(language, messages = {}) {
+    if (!language) {
+      return this;
+    }
+
+    normalizeMessageList(messages).forEach((messagePart) => {
+      this._messages[language] = mergeMessages(this._messages[language] || {}, messagePart);
+    });
+    this._notify();
+    return this;
+  }
+
+  /**
+   * 注册一个或多个语料库文件。
+   * 支持 { "zh-CN": {...} } 多语言文件、{ language, messages } 单语言文件和数组。
+   */
+  registerMessages(corpus = {}) {
+    normalizeCorpusList(corpus).forEach((corpusPart) => {
+      if (corpusPart.language) {
+        this.register(corpusPart.language, corpusPart.messages || {});
+        return;
+      }
+
+      Object.entries(corpusPart).forEach(([language, messages]) => {
+        this.register(language, messages);
+      });
+    });
+
+    return this;
+  }
+
+  /**
+   * 翻译 key。支持 dot path、fallback language、默认文案和 {name} 参数替换。
+   */
+  t(key, params = {}, defaultValue = undefined) {
+    const message =
+      readMessage(this._messages[this._language], key) ??
+      readMessage(this._messages[this._fallbackLanguage], key) ??
+      defaultValue ??
+      key;
+
+    const value = typeof message === 'function' ? message(params, this) : message;
+    return interpolate(value, params);
+  }
+
+  /**
+   * 创建随语言变化自动刷新的文本节点。
+   */
+  text(key, params = {}, defaultValue = undefined) {
+    return new I18nTextNode(this, key, params, defaultValue);
+  }
+
+  subscribe(listener) {
+    this._listeners.add(listener);
+    return () => {
+      this._listeners.delete(listener);
+    };
+  }
+
+  _notify() {
+    this._listeners.forEach((listener) => listener(this));
+  }
+}
+
+/**
+ * I18nTextNode 继承 VTextNode，语言变化时只更新文本节点内容。
+ */
+export class I18nTextNode extends VTextNode {
+  constructor(i18n, key, params = {}, defaultValue = undefined) {
+    super(i18n.t(key, params, defaultValue));
+    this._i18n = i18n;
+    this._key = key;
+    this._params = params || {};
+    this._defaultValue = defaultValue;
+    this._unsubscribe = i18n.subscribe(() => this.refresh());
+  }
+
+  key(value) {
+    if (value === undefined) {
+      return this._key;
+    }
+
+    this._key = value;
+    return this.refresh();
+  }
+
+  params(value) {
+    if (value === undefined) {
+      return { ...this._params };
+    }
+
+    this._params = value || {};
+    return this.refresh();
+  }
+
+  defaultValue(value) {
+    if (value === undefined) {
+      return this._defaultValue;
+    }
+
+    this._defaultValue = value;
+    return this.refresh();
+  }
+
+  refresh() {
+    this.textContent(this._i18n.t(this._key, this._params, this._defaultValue));
+    return this;
+  }
+
+  destroy() {
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
+
+    return super.destroy();
+  }
+}
+
+export function createI18n(options = {}) {
+  return new I18n(options);
+}
+
+export const i18n = createI18n();
+
+export function i18nText(key, params = {}) {
+  return i18n.text(key, params);
+}
+
+let stringShortcutI18n = i18n;
+
+/**
+ * 安装字符串快捷写法："内容".s("content-key")。
+ * 字符串本身作为默认文案，参数作为翻译 key；语言和词典由外部 I18n 实例控制。
+ */
+export function installI18nStringShortcut(locale = i18n) {
+  stringShortcutI18n = locale;
+
+  if (String.prototype._yoyaUiStringShortcutInstalled) {
+    return locale;
+  }
+
+  Object.defineProperty(String.prototype, '_yoyaUiStringShortcutInstalled', {
+    configurable: true,
+    enumerable: false,
+    value: true
+  });
+
+  Object.defineProperty(String.prototype, 's', {
+    configurable: true,
+    enumerable: false,
+    value: function stringShortcut(key, params = {}) {
+      const defaultValue = String(this);
+      return stringShortcutI18n.text(key || defaultValue, params, defaultValue);
+    }
+  });
+
+  return locale;
+}
+
+installI18nStringShortcut(i18n);
+
+function readMessage(messages, key) {
+  if (!messages || !key) {
+    return undefined;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(messages, key)) {
+    return messages[key];
+  }
+
+  return String(key)
+    .split('.')
+    .reduce((value, part) => {
+      if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, part)) {
+        return value[part];
+      }
+
+      return undefined;
+    }, messages);
+}
+
+function interpolate(value, params) {
+  return String(value).replace(/\{([^{}]+)\}/g, (match, name) => {
+    const paramValue = params?.[name.trim()];
+    return paramValue === undefined || paramValue === null ? match : String(paramValue);
+  });
+}
+
+function mergeMessages(target, source) {
+  const next = { ...target };
+
+  Object.entries(source || {}).forEach(([key, value]) => {
+    if (isPlainObject(value) && isPlainObject(next[key])) {
+      next[key] = mergeMessages(next[key], value);
+    } else {
+      next[key] = value;
+    }
+  });
+
+  return next;
+}
+
+function isPlainObject(value) {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
+
+function normalizeCorpusList(corpus) {
+  return Array.isArray(corpus) ? corpus.flatMap((item) => normalizeCorpusList(item)) : [corpus || {}];
+}
+
+function normalizeMessageList(messages) {
+  return Array.isArray(messages)
+    ? messages.flatMap((messagePart) => normalizeMessageList(messagePart))
+    : [messages || {}];
+}

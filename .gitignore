@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+coverage/
+.idea/
+*.local
+npm-debug.log*

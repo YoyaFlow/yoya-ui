@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui SVG 元素演示</title>
+    <style>
+      body {
+        margin: 0;
+        color: #172033;
+        background: #f5f7fa;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .svg-shell {
+        display: grid;
+        gap: 18px;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 32px 20px;
+      }
+
+      .svg-header,
+      .svg-panel {
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .svg-header,
+      .svg-panel {
+        padding: 20px;
+      }
+
+      .svg-panel {
+        display: grid;
+        gap: 14px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      h2 {
+        font-size: 1.1rem;
+      }
+
+      p,
+      output {
+        color: #5a6575;
+      }
+
+      output {
+        font-weight: 700;
+      }
+
+      .status-icon,
+      .metric-chart,
+      .topology-map {
+        display: block;
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fbfcfe;
+      }
+
+      .status-icon {
+        max-width: 220px;
+      }
+
+      .metric-chart,
+      .topology-map {
+        max-width: 760px;
+      }
+
+      .chart-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        justify-content: space-between;
+      }
+
+      button {
+        min-height: 38px;
+        border: 1px solid #b8c4d4;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #172033;
+        background: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      button:hover {
+        border-color: #1f6feb;
+        color: #1f6feb;
+      }
+
+      button[aria-pressed="true"] {
+        border-color: #1f6feb;
+        color: #ffffff;
+        background: #1f6feb;
+      }
+
+      svg text {
+        fill: #172033;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .axis-label {
+        fill: #5a6575;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      [data-chart-bar] {
+        transition:
+          height 160ms ease,
+          y 160ms ease;
+      }
+
+      @media (max-width: 720px) {
+        .svg-shell {
+          padding: 20px 16px;
+        }
+
+        h1 {
+          font-size: 1.55rem;
+        }
+
+        .metric-chart,
+        .topology-map {
+          overflow: visible;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="./svg-demo.js"></script>
+  </body>
+</html>

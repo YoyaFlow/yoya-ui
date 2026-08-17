@@ -1,0 +1,41 @@
+{
+  "zh-CN": {
+    "language": {
+      "current": "当前语言：中文",
+      "zh": "中文",
+      "en": "English",
+      "mn": "Монгол"
+    },
+    "feature": {
+      "default": "字符串默认文案：内容",
+      "external": "语言和词典由外部 I18n 实例控制",
+      "reactive": "切换语言时只刷新 ViewTextNode"
+    }
+  },
+  "en": {
+    "language": {
+      "current": "Current language: English",
+      "zh": "中文",
+      "en": "English",
+      "mn": "Монгол"
+    },
+    "feature": {
+      "default": "String default text: Content",
+      "external": "Language and messages are controlled by the external I18n instance",
+      "reactive": "Only ViewTextNode content refreshes when language changes"
+    }
+  },
+  "mn": {
+    "language": {
+      "current": "Одоогийн хэл: Монгол",
+      "zh": "中文",
+      "en": "English",
+      "mn": "Монгол"
+    },
+    "feature": {
+      "default": "Мөрийн анхны текст: Агуулга",
+      "external": "Хэл болон толь бичгийг гаднах I18n удирдана",
+      "reactive": "Хэл солиход зөвхөн ViewTextNode шинэчлэгдэнэ"
+    }
+  }
+}

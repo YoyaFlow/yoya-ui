@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "HEAD",
+    "indexed_at": "2026-08-17T05:42:30Z",
+    "project": "yoya-ui",
+    "nodes": 427,
+    "edges": 749,
+    "original_size": 1769472,
+    "compressed_size": 198552,
+    "compression_level": 9
+}

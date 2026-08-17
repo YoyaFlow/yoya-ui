@@ -1,0 +1,44 @@
+{
+  "zh-CN": {
+    "demo": {
+      "title": "语言切换演示",
+      "intro": "使用 I18nTextNode 和字符串快捷写法实现无感语言切换。"
+    },
+    "panel": {
+      "title": "核心写法",
+      "code": "\"内容\".s(\"content-key\")"
+    },
+    "action": {
+      "copy": "复制写法",
+      "copied": "已复制写法"
+    }
+  },
+  "en": {
+    "demo": {
+      "title": "Language Switch Demo",
+      "intro": "Switch language without rebuilding the surrounding ViewNode tree."
+    },
+    "panel": {
+      "title": "Core Syntax",
+      "code": "\"Content\".s(\"content-key\")"
+    },
+    "action": {
+      "copy": "Copy syntax",
+      "copied": "Syntax copied"
+    }
+  },
+  "mn": {
+    "demo": {
+      "title": "Хэл солих жишээ",
+      "intro": "ViewNode модыг дахин бүтээлгүйгээр хэл солино."
+    },
+    "panel": {
+      "title": "Үндсэн бичлэг",
+      "code": "\"Агуулга\".s(\"content-key\")"
+    },
+    "action": {
+      "copy": "Бичлэг хуулах",
+      "copied": "Бичлэг хуулагдлаа"
+    }
+  }
+}

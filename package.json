@@ -1,0 +1,44 @@
+{
+  "name": "yoya-ui",
+  "version": "0.1.0",
+  "description": "A small vanilla JavaScript UI foundation library for backend and full-stack developers.",
+  "type": "module",
+  "private": false,
+  "main": "./dist/yoya-ui.umd.js",
+  "module": "./dist/yoya-ui.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/yoya-ui.es.js",
+      "require": "./dist/yoya-ui.umd.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "examples:html": "vite --host 0.0.0.0",
+    "examples:i18n": "vite --host 0.0.0.0 --port 5174",
+    "examples:layout": "vite --host 0.0.0.0 --port 5175",
+    "examples:svg": "vite --host 0.0.0.0 --port 5176",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "vite",
+    "vanilla-js",
+    "ui",
+    "web-components",
+    "frontend"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
+  }
+}
