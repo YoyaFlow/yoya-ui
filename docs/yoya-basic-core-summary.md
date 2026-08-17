@@ -126,7 +126,7 @@ div(page => {
 
 ### 基础元素层
 
-基础元素层提供 HTML 标签的节点类和工厂函数，是整个库的语法根基。`yoya-ui` 当前应覆盖 WHATWG HTML 标准中的 conforming HTML 元素；过时元素、SVG、MathML 和自定义元素不混入 `elements/html`，后续按独立模块扩展。
+基础元素层提供 HTML 标签的节点类和工厂函数，是整个库的语法根基。`yoya-ui` 当前应覆盖 WHATWG HTML 标准中的 conforming HTML 元素；过时元素、SVG、MathML 和自定义元素不混入 `html` 模块，SVG 由 `svg` 模块独立承载。
 
 关键能力：
 
@@ -142,6 +142,7 @@ div(page => {
 - 标签工厂默认与标签同名，例如 `div()`、`dialog()`、`search()`、`video()`。
 - `<var>` 因为 JS 关键字冲突，使用 `varTag()`。
 - `<style>` 顶层工厂仍为 `style()`；父节点快捷方法使用 `styleTag()`，避免覆盖 `.style()` 样式设置 API。
+- SVG 子标签注册在独立的 `SvgElementNode` 上，使用 `text()`、`title()`、`style()` 等原始标签名，不污染 HTML 节点。
 
 ### 布局层
 
@@ -319,7 +320,8 @@ i18n 模块提供轻量国际化：
 
 ```text
 ViewNode       视图节点底座，负责生命周期、事件、子节点和状态
-ElementNode    HTML/SVG 元素节点
+ElementNode    普通 DOM 元素节点，SVG 命名空间节点由 SvgElementNode 承载
+HtmlElementNode HTML DSL 元素节点，承载 HTML 子元素和布局快捷方法
 VTextNode      文本节点，配套工厂函数为 vText()
 ComponentNode  组件节点
 ```
@@ -366,39 +368,27 @@ div(page => {
 
 ## yoya-ui 推荐底层结构
 
-建议将后续源码收敛为以下结构：
+基础库阶段建议将源码收敛为以下结构：
 
 ```text
 src/
   core/
-    view-node.js    ViewNode 底座
-    element-node.js HTML/SVG 元素节点
-    text-node.js    VTextNode 文本节点
-    factory.js      工厂函数生成与元素注册
-    render.js       DOM 创建、更新、销毁
-    state.js        最小状态机
-    events.js       事件绑定与清理
-  elements/
-    html.js         基础 HTML 元素工厂
-    svg.js          可选 SVG 元素工厂
+    node.js         ViewNode、ElementNode、VTextNode、DOM 辅助和工厂注册
+    i18n.js         I18n 和 I18nTextNode
+    index.js        核心导出
+  html/
+    index.js        HtmlElementNode 和基础 HTML 元素工厂
+  svg/
+    index.js        SvgElementNode、SVG 入口和内部子元素扩展
   layout/
-    flex.js
-    grid.js
-    stack.js
+    index.js        布局工厂
   components/
-    button.js
-    card.js
-    form.js
-    table.js
-    detail.js
-    message.js
+    index.js        复杂组件入口
+  router.js         hash 路由出口
   theme/
-    tokens.js
-    theme.js
+    index.js        主题入口
   extras/
-    router.js
-    i18n.js
-    dynamic-loader.js
+    index.js        扩展入口
   index.js
 ```
 

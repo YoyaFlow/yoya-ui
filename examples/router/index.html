@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui Router 路由演示</title>
+    <style>
+      body {
+        margin: 0;
+        color: #172033;
+        background: #f5f7fa;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .router-shell {
+        min-height: 100vh;
+        padding: 32px 0;
+      }
+
+      .router-container {
+        display: grid;
+        gap: 18px;
+      }
+
+      .router-header,
+      .router-sidebar,
+      .router-panel,
+      .route-card {
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .router-header,
+      .router-sidebar,
+      .router-panel,
+      .route-card {
+        padding: 20px;
+      }
+
+      .router-header {
+        display: grid;
+        gap: 8px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      h2 {
+        font-size: 1.1rem;
+      }
+
+      h3 {
+        color: #5a6575;
+        font-size: 0.9rem;
+      }
+
+      p,
+      output {
+        color: #5a6575;
+      }
+
+      .router-sidebar {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .router-nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      button {
+        min-height: 40px;
+        border: 1px solid #b8c4d4;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #172033;
+        background: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        text-align: left;
+      }
+
+      button:hover,
+      button[aria-current="page"] {
+        border-color: #1f6feb;
+        color: #1f6feb;
+        background: #f0f6ff;
+      }
+
+      code {
+        display: block;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        color: #172033;
+        font-family: "Cascadia Code", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.86rem;
+      }
+
+      #router-guard-message {
+        min-height: 40px;
+        border-left: 4px solid #bf8700;
+        padding: 8px 10px;
+        background: #fff8e5;
+        color: #6f5300;
+      }
+
+      .router-panel {
+        min-width: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .router-view {
+        min-height: 420px;
+      }
+
+      .route-card {
+        display: grid;
+        align-content: start;
+        gap: 16px;
+        min-height: 380px;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .route-map {
+        width: 100%;
+        max-width: 620px;
+        height: auto;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #fbfcfe;
+      }
+
+      .route-map text {
+        fill: #172033;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .detail-grid {
+        width: 100%;
+      }
+
+      .stat-card {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .stat-card strong {
+        font-size: 1.35rem;
+      }
+
+      .order-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .order-table th,
+      .order-table td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .order-table th {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 820px) {
+        .router-shell {
+          padding: 20px 0;
+        }
+
+        .router-container {
+          padding-left: 16px !important;
+          padding-right: 16px !important;
+        }
+
+        .router-workspace,
+        .detail-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="./router-demo.js"></script>
+  </body>
+</html>

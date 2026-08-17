@@ -12,7 +12,7 @@ const sampleImageSvg = `
 const sampleImageSrc = `data:image/svg+xml,${encodeURIComponent(sampleImageSvg)}`;
 
 /**
- * 渲染基础 HTML 元素示例，用于验证 elements/html 工厂的常见用法。
+ * 渲染基础 HTML 元素示例，用于验证 html 模块工厂的常见用法。
  */
 export function renderBasicElementsExample(target = '#app') {
   const previewText = vText('预览：未填写');

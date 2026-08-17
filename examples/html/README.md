@@ -1,8 +1,8 @@
 # HTML 基础元素示例
 
-这个目录用于测试 `src/elements/html.js` 导出的基础 HTML 工厂函数的常用写法。
+这个目录用于测试 `src/html/index.js` 导出的基础 HTML 工厂函数的常用写法。
 
-全量 HTML 元素覆盖由 `src/elements/html.test.js` 保障；这里保留轻量示例，便于在浏览器中验证父元素快捷 DSL。
+全量 HTML 元素覆盖由 `src/html/html.test.js` 保障；这里保留轻量示例，便于在浏览器中验证父元素快捷 DSL。
 
 覆盖内容按高频场景分组：
 

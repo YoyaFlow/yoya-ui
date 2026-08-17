@@ -21,6 +21,8 @@
     "examples:i18n": "vite --host 0.0.0.0 --port 5174",
     "examples:layout": "vite --host 0.0.0.0 --port 5175",
     "examples:svg": "vite --host 0.0.0.0 --port 5176",
+    "examples:router": "vite --host 0.0.0.0 --port 5177",
+    "examples:components": "vite --host 0.0.0.0 --port 5178",
     "test": "vitest run",
     "test:watch": "vitest"
   },

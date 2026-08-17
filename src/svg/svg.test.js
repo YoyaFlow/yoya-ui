@@ -26,12 +26,12 @@ const svgElementFactories = [
   ['rect', 'rect'],
   ['set', 'set'],
   ['stop', 'stop'],
-  ['svgA', 'a'],
-  ['svgScript', 'script'],
-  ['svgStyle', 'style'],
-  ['svgSwitch', 'switch'],
-  ['svgText', 'text'],
-  ['svgTitle', 'title'],
+  ['a', 'a'],
+  ['script', 'script'],
+  ['style', 'style'],
+  ['switch', 'switch'],
+  ['text', 'text'],
+  ['title', 'title'],
   ['symbol', 'symbol'],
   ['textPath', 'textPath'],
   ['tspan', 'tspan'],
@@ -43,22 +43,31 @@ describe('SVG element factories', () => {
   it('exports svg as the only public SVG tag entry', () => {
     const icon = yoya.svg();
     const element = icon.renderDom();
+    const svgOnlyFactoryNames = svgElementFactories
+      .map(([factoryName]) => factoryName)
+      .filter((factoryName) => !['a', 'script', 'style', 'text', 'title'].includes(factoryName));
 
     expect(yoya.svg).toBeTypeOf('function');
     expect(icon.tagName()).toBe('svg');
     expect(element.namespaceURI).toBe(SVG_NS);
     expect(element.tagName).toBe('svg');
 
-    svgElementFactories.forEach(([exportName]) => {
+    svgOnlyFactoryNames.forEach((exportName) => {
       expect(yoya[exportName], `${exportName} should stay scoped to svg nodes`).toBeUndefined();
     });
+
+    expect(yoya.a().tagName()).toBe('a');
+    expect(yoya.script().tagName()).toBe('script');
+    expect(yoya.style().tagName()).toBe('style');
+    expect(yoya.title().tagName()).toBe('title');
+    expect(yoya.text('plain').textContent()).toBe('plain');
   });
 
   it('builds nested SVG trees through svg-local child methods', () => {
     const icon = yoya.svg((root) => {
       root.className('status-icon');
       root.attr({ viewBox: '0 0 24 24', role: 'img' });
-      root.svgTitle('服务状态');
+      root.title('服务状态');
 
       root.defs((defs) => {
         defs.linearGradient((gradient) => {
@@ -72,7 +81,7 @@ describe('SVG element factories', () => {
         group.attr('fill', 'none');
         group.circle({ cx: 12, cy: 12, r: 9, stroke: 'url(#status-gradient)' });
         group.path({ d: 'M8 12l2.5 2.5L16 9', stroke: 'currentColor', 'stroke-width': 2 });
-        group.svgText((label) => {
+        group.text((label) => {
           label.attr({ x: 12, y: 22, 'text-anchor': 'middle' });
           label.text('OK');
         });
@@ -87,6 +96,35 @@ describe('SVG element factories', () => {
     expect(element.querySelector('circle').getAttribute('stroke')).toBe('url(#status-gradient)');
     expect(element.querySelector('path').getAttribute('stroke-width')).toBe('2');
     expect(element.querySelector('text').textContent).toBe('OK');
+  });
+
+  it('uses original SVG tag names without inheriting HTML child factories', () => {
+    const icon = yoya.svg((root) => {
+      root.title('SVG title');
+      root.text('SVG text');
+      root.style('.status-text { font-weight: 700; }');
+      root.a((link) => {
+        link.attr('href', '#details');
+        link.text((label) => {
+          label.attr({ x: 4, y: 18 });
+          label.text('Details');
+        });
+      });
+      root.script('console.log("svg scope")');
+      root.switch((branch) => {
+        branch.g();
+      });
+    });
+
+    const children = icon.children();
+
+    expect(children.map((child) => child.tagName())).toEqual(['title', 'text', 'style', 'a', 'script', 'switch']);
+    expect(children[0].textContent()).toBe('SVG title');
+    expect(children[1].textContent()).toBe('SVG text');
+    expect(children[2].textContent()).toBe('.status-text { font-weight: 700; }');
+    expect(children[3].children()[0].tagName()).toBe('text');
+    expect(icon.div).toBeUndefined();
+    expect(icon.button).toBeUndefined();
   });
 
   it('keeps SVG attrs, styles, events, and HTML serialization aligned', () => {
@@ -124,8 +162,8 @@ describe('SVG element factories', () => {
       page.style('display', 'grid');
       page.title('HTML title');
       page.svg((icon) => {
-        icon.svgTitle('SVG title');
-        icon.svgText('SVG text');
+        icon.title('SVG title');
+        icon.text('SVG text');
       });
     });
 
@@ -136,7 +174,7 @@ describe('SVG element factories', () => {
     expect(root.path).toBeUndefined();
     expect(yoya.text('plain').textContent()).toBe('plain');
     expect(yoya.title('HTML').tagName()).toBe('title');
-    expect(yoya.svgTitle).toBeUndefined();
+    expect(yoya.switch).toBeUndefined();
     expect(htmlTitle.tagName()).toBe('title');
     expect(icon.children().map((child) => child.tagName())).toEqual(['title', 'text']);
   });

@@ -1,5 +1,5 @@
-import { ElementNode } from '../core/element-node.js';
-import { registerChildFactories } from '../core/factory.js';
+import { registerChildFactories } from '../core/node.js';
+import { HtmlElementNode } from '../html/index.js';
 
 const layoutOptionNames = new Set([
   'align',
@@ -113,10 +113,10 @@ const layoutFactories = {
   vstack
 };
 
-registerChildFactories(ElementNode, layoutFactories);
+registerChildFactories(HtmlElementNode, layoutFactories);
 
 function createLayoutNode(kind, baseStyles, setup, applyOptions) {
-  const node = new ElementNode('div');
+  const node = new HtmlElementNode('div');
   node.className('yoya-layout', `yoya-${kind}`);
   node.styles(baseStyles);
   applyLayoutSetup(node, setup, applyOptions);

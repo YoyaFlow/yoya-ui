@@ -6,8 +6,9 @@
 
 - 普通 HTML DSL 里只添加 `svg()` 入口。
 - SVG 子元素只能在 `svg((icon) => { ... })` 回调内部添加。
-- `circle()`、`path()`、`rect()`、`svgText()`、`svgTitle()` 等不会作为顶层导出，也不会出现在普通 HTML 父节点上。
-- SVG 节点仍支持 `attr()`、`className()`、`style()`、`on()`、`child()` 和 `toHTML()`。
+- `circle()`、`path()`、`rect()`、`text()`、`title()` 等不会作为 SVG 顶层导出，也不会出现在普通 HTML 父节点上。
+- SVG 节点仍支持 `attr()`、`className()`、`style(name, value)`、`on()`、`child()` 和 `toHTML()`。
+- `style('...')` 在 SVG 作用域内创建 `<style>` 标签；`style(name, value)` 和 `styles({...})` 设置 CSS 样式。
 
 示例写法：
 
@@ -15,7 +16,7 @@
 section((page) => {
   page.svg((icon) => {
     icon.attr({ viewBox: '0 0 24 24', role: 'img' });
-    icon.svgTitle('服务状态');
+    icon.title('服务状态');
     icon.circle({ cx: 12, cy: 12, r: 9 });
     icon.path({ d: 'M8 12l2.5 2.5L16 9' });
   });
@@ -24,9 +25,9 @@ section((page) => {
 
 当前演示包含：
 
-- 状态图标：`svgTitle`、`defs`、`linearGradient`、`circle`、`path`、`svgText`。
-- 趋势柱状图：`rect`、`line`、`svgText`，并通过按钮事件更新现有 SVG 子元素。
-- 服务拓扑图：`marker`、`path`、`line`、`rect`、`circle`、`svgText`。
+- 状态图标：`title`、`defs`、`linearGradient`、`circle`、`path`、`text`。
+- 趋势柱状图：`rect`、`line`、`text`，并通过按钮事件更新现有 SVG 子元素。
+- 服务拓扑图：`marker`、`path`、`line`、`rect`、`circle`、`text`。
 
 运行方式：
 

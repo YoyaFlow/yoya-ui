@@ -9,17 +9,20 @@ Yoya UI is a small vanilla JavaScript UI foundation library built with Vite. It 
 - A browser-native HTML DSL core:
   - `ViewNode` for lifecycle, child nodes, events, and state.
   - `ElementNode` for real DOM elements.
+  - `HtmlElementNode` for HTML-only child factory extensions.
   - `SvgElementNode` for SVG namespace elements.
   - `VTextNode` / `ViewTextNode` and `vText` for internal text nodes.
   - `I18n` and `I18nTextNode` for language-aware text that updates without rebuilding the view tree.
   - Full conforming HTML element factories from the WHATWG HTML standard.
   - Namespace-aware `svg()` tag entry with SVG-only child element extensions.
   - Layout factories such as `flex`, `grid`, `stack`, `hstack`, `vstack`, `center`, `container`, `spacer`, and `divider`.
+  - A compact hash `Router` in `router.js` for route matching and ViewNode rendering.
   - Reserved or conflicting names use explicit aliases: `varTag()` creates `<var>`, and parent nodes use `styleTag()` to create `<style>` without replacing `.style()`.
 
 ## Project Documents
 
 - [yoya-basic core summary](docs/yoya-basic-core-summary.md)
+- [component development spec](docs/component-development-spec.md)
 
 ## Requirements
 
@@ -36,6 +39,8 @@ npm run examples:html
 npm run examples:i18n
 npm run examples:layout
 npm run examples:svg
+npm run examples:router
+npm run examples:components
 ```
 
 ## Examples
@@ -44,6 +49,8 @@ npm run examples:svg
 - [I18n language switch](examples/i18n/README.md)
 - [Layout components](examples/layout/README.md)
 - [SVG elements](examples/svg/README.md)
+- [Router navigation](examples/router/README.md)
+- [Compound components](examples/components/README.md)
 
 ## Library Build
 
@@ -77,7 +84,7 @@ div((page) => {
 
 ## HTML Element Coverage
 
-`src/elements/html.js` covers the conforming HTML element set. Obsolete HTML elements, MathML, and custom elements are intentionally left out of this module because they need separate compatibility or namespace handling. SVG is provided separately by `src/elements/svg.js`.
+`src/html/index.js` covers the conforming HTML element set. Obsolete HTML elements, MathML, and custom elements are intentionally left out of this module because they need separate compatibility or namespace handling. SVG is provided separately by `src/svg/index.js`.
 
 Most factories keep the same name as the tag:
 
@@ -93,33 +100,30 @@ Special cases:
 
 ## SVG Elements
 
-`svg()` creates a `SvgElementNode` with the SVG namespace. SVG child elements are intentionally scoped to the SVG node callback, so `circle()`、`path()`、`svgText()` and similar methods are only available inside `svg((icon) => { ... })`.
+`svg()` creates a `SvgElementNode` with the SVG namespace. SVG child elements are intentionally scoped to the SVG node callback, so `circle()`、`path()`、`text()` and similar methods are only available inside `svg((icon) => { ... })`.
 
 ```js
 import { svg } from 'yoya-ui';
 
 svg((icon) => {
   icon.attr({ viewBox: '0 0 24 24', role: 'img' });
-  icon.svgTitle('服务状态');
+  icon.title('服务状态');
   icon.circle({ cx: 12, cy: 12, r: 9, fill: 'none', stroke: 'currentColor' });
   icon.path({ d: 'M8 12l2.5 2.5L16 9', stroke: 'currentColor', 'stroke-width': 2 });
-  icon.svgText((label) => {
+  icon.text((label) => {
     label.attr({ x: 12, y: 22, 'text-anchor': 'middle' });
     label.text('OK');
   });
 }).bindTo('#app');
 ```
 
-Most SVG child method names match their tag names, such as `circle()`、`path()`、`rect()`、`g()`、`defs()`、`linearGradient()`、`stop()`、`use()` and `symbol()`.
+SVG child method names use their original tag names, including `a()`、`script()`、`style()`、`switch()`、`text()` and `title()`.
 
-Conflict aliases:
+Name isolation rules:
 
-- `icon.svgText()` creates `<text>` and keeps core `text()` as the `VTextNode` shortcut.
-- `icon.svgTitle()` creates SVG `<title>` and keeps HTML `title()`.
-- `icon.svgStyle()` creates SVG `<style>` and keeps `.style()` / `styleTag()`.
-- `icon.svgScript()` creates SVG `<script>` and keeps HTML `script()`.
-- `icon.svgA()` creates SVG `<a>` and keeps HTML `a()`.
-- `icon.svgSwitch()` creates `<switch>` because `switch` is a JavaScript keyword.
+- HTML child factories are registered on `HtmlElementNode`; SVG child factories are registered on `SvgElementNode`.
+- `icon.text('OK')` creates `<text>OK</text>`. Inside `<text>`、`<tspan>`、`<title>` and similar text-bearing SVG nodes, `label.text('OK')` appends text content.
+- `icon.style('.status { fill: currentColor; }')` creates SVG `<style>`. `node.style('fill', 'red')` and `node.styles({ fill: 'red' })` still set CSS styles.
 
 By design, SVG child tags are not public top-level factories and are not added to ordinary HTML parent nodes:
 
@@ -182,6 +186,45 @@ npm run examples:layout
 ```
 
 Then open `/examples/layout/index.html`.
+
+## Compound Components
+
+Complex UI components use a `v` prefix, so they stay distinct from native HTML factories:
+
+```js
+import { div, toast, vButton, vCard } from 'yoya-ui';
+
+div((page) => {
+  page.vCard((card) => {
+    card.vCardHeader('部署任务');
+    card.vCardBody('任务等待调度');
+    card.vCardFooter((footer) => {
+      footer.vButton((button) => {
+        button.label('启动任务');
+        button.variant('primary');
+        button.on('click', () => toast.success('任务已启动', { duration: 0 }));
+      });
+    });
+  });
+});
+```
+
+`button()` remains the native `<button>` factory. `vButton()` is the compound button component with label, variant, size, disabled and loading state support. Use `variant('primary')` for visual style; use `htmlType('submit')` when the underlying `<button>` needs a native form type.
+
+First-batch component exports:
+
+- `vButton`
+- `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
+- `vMessage`, `vMessageContainer`
+- `toast`
+
+Browser demo:
+
+```bash
+npm run examples:components
+```
+
+Then open `/examples/components/index.html`.
 
 ## I18n Text
 
@@ -298,28 +341,59 @@ For backend-rendered pages, build the library and serve `dist/yoya-ui.es.js` as 
 </script>
 ```
 
+## Router
+
+`router()` creates a hash router outlet. Routes return `ViewNode` instances or plain text, and dynamic params are exposed through the route context.
+
+```js
+import { div, router } from 'yoya-ui';
+
+router((r) => {
+  r.default('/home');
+  r.route('/home', () => div('首页'));
+  r.route('/user/:id', ({ params, query }) =>
+    div((page) => {
+      page.h1(`用户 ${params.id}`);
+      page.p(`标签 ${query.tab || '默认'}`);
+    })
+  );
+  r.notFound(({ path }) => div(`未找到 ${path}`));
+}).bindTo('#app').start();
+```
+
+Useful methods:
+
+- `route(pattern, view | { view, beforeEnter })`
+- `default(path)`
+- `notFound(view)`
+- `beforeEach((to, from, router) => true)`
+- `navigate(path, { replace })`
+- `currentPath()`、`currentParams()`、`currentQuery()`
+
 ## Project Layout
 
 ```text
 src/
   core/
-    view-node.js       ViewNode and VTextNode
+    node.js            ViewNode, ElementNode, VTextNode, DOM helpers, and factories
     i18n.js            I18n and I18nTextNode
-    element-node.js    DOM element node
-    svg-element-node.js SVG namespace DOM element node
-    factory.js         Factory generation
     index.js           Core exports
-    view-node.test.js  Core behavior tests
-  elements/
-    html.js            HTML element factories
-    svg.js             SVG element factories
+    node.test.js       Core behavior tests
+  html/
+    index.js           HtmlElementNode and HTML element factories
+  svg/
+    index.js           SvgElementNode, SVG tag entry, and scoped child methods
   layout/
     index.js           Layout factories
+  components/
+    index.js           Complex component exports
+  router.js            Hash router outlet
   index.js             Public library API
 examples/
   html/                Basic HTML element usage checks
   i18n/                I18n language switch demo
   layout/              Layout component composition demo
   svg/                 SVG tag entry and child extension demo
+  components/          Compound component usage demo
 vite.config.js         Vite library and Vitest config
 ```

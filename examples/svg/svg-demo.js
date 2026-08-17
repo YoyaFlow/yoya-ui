@@ -67,13 +67,13 @@ export function renderSvgExample(target = '#app') {
       panel.className('svg-panel status-panel');
       panel.attr('data-svg-panel', 'status-icon');
       panel.h2('状态图标');
-      panel.p('svgTitle、defs、linearGradient、circle、path 和 svgText 组合成可访问的状态图标。');
+      panel.p('title、defs、linearGradient、circle、path 和 text 组合成可访问的状态图标。');
 
       panel.svg((icon) => {
         icon.id('service-status-icon');
         icon.className('status-icon');
         icon.attr({ viewBox: '0 0 96 96', role: 'img', 'aria-labelledby': 'status-icon-title' });
-        icon.svgTitle((title) => {
+        icon.title((title) => {
           title.id('status-icon-title');
           title.text('服务状态正常');
         });
@@ -94,7 +94,7 @@ export function renderSvgExample(target = '#app') {
           'stroke-linejoin': 'round',
           'stroke-width': 2
         });
-        icon.svgText((label) => {
+        icon.text((label) => {
           label.attr({ x: 48, y: 84, 'text-anchor': 'middle' });
           label.text('OK');
         });
@@ -131,7 +131,7 @@ export function renderSvgExample(target = '#app') {
         chart.id('svg-metric-chart');
         chart.className('metric-chart');
         chart.attr({ viewBox: '0 0 420 220', role: 'img', 'aria-labelledby': 'metric-chart-title' });
-        chart.svgTitle((title) => {
+        chart.title((title) => {
           title.id('metric-chart-title');
           title.text('请求趋势柱状图');
         });
@@ -162,7 +162,7 @@ export function renderSvgExample(target = '#app') {
               fill: 'url(#bar-fill)'
             });
           });
-          chart.svgText((label) => {
+          chart.text((label) => {
             label.attr({
               'data-chart-label': index,
               x: x + 16,
@@ -171,7 +171,7 @@ export function renderSvgExample(target = '#app') {
             });
             label.child(valueText);
           });
-          chart.svgText((label) => {
+          chart.text((label) => {
             label.className('axis-label');
             label.attr({ x: x + 16, y: 186, 'text-anchor': 'middle' });
             label.text(time);
@@ -192,7 +192,7 @@ export function renderSvgExample(target = '#app') {
         map.id('svg-topology-map');
         map.className('topology-map');
         map.attr({ viewBox: '0 0 460 210', role: 'img', 'aria-labelledby': 'topology-title' });
-        map.svgTitle((title) => {
+        map.title((title) => {
           title.id('topology-title');
           title.text('服务拓扑图');
         });
@@ -211,7 +211,7 @@ export function renderSvgExample(target = '#app') {
           });
         });
         map.rect({ x: 32, y: 70, width: 96, height: 54, rx: 8, fill: '#ffffff', stroke: '#1f6feb' });
-        map.svgText((label) => {
+        map.text((label) => {
           label.attr({ x: 80, y: 102, 'text-anchor': 'middle' });
           label.text('API');
         });
@@ -225,12 +225,12 @@ export function renderSvgExample(target = '#app') {
           'marker-end': 'url(#arrow-head)'
         });
         map.rect({ x: 206, y: 48, width: 112, height: 48, rx: 8, fill: '#ffffff', stroke: '#2da44e' });
-        map.svgText((label) => {
+        map.text((label) => {
           label.attr({ x: 262, y: 78, 'text-anchor': 'middle' });
           label.text('Worker');
         });
         map.rect({ x: 206, y: 122, width: 112, height: 48, rx: 8, fill: '#ffffff', stroke: '#bf8700' });
-        map.svgText((label) => {
+        map.text((label) => {
           label.attr({ x: 262, y: 152, 'text-anchor': 'middle' });
           label.text('Queue');
         });
@@ -253,7 +253,7 @@ export function renderSvgExample(target = '#app') {
           'marker-end': 'url(#arrow-head)'
         });
         map.circle({ cx: 402, cy: 102, r: 30, fill: '#ffffff', stroke: '#6f42c1' });
-        map.svgText((label) => {
+        map.text((label) => {
           label.attr({ x: 402, y: 108, 'text-anchor': 'middle' });
           label.text('DB');
         });

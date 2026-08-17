@@ -1,4 +1,4 @@
-import { VTextNode } from './view-node.js';
+import { VTextNode } from './node.js';
 
 /**
  * I18n 是最小国际化管理器：负责语言、词典、订阅通知和文本翻译。

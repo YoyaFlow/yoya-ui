@@ -1,7 +1,13 @@
-import { ElementNode } from './element-node.js';
+import { ElementNode, createElementFactory, registerChildFactories } from '../core/node.js';
 
-// 核心 HTML 工厂覆盖 WHATWG HTML 标准中的 conforming HTML 元素。
-// MathML、SVG 和自定义元素需要不同命名空间或运行时注册机制，后续应放到独立模块。
+/**
+ * HtmlElementNode 是 HTML DSL 的元素节点。
+ * HTML 子元素快捷方法只注册到这个类上，避免被 SVG 节点继承。
+ */
+export class HtmlElementNode extends ElementNode {}
+
+// HTML 工厂覆盖 WHATWG HTML 标准中的 conforming HTML 元素。
+// MathML、SVG 和自定义元素分别由独立模块处理。
 const htmlElementDefinitions = [
   'a',
   'abbr',
@@ -119,36 +125,12 @@ const htmlElementDefinitions = [
 ];
 
 /**
- * 为指定标签创建工厂函数，例如 createElementFactory('div') -> div(setup)。
- */
-export function createElementFactory(tagName) {
-  return function elementFactory(setup = null) {
-    return new ElementNode(tagName, setup);
-  };
-}
-
-/**
- * 把工厂函数注册为父节点快捷方法，使 page.h1('标题') 这类 DSL 写法成立。
- */
-export function registerChildFactories(NodeClass, factories) {
-  Object.entries(factories).forEach(([name, factory]) => {
-    if (NodeClass.prototype[name]) {
-      return;
-    }
-
-    NodeClass.prototype[name] = function childFactory(setup = null) {
-      return this.child(factory(setup));
-    };
-  });
-}
-
-/**
- * 生成核心 HTML 工厂集合。
+ * 生成 HTML 工厂集合。
  */
 export function createHtmlFactories() {
   return htmlElementDefinitions.reduce((factories, definition) => {
     const { aliases = [], name, tagName } = normalizeElementDefinition(definition);
-    const factory = createElementFactory(tagName);
+    const factory = createElementFactory(tagName, HtmlElementNode);
 
     factories[name] = factory;
     aliases.forEach((alias) => {
@@ -158,6 +140,128 @@ export function createHtmlFactories() {
     return factories;
   }, {});
 }
+
+// HTML 工厂作为 html 层导出，同时只注册到 HtmlElementNode 原型上形成嵌套 DSL。
+const factories = createHtmlFactories();
+
+registerChildFactories(HtmlElementNode, factories);
+
+export const {
+  a,
+  abbr,
+  address,
+  area,
+  article,
+  aside,
+  audio,
+  b,
+  base,
+  bdi,
+  bdo,
+  blockquote,
+  body,
+  br,
+  button,
+  canvas,
+  caption,
+  cite,
+  code,
+  col,
+  colgroup,
+  data,
+  datalist,
+  dd,
+  del,
+  details,
+  dfn,
+  dialog,
+  div,
+  dl,
+  dt,
+  em,
+  embed,
+  fieldset,
+  figcaption,
+  figure,
+  footer,
+  form,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  head,
+  header,
+  hgroup,
+  hr,
+  html,
+  i,
+  iframe,
+  img,
+  input,
+  ins,
+  kbd,
+  label,
+  legend,
+  li,
+  link,
+  main,
+  map,
+  mark,
+  menu,
+  meta,
+  meter,
+  nav,
+  noscript,
+  object,
+  ol,
+  optgroup,
+  option,
+  output,
+  p,
+  picture,
+  pre,
+  progress,
+  q,
+  rp,
+  rt,
+  ruby,
+  s,
+  samp,
+  script,
+  search,
+  section,
+  select,
+  selectedcontent,
+  slot,
+  small,
+  source,
+  span,
+  strong,
+  style,
+  styleTag,
+  sub,
+  summary,
+  sup,
+  table,
+  tbody,
+  td,
+  template,
+  textarea,
+  tfoot,
+  th,
+  thead,
+  time,
+  title,
+  tr,
+  track,
+  u,
+  ul,
+  varTag,
+  video,
+  wbr
+} = factories;
 
 /**
  * 标签定义默认使用同名工厂；遇到 JS 关键字或节点方法冲突时声明别名。
