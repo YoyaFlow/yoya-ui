@@ -215,7 +215,7 @@ Available compound component exports:
 
 - `vButton`
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
-- `vMenu`, `vMenuItem`
+- `vMenu`, `vMenuItem`, `vDropdownMenu`, `vContextMenu`
 - `vMessage`, `vMessageContainer`
 - `toast`
 

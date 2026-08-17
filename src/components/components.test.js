@@ -10,6 +10,8 @@ import {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vContextMenu,
+  vDropdownMenu,
   vMenu,
   vMenuItem,
   vMessage,
@@ -251,5 +253,190 @@ describe('compound components', () => {
     expect(element.dataset.orientation).toBe('horizontal');
     expect(items[0].style.width).toBe('auto');
     expect(items[1].style.width).toBe('auto');
+  });
+
+  it('creates vDropdownMenu with trigger, menu content and open state', () => {
+    const clicked = vi.fn();
+    const dropdown = vDropdownMenu((menu) => {
+      menu.trigger((button) => {
+        button.attr('id', 'more-actions');
+        button.label('更多操作');
+      });
+      menu.menuContent((commands) => {
+        commands.vMenuItem((item) => {
+          item.attr('id', 'dropdown-refresh');
+          item.text('刷新');
+          item.on('click', clicked);
+        });
+      });
+    }).placement('bottom-end');
+
+    const element = dropdown.renderDom();
+    const trigger = element.querySelector('#more-actions');
+    const panel = element.querySelector('.yoya-vdropdown-panel');
+
+    expect(element.classList.contains('yoya-vdropdown-menu')).toBe(true);
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(panel.style.display).toBe('none');
+    expect(element.dataset.placement).toBe('bottom-end');
+
+    trigger.click();
+
+    expect(element.dataset.open).toBe('true');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.style.display).toBe('');
+
+    element.querySelector('#dropdown-refresh').click();
+
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(element.dataset.open).toBeUndefined();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('closes dropdown menus from outside clicks and Escape', () => {
+    const dropdown = vDropdownMenu((menu) => {
+      menu.trigger((button) => button.attr('id', 'dropdown-close-trigger').label('更多'));
+      menu.menuContent((commands) => commands.vMenuItem('刷新'));
+    }).bindTo(document.body);
+    const element = dropdown.renderDom();
+    const trigger = element.querySelector('#dropdown-close-trigger');
+
+    trigger.click();
+    expect(element.dataset.open).toBe('true');
+
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(element.dataset.open).toBeUndefined();
+
+    trigger.click();
+    expect(element.dataset.open).toBe('true');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(element.dataset.open).toBeUndefined();
+  });
+
+  it('can keep dropdown menus open after selecting an item', () => {
+    const clicked = vi.fn();
+    const dropdown = vDropdownMenu((menu) => {
+      menu.trigger('更多');
+      menu.menuContent((commands) => {
+        commands.vMenuItem((item) => {
+          item.attr('id', 'dropdown-keep-open');
+          item.text('固定面板');
+          item.on('click', clicked);
+        });
+      });
+    }).closeOnSelect(false);
+    const element = dropdown.renderDom();
+
+    element.querySelector('.yoya-vbutton').click();
+    element.querySelector('#dropdown-keep-open').click();
+
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(element.dataset.open).toBe('true');
+  });
+
+  it('registers dropdown menu as a v-prefixed parent shortcut', () => {
+    const page = div((root) => {
+      root.vDropdownMenu((dropdown) => {
+        dropdown.trigger('操作');
+        dropdown.menuContent((menu) => {
+          menu.vMenuItem('导出');
+        });
+      });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vdropdown-menu')).not.toBeNull();
+    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('操作');
+    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
+  });
+
+  it('creates vContextMenu and opens from a contextmenu event', () => {
+    const selected = vi.fn();
+    const contextMenu = vContextMenu((menu) => {
+      menu.target((target) => {
+        target.attr('id', 'service-row');
+        target.text('服务 api-gateway');
+      });
+      menu.menuContent((commands) => {
+        commands.vMenuItem((item) => {
+          item.attr('id', 'restart-service');
+          item.text('重启服务');
+          item.on('click', selected);
+        });
+      });
+    });
+
+    const element = contextMenu.renderDom();
+    const target = element.querySelector('#service-row');
+    const panel = element.querySelector('.yoya-vcontext-panel');
+    const event = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 24,
+      clientY: 48
+    });
+
+    target.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(element.dataset.open).toBe('true');
+    expect(panel.style.display).toBe('');
+    expect(panel.style.left).toBe('24px');
+    expect(panel.style.top).toBe('48px');
+
+    element.querySelector('#restart-service').click();
+
+    expect(selected).toHaveBeenCalledTimes(1);
+    expect(element.dataset.open).toBeUndefined();
+    expect(panel.style.display).toBe('none');
+  });
+
+  it('closes context menus from outside clicks and Escape', () => {
+    const contextMenu = vContextMenu((menu) => {
+      menu.target((target) => target.attr('id', 'context-close-target').text('右键区域'));
+      menu.menuContent((commands) => commands.vMenuItem('查看详情'));
+    }).bindTo(document.body);
+    const element = contextMenu.renderDom();
+    const target = element.querySelector('#context-close-target');
+
+    target.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 18
+    }));
+    expect(element.dataset.open).toBe('true');
+
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(element.dataset.open).toBeUndefined();
+
+    target.dispatchEvent(new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 24,
+      clientY: 36
+    }));
+    expect(element.dataset.open).toBe('true');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(element.dataset.open).toBeUndefined();
+  });
+
+  it('registers context menu as a v-prefixed parent shortcut', () => {
+    const page = div((root) => {
+      root.vContextMenu((context) => {
+        context.target('右键区域');
+        context.menuContent((menu) => {
+          menu.vMenuItem('查看详情');
+        });
+      });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vcontext-menu')).not.toBeNull();
+    expect(element.querySelector('.yoya-vcontext-target').textContent).toBe('右键区域');
+    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('查看详情');
   });
 });

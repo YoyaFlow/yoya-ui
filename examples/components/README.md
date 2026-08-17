@@ -1,9 +1,11 @@
 # Components 复合组件示例
 
-这个目录演示第一批复合组件：
+这个目录演示当前复合组件：
 
 - `vButton`
 - `vCard` / `vCardHeader` / `vCardBody` / `vCardFooter`
+- `vMenu` / `vMenuItem`
+- `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
 

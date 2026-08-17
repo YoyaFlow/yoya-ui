@@ -476,6 +476,396 @@ export class VMenuItem extends HtmlElementNode {
   }
 }
 
+export class VDropdownMenu extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this._closeOnSelect = true;
+    this._globalCloseCleanup = null;
+    this._trigger = new VButton('操作')
+      .className('yoya-vdropdown-trigger')
+      .attr({ 'aria-expanded': 'false', 'aria-haspopup': 'menu' })
+      .on('click', (event) => {
+        event.preventDefault();
+        if (!this._trigger.getBooleanState('disabled')) {
+          this.toggle();
+        }
+      });
+    this._menu = new VMenu().className('yoya-vdropdown-content');
+    this._panel = new HtmlElementNode('div')
+      .className('yoya-vdropdown-panel')
+      .styles({
+        background: '#ffffff',
+        border: '1px solid #d8dee8',
+        borderRadius: '8px',
+        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
+        display: 'none',
+        minWidth: '200px',
+        position: 'absolute',
+        zIndex: '100'
+      })
+      .child(this._menu);
+
+    this.className(componentClass, 'yoya-vdropdown-menu');
+    this.styles({
+      display: 'inline-flex',
+      position: 'relative'
+    });
+    this._menu.on('click', (event) => {
+      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      if (this._closeOnSelect && menuItem && !menuItem.disabled) {
+        this.close();
+      }
+    });
+    this.child(this._trigger, this._panel);
+    this.placement('bottom-start');
+    this._setupDropdownMenu(setup);
+  }
+
+  trigger(setup) {
+    if (setup === undefined) {
+      return this._trigger;
+    }
+
+    setupButtonSlot(this._trigger, setup);
+    return this;
+  }
+
+  menuContent(setup) {
+    if (setup === undefined) {
+      return this._menu;
+    }
+
+    setupContentSlot(this._menu, setup);
+    return this;
+  }
+
+  placement(value) {
+    if (value === undefined) {
+      return this.attr('data-placement');
+    }
+
+    const placement = value || 'bottom-start';
+    this.attr('data-placement', placement);
+    this._panel.styles(dropdownPlacementStyles(placement));
+    return this;
+  }
+
+  closeOnSelect(value = true) {
+    this._closeOnSelect = Boolean(value);
+    return this;
+  }
+
+  open(value = true) {
+    const enabled = Boolean(value);
+
+    this.setState('open', enabled);
+    this.attr('data-open', enabled ? 'true' : null);
+    this._trigger.attr('aria-expanded', enabled ? 'true' : 'false');
+    this._panel.style('display', enabled ? null : 'none');
+
+    if (enabled) {
+      this._bindGlobalCloseHandlers();
+    } else {
+      this._releaseGlobalCloseHandlers();
+    }
+
+    return this;
+  }
+
+  close() {
+    return this.open(false);
+  }
+
+  toggle() {
+    return this.open(!this.getBooleanState('open'));
+  }
+
+  destroy() {
+    this.close();
+    return super.destroy();
+  }
+
+  _bindGlobalCloseHandlers() {
+    if (this._globalCloseCleanup || typeof document === 'undefined') {
+      return;
+    }
+
+    const handlePointer = (event) => {
+      if (!this._el?.contains(event.target)) {
+        this.close();
+      }
+    };
+    const handleKey = (event) => {
+      if (event.key === 'Escape') {
+        this.close();
+      }
+    };
+
+    document.addEventListener('click', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    this._globalCloseCleanup = () => {
+      document.removeEventListener('click', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+      this._globalCloseCleanup = null;
+    };
+  }
+
+  _releaseGlobalCloseHandlers() {
+    if (this._globalCloseCleanup) {
+      this._globalCloseCleanup();
+    }
+  }
+
+  _setupDropdownMenu(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const {
+        children,
+        closeOnSelect,
+        content,
+        label,
+        menu,
+        menuContent,
+        open,
+        placement,
+        text,
+        trigger,
+        ...elementConfig
+      } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        super._setupObject(elementConfig);
+      }
+
+      if (trigger !== undefined) {
+        this.trigger(trigger);
+      } else if (label !== undefined) {
+        this.trigger(label);
+      } else if (text !== undefined) {
+        this.trigger(text);
+      }
+
+      const menuSetup = menuContent ?? menu ?? content ?? children;
+      if (menuSetup !== undefined) {
+        this.menuContent(menuSetup);
+      }
+
+      if (placement !== undefined) {
+        this.placement(placement);
+      }
+
+      if (closeOnSelect !== undefined) {
+        this.closeOnSelect(closeOnSelect);
+      }
+
+      if (open !== undefined) {
+        this.open(open);
+      }
+
+      return;
+    }
+
+    this.trigger(setup);
+  }
+}
+
+export class VContextMenu extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this._closeOnSelect = true;
+    this._globalCloseCleanup = null;
+    this._target = new HtmlElementNode('div')
+      .className('yoya-vcontext-target')
+      .styles({
+        minWidth: '0'
+      })
+      .on('contextmenu', (event) => {
+        event.preventDefault();
+        this.openAt(event);
+      });
+    this._menu = new VMenu().className('yoya-vcontext-content');
+    this._panel = new HtmlElementNode('div')
+      .className('yoya-vcontext-panel')
+      .styles({
+        background: '#ffffff',
+        border: '1px solid #d8dee8',
+        borderRadius: '8px',
+        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
+        display: 'none',
+        minWidth: '200px',
+        position: 'fixed',
+        zIndex: '120'
+      })
+      .child(this._menu);
+
+    this.className(componentClass, 'yoya-vcontext-menu');
+    this.styles({
+      display: 'block',
+      minWidth: '0'
+    });
+    this._menu.on('click', (event) => {
+      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      if (this._closeOnSelect && menuItem && !menuItem.disabled) {
+        this.close();
+      }
+    });
+    this.child(this._target, this._panel);
+    this._setupContextMenu(setup);
+  }
+
+  target(setup) {
+    if (setup === undefined) {
+      return this._target;
+    }
+
+    setupContentSlot(this._target, setup);
+    return this;
+  }
+
+  menuContent(setup) {
+    if (setup === undefined) {
+      return this._menu;
+    }
+
+    setupContentSlot(this._menu, setup);
+    return this;
+  }
+
+  closeOnSelect(value = true) {
+    this._closeOnSelect = Boolean(value);
+    return this;
+  }
+
+  openAt(pointOrX = 0, y = 0) {
+    const point = normalizePoint(pointOrX, y);
+
+    this._panel.styles({
+      left: `${point.x}px`,
+      top: `${point.y}px`
+    });
+    return this.open(true);
+  }
+
+  open(value = true) {
+    const enabled = Boolean(value);
+
+    this.setState('open', enabled);
+    this.attr('data-open', enabled ? 'true' : null);
+    this._panel.style('display', enabled ? null : 'none');
+
+    if (enabled) {
+      this._bindGlobalCloseHandlers();
+    } else {
+      this._releaseGlobalCloseHandlers();
+    }
+
+    return this;
+  }
+
+  close() {
+    return this.open(false);
+  }
+
+  destroy() {
+    this.close();
+    return super.destroy();
+  }
+
+  _bindGlobalCloseHandlers() {
+    if (this._globalCloseCleanup || typeof document === 'undefined') {
+      return;
+    }
+
+    const handlePointer = (event) => {
+      if (!this._el?.contains(event.target)) {
+        this.close();
+      }
+    };
+    const handleKey = (event) => {
+      if (event.key === 'Escape') {
+        this.close();
+      }
+    };
+
+    document.addEventListener('click', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    this._globalCloseCleanup = () => {
+      document.removeEventListener('click', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+      this._globalCloseCleanup = null;
+    };
+  }
+
+  _releaseGlobalCloseHandlers() {
+    if (this._globalCloseCleanup) {
+      this._globalCloseCleanup();
+    }
+  }
+
+  _setupContextMenu(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const {
+        children,
+        closeOnSelect,
+        content,
+        menu,
+        menuContent,
+        open,
+        target,
+        x,
+        y,
+        ...elementConfig
+      } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        super._setupObject(elementConfig);
+      }
+
+      if (target !== undefined) {
+        this.target(target);
+      }
+
+      const menuSetup = menuContent ?? menu ?? content ?? children;
+      if (menuSetup !== undefined) {
+        this.menuContent(menuSetup);
+      }
+
+      if (closeOnSelect !== undefined) {
+        this.closeOnSelect(closeOnSelect);
+      }
+
+      if (open !== undefined) {
+        if (open) {
+          this.openAt(x ?? 0, y ?? 0);
+        } else {
+          this.close();
+        }
+      }
+
+      return;
+    }
+
+    this.target(setup);
+  }
+}
+
 export class VMessage extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
@@ -738,6 +1128,14 @@ export function vMenuItem(setup = null) {
   return new VMenuItem(setup);
 }
 
+export function vDropdownMenu(setup = null) {
+  return new VDropdownMenu(setup);
+}
+
+export function vContextMenu(setup = null) {
+  return new VContextMenu(setup);
+}
+
 export function vMessage(setup = null) {
   return new VMessage(setup);
 }
@@ -800,6 +1198,8 @@ const componentFactories = {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vContextMenu,
+  vDropdownMenu,
   vMenu,
   vMenuItem,
   vMessage,
@@ -856,6 +1256,72 @@ function replaceChildren(node, children) {
 function removeChild(parent, child) {
   parent._children = parent.children().filter((existingChild) => existingChild !== child);
   return parent;
+}
+
+function setupButtonSlot(button, setup) {
+  if (setup === null || setup === undefined) {
+    return button;
+  }
+
+  if (typeof setup === 'function') {
+    setup(button);
+    return button;
+  }
+
+  if (isPlainObject(setup)) {
+    button._setupButton(setup);
+    return button;
+  }
+
+  button.label(setup);
+  return button;
+}
+
+function setupContentSlot(node, setup) {
+  replaceChildren(node, []);
+
+  if (setup === null || setup === undefined) {
+    return node;
+  }
+
+  if (typeof setup === 'function') {
+    setup(node);
+    return node;
+  }
+
+  applyComponentSetup(node, setup);
+  return node;
+}
+
+function dropdownPlacementStyles(placement) {
+  const base = {
+    bottom: null,
+    left: null,
+    right: null,
+    top: null
+  };
+  const placements = {
+    'bottom-end': { right: '0', top: 'calc(100% + 6px)' },
+    'bottom-start': { left: '0', top: 'calc(100% + 6px)' },
+    'top-end': { bottom: 'calc(100% + 6px)', right: '0' },
+    'top-start': { bottom: 'calc(100% + 6px)', left: '0' }
+  };
+
+  return { ...base, ...(placements[placement] || placements['bottom-start']) };
+}
+
+function normalizePoint(pointOrX, y) {
+  if (pointOrX && typeof pointOrX === 'object') {
+    return {
+      x: Number(pointOrX.clientX ?? pointOrX.x ?? 0),
+      y: Number(pointOrX.clientY ?? pointOrX.y ?? 0)
+    };
+  }
+
+  return {
+    x: Number(pointOrX || 0),
+    y: Number(y || 0)
+  };
 }
 
 function buttonVariantStyles(variant) {
