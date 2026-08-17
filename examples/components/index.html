@@ -59,8 +59,42 @@
         background: #ffffff;
       }
 
-      .components-grid {
+      .component-example {
         align-items: start;
+      }
+
+      .source-panel {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        padding: 16px;
+        background: #ffffff;
+      }
+
+      .source-panel h2 {
+        color: #172033;
+      }
+
+      .source-code {
+        max-height: 360px;
+        margin: 0;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 14px;
+        background: #fbfcfe;
+      }
+
+      .source-code code {
+        display: block;
+        min-width: max-content;
+        color: #172033;
+        font-family: "Cascadia Code", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.86rem;
+        line-height: 1.55;
+        white-space: pre;
       }
 
       .task-row,
@@ -127,7 +161,7 @@
           padding-right: 16px !important;
         }
 
-        .components-grid {
+        .component-example {
           grid-template-columns: 1fr !important;
         }
       }

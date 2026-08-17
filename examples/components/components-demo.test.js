@@ -19,4 +19,15 @@ describe('components example', () => {
     document.querySelector('#switch-en').click();
     expect(document.querySelector('#save-config').textContent).toContain('Save');
   });
+
+  it('shows source code beside the rendered component examples', () => {
+    renderComponentsExample('#app');
+
+    const sourceBlocks = document.querySelectorAll('[data-source-example]');
+
+    expect(sourceBlocks).toHaveLength(3);
+    expect(sourceBlocks[0].textContent).toContain("card.vCardHeader('部署任务')");
+    expect(sourceBlocks[1].textContent).toContain("toast.success('配置已保存'");
+    expect(sourceBlocks[2].textContent).toContain("locale.setLanguage('en')");
+  });
 });
