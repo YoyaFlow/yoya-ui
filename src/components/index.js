@@ -215,6 +215,267 @@ export class VCardFooter extends HtmlElementNode {
   }
 }
 
+export class VMenu extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this.className(componentClass, 'yoya-vmenu');
+    this.styles({
+      display: 'flex',
+      gap: '4px',
+      minWidth: '180px',
+      padding: '6px'
+    });
+    this.orientation('vertical');
+    this._setupMenu(setup);
+  }
+
+  orientation(value = 'vertical') {
+    const orientation = value === 'horizontal' ? 'horizontal' : 'vertical';
+
+    this.attr('data-orientation', orientation);
+    this.attr('role', orientation === 'horizontal' ? 'menubar' : 'menu');
+    this.attr('aria-orientation', orientation);
+    this.style('flexDirection', orientation === 'horizontal' ? 'row' : 'column');
+    this.children().forEach((child) => {
+      if (child instanceof VMenuItem) {
+        child._menuOrientation(orientation);
+      }
+    });
+    return this;
+  }
+
+  child(...children) {
+    super.child(...children);
+    const orientation = this.attr('data-orientation') || 'vertical';
+
+    this.children().forEach((child) => {
+      if (child instanceof VMenuItem) {
+        child._menuOrientation(orientation);
+      }
+    });
+
+    return this;
+  }
+
+  horizontal() {
+    return this.orientation('horizontal');
+  }
+
+  vertical() {
+    return this.orientation('vertical');
+  }
+
+  _setupMenu(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { children, orientation, horizontal, ...elementConfig } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        this.setup(elementConfig);
+      }
+
+      if (orientation !== undefined) {
+        this.orientation(orientation);
+      } else if (horizontal !== undefined) {
+        this.orientation(horizontal ? 'horizontal' : 'vertical');
+      }
+
+      if (children !== undefined) {
+        this.child(children);
+      }
+
+      return;
+    }
+
+    applyComponentSetup(this, setup);
+  }
+}
+
+export class VMenuItem extends HtmlElementNode {
+  constructor(setup = null) {
+    super('button', null);
+    this._iconBox = new HtmlElementNode('span')
+      .className('yoya-vmenu-item-icon')
+      .attr('aria-hidden', 'true')
+      .style('display', 'none');
+    this._labelBox = new HtmlElementNode('span').className('yoya-vmenu-item-label');
+    this._shortcutBox = new HtmlElementNode('span')
+      .className('yoya-vmenu-item-shortcut')
+      .attr('aria-hidden', 'true')
+      .style('display', 'none');
+
+    this.className(componentClass, 'yoya-vmenu-item');
+    this.attr({ role: 'menuitem', type: 'button' });
+    this.styles({
+      alignItems: 'center',
+      background: 'transparent',
+      border: '1px solid transparent',
+      borderRadius: '6px',
+      color: '#1f2937',
+      cursor: 'pointer',
+      display: 'grid',
+      font: 'inherit',
+      gap: '10px',
+      gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+      lineHeight: '1.2',
+      minHeight: '34px',
+      padding: '8px 10px',
+      textAlign: 'left',
+      width: '100%'
+    });
+    this.child(this._iconBox, this._labelBox, this._shortcutBox);
+    this._setupMenuItem(setup);
+  }
+
+  text(content) {
+    replaceChildren(this._labelBox, normalizeChildren(content));
+    return this;
+  }
+
+  label(content) {
+    return this.text(content);
+  }
+
+  content(content) {
+    return this.text(content);
+  }
+
+  icon(content) {
+    replaceChildren(this._iconBox, normalizeChildren(content));
+    this._iconBox.style('display', content === null || content === undefined || content === '' ? 'none' : null);
+    return this;
+  }
+
+  shortcut(content) {
+    replaceChildren(this._shortcutBox, normalizeChildren(content));
+    this._shortcutBox.style('display', content === null || content === undefined || content === '' ? 'none' : null);
+    return this;
+  }
+
+  active(value = true) {
+    const enabled = Boolean(value);
+
+    this.setState('active', enabled);
+    this.attr('data-active', enabled ? 'true' : null);
+    this.attr('aria-current', enabled ? 'page' : null);
+    this.styles(enabled ? {
+      background: '#eff6ff',
+      borderColor: '#bfdbfe',
+      color: '#1d4ed8',
+      fontWeight: '700'
+    } : {
+      background: 'transparent',
+      borderColor: 'transparent',
+      color: this.getBooleanState('danger') ? '#b91c1c' : '#1f2937',
+      fontWeight: '400'
+    });
+    return this;
+  }
+
+  danger(value = true) {
+    const enabled = Boolean(value);
+
+    this.setState('danger', enabled);
+    this.attr('data-danger', enabled ? 'true' : null);
+    if (!this.getBooleanState('active')) {
+      this.style('color', enabled ? '#b91c1c' : '#1f2937');
+    }
+    return this;
+  }
+
+  disabled(value = true) {
+    const enabled = Boolean(value);
+
+    this.setState('disabled', enabled);
+    this.attr('disabled', enabled ? true : null);
+    this.style('cursor', enabled ? 'not-allowed' : 'pointer');
+    this.style('opacity', enabled ? '0.55' : '1');
+    return this;
+  }
+
+  hoverable(value = true) {
+    this.attr('data-hoverable', value ? 'true' : null);
+    return this;
+  }
+
+  _menuOrientation(orientation) {
+    this.style('width', orientation === 'horizontal' ? 'auto' : '100%');
+    return this;
+  }
+
+  _setupMenuItem(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const {
+        active,
+        children,
+        content,
+        danger,
+        disabled,
+        icon,
+        label,
+        shortcut,
+        text,
+        ...elementConfig
+      } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        this.setup(elementConfig);
+      }
+
+      if (label !== undefined) {
+        this.label(label);
+      } else if (text !== undefined) {
+        this.text(text);
+      } else if (content !== undefined) {
+        this.content(content);
+      } else if (children !== undefined) {
+        this.text(children);
+      }
+
+      if (icon !== undefined) {
+        this.icon(icon);
+      }
+
+      if (shortcut !== undefined) {
+        this.shortcut(shortcut);
+      }
+
+      if (active !== undefined) {
+        this.active(active);
+      }
+
+      if (danger !== undefined) {
+        this.danger(danger);
+      }
+
+      if (disabled !== undefined) {
+        this.disabled(disabled);
+      }
+
+      return;
+    }
+
+    this.text(setup);
+  }
+}
+
 export class VMessage extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
@@ -469,6 +730,14 @@ export function vCardFooter(setup = null) {
   return new VCardFooter(setup);
 }
 
+export function vMenu(setup = null) {
+  return new VMenu(setup);
+}
+
+export function vMenuItem(setup = null) {
+  return new VMenuItem(setup);
+}
+
 export function vMessage(setup = null) {
   return new VMessage(setup);
 }
@@ -531,6 +800,8 @@ const componentFactories = {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vMenu,
+  vMenuItem,
   vMessage,
   vMessageContainer
 };

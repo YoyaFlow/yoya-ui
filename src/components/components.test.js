@@ -10,6 +10,8 @@ import {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vMenu,
+  vMenuItem,
   vMessage,
   vMessageContainer
 } from '../index.js';
@@ -160,5 +162,94 @@ describe('compound components', () => {
 
     expect(closeSpy).toHaveBeenCalledTimes(1);
     expect(document.body.querySelector('.yoya-vmessage-container')).toBeNull();
+  });
+
+  it('creates vMenu and vMenuItem command components', () => {
+    const clicked = vi.fn();
+    const disabledClick = vi.fn();
+    const menu = vMenu((commands) => {
+      commands.vMenuItem((item) => {
+        item.icon('N');
+        item.text('新建');
+        item.shortcut('Ctrl+N');
+        item.active(true);
+        item.on('click', clicked);
+      });
+      commands.vMenuItem((item) => {
+        item.text('删除');
+        item.danger(true);
+        item.disabled(true);
+        item.on('click', disabledClick);
+      });
+    });
+
+    const element = menu.renderDom();
+    const items = element.querySelectorAll('.yoya-vmenu-item');
+
+    expect(element.getAttribute('role')).toBe('menu');
+    expect(element.dataset.orientation).toBe('vertical');
+    expect(items).toHaveLength(2);
+    expect(items[0].getAttribute('role')).toBe('menuitem');
+    expect(items[0].querySelector('.yoya-vmenu-item-icon').textContent).toBe('N');
+    expect(items[0].querySelector('.yoya-vmenu-item-label').textContent).toBe('新建');
+    expect(items[0].querySelector('.yoya-vmenu-item-shortcut').textContent).toBe('Ctrl+N');
+    expect(items[0].getAttribute('aria-current')).toBe('page');
+    expect(items[1].dataset.danger).toBe('true');
+    expect(items[1].disabled).toBe(true);
+
+    items[0].click();
+    items[1].click();
+
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(disabledClick).not.toHaveBeenCalled();
+  });
+
+  it('registers menu components as v-prefixed parent shortcuts and supports i18n text', () => {
+    const locale = createI18n({
+      language: 'zh-CN',
+      messages: {
+        'zh-CN': { menu: { dashboard: '控制台' } },
+        en: { menu: { dashboard: 'Dashboard' } }
+      }
+    });
+    const page = div((root) => {
+      root.vMenu((menu) => {
+        menu.horizontal();
+        menu.vMenuItem(locale.text('menu.dashboard'));
+      });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vmenu').dataset.orientation).toBe('horizontal');
+    expect(element.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menubar');
+    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('控制台');
+
+    locale.setLanguage('en');
+
+    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('Dashboard');
+    expect(vMenuItem('独立项').toHTML()).toContain('yoya-vmenu-item-label');
+  });
+
+  it('preserves danger styling when active state is turned off', () => {
+    const item = vMenuItem('删除服务').danger(true).active(true).active(false);
+    const element = item.renderDom();
+
+    expect(element.dataset.danger).toBe('true');
+    expect(element.dataset.active).toBeUndefined();
+    expect(element.style.color).toBe('rgb(185, 28, 28)');
+  });
+
+  it('uses content-width menu items in horizontal menus', () => {
+    const menu = vMenu((commands) => {
+      commands.horizontal();
+      commands.vMenuItem('概览');
+      commands.vMenuItem('配置');
+    });
+    const element = menu.renderDom();
+    const items = element.querySelectorAll('.yoya-vmenu-item');
+
+    expect(element.dataset.orientation).toBe('horizontal');
+    expect(items[0].style.width).toBe('auto');
+    expect(items[1].style.width).toBe('auto');
   });
 });

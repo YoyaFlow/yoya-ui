@@ -86,6 +86,27 @@ card.vCardFooter((footer) => {
     });
   });
 });
+`.trim(),
+  menu: `
+card.vCardBody((body) => {
+  body.vMenu((menu) => {
+    menu.vMenuItem((item) => {
+      item.icon('R');
+      item.text('刷新状态');
+      item.shortcut('Ctrl+R');
+      item.active(true);
+      item.on('click', () => {
+        toast.info('菜单触发：刷新状态', { duration: 0 });
+      });
+    });
+    menu.vMenuItem((item) => {
+      item.text('删除服务');
+      item.shortcut('Del');
+      item.danger(true);
+      item.disabled(true);
+    });
+  });
+});
 `.trim()
 };
 
@@ -271,6 +292,50 @@ export function renderComponentsExample(target = '#app') {
           });
 
           exampleSource(example, '语言切换核心源码', sourceSnippets.locale);
+        });
+
+        examples.grid((example) => {
+          example.className('component-example');
+          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+
+          example.vCard((card) => {
+            card.vCardHeader('命令菜单');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vMenuItem 可以承载图标、文本、快捷键、选中状态、危险状态和禁用状态。');
+                stack.vMenu((menu) => {
+                  menu.vMenuItem((item) => {
+                    item.attr('id', 'menu-refresh');
+                    item.icon('R');
+                    item.text('刷新状态');
+                    item.shortcut('Ctrl+R');
+                    item.active(true);
+                    item.on('click', () => {
+                      toast.info('菜单触发：刷新状态', { duration: 0 });
+                    });
+                  });
+                  menu.vMenuItem((item) => {
+                    item.icon('S');
+                    item.text('系统设置');
+                    item.shortcut('Ctrl+,');
+                    item.on('click', () => {
+                      toast.info('菜单触发：系统设置', { duration: 0 });
+                    });
+                  });
+                  menu.vMenuItem((item) => {
+                    item.icon('D');
+                    item.text('删除服务');
+                    item.shortcut('Del');
+                    item.danger(true);
+                    item.disabled(true);
+                  });
+                });
+              });
+            });
+          });
+
+          exampleSource(example, '命令菜单核心源码', sourceSnippets.menu);
         });
       });
     });

@@ -211,10 +211,11 @@ div((page) => {
 
 `button()` remains the native `<button>` factory. `vButton()` is the compound button component with label, variant, size, disabled and loading state support. Use `variant('primary')` for visual style; use `htmlType('submit')` when the underlying `<button>` needs a native form type.
 
-First-batch component exports:
+Available compound component exports:
 
 - `vButton`
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
+- `vMenu`, `vMenuItem`
 - `vMessage`, `vMessageContainer`
 - `toast`
 
