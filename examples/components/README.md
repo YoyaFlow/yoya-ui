@@ -8,6 +8,9 @@
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
+- `vDetail` / `vDetailItem`
+- `vCode`
+- `vTable`
 
 运行方式：
 

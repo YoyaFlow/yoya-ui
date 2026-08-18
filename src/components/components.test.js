@@ -5,17 +5,21 @@ import {
   createI18n,
   div,
   toast,
+  vCode,
   vButton,
   vCard,
   vCardBody,
   vCardFooter,
   vCardHeader,
   vContextMenu,
+  vDetail,
+  vDetailItem,
   vDropdownMenu,
   vMenu,
   vMenuItem,
   vMessage,
-  vMessageContainer
+  vMessageContainer,
+  vTable
 } from '../index.js';
 
 describe('compound components', () => {
@@ -438,5 +442,105 @@ describe('compound components', () => {
     expect(element.querySelector('.yoya-vcontext-menu')).not.toBeNull();
     expect(element.querySelector('.yoya-vcontext-target').textContent).toBe('右键区域');
     expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('查看详情');
+  });
+
+  it('creates detail components with label and value pairs', () => {
+    const page = div((root) => {
+      root.vDetail((detail) => {
+        detail.vDetailItem((item) => {
+          item.label('主机');
+          item.value('api-gateway-01');
+        });
+        detail.vDetailItem(vDetailItem('状态', '运行中'));
+      });
+    });
+
+    const element = page.renderDom();
+    const items = element.querySelectorAll('.yoya-vdetail-item');
+
+    expect(element.querySelector('.yoya-vdetail')).not.toBeNull();
+    expect(items).toHaveLength(2);
+    expect(items[0].querySelector('dt').textContent).toBe('主机');
+    expect(items[0].querySelector('dd').textContent).toBe('api-gateway-01');
+    expect(items[1].querySelector('dt').textContent).toBe('状态');
+    expect(items[1].querySelector('dd').textContent).toBe('运行中');
+    expect(vDetailItem('版本', '1.2.3').toHTML()).toContain('1.2.3');
+  });
+
+  it('renders copyable code snippets and copies text from the code block', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const originalClipboard = navigator.clipboard;
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    });
+
+    try {
+      const snippet = vCode((code) => {
+        code.language('sql');
+        code.content('SELECT * FROM services;');
+      });
+
+      const element = snippet.renderDom();
+      element.querySelector('.yoya-vcode-copy').click();
+
+      expect(element.classList.contains('yoya-vcode')).toBe(true);
+      expect(element.dataset.language).toBe('sql');
+      expect(element.querySelector('pre code').textContent).toBe('SELECT * FROM services;');
+      expect(writeText).toHaveBeenCalledWith('SELECT * FROM services;');
+    } finally {
+      if (originalClipboard === undefined) {
+        delete navigator.clipboard;
+      } else {
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: originalClipboard
+        });
+      }
+    }
+  });
+
+  it('renders tables with row actions and empty states', () => {
+    const clicked = vi.fn();
+    const table = vTable({
+      caption: '服务列表',
+      columns: [
+        { key: 'name', label: '名称' },
+        { key: 'status', label: '状态' },
+        {
+          key: 'actions',
+          label: '操作',
+          render: (row) =>
+            vButton((button) => {
+              button.label(row.status === '运行中' ? '重启' : '启动');
+              button.variant('secondary');
+              button.on('click', () => clicked(row.name));
+            })
+        }
+      ],
+      emptyText: '暂无服务',
+      rows: [
+        { name: 'api-gateway', status: '运行中' },
+        { name: 'worker', status: '停止' }
+      ]
+    });
+
+    const element = table.renderDom();
+    const rows = element.querySelectorAll('tbody tr');
+
+    expect(element.classList.contains('yoya-vtable')).toBe(true);
+    expect(element.querySelector('caption').textContent).toBe('服务列表');
+    expect(element.querySelectorAll('thead th')).toHaveLength(3);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelectorAll('td')[2].textContent).toBe('重启');
+
+    rows[0].querySelector('button').click();
+    expect(clicked).toHaveBeenCalledWith('api-gateway');
+
+    table.rows([]);
+
+    expect(element.querySelector('.yoya-vtable-empty').textContent).toBe('暂无服务');
+    expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 });

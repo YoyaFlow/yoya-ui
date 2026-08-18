@@ -2,6 +2,7 @@ import {
   createI18n,
   section,
   toast,
+  vButton,
   vMessageContainer,
   vText
 } from '../../src/index.js';
@@ -128,15 +129,68 @@ card.vCardBody((body) => {
     });
   });
 });
+`.trim(),
+  detail: `
+card.vCardBody((body) => {
+  body.vDetail((detail) => {
+    detail.vDetailItem((item) => {
+      item.label('服务名称');
+      item.value('api-gateway');
+    });
+    detail.vDetailItem((item) => {
+      item.label('当前状态');
+      item.value(serviceState);
+    });
+    detail.vDetailItem('负责人', 'SRE Team');
+  });
+});
+`.trim(),
+  code: `
+card.vCardBody((body) => {
+  body.vCode((code) => {
+    code.language('sql');
+    code.content('SELECT id, name, status FROM services ORDER BY updated_at DESC;');
+  });
+});
+`.trim(),
+  table: `
+card.vCardBody((body) => {
+  body.vTable((table) => {
+    table.caption('在线服务');
+    table.columns([
+      { key: 'name', label: '名称' },
+      { key: 'status', label: '状态' },
+      { key: 'owner', label: '负责人' },
+      {
+        key: 'actions',
+        label: '操作',
+        align: 'right',
+        render: (row) =>
+          vButton((button) => {
+            button.label(row.status === '运行中' ? '重启' : '启动');
+            button.variant('secondary');
+            button.size('small');
+          })
+      }
+    ]);
+    table.rows(services);
+    table.emptyText('暂无服务');
+  });
+});
 `.trim()
 };
 
 /**
- * 渲染第一批复合组件示例：vCard、vButton、vMessageContainer 和 toast。
+ * 渲染复合组件示例：vCard、vButton、vMessageContainer、toast、vDetail、vCode 和 vTable。
  */
 export function renderComponentsExample(target = '#app') {
   const jobState = vText('等待调度');
   const auditState = vText('尚未保存');
+  const serviceState = vText('运行中');
+  const services = [
+    { name: 'api-gateway', status: '运行中', owner: 'SRE' },
+    { name: 'worker', status: '空闲', owner: 'Platform' }
+  ];
   let startButton = null;
 
   const messageHost = vMessageContainer({ placement: 'top-right' }).bindTo(document.body);
@@ -430,6 +484,105 @@ export function renderComponentsExample(target = '#app') {
           });
 
           exampleSource(example, '浮层菜单核心源码', sourceSnippets.overlay);
+        });
+
+        examples.grid((example) => {
+          example.className('component-example');
+          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+
+          example.vCard((card) => {
+            card.vCardHeader('服务详情');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vDetail 将 label/value 结构集中到一个组件里，适合服务概览和只读资料。');
+                stack.vDetail((detail) => {
+                  detail.vDetailItem((item) => {
+                    item.label('服务名称');
+                    item.value('api-gateway');
+                  });
+                  detail.vDetailItem((item) => {
+                    item.label('当前状态');
+                    item.value(serviceState);
+                  });
+                  detail.vDetailItem('负责人', 'SRE Team');
+                });
+              });
+            });
+            card.vCardFooter((footer) => {
+              footer.vButton((button) => {
+                button.label('切换状态');
+                button.on('click', () => {
+                  serviceState.textContent(serviceState.textContent() === '运行中' ? '维护中' : '运行中');
+                  toast.info(`状态已切换为 ${serviceState.textContent()}`, { duration: 0 });
+                });
+              });
+            });
+          });
+
+          exampleSource(example, '服务详情核心源码', sourceSnippets.detail);
+        });
+
+        examples.grid((example) => {
+          example.className('component-example');
+          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+
+          example.vCard((card) => {
+            card.vCardHeader('SQL 片段');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vCode 内置复制按钮，适合 SQL、日志和配置片段。');
+                stack.vCode((code) => {
+                  code.language('sql');
+                  code.content('SELECT id, name, status FROM services ORDER BY updated_at DESC;');
+                });
+              });
+            });
+          });
+
+          exampleSource(example, 'SQL 片段核心源码', sourceSnippets.code);
+        });
+
+        examples.grid((example) => {
+          example.className('component-example');
+          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+
+          example.vCard((card) => {
+            card.vCardHeader('服务表格');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vTable 可以把列定义、空状态和行操作收拢在一个组件里。');
+                stack.vTable((table) => {
+                  table.caption('在线服务');
+                  table.columns([
+                    { key: 'name', label: '名称' },
+                    { key: 'status', label: '状态' },
+                    { key: 'owner', label: '负责人' },
+                    {
+                      key: 'actions',
+                      label: '操作',
+                      align: 'right',
+                      render: (row) =>
+                        vButton((button) => {
+                          button.label(row.status === '运行中' ? '重启' : '启动');
+                          button.variant('secondary');
+                          button.size('small');
+                          button.on('click', () => {
+                            toast.info(`菜单触发：${row.name}`, { duration: 0 });
+                          });
+                        })
+                    }
+                  ]);
+                  table.rows(services);
+                  table.emptyText('暂无服务');
+                });
+              });
+            });
+          });
+
+          exampleSource(example, '服务表格核心源码', sourceSnippets.table);
         });
       });
     });

@@ -1100,6 +1100,537 @@ export class VMessageContainer extends HtmlElementNode {
   }
 }
 
+export class VDetail extends HtmlElementNode {
+  constructor(setup = null) {
+    super('dl', null);
+    this.className(componentClass, 'yoya-vdetail');
+    this.styles({
+      border: '1px solid #d8dee8',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '0',
+      margin: '0',
+      overflow: 'hidden'
+    });
+    this._setupDetail(setup);
+  }
+
+  items(value) {
+    if (value === undefined) {
+      return this.children();
+    }
+
+    replaceChildren(this, []);
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        this.child(normalizeDetailItem(item));
+      });
+    }
+
+    return this;
+  }
+
+  _setupDetail(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (Array.isArray(setup)) {
+      this.items(setup);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      this.setup(setup);
+      return;
+    }
+
+    this.child(setup);
+  }
+}
+
+export class VDetailItem extends HtmlElementNode {
+  constructor(setup = null, value = undefined) {
+    super('div', null);
+    this._labelBox = new HtmlElementNode('dt').className('yoya-vdetail-label');
+    this._valueBox = new HtmlElementNode('dd').className('yoya-vdetail-value');
+
+    this.className('yoya-vdetail-item');
+    this.styles({
+      alignItems: 'start',
+      display: 'grid',
+      gap: '12px',
+      gridTemplateColumns: 'minmax(120px, 180px) minmax(0, 1fr)',
+      padding: '12px 16px'
+    });
+    this._labelBox.styles({
+      color: '#475569',
+      fontWeight: '700',
+      margin: '0',
+      wordBreak: 'break-word'
+    });
+    this._valueBox.styles({
+      color: '#111827',
+      margin: '0',
+      wordBreak: 'break-word'
+    });
+    this.child(this._labelBox, this._valueBox);
+    this._setupDetailItem(setup, value);
+  }
+
+  label(content) {
+    if (content === undefined) {
+      return this._labelBox.textContent();
+    }
+
+    replaceChildren(this._labelBox, normalizeChildren(content));
+    return this;
+  }
+
+  value(content) {
+    if (content === undefined) {
+      return this._valueBox.textContent();
+    }
+
+    replaceChildren(this._valueBox, normalizeChildren(content));
+    return this;
+  }
+
+  content(content) {
+    return this.value(content);
+  }
+
+  _setupDetailItem(setup, value) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (Array.isArray(setup) && value === undefined && setup.length >= 2) {
+      this.label(setup[0]);
+      this.value(setup[1]);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { children, content, label, text, value: itemValue, ...elementConfig } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        this.setup(elementConfig);
+      }
+
+      if (label !== undefined) {
+        this.label(label);
+      }
+
+      if (itemValue !== undefined) {
+        this.value(itemValue);
+      } else if (content !== undefined) {
+        this.value(content);
+      } else if (text !== undefined) {
+        this.value(text);
+      } else if (children !== undefined) {
+        this.value(children);
+      }
+
+      return;
+    }
+
+    if (value !== undefined) {
+      this.label(setup);
+      this.value(value);
+      return;
+    }
+
+    this.value(setup);
+  }
+}
+
+export class VCode extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this._languageBadge = new HtmlElementNode('span')
+      .className('yoya-vcode-language')
+      .style('display', 'none');
+    this._copyButton = new HtmlElementNode('button')
+      .className('yoya-vcode-copy')
+      .attr({ 'aria-label': '复制代码', type: 'button' })
+      .on('click', () => {
+        void this.copy();
+      });
+    this._toolbar = new HtmlElementNode('div').className('yoya-vcode-toolbar');
+    this._codeBox = new HtmlElementNode('code').className('yoya-vcode-content');
+    this._preBox = new HtmlElementNode('pre').className('yoya-vcode-pre').child(this._codeBox);
+
+    this.className(componentClass, 'yoya-vcode');
+    this.styles({
+      background: '#ffffff',
+      border: '1px solid #d8dee8',
+      borderRadius: '8px',
+      color: '#172033',
+      overflow: 'hidden'
+    });
+    this._toolbar.styles({
+      alignItems: 'center',
+      background: '#f8fafc',
+      display: 'flex',
+      gap: '8px',
+      justifyContent: 'space-between',
+      padding: '10px 12px'
+    });
+    this._languageBadge.styles({
+      background: '#e2e8f0',
+      borderRadius: '999px',
+      color: '#334155',
+      fontSize: '12px',
+      fontWeight: '700',
+      lineHeight: '1',
+      padding: '4px 8px'
+    });
+    this._preBox.styles({
+      background: '#fbfcfe',
+      margin: '0',
+      overflow: 'auto',
+      padding: '14px 16px'
+    });
+    this._codeBox.styles({
+      display: 'block',
+      fontFamily:
+        '"Cascadia Code", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace',
+      fontSize: '13px',
+      lineHeight: '1.55',
+      minWidth: 'max-content',
+      whiteSpace: 'pre'
+    });
+    this.copyLabel('复制');
+    this.copyable(true);
+    this._toolbar.child(this._languageBadge, this._copyButton);
+    this.child(this._toolbar, this._preBox);
+    this._setupCode(setup);
+  }
+
+  content(content) {
+    replaceChildren(this._codeBox, normalizeChildren(content));
+    return this;
+  }
+
+  text(content) {
+    return this.content(content);
+  }
+
+  language(value) {
+    if (value === undefined) {
+      return this.attr('data-language');
+    }
+
+    const language = value === null || value === undefined ? '' : String(value);
+    this.attr('data-language', language || null);
+    this._languageBadge.style('display', language ? null : 'none');
+    replaceChildren(this._languageBadge, language ? normalizeChildren(language) : []);
+    return this;
+  }
+
+  copyable(value = undefined) {
+    if (value === undefined) {
+      return this.getBooleanState('copyable');
+    }
+
+    const enabled = Boolean(value);
+    this.setState('copyable', enabled);
+    this.attr('data-copyable', enabled ? 'true' : null);
+    this._copyButton.style('display', enabled ? null : 'none');
+    return this;
+  }
+
+  copyLabel(value) {
+    if (value === undefined) {
+      return this._copyButton.textContent();
+    }
+
+    replaceChildren(this._copyButton, normalizeChildren(value ?? '复制'));
+    return this;
+  }
+
+  async copy() {
+    const text = this._codeBox.textContent();
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      }
+    } catch {
+      // Copy should fail softly in unsupported contexts.
+    }
+
+    return text;
+  }
+
+  _setupCode(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { children, content, copyLabel, copyable, language, text, ...elementConfig } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        this.setup(elementConfig);
+      }
+
+      if (language !== undefined) {
+        this.language(language);
+      }
+
+      if (copyLabel !== undefined) {
+        this.copyLabel(copyLabel);
+      }
+
+      if (copyable !== undefined) {
+        this.copyable(copyable);
+      }
+
+      if (content !== undefined) {
+        this.content(content);
+      } else if (text !== undefined) {
+        this.content(text);
+      } else if (children !== undefined) {
+        this.content(children);
+      }
+
+      return;
+    }
+
+    this.content(setup);
+  }
+}
+
+export class VTable extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this._columns = [];
+    this._rows = [];
+    this._emptyContent = '暂无数据';
+    this._captionBox = new HtmlElementNode('caption').className('yoya-vtable-caption');
+    this._head = new HtmlElementNode('thead').className('yoya-vtable-head');
+    this._body = new HtmlElementNode('tbody').className('yoya-vtable-body');
+    this._table = new HtmlElementNode('table').className('yoya-vtable-table');
+    this._scroll = new HtmlElementNode('div').className('yoya-vtable-scroll');
+
+    this.className(componentClass, 'yoya-vtable');
+    this.styles({
+      display: 'block',
+      minWidth: '0'
+    });
+    this._scroll.styles({
+      background: '#ffffff',
+      border: '1px solid #d8dee8',
+      borderRadius: '8px',
+      overflowX: 'auto'
+    });
+    this._table.styles({
+      borderCollapse: 'collapse',
+      color: '#172033',
+      width: '100%'
+    });
+    this._captionBox.styles({
+      captionSide: 'top',
+      color: '#111827',
+      fontWeight: '700',
+      padding: '0 0 12px',
+      textAlign: 'left'
+    });
+    this._captionBox.style('display', 'none');
+    this._scroll.child(this._table);
+    this._table.child(this._captionBox, this._head, this._body);
+    this.child(this._scroll);
+    this._setupTable(setup);
+  }
+
+  caption(content) {
+    if (content === undefined) {
+      return this._captionBox.textContent();
+    }
+
+    const hasContent = content !== null && content !== undefined && content !== '';
+    this._captionBox.style('display', hasContent ? null : 'none');
+    replaceChildren(this._captionBox, hasContent ? normalizeChildren(content) : []);
+    return this;
+  }
+
+  columns(value) {
+    if (value === undefined) {
+      return this._columns.slice();
+    }
+
+    this._columns = normalizeTableColumns(value);
+    this._renderTable();
+    return this;
+  }
+
+  rows(value) {
+    if (value === undefined) {
+      return this._rows.slice();
+    }
+
+    this._rows = Array.isArray(value) ? value.slice() : [];
+    this._renderTable();
+    return this;
+  }
+
+  empty(value) {
+    if (value === undefined) {
+      return this._emptyContent;
+    }
+
+    this._emptyContent = value;
+    this._renderTable();
+    return this;
+  }
+
+  emptyText(value) {
+    if (value === undefined) {
+      return this._emptyContent;
+    }
+
+    return this.empty(value);
+  }
+
+  data(value) {
+    if (value === undefined) {
+      return {
+        caption: this.caption(),
+        columns: this.columns(),
+        emptyText: this.emptyText(),
+        rows: this.rows()
+      };
+    }
+
+    if (Array.isArray(value)) {
+      this.rows(value);
+      return this;
+    }
+
+    if (isPlainObject(value)) {
+      const { caption, columns, empty, emptyText, rows } = value;
+
+      if (caption !== undefined) {
+        this.caption(caption);
+      }
+
+      if (columns !== undefined) {
+        this.columns(columns);
+      }
+
+      if (rows !== undefined) {
+        this.rows(rows);
+      }
+
+      if (emptyText !== undefined) {
+        this.emptyText(emptyText);
+      } else if (empty !== undefined) {
+        this.emptyText(empty);
+      }
+    }
+
+    return this;
+  }
+
+  _renderTable() {
+    const resolvedColumns = this._columns.length > 0 ? this._columns : inferTableColumns(this._rows);
+    const bodyColumns = resolvedColumns.length > 0 ? resolvedColumns : [{ key: '__value', label: '' }];
+
+    replaceChildren(this._head, []);
+    replaceChildren(this._body, []);
+
+    if (resolvedColumns.length > 0) {
+      const headRow = new HtmlElementNode('tr').className('yoya-vtable-head-row');
+
+      resolvedColumns.forEach((column, columnIndex) => {
+        const headerCell = new HtmlElementNode('th').className('yoya-vtable-head-cell');
+        const columnKey = column.key ?? `column-${columnIndex}`;
+
+        headerCell.attr('scope', 'col');
+        headerCell.attr('data-key', columnKey);
+        applyTableCellStyles(headerCell, column, 'head');
+        appendTableCellContent(headerCell, column.label ?? column.title ?? column.key ?? '');
+        headRow.child(headerCell);
+      });
+
+      this._head.child(headRow);
+    }
+
+    if (this._rows.length > 0) {
+      this._rows.forEach((row, rowIndex) => {
+        const bodyRow = new HtmlElementNode('tr').className('yoya-vtable-row');
+        bodyRow.attr('data-row-index', String(rowIndex));
+
+        bodyColumns.forEach((column, columnIndex) => {
+          const cell = new HtmlElementNode('td').className('yoya-vtable-cell');
+          const columnKey = column.key ?? `column-${columnIndex}`;
+
+          cell.attr('data-key', columnKey);
+          applyTableCellStyles(cell, column, 'body');
+          appendTableCellContent(cell, resolveTableCellContent(column, row, rowIndex));
+          bodyRow.child(cell);
+        });
+
+        this._body.child(bodyRow);
+      });
+    } else {
+      const emptyRow = new HtmlElementNode('tr').className('yoya-vtable-empty-row');
+      const emptyCell = new HtmlElementNode('td').className('yoya-vtable-empty');
+
+      emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
+      emptyCell.styles({
+        color: '#64748b',
+        padding: '18px 14px',
+        textAlign: 'center'
+      });
+      appendTableCellContent(emptyCell, this._emptyContent);
+      emptyRow.child(emptyCell);
+      this._body.child(emptyRow);
+    }
+  }
+
+  _setupTable(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (Array.isArray(setup)) {
+      this.rows(setup);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      this.setup(setup);
+      return;
+    }
+
+    this.caption(setup);
+  }
+}
+
 export function vButton(setup = null) {
   return new VButton(setup);
 }
@@ -1142,6 +1673,22 @@ export function vMessage(setup = null) {
 
 export function vMessageContainer(setup = null) {
   return new VMessageContainer(setup);
+}
+
+export function vDetail(setup = null) {
+  return setup instanceof VDetail ? setup : new VDetail(setup);
+}
+
+export function vDetailItem(setup = null, value = undefined) {
+  return setup instanceof VDetailItem && value === undefined ? setup : new VDetailItem(setup, value);
+}
+
+export function vCode(setup = null) {
+  return setup instanceof VCode ? setup : new VCode(setup);
+}
+
+export function vTable(setup = null) {
+  return setup instanceof VTable ? setup : new VTable(setup);
 }
 
 export const toast = {
@@ -1198,12 +1745,16 @@ const componentFactories = {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vCode,
   vContextMenu,
+  vDetail,
+  vDetailItem,
   vDropdownMenu,
   vMenu,
   vMenuItem,
   vMessage,
-  vMessageContainer
+  vMessageContainer,
+  vTable
 };
 
 registerChildFactories(HtmlElementNode, componentFactories);
@@ -1435,4 +1986,145 @@ function isPlainObject(value) {
 
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
+}
+
+function normalizeDetailItem(item) {
+  if (item instanceof VDetailItem) {
+    return item;
+  }
+
+  if (Array.isArray(item) && item.length >= 2) {
+    return vDetailItem(item[0], item[1]);
+  }
+
+  if (item instanceof ViewNode) {
+    return vDetailItem({ value: item });
+  }
+
+  if (isPlainObject(item)) {
+    return vDetailItem(item);
+  }
+
+  return vDetailItem({ value: item });
+}
+
+function normalizeTableColumns(columns) {
+  if (!Array.isArray(columns)) {
+    return [];
+  }
+
+  return columns.map((column, index) => {
+    if (typeof column === 'string' || typeof column === 'number') {
+      const key = String(column);
+      return { key, label: key };
+    }
+
+    if (Array.isArray(column) && column.length > 0) {
+      const [key, label = key] = column;
+      return {
+        key: key === undefined || key === null ? `column-${index}` : key,
+        label: label ?? key ?? ''
+      };
+    }
+
+    if (isPlainObject(column)) {
+      const key = column.key ?? column.field ?? column.name ?? column.label ?? column.title ?? `column-${index}`;
+      return {
+        ...column,
+        key,
+        label: column.label ?? column.title ?? column.name ?? key
+      };
+    }
+
+    const key = `column-${index}`;
+    return { key, label: String(column ?? '') };
+  });
+}
+
+function inferTableColumns(rows) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  const sampleRow = rows.find(
+    (row) => row && typeof row === 'object' && !Array.isArray(row) && !(row instanceof ViewNode)
+  );
+
+  if (!sampleRow) {
+    return [];
+  }
+
+  return Object.keys(sampleRow).map((key) => ({ key, label: key }));
+}
+
+function resolveTableCellContent(column, row, rowIndex) {
+  if (typeof column.render === 'function') {
+    return column.render(row, rowIndex, column);
+  }
+
+  if (typeof column.value === 'function') {
+    return column.value(row, rowIndex, column);
+  }
+
+  if (column.key === '__value') {
+    return row;
+  }
+
+  if (column.value !== undefined) {
+    return column.value;
+  }
+
+  if (column.key && row && typeof row === 'object' && !Array.isArray(row)) {
+    return row[column.key];
+  }
+
+  return row;
+}
+
+function appendTableCellContent(node, content) {
+  if (content !== null && content !== undefined) {
+    node.child(content);
+  }
+
+  return node;
+}
+
+function applyTableCellStyles(node, column, section) {
+  const isHead = section === 'head';
+
+  node.styles({
+    borderBottom: '1px solid #e2e8f0',
+    fontWeight: isHead ? '700' : '400',
+    padding: '12px 14px',
+    textAlign: column.align || 'left',
+    verticalAlign: 'top',
+    whiteSpace: column.wrap === false ? 'nowrap' : 'normal'
+  });
+
+  if (isHead) {
+    node.style('background', '#f8fafc');
+    node.style('color', '#334155');
+  } else {
+    node.style('color', '#172033');
+  }
+
+  if (column.className !== undefined) {
+    node.className(column.className);
+  }
+
+  if (column.style !== undefined) {
+    node.styles(column.style);
+  }
+
+  if (column.width !== undefined) {
+    node.style('width', typeof column.width === 'number' ? `${column.width}px` : column.width);
+  }
+
+  if (column.minWidth !== undefined) {
+    node.style('minWidth', typeof column.minWidth === 'number' ? `${column.minWidth}px` : column.minWidth);
+  }
+
+  if (column.maxWidth !== undefined) {
+    node.style('maxWidth', typeof column.maxWidth === 'number' ? `${column.maxWidth}px` : column.maxWidth);
+  }
 }
