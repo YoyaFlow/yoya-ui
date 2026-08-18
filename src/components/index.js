@@ -3226,7 +3226,7 @@ export class VField extends HtmlElementNode {
     this._labelBox = new HtmlElementNode('div').className('yoya-vfield-label');
     this._hintBox = new HtmlElementNode('div').className('yoya-vfield-hint').style('display', 'none');
     this._errorBox = new HtmlElementNode('div').className('yoya-vfield-error').style('display', 'none');
-    this._actionButton = new VButton('编辑')
+    this._actionButton = new VButton('✎')
       .className('yoya-vfield-action')
       .size('small')
       .variant('secondary')
@@ -3278,6 +3278,8 @@ export class VField extends HtmlElementNode {
     });
     this._actionButton.styles({
       flexShrink: '0',
+      gap: '0',
+      minWidth: '32px',
       opacity: '0',
       pointerEvents: 'none',
       transition: 'opacity 120ms ease'
@@ -3428,9 +3430,15 @@ export class VField extends HtmlElementNode {
 
     const hasControl = Boolean(this.control());
     const visible = hasControl && (this._hovered || this._mode === 'edit');
+    const label = this._mode === 'edit' ? '完成' : '编辑';
+    const symbol = this._mode === 'edit' ? '✓' : '✎';
 
-    this._actionButton.label(this._mode === 'edit' ? '完成' : '编辑');
-    this._actionButton.attr('aria-hidden', visible ? null : 'true');
+    this._actionButton.label(symbol);
+    this._actionButton.attr({
+      'aria-hidden': visible ? null : 'true',
+      'aria-label': label,
+      title: label
+    });
     this._actionButton.attr('tabindex', visible ? null : '-1');
     this._actionButton.style('opacity', visible ? '1' : '0');
     this._actionButton.style('pointerEvents', visible ? null : 'none');
