@@ -11,14 +11,22 @@ import {
   vCardBody,
   vCardFooter,
   vCardHeader,
+  vCheckbox,
+  vCheckboxes,
   vContextMenu,
   vDetail,
   vDetailItem,
   vDropdownMenu,
+  vField,
+  vForm,
+  vInput,
   vMenu,
   vMenuItem,
   vMessage,
   vMessageContainer,
+  vSelect,
+  vSwitch,
+  vTextarea,
   vTable
 } from '../index.js';
 
@@ -542,5 +550,213 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vtable-empty').textContent).toBe('暂无服务');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
+  });
+
+  it('renders form inputs with values, placeholders and options', () => {
+    const input = vInput({
+      name: 'serviceName',
+      placeholder: '服务名',
+      value: 'api-gateway'
+    });
+    const select = vSelect({
+      name: 'status',
+      options: ['运行中', ['stopped', '停止']],
+      value: '运行中'
+    });
+    const textarea = vTextarea({
+      name: 'notes',
+      value: '初始说明'
+    }).readonly(true);
+    const page = div((root) => {
+      root.child(input, select, textarea);
+    });
+
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vinput').name).toBe('serviceName');
+    expect(element.querySelector('.yoya-vinput').placeholder).toBe('服务名');
+    expect(element.querySelector('.yoya-vinput').value).toBe('api-gateway');
+    expect(element.querySelector('.yoya-vselect').value).toBe('运行中');
+    expect(element.querySelector('.yoya-vselect option[selected]').textContent).toBe('运行中');
+    expect(element.querySelector('.yoya-vtextarea').value).toBe('初始说明');
+    expect(element.querySelector('.yoya-vtextarea').readOnly).toBe(true);
+
+    input.value('worker');
+    textarea.value('更新说明');
+
+    expect(input.value()).toBe('worker');
+    expect(textarea.value()).toBe('更新说明');
+  });
+
+  it('renders checkbox, switch and checkbox group states', () => {
+    const checkbox = vCheckbox({
+      checked: true,
+      label: '启用服务',
+      name: 'enabled'
+    });
+    const sw = vSwitch({
+      checked: false,
+      label: '自动部署',
+      name: 'autoDeploy'
+    });
+    const group = vCheckboxes({
+      name: 'regions',
+      options: [
+        { checked: true, label: '上海', value: 'sh' },
+        { label: '杭州', value: 'hz' }
+      ]
+    });
+    const page = div((root) => {
+      root.child(checkbox, sw, group);
+    });
+
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vcheckbox').dataset.checked).toBe('true');
+    expect(element.querySelector('.yoya-vswitch').dataset.checked).toBeUndefined();
+    expect(group.value()).toEqual(['sh']);
+
+    group.value(['hz']);
+
+    expect(group.value()).toEqual(['hz']);
+  });
+
+  it('switches field modes and keeps control values in sync', () => {
+    const field = vField((item) => {
+      item.label('服务名');
+      item.display('api-gateway');
+      item.editor((editor) => {
+        editor.vInput({
+          name: 'serviceName',
+          value: 'api-gateway'
+        });
+      });
+    }).mode('edit');
+
+    const element = field.renderDom();
+
+    expect(element.dataset.mode).toBe('edit');
+    expect(element.querySelector('.yoya-vfield-display').style.display).toBe('none');
+    expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
+
+    field.value('worker');
+
+    expect(element.querySelector('.yoya-vinput').value).toBe('worker');
+
+    field.mode('view');
+
+    expect(element.dataset.mode).toBe('view');
+    expect(element.querySelector('.yoya-vfield-display').textContent).toBe('worker');
+  });
+
+  it('reveals an edit button on hover and enters edit mode when clicked', () => {
+    const field = vField((item) => {
+      item.label('负责人');
+      item.display('SRE Team');
+      item.editor((editor) => {
+        editor.vInput({
+          name: 'owner',
+          value: 'SRE Team'
+        });
+      });
+    });
+
+    const element = field.renderDom();
+    const action = element.querySelector('.yoya-vfield-action');
+
+    expect(action).not.toBeNull();
+    expect(action.textContent).toBe('编辑');
+    expect(action.style.opacity).toBe('0');
+
+    element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+
+    expect(action.style.opacity).toBe('1');
+
+    action.click();
+
+    expect(element.dataset.mode).toBe('edit');
+    expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
+    expect(element.querySelector('.yoya-vinput').value).toBe('SRE Team');
+  });
+
+  it('collects and applies values through vForm', () => {
+    const form = vForm((root) => {
+      root.vField((field) => {
+        field.label('服务名');
+        field.control((editor) => {
+          editor.vInput({
+            name: 'serviceName',
+            required: true,
+            value: 'api-gateway'
+          });
+        });
+      });
+      root.vField((field) => {
+        field.label('状态');
+        field.control((editor) => {
+          editor.vSelect({
+            name: 'status',
+            options: ['运行中', '停止'],
+            value: '运行中'
+          });
+        });
+      });
+      root.vField((field) => {
+        field.label('开关');
+        field.control((editor) => {
+          editor.vSwitch({
+            checked: true,
+            name: 'enabled'
+          });
+        });
+      });
+      root.vField((field) => {
+        field.label('区域');
+        field.control((editor) => {
+          editor.vCheckboxes({
+            name: 'regions',
+            options: [
+              { checked: true, label: '上海', value: 'sh' },
+              { label: '杭州', value: 'hz' }
+            ]
+          });
+        });
+      });
+    });
+
+    const element = form.renderDom();
+
+    expect(form.values()).toEqual({
+      enabled: true,
+      regions: ['sh'],
+      serviceName: 'api-gateway',
+      status: '运行中'
+    });
+    expect(form.validate()).toBe(true);
+
+    form.values({
+      enabled: false,
+      regions: ['hz'],
+      serviceName: 'worker',
+      status: '停止'
+    });
+
+    expect(form.values()).toEqual({
+      enabled: false,
+      regions: ['hz'],
+      serviceName: 'worker',
+      status: '停止'
+    });
+    expect(element.querySelector('.yoya-vinput').value).toBe('worker');
+    expect(element.querySelector('.yoya-vselect').value).toBe('停止');
+
+    form.values({
+      enabled: false,
+      regions: [],
+      serviceName: '',
+      status: '停止'
+    });
+
+    expect(form.validate()).toBe(false);
   });
 });

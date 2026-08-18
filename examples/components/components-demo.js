@@ -3,7 +3,15 @@ import {
   section,
   toast,
   vButton,
+  vCheckbox,
+  vCheckboxes,
+  vField,
+  vForm,
   vMessageContainer,
+  vInput,
+  vSelect,
+  vSwitch,
+  vTextarea,
   vText
 } from '../../src/index.js';
 
@@ -178,6 +186,79 @@ card.vCardBody((body) => {
   });
 });
 `.trim()
+,
+  form: `
+card.vCardBody((body) => {
+  body.vForm((form) => {
+    form.vField((field) => {
+      field.label('服务名');
+      field.control((editor) => {
+        editor.vInput({
+          name: 'serviceName',
+          placeholder: '请输入服务名',
+          value: 'api-gateway'
+        });
+      });
+    });
+    form.vField((field) => {
+      field.label('状态');
+      field.control((editor) => {
+        editor.vSelect({
+          name: 'status',
+          options: ['运行中', '停止'],
+          value: '运行中'
+        });
+      });
+    });
+    form.vField((field) => {
+      field.label('备注');
+      field.control((editor) => {
+        editor.vTextarea({
+          name: 'notes',
+          value: '初始说明'
+        });
+      });
+    });
+    form.vCheckbox({
+      checked: true,
+      label: '启用服务',
+      name: 'enabled'
+    });
+    form.vSwitch({
+      checked: true,
+      label: '自动部署',
+      name: 'autoDeploy'
+    });
+    form.vCheckboxes({
+      name: 'regions',
+      options: [
+        { checked: true, label: '上海', value: 'sh' },
+        { label: '杭州', value: 'hz' }
+      ]
+    });
+    form.vButton((button) => {
+      button.htmlType('submit');
+      button.label('提交表单');
+      button.variant('primary');
+    });
+  });
+});
+`.trim(),
+  field: `
+card.vCardBody((body) => {
+  body.vField((field) => {
+    field.label('负责人');
+    field.hint('vField 可以在查看态和编辑态之间切换。');
+    field.display('SRE Team');
+    field.control((editor) => {
+      editor.vInput({
+        name: 'owner',
+        value: 'SRE Team'
+      });
+    });
+  });
+});
+`.trim()
 };
 
 const exampleGridStyles = {
@@ -198,11 +279,14 @@ export function renderComponentsExample(target = '#app') {
   const jobState = vText('等待调度');
   const auditState = vText('尚未保存');
   const serviceState = vText('运行中');
+  const formSnapshot = vText('尚未提交');
+  const fieldModeState = vText('查看');
   const services = [
     { name: 'api-gateway', status: '运行中', owner: 'SRE' },
     { name: 'worker', status: '空闲', owner: 'Platform' }
   ];
   let startButton = null;
+  let editableField = null;
 
   const messageHost = vMessageContainer({ placement: 'top-right' }).bindTo(document.body);
   toast.use(messageHost);
@@ -215,8 +299,8 @@ export function renderComponentsExample(target = '#app') {
       shell.styles({
         boxSizing: 'border-box',
         margin: '0 auto',
-        maxWidth: '1160px',
-        padding: '0 24px',
+        maxWidth: '1120px',
+        padding: '0 16px',
         width: '100%'
       });
 
@@ -594,6 +678,162 @@ export function renderComponentsExample(target = '#app') {
           });
 
           exampleSource(example, '服务表格核心源码', sourceSnippets.table);
+        });
+
+        examples.grid((example) => {
+          styleExampleGrid(example);
+
+          example.vCard((card) => {
+            card.vCardHeader('基础表单');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vForm 可以把字段、开关、勾选组和提交动作放在同一个收集点。');
+                stack.vForm((form) => {
+                  form.attr('id', 'service-form');
+                  form.style('gap', '12px');
+                  form.vField((field) => {
+                    field.label('服务名');
+                    field.control((editor) => {
+                      editor.vInput({
+                        name: 'serviceName',
+                        placeholder: '请输入服务名',
+                        value: 'api-gateway'
+                      });
+                    });
+                  });
+                  form.vField((field) => {
+                    field.label('状态');
+                    field.control((editor) => {
+                      editor.vSelect({
+                        name: 'status',
+                        options: ['运行中', '停止'],
+                        value: '运行中'
+                      });
+                    });
+                  });
+                  form.vField((field) => {
+                    field.label('备注');
+                    field.control((editor) => {
+                      editor.vTextarea({
+                        name: 'notes',
+                        value: '初始说明'
+                      });
+                    });
+                  });
+                  form.hstack((row) => {
+                    row.className('form-inline-controls');
+                    row.style('gap', '16px');
+                    row.vCheckbox({
+                      checked: true,
+                      label: '启用服务',
+                      name: 'enabled'
+                    });
+                    row.vSwitch({
+                      checked: true,
+                      label: '自动部署',
+                      name: 'autoDeploy'
+                    });
+                  });
+                  form.vCheckboxes({
+                    name: 'regions',
+                    options: [
+                      { checked: true, label: '上海', value: 'sh' },
+                      { label: '杭州', value: 'hz' }
+                    ]
+                  });
+                  form.hstack((actions) => {
+                    actions.className('form-actions');
+                    actions.style('justifyContent', 'flex-end');
+                    actions.vButton((button) => {
+                      button.htmlType('submit');
+                      button.label('提交表单');
+                      button.variant('primary');
+                      button.on('click', () => {
+                        formSnapshot.textContent(JSON.stringify(form.values()));
+                      });
+                    });
+                    actions.vButton((button) => {
+                      button.label('重置');
+                      button.on('click', () => {
+                        form.values({
+                          autoDeploy: true,
+                          enabled: true,
+                          notes: '初始说明',
+                          regions: ['sh'],
+                          serviceName: 'api-gateway',
+                          status: '运行中'
+                        });
+                        formSnapshot.textContent('表单已重置');
+                      });
+                    });
+                  });
+                  form.on('submit', (event) => {
+                    event.preventDefault();
+                    formSnapshot.textContent(JSON.stringify(form.values()));
+                    toast.success('表单已提交', { duration: 0 });
+                  });
+                  form.values({
+                    autoDeploy: true,
+                    enabled: true,
+                    notes: '初始说明',
+                    regions: ['sh'],
+                    serviceName: 'api-gateway',
+                    status: '运行中'
+                  });
+                });
+                stack.hstack((row) => {
+                  row.className('form-summary');
+                  row.span('当前提交');
+                  row.spacer();
+                  row.output((output) => output.child(formSnapshot));
+                });
+              });
+            });
+          });
+
+          exampleSource(example, '基础表单核心源码', sourceSnippets.form);
+        });
+
+        examples.grid((example) => {
+          styleExampleGrid(example);
+
+          example.vCard((card) => {
+            card.vCardHeader('字段模式');
+            card.vCardBody((body) => {
+              body.vstack((stack) => {
+                stack.style('gap', '14px');
+                stack.p('vField 把查看态和编辑态收在一个组件里，适合资料页和详情页切换。');
+                stack.vField((field) => {
+                  editableField = field;
+                  field.label('负责人');
+                  field.hint('点击按钮在查看态和编辑态之间切换。');
+                  field.display('SRE Team');
+                  field.control((editor) => {
+                    editor.vInput({
+                      name: 'owner',
+                      value: 'SRE Team'
+                    });
+                  });
+                });
+                stack.hstack((row) => {
+                  row.className('field-actions');
+                  row.style('alignItems', 'center');
+                  row.vButton((button) => {
+                    button.label('切换模式');
+                    button.on('click', () => {
+                      const nextMode = editableField.mode() === 'view' ? 'edit' : 'view';
+                      editableField.mode(nextMode);
+                      fieldModeState.textContent(nextMode === 'view' ? '查看' : '编辑');
+                    });
+                  });
+                  row.output((output) => output.child(fieldModeState));
+                });
+              });
+            });
+          });
+
+          exampleSource(example, '字段模式核心源码', sourceSnippets.field);
         });
       });
     });

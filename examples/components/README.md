@@ -11,6 +11,11 @@
 - `vDetail` / `vDetailItem`
 - `vCode`
 - `vTable`
+- `vInput`
+- `vTextarea`
+- `vSelect`
+- `vCheckbox` / `vSwitch` / `vCheckboxes`
+- `vField` / `vForm`
 
 运行方式：
 

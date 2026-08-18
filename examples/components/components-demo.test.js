@@ -12,8 +12,8 @@ describe('components example', () => {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.renderDom().querySelectorAll('.yoya-vcard')).toHaveLength(8);
-    expect(container.style.maxWidth).toBe('1160px');
+    expect(root.renderDom().querySelectorAll('.yoya-vcard')).toHaveLength(10);
+    expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
     expect(firstExample.style.gridTemplateColumns).toBe('minmax(0, 1fr)');
@@ -26,6 +26,8 @@ describe('components example', () => {
     expect(document.body.textContent).toContain('服务详情');
     expect(document.body.textContent).toContain('SQL 片段');
     expect(document.body.textContent).toContain('服务表格');
+    expect(document.body.textContent).toContain('基础表单');
+    expect(document.body.textContent).toContain('字段模式');
 
     document.querySelector('#save-config').click();
     expect(document.body.textContent).toContain('配置已保存');
@@ -52,6 +54,26 @@ describe('components example', () => {
     expect(document.querySelector('.yoya-vcontext-menu').dataset.open).toBe('true');
     document.querySelector('#context-restart').click();
     expect(document.body.textContent).toContain('菜单触发：重启服务');
+
+    document.querySelector('#service-form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true })
+    );
+    expect(document.body.textContent).toContain('"serviceName":"api-gateway"');
+
+    const formField = document.querySelector('#service-form .yoya-vfield');
+    formField.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+    document.querySelector('#service-form .yoya-vfield-action').click();
+    expect(document.querySelector('#service-form .yoya-vfield-editor').style.display).toBe('');
+
+    const serviceNameInput = document.querySelector('#service-form .yoya-vinput');
+    serviceNameInput.value = 'worker';
+    document.querySelector('#service-form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true })
+    );
+    expect(document.body.textContent).toContain('"serviceName":"worker"');
+
+    document.querySelector('.field-actions button').click();
+    expect(document.body.textContent).toContain('编辑');
   });
 
   it('shows source code beside the rendered component examples', () => {
@@ -59,7 +81,7 @@ describe('components example', () => {
 
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
 
-    expect(sourceBlocks).toHaveLength(8);
+    expect(sourceBlocks).toHaveLength(10);
     expect(sourceBlocks[0].textContent).toContain("card.vCardHeader('部署任务')");
     expect(sourceBlocks[1].textContent).toContain("toast.success('配置已保存'");
     expect(sourceBlocks[2].textContent).toContain("locale.setLanguage('en')");
@@ -69,5 +91,10 @@ describe('components example', () => {
     expect(sourceBlocks[5].textContent).toContain('body.vDetail');
     expect(sourceBlocks[6].textContent).toContain('body.vCode');
     expect(sourceBlocks[7].textContent).toContain('body.vTable');
+    expect(sourceBlocks[8].textContent).toContain('form.vField');
+    expect(sourceBlocks[8].textContent).toContain('form.vCheckboxes');
+    expect(sourceBlocks[8].textContent).toContain('form.vButton');
+    expect(sourceBlocks[9].textContent).toContain("field.display('SRE Team')");
+    expect(sourceBlocks[9].textContent).toContain('field.control');
   });
 });
