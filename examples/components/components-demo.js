@@ -180,6 +180,17 @@ card.vCardBody((body) => {
 `.trim()
 };
 
+const exampleGridStyles = {
+  gap: '12px',
+  gridTemplateColumns: 'minmax(0, 1fr)',
+  width: '100%'
+};
+
+function styleExampleGrid(example) {
+  example.className('component-example');
+  example.styles(exampleGridStyles);
+}
+
 /**
  * 渲染复合组件示例：vCard、vButton、vMessageContainer、toast、vDetail、vCode 和 vTable。
  */
@@ -201,6 +212,13 @@ export function renderComponentsExample(target = '#app') {
 
     page.container((shell) => {
       shell.className('components-container');
+      shell.styles({
+        boxSizing: 'border-box',
+        margin: '0 auto',
+        maxWidth: '1160px',
+        padding: '0 24px',
+        width: '100%'
+      });
 
       shell.header((header) => {
         header.className('components-header');
@@ -211,10 +229,10 @@ export function renderComponentsExample(target = '#app') {
       shell.vstack((examples) => {
         examples.className('components-examples');
         examples.style('gap', '18px');
+        examples.style('width', '100%');
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('部署任务');
@@ -269,8 +287,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('配置审计');
@@ -325,8 +342,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('语言与反馈');
@@ -370,8 +386,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('命令菜单');
@@ -414,8 +429,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('浮层菜单');
@@ -487,8 +501,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('服务详情');
@@ -524,8 +537,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('SQL 片段');
@@ -545,8 +557,7 @@ export function renderComponentsExample(target = '#app') {
         });
 
         examples.grid((example) => {
-          example.className('component-example');
-          example.styles({ gap: '18px', gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.9fr)' });
+          styleExampleGrid(example);
 
           example.vCard((card) => {
             card.vCardHeader('服务表格');
@@ -599,6 +610,7 @@ if (typeof document !== 'undefined' && document.querySelector('#app')) {
 function exampleSource(parent, title, source) {
   parent.aside((panel) => {
     panel.className('source-panel');
+    panel.style('width', '100%');
     panel.h2(title);
     panel.pre((pre) => {
       pre.className('source-code');

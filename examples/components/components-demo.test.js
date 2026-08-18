@@ -9,7 +9,16 @@ describe('components example', () => {
   it('renders compound components and interactive feedback', () => {
     const root = renderComponentsExample('#app');
 
+    const container = document.querySelector('.components-container');
+    const firstExample = document.querySelector('.component-example');
+
     expect(root.renderDom().querySelectorAll('.yoya-vcard')).toHaveLength(8);
+    expect(container.style.maxWidth).toBe('1160px');
+    expect(container.style.marginLeft).toBe('auto');
+    expect(container.style.marginRight).toBe('auto');
+    expect(firstExample.style.gridTemplateColumns).toBe('minmax(0, 1fr)');
+    expect(firstExample.children[0].classList.contains('yoya-vcard')).toBe(true);
+    expect(firstExample.children[1].classList.contains('source-panel')).toBe(true);
     expect(document.body.textContent).toContain('部署任务');
     expect(document.body.textContent).toContain('保存配置');
     expect(document.body.textContent).toContain('命令菜单');
