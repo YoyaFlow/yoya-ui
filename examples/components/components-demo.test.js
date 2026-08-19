@@ -9,13 +9,14 @@ import {
   ServiceFormCard,
   TimerRangeCard
 } from './demos/forms-datetime.js';
-import { CommandMenuCard, OverlayMenuCard } from './demos/navigation.js';
+import { CommandMenuCard, OverlayMenuCard, SubMenuCard } from './demos/navigation.js';
 
 const demoComponents = [
   DeploymentTaskCard,
   AuditCard,
   LocaleSwitchCard,
   CommandMenuCard,
+  SubMenuCard,
   OverlayMenuCard,
   ServiceDetailCard,
   SqlSnippetCard,
@@ -58,7 +59,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(4);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(12);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(13);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -93,7 +94,7 @@ export function SampleCard() {
     ]);
     expect(categoryLinks.map((link) => link.textContent)).toEqual([
       '操作与反馈3 个演示',
-      '导航菜单2 个演示',
+      '导航菜单3 个演示',
       '数据展示3 个演示',
       '表单与日期时间4 个演示'
     ]);
@@ -125,13 +126,30 @@ export function SampleCard() {
     expect(commandSource).toContain('menu.vMenuDivider');
   });
 
+  it('demonstrates nested submenus from an object component in the navigation category', () => {
+    renderComponentsExample('#app');
+
+    const navigation = document.querySelector('[data-demo-category="navigation"]');
+    const submenu = navigation.querySelector('.yoya-vsubmenu');
+    const navigationSource = Array.from(
+      navigation.querySelectorAll('[data-source-example]'),
+      (source) => source.textContent
+    ).join('\n');
+
+    expect(submenu).not.toBeNull();
+    expect(submenu?.querySelector('.yoya-vsubmenu-trigger').getAttribute('aria-expanded')).toBe(
+      'false'
+    );
+    expect(navigationSource).toContain('menu.vSubMenu');
+  });
+
   it('renders compound components and interactive feedback', () => {
     const root = renderComponentsExample('#app');
 
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.yoya-vcard')).toHaveLength(12);
+    expect(root.commit().querySelectorAll('.yoya-vcard')).toHaveLength(13);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -141,6 +159,7 @@ export function SampleCard() {
     expect(document.body.textContent).toContain('部署任务');
     expect(document.body.textContent).toContain('保存配置');
     expect(document.body.textContent).toContain('命令菜单');
+    expect(document.body.textContent).toContain('嵌套菜单');
     expect(document.body.textContent).toContain('浮层菜单');
     expect(document.body.textContent).toContain('服务详情');
     expect(document.body.textContent).toContain('SQL 片段');
@@ -219,7 +238,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(12);
+    expect(sourceBlocks).toHaveLength(13);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -228,9 +247,9 @@ export function SampleCard() {
     });
     expect(sourceBlocks[0].textContent).toContain("import { vCard, vText } from 'yoya-ui';");
     expect(sourceBlocks[0].textContent).toContain("['拉取镜像', '应用配置', '重启服务']");
-    expect(sourceBlocks[8].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[9].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[10].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[11].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[9].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[10].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[11].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[12].textContent).toContain('stack.vTimerRange');
   });
 });

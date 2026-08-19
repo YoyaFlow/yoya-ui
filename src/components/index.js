@@ -4,6 +4,7 @@ import { HtmlElementNode } from '../html/index.js';
 const componentClass = 'yoya-component';
 const messageTypes = ['success', 'error', 'warning', 'info'];
 let menuGroupSequence = 0;
+let submenuSequence = 0;
 let timerRangeSequence = 0;
 
 /**
@@ -666,8 +667,278 @@ export class VMenuGroup extends HtmlElementNode {
   }
 }
 
+export class VSubMenu extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    const panelId = `yoya-vsubmenu-panel-${++submenuSequence}`;
+    this._globalCloseCleanup = null;
+    this._trigger = new VMenuItem()
+      .className('yoya-vsubmenu-trigger')
+      .attr({
+        'aria-controls': panelId,
+        'aria-expanded': 'false',
+        'aria-haspopup': 'menu'
+      })
+      .shortcut('›')
+      .on('click', (event) => {
+        event.preventDefault();
+        if (!this.getBooleanState('disabled')) {
+          this.toggle();
+        }
+      });
+    this._menu = new VMenu().className('yoya-vsubmenu-content');
+    this._menu.on('click', (event) => {
+      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
+        this.close();
+      }
+    });
+    this._panel = new HtmlElementNode('div')
+      .id(panelId)
+      .className('yoya-vsubmenu-panel')
+      .styles({
+        background: '#ffffff',
+        border: '1px solid #d8dee8',
+        borderRadius: '8px',
+        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
+        display: 'none',
+        left: 'calc(100% + 4px)',
+        minWidth: '200px',
+        position: 'absolute',
+        top: '0',
+        zIndex: '110'
+      })
+      .child(this._menu);
+
+    this.className(componentClass, 'yoya-vsubmenu');
+    this.styles({ display: 'inline-flex', position: 'relative', width: '100%' });
+    this.on('keydown', (event) => this._handleKeydown(event));
+    this.child(this._trigger, this._panel);
+    this._setupSubMenu(setup);
+  }
+
+  trigger(setup) {
+    if (setup === undefined) {
+      return this._trigger;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this._trigger);
+    } else {
+      this._trigger._setupMenuItem(setup);
+    }
+    return this;
+  }
+
+  label(content) {
+    this._trigger.label(content);
+    return this;
+  }
+
+  text(content) {
+    return this.label(content);
+  }
+
+  menuContent(setup) {
+    if (setup === undefined) {
+      return this._menu;
+    }
+
+    setupContentSlot(this._menu, setup);
+    return this;
+  }
+
+  disabled(value = true) {
+    const disabled = Boolean(value);
+    this.setState('disabled', disabled);
+    this.attr('data-disabled', disabled ? 'true' : null);
+    this._trigger.disabled(disabled);
+    if (disabled) {
+      this.close();
+    }
+    return this;
+  }
+
+  open(value = true) {
+    const open = Boolean(value) && !this.getBooleanState('disabled');
+    this.setState('open', open);
+    this.attr('data-open', open ? 'true' : null);
+    this._trigger.attr('aria-expanded', open ? 'true' : 'false');
+    this._panel.style('display', open ? null : 'none');
+    if (open) {
+      this._bindGlobalCloseHandlers();
+    } else {
+      this._closeDescendantSubMenus();
+      this._releaseGlobalCloseHandlers();
+    }
+    return this;
+  }
+
+  close() {
+    return this.open(false);
+  }
+
+  toggle() {
+    return this.open(!this.getBooleanState('open'));
+  }
+
+  destroy() {
+    this.close();
+    return super.destroy();
+  }
+
+  _menuOrientation(orientation) {
+    const horizontal = orientation === 'horizontal';
+    this.style('width', horizontal ? 'auto' : '100%');
+    this._trigger._menuOrientation(orientation);
+    return this;
+  }
+
+  _handleKeydown(event) {
+    const owningSubMenu = event.target.closest?.('.yoya-vsubmenu');
+    const trigger = event.target.closest?.('.yoya-vsubmenu-trigger');
+    const enterKeys = ['ArrowRight', 'Enter', ' ', 'Spacebar'];
+    const exitKey = event.key === 'ArrowLeft' || event.key === 'Escape';
+
+    if (
+      owningSubMenu === this._el &&
+      trigger === this._trigger._el &&
+      enterKeys.includes(event.key)
+    ) {
+      if (this.getBooleanState('disabled')) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.open();
+      const firstItem = this._menu._enabledMenuItems()[0];
+      if (firstItem) {
+        this._menu._syncTabStops(firstItem);
+        firstItem.focus();
+      }
+      return;
+    }
+
+    if (
+      owningSubMenu === this._el &&
+      trigger === this._trigger._el &&
+      exitKey &&
+      this.getBooleanState('open')
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+      this._trigger._el?.focus();
+      return;
+    }
+
+    const exitsOwnedMenu =
+      exitKey &&
+      ((owningSubMenu === this._el && trigger !== this._trigger._el) ||
+        (owningSubMenu !== this._el && this._menu._el?.contains(event.target)));
+    if (exitsOwnedMenu) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+      this._trigger._el?.focus();
+    }
+  }
+
+  _closeDescendantSubMenus() {
+    const visit = (node) => {
+      node.children().forEach((child) => {
+        if (child instanceof VSubMenu) {
+          child.close();
+        } else if (typeof child.children === 'function') {
+          visit(child);
+        }
+      });
+    };
+
+    visit(this._menu);
+  }
+
+  _bindGlobalCloseHandlers() {
+    if (this._globalCloseCleanup || typeof document === 'undefined') {
+      return;
+    }
+
+    const handlePointer = (event) => {
+      if (!this._el?.contains(event.target)) {
+        this.close();
+      }
+    };
+    const handleKey = (event) => {
+      if (event.key === 'Escape') {
+        this.close();
+      }
+    };
+
+    document.addEventListener('click', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    this._globalCloseCleanup = () => {
+      document.removeEventListener('click', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+      this._globalCloseCleanup = null;
+    };
+  }
+
+  _releaseGlobalCloseHandlers() {
+    if (this._globalCloseCleanup) {
+      this._globalCloseCleanup();
+    }
+  }
+
+  _setupSubMenu(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const {
+        children,
+        content,
+        disabled,
+        label,
+        menu,
+        menuContent,
+        open,
+        text,
+        trigger,
+        ...elementConfig
+      } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        super._setupObject(elementConfig);
+      }
+
+      if (trigger !== undefined) this.trigger(trigger);
+      else if (label !== undefined) this.label(label);
+      else if (text !== undefined) this.text(text);
+
+      const nestedSetup = menuContent ?? menu ?? content ?? children;
+      if (nestedSetup !== undefined) this.menuContent(nestedSetup);
+      if (disabled !== undefined) this.disabled(disabled);
+      if (open !== undefined) this.open(open);
+      return;
+    }
+
+    this.label(setup);
+  }
+}
+
 function applyMenuOrientation(child, orientation) {
-  if (child instanceof VMenuItem || child instanceof VMenuDivider || child instanceof VMenuGroup) {
+  if (
+    child instanceof VMenuItem ||
+    child instanceof VMenuDivider ||
+    child instanceof VMenuGroup ||
+    child instanceof VSubMenu
+  ) {
     child._menuOrientation(orientation);
   }
 }
@@ -708,7 +979,12 @@ export class VDropdownMenu extends HtmlElementNode {
     });
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
-      if (this._closeOnSelect && menuItem && !menuItem.disabled) {
+      if (
+        this._closeOnSelect &&
+        menuItem &&
+        !menuItem.disabled &&
+        !menuItem.classList.contains('yoya-vsubmenu-trigger')
+      ) {
         this.close();
       }
     });
@@ -909,7 +1185,12 @@ export class VContextMenu extends HtmlElementNode {
     });
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
-      if (this._closeOnSelect && menuItem && !menuItem.disabled) {
+      if (
+        this._closeOnSelect &&
+        menuItem &&
+        !menuItem.disabled &&
+        !menuItem.classList.contains('yoya-vsubmenu-trigger')
+      ) {
         this.close();
       }
     });
@@ -1863,6 +2144,10 @@ export function vMenuGroup(setup = null) {
   return setup instanceof VMenuGroup ? setup : new VMenuGroup(setup);
 }
 
+export function vSubMenu(setup = null) {
+  return setup instanceof VSubMenu ? setup : new VSubMenu(setup);
+}
+
 export function vDropdownMenu(setup = null) {
   return new VDropdownMenu(setup);
 }
@@ -1958,6 +2243,7 @@ const componentFactories = {
   vMenuDivider,
   vMenuGroup,
   vMenuItem,
+  vSubMenu,
   vMessage,
   vMessageContainer,
   vTable

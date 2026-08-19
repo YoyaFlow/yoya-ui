@@ -3,6 +3,7 @@ import {
   HtmlElementNode,
   VMenuDivider,
   VMenuGroup,
+  VSubMenu,
   VTimer,
   VTimerRange,
   button,
@@ -28,6 +29,7 @@ import {
   vMenuDivider,
   vMenuGroup,
   vMenuItem,
+  vSubMenu,
   vMessage,
   vMessageContainer,
   vSelect,
@@ -290,6 +292,232 @@ describe('compound components', () => {
     expect(vMenuDivider()).toBeInstanceOf(VMenuDivider);
     expect(element.querySelector('.yoya-vmenu-group-label').textContent).toBe('快捷操作');
     expect(element.querySelector('.yoya-vmenu-divider').getAttribute('role')).toBe('separator');
+  });
+
+  it('creates an accessible nested submenu through public factories', () => {
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((submenu) => {
+        submenu.label('更多操作');
+        submenu.menuContent((nested) => nested.vMenuItem('导出'));
+      });
+    });
+    const element = menu.renderDom();
+    const submenu = menu.children()[0];
+    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const panel = element.querySelector('.yoya-vsubmenu-panel');
+
+    expect(submenu).toBeInstanceOf(VSubMenu);
+    expect(vSubMenu('独立子菜单')).toBeInstanceOf(VSubMenu);
+    expect(trigger.getAttribute('role')).toBe('menuitem');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.getAttribute('aria-controls')).toBe(panel.id);
+    expect(trigger.textContent).toContain('更多操作');
+    expect(panel.style.display).toBe('none');
+    expect(panel.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menu');
+    expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
+  });
+
+  it('toggles nested submenus from the pointer and blocks disabled triggers', () => {
+    const submenu = vSubMenu((menu) => {
+      menu.label('更多操作');
+      menu.menuContent((nested) => nested.vMenuItem('导出'));
+    });
+    const element = submenu.renderDom();
+    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const panel = element.querySelector('.yoya-vsubmenu-panel');
+
+    trigger.click();
+    expect(element.dataset.open).toBe('true');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.style.display).toBe('');
+
+    trigger.click();
+    expect(element.dataset.open).toBeUndefined();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(panel.style.display).toBe('none');
+
+    submenu.disabled(true);
+    trigger.click();
+    expect(trigger.disabled).toBe(true);
+    expect(element.dataset.open).toBeUndefined();
+  });
+
+  it('enters and exits nested submenus with keyboard focus management', () => {
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((submenu) => {
+        submenu.label('更多操作');
+        submenu.menuContent((nested) => {
+          nested.vMenuItem((item) => item.id('nested-disabled').text('禁用项').disabled(true));
+          nested.vMenuItem((item) => item.id('nested-first').text('导出'));
+          nested.vMenuItem((item) => item.id('nested-second').text('归档'));
+        });
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const submenu = element.querySelector('.yoya-vsubmenu');
+    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const first = element.querySelector('#nested-first');
+    const second = element.querySelector('#nested-second');
+
+    trigger.focus();
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowRight' })
+    );
+    expect(submenu.dataset.open).toBe('true');
+    expect(document.activeElement).toBe(first);
+
+    first.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(second);
+
+    second.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowLeft' })
+    );
+    expect(submenu.dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' })
+    );
+    expect(document.activeElement).toBe(first);
+
+    first.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' })
+    );
+    expect(submenu.dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('closes nested submenus outside and on leaf selection but keeps ancestor levels open', () => {
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((submenu) => {
+        submenu.label('更多操作');
+        submenu.menuContent((nested) => {
+          nested.vMenuItem((item) => item.id('submenu-leaf').text('导出'));
+          nested.vSubMenu((child) => {
+            child.label('高级操作');
+            child.menuContent((deep) => deep.vMenuItem('清理缓存'));
+          });
+        });
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const submenus = element.querySelectorAll('.yoya-vsubmenu');
+    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+
+    triggers[0].click();
+    expect(submenus[0].dataset.open).toBe('true');
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(submenus[0].dataset.open).toBeUndefined();
+
+    triggers[0].click();
+    element.querySelector('#submenu-leaf').click();
+    expect(submenus[0].dataset.open).toBeUndefined();
+
+    triggers[0].click();
+    triggers[1].click();
+    expect(submenus[0].dataset.open).toBe('true');
+    expect(submenus[1].dataset.open).toBe('true');
+  });
+
+  it('closes an open sibling when another submenu trigger is selected', () => {
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((submenu) => {
+        submenu.label('导出');
+        submenu.menuContent((nested) => nested.vMenuItem('导出 CSV'));
+      });
+      commands.vSubMenu((submenu) => {
+        submenu.label('共享');
+        submenu.menuContent((nested) => nested.vMenuItem('复制链接'));
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const submenus = element.querySelectorAll('.yoya-vsubmenu');
+    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+
+    triggers[0].click();
+    triggers[1].click();
+
+    expect(submenus[0].dataset.open).toBeUndefined();
+    expect(submenus[1].dataset.open).toBe('true');
+  });
+
+  it('exits one nested submenu level at a time from a child trigger', () => {
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((parent) => {
+        parent.label('父级');
+        parent.menuContent((nested) => {
+          nested.vSubMenu((child) => {
+            child.label('子级');
+            child.menuContent((deep) => deep.vMenuItem('叶子'));
+          });
+        });
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const submenus = element.querySelectorAll('.yoya-vsubmenu');
+    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+
+    triggers[0].click();
+    triggers[1].click();
+    triggers[1].focus();
+    triggers[1].dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowLeft' })
+    );
+    expect(submenus[0].dataset.open).toBe('true');
+    expect(submenus[1].dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(triggers[1]);
+
+    triggers[1].dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowLeft' })
+    );
+    expect(submenus[0].dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(triggers[0]);
+
+    triggers[0].click();
+    triggers[1].click();
+    triggers[1].focus();
+    triggers[1].dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' })
+    );
+    expect(submenus[0].dataset.open).toBe('true');
+    expect(submenus[1].dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(triggers[1]);
+  });
+
+  it('closes descendant submenu state when a parent closes or becomes disabled', () => {
+    let parentSubMenu;
+    let childSubMenu;
+    const menu = vMenu((commands) => {
+      commands.vSubMenu((parent) => {
+        parentSubMenu = parent;
+        parent.label('父级');
+        parent.menuContent((nested) => {
+          nested.vSubMenu((child) => {
+            childSubMenu = child;
+            child.label('子级');
+            child.menuContent((deep) => deep.vMenuItem('叶子'));
+          });
+        });
+      });
+    });
+    const element = menu.renderDom();
+    const submenus = element.querySelectorAll('.yoya-vsubmenu');
+    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+
+    parentSubMenu.open();
+    childSubMenu.open();
+    parentSubMenu.close();
+    expect(submenus[0].dataset.open).toBeUndefined();
+    expect(submenus[1].dataset.open).toBeUndefined();
+    expect(triggers[1].getAttribute('aria-expanded')).toBe('false');
+
+    parentSubMenu.open();
+    childSubMenu.open();
+    parentSubMenu.disabled(true);
+    expect(submenus[0].dataset.open).toBeUndefined();
+    expect(submenus[1].dataset.open).toBeUndefined();
+    expect(triggers[1].getAttribute('aria-expanded')).toBe('false');
   });
 
   it('navigates vertical structured menus while skipping disabled and structural elements', () => {
@@ -562,6 +790,51 @@ describe('compound components', () => {
 
     expect(clicked).toHaveBeenCalledTimes(1);
     expect(element.dataset.open).toBe('true');
+  });
+
+  it('composes nested submenus with dropdown and context menu selection closing', () => {
+    const dropdown = vDropdownMenu((overlay) => {
+      overlay.trigger((button) => button.id('submenu-dropdown-trigger').label('更多'));
+      overlay.menuContent((menu) => {
+        menu.vSubMenu((submenu) => {
+          submenu.label('导出');
+          submenu.menuContent((nested) => {
+            nested.vMenuItem((item) => item.id('submenu-dropdown-leaf').text('导出 CSV'));
+          });
+        });
+      });
+    }).bindTo(document.body);
+    const dropdownElement = dropdown.renderDom();
+
+    dropdownElement.querySelector('#submenu-dropdown-trigger').click();
+    dropdownElement.querySelector('.yoya-vsubmenu-trigger').click();
+    expect(dropdownElement.dataset.open).toBe('true');
+    expect(dropdownElement.querySelector('.yoya-vsubmenu').dataset.open).toBe('true');
+
+    dropdownElement.querySelector('#submenu-dropdown-leaf').click();
+    expect(dropdownElement.dataset.open).toBeUndefined();
+
+    const contextMenu = vContextMenu((overlay) => {
+      overlay.target((target) => target.id('submenu-context-target').text('右键区域'));
+      overlay.menuContent((menu) => {
+        menu.vSubMenu((submenu) => {
+          submenu.label('服务操作');
+          submenu.menuContent((nested) => {
+            nested.vMenuItem((item) => item.id('submenu-context-leaf').text('重启'));
+          });
+        });
+      });
+    }).bindTo(document.body);
+    const contextElement = contextMenu.renderDom();
+
+    contextElement
+      .querySelector('#submenu-context-target')
+      .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+    contextElement.querySelector('.yoya-vsubmenu-trigger').click();
+    expect(contextElement.dataset.open).toBe('true');
+
+    contextElement.querySelector('#submenu-context-leaf').click();
+    expect(contextElement.dataset.open).toBeUndefined();
   });
 
   it('registers dropdown menu as a v-prefixed parent shortcut', () => {

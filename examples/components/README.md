@@ -6,6 +6,7 @@
 - `vCard` / `vCardHeader` / `vCardBody` / `vCardFooter`
 - `vMenu` / `vMenuItem`
 - `vMenuGroup` / `vMenuDivider`
+- `vSubMenu`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
@@ -70,6 +71,8 @@ menu.vMenuGroup((group) => {
 ```
 
 纵向菜单使用 `ArrowUp` / `ArrowDown`，横向菜单使用 `ArrowLeft` / `ArrowRight`；`Home` / `End` 跳到首尾。导航会循环并自动跳过分组标题、分隔线和禁用项。
+
+嵌套命令使用 `vSubMenu`。点击触发器，或聚焦后按 `ArrowRight`、`Enter`、空格可展开并进入子菜单；按 `ArrowLeft` 或 `Escape` 收起并返回上一级。点击外部区域或选择可用的叶子命令也会关闭子菜单，禁用的子菜单不会展开。
 
 日期和时间输入使用 `vTimer`，通过 `mode` 选择 `date`、`datetime-local` 或 `time`：
 
