@@ -2312,6 +2312,54 @@ export class VInput extends HtmlElementNode {
   }
 }
 
+export class VTimer extends VInput {
+  constructor(setup = null) {
+    super(null);
+    this.className('yoya-vtimer');
+    this.mode('date');
+    this._setupTimer(setup);
+  }
+
+  mode(value) {
+    if (value === undefined) {
+      return this.attr('type');
+    }
+
+    const supportedModes = new Set(['date', 'datetime-local', 'time']);
+    this.attr('type', supportedModes.has(value) ? value : 'date');
+    return this;
+  }
+
+  type(value) {
+    return value === undefined ? this.mode() : this.mode(value);
+  }
+
+  _setupTimer(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { mode, type, ...inputSetup } = setup;
+
+      this._setupInput(inputSetup);
+      if (mode !== undefined) {
+        this.mode(mode);
+      } else if (type !== undefined) {
+        this.mode(type);
+      }
+      return;
+    }
+
+    this.value(setup);
+  }
+}
+
 export class VTextarea extends HtmlElementNode {
   constructor(setup = null) {
     super('textarea', null);
@@ -3591,6 +3639,10 @@ export function vInput(setup = null) {
   return setup instanceof VInput ? setup : new VInput(setup);
 }
 
+export function vTimer(setup = null) {
+  return setup instanceof VTimer ? setup : new VTimer(setup);
+}
+
 export function vTextarea(setup = null) {
   return setup instanceof VTextarea ? setup : new VTextarea(setup);
 }
@@ -3627,6 +3679,7 @@ const formComponentFactories = {
   vInput,
   vSelect,
   vSwitch,
+  vTimer,
   vTextarea
 };
 

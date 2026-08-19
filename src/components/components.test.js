@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
+  VTimer,
   button,
   createI18n,
   div,
@@ -27,7 +28,8 @@ import {
   vSelect,
   vSwitch,
   vTextarea,
-  vTable
+  vTable,
+  vTimer
 } from '../index.js';
 
 describe('compound components', () => {
@@ -586,6 +588,67 @@ describe('compound components', () => {
 
     expect(input.value()).toBe('worker');
     expect(textarea.value()).toBe('更新说明');
+  });
+
+  it('creates vTimer with supported date and time modes and live values', () => {
+    const timer = vTimer({
+      mode: 'datetime-local',
+      name: 'scheduledAt',
+      value: '2026-08-19T14:30'
+    });
+    const element = timer.renderDom();
+
+    expect(timer).toBeInstanceOf(VTimer);
+    expect(timer).toBeInstanceOf(HtmlElementNode);
+    expect(element.classList.contains('yoya-vtimer')).toBe(true);
+    expect(element.type).toBe('datetime-local');
+    expect(element.name).toBe('scheduledAt');
+    expect(timer.value()).toBe('2026-08-19T14:30');
+
+    element.value = '2026-08-20T09:15';
+    expect(timer.value()).toBe('2026-08-20T09:15');
+
+    timer.mode('time').value('18:45');
+    expect(element.type).toBe('time');
+    expect(element.value).toBe('18:45');
+
+    timer.mode('unsupported');
+    expect(element.type).toBe('date');
+  });
+
+  it('applies vTimer availability states and existing change events', () => {
+    const changed = vi.fn();
+    const timer = vTimer((control) => {
+      control.mode('date');
+      control.value('2026-08-19');
+      control.disabled(true);
+      control.readonly(true);
+      control.required(true);
+      control.on('change', changed);
+    });
+    const element = timer.renderDom();
+
+    expect(element.disabled).toBe(true);
+    expect(element.readOnly).toBe(true);
+    expect(element.required).toBe(true);
+
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(changed).toHaveBeenCalledTimes(1);
+
+    timer.disabled(false).readonly(false).required(false);
+    expect(element.disabled).toBe(false);
+    expect(element.readOnly).toBe(false);
+    expect(element.required).toBe(false);
+  });
+
+  it('registers vTimer as a v-prefixed parent shortcut', () => {
+    const page = div((root) => {
+      root.vTimer({ mode: 'time', value: '08:30' });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('.yoya-vtimer').type).toBe('time');
+    expect(element.querySelector('.yoya-vtimer').value).toBe('08:30');
   });
 
   it('renders checkbox, switch and checkbox group states', () => {
