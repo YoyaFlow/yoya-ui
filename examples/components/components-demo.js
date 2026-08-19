@@ -58,12 +58,28 @@ export function renderComponentsExample(target = '#app') {
         header.h1('复合组件');
         header.p('按操作反馈、导航、数据展示、表单与日期时间浏览组件。');
       });
+      shell.nav((navigation) => {
+        navigation.className('component-category-navigation');
+        navigation.attr('aria-label', '组件大类');
+        componentDemoCategories.forEach((category) => {
+          navigation.a((link) => {
+            link.className('component-category-link');
+            link.attr({
+              'data-demo-category-link': category.id,
+              href: `#category-${category.id}`
+            });
+            link.strong(category.title);
+            link.span(`${category.demos.length} 个演示`);
+          });
+        });
+      });
       shell.vstack((categories) => {
         categories.className('components-examples');
         categories.styles({ gap: '28px', width: '100%' });
 
         componentDemoCategories.forEach((category) => {
           categories.section((categorySection) => {
+            categorySection.id(`category-${category.id}`);
             categorySection.attr('data-demo-category', category.id);
             categorySection.vstack((categoryStack) => {
               categoryStack.style('gap', '18px');

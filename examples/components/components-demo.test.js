@@ -75,13 +75,33 @@ export function SampleCard() {
   it('groups demos into broad category sections and includes vTimerRange', () => {
     renderComponentsExample('#app');
 
+    const categoryNavigation = document.querySelector('[aria-label="组件大类"]');
+    const categoryLinks = Array.from(
+      categoryNavigation.querySelectorAll('[data-demo-category-link]')
+    );
     const categoryHeadings = Array.from(
       document.querySelectorAll('[data-demo-category] header h2'),
       (heading) => heading.textContent
     );
 
+    expect(categoryLinks).toHaveLength(4);
+    expect(categoryLinks.map((link) => link.getAttribute('href'))).toEqual([
+      '#category-actions-feedback',
+      '#category-navigation',
+      '#category-data-display',
+      '#category-forms-datetime'
+    ]);
+    expect(categoryLinks.map((link) => link.textContent)).toEqual([
+      '操作与反馈3 个演示',
+      '导航菜单2 个演示',
+      '数据展示3 个演示',
+      '表单与日期时间4 个演示'
+    ]);
     expect(categoryHeadings).toEqual(['操作与反馈', '导航菜单', '数据展示', '表单与日期时间']);
     expect(document.querySelectorAll('[data-demo-category]')).toHaveLength(4);
+    expect(document.querySelector('[data-demo-category="navigation"]').id).toBe(
+      'category-navigation'
+    );
     expect(document.querySelector('.yoya-vtimer-range')).not.toBeNull();
     expect(document.body.textContent).toContain('日期范围');
   });
