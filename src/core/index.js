@@ -1,5 +1,6 @@
 export {
   ElementNode,
+  ComponentNode,
   TextNode,
   VTextNode,
   ViewNode,

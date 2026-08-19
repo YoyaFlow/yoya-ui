@@ -251,6 +251,11 @@ export class ViewNode {
     return null;
   }
 
+  /** 将当前 ViewNode 树提交到真实 DOM。 */
+  commit() {
+    return this.renderDom();
+  }
+
   /**
    * 将当前节点挂载到选择器或 DOM 元素。
    */
@@ -329,6 +334,64 @@ export class VTextNode extends ViewNode {
 }
 
 /**
+ * ComponentNode 延迟解析函数 Factory 或带 render() 的组件对象。
+ * 组件只在第一次需要真实节点时解析，并复用解析后的节点。
+ */
+export class ComponentNode extends ViewNode {
+  constructor(component) {
+    super(null);
+    this._component = component;
+    this._resolved = null;
+  }
+
+  _resolve() {
+    if (this._resolved) {
+      return this._resolved;
+    }
+
+    const resolved =
+      typeof this._component === 'function' ? this._component() : this._component.render();
+    if (!(resolved instanceof ViewNode)) {
+      throw new TypeError('Component render must return a ViewNode');
+    }
+
+    this._resolved = resolved;
+    return resolved;
+  }
+
+  children() {
+    return this._resolved ? this._resolved.children() : [];
+  }
+
+  textContent() {
+    const component = this._resolve();
+    return typeof component.textContent === 'function' ? component.textContent() : '';
+  }
+
+  renderDom() {
+    if (this._deleted) {
+      return null;
+    }
+
+    const element = this._resolve().renderDom();
+    this._el = element;
+    return element;
+  }
+
+  toHTML() {
+    return this._deleted ? '' : this._resolve().toHTML();
+  }
+
+  destroy() {
+    if (this._resolved) {
+      this._resolved.destroy();
+    }
+
+    return super.destroy();
+  }
+}
+
+/**
  * 创建文本节点的工厂函数。
  */
 export function vText(content = '') {
@@ -343,11 +406,18 @@ export function normalizeChild(child) {
     return child;
   }
 
+  if (
+    typeof child === 'function' ||
+    (child && typeof child === 'object' && typeof child.render === 'function')
+  ) {
+    return new ComponentNode(child);
+  }
+
   if (typeof child === 'string' || typeof child === 'number') {
     return new VTextNode(child);
   }
 
-  throw new TypeError('ViewNode child must be a ViewNode, string, or number');
+  throw new TypeError('ViewNode child must be a ViewNode, component, string, or number');
 }
 
 /**

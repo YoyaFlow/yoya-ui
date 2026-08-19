@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
   VTimer,
+  VTimerRange,
   button,
   createI18n,
   div,
@@ -29,7 +30,8 @@ import {
   vSwitch,
   vTextarea,
   vTable,
-  vTimer
+  vTimer,
+  vTimerRange
 } from '../index.js';
 
 describe('compound components', () => {
@@ -649,6 +651,110 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vtimer').type).toBe('time');
     expect(element.querySelector('.yoya-vtimer').value).toBe('08:30');
+  });
+
+  it('reads and writes vTimerRange start, end and unified values', () => {
+    const range = vTimerRange({
+      end: '2026-08-21',
+      mode: 'date',
+      name: 'deployment',
+      start: '2026-08-19'
+    });
+    const element = range.renderDom();
+    const controls = element.querySelectorAll('.yoya-vtimer');
+
+    expect(range).toBeInstanceOf(VTimerRange);
+    expect(controls).toHaveLength(2);
+    expect(controls[0].type).toBe('date');
+    expect(controls[0].name).toBe('deploymentStart');
+    expect(controls[0].getAttribute('aria-label')).toBe('开始值');
+    expect(controls[1].name).toBe('deploymentEnd');
+    expect(controls[1].getAttribute('aria-label')).toBe('结束值');
+    expect(range.start()).toBe('2026-08-19');
+    expect(range.end()).toBe('2026-08-21');
+    expect(range.value()).toEqual({ start: '2026-08-19', end: '2026-08-21' });
+
+    range.value({ start: '2026-08-20', end: '2026-08-22' });
+    expect(range.value()).toEqual({ start: '2026-08-20', end: '2026-08-22' });
+
+    range.value(['2026-08-23', '2026-08-24']);
+    expect(range.start()).toBe('2026-08-23');
+    expect(range.end()).toBe('2026-08-24');
+  });
+
+  it('registers vTimerRange as a v-prefixed parent shortcut', () => {
+    const page = div((root) => {
+      root.vTimerRange({ mode: 'time', value: ['08:30', '17:30'] });
+    });
+    const element = page.renderDom();
+    const range = element.querySelector('.yoya-vtimer-range');
+
+    expect(range).not.toBeNull();
+    expect(range.querySelectorAll('input')).toHaveLength(2);
+    expect(range.querySelectorAll('input')[0].type).toBe('time');
+    expect(range.querySelectorAll('input')[1].value).toBe('17:30');
+  });
+
+  it('reports an end value earlier than the start value', () => {
+    const range = vTimerRange({ value: ['2026-08-21', '2026-08-19'] });
+    const element = range.renderDom();
+
+    expect(element.dataset.error).toBe('true');
+    expect(element.dataset.invalid).toBe('true');
+    expect(element.getAttribute('aria-invalid')).toBe('true');
+    const errorMessage = element.querySelector('.yoya-vtimer-range-error');
+    const controls = element.querySelectorAll('input');
+    expect(errorMessage.id).not.toBe('');
+    expect(errorMessage.textContent).toBe('结束值不能早于开始值');
+    controls.forEach((control) => {
+      expect(control.getAttribute('aria-invalid')).toBe('true');
+      expect(control.getAttribute('aria-describedby')).toBe(errorMessage.id);
+    });
+
+    range.end('2026-08-22');
+    expect(element.dataset.error).toBeUndefined();
+    expect(element.dataset.invalid).toBeUndefined();
+    expect(element.getAttribute('aria-invalid')).toBeNull();
+    expect(errorMessage.textContent).toBe('');
+    controls.forEach((control) => {
+      expect(control.getAttribute('aria-invalid')).toBeNull();
+      expect(control.getAttribute('aria-describedby')).toBe(errorMessage.id);
+    });
+  });
+
+  it('emits one unified change event when either range control changes', () => {
+    const changed = vi.fn();
+    const range = vTimerRange({ value: ['2026-08-19', '2026-08-21'] }).on('change', changed);
+    const element = range.renderDom();
+    const endControl = element.querySelector('.yoya-vtimer-range-end');
+
+    endControl.value = '2026-08-22';
+    endControl.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(changed.mock.calls[0][0].detail).toEqual({
+      start: '2026-08-19',
+      end: '2026-08-22'
+    });
+    expect(range.value()).toEqual({ start: '2026-08-19', end: '2026-08-22' });
+  });
+
+  it('propagates vTimerRange availability states to both controls', () => {
+    const range = vTimerRange({ disabled: true, readonly: true, required: true });
+    const controls = range.renderDom().querySelectorAll('input');
+
+    controls.forEach((control) => {
+      expect(control.disabled).toBe(true);
+      expect(control.readOnly).toBe(true);
+      expect(control.required).toBe(true);
+    });
+
+    range.disabled(false).readonly(false).required(false);
+    controls.forEach((control) => {
+      expect(control.disabled).toBe(false);
+      expect(control.readOnly).toBe(false);
+      expect(control.required).toBe(false);
+    });
   });
 
   it('renders checkbox, switch and checkbox group states', () => {

@@ -123,4 +123,42 @@ describe('ViewNode core', () => {
     expect(field.renderDom().hasAttribute('disabled')).toBe(true);
     expect(field.renderDom().getAttribute('data-size')).toBe('large');
   });
+
+  it('supports component objects with render and public methods', () => {
+    let renderCalls = 0;
+    function StatusPanel() {
+      const message = vText('Waiting');
+      return {
+        setStatus(value) {
+          message.textContent(value);
+        },
+        render() {
+          renderCalls += 1;
+          return div((panel) => panel.className('status-panel').child(message));
+        }
+      };
+    }
+
+    const panel = StatusPanel();
+    const root = div().child(panel);
+    panel.setStatus('Ready');
+
+    expect(renderCalls).toBe(0);
+    expect(root.commit().textContent).toBe('Ready');
+    expect(root.toHTML()).toBe('<div><div class="status-panel">Ready</div></div>');
+    expect(renderCalls).toBe(1);
+  });
+
+  it('rejects component objects whose render does not return a ViewNode', () => {
+    const root = div().child({ render: () => ({}) });
+
+    expect(() => root.renderDom()).toThrow('Component render must return a ViewNode');
+  });
+
+  it('exposes commit as the semantic DOM synchronization entry point', () => {
+    const root = div().text('Committed');
+
+    expect(root.commit()).toBe(root.renderDom());
+    expect(root.commit().textContent).toBe('Committed');
+  });
 });
