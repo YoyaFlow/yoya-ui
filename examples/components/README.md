@@ -5,6 +5,7 @@
 - `vButton`
 - `vCard` / `vCardHeader` / `vCardBody` / `vCardFooter`
 - `vMenu` / `vMenuItem`
+- `vMenuGroup` / `vMenuDivider`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
@@ -52,6 +53,23 @@ const page = div((root) => {
 ```
 
 `child` 接收到组件对象后会在首次 `commit()` 或 `toHTML()` 时调用并缓存 `render()` 的结果。组件可以在对象上继续公开命令；演示源码不得直接返回 `ViewNode` 或裸 Factory。已有的 `vButton(...)` 等底层快捷工厂仍然在 `render()` 内正常使用。
+
+长菜单使用 `vMenuGroup` 提供可访问的分组标题，并用 `vMenuDivider` 分隔命令区域：
+
+```js
+menu.vMenuGroup((group) => {
+  group.label('常用操作');
+  group.vMenuItem('刷新');
+  group.vMenuItem({ disabled: true, text: '删除' });
+});
+menu.vMenuDivider();
+menu.vMenuGroup((group) => {
+  group.label('其他操作');
+  group.vMenuItem('退出');
+});
+```
+
+纵向菜单使用 `ArrowUp` / `ArrowDown`，横向菜单使用 `ArrowLeft` / `ArrowRight`；`Home` / `End` 跳到首尾。导航会循环并自动跳过分组标题、分隔线和禁用项。
 
 日期和时间输入使用 `vTimer`，通过 `mode` 选择 `date`、`datetime-local` 或 `time`：
 

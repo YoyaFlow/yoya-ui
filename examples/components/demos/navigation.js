@@ -8,28 +8,37 @@ export function CommandMenuCard({ toast }) {
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vMenuItem 可以承载图标、文本、快捷键、选中状态、危险状态和禁用状态。');
+            stack.p(
+              'vMenuGroup 与 vMenuDivider 组织长命令列表，方向键会跳过标题、分隔线和禁用项。'
+            );
             stack.vMenu((menu) => {
-              menu.vMenuItem((item) => {
-                item.id('menu-refresh');
-                item.icon('R');
-                item.text('刷新状态');
-                item.shortcut('Ctrl+R');
-                item.active(true);
-                item.on('click', () => toast.info('菜单触发：刷新状态', { duration: 0 }));
+              menu.vMenuGroup((group) => {
+                group.label('常用操作');
+                group.vMenuItem((item) => {
+                  item.id('menu-refresh');
+                  item.icon('R');
+                  item.text('刷新状态');
+                  item.shortcut('Ctrl+R');
+                  item.active(true);
+                  item.on('click', () => toast.info('菜单触发：刷新状态', { duration: 0 }));
+                });
+                group.vMenuItem((item) => {
+                  item.icon('S');
+                  item.text('系统设置');
+                  item.shortcut('Ctrl+,');
+                  item.on('click', () => toast.info('菜单触发：系统设置', { duration: 0 }));
+                });
               });
-              menu.vMenuItem((item) => {
-                item.icon('S');
-                item.text('系统设置');
-                item.shortcut('Ctrl+,');
-                item.on('click', () => toast.info('菜单触发：系统设置', { duration: 0 }));
-              });
-              menu.vMenuItem((item) => {
-                item.icon('D');
-                item.text('删除服务');
-                item.shortcut('Del');
-                item.danger(true);
-                item.disabled(true);
+              menu.vMenuDivider();
+              menu.vMenuGroup((group) => {
+                group.label('危险操作');
+                group.vMenuItem((item) => {
+                  item.icon('D');
+                  item.text('删除服务');
+                  item.shortcut('Del');
+                  item.danger(true);
+                  item.disabled(true);
+                });
               });
             });
           });

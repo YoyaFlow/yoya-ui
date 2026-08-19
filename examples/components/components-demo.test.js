@@ -86,6 +86,25 @@ export function SampleCard() {
     expect(document.body.textContent).toContain('日期范围');
   });
 
+  it('demonstrates accessible menu groups and dividers from the component function', () => {
+    renderComponentsExample('#app');
+
+    const navigation = document.querySelector('[data-demo-category="navigation"]');
+    const groups = navigation.querySelectorAll('.yoya-vmenu-group');
+    const divider = navigation.querySelector('.yoya-vmenu-divider');
+    const commandSource = document.querySelectorAll('[data-source-example]')[3].textContent;
+
+    expect(groups).toHaveLength(2);
+    groups.forEach((group) => {
+      const heading = group.querySelector('.yoya-vmenu-group-label');
+      expect(heading.id).not.toBe('');
+      expect(group.getAttribute('aria-labelledby')).toBe(heading.id);
+    });
+    expect(divider.getAttribute('role')).toBe('separator');
+    expect(commandSource).toContain('menu.vMenuGroup');
+    expect(commandSource).toContain('menu.vMenuDivider');
+  });
+
   it('renders compound components and interactive feedback', () => {
     const root = renderComponentsExample('#app');
 

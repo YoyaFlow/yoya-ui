@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
+  VMenuDivider,
+  VMenuGroup,
   VTimer,
   VTimerRange,
   button,
@@ -23,6 +25,8 @@ import {
   vForm,
   vInput,
   vMenu,
+  vMenuDivider,
+  vMenuGroup,
   vMenuItem,
   vMessage,
   vMessageContainer,
@@ -246,6 +250,214 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('Dashboard');
     expect(vMenuItem('独立项').toHTML()).toContain('yoya-vmenu-item-label');
+  });
+
+  it('creates accessible menu groups and dividers', () => {
+    const menu = vMenu((commands) => {
+      commands.vMenuGroup((group) => {
+        group.label('文件操作');
+        group.vMenuItem('新建');
+        group.vMenuItem({ disabled: true, text: '删除' });
+      });
+      commands.vMenuDivider();
+      commands.vMenuItem('退出');
+    });
+    const element = menu.renderDom();
+    const group = element.querySelector('.yoya-vmenu-group');
+    const heading = group.querySelector('.yoya-vmenu-group-label');
+    const divider = element.querySelector('.yoya-vmenu-divider');
+    const disabledItem = group.querySelector('[disabled]');
+
+    expect(menu.children()[0]).toBeInstanceOf(VMenuGroup);
+    expect(menu.children()[1]).toBeInstanceOf(VMenuDivider);
+    expect(group.getAttribute('role')).toBe('group');
+    expect(heading.id).not.toBe('');
+    expect(group.getAttribute('aria-labelledby')).toBe(heading.id);
+    expect(heading.textContent).toBe('文件操作');
+    expect(divider.getAttribute('role')).toBe('separator');
+    expect(divider.getAttribute('aria-orientation')).toBe('horizontal');
+    expect(disabledItem.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('registers menu groups and dividers as v-prefixed parent shortcuts', () => {
+    const page = div((root) => {
+      root.vMenuGroup((group) => group.label('快捷操作').vMenuItem('复制'));
+      root.vMenuDivider();
+    });
+    const element = page.renderDom();
+
+    expect(vMenuGroup('分组')).toBeInstanceOf(VMenuGroup);
+    expect(vMenuDivider()).toBeInstanceOf(VMenuDivider);
+    expect(element.querySelector('.yoya-vmenu-group-label').textContent).toBe('快捷操作');
+    expect(element.querySelector('.yoya-vmenu-divider').getAttribute('role')).toBe('separator');
+  });
+
+  it('navigates vertical structured menus while skipping disabled and structural elements', () => {
+    const menu = vMenu((commands) => {
+      commands.vMenuItem((item) => item.id('menu-first').text('第一项'));
+      commands.vMenuDivider();
+      commands.vMenuGroup((group) => {
+        group.label('分组');
+        group.vMenuItem((item) => item.id('menu-disabled').text('禁用项').disabled(true));
+        group.vMenuItem((item) => item.id('menu-grouped').text('分组项'));
+      });
+      commands.vMenuItem((item) => item.id('menu-last').text('最后一项'));
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const first = element.querySelector('#menu-first');
+    const grouped = element.querySelector('#menu-grouped');
+    const last = element.querySelector('#menu-last');
+    const disabled = element.querySelector('#menu-disabled');
+
+    expect(first.tabIndex).toBe(0);
+    expect(grouped.tabIndex).toBe(-1);
+    expect(last.tabIndex).toBe(-1);
+    expect(disabled.tabIndex).toBe(-1);
+
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(grouped);
+
+    grouped.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'End' }));
+    expect(document.activeElement).toBe(last);
+
+    last.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(first);
+
+    first.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowUp' }));
+    expect(document.activeElement).toBe(last);
+
+    last.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Home' }));
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('uses left and right arrows for horizontal structured menus', () => {
+    const menu = vMenu((commands) => {
+      commands.horizontal();
+      commands.vMenuItem((item) => item.id('horizontal-first').text('第一项'));
+      commands.vMenuDivider();
+      commands.vMenuGroup((group) => {
+        group.label('分组');
+        group.vMenuItem((item) => item.id('horizontal-second').text('第二项'));
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const first = element.querySelector('#horizontal-first');
+    const second = element.querySelector('#horizontal-second');
+    const divider = element.querySelector('.yoya-vmenu-divider');
+
+    expect(divider.getAttribute('aria-orientation')).toBe('vertical');
+
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
+    expect(document.activeElement).toBe(second);
+
+    second.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowLeft' }));
+    expect(document.activeElement).toBe(first);
+
+    const down = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'ArrowDown'
+    });
+    first.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('updates the roving menu tab stop when an enabled item receives focus', () => {
+    const menu = vMenu((commands) => {
+      commands.vMenuItem((item) => item.id('focus-first').text('第一项'));
+      commands.vMenuItem((item) => item.id('focus-second').text('第二项'));
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const first = element.querySelector('#focus-first');
+    const second = element.querySelector('#focus-second');
+
+    second.focus();
+
+    expect(first.tabIndex).toBe(-1);
+    expect(second.tabIndex).toBe(0);
+  });
+
+  it('moves the roving tab stop when the current menu item is disabled', () => {
+    let firstItem;
+    const menu = vMenu((commands) => {
+      commands.vMenuItem((item) => {
+        firstItem = item;
+        item.id('disable-first').text('第一项');
+      });
+      commands.vMenuItem((item) => item.id('disable-second').text('第二项'));
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const first = element.querySelector('#disable-first');
+    const second = element.querySelector('#disable-second');
+
+    expect(first.tabIndex).toBe(0);
+    expect(second.tabIndex).toBe(-1);
+
+    firstItem.disabled(true);
+
+    expect(first.disabled).toBe(true);
+    expect(first.tabIndex).toBe(-1);
+    expect(second.tabIndex).toBe(0);
+  });
+
+  it('keeps nested menu tab stops and keyboard navigation independent', () => {
+    const menu = vMenu((outer) => {
+      outer.vMenuItem((item) => item.id('outer-first').text('外层第一项'));
+      outer.vMenu((inner) => {
+        inner.vMenuItem((item) => item.id('inner-first').text('内层第一项'));
+        inner.vMenuItem((item) => item.id('inner-second').text('内层第二项'));
+      });
+      outer.vMenuItem((item) => item.id('outer-last').text('外层最后一项'));
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+    const outerFirst = element.querySelector('#outer-first');
+    const innerFirst = element.querySelector('#inner-first');
+    const innerSecond = element.querySelector('#inner-second');
+    const outerLast = element.querySelector('#outer-last');
+
+    expect(outerFirst.tabIndex).toBe(0);
+    expect(innerFirst.tabIndex).toBe(0);
+    expect(innerSecond.tabIndex).toBe(-1);
+    expect(outerLast.tabIndex).toBe(-1);
+
+    innerFirst.focus();
+    innerFirst.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(innerSecond);
+
+    innerSecond.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(innerFirst);
+  });
+
+  it('keeps one roving tab stop when an item is appended to a rendered group', () => {
+    let group;
+    const menu = vMenu((commands) => {
+      commands.vMenuGroup((items) => {
+        group = items;
+        items.label('动态分组');
+        items.vMenuItem((item) => item.id('dynamic-first').text('第一项'));
+      });
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+
+    group.vMenuItem((item) => item.id('dynamic-second').text('第二项'));
+
+    expect(element.querySelector('#dynamic-first').tabIndex).toBe(0);
+    expect(element.querySelector('#dynamic-second').tabIndex).toBe(-1);
+  });
+
+  it('keeps one roving tab stop when an item is appended to a rendered menu', () => {
+    const menu = vMenu((commands) => {
+      commands.vMenuItem((item) => item.id('direct-first').text('第一项'));
+    }).bindTo(document.body);
+    const element = menu.renderDom();
+
+    menu.vMenuItem((item) => item.id('direct-second').text('第二项'));
+
+    expect(element.querySelector('#direct-first').tabIndex).toBe(0);
+    expect(element.querySelector('#direct-second').tabIndex).toBe(-1);
   });
 
   it('preserves danger styling when active state is turned off', () => {

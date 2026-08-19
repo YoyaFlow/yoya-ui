@@ -3,6 +3,7 @@ import { HtmlElementNode } from '../html/index.js';
 
 const componentClass = 'yoya-component';
 const messageTypes = ['success', 'error', 'warning', 'info'];
+let menuGroupSequence = 0;
 let timerRangeSequence = 0;
 
 /**
@@ -227,6 +228,9 @@ export class VMenu extends HtmlElementNode {
       padding: '6px'
     });
     this.orientation('vertical');
+    this.on('focusin', (event) => this._handleFocusin(event));
+    this.on('keydown', (event) => this._handleKeydown(event));
+    this.on('yoya:menuitem-statechange', () => this._syncTabStops());
     this._setupMenu(setup);
   }
 
@@ -238,9 +242,7 @@ export class VMenu extends HtmlElementNode {
     this.attr('aria-orientation', orientation);
     this.style('flexDirection', orientation === 'horizontal' ? 'row' : 'column');
     this.children().forEach((child) => {
-      if (child instanceof VMenuItem) {
-        child._menuOrientation(orientation);
-      }
+      applyMenuOrientation(child, orientation);
     });
     return this;
   }
@@ -250,10 +252,11 @@ export class VMenu extends HtmlElementNode {
     const orientation = this.attr('data-orientation') || 'vertical';
 
     this.children().forEach((child) => {
-      if (child instanceof VMenuItem) {
-        child._menuOrientation(orientation);
-      }
+      applyMenuOrientation(child, orientation);
     });
+    if (this._el) {
+      this._syncTabStops();
+    }
 
     return this;
   }
@@ -264,6 +267,92 @@ export class VMenu extends HtmlElementNode {
 
   vertical() {
     return this.orientation('vertical');
+  }
+
+  renderDom() {
+    const element = super.renderDom();
+    this._syncTabStops();
+    return element;
+  }
+
+  _enabledMenuItems() {
+    if (!this._el) {
+      return [];
+    }
+
+    return this._menuItems().filter((item) => !item.disabled);
+  }
+
+  _menuItems() {
+    if (!this._el) {
+      return [];
+    }
+
+    return Array.from(this._el.querySelectorAll('.yoya-vmenu-item')).filter(
+      (item) => item.closest('.yoya-vmenu') === this._el
+    );
+  }
+
+  _syncTabStops(preferredItem = null) {
+    if (!this._el) {
+      return this;
+    }
+
+    const allItems = this._menuItems();
+    const enabledItems = allItems.filter((item) => !item.disabled);
+    const currentItem = enabledItems.includes(preferredItem)
+      ? preferredItem
+      : enabledItems.find((item) => item.tabIndex === 0) || enabledItems[0];
+
+    allItems.forEach((item) => {
+      item.tabIndex = item === currentItem ? 0 : -1;
+    });
+    return this;
+  }
+
+  _handleKeydown(event) {
+    if (event.target.closest?.('.yoya-vmenu') !== this._el) {
+      return;
+    }
+
+    const orientation = this.attr('data-orientation') || 'vertical';
+    const keyStep =
+      orientation === 'vertical' ? { ArrowDown: 1, ArrowUp: -1 } : { ArrowLeft: -1, ArrowRight: 1 };
+    const items = this._enabledMenuItems();
+    const currentItem = event.target.closest?.('.yoya-vmenu-item');
+
+    if (
+      items.length === 0 ||
+      (!keyStep[event.key] && event.key !== 'Home' && event.key !== 'End')
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    let nextIndex;
+    if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = items.length - 1;
+    } else {
+      const currentIndex = Math.max(0, items.indexOf(currentItem));
+      nextIndex = (currentIndex + keyStep[event.key] + items.length) % items.length;
+    }
+
+    const nextItem = items[nextIndex];
+    this._syncTabStops(nextItem);
+    nextItem.focus();
+  }
+
+  _handleFocusin(event) {
+    if (event.target.closest?.('.yoya-vmenu') !== this._el) {
+      return;
+    }
+
+    const item = event.target.closest?.('.yoya-vmenu-item');
+    if (item && !item.disabled) {
+      this._syncTabStops(item);
+    }
   }
 
   _setupMenu(setup) {
@@ -397,8 +486,13 @@ export class VMenuItem extends HtmlElementNode {
 
     this.setState('disabled', enabled);
     this.attr('disabled', enabled ? true : null);
+    this.attr('aria-disabled', enabled ? 'true' : null);
     this.style('cursor', enabled ? 'not-allowed' : 'pointer');
     this.style('opacity', enabled ? '0.55' : '1');
+    if (this._el) {
+      const EventClass = this._el.ownerDocument.defaultView.Event;
+      this._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
+    }
     return this;
   }
 
@@ -474,6 +568,107 @@ export class VMenuItem extends HtmlElementNode {
     }
 
     this.text(setup);
+  }
+}
+
+export class VMenuDivider extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this.className(componentClass, 'yoya-vmenu-divider');
+    this.attr('role', 'separator');
+    this._menuOrientation('vertical');
+    applyComponentSetup(this, setup);
+  }
+
+  _menuOrientation(orientation) {
+    const horizontal = orientation === 'horizontal';
+    this.attr('aria-orientation', horizontal ? 'vertical' : 'horizontal');
+    this.styles({
+      alignSelf: 'stretch',
+      borderLeft: horizontal ? '1px solid #e2e8f0' : null,
+      borderTop: horizontal ? null : '1px solid #e2e8f0',
+      height: horizontal ? 'auto' : '0',
+      margin: horizontal ? '0 4px' : '4px 0',
+      width: horizontal ? '0' : 'auto'
+    });
+    return this;
+  }
+}
+
+export class VMenuGroup extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    const labelId = `yoya-vmenu-group-label-${++menuGroupSequence}`;
+    this._orientation = 'vertical';
+    this._labelBox = new HtmlElementNode('div')
+      .className('yoya-vmenu-group-label')
+      .id(labelId)
+      .styles({
+        color: '#64748b',
+        fontSize: '0.75rem',
+        fontWeight: '700',
+        padding: '6px 10px 4px'
+      });
+
+    this.className(componentClass, 'yoya-vmenu-group');
+    this.attr({ 'aria-labelledby': labelId, role: 'group' });
+    this.styles({ display: 'flex', flexDirection: 'column', gap: '4px' });
+    super.child(this._labelBox);
+    this._setupMenuGroup(setup);
+  }
+
+  label(content) {
+    replaceChildren(this._labelBox, normalizeChildren(content));
+    return this;
+  }
+
+  title(content) {
+    return this.label(content);
+  }
+
+  child(...children) {
+    super.child(...children);
+    this.children().forEach((child) => applyMenuOrientation(child, this._orientation));
+    if (this._el) {
+      const EventClass = this._el.ownerDocument.defaultView.Event;
+      this._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
+    }
+    return this;
+  }
+
+  _menuOrientation(orientation) {
+    this._orientation = orientation === 'horizontal' ? 'horizontal' : 'vertical';
+    this.style('flexDirection', this._orientation === 'horizontal' ? 'row' : 'column');
+    this.children().forEach((child) => applyMenuOrientation(child, this._orientation));
+    return this;
+  }
+
+  _setupMenuGroup(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { children, label, title, ...elementConfig } = setup;
+      if (Object.keys(elementConfig).length > 0) this.setup(elementConfig);
+      if (label !== undefined) this.label(label);
+      else if (title !== undefined) this.title(title);
+      if (children !== undefined) this.child(children);
+      return;
+    }
+
+    this.label(setup);
+  }
+}
+
+function applyMenuOrientation(child, orientation) {
+  if (child instanceof VMenuItem || child instanceof VMenuDivider || child instanceof VMenuGroup) {
+    child._menuOrientation(orientation);
   }
 }
 
@@ -1660,6 +1855,14 @@ export function vMenuItem(setup = null) {
   return new VMenuItem(setup);
 }
 
+export function vMenuDivider(setup = null) {
+  return setup instanceof VMenuDivider ? setup : new VMenuDivider(setup);
+}
+
+export function vMenuGroup(setup = null) {
+  return setup instanceof VMenuGroup ? setup : new VMenuGroup(setup);
+}
+
 export function vDropdownMenu(setup = null) {
   return new VDropdownMenu(setup);
 }
@@ -1752,6 +1955,8 @@ const componentFactories = {
   vDetailItem,
   vDropdownMenu,
   vMenu,
+  vMenuDivider,
+  vMenuGroup,
   vMenuItem,
   vMessage,
   vMessageContainer,
