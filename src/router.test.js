@@ -245,9 +245,11 @@ describe('router', () => {
     expect(
       views.renderDom().querySelector('.yoya-vrouter-views-titlebar').getAttribute('role')
     ).toBe('banner');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
-      '项目概览'
-    );
+    const titleTab = views.renderDom().querySelector('.yoya-vrouter-views-title');
+    expect(titleTab.textContent).toBe('项目概览');
+    expect(titleTab.getAttribute('role')).toBe('tab');
+    expect(titleTab.style.display).toBe('inline-block');
+    expect(titleTab.style.borderRadius).toBe('6px 6px 0 0');
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '概览内容'
     );

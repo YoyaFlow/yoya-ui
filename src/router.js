@@ -369,7 +369,20 @@ export function vRouterViews(routerInstance, setup = null) {
     fontSize: '13px',
     padding: '8px 12px'
   });
-  titleNode.child(new ElementNode('span').className('yoya-vrouter-views-title').child(titleText));
+  const titleTab = new ElementNode('span').className('yoya-vrouter-views-title');
+  titleTab.attr({ role: 'tab', 'aria-selected': 'true' });
+  titleTab.styles({
+    background: '#ffffff',
+    border: '1px solid #d0d7de',
+    borderBottomColor: '#ffffff',
+    borderRadius: '6px 6px 0 0',
+    color: '#24292f',
+    display: 'inline-block',
+    fontWeight: '600',
+    marginBottom: '-9px',
+    padding: '7px 14px 8px'
+  });
+  titleNode.child(titleTab.child(titleText));
   contentNode.className('yoya-vrouter-views-content');
   contentNode.styles({ minHeight: '120px', padding: '16px' });
   node.child(titleNode, contentNode);
