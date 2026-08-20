@@ -7,6 +7,7 @@
 - `vMenu` / `vMenuItem`
 - `vMenuGroup` / `vMenuDivider`
 - `vSubMenu`
+- `vSidebar`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
@@ -74,6 +75,8 @@ menu.vMenuGroup((group) => {
 
 嵌套命令使用 `vSubMenu`。点击触发器，或聚焦后按 `ArrowRight`、`Enter`、空格可展开并进入子菜单；按 `ArrowLeft` 或 `Escape` 收起并返回上一级。点击外部区域或选择可用的叶子命令也会关闭子菜单，禁用的子菜单不会展开。
 
+后台导航使用 `vSidebar` 组合现有的 `vMenuGroup`、`vMenuItem` 和 `vSubMenu`。通过 `title()` 设置标题、`menuContent()` 填充导航，`collapsed()` / `toggle()` 控制折叠；菜单继续支持方向键、`Home` / `End` 和当前项的 `aria-current`。调用 `responsive('(max-width: 768px)')` 后，侧栏会跟随媒体查询折叠，并在销毁时释放监听器。
+
 日期和时间输入使用 `vTimer`，通过 `mode` 选择 `date`、`datetime-local` 或 `time`：
 
 ```js
@@ -137,7 +140,7 @@ example.child(
 页面壳层只负责遍历分类和组合组件，具体演示按大类维护：
 
 - `demos/actions-feedback.js`：操作、审计、语言切换与反馈。
-- `demos/navigation.js`：命令菜单、下拉菜单与上下文菜单。
+- `demos/navigation.js`：命令菜单、下拉菜单、上下文菜单与后台侧栏。
 - `demos/data-display.js`：详情、代码片段与表格。
 - `demos/forms-datetime.js`：表单、字段模式、`vTimer` 与 `vTimerRange`。
 

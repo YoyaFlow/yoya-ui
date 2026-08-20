@@ -9,7 +9,7 @@ import {
   ServiceFormCard,
   TimerRangeCard
 } from './demos/forms-datetime.js';
-import { CommandMenuCard, OverlayMenuCard, SubMenuCard } from './demos/navigation.js';
+import { CommandMenuCard, OverlayMenuCard, SidebarCard, SubMenuCard } from './demos/navigation.js';
 
 const demoComponents = [
   DeploymentTaskCard,
@@ -18,6 +18,7 @@ const demoComponents = [
   CommandMenuCard,
   SubMenuCard,
   OverlayMenuCard,
+  SidebarCard,
   ServiceDetailCard,
   SqlSnippetCard,
   ServiceTableCard,
@@ -59,7 +60,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(4);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(13);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(14);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -94,7 +95,7 @@ export function SampleCard() {
     ]);
     expect(categoryLinks.map((link) => link.textContent)).toEqual([
       '操作与反馈3 个演示',
-      '导航菜单3 个演示',
+      '导航菜单4 个演示',
       '数据展示3 个演示',
       '表单与日期时间4 个演示'
     ]);
@@ -111,8 +112,9 @@ export function SampleCard() {
     renderComponentsExample('#app');
 
     const navigation = document.querySelector('[data-demo-category="navigation"]');
-    const groups = navigation.querySelectorAll('.yoya-vmenu-group');
-    const divider = navigation.querySelector('.yoya-vmenu-divider');
+    const commandExample = navigation.querySelector('.component-example');
+    const groups = commandExample.querySelectorAll('.yoya-vmenu-group');
+    const divider = commandExample.querySelector('.yoya-vmenu-divider');
     const commandSource = document.querySelectorAll('[data-source-example]')[3].textContent;
 
     expect(groups).toHaveLength(2);
@@ -143,13 +145,35 @@ export function SampleCard() {
     expect(navigationSource).toContain('menu.vSubMenu');
   });
 
+  it('demonstrates a collapsible sidebar with generated component source', () => {
+    renderComponentsExample('#app');
+
+    const navigation = document.querySelector('[data-demo-category="navigation"]');
+    const sidebar = navigation.querySelector('.yoya-vsidebar');
+    const toggle = sidebar.querySelector('.yoya-vsidebar-toggle');
+    const source = Array.from(
+      navigation.querySelectorAll('[data-source-example]'),
+      (panel) => panel.textContent
+    ).join('\n');
+
+    expect(sidebar.getAttribute('aria-label')).toBe('后台主导航');
+    expect(sidebar.querySelector('[aria-current="page"]').textContent).toContain('服务概览');
+    expect(sidebar.querySelector('.yoya-vmenu-group')).not.toBeNull();
+    expect(sidebar.querySelector('.yoya-vsubmenu')).not.toBeNull();
+    toggle.click();
+    expect(sidebar.dataset.collapsed).toBe('true');
+    expect(source).toContain('body.vSidebar');
+    expect(source).toContain('menu.vMenuGroup');
+    expect(source).toContain('menu.vSubMenu');
+  });
+
   it('renders compound components and interactive feedback', () => {
     const root = renderComponentsExample('#app');
 
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.yoya-vcard')).toHaveLength(13);
+    expect(root.commit().querySelectorAll('.yoya-vcard')).toHaveLength(14);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -161,6 +185,7 @@ export function SampleCard() {
     expect(document.body.textContent).toContain('命令菜单');
     expect(document.body.textContent).toContain('嵌套菜单');
     expect(document.body.textContent).toContain('浮层菜单');
+    expect(document.body.textContent).toContain('后台侧栏');
     expect(document.body.textContent).toContain('服务详情');
     expect(document.body.textContent).toContain('SQL 片段');
     expect(document.body.textContent).toContain('服务表格');
@@ -238,7 +263,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(13);
+    expect(sourceBlocks).toHaveLength(14);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -247,9 +272,9 @@ export function SampleCard() {
     });
     expect(sourceBlocks[0].textContent).toContain("import { vCard, vText } from 'yoya-ui';");
     expect(sourceBlocks[0].textContent).toContain("['拉取镜像', '应用配置', '重启服务']");
-    expect(sourceBlocks[9].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[10].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[11].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[12].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[10].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[11].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[12].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[13].textContent).toContain('stack.vTimerRange');
   });
 });

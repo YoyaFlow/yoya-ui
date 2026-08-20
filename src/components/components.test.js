@@ -3,6 +3,7 @@ import {
   HtmlElementNode,
   VMenuDivider,
   VMenuGroup,
+  VSidebar,
   VSubMenu,
   VTimer,
   VTimerRange,
@@ -28,6 +29,7 @@ import {
   vMenu,
   vMenuDivider,
   vMenuGroup,
+  vSidebar,
   vMenuItem,
   vSubMenu,
   vMessage,
@@ -315,6 +317,225 @@ describe('compound components', () => {
     expect(trigger.textContent).toContain('更多操作');
     expect(panel.style.display).toBe('none');
     expect(panel.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menu');
+  it('creates an accessible sidebar from existing navigation compounds', () => {
+    const sidebar = vSidebar({
+      ariaLabel: '?????',
+      title: '????',
+      menuContent(menu) {
+        menu.vMenuGroup((group) => {
+          group.label('???');
+          group.vMenuItem({ active: true, icon: 'O', text: '??' });
+        });
+        menu.vSubMenu((submenu) => {
+          submenu.label('????');
+          submenu.menuContent((nested) => nested.vMenuItem('????'));
+        });
+      }
+    });
+    const element = sidebar.renderDom();
+    const toggle = element.querySelector('.yoya-vsidebar-toggle');
+    const menu = element.querySelector('.yoya-vmenu');
+
+    expect(sidebar).toBeInstanceOf(VSidebar);
+    expect(vSidebar(sidebar)).toBe(sidebar);
+    expect(element.tagName).toBe('ASIDE');
+    expect(element.getAttribute('aria-label')).toBe('?????');
+    expect(element.querySelector('.yoya-vsidebar-title').textContent).toBe('????');
+    expect(toggle.getAttribute('aria-controls')).toBe(menu.id);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.getAttribute('aria-label')).toBe('???????');
+    expect(element.querySelector('.yoya-vmenu-group').getAttribute('role')).toBe('group');
+    expect(element.querySelector('[aria-current="page"]').textContent).toContain('??');
+    expect(element.querySelector('.yoya-vsubmenu-trigger').textContent).toContain('????');
+
+    const configured = vSidebar({ collapsed: true, responsive: false }).renderDom();
+    expect(configured.dataset.collapsed).toBe('true');
+    expect(configured.dataset.responsive).toBeUndefined();
+  });
+
+  it('toggles sidebar collapse without removing accessible menu labels', () => {
+    const sidebar = vSidebar((navigation) => {
+      navigation.title('????');
+      navigation.menuContent((menu) => {
+        menu.vMenuItem({ icon: 'O', text: '??' });
+        menu.vSubMenu((submenu) => {
+          submenu.label('????');
+          submenu.menuContent((nested) => nested.vMenuItem('????'));
+          submenu.open(true);
+        });
+      });
+    }).bindTo(document.body);
+    const element = sidebar.renderDom();
+    const toggle = element.querySelector('.yoya-vsidebar-toggle');
+    const label = element.querySelector('.yoya-vmenu-item-label');
+    const submenu = element.querySelector('.yoya-vsubmenu');
+    const submenuTrigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const submenuShortcut = submenuTrigger.querySelector('.yoya-vmenu-item-shortcut');
+
+    toggle.click();
+
+    expect(element.dataset.collapsed).toBe('true');
+    expect(element.style.width).toBe('72px');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.getAttribute('aria-label')).toBe('??????');
+    expect(toggle.textContent).toBe('?');
+    expect(label.textContent).toBe('??');
+    expect(label.style.position).toBe('absolute');
+    expect(submenu.dataset.open).toBeUndefined();
+    expect(submenuShortcut.textContent).toBe('?');
+    expect(submenuShortcut.style.position).toBe('');
+
+    submenuTrigger.click();
+    expect(element.dataset.collapsed).toBeUndefined();
+    expect(element.style.width).toBe('260px');
+    expect(label.style.position).toBe('');
+    expect(submenu.dataset.open).toBe('true');
+
+    sidebar.collapsed(true);
+    submenuTrigger.focus();
+    submenuTrigger.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' })
+    );
+    expect(element.dataset.collapsed).toBeUndefined();
+    expect(submenu.dataset.open).toBe('true');
+  });
+
+  it('keeps menu roving focus and collapses the sidebar with Escape', () => {
+    const sidebar = vSidebar((navigation) => {
+      navigation.menuContent((menu) => {
+        menu.vMenuItem((item) => item.id('sidebar-overview').text('??'));
+        menu.vMenuItem((item) => item.id('sidebar-disabled').text('??').disabled(true));
+        menu.vMenuItem((item) => item.id('sidebar-services').text('??'));
+      });
+    }).bindTo(document.body);
+    const element = sidebar.renderDom();
+    const overview = element.querySelector('#sidebar-overview');
+    const services = element.querySelector('#sidebar-services');
+    const toggle = element.querySelector('.yoya-vsidebar-toggle');
+
+    overview.focus();
+    overview.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    expect(document.activeElement).toBe(services);
+
+    services.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Home' }));
+    expect(document.activeElement).toBe(overview);
+
+    overview.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }));
+    expect(element.dataset.collapsed).toBe('true');
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it('responds to sidebar breakpoints and releases the media listener', () => {
+    const originalMatchMedia = window.matchMedia;
+    let changeListener;
+    const media = {
+      matches: false,
+      media: '(max-width: 720px)',
+      addEventListener: vi.fn((type, listener) => {
+        if (type === 'change') changeListener = listener;
+      }),
+      removeEventListener: vi.fn()
+    };
+    window.matchMedia = vi.fn(() => media);
+
+    try {
+      const sidebar = vSidebar((navigation) => {
+        navigation.menuContent((menu) => {
+          menu.vSubMenu((submenu) => {
+            submenu.label('????');
+            submenu.menuContent((nested) => {
+              nested.vMenuItem((item) => item.id('sidebar-responsive-member').text('????'));
+            });
+          });
+        });
+        navigation.responsive('(max-width: 720px)');
+      }).bindTo(document.body);
+      const element = sidebar.renderDom();
+      const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+      const nestedItem = element.querySelector('#sidebar-responsive-member');
+
+      expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 720px)');
+      expect(element.dataset.responsive).toBe('true');
+      expect(element.dataset.collapsed).toBeUndefined();
+
+      trigger.click();
+      nestedItem.focus();
+      expect(document.activeElement).toBe(nestedItem);
+
+      media.matches = true;
+      changeListener({ matches: true });
+      expect(element.dataset.collapsed).toBe('true');
+      expect(document.activeElement).toBe(trigger);
+
+      media.matches = false;
+      changeListener({ matches: false });
+      expect(element.dataset.collapsed).toBeUndefined();
+
+      sidebar.destroy();
+      expect(media.removeEventListener).toHaveBeenCalledWith('change', changeListener);
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
+  it('keeps sidebar content collapsed when it is added after responsive state', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn(() => ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {}
+    }));
+
+    try {
+      let group;
+      let submenu;
+      const sidebar = vSidebar((navigation) => {
+        navigation.responsive('(max-width: 720px)');
+        navigation.menuContent((menu) => {
+          menu.vMenuItem('??');
+          menu.vMenuGroup((navigationGroup) => {
+            group = navigationGroup;
+            group.label('???');
+          });
+          menu.vSubMenu((navigationSubmenu) => {
+            submenu = navigationSubmenu;
+            submenu.label('????');
+            submenu.menuContent(() => {});
+          });
+        });
+      });
+
+      group.vMenuItem('???????');
+      submenu.menuContent((nested) => nested.vMenuItem('???????'));
+      const element = sidebar.renderDom();
+
+      let labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      expect(labels).toHaveLength(4);
+      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+
+      group.vMenuItem('???????');
+      submenu.menuContent().vMenuItem('???????');
+      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      expect(labels).toHaveLength(6);
+      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+
+      sidebar.menuContent((menu) => menu.vMenuItem('????'));
+      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      expect(labels).toHaveLength(1);
+      expect(labels[0].textContent).toBe('????');
+      expect(labels[0].style.position).toBe('absolute');
+
+      sidebar.menuContent().vMenuItem('????');
+      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      expect(labels).toHaveLength(2);
+      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+
+      sidebar.destroy();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
     expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
   });
 

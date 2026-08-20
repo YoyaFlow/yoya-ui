@@ -152,13 +152,61 @@ export function OverlayMenuCard({ toast }) {
   };
 }
 
+export function SidebarCard({ toast }) {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('后台侧栏');
+        card.vCardBody((body) => {
+          body.vSidebar((sidebar) => {
+            sidebar.ariaLabel('后台主导航');
+            sidebar.title('运维中心');
+            sidebar.responsive('(max-width: 720px)');
+            sidebar.menuContent((menu) => {
+              menu.vMenuGroup((group) => {
+                group.label('工作台');
+                group.vMenuItem((item) => {
+                  item.icon('O');
+                  item.text('服务概览');
+                  item.active(true);
+                  item.on('click', () => toast.info('侧栏导航：服务概览', { duration: 0 }));
+                });
+                group.vMenuItem((item) => {
+                  item.icon('D');
+                  item.text('部署任务');
+                  item.on('click', () => toast.info('侧栏导航：部署任务', { duration: 0 }));
+                });
+              });
+              menu.vMenuDivider();
+              menu.vSubMenu((submenu) => {
+                submenu.trigger({ icon: 'S', label: '系统设置' });
+                submenu.menuContent((settings) => {
+                  settings.vMenuItem((item) => {
+                    item.text('成员管理');
+                    item.on('click', () => toast.info('侧栏导航：成员管理', { duration: 0 }));
+                  });
+                  settings.vMenuItem((item) => {
+                    item.text('权限策略');
+                    item.on('click', () => toast.info('侧栏导航：权限策略', { duration: 0 }));
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 export const navigationCategory = {
-  description: '命令、下拉与上下文菜单。',
+  description: '命令、下拉、上下文菜单与后台侧栏。',
   id: 'navigation',
   title: '导航菜单',
   demos: [
     { component: CommandMenuCard, imports: ['vCard'], title: '命令菜单核心源码' },
     { component: SubMenuCard, imports: ['vCard'], title: '嵌套菜单核心源码' },
-    { component: OverlayMenuCard, imports: ['vCard'], title: '浮层菜单核心源码' }
+    { component: OverlayMenuCard, imports: ['vCard'], title: '浮层菜单核心源码' },
+    { component: SidebarCard, imports: ['vCard'], title: '后台侧栏核心源码' }
   ]
 };

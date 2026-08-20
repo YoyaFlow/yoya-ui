@@ -4,6 +4,7 @@ import { HtmlElementNode } from '../html/index.js';
 const componentClass = 'yoya-component';
 const messageTypes = ['success', 'error', 'warning', 'info'];
 let menuGroupSequence = 0;
+let sidebarSequence = 0;
 let submenuSequence = 0;
 let timerRangeSequence = 0;
 
@@ -269,6 +270,7 @@ export class VMenu extends HtmlElementNode {
   vertical() {
     return this.orientation('vertical');
   }
+    this._sidebarContentChangeCallback?.();
 
   renderDom() {
     const element = super.renderDom();
@@ -655,6 +657,7 @@ export class VMenuGroup extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
+    this._sidebarContentChangeCallback?.();
       const { children, label, title, ...elementConfig } = setup;
       if (Object.keys(elementConfig).length > 0) this.setup(elementConfig);
       if (label !== undefined) this.label(label);
@@ -964,6 +967,257 @@ export class VDropdownMenu extends HtmlElementNode {
         background: '#ffffff',
         border: '1px solid #d8dee8',
         borderRadius: '8px',
+export class VSidebar extends HtmlElementNode {
+  constructor(setup = null) {
+    super('aside', null);
+    const menuId = `yoya-vsidebar-menu-${++sidebarSequence}`;
+    this._responsiveCleanup = null;
+    this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
+    this._toggle = new VButton('?')
+      .className('yoya-vsidebar-toggle')
+      .attr({
+        'aria-controls': menuId,
+        'aria-expanded': 'true',
+        'aria-label': '??????'
+      })
+      .on('click', () => this.toggle());
+    this._header = new HtmlElementNode('div')
+      .className('yoya-vsidebar-header')
+      .styles({
+        alignItems: 'center',
+        display: 'flex',
+        gap: '12px',
+        justifyContent: 'space-between'
+      })
+      .child(this._titleBox, this._toggle);
+    this._menu = new VMenu()
+      .id(menuId)
+      .className('yoya-vsidebar-menu')
+      .attr('aria-label', '??????');
+    this._menu._sidebarContentChangeCallback = () =>
+      setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+    this._menu.on('yoya:menuitem-statechange', this._menu._sidebarContentChangeCallback);
+
+    this.className(componentClass, 'yoya-vsidebar');
+    this.attr('aria-label', '????');
+    this.styles({
+      background: '#ffffff',
+      border: '1px solid #d8dee8',
+      borderRadius: '8px',
+      boxSizing: 'border-box',
+      display: 'grid',
+      gap: '12px',
+      overflow: 'hidden',
+      padding: '12px',
+      transition: 'width 160ms ease',
+      width: '260px'
+    });
+    this.on('keydown', (event) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || this.getBooleanState('collapsed')) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      this.collapsed(true);
+      this._toggle._el?.focus();
+    });
+    this.child(this._header, this._menu);
+    this._setupSidebar(setup);
+  }
+
+  title(content) {
+    replaceChildren(this._titleBox, normalizeChildren(content));
+    return this;
+  }
+
+  ariaLabel(content) {
+    const label = resolveTextValue(content) || '????';
+    this.attr('aria-label', label);
+    this._menu.attr('aria-label', `${label}??`);
+    return this;
+  }
+
+  menuContent(setup) {
+    if (setup === undefined) {
+      return this._menu;
+    }
+
+    setupContentSlot(this._menu, setup);
+    setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+    return this;
+  }
+
+  collapsed(value = true) {
+    const collapsed = Boolean(value);
+    this.setState('collapsed', collapsed);
+    this.attr('data-collapsed', collapsed ? 'true' : null);
+    this.style('width', collapsed ? '72px' : '260px');
+    this._toggle
+      .label(collapsed ? '?' : '?')
+      .attr('aria-expanded', collapsed ? 'false' : 'true')
+      .attr('aria-label', collapsed ? '??????' : '??????');
+    setSidebarContentCollapsed(this._menu, collapsed, this);
+    setSidebarVisuallyHidden(this._titleBox, collapsed);
+    return this;
+  }
+
+  toggle() {
+    return this.collapsed(!this.getBooleanState('collapsed'));
+  }
+
+  responsive(query = '(max-width: 768px)') {
+    this._releaseResponsiveListener();
+
+    if (query === false) {
+      this.attr({ 'data-responsive': null, 'data-responsive-query': null });
+      return this;
+    }
+
+    const mediaQuery = typeof query === 'string' && query ? query : '(max-width: 768px)';
+    this.attr({ 'data-responsive': 'true', 'data-responsive-query': mediaQuery });
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return this;
+    }
+
+    const media = window.matchMedia(mediaQuery);
+    const handleChange = (event) => this.collapsed(event.matches);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange);
+      this._responsiveCleanup = () => media.removeEventListener('change', handleChange);
+    } else if (typeof media.addListener === 'function') {
+      media.addListener(handleChange);
+      this._responsiveCleanup = () => media.removeListener(handleChange);
+    }
+    this.collapsed(media.matches);
+    return this;
+  }
+
+  destroy() {
+    this._releaseResponsiveListener();
+    return super.destroy();
+  }
+
+  _releaseResponsiveListener() {
+    if (this._responsiveCleanup) {
+      this._responsiveCleanup();
+      this._responsiveCleanup = null;
+    }
+  }
+
+  _setupSidebar(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { ariaLabel, children, content, menu, menuContent, title, ...elementConfig } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        super._setupObject(elementConfig);
+      }
+
+      if (title !== undefined) this.title(title);
+      if (ariaLabel !== undefined) this.ariaLabel(ariaLabel);
+      const navigation = menuContent ?? menu ?? content ?? children;
+      if (navigation !== undefined) this.menuContent(navigation);
+      return;
+    }
+
+    this.title(setup);
+  }
+}
+
+function setSidebarContentCollapsed(root, collapsed, sidebar) {
+  const contentChangeCallback = sidebar?._menu._sidebarContentChangeCallback;
+  const visit = (node, { preserveShortcut = false } = {}) => {
+    if ((node instanceof VMenu || node instanceof VMenuGroup) && contentChangeCallback) {
+      node._sidebarContentChangeCallback = contentChangeCallback;
+    }
+
+    if (node instanceof VMenuItem) {
+      setSidebarVisuallyHidden(node._labelBox, collapsed);
+      setSidebarVisuallyHidden(node._shortcutBox, collapsed && !preserveShortcut);
+      return;
+    }
+
+    if (node instanceof VSubMenu) {
+      bindSidebarSubMenuExpansion(node, sidebar);
+      if (collapsed) {
+        const activeElement = node._panel._el?.ownerDocument.activeElement;
+        if (activeElement && node._panel._el.contains(activeElement)) {
+          node._trigger._el?.focus();
+        }
+        node.close();
+      }
+      visit(node._trigger, { preserveShortcut: true });
+      visit(node._menu);
+      return;
+    }
+
+    if (node instanceof VMenuGroup) {
+      setSidebarVisuallyHidden(node._labelBox, collapsed);
+    }
+
+    if (typeof node.children === 'function') {
+      node.children().forEach(visit);
+    }
+  };
+
+  visit(root);
+}
+
+function bindSidebarSubMenuExpansion(submenu, sidebar) {
+  if (!sidebar || submenu._sidebarExpandOwner === sidebar) {
+    return;
+  }
+
+  submenu._sidebarExpandOwner = sidebar;
+  const expandSidebar = () => {
+    if (!submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
+      sidebar.collapsed(false);
+    }
+  };
+  submenu._trigger.on('click', expandSidebar);
+  submenu._trigger.on('keydown', (event) => {
+    if (['ArrowRight', 'Enter', ' ', 'Spacebar'].includes(event.key)) {
+      expandSidebar();
+    }
+  });
+}
+
+function setSidebarVisuallyHidden(node, hidden) {
+  const hiddenStyles = {
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    height: '1px',
+    overflow: 'hidden',
+    position: 'absolute',
+    whiteSpace: 'nowrap',
+    width: '1px'
+  };
+
+  if (hidden) {
+    if (!node._sidebarVisibleStyles) {
+      node._sidebarVisibleStyles = Object.fromEntries(
+        Object.keys(hiddenStyles).map((name) => [name, node.style(name) ?? null])
+      );
+    }
+    node.styles(hiddenStyles);
+    return;
+  }
+
+  if (node._sidebarVisibleStyles) {
+    node.styles(node._sidebarVisibleStyles);
+    node._sidebarVisibleStyles = null;
+  }
+}
+
         boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
         display: 'none',
         minWidth: '200px',
@@ -2170,6 +2424,10 @@ export function vDetail(setup = null) {
 
 export function vDetailItem(setup = null, value = undefined) {
   return setup instanceof VDetailItem && value === undefined ? setup : new VDetailItem(setup, value);
+export function vSidebar(setup = null) {
+  return setup instanceof VSidebar ? setup : new VSidebar(setup);
+}
+
 }
 
 export function vCode(setup = null) {
@@ -2267,6 +2525,7 @@ function applyComponentSetup(node, setup) {
   }
 
   if (isPlainObject(setup)) {
+  vSidebar,
     node.setup(setup);
   }
 
