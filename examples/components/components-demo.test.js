@@ -3,7 +3,12 @@ import { componentSource } from './component-source.js';
 import { componentDemoCategories, renderComponentsExample } from './components-demo.js';
 import { AuditCard, DeploymentTaskCard, LocaleSwitchCard } from './demos/actions-feedback.js';
 import { DynamicModuleCard } from './demos/async-dynamic.js';
-import { ServiceDetailCard, ServiceTableCard, SqlSnippetCard } from './demos/data-display.js';
+import {
+  CodeBlockCard,
+  ServiceDetailCard,
+  ServiceTableCard,
+  SqlSnippetCard
+} from './demos/data-display.js';
 import {
   OwnerFieldCard,
   ScheduleTimerCard,
@@ -28,6 +33,7 @@ const demoComponents = [
   BodyPageCard,
   ServiceDetailCard,
   SqlSnippetCard,
+  CodeBlockCard,
   ServiceTableCard,
   ServiceFormCard,
   OwnerFieldCard,
@@ -67,7 +73,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(7);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(18);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(19);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -109,7 +115,7 @@ export function SampleCard() {
       '路由导航2 个演示',
       '异步与动态1 个演示',
       '页面布局1 个演示',
-      '数据展示3 个演示',
+      '数据展示4 个演示',
       '表单与日期时间4 个演示'
     ]);
     expect(categoryHeadings).toEqual([
@@ -159,6 +165,24 @@ export function SampleCard() {
     expect(loader.textContent).toContain('审计模块已就绪');
     expect(source).toContain('vDynamicLoader');
     expect(source).toContain('moduleLoader.retry');
+  });
+
+  it('demonstrates CodeBlock language, copy label, dynamic content, and generated source', () => {
+    renderComponentsExample('#app');
+
+    const block = document.querySelector('.yoya-code-block');
+    const source = Array.from(
+      document.querySelectorAll('[data-demo-category="data-display"] [data-source-example]'),
+      (panel) => panel.textContent
+    ).join('\n');
+
+    expect(block.dataset.language).toBe('log');
+    expect(block.querySelector('.yoya-vcode-copy').textContent).toBe('复制日志');
+    expect(block.querySelector('.yoya-vcode-content').textContent).toContain('request_id=api-42');
+    document.querySelector('#code-block-update').click();
+    expect(block.querySelector('.yoya-vcode-content').textContent).toContain('status=recovered');
+    expect(source).toContain('codeBlock');
+    expect(source).toContain('logBlock.content');
   });
 
   it('demonstrates router links, params, query, 404, and generated component source', () => {
@@ -263,7 +287,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(18);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(19);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -353,7 +377,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(18);
+    expect(sourceBlocks).toHaveLength(19);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -366,9 +390,10 @@ export function SampleCard() {
     expect(sourceBlocks[8].textContent).toContain('vRouter');
     expect(sourceBlocks[9].textContent).toContain('vDynamicLoader');
     expect(sourceBlocks[10].textContent).toContain('body.vBody');
-    expect(sourceBlocks[14].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[15].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[16].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[17].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[13].textContent).toContain('codeBlock');
+    expect(sourceBlocks[15].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[16].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[17].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[18].textContent).toContain('stack.vTimerRange');
   });
 });

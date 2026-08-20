@@ -3,5 +3,6 @@ export * from './html/index.js';
 export * from './svg/index.js';
 export * from './layout/index.js';
 export * from './components/index.js';
+export * from './code-block.js';
 export * from './dynamic-loader.js';
 export * from './router.js';

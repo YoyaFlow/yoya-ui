@@ -1,4 +1,4 @@
-import { vButton, vCard, vText } from '../../../src/index.js';
+import { codeBlock, vButton, vCard, vText } from '../../../src/index.js';
 
 export function ServiceDetailCard({ toast }) {
   const serviceState = vText('运行中');
@@ -52,6 +52,42 @@ export function SqlSnippetCard() {
             stack.vCode((code) => {
               code.language('sql');
               code.content('SELECT id, name, status FROM services ORDER BY updated_at DESC;');
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+export function CodeBlockCard() {
+  const logBlock = codeBlock({
+    content:
+      '2026-08-20T12:00:00Z level=error request_id=api-42 status=timeout\n' +
+      '2026-08-20T12:00:01Z level=info request_id=api-42 retry=1',
+    copyLabel: '复制日志',
+    language: 'log'
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('日志代码块');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('CodeBlock 复用 vCode，并提供适合文档、SQL 和长日志的快捷入口。');
+            stack.child(logBlock);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton((button) => {
+            button.id('code-block-update');
+            button.label('更新日志');
+            button.on('click', () => {
+              logBlock.content(
+                '2026-08-20T12:00:02Z level=info request_id=api-42 status=recovered'
+              );
             });
           });
         });
@@ -116,6 +152,11 @@ export const dataDisplayCategory = {
       title: '服务详情核心源码'
     },
     { component: SqlSnippetCard, imports: ['vCard'], title: 'SQL 片段核心源码' },
+    {
+      component: CodeBlockCard,
+      imports: ['codeBlock', 'vCard'],
+      title: '日志代码块核心源码'
+    },
     {
       component: ServiceTableCard,
       imports: ['vButton', 'vCard'],

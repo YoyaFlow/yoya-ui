@@ -12,6 +12,7 @@
 - `vLink` / `vRouterView`
 - `vRouter` / `vRoute`
 - `vDynamicLoader`
+- `CodeBlock` / `codeBlock`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
