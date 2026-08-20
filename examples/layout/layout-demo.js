@@ -98,14 +98,20 @@ export function renderLayoutExample(target = '#app') {
           });
         });
 
-        body.grid((metrics) => {
+        body.responsiveGrid((metrics) => {
           metricsGrid = metrics;
+          metrics.breakpoints([
+            { minWidth: 600, columns: 2 },
+            { minWidth: 1000, columns: 4 }
+          ]);
+          metrics.minColumnWidth('220px');
           metrics.id('metric-grid');
           metrics.className('metric-grid');
           metrics.styles({
             gap: '14px',
             gridTemplateColumns: 'repeat(4, minmax(0, 1fr))'
           });
+          metrics.refresh();
 
           metricCards.forEach(([label, value, hint, tone]) => {
             metrics.article((card) => {

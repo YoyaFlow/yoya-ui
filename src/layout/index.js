@@ -10,11 +10,13 @@ const layoutOptionNames = new Set([
   'gap',
   'justify',
   'maxWidth',
+  'minColumnWidth',
   'orientation',
   'padding',
   'paddingInline',
   'rows',
   'size',
+  'breakpoints',
   'wrap'
 ]);
 
@@ -62,6 +64,82 @@ export function grid(setup = null) {
   return createLayoutNode('grid', { display: 'grid' }, setup, applyGridOptions);
 }
 
+export function responsiveGrid(setup = null) {
+  const node = createLayoutNode(
+    'responsive-grid',
+    { display: 'grid' },
+    typeof setup === 'function' ? null : setup,
+    applyResponsiveGridOptions
+  );
+  const options = isPlainObject(setup) ? setup : {};
+  node._responsiveGridBreakpoints = normalizeBreakpoints(options.breakpoints);
+  node._responsiveGridMinColumnWidth = normalizeMinColumnWidth(options.minColumnWidth);
+
+  node._responsiveGridRefresh = () => {
+    const width = typeof window === 'undefined' ? null : window.innerWidth;
+    const match =
+      width === null
+        ? null
+        : node._responsiveGridBreakpoints
+            .filter((breakpoint) => width >= breakpoint.minWidth)
+            .at(-1);
+    node.style(
+      'gridTemplateColumns',
+      match
+        ? `repeat(${match.columns}, minmax(0, 1fr))`
+        : `repeat(auto-fit, minmax(${node._responsiveGridMinColumnWidth}, 1fr))`
+    );
+    return node;
+  };
+  node.refresh = node._responsiveGridRefresh;
+  node.minColumnWidth = (value) => {
+    if (value === undefined) return node._responsiveGridMinColumnWidth;
+    node._responsiveGridMinColumnWidth = normalizeMinColumnWidth(value);
+    node._responsiveGridRefresh();
+    return node;
+  };
+  node.breakpoints = (value) => {
+    if (value === undefined) return node._responsiveGridBreakpoints;
+    node._responsiveGridBreakpoints = normalizeBreakpoints(value);
+    if (
+      node._responsiveGridBreakpoints.length &&
+      !node._responsiveGridResize &&
+      typeof window !== 'undefined'
+    ) {
+      node._responsiveGridResize = () => node._responsiveGridRefresh();
+      window.addEventListener('resize', node._responsiveGridResize);
+      wrapResponsiveGridDestroy(node);
+    }
+    node._responsiveGridRefresh();
+    return node;
+  };
+  node._responsiveGridRefresh();
+
+  if (node._responsiveGridBreakpoints.length && typeof window !== 'undefined') {
+    node._responsiveGridResize = () => node._responsiveGridRefresh();
+    window.addEventListener('resize', node._responsiveGridResize);
+    wrapResponsiveGridDestroy(node);
+  }
+
+  if (typeof setup === 'function') {
+    setup(node);
+  }
+
+  return node;
+}
+
+function wrapResponsiveGridDestroy(node) {
+  if (node._responsiveGridDestroyWrapped) return;
+  node._responsiveGridDestroyWrapped = true;
+  const destroy = node.destroy.bind(node);
+  node.destroy = () => {
+    if (node._responsiveGridResize) {
+      window.removeEventListener('resize', node._responsiveGridResize);
+    }
+    return destroy();
+  };
+}
+
 export function container(setup = null) {
   return createLayoutNode(
     'container',
@@ -107,6 +185,7 @@ const layoutFactories = {
   divider,
   flex,
   grid,
+  responsiveGrid,
   hstack,
   spacer,
   stack,
@@ -145,41 +224,57 @@ function applyLayoutSetup(node, setup, applyOptions) {
 }
 
 function applyFlexOptions(node, options) {
-  node.styles(compactStyles({
-    alignItems: options.align,
-    flexDirection: options.direction,
-    flexWrap: normalizeWrap(options.wrap),
-    gap: options.gap,
-    justifyContent: options.justify
-  }));
+  node.styles(
+    compactStyles({
+      alignItems: options.align,
+      flexDirection: options.direction,
+      flexWrap: normalizeWrap(options.wrap),
+      gap: options.gap,
+      justifyContent: options.justify
+    })
+  );
 }
 
 function applyGridOptions(node, options) {
-  node.styles(compactStyles({
-    gap: options.gap,
-    gridAutoFlow: options.autoFlow,
-    gridTemplateAreas: options.areas,
-    gridTemplateColumns: normalizeTracks(options.columns),
-    gridTemplateRows: normalizeTracks(options.rows)
-  }));
+  node.styles(
+    compactStyles({
+      gap: options.gap,
+      gridAutoFlow: options.autoFlow,
+      gridTemplateAreas: options.areas,
+      gridTemplateColumns: normalizeTracks(options.columns),
+      gridTemplateRows: normalizeTracks(options.rows)
+    })
+  );
+}
+
+function applyResponsiveGridOptions(node, options) {
+  node.style('gap', options.gap);
+  node.style(
+    'gridTemplateColumns',
+    `repeat(auto-fit, minmax(${normalizeMinColumnWidth(options.minColumnWidth)}, 1fr))`
+  );
 }
 
 function applyContainerOptions(node, options) {
   const paddingInline = options.paddingInline ?? options.padding;
 
-  node.styles(compactStyles({
-    maxWidth: options.maxWidth,
-    paddingLeft: paddingInline,
-    paddingRight: paddingInline
-  }));
+  node.styles(
+    compactStyles({
+      maxWidth: options.maxWidth,
+      paddingLeft: paddingInline,
+      paddingRight: paddingInline
+    })
+  );
 }
 
 function applySpacerOptions(node, options) {
-  node.styles(compactStyles({
-    flexBasis: options.size,
-    height: options.orientation === 'vertical' ? options.size : undefined,
-    width: options.orientation === 'horizontal' ? options.size : undefined
-  }));
+  node.styles(
+    compactStyles({
+      flexBasis: options.size,
+      height: options.orientation === 'vertical' ? options.size : undefined,
+      width: options.orientation === 'horizontal' ? options.size : undefined
+    })
+  );
 }
 
 function applyDividerOptions(node, options) {
@@ -216,6 +311,30 @@ function normalizeTracks(value) {
   return String(value);
 }
 
+function normalizeMinColumnWidth(value) {
+  if (typeof value === 'number') {
+    return `${value}px`;
+  }
+
+  return value || '240px';
+}
+
+function normalizeBreakpoints(value) {
+  if (!value) return [];
+
+  const entries = Array.isArray(value)
+    ? value
+    : Object.entries(value).map(([minWidth, columns]) => ({ minWidth, columns }));
+
+  return entries
+    .map((entry) => ({
+      columns: Number(entry.columns),
+      minWidth: Number.parseInt(entry.minWidth, 10)
+    }))
+    .filter(({ columns, minWidth }) => Number.isFinite(minWidth) && columns > 0)
+    .sort((left, right) => left.minWidth - right.minWidth);
+}
+
 function normalizeWrap(value) {
   if (value === true) {
     return 'wrap';
@@ -236,7 +355,9 @@ function omitLayoutOptions(config) {
 
 function compactStyles(styles) {
   return Object.fromEntries(
-    Object.entries(styles).filter(([, value]) => value !== undefined && value !== null && value !== false)
+    Object.entries(styles).filter(
+      ([, value]) => value !== undefined && value !== null && value !== false
+    )
   );
 }
 

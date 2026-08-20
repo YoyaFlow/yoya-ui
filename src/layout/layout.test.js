@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { center, container, divider, div, flex, grid, hstack, spacer, stack, vstack } from '../index.js';
+import {
+  center,
+  container,
+  divider,
+  div,
+  flex,
+  grid,
+  hstack,
+  responsiveGrid,
+  spacer,
+  stack,
+  vstack
+} from '../index.js';
 
 describe('layout components', () => {
   it('creates flex, stack, hstack, vstack, and center layout nodes', () => {
@@ -87,5 +99,75 @@ describe('layout components', () => {
     expect(root.toHTML()).toBe(
       '<div class="yoya-layout yoya-flex" style="display:flex; gap:12px"><div>A</div></div>'
     );
+  });
+
+  it('creates responsive grids with minimum columns and parent shortcuts', () => {
+    const cards = responsiveGrid({
+      minColumnWidth: 240,
+      gap: '16px',
+      children: [div('A'), div('B')]
+    });
+    const element = cards.renderDom();
+
+    expect(element.classList.contains('yoya-responsive-grid')).toBe(true);
+    expect(element.style.gridTemplateColumns).toBe('repeat(auto-fit, minmax(240px, 1fr))');
+    expect(element.style.gap).toBe('16px');
+    expect(element.textContent).toBe('AB');
+    expect(
+      container((root) => root.responsiveGrid({ minColumnWidth: '18rem' })).children()[0]
+    ).toBeDefined();
+  });
+
+  it('serializes responsive grid styles consistently for SSR', () => {
+    const root = responsiveGrid({ minColumnWidth: '14rem', gap: '12px', children: [div('A')] });
+
+    expect(root.toHTML()).toBe(
+      '<div class="yoya-layout yoya-responsive-grid" style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr))"><div>A</div></div>'
+    );
+  });
+
+  it('changes responsive grid columns at configured breakpoints and cleans up', () => {
+    const originalWidth = window.innerWidth;
+    const originalAdd = window.addEventListener;
+    const originalRemove = window.removeEventListener;
+    const listeners = new Map();
+    window.addEventListener = (type, listener) => listeners.set(type, listener);
+    window.removeEventListener = (type, listener) => {
+      if (listeners.get(type) === listener) listeners.delete(type);
+    };
+
+    try {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
+      const root = responsiveGrid({
+        minColumnWidth: 220,
+        breakpoints: [
+          { minWidth: 600, columns: 2 },
+          { minWidth: 1000, columns: 4 }
+        ]
+      });
+      const element = root.renderDom();
+
+      expect(element.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 });
+      listeners.get('resize')();
+      expect(element.style.gridTemplateColumns).toBe('repeat(4, minmax(0, 1fr))');
+
+      root.destroy();
+      expect(listeners.has('resize')).toBe(false);
+    } finally {
+      window.addEventListener = originalAdd;
+      window.removeEventListener = originalRemove;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
+  });
+
+  it('normalizes object-form responsive grid breakpoints', () => {
+    const root = responsiveGrid({ breakpoints: { 600: 2, 1000: 4 } });
+
+    expect(root.breakpoints()).toEqual([
+      { minWidth: 600, columns: 2 },
+      { minWidth: 1000, columns: 4 }
+    ]);
+    root.destroy();
   });
 });

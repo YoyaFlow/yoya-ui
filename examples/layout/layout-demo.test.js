@@ -13,10 +13,29 @@ describe('examples/layout layout demo', () => {
     expect(document.querySelector('#layout-demo .yoya-vstack')).not.toBeNull();
     expect(document.querySelector('#layout-demo .yoya-hstack')).not.toBeNull();
     expect(document.querySelector('#layout-demo .yoya-grid')).not.toBeNull();
+    expect(document.querySelector('#layout-demo .yoya-responsive-grid')).not.toBeNull();
     expect(document.querySelector('#layout-demo .yoya-spacer')).not.toBeNull();
     expect(document.querySelector('#layout-demo .yoya-divider')).not.toBeNull();
     expect(document.querySelectorAll('[data-layout-card]')).toHaveLength(4);
     expect(document.querySelector('[data-layout-panel="center"]').textContent).toContain('center');
+  });
+
+  it('renders responsive grid sizing and responds to viewport changes', () => {
+    document.body.innerHTML = '<main id="layout-root"></main>';
+    const originalWidth = window.innerWidth;
+
+    try {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 640 });
+      renderLayoutExample('#layout-root');
+      const metricsGrid = document.querySelector('#metric-grid');
+
+      expect(metricsGrid.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 });
+      window.dispatchEvent(new Event('resize'));
+      expect(metricsGrid.style.gridTemplateColumns).toBe('repeat(4, minmax(0, 1fr))');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
   });
 
   it('switches the metric grid between relaxed and compact columns', () => {
