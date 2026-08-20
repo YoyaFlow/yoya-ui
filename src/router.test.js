@@ -249,9 +249,10 @@ describe('router', () => {
       'auto'
     );
     const titleTab = views.renderDom().querySelector('.yoya-vrouter-views-title');
-    expect(titleTab.textContent).toBe('项目概览');
-    expect(titleTab.getAttribute('role')).toBe('tab');
-    expect(titleTab.style.display).toBe('inline-block');
+    const titleLabel = titleTab.querySelector('.yoya-vrouter-views-label');
+    expect(titleLabel.textContent).toBe('项目概览');
+    expect(titleLabel.getAttribute('role')).toBe('tab');
+    expect(titleTab.style.display).toBe('inline-flex');
     expect(titleTab.style.borderRadius).toBe('6px 6px 0 0');
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '概览内容'
@@ -259,17 +260,63 @@ describe('router', () => {
 
     appRouter.navigate('/editor', { replace: true });
     const titleTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
-    expect(Array.from(titleTabs, (tab) => tab.textContent)).toEqual(['项目概览', '代码编辑器']);
-    expect(titleTabs[0].getAttribute('aria-selected')).toBe('false');
-    expect(titleTabs[1].getAttribute('aria-selected')).toBe('true');
+    expect(
+      Array.from(titleTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+    ).toEqual(['项目概览', '代码编辑器']);
+    expect(titleTabs[0].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')).toBe(
+      'false'
+    );
+    expect(titleTabs[1].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')).toBe(
+      'true'
+    );
+    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-close')).toHaveLength(2);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '编辑内容'
     );
 
-    titleTabs[0].click();
+    titleTabs[0].querySelector('.yoya-vrouter-views-close').click();
+    expect(appRouter.currentPath()).toBe('/editor');
+    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '编辑内容'
+    );
+
+    appRouter.navigate('/overview', { replace: true });
+    const reopenedTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+    reopenedTabs[1].querySelector('.yoya-vrouter-views-close').click();
+    expect(appRouter.currentPath()).toBe('/editor');
+    expect(
+      reopenedTabs[0].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
+    ).toBe('true');
+    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '编辑内容'
+    );
+
+    reopenedTabs[0].querySelector('.yoya-vrouter-views-close').click();
+    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(0);
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe('');
+  });
+
+  it('switches to the previous tab when the active last tab closes', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/overview', { title: '项目概览', view: () => div('概览内容') }),
+        vRoute('/editor', { title: '代码编辑器', view: () => div('编辑内容') })
+      ]
+    });
+    const views = vRouterViews(appRouter);
+    div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/overview', { replace: true });
+    appRouter.navigate('/editor', { replace: true });
+    views
+      .renderDom()
+      .querySelector('[data-router-view-path="/editor"] .yoya-vrouter-views-close')
+      .click();
+
     expect(appRouter.currentPath()).toBe('/overview');
-    expect(titleTabs[0].getAttribute('aria-selected')).toBe('true');
-    expect(titleTabs[1].getAttribute('aria-selected')).toBe('false');
+    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '概览内容'
     );
@@ -289,7 +336,7 @@ describe('router', () => {
     const root = div((page) => page.child(views)).bindTo('#app');
 
     appRouter.navigate('/file/main.js', { replace: true });
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-label').textContent).toBe(
       '文件：main.js'
     );
     root.destroy();

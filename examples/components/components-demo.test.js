@@ -296,16 +296,22 @@ export function SampleCard() {
     const views = liveCard.querySelector('.yoya-vrouter-views');
 
     expect(
-      views.querySelector('.yoya-vrouter-views-title[aria-selected="true"]').textContent
+      views.querySelector(
+        '.yoya-vrouter-views-title .yoya-vrouter-views-label[aria-selected="true"]'
+      ).textContent
     ).toBe('overview.js');
     expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目概览内容');
     liveCard.querySelector('.yoya-vlink[href="#/settings"]').click();
     expect(
-      views.querySelector('.yoya-vrouter-views-title[aria-selected="true"]').textContent
+      views.querySelector(
+        '.yoya-vrouter-views-title .yoya-vrouter-views-label[aria-selected="true"]'
+      ).textContent
     ).toBe('settings.js');
     expect(views.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(2);
+    expect(views.querySelectorAll('.yoya-vrouter-views-close')).toHaveLength(2);
     expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目设置内容');
-    views.querySelector('[data-router-view-path="/overview"]').click();
+    views.querySelector('[data-router-view-path="/settings"] .yoya-vrouter-views-close').click();
+    expect(views.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
     expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目概览内容');
     expect(source).toContain('vRouterViews');
     expect(source).toContain("title: 'overview.js'");

@@ -104,7 +104,7 @@ export function RouterViewsEditorCard() {
           body.vstack((stack) => {
             stack.style('gap', '14px');
             stack.p(
-              '访问过的路由会保留为文件标签；点击 title 标签即可在已打开页面之间切换。'
+              '访问过的路由会保留为文件标签；点击 title 切换页面，点击 × 关闭标签。'
             );
             stack.hstack((tabs) => {
               tabs.style('gap', '8px');

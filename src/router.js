@@ -392,7 +392,9 @@ export function vRouterViews(routerInstance, setup = null) {
   };
 
   const styleTitleTab = (tab, active) => {
-    tab.attr('aria-selected', String(active));
+    tab.renderDom()
+      .querySelector('.yoya-vrouter-views-label')
+      ?.setAttribute('aria-selected', String(active));
     tab.styles({
       background: active ? '#ffffff' : '#eaeef2',
       borderBottomColor: active ? '#ffffff' : '#d0d7de',
@@ -401,32 +403,85 @@ export function vRouterViews(routerInstance, setup = null) {
     });
   };
 
+  const closeTitleTab = (path, event) => {
+    event.stopPropagation();
+    const entries = Array.from(state.tabs.entries());
+    const closingIndex = entries.findIndex(([tabPath]) => tabPath === path);
+    const entry = state.tabs.get(path);
+    if (!entry) return;
+
+    const wasActive =
+      entry.tab.renderDom().querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected') ===
+      'true';
+    state.tabs.delete(path);
+    titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
+    entry.tab.destroy();
+
+    if (!wasActive) return;
+    const remainingPaths = Array.from(state.tabs.keys());
+    if (remainingPaths.length > 0) {
+      const nextPath = remainingPaths[Math.min(closingIndex, remainingPaths.length - 1)];
+      routerInstance.navigate(nextPath, { replace: true });
+      return;
+    }
+
+    contentNode.clearChildren().commit();
+    routerInstance._currentView = null;
+  };
+
   const updateTitle = (context = {}) => {
     const path = context.path || routerInstance.currentPath();
     let entry = state.tabs.get(path);
 
     if (!entry) {
-      const tab = new ElementNode('button').className('yoya-vrouter-views-title');
+      const tab = new ElementNode('div').className('yoya-vrouter-views-title');
       const text = vText(resolveTitle(context));
-      tab.attr({ type: 'button', role: 'tab', 'data-router-view-path': path });
+      const label = new ElementNode('button').className('yoya-vrouter-views-label').child(text);
+      const closeButton = new ElementNode('button').className('yoya-vrouter-views-close');
+      tab.attr({ 'data-router-view-path': path });
       tab.styles({
+        alignItems: 'center',
         border: '1px solid #d0d7de',
         borderRadius: '6px 6px 0 0',
         cursor: 'pointer',
-        display: 'inline-block',
+        display: 'inline-flex',
         flexShrink: '0',
         font: 'inherit',
+        gap: '8px',
         marginBottom: '-9px',
         padding: '7px 14px 8px',
         whiteSpace: 'nowrap'
       });
-      tab.on('click', () => routerInstance.navigate(path));
-      tab.child(text);
+      label.attr({ role: 'tab', type: 'button' });
+      label.styles({
+        background: 'transparent',
+        border: '0',
+        color: 'inherit',
+        cursor: 'pointer',
+        font: 'inherit',
+        padding: '0'
+      });
+      label.on('click', () => routerInstance.navigate(path));
+      closeButton.attr({ type: 'button', 'aria-label': `关闭 ${resolveTitle(context)}` });
+      closeButton.styles({
+        background: 'transparent',
+        border: '0',
+        color: 'inherit',
+        cursor: 'pointer',
+        font: 'inherit',
+        lineHeight: '1',
+        padding: '0'
+      });
+      closeButton.text('×');
+      closeButton.on('click', (event) => closeTitleTab(path, event));
+      tab.child(label, closeButton);
       titleNode.child(tab);
-      entry = { tab, text };
+      entry = { closeButton, tab, text };
       state.tabs.set(path, entry);
     } else {
-      entry.text.textContent(resolveTitle(context));
+      const title = resolveTitle(context);
+      entry.text.textContent(title);
+      entry.closeButton.attr('aria-label', `关闭 ${title}`);
     }
 
     state.tabs.forEach(({ tab }, tabPath) => styleTitleTab(tab, tabPath === path));

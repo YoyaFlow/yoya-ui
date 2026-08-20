@@ -154,8 +154,10 @@ example.child(
 - `demos/data-display.js`：详情、代码片段、表格与图表适配器。
 - `demos/forms-datetime.js`：表单、字段模式、`vTimer` 与 `vTimerRange`。
 
-`vRouterViews` 会把访问过的路由按完整路径保留为文件标签。当前标签通过
-`aria-selected="true"` 标识，点击任一 `.yoya-vrouter-views-title` 会重新导航到对应路径；
-标签较多时标题栏支持横向滚动。
+`vRouterViews` 会把访问过的路由按完整路径保留为文件标签。当前
+`.yoya-vrouter-views-label` 通过 `aria-selected="true"` 标识，点击任一
+`.yoya-vrouter-views-title` 会重新导航到对应路径；
+点击 `.yoya-vrouter-views-close` 可关闭标签，关闭当前标签时自动切换到相邻页面，
+关闭最后一个标签时清空内容区；标签较多时标题栏支持横向滚动。
 
 新增演示时，把标准对象组件和分类描述放入所属文件，并让页面通过 `child(component(options))` 与 `ComponentSource` 组合它们。
