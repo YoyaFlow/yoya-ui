@@ -10,6 +10,7 @@
 - `vSidebar`
 - `vBody` / `responsiveGrid`
 - `vLink` / `vRouterView`
+- `vRouter` / `vRoute`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`

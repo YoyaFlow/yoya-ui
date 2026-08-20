@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { div, router, vLink, vRouterView, vText } from './index.js';
+import { div, router, vLink, vRoute, vRouter, vRouterView, vText } from './index.js';
 
 describe('router', () => {
   beforeEach(() => {
@@ -180,5 +180,51 @@ describe('router', () => {
 
     root.destroy();
     expect(appRouter._subscribers.size).toBe(0);
+  });
+
+  it('declares routes through vRoute descriptors and renders with vRouter', () => {
+    const appRouter = vRouter({
+      default: '/home',
+      notFound: ({ path }) => div(`404 ${path}`),
+      routes: [
+        vRoute('/home', () => div('首页')),
+        vRoute('/users/:id', ({ params, query }) => div(`${params.id}:${query.tab}`))
+      ]
+    });
+    const outlet = vRouterView(appRouter);
+    div((page) => page.child(outlet)).bindTo('#app');
+
+    appRouter.start();
+    expect(appRouter.currentPath()).toBe('/home');
+    expect(outlet.renderDom().textContent).toBe('首页');
+    appRouter.navigate('/users/7?tab=activity', { replace: true });
+    expect(outlet.renderDom().textContent).toBe('7:activity');
+    appRouter.navigate('/missing', { replace: true });
+    expect(outlet.renderDom().textContent).toBe('404 /missing');
+  });
+
+  it('supports vRouter setup callbacks and route guards without duplicating Router behavior', () => {
+    const guard = vi.fn(() => true);
+    const appRouter = vRouter((routes) => {
+      routes.default('/guarded');
+      routes.beforeEach(guard);
+      routes.vRoute('/guarded', {
+        beforeEnter: () => true,
+        view: () => div('通过')
+      });
+      routes.vRoute('/blocked', {
+        beforeEnter: () => false,
+        view: () => div('不应显示')
+      });
+      routes.notFound(() => div('404'));
+    });
+    const outlet = vRouterView(appRouter);
+    div((page) => page.child(outlet)).bindTo('#app');
+
+    appRouter.start();
+    appRouter.navigate('/blocked', { replace: true });
+    expect(guard).toHaveBeenCalled();
+    expect(appRouter.currentPath()).toBe('/guarded');
+    expect(outlet.renderDom().textContent).toBe('通过');
   });
 });

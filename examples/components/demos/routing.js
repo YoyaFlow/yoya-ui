@@ -1,4 +1,4 @@
-import { div, router, vCard } from '../../../src/index.js';
+import { div, router, vCard, vRoute, vRouter } from '../../../src/index.js';
 
 export function RouterNavigationCard() {
   const appRouter = router((routes) => {
@@ -52,6 +52,41 @@ export function RouterNavigationCard() {
   };
 }
 
+export function DeclarativeRouterCard() {
+  const appRouter = vRouter({
+    default: '/home',
+    notFound: ({ path }) => div(`声明式 404：${path}`),
+    routes: [
+      vRoute('/home', () => div('声明式首页')),
+      vRoute('/projects/:id', ({ params, query }) =>
+        div(`项目 ${params.id} / ${query.tab || 'overview'}`)
+      )
+    ]
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('声明式路由');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('vRouter 负责声明配置，vRoute 描述路径与视图，仍由同一个 Router 执行匹配。');
+            stack.vLink(appRouter, {
+              label: '项目 42',
+              params: { id: 42 },
+              query: { tab: 'tasks' },
+              to: '/projects/:id'
+            });
+            stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+          });
+        });
+        appRouter.navigate('/home', { replace: true });
+      });
+    }
+  };
+}
+
 export const routingCategory = {
   description: '链接导航、活动状态、参数 query 与路由视图。',
   id: 'routing',
@@ -61,6 +96,11 @@ export const routingCategory = {
       component: RouterNavigationCard,
       imports: ['div', 'router', 'vCard'],
       title: '路由链接与视图核心源码'
+    },
+    {
+      component: DeclarativeRouterCard,
+      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+      title: '声明式路由核心源码'
     }
   ]
 };

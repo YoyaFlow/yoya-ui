@@ -264,6 +264,20 @@ export function createRouter(setup = null) {
 
 export const router = createRouter;
 
+export function vRoute(pattern, config) {
+  return { config, pattern };
+}
+
+export function vRouter(setup = null) {
+  const node = new Router();
+  node.vRoute = (pattern, config) => {
+    node.route(pattern, config);
+    return node;
+  };
+  applyDeclarativeRouterSetup(node, setup);
+  return node;
+}
+
 export function vLink(routerInstance, setup = null) {
   assertRouter(routerInstance);
   const node = new ElementNode('a');
@@ -328,7 +342,7 @@ export function vRouterView(routerInstance, setup = null) {
   return node;
 }
 
-registerChildFactories(ElementNode, { vLink, vRouterView });
+registerChildFactories(ElementNode, { vLink, vRouter, vRouterView });
 
 function normalizeRoute(pattern, config) {
   const route = {
@@ -354,6 +368,24 @@ function assertRouter(routerInstance) {
   if (!(routerInstance instanceof Router)) {
     throw new TypeError('vLink and vRouterView require a Router instance');
   }
+}
+
+function applyDeclarativeRouterSetup(node, setup) {
+  if (typeof setup === 'function') {
+    setup(node);
+    return node;
+  }
+  if (!setup || typeof setup !== 'object') return node;
+
+  const { beforeEach, default: defaultPath, notFound, routes = [], ...elementConfig } = setup;
+  if (Object.keys(elementConfig).length) node.setup(elementConfig);
+  if (defaultPath !== undefined) node.default(defaultPath);
+  if (beforeEach) node.beforeEach(beforeEach);
+  routes.forEach((declaration) => {
+    if (declaration?.pattern !== undefined) node.vRoute(declaration.pattern, declaration.config);
+  });
+  if (notFound !== undefined) node.notFound(notFound);
+  return node;
 }
 
 function applyLinkSetup(node, state, setup) {
