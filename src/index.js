@@ -5,4 +5,5 @@ export * from './layout/index.js';
 export * from './components/index.js';
 export * from './code-block.js';
 export * from './dynamic-loader.js';
+export * from './message-manager.js';
 export * from './router.js';

@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { VMessageManager } from '../../src/index.js';
 import { componentSource } from './component-source.js';
 import { componentDemoCategories, renderComponentsExample } from './components-demo.js';
-import { AuditCard, DeploymentTaskCard, LocaleSwitchCard } from './demos/actions-feedback.js';
+import {
+  AuditCard,
+  DeploymentTaskCard,
+  LocaleSwitchCard,
+  LocalMessageManagerCard
+} from './demos/actions-feedback.js';
 import { DynamicModuleCard } from './demos/async-dynamic.js';
 import {
   CodeBlockCard,
@@ -23,6 +29,7 @@ const demoComponents = [
   DeploymentTaskCard,
   AuditCard,
   LocaleSwitchCard,
+  LocalMessageManagerCard,
   CommandMenuCard,
   SubMenuCard,
   OverlayMenuCard,
@@ -73,7 +80,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(7);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(19);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(20);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -110,7 +117,7 @@ export function SampleCard() {
       '#category-forms-datetime'
     ]);
     expect(categoryLinks.map((link) => link.textContent)).toEqual([
-      '操作与反馈3 个演示',
+      '操作与反馈4 个演示',
       '导航菜单4 个演示',
       '路由导航2 个演示',
       '异步与动态1 个演示',
@@ -185,6 +192,37 @@ export function SampleCard() {
     expect(source).toContain('logBlock.content');
   });
 
+  it('demonstrates an independent local message manager with generated source', () => {
+    const destroyManager = vi.spyOn(VMessageManager.prototype, 'destroy');
+    const root = renderComponentsExample('#app');
+
+    const actions = document.querySelector('[data-demo-category="actions-feedback"]');
+    const localExample = actions.querySelectorAll('.component-example')[3];
+    const liveCard = localExample.querySelector(':scope > .yoya-vcard');
+    const source = localExample.querySelector('[data-source-example]').textContent;
+
+    expect(liveCard.querySelector('.yoya-vmessage-container')).not.toBeNull();
+    expect(liveCard.textContent).not.toContain('局部保存成功');
+
+    liveCard.querySelector('#local-message-success').click();
+    expect(liveCard.textContent).toContain('局部保存成功');
+    liveCard.querySelector('#local-message-replace').click();
+    expect(liveCard.querySelectorAll('.yoya-vmessage')).toHaveLength(1);
+    expect(liveCard.textContent).not.toContain('局部保存成功');
+    expect(liveCard.textContent).toContain('同 ID 消息已替换');
+    liveCard.querySelector('#local-message-clear').click();
+    expect(liveCard.querySelectorAll('.yoya-vmessage')).toHaveLength(0);
+    expect(source).toContain('vMessageManager');
+    expect(source).toContain("id: 'local-status'");
+
+    try {
+      root.destroy();
+      expect(destroyManager).toHaveBeenCalledTimes(1);
+    } finally {
+      destroyManager.mockRestore();
+    }
+  });
+
   it('demonstrates router links, params, query, 404, and generated component source', () => {
     renderComponentsExample('#app');
 
@@ -229,7 +267,7 @@ export function SampleCard() {
     const commandExample = navigation.querySelector('.component-example');
     const groups = commandExample.querySelectorAll('.yoya-vmenu-group');
     const divider = commandExample.querySelector('.yoya-vmenu-divider');
-    const commandSource = document.querySelectorAll('[data-source-example]')[3].textContent;
+    const commandSource = document.querySelectorAll('[data-source-example]')[4].textContent;
 
     expect(groups).toHaveLength(2);
     groups.forEach((group) => {
@@ -287,7 +325,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(19);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(20);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -377,7 +415,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(19);
+    expect(sourceBlocks).toHaveLength(20);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -386,14 +424,15 @@ export function SampleCard() {
     });
     expect(sourceBlocks[0].textContent).toContain("import { vCard, vText } from 'yoya-ui';");
     expect(sourceBlocks[0].textContent).toContain("['拉取镜像', '应用配置', '重启服务']");
-    expect(sourceBlocks[7].textContent).toContain('nav.vLink');
-    expect(sourceBlocks[8].textContent).toContain('vRouter');
-    expect(sourceBlocks[9].textContent).toContain('vDynamicLoader');
-    expect(sourceBlocks[10].textContent).toContain('body.vBody');
-    expect(sourceBlocks[13].textContent).toContain('codeBlock');
-    expect(sourceBlocks[15].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[16].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[17].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[18].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[3].textContent).toContain('vMessageManager');
+    expect(sourceBlocks[8].textContent).toContain('nav.vLink');
+    expect(sourceBlocks[9].textContent).toContain('vRouter');
+    expect(sourceBlocks[10].textContent).toContain('vDynamicLoader');
+    expect(sourceBlocks[11].textContent).toContain('body.vBody');
+    expect(sourceBlocks[14].textContent).toContain('codeBlock');
+    expect(sourceBlocks[16].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[17].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[18].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[19].textContent).toContain('stack.vTimerRange');
   });
 });

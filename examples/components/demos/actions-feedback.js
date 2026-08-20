@@ -1,4 +1,4 @@
-import { vCard, vText } from '../../../src/index.js';
+import { vCard, vMessageManager, vText } from '../../../src/index.js';
 
 export function DeploymentTaskCard({ locale, toast }) {
   const jobState = vText('等待调度');
@@ -149,8 +149,58 @@ export function LocaleSwitchCard({ locale, toast }) {
   };
 }
 
+export function LocalMessageManagerCard() {
+  const manager = vMessageManager({ placement: 'top-right' });
+  manager.container().styles({
+    bottom: null,
+    left: null,
+    maxWidth: 'none',
+    position: 'static',
+    right: null,
+    top: null,
+    width: '100%'
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('局部消息管理器');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('消息容器只属于当前卡片，可按 ID 替换消息，并在管理器销毁时统一清理。');
+            stack.child(manager);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton((button) => {
+            button.id('local-message-success');
+            button.label('显示成功消息');
+            button.variant('primary');
+            button.on('click', () => {
+              manager.success('局部保存成功', { id: 'local-status', duration: 0 });
+            });
+          });
+          footer.vButton((button) => {
+            button.id('local-message-replace');
+            button.label('替换同 ID 消息');
+            button.on('click', () => {
+              manager.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
+            });
+          });
+          footer.vButton((button) => {
+            button.id('local-message-clear');
+            button.label('清空局部消息');
+            button.on('click', () => manager.clear());
+          });
+        });
+      });
+    }
+  };
+}
+
 export const actionsFeedbackCategory = {
-  description: '任务操作、审计状态、国际化按钮与即时反馈。',
+  description: '任务操作、审计状态、国际化按钮与局部即时反馈。',
   id: 'actions-feedback',
   title: '操作与反馈',
   demos: [
@@ -160,6 +210,11 @@ export const actionsFeedbackCategory = {
       title: '部署任务核心源码'
     },
     { component: AuditCard, imports: ['vCard', 'vText'], title: '配置审计核心源码' },
-    { component: LocaleSwitchCard, imports: ['vCard'], title: '语言切换核心源码' }
+    { component: LocaleSwitchCard, imports: ['vCard'], title: '语言切换核心源码' },
+    {
+      component: LocalMessageManagerCard,
+      imports: ['vCard', 'vMessageManager'],
+      title: '局部消息管理器核心源码'
+    }
   ]
 };

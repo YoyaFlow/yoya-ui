@@ -15,6 +15,7 @@
 - `CodeBlock` / `codeBlock`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
+- `VMessageManager` / `vMessageManager`
 - `toast`
 - `vDetail` / `vDetailItem`
 - `vCode`
@@ -144,7 +145,7 @@ example.child(
 
 页面壳层只负责遍历分类和组合组件，具体演示按大类维护：
 
-- `demos/actions-feedback.js`：操作、审计、语言切换与反馈。
+- `demos/actions-feedback.js`：操作、审计、语言切换与局部消息反馈。
 - `demos/navigation.js`：命令菜单、下拉菜单、上下文菜单与后台侧栏。
 - `demos/routing.js`：路由链接、活动状态、参数 query 与路由视图。
 - `demos/async-dynamic.js`：异步模块状态、失败重试与缓存。
