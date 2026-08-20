@@ -103,7 +103,9 @@ export function RouterViewsEditorCard() {
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vRouterViews 在内容区上方显示当前路由标题，适合文件编辑器和工作区预览。');
+            stack.p(
+              '访问过的路由会保留为文件标签；点击 title 标签即可在已打开页面之间切换。'
+            );
             stack.hstack((tabs) => {
               tabs.style('gap', '8px');
               tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });

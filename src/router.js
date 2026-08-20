@@ -347,10 +347,10 @@ export function vRouterViews(routerInstance, setup = null) {
   const node = new ElementNode('div');
   const titleNode = new ElementNode('header')
     .className('yoya-vrouter-views-titlebar')
-    .attr('role', 'banner');
-  const titleText = vText('');
+    .attr({ role: 'tablist', 'aria-label': '已打开页面' });
   const contentNode = new ElementNode('div').className('yoya-vrouter-views-content');
   const state = {
+    tabs: new Map(),
     title: '工作区',
     titleResolver: null
   };
@@ -365,29 +365,18 @@ export function vRouterViews(routerInstance, setup = null) {
     background: '#f6f8fa',
     borderBottom: '1px solid #d0d7de',
     color: '#57606a',
+    display: 'flex',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: '13px',
+    gap: '4px',
+    overflowX: 'auto',
     padding: '8px 12px'
   });
-  const titleTab = new ElementNode('span').className('yoya-vrouter-views-title');
-  titleTab.attr({ role: 'tab', 'aria-selected': 'true' });
-  titleTab.styles({
-    background: '#ffffff',
-    border: '1px solid #d0d7de',
-    borderBottomColor: '#ffffff',
-    borderRadius: '6px 6px 0 0',
-    color: '#24292f',
-    display: 'inline-block',
-    fontWeight: '600',
-    marginBottom: '-9px',
-    padding: '7px 14px 8px'
-  });
-  titleNode.child(titleTab.child(titleText));
   contentNode.className('yoya-vrouter-views-content');
   contentNode.styles({ minHeight: '120px', padding: '16px' });
   node.child(titleNode, contentNode);
 
-  const updateTitle = (context = {}) => {
+  const resolveTitle = (context = {}) => {
     let title = state.title;
     const routeTitle = context.route?.title;
     if (routeTitle !== undefined) {
@@ -399,7 +388,48 @@ export function vRouterViews(routerInstance, setup = null) {
         title = typeof resolved === 'function' ? resolved(context) : resolved;
       }
     }
-    titleText.textContent(title ?? '');
+    return title ?? '';
+  };
+
+  const styleTitleTab = (tab, active) => {
+    tab.attr('aria-selected', String(active));
+    tab.styles({
+      background: active ? '#ffffff' : '#eaeef2',
+      borderBottomColor: active ? '#ffffff' : '#d0d7de',
+      color: active ? '#24292f' : '#57606a',
+      fontWeight: active ? '600' : '400'
+    });
+  };
+
+  const updateTitle = (context = {}) => {
+    const path = context.path || routerInstance.currentPath();
+    let entry = state.tabs.get(path);
+
+    if (!entry) {
+      const tab = new ElementNode('button').className('yoya-vrouter-views-title');
+      const text = vText(resolveTitle(context));
+      tab.attr({ type: 'button', role: 'tab', 'data-router-view-path': path });
+      tab.styles({
+        border: '1px solid #d0d7de',
+        borderRadius: '6px 6px 0 0',
+        cursor: 'pointer',
+        display: 'inline-block',
+        flexShrink: '0',
+        font: 'inherit',
+        marginBottom: '-9px',
+        padding: '7px 14px 8px',
+        whiteSpace: 'nowrap'
+      });
+      tab.on('click', () => routerInstance.navigate(path));
+      tab.child(text);
+      titleNode.child(tab);
+      entry = { tab, text };
+      state.tabs.set(path, entry);
+    } else {
+      entry.text.textContent(resolveTitle(context));
+    }
+
+    state.tabs.forEach(({ tab }, tabPath) => styleTitleTab(tab, tabPath === path));
   };
 
   if (typeof setup === 'function') {
@@ -412,13 +442,15 @@ export function vRouterViews(routerInstance, setup = null) {
   }
 
   routerInstance.outlet(contentNode);
-  updateTitle({
-    params: routerInstance.currentParams(),
-    path: routerInstance.currentPath(),
-    query: routerInstance.currentQuery(),
-    route: routerInstance.currentRoute(),
-    router: routerInstance
-  });
+  if (routerInstance.currentRoute() || routerInstance.currentPath() !== '/') {
+    updateTitle({
+      params: routerInstance.currentParams(),
+      path: routerInstance.currentPath(),
+      query: routerInstance.currentQuery(),
+      route: routerInstance.currentRoute(),
+      router: routerInstance
+    });
+  }
   const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
 
   const destroy = node.destroy.bind(node);

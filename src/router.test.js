@@ -244,7 +244,10 @@ describe('router', () => {
     expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').tagName).toBe('HEADER');
     expect(
       views.renderDom().querySelector('.yoya-vrouter-views-titlebar').getAttribute('role')
-    ).toBe('banner');
+    ).toBe('tablist');
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.overflowX).toBe(
+      'auto'
+    );
     const titleTab = views.renderDom().querySelector('.yoya-vrouter-views-title');
     expect(titleTab.textContent).toBe('项目概览');
     expect(titleTab.getAttribute('role')).toBe('tab');
@@ -255,11 +258,20 @@ describe('router', () => {
     );
 
     appRouter.navigate('/editor', { replace: true });
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
-      '代码编辑器'
-    );
+    const titleTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+    expect(Array.from(titleTabs, (tab) => tab.textContent)).toEqual(['项目概览', '代码编辑器']);
+    expect(titleTabs[0].getAttribute('aria-selected')).toBe('false');
+    expect(titleTabs[1].getAttribute('aria-selected')).toBe('true');
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '编辑内容'
+    );
+
+    titleTabs[0].click();
+    expect(appRouter.currentPath()).toBe('/overview');
+    expect(titleTabs[0].getAttribute('aria-selected')).toBe('true');
+    expect(titleTabs[1].getAttribute('aria-selected')).toBe('false');
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '概览内容'
     );
   });
 

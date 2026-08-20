@@ -295,11 +295,18 @@ export function SampleCard() {
     const source = editor.querySelector('[data-source-example]').textContent;
     const views = liveCard.querySelector('.yoya-vrouter-views');
 
-    expect(views.querySelector('.yoya-vrouter-views-title').textContent).toBe('overview.js');
+    expect(
+      views.querySelector('.yoya-vrouter-views-title[aria-selected="true"]').textContent
+    ).toBe('overview.js');
     expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目概览内容');
     liveCard.querySelector('.yoya-vlink[href="#/settings"]').click();
-    expect(views.querySelector('.yoya-vrouter-views-title').textContent).toBe('settings.js');
+    expect(
+      views.querySelector('.yoya-vrouter-views-title[aria-selected="true"]').textContent
+    ).toBe('settings.js');
+    expect(views.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(2);
     expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目设置内容');
+    views.querySelector('[data-router-view-path="/overview"]').click();
+    expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目概览内容');
     expect(source).toContain('vRouterViews');
     expect(source).toContain("title: 'overview.js'");
   });
