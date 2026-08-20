@@ -342,12 +342,86 @@ export function vRouterView(routerInstance, setup = null) {
   return node;
 }
 
-registerChildFactories(ElementNode, { vLink, vRouter, vRouterView });
+export function vRouterViews(routerInstance, setup = null) {
+  assertRouter(routerInstance);
+  const node = new ElementNode('div');
+  const titleNode = new ElementNode('div').className('yoya-vrouter-views-title');
+  const titleText = vText('');
+  const contentNode = new ElementNode('div').className('yoya-vrouter-views-content');
+  const state = {
+    title: '工作区',
+    titleResolver: null
+  };
+
+  node.className('yoya-vrouter-views');
+  node.styles({
+    border: '1px solid #d0d7de',
+    borderRadius: '8px',
+    overflow: 'hidden'
+  });
+  titleNode.styles({
+    background: '#f6f8fa',
+    borderBottom: '1px solid #d0d7de',
+    color: '#57606a',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    fontSize: '13px',
+    padding: '8px 12px'
+  });
+  contentNode.className('yoya-vrouter-views-content');
+  contentNode.styles({ minHeight: '120px', padding: '16px' });
+  titleNode.child(titleText);
+  node.child(titleNode, contentNode);
+
+  const updateTitle = (context = {}) => {
+    let title = state.title;
+    const routeTitle = context.route?.title;
+    if (routeTitle !== undefined) {
+      title = typeof routeTitle === 'function' ? routeTitle(context) : routeTitle;
+    }
+    if (state.titleResolver) {
+      const resolved = state.titleResolver(context);
+      if (resolved !== undefined && resolved !== null) {
+        title = typeof resolved === 'function' ? resolved(context) : resolved;
+      }
+    }
+    titleText.textContent(title ?? '');
+  };
+
+  if (typeof setup === 'function') {
+    setup(node);
+  } else if (setup && typeof setup === 'object') {
+    const { title, titleResolver, ...elementConfig } = setup;
+    if (title !== undefined) state.title = title;
+    if (typeof titleResolver === 'function') state.titleResolver = titleResolver;
+    if (Object.keys(elementConfig).length > 0) node.setup(elementConfig);
+  }
+
+  routerInstance.outlet(contentNode);
+  updateTitle({
+    params: routerInstance.currentParams(),
+    path: routerInstance.currentPath(),
+    query: routerInstance.currentQuery(),
+    route: routerInstance.currentRoute(),
+    router: routerInstance
+  });
+  const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
+
+  const destroy = node.destroy.bind(node);
+  node.destroy = () => {
+    unsubscribe();
+    if (routerInstance.outlet() === contentNode) routerInstance.outlet(routerInstance);
+    return destroy();
+  };
+  return node;
+}
+
+registerChildFactories(ElementNode, { vLink, vRouter, vRouterView, vRouterViews });
 
 function normalizeRoute(pattern, config) {
   const route = {
     beforeEnter: null,
     pattern: normalizePattern(pattern),
+    title: null,
     view: null
   };
 
@@ -358,6 +432,7 @@ function normalizeRoute(pattern, config) {
 
   if (config && typeof config === 'object') {
     route.beforeEnter = config.beforeEnter || null;
+    route.title = config.title ?? null;
     route.view = config.view || config.component || null;
   }
 

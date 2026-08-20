@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { div, router, vLink, vRoute, vRouter, vRouterView, vText } from './index.js';
+import { div, router, vLink, vRoute, vRouter, vRouterView, vRouterViews, vText } from './index.js';
 
 describe('router', () => {
   beforeEach(() => {
@@ -226,5 +226,55 @@ describe('router', () => {
     expect(guard).toHaveBeenCalled();
     expect(appRouter.currentPath()).toBe('/guarded');
     expect(outlet.renderDom().textContent).toBe('通过');
+  });
+
+  it('renders route titles above matched content in vRouterViews', () => {
+    const appRouter = vRouter({
+      default: '/overview',
+      routes: [
+        vRoute('/overview', { title: '项目概览', view: () => div('概览内容') }),
+        vRoute('/editor', { title: '代码编辑器', view: () => div('编辑内容') })
+      ]
+    });
+    const views = vRouterViews(appRouter, { title: '工作区' });
+    div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.start();
+    expect(views.renderDom().classList.contains('yoya-vrouter-views')).toBe(true);
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
+      '项目概览'
+    );
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '概览内容'
+    );
+
+    appRouter.navigate('/editor', { replace: true });
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
+      '代码编辑器'
+    );
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '编辑内容'
+    );
+  });
+
+  it('supports a title resolver and cleans up its outlet subscription', () => {
+    const appRouter = router((r) => {
+      r.route('/file/:name', {
+        title: ({ params }) => `文件：${params.name}`,
+        view: ({ params }) => div(params.name)
+      });
+    });
+    const views = vRouterViews(appRouter, {
+      title: '未选择文件',
+      titleResolver: ({ route }) => (typeof route?.title === 'function' ? route.title : null)
+    });
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/file/main.js', { replace: true });
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
+      '文件：main.js'
+    );
+    root.destroy();
+    expect(appRouter._subscribers.size).toBe(0);
   });
 });

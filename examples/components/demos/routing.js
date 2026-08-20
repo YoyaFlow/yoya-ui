@@ -87,8 +87,39 @@ export function DeclarativeRouterCard() {
   };
 }
 
+export function RouterViewsEditorCard() {
+  const appRouter = vRouter({
+    default: '/overview',
+    routes: [
+      vRoute('/overview', { title: 'overview.js', view: () => div('项目概览内容') }),
+      vRoute('/settings', { title: 'settings.js', view: () => div('项目设置内容') })
+    ]
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('IDE 风格路由视图');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('vRouterViews 在内容区上方显示当前路由标题，适合文件编辑器和工作区预览。');
+            stack.hstack((tabs) => {
+              tabs.style('gap', '8px');
+              tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+              tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
+            });
+            stack.vRouterViews(appRouter, { title: '未打开文件' });
+          });
+        });
+        appRouter.navigate('/overview', { replace: true });
+      });
+    }
+  };
+}
+
 export const routingCategory = {
-  description: '链接导航、活动状态、参数 query 与路由视图。',
+  description: '链接导航、活动状态、参数 query 与带标题的路由视图。',
   id: 'routing',
   title: '路由导航',
   demos: [
@@ -101,6 +132,11 @@ export const routingCategory = {
       component: DeclarativeRouterCard,
       imports: ['div', 'vCard', 'vRoute', 'vRouter'],
       title: '声明式路由核心源码'
+    },
+    {
+      component: RouterViewsEditorCard,
+      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+      title: 'IDE 风格路由视图核心源码'
     }
   ]
 };

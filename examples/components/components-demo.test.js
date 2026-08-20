@@ -24,7 +24,11 @@ import {
 } from './demos/forms-datetime.js';
 import { BodyPageCard } from './demos/layout-page.js';
 import { CommandMenuCard, OverlayMenuCard, SidebarCard, SubMenuCard } from './demos/navigation.js';
-import { DeclarativeRouterCard, RouterNavigationCard } from './demos/routing.js';
+import {
+  DeclarativeRouterCard,
+  RouterNavigationCard,
+  RouterViewsEditorCard
+} from './demos/routing.js';
 
 const demoComponents = [
   DeploymentTaskCard,
@@ -37,6 +41,7 @@ const demoComponents = [
   SidebarCard,
   RouterNavigationCard,
   DeclarativeRouterCard,
+  RouterViewsEditorCard,
   DynamicModuleCard,
   BodyPageCard,
   ServiceDetailCard,
@@ -82,7 +87,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(7);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(21);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(22);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -121,7 +126,7 @@ export function SampleCard() {
     expect(categoryLinks.map((link) => link.textContent)).toEqual([
       '操作与反馈4 个演示',
       '导航菜单4 个演示',
-      '路由导航2 个演示',
+      '路由导航3 个演示',
       '异步与动态1 个演示',
       '页面布局1 个演示',
       '数据展示5 个演示',
@@ -281,6 +286,24 @@ export function SampleCard() {
     addEventListener.mockRestore();
   });
 
+  it('demonstrates IDE-style titled router views with generated source', () => {
+    renderComponentsExample('#app');
+
+    const routing = document.querySelector('[data-demo-category="routing"]');
+    const editor = routing.querySelectorAll('.component-example')[2];
+    const liveCard = editor.querySelector(':scope > .yoya-vcard');
+    const source = editor.querySelector('[data-source-example]').textContent;
+    const views = liveCard.querySelector('.yoya-vrouter-views');
+
+    expect(views.querySelector('.yoya-vrouter-views-title').textContent).toBe('overview.js');
+    expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目概览内容');
+    liveCard.querySelector('.yoya-vlink[href="#/settings"]').click();
+    expect(views.querySelector('.yoya-vrouter-views-title').textContent).toBe('settings.js');
+    expect(views.querySelector('.yoya-vrouter-views-content').textContent).toBe('项目设置内容');
+    expect(source).toContain('vRouterViews');
+    expect(source).toContain("title: 'overview.js'");
+  });
+
   it('demonstrates accessible menu groups and dividers from the component function', () => {
     renderComponentsExample('#app');
 
@@ -346,7 +369,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(21);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(22);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -436,7 +459,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(21);
+    expect(sourceBlocks).toHaveLength(22);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -448,13 +471,14 @@ export function SampleCard() {
     expect(sourceBlocks[3].textContent).toContain('vMessageManager');
     expect(sourceBlocks[8].textContent).toContain('nav.vLink');
     expect(sourceBlocks[9].textContent).toContain('vRouter');
-    expect(sourceBlocks[10].textContent).toContain('vDynamicLoader');
-    expect(sourceBlocks[11].textContent).toContain('body.vBody');
-    expect(sourceBlocks[14].textContent).toContain('codeBlock');
-    expect(sourceBlocks[16].textContent).toContain('vChart');
-    expect(sourceBlocks[17].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[18].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[19].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[20].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[10].textContent).toContain('vRouterViews');
+    expect(sourceBlocks[11].textContent).toContain('vDynamicLoader');
+    expect(sourceBlocks[12].textContent).toContain('body.vBody');
+    expect(sourceBlocks[15].textContent).toContain('codeBlock');
+    expect(sourceBlocks[17].textContent).toContain('vChart');
+    expect(sourceBlocks[18].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[19].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[20].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[21].textContent).toContain('stack.vTimerRange');
   });
 });

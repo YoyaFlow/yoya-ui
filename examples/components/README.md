@@ -9,7 +9,7 @@
 - `vSubMenu`
 - `vSidebar`
 - `vBody` / `responsiveGrid`
-- `vLink` / `vRouterView`
+- `vLink` / `vRouterView` / `vRouterViews`
 - `vRouter` / `vRoute`
 - `vDynamicLoader`
 - `CodeBlock` / `codeBlock`
