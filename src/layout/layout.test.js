@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   center,
   container,
+  createVBodyPage,
   divider,
   div,
   flex,
@@ -10,6 +11,7 @@ import {
   responsiveGrid,
   spacer,
   stack,
+  vBody,
   vstack
 } from '../index.js';
 
@@ -169,5 +171,54 @@ describe('layout components', () => {
       { minWidth: 1000, columns: 4 }
     ]);
     root.destroy();
+  });
+
+  it('creates a page body with stable surface and content hooks', () => {
+    const page = vBody({
+      background: '#eef2ff',
+      gap: '20px',
+      maxWidth: 960,
+      padding: '24px',
+      children: [div('Header'), div('Content')]
+    });
+    const element = page.renderDom();
+    const content = element.querySelector('.yoya-vbody-content');
+
+    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.getAttribute('data-page-body')).toBe('true');
+    expect(element.style.background).toBe('rgb(238, 242, 255)');
+    expect(element.style.padding).toBe('24px');
+    expect(content.style.maxWidth).toBe('960px');
+    expect(content.style.gap).toBe('20px');
+    expect(content.textContent).toBe('HeaderContent');
+    expect(
+      container((root) => root.vBody('Local'))
+        .children()[0]
+        .renderDom().textContent
+    ).toBe('Local');
+  });
+
+  it('serializes page body styles for server rendering', () => {
+    expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
+      'class="yoya-layout yoya-vbody"'
+    );
+    expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
+      'class="yoya-vbody-content"'
+    );
+    expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
+      'max-width:72rem'
+    );
+  });
+
+  it('mounts vBody locally and only uses document.body through the explicit page entry', () => {
+    document.body.innerHTML = '<div id="existing"></div><div id="local"></div>';
+
+    vBody('Local page').bindTo('#local');
+    const fullPage = createVBodyPage('Full page');
+
+    expect(document.querySelector('#existing')).not.toBeNull();
+    expect(document.querySelector('#local .yoya-vbody-content').textContent).toBe('Local page');
+    expect(document.body.lastElementChild).toBe(fullPage.renderDom());
+    expect(document.body.lastElementChild.textContent).toBe('Full page');
   });
 });

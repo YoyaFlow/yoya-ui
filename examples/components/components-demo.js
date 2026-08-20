@@ -3,6 +3,7 @@ import { ComponentSource } from './component-source.js';
 import { actionsFeedbackCategory } from './demos/actions-feedback.js';
 import { dataDisplayCategory } from './demos/data-display.js';
 import { formsDatetimeCategory } from './demos/forms-datetime.js';
+import { layoutPageCategory } from './demos/layout-page.js';
 import { navigationCategory } from './demos/navigation.js';
 
 const locale = createI18n({
@@ -30,6 +31,7 @@ const locale = createI18n({
 export const componentDemoCategories = [
   actionsFeedbackCategory,
   navigationCategory,
+  layoutPageCategory,
   dataDisplayCategory,
   formsDatetimeCategory
 ];
@@ -56,7 +58,7 @@ export function renderComponentsExample(target = '#app') {
       shell.header((header) => {
         header.className('components-header');
         header.h1('复合组件');
-        header.p('按操作反馈、导航、数据展示、表单与日期时间浏览组件。');
+        header.p('按操作反馈、导航、页面布局、数据展示、表单与日期时间浏览组件。');
       });
       shell.nav((navigation) => {
         navigation.className('component-category-navigation');

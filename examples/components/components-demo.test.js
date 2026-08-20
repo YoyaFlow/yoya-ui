@@ -9,6 +9,7 @@ import {
   ServiceFormCard,
   TimerRangeCard
 } from './demos/forms-datetime.js';
+import { BodyPageCard } from './demos/layout-page.js';
 import { CommandMenuCard, OverlayMenuCard, SidebarCard, SubMenuCard } from './demos/navigation.js';
 
 const demoComponents = [
@@ -19,6 +20,7 @@ const demoComponents = [
   SubMenuCard,
   OverlayMenuCard,
   SidebarCard,
+  BodyPageCard,
   ServiceDetailCard,
   SqlSnippetCard,
   ServiceTableCard,
@@ -59,8 +61,8 @@ export function SampleCard() {
       toast: { error() {}, info() {}, success() {}, warning() {} }
     };
 
-    expect(componentDemoCategories).toHaveLength(4);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(14);
+    expect(componentDemoCategories).toHaveLength(5);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(15);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -86,26 +88,47 @@ export function SampleCard() {
       (heading) => heading.textContent
     );
 
-    expect(categoryLinks).toHaveLength(4);
+    expect(categoryLinks).toHaveLength(5);
     expect(categoryLinks.map((link) => link.getAttribute('href'))).toEqual([
       '#category-actions-feedback',
       '#category-navigation',
+      '#category-layout-page',
       '#category-data-display',
       '#category-forms-datetime'
     ]);
     expect(categoryLinks.map((link) => link.textContent)).toEqual([
       '操作与反馈3 个演示',
       '导航菜单4 个演示',
+      '页面布局1 个演示',
       '数据展示3 个演示',
       '表单与日期时间4 个演示'
     ]);
-    expect(categoryHeadings).toEqual(['操作与反馈', '导航菜单', '数据展示', '表单与日期时间']);
-    expect(document.querySelectorAll('[data-demo-category]')).toHaveLength(4);
+    expect(categoryHeadings).toEqual([
+      '操作与反馈',
+      '导航菜单',
+      '页面布局',
+      '数据展示',
+      '表单与日期时间'
+    ]);
+    expect(document.querySelectorAll('[data-demo-category]')).toHaveLength(5);
     expect(document.querySelector('[data-demo-category="navigation"]').id).toBe(
       'category-navigation'
     );
     expect(document.querySelector('.yoya-vtimer-range')).not.toBeNull();
     expect(document.body.textContent).toContain('日期范围');
+  });
+
+  it('demonstrates vBody with a responsive page grid and generated component source', () => {
+    renderComponentsExample('#app');
+
+    const layout = document.querySelector('[data-demo-category="layout-page"]');
+    const source = layout.querySelector('[data-source-example]').textContent;
+
+    expect(layout.querySelector('.yoya-vbody')).not.toBeNull();
+    expect(layout.querySelector('.yoya-vbody-content')).not.toBeNull();
+    expect(layout.querySelector('.yoya-responsive-grid')).not.toBeNull();
+    expect(source).toContain('body.vBody');
+    expect(source).toContain('page.responsiveGrid');
   });
 
   it('demonstrates accessible menu groups and dividers from the component function', () => {
@@ -173,7 +196,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.yoya-vcard')).toHaveLength(14);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(15);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -263,7 +286,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(14);
+    expect(sourceBlocks).toHaveLength(15);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -272,9 +295,10 @@ export function SampleCard() {
     });
     expect(sourceBlocks[0].textContent).toContain("import { vCard, vText } from 'yoya-ui';");
     expect(sourceBlocks[0].textContent).toContain("['拉取镜像', '应用配置', '重启服务']");
-    expect(sourceBlocks[10].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[11].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[12].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[13].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[7].textContent).toContain('body.vBody');
+    expect(sourceBlocks[11].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[12].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[13].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[14].textContent).toContain('stack.vTimerRange');
   });
 });

@@ -128,6 +128,78 @@ export function responsiveGrid(setup = null) {
   return node;
 }
 
+export function vBody(setup = null) {
+  const node = new HtmlElementNode('div');
+  const content = new HtmlElementNode('div').className('yoya-vbody-content');
+  const appendOuterChild = node.child.bind(node);
+
+  node.className('yoya-layout', 'yoya-vbody');
+  node.attr('data-page-body', 'true');
+  node.styles({
+    background: '#f5f7fa',
+    boxSizing: 'border-box',
+    minHeight: '100%',
+    padding: 'clamp(16px, 3vw, 32px)',
+    width: '100%'
+  });
+  content.styles({
+    display: 'grid',
+    gap: '24px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    maxWidth: '1120px',
+    width: '100%'
+  });
+  appendOuterChild(content);
+
+  node.background = (value) => {
+    if (value === undefined) return node.style('background');
+    node.style('background', value);
+    return node;
+  };
+  node.maxWidth = (value) => {
+    if (value === undefined) return content.style('maxWidth');
+    content.style('maxWidth', normalizeLength(value));
+    return node;
+  };
+  node.padding = (value) => {
+    if (value === undefined) return node.style('padding');
+    node.style('padding', normalizeLength(value));
+    return node;
+  };
+  node.gap = (value) => {
+    if (value === undefined) return content.style('gap');
+    content.style('gap', normalizeLength(value));
+    return node;
+  };
+  node.minHeight = (value) => {
+    if (value === undefined) return node.style('minHeight');
+    node.style('minHeight', normalizeLength(value));
+    return node;
+  };
+  node.content = (value) => {
+    if (value === undefined) return content;
+    if (typeof value === 'function') value(content);
+    else content.child(value);
+    return node;
+  };
+  node.child = (...children) => {
+    content.child(...children);
+    return node;
+  };
+
+  applyVBodySetup(node, setup);
+  return node;
+}
+
+export function createVBodyPage(setup = null, target = null) {
+  const page = vBody(setup);
+  if (typeof document !== 'undefined') {
+    page.bindTo(target || document.body);
+  }
+  return page;
+}
+
 function wrapResponsiveGridDestroy(node) {
   if (node._responsiveGridDestroyWrapped) return;
   node._responsiveGridDestroyWrapped = true;
@@ -186,6 +258,7 @@ const layoutFactories = {
   flex,
   grid,
   responsiveGrid,
+  vBody,
   hstack,
   spacer,
   stack,
@@ -255,6 +328,30 @@ function applyResponsiveGridOptions(node, options) {
   );
 }
 
+function applyVBodySetup(node, setup) {
+  if (setup === null || setup === undefined) return node;
+  if (typeof setup === 'function') {
+    setup(node);
+    return node;
+  }
+  if (!isPlainObject(setup)) {
+    node.child(setup);
+    return node;
+  }
+
+  const { background, children, content, gap, maxWidth, minHeight, padding, ...elementConfig } =
+    setup;
+  if (Object.keys(elementConfig).length) node.setup(elementConfig);
+  if (background !== undefined) node.background(background);
+  if (maxWidth !== undefined) node.maxWidth(maxWidth);
+  if (padding !== undefined) node.padding(padding);
+  if (gap !== undefined) node.gap(gap);
+  if (minHeight !== undefined) node.minHeight(minHeight);
+  const bodyContent = content ?? children;
+  if (bodyContent !== undefined) node.content(bodyContent);
+  return node;
+}
+
 function applyContainerOptions(node, options) {
   const paddingInline = options.paddingInline ?? options.padding;
 
@@ -317,6 +414,10 @@ function normalizeMinColumnWidth(value) {
   }
 
   return value || '240px';
+}
+
+function normalizeLength(value) {
+  return typeof value === 'number' ? `${value}px` : value;
 }
 
 function normalizeBreakpoints(value) {

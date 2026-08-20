@@ -8,6 +8,7 @@
 - `vMenuGroup` / `vMenuDivider`
 - `vSubMenu`
 - `vSidebar`
+- `vBody` / `responsiveGrid`
 - `vDropdownMenu` / `vContextMenu`
 - `vMessageContainer`
 - `toast`
@@ -141,6 +142,7 @@ example.child(
 
 - `demos/actions-feedback.js`：操作、审计、语言切换与反馈。
 - `demos/navigation.js`：命令菜单、下拉菜单、上下文菜单与后台侧栏。
+- `demos/layout-page.js`：页面容器、内容宽度与响应式网格。
 - `demos/data-display.js`：详情、代码片段与表格。
 - `demos/forms-datetime.js`：表单、字段模式、`vTimer` 与 `vTimerRange`。
 
