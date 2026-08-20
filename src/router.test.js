@@ -241,6 +241,10 @@ describe('router', () => {
 
     appRouter.start();
     expect(views.renderDom().classList.contains('yoya-vrouter-views')).toBe(true);
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').tagName).toBe('HEADER');
+    expect(
+      views.renderDom().querySelector('.yoya-vrouter-views-titlebar').getAttribute('role')
+    ).toBe('banner');
     expect(views.renderDom().querySelector('.yoya-vrouter-views-title').textContent).toBe(
       '项目概览'
     );

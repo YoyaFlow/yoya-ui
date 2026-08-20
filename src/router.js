@@ -345,7 +345,9 @@ export function vRouterView(routerInstance, setup = null) {
 export function vRouterViews(routerInstance, setup = null) {
   assertRouter(routerInstance);
   const node = new ElementNode('div');
-  const titleNode = new ElementNode('div').className('yoya-vrouter-views-title');
+  const titleNode = new ElementNode('header')
+    .className('yoya-vrouter-views-titlebar')
+    .attr('role', 'banner');
   const titleText = vText('');
   const contentNode = new ElementNode('div').className('yoya-vrouter-views-content');
   const state = {
@@ -367,9 +369,9 @@ export function vRouterViews(routerInstance, setup = null) {
     fontSize: '13px',
     padding: '8px 12px'
   });
+  titleNode.child(new ElementNode('span').className('yoya-vrouter-views-title').child(titleText));
   contentNode.className('yoya-vrouter-views-content');
   contentNode.styles({ minHeight: '120px', padding: '16px' });
-  titleNode.child(titleText);
   node.child(titleNode, contentNode);
 
   const updateTitle = (context = {}) => {
