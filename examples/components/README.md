@@ -20,6 +20,7 @@
 - `vDetail` / `vDetailItem`
 - `vCode`
 - `vTable`
+- `VChart` / `vChart`
 - `vInput`
 - `vTextarea`
 - `vSelect`
@@ -150,7 +151,7 @@ example.child(
 - `demos/routing.js`：路由链接、活动状态、参数 query 与路由视图。
 - `demos/async-dynamic.js`：异步模块状态、失败重试与缓存。
 - `demos/layout-page.js`：页面容器、内容宽度与响应式网格。
-- `demos/data-display.js`：详情、代码片段与表格。
+- `demos/data-display.js`：详情、代码片段、表格与图表适配器。
 - `demos/forms-datetime.js`：表单、字段模式、`vTimer` 与 `vTimerRange`。
 
 新增演示时，把标准对象组件和分类描述放入所属文件，并让页面通过 `child(component(options))` 与 `ComponentSource` 组合它们。

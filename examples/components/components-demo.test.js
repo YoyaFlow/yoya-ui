@@ -11,6 +11,7 @@ import {
 import { DynamicModuleCard } from './demos/async-dynamic.js';
 import {
   CodeBlockCard,
+  ChartAdapterCard,
   ServiceDetailCard,
   ServiceTableCard,
   SqlSnippetCard
@@ -42,6 +43,7 @@ const demoComponents = [
   SqlSnippetCard,
   CodeBlockCard,
   ServiceTableCard,
+  ChartAdapterCard,
   ServiceFormCard,
   OwnerFieldCard,
   ScheduleTimerCard,
@@ -80,7 +82,7 @@ export function SampleCard() {
     };
 
     expect(componentDemoCategories).toHaveLength(7);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(20);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(21);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -122,7 +124,7 @@ export function SampleCard() {
       '路由导航2 个演示',
       '异步与动态1 个演示',
       '页面布局1 个演示',
-      '数据展示4 个演示',
+      '数据展示5 个演示',
       '表单与日期时间4 个演示'
     ]);
     expect(categoryHeadings).toEqual([
@@ -190,6 +192,25 @@ export function SampleCard() {
     expect(block.querySelector('.yoya-vcode-content').textContent).toContain('status=recovered');
     expect(source).toContain('codeBlock');
     expect(source).toContain('logBlock.content');
+  });
+
+  it('demonstrates a library-agnostic chart adapter with generated source', () => {
+    renderComponentsExample('#app');
+
+    const dataDisplay = document.querySelector('[data-demo-category="data-display"]');
+    const chartExample = dataDisplay.querySelectorAll('.component-example')[4];
+    const liveCard = chartExample.querySelector(':scope > .yoya-vcard');
+    const source = chartExample.querySelector('[data-source-example]').textContent;
+
+    expect(liveCard.querySelector('.yoya-vchart')).not.toBeNull();
+    expect(liveCard.querySelectorAll('[data-chart-bar]')).toHaveLength(3);
+    liveCard.querySelector('#chart-adapter-update').click();
+    expect(liveCard.querySelectorAll('[data-chart-bar]')).toHaveLength(4);
+    expect(liveCard.querySelector('[data-chart-bar="3"]').textContent).toBe('84');
+    liveCard.querySelector('#chart-adapter-resize').click();
+    expect(liveCard.querySelector('.yoya-vchart').style.height).toBe('240px');
+    expect(source).toContain('vChart');
+    expect(source).toContain('update(instance, context)');
   });
 
   it('demonstrates an independent local message manager with generated source', () => {
@@ -325,7 +346,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(20);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(21);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -415,7 +436,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(20);
+    expect(sourceBlocks).toHaveLength(21);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -430,9 +451,10 @@ export function SampleCard() {
     expect(sourceBlocks[10].textContent).toContain('vDynamicLoader');
     expect(sourceBlocks[11].textContent).toContain('body.vBody');
     expect(sourceBlocks[14].textContent).toContain('codeBlock');
-    expect(sourceBlocks[16].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[17].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[18].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[19].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[16].textContent).toContain('vChart');
+    expect(sourceBlocks[17].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[18].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[19].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[20].textContent).toContain('stack.vTimerRange');
   });
 });

@@ -1,4 +1,4 @@
-import { codeBlock, vButton, vCard, vText } from '../../../src/index.js';
+import { codeBlock, vButton, vCard, vChart, vText } from '../../../src/index.js';
 
 export function ServiceDetailCard({ toast }) {
   const serviceState = vText('运行中');
@@ -141,8 +141,73 @@ export function ServiceTableCard({ toast }) {
   };
 }
 
+export function ChartAdapterCard() {
+  let values = [42, 58, 36];
+  const adapter = {
+    init(host, context) {
+      host.classList.add('chart-adapter-host');
+      const instance = { host };
+      this.update(instance, context);
+      return instance;
+    },
+    update(instance, context) {
+      instance.host.replaceChildren();
+      context.data.forEach((value, index) => {
+        const bar = document.createElement('span');
+        bar.dataset.chartBar = String(index);
+        bar.textContent = String(value);
+        bar.style.height = `${value}px`;
+        bar.style.width = '28px';
+        bar.style.background = '#1f6feb';
+        bar.style.color = '#fff';
+        bar.style.display = 'inline-flex';
+        bar.style.alignItems = 'flex-end';
+        bar.style.justifyContent = 'center';
+        instance.host.appendChild(bar);
+      });
+    },
+    resize(instance, context) {
+      instance.host.dataset.chartHeight = String(context.height ?? 'auto');
+    },
+    destroy(instance) {
+      instance.host.replaceChildren();
+    }
+  };
+  const chart = vChart({ adapter, data: values, height: 180 });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('图表适配器');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('vChart 只提供宿主和生命周期，具体绘制逻辑由适配器负责。');
+            stack.child(chart);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton((button) => {
+            button.id('chart-adapter-update');
+            button.label('更新数据');
+            button.on('click', () => {
+              values = [64, 48, 72, 84];
+              chart.data(values);
+            });
+          });
+          footer.vButton((button) => {
+            button.id('chart-adapter-resize');
+            button.label('调整高度');
+            button.on('click', () => chart.resize(undefined, 240));
+          });
+        });
+      });
+    }
+  };
+}
+
 export const dataDisplayCategory = {
-  description: '详情、代码片段与表格数据。',
+  description: '详情、代码片段、表格与图表适配器。',
   id: 'data-display',
   title: '数据展示',
   demos: [
@@ -161,6 +226,11 @@ export const dataDisplayCategory = {
       component: ServiceTableCard,
       imports: ['vButton', 'vCard'],
       title: '服务表格核心源码'
+    },
+    {
+      component: ChartAdapterCard,
+      imports: ['vCard', 'vChart'],
+      title: '图表适配器核心源码'
     }
   ]
 };
