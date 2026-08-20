@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { div, router, vText } from './index.js';
+import { div, router, vLink, vRouterView, vText } from './index.js';
 
 describe('router', () => {
   beforeEach(() => {
@@ -76,5 +76,109 @@ describe('router', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
 
     expect(renderView).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders resolved routes into an attached outlet and notifies subscribers', () => {
+    const outlet = div().className('test-router-outlet');
+    const changes = [];
+    const appRouter = router((r) => {
+      r.route('/users/:id', ({ params, query }) => div(`用户 ${params.id} / ${query.tab}`));
+      r.notFound(({ path }) => div(`未找到 ${path}`));
+    });
+    const unsubscribe = appRouter.subscribe(({ params, path, query }) => {
+      changes.push({ params, path, query });
+    });
+
+    appRouter.outlet(outlet);
+    outlet.bindTo('#app');
+    appRouter.navigate('/users/42?tab=profile', { replace: true });
+
+    expect(document.querySelector('.test-router-outlet').textContent).toBe('用户 42 / profile');
+    expect(changes).toEqual([
+      {
+        params: { id: '42' },
+        path: '/users/42?tab=profile',
+        query: { tab: 'profile' }
+      }
+    ]);
+
+    unsubscribe();
+    appRouter.navigate('/missing', { replace: true });
+    expect(document.querySelector('.test-router-outlet').textContent).toBe('未找到 /missing');
+    expect(changes).toHaveLength(1);
+  });
+
+  it('refreshes an attached outlet when browser history changes the hash', () => {
+    const outlet = div();
+    const appRouter = router((r) => {
+      r.route('/history/:id', ({ params, query }) => div(`${params.id}:${query.mode}`));
+      r.notFound(() => div('404'));
+    });
+
+    appRouter.outlet(outlet);
+    outlet.bindTo('#app');
+    appRouter.start();
+    window.history.replaceState(null, '', '#/history/7?mode=back');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+    expect(appRouter.currentPath()).toBe('/history/7?mode=back');
+    expect(document.querySelector('#app').textContent).toBe('7:back');
+    appRouter.stop();
+  });
+
+  it('creates router links with params, query, delegated navigation, and active state', () => {
+    const appRouter = router((r) => {
+      r.route('/users/:id', ({ params, query }) => div(`${params.id}:${query.tab}`));
+      r.route('/settings', () => div('设置'));
+    });
+    const link = vLink(appRouter, {
+      label: '用户资料',
+      params: { id: 'Ada Lovelace' },
+      query: { tab: 'profile' },
+      to: '/users/:id'
+    });
+    const outlet = vRouterView(appRouter);
+    const root = div((page) => page.child(link, outlet)).bindTo('#app');
+    const element = document.querySelector('.yoya-vlink');
+
+    expect(element.textContent).toBe('用户资料');
+    expect(element.getAttribute('href')).toBe('#/users/Ada%20Lovelace?tab=profile');
+    expect(outlet.renderDom().classList.contains('yoya-vrouter-view')).toBe(true);
+
+    const click = new MouseEvent('click', { bubbles: true, button: 0, cancelable: true });
+    element.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(appRouter.currentPath()).toBe('/users/Ada%20Lovelace?tab=profile');
+    expect(element.getAttribute('aria-current')).toBe('page');
+    expect(element.classList.contains('is-active')).toBe(true);
+    expect(outlet.renderDom().textContent).toBe('Ada Lovelace:profile');
+
+    appRouter.navigate('/settings', { replace: true });
+    expect(element.hasAttribute('aria-current')).toBe(false);
+    expect(element.classList.contains('is-active')).toBe(false);
+    root.destroy();
+  });
+
+  it('preserves modified link clicks and registers parent shortcuts', () => {
+    const appRouter = router((r) => r.route('/reports', () => div('报表')));
+    const root = div((page) => {
+      page.vLink(appRouter, { label: '报表', to: '/reports' });
+      page.vRouterView(appRouter);
+    }).bindTo('#app');
+    const element = document.querySelector('.yoya-vlink');
+    const click = new MouseEvent('click', {
+      bubbles: true,
+      button: 0,
+      cancelable: true,
+      ctrlKey: true
+    });
+
+    element.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(false);
+    expect(appRouter.currentPath()).toBe('/');
+    expect(root.children()[1].className()).toContain('yoya-vrouter-view');
+
+    root.destroy();
+    expect(appRouter._subscribers.size).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-import { ElementNode, ViewNode, vText } from './core/index.js';
+import { ElementNode, registerChildFactories, ViewNode, vText } from './core/index.js';
 
 /**
  * Router 是一个很轻的 hash 路由出口。
@@ -16,6 +16,8 @@ export class Router extends ElementNode {
     this._currentQuery = {};
     this._currentRoute = null;
     this._currentView = null;
+    this._outlet = this;
+    this._subscribers = new Set();
     this._ignoreNextHashPath = null;
     this._started = false;
     this._onHashChange = () => this._handleHashChange();
@@ -137,6 +139,23 @@ export class Router extends ElementNode {
     return this._currentRoute;
   }
 
+  outlet(value) {
+    if (value === undefined) return this._outlet;
+    if (!(value instanceof ElementNode)) {
+      throw new TypeError('Router outlet must be an ElementNode');
+    }
+    this._outlet = value;
+    return this;
+  }
+
+  subscribe(listener) {
+    if (typeof listener !== 'function') {
+      throw new TypeError('Router subscriber must be a function');
+    }
+    this._subscribers.add(listener);
+    return () => this._subscribers.delete(listener);
+  }
+
   go(delta) {
     window.history.go(delta);
     return this;
@@ -153,6 +172,7 @@ export class Router extends ElementNode {
   destroy() {
     this.stop();
     this._destroyCurrentView();
+    this._subscribers.clear();
     return super.destroy();
   }
 
@@ -211,20 +231,22 @@ export class Router extends ElementNode {
     const { context, route, view } = resolved;
     const result = typeof view === 'function' ? view(context) : view;
     const nextView = normalizeRouteView(result);
+    const outlet = this._outlet;
 
     this._destroyCurrentView();
-    this._children = [];
+    outlet._children = [];
 
-    if (this._el) {
-      this._el.replaceChildren();
+    if (outlet._el) {
+      outlet._el.replaceChildren();
     }
 
-    this.child(nextView);
+    outlet.child(nextView);
     this._currentPath = context.path;
     this._currentParams = context.params;
     this._currentQuery = context.query;
     this._currentRoute = route;
     this._currentView = nextView;
+    this._subscribers.forEach((listener) => listener(context, this));
   }
 
   _destroyCurrentView() {
@@ -241,6 +263,72 @@ export function createRouter(setup = null) {
 }
 
 export const router = createRouter;
+
+export function vLink(routerInstance, setup = null) {
+  assertRouter(routerInstance);
+  const node = new ElementNode('a');
+  const state = {
+    exact: true,
+    label: null,
+    params: {},
+    query: {},
+    replace: false,
+    to: '/'
+  };
+  const labelNode = vText('');
+
+  node.className('yoya-vlink');
+  node.attr('data-router-link', 'true');
+  node.child(labelNode);
+  node.to = (value) => updateLinkValue(node, state, 'to', value);
+  node.params = (value) => updateLinkValue(node, state, 'params', value || {});
+  node.query = (value) => updateLinkValue(node, state, 'query', value || {});
+  node.replace = (value) => updateLinkValue(node, state, 'replace', Boolean(value));
+  node.exact = (value) => updateLinkValue(node, state, 'exact', Boolean(value));
+  node.label = (value) => {
+    if (value === undefined) return state.label;
+    state.label = value;
+    labelNode.textContent(value);
+    return node;
+  };
+
+  applyLinkSetup(node, state, setup);
+  updateLink(node, state, routerInstance);
+  node.on('click', (event) => {
+    if (!shouldHandleLinkClick(event, node)) return;
+    event.preventDefault();
+    routerInstance.navigate(buildLinkPath(state.to, state.params, state.query), {
+      replace: state.replace
+    });
+  });
+
+  const unsubscribe = routerInstance.subscribe(() => updateLink(node, state, routerInstance));
+  const destroy = node.destroy.bind(node);
+  node.destroy = () => {
+    unsubscribe();
+    return destroy();
+  };
+  return node;
+}
+
+export function vRouterView(routerInstance, setup = null) {
+  assertRouter(routerInstance);
+  const node = new ElementNode('div');
+  node.className('yoya-vrouter-view');
+  node.attr('data-router-view', 'true');
+  if (typeof setup === 'function') setup(node);
+  else if (setup) node.setup(setup);
+  routerInstance.outlet(node);
+
+  const destroy = node.destroy.bind(node);
+  node.destroy = () => {
+    if (routerInstance.outlet() === node) routerInstance.outlet(routerInstance);
+    return destroy();
+  };
+  return node;
+}
+
+registerChildFactories(ElementNode, { vLink, vRouterView });
 
 function normalizeRoute(pattern, config) {
   const route = {
@@ -260,6 +348,101 @@ function normalizeRoute(pattern, config) {
   }
 
   return route;
+}
+
+function assertRouter(routerInstance) {
+  if (!(routerInstance instanceof Router)) {
+    throw new TypeError('vLink and vRouterView require a Router instance');
+  }
+}
+
+function applyLinkSetup(node, state, setup) {
+  if (typeof setup === 'function') {
+    setup(node);
+    return;
+  }
+  if (typeof setup === 'string') {
+    node.to(setup);
+    node.label(setup);
+    return;
+  }
+  if (!setup) return;
+
+  const { exact, label, params, query, replace, to, ...elementConfig } = setup;
+  if (Object.keys(elementConfig).length) node.setup(elementConfig);
+  if (to !== undefined) state.to = to;
+  if (params !== undefined) state.params = params || {};
+  if (query !== undefined) state.query = query || {};
+  if (replace !== undefined) state.replace = Boolean(replace);
+  if (exact !== undefined) state.exact = Boolean(exact);
+  state.label = label ?? state.to;
+  node.children()[0].textContent(state.label);
+}
+
+function updateLinkValue(node, state, key, value) {
+  if (value === undefined) return state[key];
+  state[key] = value;
+  if (key === 'to' && state.label === null) node.children()[0].textContent(value);
+  const routerInstance = node._routerInstance;
+  if (routerInstance) updateLink(node, state, routerInstance);
+  return node;
+}
+
+function updateLink(node, state, routerInstance) {
+  node._routerInstance = routerInstance;
+  const target = buildLinkPath(state.to, state.params, state.query);
+  const active = isLinkActive(routerInstance.currentPath(), target, state.exact);
+  const classes = new Set(
+    String(node.attr('class') || '')
+      .split(/\s+/)
+      .filter(Boolean)
+  );
+  classes.add('yoya-vlink');
+  if (active) classes.add('is-active');
+  else classes.delete('is-active');
+  node.attr({
+    'aria-current': active ? 'page' : null,
+    class: [...classes].join(' '),
+    href: `#${target}`
+  });
+  return node;
+}
+
+function buildLinkPath(to, params, query) {
+  const normalized = normalizePath(to);
+  const [pathTemplate, existingQuery = ''] = normalized.split('?');
+  const pathname = pathTemplate.replace(/:([A-Za-z0-9_]+)/g, (match, name) =>
+    params[name] === undefined ? match : encodeURIComponent(params[name])
+  );
+  const search = new URLSearchParams(existingQuery);
+  Object.entries(query || {}).forEach(([name, value]) => {
+    search.delete(name);
+    if (Array.isArray(value)) value.forEach((item) => search.append(name, item));
+    else if (value !== null && value !== undefined) search.set(name, value);
+  });
+  const queryString = search.toString();
+  return queryString ? `${pathname}?${queryString}` : pathname;
+}
+
+function isLinkActive(currentPath, targetPath, exact) {
+  const current = normalizePath(currentPath);
+  const target = normalizePath(targetPath);
+  if (exact) return current === target;
+  const currentPathname = parsePath(current).pathname;
+  const targetPathname = parsePath(target).pathname;
+  return currentPathname === targetPathname || currentPathname.startsWith(`${targetPathname}/`);
+}
+
+function shouldHandleLinkClick(event, node) {
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey &&
+    (!node.attr('target') || node.attr('target') === '_self')
+  );
 }
 
 function normalizeRouteView(view) {
