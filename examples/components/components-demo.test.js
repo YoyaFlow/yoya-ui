@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { componentSource } from './component-source.js';
 import { componentDemoCategories, renderComponentsExample } from './components-demo.js';
 import { AuditCard, DeploymentTaskCard, LocaleSwitchCard } from './demos/actions-feedback.js';
+import { DynamicModuleCard } from './demos/async-dynamic.js';
 import { ServiceDetailCard, ServiceTableCard, SqlSnippetCard } from './demos/data-display.js';
 import {
   OwnerFieldCard,
@@ -23,6 +24,7 @@ const demoComponents = [
   SidebarCard,
   RouterNavigationCard,
   DeclarativeRouterCard,
+  DynamicModuleCard,
   BodyPageCard,
   ServiceDetailCard,
   SqlSnippetCard,
@@ -64,8 +66,8 @@ export function SampleCard() {
       toast: { error() {}, info() {}, success() {}, warning() {} }
     };
 
-    expect(componentDemoCategories).toHaveLength(6);
-    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(17);
+    expect(componentDemoCategories).toHaveLength(7);
+    expect(componentDemoCategories.flatMap((category) => category.demos)).toHaveLength(18);
     demoComponents.forEach((Component) => {
       const instance = Component(context);
       expect(typeof instance.render).toBe('function');
@@ -91,11 +93,12 @@ export function SampleCard() {
       (heading) => heading.textContent
     );
 
-    expect(categoryLinks).toHaveLength(6);
+    expect(categoryLinks).toHaveLength(7);
     expect(categoryLinks.map((link) => link.getAttribute('href'))).toEqual([
       '#category-actions-feedback',
       '#category-navigation',
       '#category-routing',
+      '#category-async-dynamic',
       '#category-layout-page',
       '#category-data-display',
       '#category-forms-datetime'
@@ -104,6 +107,7 @@ export function SampleCard() {
       '操作与反馈3 个演示',
       '导航菜单4 个演示',
       '路由导航2 个演示',
+      '异步与动态1 个演示',
       '页面布局1 个演示',
       '数据展示3 个演示',
       '表单与日期时间4 个演示'
@@ -112,11 +116,12 @@ export function SampleCard() {
       '操作与反馈',
       '导航菜单',
       '路由导航',
+      '异步与动态',
       '页面布局',
       '数据展示',
       '表单与日期时间'
     ]);
-    expect(document.querySelectorAll('[data-demo-category]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-demo-category]')).toHaveLength(7);
     expect(document.querySelector('[data-demo-category="navigation"]').id).toBe(
       'category-navigation'
     );
@@ -135,6 +140,25 @@ export function SampleCard() {
     expect(layout.querySelector('.yoya-responsive-grid')).not.toBeNull();
     expect(source).toContain('body.vBody');
     expect(source).toContain('page.responsiveGrid');
+  });
+
+  it('demonstrates dynamic loading failure, retry, and generated component source', async () => {
+    renderComponentsExample('#app');
+
+    const dynamic = document.querySelector('[data-demo-category="async-dynamic"]');
+    const loader = dynamic.querySelector('.yoya-vdynamic-loader');
+    const source = dynamic.querySelector('[data-source-example]').textContent;
+
+    expect(loader.dataset.loaderState).toBe('pending');
+    expect(loader.textContent).toContain('等待加载');
+    dynamic.querySelector('#dynamic-load').click();
+    await vi.waitFor(() => expect(loader.dataset.loaderState).toBe('error'));
+    expect(loader.textContent).toContain('模拟网络失败');
+    dynamic.querySelector('#dynamic-retry').click();
+    await vi.waitFor(() => expect(loader.dataset.loaderState).toBe('loaded'));
+    expect(loader.textContent).toContain('审计模块已就绪');
+    expect(source).toContain('vDynamicLoader');
+    expect(source).toContain('moduleLoader.retry');
   });
 
   it('demonstrates router links, params, query, 404, and generated component source', () => {
@@ -239,7 +263,7 @@ export function SampleCard() {
     const container = document.querySelector('.components-container');
     const firstExample = document.querySelector('.component-example');
 
-    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(17);
+    expect(root.commit().querySelectorAll('.component-example > .yoya-vcard')).toHaveLength(18);
     expect(container.style.maxWidth).toBe('1120px');
     expect(container.style.marginLeft).toBe('auto');
     expect(container.style.marginRight).toBe('auto');
@@ -329,7 +353,7 @@ export function SampleCard() {
     const sourceBlocks = document.querySelectorAll('[data-source-example]');
     const componentNames = demoComponents.map((Component) => Component.name);
 
-    expect(sourceBlocks).toHaveLength(17);
+    expect(sourceBlocks).toHaveLength(18);
     sourceBlocks.forEach((block, index) => {
       expect(block.textContent).toContain(`export function ${componentNames[index]}`);
       expect(block.textContent).toMatch(/return\s*{\s*render\(\)\s*{\s*return vCard/s);
@@ -340,10 +364,11 @@ export function SampleCard() {
     expect(sourceBlocks[0].textContent).toContain("['拉取镜像', '应用配置', '重启服务']");
     expect(sourceBlocks[7].textContent).toContain('nav.vLink');
     expect(sourceBlocks[8].textContent).toContain('vRouter');
-    expect(sourceBlocks[9].textContent).toContain('body.vBody');
-    expect(sourceBlocks[13].textContent).toContain('defaultServiceValues');
-    expect(sourceBlocks[14].textContent).toContain('const nextMode =');
-    expect(sourceBlocks[15].textContent).toContain("mode: 'datetime-local'");
-    expect(sourceBlocks[16].textContent).toContain('stack.vTimerRange');
+    expect(sourceBlocks[9].textContent).toContain('vDynamicLoader');
+    expect(sourceBlocks[10].textContent).toContain('body.vBody');
+    expect(sourceBlocks[14].textContent).toContain('defaultServiceValues');
+    expect(sourceBlocks[15].textContent).toContain('const nextMode =');
+    expect(sourceBlocks[16].textContent).toContain("mode: 'datetime-local'");
+    expect(sourceBlocks[17].textContent).toContain('stack.vTimerRange');
   });
 });
