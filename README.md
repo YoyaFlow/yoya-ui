@@ -40,7 +40,7 @@ npm run examples:i18n
 npm run examples:layout
 npm run examples:svg
 npm run examples:router
-npm run examples:components
+npm run examples:admin
 ```
 
 ## Examples
@@ -50,7 +50,8 @@ npm run examples:components
 - [Layout components](examples/layout/README.md)
 - [SVG elements](examples/svg/README.md)
 - [Router navigation](examples/router/README.md)
-- [Compound components](examples/components/README.md)
+- [Admin management page](examples/admin/README.md)
+- [Compound components](examples/Index.html#/components)
 
 ## Library Build
 
@@ -67,20 +68,110 @@ The build outputs:
 
 ## Usage
 
-```js
-import { button, div, h1, p } from 'yoya-ui';
+下面是一个可以直接保存为 `dashboard.js` 的完整小模块。页面只需要准备 `<div id="app"></div>`，再用模块脚本加载它即可。
 
-div((page) => {
-  page.id('dashboard').className('surface');
-  page.h1('Dashboard');
-  page.p('Built with ViewNode');
-  page.child(
-    button('Save').attr('type', 'button').on('click', () => {
-      console.log('saved');
-    })
-  );
+```js
+import { section, vText } from 'yoya-ui';
+
+export function DashboardExample() {
+  const previewText = vText('预览：未填写');
+  const statusText = vText('状态：等待保存');
+  let nameInput = null;
+
+  return {
+    render() {
+      return section((page) => {
+        page.id('dashboard').className('surface');
+        page.h1('Dashboard');
+        page.p('一个带表单状态和事件处理的 ViewNode 页面模块。');
+
+        page.form((form) => {
+          form.label((label) => {
+            label.attr('for', 'dashboard-name');
+            label.text('名称');
+          });
+          form.input((input) => {
+            nameInput = input;
+            input.id('dashboard-name');
+            input.attr('type', 'text').attr('placeholder', '输入名称');
+            input.on('input', (event) => {
+              const value = event.target.value.trim();
+              previewText.textContent(`预览：${value || '未填写'}`);
+            });
+          });
+          form.output((output) => {
+            output.id('dashboard-preview');
+            output.child(previewText);
+          });
+          form.button((button) => {
+            button.attr('type', 'button');
+            button.text('保存');
+            button.on('click', () => {
+              const value = nameInput.renderDom().value.trim() || '未填写';
+              statusText.textContent(`状态：已保存 ${value}`);
+            });
+          });
+        });
+
+        page.p((status) => {
+          status.id('dashboard-status');
+          status.child(statusText);
+        });
+      });
+    }
+  };
+}
+
+if (typeof document !== 'undefined' && document.querySelector('#app')) {
+  section((root) => root.child(DashboardExample())).bindTo('#app');
+}
+```
+
+更完整的表单、布局、路由、SVG 和语言切换模块见下面各专题 README；它们都遵循同一个可复制的函数入口约定。
+
+### 函数组件
+
+自定义组件统一使用“参数函数 → 带 `render()` 的对象 → ViewNode”的结构：
+
+```js
+import { section, span } from 'yoya-ui';
+
+function StatusBadge({ label }) {
+  return {
+    render() {
+      return span(label).className('status-badge');
+    }
+  };
+}
+
+section((page) => {
+  page.child(StatusBadge({ label: 'Ready' }));
 }).bindTo('#app');
 ```
+
+`child` 会延迟调用并缓存 `render()` 返回的 `ViewNode`。组件参数保留在闭包中，组件对象无需继承 `ViewNode`；普通 setup 回调和现有 `v*` 工厂行为不变。组件还可以在 `render()` 之外公开命令：
+
+```js
+import { div, vText } from 'yoya-ui';
+
+function StatusPanel() {
+  const message = vText('Waiting');
+  return {
+    setStatus(value) {
+      message.textContent(value);
+    },
+    render() {
+      return div((panel) => panel.child(message));
+    }
+  };
+}
+
+const panel = StatusPanel();
+page.child(panel);
+panel.setStatus('Ready');
+```
+
+组件演示和可复制源码必须保留完整的 `{ render() { ... } }` 封装，不使用直接返回 `ViewNode` 或裸 `() => ViewNode` Factory 的写法。
 
 ## HTML Element Coverage
 
@@ -209,7 +300,27 @@ div((page) => {
 });
 ```
 
-`button()` remains the native `<button>` factory. `vButton()` is the compound button component with label, variant, size, disabled and loading state support. Use `variant('primary')` for visual style; use `htmlType('submit')` when the underlying `<button>` needs a native form type.
+`button()` remains the native `<button>` factory. `vButton()` is the compound button component with label, variant, size, disabled and loading state support. Use `variant('primary')` for visual style; use `formType('submit')` when the underlying `<button>` needs a native form type.
+
+`vButton()` also supports a three-argument form: `vButton(content, { attrs: {}, style: {} }, setup)`. The second argument applies element attributes and styles; the final callback receives the initialized button instance for event handlers and state changes.
+
+Component factories keep their own first-argument meaning while sharing the same optional setup tail:
+
+```js
+import { hstack, vInput } from 'yoya-ui';
+
+const nameInput = vInput(
+  '请输入服务名',
+  { attrs: { name: 'serviceName' }, style: { maxWidth: '280px' } },
+  (input) => input.required(true)
+);
+
+const actions = hstack({ attrs: { 'data-layout': 'actions' }, style: { gap: '8px' } }, (row) =>
+  row.child(nameInput)
+);
+```
+
+`vInput` uses its first string as `placeholder`; layout factories do not need a content argument, so their options can be the first argument. When a positional slot must be skipped, pass `null`, for example `vInput(null, options, setup)`.
 
 Available compound component exports:
 
@@ -217,15 +328,17 @@ Available compound component exports:
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
 - `vMenu`, `vMenuItem`, `vDropdownMenu`, `vContextMenu`
 - `vMessage`, `vMessageContainer`
+- `vInput`, `vSelect`, `vTextarea`, `vCheckbox`, `vCheckboxes`, `vSwitch`, `vField`, `vForm`
+- `vTimer` (`date`, `datetime-local`, and `time` modes)
 - `toast`
 
 Browser demo:
 
 ```bash
-npm run examples:components
+npm run examples:html
 ```
 
-Then open `/examples/components/index.html`.
+Then open `/examples/Index.html#/components`.
 
 ## I18n Text
 

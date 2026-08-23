@@ -111,6 +111,8 @@ export class ViewNode {
     this._states = {};
     this._stateTypes = {};
     this._stateHandlers = new Map();
+    this._pendingRemovals = new Set();
+    this._childrenDirty = false;
     this._deleted = false;
 
     if (setup !== null) {
@@ -148,6 +150,15 @@ export class ViewNode {
     return [...this._children];
   }
 
+  clearChildren() {
+    this._children.forEach((child) => {
+      this._pendingRemovals.add(child);
+    });
+    this._children = [];
+    this._childrenDirty = true;
+    return this;
+  }
+
   /**
    * 添加子节点；字符串和数字会自动转成 VTextNode。
    */
@@ -157,7 +168,10 @@ export class ViewNode {
         return;
       }
 
-      this._children.push(normalizeChild(child));
+      const viewNode = normalizeChild(child);
+      this._pendingRemovals.delete(viewNode);
+      this._children.push(viewNode);
+      this._childrenDirty = true;
     });
 
     return this;
@@ -256,6 +270,12 @@ export class ViewNode {
     return this.renderDom();
   }
 
+  _commitChildren() {
+    this._pendingRemovals.forEach((child) => child.destroy());
+    this._pendingRemovals.clear();
+    this._childrenDirty = false;
+  }
+
   /**
    * 将当前节点挂载到选择器或 DOM 元素。
    */
@@ -278,6 +298,8 @@ export class ViewNode {
     this._cleanup.forEach((cleanup) => cleanup());
     this._cleanup = [];
     this._children.forEach((child) => child.destroy());
+    this._pendingRemovals.forEach((child) => child.destroy());
+    this._pendingRemovals.clear();
     this._children = [];
 
     if (this._el?.parentNode) {
@@ -420,6 +442,38 @@ export function normalizeChild(child) {
   throw new TypeError('ViewNode child must be a ViewNode, component, string, or number');
 }
 
+export function normalizeSetupArguments(first = null, second = null, third = null) {
+  if (typeof second === 'function' && (third === null || third === undefined)) {
+    return {
+      first,
+      options: null,
+      callback: second
+    };
+  }
+
+  return {
+    first,
+    options: second,
+    callback: third
+  };
+}
+
+export function applyElementOptions(node, options) {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    return node;
+  }
+
+  if (options.attrs && typeof node.attr === 'function') {
+    node.attr(options.attrs);
+  }
+
+  if (options.style && typeof node.styles === 'function') {
+    node.styles(options.style);
+  }
+
+  return node;
+}
+
 /**
  * ElementNode 表示可渲染成真实 DOM Element 的视图节点。
  * 它负责属性、类名、样式、事件和子节点到 DOM 的同步。
@@ -445,6 +499,11 @@ export class ElementNode extends ViewNode {
     Object.entries(config).forEach(([key, value]) => {
       if (key === 'class' || key === 'className') {
         this.className(value);
+        return;
+      }
+
+      if (key === 'attrs') {
+        this.attr(value);
         return;
       }
 
@@ -588,11 +647,13 @@ export class ElementNode extends ViewNode {
       }
 
       const viewNode = normalizeChild(child);
+      this._pendingRemovals.delete(viewNode);
       this._children.push(viewNode);
+      this._childrenDirty = true;
 
       if (this._el) {
         const childElement = viewNode.renderDom();
-        if (childElement) {
+        if (childElement && childElement.parentNode !== this._el) {
           this._el.appendChild(childElement);
         }
       }
@@ -613,6 +674,14 @@ export class ElementNode extends ViewNode {
       this._el = document.createElement(this._tagName);
       this._applySnapshotToElement();
     }
+
+    this._commitChildren();
+    this._children.forEach((child) => {
+      const childElement = child.renderDom();
+      if (childElement && childElement.parentNode !== this._el) {
+        this._el.appendChild(childElement);
+      }
+    });
 
     return this._el;
   }
@@ -714,8 +783,14 @@ export class ElementNode extends ViewNode {
  * 为标签创建工厂函数；默认使用 ElementNode，HTML/SVG 层可以传入自己的节点类。
  */
 export function createElementFactory(tagName, NodeClass = ElementNode) {
-  return function elementFactory(setup = null) {
-    return new NodeClass(tagName, setup);
+  return function elementFactory(first = null, second = null, third = null) {
+    const args = normalizeSetupArguments(first, second, third);
+    const node = new NodeClass(tagName, args.first);
+    applyElementOptions(node, args.options);
+    if (typeof args.callback === 'function') {
+      args.callback(node);
+    }
+    return node;
   };
 }
 

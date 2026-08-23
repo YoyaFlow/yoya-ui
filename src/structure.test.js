@@ -1,11 +1,12 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const existsInSrc = (path) => existsSync(new URL(path, import.meta.url));
 const importFromSrc = (path) => import(new URL(path, import.meta.url).href);
+const readFromSrc = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('foundation module structure', () => {
-  it('keeps large modules compact with concise file names', async () => {
+  it('keeps large modules compact with concise file names and domain entrypoints', async () => {
     expect(existsInSrc('./core/index.js')).toBe(true);
     expect(existsInSrc('./core/node.js')).toBe(true);
     expect(existsInSrc('./core/node.test.js')).toBe(true);
@@ -13,9 +14,48 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./html/index.js')).toBe(true);
     expect(existsInSrc('./svg/index.js')).toBe(true);
     expect(existsInSrc('./layout/index.js')).toBe(true);
+    expect(existsInSrc('./actions/index.js')).toBe(true);
+    expect(existsInSrc('./actions/button.js')).toBe(true);
+    expect(existsInSrc('./actions/context-menu.js')).toBe(true);
+    expect(existsInSrc('./actions/dropdown-menu.js')).toBe(true);
+    expect(existsInSrc('./navigation/index.js')).toBe(true);
+    expect(existsInSrc('./navigation/menu.js')).toBe(true);
+    expect(existsInSrc('./feedback/index.js')).toBe(true);
+    expect(existsInSrc('./feedback/message.js')).toBe(true);
+    expect(existsInSrc('./feedback/dialog.js')).toBe(true);
+    expect(existsInSrc('./feedback/dialog.test.js')).toBe(true);
+    expect(existsInSrc('./form/index.js')).toBe(true);
+    expect(existsInSrc('./form/controls.js')).toBe(true);
+    expect(existsInSrc('./data-display/index.js')).toBe(true);
+    expect(existsInSrc('./data-display/code.js')).toBe(true);
+    expect(existsInSrc('./data-display/detail.js')).toBe(true);
+    expect(existsInSrc('./data-display/pagination.js')).toBe(true);
+    expect(existsInSrc('./data-display/surface.js')).toBe(true);
+    expect(existsInSrc('./data-display/table.js')).toBe(true);
+    expect(existsInSrc('./data-display/chart.js')).toBe(true);
+    expect(existsInSrc('./data-display/chart.test.js')).toBe(true);
+    expect(existsInSrc('./data-display/code-block.js')).toBe(true);
+    expect(existsInSrc('./data-display/code-block.test.js')).toBe(true);
+    expect(existsInSrc('./async/index.js')).toBe(true);
+    expect(existsInSrc('./async/dynamic-loader.js')).toBe(true);
+    expect(existsInSrc('./async/dynamic-loader.test.js')).toBe(true);
+    expect(existsInSrc('./router/index.js')).toBe(true);
+    expect(existsInSrc('./router/router.js')).toBe(true);
+    expect(existsInSrc('./router/router.test.js')).toBe(true);
+    expect(existsInSrc('./feedback/message-manager.js')).toBe(true);
+    expect(existsInSrc('./feedback/message-manager.test.js')).toBe(true);
     expect(existsInSrc('./components/index.js')).toBe(true);
-    expect(existsInSrc('./router.js')).toBe(true);
 
+    expect(existsInSrc('./chart.js')).toBe(false);
+    expect(existsInSrc('./chart.test.js')).toBe(false);
+    expect(existsInSrc('./code-block.js')).toBe(false);
+    expect(existsInSrc('./code-block.test.js')).toBe(false);
+    expect(existsInSrc('./dynamic-loader.js')).toBe(false);
+    expect(existsInSrc('./dynamic-loader.test.js')).toBe(false);
+    expect(existsInSrc('./message-manager.js')).toBe(false);
+    expect(existsInSrc('./message-manager.test.js')).toBe(false);
+    expect(existsInSrc('./router.js')).toBe(false);
+    expect(existsInSrc('./router.test.js')).toBe(false);
     expect(existsInSrc('./core/attributes.js')).toBe(false);
     expect(existsInSrc('./core/dom.js')).toBe(false);
     expect(existsInSrc('./core/element-node.js')).toBe(false);
@@ -28,23 +68,45 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./svg/svg-element-node.js')).toBe(false);
     expect(existsInSrc('./elements')).toBe(false);
 
+    const componentsEntry = readFromSrc('./components/index.js');
+    expect(componentsEntry).not.toMatch(/^export class /m);
+    expect(componentsEntry).not.toMatch(/^export function /m);
+    expect(componentsEntry).not.toMatch(/^export const toast\b/m);
+
     const api = await importFromSrc('./index.js');
     const html = await importFromSrc('./html/index.js');
     const svg = await importFromSrc('./svg/index.js');
+    const actions = await importFromSrc('./actions/index.js');
+    const navigation = await importFromSrc('./navigation/index.js');
+    const feedback = await importFromSrc('./feedback/index.js');
+    const form = await importFromSrc('./form/index.js');
+    const dataDisplay = await importFromSrc('./data-display/index.js');
+    const asyncViews = await importFromSrc('./async/index.js');
+    const routerModule = await importFromSrc('./router/index.js');
     const components = await importFromSrc('./components/index.js');
 
     expect(api.div).toBe(html.div);
     expect(api.svg).toBe(svg.svg);
     expect(api.flex).toBeTypeOf('function');
-    expect(api.router).toBeTypeOf('function');
-    expect(api.createRouter).toBeTypeOf('function');
-    expect(api.Router).toBeTypeOf('function');
+    expect(api.router).toBe(routerModule.router);
+    expect(api.createRouter).toBe(routerModule.createRouter);
+    expect(api.Router).toBe(routerModule.Router);
     expect(api.ElementNode).toBeTypeOf('function');
     expect(api.HtmlElementNode).toBeTypeOf('function');
     expect(api.SvgElementNode).toBeTypeOf('function');
     expect(api.circle).toBeUndefined();
-    expect(api.vButton).toBe(components.vButton);
+    expect(api.vButton).toBe(actions.vButton);
+    expect(api.vMenu).toBe(navigation.vMenu);
+    expect(api.toast).toBe(feedback.toast);
+    expect(api.vMessageManager).toBe(feedback.vMessageManager);
+    expect(api.vDialog).toBe(feedback.vDialog);
+    expect(api.vForm).toBe(form.vForm);
+    expect(api.vTable).toBe(dataDisplay.vTable);
+    expect(api.vChart).toBe(dataDisplay.vChart);
+    expect(api.codeBlock).toBe(dataDisplay.codeBlock);
+    expect(api.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(api.vCard).toBe(components.vCard);
+    expect(api.vButton).toBe(components.vButton);
     expect(api.toast).toBe(components.toast);
   });
 

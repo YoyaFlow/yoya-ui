@@ -1,0 +1,1228 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui 组件目录</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: #172033;
+        background: #f5f7fa;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:focus-visible {
+        outline: 2px solid #1f6feb;
+        outline-offset: 2px;
+      }
+
+      #app {
+        min-height: 100vh;
+      }
+
+      .components-workspace {
+        display: grid;
+        grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        width: min(100%, 1280px);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+
+      .components-menu,
+      .components-router-panel {
+        min-width: 0;
+      }
+
+      .components-menu {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        padding: 16px;
+        background: #ffffff;
+      }
+
+      .components-menu-intro {
+        display: grid;
+        gap: 6px;
+      }
+
+      .components-menu-intro h2,
+      .components-menu-intro p,
+      .components-route-page h2,
+      .components-route-page p,
+      .components-route-header h2,
+      .components-route-header p,
+      .components-route-meta h3,
+      .components-route-meta strong,
+      .components-route-detail h3,
+      .components-route-detail strong,
+      .components-route-detail code,
+      .components-route-behavior h3,
+      .components-route-behavior ul,
+      .components-route-behavior li,
+      .components-route-notes h3,
+      .components-route-notes p,
+      .components-route-placeholder h3,
+      .components-route-placeholder p,
+      .source-panel h2,
+      .source-panel p,
+      .components-not-found h2,
+      .components-not-found p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-menu-intro h2 {
+        font-size: 1rem;
+      }
+
+      .components-menu-intro p {
+        color: #5a6575;
+      }
+
+      .components-menu-list {
+        min-width: 0;
+        width: 100%;
+        padding: 0;
+      }
+
+      .components-menu-list .yoya-vmenu {
+        min-width: 0;
+        width: 100%;
+        padding: 0;
+        gap: 4px;
+      }
+
+      .components-menu-list .yoya-vmenu-group {
+        gap: 2px;
+        padding: 0 0 6px;
+      }
+
+      .components-menu-list .yoya-vmenu-group-label {
+        color: #344054;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 6px 10px 4px;
+        text-transform: none;
+      }
+
+      .components-menu-list .yoya-vmenu-group[data-active='true'] .yoya-vmenu-group-label {
+        color: #1d4ed8;
+      }
+
+      .components-menu-list .yoya-vmenu-item {
+        min-height: 36px;
+      }
+
+      .components-menu-list .yoya-vmenu-item-shortcut {
+        align-self: center;
+        justify-self: end;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #eef3f9;
+        color: #5a6575;
+        font-size: 0.8rem;
+        line-height: 1.2;
+        text-align: right;
+        white-space: normal;
+      }
+
+      .components-menu-list
+        .yoya-vmenu-item[data-component-status='planned']
+        .yoya-vmenu-item-shortcut {
+        background: #fff6db;
+        color: #8a5b00;
+      }
+
+      .components-router-panel .yoya-vrouter-views {
+        min-height: 100%;
+      }
+
+      .components-route-page {
+        display: grid;
+        gap: 16px;
+      }
+
+      .components-button-docs {
+        gap: 24px;
+      }
+
+      .components-button-docs-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #2563eb;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-button-docs-header h1,
+      .components-button-docs-header p,
+      .components-button-docs-usage h2,
+      .components-button-docs-usage p,
+      .components-button-docs-usage ul,
+      .components-button-docs-examples h2,
+      .components-button-docs-examples > p,
+      .components-button-docs-api h2,
+      .components-button-demo h3,
+      .components-button-demo > p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-button-docs-header h1 {
+        color: #172033;
+        font-size: 1.45rem;
+      }
+
+      .components-button-docs-header p,
+      .components-button-docs-usage p,
+      .components-button-docs-usage li,
+      .components-button-docs-examples > p,
+      .components-button-demo > p {
+        color: #5a6575;
+      }
+
+      .components-button-docs-usage,
+      .components-button-docs-api,
+      .components-button-docs-examples {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-button-docs-usage {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .components-button-docs-usage h2,
+      .components-button-docs-api h2,
+      .components-button-docs-examples h2 {
+        color: #172033;
+        font-size: 1.05rem;
+      }
+
+      .components-button-docs-usage ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .components-button-docs-api {
+        overflow: hidden;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .components-button-docs-api h2 {
+        padding: 16px 16px 0;
+      }
+
+      .button-api-signature {
+        margin: 0 16px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .button-api-signature code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        white-space: pre;
+      }
+
+      .components-button-docs-api table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .components-button-docs-api th,
+      .components-button-docs-api td {
+        border-top: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .components-button-docs-api th {
+        color: #344054;
+        background: #f8fafc;
+        font-size: 0.82rem;
+      }
+
+      .components-button-docs-api td {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-button-docs-api td code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+
+      .components-button-demo {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border-top: 1px solid #d8e0ea;
+        padding: 20px 0 0;
+      }
+
+      .components-button-demo h3 {
+        color: #172033;
+        font-size: 1rem;
+      }
+
+      .components-button-demo-live {
+        display: grid;
+        align-items: center;
+        min-height: 92px;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #ffffff;
+      }
+
+      .button-demo-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .button-demo-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .button-demo-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .components-button-demo .source-panel {
+        margin-top: 2px;
+      }
+
+      .components-layout-docs {
+        gap: 24px;
+      }
+
+      .components-layout-docs-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #2563eb;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-layout-docs-header h1,
+      .components-layout-docs-header p,
+      .components-layout-docs-usage h2,
+      .components-layout-docs-usage p,
+      .components-layout-docs-usage ul,
+      .components-layout-docs-examples h2,
+      .components-layout-docs-examples > p,
+      .components-layout-docs-api h2,
+      .components-layout-demo h3,
+      .components-layout-demo > p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-layout-docs-header h1 {
+        color: #172033;
+        font-size: 1.45rem;
+      }
+
+      .components-layout-docs-header p,
+      .components-layout-docs-usage p,
+      .components-layout-docs-usage li,
+      .components-layout-docs-examples > p,
+      .components-layout-demo > p {
+        color: #5a6575;
+      }
+
+      .components-layout-docs-usage,
+      .components-layout-docs-api,
+      .components-layout-docs-examples {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-layout-docs-usage {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .components-layout-docs-usage h2,
+      .components-layout-docs-api h2,
+      .components-layout-docs-examples h2 {
+        color: #172033;
+        font-size: 1.05rem;
+      }
+
+      .components-layout-docs-usage ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .components-layout-docs-api {
+        overflow: hidden;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .components-layout-docs-api h2 {
+        padding: 16px 16px 0;
+      }
+
+      .layout-api-signature {
+        margin: 0 16px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .layout-api-signature code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        white-space: pre;
+      }
+
+      .components-layout-docs-api table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .components-layout-docs-api th,
+      .components-layout-docs-api td {
+        border-top: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .components-layout-docs-api th {
+        color: #344054;
+        background: #f8fafc;
+        font-size: 0.82rem;
+      }
+
+      .components-layout-docs-api td {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-layout-docs-api td code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+
+      .components-layout-demo {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border-top: 1px solid #d8e0ea;
+        padding: 20px 0 0;
+      }
+
+      .components-layout-demo h3 {
+        color: #172033;
+        font-size: 1rem;
+      }
+
+      .components-layout-demo-live {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        align-items: start;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #ffffff;
+      }
+
+      .components-layout-demo .source-panel {
+        margin-top: 2px;
+      }
+
+      .components-layout-docs--popup {
+        gap: 24px;
+      }
+
+      .components-layout-popup-sheet {
+        display: grid;
+        gap: 14px;
+        padding: 0;
+      }
+
+      .components-layout-docs--popup .yoya-vdialog {
+        border: none;
+      }
+
+      .components-layout-docs--popup .yoya-vdialog::backdrop {
+        background: rgba(15, 23, 42, 0.28);
+      }
+
+      .components-layout-docs--popup .yoya-vdialog-content {
+        display: grid;
+        gap: 14px;
+        padding: 18px 20px 20px;
+      }
+
+      .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard {
+        margin: 0;
+      }
+
+      .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-header,
+      .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-body,
+      .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-footer {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      .components-layout-docs--templates {
+        gap: 24px;
+      }
+
+      .components-layout-template-shell {
+        display: grid;
+        gap: 16px;
+        min-width: 0;
+        width: 100%;
+      }
+
+      .components-layout-template-auth-card {
+        width: 100%;
+      }
+
+      .components-navigation-docs {
+        gap: 24px;
+      }
+
+      .components-navigation-docs-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #0f766e;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-navigation-docs-header h1,
+      .components-navigation-docs-header p,
+      .components-navigation-docs-usage h2,
+      .components-navigation-docs-usage p,
+      .components-navigation-docs-usage ul,
+      .components-navigation-docs-examples h2,
+      .components-navigation-docs-examples > p,
+      .components-navigation-docs-api h2,
+      .components-navigation-demo h3,
+      .components-navigation-demo > p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-navigation-docs-header h1 {
+        color: #172033;
+        font-size: 1.45rem;
+      }
+
+      .components-navigation-docs-header p,
+      .components-navigation-docs-usage p,
+      .components-navigation-docs-usage li,
+      .components-navigation-docs-examples > p,
+      .components-navigation-demo > p {
+        color: #5a6575;
+      }
+
+      .components-navigation-docs-usage,
+      .components-navigation-docs-api,
+      .components-navigation-docs-examples {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-navigation-docs-usage {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .components-navigation-docs-usage h2,
+      .components-navigation-docs-api h2,
+      .components-navigation-docs-examples h2 {
+        color: #172033;
+        font-size: 1.05rem;
+      }
+
+      .components-navigation-docs-usage ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .components-navigation-docs-api {
+        overflow: hidden;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .components-navigation-docs-api h2 {
+        padding: 16px 16px 0;
+      }
+
+      .navigation-api-signature {
+        margin: 0 16px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .navigation-api-signature code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        white-space: pre;
+      }
+
+      .components-navigation-docs-api table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .components-navigation-docs-api th,
+      .components-navigation-docs-api td {
+        border-top: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .components-navigation-docs-api th {
+        color: #344054;
+        background: #f8fafc;
+        font-size: 0.82rem;
+      }
+
+      .components-navigation-docs-api td {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-navigation-docs-api td code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+
+      .components-navigation-demo {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border-top: 1px solid #d8e0ea;
+        padding: 20px 0 0;
+      }
+
+      .components-navigation-demo h3 {
+        color: #172033;
+        font-size: 1rem;
+      }
+
+      .components-navigation-demo-live {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        align-items: start;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #ffffff;
+      }
+
+      .components-navigation-demo .source-panel {
+        margin-top: 2px;
+      }
+
+      .components-data-display-docs {
+        gap: 24px;
+      }
+
+      .components-data-display-docs-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #7c3aed;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-data-display-docs-header h1,
+      .components-data-display-docs-header p,
+      .components-data-display-docs-usage h2,
+      .components-data-display-docs-usage p,
+      .components-data-display-docs-usage ul,
+      .components-data-display-docs-examples h2,
+      .components-data-display-docs-examples > p,
+      .components-data-display-docs-api h2,
+      .components-data-display-demo h3,
+      .components-data-display-demo > p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-data-display-docs-header h1 {
+        color: #172033;
+        font-size: 1.45rem;
+      }
+
+      .components-data-display-docs-header p,
+      .components-data-display-docs-usage p,
+      .components-data-display-docs-usage li,
+      .components-data-display-docs-examples > p,
+      .components-data-display-demo > p {
+        color: #5a6575;
+      }
+
+      .components-data-display-docs-usage,
+      .components-data-display-docs-api,
+      .components-data-display-docs-examples {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-data-display-docs-usage {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .components-data-display-docs-usage h2,
+      .components-data-display-docs-api h2,
+      .components-data-display-docs-examples h2 {
+        color: #172033;
+        font-size: 1.05rem;
+      }
+
+      .components-data-display-docs-usage ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .components-data-display-docs-api {
+        overflow: hidden;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .components-data-display-docs-api h2 {
+        padding: 16px 16px 0;
+      }
+
+      .data-display-api-signature {
+        margin: 0 16px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .data-display-api-signature code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        white-space: pre;
+      }
+
+      .components-data-display-docs-api table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .components-data-display-docs-api th,
+      .components-data-display-docs-api td {
+        border-top: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .components-data-display-docs-api th {
+        color: #344054;
+        background: #f8fafc;
+        font-size: 0.82rem;
+      }
+
+      .components-data-display-docs-api td {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-data-display-docs-api td code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+
+      .components-data-display-demo {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border-top: 1px solid #d8e0ea;
+        padding: 20px 0 0;
+      }
+
+      .components-data-display-demo h3 {
+        color: #172033;
+        font-size: 1rem;
+      }
+
+      .components-data-display-demo-live {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        align-items: start;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #ffffff;
+      }
+
+      .components-data-display-demo-live .yoya-vtable {
+        width: 100%;
+      }
+
+      .components-data-display-demo .source-panel {
+        margin-top: 2px;
+      }
+
+      .components-feedback-docs {
+        gap: 24px;
+      }
+
+      .components-feedback-docs-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #0f766e;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-feedback-docs-header h1,
+      .components-feedback-docs-header p,
+      .components-feedback-docs-usage h2,
+      .components-feedback-docs-usage p,
+      .components-feedback-docs-usage ul,
+      .components-feedback-docs-examples h2,
+      .components-feedback-docs-examples > p,
+      .components-feedback-docs-api h2,
+      .components-feedback-demo h3,
+      .components-feedback-demo > p {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      .components-feedback-docs-header h1 {
+        color: #172033;
+        font-size: 1.45rem;
+      }
+
+      .components-feedback-docs-header p,
+      .components-feedback-docs-usage p,
+      .components-feedback-docs-usage li,
+      .components-feedback-docs-examples > p,
+      .components-feedback-demo > p {
+        color: #5a6575;
+      }
+
+      .components-feedback-docs-usage,
+      .components-feedback-docs-api,
+      .components-feedback-docs-examples {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-feedback-docs-usage {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+
+      .components-feedback-docs-usage h2,
+      .components-feedback-docs-api h2,
+      .components-feedback-docs-examples h2 {
+        color: #172033;
+        font-size: 1.05rem;
+      }
+
+      .components-feedback-docs-usage ul {
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .components-feedback-docs-api {
+        overflow: hidden;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .components-feedback-docs-api h2 {
+        padding: 16px 16px 0;
+      }
+
+      .feedback-api-signature {
+        margin: 0 16px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .feedback-api-signature code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        white-space: pre;
+      }
+
+      .components-feedback-docs-api table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .components-feedback-docs-api th,
+      .components-feedback-docs-api td {
+        border-top: 1px solid #e2e8f0;
+        padding: 11px 16px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .components-feedback-docs-api th {
+        color: #344054;
+        background: #f8fafc;
+        font-size: 0.82rem;
+      }
+
+      .components-feedback-docs-api td {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-feedback-docs-api td code {
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.82rem;
+        overflow-wrap: anywhere;
+      }
+
+      .components-feedback-demo {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border-top: 1px solid #d8e0ea;
+        padding: 20px 0 0;
+      }
+
+      .components-feedback-demo h3 {
+        color: #172033;
+        font-size: 1rem;
+      }
+
+      .components-feedback-demo-live {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        align-items: start;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        background: #ffffff;
+      }
+
+      .components-feedback-demo-live .yoya-vmessage-container {
+        min-height: 44px;
+      }
+
+      .components-feedback-demo .source-panel {
+        margin-top: 2px;
+      }
+
+      .components-route-page--intro {
+        gap: 12px;
+      }
+
+      .components-route-meta-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .components-route-meta,
+      .components-route-detail {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #fbfcfe;
+      }
+
+      .components-route-meta h3 {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-route-meta strong {
+        color: #172033;
+        font-size: 1.35rem;
+      }
+
+      .components-route-header {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid #2563eb;
+        padding: 4px 0 4px 12px;
+      }
+
+      .components-route-header h2 {
+        color: #172033;
+        font-size: 1.1rem;
+      }
+
+      .components-route-header p,
+      .components-route-page p {
+        color: #5a6575;
+      }
+
+      .components-route-layout {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .components-route-live {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .components-route-live h3,
+      .components-route-behavior h3,
+      .components-route-notes h3,
+      .components-route-placeholder h3 {
+        color: #172033;
+        font-size: 0.98rem;
+      }
+
+      .components-route-behavior,
+      .components-route-notes,
+      .components-route-placeholder {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #fbfcfe;
+      }
+
+      .components-route-behavior ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #4b5563;
+      }
+
+      .components-route-note-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .components-route-note,
+      .detail-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #d7dee8;
+        border-radius: 999px;
+        padding: 3px 10px;
+        color: #445065;
+        background: #f8fafc;
+        font-size: 0.78rem;
+      }
+
+      .detail-grid-cell {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: #fbfcfe;
+      }
+
+      .detail-grid-cell strong {
+        color: #172033;
+      }
+
+      .components-route-placeholder p {
+        color: #5a6575;
+      }
+
+      .source-panel {
+        display: grid;
+        box-sizing: border-box;
+        gap: 10px;
+        min-width: 0;
+        width: 100%;
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        padding: 16px;
+        background: #ffffff;
+      }
+
+      .source-code {
+        width: 100%;
+        max-height: 620px;
+        min-height: 260px;
+        margin: 0;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 14px;
+        background: #fbfcfe;
+      }
+
+      .source-code code {
+        display: block;
+        min-width: max-content;
+        color: #172033;
+        font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+        font-size: 0.84rem;
+        line-height: 1.55;
+        white-space: pre;
+      }
+
+      .components-route-details {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .components-route-detail h3 {
+        color: #5a6575;
+        font-size: 0.88rem;
+      }
+
+      .components-route-detail code {
+        color: #172033;
+        overflow-wrap: anywhere;
+        font-family: ui-monospace, SFMono-Regular, Consolas, 'Cascadia Code', monospace;
+        font-size: 0.86rem;
+      }
+
+      .components-not-found {
+        display: grid;
+        gap: 12px;
+      }
+
+      .components-not-found a {
+        color: #1f6feb;
+        font-weight: 600;
+      }
+
+      @media (max-width: 960px) {
+        .components-workspace,
+        .components-route-meta-grid,
+        .components-route-details,
+        .components-route-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .components-workspace {
+          width: 100%;
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="./index.router.js"></script>
+  </body>
+</html>

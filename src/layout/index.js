@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { applyComponentArguments, normalizeComponentArguments } from '../components/shared.js';
 
 const layoutOptionNames = new Set([
   'align',
@@ -20,58 +21,69 @@ const layoutOptionNames = new Set([
   'wrap'
 ]);
 
-export function flex(setup = null) {
-  return createLayoutNode('flex', { display: 'flex' }, setup, applyFlexOptions);
+export function flex(first = null, second = null, third = null) {
+  return createLayoutNode('flex', { display: 'flex' }, first, applyFlexOptions, second, third);
 }
 
-export function stack(setup = null) {
+export function stack(first = null, second = null, third = null) {
   return createLayoutNode(
     'stack',
     { display: 'flex', flexDirection: 'column' },
-    setup,
-    applyFlexOptions
+    first,
+    applyFlexOptions,
+    second,
+    third
   );
 }
 
-export function vstack(setup = null) {
+export function vstack(first = null, second = null, third = null) {
   return createLayoutNode(
     'vstack',
     { display: 'flex', flexDirection: 'column' },
-    setup,
-    applyFlexOptions
+    first,
+    applyFlexOptions,
+    second,
+    third
   );
 }
 
-export function hstack(setup = null) {
+export function hstack(first = null, second = null, third = null) {
   return createLayoutNode(
     'hstack',
     { display: 'flex', flexDirection: 'row' },
-    setup,
-    applyFlexOptions
+    first,
+    applyFlexOptions,
+    second,
+    third
   );
 }
 
-export function center(setup = null) {
+export function center(first = null, second = null, third = null) {
   return createLayoutNode(
     'center',
     { display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    setup,
-    applyFlexOptions
+    first,
+    applyFlexOptions,
+    second,
+    third
   );
 }
 
-export function grid(setup = null) {
-  return createLayoutNode('grid', { display: 'grid' }, setup, applyGridOptions);
+export function grid(first = null, second = null, third = null) {
+  return createLayoutNode('grid', { display: 'grid' }, first, applyGridOptions, second, third);
 }
 
-export function responsiveGrid(setup = null) {
+export function responsiveGrid(first = null, second = null, third = null) {
+  const args = normalizeComponentArguments(first, second, third);
   const node = createLayoutNode(
     'responsive-grid',
     { display: 'grid' },
-    typeof setup === 'function' ? null : setup,
-    applyResponsiveGridOptions
+    args.first,
+    applyResponsiveGridOptions,
+    args.options,
+    args.callback
   );
-  const options = isPlainObject(setup) ? setup : {};
+  const options = isPlainObject(args.first) ? args.first : {};
   node._responsiveGridBreakpoints = normalizeBreakpoints(options.breakpoints);
   node._responsiveGridMinColumnWidth = normalizeMinColumnWidth(options.minColumnWidth);
 
@@ -121,14 +133,11 @@ export function responsiveGrid(setup = null) {
     wrapResponsiveGridDestroy(node);
   }
 
-  if (typeof setup === 'function') {
-    setup(node);
-  }
-
   return node;
 }
 
-export function vBody(setup = null) {
+export function vBody(first = null, second = null, third = null) {
+  const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div');
   const content = new HtmlElementNode('div').className('yoya-vbody-content');
   const appendOuterChild = node.child.bind(node);
@@ -188,8 +197,8 @@ export function vBody(setup = null) {
     return node;
   };
 
-  applyVBodySetup(node, setup);
-  return node;
+  applyVBodySetup(node, args.first);
+  return applyComponentArguments(node, args.options, args.callback);
 }
 
 export function createVBodyPage(setup = null, target = null) {
@@ -212,7 +221,7 @@ function wrapResponsiveGridDestroy(node) {
   };
 }
 
-export function container(setup = null) {
+export function container(first = null, second = null, third = null) {
   return createLayoutNode(
     'container',
     {
@@ -223,25 +232,29 @@ export function container(setup = null) {
       paddingLeft: '16px',
       paddingRight: '16px'
     },
-    setup,
-    applyContainerOptions
+    first,
+    applyContainerOptions,
+    second,
+    third
   );
 }
 
-export function spacer(setup = null) {
+export function spacer(first = null, second = null, third = null) {
   const node = createLayoutNode(
     'spacer',
     { flexGrow: 1, minWidth: 0, minHeight: 0 },
-    setup,
-    applySpacerOptions
+    first,
+    applySpacerOptions,
+    second,
+    third
   );
 
   node.attr('aria-hidden', 'true');
   return node;
 }
 
-export function divider(setup = null) {
-  const node = createLayoutNode('divider', {}, setup, applyDividerOptions);
+export function divider(first = null, second = null, third = null) {
+  const node = createLayoutNode('divider', {}, first, applyDividerOptions, second, third);
   node.attr('role', 'separator');
 
   if (!node.attr('aria-orientation')) {
@@ -267,12 +280,13 @@ const layoutFactories = {
 
 registerChildFactories(HtmlElementNode, layoutFactories);
 
-function createLayoutNode(kind, baseStyles, setup, applyOptions) {
+function createLayoutNode(kind, baseStyles, first, applyOptions, second, third) {
+  const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div');
   node.className('yoya-layout', `yoya-${kind}`);
   node.styles(baseStyles);
-  applyLayoutSetup(node, setup, applyOptions);
-  return node;
+  applyLayoutSetup(node, args.first, applyOptions);
+  return applyComponentArguments(node, args.options, args.callback);
 }
 
 function applyLayoutSetup(node, setup, applyOptions) {

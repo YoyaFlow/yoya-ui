@@ -1,0 +1,58 @@
+## 由作者手动维护组件清单
+
+`（待开发）` 表示目录里已预留、代码里还没落地。
+
+### 通用
+1. 按钮 vButton
+2. 按钮组 vButtons（待开发）
+3. 悬浮按钮 vFloatButton（待开发）
+
+### 布局
+1. 分割线 divider
+2. 弹性布局 flex / stack / hstack / vstack / center
+3. 栅格 grid / responsiveGrid
+4. 页面容器 container / vBody
+5. 间距 spacer
+6. 弹窗 vDialog
+7. 布局模板 dashboard / detail / settings / auth
+8. 分隔面板 Splitter（待开发）
+
+### 导航
+1. 锚点 vAnchor（待开发）
+2. 面包屑（待开发）
+3. 下拉菜单 vDropdownMenu / vContextMenu
+4. 菜单 vMenu / vMenuItem / vMenuGroup / vMenuDivider / vSubMenu / vSidebar
+5. 分页 vPagination
+6. 步骤条（待开发）
+7. 标签页 vRouterViews
+8. 路由 Router / vRouter / vLink / vRoute
+9. 路由视图 vRouterView / vRouterViews
+10. 导航栏 vNavbar / vMenu / vButton
+
+### 表单与数据录入
+1. 表单 vForm
+2. 输入框 vInput
+3. 选择框 vSelect
+4. 多选框 vCheckbox / vCheckboxes
+5. 单选框 vRadio（待开发）
+6. 文本域 vTextarea
+7. 开关 vSwitch
+8. 字段 vField
+9. 日期时间 vTimer
+10. 日期范围 vTimerRange
+
+### 数据展示
+1. 头像（待开发）
+2. 徽标数（待开发）
+3. 详情 vDetail / vDetailItem
+4. 代码 vCode / codeBlock
+5. 表格 vTable
+6. 卡片 vCard / vCardHeader / vCardBody / vCardFooter
+7. 图表 vChart
+
+### 异步
+1. 动态加载 vDynamicLoader
+
+### 反馈
+1. 消息 vMessage / vMessageContainer / toast
+2. 消息管理器 vMessageManager

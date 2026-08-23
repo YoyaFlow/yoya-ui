@@ -8,6 +8,7 @@ import {
   h1,
   input,
   p,
+  span,
   vText
 } from '../index.js';
 
@@ -124,6 +125,32 @@ describe('ViewNode core', () => {
     expect(field.renderDom().getAttribute('data-size')).toBe('large');
   });
 
+  it('resolves function components lazily when they are rendered', () => {
+    let calls = 0;
+    function StatusBadge({ label }) {
+      return () => {
+        calls += 1;
+        return span(label).className('status-badge');
+      };
+    }
+
+    const root = div().child(StatusBadge({ label: 'Ready' }));
+
+    expect(calls).toBe(0);
+    expect(root.renderDom().innerHTML).toBe('<span class="status-badge">Ready</span>');
+    expect(calls).toBe(1);
+    expect(root.toHTML()).toBe('<div><span class="status-badge">Ready</span></div>');
+  });
+
+  it('supports function components added after the parent has rendered', () => {
+    const root = div('before');
+    root.renderDom();
+
+    root.child(() => p('after'));
+
+    expect(root.renderDom().innerHTML).toBe('before<p>after</p>');
+  });
+
   it('supports component objects with render and public methods', () => {
     let renderCalls = 0;
     function StatusPanel() {
@@ -144,7 +171,7 @@ describe('ViewNode core', () => {
     panel.setStatus('Ready');
 
     expect(renderCalls).toBe(0);
-    expect(root.commit().textContent).toBe('Ready');
+    expect(root.renderDom().textContent).toBe('Ready');
     expect(root.toHTML()).toBe('<div><div class="status-panel">Ready</div></div>');
     expect(renderCalls).toBe(1);
   });
@@ -155,10 +182,37 @@ describe('ViewNode core', () => {
     expect(() => root.renderDom()).toThrow('Component render must return a ViewNode');
   });
 
+  it('clears logical children and removes their DOM on the next render', () => {
+    const root = div().child(p('old'));
+    const element = root.renderDom();
+
+    root.clearChildren();
+
+    expect(root.children()).toHaveLength(0);
+    expect(root.toHTML()).toBe('<div></div>');
+    expect(element.textContent).toBe('old');
+
+    root.renderDom();
+
+    expect(element.textContent).toBe('');
+  });
+
   it('exposes commit as the semantic DOM synchronization entry point', () => {
     const root = div().text('Committed');
 
     expect(root.commit()).toBe(root.renderDom());
     expect(root.commit().textContent).toBe('Committed');
+  });
+
+  it('cancels pending removal when a child is added again before render', () => {
+    const child = p('keep');
+    const root = div().child(child);
+    const element = root.renderDom();
+
+    root.clearChildren().child(child);
+    root.renderDom();
+
+    expect(root.children()).toEqual([child]);
+    expect(element.innerHTML).toBe('<p>keep</p>');
   });
 });

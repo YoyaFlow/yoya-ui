@@ -11,6 +11,7 @@ import {
   createI18n,
   div,
   toast,
+  vChart,
   vCode,
   vButton,
   vCard,
@@ -20,17 +21,18 @@ import {
   vCheckbox,
   vCheckboxes,
   vContextMenu,
-  vDetail,
   vDetailItem,
   vDropdownMenu,
+  vDynamicLoader,
   vField,
   vForm,
   vInput,
+  hstack,
   vMenu,
   vMenuDivider,
   vMenuGroup,
-  vSidebar,
   vMenuItem,
+  vSidebar,
   vSubMenu,
   vMessage,
   vMessageContainer,
@@ -38,9 +40,12 @@ import {
   vSwitch,
   vTextarea,
   vTable,
+  VPagination,
   vTimer,
-  vTimerRange
+  vTimerRange,
+  vPagination
 } from '../index.js';
+import { applyComponentArguments } from './shared.js';
 
 describe('compound components', () => {
   afterEach(() => {
@@ -52,11 +57,13 @@ describe('compound components', () => {
   it('keeps vButton distinct from the native button factory', () => {
     const native = button('保存');
     const action = vButton('保存').type('primary').size('small').loading(true);
-    const submit = vButton('提交').variant('primary').htmlType('submit');
+    const submit = vButton('提交').variant('primary').formType('submit');
+    const reset = vButton({ label: '重置', formType: 'reset' });
 
     const nativeElement = native.renderDom();
     const actionElement = action.renderDom();
     const submitElement = submit.renderDom();
+    const resetElement = reset.renderDom();
 
     expect(nativeElement.className).toBe('');
     expect(nativeElement.textContent).toBe('保存');
@@ -70,6 +77,237 @@ describe('compound components', () => {
     expect(actionElement.querySelector('.yoya-vbutton-label').textContent).toBe('保存');
     expect(submitElement.type).toBe('submit');
     expect(submitElement.dataset.variant).toBe('primary');
+    expect(resetElement.type).toBe('reset');
+  });
+
+  it('accepts label, element options, and a final button setup callback', () => {
+    let callbackButton = null;
+    const action = vButton(
+      'OK',
+      {
+        attrs: {
+          'aria-label': '确认操作',
+          'data-action': 'confirm',
+          id: 'confirm-button'
+        },
+        style: {
+          minWidth: '120px',
+          textTransform: 'uppercase'
+        }
+      },
+      (button) => {
+        callbackButton = button;
+        button.variant('primary');
+      }
+    );
+
+    const element = action.renderDom();
+
+    expect(callbackButton).toBe(action);
+    expect(element.textContent).toBe('OK');
+    expect(element.id).toBe('confirm-button');
+    expect(element.getAttribute('aria-label')).toBe('确认操作');
+    expect(element.dataset.action).toBe('confirm');
+    expect(element.style.minWidth).toBe('120px');
+    expect(element.style.textTransform).toBe('uppercase');
+    expect(element.dataset.variant).toBe('primary');
+  });
+
+  it('applies button interaction styles for hover, active, focus, and disabled states', () => {
+    const action = vButton('保存').variant('primary');
+    const element = action.renderDom();
+
+    expect(element.style.transition).toContain('transform');
+    expect(element.style.boxShadow).not.toBe('');
+
+    element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+
+    expect(element.dataset.interaction).toBe('hover');
+    expect(element.style.transform).toBe('translateY(-1px)');
+    expect(element.style.background).toBe('rgb(29, 78, 216)');
+
+    element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
+    expect(element.dataset.interaction).toBe('active');
+    expect(element.style.transform).toBe('translateY(0px)');
+
+    element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    element.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+    element.dispatchEvent(new FocusEvent('focus', { bubbles: false }));
+
+    expect(element.dataset.interaction).toBe('focus');
+    expect(element.style.outline).toBe('3px solid rgba(37, 99, 235, 0.28)');
+
+    action.disabled(true);
+    element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+
+    expect(element.dataset.interaction).toBe('disabled');
+    expect(element.style.cursor).toBe('not-allowed');
+    expect(element.style.transform).toBe('translateY(0px)');
+  });
+
+  it('applies shared element options and final callbacks when the first setup is omitted', () => {
+    let callbackNode = null;
+    const card = vCard(
+      null,
+      { attrs: { 'data-surface': 'card' }, style: { minHeight: '40px' } },
+      (node) => {
+        callbackNode = node;
+        node.attr('data-callback', 'yes');
+      }
+    );
+
+    const element = card.renderDom();
+
+    expect(callbackNode).toBe(card);
+    expect(element.dataset.surface).toBe('card');
+    expect(element.dataset.callback).toBe('yes');
+    expect(element.style.minHeight).toBe('40px');
+  });
+
+  it('keeps component-specific first arguments while sharing options and callbacks', () => {
+    let inputCallback = null;
+    const input = vInput(
+      '请输入服务名',
+      { attrs: { name: 'serviceName' }, style: { maxWidth: '240px' } },
+      (node) => {
+        inputCallback = node;
+        node.required(true);
+      }
+    );
+    const inputElement = input.renderDom();
+
+    expect(inputCallback).toBe(input);
+    expect(inputElement.placeholder).toBe('请输入服务名');
+    expect(inputElement.name).toBe('serviceName');
+    expect(inputElement.style.maxWidth).toBe('240px');
+    expect(inputElement.required).toBe(true);
+  });
+
+  it('allows layout factories to use options as their first argument', () => {
+    let rowCallback = null;
+    const row = hstack({ attrs: { 'data-layout': 'hstack' }, style: { gap: '12px' } }, (node) => {
+      rowCallback = node;
+      node.span('content');
+    });
+    const rowElement = row.renderDom();
+
+    expect(rowCallback).toBe(row);
+    expect(rowElement.dataset.layout).toBe('hstack');
+    expect(rowElement.style.gap).toBe('12px');
+    expect(rowElement.textContent).toBe('content');
+  });
+
+  it('exposes the shared argument applier for custom factories', () => {
+    let callbackNode = null;
+    const node = vCard();
+    applyComponentArguments(node, { attrs: { id: 'custom' } }, (value) => {
+      callbackNode = value;
+    });
+
+    expect(callbackNode).toBe(node);
+    expect(node.attr('id')).toBe('custom');
+  });
+
+  it('supports the same setup sequence in native HTML factories', () => {
+    let callbackNode = null;
+    const node = button(
+      'OK',
+      { attrs: { id: 'native-button' }, style: { minWidth: '80px' } },
+      (element) => {
+        callbackNode = element;
+        element.attr('data-ready', 'true');
+      }
+    );
+    const element = node.renderDom();
+
+    expect(callbackNode).toBe(node);
+    expect(element.id).toBe('native-button');
+    expect(element.dataset.ready).toBe('true');
+    expect(element.style.minWidth).toBe('80px');
+    expect(element.textContent).toBe('OK');
+  });
+
+  it('shares options and final callbacks across select, menu, and code components', () => {
+    let selectCallback = null;
+    const select = vSelect(
+      { options: ['运行中', '已停用'], value: '运行中' },
+      { attrs: { name: 'status' }, style: { maxWidth: '220px' } },
+      (node) => {
+        selectCallback = node;
+        node.required(true);
+      }
+    );
+    const selectElement = select.renderDom();
+
+    let menuCallback = null;
+    const menu = vMenu({ attrs: { 'data-menu': 'actions' } }, (node) => {
+      menuCallback = node;
+      node.horizontal();
+    });
+    const menuElement = menu.renderDom();
+
+    let codeCallback = null;
+    const code = vCode(
+      'SELECT 1',
+      { attrs: { 'data-language': 'sql' }, style: { maxWidth: '320px' } },
+      (node) => {
+        codeCallback = node;
+        node.copyable(false);
+      }
+    );
+    const codeElement = code.renderDom();
+
+    expect(selectCallback).toBe(select);
+    expect(selectElement.name).toBe('status');
+    expect(selectElement.style.maxWidth).toBe('220px');
+    expect(selectElement.required).toBe(true);
+    expect(menuCallback).toBe(menu);
+    expect(menuElement.dataset.menu).toBe('actions');
+    expect(menuElement.dataset.orientation).toBe('horizontal');
+    expect(codeCallback).toBe(code);
+    expect(codeElement.dataset.language).toBe('sql');
+    expect(codeElement.style.maxWidth).toBe('320px');
+    expect(codeElement.dataset.copyable).toBeUndefined();
+  });
+
+  it('applies element options to render-backed component APIs', () => {
+    let paginationCallback = null;
+    const pagination = vPagination(
+      { total: 12 },
+      { attrs: { 'data-pagination': 'demo' }, style: { maxWidth: '480px' } },
+      (api) => {
+        paginationCallback = api;
+        api.page(1);
+      }
+    );
+    const element = pagination.render().renderDom();
+
+    expect(paginationCallback).toBe(pagination);
+    expect(element.dataset.pagination).toBe('demo');
+    expect(element.style.maxWidth).toBe('480px');
+  });
+
+  it('keeps attrs and style from configuration-first async and chart components', () => {
+    const loader = vDynamicLoader({
+      attrs: { 'data-loader-demo': 'true' },
+      auto: false,
+      loader: () => Promise.resolve('ready'),
+      style: { maxWidth: '260px' }
+    });
+    const loaderElement = loader.renderDom();
+
+    const chart = vChart({
+      adapter: { init: () => ({}) },
+      attrs: { 'data-chart-demo': 'true' },
+      style: { maxWidth: '360px' }
+    });
+    const chartElement = chart.renderDom();
+
+    expect(loaderElement.dataset.loaderDemo).toBe('true');
+    expect(loaderElement.style.maxWidth).toBe('260px');
+    expect(chartElement.dataset.chartDemo).toBe('true');
+    expect(chartElement.style.maxWidth).toBe('360px');
   });
 
   it('registers compound components as v-prefixed parent shortcuts', () => {
@@ -94,16 +332,14 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vcard-header').textContent).toBe('账户');
     expect(element.querySelector('.yoya-vcard-body').textContent).toBe('余额');
-    expect(element.querySelector('.yoya-vcard-footer .yoya-vbutton-label').textContent).toBe('刷新');
+    expect(element.querySelector('.yoya-vcard-footer .yoya-vbutton-label').textContent).toBe(
+      '刷新'
+    );
     expect(clicked).toHaveBeenCalledTimes(1);
   });
 
   it('creates card slots through top-level factories', () => {
-    const card = vCard([
-      vCardHeader('标题'),
-      vCardBody('内容'),
-      vCardFooter(vButton('确认'))
-    ]);
+    const card = vCard([vCardHeader('标题'), vCardBody('内容'), vCardFooter(vButton('确认'))]);
 
     expect(card.toHTML()).toContain('class="yoya-component yoya-vcard"');
     expect(card.toHTML()).toContain('class="yoya-vcard-header"');
@@ -317,18 +553,21 @@ describe('compound components', () => {
     expect(trigger.textContent).toContain('更多操作');
     expect(panel.style.display).toBe('none');
     expect(panel.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menu');
+    expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
+  });
+
   it('creates an accessible sidebar from existing navigation compounds', () => {
     const sidebar = vSidebar({
-      ariaLabel: '?????',
-      title: '????',
+      ariaLabel: '后台主导航',
+      title: '运维中心',
       menuContent(menu) {
         menu.vMenuGroup((group) => {
-          group.label('???');
-          group.vMenuItem({ active: true, icon: 'O', text: '??' });
+          group.label('工作台');
+          group.vMenuItem({ active: true, icon: 'O', text: '概览' });
         });
         menu.vSubMenu((submenu) => {
-          submenu.label('????');
-          submenu.menuContent((nested) => nested.vMenuItem('????'));
+          submenu.label('系统设置');
+          submenu.menuContent((nested) => nested.vMenuItem('成员管理'));
         });
       }
     });
@@ -339,14 +578,14 @@ describe('compound components', () => {
     expect(sidebar).toBeInstanceOf(VSidebar);
     expect(vSidebar(sidebar)).toBe(sidebar);
     expect(element.tagName).toBe('ASIDE');
-    expect(element.getAttribute('aria-label')).toBe('?????');
-    expect(element.querySelector('.yoya-vsidebar-title').textContent).toBe('????');
+    expect(element.getAttribute('aria-label')).toBe('后台主导航');
+    expect(element.querySelector('.yoya-vsidebar-title').textContent).toBe('运维中心');
     expect(toggle.getAttribute('aria-controls')).toBe(menu.id);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(menu.getAttribute('aria-label')).toBe('???????');
+    expect(menu.getAttribute('aria-label')).toBe('后台主导航菜单');
     expect(element.querySelector('.yoya-vmenu-group').getAttribute('role')).toBe('group');
-    expect(element.querySelector('[aria-current="page"]').textContent).toContain('??');
-    expect(element.querySelector('.yoya-vsubmenu-trigger').textContent).toContain('????');
+    expect(element.querySelector('[aria-current="page"]').textContent).toContain('概览');
+    expect(element.querySelector('.yoya-vsubmenu-trigger').textContent).toContain('系统设置');
 
     const configured = vSidebar({ collapsed: true, responsive: false }).renderDom();
     expect(configured.dataset.collapsed).toBe('true');
@@ -355,12 +594,12 @@ describe('compound components', () => {
 
   it('toggles sidebar collapse without removing accessible menu labels', () => {
     const sidebar = vSidebar((navigation) => {
-      navigation.title('????');
+      navigation.title('运维中心');
       navigation.menuContent((menu) => {
-        menu.vMenuItem({ icon: 'O', text: '??' });
+        menu.vMenuItem({ icon: 'O', text: '概览' });
         menu.vSubMenu((submenu) => {
-          submenu.label('????');
-          submenu.menuContent((nested) => nested.vMenuItem('????'));
+          submenu.label('系统设置');
+          submenu.menuContent((nested) => nested.vMenuItem('成员管理'));
           submenu.open(true);
         });
       });
@@ -377,12 +616,12 @@ describe('compound components', () => {
     expect(element.dataset.collapsed).toBe('true');
     expect(element.style.width).toBe('72px');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(toggle.getAttribute('aria-label')).toBe('??????');
-    expect(toggle.textContent).toBe('?');
-    expect(label.textContent).toBe('??');
+    expect(toggle.getAttribute('aria-label')).toBe('展开侧边导航');
+    expect(toggle.textContent).toBe('›');
+    expect(label.textContent).toBe('概览');
     expect(label.style.position).toBe('absolute');
     expect(submenu.dataset.open).toBeUndefined();
-    expect(submenuShortcut.textContent).toBe('?');
+    expect(submenuShortcut.textContent).toBe('›');
     expect(submenuShortcut.style.position).toBe('');
 
     submenuTrigger.click();
@@ -403,9 +642,9 @@ describe('compound components', () => {
   it('keeps menu roving focus and collapses the sidebar with Escape', () => {
     const sidebar = vSidebar((navigation) => {
       navigation.menuContent((menu) => {
-        menu.vMenuItem((item) => item.id('sidebar-overview').text('??'));
-        menu.vMenuItem((item) => item.id('sidebar-disabled').text('??').disabled(true));
-        menu.vMenuItem((item) => item.id('sidebar-services').text('??'));
+        menu.vMenuItem((item) => item.id('sidebar-overview').text('概览'));
+        menu.vMenuItem((item) => item.id('sidebar-disabled').text('禁用').disabled(true));
+        menu.vMenuItem((item) => item.id('sidebar-services').text('服务'));
       });
     }).bindTo(document.body);
     const element = sidebar.renderDom();
@@ -442,9 +681,9 @@ describe('compound components', () => {
       const sidebar = vSidebar((navigation) => {
         navigation.menuContent((menu) => {
           menu.vSubMenu((submenu) => {
-            submenu.label('????');
+            submenu.label('系统设置');
             submenu.menuContent((nested) => {
-              nested.vMenuItem((item) => item.id('sidebar-responsive-member').text('????'));
+              nested.vMenuItem((item) => item.id('sidebar-responsive-member').text('成员管理'));
             });
           });
         });
@@ -492,40 +731,40 @@ describe('compound components', () => {
       const sidebar = vSidebar((navigation) => {
         navigation.responsive('(max-width: 720px)');
         navigation.menuContent((menu) => {
-          menu.vMenuItem('??');
+          menu.vMenuItem('概览');
           menu.vMenuGroup((navigationGroup) => {
             group = navigationGroup;
-            group.label('???');
+            group.label('工作台');
           });
           menu.vSubMenu((navigationSubmenu) => {
             submenu = navigationSubmenu;
-            submenu.label('????');
+            submenu.label('系统设置');
             submenu.menuContent(() => {});
           });
         });
       });
 
-      group.vMenuItem('???????');
-      submenu.menuContent((nested) => nested.vMenuItem('???????'));
+      group.vMenuItem('渲染前分组项目');
+      submenu.menuContent((nested) => nested.vMenuItem('渲染前嵌套项目'));
       const element = sidebar.renderDom();
 
       let labels = element.querySelectorAll('.yoya-vmenu-item-label');
       expect(labels).toHaveLength(4);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
 
-      group.vMenuItem('???????');
-      submenu.menuContent().vMenuItem('???????');
+      group.vMenuItem('渲染后分组项目');
+      submenu.menuContent().vMenuItem('渲染后嵌套项目');
       labels = element.querySelectorAll('.yoya-vmenu-item-label');
       expect(labels).toHaveLength(6);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
 
-      sidebar.menuContent((menu) => menu.vMenuItem('????'));
+      sidebar.menuContent((menu) => menu.vMenuItem('审计日志'));
       labels = element.querySelectorAll('.yoya-vmenu-item-label');
       expect(labels).toHaveLength(1);
-      expect(labels[0].textContent).toBe('????');
+      expect(labels[0].textContent).toBe('审计日志');
       expect(labels[0].style.position).toBe('absolute');
 
-      sidebar.menuContent().vMenuItem('????');
+      sidebar.menuContent().vMenuItem('告警中心');
       labels = element.querySelectorAll('.yoya-vmenu-item-label');
       expect(labels).toHaveLength(2);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
@@ -534,9 +773,6 @@ describe('compound components', () => {
     } finally {
       window.matchMedia = originalMatchMedia;
     }
-  });
-
-    expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
   });
 
   it('toggles nested submenus from the pointer and blocks disabled triggers', () => {
@@ -956,6 +1192,8 @@ describe('compound components', () => {
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(panel.style.display).toBe('none');
+    expect(panel.style.borderRadius).toBe('10px');
+    expect(panel.style.minWidth).toBe('192px');
     expect(element.dataset.placement).toBe('bottom-end');
 
     trigger.click();
@@ -1011,6 +1249,35 @@ describe('compound components', () => {
 
     expect(clicked).toHaveBeenCalledTimes(1);
     expect(element.dataset.open).toBe('true');
+  });
+
+  it('opens dropdown menus from trigger keyboard and focuses the first item', () => {
+    const dropdown = vDropdownMenu((menu) => {
+      menu.trigger((button) => button.attr('id', 'dropdown-keyboard-trigger').label('更多'));
+      menu.menuContent((commands) => {
+        commands.vMenuItem((item) => item.id('dropdown-first-item').text('导出'));
+        commands.vMenuItem((item) => item.id('dropdown-second-item').text('归档'));
+      });
+    }).bindTo(document.body);
+    const element = dropdown.renderDom();
+    const trigger = element.querySelector('#dropdown-keyboard-trigger');
+    const firstItem = element.querySelector('#dropdown-first-item');
+
+    trigger.focus();
+    trigger.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowDown' })
+    );
+
+    expect(element.dataset.open).toBe('true');
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(firstItem);
+
+    document.activeElement.dispatchEvent(
+      new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' })
+    );
+
+    expect(element.dataset.open).toBeUndefined();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it('composes nested submenus with dropdown and context menu selection closing', () => {
@@ -1123,23 +1390,27 @@ describe('compound components', () => {
     const element = contextMenu.renderDom();
     const target = element.querySelector('#context-close-target');
 
-    target.dispatchEvent(new MouseEvent('contextmenu', {
-      bubbles: true,
-      cancelable: true,
-      clientX: 12,
-      clientY: 18
-    }));
+    target.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 12,
+        clientY: 18
+      })
+    );
     expect(element.dataset.open).toBe('true');
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(element.dataset.open).toBeUndefined();
 
-    target.dispatchEvent(new MouseEvent('contextmenu', {
-      bubbles: true,
-      cancelable: true,
-      clientX: 24,
-      clientY: 36
-    }));
+    target.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 24,
+        clientY: 36
+      })
+    );
     expect(element.dataset.open).toBe('true');
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -1260,6 +1531,77 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vtable-empty').textContent).toBe('暂无服务');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
+  });
+
+  it('renders pagination controls, updates its state, and emits page changes', () => {
+    const changed = vi.fn();
+    const direct = VPagination();
+    const pagination = vPagination((pager) => {
+      pager.pageSizes([10, 20, 50]);
+      pager.update({
+        page: 2,
+        pageSize: 10,
+        total: 35,
+        totalPages: 4
+      });
+      pager.change(changed);
+    });
+    const page = div((root) => {
+      root.vPagination(pagination);
+    });
+
+    const element = page.renderDom();
+    const paginationRoot = element.querySelector('.yoya-vpagination');
+    const first = paginationRoot.querySelector('[data-action="first"]');
+    const previous = paginationRoot.querySelector('[data-action="previous"]');
+    const next = paginationRoot.querySelector('[data-action="next"]');
+    const last = paginationRoot.querySelector('[data-action="last"]');
+    const jumpInput = paginationRoot.querySelector('[data-role="page-input"]');
+    const jumpButton = paginationRoot.querySelector('[data-action="jump"]');
+    const pageSize = paginationRoot.querySelector('[data-role="page-size"]');
+
+    expect(pagination).toBeInstanceOf(Object);
+    expect(typeof pagination.render).toBe('function');
+    expect(typeof pagination.update).toBe('function');
+    expect(typeof pagination.change).toBe('function');
+    expect(paginationRoot.getAttribute('aria-label')).toBe('分页');
+    expect(typeof direct.render).toBe('function');
+    expect(typeof direct.update).toBe('function');
+    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+      '共 35 条'
+    );
+    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+      '第 2 / 4 页'
+    );
+    expect(first.disabled).toBe(false);
+    expect(previous.disabled).toBe(false);
+    expect(next.disabled).toBe(false);
+    expect(last.disabled).toBe(false);
+    expect(jumpInput.value).toBe('2');
+    expect(pageSize.value).toBe('10');
+
+    pageSize.value = '20';
+    pageSize.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, pageSize: 20 }));
+
+    jumpInput.value = '4';
+    jumpButton.click();
+    expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 20 }));
+
+    pagination.update({
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      totalPages: 1
+    });
+
+    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+      '共 0 条'
+    );
+    expect(first.disabled).toBe(true);
+    expect(previous.disabled).toBe(true);
+    expect(next.disabled).toBe(true);
+    expect(last.disabled).toBe(true);
   });
 
   it('renders form inputs with values, placeholders and options', () => {

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui 管理列表页示例</title>
+    <style>
+      :root {
+        color: #172033;
+        background: #f5f7fa;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      #app {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      .admin-page {
+        display: grid;
+        gap: 18px;
+      }
+
+      .admin-page > header,
+      .admin-search-form,
+      .admin-table,
+      .admin-page > footer {
+        border: 1px solid #d8e0ea;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .admin-page > header,
+      .admin-search-form,
+      .admin-page > footer {
+        padding: 18px;
+      }
+
+      .admin-page > header,
+      .admin-search-form,
+      .admin-page > footer,
+      .admin-row-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .admin-page > header {
+        display: grid;
+        gap: 6px;
+      }
+
+      .admin-search-form label {
+        font-weight: 700;
+      }
+
+      .admin-search-form input,
+      .admin-search-form select {
+        min-width: 160px;
+        border: 1px solid #b8c4d3;
+        border-radius: 4px;
+        padding: 8px 10px;
+      }
+
+      button {
+        border: 1px solid #1f6feb;
+        border-radius: 4px;
+        padding: 8px 12px;
+        color: #ffffff;
+        background: #1f6feb;
+        cursor: pointer;
+      }
+
+      .admin-search-form button:nth-last-child(2) {
+        border-color: #8b98a9;
+        color: #172033;
+        background: #ffffff;
+      }
+
+      .admin-table {
+        width: 100%;
+        border-spacing: 0;
+        overflow: hidden;
+      }
+
+      .admin-table th,
+      .admin-table td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 14px;
+        text-align: left;
+      }
+
+      .admin-table th {
+        background: #f8fafc;
+      }
+
+      .admin-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .status-active {
+        color: #16794a;
+      }
+
+      .status-inactive {
+        color: #8b5a00;
+      }
+
+      #admin-feedback {
+        flex: 1;
+        color: #5a6575;
+      }
+
+      @media (max-width: 720px) {
+        #app {
+          width: min(100% - 20px, 1120px);
+          padding: 20px 0;
+        }
+
+        .admin-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module" src="./admin-page.js"></script>
+  </body>
+</html>
