@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { VBadge, vBadge } from './badge.js';
 import { VCode, vCode } from './code.js';
 import { VDetail, VDetailItem, vDetail, vDetailItem } from './detail.js';
 import { VPagination, vPagination } from './pagination.js';
@@ -17,6 +18,7 @@ import { VTable, vTable } from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
 
 const dataDisplayFactories = {
+  vBadge,
   vCard,
   vCardBody,
   vCardFooter,
@@ -32,6 +34,7 @@ const dataDisplayFactories = {
 registerChildFactories(HtmlElementNode, dataDisplayFactories);
 
 export {
+  VBadge,
   VCard,
   VCardBody,
   VCardFooter,
@@ -43,6 +46,7 @@ export {
   VTable,
   VTree,
   VTreeNode,
+  vBadge,
   vCard,
   vCardBody,
   vCardFooter,

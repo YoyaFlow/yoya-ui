@@ -1558,6 +1558,41 @@ describe('compound components', () => {
     expect(vDetailItem('版本', '1.2.3').toHTML()).toContain('1.2.3');
   });
 
+  it('dynamically changes how many detail items are shown per row', () => {
+    const page = div((root) => {
+      root.vDetail({
+        columns: 2,
+        items: [
+          ['服务名称', 'api-gateway'],
+          ['状态', '运行中'],
+          ['负责人', 'SRE 团队']
+        ]
+      });
+    });
+    const element = page.renderDom();
+    const detail = page.children()[0];
+    const detailElement = element.querySelector('.yoya-vdetail');
+
+    expect(detail.columns()).toBe(2);
+    expect(detailElement.dataset.columns).toBe('2');
+    expect(detailElement.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
+    expect(detailElement.querySelectorAll('.yoya-vdetail-item')).toHaveLength(3);
+    expect(detailElement.querySelector('.yoya-vdetail-item').style.gridTemplateColumns).toBe(
+      'minmax(96px, 1fr) minmax(0, 1.5fr)'
+    );
+
+    detail.column(3);
+
+    expect(detail.columns()).toBe(3);
+    expect(detailElement.dataset.columns).toBe('3');
+    expect(detailElement.style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))');
+
+    detail.columns(0);
+
+    expect(detail.columns()).toBe(1);
+    expect(detailElement.style.gridTemplateColumns).toBe('repeat(1, minmax(0, 1fr))');
+  });
+
   it('renders copyable code snippets and copies text from the code block', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     const originalClipboard = navigator.clipboard;

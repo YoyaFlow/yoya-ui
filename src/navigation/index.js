@@ -15,6 +15,7 @@ import {
   vSubMenu
 } from './menu.js';
 import { VNavbar, vNavbar } from './navbar.js';
+import { VStep, VSteps, vStep, vSteps } from './steps.js';
 
 const navigationFactories = {
   vMenu,
@@ -23,6 +24,8 @@ const navigationFactories = {
   vMenuItem,
   vNavbar,
   vSidebar,
+  vStep,
+  vSteps,
   vSubMenu
 };
 
@@ -34,6 +37,8 @@ export {
   VMenuGroup,
   VMenuItem,
   VNavbar,
+  VStep,
+  VSteps,
   VSidebar,
   VSubMenu,
   vMenu,
@@ -42,5 +47,7 @@ export {
   vMenuItem,
   vNavbar,
   vSidebar,
+  vStep,
+  vSteps,
   vSubMenu
 };

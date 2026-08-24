@@ -34,3 +34,29 @@ function ComponentName(options) {
 - Demo source panels must reuse `ComponentSource` from `examples/components/component-source.js`; do not maintain duplicate source strings or reimplement the source panel.
 - Page composition should pass the component object to `child(...)`, which resolves and caches its `render()` result.
 - Low-level element and `v*` factories remain valid inside `render()`; this rule governs reusable component boundaries and demo code.
+
+## Declarative-First Component Rule
+
+组件定义和演示代码优先使用声明式写法：
+
+```js
+function ServiceDetailCard() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('服务详情');
+        card.vCardBody((body) => {
+          body.vDetail((detail) => {
+            detail.vDetailItem('服务名称', 'api-gateway');
+            detail.vDetailItem('状态', '运行中');
+          });
+        });
+      });
+    }
+  };
+}
+```
+
+- 定义组件时优先使用 setup callback、父节点快捷方法和链式方法组合结构。
+- 演示代码同样以声明式写法为主，参数对象只作为 API 说明保留。
+- 每个组件或演示集最多保留一个完整的参数对象案例，其余示例使用声明式写法。

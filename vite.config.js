@@ -2,16 +2,17 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
+    emptyOutDir: true,
     lib: {
       entry: 'src/index.js',
       name: 'YoyaUI',
-      formats: ['es', 'umd'],
-      fileName: (format) => `yoya-ui.${format}.js`
+      formats: ['es'],
+      fileName: () => 'yoya.ui.js'
     }
   },
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.js', 'examples/**/*.test.js']
+    include: ['src/**/*.test.js']
   }
 });

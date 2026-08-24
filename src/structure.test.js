@@ -20,6 +20,8 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./actions/dropdown-menu.js')).toBe(true);
     expect(existsInSrc('./navigation/index.js')).toBe(true);
     expect(existsInSrc('./navigation/menu.js')).toBe(true);
+    expect(existsInSrc('./navigation/steps.js')).toBe(true);
+    expect(existsInSrc('./navigation/steps.test.js')).toBe(true);
     expect(existsInSrc('./feedback/index.js')).toBe(true);
     expect(existsInSrc('./feedback/message.js')).toBe(true);
     expect(existsInSrc('./feedback/dialog.js')).toBe(true);
@@ -27,6 +29,8 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./form/index.js')).toBe(true);
     expect(existsInSrc('./form/controls.js')).toBe(true);
     expect(existsInSrc('./data-display/index.js')).toBe(true);
+    expect(existsInSrc('./data-display/badge.js')).toBe(true);
+    expect(existsInSrc('./data-display/badge.test.js')).toBe(true);
     expect(existsInSrc('./data-display/code.js')).toBe(true);
     expect(existsInSrc('./data-display/detail.js')).toBe(true);
     expect(existsInSrc('./data-display/pagination.js')).toBe(true);
@@ -47,6 +51,13 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./feedback/message-manager.js')).toBe(true);
     expect(existsInSrc('./feedback/message-manager.test.js')).toBe(true);
     expect(existsInSrc('./components/index.js')).toBe(true);
+    expect(existsInSrc('./yoya.base.js')).toBe(true);
+    expect(existsInSrc('./yoya.form.js')).toBe(true);
+    expect(existsInSrc('./yoya.navigation.js')).toBe(true);
+    expect(existsInSrc('./yoya.feedback.js')).toBe(true);
+    expect(existsInSrc('./yoya.data.js')).toBe(true);
+    expect(existsInSrc('./yoya.async.js')).toBe(true);
+    expect(existsInSrc('./yoya.router.js')).toBe(true);
 
     expect(existsInSrc('./chart.js')).toBe(false);
     expect(existsInSrc('./chart.test.js')).toBe(false);
@@ -86,6 +97,13 @@ describe('foundation module structure', () => {
     const asyncViews = await importFromSrc('./async/index.js');
     const routerModule = await importFromSrc('./router/index.js');
     const components = await importFromSrc('./components/index.js');
+    const baseEntry = await importFromSrc('./yoya.base.js');
+    const formEntry = await importFromSrc('./yoya.form.js');
+    const navigationEntry = await importFromSrc('./yoya.navigation.js');
+    const feedbackEntry = await importFromSrc('./yoya.feedback.js');
+    const dataEntry = await importFromSrc('./yoya.data.js');
+    const asyncEntry = await importFromSrc('./yoya.async.js');
+    const routerEntry = await importFromSrc('./yoya.router.js');
 
     expect(api.div).toBe(html.div);
     expect(api.svg).toBe(svg.svg);
@@ -99,6 +117,10 @@ describe('foundation module structure', () => {
     expect(api.circle).toBeUndefined();
     expect(api.vButton).toBe(actions.vButton);
     expect(api.vMenu).toBe(navigation.vMenu);
+    expect(api.vSteps).toBe(navigation.vSteps);
+    expect(api.vStep).toBe(navigation.vStep);
+    expect(api.VSteps).toBe(navigation.VSteps);
+    expect(api.VStep).toBe(navigation.VStep);
     expect(api.toast).toBe(feedback.toast);
     expect(api.vMessageManager).toBe(feedback.vMessageManager);
     expect(api.vDialog).toBe(feedback.vDialog);
@@ -107,14 +129,27 @@ describe('foundation module structure', () => {
     expect(api.vTree).toBe(dataDisplay.vTree);
     expect(api.vTreeNode).toBe(dataDisplay.vTreeNode);
     expect(api.VTreeNode).toBe(dataDisplay.VTreeNode);
+    expect(api.vBadge).toBe(dataDisplay.vBadge);
+    expect(api.VBadge).toBe(dataDisplay.VBadge);
     expect(api.vChart).toBe(dataDisplay.vChart);
     expect(api.codeBlock).toBe(dataDisplay.codeBlock);
     expect(api.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(api.vCard).toBe(components.vCard);
     expect(api.vButton).toBe(components.vButton);
+    expect(api.vSteps).toBe(components.vSteps);
+    expect(api.vBadge).toBe(components.vBadge);
     expect(api.vTree).toBe(components.vTree);
     expect(api.vTreeNode).toBe(components.vTreeNode);
     expect(api.toast).toBe(components.toast);
+    expect(baseEntry.vButton).toBe(actions.vButton);
+    expect(formEntry.vForm).toBe(form.vForm);
+    expect(navigationEntry.vMenu).toBe(navigation.vMenu);
+    expect(navigationEntry.vSteps).toBe(navigation.vSteps);
+    expect(feedbackEntry.toast).toBe(feedback.toast);
+    expect(dataEntry.vTable).toBe(dataDisplay.vTable);
+    expect(dataEntry.vBadge).toBe(dataDisplay.vBadge);
+    expect(asyncEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
+    expect(routerEntry.router).toBe(routerModule.router);
   });
 
   it('keeps core helpers available through the core entry', async () => {

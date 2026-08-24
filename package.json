@@ -5,25 +5,37 @@
   "type": "module",
   "private": false,
   "main": "./dist/yoya-ui.umd.js",
-  "module": "./dist/yoya-ui.es.js",
+  "module": "./dist/yoya.ui.js",
   "exports": {
     ".": {
-      "import": "./dist/yoya-ui.es.js",
+      "import": "./dist/yoya.ui.js",
       "require": "./dist/yoya-ui.umd.js"
-    }
+    },
+    "./async": "./dist/yoya.async.js",
+    "./base": "./dist/yoya.base.js",
+    "./data": "./dist/yoya.data.js",
+    "./dist": "./dist/yoya.ui.js",
+    "./feedback": "./dist/yoya.feedback.js",
+    "./form": "./dist/yoya.form.js",
+    "./navigation": "./dist/yoya.navigation.js",
+    "./router": "./dist/yoya.router.js",
+    "./ui": "./dist/yoya.ui.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "vite build",
-    "examples:html": "vite --host 0.0.0.0",
-    "examples:i18n": "vite --host 0.0.0.0 --port 5174",
-    "examples:layout": "vite --host 0.0.0.0 --port 5175",
-    "examples:svg": "vite --host 0.0.0.0 --port 5176",
-    "examples:router": "vite --host 0.0.0.0 --port 5177",
-    "examples:admin": "vite --host 0.0.0.0 --port 5179",
-    "examples:components": "vite --host 0.0.0.0 --port 5178",
+    "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
+    "build:entries": "node scripts/build-entries.mjs",
+    "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
+    "build:umd": "vite build --config vite.umd.config.js",
+    "examples:html": "vite src/examples --host 0.0.0.0",
+    "examples:i18n": "vite src/examples --host 0.0.0.0 --port 5174",
+    "examples:layout": "vite src/examples --host 0.0.0.0 --port 5175",
+    "examples:svg": "vite src/examples --host 0.0.0.0 --port 5176",
+    "examples:router": "vite src/examples --host 0.0.0.0 --port 5177",
+    "examples:admin": "vite src/examples --host 0.0.0.0 --port 5179",
+    "examples:components": "vite src/examples --host 0.0.0.0 --port 5178",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",

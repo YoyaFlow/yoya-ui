@@ -11,6 +11,7 @@ import {
 export class VDetail extends HtmlElementNode {
   constructor(setup = null) {
     super('dl', null);
+    this._columns = 3;
     this.className(componentClass, 'yoya-vdetail');
     this.styles({
       border: '1px solid #d8dee8',
@@ -20,7 +21,23 @@ export class VDetail extends HtmlElementNode {
       margin: '0',
       overflow: 'hidden'
     });
+    this.columns(this._columns);
     this._setupDetail(setup);
+  }
+
+  columns(value) {
+    if (value === undefined) {
+      return this._columns;
+    }
+
+    this._columns = normalizeDetailColumns(value);
+    this.attr('data-columns', String(this._columns));
+    this.style('gridTemplateColumns', `repeat(${this._columns}, minmax(0, 1fr))`);
+    return this;
+  }
+
+  column(value) {
+    return this.columns(value);
   }
 
   items(value) {
@@ -74,7 +91,7 @@ export class VDetailItem extends HtmlElementNode {
       alignItems: 'start',
       display: 'grid',
       gap: '12px',
-      gridTemplateColumns: 'minmax(120px, 180px) minmax(0, 1fr)',
+      gridTemplateColumns: 'minmax(96px, 1fr) minmax(0, 1.5fr)',
       padding: '12px 16px'
     });
     this._labelBox.styles({
@@ -90,6 +107,7 @@ export class VDetailItem extends HtmlElementNode {
     });
     this.child(this._labelBox, this._valueBox);
     this._setupDetailItem(setup, value);
+    this._syncLabelPresence();
   }
 
   label(content) {
@@ -97,7 +115,9 @@ export class VDetailItem extends HtmlElementNode {
       return this._labelBox.textContent();
     }
 
-    replaceChildren(this._labelBox, normalizeChildren(content));
+    const hasContent = content !== null && content !== undefined && content !== '';
+    replaceChildren(this._labelBox, hasContent ? normalizeChildren(content) : []);
+    this._syncLabelPresence();
     return this;
   }
 
@@ -112,6 +132,17 @@ export class VDetailItem extends HtmlElementNode {
 
   content(content) {
     return this.value(content);
+  }
+
+  _syncLabelPresence() {
+    const hasLabel = this._labelBox.children().length > 0;
+    this.style(
+      'gridTemplateColumns',
+      hasLabel ? 'minmax(96px, 1fr) minmax(0, 1.5fr)' : 'minmax(0, 1fr)'
+    );
+    this._labelBox.style('display', hasLabel ? null : 'none');
+    this.attr('data-label-visible', hasLabel ? 'true' : null);
+    return this;
   }
 
   _setupDetailItem(setup, value) {
@@ -192,4 +223,14 @@ function normalizeDetailItem(item) {
   }
 
   return vDetailItem({ value: item });
+}
+
+function normalizeDetailColumns(value) {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric) || numeric < 1) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(numeric));
 }

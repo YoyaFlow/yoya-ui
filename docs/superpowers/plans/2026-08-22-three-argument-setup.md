@@ -12,7 +12,7 @@
 
 - Keep reusable component boundaries in the object component pattern.
 - Preserve existing one-argument setup APIs and component-specific option objects.
-- Do not modify `examples_bak`; it is only a discarded reference copy.
+- Keep reusable examples under `src/examples`; do not maintain backup copies.
 - The second setup argument uses `{ attrs: {}, style: {} }` for element-level customization.
 - The final setup callback receives the initialized component instance after positional values and element options are applied.
 

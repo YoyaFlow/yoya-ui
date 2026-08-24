@@ -45,13 +45,7 @@ npm run examples:admin
 
 ## Examples
 
-- [HTML basic elements](examples/html/README.md)
-- [I18n language switch](examples/i18n/README.md)
-- [Layout components](examples/layout/README.md)
-- [SVG elements](examples/svg/README.md)
-- [Router navigation](examples/router/README.md)
-- [Admin management page](examples/admin/README.md)
-- [Compound components](examples/Index.html#/components)
+- [Compound components](src/examples/Index.html#/components)
 
 ## Library Build
 
@@ -63,8 +57,24 @@ npm run build
 
 The build outputs:
 
-- `dist/yoya-ui.es.js`
+- `dist/yoya.ui.js`
 - `dist/yoya-ui.umd.js`
+- `dist/yoya.base.js`
+- `dist/yoya.form.js`
+- `dist/yoya.navigation.js`
+- `dist/yoya.feedback.js`
+- `dist/yoya.data.js`
+- `dist/yoya.async.js`
+- `dist/yoya.router.js`
+- `dist/examples/Index.html` 和 `dist/examples/assets/`
+
+按模块引入：
+
+```js
+import { div } from 'yoya-ui/base';
+import { vForm } from 'yoya-ui/form';
+import { vTree } from 'yoya-ui/data';
+```
 
 ## Usage
 
@@ -234,7 +244,7 @@ Browser demo:
 npm run examples:svg
 ```
 
-Then open `/examples/svg/index.html`.
+Then open `src/examples/Index.html#/components`.
 
 ## Layout Components
 
@@ -276,7 +286,7 @@ Browser demo:
 npm run examples:layout
 ```
 
-Then open `/examples/layout/index.html`.
+Then open `src/examples/Index.html#/components`.
 
 ## Compound Components
 
@@ -340,7 +350,7 @@ Browser demo:
 npm run examples:html
 ```
 
-Then open `/examples/Index.html#/components`.
+Then open `/src/examples/Index.html#/components`.
 
 ## I18n Text
 
@@ -446,12 +456,12 @@ locale.registerMessages([
 
 ## Server Template Integration
 
-For backend-rendered pages, build the library and serve `dist/yoya-ui.es.js` as a static asset:
+For backend-rendered pages, build the library and serve `dist/yoya.ui.js` as a static asset:
 
 ```html
 <div id="app"></div>
 <script type="module">
-  import { div } from '/static/yoya-ui.es.js';
+  import { div } from '/static/yoya.ui.js';
 
   div('Ready').bindTo('#app');
 </script>
@@ -474,7 +484,9 @@ router((r) => {
     })
   );
   r.notFound(({ path }) => div(`未找到 ${path}`));
-}).bindTo('#app').start();
+})
+  .bindTo('#app')
+  .start();
 ```
 
 Useful methods:
@@ -503,13 +515,14 @@ src/
     index.js           Layout factories
   components/
     index.js           Complex component exports
-  router.js            Hash router outlet
+  examples/
+    Index.html         Compound component docs app
   index.js             Public library API
-examples/
-  html/                Basic HTML element usage checks
-  i18n/                I18n language switch demo
-  layout/              Layout component composition demo
-  svg/                 SVG tag entry and child extension demo
-  components/          Compound component usage demo
+  yoya.base.js         Base ESM entry
+  yoya.form.js         Form ESM entry
+  yoya.data.js         Data display ESM entry
+scripts/
+  build-entries.mjs    Build standalone yoya.* ESM bundles
 vite.config.js         Vite library and Vitest config
+vite.umd.config.js     Full UMD bundle config
 ```
