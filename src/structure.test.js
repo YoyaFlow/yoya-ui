@@ -32,6 +32,8 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./data-display/pagination.js')).toBe(true);
     expect(existsInSrc('./data-display/surface.js')).toBe(true);
     expect(existsInSrc('./data-display/table.js')).toBe(true);
+    expect(existsInSrc('./data-display/tree.js')).toBe(true);
+    expect(existsInSrc('./data-display/tree.test.js')).toBe(true);
     expect(existsInSrc('./data-display/chart.js')).toBe(true);
     expect(existsInSrc('./data-display/chart.test.js')).toBe(true);
     expect(existsInSrc('./data-display/code-block.js')).toBe(true);
@@ -102,11 +104,16 @@ describe('foundation module structure', () => {
     expect(api.vDialog).toBe(feedback.vDialog);
     expect(api.vForm).toBe(form.vForm);
     expect(api.vTable).toBe(dataDisplay.vTable);
+    expect(api.vTree).toBe(dataDisplay.vTree);
+    expect(api.vTreeNode).toBe(dataDisplay.vTreeNode);
+    expect(api.VTreeNode).toBe(dataDisplay.VTreeNode);
     expect(api.vChart).toBe(dataDisplay.vChart);
     expect(api.codeBlock).toBe(dataDisplay.codeBlock);
     expect(api.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(api.vCard).toBe(components.vCard);
     expect(api.vButton).toBe(components.vButton);
+    expect(api.vTree).toBe(components.vTree);
+    expect(api.vTreeNode).toBe(components.vTreeNode);
     expect(api.toast).toBe(components.toast);
   });
 

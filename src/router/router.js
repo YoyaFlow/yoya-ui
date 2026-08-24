@@ -7,6 +7,69 @@ import {
   vText
 } from '../core/index.js';
 
+const maxVisibleTitles = 8;
+let scrollbarStyle = null;
+
+function ensureScrollbarStyle() {
+  if (typeof document === 'undefined' || scrollbarStyle) return;
+
+  scrollbarStyle = document.createElement('style');
+  scrollbarStyle.setAttribute('data-yoya-vrouter-views-popup-style', '');
+  scrollbarStyle.textContent = `.yoya-vrouter-views-titlebar,
+.yoya-vrouter-views-popup {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.yoya-vrouter-views-titlebar::-webkit-scrollbar,
+.yoya-vrouter-views-popup::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+.yoya-vrouter-views-popup-item:hover {
+  background: #eef3f9;
+}
+.yoya-vrouter-views-popup-item[aria-current='true'] {
+  background: #e8f0fe;
+  color: #1f6feb;
+}
+.yoya-vrouter-views-popup-close {
+  color: #57606a;
+  opacity: 0.65;
+}
+.yoya-vrouter-views-popup-item:hover .yoya-vrouter-views-popup-close,
+.yoya-vrouter-views-popup-close:hover {
+  color: #b91c1c;
+  opacity: 1;
+}`;
+  document.head?.appendChild(scrollbarStyle);
+}
+
+function createRouterViewsStorageKey(routerInstance) {
+  const source = [
+    routerInstance._defaultPath || '/',
+    routerInstance._routes.map((route) => route.pattern).join('|')
+  ].join('::');
+  let hash = 0;
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) | 0;
+  }
+
+  return `yoya-ui:router-views:${(hash >>> 0).toString(36)}`;
+}
+
+function readSavedTabs(storageKey) {
+  if (typeof localStorage === 'undefined') return null;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    return Array.isArray(saved?.paths) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Router 是一个很轻的 hash 路由出口。
  * 它负责路径匹配、参数提取、守卫和把路由视图渲染到自身节点内。
@@ -365,10 +428,59 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     .className('yoya-vrouter-views-titlebar')
     .attr({ role: 'tablist', 'aria-label': '已打开页面' });
   const contentNode = new ElementNode('div').className('yoya-vrouter-views-content');
+  const moreButtonText = vText('⋯');
+  const moreButton = new ElementNode('button')
+    .className('yoya-vrouter-views-expand')
+    .attr({ type: 'button', 'aria-expanded': 'false', 'aria-label': '展开全部标签' })
+    .styles({
+      alignItems: 'center',
+      background: 'transparent',
+      border: '0',
+      color: '#57606a',
+      cursor: 'pointer',
+      display: 'none',
+      flexShrink: '0',
+      font: 'inherit',
+      gap: '6px',
+      height: '24px',
+      justifyContent: 'center',
+      lineHeight: '1',
+      marginBottom: '0',
+      marginLeft: 'auto',
+      minWidth: '24px',
+      padding: '0',
+      position: 'static'
+    })
+    .child(moreButtonText);
+  const popup = new ElementNode('div')
+    .className('yoya-vrouter-views-popup')
+    .attr({ role: 'menu', 'aria-label': '已打开页面' })
+    .styles({
+      background: '#ffffff',
+      border: '1px solid #d0d7de',
+      borderRadius: '8px',
+      boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
+      display: 'none',
+      maxHeight: '280px',
+      maxWidth: '260px',
+      minWidth: '180px',
+      msOverflowStyle: 'none',
+      overflowY: 'auto',
+      padding: '6px',
+      position: 'fixed',
+      scrollbarWidth: 'none',
+      zIndex: '100'
+    });
   const state = {
+    overflow: false,
+    persist: true,
+    popupOpen: false,
+    storageKey: createRouterViewsStorageKey(routerInstance),
+    suppressPersist: false,
     tabs: new Map(),
     title: '工作区',
-    titleResolver: null
+    titleResolver: null,
+    titlePosition: 'top'
   };
 
   node.className('yoya-vrouter-views');
@@ -380,17 +492,66 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   titleNode.styles({
     background: '#f6f8fa',
     borderBottom: '1px solid #d0d7de',
+    boxSizing: 'border-box',
     color: '#57606a',
     display: 'flex',
+    flexWrap: 'nowrap',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: '13px',
     gap: '4px',
+    msOverflowStyle: 'none',
     overflowX: 'auto',
-    padding: '8px 12px'
+    overflowY: 'hidden',
+    padding: '0px 0px',
+    scrollbarWidth: 'none',
+    width: '100%'
   });
   contentNode.className('yoya-vrouter-views-content');
   contentNode.styles({ minHeight: '120px', padding: '16px' });
-  node.child(titleNode, contentNode);
+  node.child(titleNode, contentNode, popup);
+
+  const applyTitlePosition = (position) => {
+    const vertical = position !== 'top';
+
+    node.styles({
+      alignItems: vertical ? 'stretch' : null,
+      display: vertical ? 'flex' : null
+    });
+    titleNode.styles({
+      background: '#f6f8fa',
+      borderBottom: vertical ? null : '1px solid #d0d7de',
+      borderLeft: position === 'right' ? '1px solid #d0d7de' : null,
+      borderRight: position === 'left' ? '1px solid #d0d7de' : null,
+      boxSizing: 'border-box',
+      color: '#57606a',
+      display: 'flex',
+      flexDirection: vertical ? 'column' : 'row',
+      flexShrink: vertical ? '0' : null,
+      flexWrap: 'nowrap',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontSize: '13px',
+      gap: '4px',
+      msOverflowStyle: 'none',
+      overflowX: vertical ? 'hidden' : 'auto',
+      overflowY: vertical ? 'auto' : 'hidden',
+      padding: vertical ? '10px 8px' : '0px 0px',
+      scrollbarWidth: 'none',
+      width: vertical ? null : '100%'
+    });
+    contentNode.styles({
+      flex: vertical ? '1 1 auto' : null,
+      minWidth: vertical ? '0' : null
+    });
+    const orderedChildren =
+      position === 'right' ? [contentNode, titleNode, popup] : [titleNode, contentNode, popup];
+    node.clearChildren().child(orderedChildren);
+    if (node._el) {
+      orderedChildren.forEach((child) => {
+        const childElement = child.renderDom();
+        if (childElement) node._el.appendChild(childElement);
+      });
+    }
+  };
 
   const resolveTitle = (context = {}) => {
     let title = state.title;
@@ -408,17 +569,254 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   };
 
   const styleTitleTab = (tab, active) => {
+    const position = state.titlePosition;
+    const vertical = position !== 'top';
+
     tab
       .renderDom()
       .querySelector('.yoya-vrouter-views-label')
       ?.setAttribute('aria-selected', String(active));
     tab.styles({
       background: active ? '#ffffff' : '#eaeef2',
-      borderBottomColor: active ? '#ffffff' : '#d0d7de',
+      border: '1px solid #d0d7de',
+      borderBottomColor: position === 'top' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
+      borderLeftColor: position === 'right' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
+      borderRadius:
+        position === 'left' ? '6px 0 0 6px' : position === 'right' ? '0 6px 6px 0' : '6px 6px 0 0',
+      borderRightColor: position === 'left' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
       color: active ? '#24292f' : '#57606a',
-      fontWeight: active ? '600' : '400'
+      fontWeight: active ? '600' : '400',
+      marginBottom: position === 'top' ? '-9px' : '0',
+      marginLeft: position === 'right' ? '-9px' : '0',
+      marginRight: position === 'left' ? '-9px' : '0',
+      padding: vertical ? '8px 10px' : '7px 14px 8px'
     });
   };
+
+  const setOverflowButtonVisible = (visible) => {
+    state.overflow = Boolean(visible);
+    node.attr('data-title-overflow', state.overflow ? 'true' : null);
+    moreButton.style('display', state.overflow ? 'inline-flex' : 'none');
+  };
+
+  const updateOverflow = () => {
+    if (state.titlePosition !== 'top' || state.tabs.size <= maxVisibleTitles) {
+      setOverflowButtonVisible(false);
+      return;
+    }
+
+    setOverflowButtonVisible(true);
+  };
+
+  const syncMoreButton = () => {
+    const tabEntries = Array.from(state.tabs.entries());
+    const children = tabEntries
+      .slice(0, maxVisibleTitles)
+      .map(([, entry]) => entry.tab)
+      .filter((child) => child !== moreButton);
+    const shouldShowButton = tabEntries.length > maxVisibleTitles && state.titlePosition === 'top';
+
+    if (!shouldShowButton) {
+      if (state.popupOpen) closePopup();
+      titleNode._children = children;
+      titleNode._childrenDirty = true;
+      if (titleNode._el) {
+        titleNode._el.replaceChildren(
+          ...children.map((child) => child.renderDom()).filter(Boolean)
+        );
+      } else {
+        moreButton._el?.remove();
+      }
+      setOverflowButtonVisible(false);
+      return;
+    }
+
+    titleNode._children = [...children, moreButton];
+    titleNode._childrenDirty = true;
+    if (titleNode._el) {
+      const childElements = children.map((child) => child.renderDom()).filter(Boolean);
+      titleNode._el.replaceChildren(...childElements, moreButton.renderDom());
+    }
+    updateOverflow();
+  };
+
+  const persistTabs = () => {
+    if (!state.persist || state.suppressPersist || typeof localStorage === 'undefined') return;
+
+    try {
+      localStorage.setItem(
+        state.storageKey,
+        JSON.stringify({
+          activePath: routerInstance.currentPath(),
+          paths: Array.from(state.tabs.keys())
+        })
+      );
+    } catch {
+      // 存储不可用时静默跳过持久化。
+    }
+  };
+
+  let popupCleanup = null;
+
+  const closePopup = () => {
+    state.popupOpen = false;
+    node.attr('data-title-popup', null);
+    moreButton.attr('aria-expanded', 'false');
+    popup.style('display', 'none');
+    if (popupCleanup) {
+      popupCleanup();
+      popupCleanup = null;
+    }
+  };
+
+  const buildPopup = () => {
+    popup.clearChildren();
+    if (popup._el) popup._el.replaceChildren();
+
+    Array.from(state.tabs.entries())
+      .slice(maxVisibleTitles)
+      .forEach(([path, entry]) => {
+        const title = entry.text.textContent();
+        const item = new ElementNode('div')
+          .className('yoya-vrouter-views-popup-item')
+          .attr({ role: 'menuitem', tabIndex: '0', 'data-router-view-path': path })
+          .styles({
+            alignItems: 'center',
+            borderRadius: '6px',
+            color: '#24292f',
+            cursor: 'pointer',
+            display: 'flex',
+            fontSize: '13px',
+            gap: '8px',
+            padding: '7px 8px',
+            width: '100%'
+          });
+        const titleSpan = new ElementNode('span')
+          .className('yoya-vrouter-views-popup-title')
+          .styles({
+            flex: '1',
+            minWidth: '0',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          })
+          .text(title);
+        const closeButton = new ElementNode('button')
+          .className('yoya-vrouter-views-popup-close')
+          .attr({ type: 'button', 'aria-label': `关闭 ${title}` })
+          .styles({
+            background: 'transparent',
+            border: '0',
+            color: 'inherit',
+            cursor: 'pointer',
+            flexShrink: '0',
+            font: 'inherit',
+            lineHeight: '1',
+            padding: '2px 4px'
+          })
+          .text('×');
+        if (path === routerInstance.currentPath()) {
+          item.attr('aria-current', 'true');
+          item.styles({ background: '#e8f0fe', color: '#1f6feb' });
+        }
+        const activate = () => {
+          closePopup();
+          routerInstance.navigate(path);
+        };
+        item.on('click', activate);
+        item.on('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            activate();
+          }
+        });
+        closeButton.on('click', (event) => {
+          event.stopPropagation();
+          closeTitleTab(path, event);
+          if (state.popupOpen) buildPopup();
+        });
+        item.child(titleSpan, closeButton);
+        popup.child(item);
+      });
+  };
+
+  const openPopup = () => {
+    if (state.tabs.size === 0) return;
+
+    ensureScrollbarStyle();
+    buildPopup();
+    state.popupOpen = true;
+    node.attr('data-title-popup', 'true');
+    moreButton.attr('aria-expanded', 'true');
+    const buttonRect = moreButton._el?.getBoundingClientRect();
+    popup.styles({
+      display: 'block',
+      left: `${buttonRect?.left ?? 0}px`,
+      top: `${(buttonRect?.bottom ?? 0) + 4}px`
+    });
+
+    const handleDocumentClick = (event) => {
+      if (!popup._el?.contains(event.target) && !moreButton._el?.contains(event.target)) {
+        closePopup();
+      }
+    };
+    const handleKeydown = (event) => {
+      if (event.key === 'Escape') closePopup();
+    };
+    const handleScroll = () => {
+      const buttonRect = moreButton._el?.getBoundingClientRect();
+      if (buttonRect) {
+        popup.styles({
+          left: `${buttonRect.left}px`,
+          top: `${buttonRect.bottom + 4}px`
+        });
+      }
+    };
+
+    document.addEventListener('click', handleDocumentClick);
+    document.addEventListener('keydown', handleKeydown);
+    window.addEventListener('scroll', handleScroll, true);
+    popupCleanup = () => {
+      document.removeEventListener('click', handleDocumentClick);
+      document.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  };
+
+  moreButton.on('click', () => {
+    if (state.popupOpen) {
+      closePopup();
+    } else {
+      openPopup();
+    }
+  });
+
+  const renderDom = node.renderDom.bind(node);
+  node.renderDom = () => {
+    ensureScrollbarStyle();
+    const element = renderDom();
+    updateOverflow();
+    return element;
+  };
+  node.updateOverflow = updateOverflow;
+
+  node.titlePosition = (value) => {
+    if (value === undefined) return state.titlePosition;
+
+    const next = normalizeTitlePosition(value);
+    state.titlePosition = next;
+    if (next !== 'top' && state.popupOpen) closePopup();
+    node.attr('data-title-position', state.titlePosition);
+    titleNode.attr('aria-orientation', state.titlePosition === 'top' ? 'horizontal' : 'vertical');
+    applyTitlePosition(state.titlePosition);
+    syncMoreButton();
+    state.tabs.forEach(({ tab }, path) => {
+      styleTitleTab(tab, path === routerInstance.currentPath());
+    });
+    updateOverflow();
+    return node;
+  };
+  node.titlePosition(state.titlePosition);
 
   const closeTitleTab = (path, event) => {
     event.stopPropagation();
@@ -434,7 +832,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
         .getAttribute('aria-selected') === 'true';
     state.tabs.delete(path);
     titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
+    titleNode._childrenDirty = true;
     entry.tab.destroy();
+    syncMoreButton();
+    persistTabs();
 
     if (!wasActive) return;
     const remainingPaths = Array.from(state.tabs.keys());
@@ -460,15 +861,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       tab.attr({ 'data-router-view-path': path });
       tab.styles({
         alignItems: 'center',
-        border: '1px solid #d0d7de',
-        borderRadius: '6px 6px 0 0',
         cursor: 'pointer',
         display: 'inline-flex',
-        flexShrink: '0',
         font: 'inherit',
         gap: '8px',
-        marginBottom: '-9px',
-        padding: '7px 14px 8px',
         whiteSpace: 'nowrap'
       });
       label.attr({ role: 'tab', type: 'button' });
@@ -495,6 +891,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       closeButton.on('click', (event) => closeTitleTab(path, event));
       tab.child(label, closeButton);
       titleNode.child(tab);
+      styleTitleTab(tab, false);
       entry = { closeButton, tab, text };
       state.tabs.set(path, entry);
     } else {
@@ -503,19 +900,49 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       entry.closeButton.attr('aria-label', `关闭 ${title}`);
     }
 
+    state.tabs.delete(path);
+    state.tabs = new Map([[path, entry], ...state.tabs]);
     state.tabs.forEach(({ tab }, tabPath) => styleTitleTab(tab, tabPath === path));
+    syncMoreButton();
+    if (state.popupOpen) buildPopup();
+    persistTabs();
+  };
+
+  const restoreTabs = () => {
+    if (!state.persist) return;
+
+    const saved = readSavedTabs(state.storageKey);
+    if (!saved) return;
+
+    state.suppressPersist = true;
+    try {
+      saved.paths
+        .slice()
+        .reverse()
+        .forEach((path) => {
+          const resolved = routerInstance._resolve(path);
+          updateTitle({ ...resolved.context, path });
+        });
+    } finally {
+      state.suppressPersist = false;
+      persistTabs();
+    }
   };
 
   if (typeof setup === 'function') {
     setup(node);
   } else if (setup && typeof setup === 'object') {
-    const { title, titleResolver, ...elementConfig } = setup;
+    const { persist, storageKey, title, titlePosition, titleResolver, ...elementConfig } = setup;
     if (title !== undefined) state.title = title;
+    if (persist !== undefined) state.persist = Boolean(persist);
+    if (storageKey !== undefined) state.storageKey = storageKey;
+    if (titlePosition !== undefined) node.titlePosition(titlePosition);
     if (typeof titleResolver === 'function') state.titleResolver = titleResolver;
     if (Object.keys(elementConfig).length > 0) node.setup(elementConfig);
   }
 
   routerInstance.outlet(contentNode);
+  restoreTabs();
   if (routerInstance.currentRoute() || routerInstance.currentPath() !== '/') {
     updateTitle({
       params: routerInstance.currentParams(),
@@ -527,8 +954,17 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   }
   const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
 
+  const handleResize = () => updateOverflow();
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', handleResize);
+  }
+
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
+    if (state.popupOpen) closePopup();
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', handleResize);
+    }
     unsubscribe();
     if (routerInstance.outlet() === contentNode) routerInstance.outlet(routerInstance);
     return destroy();
@@ -565,6 +1001,10 @@ function assertRouter(routerInstance) {
   if (!(routerInstance instanceof Router)) {
     throw new TypeError('vLink and vRouterView require a Router instance');
   }
+}
+
+function normalizeTitlePosition(value) {
+  return value === 'left' || value === 'right' ? value : 'top';
 }
 
 function applyDeclarativeRouterSetup(node, setup) {

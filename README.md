@@ -330,6 +330,8 @@ Available compound component exports:
 - `vMessage`, `vMessageContainer`
 - `vInput`, `vSelect`, `vTextarea`, `vCheckbox`, `vCheckboxes`, `vSwitch`, `vField`, `vForm`
 - `vTimer` (`date`, `datetime-local`, and `time` modes)
+- `vTree`
+- `vTreeNode`
 - `toast`
 
 Browser demo:

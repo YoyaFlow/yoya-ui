@@ -592,6 +592,108 @@ describe('compound components', () => {
     expect(configured.dataset.responsive).toBeUndefined();
   });
 
+  it('keeps sidebar submenu popups visible outside the sidebar edge', () => {
+    const sidebar = vSidebar((navigation) => {
+      navigation.title('企业管理平台');
+      navigation.menuContent((menu) => {
+        menu.vSubMenu((submenu) => {
+          submenu.label('系统设置');
+          submenu.menuContent((nested) => nested.vMenuItem('参数配置'));
+        });
+      });
+    }).bindTo(document.body);
+    const element = sidebar.renderDom();
+    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+
+    expect(element.style.overflow).toBe('hidden');
+    trigger.click();
+    expect(element.style.overflow).toBe('visible');
+    trigger.click();
+    expect(element.style.overflow).toBe('hidden');
+
+    sidebar.destroy();
+  });
+
+  it('expands sidebar submenus inline with vertical layout', () => {
+    const sidebar = vSidebar((navigation) => {
+      navigation.title('企业管理平台');
+      navigation.menuContent((menu) => {
+        menu.vSubMenu({
+          inline: true,
+          label: '系统设置',
+          menuContent: (nested) => nested.vMenuItem('参数配置')
+        });
+      });
+    }).bindTo(document.body);
+    const element = sidebar.renderDom();
+    const submenu = element.querySelector('.yoya-vsubmenu');
+    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const panel = element.querySelector('.yoya-vsubmenu-panel');
+    const shortcut = trigger.querySelector('.yoya-vmenu-item-shortcut');
+    const item = panel.querySelector('.yoya-vmenu-item');
+
+    expect(submenu.dataset.inline).toBe('true');
+    expect(submenu.style.display).toBe('block');
+    expect(panel.style.position).toBe('static');
+    expect(panel.style.display).toBe('none');
+    expect(shortcut.textContent).toBe('▸');
+
+    trigger.click();
+    expect(submenu.dataset.open).toBe('true');
+    expect(panel.style.display).toBe('block');
+    expect(shortcut.textContent).toBe('▾');
+    expect(element.style.overflow).toBe('hidden');
+
+    item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    expect(item.dataset.hovered).toBe('true');
+    item.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    expect(item.dataset.hovered).toBeUndefined();
+
+    item.click();
+    expect(submenu.dataset.open).toBe('true');
+    expect(item.getAttribute('aria-current')).toBe('page');
+
+    trigger.click();
+    expect(panel.style.display).toBe('none');
+    expect(shortcut.textContent).toBe('▸');
+
+    sidebar.destroy();
+  });
+
+  it('switches the active sidebar item globally when clicking menu items', () => {
+    const sidebar = vSidebar((navigation) => {
+      navigation.menuContent((menu) => {
+        menu.vMenuItem((item) => {
+          item.id('sidebar-overview').text('数据概览').active(true);
+        });
+        menu.vMenuItem((item) => item.id('sidebar-todo').text('待办审批'));
+        menu.vSubMenu({
+          inline: true,
+          label: '系统设置',
+          menuContent: (nested) =>
+            nested.vMenuItem((item) => item.id('sidebar-param').text('参数配置'))
+        });
+      });
+    }).bindTo(document.body);
+    const element = sidebar.renderDom();
+    const overview = element.querySelector('#sidebar-overview');
+    const todo = element.querySelector('#sidebar-todo');
+    const param = element.querySelector('#sidebar-param');
+
+    expect(overview.getAttribute('aria-current')).toBe('page');
+
+    todo.click();
+    expect(overview.getAttribute('aria-current')).toBeNull();
+    expect(todo.getAttribute('aria-current')).toBe('page');
+
+    element.querySelector('.yoya-vsubmenu-trigger').click();
+    param.click();
+    expect(todo.getAttribute('aria-current')).toBeNull();
+    expect(param.getAttribute('aria-current')).toBe('page');
+
+    sidebar.destroy();
+  });
+
   it('toggles sidebar collapse without removing accessible menu labels', () => {
     const sidebar = vSidebar((navigation) => {
       navigation.title('运维中心');
@@ -1980,5 +2082,89 @@ describe('compound components', () => {
     });
 
     expect(form.validate()).toBe(false);
+  });
+
+  it('validates vFormItem with required rules and custom callbacks', () => {
+    const form = vForm((root) => {
+      root.vFormItem((item) => {
+        item
+          .name('projectName')
+          .label('项目名称')
+          .hint('请输入项目名称')
+          .required('项目名称不能为空');
+        item.control((editor) => editor.vInput({ name: 'projectName' }));
+      });
+      root.vFormItem((item) => {
+        item.name('role').label('负责人角色').hint('请选择负责人角色').required('请选择负责人角色');
+        item.validate((value) => (value === '运维' ? null : '运维角色必须选择'));
+        item.control((editor) => editor.vSelect({ name: 'role', options: ['开发', '运维'] }));
+      });
+    });
+    const element = form.renderDom();
+
+    expect(form.validate()).toBe(false);
+    expect(element.querySelectorAll('.yoya-vform-item[data-error="true"]')).toHaveLength(2);
+    expect(element.textContent).toContain('项目名称不能为空');
+    expect(element.textContent).toContain('运维角色必须选择');
+    element.querySelectorAll('.yoya-vform-item-hint').forEach((hint) => {
+      expect(hint.style.display).toBe('none');
+    });
+
+    form.values({ projectName: '网关', role: '运维' });
+    expect(form.validate()).toBe(true);
+    expect(element.querySelectorAll('.yoya-vform-item[data-error="true"]')).toHaveLength(0);
+    element.querySelectorAll('.yoya-vform-item-hint').forEach((hint) => {
+      expect(hint.style.display).not.toBe('none');
+    });
+  });
+
+  it('uses collectValue callbacks for custom editor values', () => {
+    const form = vForm((root) => {
+      root.vFormItem((item) => {
+        item.name('custom').label('自定义值');
+        item.control((editor) => {
+          const custom = div().text('自定义组件');
+          custom.value = () => 'custom-result';
+          editor.collectValue(() => custom.value());
+          editor.child(custom);
+        });
+      });
+      root.vFormItem((item) => {
+        item.name('standard').label('标准值');
+        item.control((editor) => editor.vInput({ name: 'standard', value: 'api-gateway' }));
+      });
+    });
+
+    form.renderDom();
+
+    expect(form.values()).toEqual({
+      custom: 'custom-result',
+      standard: 'api-gateway'
+    });
+  });
+
+  it('shows a required indicator only when configured', () => {
+    const form = vForm((root) => {
+      root.vFormItem((item) => {
+        item.name('plain').label('普通必填').required('不能为空');
+      });
+      root.vFormItem((item) => {
+        item.name('star').label('星号必填').required({ message: '不能为空', indicator: '*' });
+      });
+      root.vFormItem((item) => {
+        item
+          .name('node')
+          .label('节点必填')
+          .required({ message: '不能为空', indicator: div((node) => node.text('必填')) });
+      });
+    });
+    const element = form.renderDom();
+    const indicators = element.querySelectorAll('.yoya-vform-item-required-indicator');
+
+    expect(indicators[0].style.display).toBe('none');
+    expect(indicators[1].style.display).not.toBe('none');
+    expect(indicators[1].textContent).toBe('*');
+    expect(indicators[2].style.display).not.toBe('none');
+    expect(indicators[2].textContent).toBe('必填');
   });
 });

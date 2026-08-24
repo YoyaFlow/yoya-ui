@@ -103,15 +103,13 @@ export function RouterViewsEditorCard() {
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p(
-              '访问过的路由会保留为文件标签；点击 title 切换页面，点击 × 关闭标签。'
-            );
+            stack.p('访问过的路由会保留为文件标签；点击 title 切换页面，点击 × 关闭标签。');
             stack.hstack((tabs) => {
               tabs.style('gap', '8px');
               tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
               tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
             });
-            stack.vRouterViews(appRouter, { title: '未打开文件' });
+            stack.vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
           });
         });
         appRouter.navigate('/overview', { replace: true });

@@ -81,6 +81,7 @@ menu.vMenuGroup((group) => {
 纵向菜单使用 `ArrowUp` / `ArrowDown`，横向菜单使用 `ArrowLeft` / `ArrowRight`；`Home` / `End` 跳到首尾。导航会循环并自动跳过分组标题、分隔线和禁用项。
 
 嵌套命令使用 `vSubMenu`。点击触发器，或聚焦后按 `ArrowRight`、`Enter`、空格可展开并进入子菜单；按 `ArrowLeft` 或 `Escape` 收起并返回上一级。点击外部区域或选择可用的叶子命令也会关闭子菜单，禁用的子菜单不会展开。
+设置 `inline: true` 后，`vSubMenu` 会改为在菜单内部上下展开，点击叶子项保持展开并显示选中态，适合后台侧栏的手风琴式导航。
 
 后台导航使用 `vSidebar` 组合现有的 `vMenuGroup`、`vMenuItem` 和 `vSubMenu`。通过 `title()` 设置标题、`menuContent()` 填充导航，`collapsed()` / `toggle()` 控制折叠；菜单继续支持方向键、`Home` / `End` 和当前项的 `aria-current`。调用 `responsive('(max-width: 768px)')` 后，侧栏会跟随媒体查询折叠，并在销毁时释放监听器。
 
@@ -159,7 +160,12 @@ example.child(
 `.yoya-vrouter-views-label` 通过 `aria-selected="true"` 标识，点击任一
 `.yoya-vrouter-views-title` 会重新导航到对应路径；
 点击 `.yoya-vrouter-views-close` 可关闭标签，关闭当前标签时自动切换到相邻页面，
-关闭最后一个标签时清空内容区；标签较多时标题栏支持横向滚动。
+关闭最后一个标签时清空内容区；标签较多时标题栏支持横向滚动且不显示滚动条，
+溢出时显示符号按钮，点击会打开纵向标签列表弹窗，弹窗项带 hover 和关闭按钮，
+弹窗内可滚动且不显示滚动条；标签按最近访问排序，最近点击的 title 显示在最前。
+横向 title 区只保留最近 8 个，其余 title 进入弹窗。
+打开记录会写入 `localStorage`，刷新页面后按最近访问顺序恢复。
+设置 `titlePosition: 'left'` 或 `'right'` 时，title 区域会竖排显示在内容区左侧或右侧。
 
 新增演示时，把标准对象组件和分类描述放入所属文件，并让页面通过 `child(component(options))` 与 `ComponentSource` 组合它们。
 演示文案优先使用组件能力命名，例如按钮状态、表格、分页、路由、表单；业务词只作为局部示例数据，不要把演示写成正式业务页面。

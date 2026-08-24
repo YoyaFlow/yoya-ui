@@ -47,8 +47,9 @@
 3. 详情 vDetail / vDetailItem
 4. 代码 vCode / codeBlock
 5. 表格 vTable
-6. 卡片 vCard / vCardHeader / vCardBody / vCardFooter
-7. 图表 vChart
+6. 树形控件 vTree
+7. 卡片 vCard / vCardHeader / vCardBody / vCardFooter
+8. 图表 vChart
 
 ### 异步
 1. 动态加载 vDynamicLoader

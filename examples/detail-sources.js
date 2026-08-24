@@ -311,7 +311,7 @@ export function TabsExample1() {
 
   return {
     render() {
-      return vRouterViews(appRouter);
+      return vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
     }
   };
 }
@@ -343,7 +343,7 @@ export function RouterViewsExample1() {
 
   return {
     render() {
-      return vRouterViews(appRouter, { title: '未打开文件' });
+      return vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
     }
   };
 }

@@ -221,6 +221,8 @@ export class VMenuItem extends HtmlElementNode {
       width: '100%'
     });
     this.child(this._iconBox, this._labelBox, this._shortcutBox);
+    this.on('mouseenter', () => this._setHover(true));
+    this.on('mouseleave', () => this._setHover(false));
     this._setupMenuItem(setup);
   }
 
@@ -287,6 +289,17 @@ export class VMenuItem extends HtmlElementNode {
     if (!this.getBooleanState('active')) {
       this.style('color', enabled ? '#b91c1c' : '#1f2937');
     }
+    return this;
+  }
+
+  _setHover(hovered) {
+    this.attr('data-hovered', hovered ? 'true' : null);
+    if (this.getBooleanState('disabled') || this.getBooleanState('active')) return;
+
+    this.styles({
+      background: hovered ? '#f1f5f9' : 'transparent',
+      borderColor: hovered ? '#e2e8f0' : 'transparent'
+    });
     return this;
   }
 
@@ -506,7 +519,11 @@ export class VSubMenu extends HtmlElementNode {
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
       if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
-        this.close();
+        if (this._inline) {
+          this._selectInlineItem(menuItem);
+        } else {
+          this.close();
+        }
       }
     });
     this._panel = new HtmlElementNode('div')
@@ -564,6 +581,53 @@ export class VSubMenu extends HtmlElementNode {
     return this;
   }
 
+  inline(value = true) {
+    this._inline = Boolean(value);
+    this.attr('data-inline', this._inline ? 'true' : null);
+
+    if (this._inline) {
+      this.styles({ display: 'block', position: 'relative', width: '100%' });
+      this._panel.styles({
+        background: 'transparent',
+        border: '0',
+        borderLeft: '1px solid #e2e8f0',
+        borderRadius: '0',
+        boxShadow: 'none',
+        display: this.getBooleanState('open') ? 'block' : 'none',
+        left: null,
+        marginLeft: '14px',
+        minWidth: null,
+        paddingLeft: '10px',
+        position: 'static',
+        top: null,
+        width: 'auto',
+        zIndex: null
+      });
+      this._trigger.shortcut(this.getBooleanState('open') ? '▾' : '▸');
+    } else {
+      this.styles({ display: 'inline-flex', position: 'relative', width: '100%' });
+      this._panel.styles({
+        background: '#ffffff',
+        border: '1px solid #d8dee8',
+        borderLeft: null,
+        borderRadius: '8px',
+        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
+        display: this.getBooleanState('open') ? null : 'none',
+        left: 'calc(100% + 4px)',
+        marginLeft: null,
+        minWidth: '200px',
+        paddingLeft: null,
+        position: 'absolute',
+        top: '0',
+        width: null,
+        zIndex: '110'
+      });
+      this._trigger.shortcut('›');
+    }
+
+    return this;
+  }
+
   disabled(value = true) {
     const disabled = Boolean(value);
     this.setState('disabled', disabled);
@@ -580,7 +644,10 @@ export class VSubMenu extends HtmlElementNode {
     this.setState('open', open);
     this.attr('data-open', open ? 'true' : null);
     this._trigger.attr('aria-expanded', open ? 'true' : 'false');
-    this._panel.style('display', open ? null : 'none');
+    this._panel.style('display', open ? (this._inline ? 'block' : null) : 'none');
+    if (this._inline) {
+      this._trigger.shortcut(open ? '▾' : '▸');
+    }
     if (open) {
       this._bindGlobalCloseHandlers();
     } else {
@@ -596,6 +663,20 @@ export class VSubMenu extends HtmlElementNode {
 
   toggle() {
     return this.open(!this.getBooleanState('open'));
+  }
+
+  _selectInlineItem(element) {
+    const visit = (children) => {
+      children.forEach((child) => {
+        if (child instanceof VMenuItem) {
+          child.active(child.renderDom() === element);
+        } else if (typeof child.children === 'function') {
+          visit(child.children());
+        }
+      });
+    };
+
+    visit(this._menu.children());
   }
 
   destroy() {
@@ -720,6 +801,7 @@ export class VSubMenu extends HtmlElementNode {
         children,
         content,
         disabled,
+        inline,
         label,
         menu,
         menuContent,
@@ -737,6 +819,7 @@ export class VSubMenu extends HtmlElementNode {
       else if (label !== undefined) this.label(label);
       else if (text !== undefined) this.text(text);
 
+      if (inline !== undefined) this.inline(inline);
       const nestedSetup = menuContent ?? menu ?? content ?? children;
       if (nestedSetup !== undefined) this.menuContent(nestedSetup);
       if (disabled !== undefined) this.disabled(disabled);
@@ -789,6 +872,12 @@ export class VSidebar extends HtmlElementNode {
     this._menu._sidebarContentChangeCallback = () =>
       setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
     this._menu.on('yoya:menuitem-statechange', this._menu._sidebarContentChangeCallback);
+    this._menu.on('click', (event) => {
+      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
+        this._activateMenuItem(menuItem);
+      }
+    });
 
     this.className(componentClass, 'yoya-vsidebar');
     this.attr('aria-label', '侧边导航');
@@ -816,6 +905,20 @@ export class VSidebar extends HtmlElementNode {
     });
     this.child(this._header, this._menu);
     this._setupSidebar(setup);
+  }
+
+  _activateMenuItem(element) {
+    const visit = (children) => {
+      children.forEach((child) => {
+        if (child instanceof VMenuItem) {
+          child.active(child.renderDom() === element);
+        } else if (typeof child.children === 'function') {
+          visit(child.children());
+        }
+      });
+    };
+
+    visit(this._menu.children());
   }
 
   title(content) {
@@ -970,6 +1073,18 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   }
 
   submenu._sidebarExpandOwner = sidebar;
+  const originalOpen = submenu.open.bind(submenu);
+  submenu.open = (value) => {
+    const result = originalOpen(value);
+    sidebar.style(
+      'overflow',
+      submenu.getBooleanState('open') && !submenu._inline ? 'visible' : 'hidden'
+    );
+    return result;
+  };
+  if (submenu.getBooleanState('open')) {
+    sidebar.style('overflow', submenu._inline ? 'hidden' : 'visible');
+  }
   const expandSidebar = () => {
     if (!submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
       sidebar.collapsed(false);

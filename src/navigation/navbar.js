@@ -18,15 +18,13 @@ export class VNavbar extends HtmlElementNode {
     super('nav', null);
     const menuId = `yoya-vnavbar-menu-${++navbarSequence}`;
 
-    this._brandTitle = new HtmlElementNode('strong')
-      .className('yoya-vnavbar-brand-title')
-      .styles({
-        color: '#172033',
-        display: 'none',
-        fontSize: '1rem',
-        fontWeight: '700',
-        lineHeight: '1.2'
-      });
+    this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title').styles({
+      color: '#0f172a',
+      display: 'none',
+      fontSize: '1.02rem',
+      fontWeight: '700',
+      lineHeight: '1.2'
+    });
     this._brandSubtitle = new HtmlElementNode('span')
       .className('yoya-vnavbar-brand-subtitle')
       .styles({
@@ -43,16 +41,15 @@ export class VNavbar extends HtmlElementNode {
         minWidth: '0'
       })
       .child(this._brandTitle, this._brandSubtitle);
-    this._brandCustom = new HtmlElementNode('div')
-      .className('yoya-vnavbar-brand-custom')
-      .styles({
-        display: 'none',
-        gap: '2px',
-        minWidth: '0'
-      });
+    this._brandCustom = new HtmlElementNode('div').className('yoya-vnavbar-brand-custom').styles({
+      display: 'none',
+      gap: '2px',
+      minWidth: '0'
+    });
     this._brandBox = new HtmlElementNode('div')
       .className('yoya-vnavbar-brand')
       .styles({
+        alignContent: 'center',
         display: 'grid',
         flex: '0 0 auto',
         gap: '2px',
@@ -60,12 +57,15 @@ export class VNavbar extends HtmlElementNode {
       })
       .child(this._brandDefault, this._brandCustom);
 
-    this._menu = new VMenu().id(menuId).className('yoya-vnavbar-menu').attr('aria-label', '导航菜单');
+    this._menu = new VMenu()
+      .id(menuId)
+      .className('yoya-vnavbar-menu')
+      .attr('aria-label', '导航菜单');
     this._menu.horizontal();
     this._menu.styles({
       alignItems: 'center',
       flex: '1 1 auto',
-      gap: '4px',
+      gap: '2px',
       minWidth: '0',
       padding: '0',
       width: '100%'
@@ -79,29 +79,31 @@ export class VNavbar extends HtmlElementNode {
         minWidth: '0'
       })
       .child(this._menu);
-    this._actionsBox = new HtmlElementNode('div')
-      .className('yoya-vnavbar-actions')
-      .styles({
-        alignItems: 'center',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '10px',
-        marginLeft: 'auto',
-        minWidth: '0'
-      });
+    this._actionsBox = new HtmlElementNode('div').className('yoya-vnavbar-actions').styles({
+      alignItems: 'center',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginLeft: 'auto',
+      minWidth: '0'
+    });
 
     this.className(componentClass, 'yoya-vnavbar');
     this.attr({ 'aria-label': '导航栏', role: 'navigation' });
     this.styles({
       alignItems: 'center',
       background: '#ffffff',
-      border: '1px solid #d8dee8',
+      border: '1px solid #dde3ec',
       borderRadius: '8px',
+      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.05)',
       boxSizing: 'border-box',
       display: 'flex',
       flexWrap: 'wrap',
-      gap: '12px',
-      padding: '12px 16px',
+      columnGap: '16px',
+      rowGap: '8px',
+      minHeight: '56px',
+      padding: '10px 16px',
+      transition: 'border-color 160ms ease, box-shadow 160ms ease',
       width: '100%'
     });
     this.child(this._brandBox, this._menuWrapper, this._actionsBox);
@@ -119,6 +121,7 @@ export class VNavbar extends HtmlElementNode {
     this._showDefaultBrand();
     replaceChildren(this._brandTitle, normalizeChildren(content));
     this._brandTitle.style('display', resolveTextValue(content) ? null : 'none');
+    this._syncBrandDivider();
     return this;
   }
 
@@ -126,6 +129,7 @@ export class VNavbar extends HtmlElementNode {
     this._showDefaultBrand();
     replaceChildren(this._brandSubtitle, normalizeChildren(content));
     this._brandSubtitle.style('display', resolveTextValue(content) ? null : 'none');
+    this._syncBrandDivider();
     return this;
   }
 
@@ -136,11 +140,13 @@ export class VNavbar extends HtmlElementNode {
 
     if (setup === null) {
       this._showDefaultBrand();
+      this._syncBrandDivider();
       return this;
     }
 
     this._showCustomBrand();
     setupContentSlot(this._brandCustom, setup);
+    this._syncBrandDivider();
     return this;
   }
 
@@ -172,6 +178,18 @@ export class VNavbar extends HtmlElementNode {
   _showCustomBrand() {
     this._brandDefault.style('display', 'none');
     this._brandCustom.style('display', null);
+    return this;
+  }
+
+  _syncBrandDivider() {
+    const hasBrandContent = Boolean(
+      this._brandDefault.textContent().trim() || this._brandCustom.textContent().trim()
+    );
+
+    this._brandBox.styles({
+      borderRight: hasBrandContent ? '1px solid #e2e8f0' : null,
+      paddingRight: hasBrandContent ? '14px' : null
+    });
     return this;
   }
 

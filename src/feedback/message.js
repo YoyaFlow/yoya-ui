@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { vText } from '../core/index.js';
 import {
   componentClass,
   createComponentFactory,
@@ -17,13 +18,40 @@ export class VMessage extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
     this._closeHandlers = [];
+    this._countdownDuration = 0;
+    this._countdownTimer = null;
     this._contentBox = new HtmlElementNode('span').className('yoya-vmessage-content');
+    this._countdownBox = new HtmlElementNode('span')
+      .className('yoya-vmessage-countdown')
+      .attr('aria-hidden', 'true')
+      .styles({
+        color: 'inherit',
+        flexShrink: '0',
+        fontVariantNumeric: 'tabular-nums',
+        fontSize: '12px',
+        opacity: '0.65'
+      })
+      .style('display', 'none');
+    this._countdownText = vText('');
+    this._countdownBox.child(this._countdownText);
     this._closeButton = new HtmlElementNode('button')
       .className('yoya-vmessage-close')
       .attr({ type: 'button', 'aria-label': 'Close message' })
       .style('display', 'none')
       .text('x')
       .on('click', () => this.close());
+    this._progressBar = new HtmlElementNode('span')
+      .className('yoya-vmessage-countdown-bar')
+      .attr('aria-hidden', 'true')
+      .styles({
+        background: 'currentColor',
+        bottom: '0',
+        height: '2px',
+        left: '0',
+        opacity: '0',
+        position: 'absolute',
+        width: '100%'
+      });
 
     this.className(componentClass, 'yoya-vmessage');
     this.attr('role', 'status');
@@ -36,9 +64,11 @@ export class VMessage extends HtmlElementNode {
       display: 'flex',
       gap: '10px',
       lineHeight: '1.4',
-      padding: '10px 12px'
+      overflow: 'hidden',
+      padding: '10px 12px',
+      position: 'relative'
     });
-    this.child(this._contentBox, this._closeButton);
+    this.child(this._contentBox, this._countdownBox, this._closeButton, this._progressBar);
     this.type('info');
     this._setupMessage(setup);
   }
@@ -64,6 +94,39 @@ export class VMessage extends HtmlElementNode {
     return this;
   }
 
+  countdown(duration, enabled = true) {
+    if (duration === undefined) {
+      return this._countdownDuration;
+    }
+
+    this._clearCountdown();
+    this._countdownDuration = Number(duration) || 0;
+    const show = Boolean(enabled) && this._countdownDuration > 0;
+    this._countdownBox.style('display', show ? null : 'none');
+    this._progressBar.style('opacity', show ? '0.45' : '0');
+
+    if (!show) {
+      return this;
+    }
+
+    this._countdownText.textContent(`${Math.ceil(this._countdownDuration / 1000)}s`);
+    this._progressBar.style('width', '100%');
+    const startedAt = Date.now();
+    this._countdownTimer = setInterval(() => {
+      const remaining = Math.max(0, this._countdownDuration - (Date.now() - startedAt));
+      this._countdownText.textContent(`${Math.ceil(remaining / 1000)}s`);
+      this._progressBar.style(
+        'width',
+        `${Math.max(0, (remaining / this._countdownDuration) * 100)}%`
+      );
+      if (remaining <= 0) {
+        this._clearCountdown();
+      }
+    }, 100);
+
+    return this;
+  }
+
   onClose(handler) {
     if (typeof handler === 'function') {
       this._closeHandlers.push(handler);
@@ -81,6 +144,18 @@ export class VMessage extends HtmlElementNode {
     return this.destroy();
   }
 
+  destroy() {
+    this._clearCountdown();
+    return super.destroy();
+  }
+
+  _clearCountdown() {
+    if (this._countdownTimer) {
+      clearInterval(this._countdownTimer);
+      this._countdownTimer = null;
+    }
+  }
+
   _setupMessage(setup) {
     if (setup === null || setup === undefined) {
       return;
@@ -92,7 +167,8 @@ export class VMessage extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const { children, content, text, type, closable, ...elementConfig } = setup;
+      const { children, closable, content, countdown, duration, text, type, ...elementConfig } =
+        setup;
 
       if (Object.keys(elementConfig).length > 0) {
         this.setup(elementConfig);
@@ -112,6 +188,10 @@ export class VMessage extends HtmlElementNode {
 
       if (closable !== undefined) {
         this.closable(closable);
+      }
+
+      if (duration !== undefined) {
+        this.countdown(duration, countdown !== false);
       }
 
       return;
@@ -175,7 +255,9 @@ export class VMessageContainer extends HtmlElementNode {
     this.child(message);
 
     if (normalized.duration !== 0) {
-      const timer = setTimeout(() => this.close(id), normalized.duration ?? 3000);
+      const duration = normalized.duration ?? 3000;
+      message.countdown(duration, normalized.countdown !== false);
+      const timer = setTimeout(() => this.close(id), duration);
       this._messages.set(id, { message, timer });
     }
 

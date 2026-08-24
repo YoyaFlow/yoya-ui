@@ -11,8 +11,9 @@ import {
 } from '../src/index.js';
 import { ComponentSource } from './component-source.js';
 import { ButtonDocumentationPage } from './button-docs.js';
-import { TableDocumentationPage } from './data-display-docs.js';
+import { TableDocumentationPage, TreeDocumentationPage } from './data-display-docs.js';
 import { MessageDocumentationPage } from './feedback-docs.js';
+import { FormDocumentationPage } from './form-docs.js';
 import { MenuDocumentationPage, NavbarDocumentationPage } from './navigation-docs.js';
 import {
   BodyDocumentationPage,
@@ -94,6 +95,7 @@ const componentMenuSections = [
       { label: '详情', details: 'vDetail / vDetailItem' },
       { label: '代码', details: 'vCode / codeBlock' },
       { label: '表格', details: 'vTable' },
+      { label: '树形控件', details: 'vTree' },
       { label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
       { label: '图表', details: 'vChart' }
     ]
@@ -133,8 +135,13 @@ const feedbackDocumentationPages = Object.freeze({
   0: MessageDocumentationPage
 });
 
+const formDocumentationPages = Object.freeze({
+  0: FormDocumentationPage
+});
+
 const dataDisplayDocumentationPages = Object.freeze({
-  4: TableDocumentationPage
+  4: TableDocumentationPage,
+  5: TreeDocumentationPage
 });
 
 const locale = createI18n({
@@ -352,6 +359,10 @@ function createComponentItemView(category, item, itemIndex, context) {
 
   if (category.id === 'feedback' && feedbackDocumentationPages[itemIndex]) {
     return feedbackDocumentationPages[itemIndex]().render();
+  }
+
+  if (category.id === 'form' && formDocumentationPages[itemIndex]) {
+    return formDocumentationPages[itemIndex]().render();
   }
 
   if (category.id === 'data-display' && dataDisplayDocumentationPages[itemIndex]) {

@@ -1,6 +1,7 @@
 import { section, toast, vCard, vText } from '../src/index.js';
 import { ComponentSource } from './component-source.js';
 import {
+  AdminSidebarCard,
   CommandMenuCard,
   OverlayMenuCard,
   SidebarCard,
@@ -12,14 +13,38 @@ const navigationDocsDefinitions = Object.freeze({
     apiIntro:
       'vMenu 负责菜单骨架，vMenuGroup 和 vMenuDivider 负责层级，vSubMenu 负责展开更深一层的选择。vDropdownMenu 和 vContextMenu 只是把同一套菜单内容挂到按钮或右键上。',
     apiRows: [
-      ['vMenu({ orientation })', '创建纵向或横向菜单容器。', "vMenu({ orientation: 'horizontal' })"],
-      ['vMenuItem({ text, icon, shortcut, active, danger, disabled })', '定义可点击的菜单项。', "item.text('刷新状态')"],
+      [
+        'vMenu({ orientation })',
+        '创建纵向或横向菜单容器。',
+        "vMenu({ orientation: 'horizontal' })"
+      ],
+      [
+        'vMenuItem({ text, icon, shortcut, active, danger, disabled })',
+        '定义可点击的菜单项。',
+        "item.text('刷新状态')"
+      ],
       ['vMenuGroup({ label, title })', '把相关动作归为一组。', "group.label('常用操作')"],
       ['vMenuDivider()', '在菜单中插入分隔线。', 'menu.vMenuDivider()'],
-      ['vSubMenu({ label, trigger, menuContent })', '展开二级或三级菜单。', "submenu.label('导出报表')"],
-      ['vSidebar({ title, ariaLabel, menuContent, responsive })', '把菜单装进可折叠侧边栏。', "vSidebar({ title: '运维中心' })"],
-      ['vDropdownMenu({ trigger, menuContent, placement })', '按钮触发的浮层菜单。', "vDropdownMenu({ placement: 'bottom-end' })"],
-      ['vContextMenu({ target, menuContent })', '右键触发的上下文菜单。', "vContextMenu({ target: '...' })"]
+      [
+        'vSubMenu({ label, trigger, menuContent, inline })',
+        '展开二级或三级菜单；inline 时在菜单内上下展开。',
+        'submenu.inline(true)'
+      ],
+      [
+        'vSidebar({ title, ariaLabel, menuContent, responsive })',
+        '把菜单装进可折叠侧边栏。',
+        "vSidebar({ title: '运维中心' })"
+      ],
+      [
+        'vDropdownMenu({ trigger, menuContent, placement })',
+        '按钮触发的浮层菜单。',
+        "vDropdownMenu({ placement: 'bottom-end' })"
+      ],
+      [
+        'vContextMenu({ target, menuContent })',
+        '右键触发的上下文菜单。',
+        "vContextMenu({ target: '...' })"
+      ]
     ],
     apiSignature: `vMenu((menu) => {
   menu.vMenuGroup(...);
@@ -61,11 +86,21 @@ const navigationDocsDefinitions = Object.freeze({
         sourceComponent: SidebarCard,
         sourceTitle: '侧栏菜单核心源码',
         title: '后台侧栏'
+      },
+      {
+        component: () => AdminSidebarCard({ toast }),
+        description: '常见管理系统左侧导航：工作台、组织、业务、系统设置和监控审计分组。',
+        id: 'admin-sidebar',
+        imports: ['vCard'],
+        sourceComponent: AdminSidebarCard,
+        sourceTitle: '管理系统左侧菜单核心源码',
+        title: '管理系统左侧菜单'
       }
     ],
-    examplesIntro: '下面四个示例分别展示命令菜单、嵌套菜单、浮层菜单和后台侧栏。',
+    examplesIntro: '下面五个示例分别展示命令菜单、嵌套菜单、浮层菜单、后台侧栏和管理系统左侧菜单。',
     heading: 'vMenu 菜单',
-    intro: 'vMenu 负责把导航动作整理成可扫描的列表，常见于命令面板、下拉菜单和后台侧栏。它和 vSubMenu、vSidebar、vDropdownMenu、vContextMenu 配合起来，足够覆盖大多数菜单场景。',
+    intro:
+      'vMenu 负责把导航动作整理成可扫描的列表，常见于命令面板、下拉菜单和后台侧栏。它和 vSubMenu、vSidebar、vDropdownMenu、vContextMenu 配合起来，足够覆盖大多数菜单场景。',
     key: 'menu',
     routeItem: 'navigation:3',
     title: '菜单',
@@ -79,12 +114,24 @@ const navigationDocsDefinitions = Object.freeze({
     apiIntro:
       'vNavbar 把品牌区、横向菜单和右侧动作区组合成统一顶栏，内部仍然复用 vMenu 的 horizontal 模式，所以左右方向键、Home 和 End 都保持菜单的行为。',
     apiRows: [
-      ['vNavbar({ title, subtitle, ariaLabel, menuContent, actions })', '创建横向导航栏。', "vNavbar({ title: 'yoya-ui' })"],
+      [
+        'vNavbar({ title, subtitle, ariaLabel, menuContent, actions })',
+        '创建横向导航栏。',
+        "vNavbar({ title: 'yoya-ui' })"
+      ],
       ['navbar.title(content)', '设置品牌标题。', "navbar.title('yoya-ui')"],
       ['navbar.subtitle(content)', '设置品牌副标题。', "navbar.subtitle('Workspace')"],
       ['navbar.brand(setup)', '自定义品牌区域。', 'navbar.brand((brand) => brand.strong(...))'],
-      ['navbar.menuContent(setup)', '填充横向菜单。', "navbar.menuContent((menu) => menu.vMenuItem('概览'))"],
-      ['navbar.actions(setup)', '放置右侧按钮或下拉菜单。', "navbar.actions((actions) => actions.vButton('登录'))"],
+      [
+        'navbar.menuContent(setup)',
+        '填充横向菜单。',
+        "navbar.menuContent((menu) => menu.vMenuItem('概览'))"
+      ],
+      [
+        'navbar.actions(setup)',
+        '放置右侧按钮或下拉菜单。',
+        "navbar.actions((actions) => actions.vButton('登录'))"
+      ],
       ['navbar.ariaLabel(content)', '设置导航地标名称。', "navbar.ariaLabel('产品主导航')"]
     ],
     apiSignature: `vNavbar((navbar) => {

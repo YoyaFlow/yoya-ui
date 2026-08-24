@@ -3,8 +3,18 @@ import { HtmlElementNode } from '../html/index.js';
 import { VCode, vCode } from './code.js';
 import { VDetail, VDetailItem, vDetail, vDetailItem } from './detail.js';
 import { VPagination, vPagination } from './pagination.js';
-import { VCard, VCardBody, VCardFooter, VCardHeader, vCard, vCardBody, vCardFooter, vCardHeader } from './surface.js';
+import {
+  VCard,
+  VCardBody,
+  VCardFooter,
+  VCardHeader,
+  vCard,
+  vCardBody,
+  vCardFooter,
+  vCardHeader
+} from './surface.js';
 import { VTable, vTable } from './table.js';
+import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
 
 const dataDisplayFactories = {
   vCard,
@@ -15,7 +25,8 @@ const dataDisplayFactories = {
   vDetail,
   vDetailItem,
   vPagination,
-  vTable
+  vTable,
+  vTree
 };
 
 registerChildFactories(HtmlElementNode, dataDisplayFactories);
@@ -30,6 +41,8 @@ export {
   VDetailItem,
   VPagination,
   VTable,
+  VTree,
+  VTreeNode,
   vCard,
   vCardBody,
   vCardFooter,
@@ -38,7 +51,9 @@ export {
   vDetail,
   vDetailItem,
   vPagination,
-  vTable
+  vTable,
+  vTree,
+  vTreeNode
 };
 
 export { CodeBlock, codeBlock } from './code-block.js';

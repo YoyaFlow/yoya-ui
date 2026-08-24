@@ -4,6 +4,7 @@ import { div, router, vLink, vRoute, vRouter, vRouterView, vRouterViews, vText }
 describe('router', () => {
   beforeEach(() => {
     document.body.innerHTML = '<main id="app"></main>';
+    window.localStorage.clear();
     window.history.replaceState(null, '', '/');
   });
 
@@ -270,6 +271,23 @@ describe('router', () => {
     expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.overflowX).toBe(
       'auto'
     );
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.overflowY).toBe(
+      'hidden'
+    );
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.width).toBe(
+      '100%'
+    );
+    expect(
+      views
+        .renderDom()
+        .querySelector('.yoya-vrouter-views-titlebar')
+        .style.getPropertyValue('scrollbar-width')
+    ).toBe('none');
+    expect(
+      document
+        .querySelector('[data-yoya-vrouter-views-popup-style]')
+        .textContent.includes('.yoya-vrouter-views-titlebar::-webkit-scrollbar')
+    ).toBe(true);
     const titleTab = views.renderDom().querySelector('.yoya-vrouter-views-title');
     const titleLabel = titleTab.querySelector('.yoya-vrouter-views-label');
     expect(titleLabel.textContent).toBe('项目概览');
@@ -284,19 +302,19 @@ describe('router', () => {
     const titleTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
     expect(
       Array.from(titleTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
-    ).toEqual(['项目概览', '代码编辑器']);
+    ).toEqual(['代码编辑器', '项目概览']);
     expect(
       titleTabs[0].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
-    ).toBe('false');
+    ).toBe('true');
     expect(
       titleTabs[1].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
-    ).toBe('true');
+    ).toBe('false');
     expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-close')).toHaveLength(2);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '编辑内容'
     );
 
-    titleTabs[0].querySelector('.yoya-vrouter-views-close').click();
+    titleTabs[1].querySelector('.yoya-vrouter-views-close').click();
     expect(appRouter.currentPath()).toBe('/editor');
     expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
@@ -305,19 +323,23 @@ describe('router', () => {
 
     appRouter.navigate('/overview', { replace: true });
     const reopenedTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
-    reopenedTabs[1].querySelector('.yoya-vrouter-views-close').click();
+    expect(
+      Array.from(reopenedTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+    ).toEqual(['项目概览', '代码编辑器']);
+    reopenedTabs[0].querySelector('.yoya-vrouter-views-close').click();
     expect(appRouter.currentPath()).toBe('/editor');
     expect(
-      reopenedTabs[0].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
-    ).toBe('true');
+      views.renderDom().querySelector('.yoya-vrouter-views-label[aria-selected="true"]').textContent
+    ).toBe('代码编辑器');
     expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '编辑内容'
     );
 
-    reopenedTabs[0].querySelector('.yoya-vrouter-views-close').click();
+    reopenedTabs[1].querySelector('.yoya-vrouter-views-close').click();
     expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(0);
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe('');
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-expand')).toBeNull();
   });
 
   it('switches to the previous tab when the active last tab closes', () => {
@@ -363,5 +385,190 @@ describe('router', () => {
     );
     root.destroy();
     expect(appRouter._subscribers.size).toBe(0);
+  });
+
+  it('shows an expand button when titles overflow and opens a title list popup', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/page-01', { title: '页面 1', view: () => div('一') }),
+        vRoute('/page-02', { title: '页面 2', view: () => div('二') }),
+        vRoute('/page-03', { title: '页面 3', view: () => div('三') }),
+        vRoute('/page-04', { title: '页面 4', view: () => div('四') }),
+        vRoute('/page-05', { title: '页面 5', view: () => div('五') }),
+        vRoute('/page-06', { title: '页面 6', view: () => div('六') }),
+        vRoute('/page-07', { title: '页面 7', view: () => div('七') }),
+        vRoute('/page-08', { title: '页面 8', view: () => div('八') }),
+        vRoute('/page-09', { title: '页面 9', view: () => div('九') }),
+        vRoute('/page-10', { title: '页面 10', view: () => div('十') })
+      ]
+    });
+    const views = vRouterViews(appRouter, { title: '工作区' });
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    [
+      '/page-01',
+      '/page-02',
+      '/page-03',
+      '/page-04',
+      '/page-05',
+      '/page-06',
+      '/page-07',
+      '/page-08',
+      '/page-09',
+      '/page-10'
+    ].forEach((path) => appRouter.navigate(path, { replace: true }));
+
+    const element = views.renderDom();
+    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
+    views.updateOverflow();
+
+    const button = titlebar.querySelector('.yoya-vrouter-views-expand');
+    const popup = element.querySelector('.yoya-vrouter-views-popup');
+    const visibleTabs = titlebar.querySelectorAll('.yoya-vrouter-views-title');
+    expect(element.dataset.titleOverflow).toBe('true');
+    expect(visibleTabs).toHaveLength(8);
+    expect(
+      Array.from(visibleTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+    ).toEqual(['页面 10', '页面 9', '页面 8', '页面 7', '页面 6', '页面 5', '页面 4', '页面 3']);
+    expect(button.style.display).toBe('inline-flex');
+    expect(button.textContent).toBe('⋯');
+    expect(button.style.borderWidth).toBe('0px');
+    expect(button.style.justifyContent).toBe('center');
+    expect(button.style.alignItems).toBe('center');
+    expect(button.style.position).toBe('static');
+    expect(button.style.marginLeft).toBe('auto');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(titlebar.lastElementChild).toBe(button);
+
+    button.click();
+    const items = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
+    expect(element.dataset.titlePopup).toBe('true');
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(popup.style.display).toBe('block');
+    expect(popup.style.getPropertyValue('scrollbar-width')).toBe('none');
+    expect(document.querySelector('[data-yoya-vrouter-views-popup-style]')).not.toBeNull();
+    expect(
+      Array.from(items, (item) => item.querySelector('.yoya-vrouter-views-popup-title').textContent)
+    ).toEqual(['页面 2', '页面 1']);
+    expect(items[0].style.fontSize).toBe('13px');
+    expect(popup.querySelectorAll('.yoya-vrouter-views-popup-close')).toHaveLength(2);
+    expect(
+      document
+        .querySelector('[data-yoya-vrouter-views-popup-style]')
+        .textContent.includes('.yoya-vrouter-views-popup-item:hover')
+    ).toBe(true);
+
+    popup.querySelectorAll('.yoya-vrouter-views-popup-close')[0].click();
+    expect(appRouter.currentPath()).toBe('/page-10');
+    expect(popup.querySelectorAll('.yoya-vrouter-views-popup-item')).toHaveLength(1);
+    const remainingItems = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
+    expect(remainingItems[0].querySelector('.yoya-vrouter-views-popup-title').textContent).toBe(
+      '页面 1'
+    );
+
+    window.dispatchEvent(new Event('scroll'));
+    expect(element.dataset.titlePopup).toBe('true');
+
+    remainingItems[0].click();
+    expect(appRouter.currentPath()).toBe('/page-01');
+    expect(element.dataset.titlePopup).toBeUndefined();
+    expect(popup.style.display).toBe('none');
+
+    button.click();
+    const afterItems = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
+    expect(afterItems).toHaveLength(1);
+    expect(afterItems[0].querySelector('.yoya-vrouter-views-popup-title').textContent).toBe(
+      '页面 3'
+    );
+    const visibleTabsAfter = titlebar.querySelectorAll('.yoya-vrouter-views-title');
+    expect(visibleTabsAfter).toHaveLength(8);
+    expect(visibleTabsAfter[0].querySelector('.yoya-vrouter-views-label').textContent).toBe(
+      '页面 1'
+    );
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(element.dataset.titlePopup).toBeUndefined();
+
+    button.click();
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(element.dataset.titlePopup).toBeUndefined();
+
+    root.destroy();
+  });
+
+  it('restores opened titles from storage after a page refresh', () => {
+    const createRouter = () =>
+      vRouter({
+        routes: [
+          vRoute('/persist-a', { title: '持久化 A', view: () => div('A') }),
+          vRoute('/persist-b', { title: '持久化 B', view: () => div('B') }),
+          vRoute('/persist-c', { title: '持久化 C', view: () => div('C') })
+        ]
+      });
+    const firstRouter = createRouter();
+    const firstViews = vRouterViews(firstRouter, { storageKey: 'test-router-views' });
+    const firstRoot = div((page) => page.child(firstViews)).bindTo('#app');
+
+    firstRouter.navigate('/persist-a', { replace: true });
+    firstRouter.navigate('/persist-b', { replace: true });
+    firstRouter.navigate('/persist-c', { replace: true });
+
+    expect(JSON.parse(window.localStorage.getItem('test-router-views')).paths).toEqual([
+      '/persist-c',
+      '/persist-b',
+      '/persist-a'
+    ]);
+
+    firstRoot.destroy();
+    document.body.innerHTML = '<main id="app"></main>';
+
+    const restoredRouter = createRouter();
+    const restoredViews = vRouterViews(restoredRouter, { storageKey: 'test-router-views' });
+    const restoredRoot = div((page) => page.child(restoredViews)).bindTo('#app');
+    const restoredTabs = restoredViews.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+
+    expect(
+      Array.from(restoredTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+    ).toEqual(['持久化 C', '持久化 B', '持久化 A']);
+
+    restoredRoot.destroy();
+  });
+
+  it('supports vertical title positions on the left and right', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/overview', { title: '概览', view: () => div('概览内容') }),
+        vRoute('/settings', { title: '设置', view: () => div('设置内容') })
+      ]
+    });
+    const views = vRouterViews(appRouter, { titlePosition: 'left' });
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/overview', { replace: true });
+    appRouter.navigate('/settings', { replace: true });
+
+    const element = views.renderDom();
+    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
+    const overviewTab = titlebar.querySelector('[data-router-view-path="/overview"]');
+
+    expect(element.dataset.titlePosition).toBe('left');
+    expect(titlebar.getAttribute('aria-orientation')).toBe('vertical');
+    expect(titlebar.style.flexDirection).toBe('column');
+    expect(titlebar.style.borderRightWidth).toBe('1px');
+    expect(titlebar.style.overflowY).toBe('auto');
+    expect(titlebar.querySelector('.yoya-vrouter-views-expand')).toBeNull();
+    expect(element.firstElementChild).toBe(titlebar);
+    expect(overviewTab.style.borderRadius).toBe('6px 0 0 6px');
+    expect(overviewTab.style.marginRight).toBe('-9px');
+
+    views.titlePosition('right');
+
+    expect(element.dataset.titlePosition).toBe('right');
+    expect(titlebar.style.borderLeftWidth).toBe('1px');
+    expect(titlebar.style.borderRightWidth).toBe('');
+    expect(element.children[1]).toBe(titlebar);
+    expect(overviewTab.style.borderRadius).toBe('0 6px 6px 0');
+    expect(overviewTab.style.marginLeft).toBe('-9px');
+
+    root.destroy();
   });
 });

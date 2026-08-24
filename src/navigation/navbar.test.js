@@ -110,4 +110,45 @@ describe('vNavbar', () => {
     expect(element.querySelector('.yoya-vnavbar-brand-custom').style.display).toBe('');
     expect(element.querySelector('.yoya-vnavbar-brand').textContent).toBe('控制台');
   });
+
+  it('uses polished top bar defaults for height, shadow, brand divider, and actions', () => {
+    const navbar = vNavbar({
+      title: 'yoya-ui',
+      menuContent(menu) {
+        menu.vMenuItem('概览');
+        menu.vMenuItem('组件');
+      },
+      actions(actions) {
+        actions.vButton('登录');
+      }
+    });
+
+    const element = navbar.renderDom();
+    const brand = element.querySelector('.yoya-vnavbar-brand');
+    const actions = element.querySelector('.yoya-vnavbar-actions');
+
+    expect(element.style.minHeight).toBe('56px');
+    expect(element.style.boxShadow).toContain('rgba(15, 23, 42, 0.05)');
+    expect(brand.style.borderRight).toBe('1px solid rgb(226, 232, 240)');
+    expect(actions.style.gap).toBe('8px');
+  });
+
+  it('omits the brand divider until brand content is configured', () => {
+    const navbar = vNavbar({
+      menuContent(menu) {
+        menu.vMenuItem('概览');
+      }
+    });
+
+    const element = navbar.renderDom();
+    const brand = element.querySelector('.yoya-vnavbar-brand');
+
+    expect(brand.style.borderRight).toBe('');
+
+    navbar.brand((customBrand) => {
+      customBrand.strong('控制台');
+    });
+
+    expect(brand.style.borderRight).toBe('1px solid rgb(226, 232, 240)');
+  });
 });
