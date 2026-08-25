@@ -134,21 +134,24 @@ export class VUpload extends HtmlElementNode {
       return this;
     }
 
+    const acceptedFiles = Array.from(fileList).filter((file) => this._acceptsFile(file));
+    if (acceptedFiles.length === 0) {
+      return this;
+    }
+
     if (!this._multiple) {
       this._files = [];
     }
 
-    Array.from(fileList)
-      .filter((file) => this._acceptsFile(file))
-      .forEach((file) => {
-        this._files.push({
-          file,
-          name: file.name,
-          progress: 0,
-          size: file.size,
-          status: 'ready'
-        });
+    acceptedFiles.forEach((file) => {
+      this._files.push({
+        file,
+        name: file.name,
+        progress: 0,
+        size: file.size,
+        status: 'ready'
       });
+    });
     this._sync();
     this._emitChange();
     return this;

@@ -114,8 +114,11 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(8);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(45);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(46);
+    expect(
+      document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
+    ).toContain('开发指南');
     expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(4);
     expect(selectedRouteTitle()).toBe('说明');
   });
@@ -124,7 +127,7 @@ describe('renderExamplesIndex', () => {
     root = renderExamplesIndex('#app');
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
-    expect(navItems).toHaveLength(9);
+    expect(navItems).toHaveLength(10);
     expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
       'page'
     );
@@ -292,6 +295,44 @@ describe('renderExamplesIndex', () => {
     expect(
       page.querySelector('[data-echarts-demo="bar"] [data-source-example]').textContent
     ).toContain("import { vEchart } from 'yoya-ui/echart';");
+  });
+
+  it('renders the component definition guide with define and compose demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/guides/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('定义组件');
+    });
+
+    const page = document.querySelector('[data-definition-page]');
+    expect(page.querySelector('h1').textContent).toBe('定义组件');
+    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(4);
+    expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
+      'html-native'
+    );
+    expect(
+      page.querySelector('[data-definition-demo="html-native"] [data-source-example]').textContent
+    ).toContain('render()');
+    const htmlDemo = page.querySelector('[data-definition-demo="html-native"]');
+    htmlDemo.querySelector('input').value = 'yoya';
+    htmlDemo.querySelector('button').click();
+    expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
+    expect(page.querySelector('[data-definition-demo="compose"] .yoya-vavatar')).not.toBeNull();
+    expect(page.querySelector('[data-definition-demo="compose"] .yoya-vbadge')).not.toBeNull();
+
+    const interactiveDemo = page.querySelector('[data-definition-demo="interactive-compose"]');
+    const jumpButton = [...interactiveDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('跳转第 3 步')
+    );
+    const nextButton = [...interactiveDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('下一步')
+    );
+    jumpButton.click();
+    nextButton.click();
+    expect(interactiveDemo.querySelector('[data-parent-log]').textContent).toContain(
+      '父组件收到：第 3 步完成'
+    );
   });
 
   it.each([

@@ -257,6 +257,10 @@ export class VEchart extends HtmlElementNode {
   }
 
   _initChart() {
+    if (this._deleted) {
+      return;
+    }
+
     if (!this._echartsLib) {
       this.echartsLib();
     }
@@ -275,6 +279,9 @@ export class VEchart extends HtmlElementNode {
       });
       if (this._option) {
         this._chartInstance.setOption(this._option, true);
+      }
+      if (this._loading) {
+        this.loading(true, this._loadingText);
       }
       setTimeout(() => {
         if (this._chartInstance && !this._chartInstance.isDisposed()) {

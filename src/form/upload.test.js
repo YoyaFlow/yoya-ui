@@ -70,6 +70,16 @@ describe('vUpload', () => {
     expect(upload.files()).toHaveLength(1);
   });
 
+  it('keeps the existing file when a single-file selection is rejected', () => {
+    const upload = vUpload({ accept: '.txt', multiple: false });
+
+    upload.addFiles([createFile('keep.txt')]);
+    upload.addFiles([createFile('skip.png', 'image/png')]);
+
+    expect(upload.files()).toHaveLength(1);
+    expect(upload.files()[0].name).toBe('keep.txt');
+  });
+
   it('accepts files from a drop event', () => {
     const upload = vUpload();
     const element = upload.renderDom();

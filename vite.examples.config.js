@@ -17,6 +17,15 @@ export default defineConfig({
         'router-views-top': 'router-views-top.html'
       },
       output: {
+        manualChunks(id) {
+          if (
+            id.includes('src/chart/echarts.min.js') ||
+            id.includes('src/chart/echarts-loader.js')
+          ) {
+            return 'echarts';
+          }
+          return undefined;
+        },
         paths: {
           'yoya-ui/ui': '../yoya.ui.js'
         }

@@ -58,4 +58,40 @@ describe('VEchart', () => {
     expect(chart.className()).toContain('yoya-vechart');
     expect(chart.height()).toBe('240px');
   });
+
+  it('does not initialize a chart after destroy before the animation frame runs', () => {
+    let frameCallback = null;
+    const lib = { init: vi.fn(() => ({})) };
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frameCallback = callback;
+      return 1;
+    });
+
+    const chart = vEchart({ echartsLib: lib }).bindTo(document.body);
+    chart.destroy();
+    frameCallback();
+
+    expect(lib.init).not.toHaveBeenCalled();
+  });
+
+  it('applies loading state after the chart initializes', () => {
+    const instance = {
+      dispose: vi.fn(),
+      isDisposed: vi.fn(() => false),
+      resize: vi.fn(),
+      setOption: vi.fn(),
+      showLoading: vi.fn()
+    };
+    const lib = { init: vi.fn(() => instance) };
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback();
+      return 1;
+    });
+
+    vEchart({ echartsLib: lib, loading: true, option: {} }).bindTo(document.body);
+
+    expect(instance.showLoading).toHaveBeenCalledWith(
+      expect.objectContaining({ text: '加载中...' })
+    );
+  });
 });

@@ -24,6 +24,7 @@ import {
 } from './data-display-docs.js';
 import { MessageDocumentationPage } from './feedback-docs.js';
 import { FieldDocumentationPage, FormDocumentationPage } from './form-docs.js';
+import { ComponentDefinitionDocumentationPage } from './component-definition-docs.js';
 import { EchartsDocumentationPage } from './echarts-docs.js';
 import { IconsDocumentationPage } from './icons-docs.js';
 import {
@@ -47,6 +48,11 @@ import {
 import { getComponentDetail } from './detail-demos.js';
 
 const componentMenuSections = [
+  {
+    id: 'guides',
+    title: '开发指南',
+    items: [{ label: '定义组件', details: 'function + render()' }]
+  },
   {
     id: 'general',
     title: '通用',
@@ -443,6 +449,10 @@ function createComponentsIntroView() {
 }
 
 function createComponentItemView(category, item, itemIndex, context) {
+  if (category.id === 'guides' && itemIndex === 0) {
+    return ComponentDefinitionDocumentationPage().render();
+  }
+
   if (category.id === 'third-party' && itemIndex === 0) {
     return EchartsDocumentationPage().render();
   }

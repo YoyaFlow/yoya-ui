@@ -73,3 +73,7 @@
 ### 第三方扩展
 
 1. ECharts 图表 vEchart / VEchart
+
+### 开发指南
+
+1. 定义组件 function + render()

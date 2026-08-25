@@ -865,6 +865,94 @@ const thirdPartyExtraRules = [
   ['.components-echarts-demo .yoya-vechart', { minWidth: '0', width: '100%' }]
 ];
 
+const definitionExtraRules = [
+  ['.components-definition-page', { display: 'grid', gap: '20px' }],
+  ['.components-definition-page h1', { color: '#172033', fontSize: '1.45rem' }],
+  ['.components-definition-page > p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-definition-demo',
+    {
+      borderTop: '1px solid #e2e8f0',
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  ['.components-definition-demo h3', { color: '#172033', fontSize: '1rem', margin: '0' }],
+  [
+    '.components-definition-demo-live',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-definition-demo .yoya-vcard', { margin: '0' }],
+  ['.components-definition-demo .yoya-vcard-body', { width: '100%' }],
+  [
+    '.html-native-demo',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '10px',
+      padding: '16px'
+    }
+  ],
+  ['.html-native-demo h3, .html-native-demo p', { margin: '0' }],
+  [
+    '.html-native-box',
+    {
+      alignItems: 'center',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  ],
+  [
+    '.html-native-box input',
+    {
+      border: '1px solid #cbd5e1',
+      borderRadius: '6px',
+      boxSizing: 'border-box',
+      font: 'inherit',
+      minHeight: '34px',
+      padding: '0 10px',
+      width: '180px'
+    }
+  ],
+  [
+    '.html-native-button',
+    {
+      background: '#2563eb',
+      border: '0',
+      borderRadius: '6px',
+      color: '#ffffff',
+      cursor: 'pointer',
+      font: 'inherit',
+      minHeight: '34px',
+      padding: '0 14px'
+    }
+  ],
+  [
+    '.wizard-child-panel',
+    {
+      background: '#fbfcfe',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '10px',
+      padding: '14px'
+    }
+  ],
+  ['.wizard-child-panel strong, .wizard-child-panel p', { margin: '0' }],
+  ['.wizard-child-panel p', { color: '#5a6575' }]
+];
+
 const demoRules = [
   ...baseRules,
   ...documentationThemes.flatMap(({ accent, prefix }) => documentationRules(prefix, accent)),
@@ -875,6 +963,7 @@ const demoRules = [
   ...navigationExtraRules,
   ...iconExtraRules,
   ...thirdPartyExtraRules,
+  ...definitionExtraRules,
   ...genericRules
 ];
 
