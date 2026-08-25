@@ -7,12 +7,15 @@ import {
   vMenu,
   vMenuGroup,
   vMenuItem,
+  vNavbar,
   vRouterViews
 } from '../index.js';
 import '../yoya.ui.css';
 import { ComponentSource } from './component-source.js';
+import { applyDemoStyles } from './demo-styles.js';
 import { ButtonDocumentationPage } from './button-docs.js';
 import {
+  AvatarDocumentationPage,
   BadgeDocumentationPage,
   DetailDocumentationPage,
   TableDocumentationPage,
@@ -100,7 +103,7 @@ const componentMenuSections = [
     id: 'data-display',
     title: '数据展示',
     items: [
-      { label: '头像', status: 'planned' },
+      { label: '头像', details: 'vAvatar' },
       { label: '徽标数', details: 'vBadge' },
       { label: '详情', details: 'vDetail / vDetailItem' },
       { label: '代码', details: 'vCode / codeBlock' },
@@ -131,6 +134,20 @@ const componentMenuStats = {
   planned: countComponentMenuItems(componentMenuSections, 'planned')
 };
 
+function getTopNavigationItems() {
+  return [
+    { categoryId: 'intro', label: '说明', path: '/components' },
+    ...componentMenuSections.map((category) => {
+      const firstReadyIndex = category.items.findIndex((item) => item.status !== 'planned');
+      return {
+        categoryId: category.id,
+        label: category.title,
+        path: buildComponentItemPath(category.id, firstReadyIndex >= 0 ? firstReadyIndex : 0)
+      };
+    })
+  ];
+}
+
 const layoutDocumentationPages = Object.freeze({
   0: DividerDocumentationPage,
   1: FlexDocumentationPage,
@@ -151,6 +168,7 @@ const formDocumentationPages = Object.freeze({
 });
 
 const dataDisplayDocumentationPages = Object.freeze({
+  0: AvatarDocumentationPage,
   1: BadgeDocumentationPage,
   2: DetailDocumentationPage,
   4: TableDocumentationPage,
@@ -203,11 +221,18 @@ export function renderExamplesIndex(target = '#app') {
   });
 
   const root = createComponentsView(appRouter);
+  const mediaQuery =
+    typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 960px)') : null;
+  const applyStyles = () => applyDemoStyles(root);
+
+  mediaQuery?.addEventListener?.('change', applyStyles);
   root.bindTo(target);
   appRouter.start();
+  applyStyles();
 
   const destroy = root.destroy.bind(root);
   root.destroy = () => {
+    mediaQuery?.removeEventListener?.('change', applyStyles);
     toast.use(previousToastContainer);
     messageHost.destroy?.();
     appRouter.stop?.();
@@ -231,6 +256,7 @@ function registerComponentsWorkspaceRoutes(routerInstance, context) {
 function createComponentsView(appRouter) {
   const menuItemRefs = [];
   const groupRefs = [];
+  const topNavItemRefs = [];
   const routerViews = vRouterViews(appRouter, { title: '组件目录' });
 
   const syncSelection = () => {
@@ -248,7 +274,40 @@ function createComponentsView(appRouter) {
         group.node.attr('data-active', active ? 'true' : null);
       }
     });
+
+    topNavItemRefs.forEach(({ node, entry }) => {
+      const active =
+        entry.categoryId === 'intro'
+          ? currentPath === '/components' || currentPath === '/components/intro'
+          : currentPath.startsWith(`/components/${entry.categoryId}/`);
+      node.active(active);
+      node.attr('data-active-path', active ? 'true' : null);
+    });
+
+    applyStyles();
   };
+
+  const topNavigationItems = getTopNavigationItems();
+  const topNav = vNavbar((navbar) => {
+    navbar.attr('data-components-top-nav', 'true');
+    navbar.ariaLabel('演示页面导航');
+    navbar.title('yoya-ui');
+    navbar.subtitle('组件演示');
+
+    navbar.menuContent((menu) => {
+      topNavigationItems.forEach((entry) => {
+        menu.vMenuItem((entryView) => {
+          entryView.attr({
+            'data-top-nav-item': entry.categoryId,
+            'data-top-nav-path': entry.path
+          });
+          entryView.text(entry.label);
+          entryView.on('click', () => appRouter.navigate(entry.path));
+          topNavItemRefs.push({ entry, node: entryView });
+        });
+      });
+    });
+  });
 
   const menu = vMenu((nav) => {
     nav.className('components-menu-list');
@@ -293,28 +352,36 @@ function createComponentsView(appRouter) {
   });
 
   const root = section((view) => {
-    view.className('components-workspace');
+    view.className('components-demo-shell');
+    view.attr('data-components-demo-shell', 'true');
+    view.child(topNav);
 
-    view.aside((sidebar) => {
-      sidebar.className('components-menu');
-      sidebar.attr('data-components-menu', 'true');
-      sidebar.attr('aria-label', '组件菜单');
+    view.section((workspace) => {
+      workspace.className('components-workspace');
 
-      sidebar.div((intro) => {
-        intro.className('components-menu-intro');
-        intro.h2('组件菜单');
-        intro.p('按 docs/components.md 的分组顺序整理。');
+      workspace.aside((sidebar) => {
+        sidebar.className('components-menu');
+        sidebar.attr('data-components-menu', 'true');
+        sidebar.attr('aria-label', '组件菜单');
+
+        sidebar.div((intro) => {
+          intro.className('components-menu-intro');
+          intro.h2('组件菜单');
+          intro.p('按 docs/components.md 的分组顺序整理。');
+        });
+
+        sidebar.child(menu);
       });
 
-      sidebar.child(menu);
-    });
-
-    view.section((panel) => {
-      panel.className('components-router-panel');
-      panel.attr('data-components-router-views', 'true');
-      panel.child(routerViews);
+      workspace.section((panel) => {
+        panel.className('components-router-panel');
+        panel.attr('data-components-router-views', 'true');
+        panel.child(routerViews);
+      });
     });
   });
+
+  const applyStyles = () => applyDemoStyles(root);
 
   appRouter.subscribe(syncSelection);
   syncSelection();

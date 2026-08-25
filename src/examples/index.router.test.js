@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buttonDemoDefinitions } from './button-docs.js';
 import { ComponentSource, componentSource } from './component-source.js';
@@ -30,6 +31,13 @@ afterEach(() => {
 });
 
 describe('renderExamplesIndex', () => {
+  it('keeps example styles inside the component module instead of Index.html', () => {
+    const html = readFileSync('./src/examples/Index.html', 'utf8');
+
+    expect(html).not.toContain('<style');
+    expect(html).toContain('<main id="app"></main>');
+  });
+
   it('uses the same component for each button demo and its source', () => {
     expect(buttonDemoDefinitions).toHaveLength(5);
     buttonDemoDefinitions.forEach((demo) => {
@@ -40,14 +48,44 @@ describe('renderExamplesIndex', () => {
   it('renders the menu workspace and intro page', () => {
     root = renderExamplesIndex('#app');
 
+    expect(document.querySelector('[data-components-demo-shell]')).not.toBeNull();
+    expect(document.querySelector('[data-components-top-nav]')).not.toBeNull();
+    expect(document.querySelector('.components-demo-shell').style.display).toBe('grid');
+    expect(document.querySelector('.components-demo-shell').style.gap).toBe('16px');
+    expect(document.querySelector('[data-components-top-nav]').style.position).toBe('sticky');
+    expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('8px');
     expect(document.querySelector('.components-workspace')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
-    expect(document.querySelectorAll('.yoya-vmenu-group')).toHaveLength(7);
-    expect(document.querySelectorAll('.yoya-vmenu-item')).toHaveLength(42);
-    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(7);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(7);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(42);
+    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(6);
     expect(selectedRouteTitle()).toBe('说明');
+  });
+
+  it('navigates and highlights the top navigation when a category is selected', async () => {
+    root = renderExamplesIndex('#app');
+
+    const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
+    expect(navItems).toHaveLength(8);
+    expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
+      'page'
+    );
+
+    const layoutItem = document.querySelector('[data-top-nav-item="layout"]');
+    expect(layoutItem.getAttribute('data-top-nav-path')).toBe('/components/layout/0');
+
+    layoutItem.click();
+
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('分割线');
+    });
+
+    expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
+      null
+    );
+    expect(layoutItem.getAttribute('aria-current')).toBe('page');
   });
 
   it.each([
@@ -160,6 +198,16 @@ describe('renderExamplesIndex', () => {
       'detail',
       'FieldDetailExample1',
       'vDetail((detail)',
+      3
+    ],
+    [
+      '/components/data-display/0',
+      '头像',
+      'avatar',
+      'vAvatar 头像',
+      'basic',
+      'AvatarBasicExample1',
+      'vAvatar(',
       3
     ],
     [

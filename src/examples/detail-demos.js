@@ -26,9 +26,9 @@ import {
   TimerRangeCard
 } from './demos/form.js';
 import { BodyPageCard } from './demos/layout.js';
-import { CommandMenuCard, OverlayMenuCard } from './demos/navigation.js';
+import { CommandMenuCard } from './demos/navigation.js';
 import { RouterNavigationCard, RouterViewsEditorCard } from './demos/router.js';
-import { detailSourceRegistry } from './detail-sources.js';
+import { detailSourceRegistry, DropdownMenuExample1 } from './detail-sources.js';
 
 function DividerDemo() {
   return {
@@ -584,8 +584,8 @@ const detailEntries = new Map([
     'navigation:2',
     freezeEntry({
       behavior: ['下拉菜单和上下文菜单都属于浮层操作入口。'],
-      component: OverlayMenuCard,
-      imports: ['vCard'],
+      component: DropdownMenuExample1,
+      imports: ['vCard', 'vDropdownMenu', 'vText'],
       notes: ['按钮触发和右键触发共用同一套菜单能力。'],
       sourceTitle: '浮层菜单核心源码',
       summary: '按钮触发和右键触发菜单。',

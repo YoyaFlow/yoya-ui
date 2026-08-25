@@ -1,5 +1,6 @@
 import {
   section,
+  vAvatar,
   vBadge,
   vButton,
   vCard,
@@ -12,6 +13,69 @@ import {
 import { ComponentSource } from './component-source.js';
 
 const dataDisplayDocsDefinitions = Object.freeze({
+  avatar: createDataDisplayDocsDefinition({
+    apiIntro:
+      'vAvatar 用于展示用户、服务或资源标识。它支持文字、图标、图片、尺寸、形状、自定义颜色和在线状态。',
+    apiRows: [
+      ['vAvatar("A")', '创建文字头像，适合展示姓名或资源首字母。', 'vAvatar("A")'],
+      ['avatar.src(value)', '设置图片地址并切换为图片头像。', 'avatar.src("/alice.png")'],
+      ['avatar.alt(value)', '设置图片替代文本和头像 aria-label。', 'avatar.alt("Alice")'],
+      ['avatar.icon(value)', '用图标或任意 ViewNode 作为头像内容。', 'avatar.icon("★")'],
+      ['avatar.size(value)', '切换 small / medium / large / xlarge 尺寸。', 'avatar.size("large")'],
+      ['avatar.shape(value)', '切换 circle / square 形状。', 'avatar.shape("square")'],
+      ['avatar.color(value)', '覆盖头像背景色。', "avatar.color('#0f766e')"],
+      [
+        'avatar.status(value)',
+        '显示 online / busy / away / offline 状态点。',
+        'avatar.status("online")'
+      ]
+    ],
+    apiSignature: `vAvatar({
+  text: 'A',
+  size: 'large',
+  shape: 'circle',
+  color: '#0f766e',
+  status: 'online'
+})`,
+    examples: [
+      {
+        component: AvatarBasicExample1,
+        description: '文字和图标头像通过 size、shape、color 快速形成不同标识。',
+        id: 'basic',
+        imports: ['vAvatar', 'vCard'],
+        sourceTitle: '基础头像源码',
+        title: '基础头像'
+      },
+      {
+        component: AvatarImageExample1,
+        description: 'src 切换为图片头像，alt 同步作为替代文本和 aria-label。',
+        id: 'image',
+        imports: ['vAvatar', 'vCard'],
+        sourceTitle: '图片头像源码',
+        title: '图片头像'
+      },
+      {
+        component: AvatarStatusExample1,
+        description: 'status 在头像右下角显示语义状态点，适合成员、节点和服务标识。',
+        id: 'status',
+        imports: ['vAvatar', 'vCard'],
+        sourceTitle: '状态头像源码',
+        title: '状态头像'
+      }
+    ],
+    examplesIntro: '下面三个示例分别展示基础头像、图片头像和状态头像。',
+    heading: 'vAvatar 头像',
+    intro:
+      '头像用于在列表、详情、导航和操作区域中标识用户或对象。vAvatar 把文字、图片、图标和状态统一收敛到一个组件 API 中。',
+    key: 'avatar',
+    routeItem: 'data-display:0',
+    title: '头像',
+    usageItems: [
+      '用户列表或成员卡片中展示姓名首字母或头像图片。',
+      '服务、节点或资源标识中配合状态点表达在线、忙碌或离线。',
+      '导航栏和侧栏中用小尺寸头像作为账户入口。'
+    ]
+  }),
   badge: createDataDisplayDocsDefinition({
     apiIntro:
       'vBadge 用于在内容右上角显示数量或状态点。count 表示数字，overflowCount 控制上限，dot 和 status 适合只表达“有变化”或运行状态。',
@@ -357,6 +421,10 @@ export function TableDocumentationPage() {
   return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.table);
 }
 
+export function AvatarDocumentationPage() {
+  return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.avatar);
+}
+
 export function BadgeDocumentationPage() {
   return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.badge);
 }
@@ -593,6 +661,85 @@ function BadgeStatusExample1() {
               row.child(vBadge({ status: 'warning', text: '待确认' }));
               row.child(vBadge({ status: 'error', text: '故障' }));
               row.child(vBadge({ color: '#7c3aed', status: 'default', text: '自定义色' }));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function AvatarBasicExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础头像');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('文字和图标头像通过 size、shape、color 快速形成不同标识。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+              row.child(vAvatar('A'));
+              row.child(vAvatar({ color: '#0f766e', text: 'UI' }));
+              row.child(vAvatar({ icon: '★', shape: 'square' }));
+              row.child(vAvatar({ color: '#7c3aed', size: 'large', text: 'API' }));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function AvatarImageExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('图片头像');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('src 切换为图片头像，alt 同步作为替代文本和 aria-label。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+              row.child(
+                vAvatar({
+                  alt: 'Alice',
+                  size: 'xlarge',
+                  src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='48' fill='%230f766e'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E"
+                })
+              );
+              row.child(
+                vAvatar({
+                  alt: 'Ops',
+                  shape: 'square',
+                  src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='24' fill='%237c3aed'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E"
+                })
+              );
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function AvatarStatusExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('状态头像');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('status 在头像右下角显示语义状态点，适合成员、节点和服务标识。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+              row.child(vAvatar({ status: 'online', text: 'A' }));
+              row.child(vAvatar({ color: '#0f766e', status: 'busy', text: 'B' }));
+              row.child(vAvatar({ color: '#b45309', status: 'away', text: 'C' }));
+              row.child(vAvatar({ color: '#64748b', size: 'large', status: 'offline', text: 'D' }));
             });
           });
         });
