@@ -701,12 +701,9 @@ function AvatarBasicExample1() {
 }
 
 function AvatarImageExample1() {
-  const aliceImage =
-    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='48'%20fill='%230f766e'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='36'%20fill='white'%20text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E";
-  const opsImage =
-    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='24'%20fill='%237c3aed'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='36'%20fill='white'%20text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E";
-  const gatewayImage =
-    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='48'%20fill='%230284c7'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='28'%20fill='white'%20text-anchor='middle'%3EGW%3C/text%3E%3C/svg%3E";
+  const aliceImage = new URL('./assets/avatar-alice.svg', import.meta.url).href;
+  const opsImage = new URL('./assets/avatar-ops.svg', import.meta.url).href;
+  const gatewayImage = new URL('./assets/avatar-gateway.svg', import.meta.url).href;
 
   return {
     render() {
