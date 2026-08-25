@@ -692,6 +692,13 @@ function AvatarBasicExample1() {
 }
 
 function AvatarImageExample1() {
+  const aliceImage =
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='48'%20fill='%230f766e'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='36'%20fill='white'%20text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E";
+  const opsImage =
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='24'%20fill='%237c3aed'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='36'%20fill='white'%20text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E";
+  const gatewayImage =
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='96'%20height='96'%3E%3Crect%20width='96'%20height='96'%20rx='48'%20fill='%230284c7'/%3E%3Ctext%20x='48'%20y='60'%20font-family='Arial'%20font-size='28'%20fill='white'%20text-anchor='middle'%3EGW%3C/text%3E%3C/svg%3E";
+
   return {
     render() {
       return vCard((card) => {
@@ -705,12 +712,19 @@ function AvatarImageExample1() {
               row.vAvatar({
                 alt: 'Alice',
                 size: 'xlarge',
-                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='48' fill='%230f766e'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E"
+                src: aliceImage,
+                status: 'online'
               });
               row.vAvatar({
                 alt: 'Ops',
                 shape: 'square',
-                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='24' fill='%237c3aed'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E"
+                src: opsImage
+              });
+              row.vAvatar({
+                alt: 'Gateway',
+                size: 'large',
+                src: gatewayImage,
+                status: 'busy'
               });
             });
           });
