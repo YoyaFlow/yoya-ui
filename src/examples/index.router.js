@@ -9,6 +9,7 @@ import {
   vMenuItem,
   vRouterViews
 } from '../index.js';
+import '../yoya.ui.css';
 import { ComponentSource } from './component-source.js';
 import { ButtonDocumentationPage } from './button-docs.js';
 import {
