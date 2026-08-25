@@ -1,6 +1,5 @@
 import {
   section,
-  vAvatar,
   vBadge,
   vButton,
   vCard,
@@ -680,10 +679,10 @@ function AvatarBasicExample1() {
             content.p('文字和图标头像通过 size、shape、color 快速形成不同标识。');
             content.hstack((row) => {
               row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(vAvatar('A'));
-              row.child(vAvatar({ color: '#0f766e', text: 'UI' }));
-              row.child(vAvatar({ icon: '★', shape: 'square' }));
-              row.child(vAvatar({ color: '#7c3aed', size: 'large', text: 'API' }));
+              row.vAvatar('A');
+              row.vAvatar({ color: '#0f766e', text: 'UI' });
+              row.vAvatar({ icon: '★', shape: 'square' });
+              row.vAvatar({ color: '#7c3aed', size: 'large', text: 'API' });
             });
           });
         });
@@ -703,20 +702,16 @@ function AvatarImageExample1() {
             content.p('src 切换为图片头像，alt 同步作为替代文本和 aria-label。');
             content.hstack((row) => {
               row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(
-                vAvatar({
-                  alt: 'Alice',
-                  size: 'xlarge',
-                  src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='48' fill='%230f766e'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E"
-                })
-              );
-              row.child(
-                vAvatar({
-                  alt: 'Ops',
-                  shape: 'square',
-                  src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='24' fill='%237c3aed'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E"
-                })
-              );
+              row.vAvatar({
+                alt: 'Alice',
+                size: 'xlarge',
+                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='48' fill='%230f766e'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EAL%3C/text%3E%3C/svg%3E"
+              });
+              row.vAvatar({
+                alt: 'Ops',
+                shape: 'square',
+                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' rx='24' fill='%237c3aed'/%3E%3Ctext x='48' y='60' font-family='Arial' font-size='36' fill='white' text-anchor='middle'%3EOPS%3C/text%3E%3C/svg%3E"
+              });
             });
           });
         });
@@ -736,10 +731,15 @@ function AvatarStatusExample1() {
             content.p('status 在头像右下角显示语义状态点，适合成员、节点和服务标识。');
             content.hstack((row) => {
               row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(vAvatar({ status: 'online', text: 'A' }));
-              row.child(vAvatar({ color: '#0f766e', status: 'busy', text: 'B' }));
-              row.child(vAvatar({ color: '#b45309', status: 'away', text: 'C' }));
-              row.child(vAvatar({ color: '#64748b', size: 'large', status: 'offline', text: 'D' }));
+              row.vAvatar({ status: 'online', text: 'A' });
+              row.vAvatar({ color: '#0f766e', status: 'busy', text: 'B' });
+              row.vAvatar({ color: '#b45309', status: 'away', text: 'C' });
+              row.vAvatar({
+                color: '#64748b',
+                size: 'large',
+                status: 'offline',
+                text: 'D'
+              });
             });
           });
         });
