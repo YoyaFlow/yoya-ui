@@ -8,9 +8,7 @@ import {
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
-  setupContentSlot,
-  themeBorder,
-  themeValue
+  setupContentSlot
 } from '../components/shared.js';
 
 let menuGroupSequence = 0;
@@ -21,12 +19,6 @@ export class VMenu extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
     this.className(componentClass, 'yoya-vmenu');
-    this.styles({
-      display: 'flex',
-      gap: '4px',
-      minWidth: '180px',
-      padding: '6px'
-    });
     this.orientation('vertical');
     this.on('focusin', (event) => this._handleFocusin(event));
     this.on('keydown', (event) => this._handleKeydown(event));
@@ -40,7 +32,6 @@ export class VMenu extends HtmlElementNode {
     this.attr('data-orientation', orientation);
     this.attr('role', orientation === 'horizontal' ? 'menubar' : 'menu');
     this.attr('aria-orientation', orientation);
-    this.style('flexDirection', orientation === 'horizontal' ? 'row' : 'column');
     this.children().forEach((child) => {
       applyMenuOrientation(child, orientation);
     });
@@ -205,23 +196,6 @@ export class VMenuItem extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vmenu-item');
     this.attr({ role: 'menuitem', type: 'button' });
-    this.styles({
-      alignItems: 'center',
-      background: 'transparent',
-      border: '1px solid transparent',
-      borderRadius: '6px',
-      color: themeValue('color-text', '#1f2937'),
-      cursor: 'pointer',
-      display: 'grid',
-      font: 'inherit',
-      gap: '10px',
-      gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-      lineHeight: '1.2',
-      minHeight: '34px',
-      padding: '8px 10px',
-      textAlign: 'left',
-      width: '100%'
-    });
     this.child(this._iconBox, this._labelBox, this._shortcutBox);
     this.on('mouseenter', () => this._setHover(true));
     this.on('mouseleave', () => this._setHover(false));
@@ -265,23 +239,6 @@ export class VMenuItem extends HtmlElementNode {
     this.setState('active', enabled);
     this.attr('data-active', enabled ? 'true' : null);
     this.attr('aria-current', enabled ? 'page' : null);
-    this.styles(
-      enabled
-        ? {
-            background: themeValue('color-primary-subtle', '#eff6ff'),
-            borderColor: themeValue('color-primary-border', '#bfdbfe'),
-            color: themeValue('color-primary-hover', '#1d4ed8'),
-            fontWeight: '700'
-          }
-        : {
-            background: 'transparent',
-            borderColor: 'transparent',
-            color: this.getBooleanState('danger')
-              ? themeValue('color-text-danger', '#b91c1c')
-              : themeValue('color-text', '#1f2937'),
-            fontWeight: '400'
-          }
-    );
     return this;
   }
 
@@ -290,23 +247,11 @@ export class VMenuItem extends HtmlElementNode {
 
     this.setState('danger', enabled);
     this.attr('data-danger', enabled ? 'true' : null);
-    if (!this.getBooleanState('active')) {
-      this.style(
-        'color',
-        enabled ? themeValue('color-text-danger', '#b91c1c') : themeValue('color-text', '#1f2937')
-      );
-    }
     return this;
   }
 
   _setHover(hovered) {
     this.attr('data-hovered', hovered ? 'true' : null);
-    if (this.getBooleanState('disabled') || this.getBooleanState('active')) return;
-
-    this.styles({
-      background: hovered ? themeValue('color-surface-hover', '#f1f5f9') : 'transparent',
-      borderColor: hovered ? themeValue('color-border-faint', '#e2e8f0') : 'transparent'
-    });
     return this;
   }
 
@@ -316,8 +261,6 @@ export class VMenuItem extends HtmlElementNode {
     this.setState('disabled', enabled);
     this.attr('disabled', enabled ? true : null);
     this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('cursor', enabled ? 'not-allowed' : 'pointer');
-    this.style('opacity', enabled ? '0.55' : '1');
     if (this._el) {
       const EventClass = this._el.ownerDocument.defaultView.Event;
       this._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
@@ -331,14 +274,7 @@ export class VMenuItem extends HtmlElementNode {
   }
 
   _menuOrientation(orientation) {
-    const horizontal = orientation === 'horizontal';
-
-    this.styles({
-      display: horizontal ? 'inline-flex' : 'grid',
-      justifyContent: horizontal ? 'center' : null,
-      textAlign: horizontal ? 'center' : 'left',
-      width: horizontal ? 'auto' : '100%'
-    });
+    this.attr('data-orientation', orientation);
     return this;
   }
 
@@ -419,14 +355,7 @@ export class VMenuDivider extends HtmlElementNode {
   _menuOrientation(orientation) {
     const horizontal = orientation === 'horizontal';
     this.attr('aria-orientation', horizontal ? 'vertical' : 'horizontal');
-    this.styles({
-      alignSelf: 'stretch',
-      borderLeft: horizontal ? themeBorder('color-border-faint', '#e2e8f0') : null,
-      borderTop: horizontal ? null : themeBorder('color-border-faint', '#e2e8f0'),
-      height: horizontal ? 'auto' : '0',
-      margin: horizontal ? '0 4px' : '4px 0',
-      width: horizontal ? '0' : 'auto'
-    });
+    this.attr('data-orientation', orientation);
     return this;
   }
 }
@@ -436,19 +365,10 @@ export class VMenuGroup extends HtmlElementNode {
     super('div', null);
     const labelId = `yoya-vmenu-group-label-${++menuGroupSequence}`;
     this._orientation = 'vertical';
-    this._labelBox = new HtmlElementNode('div')
-      .className('yoya-vmenu-group-label')
-      .id(labelId)
-      .styles({
-        color: themeValue('color-text-muted', '#64748b'),
-        fontSize: '0.75rem',
-        fontWeight: '700',
-        padding: '6px 10px 4px'
-      });
+    this._labelBox = new HtmlElementNode('div').className('yoya-vmenu-group-label').id(labelId);
 
     this.className(componentClass, 'yoya-vmenu-group');
     this.attr({ 'aria-labelledby': labelId, role: 'group' });
-    this.styles({ display: 'flex', flexDirection: 'column', gap: '4px' });
     super.child(this._labelBox);
     this._setupMenuGroup(setup);
   }
@@ -475,7 +395,7 @@ export class VMenuGroup extends HtmlElementNode {
 
   _menuOrientation(orientation) {
     this._orientation = orientation === 'horizontal' ? 'horizontal' : 'vertical';
-    this.style('flexDirection', this._orientation === 'horizontal' ? 'row' : 'column');
+    this.attr('data-orientation', this._orientation);
     this.children().forEach((child) => applyMenuOrientation(child, this._orientation));
     return this;
   }
@@ -536,22 +456,9 @@ export class VSubMenu extends HtmlElementNode {
     this._panel = new HtmlElementNode('div')
       .id(panelId)
       .className('yoya-vsubmenu-panel')
-      .styles({
-        background: themeValue('color-surface', '#ffffff'),
-        border: themeBorder('color-border', '#d8dee8'),
-        borderRadius: '8px',
-        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
-        display: 'none',
-        left: 'calc(100% + 4px)',
-        minWidth: '200px',
-        position: 'absolute',
-        top: '0',
-        zIndex: '110'
-      })
       .child(this._menu);
 
     this.className(componentClass, 'yoya-vsubmenu');
-    this.styles({ display: 'inline-flex', position: 'relative', width: '100%' });
     this.on('keydown', (event) => this._handleKeydown(event));
     this.child(this._trigger, this._panel);
     this._setupSubMenu(setup);
@@ -591,46 +498,7 @@ export class VSubMenu extends HtmlElementNode {
   inline(value = true) {
     this._inline = Boolean(value);
     this.attr('data-inline', this._inline ? 'true' : null);
-
-    if (this._inline) {
-      this.styles({ display: 'block', position: 'relative', width: '100%' });
-      this._panel.styles({
-        background: 'transparent',
-        border: '0',
-        borderLeft: themeBorder('color-border-faint', '#e2e8f0'),
-        borderRadius: '0',
-        boxShadow: 'none',
-        display: this.getBooleanState('open') ? 'block' : 'none',
-        left: null,
-        marginLeft: '14px',
-        minWidth: null,
-        paddingLeft: '10px',
-        position: 'static',
-        top: null,
-        width: 'auto',
-        zIndex: null
-      });
-      this._trigger.shortcut(this.getBooleanState('open') ? '▾' : '▸');
-    } else {
-      this.styles({ display: 'inline-flex', position: 'relative', width: '100%' });
-      this._panel.styles({
-        background: themeValue('color-surface', '#ffffff'),
-        border: themeBorder('color-border', '#d8dee8'),
-        borderLeft: null,
-        borderRadius: '8px',
-        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
-        display: this.getBooleanState('open') ? null : 'none',
-        left: 'calc(100% + 4px)',
-        marginLeft: null,
-        minWidth: '200px',
-        paddingLeft: null,
-        position: 'absolute',
-        top: '0',
-        width: null,
-        zIndex: '110'
-      });
-      this._trigger.shortcut('›');
-    }
+    this._trigger.shortcut(this._inline ? (this.getBooleanState('open') ? '▾' : '▸') : '›');
 
     return this;
   }
@@ -651,7 +519,6 @@ export class VSubMenu extends HtmlElementNode {
     this.setState('open', open);
     this.attr('data-open', open ? 'true' : null);
     this._trigger.attr('aria-expanded', open ? 'true' : 'false');
-    this._panel.style('display', open ? (this._inline ? 'block' : null) : 'none');
     if (this._inline) {
       this._trigger.shortcut(open ? '▾' : '▸');
     }
@@ -692,8 +559,7 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   _menuOrientation(orientation) {
-    const horizontal = orientation === 'horizontal';
-    this.style('width', horizontal ? 'auto' : '100%');
+    this.attr('data-orientation', orientation);
     this._trigger._menuOrientation(orientation);
     return this;
   }
@@ -865,12 +731,6 @@ export class VSidebar extends HtmlElementNode {
       .on('click', () => this.toggle());
     this._header = new HtmlElementNode('div')
       .className('yoya-vsidebar-header')
-      .styles({
-        alignItems: 'center',
-        display: 'flex',
-        gap: '12px',
-        justifyContent: 'space-between'
-      })
       .child(this._titleBox, this._toggle);
     this._menu = new VMenu()
       .id(menuId)
@@ -888,18 +748,6 @@ export class VSidebar extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vsidebar');
     this.attr('aria-label', '侧边导航');
-    this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '8px',
-      boxSizing: 'border-box',
-      display: 'grid',
-      gap: '12px',
-      overflow: 'hidden',
-      padding: '12px',
-      transition: 'width 160ms ease',
-      width: '260px'
-    });
     this.on('keydown', (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented || this.getBooleanState('collapsed')) {
         return;
@@ -954,7 +802,6 @@ export class VSidebar extends HtmlElementNode {
     const collapsed = Boolean(value);
     this.setState('collapsed', collapsed);
     this.attr('data-collapsed', collapsed ? 'true' : null);
-    this.style('width', collapsed ? '72px' : '260px');
     this._toggle
       .label(collapsed ? '›' : '‹')
       .attr('aria-expanded', collapsed ? 'false' : 'true')

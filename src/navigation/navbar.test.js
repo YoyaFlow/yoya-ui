@@ -39,7 +39,7 @@ describe('vNavbar', () => {
     expect(menu.dataset.orientation).toBe('horizontal');
     expect(items).toHaveLength(2);
     expect(items[0].getAttribute('aria-current')).toBe('page');
-    expect(items[0].style.width).toBe('auto');
+    expect(items[0].classList.contains('yoya-vmenu-item')).toBe(true);
     expect(element.querySelector('.yoya-vnavbar-actions .yoya-vbutton-label').textContent).toBe(
       '登录'
     );
@@ -88,10 +88,8 @@ describe('vNavbar', () => {
     const element = navbar.renderDom();
     const item = element.querySelector('.yoya-vnavbar-menu .yoya-vmenu-item');
 
-    expect(item.style.display).toBe('inline-flex');
-    expect(item.style.justifyContent).toBe('center');
-    expect(item.style.textAlign).toBe('center');
-    expect(item.style.width).toBe('auto');
+    expect(item.classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(element.querySelector('.yoya-vnavbar-menu').dataset.orientation).toBe('horizontal');
   });
 
   it('keeps custom brand content when subtitle is also configured', () => {
@@ -127,11 +125,10 @@ describe('vNavbar', () => {
     const brand = element.querySelector('.yoya-vnavbar-brand');
     const actions = element.querySelector('.yoya-vnavbar-actions');
 
-    expect(element.style.minHeight).toBe('56px');
-    expect(element.style.boxShadow).toContain('rgba(15, 23, 42, 0.05)');
+    expect(element.classList.contains('yoya-vnavbar')).toBe(true);
+    expect(actions.classList.contains('yoya-vnavbar-actions')).toBe(true);
     expect(brand.style.borderRight).toContain('1px solid');
     expect(brand.style.borderRight).toContain('var(--yoya-color-border-faint');
-    expect(actions.style.gap).toBe('8px');
   });
 
   it('omits the brand divider until brand content is configured', () => {

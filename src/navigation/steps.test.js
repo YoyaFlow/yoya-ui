@@ -72,7 +72,6 @@ describe('vSteps', () => {
     steps.size('small');
 
     expect(element.dataset.direction).toBe('vertical');
-    expect(element.style.flexDirection).toBe('column');
     expect(element.dataset.size).toBe('small');
     expect(element.querySelector('.yoya-vstep').style.gridTemplateColumns).toBe(
       'auto minmax(0, 1fr)'

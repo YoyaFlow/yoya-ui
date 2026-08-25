@@ -26,9 +26,51 @@ const sharedActionSelectors = [
   ".yoya-vcontext-menu[data-open='true'] > .yoya-vcontext-panel"
 ];
 
+const navigationSelectors = [
+  '.yoya-vmenu',
+  ".yoya-vmenu[data-orientation='horizontal']",
+  '.yoya-vmenu-item',
+  ".yoya-vmenu-item[data-active='true']",
+  ".yoya-vmenu-item[data-danger='true']",
+  ".yoya-vmenu-item[data-hovered='true']",
+  '.yoya-vmenu-item[disabled]',
+  '.yoya-vmenu-divider',
+  '.yoya-vmenu-group',
+  '.yoya-vmenu-group-label',
+  '.yoya-vsubmenu',
+  '.yoya-vsubmenu-panel',
+  ".yoya-vsubmenu[data-open='true'] > .yoya-vsubmenu-panel",
+  ".yoya-vsubmenu[data-inline='true'] > .yoya-vsubmenu-panel",
+  '.yoya-vsidebar',
+  ".yoya-vsidebar[data-collapsed='true']",
+  '.yoya-vsidebar-header',
+  '.yoya-vnavbar',
+  '.yoya-vnavbar-brand',
+  '.yoya-vnavbar-brand-title',
+  '.yoya-vnavbar-brand-subtitle',
+  '.yoya-vnavbar-actions',
+  '.yoya-vsteps',
+  ".yoya-vsteps[data-direction='vertical']",
+  '.yoya-vstep',
+  '.yoya-vsteps-indicator',
+  '.yoya-vsteps-title',
+  '.yoya-vsteps-description',
+  '.yoya-vsteps-connector',
+  ".yoya-vstep[data-status='finish'] .yoya-vsteps-indicator",
+  ".yoya-vstep[data-status='process'] .yoya-vsteps-indicator",
+  ".yoya-vstep[data-status='error'] .yoya-vsteps-indicator",
+  ".yoya-vstep[data-status='finish'] .yoya-vsteps-connector"
+];
+
 describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the navigation batch selectors', () => {
+    navigationSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

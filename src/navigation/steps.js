@@ -4,8 +4,7 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren,
-  themeValue
+  replaceChildren
 } from '../components/shared.js';
 
 export class VSteps extends HtmlElementNode {
@@ -23,16 +22,6 @@ export class VSteps extends HtmlElementNode {
       'data-size': 'default',
       'data-status': 'process',
       role: 'list'
-    });
-    this.styles({
-      alignItems: 'flex-start',
-      display: 'flex',
-      flexDirection: 'row',
-      gap: '12px',
-      listStyle: 'none',
-      margin: '0',
-      minWidth: '0',
-      padding: '0'
     });
     this._setupSteps(setup);
     this._syncSteps();
@@ -67,7 +56,6 @@ export class VSteps extends HtmlElementNode {
 
     this._direction = value === 'vertical' ? 'vertical' : 'horizontal';
     this.attr('data-direction', this._direction);
-    this.style('flexDirection', this._direction === 'vertical' ? 'column' : 'row');
     this._syncSteps();
     return this;
   }
@@ -212,53 +200,10 @@ export class VStep extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vstep');
     this.attr('role', 'listitem');
-    this.styles({
-      alignItems: 'flex-start',
-      display: 'grid',
-      flex: '1 1 0',
-      gap: '10px',
-      gridTemplateColumns: 'auto minmax(0, 1fr)',
-      minWidth: '0',
-      position: 'relative'
-    });
-    this._indicatorBox.styles({
-      alignItems: 'center',
-      background: themeValue('color-surface', '#ffffff'),
-      border: `2px solid ${themeValue('color-border-strong', '#cbd5e1')}`,
-      borderRadius: '50%',
-      boxSizing: 'border-box',
-      color: themeValue('color-text-muted', '#64748b'),
-      display: 'inline-flex',
-      fontSize: '14px',
-      fontWeight: '700',
-      height: '30px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      width: '30px'
-    });
-    this._contentBox.styles({
-      display: 'grid',
-      gap: '2px',
-      minWidth: '0',
-      paddingTop: '3px'
-    });
-    this._titleBox.styles({
-      color: themeValue('color-text', '#172033'),
-      fontSize: '14px',
-      fontWeight: '700',
-      lineHeight: '1.35'
-    });
-    this._descriptionBox.styles({
-      color: themeValue('color-text-muted', '#64748b'),
-      fontSize: '12px',
-      lineHeight: '1.5'
-    });
-    this._connector.styles({
-      background: themeValue('color-border', '#d8dee8'),
-      display: 'none',
-      height: '2px',
-      position: 'absolute'
-    });
+    this._contentBox.className('yoya-vsteps-content');
+    this._titleBox.className('yoya-vsteps-title');
+    this._descriptionBox.className('yoya-vsteps-description');
+    this._connector.className('yoya-vsteps-connector');
     this.child(this._indicatorBox, this._contentBox, this._connector);
     this._contentBox.child(this._titleBox, this._descriptionBox);
     this._setupStep(setup);
@@ -386,20 +331,9 @@ export class VStep extends HtmlElementNode {
     const indicatorSize = size === 'small' ? '24px' : '30px';
     const indicatorCenter = size === 'small' ? '11px' : '14px';
     const indicatorHalf = size === 'small' ? '12px' : '15px';
-    const indicatorFontSize = size === 'small' ? '12px' : '14px';
-    const styles = stepIndicatorStyles(status);
 
     this.attr('data-status', status);
     this.attr('aria-current', this._index === this._stepsCurrent ? 'step' : null);
-    this._indicatorBox.styles({
-      fontSize: indicatorFontSize,
-      height: indicatorSize,
-      width: indicatorSize
-    });
-    this._indicatorBox.style('background', styles.background);
-    this._indicatorBox.style('borderColor', styles.borderColor);
-    this._indicatorBox.style('color', styles.color);
-    this._titleBox.style('fontSize', size === 'small' ? '13px' : '14px');
     this._descriptionBox.style(
       'display',
       this._descriptionBox.children().length > 0 ? null : 'none'
@@ -415,12 +349,6 @@ export class VStep extends HtmlElementNode {
     }
 
     this._connector.style('display', this._index < this._total - 1 ? null : 'none');
-    this._connector.style(
-      'background',
-      status === 'finish'
-        ? themeValue('color-primary', '#2563eb')
-        : themeValue('color-border', '#d8dee8')
-    );
 
     if (this._stepsDirection === 'vertical') {
       this.style('gridTemplateColumns', 'auto minmax(0, 1fr)');
@@ -470,38 +398,6 @@ function normalizeStepItem(item) {
   }
 
   return vStep(item);
-}
-
-function stepIndicatorStyles(status) {
-  if (status === 'finish') {
-    return {
-      background: themeValue('color-success', '#16a34a'),
-      borderColor: themeValue('color-success', '#16a34a'),
-      color: themeValue('color-text-inverse', '#ffffff')
-    };
-  }
-
-  if (status === 'error') {
-    return {
-      background: themeValue('color-danger', '#dc2626'),
-      borderColor: themeValue('color-danger', '#dc2626'),
-      color: themeValue('color-text-inverse', '#ffffff')
-    };
-  }
-
-  if (status === 'process') {
-    return {
-      background: themeValue('color-primary', '#2563eb'),
-      borderColor: themeValue('color-primary', '#2563eb'),
-      color: themeValue('color-text-inverse', '#ffffff')
-    };
-  }
-
-  return {
-    background: themeValue('color-surface', '#ffffff'),
-    borderColor: themeValue('color-border-strong', '#cbd5e1'),
-    color: themeValue('color-text-muted', '#64748b')
-  };
 }
 
 function stepIndicatorText(status, index) {

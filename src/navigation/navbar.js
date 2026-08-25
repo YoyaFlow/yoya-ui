@@ -9,8 +9,7 @@ import {
   replaceChildren,
   resolveTextValue,
   setupContentSlot,
-  themeBorder,
-  themeValue
+  themeBorder
 } from '../components/shared.js';
 
 let navbarSequence = 0;
@@ -20,43 +19,14 @@ export class VNavbar extends HtmlElementNode {
     super('nav', null);
     const menuId = `yoya-vnavbar-menu-${++navbarSequence}`;
 
-    this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title').styles({
-      color: themeValue('color-text-strong', '#0f172a'),
-      display: 'none',
-      fontSize: '1.02rem',
-      fontWeight: '700',
-      lineHeight: '1.2'
-    });
-    this._brandSubtitle = new HtmlElementNode('span')
-      .className('yoya-vnavbar-brand-subtitle')
-      .styles({
-        color: themeValue('color-text-muted', '#64748b'),
-        display: 'none',
-        fontSize: '0.78rem',
-        lineHeight: '1.2'
-      });
+    this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title');
+    this._brandSubtitle = new HtmlElementNode('span').className('yoya-vnavbar-brand-subtitle');
     this._brandDefault = new HtmlElementNode('div')
       .className('yoya-vnavbar-brand-default')
-      .styles({
-        display: 'grid',
-        gap: '2px',
-        minWidth: '0'
-      })
       .child(this._brandTitle, this._brandSubtitle);
-    this._brandCustom = new HtmlElementNode('div').className('yoya-vnavbar-brand-custom').styles({
-      display: 'none',
-      gap: '2px',
-      minWidth: '0'
-    });
+    this._brandCustom = new HtmlElementNode('div').className('yoya-vnavbar-brand-custom');
     this._brandBox = new HtmlElementNode('div')
       .className('yoya-vnavbar-brand')
-      .styles({
-        alignContent: 'center',
-        display: 'grid',
-        flex: '0 0 auto',
-        gap: '2px',
-        minWidth: '0'
-      })
       .child(this._brandDefault, this._brandCustom);
 
     this._menu = new VMenu()
@@ -64,50 +34,13 @@ export class VNavbar extends HtmlElementNode {
       .className('yoya-vnavbar-menu')
       .attr('aria-label', '导航菜单');
     this._menu.horizontal();
-    this._menu.styles({
-      alignItems: 'center',
-      flex: '1 1 auto',
-      gap: '2px',
-      minWidth: '0',
-      padding: '0',
-      width: '100%'
-    });
     this._menuWrapper = new HtmlElementNode('div')
       .className('yoya-vnavbar-menu-slot')
-      .styles({
-        alignItems: 'center',
-        display: 'flex',
-        flex: '1 1 320px',
-        minWidth: '0'
-      })
       .child(this._menu);
-    this._actionsBox = new HtmlElementNode('div').className('yoya-vnavbar-actions').styles({
-      alignItems: 'center',
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      marginLeft: 'auto',
-      minWidth: '0'
-    });
+    this._actionsBox = new HtmlElementNode('div').className('yoya-vnavbar-actions');
 
     this.className(componentClass, 'yoya-vnavbar');
     this.attr({ 'aria-label': '导航栏', role: 'navigation' });
-    this.styles({
-      alignItems: 'center',
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#dde3ec'),
-      borderRadius: '8px',
-      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.05)',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexWrap: 'wrap',
-      columnGap: '16px',
-      rowGap: '8px',
-      minHeight: '56px',
-      padding: '10px 16px',
-      transition: 'border-color 160ms ease, box-shadow 160ms ease',
-      width: '100%'
-    });
     this.child(this._brandBox, this._menuWrapper, this._actionsBox);
     this._setupNavbar(setup);
   }

@@ -543,7 +543,8 @@ describe('compound components', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(trigger.getAttribute('aria-controls')).toBe(panel.id);
     expect(trigger.textContent).toContain('更多操作');
-    expect(panel.style.display).toBe('none');
+    expect(element.querySelector('.yoya-vsubmenu').dataset.open).toBeUndefined();
+    expect(panel.classList.contains('yoya-vsubmenu-panel')).toBe(true);
     expect(panel.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menu');
     expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
   });
@@ -597,7 +598,7 @@ describe('compound components', () => {
     const element = sidebar.renderDom();
     const trigger = element.querySelector('.yoya-vsubmenu-trigger');
 
-    expect(element.style.overflow).toBe('hidden');
+    expect(element.classList.contains('yoya-vsidebar')).toBe(true);
     trigger.click();
     expect(element.style.overflow).toBe('visible');
     trigger.click();
@@ -625,14 +626,12 @@ describe('compound components', () => {
     const item = panel.querySelector('.yoya-vmenu-item');
 
     expect(submenu.dataset.inline).toBe('true');
-    expect(submenu.style.display).toBe('block');
-    expect(panel.style.position).toBe('static');
-    expect(panel.style.display).toBe('none');
+    expect(panel.classList.contains('yoya-vsubmenu-panel')).toBe(true);
+    expect(submenu.dataset.open).toBeUndefined();
     expect(shortcut.textContent).toBe('▸');
 
     trigger.click();
     expect(submenu.dataset.open).toBe('true');
-    expect(panel.style.display).toBe('block');
     expect(shortcut.textContent).toBe('▾');
     expect(element.style.overflow).toBe('hidden');
 
@@ -646,7 +645,7 @@ describe('compound components', () => {
     expect(item.getAttribute('aria-current')).toBe('page');
 
     trigger.click();
-    expect(panel.style.display).toBe('none');
+    expect(submenu.dataset.open).toBeUndefined();
     expect(shortcut.textContent).toBe('▸');
 
     sidebar.destroy();
@@ -708,7 +707,6 @@ describe('compound components', () => {
     toggle.click();
 
     expect(element.dataset.collapsed).toBe('true');
-    expect(element.style.width).toBe('72px');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(toggle.getAttribute('aria-label')).toBe('展开侧边导航');
     expect(toggle.textContent).toBe('›');
@@ -720,7 +718,6 @@ describe('compound components', () => {
 
     submenuTrigger.click();
     expect(element.dataset.collapsed).toBeUndefined();
-    expect(element.style.width).toBe('260px');
     expect(label.style.position).toBe('');
     expect(submenu.dataset.open).toBe('true');
 
@@ -876,17 +873,14 @@ describe('compound components', () => {
     });
     const element = submenu.renderDom();
     const trigger = element.querySelector('.yoya-vsubmenu-trigger');
-    const panel = element.querySelector('.yoya-vsubmenu-panel');
 
     trigger.click();
     expect(element.dataset.open).toBe('true');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(panel.style.display).toBe('');
 
     trigger.click();
     expect(element.dataset.open).toBeUndefined();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(panel.style.display).toBe('none');
 
     submenu.disabled(true);
     trigger.click();
@@ -1245,7 +1239,7 @@ describe('compound components', () => {
 
     expect(element.dataset.danger).toBe('true');
     expect(element.dataset.active).toBeUndefined();
-    expect(element.style.color).toContain('var(--yoya-color-text-danger');
+    expect(element.classList.contains('yoya-vmenu-item')).toBe(true);
   });
 
   it('uses content-width menu items in horizontal menus', () => {
@@ -1258,8 +1252,8 @@ describe('compound components', () => {
     const items = element.querySelectorAll('.yoya-vmenu-item');
 
     expect(element.dataset.orientation).toBe('horizontal');
-    expect(items[0].style.width).toBe('auto');
-    expect(items[1].style.width).toBe('auto');
+    expect(items[0].classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(items[1].classList.contains('yoya-vmenu-item')).toBe(true);
   });
 
   it('creates vDropdownMenu with trigger, menu content and open state', () => {
