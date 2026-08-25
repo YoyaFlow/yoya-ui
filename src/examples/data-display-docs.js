@@ -791,7 +791,7 @@ function AvatarInteractiveExample1() {
             content.style('gap', '14px');
             content.hstack((row) => {
               row.style({ alignItems: 'center', gap: '18px' });
-              row.vAvatar(avatar);
+              row.child(avatar);
               row.vstack((info) => {
                 info.style('gap', '4px');
                 info.span('当前状态');
