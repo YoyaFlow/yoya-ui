@@ -331,6 +331,7 @@ const actions = hstack({ attrs: { 'data-layout': 'actions' }, style: { gap: '8px
 
 Available compound component exports:
 
+- `vAvatar`
 - `vButton`
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
 - `vMenu`, `vMenuItem`, `vDropdownMenu`, `vContextMenu`

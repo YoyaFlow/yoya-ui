@@ -62,6 +62,20 @@ const navigationSelectors = [
   ".yoya-vstep[data-status='finish'] .yoya-vsteps-connector"
 ];
 
+const avatarSelectors = [
+  '.yoya-vavatar',
+  ".yoya-vavatar[data-shape='square']",
+  ".yoya-vavatar[data-size='small']",
+  ".yoya-vavatar[data-size='large']",
+  '.yoya-vavatar-content',
+  '.yoya-vavatar-image',
+  ".yoya-vavatar[data-image='true'] .yoya-vavatar-image",
+  '.yoya-vavatar-status',
+  ".yoya-vavatar[data-status='online'] .yoya-vavatar-status",
+  ".yoya-vavatar[data-status='busy'] .yoya-vavatar-status",
+  ".yoya-vavatar[data-status='away'] .yoya-vavatar-status"
+];
+
 describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
@@ -71,6 +85,12 @@ describe('CSS style contract', () => {
 
   it('covers the navigation batch selectors', () => {
     navigationSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the avatar selectors', () => {
+    avatarSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { VAvatar, vAvatar } from './avatar.js';
 import { VBadge, vBadge } from './badge.js';
 import { VCode, vCode } from './code.js';
 import { VDetail, VDetailItem, vDetail, vDetailItem } from './detail.js';
@@ -18,6 +19,7 @@ import { VTable, vTable } from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
 
 const dataDisplayFactories = {
+  vAvatar,
   vBadge,
   vCard,
   vCardBody,
@@ -34,6 +36,7 @@ const dataDisplayFactories = {
 registerChildFactories(HtmlElementNode, dataDisplayFactories);
 
 export {
+  VAvatar,
   VBadge,
   VCard,
   VCardBody,
@@ -46,6 +49,7 @@ export {
   VTable,
   VTree,
   VTreeNode,
+  vAvatar,
   vBadge,
   vCard,
   vCardBody,

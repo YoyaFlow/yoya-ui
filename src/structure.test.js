@@ -37,6 +37,8 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./data-display/surface.js')).toBe(true);
     expect(existsInSrc('./data-display/table.js')).toBe(true);
     expect(existsInSrc('./data-display/tree.js')).toBe(true);
+    expect(existsInSrc('./data-display/avatar.js')).toBe(true);
+    expect(existsInSrc('./data-display/avatar.test.js')).toBe(true);
     expect(existsInSrc('./data-display/tree.test.js')).toBe(true);
     expect(existsInSrc('./data-display/chart.js')).toBe(true);
     expect(existsInSrc('./data-display/chart.test.js')).toBe(true);
@@ -122,6 +124,8 @@ describe('foundation module structure', () => {
     expect(api.VTreeNode).toBe(dataDisplay.VTreeNode);
     expect(api.vBadge).toBe(dataDisplay.vBadge);
     expect(api.VBadge).toBe(dataDisplay.VBadge);
+    expect(api.vAvatar).toBe(dataDisplay.vAvatar);
+    expect(api.VAvatar).toBe(dataDisplay.VAvatar);
     expect(api.vChart).toBe(dataDisplay.vChart);
     expect(api.codeBlock).toBe(dataDisplay.codeBlock);
     expect(api.vDynamicLoader).toBe(asyncViews.vDynamicLoader);

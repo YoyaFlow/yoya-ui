@@ -47,7 +47,7 @@
 
 ### 数据展示
 
-1. 头像（待开发）
+1. 头像 vAvatar
 2. 徽标数 vBadge
 3. 详情 vDetail / vDetailItem
 4. 代码 vCode / codeBlock
