@@ -16,46 +16,178 @@ import {
 
 let timerRangeSequence = 0;
 
+function createClearButton(className, position = {}) {
+  return new HtmlElementNode('button')
+    .className(className, 'yoya-control-clear')
+    .attr({ type: 'button', 'aria-label': '清空', title: '清空' })
+    .styles({
+      alignItems: 'center',
+      background: 'transparent',
+      border: 'none',
+      borderRadius: '4px',
+      boxSizing: 'border-box',
+      color: themeValue('color-text-muted', '#64748b'),
+      cursor: 'pointer',
+      display: 'inline-flex',
+      flexShrink: '0',
+      fontFamily: 'inherit',
+      fontSize: '16px',
+      fontWeight: '700',
+      height: '18px',
+      justifyContent: 'center',
+      lineHeight: '1',
+      margin: '0',
+      padding: '0',
+      position: 'absolute',
+      width: '18px',
+      zIndex: '1',
+      ...position
+    })
+    .text('×');
+}
+
+function syncClearButton(control, inputNode, clearButton) {
+  const value = inputNode._el?.value ?? control.value();
+  const hasValue = Array.isArray(value)
+    ? value.length > 0
+    : value !== '' && value !== null && value !== undefined;
+  const visible =
+    control._clearable &&
+    hasValue &&
+    !control.getBooleanState('disabled') &&
+    !control.getBooleanState('readonly');
+
+  clearButton.style('display', visible ? null : 'none');
+}
+
 export class VInput extends HtmlElementNode {
   constructor(setup = null) {
-    super('input', null);
+    super('div', null);
     this._value = '';
+    this._clearable = true;
+    this._clearButton = createClearButton('yoya-vinput-clear', {
+      right: '6px',
+      top: '50%',
+      transform: 'translateY(-50%)'
+    });
+    this._input = new HtmlElementNode('input')
+      .className(componentClass, 'yoya-vinput')
+      .attr('type', 'text')
+      .styles({
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border-strong', '#cbd5e1'),
+        borderRadius: '6px',
+        boxSizing: 'border-box',
+        color: themeValue('color-text', '#172033'),
+        font: 'inherit',
+        minHeight: '34px',
+        outline: 'none',
+        padding: '0 12px',
+        width: '100%'
+      });
 
-    this.className(componentClass, 'yoya-vinput');
-    this.attr('type', 'text');
+    this._addRootClass(componentClass, 'yoya-vinput-wrap');
     this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border-strong', '#cbd5e1'),
-      borderRadius: '6px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text', '#172033'),
-      font: 'inherit',
-      minHeight: '34px',
-      outline: 'none',
-      padding: '0 12px',
+      minWidth: '0',
+      position: 'relative',
       width: '100%'
     });
+    this._clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.clear();
+      this._input._el?.focus();
+    });
+    this._input.on('input', () => this._syncClear());
+    this._input.on('change', () => this._syncClear());
+    this.child(this._input, this._clearButton);
 
     this._setupInput(setup);
+    this._syncClearPadding();
+    this._syncClear();
+  }
+
+  _addRootClass(...classes) {
+    super.className(...classes);
+    return this;
+  }
+
+  className(...classes) {
+    if (classes.length === 0) {
+      return this._input.className();
+    }
+
+    this._input.className(...classes);
+    return this;
+  }
+
+  attr(name, value) {
+    if (name && typeof name === 'object') {
+      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
+      return this;
+    }
+
+    if (name === 'value') {
+      return value === undefined ? this.value() : this.value(value);
+    }
+
+    if (value === undefined) {
+      return this._input.attr(name);
+    }
+
+    this._input.attr(name, value);
+    return this;
+  }
+
+  on(eventName, handler, options) {
+    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
+      this._input.on(eventName, handler, options);
+      return this;
+    }
+
+    return super.on(eventName, handler, options);
+  }
+
+  id(value) {
+    if (value === undefined) {
+      return this._input.id();
+    }
+
+    this._input.id(value);
+    return this;
+  }
+
+  name(value) {
+    if (value === undefined) {
+      return this._input.name();
+    }
+
+    this._input.name(value);
+    return this;
+  }
+
+  textContent() {
+    return this._input.textContent();
   }
 
   type(value) {
     if (value === undefined) {
-      return this.attr('type');
+      return this._input.attr('type');
     }
 
-    this.attr('type', value || 'text');
+    this._input.attr('type', value || 'text');
     return this;
   }
 
   value(value) {
     if (value === undefined) {
-      return this._el?.value ?? this._value ?? this.attr('value') ?? '';
+      return this._input._el?.value ?? this._value ?? this._input.attr('value') ?? '';
     }
 
     const next = resolveTextValue(value);
     this._value = next;
-    this.attr('value', next);
+    this._input.attr('value', next);
+    this._syncClear();
     return this;
   }
 
@@ -69,11 +201,11 @@ export class VInput extends HtmlElementNode {
 
   placeholder(value) {
     if (value === undefined) {
-      return this.attr('placeholder');
+      return this._input.attr('placeholder');
     }
 
     const next = resolveTextValue(value);
-    this.attr('placeholder', next || null);
+    this._input.attr('placeholder', next || null);
     return this;
   }
 
@@ -85,9 +217,10 @@ export class VInput extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('disabled', enabled);
-    this.attr('disabled', enabled ? true : null);
-    this.style('cursor', enabled ? 'not-allowed' : 'text');
-    this.style('opacity', enabled ? '0.64' : '1');
+    this._input.attr('disabled', enabled ? true : null);
+    this._input.style('cursor', enabled ? 'not-allowed' : 'text');
+    this._input.style('opacity', enabled ? '0.64' : '1');
+    this._syncClear();
     return this;
   }
 
@@ -99,7 +232,8 @@ export class VInput extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('readonly', enabled);
-    this.attr('readonly', enabled ? true : null);
+    this._input.attr('readonly', enabled ? true : null);
+    this._syncClear();
     return this;
   }
 
@@ -111,7 +245,7 @@ export class VInput extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('required', enabled);
-    this.attr('required', enabled ? true : null);
+    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
@@ -123,15 +257,48 @@ export class VInput extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('error', enabled);
-    this.attr('data-error', enabled ? 'true' : null);
-    this.style(
+    this._input.attr('data-error', enabled ? 'true' : null);
+    this._input.style(
       'borderColor',
       enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
     );
-    this.style(
+    this._input.style(
       'boxShadow',
       enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
     );
+    return this;
+  }
+
+  clearable(value) {
+    if (value === undefined) {
+      return this._clearable;
+    }
+
+    this._clearable = Boolean(value);
+    this._input.attr('data-clearable', this._clearable ? 'true' : null);
+    this._syncClearPadding();
+    this._syncClear();
+    return this;
+  }
+
+  clear() {
+    this.value('');
+
+    if (this._input._el) {
+      this._input._el.dispatchEvent(new Event('input', { bubbles: true }));
+      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    return this;
+  }
+
+  _syncClear() {
+    syncClearButton(this, this._input, this._clearButton);
+    return this;
+  }
+
+  _syncClearPadding() {
+    this._input.style('paddingRight', this._clearable ? '34px' : '12px');
     return this;
   }
 
@@ -147,6 +314,7 @@ export class VInput extends HtmlElementNode {
 
     if (isPlainObject(setup)) {
       const {
+        clearable,
         children,
         content,
         disabled,
@@ -198,6 +366,10 @@ export class VInput extends HtmlElementNode {
         this.error(error);
       }
 
+      if (clearable !== undefined) {
+        this.clearable(clearable);
+      }
+
       return;
     }
 
@@ -209,6 +381,8 @@ export class VTimer extends VInput {
   constructor(setup = null) {
     super(null);
     this.className('yoya-vtimer');
+    this._clearButton.className('yoya-vtimer-clear');
+    this._addRootClass('yoya-vtimer-wrap');
     this.mode('date');
     this._setupTimer(setup);
   }
@@ -434,40 +608,127 @@ export class VTimerRange extends HtmlElementNode {
 
 export class VTextarea extends HtmlElementNode {
   constructor(setup = null) {
-    super('textarea', null);
+    super('div', null);
     this._value = '';
+    this._clearable = true;
+    this._clearButton = createClearButton('yoya-vtextarea-clear', {
+      right: '6px',
+      top: '6px'
+    });
+    this._input = new HtmlElementNode('textarea')
+      .className(componentClass, 'yoya-vtextarea')
+      .styles({
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border-strong', '#cbd5e1'),
+        borderRadius: '6px',
+        boxSizing: 'border-box',
+        color: themeValue('color-text', '#172033'),
+        font: 'inherit',
+        minHeight: '88px',
+        outline: 'none',
+        padding: '10px 12px',
+        resize: 'vertical',
+        width: '100%'
+      });
 
-    this.className(componentClass, 'yoya-vtextarea');
+    this._addRootClass(componentClass, 'yoya-vtextarea-wrap');
     this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border-strong', '#cbd5e1'),
-      borderRadius: '6px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text', '#172033'),
-      font: 'inherit',
-      minHeight: '88px',
-      outline: 'none',
-      padding: '10px 12px',
-      resize: 'vertical',
+      minWidth: '0',
+      position: 'relative',
       width: '100%'
     });
+    this._clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.clear();
+      this._input._el?.focus();
+    });
+    this._input.on('input', () => this._syncClear());
+    this._input.on('change', () => this._syncClear());
+    this.child(this._input, this._clearButton);
 
     this._setupTextarea(setup);
+    this._syncClearPadding();
+    this._syncClear();
+  }
+
+  _addRootClass(...classes) {
+    super.className(...classes);
+    return this;
+  }
+
+  className(...classes) {
+    if (classes.length === 0) {
+      return this._input.className();
+    }
+
+    this._input.className(...classes);
+    return this;
+  }
+
+  attr(name, value) {
+    if (name && typeof name === 'object') {
+      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
+      return this;
+    }
+
+    if (name === 'value') {
+      return value === undefined ? this.value() : this.value(value);
+    }
+
+    if (value === undefined) {
+      return this._input.attr(name);
+    }
+
+    this._input.attr(name, value);
+    return this;
+  }
+
+  on(eventName, handler, options) {
+    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
+      this._input.on(eventName, handler, options);
+      return this;
+    }
+
+    return super.on(eventName, handler, options);
+  }
+
+  id(value) {
+    if (value === undefined) {
+      return this._input.id();
+    }
+
+    this._input.id(value);
+    return this;
+  }
+
+  name(value) {
+    if (value === undefined) {
+      return this._input.name();
+    }
+
+    this._input.name(value);
+    return this;
+  }
+
+  textContent() {
+    return this._input.textContent();
   }
 
   value(value) {
     if (value === undefined) {
-      return this._el?.value ?? this._value ?? this.textContent();
+      return this._input._el?.value ?? this._value ?? this._input.textContent();
     }
 
     const next = resolveTextValue(value);
     this._value = next;
-    replaceChildren(this, next ? normalizeChildren(next) : []);
+    replaceChildren(this._input, next ? normalizeChildren(next) : []);
 
-    if (this._el) {
-      this._el.value = next;
+    if (this._input._el) {
+      this._input._el.value = next;
     }
 
+    this._syncClear();
     return this;
   }
 
@@ -481,11 +742,11 @@ export class VTextarea extends HtmlElementNode {
 
   placeholder(value) {
     if (value === undefined) {
-      return this.attr('placeholder');
+      return this._input.attr('placeholder');
     }
 
     const next = resolveTextValue(value);
-    this.attr('placeholder', next || null);
+    this._input.attr('placeholder', next || null);
     return this;
   }
 
@@ -497,9 +758,10 @@ export class VTextarea extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('disabled', enabled);
-    this.attr('disabled', enabled ? true : null);
-    this.style('cursor', enabled ? 'not-allowed' : 'text');
-    this.style('opacity', enabled ? '0.64' : '1');
+    this._input.attr('disabled', enabled ? true : null);
+    this._input.style('cursor', enabled ? 'not-allowed' : 'text');
+    this._input.style('opacity', enabled ? '0.64' : '1');
+    this._syncClear();
     return this;
   }
 
@@ -511,7 +773,8 @@ export class VTextarea extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('readonly', enabled);
-    this.attr('readonly', enabled ? true : null);
+    this._input.attr('readonly', enabled ? true : null);
+    this._syncClear();
     return this;
   }
 
@@ -523,7 +786,7 @@ export class VTextarea extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('required', enabled);
-    this.attr('required', enabled ? true : null);
+    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
@@ -535,12 +798,12 @@ export class VTextarea extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('error', enabled);
-    this.attr('data-error', enabled ? 'true' : null);
-    this.style(
+    this._input.attr('data-error', enabled ? 'true' : null);
+    this._input.style(
       'borderColor',
       enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
     );
-    this.style(
+    this._input.style(
       'boxShadow',
       enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
     );
@@ -549,10 +812,43 @@ export class VTextarea extends HtmlElementNode {
 
   rows(value) {
     if (value === undefined) {
-      return this.attr('rows');
+      return this._input.attr('rows');
     }
 
-    this.attr('rows', value);
+    this._input.attr('rows', value);
+    return this;
+  }
+
+  clearable(value) {
+    if (value === undefined) {
+      return this._clearable;
+    }
+
+    this._clearable = Boolean(value);
+    this._input.attr('data-clearable', this._clearable ? 'true' : null);
+    this._syncClearPadding();
+    this._syncClear();
+    return this;
+  }
+
+  clear() {
+    this.value('');
+
+    if (this._input._el) {
+      this._input._el.dispatchEvent(new Event('input', { bubbles: true }));
+      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    return this;
+  }
+
+  _syncClear() {
+    syncClearButton(this, this._input, this._clearButton);
+    return this;
+  }
+
+  _syncClearPadding() {
+    this._input.style('paddingRight', this._clearable ? '34px' : '12px');
     return this;
   }
 
@@ -568,6 +864,7 @@ export class VTextarea extends HtmlElementNode {
 
     if (isPlainObject(setup)) {
       const {
+        clearable,
         children,
         content,
         disabled,
@@ -619,6 +916,10 @@ export class VTextarea extends HtmlElementNode {
         this.error(error);
       }
 
+      if (clearable !== undefined) {
+        this.clearable(clearable);
+      }
+
       return;
     }
 
@@ -628,13 +929,17 @@ export class VTextarea extends HtmlElementNode {
 
 export class VSelect extends HtmlElementNode {
   constructor(setup = null) {
-    super('select', null);
+    super('div', null);
     this._options = [];
     this._placeholder = '';
     this._value = '';
-
-    this.className(componentClass, 'yoya-vselect');
-    this.styles({
+    this._clearable = true;
+    this._clearButton = createClearButton('yoya-vselect-clear', {
+      right: '30px',
+      top: '50%',
+      transform: 'translateY(-50%)'
+    });
+    this._input = new HtmlElementNode('select').className(componentClass, 'yoya-vselect').styles({
       background: themeValue('color-surface', '#ffffff'),
       border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '6px',
@@ -648,16 +953,97 @@ export class VSelect extends HtmlElementNode {
       width: '100%'
     });
 
+    this._addRootClass(componentClass, 'yoya-vselect-wrap');
+    this.styles({
+      minWidth: '0',
+      position: 'relative',
+      width: '100%'
+    });
+    this._clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.clear();
+      this._input._el?.focus();
+    });
+    this._input.on('change', () => this._syncClear());
+    this.child(this._input, this._clearButton);
+
     this._setupSelect(setup);
+    this._syncClearPadding();
+    this._syncClear();
+  }
+
+  _addRootClass(...classes) {
+    super.className(...classes);
+    return this;
+  }
+
+  className(...classes) {
+    if (classes.length === 0) {
+      return this._input.className();
+    }
+
+    this._input.className(...classes);
+    return this;
+  }
+
+  attr(name, value) {
+    if (name && typeof name === 'object') {
+      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
+      return this;
+    }
+
+    if (name === 'value') {
+      return value === undefined ? this.value() : this.value(value);
+    }
+
+    if (value === undefined) {
+      return this._input.attr(name);
+    }
+
+    this._input.attr(name, value);
+    return this;
+  }
+
+  on(eventName, handler, options) {
+    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
+      this._input.on(eventName, handler, options);
+      return this;
+    }
+
+    return super.on(eventName, handler, options);
+  }
+
+  id(value) {
+    if (value === undefined) {
+      return this._input.id();
+    }
+
+    this._input.id(value);
+    return this;
+  }
+
+  name(value) {
+    if (value === undefined) {
+      return this._input.name();
+    }
+
+    this._input.name(value);
+    return this;
+  }
+
+  textContent() {
+    return this._input.textContent();
   }
 
   value(value) {
     if (value === undefined) {
-      return this._el?.value ?? this._value ?? '';
+      return this._input._el?.value ?? this._value ?? '';
     }
 
     this._value = resolveTextValue(value);
     this._renderOptions();
+    this._syncClear();
     return this;
   }
 
@@ -697,9 +1083,10 @@ export class VSelect extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('disabled', enabled);
-    this.attr('disabled', enabled ? true : null);
-    this.style('cursor', enabled ? 'not-allowed' : 'pointer');
-    this.style('opacity', enabled ? '0.64' : '1');
+    this._input.attr('disabled', enabled ? true : null);
+    this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
+    this._input.style('opacity', enabled ? '0.64' : '1');
+    this._syncClear();
     return this;
   }
 
@@ -711,7 +1098,7 @@ export class VSelect extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('required', enabled);
-    this.attr('required', enabled ? true : null);
+    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
@@ -723,20 +1110,49 @@ export class VSelect extends HtmlElementNode {
     const enabled = Boolean(value);
 
     this.setState('error', enabled);
-    this.attr('data-error', enabled ? 'true' : null);
-    this.style(
+    this._input.attr('data-error', enabled ? 'true' : null);
+    this._input.style(
       'borderColor',
       enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
     );
-    this.style(
+    this._input.style(
       'boxShadow',
       enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
     );
     return this;
   }
 
+  clearable(value) {
+    if (value === undefined) {
+      return this._clearable;
+    }
+
+    this._clearable = Boolean(value);
+    this._input.attr('data-clearable', this._clearable ? 'true' : null);
+    this._renderOptions();
+    this._syncClearPadding();
+    this._syncClear();
+    return this;
+  }
+
   clear() {
-    return this.value('');
+    this.value('');
+
+    if (this._input._el) {
+      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    return this;
+  }
+
+  _syncClear() {
+    syncClearButton(this, this._input, this._clearButton);
+    return this;
+  }
+
+  _syncClearPadding() {
+    this._input.style('paddingRight', this._clearable ? '52px' : '32px');
+    return this;
   }
 
   _renderOptions() {
@@ -752,16 +1168,24 @@ export class VSelect extends HtmlElementNode {
       });
       replaceChildren(placeholderNode, normalizeChildren(this._placeholder));
       nodes.push(placeholderNode);
+    } else if (this._clearable && !selectedValue) {
+      const clearPlaceholderNode = new HtmlElementNode('option')
+        .className('yoya-vselect-option')
+        .attr({ selected: true, value: '' })
+        .styles({
+          color: themeValue('color-border-muted', '#94a3b8')
+        });
+      nodes.push(clearPlaceholderNode);
     }
 
     this._options.forEach((option, index) => {
       nodes.push(createSelectOptionNode(option, selectedValue, index));
     });
 
-    replaceChildren(this, nodes);
+    replaceChildren(this._input, nodes);
 
-    if (this._el) {
-      this._el.value = selectedValue;
+    if (this._input._el) {
+      this._input._el.value = selectedValue;
     }
   }
 
@@ -777,6 +1201,7 @@ export class VSelect extends HtmlElementNode {
 
     if (isPlainObject(setup)) {
       const {
+        clearable,
         children,
         content,
         disabled,
@@ -821,6 +1246,10 @@ export class VSelect extends HtmlElementNode {
 
       if (error !== undefined) {
         this.error(error);
+      }
+
+      if (clearable !== undefined) {
+        this.clearable(clearable);
       }
 
       return;

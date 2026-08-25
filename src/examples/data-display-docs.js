@@ -1,5 +1,6 @@
 import {
   section,
+  vAvatarUpload,
   vAvatar,
   vBadge,
   vButton,
@@ -69,9 +70,17 @@ const dataDisplayDocsDefinitions = Object.freeze({
         imports: ['vAvatar', 'vButton', 'vCard', 'vText'],
         sourceTitle: '自定义头像源码',
         title: '自定义头像'
+      },
+      {
+        component: AvatarUploadExample1,
+        description: '头像上传组件支持点击、拖拽、预览和移除，适合个人资料编辑。',
+        id: 'upload',
+        imports: ['vAvatarUpload', 'vCard', 'vText'],
+        sourceTitle: '头像上传源码',
+        title: '头像上传'
       }
     ],
-    examplesIntro: '下面四个示例分别展示图片头像、基础头像、状态头像和自定义头像。',
+    examplesIntro: '下面五个示例分别展示图片头像、基础头像、状态头像、自定义头像和头像上传。',
     heading: 'vAvatar 头像',
     intro:
       '头像用于在列表、详情、导航和操作区域中标识用户或对象。vAvatar 把文字、图片、图标和状态统一收敛到一个组件 API 中。',
@@ -833,6 +842,42 @@ function AvatarInteractiveExample1() {
                 button.on('click', () => {
                   label = label === 'A' ? 'B' : 'A';
                   avatar.text(label);
+                });
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function AvatarUploadExample1() {
+  const avatar = vAvatarUpload({ size: 96 });
+  const status = vText('未选择头像');
+
+  avatar.on('change', () => {
+    const file = avatar.value();
+    status.textContent(file ? `已选择：${file.name}` : '未选择头像');
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('头像上传');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('点击头像区域选择图片，也可以拖拽图片到区域内预览。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '18px' });
+              row.child(avatar);
+              row.vstack((info) => {
+                info.style('gap', '4px');
+                info.span('当前状态');
+                info.output((output) => {
+                  output.attr('data-avatar-upload-status', 'true');
+                  output.child(status);
                 });
               });
             });

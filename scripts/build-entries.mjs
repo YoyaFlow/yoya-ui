@@ -2,6 +2,7 @@ import { build } from 'vite';
 import { cpSync } from 'node:fs';
 
 const entries = [
+  ['echart', 'src/yoya.echart.js'],
   ['ui', 'src/yoya.ui.js'],
   ['core', 'src/yoya.core.js']
 ];

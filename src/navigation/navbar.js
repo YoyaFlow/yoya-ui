@@ -52,6 +52,17 @@ export class VNavbar extends HtmlElementNode {
     return this;
   }
 
+  sticky(value = true) {
+    if (value === undefined) return this.style('position') === 'sticky';
+    const enabled = Boolean(value);
+    this.styles({
+      position: enabled ? 'sticky' : null,
+      top: enabled ? '0' : null,
+      zIndex: enabled ? '20' : null
+    });
+    return this;
+  }
+
   title(content) {
     this._showDefaultBrand();
     replaceChildren(this._brandTitle, normalizeChildren(content));
@@ -147,6 +158,7 @@ export class VNavbar extends HtmlElementNode {
         content,
         menu,
         menuContent,
+        sticky,
         subtitle,
         title,
         ...elementConfig
@@ -179,6 +191,10 @@ export class VNavbar extends HtmlElementNode {
 
       if (ariaLabel !== undefined) {
         this.ariaLabel(ariaLabel);
+      }
+
+      if (sticky !== undefined) {
+        this.sticky(sticky);
       }
 
       return;

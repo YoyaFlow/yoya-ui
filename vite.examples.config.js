@@ -8,7 +8,14 @@ export default defineConfig({
     outDir: '../../dist/examples',
     rollupOptions: {
       external: ['yoya-ui/ui'],
-      input: 'Index.html',
+      input: {
+        anchor: 'anchor.html',
+        index: 'Index.html',
+        'declarative-router': 'declarative-router.html',
+        'router-links': 'router-links.html',
+        'router-views': 'router-views.html',
+        'router-views-top': 'router-views-top.html'
+      },
       output: {
         paths: {
           'yoya-ui/ui': '../yoya.ui.js'

@@ -450,7 +450,9 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       marginLeft: 'auto',
       minWidth: '24px',
       padding: '0',
-      position: 'static'
+      position: 'sticky',
+      right: '8px',
+      zIndex: '2'
     })
     .child(moreButtonText);
   const popup = new ElementNode('div')
@@ -473,6 +475,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       zIndex: '100'
     });
   const state = {
+    lockTitle: false,
     overflow: false,
     persist: true,
     popupOpen: false,
@@ -510,6 +513,42 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   contentNode.className('yoya-vrouter-views-content');
   contentNode.styles({ minHeight: '120px', padding: '16px' });
   node.child(titleNode, contentNode, popup);
+
+  const applyLockedTitle = () => {
+    const vertical = state.titlePosition !== 'top';
+
+    if (state.lockTitle) {
+      node.styles({
+        display: 'flex',
+        flexDirection: vertical ? 'row' : 'column',
+        height: '100%',
+        minHeight: '0',
+        overflow: 'hidden'
+      });
+      titleNode.style('flex', '0 0 auto');
+      contentNode.styles({
+        flex: '1 1 auto',
+        minHeight: '0',
+        minWidth: '0',
+        overflow: 'auto'
+      });
+      return;
+    }
+
+    node.styles({
+      flexDirection: null,
+      height: null,
+      minHeight: null,
+      overflow: 'hidden'
+    });
+    titleNode.style('flex', null);
+    contentNode.styles({
+      flex: vertical ? '1 1 auto' : null,
+      minHeight: '120px',
+      minWidth: vertical ? '0' : null,
+      overflow: null
+    });
+  };
 
   const applyTitlePosition = (position) => {
     const vertical = position !== 'top';
@@ -558,6 +597,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
         if (childElement) node._el.appendChild(childElement);
       });
     }
+    applyLockedTitle();
   };
 
   const resolveTitle = (context = {}) => {
@@ -777,12 +817,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     state.popupOpen = true;
     node.attr('data-title-popup', 'true');
     moreButton.attr('aria-expanded', 'true');
-    const buttonRect = moreButton._el?.getBoundingClientRect();
     popup.styles({
-      display: 'block',
-      left: `${buttonRect?.left ?? 0}px`,
-      top: `${(buttonRect?.bottom ?? 0) + 4}px`
+      display: 'block'
     });
+    placePopup();
 
     const handleDocumentClick = (event) => {
       if (!popup._el?.contains(event.target) && !moreButton._el?.contains(event.target)) {
@@ -792,24 +830,43 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     const handleKeydown = (event) => {
       if (event.key === 'Escape') closePopup();
     };
-    const handleScroll = () => {
-      const buttonRect = moreButton._el?.getBoundingClientRect();
-      if (buttonRect) {
-        popup.styles({
-          left: `${buttonRect.left}px`,
-          top: `${buttonRect.bottom + 4}px`
-        });
-      }
-    };
+    const handleScroll = () => placePopup();
+    const handleResize = () => placePopup();
 
     document.addEventListener('click', handleDocumentClick);
     document.addEventListener('keydown', handleKeydown);
     window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
     popupCleanup = () => {
       document.removeEventListener('click', handleDocumentClick);
       document.removeEventListener('keydown', handleKeydown);
       window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
     };
+
+    function placePopup() {
+      const buttonRect = moreButton._el?.getBoundingClientRect();
+      const popupRect = popup._el?.getBoundingClientRect();
+      if (!buttonRect || !popupRect) {
+        return;
+      }
+
+      const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
+      const edge = 8;
+      let left = buttonRect.right - popupRect.width;
+      left = Math.max(edge, Math.min(left, viewportWidth - popupRect.width - edge));
+
+      let top = buttonRect.bottom + 4;
+      if (top + popupRect.height + edge > viewportHeight) {
+        top = Math.max(edge, buttonRect.top - popupRect.height - 4);
+      }
+
+      popup.styles({
+        left: `${left}px`,
+        top: `${top}px`
+      });
+    }
   };
 
   moreButton.on('click', () => {
@@ -846,6 +903,16 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     return node;
   };
   node.titlePosition(state.titlePosition);
+
+  node.lockTitle = (value = true) => {
+    if (value === undefined) return state.lockTitle;
+    state.lockTitle = Boolean(value);
+    node.attr('data-title-locked', state.lockTitle ? 'true' : null);
+    applyTitlePosition(state.titlePosition);
+    updateOverflow();
+    return node;
+  };
+  node.titleLocked = node.lockTitle;
 
   const closeTitleTab = (path, event) => {
     event.stopPropagation();

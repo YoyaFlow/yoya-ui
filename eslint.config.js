@@ -7,7 +7,8 @@ export default [
       '.codebase-memory/**',
       '.scratch/**',
       'dist/**',
-      'node_modules/**'
+      'node_modules/**',
+      'src/chart/echarts.min.js'
     ]
   },
   js.configs.recommended,
@@ -46,4 +47,3 @@ export default [
     }
   }
 ];
-

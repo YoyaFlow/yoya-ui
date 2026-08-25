@@ -22,3 +22,5 @@ export {
   vTimer,
   vTimerRange
 } from './controls.js';
+export { VUpload, vUpload } from './upload.js';
+export { VAvatarUpload, vAvatarUpload } from './avatar-upload.js';

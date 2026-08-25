@@ -3,6 +3,7 @@ import {
   router,
   section,
   toast,
+  vContainer,
   vMessageContainer,
   vMenu,
   vMenuGroup,
@@ -23,9 +24,15 @@ import {
 } from './data-display-docs.js';
 import { MessageDocumentationPage } from './feedback-docs.js';
 import { FieldDocumentationPage, FormDocumentationPage } from './form-docs.js';
+import { EchartsDocumentationPage } from './echarts-docs.js';
+import { IconsDocumentationPage } from './icons-docs.js';
 import {
+  AnchorDocumentationPage,
+  BreadcrumbDocumentationPage,
   MenuDocumentationPage,
   NavbarDocumentationPage,
+  RouterDocumentationPage,
+  RouterViewsDocumentationPage,
   StepsDocumentationPage
 } from './navigation-docs.js';
 import {
@@ -46,7 +53,8 @@ const componentMenuSections = [
     items: [
       { label: '按钮', details: 'vButton' },
       { label: '按钮组', details: 'vButtons', status: 'planned' },
-      { label: '悬浮按钮', details: 'vFloatButton', status: 'planned' }
+      { label: '悬浮按钮', details: 'vFloatButton', status: 'planned' },
+      { label: '图标', details: 'SearchOutlined / UploadOutlined' }
     ]
   },
   {
@@ -59,7 +67,7 @@ const componentMenuSections = [
       { label: '页面容器', details: 'vBody / container / grid / responsiveGrid' },
       { label: '间距', details: 'spacer' },
       { label: '弹窗', details: 'vDialog' },
-      { label: '布局模板', details: 'dashboard / detail / settings / auth' },
+      { label: '布局模板', details: 'admin / cloud / profile / docs' },
       { label: '分隔面板', details: 'Splitter', status: 'planned' }
     ]
   },
@@ -67,8 +75,8 @@ const componentMenuSections = [
     id: 'navigation',
     title: '导航',
     items: [
-      { label: '锚点', details: 'vAnchor', status: 'planned' },
-      { label: '面包屑', status: 'planned' },
+      { label: '锚点', details: 'vAnchor / vAnchorItem' },
+      { label: '面包屑', details: 'vBreadcrumb / vBreadcrumbItem' },
       { label: '下拉菜单', details: 'vDropdownMenu / vContextMenu' },
       {
         label: '菜单',
@@ -96,7 +104,8 @@ const componentMenuSections = [
       { label: '开关', details: 'vSwitch' },
       { label: '字段', details: 'vField' },
       { label: '日期时间', details: 'vTimer' },
-      { label: '日期范围', details: 'vTimerRange' }
+      { label: '日期范围', details: 'vTimerRange' },
+      { label: '文件上传', details: 'vUpload' }
     ]
   },
   {
@@ -125,6 +134,11 @@ const componentMenuSections = [
       { label: '消息', details: 'vMessage / vMessageContainer / toast' },
       { label: '消息管理器', details: 'vMessageManager' }
     ]
+  },
+  {
+    id: 'third-party',
+    title: '第三方扩展',
+    items: [{ label: 'ECharts 图表', details: 'vEchart / VEchart' }]
   }
 ];
 
@@ -257,7 +271,7 @@ function createComponentsView(appRouter) {
   const menuItemRefs = [];
   const groupRefs = [];
   const topNavItemRefs = [];
-  const routerViews = vRouterViews(appRouter, { title: '组件目录' });
+  const routerViews = vRouterViews(appRouter, { lockTitle: true, title: '组件目录' });
 
   const syncSelection = () => {
     const currentPath = appRouter.currentPath();
@@ -308,6 +322,7 @@ function createComponentsView(appRouter) {
       });
     });
   });
+  topNav.sticky();
 
   const menu = vMenu((nav) => {
     nav.className('components-menu-list');
@@ -351,34 +366,41 @@ function createComponentsView(appRouter) {
     });
   });
 
-  const root = section((view) => {
+  const workspace = vContainer((body) => {
+    body.className('components-workspace');
+    body.fill();
+    body.style('gap', '16px');
+    body.direction('row');
+
+    body.vAside((sidebar) => {
+      sidebar.className('components-menu');
+      sidebar.attr('data-components-menu', 'true');
+      sidebar.attr('aria-label', '组件菜单');
+      sidebar.scrollable();
+
+      sidebar.div((intro) => {
+        intro.className('components-menu-intro');
+        intro.h2('组件菜单');
+        intro.p('按 docs/components.md 的分组顺序整理。');
+      });
+
+      sidebar.child(menu);
+    });
+
+    body.vMain((panel) => {
+      panel.className('components-router-panel');
+      panel.attr('data-components-router-views', 'true');
+      panel.scrollable();
+      panel.child(routerViews);
+    });
+  });
+
+  const root = vContainer((view) => {
     view.className('components-demo-shell');
     view.attr('data-components-demo-shell', 'true');
+    view.viewport();
     view.child(topNav);
-
-    view.section((workspace) => {
-      workspace.className('components-workspace');
-
-      workspace.aside((sidebar) => {
-        sidebar.className('components-menu');
-        sidebar.attr('data-components-menu', 'true');
-        sidebar.attr('aria-label', '组件菜单');
-
-        sidebar.div((intro) => {
-          intro.className('components-menu-intro');
-          intro.h2('组件菜单');
-          intro.p('按 docs/components.md 的分组顺序整理。');
-        });
-
-        sidebar.child(menu);
-      });
-
-      workspace.section((panel) => {
-        panel.className('components-router-panel');
-        panel.attr('data-components-router-views', 'true');
-        panel.child(routerViews);
-      });
-    });
+    view.child(workspace);
   });
 
   const applyStyles = () => applyDemoStyles(root);
@@ -421,12 +443,36 @@ function createComponentsIntroView() {
 }
 
 function createComponentItemView(category, item, itemIndex, context) {
+  if (category.id === 'third-party' && itemIndex === 0) {
+    return EchartsDocumentationPage().render();
+  }
+
   if (category.id === 'general' && itemIndex === 0) {
     return ButtonDocumentationPage().render();
   }
 
+  if (category.id === 'general' && itemIndex === 3) {
+    return IconsDocumentationPage().render();
+  }
+
   if (category.id === 'navigation' && itemIndex === 3) {
     return MenuDocumentationPage().render();
+  }
+
+  if (category.id === 'navigation' && itemIndex === 1) {
+    return BreadcrumbDocumentationPage().render();
+  }
+
+  if (category.id === 'navigation' && itemIndex === 0) {
+    return AnchorDocumentationPage().render();
+  }
+
+  if (category.id === 'navigation' && itemIndex === 7) {
+    return RouterDocumentationPage().render();
+  }
+
+  if (category.id === 'navigation' && itemIndex === 8) {
+    return RouterViewsDocumentationPage().render();
   }
 
   if (category.id === 'navigation' && itemIndex === 5) {

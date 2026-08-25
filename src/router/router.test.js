@@ -435,7 +435,9 @@ describe('router', () => {
     expect(button.style.borderWidth).toBe('0px');
     expect(button.style.justifyContent).toBe('center');
     expect(button.style.alignItems).toBe('center');
-    expect(button.style.position).toBe('static');
+    expect(button.style.position).toBe('sticky');
+    expect(button.style.right).toBe('8px');
+    expect(button.style.zIndex).toBe('2');
     expect(button.style.marginLeft).toBe('auto');
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(titlebar.lastElementChild).toBe(button);
@@ -492,6 +494,60 @@ describe('router', () => {
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(element.dataset.titlePopup).toBeUndefined();
 
+    root.destroy();
+  });
+
+  it('keeps the overflow popup within the viewport near the expand button', () => {
+    const paths = Array.from({ length: 10 }, (_, index) => `/viewport-${index + 1}`);
+    const appRouter = vRouter({
+      routes: paths.map((path, index) =>
+        vRoute(path, { title: `页面 ${index + 1}`, view: () => div(String(index + 1)) })
+      )
+    });
+    const views = vRouterViews(appRouter, { title: '工作区' });
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    paths.forEach((path) => appRouter.navigate(path, { replace: true }));
+    const element = views.renderDom();
+    views.updateOverflow();
+
+    const button = element.querySelector('.yoya-vrouter-views-expand');
+    const popup = element.querySelector('.yoya-vrouter-views-popup');
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 500 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 400 });
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue({
+      bottom: 44,
+      height: 24,
+      left: 460,
+      right: 484,
+      top: 20,
+      width: 24
+    });
+    vi.spyOn(popup, 'getBoundingClientRect').mockReturnValue({
+      bottom: 260,
+      height: 260,
+      left: 0,
+      right: 180,
+      top: 0,
+      width: 180
+    });
+
+    button.click();
+
+    expect(popup.style.left).toBe('304px');
+    expect(popup.style.top).toBe('48px');
+
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 200 });
+    window.dispatchEvent(new Event('resize'));
+
+    expect(popup.style.top).toBe('8px');
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: originalHeight });
+    vi.restoreAllMocks();
     root.destroy();
   });
 
@@ -568,6 +624,47 @@ describe('router', () => {
     expect(element.children[1]).toBe(titlebar);
     expect(overviewTab.style.borderRadius).toBe('0 6px 6px 0');
     expect(overviewTab.style.marginLeft).toBe('-9px');
+
+    root.destroy();
+  });
+
+  it('locks the title area and scrolls only the content when configured', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/overview', { title: '概览', view: () => div('概览内容') }),
+        vRoute('/settings', { title: '设置', view: () => div('设置内容') })
+      ]
+    });
+    const views = vRouterViews(appRouter, { lockTitle: true, title: '工作区' });
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/overview', { replace: true });
+    appRouter.navigate('/settings', { replace: true });
+
+    const element = views.renderDom();
+    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
+    const content = element.querySelector('.yoya-vrouter-views-content');
+
+    expect(element.dataset.titleLocked).toBe('true');
+    expect(element.style.display).toBe('flex');
+    expect(element.style.flexDirection).toBe('column');
+    expect(element.style.height).toContain('100');
+    expect(titlebar.style.flex).toBe('0 0 auto');
+    expect(content.style.flex).toBe('1 1 auto');
+    expect(content.style.overflow).toBe('auto');
+    expect(content.style.minHeight).toContain('0');
+
+    views.titlePosition('left');
+
+    expect(element.style.flexDirection).toBe('row');
+    expect(titlebar.style.overflowY).toBe('auto');
+    expect(content.style.overflow).toBe('auto');
+
+    views.lockTitle(false);
+
+    expect(element.dataset.titleLocked).toBeUndefined();
+    expect(content.style.overflow).toBe('');
+    expect(content.style.minHeight).toBe('120px');
 
     root.destroy();
   });

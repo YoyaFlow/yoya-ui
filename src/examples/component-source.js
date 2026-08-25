@@ -1,14 +1,23 @@
 import { aside } from '../index.js';
 
 export function componentSource(Component, imports = []) {
-  const importSource = imports.length ? `import { ${imports.join(', ')} } from 'yoya-ui';\n\n` : '';
+  const importSource = imports
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return `import { ${entry} } from 'yoya-ui';`;
+      }
+
+      return `import { ${entry.names.join(', ')} } from '${entry.from}';`;
+    })
+    .join('\n');
+  const importBlock = importSource ? `${importSource}\n\n` : '';
   const functionSource = dedentFunctionSource(
     Component.toString()
       .replace(/\(0,\s*__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)\)/g, '$1')
       .replace(/__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)/g, '$1')
   );
 
-  return `${importSource}export ${functionSource}`;
+  return `${importBlock}export ${functionSource}`;
 }
 
 export function ComponentSource({

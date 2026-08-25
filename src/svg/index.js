@@ -230,6 +230,8 @@ const svgChildFactories = createSvgFactories();
 registerChildFactories(HtmlElementNode, { svg });
 registerChildFactories(SvgElementNode, { svg, ...svgChildFactories });
 
+export * from './icons.js';
+
 function normalizeSvgElementDefinition(definition) {
   if (typeof definition === 'string') {
     return {

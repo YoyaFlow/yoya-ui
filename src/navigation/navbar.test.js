@@ -131,6 +131,15 @@ describe('vNavbar', () => {
     expect(brand.style.borderRight).toContain('var(--yoya-color-border-faint');
   });
 
+  it('sticks the navbar when sticky is enabled', () => {
+    const navbar = vNavbar({ title: 'yoya-ui', sticky: true });
+    const element = navbar.renderDom();
+
+    expect(element.style.position).toBe('sticky');
+    expect(element.style.top).toContain('0');
+    expect(element.style.zIndex).toBe('20');
+  });
+
   it('omits the brand divider until brand content is configured', () => {
     const navbar = vNavbar({
       menuContent(menu) {

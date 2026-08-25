@@ -15,7 +15,7 @@ Yoya UI is a small vanilla JavaScript UI foundation library built with Vite. It 
   - `I18n` and `I18nTextNode` for language-aware text that updates without rebuilding the view tree.
   - Full conforming HTML element factories from the WHATWG HTML standard.
   - Namespace-aware `svg()` tag entry with SVG-only child element extensions.
-  - Layout factories such as `flex`, `grid`, `stack`, `hstack`, `vstack`, `center`, `container`, `spacer`, and `divider`.
+  - Layout factories such as `flex`, `grid`, `stack`, `hstack`, `vstack`, `center`, `container`, `spacer`, `divider`, `vRow` / `vCol`, and `vContainer` / `vHeader` / `vAside` / `vMain` / `vFooter`.
   - A compact hash `Router` in `router.js` for route matching and ViewNode rendering.
   - Reserved or conflicting names use explicit aliases: `varTag()` creates `<var>`, and parent nodes use `styleTag()` to create `<style>` without replacing `.style()`.
 
@@ -58,6 +58,7 @@ npm run build
 The build outputs:
 
 - `dist/yoya.core.js`
+- `dist/yoya.echart.js`
 - `dist/yoya.ui.js`
 - `dist/yoya.ui.css`
 - `dist/yoya-ui.umd.js`
@@ -67,11 +68,12 @@ The build outputs:
 
 ```js
 import { div, svg, createI18n } from 'yoya-ui/core';
+import { vEchart } from 'yoya-ui/echart';
 import { vButton, vCard, vForm, vTable, vTree } from 'yoya-ui/ui';
 import 'yoya-ui/ui.css';
 ```
 
-`yoya.core.js` 只包含原生 HTML、SVG 和核心逻辑，不附带组件样式。`yoya.ui.js` 聚合所有不需要第三方依赖的预定义组件和布局能力，`yoya.ui.css` 提供配套的默认样式与主题变量。发布入口只保留 `yoya-ui/core`、`yoya-ui/ui` 和 `yoya-ui/ui.css`。
+`yoya.core.js` 只包含原生 HTML、SVG 和核心逻辑，不附带组件样式。`yoya.ui.js` 聚合所有不需要第三方依赖的预定义组件和布局能力，`yoya.echart.js` 单独导出 `vEchart / VEchart`，需要业务项目自行提供 ECharts 库。`yoya.ui.css` 提供配套的默认样式与主题变量。发布入口保留 `yoya-ui/core`、`yoya-ui/echart`、`yoya-ui/ui` 和 `yoya-ui/ui.css`。
 
 ## Usage
 
@@ -243,6 +245,20 @@ npm run examples:svg
 
 Then open `src/examples/Index.html#/components`.
 
+### SVG Icons
+
+常用图标由具名函数提供，默认使用 24x24 viewBox、`stroke="currentColor"` 和 2px 描边。
+
+```js
+import { SearchOutlined, SettingsOutlined, TrashOutlined } from 'yoya-ui';
+
+div((page) => {
+  page.child(SearchOutlined());
+  page.child(SettingsOutlined());
+  page.child(TrashOutlined());
+});
+```
+
 ## Layout Components
 
 Layout factories create `ElementNode` instances with stable inline styles and parent shortcut methods:
@@ -272,10 +288,14 @@ Supported first-batch layout factories:
 - `stack({ gap })` and `vstack({ gap })`
 - `hstack({ gap, align, justify })`
 - `grid({ columns, rows, gap, areas, autoFlow })`
+- `vRow({ gutter, justify, align })` and `vCol({ span, offset, push, pull, xs, sm, md, lg, xl })`
+- `vContainer({ direction })` plus `vHeader({ height })`, `vAside({ width })`, `vMain()`, `vFooter({ height })`
 - `center()`
 - `container({ maxWidth, paddingInline })`
 - `spacer({ size })`
 - `divider({ orientation })`
+
+`vCol` 使用 `v` 前缀是为了保留原生 HTML 的 `col()` 工厂；24 栅格与 Element UI 的 `el-row / el-col` 语义一致。
 
 Browser demo:
 
@@ -331,13 +351,17 @@ const actions = hstack({ attrs: { 'data-layout': 'actions' }, style: { gap: '8px
 
 Available compound component exports:
 
+- `vAnchor`, `vAnchorItem`
 - `vAvatar`
+- `vBreadcrumb`, `vBreadcrumbItem`
 - `vButton`
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
 - `vMenu`, `vMenuItem`, `vDropdownMenu`, `vContextMenu`
 - `vMessage`, `vMessageContainer`
 - `vInput`, `vSelect`, `vTextarea`, `vCheckbox`, `vCheckboxes`, `vSwitch`, `vField`, `vForm`
 - `vTimer` (`date`, `datetime-local`, and `time` modes)
+- `vAvatarUpload`
+- `vUpload`
 - `vTree`
 - `vTreeNode`
 - `toast`

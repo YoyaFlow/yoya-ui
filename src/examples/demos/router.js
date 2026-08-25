@@ -1,4 +1,4 @@
-import { div, router, vCard, vRoute, vRouter } from '../../index.js';
+import { div, router, vCard, vContainer, vRoute, vRouter, vRouterViews } from '../../index.js';
 
 export function RouterNavigationCard() {
   const appRouter = router((routes) => {
@@ -118,6 +118,136 @@ export function RouterViewsEditorCard() {
   };
 }
 
+export function RouterViewsTopCard() {
+  const appRouter = vRouter({
+    default: '/overview',
+    routes: [
+      vRoute('/overview', { title: '概览', view: () => div('项目概览内容') }),
+      vRoute('/settings', { title: '设置', view: () => div('项目设置内容') })
+    ]
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('顶部标签路由视图');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('顶部标题栏适合放在页面主区，标签会保留访问记录。');
+            stack.hstack((tabs) => {
+              tabs.style('gap', '8px');
+              tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+              tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
+            });
+            stack.vRouterViews(appRouter, {
+              persist: false,
+              title: '未打开文件',
+              titlePosition: 'top'
+            });
+          });
+        });
+        appRouter.navigate('/overview', { replace: true });
+      });
+    }
+  };
+}
+
+export function RouterViewsEditorStandalone() {
+  const appRouter = vRouter({
+    default: '/overview',
+    routes: [
+      vRoute('/overview', { title: 'overview.js', view: () => div('项目概览内容') }),
+      vRoute('/settings', { title: 'settings.js', view: () => div('项目设置内容') })
+    ]
+  });
+  const root = vContainer((page) => {
+    page.className('router-views-standalone');
+    page.viewport();
+    page.vHeader((header) => {
+      header.className('router-views-topbar');
+      header.styles({
+        background: '#ffffff',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '0 16px'
+      });
+      header.hstack((row) => {
+        row.style({ alignItems: 'center', gap: '10px', height: '100%' });
+        row.strong('工作区');
+        row.spacer();
+        row.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+        row.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
+      });
+    });
+    page.vMain((main) => {
+      main.className('router-views-main');
+      main.styles({ background: '#f5f7fa', padding: '12px' });
+      main.child(
+        vRouterViews(appRouter, {
+          lockTitle: true,
+          title: '未打开文件',
+          titlePosition: 'left'
+        })
+      );
+    });
+  });
+  appRouter.navigate('/overview', { replace: true });
+
+  return {
+    render() {
+      return root;
+    }
+  };
+}
+
+export function RouterViewsTopStandalone() {
+  const appRouter = vRouter({
+    default: '/overview',
+    routes: [
+      vRoute('/overview', { title: '概览', view: () => div('项目概览内容') }),
+      vRoute('/settings', { title: '设置', view: () => div('项目设置内容') })
+    ]
+  });
+  const root = vContainer((page) => {
+    page.className('router-views-standalone');
+    page.viewport();
+    page.vHeader((header) => {
+      header.className('router-views-topbar');
+      header.styles({
+        background: '#ffffff',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '0 16px'
+      });
+      header.hstack((row) => {
+        row.style({ alignItems: 'center', gap: '10px', height: '100%' });
+        row.strong('工作区');
+        row.spacer();
+        row.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+        row.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
+      });
+    });
+    page.vMain((main) => {
+      main.className('router-views-main');
+      main.styles({ background: '#f5f7fa', padding: '12px' });
+      main.child(
+        vRouterViews(appRouter, {
+          lockTitle: true,
+          persist: false,
+          title: '未打开文件',
+          titlePosition: 'top'
+        })
+      );
+    });
+  });
+  appRouter.navigate('/overview', { replace: true });
+
+  return {
+    render() {
+      return root;
+    }
+  };
+}
+
 export const routerCategory = {
   description: '链接导航、活动状态、参数 query 与带标题的路由视图。',
   id: 'router',
@@ -137,6 +267,11 @@ export const routerCategory = {
       component: RouterViewsEditorCard,
       imports: ['div', 'vCard', 'vRoute', 'vRouter'],
       title: 'IDE 风格路由视图核心源码'
+    },
+    {
+      component: RouterViewsTopCard,
+      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+      title: '顶部标签路由视图核心源码'
     }
   ]
 };

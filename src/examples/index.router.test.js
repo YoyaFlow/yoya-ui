@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buttonDemoDefinitions } from './button-docs.js';
 import { ComponentSource, componentSource } from './component-source.js';
+import { applyDemoStyles } from './demo-styles.js';
 import { renderExamplesIndex } from './index.router.js';
 
 let root = null;
@@ -45,22 +46,77 @@ describe('renderExamplesIndex', () => {
     });
   });
 
+  it('keeps router demos as standalone iframe pages', () => {
+    const pages = {
+      'anchor.html': 'AnchorStandaloneDemo',
+      'declarative-router.html': 'DeclarativeRouterCard',
+      'router-links.html': 'RouterNavigationCard',
+      'router-views-top.html': 'RouterViewsTopStandalone',
+      'router-views.html': 'RouterViewsEditorStandalone'
+    };
+
+    Object.entries(pages).forEach(([file, component]) => {
+      const html = readFileSync(`./src/examples/${file}`, 'utf8');
+      expect(html).toContain(component);
+      expect(html).toContain('.render().bindTo');
+      expect(html).not.toContain('components-demo-shell');
+      expect(html).not.toContain('index.router.js');
+    });
+  });
+
+  it('keeps outer workspace styles when applying demo styles inside a frame', () => {
+    const outer = document.createElement('section');
+    const child = document.createElement('div');
+    outer.className = 'components-workspace';
+    outer.appendChild(child);
+    document.body.appendChild(outer);
+
+    applyDemoStyles(outer);
+    expect(outer.style.display).toBe('grid');
+    expect(outer.style.height).toBe('100%');
+
+    applyDemoStyles(child);
+    expect(outer.style.display).toBe('grid');
+    expect(outer.style.height).toBe('100%');
+
+    outer.remove();
+  });
+
   it('renders the menu workspace and intro page', () => {
     root = renderExamplesIndex('#app');
 
     expect(document.querySelector('[data-components-demo-shell]')).not.toBeNull();
     expect(document.querySelector('[data-components-top-nav]')).not.toBeNull();
     expect(document.querySelector('.components-demo-shell').style.display).toBe('grid');
-    expect(document.querySelector('.components-demo-shell').style.gap).toBe('16px');
+    expect(document.querySelector('.components-demo-shell').style.gap).toBe('0px');
+    expect(document.querySelector('.components-demo-shell').style.background).toBe(
+      'rgb(246, 247, 249)'
+    );
+    expect(document.querySelector('.components-demo-shell').style.height).toContain('100');
     expect(document.querySelector('[data-components-top-nav]').style.position).toBe('sticky');
-    expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('8px');
+    expect(document.querySelector('[data-components-top-nav]').style.background).toBe(
+      'rgb(255, 255, 255)'
+    );
+    expect(document.querySelector('[data-components-top-nav]').style.minHeight).toBe('52px');
+    expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('0px');
+    expect(document.querySelector('[data-components-menu]').style.background).toBe(
+      'rgb(255, 255, 255)'
+    );
+    expect(document.querySelector('[data-components-menu]').style.overflow).toBe('auto');
+    expect(document.querySelector('[data-components-menu]').style.height).toBe('100%');
+    expect(document.querySelector('[data-components-menu]').style.scrollbarWidth).toBe('none');
+    expect(document.head.querySelector('[data-demo-menu-scrollbar-style]')).not.toBeNull();
+    expect(document.querySelector('[data-components-router-views]').style.overflow).toBe('auto');
+    expect(document.querySelector('[data-components-router-views]').style.height).toBe('100%');
+    expect(document.querySelector('.yoya-vrouter-views').dataset.titleLocked).toBe('true');
+    expect(document.querySelector('.yoya-vrouter-views-content').style.overflow).toBe('auto');
     expect(document.querySelector('.components-workspace')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(7);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(42);
-    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(8);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(45);
+    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(4);
     expect(selectedRouteTitle()).toBe('说明');
   });
 
@@ -68,7 +124,7 @@ describe('renderExamplesIndex', () => {
     root = renderExamplesIndex('#app');
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
-    expect(navItems).toHaveLength(8);
+    expect(navItems).toHaveLength(9);
     expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
       'page'
     );
@@ -86,6 +142,156 @@ describe('renderExamplesIndex', () => {
       null
     );
     expect(layoutItem.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('clears previous active states when navigating between menu items', async () => {
+    root = renderExamplesIndex('#app');
+
+    const layoutItem = document.querySelector('[data-top-nav-item="layout"]');
+    const dataItem = document.querySelector('[data-top-nav-item="data-display"]');
+    const dataPath = dataItem.getAttribute('data-top-nav-path');
+
+    layoutItem.click();
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('分割线');
+    });
+
+    dataItem.click();
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('头像');
+    });
+
+    const activeTopItems = document.querySelectorAll(
+      '[data-components-top-nav] .yoya-vmenu-item[data-active="true"]'
+    );
+    const activeMenuItems = document.querySelectorAll(
+      '[data-components-menu] .yoya-vmenu-item[data-active="true"]'
+    );
+
+    expect(activeTopItems).toHaveLength(1);
+    expect(activeMenuItems).toHaveLength(1);
+    expect(activeTopItems[0].getAttribute('data-top-nav-path')).toBe(dataPath);
+    expect(activeMenuItems[0].getAttribute('data-component-path')).toBe(
+      '/components/data-display/0'
+    );
+    expect(layoutItem.style.background).toBe('');
+    expect(
+      document.querySelector('[data-component-path="/components/layout/0"]').style.background
+    ).toBe('');
+  });
+
+  it('renders the SVG icon library in a responsive grid', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/general/3');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('图标');
+    });
+
+    const page = document.querySelector('[data-icons-page]');
+    const grid = page.querySelector('[data-icons-grid]');
+    const cells = grid.querySelectorAll('[data-icon-name]');
+    const source = page.querySelector('.yoya-code-block .yoya-vcode-content');
+    const copyButtons = grid.querySelectorAll('.components-icon-copy');
+    const originalClipboard = navigator.clipboard;
+    const writeText = vi.fn();
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    });
+
+    expect(page.querySelector('h1').textContent).toBe('SVG 图标');
+    expect(grid.style.gridTemplateColumns).toContain('minmax(200px, 1fr)');
+    expect(cells.length).toBeGreaterThan(30);
+    expect(Array.from(cells, (cell) => cell.dataset.iconName)).toContain('UploadOutlined');
+    expect(cells[0].querySelector('svg').namespaceURI).toBe('http://www.w3.org/2000/svg');
+    expect(cells[0].style.aspectRatio).toBe('1 / 1');
+    expect(cells[0].style.gridTemplateRows).toContain('1fr');
+    expect(cells[0].querySelector('.components-icon-symbol svg').style.width).toBe('40px');
+    expect(cells[0].querySelector('.components-icon-symbol svg').style.height).toBe('40px');
+    expect(cells[0].querySelector('strong').textContent).toBe('ArrowDownOutlined');
+    expect(cells[0].querySelector('.components-icon-description').textContent).toBe('向下箭头');
+    const sourceTrigger = cells[0].querySelector('.components-icon-source-trigger');
+    expect(sourceTrigger.getAttribute('title')).toBe('源码定义');
+    expect(sourceTrigger.getAttribute('aria-label')).toBe('查看源码定义');
+    expect(sourceTrigger.querySelector('svg')).not.toBeNull();
+    expect(sourceTrigger.style.position).toBe('absolute');
+    expect(sourceTrigger.style.right).toBe('8px');
+    expect(sourceTrigger.style.bottom).toBe('8px');
+    expect(sourceTrigger.style.width).toBe('20px');
+    expect(sourceTrigger.style.height).toBe('20px');
+    expect(sourceTrigger.querySelector('svg').style.width).toBe('10px');
+    expect(page.querySelector('[data-icons-source-section]')).not.toBeNull();
+    expect(page.querySelector('[data-icons-api]')).not.toBeNull();
+    expect(page.querySelector('[data-icons-api] table').textContent).toContain('SvgElementNode');
+    expect(source.textContent).toContain('SearchOutlined');
+    expect(copyButtons.length).toBe(cells.length);
+
+    sourceTrigger.click();
+    const dialog = page.querySelector('[data-icon-source-dialog]');
+    expect(dialog.getAttribute('open')).not.toBeNull();
+    expect(dialog.querySelector('.yoya-vcard')).not.toBeNull();
+    expect(dialog.querySelector('.components-icon-source-dialog-title strong').textContent).toBe(
+      '图标源码'
+    );
+    expect(dialog.querySelector('.components-icon-source-dialog-title span').textContent).toBe(
+      'ArrowDownOutlined'
+    );
+    const dialogClose = dialog.querySelector('[aria-label="关闭"]');
+    expect(dialogClose.tagName).toBe('svg');
+    expect(dialogClose.getAttribute('aria-label')).toBe('关闭');
+    expect(dialogClose.style.width).toBe('16px');
+    expect(dialogClose.style.height).toBe('16px');
+    expect(dialogClose.style.borderWidth).toBe('0px');
+    expect(dialogClose.style.outline).toBe('none');
+    expect(dialog.querySelector('.components-icon-source-dialog-header').style.display).toBe(
+      'flex'
+    );
+    expect(dialog.querySelector('.components-icon-source-dialog-code').textContent).toContain(
+      'export function ArrowDownOutlined'
+    );
+
+    copyButtons[0].click();
+
+    expect(writeText).toHaveBeenCalledWith(`${cells[0].dataset.iconName}()`);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: originalClipboard
+    });
+  });
+
+  it('renders the file upload demo page with live component and source', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/form/10');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('文件上传');
+    });
+
+    const page = document.querySelector('[data-component-route-item="form:10"]');
+    expect(page.querySelector('.yoya-vupload')).not.toBeNull();
+    expect(page.querySelector('[data-source-example]').textContent).toContain('UploadExample1');
+  });
+
+  it('renders the third-party ECharts demo page', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/third-party/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('ECharts 图表');
+    });
+
+    const page = document.querySelector('[data-echarts-page]');
+    expect(page.querySelector('h1').textContent).toBe('ECharts 图表');
+    expect(page.querySelectorAll('.components-echarts-grid .yoya-vcard')).toHaveLength(3);
+    expect(page.querySelectorAll('.yoya-vechart')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-echarts-demo]')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-echarts-demo] [data-source-example]')).toHaveLength(3);
+    expect(
+      page.querySelector('[data-echarts-demo="bar"] [data-source-example]').textContent
+    ).toContain("import { vEchart } from 'yoya-ui/echart';");
   });
 
   it.each([
@@ -109,7 +315,7 @@ describe('renderExamplesIndex', () => {
       'flex(',
       3
     ],
-    ['/components/layout/2', '栅格', 'grid', 'grid 栅格', 'fixed', 'GridFixedExample1', 'grid(', 2],
+    ['/components/layout/2', '栅格', 'grid', 'grid 栅格', 'fixed', 'GridFixedExample1', 'grid(', 3],
     [
       '/components/layout/3',
       '页面容器',
@@ -118,7 +324,7 @@ describe('renderExamplesIndex', () => {
       'shell',
       'BodyShellExample1',
       'vBody(',
-      2
+      3
     ],
     [
       '/components/layout/4',
@@ -138,17 +344,37 @@ describe('renderExamplesIndex', () => {
       'launch',
       'PopupLaunchExample1',
       'dialog.open(true)',
-      2
+      3
     ],
     [
       '/components/layout/6',
       '布局模板',
       'templates',
       '布局模板',
-      'dashboard',
-      'DashboardTemplateExample1',
-      'vBody(',
+      'admin',
+      'AdminTemplateExample1',
+      'vContainer(',
       4
+    ],
+    [
+      '/components/navigation/0',
+      '锚点',
+      'anchor',
+      'vAnchor 锚点',
+      'basic',
+      'AnchorStandaloneDemo',
+      'vAnchor(',
+      1
+    ],
+    [
+      '/components/navigation/1',
+      '面包屑',
+      'breadcrumb',
+      'vBreadcrumb 面包屑',
+      'basic',
+      'BreadcrumbBasicExample1',
+      'vBreadcrumb(',
+      2
     ],
     [
       '/components/navigation/3',
@@ -181,6 +407,26 @@ describe('renderExamplesIndex', () => {
       3
     ],
     [
+      '/components/navigation/7',
+      '路由',
+      'router',
+      'Router 路由',
+      'links',
+      'RouterNavigationCard',
+      'vRouterView(',
+      2
+    ],
+    [
+      '/components/navigation/8',
+      '路由视图',
+      'router-views',
+      'vRouterViews 路由视图',
+      'editor',
+      'RouterViewsEditorStandalone',
+      'vRouterViews(',
+      2
+    ],
+    [
       '/components/feedback/0',
       '消息',
       'message',
@@ -208,7 +454,7 @@ describe('renderExamplesIndex', () => {
       'image',
       'AvatarImageExample1',
       'new URL(',
-      4
+      5
     ],
     [
       '/components/data-display/1',
@@ -307,6 +553,59 @@ describe('renderExamplesIndex', () => {
     expect(launchDemo.querySelector('dialog[open]')).not.toBeNull();
   });
 
+  it('validates a vForm inside the popup form demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/layout/5');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('弹窗');
+    });
+
+    const page = document.querySelector('[data-layout-docs="popup"]');
+    const formDemo = page.querySelector('[data-layout-demo="form"]');
+    const openButton = [...formDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('新建发布')
+    );
+    openButton.click();
+
+    const dialog = formDemo.querySelector('dialog[open]');
+    expect(dialog).not.toBeNull();
+
+    const submitButton = [...dialog.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('创建')
+    );
+    submitButton.click();
+    expect(dialog.querySelector('.yoya-vform-item-error')).not.toBeNull();
+    expect(formDemo.textContent).toContain('请检查必填项');
+
+    const title = dialog.querySelector('input[name="title"]');
+    title.value = 'v2026.08.25';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    const environment = dialog.querySelector('select[name="environment"]');
+    environment.value = '生产';
+    environment.dispatchEvent(new Event('change', { bubbles: true }));
+    submitButton.click();
+
+    expect(formDemo.querySelector('dialog[open]')).toBeNull();
+    expect(formDemo.textContent).toContain('已创建');
+  });
+
+  it('renders layout template demos inside isolated iframes', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/layout/6');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('布局模板');
+    });
+
+    const page = document.querySelector('[data-layout-docs="templates"]');
+    const frames = page.querySelectorAll('[data-layout-demo-frame]');
+    expect(frames).toHaveLength(4);
+    frames.forEach((frame) => {
+      expect(frame.tagName).toBe('IFRAME');
+    });
+  });
+
   it('shows interactive state changes in the horizontal navbar demo', async () => {
     root = renderExamplesIndex('#app');
 
@@ -358,6 +657,33 @@ describe('renderExamplesIndex', () => {
     expect(status.textContent).toBe('当前第 3 步：发布');
     expect(steps.dataset.current).toBe('2');
     expect(demo.querySelectorAll('.yoya-vstep')[2].dataset.status).toBe('process');
+  });
+
+  it('switches the active item in the breadcrumb docs demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/navigation/1');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('面包屑');
+    });
+
+    const demo = document.querySelector('[data-navigation-demo="dynamic"]');
+    const status = demo.querySelector('[data-breadcrumb-demo-status]');
+    const consoleButton = [...demo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('控制台')
+    );
+
+    expect(status.textContent).toBe('当前：服务详情');
+    expect(demo.querySelector('.yoya-vbreadcrumb-item[data-current="true"]').textContent).toContain(
+      '服务详情'
+    );
+
+    consoleButton.click();
+
+    expect(status.textContent).toBe('当前：控制台');
+    expect(demo.querySelector('.yoya-vbreadcrumb-item[data-current="true"]').textContent).toContain(
+      '控制台'
+    );
   });
 
   it('shows tree selection and checkbox state changes in the tree docs demos', async () => {
@@ -547,6 +873,24 @@ describe('renderExamplesIndex', () => {
     images.forEach((image) => {
       expect(image.getAttribute('src')).toBeTruthy();
     });
+  });
+
+  it('renders the avatar upload demo below the avatar demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('头像');
+    });
+
+    const page = document.querySelector('[data-data-display-docs="avatar"]');
+    const demos = page.querySelectorAll('[data-data-display-demo]');
+    const uploadDemo = page.querySelector('[data-data-display-demo="upload"]');
+
+    expect(demos).toHaveLength(5);
+    expect(demos[demos.length - 1].dataset.dataDisplayDemo).toBe('upload');
+    expect(uploadDemo.querySelector('.yoya-vavatar-upload')).not.toBeNull();
+    expect(uploadDemo.querySelector('[data-avatar-upload-status]').textContent).toBe('未选择头像');
   });
 
   it('updates detail values when switching services in the detail docs demo', async () => {
@@ -845,24 +1189,74 @@ export function SampleCard() {
     }
   };
 }`);
+    const customImportSource = componentSource(SampleCard, [
+      { from: 'yoya-ui', names: ['vCard'] },
+      { from: 'yoya-ui/echart', names: ['vEchart'] }
+    ]);
+    expect(customImportSource).toContain("import { vCard } from 'yoya-ui';");
+    expect(customImportSource).toContain("import { vEchart } from 'yoya-ui/echart';");
     expect(element.classList.contains('source-panel')).toBe(true);
     expect(element.querySelector('h2').textContent).toBe('示例源码');
   });
 
-  it('renders the router views demo with a vertical left title bar', async () => {
+  it('renders router demos inside isolated iframes without touching the parent URL', async () => {
     root = renderExamplesIndex('#app');
+
+    openRoute('/components/navigation/7');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('路由');
+    });
+
+    const routerPage = document.querySelector('[data-navigation-docs="router"]');
+    const linksFrame = routerPage.querySelector(
+      '[data-navigation-demo="links"] [data-navigation-demo-frame]'
+    );
+    const declarativeFrame = routerPage.querySelector(
+      '[data-navigation-demo="declarative"] [data-navigation-demo-frame]'
+    );
+
+    expect(linksFrame).not.toBeNull();
+    expect(declarativeFrame).not.toBeNull();
+    expect(linksFrame.getAttribute('src')).toContain('router-links.html');
+    expect(declarativeFrame.getAttribute('src')).toContain('declarative-router.html');
+    expect(routerPage.querySelector('.yoya-vrouter-view')).toBeNull();
+    expect(window.location.hash).toContain('/components/navigation/7');
 
     openRoute('/components/navigation/8');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('路由视图');
     });
 
-    const page = document.querySelector('[data-component-route-item="navigation:8"]');
-    const demoViews = page.querySelector('.yoya-vrouter-views');
-    const titlebar = demoViews.querySelector('.yoya-vrouter-views-titlebar');
+    const viewsPage = document.querySelector('[data-navigation-docs="router-views"]');
+    const editorFrame = viewsPage.querySelector(
+      '[data-navigation-demo="editor"] [data-navigation-demo-frame]'
+    );
+    const topFrame = viewsPage.querySelector(
+      '[data-navigation-demo="top"] [data-navigation-demo-frame]'
+    );
 
-    expect(demoViews.dataset.titlePosition).toBe('left');
-    expect(titlebar.getAttribute('aria-orientation')).toBe('vertical');
-    expect(titlebar.style.flexDirection).toBe('column');
+    expect(editorFrame).not.toBeNull();
+    expect(topFrame).not.toBeNull();
+    expect(editorFrame.getAttribute('src')).toContain('router-views.html');
+    expect(topFrame.getAttribute('src')).toContain('router-views-top.html');
+    expect(viewsPage.querySelector('.yoya-vrouter-views')).toBeNull();
+    expect(window.location.hash).toContain('/components/navigation/8');
+  });
+
+  it('renders the anchor demo inside an isolated iframe', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/navigation/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('锚点');
+    });
+
+    const page = document.querySelector('[data-navigation-docs="anchor"]');
+    const frame = page.querySelector('[data-navigation-demo="basic"] [data-navigation-demo-frame]');
+
+    expect(frame).not.toBeNull();
+    expect(frame.getAttribute('src')).toContain('anchor.html');
+    expect(page.querySelector('.yoya-vanchor')).toBeNull();
+    expect(window.location.hash).toContain('/components/navigation/0');
   });
 });

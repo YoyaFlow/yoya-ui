@@ -167,12 +167,13 @@ describe('compound components', () => {
         node.required(true);
       }
     );
-    const inputElement = input.renderDom();
+    const inputRoot = input.renderDom();
+    const inputElement = inputRoot.querySelector('.yoya-vinput');
 
     expect(inputCallback).toBe(input);
     expect(inputElement.placeholder).toBe('请输入服务名');
     expect(inputElement.name).toBe('serviceName');
-    expect(inputElement.style.maxWidth).toBe('240px');
+    expect(inputRoot.style.maxWidth).toBe('240px');
     expect(inputElement.required).toBe(true);
   });
 
@@ -230,7 +231,8 @@ describe('compound components', () => {
         node.required(true);
       }
     );
-    const selectElement = select.renderDom();
+    const selectRoot = select.renderDom();
+    const selectElement = selectRoot.querySelector('.yoya-vselect');
 
     let menuCallback = null;
     const menu = vMenu({ attrs: { 'data-menu': 'actions' } }, (node) => {
@@ -252,7 +254,7 @@ describe('compound components', () => {
 
     expect(selectCallback).toBe(select);
     expect(selectElement.name).toBe('status');
-    expect(selectElement.style.maxWidth).toBe('220px');
+    expect(selectRoot.style.maxWidth).toBe('220px');
     expect(selectElement.required).toBe(true);
     expect(menuCallback).toBe(menu);
     expect(menuElement.dataset.menu).toBe('actions');
@@ -1761,13 +1763,79 @@ describe('compound components', () => {
     expect(textarea.value()).toBe('更新说明');
   });
 
+  it('shows clear controls and clears input, select, textarea and timer values', () => {
+    const input = vInput({
+      name: 'serviceName',
+      value: 'api-gateway'
+    });
+    const select = vSelect({
+      name: 'status',
+      options: ['运行中', '停止'],
+      value: '运行中'
+    });
+    const textarea = vTextarea({
+      name: 'notes',
+      value: '初始说明'
+    });
+    const timer = vTimer({
+      mode: 'date',
+      name: 'scheduledAt',
+      value: '2026-08-19'
+    });
+    const changed = vi.fn();
+    input.on('change', changed);
+
+    const page = div((root) => {
+      root.child(input, select, textarea, timer);
+    });
+    const element = page.renderDom();
+    const clearButtons = element.querySelectorAll('.yoya-control-clear');
+
+    expect(clearButtons).toHaveLength(4);
+    clearButtons.forEach((button) => {
+      expect(button.style.display).not.toBe('none');
+    });
+
+    const inputClear = element.querySelector('.yoya-vinput-clear');
+    inputClear.click();
+
+    expect(input.value()).toBe('');
+    expect(inputClear.style.display).toBe('none');
+    expect(changed).toHaveBeenCalledTimes(1);
+
+    element.querySelector('.yoya-vselect-clear').click();
+    element.querySelector('.yoya-vtextarea-clear').click();
+    element.querySelector('.yoya-vtimer-clear').click();
+
+    expect(select.value()).toBe('');
+    expect(textarea.value()).toBe('');
+    expect(timer.value()).toBe('');
+  });
+
+  it('hides clear controls when disabled or configured off', () => {
+    const disabled = vInput({ value: 'api-gateway' }).disabled(true);
+    const fixed = vInput({ value: 'api-gateway', clearable: false });
+    const readonly = vInput({ value: 'api-gateway' }).readonly(true);
+
+    const page = div((root) => {
+      root.child(disabled, fixed, readonly);
+    });
+    const element = page.renderDom();
+    const clearButtons = element.querySelectorAll('.yoya-vinput-clear');
+
+    expect(clearButtons).toHaveLength(3);
+    clearButtons.forEach((button) => {
+      expect(button.style.display).toBe('none');
+    });
+  });
+
   it('creates vTimer with supported date and time modes and live values', () => {
     const timer = vTimer({
       mode: 'datetime-local',
       name: 'scheduledAt',
       value: '2026-08-19T14:30'
     });
-    const element = timer.renderDom();
+    const element = timer.renderDom().querySelector('.yoya-vtimer');
 
     expect(timer).toBeInstanceOf(VTimer);
     expect(timer).toBeInstanceOf(HtmlElementNode);
@@ -1797,7 +1865,7 @@ describe('compound components', () => {
       control.required(true);
       control.on('change', changed);
     });
-    const element = timer.renderDom();
+    const element = timer.renderDom().querySelector('.yoya-vtimer');
 
     expect(element.disabled).toBe(true);
     expect(element.readOnly).toBe(true);
@@ -2116,7 +2184,13 @@ describe('compound components', () => {
       root.vFormItem((item) => {
         item.name('role').label('负责人角色').hint('请选择负责人角色').required('请选择负责人角色');
         item.validate((value) => (value === '运维' ? null : '运维角色必须选择'));
-        item.control((editor) => editor.vSelect({ name: 'role', options: ['开发', '运维'] }));
+        item.control((editor) =>
+          editor.vSelect({
+            clearable: false,
+            name: 'role',
+            options: ['开发', '运维']
+          })
+        );
       });
     });
     const element = form.renderDom();

@@ -154,25 +154,64 @@ const baseRules = [
   [
     '.components-demo-shell',
     {
+      background: '#f6f7f9',
       boxSizing: 'border-box',
       display: 'grid',
-      gap: '16px',
-      margin: '0 auto',
-      padding: '16px',
-      width: 'min(100%, 1440px)'
+      gap: '0px',
+      gridTemplateRows: '52px minmax(0, 1fr)',
+      height: '100dvh',
+      margin: '0',
+      overflow: 'hidden',
+      padding: '0',
+      width: '100%'
     }
   ],
-  ['.components-demo-shell > .yoya-vnavbar', { position: 'sticky', top: '12px', zIndex: '20' }],
+  [
+    '.components-demo-shell > .yoya-vnavbar',
+    {
+      background: '#ffffff',
+      border: '0',
+      borderBottom: '1px solid #e2e8f0',
+      borderRadius: '0',
+      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
+      minHeight: '52px',
+      padding: '0 16px',
+      zIndex: '30'
+    }
+  ],
+  ['.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand', { borderRightColor: '#e2e8f0' }],
+  ['.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand-title', { color: '#172033' }],
+  ['.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand-subtitle', { color: '#64748b' }],
+  [
+    '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item',
+    {
+      borderColor: 'transparent',
+      color: '#445065',
+      minHeight: '32px',
+      padding: '6px 10px'
+    }
+  ],
+  [
+    ".components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item[data-active='true']",
+    { background: '#e8f0fe', color: '#1d4ed8' }
+  ],
+  [
+    ".components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item[data-hovered='true']:not([data-active='true'])",
+    { background: '#f1f5f9', borderColor: '#e2e8f0', color: '#172033' }
+  ],
   [
     '.components-workspace',
     {
-      alignItems: 'start',
+      alignItems: 'stretch',
+      background: '#f6f7f9',
       boxSizing: 'border-box',
       display: 'grid',
-      gap: '16px',
-      gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)',
+      gap: '0px',
+      gridTemplateColumns: 'minmax(248px, 288px) minmax(0, 1fr)',
+      height: '100%',
       margin: '0',
       minHeight: '0',
+      overflow: 'hidden',
       padding: '0',
       width: '100%'
     }
@@ -183,11 +222,28 @@ const baseRules = [
     {
       alignContent: 'start',
       background: '#ffffff',
-      border: '1px solid #d8e0ea',
-      borderRadius: '8px',
+      border: '0',
+      borderRight: '1px solid #e2e8f0',
+      borderRadius: '0px',
       display: 'grid',
-      gap: '12px',
-      padding: '16px'
+      gap: '10px',
+      height: '100%',
+      msOverflowStyle: 'none',
+      overflow: 'auto',
+      padding: '14px 12px 18px',
+      scrollbarWidth: 'none',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-router-panel',
+    {
+      background: '#f6f7f9',
+      border: '0',
+      borderRadius: '0px',
+      height: '100%',
+      overflow: 'auto',
+      width: '100%'
     }
   ],
   ['.components-menu-intro', { display: 'grid', gap: '6px' }],
@@ -216,11 +272,11 @@ const baseRules = [
      .components-not-found p`,
     { letterSpacing: '0', margin: '0' }
   ],
-  ['.components-menu-intro h2', { fontSize: '1rem' }],
+  ['.components-menu-intro h2', { color: '#172033', fontSize: '1rem' }],
   ['.components-menu-intro p', { color: '#5a6575' }],
   ['.components-menu-list', { minWidth: '0', padding: '0', width: '100%' }],
-  ['.components-menu-list .yoya-vmenu', { gap: '4px', minWidth: '0', padding: '0', width: '100%' }],
-  ['.components-menu-list .yoya-vmenu-group', { gap: '2px', padding: '0 0 6px' }],
+  ['.components-menu-list .yoya-vmenu', { gap: '3px', minWidth: '0', padding: '0', width: '100%' }],
+  ['.components-menu-list .yoya-vmenu-group', { gap: '2px', padding: '0 0 10px' }],
   [
     '.components-menu-list .yoya-vmenu-group-label',
     {
@@ -235,7 +291,15 @@ const baseRules = [
     ".components-menu-list .yoya-vmenu-group[data-active='true'] .yoya-vmenu-group-label",
     { color: '#1d4ed8' }
   ],
-  ['.components-menu-list .yoya-vmenu-item', { minHeight: '36px' }],
+  ['.components-menu-list .yoya-vmenu-item', { color: '#1f2937', minHeight: '34px' }],
+  [
+    ".components-menu-list .yoya-vmenu-item[data-active='true']",
+    { background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8' }
+  ],
+  [
+    ".components-menu-list .yoya-vmenu-item[data-hovered='true']:not([data-active='true'])",
+    { background: '#f1f5f9', borderColor: '#e2e8f0', color: '#172033' }
+  ],
   [
     '.components-menu-list .yoya-vmenu-item-shortcut',
     {
@@ -255,7 +319,10 @@ const baseRules = [
     ".components-menu-list .yoya-vmenu-item[data-component-status='planned'] .yoya-vmenu-item-shortcut",
     { background: '#fff6db', color: '#8a5b00' }
   ],
-  ['.components-router-panel .yoya-vrouter-views', { minHeight: '100%' }],
+  [
+    '.components-router-panel .yoya-vrouter-views',
+    { border: '0', borderRadius: '0px', height: '100%', minHeight: '100%', overflow: 'hidden' }
+  ],
   ['.components-route-page', { display: 'grid', gap: '16px' }]
 ];
 
@@ -417,6 +484,8 @@ const genericRules = [
 const layoutExtraRules = [
   ['.components-layout-docs--popup', { gap: '24px' }],
   ['.components-layout-popup-sheet', { display: 'grid', gap: '14px', padding: '0' }],
+  ['.components-layout-demo-live', { minWidth: '0', width: '100%' }],
+  ['.components-layout-demo-frame', { display: 'block', height: '540px', width: '100%' }],
   ['.components-layout-docs--popup .yoya-vdialog', { border: 'none' }],
   [
     '.components-layout-docs--popup .yoya-vdialog-content',
@@ -434,7 +503,69 @@ const layoutExtraRules = [
     '.components-layout-template-shell',
     { display: 'grid', gap: '16px', minWidth: '0', width: '100%' }
   ],
-  ['.components-layout-template-auth-card', { width: '100%' }]
+  ['.components-layout-template-frame', { minWidth: '0' }],
+  [
+    '.components-layout-template-frame .yoya-vheader',
+    {
+      background: 'var(--yoya-color-surface-hover, #f8fafc)',
+      borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)'
+    }
+  ],
+  [
+    '.components-layout-template-frame .yoya-vaside',
+    {
+      background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+      borderRight: '1px solid var(--yoya-color-border-faint, #e2e8f0)'
+    }
+  ],
+  [
+    '.components-layout-template-frame .yoya-vmain',
+    {
+      background: 'var(--yoya-color-surface, #fff)',
+      padding: '14px'
+    }
+  ],
+  ['.components-layout-template-aside', { padding: '12px' }],
+  ['.components-layout-template-main', { padding: '14px' }],
+  ['.structure-region', { boxSizing: 'border-box', minWidth: '0' }],
+  [
+    '.structure-header, .structure-footer',
+    { background: 'var(--yoya-color-surface-hover, #f8fafc)', color: '#475569' }
+  ],
+  ['.structure-header', { borderBottom: '1px solid #e2e8f0' }],
+  ['.structure-footer', { borderTop: '1px solid #e2e8f0' }],
+  [
+    '.structure-aside',
+    {
+      background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+      borderRight: '1px solid #e2e8f0',
+      padding: '12px'
+    }
+  ],
+  ['.structure-main', { background: '#ffffff', padding: '14px' }],
+  [
+    '.structure-label',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '6px',
+      color: '#475569',
+      display: 'block',
+      padding: '8px 10px'
+    }
+  ],
+  [
+    '.structure-placeholder',
+    {
+      background: '#fbfcfe',
+      border: '1px dashed #cbd5e1',
+      borderRadius: '8px',
+      display: 'grid',
+      minHeight: '120px',
+      padding: '16px',
+      placeItems: 'center'
+    }
+  ]
 ];
 
 const buttonExtraRules = [
@@ -452,6 +583,288 @@ const feedbackExtraRules = [
   ['.components-feedback-demo-live .yoya-vmessage-container', { minHeight: '44px' }]
 ];
 
+const navigationExtraRules = [
+  [
+    '.components-navigation-demo-frame',
+    {
+      border: '0',
+      borderRadius: '8px',
+      display: 'block',
+      height: '540px',
+      width: '100%'
+    }
+  ]
+];
+
+const iconExtraRules = [
+  ['.components-icons-page', { display: 'grid', gap: '20px' }],
+  ['.components-icons-page h1', { color: '#172033', fontSize: '1.45rem' }],
+  ['.components-icons-page h2', { color: '#172033', fontSize: '1.05rem' }],
+  ['.components-icons-page > p', { color: '#5a6575', margin: '0' }],
+  ['.components-icons-page .yoya-code-block', { minWidth: '0', width: '100%' }],
+  [
+    '.components-icons-grid',
+    {
+      display: 'grid',
+      gap: '8px',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+      minWidth: '0',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-icon-cell',
+    {
+      alignContent: 'stretch',
+      alignItems: 'stretch',
+      aspectRatio: '1 / 1',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '6px',
+      gridTemplateRows: 'minmax(0, 1fr) auto auto',
+      justifyItems: 'stretch',
+      minHeight: '0',
+      minWidth: '0',
+      padding: '14px 12px 30px',
+      position: 'relative'
+    }
+  ],
+  [
+    '.components-icon-symbol',
+    {
+      alignItems: 'center',
+      display: 'flex',
+      justifyContent: 'center',
+      minHeight: '0'
+    }
+  ],
+  ['.components-icon-cell svg', { color: '#475569', height: '40px', width: '40px' }],
+  ['.components-icon-cell strong', { color: '#172033', fontSize: '0.82rem' }],
+  ['.components-icon-description', { color: '#5a6575', fontSize: '0.74rem' }],
+  [
+    '.components-icon-source-trigger',
+    {
+      alignItems: 'center',
+      background: '#fbfcfe',
+      border: '1px solid #e2e8f0',
+      borderRadius: '6px',
+      color: '#5a6575',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      height: '20px',
+      justifyContent: 'center',
+      padding: '3px',
+      position: 'absolute',
+      right: '8px',
+      bottom: '8px',
+      width: '20px'
+    }
+  ],
+  [
+    '.components-icon-source-trigger svg',
+    {
+      height: '10px',
+      width: '10px'
+    }
+  ],
+  [
+    '.components-icons-source-section, .components-icons-api',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '10px',
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  [
+    '.components-icons-source-section h2, .components-icons-api h2',
+    { color: '#172033', fontSize: '1.05rem', margin: '0' }
+  ],
+  [
+    '.components-icons-source-section > p, .components-icons-api > p',
+    { color: '#5a6575', margin: '0' }
+  ],
+  ['.components-icons-source-section .yoya-code-block', { minWidth: '0', width: '100%' }],
+  [
+    '.components-icons-api table',
+    {
+      borderCollapse: 'collapse',
+      tableLayout: 'fixed',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-icons-api th, .components-icons-api td',
+    {
+      borderTop: '1px solid #e2e8f0',
+      padding: '9px 12px',
+      textAlign: 'left',
+      verticalAlign: 'top'
+    }
+  ],
+  ['.components-icons-api th', { background: '#f8fafc', color: '#344054', fontSize: '0.82rem' }],
+  ['.components-icons-api td', { color: '#5a6575', fontSize: '0.86rem' }],
+  [
+    '.components-icons-api td code',
+    {
+      color: '#172033',
+      fontFamily: "'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace",
+      fontSize: '0.8rem'
+    }
+  ],
+  ['.components-icons-api ul', { color: '#5a6575', margin: '0', paddingLeft: '18px' }],
+  [
+    '.components-icons-page .yoya-vdialog',
+    {
+      maxWidth: 'min(92vw, 920px)',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-icon-source-dialog-header',
+    {
+      alignItems: 'center',
+      background: '#f8fafc',
+      borderBottom: '1px solid #e2e8f0',
+      display: 'flex',
+      gap: '10px',
+      padding: '10px 12px'
+    }
+  ],
+  [
+    '.components-icon-source-dialog-title',
+    {
+      alignItems: 'center',
+      display: 'flex',
+      gap: '8px',
+      minWidth: '0'
+    }
+  ],
+  ['.components-icon-source-dialog-title strong', { color: '#172033', fontSize: '0.9rem' }],
+  [
+    '.components-icon-source-dialog-title span',
+    {
+      background: '#e8f0fe',
+      borderRadius: '999px',
+      color: '#1d4ed8',
+      fontSize: '0.75rem',
+      overflow: 'hidden',
+      padding: '3px 8px',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  ],
+  [
+    '.components-icon-source-dialog .yoya-vcard',
+    { border: '0', borderRadius: '8px', boxShadow: 'none', margin: '0' }
+  ],
+  ['.components-icon-source-dialog .yoya-vcard-header', { padding: '10px 12px' }],
+  ['.components-icon-source-dialog .yoya-vcard-body', { padding: '0' }],
+  [
+    '.components-icon-source-dialog-code',
+    {
+      background: '#1e1f22',
+      margin: '0',
+      maxHeight: '70vh',
+      overflow: 'auto',
+      padding: '14px'
+    }
+  ],
+  [
+    '.components-icon-source-dialog-code code',
+    {
+      color: '#dfe1e5',
+      display: 'block',
+      fontFamily: "'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace",
+      fontSize: '0.78rem',
+      lineHeight: '1.5',
+      minWidth: 'max-content',
+      whiteSpace: 'pre'
+    }
+  ],
+  [
+    '.components-icon-copy',
+    {
+      alignItems: 'center',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '6px',
+      color: '#5a6575',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      height: '20px',
+      justifyContent: 'center',
+      padding: '3px',
+      position: 'absolute',
+      right: '8px',
+      top: '8px',
+      width: '20px'
+    }
+  ],
+  [
+    '.components-icon-copy svg',
+    {
+      height: '10px',
+      width: '10px'
+    }
+  ],
+  [
+    '.components-icon-cell span',
+    {
+      color: '#5a6575',
+      fontSize: '0.78rem',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  ]
+];
+
+const thirdPartyExtraRules = [
+  ['.components-echarts-page', { display: 'grid', gap: '20px' }],
+  ['.components-echarts-page h1', { color: '#172033', fontSize: '1.45rem' }],
+  ['.components-echarts-page > p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-echarts-grid',
+    {
+      display: 'grid',
+      gap: '16px',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      minWidth: '0',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-echarts-demo',
+    {
+      borderTop: '1px solid #e2e8f0',
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  ['.components-echarts-demo h3', { color: '#172033', fontSize: '1rem', margin: '0' }],
+  [
+    '.components-echarts-demo-live',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-echarts-demo .yoya-vcard', { margin: '0' }],
+  ['.components-echarts-demo .yoya-vechart', { minWidth: '0', width: '100%' }]
+];
+
 const demoRules = [
   ...baseRules,
   ...documentationThemes.flatMap(({ accent, prefix }) => documentationRules(prefix, accent)),
@@ -459,17 +872,53 @@ const demoRules = [
   ...buttonExtraRules,
   ...dataDisplayExtraRules,
   ...feedbackExtraRules,
+  ...navigationExtraRules,
+  ...iconExtraRules,
+  ...thirdPartyExtraRules,
   ...genericRules
 ];
 
+const managedStyleElements = new Set();
+const managedStyleProperties = new WeakMap();
+
+function resetManagedStyles(rootElement) {
+  managedStyleElements.forEach((element) => {
+    if (!element.isConnected) {
+      managedStyleElements.delete(element);
+      return;
+    }
+
+    if (rootElement !== element && !rootElement.contains?.(element)) {
+      return;
+    }
+
+    const properties = managedStyleProperties.get(element);
+    if (properties) {
+      properties.forEach((name) => {
+        element.style[name] = '';
+      });
+    }
+    managedStyleElements.delete(element);
+  });
+}
+
 function applySelector(element, selector, styles) {
+  const applyTo = (match) => {
+    Object.assign(match.style, styles);
+    if (!managedStyleProperties.has(match)) {
+      managedStyleProperties.set(match, new Set());
+    }
+
+    const properties = managedStyleProperties.get(match);
+    Object.keys(styles).forEach((name) => properties.add(name));
+    managedStyleElements.add(match);
+  };
+
   if (element.matches?.(selector)) {
-    Object.assign(element.style, styles);
+    applyTo(element);
   }
 
-  element.querySelectorAll(selector).forEach((match) => {
-    Object.assign(match.style, styles);
-  });
+  element.querySelectorAll(selector).forEach(applyTo);
 }
 
 function applyRules(element, rules) {
@@ -485,7 +934,7 @@ function applyGlobalStyles() {
 
   const body = document.body;
   if (body) {
-    body.style.background = '#f5f7fa';
+    body.style.background = '#f6f7f9';
     body.style.color = '#172033';
     body.style.fontFamily =
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -505,6 +954,14 @@ function applyGlobalStyles() {
     backdropStyle.textContent =
       '.components-layout-docs--popup .yoya-vdialog::backdrop { background: rgba(15, 23, 42, 0.28); }';
     document.head.appendChild(backdropStyle);
+  }
+
+  if (!document.head.querySelector('[data-demo-menu-scrollbar-style]')) {
+    const scrollbarStyle = document.createElement('style');
+    scrollbarStyle.setAttribute('data-demo-menu-scrollbar-style', 'true');
+    scrollbarStyle.textContent =
+      '.components-menu::-webkit-scrollbar { display: none; height: 0; width: 0; }';
+    document.head.appendChild(scrollbarStyle);
   }
 }
 
@@ -535,7 +992,28 @@ function applyResponsiveStyles(element) {
     return;
   }
 
-  applySelector(element, '.components-demo-shell', { padding: '12px', width: '100%' });
+  applySelector(element, '.components-demo-shell', {
+    gridTemplateRows: 'none',
+    height: 'auto',
+    minHeight: '100vh',
+    overflow: 'visible',
+    padding: '0',
+    width: '100%'
+  });
+  applySelector(element, '.components-workspace', { height: 'auto', overflow: 'visible' });
+  applySelector(element, '.components-menu, .components-router-panel', {
+    height: 'auto',
+    minHeight: '0'
+  });
+  applySelector(element, '.components-menu', {
+    borderBottom: '1px solid #e2e8f0',
+    borderRight: '0',
+    borderRadius: '0px',
+    maxHeight: '360px'
+  });
+  applySelector(element, '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu-slot', {
+    overflowX: 'auto'
+  });
   applySelector(
     element,
     '.components-workspace, .components-route-meta-grid, .components-route-details, .components-route-layout',
@@ -550,6 +1028,7 @@ export function applyDemoStyles(root) {
   }
 
   applyGlobalStyles();
+  resetManagedStyles(element);
   applySelector(element, 'a', { color: 'inherit', textDecoration: 'none' });
   applyRules(element, demoRules);
   applySelector(element, '*', { boxSizing: 'border-box' });

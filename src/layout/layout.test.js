@@ -11,6 +11,9 @@ import {
   responsiveGrid,
   spacer,
   stack,
+  vCol,
+  vContainer,
+  vRow,
   vBody,
   vstack
 } from '../index.js';
@@ -70,6 +73,128 @@ describe('layout components', () => {
     expect(verticalDivider.getAttribute('role')).toBe('separator');
     expect(verticalDivider.getAttribute('aria-orientation')).toBe('vertical');
     expect(verticalDivider.style.alignSelf).toBe('stretch');
+  });
+
+  it('creates a 24-column vRow / vCol grid with gutter and offsets', () => {
+    const row = vRow({ gutter: 20, justify: 'space-between', align: 'center' }, (root) => {
+      root.vCol({ span: 6, offset: 2 }, (col) => col.text('A'));
+      root.vCol({ span: 8, push: 4, pull: 2 }, 'B');
+      root.vCol({ span: 24 }, 'C');
+    });
+    const rowElement = row.renderDom();
+    const [a, b, c] = rowElement.children;
+
+    expect(rowElement.classList.contains('yoya-vrow')).toBe(true);
+    expect(rowElement.style.display).toBe('flex');
+    expect(rowElement.style.flexWrap).toBe('wrap');
+    expect(rowElement.style.justifyContent).toBe('space-between');
+    expect(rowElement.style.alignItems).toBe('center');
+
+    expect(a.classList.contains('yoya-vcol')).toBe(true);
+    expect(parseFloat(a.style.width)).toBeCloseTo(25);
+    expect(parseFloat(a.style.marginLeft)).toBeCloseTo(8.333333);
+    expect(a.style.paddingLeft).toBe('10px');
+    expect(a.style.paddingRight).toBe('10px');
+
+    expect(parseFloat(b.style.width)).toBeCloseTo(33.333333);
+    expect(parseFloat(b.style.left)).toBeCloseTo(16.666667);
+    expect(parseFloat(b.style.right)).toBeCloseTo(8.333333);
+    expect(b.style.position).toBe('relative');
+
+    expect(parseFloat(c.style.width)).toBeCloseTo(100);
+  });
+
+  it('registers vRow and vCol as parent shortcuts and serializes for SSR', () => {
+    const root = vRow((row) => {
+      row.vCol({ span: 12, children: [div('A')] });
+    });
+
+    expect(root.children()[0].renderDom().style.width).toBe('50%');
+    expect(vRow({ gutter: 16, children: [vCol({ span: 8, offset: 2 }, 'B')] }).toHTML()).toContain(
+      'class="yoya-layout yoya-vrow"'
+    );
+  });
+
+  it('switches vCol spans at Element-style responsive breakpoints and cleans up', () => {
+    const originalWidth = window.innerWidth;
+    const originalAdd = window.addEventListener;
+    const originalRemove = window.removeEventListener;
+    const listeners = new Map();
+    window.addEventListener = (type, listener) => listeners.set(type, listener);
+    window.removeEventListener = (type, listener) => {
+      if (listeners.get(type) === listener) listeners.delete(type);
+    };
+
+    try {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1000 });
+      const col = vCol({ xs: 12, md: 6, xl: 3 });
+      const element = col.renderDom();
+
+      expect(parseFloat(element.style.width)).toBeCloseTo(25);
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 500 });
+      listeners.get('resize')();
+      expect(parseFloat(element.style.width)).toBeCloseTo(50);
+
+      col.destroy();
+      expect(listeners.has('resize')).toBe(false);
+    } finally {
+      window.addEventListener = originalAdd;
+      window.removeEventListener = originalRemove;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
+  });
+
+  it('creates a container shell with semantic header, aside, main, and footer', () => {
+    const shell = vContainer((root) => {
+      root.vHeader({ height: 64 }, 'Header');
+      root.vMain('Content');
+      root.vFooter({ height: 48 }, 'Footer');
+    });
+    const shellElement = shell.renderDom();
+
+    expect(shellElement.classList.contains('yoya-vcontainer')).toBe(true);
+    expect(shellElement.style.flexDirection).toBe('column');
+    expect(shellElement.querySelector('header').classList.contains('yoya-vheader')).toBe(true);
+    expect(shellElement.querySelector('header').style.height).toBe('64px');
+    expect(shellElement.querySelector('main').textContent).toBe('Content');
+    expect(shellElement.querySelector('footer').style.height).toBe('48px');
+
+    const rowShell = vContainer((root) => {
+      root.vAside({ width: 240 }, 'Nav');
+      root.vMain('Workspace');
+    });
+    const rowShellElement = rowShell.renderDom();
+
+    expect(rowShellElement.style.flexDirection).toBe('row');
+    expect(rowShellElement.querySelector('aside').classList.contains('yoya-vaside')).toBe(true);
+    expect(rowShellElement.querySelector('aside').style.width).toBe('240px');
+    expect(rowShellElement.querySelector('main').textContent).toBe('Workspace');
+  });
+
+  it('supports viewport, sticky, fill, and independent scrolling regions', () => {
+    const shell = vContainer((root) => {
+      root.viewport();
+      root.vHeader({ height: 48, sticky: true }, 'Header');
+      root.vContainer((body) => {
+        body.fill();
+        body.vAside({ scrollable: true, width: 200 }, 'Nav');
+        body.vMain({ scrollable: true }, 'Content');
+      });
+    });
+    const shellElement = shell.renderDom();
+    const bodyElement = shellElement.querySelector('.yoya-vheader').nextElementSibling;
+    const aside = bodyElement.querySelector('.yoya-vaside');
+    const main = bodyElement.querySelector('.yoya-vmain');
+
+    expect(shellElement.style.height).toContain('100');
+    expect(shellElement.style.overflow).toBe('hidden');
+    expect(shellElement.querySelector('.yoya-vheader').style.position).toBe('sticky');
+    expect(bodyElement.style.flex).toBe('1 1 auto');
+    expect(bodyElement.style.overflow).toBe('hidden');
+    expect(aside.style.overflow).toBe('auto');
+    expect(aside.style.height).toBe('100%');
+    expect(main.style.overflow).toBe('auto');
+    expect(main.style.height).toBe('100%');
   });
 
   it('registers layout factories as parent shortcut methods', () => {

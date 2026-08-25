@@ -27,6 +27,7 @@ import {
   vTextarea,
   vTimer,
   vTimerRange,
+  vUpload,
   vText,
   vChart,
   vRouter,
@@ -446,6 +447,17 @@ export function TimerRangeExample1() {
   };
 }
 
+export function UploadExample1() {
+  return {
+    render() {
+      return vUpload({
+        multiple: true,
+        accept: '.txt,.png,.jpg,.pdf'
+      });
+    }
+  };
+}
+
 export function DetailExample1() {
   return {
     render() {
@@ -599,6 +611,7 @@ export const detailSourceRegistry = Object.freeze({
   'form:7': { component: FieldExample1, imports: ['vField'] },
   'form:8': { component: TimerExample1, imports: ['vTimer'] },
   'form:9': { component: TimerRangeExample1, imports: ['vTimerRange'] },
+  'form:10': { component: UploadExample1, imports: ['vUpload'] },
   'data-display:2': { component: DetailExample1, imports: ['vDetail'] },
   'data-display:3': { component: CodeExample1, imports: ['vCode'] },
   'data-display:4': { component: TableExample1, imports: ['vTable'] },

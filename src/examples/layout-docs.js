@@ -1,4 +1,5 @@
-import { section, vBody, vCard, vDialog, vText } from '../index.js';
+import { section, vBody, vCard, vDialog, vForm, vText } from '../index.js';
+import { applyDemoStyles } from './demo-styles.js';
 import { ComponentSource } from './component-source.js';
 
 const layoutDocsDefinitions = Object.freeze({
@@ -19,6 +20,27 @@ const layoutDocsDefinitions = Object.freeze({
         'content(...)',
         '访问内层内容容器并继续布局。',
         'page.content((content) => content.vstack(...))'
+      ],
+      [
+        'vContainer({ direction })',
+        '页面骨架容器，包含 header / aside / main / footer。',
+        'vContainer((shell) => shell.vHeader(...))'
+      ],
+      [
+        'vHeader / vAside / vMain / vFooter',
+        '分别承载页头、侧栏、主体和页脚。',
+        'vHeader({ height: 64 })'
+      ],
+      [
+        'shell.viewport() / shell.fill()',
+        '让骨架占满视口，或让内层容器填充剩余空间。',
+        'shell.viewport()'
+      ],
+      ['header.sticky()', '让标题栏固定在视口顶部。', 'header.sticky()'],
+      [
+        'aside.scrollable() / main.scrollable()',
+        '让左侧菜单和右侧内容区各自独立滚动。',
+        'aside.scrollable()'
       ]
     ],
     apiSignature: `vBody({ maxWidth: 1120, padding: 'clamp(16px, 3vw, 32px)', gap: 24 })`,
@@ -38,17 +60,27 @@ const layoutDocsDefinitions = Object.freeze({
         imports: ['container', 'responsiveGrid', 'vCard'],
         sourceTitle: '内容容器核心源码',
         title: '内容容器'
+      },
+      {
+        component: BodyShellRegionsExample1,
+        description: 'vContainer 配合 vHeader / vAside / vMain / vFooter 搭出应用骨架。',
+        id: 'regions',
+        imports: ['vContainer', 'vHeader', 'vAside', 'vMain', 'vFooter'],
+        sourceTitle: '页面骨架核心源码',
+        title: '页面骨架'
       }
     ],
-    examplesIntro: '这两个例子分别展示整页壳和局部容器的用法。',
+    examplesIntro: '这三个例子分别展示整页壳、局部容器和页面骨架的用法。',
     heading: 'vBody 页面容器',
-    intro: 'vBody 统一页面背景、内容宽度和留白，内部再自由组合工具条、卡片和网格。',
+    intro:
+      'vBody 统一页面背景、内容宽度和留白，vContainer 负责 header / aside / main / footer 骨架。',
     key: 'body',
     routeItem: 'layout:3',
     title: '布局',
     usageItems: [
       '整页工作台需要统一背景和阅读宽度。',
       '标题栏、指标区和工作区需要清晰留白。',
+      '需要 header / aside / main / footer 结构时用 vContainer。',
       '内部内容仍可继续组合 container、grid 和 center。'
     ]
   }),
@@ -147,7 +179,8 @@ const layoutDocsDefinitions = Object.freeze({
     ]
   }),
   grid: createLayoutDocsDefinition({
-    apiIntro: 'grid 适合固定轨道，responsiveGrid 适合随视口自动换列。',
+    apiIntro:
+      'grid 适合固定轨道，responsiveGrid 适合随视口自动换列，vRow / vCol 适合 24 栅格分栏。',
     apiRows: [
       [
         'grid({ columns, rows, areas, autoFlow, gap })',
@@ -163,9 +196,19 @@ const layoutDocsDefinitions = Object.freeze({
         'breakpoints',
         '支持数组或对象，按最小宽度选择列数。',
         'responsiveGrid({ breakpoints: [{ minWidth: 640, columns: 2 }] })'
+      ],
+      [
+        'vRow({ gutter, justify, align })',
+        '24 栅格行，负责横向分栏和列间距。',
+        'vRow({ gutter: 16 }, (row) => row.vCol({ span: 8 }))'
+      ],
+      [
+        'vCol({ span, offset, push, pull, xs, sm, md, lg, xl })',
+        '24 栅格列，支持偏移、位移和响应式断点。',
+        'vCol({ span: 8, md: { span: 12 } })'
       ]
     ],
-    apiSignature: `responsiveGrid({ minColumnWidth: 180, breakpoints: [{ minWidth: 640, columns: 2 }, { minWidth: 960, columns: 3 }] })`,
+    apiSignature: `vRow({ gutter: 16 }, (row) => row.vCol({ span: 8, md: { span: 12 } }))`,
     examples: [
       {
         component: GridFixedExample1,
@@ -182,17 +225,27 @@ const layoutDocsDefinitions = Object.freeze({
         imports: ['responsiveGrid', 'vCard'],
         sourceTitle: '响应式栅格核心源码',
         title: '响应式栅格'
+      },
+      {
+        component: GridRowColExample1,
+        description: '用 vRow / vCol 按 24 栅格精确控制列宽、偏移和位移。',
+        id: 'row-col',
+        imports: ['vRow', 'vCol', 'vCard'],
+        sourceTitle: '24 栅格核心源码',
+        title: '24 栅格'
       }
     ],
-    examplesIntro: '一组示例展示固定栅格，另一组示例展示自适应栅格。',
+    examplesIntro: '固定栅格、自适应栅格和 24 栅格各有一个示例。',
     heading: 'grid 栅格',
-    intro: 'grid 负责固定轨道，responsiveGrid 负责在不同视口里自动调整列数。',
+    intro:
+      'grid 负责固定轨道，responsiveGrid 负责自适应换列，vRow / vCol 负责 Element UI 风格 24 栅格。',
     key: 'grid',
     routeItem: 'layout:2',
     title: '栅格',
     usageItems: [
       '固定列数的指标面板适合用 grid。',
       '内容密度高、卡片数量变化大的区域适合用 responsiveGrid。',
+      '需要 span / offset / push / pull 时使用 vRow / vCol。',
       '如果只是简单的横向对齐，优先用 flex / hstack。'
     ]
   }),
@@ -248,7 +301,12 @@ const layoutDocsDefinitions = Object.freeze({
         'dialog.content((sheet) => sheet.vstack(...))'
       ],
       ['dialog.open(true)', '打开弹窗。', 'dialog.open(true)'],
-      ['dialog.close()', '关闭弹窗。', 'dialog.close()']
+      ['dialog.close()', '关闭弹窗。', 'dialog.close()'],
+      [
+        'vDialog + vForm',
+        '在弹窗内收集字段、统一校验并提交。',
+        'dialog.content((sheet) => sheet.vForm(...))'
+      ]
     ],
     apiSignature: `vDialog({ open: false })`,
     examples: [
@@ -267,9 +325,26 @@ const layoutDocsDefinitions = Object.freeze({
         imports: ['vButton', 'vCard', 'vDialog', 'vText'],
         sourceTitle: '状态控制弹窗核心源码',
         title: '状态控制'
+      },
+      {
+        component: PopupFormExample1,
+        description: '把 vForm 放进 vDialog，用必填校验和提交动作完成新建流程。',
+        id: 'form',
+        imports: [
+          'vButton',
+          'vCard',
+          'vDialog',
+          'vForm',
+          'vFormItem',
+          'vInput',
+          'vSelect',
+          'vText'
+        ],
+        sourceTitle: '弹窗表单核心源码',
+        title: '弹窗表单'
       }
     ],
-    examplesIntro: '一个示例展示按钮触发打开，另一个示例展示可重复控制弹窗状态。',
+    examplesIntro: '三个示例分别展示按钮触发、状态控制和弹窗内 vForm 表单。',
     heading: 'vDialog 弹窗',
     intro:
       'vDialog 让弹窗成为一个独立的对象组件，外层按钮负责触发，内层内容负责确认、取消和临时表单。',
@@ -279,70 +354,90 @@ const layoutDocsDefinitions = Object.freeze({
     usageItems: [
       '提交、删除、发布这类动作需要二次确认。',
       '需要聚焦到一小段临时内容，而不是整页弹层。',
+      '弹窗内需要收集和校验字段时，与 vForm 配合使用。',
       '想要原生 Esc 关闭和模态遮罩时优先用 dialog。'
     ]
   }),
   templates: createLayoutDocsDefinition({
-    apiIntro: '先挑一个页面骨架，再把标题、列表、指标和表单替换成自己的业务内容。',
+    apiIntro: '布局模板只展示区域结构，不填充业务内容，便于直接判断布局骨架是否合适。',
     apiRows: [
       [
-        '后台仪表盘',
-        '适合运营总览、监控看板和任务中心。',
-        'vBody + header + metrics grid + workspace split'
+        '管理端',
+        '上导航区、左菜单区、主内容区、页脚区。',
+        'vContainer + vHeader + vAside + vMain + vFooter'
       ],
-      ['列表详情', '适合工单、审批流和内容管理。', 'vBody + search bar + master/detail grid'],
-      ['设置中心', '适合系统配置、账号偏好和通知规则。', 'vBody + side nav + section cards'],
-      ['登录页', '适合登录、注册和找回密码。', 'center + split card + action row']
+      [
+        '云工作台',
+        '顶部导航、左侧资源菜单、工作台主体、底部状态。',
+        'vContainer + vAside + vMain + vRow / vCol'
+      ],
+      [
+        '个人主页',
+        '顶部个人区、个人侧栏、内容展示区、页脚。',
+        'vContainer + vHeader + vAside + vMain + vFooter'
+      ],
+      [
+        '技术文档',
+        '顶部导航、文档目录、文章内容、页脚。',
+        'vContainer + vHeader + vAside + vMain + vFooter'
+      ]
     ],
-    apiSignature: `vBody((shell) => {
-  shell.container(...);
-  shell.grid(...);
+    apiSignature: `vContainer((frame) => {
+  frame.vHeader(...);
+  frame.vContainer((body) => {
+    body.vAside(...);
+    body.vMain(...);
+  });
 })`,
     examples: [
       {
-        component: DashboardTemplateExample1,
-        description: '把顶部工具条、指标卡片和内容工作区组合成后台首页。',
-        id: 'dashboard',
-        imports: ['vBody', 'vText'],
-        sourceTitle: '后台仪表盘模板核心源码',
-        title: '后台仪表盘'
+        component: AdminTemplateExample1,
+        description: '上导航区、左菜单区、主内容区、页脚区组成商用管理后台。',
+        frame: true,
+        id: 'admin',
+        imports: ['vBody', 'vContainer', 'vHeader', 'vAside', 'vMain', 'vFooter'],
+        sourceTitle: '管理端模板核心源码',
+        title: '管理端'
       },
       {
-        component: MasterDetailTemplateExample1,
-        description: '把列表和详情面板并排放置，适合管理页和工单页。',
-        id: 'master-detail',
-        imports: ['vBody', 'vText'],
-        sourceTitle: '列表详情模板核心源码',
-        title: '列表详情'
+        component: CloudWorkspaceTemplateExample1,
+        description: '顶部导航、左侧资源菜单、工作台主体和底部状态区。',
+        frame: true,
+        id: 'cloud',
+        imports: ['vBody', 'vContainer', 'vHeader', 'vAside', 'vMain', 'vFooter', 'vRow', 'vCol'],
+        sourceTitle: '云工作台模板核心源码',
+        title: '云工作台'
       },
       {
-        component: SettingsTemplateExample1,
-        description: '左侧导航、右侧表单和底部动作区，适合配置中心。',
-        id: 'settings',
-        imports: ['vBody', 'vText'],
-        sourceTitle: '设置中心模板核心源码',
-        title: '设置中心'
+        component: ProfileTemplateExample1,
+        description: '顶部个人区、个人侧栏、内容展示区和页脚区。',
+        frame: true,
+        id: 'profile',
+        imports: ['vBody', 'vContainer', 'vHeader', 'vAside', 'vMain', 'vFooter'],
+        sourceTitle: '个人主页模板核心源码',
+        title: '个人主页'
       },
       {
-        component: AuthTemplateExample1,
-        description: '居中卡片和双栏布局，适合登录、注册和找回密码。',
-        id: 'auth',
-        imports: ['vBody', 'vText'],
-        sourceTitle: '登录页模板核心源码',
-        title: '登录页'
+        component: DocsTemplateExample1,
+        description: '顶部导航、文档目录、文章内容和页脚区。',
+        frame: true,
+        id: 'docs',
+        imports: ['vBody', 'vContainer', 'vHeader', 'vAside', 'vMain', 'vFooter'],
+        sourceTitle: '技术文档模板核心源码',
+        title: '技术文档'
       }
     ],
-    examplesIntro: '四种模板分别覆盖后台、详情、设置和登录这几类最常见的起步页。',
+    examplesIntro: '四种模板只展示结构区域，不掺入业务内容。',
     heading: '布局模板',
-    intro: '布局模板帮助你在新项目里先把页面骨架搭好，再填业务组件，起步会快很多。',
+    intro: '布局模板用可识别的区域块展示完整页面结构，用于检查布局能力覆盖面和复用骨架。',
     key: 'templates',
     routeItem: 'layout:6',
     tableHeaders: ['模板', '适用场景', '布局骨架'],
     title: '布局模板',
     usageItems: [
-      '新项目先选骨架，再替换内容层。',
-      '后台、门户、配置页和登录页都可以直接套用。',
-      '先把布局节奏定下来，再去调细节和视觉。'
+      '管理端强调上导航、左菜单、主内容、页脚四层结构。',
+      '云工作台强调侧栏资源菜单与主体工作区的组合。',
+      '个人主页和技术文档同样由 header / aside / main / footer 组合。'
     ]
   })
 });
@@ -473,7 +568,7 @@ function createLayoutDocumentationPage(definition) {
 }
 
 function LayoutExampleSection(demo) {
-  const liveDemo = demo.component();
+  const liveDemo = demo.component().render();
   const sourcePanel = ComponentSource({
     component: demo.component,
     sourceComponent: demo.sourceComponent ?? demo.component,
@@ -491,12 +586,67 @@ function LayoutExampleSection(demo) {
         example.div((live) => {
           live.className('components-layout-demo-live');
           live.attr('data-layout-demo-live', 'true');
-          live.child(liveDemo);
+          if (demo.frame) {
+            live.iframe((frame) => {
+              frame.className('components-layout-demo-frame');
+              frame.attr('data-layout-demo-frame', 'true');
+              frame.attr('title', `${demo.title} 演示`);
+
+              let mounted = false;
+              frame.on('load', () => {
+                if (mounted) return;
+                mounted = true;
+                mountLayoutDemoInFrame(frame, liveDemo);
+              });
+
+              const destroy = frame.destroy.bind(frame);
+              frame.destroy = () => {
+                liveDemo.destroy();
+                return destroy();
+              };
+
+              frame.attr('srcdoc', '<!doctype html><html><head></head><body></body></html>');
+            });
+          } else {
+            live.child(liveDemo);
+          }
         });
         example.child(sourcePanel);
       });
     }
   };
+}
+
+function mountLayoutDemoInFrame(frameNode, demoNode) {
+  const frame = frameNode.renderDom();
+  const doc = frame.contentDocument;
+  if (!doc || !doc.body) {
+    return;
+  }
+
+  doc.head.replaceChildren();
+  document.querySelectorAll('style').forEach((styleElement) => {
+    const copy = doc.createElement('style');
+    copy.textContent = styleElement.textContent;
+    doc.head.appendChild(copy);
+  });
+  document.querySelectorAll('link[rel="stylesheet"]').forEach((linkElement) => {
+    const copy = doc.createElement('link');
+    copy.rel = 'stylesheet';
+    copy.href = new URL(linkElement.href, document.baseURI).href;
+    doc.head.appendChild(copy);
+  });
+
+  const body = doc.body;
+  body.style.background = '#f5f7fa';
+  body.style.color = '#172033';
+  body.style.fontFamily =
+    "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  body.style.lineHeight = '1.5';
+  body.style.margin = '0';
+  body.style.minHeight = '100%';
+  body.appendChild(demoNode.renderDom());
+  applyDemoStyles(body);
 }
 
 function DividerSectionExample1() {
@@ -702,6 +852,43 @@ function GridResponsiveExample1() {
   };
 }
 
+function GridRowColExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('24 栅格');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('vRow / vCol 按 24 等分控制列宽，支持 gutter、offset、push / pull。');
+            content.vRow({ gutter: 12 }, (row) => {
+              [6, 6, 6, 6].forEach((span) => {
+                row.vCol({ span }, (cell) => {
+                  cell.className('detail-grid-cell');
+                  cell.strong(String(span));
+                  cell.span(`${(span / 24) * 100}%`);
+                });
+              });
+            });
+            content.vRow({ gutter: 12 }, (row) => {
+              row.vCol({ span: 8, offset: 4 }, (cell) => {
+                cell.className('detail-grid-cell');
+                cell.strong('8');
+                cell.span('offset 4');
+              });
+              row.vCol({ span: 6 }, (cell) => {
+                cell.className('detail-grid-cell');
+                cell.strong('6');
+                cell.span('右侧');
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 function BodyShellExample1() {
   const statusText = vText('当前：四列指标');
   const metricCards = [
@@ -874,6 +1061,60 @@ function BodyContainerExample1() {
                     });
                   }
                 );
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function BodyShellRegionsExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('页面骨架');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p(
+              'vContainer 根据 header / footer 自动使用纵向布局，也可以显式指定 direction。'
+            );
+            content.vContainer((shell) => {
+              shell.style('minHeight', '260px');
+              shell.vHeader({ height: 48 }, (header) => {
+                header.className('detail-grid-cell');
+                header.hstack((row) => {
+                  row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
+                  row.strong('Header');
+                  row.spacer();
+                  row.span('48px');
+                });
+              });
+              shell.vMain((main) => {
+                main.className('detail-grid-cell');
+                main.p('Main 区域会自动吸收剩余空间。');
+              });
+              shell.vFooter({ height: 40 }, (footer) => {
+                footer.className('detail-grid-cell');
+                footer.hstack((row) => {
+                  row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
+                  row.strong('Footer');
+                  row.spacer();
+                  row.span('40px');
+                });
+              });
+            });
+            content.vContainer({ direction: 'row' }, (shell) => {
+              shell.style('minHeight', '140px');
+              shell.vAside({ width: 140 }, (aside) => {
+                aside.className('detail-grid-cell');
+                aside.p('Aside 140px');
+              });
+              shell.vMain((main) => {
+                main.className('detail-grid-cell');
+                main.p('Main');
               });
             });
           });
@@ -1089,108 +1330,87 @@ function PopupStateExample1() {
   };
 }
 
-function DashboardTemplateExample1() {
-  const status = vText('系统在线');
+function PopupFormExample1() {
+  const dialog = vDialog({ open: false });
+  const status = vText('等待提交');
+  const form = vForm((formNode) => {
+    formNode.style('gap', '12px');
+    formNode.vFormItem((item) => {
+      item.name('title').label('发布标题').hint('例如：v2026.08.25');
+      item.required({ message: '发布标题不能为空', indicator: '*' });
+      item.control((editor) => {
+        editor.vInput({ name: 'title', placeholder: '请输入发布标题' });
+      });
+    });
+    formNode.vFormItem((item) => {
+      item.name('environment').label('目标环境').hint('选择发布环境');
+      item.required({ message: '请选择目标环境', indicator: '*' });
+      item.control((editor) => {
+        editor.vSelect({
+          name: 'environment',
+          options: ['生产', '预发', '测试'],
+          placeholder: '请选择环境'
+        });
+      });
+    });
+    formNode.hstack((actions) => {
+      actions.style({ justifyContent: 'flex-end', gap: '10px' });
+      actions.vButton((button) => {
+        button.label('取消');
+        button.variant('secondary');
+        button.on('click', () => {
+          status.textContent('已取消');
+          dialog.close();
+        });
+      });
+      actions.vButton((button) => {
+        button.label('创建');
+        button.variant('primary');
+        button.formType('submit');
+      });
+    });
+    formNode.on('submit', (event) => {
+      event.preventDefault();
+      if (!formNode.validate()) {
+        status.textContent('请检查必填项');
+        return;
+      }
+      status.textContent(`已创建：${JSON.stringify(formNode.values())}`);
+      dialog.close();
+    });
+  });
+
+  dialog.content((sheet) => {
+    sheet.className('components-layout-popup-sheet');
+    sheet.vstack((content) => {
+      content.style('gap', '14px');
+      content.h3('新建发布');
+      content.p('弹窗内使用 vForm 收集字段，提交前统一校验。');
+      content.child(form);
+    });
+  });
 
   return {
     render() {
-      return vBody((shell) => {
-        shell.className('components-layout-template-shell');
-        shell.background('#f8fafc');
-        shell.maxWidth(1120);
-        shell.padding('16px');
-        shell.gap(16);
-
-        shell.container({ maxWidth: 1120, paddingInline: 0 }, (content) => {
-          content.vstack((stack) => {
-            stack.style('gap', '16px');
-            stack.hstack((bar) => {
-              bar.style({ alignItems: 'center', gap: '12px' });
-              bar.div((title) => {
-                title.style('gap', '4px');
-                title.h2('后台仪表盘');
-                title.p('适合运营总览、监控看板和任务中心。');
-              });
-              bar.spacer();
-              bar.output((output) => output.child(status));
-              bar.vButton((button) => {
-                button.label('新建任务');
+      return vCard((card) => {
+        card.vCardHeader('弹窗表单');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('把 vForm 放进 vDialog，适合新建、编辑等需要临时收集字段的流程。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.vButton((button) => {
+                button.label('新建发布');
                 button.variant('primary');
+                button.on('click', () => {
+                  status.textContent('弹窗已打开');
+                  dialog.open(true);
+                });
               });
+              row.output((output) => output.child(status));
             });
-
-            stack.responsiveGrid(
-              {
-                breakpoints: [
-                  { minWidth: 640, columns: 2 },
-                  { minWidth: 960, columns: 4 }
-                ],
-                minColumnWidth: 180
-              },
-              (cards) => {
-                cards.style('gap', '12px');
-                [
-                  ['请求量', '128k', '近 24 小时'],
-                  ['成功率', '99.92%', '接口稳定'],
-                  ['告警', '3', '待处理'],
-                  ['排队', '42', '低于阈值']
-                ].forEach(([label, value, hint]) => {
-                  cards.article((card) => {
-                    card.className('detail-grid-cell');
-                    card.span(label);
-                    card.strong(value);
-                    card.span(hint);
-                  });
-                });
-              }
-            );
-
-            stack.grid((workspace) => {
-              workspace.styles({
-                gap: '16px',
-                gridTemplateColumns: 'minmax(0, 1.35fr) minmax(300px, 0.65fr)'
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('最近活动');
-                panel.vstack((list) => {
-                  list.style('gap', '10px');
-                  [
-                    ['发布记录', '生产环境最近一次发布完成'],
-                    ['告警记录', '2 条高优先级告警正在处理'],
-                    ['工单队列', '3 个工单等待分配']
-                  ].forEach(([label, hint]) => {
-                    list.article((row) => {
-                      row.className('detail-grid-cell');
-                      row.style('gap', '4px');
-                      row.strong(label);
-                      row.span(hint);
-                    });
-                  });
-                });
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('快捷入口');
-                panel.vstack((actions) => {
-                  actions.style('gap', '10px');
-                  actions.vButton((button) => {
-                    button.label('查看告警');
-                    button.variant('secondary');
-                  });
-                  actions.vButton((button) => {
-                    button.label('同步数据');
-                    button.variant('secondary');
-                  });
-                  actions.vButton((button) => {
-                    button.label('进入详情');
-                    button.variant('primary');
-                  });
-                });
-              });
-            });
+            content.child(dialog);
           });
         });
       });
@@ -1198,88 +1418,64 @@ function DashboardTemplateExample1() {
   };
 }
 
-function MasterDetailTemplateExample1() {
-  const activeItem = vText('订单 #2048');
-
+function AdminTemplateExample1() {
   return {
     render() {
       return vBody((shell) => {
         shell.className('components-layout-template-shell');
-        shell.background('#f8fafc');
+        shell.background('#f5f7fa');
         shell.maxWidth(1200);
         shell.padding('16px');
         shell.gap(16);
 
-        shell.container({ maxWidth: 1200, paddingInline: 0 }, (content) => {
-          content.vstack((stack) => {
-            stack.style('gap', '16px');
-            stack.hstack((bar) => {
-              bar.style({ alignItems: 'center', gap: '12px' });
-              bar.div((title) => {
-                title.style('gap', '4px');
-                title.h2('列表详情');
-                title.p('适合工单、审批流和内容管理。');
+        shell.vContainer((frame) => {
+          frame.className('components-layout-template-frame');
+          frame.style('minHeight', '540px');
+
+          frame.vHeader({ height: 56 }, (header) => {
+            header.className('structure-region structure-header');
+            header.attr('data-structure-role', 'header');
+            header.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.strong('顶部导航区');
+            });
+          });
+
+          frame.vContainer((body) => {
+            body.vAside({ width: 200 }, (aside) => {
+              aside.className('structure-region structure-aside');
+              aside.attr('data-structure-role', 'aside');
+              aside.vstack((nav) => {
+                nav.style('gap', '8px');
+                ['左侧菜单区', '菜单项 1', '菜单项 2', '菜单项 3'].forEach((label) => {
+                  nav.span((item) => {
+                    item.className('structure-label');
+                    item.text(label);
+                  });
+                });
               });
-              bar.spacer();
-              bar.output((output) => output.child(activeItem));
             });
 
-            stack.grid((workspace) => {
-              workspace.styles({
-                gap: '16px',
-                gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)'
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('工单列表');
-                panel.vstack((list) => {
-                  list.style('gap', '8px');
-                  [
-                    ['订单 #2048', '待发货'],
-                    ['订单 #2047', '已完成'],
-                    ['订单 #2046', '退款处理中']
-                  ].forEach(([label, state], index) => {
-                    list.article((row) => {
-                      row.className('detail-grid-cell');
-                      row.style({
-                        cursor: 'pointer',
-                        gap: '4px',
-                        borderColor: index === 0 ? '#c7d2fe' : null
-                      });
-                      row.strong(label);
-                      row.span(state);
-                      row.on('click', () => activeItem.textContent(label));
-                    });
-                  });
+            body.vMain((main) => {
+              main.className('structure-region structure-main');
+              main.attr('data-structure-role', 'main');
+              main.vstack((content) => {
+                content.style('gap', '12px');
+                content.h2('主内容区');
+                content.div((placeholder) => {
+                  placeholder.className('structure-placeholder');
+                  placeholder.text('内容占位区');
                 });
               });
+            });
+          });
 
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('详情面板');
-                panel.vstack((detail) => {
-                  detail.style('gap', '10px');
-                  detail.p('选中列表项后，右侧区域可以承载详情、备注和操作按钮。');
-                  detail.divider();
-                  detail.hstack((row) => {
-                    row.style({ alignItems: 'center', gap: '10px' });
-                    row.span('当前条目');
-                    row.spacer();
-                    row.output((output) => output.child(activeItem));
-                  });
-                  detail.vCard((card) => {
-                    card.vCardHeader('详情摘要');
-                    card.vCardBody((body) => {
-                      body.stack((summary) => {
-                        summary.style('gap', '6px');
-                        summary.span('适合把状态、备注和日志拆成小块。');
-                        summary.span('右侧可以再放一个操作栏或审批面板。');
-                      });
-                    });
-                  });
-                });
-              });
+          frame.vFooter({ height: 40 }, (footer) => {
+            footer.className('structure-region structure-footer');
+            footer.attr('data-structure-role', 'footer');
+            footer.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.span('页脚区');
             });
           });
         });
@@ -1288,92 +1484,74 @@ function MasterDetailTemplateExample1() {
   };
 }
 
-function SettingsTemplateExample1() {
-  const saveState = vText('未保存');
-
+function CloudWorkspaceTemplateExample1() {
   return {
     render() {
       return vBody((shell) => {
         shell.className('components-layout-template-shell');
-        shell.background('#f8fafc');
+        shell.background('#f5f7fa');
         shell.maxWidth(1200);
         shell.padding('16px');
         shell.gap(16);
 
-        shell.container({ maxWidth: 1200, paddingInline: 0 }, (content) => {
-          content.vstack((stack) => {
-            stack.style('gap', '16px');
-            stack.hstack((bar) => {
-              bar.style({ alignItems: 'center', gap: '12px' });
-              bar.div((title) => {
-                title.style('gap', '4px');
-                title.h2('设置中心');
-                title.p('适合系统配置、账号偏好和通知规则。');
-              });
-              bar.spacer();
-              bar.output((output) => output.child(saveState));
-              bar.vButton((button) => {
-                button.label('保存配置');
-                button.variant('primary');
-                button.on('click', () => saveState.textContent('已保存'));
+        shell.vContainer((frame) => {
+          frame.className('components-layout-template-frame');
+          frame.style('minHeight', '540px');
+
+          frame.vHeader({ height: 56 }, (header) => {
+            header.className('structure-region structure-header');
+            header.attr('data-structure-role', 'header');
+            header.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.strong('顶部导航区');
+              row.spacer();
+              row.span('云工作台');
+            });
+          });
+
+          frame.vContainer((body) => {
+            body.vAside({ width: 180 }, (aside) => {
+              aside.className('structure-region structure-aside');
+              aside.attr('data-structure-role', 'aside');
+              aside.vstack((nav) => {
+                nav.style('gap', '8px');
+                ['左侧资源菜单', '资源组 1', '资源组 2', '资源组 3'].forEach((label) => {
+                  nav.span((item) => {
+                    item.className('structure-label');
+                    item.text(label);
+                  });
+                });
               });
             });
 
-            stack.grid((workspace) => {
-              workspace.styles({
-                gap: '16px',
-                gridTemplateColumns: 'minmax(240px, 280px) minmax(0, 1fr)'
-              });
-
-              workspace.section((nav) => {
-                nav.className('detail-grid-cell');
-                nav.h3('设置目录');
-                nav.vstack((list) => {
-                  list.style('gap', '8px');
-                  ['基础设置', '安全', '通知', '外观'].forEach((label, index) => {
-                    list.span((item) => {
-                      item.className('components-route-note');
-                      if (index === 0) {
-                        item.style('background', '#dbeafe');
-                        item.style('borderColor', '#bfdbfe');
-                        item.style('color', '#1d4ed8');
-                      }
-                      item.text(label);
+            body.vMain((main) => {
+              main.className('structure-region structure-main');
+              main.attr('data-structure-role', 'main');
+              main.vstack((content) => {
+                content.style('gap', '12px');
+                content.h2('工作台主体区');
+                content.vRow({ gutter: 8 }, (row) => {
+                  [8, 8, 8].forEach((span) => {
+                    row.vCol({ span, xs: 12, md: span }, (cell) => {
+                      cell.className('structure-placeholder');
+                      cell.text('指标占位区');
                     });
                   });
                 });
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('配置表单');
-                panel.vstack((form) => {
-                  form.style('gap', '12px');
-                  [
-                    ['站点名称', 'yoya-ui'],
-                    ['默认语言', 'zh-CN'],
-                    ['告警邮箱', 'sre@example.com']
-                  ].forEach(([label, value]) => {
-                    form.article((row) => {
-                      row.className('detail-grid-cell');
-                      row.style('gap', '4px');
-                      row.strong(label);
-                      row.span(value);
-                    });
-                  });
-                  form.divider();
-                  form.hstack((actions) => {
-                    actions.style({ alignItems: 'center', gap: '10px' });
-                    actions.span('保存后即可覆盖默认配置。');
-                    actions.spacer();
-                    actions.vButton((button) => {
-                      button.label('重置');
-                      button.variant('secondary');
-                      button.on('click', () => saveState.textContent('已重置'));
-                    });
-                  });
+                content.div((placeholder) => {
+                  placeholder.className('structure-placeholder');
+                  placeholder.text('资源列表区');
                 });
               });
+            });
+          });
+
+          frame.vFooter({ height: 40 }, (footer) => {
+            footer.className('structure-region structure-footer');
+            footer.attr('data-structure-role', 'footer');
+            footer.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.span('底部状态区');
             });
           });
         });
@@ -1382,92 +1560,142 @@ function SettingsTemplateExample1() {
   };
 }
 
-function AuthTemplateExample1() {
-  const mode = vText('登录');
-
+function ProfileTemplateExample1() {
   return {
     render() {
       return vBody((shell) => {
         shell.className('components-layout-template-shell');
-        shell.background('#f8fafc');
-        shell.maxWidth(980);
+        shell.background('#f5f7fa');
+        shell.maxWidth(1200);
         shell.padding('16px');
         shell.gap(16);
 
-        shell.center((frame) => {
-          frame.styles({ minHeight: '460px' });
-          frame.vCard((card) => {
-            card.className('components-layout-template-auth-card');
-            card.vCardHeader('认证模板');
-            card.vCardBody((body) => {
-              body.grid((layout) => {
-                layout.styles({
-                  gap: '0',
-                  gridTemplateColumns: 'minmax(0, 0.92fr) minmax(320px, 1.08fr)'
-                });
+        shell.vContainer((frame) => {
+          frame.className('components-layout-template-frame');
+          frame.style('minHeight', '540px');
 
-                layout.div((hero) => {
-                  hero.className('detail-grid-cell');
-                  hero.style({
-                    background: '#0f172a',
-                    color: '#e2e8f0',
-                    gap: '10px',
-                    minHeight: '100%'
-                  });
-                  hero.h3('欢迎回来');
-                  hero.p('适合登录、注册和找回密码。');
-                  hero.vstack((points) => {
-                    points.style('gap', '8px');
-                    ['安全登录', '二次验证', '品牌入口'].forEach((label) => {
-                      points.span((tag) => {
-                        tag.className('components-route-note');
-                        tag.style({
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          borderColor: 'rgba(255, 255, 255, 0.16)',
-                          color: '#e2e8f0'
-                        });
-                        tag.text(label);
-                      });
-                    });
-                  });
-                });
+          frame.vHeader({ height: 64 }, (header) => {
+            header.className('structure-region structure-header');
+            header.attr('data-structure-role', 'header');
+            header.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.strong('顶部个人区');
+            });
+          });
 
-                layout.div((form) => {
-                  form.className('detail-grid-cell');
-                  form.vstack((stack) => {
-                    stack.style('gap', '12px');
-                    stack.h3('进入系统');
-                    stack.article((field) => {
-                      field.className('detail-grid-cell');
-                      field.style('gap', '4px');
-                      field.strong('账号');
-                      field.span('service@example.com');
-                    });
-                    stack.article((field) => {
-                      field.className('detail-grid-cell');
-                      field.style('gap', '4px');
-                      field.strong('密码');
-                      field.span('••••••••');
-                    });
-                    stack.hstack((actions) => {
-                      actions.style({ alignItems: 'center', gap: '10px' });
-                      actions.output((output) => output.child(mode));
-                      actions.spacer();
-                      actions.vButton((button) => {
-                        button.label('切换模式');
-                        button.variant('secondary');
-                        button.on('click', () => {
-                          mode.textContent(mode.textContent() === '登录' ? '注册' : '登录');
-                        });
-                      });
-                      actions.vButton((button) => {
-                        button.label('进入系统');
-                        button.variant('primary');
-                      });
-                    });
+          frame.vContainer((body) => {
+            body.vAside({ width: 240 }, (aside) => {
+              aside.className('structure-region structure-aside');
+              aside.attr('data-structure-role', 'aside');
+              aside.vstack((nav) => {
+                nav.style('gap', '8px');
+                ['个人侧栏区', '简介', '作品', '动态'].forEach((label) => {
+                  nav.span((item) => {
+                    item.className('structure-label');
+                    item.text(label);
                   });
                 });
               });
+            });
+
+            body.vMain((main) => {
+              main.className('structure-region structure-main');
+              main.attr('data-structure-role', 'main');
+              main.vstack((content) => {
+                content.style('gap', '12px');
+                content.h2('内容展示区');
+                content.vRow({ gutter: 8 }, (row) => {
+                  row.vCol({ span: 8, xs: 24, md: 8 }, (cell) => {
+                    cell.className('structure-placeholder');
+                    cell.text('个人资料区');
+                  });
+                  row.vCol({ span: 16, xs: 24, md: 16 }, (cell) => {
+                    cell.className('structure-placeholder');
+                    cell.text('作品动态区');
+                  });
+                });
+              });
+            });
+          });
+
+          frame.vFooter({ height: 40 }, (footer) => {
+            footer.className('structure-region structure-footer');
+            footer.attr('data-structure-role', 'footer');
+            footer.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.span('页脚区');
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function DocsTemplateExample1() {
+  return {
+    render() {
+      return vBody((shell) => {
+        shell.className('components-layout-template-shell');
+        shell.background('#f5f7fa');
+        shell.maxWidth(1200);
+        shell.padding('16px');
+        shell.gap(16);
+
+        shell.vContainer((frame) => {
+          frame.className('components-layout-template-frame');
+          frame.style('minHeight', '540px');
+
+          frame.vHeader({ height: 52 }, (header) => {
+            header.className('structure-region structure-header');
+            header.attr('data-structure-role', 'header');
+            header.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.strong('顶部导航区');
+              row.spacer();
+              row.span('技术文档');
+            });
+          });
+
+          frame.vContainer((body) => {
+            body.vAside({ width: 220 }, (aside) => {
+              aside.className('structure-region structure-aside');
+              aside.attr('data-structure-role', 'aside');
+              aside.vstack((nav) => {
+                nav.style('gap', '8px');
+                ['文档目录区', '快速开始', '布局组件', 'API 参考'].forEach((label) => {
+                  nav.span((item) => {
+                    item.className('structure-label');
+                    item.text(label);
+                  });
+                });
+              });
+            });
+
+            body.vMain((main) => {
+              main.className('structure-region structure-main');
+              main.attr('data-structure-role', 'main');
+              main.vstack((article) => {
+                article.style('gap', '12px');
+                article.h2('文章内容区');
+                article.div((placeholder) => {
+                  placeholder.className('structure-placeholder');
+                  placeholder.text('正文占位区');
+                });
+                article.div((placeholder) => {
+                  placeholder.className('structure-placeholder');
+                  placeholder.text('代码块占位区');
+                });
+              });
+            });
+          });
+
+          frame.vFooter({ height: 40 }, (footer) => {
+            footer.className('structure-region structure-footer');
+            footer.attr('data-structure-role', 'footer');
+            footer.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+              row.span('页脚区');
             });
           });
         });

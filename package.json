@@ -13,6 +13,7 @@
       "require": "./dist/yoya-ui.umd.js"
     },
     "./core": "./dist/yoya.core.js",
+    "./echart": "./dist/yoya.echart.js",
     "./ui": "./dist/yoya.ui.js",
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"

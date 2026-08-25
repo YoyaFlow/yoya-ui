@@ -1,5 +1,6 @@
 import {
   codeBlock,
+  vBreadcrumb,
   vCard,
   vCheckbox,
   vCheckboxes,
@@ -8,7 +9,8 @@ import {
   vSelect,
   vSwitch,
   vTextarea,
-  vText
+  vText,
+  vUpload
 } from '../index.js';
 import { DeploymentTaskCard } from './demos/actions.js';
 import { DynamicModuleCard } from './demos/async.js';
@@ -26,8 +28,13 @@ import {
   TimerRangeCard
 } from './demos/form.js';
 import { BodyPageCard } from './demos/layout.js';
+import { AnchorStandaloneDemo } from './demos/anchor.js';
 import { CommandMenuCard } from './demos/navigation.js';
-import { RouterNavigationCard, RouterViewsEditorCard } from './demos/router.js';
+import {
+  RouterNavigationCard,
+  RouterViewsEditorCard,
+  RouterViewsEditorStandalone
+} from './demos/router.js';
 import { detailSourceRegistry, DropdownMenuExample1 } from './detail-sources.js';
 
 function DividerDemo() {
@@ -504,6 +511,105 @@ function MessageDemo() {
   };
 }
 
+function BreadcrumbDemo() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('面包屑');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('链接层级可以返回上级，当前页通过 aria-current 标记。');
+            content.child(
+              vBreadcrumb((breadcrumb) => {
+                breadcrumb.ariaLabel('服务导航');
+                breadcrumb.separator('/');
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('控制台');
+                  item.href('/console');
+                });
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('服务列表');
+                  item.href('/services');
+                });
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('api-gateway');
+                  item.active(true);
+                });
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function UploadDemo() {
+  const upload = vUpload({ multiple: true });
+  const status = vText('等待选择文件');
+
+  upload.on('change', () => {
+    status.textContent(`已选择 ${upload.files().length} 个文件`);
+  });
+
+  const simulate = () => {
+    const count = upload.files().length;
+    if (count === 0) {
+      status.textContent('请先选择文件');
+      return;
+    }
+
+    upload.items().forEach((entry, index) => {
+      upload.progress(index, 30);
+      upload.status(index, 'uploading');
+    });
+    status.textContent('上传中');
+
+    setTimeout(() => {
+      upload.items().forEach((entry, index) => {
+        upload.progress(index, 100);
+        upload.status(index, 'success');
+      });
+      status.textContent(`上传完成：${count} 个文件`);
+    }, 700);
+  };
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('文件上传');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('支持点击选择、拖拽上传、删除文件和展示上传进度。');
+            content.child(upload);
+            content.hstack((actions) => {
+              actions.style({ flexWrap: 'wrap', gap: '10px' });
+              actions.vButton((button) => {
+                button.label('模拟上传');
+                button.variant('primary');
+                button.on('click', simulate);
+              });
+              actions.vButton((button) => {
+                button.label('清空');
+                button.variant('secondary');
+                button.on('click', () => upload.clear());
+              });
+            });
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('状态');
+              row.spacer();
+              row.output((output) => output.child(status));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 const detailEntries = new Map([
   [
     'general:0',
@@ -644,8 +750,8 @@ const detailEntries = new Map([
     'navigation:8',
     freezeEntry({
       behavior: ['访问过的路由会保留为文件标签。'],
-      component: RouterViewsEditorCard,
-      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+      component: RouterViewsEditorStandalone,
+      imports: ['div', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews'],
       notes: ['适合把路由视图当成文件标签页来用。'],
       sourceTitle: 'IDE 风格路由视图核心源码',
       summary: '路由视图与标签页管理。',
@@ -761,6 +867,18 @@ const detailEntries = new Map([
     })
   ],
   [
+    'form:10',
+    freezeEntry({
+      behavior: ['支持点击选择、拖拽上传、删除文件和模拟上传进度。'],
+      component: UploadDemo,
+      imports: ['vCard', 'vUpload', 'vText'],
+      notes: ['适合资料上传、附件管理和导入任务。'],
+      sourceTitle: '文件上传核心源码',
+      summary: '文件选择、拖拽上传与进度展示。',
+      title: '文件上传'
+    })
+  ],
+  [
     'data-display:2',
     freezeEntry({
       behavior: ['只读信息适合用 label/value 的结构来展示。'],
@@ -859,8 +977,12 @@ const detailEntries = new Map([
   [
     'navigation:1',
     freezeEntry({
-      planned: true,
-      summary: '面包屑目前仍在排期中。',
+      behavior: ['链接层级可以返回上级，当前层级通过 aria-current 标记。'],
+      component: BreadcrumbDemo,
+      imports: ['vBreadcrumb', 'vCard'],
+      notes: ['适合详情页、管理后台和文档站点的位置提示。'],
+      sourceTitle: '面包屑核心源码',
+      summary: '页面层级与当前位置提示。',
       title: '面包屑'
     })
   ],
@@ -891,8 +1013,12 @@ const detailEntries = new Map([
   [
     'navigation:0',
     freezeEntry({
-      planned: true,
-      summary: '锚点目前仍在排期中。',
+      behavior: ['点击链接会平滑滚动，滚动时自动高亮当前章节。'],
+      component: AnchorStandaloneDemo,
+      imports: ['section', 'vContainer'],
+      notes: ['适合长文档和帮助中心的章节导航。'],
+      sourceTitle: '锚点核心源码',
+      summary: '页面章节导航与滚动高亮。',
       title: '锚点'
     })
   ],

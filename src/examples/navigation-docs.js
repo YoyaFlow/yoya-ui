@@ -1,4 +1,4 @@
-import { section, toast, vCard, vSteps, vText } from '../index.js';
+import { section, toast, vBreadcrumb, vBreadcrumbItem, vCard, vSteps, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   AdminSidebarCard,
@@ -7,8 +7,275 @@ import {
   SidebarCard,
   SubMenuCard
 } from './demos/navigation.js';
+import { AnchorStandaloneDemo } from './demos/anchor.js';
+import {
+  DeclarativeRouterCard,
+  RouterNavigationCard,
+  RouterViewsEditorStandalone,
+  RouterViewsTopStandalone
+} from './demos/router.js';
+
+const examplesBaseUrl = import.meta.env?.BASE_URL || './';
 
 const navigationDocsDefinitions = Object.freeze({
+  anchor: createNavigationDocsDefinition({
+    apiIntro:
+      'vAnchor 用目录列表链接到页面区块，并在滚动时自动标记当前项。演示运行在独立 iframe 中，点击锚点不会修改组件目录自身的 hash。',
+    apiRows: [
+      [
+        'vAnchor({ items, offset, target, ariaLabel })',
+        '创建页面锚点目录，可配置滚动偏移、容器和导航名称。',
+        'vAnchor({ offset: 16, items: [...] })'
+      ],
+      ['anchor.offset(value)', '设置滚动停靠偏移量。', 'anchor.offset(16)'],
+      ['anchor.target(value)', '指定滚动容器选择器或元素。', "anchor.target('.docs-scroll')"],
+      ['anchor.items(value)', '替换全部锚点项。', "anchor.items([{ href: '#api', title: 'API' }])"],
+      ['anchor.active(href)', '手动设置当前锚点。', "anchor.active('#api')"],
+      [
+        'anchor.vAnchorItem(setup)',
+        '声明单个锚点项。',
+        "anchor.vAnchorItem((item) => item.title('API').href('#api'))"
+      ],
+      [
+        'item.title(content) / item.href(content) / item.nested(setup)',
+        '设置标题、链接地址和嵌套目录。',
+        "item.nested((sub) => sub.vAnchorItem({ href: '#events', title: '事件' }))"
+      ]
+    ],
+    apiSignature: `vAnchor((anchor) => {
+  anchor.ariaLabel('文档目录');
+  anchor.offset(16);
+  anchor.vAnchorItem((item) => {
+    item.title('开始');
+    item.href('#start');
+  });
+  anchor.vAnchorItem((item) => {
+    item.title('基础用法');
+    item.href('#basic');
+    item.nested((sub) => sub.vAnchorItem({ href: '#api', title: 'API' }));
+  });
+})`,
+    examples: [
+      {
+        component: AnchorStandaloneDemo,
+        description: '目录、嵌套项和滚动高亮都在独立 iframe 中运行，不干扰演示页地址。',
+        frame: true,
+        frameSrc: './anchor.html',
+        id: 'basic',
+        imports: ['section', 'vContainer'],
+        sourceComponent: AnchorStandaloneDemo,
+        sourceTitle: '锚点核心源码',
+        title: '页面锚点'
+      }
+    ],
+    examplesIntro: '锚点演示放在独立 iframe 中，避免点击 hash 链接改变组件目录 URL。',
+    heading: 'vAnchor 锚点',
+    intro:
+      '锚点组件用于长文档、详情页和管理后台的章节导航。它把页面区块组织成目录，点击后平滑滚动，并随滚动自动高亮当前章节。',
+    key: 'anchor',
+    routeItem: 'navigation:0',
+    title: '锚点',
+    usageItems: [
+      '长文档、帮助中心和详情页需要章节导航时使用。',
+      '页面带固定头部时，用 offset() 补偿滚动停靠位置。',
+      '锚点演示放在 iframe 中，避免 hash 链接和组件目录地址互相干扰。'
+    ]
+  }),
+  breadcrumb: createNavigationDocsDefinition({
+    apiIntro:
+      'vBreadcrumb 用导航列表和分隔符表达当前页面位置，vBreadcrumbItem 负责每个层级。有 href 的层级渲染为链接，active 层级渲染为 aria-current="page" 的当前文本。',
+    apiRows: [
+      [
+        'vBreadcrumb({ ariaLabel, separator, items })',
+        '创建面包屑并配置导航名称、分隔符和层级数据。',
+        "vBreadcrumb({ separator: '/' })"
+      ],
+      ['breadcrumb.ariaLabel(content)', '设置导航地标名称。', "breadcrumb.ariaLabel('服务导航')"],
+      ['breadcrumb.separator(content)', '设置层级之间的分隔符。', "breadcrumb.separator('/')"],
+      [
+        'breadcrumb.items(value)',
+        '替换全部层级数据。',
+        "breadcrumb.items([{ label: '首页', href: '#/home' }])"
+      ],
+      [
+        'breadcrumb.vBreadcrumbItem(setup)',
+        '声明单个面包屑层级。',
+        "breadcrumb.vBreadcrumbItem((item) => item.label('服务'))"
+      ],
+      [
+        'item.label(content) / item.href(content)',
+        '设置层级文案和链接地址。',
+        "item.href('#/services')"
+      ],
+      ['item.active(value)', '把当前层级标记为 aria-current="page"。', 'item.active(true)']
+    ],
+    apiSignature: `vBreadcrumb((breadcrumb) => {
+  breadcrumb.ariaLabel('服务导航');
+  breadcrumb.separator('/');
+  breadcrumb.vBreadcrumbItem((item) => {
+    item.label('控制台');
+    item.href('/console');
+  });
+  breadcrumb.vBreadcrumbItem((item) => {
+    item.label('服务详情');
+    item.active(true);
+  });
+})`,
+    examples: [
+      {
+        component: BreadcrumbBasicExample1,
+        description: '用链接层级和当前页组成标准面包屑，适合详情页和管理后台。',
+        id: 'basic',
+        imports: ['vBreadcrumb', 'vCard'],
+        sourceComponent: BreadcrumbBasicExample1,
+        sourceTitle: '基础面包屑核心源码',
+        title: '基础面包屑'
+      },
+      {
+        component: BreadcrumbDynamicExample1,
+        description: 'active 可以动态切换，当前项会从链接变成 aria-current 文本。',
+        id: 'dynamic',
+        imports: ['vBreadcrumb', 'vBreadcrumbItem', 'vButton', 'vCard', 'vText'],
+        sourceComponent: BreadcrumbDynamicExample1,
+        sourceTitle: '动态当前项核心源码',
+        title: '动态当前项'
+      }
+    ],
+    examplesIntro: '下面两个示例分别展示基础层级和动态切换当前项。',
+    heading: 'vBreadcrumb 面包屑',
+    intro:
+      '面包屑用于告诉用户当前所在位置，并允许通过上一级链接快速返回。vBreadcrumb 默认提供语义化 nav/ol 结构、可配置分隔符和当前页状态。',
+    key: 'breadcrumb',
+    routeItem: 'navigation:1',
+    title: '面包屑',
+    usageItems: [
+      '详情页、管理后台和文档站点需要表达当前位置时使用。',
+      '中间层级有页面地址时传入 href，当前页使用 active(true)。',
+      '分隔符可以通过 separator() 换成 /、› 或自定义文本。'
+    ]
+  }),
+  router: createNavigationDocsDefinition({
+    apiIntro:
+      '路由示例都运行在独立 iframe 页面中，不会修改组件目录自身的 hash 地址。vLink 委托 Router 导航，vRouterView 负责承载匹配视图。',
+    apiRows: [
+      [
+        'router({ default, route, notFound })',
+        '创建命令式路由出口。',
+        "router((r) => r.route('/overview', view))"
+      ],
+      [
+        'vRouter({ default, routes, notFound })',
+        '声明式创建路由。',
+        'vRouter({ default: "/home", routes: [...] })'
+      ],
+      ['vRoute(pattern, config)', '描述路径、标题和视图。', "vRoute('/users/:id', view)"],
+      [
+        'vLink(router, { to, params, query, replace })',
+        '创建路由链接。',
+        "vLink(appRouter, { label: '概览', to: '/overview' })"
+      ],
+      ['vRouterView(router, setup)', '承载当前匹配视图。', 'vRouterView(appRouter)']
+    ],
+    apiSignature: `vRouter({
+  default: '/home',
+  routes: [
+    vRoute('/home', { title: '首页', view: () => div('首页') })
+  ]
+})`,
+    examples: [
+      {
+        component: RouterNavigationCard,
+        description: '命令式 Router、vLink 和 vRouterView 组合，包含参数、query 和 404。',
+        frame: true,
+        frameSrc: './router-links.html',
+        id: 'links',
+        imports: ['div', 'router', 'vCard'],
+        sourceComponent: RouterNavigationCard,
+        sourceTitle: '路由链接与视图核心源码',
+        title: '路由链接与视图'
+      },
+      {
+        component: DeclarativeRouterCard,
+        description: 'vRouter 与 vRoute 用声明式配置描述路径和视图，交互方式保持一致。',
+        frame: true,
+        frameSrc: './declarative-router.html',
+        id: 'declarative',
+        imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+        sourceComponent: DeclarativeRouterCard,
+        sourceTitle: '声明式路由核心源码',
+        title: '声明式路由'
+      }
+    ],
+    examplesIntro: '两个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
+    heading: 'Router 路由',
+    intro:
+      '路由组件负责把 URL、参数和视图连接起来。为了不让演示路由改动组件目录自身的 hash，这里全部使用 iframe 隔离运行。',
+    key: 'router',
+    routeItem: 'navigation:7',
+    title: '路由',
+    usageItems: [
+      '需要 hash 路由、参数解析和视图切换时使用 Router / vRouter。',
+      '页面跳转入口统一交给 vLink，不要在业务代码里手写 hash。',
+      '路由演示放在 iframe 中，避免干扰父级演示页面的地址。'
+    ]
+  }),
+  routerViews: createNavigationDocsDefinition({
+    apiIntro:
+      'vRouterViews 会把访问过的路由保存为标签页。两个演示都通过独立 iframe 运行，因此标签、标题和路由地址不会影响父级演示页面。',
+    apiRows: [
+      [
+        'vRouterViews(router, { title, titlePosition, lockTitle, persist, titleResolver })',
+        '创建标签页式路由视图。',
+        "vRouterViews(appRouter, { titlePosition: 'left' })"
+      ],
+      [
+        'views.titlePosition(value)',
+        '切换 top / left / right 标题栏。',
+        "views.titlePosition('left')"
+      ],
+      ['views.lockTitle(value)', '锁定标题栏并让内容撑满容器。', 'views.lockTitle(true)']
+    ],
+    apiSignature: `vRouterViews(appRouter, {
+  title: '未打开文件',
+  titlePosition: 'left'
+})`,
+    examples: [
+      {
+        component: RouterViewsEditorStandalone,
+        description: '左侧标题栏更像 IDE 文件标签，访问过的路由会保留为标签。',
+        frame: true,
+        frameSrc: './router-views.html',
+        id: 'editor',
+        imports: ['div', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews'],
+        sourceComponent: RouterViewsEditorStandalone,
+        sourceTitle: 'IDE 风格路由视图核心源码',
+        title: 'IDE 风格'
+      },
+      {
+        component: RouterViewsTopStandalone,
+        description: '顶部标题栏适合放在页面主区，点击链接后自动新增和激活标签。',
+        frame: true,
+        frameSrc: './router-views-top.html',
+        id: 'top',
+        imports: ['div', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews'],
+        sourceComponent: RouterViewsTopStandalone,
+        sourceTitle: '顶部标签路由视图核心源码',
+        title: '顶部标签'
+      }
+    ],
+    examplesIntro: '两个示例分别展示左侧标题栏和顶部标题栏。',
+    heading: 'vRouterViews 路由视图',
+    intro:
+      '路由视图适合把访问过的页面保留为标签，方便在多个路由之间切换。演示放在独立 iframe 中，标签状态和 URL 都不会和组件目录互相干扰。',
+    key: 'router-views',
+    routeItem: 'navigation:8',
+    title: '路由视图',
+    usageItems: [
+      '需要同时保留多个路由页面时使用 vRouterViews。',
+      '空间紧凑时用 titlePosition("left")，页面主区用顶部标题栏。',
+      '路由相关演示建议放入 iframe，避免路由 hash 和文档页冲突。'
+    ]
+  }),
   menu: createNavigationDocsDefinition({
     apiIntro:
       'vMenu 负责菜单骨架，vMenuGroup 和 vMenuDivider 负责层级，vSubMenu 负责展开更深一层的选择。vDropdownMenu 和 vContextMenu 只是把同一套菜单内容挂到按钮或右键上。',
@@ -261,6 +528,22 @@ export function MenuDocumentationPage() {
   return createNavigationDocumentationPage(navigationDocsDefinitions.menu);
 }
 
+export function AnchorDocumentationPage() {
+  return createNavigationDocumentationPage(navigationDocsDefinitions.anchor);
+}
+
+export function BreadcrumbDocumentationPage() {
+  return createNavigationDocumentationPage(navigationDocsDefinitions.breadcrumb);
+}
+
+export function RouterDocumentationPage() {
+  return createNavigationDocumentationPage(navigationDocsDefinitions.router);
+}
+
+export function RouterViewsDocumentationPage() {
+  return createNavigationDocumentationPage(navigationDocsDefinitions.routerViews);
+}
+
 export function NavbarDocumentationPage() {
   return createNavigationDocumentationPage(navigationDocsDefinitions.navbar);
 }
@@ -362,7 +645,7 @@ function createNavigationDocumentationPage(definition) {
 }
 
 function NavigationExampleSection(demo) {
-  const liveDemo = demo.component();
+  const liveDemo = demo.frame ? null : demo.component();
   const sourcePanel = ComponentSource({
     component: demo.component,
     sourceComponent: demo.sourceComponent ?? demo.component,
@@ -380,7 +663,16 @@ function NavigationExampleSection(demo) {
         example.div((live) => {
           live.className('components-navigation-demo-live');
           live.attr('data-navigation-demo-live', 'true');
-          live.child(liveDemo);
+          if (demo.frame) {
+            live.iframe((frame) => {
+              frame.className('components-navigation-demo-frame');
+              frame.attr('data-navigation-demo-frame', 'true');
+              frame.attr('title', `${demo.title} 演示`);
+              frame.attr('src', `${examplesBaseUrl}${demo.frameSrc.replace(/^\.\//, '')}`);
+            });
+          } else {
+            live.child(liveDemo);
+          }
         });
         example.child(sourcePanel);
       });
@@ -702,6 +994,89 @@ function StepsCustomExample1() {
                 });
               })
             );
+          });
+        });
+      });
+    }
+  };
+}
+
+function BreadcrumbBasicExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础面包屑');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('链接层级可以返回上级，最后一个节点作为当前页面。');
+            content.child(
+              vBreadcrumb((breadcrumb) => {
+                breadcrumb.ariaLabel('服务导航');
+                breadcrumb.separator('/');
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('控制台');
+                  item.href('#/console');
+                });
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('服务列表');
+                  item.href('#/services');
+                });
+                breadcrumb.vBreadcrumbItem((item) => {
+                  item.label('api-gateway');
+                  item.active(true);
+                });
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function BreadcrumbDynamicExample1() {
+  const status = vText('当前：服务详情');
+  const items = [
+    vBreadcrumbItem({ href: '/console', label: '控制台' }),
+    vBreadcrumbItem({ href: '/services', label: '服务' }),
+    vBreadcrumbItem({ active: true, label: '服务详情' })
+  ];
+  const select = (index) => {
+    items.forEach((item, itemIndex) => item.active(itemIndex === index));
+    status.textContent(`当前：${items[index].label()}`);
+  };
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('动态当前项');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('active 可以随时切换，当前项会从链接变成 aria-current 文本。');
+            content.child(
+              vBreadcrumb((breadcrumb) => {
+                breadcrumb.ariaLabel('动态服务导航');
+                breadcrumb.child(items);
+              })
+            );
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+              ['控制台', '服务', '服务详情'].forEach((label, index) => {
+                row.vButton((button) => {
+                  button.label(label);
+                  button.size('small');
+                  button.variant('secondary');
+                  button.on('click', () => select(index));
+                });
+              });
+              row.spacer();
+              row.output((output) => {
+                output.attr('data-breadcrumb-demo-status', 'true');
+                output.child(status);
+              });
+            });
           });
         });
       });

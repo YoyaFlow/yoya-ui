@@ -27,7 +27,9 @@ const formDocsDefinition = Object.freeze({
       'editor.collectValue(() => custom.value())'
     ],
     ['control.value(value)', '读取或设置单个控件值。', 'input.value()'],
-    ['control.error(value)', '切换控件错误态。', 'input.error(true)']
+    ['control.error(value)', '切换控件错误态。', 'input.error(true)'],
+    ['control.clearable(value)', '开启或关闭可清空图标。', 'input.clearable(true)'],
+    ['control.clear()', '清空控件当前值。', 'input.clear()']
   ],
   apiSignature: `const form = vForm((form) => {
   form.div((row) => {

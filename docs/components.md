@@ -7,22 +7,25 @@
 1. 按钮 vButton
 2. 按钮组 vButtons（待开发）
 3. 悬浮按钮 vFloatButton（待开发）
+4. SVG 图标 SearchOutlined / UploadOutlined 等
 
 ### 布局
 
 1. 分割线 divider
 2. 弹性布局 flex / stack / hstack / vstack / center
 3. 栅格 grid / responsiveGrid
-4. 页面容器 container / vBody
-5. 间距 spacer
-6. 弹窗 vDialog
-7. 布局模板 dashboard / detail / settings / auth
-8. 分隔面板 Splitter（待开发）
+4. 24 栅格 vRow / vCol
+5. 页面容器 container / vBody
+6. 页面骨架 vContainer / vHeader / vAside / vMain / vFooter
+7. 间距 spacer
+8. 弹窗 vDialog
+9. 布局模板 admin / cloud / profile / docs
+10. 分隔面板 Splitter（待开发）
 
 ### 导航
 
-1. 锚点 vAnchor（待开发）
-2. 面包屑（待开发）
+1. 锚点 vAnchor / vAnchorItem
+2. 面包屑 vBreadcrumb / vBreadcrumbItem
 3. 下拉菜单 vDropdownMenu / vContextMenu
 4. 菜单 vMenu / vMenuItem / vMenuGroup / vMenuDivider / vSubMenu / vSidebar
 5. 分页 vPagination
@@ -44,6 +47,8 @@
 8. 字段 vField
 9. 日期时间 vTimer
 10. 日期范围 vTimerRange
+11. 文件上传 vUpload
+12. 头像上传 vAvatarUpload
 
 ### 数据展示
 
@@ -64,3 +69,7 @@
 
 1. 消息 vMessage / vMessageContainer / toast
 2. 消息管理器 vMessageManager
+
+### 第三方扩展
+
+1. ECharts 图表 vEchart / VEchart
