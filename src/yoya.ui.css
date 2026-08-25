@@ -776,7 +776,6 @@
   font-weight: 600;
   justify-content: center;
   line-height: 1;
-  overflow: hidden;
   position: relative;
   user-select: none;
   vertical-align: middle;
@@ -819,6 +818,7 @@
 }
 
 .yoya-vavatar-image {
+  border-radius: inherit;
   display: none;
   height: 100%;
   object-fit: cover;
@@ -837,11 +837,11 @@
   background: var(--yoya-color-text-muted, #64748b);
   border: 2px solid var(--yoya-color-surface, #ffffff);
   border-radius: 50%;
-  bottom: 0;
+  bottom: -3px;
   display: none;
   height: 10px;
   position: absolute;
-  right: 0;
+  right: -3px;
   width: 10px;
 }
 
