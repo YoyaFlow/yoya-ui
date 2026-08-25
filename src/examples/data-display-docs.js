@@ -1,5 +1,6 @@
 import {
   section,
+  vAvatar,
   vBadge,
   vButton,
   vCard,
@@ -60,9 +61,17 @@ const dataDisplayDocsDefinitions = Object.freeze({
         imports: ['vAvatar', 'vCard'],
         sourceTitle: '状态头像源码',
         title: '状态头像'
+      },
+      {
+        component: AvatarInteractiveExample1,
+        description: '通过公开方法实时切换文字、尺寸、形状、颜色和在线状态。',
+        id: 'interactive',
+        imports: ['vAvatar', 'vButton', 'vCard', 'vText'],
+        sourceTitle: '自定义头像源码',
+        title: '自定义头像'
       }
     ],
-    examplesIntro: '下面三个示例分别展示基础头像、图片头像和状态头像。',
+    examplesIntro: '下面四个示例分别展示基础头像、图片头像、状态头像和自定义头像。',
     heading: 'vAvatar 头像',
     intro:
       '头像用于在列表、详情、导航和操作区域中标识用户或对象。vAvatar 把文字、图片、图标和状态统一收敛到一个组件 API 中。',
@@ -753,6 +762,81 @@ function AvatarStatusExample1() {
                 size: 'large',
                 status: 'offline',
                 text: 'D'
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function AvatarInteractiveExample1() {
+  const colors = ['#0f766e', '#7c3aed', '#b45309', '#0284c7'];
+  const sizes = ['small', 'medium', 'large', 'xlarge'];
+  const statuses = ['online', 'busy', 'away', 'offline'];
+  let colorIndex = 0;
+  let sizeIndex = 1;
+  let statusIndex = 0;
+  let label = 'A';
+  const avatar = vAvatar({ status: 'online', text: 'A' });
+  const statusText = vText('online');
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('自定义头像');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '18px' });
+              row.vAvatar(avatar);
+              row.vstack((info) => {
+                info.style('gap', '4px');
+                info.span('当前状态');
+                info.output((output) => {
+                  output.attr('data-avatar-demo-status', 'true');
+                  output.child(statusText);
+                });
+              });
+            });
+            content.hstack((actions) => {
+              actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+              actions.vButton((button) => {
+                button.label('切换状态').variant('primary');
+                button.on('click', () => {
+                  statusIndex = (statusIndex + 1) % statuses.length;
+                  avatar.status(statuses[statusIndex]);
+                  statusText.textContent(statuses[statusIndex]);
+                });
+              });
+              actions.vButton((button) => {
+                button.label('切换形状');
+                button.on('click', () => {
+                  avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
+                });
+              });
+              actions.vButton((button) => {
+                button.label('切换尺寸');
+                button.on('click', () => {
+                  sizeIndex = (sizeIndex + 1) % sizes.length;
+                  avatar.size(sizes[sizeIndex]);
+                });
+              });
+              actions.vButton((button) => {
+                button.label('切换颜色');
+                button.on('click', () => {
+                  colorIndex = (colorIndex + 1) % colors.length;
+                  avatar.color(colors[colorIndex]);
+                });
+              });
+              actions.vButton((button) => {
+                button.label('切换文字');
+                button.on('click', () => {
+                  label = label === 'A' ? 'B' : 'A';
+                  avatar.text(label);
+                });
               });
             });
           });

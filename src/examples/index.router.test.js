@@ -208,7 +208,7 @@ describe('renderExamplesIndex', () => {
       'basic',
       'AvatarBasicExample1',
       'vAvatar(',
-      3
+      4
     ],
     [
       '/components/data-display/1',
@@ -511,6 +511,25 @@ describe('renderExamplesIndex', () => {
 
     expect(status.textContent).toBe('当前 1');
     expect(countDemo.querySelector('.yoya-vbadge-count').textContent).toBe('1');
+  });
+
+  it('switches avatar status in the avatar docs demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('头像');
+    });
+
+    const demo = document.querySelector('[data-data-display-demo="interactive"]');
+    const status = demo.querySelector('[data-avatar-demo-status]');
+    const statusButton = [...demo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('切换状态')
+    );
+
+    expect(status.textContent).toBe('online');
+    statusButton.click();
+    expect(status.textContent).toBe('busy');
   });
 
   it('updates detail values when switching services in the detail docs demo', async () => {
