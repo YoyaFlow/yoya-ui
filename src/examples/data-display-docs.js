@@ -40,7 +40,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     examples: [
       {
         component: AvatarImageExample1,
-        description: 'src 切换为图片头像，alt 同步作为替代文本和 aria-label。',
+        description: 'src 切换为非文字插画图片头像，alt 同步作为替代文本和 aria-label。',
         id: 'image',
         imports: ['vAvatar', 'vCard'],
         sourceTitle: '图片头像源码',
@@ -712,7 +712,7 @@ function AvatarImageExample1() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.p('src 切换为图片头像，alt 同步作为替代文本和 aria-label。');
+            content.p('src 加载本地非文字插画图片，alt 同步作为替代文本和 aria-label。');
             content.hstack((row) => {
               row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
               row.vAvatar({

@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
   <rect width="96" height="96" rx="48" fill="#0284c7"/>
-  <text x="48" y="60" font-family="Arial, sans-serif" font-size="28" fill="#ffffff" text-anchor="middle">GW</text>
+  <circle cx="48" cy="48" r="13" fill="#e0f2fe"/>
+  <circle cx="48" cy="48" r="5" fill="#075985"/>
+  <path d="M48 35v-8M48 69v-8M35 48h-8M69 48h-8" stroke="#bae6fd" stroke-linecap="round" stroke-width="3"/>
+  <circle cx="48" cy="27" r="4" fill="#bae6fd"/>
+  <circle cx="48" cy="69" r="4" fill="#bae6fd"/>
+  <circle cx="27" cy="48" r="4" fill="#bae6fd"/>
+  <circle cx="69" cy="48" r="4" fill="#bae6fd"/>
 </svg>
