@@ -39,20 +39,20 @@ const dataDisplayDocsDefinitions = Object.freeze({
 })`,
     examples: [
       {
-        component: AvatarBasicExample1,
-        description: '文字和图标头像通过 size、shape、color 快速形成不同标识。',
-        id: 'basic',
-        imports: ['vAvatar', 'vCard'],
-        sourceTitle: '基础头像源码',
-        title: '基础头像'
-      },
-      {
         component: AvatarImageExample1,
         description: 'src 切换为图片头像，alt 同步作为替代文本和 aria-label。',
         id: 'image',
         imports: ['vAvatar', 'vCard'],
         sourceTitle: '图片头像源码',
         title: '图片头像'
+      },
+      {
+        component: AvatarBasicExample1,
+        description: '文字和图标头像通过 size、shape、color 快速形成不同标识。',
+        id: 'basic',
+        imports: ['vAvatar', 'vCard'],
+        sourceTitle: '基础头像源码',
+        title: '基础头像'
       },
       {
         component: AvatarStatusExample1,
@@ -71,7 +71,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         title: '自定义头像'
       }
     ],
-    examplesIntro: '下面四个示例分别展示基础头像、图片头像、状态头像和自定义头像。',
+    examplesIntro: '下面四个示例分别展示图片头像、基础头像、状态头像和自定义头像。',
     heading: 'vAvatar 头像',
     intro:
       '头像用于在列表、详情、导航和操作区域中标识用户或对象。vAvatar 把文字、图片、图标和状态统一收敛到一个组件 API 中。',

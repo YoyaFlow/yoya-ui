@@ -205,9 +205,9 @@ describe('renderExamplesIndex', () => {
       '头像',
       'avatar',
       'vAvatar 头像',
-      'basic',
-      'AvatarBasicExample1',
-      'vAvatar(',
+      'image',
+      'AvatarImageExample1',
+      'new URL(',
       4
     ],
     [
@@ -530,6 +530,23 @@ describe('renderExamplesIndex', () => {
     expect(status.textContent).toBe('online');
     statusButton.click();
     expect(status.textContent).toBe('busy');
+  });
+
+  it('renders image avatars in the avatar docs demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('头像');
+    });
+
+    const demo = document.querySelector('[data-data-display-demo="image"]');
+    const images = demo.querySelectorAll('.yoya-vavatar-image');
+
+    expect(images).toHaveLength(3);
+    images.forEach((image) => {
+      expect(image.getAttribute('src')).toBeTruthy();
+    });
   });
 
   it('updates detail values when switching services in the detail docs demo', async () => {
