@@ -9,7 +9,9 @@ import {
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
-  setupContentSlot
+  setupContentSlot,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 let timerRangeSequence = 0;
@@ -22,11 +24,11 @@ export class VInput extends HtmlElementNode {
     this.className(componentClass, 'yoya-vinput');
     this.attr('type', 'text');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '6px',
       boxSizing: 'border-box',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       font: 'inherit',
       minHeight: '34px',
       outline: 'none',
@@ -122,8 +124,14 @@ export class VInput extends HtmlElementNode {
 
     this.setState('error', enabled);
     this.attr('data-error', enabled ? 'true' : null);
-    this.style('borderColor', enabled ? '#dc2626' : '#cbd5e1');
-    this.style('boxShadow', enabled ? '0 0 0 1px rgba(220, 38, 38, 0.2)' : null);
+    this.style(
+      'borderColor',
+      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
+    );
+    this.style(
+      'boxShadow',
+      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+    );
     return this;
   }
 
@@ -263,7 +271,7 @@ export class VTimerRange extends HtmlElementNode {
       .className('yoya-vtimer-range-error')
       .id(errorId)
       .attr('aria-live', 'polite')
-      .style('color', '#dc2626')
+      .style('color', themeValue('color-danger', '#dc2626'))
       .style('fontSize', '0.875rem')
       .style('gridColumn', '1 / -1')
       .child(this._errorText);
@@ -431,11 +439,11 @@ export class VTextarea extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vtextarea');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '6px',
       boxSizing: 'border-box',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       font: 'inherit',
       minHeight: '88px',
       outline: 'none',
@@ -528,8 +536,14 @@ export class VTextarea extends HtmlElementNode {
 
     this.setState('error', enabled);
     this.attr('data-error', enabled ? 'true' : null);
-    this.style('borderColor', enabled ? '#dc2626' : '#cbd5e1');
-    this.style('boxShadow', enabled ? '0 0 0 1px rgba(220, 38, 38, 0.2)' : null);
+    this.style(
+      'borderColor',
+      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
+    );
+    this.style(
+      'boxShadow',
+      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+    );
     return this;
   }
 
@@ -621,11 +635,11 @@ export class VSelect extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vselect');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '6px',
       boxSizing: 'border-box',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       cursor: 'pointer',
       font: 'inherit',
       minHeight: '34px',
@@ -710,8 +724,14 @@ export class VSelect extends HtmlElementNode {
 
     this.setState('error', enabled);
     this.attr('data-error', enabled ? 'true' : null);
-    this.style('borderColor', enabled ? '#dc2626' : '#cbd5e1');
-    this.style('boxShadow', enabled ? '0 0 0 1px rgba(220, 38, 38, 0.2)' : null);
+    this.style(
+      'borderColor',
+      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
+    );
+    this.style(
+      'boxShadow',
+      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+    );
     return this;
   }
 
@@ -728,7 +748,7 @@ export class VSelect extends HtmlElementNode {
       placeholderNode.attr({ disabled: true, value: '' });
       placeholderNode.attr('selected', selectedValue ? null : true);
       placeholderNode.styles({
-        color: '#94a3b8'
+        color: themeValue('color-border-muted', '#94a3b8')
       });
       replaceChildren(placeholderNode, normalizeChildren(this._placeholder));
       nodes.push(placeholderNode);
@@ -847,12 +867,12 @@ class VBooleanControl extends HtmlElementNode {
       minWidth: '0'
     });
     this._labelBox.styles({
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       fontWeight: '600',
       lineHeight: '1.35'
     });
     this._descriptionBox.styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px',
       lineHeight: '1.45'
     });
@@ -1069,11 +1089,11 @@ export class VCheckbox extends VBooleanControl {
     super('checkbox');
     this._visualBox.styles({
       alignItems: 'center',
-      background: '#ffffff',
-      border: '1px solid #cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '4px',
       boxSizing: 'border-box',
-      color: '#ffffff',
+      color: themeValue('color-text-inverse', '#ffffff'),
       display: 'inline-flex',
       height: '16px',
       justifyContent: 'center',
@@ -1087,9 +1107,13 @@ export class VCheckbox extends VBooleanControl {
 
   _syncVisual(enabled) {
     this._visualBox.styles({
-      background: enabled ? '#2563eb' : '#ffffff',
-      borderColor: enabled ? '#2563eb' : '#cbd5e1',
-      color: enabled ? '#ffffff' : 'transparent'
+      background: enabled
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-surface', '#ffffff'),
+      borderColor: enabled
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-border-strong', '#cbd5e1'),
+      color: enabled ? themeValue('color-text-inverse', '#ffffff') : 'transparent'
     });
     replaceChildren(this._visualBox, enabled ? normalizeChildren('✓') : []);
   }
@@ -1100,8 +1124,8 @@ export class VSwitch extends VBooleanControl {
     super('switch');
     this._thumbBox = new HtmlElementNode('span').className('yoya-vswitch-thumb');
     this._visualBox.styles({
-      background: '#cbd5e1',
-      border: '1px solid #cbd5e1',
+      background: themeValue('color-border-strong', '#cbd5e1'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '999px',
       boxSizing: 'border-box',
       display: 'inline-flex',
@@ -1112,7 +1136,7 @@ export class VSwitch extends VBooleanControl {
       width: '40px'
     });
     this._thumbBox.styles({
-      background: '#ffffff',
+      background: themeValue('color-surface', '#ffffff'),
       borderRadius: '999px',
       boxShadow: '0 1px 2px rgba(15, 23, 42, 0.18)',
       height: '16px',
@@ -1127,8 +1151,12 @@ export class VSwitch extends VBooleanControl {
 
   _syncVisual(enabled) {
     this._visualBox.styles({
-      background: enabled ? '#2563eb' : '#cbd5e1',
-      borderColor: enabled ? '#2563eb' : '#cbd5e1'
+      background: enabled
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-border-strong', '#cbd5e1'),
+      borderColor: enabled
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-border-strong', '#cbd5e1')
     });
     this._thumbBox.style('transform', enabled ? 'translateX(18px)' : 'translateX(0)');
   }
@@ -1376,15 +1404,15 @@ export class VField extends HtmlElementNode {
       minWidth: '0'
     });
     this._labelBox.styles({
-      color: '#111827',
+      color: themeValue('color-text-strong', '#111827'),
       flex: '1 1 auto',
       fontWeight: '700',
       lineHeight: '1.35'
     });
     this._displayBox.styles({
-      border: '1px solid #d8dee8',
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '6px',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       minHeight: '34px',
       padding: '8px 12px'
     });
@@ -1392,12 +1420,12 @@ export class VField extends HtmlElementNode {
       minWidth: '0'
     });
     this._hintBox.styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px',
       lineHeight: '1.45'
     });
     this._errorBox.styles({
-      color: '#b91c1c',
+      color: themeValue('color-text-danger', '#b91c1c'),
       fontSize: '12px',
       lineHeight: '1.45'
     });
@@ -1670,12 +1698,12 @@ export class VFormItem extends HtmlElementNode {
       minWidth: '0'
     });
     this._labelBox.styles({
-      color: '#111827',
+      color: themeValue('color-text-strong', '#111827'),
       fontWeight: '700',
       lineHeight: '1.35'
     });
     this._requiredIndicator.styles({
-      color: '#dc2626',
+      color: themeValue('color-danger', '#dc2626'),
       fontWeight: '700',
       lineHeight: '1.35'
     });
@@ -1687,12 +1715,12 @@ export class VFormItem extends HtmlElementNode {
     });
     this._editorBox.styles({ minWidth: '0' });
     this._hintBox.styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px',
       lineHeight: '1.45'
     });
     this._errorBox.styles({
-      color: '#b91c1c',
+      color: themeValue('color-text-danger', '#b91c1c'),
       fontSize: '12px',
       lineHeight: '1.45'
     });
@@ -2147,7 +2175,7 @@ function createSelectOptionNode(option, selectedValue, index) {
 
   if (isSelected) {
     node.styles({
-      color: '#172033'
+      color: themeValue('color-text', '#172033')
     });
   }
 

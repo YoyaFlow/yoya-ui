@@ -129,7 +129,8 @@ describe('vNavbar', () => {
 
     expect(element.style.minHeight).toBe('56px');
     expect(element.style.boxShadow).toContain('rgba(15, 23, 42, 0.05)');
-    expect(brand.style.borderRight).toBe('1px solid rgb(226, 232, 240)');
+    expect(brand.style.borderRight).toContain('1px solid');
+    expect(brand.style.borderRight).toContain('var(--yoya-color-border-faint');
     expect(actions.style.gap).toBe('8px');
   });
 
@@ -149,6 +150,7 @@ describe('vNavbar', () => {
       customBrand.strong('控制台');
     });
 
-    expect(brand.style.borderRight).toBe('1px solid rgb(226, 232, 240)');
+    expect(brand.style.borderRight).toContain('1px solid');
+    expect(brand.style.borderRight).toContain('var(--yoya-color-border-faint');
   });
 });

@@ -8,7 +8,9 @@ import {
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
-  setupContentSlot
+  setupContentSlot,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 let menuGroupSequence = 0;
@@ -208,7 +210,7 @@ export class VMenuItem extends HtmlElementNode {
       background: 'transparent',
       border: '1px solid transparent',
       borderRadius: '6px',
-      color: '#1f2937',
+      color: themeValue('color-text', '#1f2937'),
       cursor: 'pointer',
       display: 'grid',
       font: 'inherit',
@@ -266,15 +268,17 @@ export class VMenuItem extends HtmlElementNode {
     this.styles(
       enabled
         ? {
-            background: '#eff6ff',
-            borderColor: '#bfdbfe',
-            color: '#1d4ed8',
+            background: themeValue('color-primary-subtle', '#eff6ff'),
+            borderColor: themeValue('color-primary-border', '#bfdbfe'),
+            color: themeValue('color-primary-hover', '#1d4ed8'),
             fontWeight: '700'
           }
         : {
             background: 'transparent',
             borderColor: 'transparent',
-            color: this.getBooleanState('danger') ? '#b91c1c' : '#1f2937',
+            color: this.getBooleanState('danger')
+              ? themeValue('color-text-danger', '#b91c1c')
+              : themeValue('color-text', '#1f2937'),
             fontWeight: '400'
           }
     );
@@ -287,7 +291,10 @@ export class VMenuItem extends HtmlElementNode {
     this.setState('danger', enabled);
     this.attr('data-danger', enabled ? 'true' : null);
     if (!this.getBooleanState('active')) {
-      this.style('color', enabled ? '#b91c1c' : '#1f2937');
+      this.style(
+        'color',
+        enabled ? themeValue('color-text-danger', '#b91c1c') : themeValue('color-text', '#1f2937')
+      );
     }
     return this;
   }
@@ -297,8 +304,8 @@ export class VMenuItem extends HtmlElementNode {
     if (this.getBooleanState('disabled') || this.getBooleanState('active')) return;
 
     this.styles({
-      background: hovered ? '#f1f5f9' : 'transparent',
-      borderColor: hovered ? '#e2e8f0' : 'transparent'
+      background: hovered ? themeValue('color-surface-hover', '#f1f5f9') : 'transparent',
+      borderColor: hovered ? themeValue('color-border-faint', '#e2e8f0') : 'transparent'
     });
     return this;
   }
@@ -414,8 +421,8 @@ export class VMenuDivider extends HtmlElementNode {
     this.attr('aria-orientation', horizontal ? 'vertical' : 'horizontal');
     this.styles({
       alignSelf: 'stretch',
-      borderLeft: horizontal ? '1px solid #e2e8f0' : null,
-      borderTop: horizontal ? null : '1px solid #e2e8f0',
+      borderLeft: horizontal ? themeBorder('color-border-faint', '#e2e8f0') : null,
+      borderTop: horizontal ? null : themeBorder('color-border-faint', '#e2e8f0'),
       height: horizontal ? 'auto' : '0',
       margin: horizontal ? '0 4px' : '4px 0',
       width: horizontal ? '0' : 'auto'
@@ -433,7 +440,7 @@ export class VMenuGroup extends HtmlElementNode {
       .className('yoya-vmenu-group-label')
       .id(labelId)
       .styles({
-        color: '#64748b',
+        color: themeValue('color-text-muted', '#64748b'),
         fontSize: '0.75rem',
         fontWeight: '700',
         padding: '6px 10px 4px'
@@ -530,8 +537,8 @@ export class VSubMenu extends HtmlElementNode {
       .id(panelId)
       .className('yoya-vsubmenu-panel')
       .styles({
-        background: '#ffffff',
-        border: '1px solid #d8dee8',
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border', '#d8dee8'),
         borderRadius: '8px',
         boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
         display: 'none',
@@ -590,7 +597,7 @@ export class VSubMenu extends HtmlElementNode {
       this._panel.styles({
         background: 'transparent',
         border: '0',
-        borderLeft: '1px solid #e2e8f0',
+        borderLeft: themeBorder('color-border-faint', '#e2e8f0'),
         borderRadius: '0',
         boxShadow: 'none',
         display: this.getBooleanState('open') ? 'block' : 'none',
@@ -607,8 +614,8 @@ export class VSubMenu extends HtmlElementNode {
     } else {
       this.styles({ display: 'inline-flex', position: 'relative', width: '100%' });
       this._panel.styles({
-        background: '#ffffff',
-        border: '1px solid #d8dee8',
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border', '#d8dee8'),
         borderLeft: null,
         borderRadius: '8px',
         boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
@@ -882,8 +889,8 @@ export class VSidebar extends HtmlElementNode {
     this.className(componentClass, 'yoya-vsidebar');
     this.attr('aria-label', '侧边导航');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #d8dee8',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       boxSizing: 'border-box',
       display: 'grid',

@@ -9,7 +9,9 @@ import {
   normalizeMessageOptions,
   placementStyles,
   removeChild,
-  replaceChildren
+  replaceChildren,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 const messageTypes = ['success', 'error', 'warning', 'info'];
@@ -57,10 +59,10 @@ export class VMessage extends HtmlElementNode {
     this.attr('role', 'status');
     this.styles({
       alignItems: 'center',
-      background: '#eff6ff',
-      border: '1px solid #bfdbfe',
+      background: themeValue('color-info-subtle', '#eff6ff'),
+      border: themeBorder('color-info-border', '#bfdbfe'),
       borderRadius: '6px',
-      color: '#1e3a8a',
+      color: themeValue('color-info-text', '#1e3a8a'),
       display: 'flex',
       gap: '10px',
       lineHeight: '1.4',

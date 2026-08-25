@@ -5,7 +5,9 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 export class VDetail extends HtmlElementNode {
@@ -14,7 +16,7 @@ export class VDetail extends HtmlElementNode {
     this._columns = 3;
     this.className(componentClass, 'yoya-vdetail');
     this.styles({
-      border: '1px solid #d8dee8',
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       display: 'grid',
       gap: '0',
@@ -95,13 +97,13 @@ export class VDetailItem extends HtmlElementNode {
       padding: '12px 16px'
     });
     this._labelBox.styles({
-      color: '#475569',
+      color: themeValue('color-text-secondary', '#475569'),
       fontWeight: '700',
       margin: '0',
       wordBreak: 'break-word'
     });
     this._valueBox.styles({
-      color: '#111827',
+      color: themeValue('color-text-strong', '#111827'),
       margin: '0',
       wordBreak: 'break-word'
     });

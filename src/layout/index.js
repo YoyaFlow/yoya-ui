@@ -1,6 +1,10 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
-import { applyComponentArguments, normalizeComponentArguments } from '../components/shared.js';
+import {
+  applyComponentArguments,
+  normalizeComponentArguments,
+  themeValue
+} from '../components/shared.js';
 
 const layoutOptionNames = new Set([
   'align',
@@ -145,7 +149,7 @@ export function vBody(first = null, second = null, third = null) {
   node.className('yoya-layout', 'yoya-vbody');
   node.attr('data-page-body', 'true');
   node.styles({
-    background: '#f5f7fa',
+    background: themeValue('color-bg', '#f5f7fa'),
     boxSizing: 'border-box',
     minHeight: '100%',
     padding: 'clamp(16px, 3vw, 32px)',

@@ -8,7 +8,9 @@ import {
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
-  setupContentSlot
+  setupContentSlot,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 let navbarSequence = 0;
@@ -19,7 +21,7 @@ export class VNavbar extends HtmlElementNode {
     const menuId = `yoya-vnavbar-menu-${++navbarSequence}`;
 
     this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title').styles({
-      color: '#0f172a',
+      color: themeValue('color-text-strong', '#0f172a'),
       display: 'none',
       fontSize: '1.02rem',
       fontWeight: '700',
@@ -28,7 +30,7 @@ export class VNavbar extends HtmlElementNode {
     this._brandSubtitle = new HtmlElementNode('span')
       .className('yoya-vnavbar-brand-subtitle')
       .styles({
-        color: '#64748b',
+        color: themeValue('color-text-muted', '#64748b'),
         display: 'none',
         fontSize: '0.78rem',
         lineHeight: '1.2'
@@ -92,8 +94,8 @@ export class VNavbar extends HtmlElementNode {
     this.attr({ 'aria-label': '导航栏', role: 'navigation' });
     this.styles({
       alignItems: 'center',
-      background: '#ffffff',
-      border: '1px solid #dde3ec',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#dde3ec'),
       borderRadius: '8px',
       boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.05)',
       boxSizing: 'border-box',
@@ -187,7 +189,7 @@ export class VNavbar extends HtmlElementNode {
     );
 
     this._brandBox.styles({
-      borderRight: hasBrandContent ? '1px solid #e2e8f0' : null,
+      borderRight: hasBrandContent ? themeBorder('color-border-faint', '#e2e8f0') : null,
       paddingRight: hasBrandContent ? '14px' : null
     });
     return this;

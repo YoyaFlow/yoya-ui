@@ -113,37 +113,29 @@ describe('compound components', () => {
     expect(element.dataset.variant).toBe('primary');
   });
 
-  it('applies button interaction styles for hover, active, focus, and disabled states', () => {
+  it('tracks button interaction states as data attributes', () => {
     const action = vButton('保存').variant('primary');
     const element = action.renderDom();
-
-    expect(element.style.transition).toContain('transform');
-    expect(element.style.boxShadow).not.toBe('');
 
     element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
 
     expect(element.dataset.interaction).toBe('hover');
-    expect(element.style.transform).toBe('translateY(-1px)');
-    expect(element.style.background).toBe('rgb(29, 78, 216)');
 
     element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
 
     expect(element.dataset.interaction).toBe('active');
-    expect(element.style.transform).toBe('translateY(0px)');
 
     element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
     element.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
     element.dispatchEvent(new FocusEvent('focus', { bubbles: false }));
 
     expect(element.dataset.interaction).toBe('focus');
-    expect(element.style.outline).toBe('3px solid rgba(37, 99, 235, 0.28)');
 
     action.disabled(true);
     element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
 
     expect(element.dataset.interaction).toBe('disabled');
-    expect(element.style.cursor).toBe('not-allowed');
-    expect(element.style.transform).toBe('translateY(0px)');
+    expect(element.disabled).toBe(true);
   });
 
   it('applies shared element options and final callbacks when the first setup is omitted', () => {
@@ -1253,7 +1245,7 @@ describe('compound components', () => {
 
     expect(element.dataset.danger).toBe('true');
     expect(element.dataset.active).toBeUndefined();
-    expect(element.style.color).toBe('rgb(185, 28, 28)');
+    expect(element.style.color).toContain('var(--yoya-color-text-danger');
   });
 
   it('uses content-width menu items in horizontal menus', () => {
@@ -1293,22 +1285,22 @@ describe('compound components', () => {
     expect(element.classList.contains('yoya-vdropdown-menu')).toBe(true);
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(panel.style.display).toBe('none');
-    expect(panel.style.borderRadius).toBe('10px');
-    expect(panel.style.minWidth).toBe('192px');
+    expect(panel.classList.contains('yoya-vdropdown-panel')).toBe(true);
+    expect(panel.getAttribute('aria-hidden')).toBe('true');
     expect(element.dataset.placement).toBe('bottom-end');
 
     trigger.click();
 
     expect(element.dataset.open).toBe('true');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(panel.style.display).toBe('');
+    expect(panel.getAttribute('aria-hidden')).toBe('false');
 
     element.querySelector('#dropdown-refresh').click();
 
     expect(clicked).toHaveBeenCalledTimes(1);
     expect(element.dataset.open).toBeUndefined();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(panel.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('closes dropdown menus from outside clicks and Escape', () => {
@@ -1473,7 +1465,6 @@ describe('compound components', () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(element.dataset.open).toBe('true');
-    expect(panel.style.display).toBe('');
     expect(panel.style.left).toBe('24px');
     expect(panel.style.top).toBe('48px');
 
@@ -1481,7 +1472,6 @@ describe('compound components', () => {
 
     expect(selected).toHaveBeenCalledTimes(1);
     expect(element.dataset.open).toBeUndefined();
-    expect(panel.style.display).toBe('none');
   });
 
   it('closes context menus from outside clicks and Escape', () => {

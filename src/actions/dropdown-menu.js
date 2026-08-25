@@ -37,25 +37,9 @@ export class VDropdownMenu extends HtmlElementNode {
       .id(this._panelId)
       .className('yoya-vdropdown-panel')
       .attr('aria-hidden', 'true')
-      .styles({
-        background: '#ffffff',
-        border: '1px solid #dbe3ef',
-        borderRadius: '10px',
-        boxShadow: '0 18px 36px rgba(15, 23, 42, 0.18)',
-        display: 'none',
-        minWidth: '192px',
-        overflow: 'hidden',
-        position: 'absolute',
-        transformOrigin: 'top left',
-        zIndex: '120'
-      })
       .child(this._menu);
 
     this.className(componentClass, 'yoya-vdropdown-menu');
-    this.styles({
-      display: 'inline-flex',
-      position: 'relative'
-    });
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
       if (
@@ -114,7 +98,6 @@ export class VDropdownMenu extends HtmlElementNode {
     this.attr('data-open', enabled ? 'true' : null);
     this._trigger.attr('aria-expanded', enabled ? 'true' : 'false');
     this._panel.attr('aria-hidden', enabled ? 'false' : 'true');
-    this._panel.style('display', enabled ? null : 'none');
 
     if (enabled) {
       this._bindGlobalCloseHandlers();

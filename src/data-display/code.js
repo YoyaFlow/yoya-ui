@@ -4,7 +4,9 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 export class VCode extends HtmlElementNode {
@@ -25,31 +27,31 @@ export class VCode extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vcode');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #d8dee8',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       overflow: 'hidden'
     });
     this._toolbar.styles({
       alignItems: 'center',
-      background: '#f8fafc',
+      background: themeValue('color-code-header', '#f8fafc'),
       display: 'flex',
       gap: '8px',
       justifyContent: 'space-between',
       padding: '10px 12px'
     });
     this._languageBadge.styles({
-      background: '#e2e8f0',
+      background: themeValue('color-code-badge', '#e2e8f0'),
       borderRadius: '999px',
-      color: '#334155',
+      color: themeValue('color-code-badge-text', '#334155'),
       fontSize: '12px',
       fontWeight: '700',
       lineHeight: '1',
       padding: '4px 8px'
     });
     this._preBox.styles({
-      background: '#fbfcfe',
+      background: themeValue('color-code-bg', '#fbfcfe'),
       margin: '0',
       overflow: 'auto',
       padding: '14px 16px'

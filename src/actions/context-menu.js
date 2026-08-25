@@ -15,33 +15,14 @@ export class VContextMenu extends HtmlElementNode {
     this._globalCloseCleanup = null;
     this._target = new HtmlElementNode('div')
       .className('yoya-vcontext-target')
-      .styles({
-        minWidth: '0'
-      })
       .on('contextmenu', (event) => {
         event.preventDefault();
         this.openAt(event);
       });
     this._menu = new VMenu().className('yoya-vcontext-content');
-    this._panel = new HtmlElementNode('div')
-      .className('yoya-vcontext-panel')
-      .styles({
-        background: '#ffffff',
-        border: '1px solid #d8dee8',
-        borderRadius: '8px',
-        boxShadow: '0 10px 26px rgba(15, 23, 42, 0.16)',
-        display: 'none',
-        minWidth: '200px',
-        position: 'fixed',
-        zIndex: '120'
-      })
-      .child(this._menu);
+    this._panel = new HtmlElementNode('div').className('yoya-vcontext-panel').child(this._menu);
 
     this.className(componentClass, 'yoya-vcontext-menu');
-    this.styles({
-      display: 'block',
-      minWidth: '0'
-    });
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
       if (
@@ -95,7 +76,6 @@ export class VContextMenu extends HtmlElementNode {
 
     this.setState('open', enabled);
     this.attr('data-open', enabled ? 'true' : null);
-    this._panel.style('display', enabled ? null : 'none');
 
     if (enabled) {
       this._bindGlobalCloseHandlers();

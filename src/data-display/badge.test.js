@@ -66,7 +66,7 @@ describe('vBadge', () => {
     const statusBox = statusElement.querySelector('.yoya-vbadge-count');
 
     expect(statusElement.dataset.status).toBe('success');
-    expect(statusBox.style.background).toBe('rgb(82, 196, 26)');
+    expect(statusBox.style.background).toContain('var(--yoya-color-success');
     expect(statusElement.querySelector('.yoya-vbadge-text').textContent).toBe('运行中');
 
     statusBadge.color('#0f766e');

@@ -1,7 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
 import {
-  buttonInteractionStyles,
-  buttonSizeStyles,
   componentClass,
   applyComponentArguments,
   applyElementOptions,
@@ -25,28 +23,10 @@ export class VButton extends HtmlElementNode {
     this._labelBox = new HtmlElementNode('span').className('yoya-vbutton-label');
     this._loadingBox = new HtmlElementNode('span')
       .className('yoya-vbutton-spinner')
-      .attr('aria-hidden', 'true')
-      .style('display', 'none');
+      .attr('aria-hidden', 'true');
 
     this.className(componentClass, 'yoya-vbutton');
     this.attr('type', 'button');
-    this.styles({
-      alignItems: 'center',
-      borderRadius: '6px',
-      borderStyle: 'solid',
-      borderWidth: '1px',
-      cursor: 'pointer',
-      display: 'inline-flex',
-      fontFamily: 'inherit',
-      fontWeight: '600',
-      gap: '6px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      transition:
-        'background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease, transform 140ms ease',
-      userSelect: 'none',
-      whiteSpace: 'nowrap'
-    });
     this.child(this._loadingBox, this._labelBox);
     this._bindInteractionEffects();
     this.type(this._variant);
@@ -97,7 +77,6 @@ export class VButton extends HtmlElementNode {
 
     this._size = value || 'medium';
     this.attr('data-size', this._size);
-    this.styles(buttonSizeStyles(this._size));
     return this;
   }
 
@@ -117,7 +96,6 @@ export class VButton extends HtmlElementNode {
     this.setState('loading', enabled);
     this.attr('aria-busy', enabled ? 'true' : null);
     this.attr('data-loading', enabled ? 'true' : null);
-    this._loadingBox.style('display', enabled ? null : 'none');
     this._loadingBox.textContent(enabled ? '...' : '');
     this._syncInteractionStyles();
     return this;
@@ -194,10 +172,6 @@ export class VButton extends HtmlElementNode {
     const interaction = this._interactionState();
 
     this.attr('data-interaction', interaction === 'rest' ? null : interaction);
-    this.styles(buttonInteractionStyles(this._variant, interaction));
-    if (interaction !== 'disabled') {
-      this.style('cursor', this.getBooleanState('loading') ? 'progress' : 'pointer');
-    }
     return this;
   }
 

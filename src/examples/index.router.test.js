@@ -595,8 +595,6 @@ describe('renderExamplesIndex', () => {
 
     expect(row.style.alignItems).toBe('center');
     expect([...buttons].map((button) => button.dataset.size)).toEqual(['small', 'medium', 'large']);
-    expect([...buttons].map((button) => button.style.minHeight)).toEqual(['30px', '34px', '38px']);
-    expect([...buttons].map((button) => button.style.fontSize)).toEqual(['13px', '14px', '15px']);
   });
 
   it('renders an interactive form demo', async () => {

@@ -2,7 +2,9 @@ import { HtmlElementNode } from '../html/index.js';
 import {
   applyComponentSetup,
   componentClass,
-  createComponentFactory
+  createComponentFactory,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 export class VCard extends HtmlElementNode {
@@ -10,11 +12,11 @@ export class VCard extends HtmlElementNode {
     super('div', null);
     this.className(componentClass, 'yoya-vcard');
     this.styles({
-      background: '#ffffff',
-      border: '1px solid #d8dee8',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
-      color: '#111827',
+      color: themeValue('color-text-strong', '#111827'),
       overflow: 'hidden'
     });
     applyComponentSetup(this, setup);
@@ -26,7 +28,7 @@ export class VCardHeader extends HtmlElementNode {
     super('div', null);
     this.className('yoya-vcard-header');
     this.styles({
-      borderBottom: '1px solid #e5e7eb',
+      borderBottom: themeBorder('color-border-faint', '#e5e7eb'),
       fontWeight: '700',
       padding: '12px 16px'
     });
@@ -51,8 +53,8 @@ export class VCardFooter extends HtmlElementNode {
     this.className('yoya-vcard-footer');
     this.styles({
       alignItems: 'center',
-      background: '#f8fafc',
-      borderTop: '1px solid #e5e7eb',
+      background: themeValue('color-surface-hover', '#f8fafc'),
+      borderTop: themeBorder('color-border-faint', '#e5e7eb'),
       display: 'flex',
       gap: '8px',
       justifyContent: 'flex-end',

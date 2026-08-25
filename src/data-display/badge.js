@@ -4,15 +4,16 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeValue
 } from '../components/shared.js';
 
 const statusColors = {
-  default: '#8c8c8c',
-  error: '#f5222d',
-  processing: '#1677ff',
-  success: '#52c41a',
-  warning: '#faad14'
+  default: themeValue('color-text-muted', '#8c8c8c'),
+  error: themeValue('color-danger', '#f5222d'),
+  processing: themeValue('color-info', '#1677ff'),
+  success: themeValue('color-success', '#52c41a'),
+  warning: themeValue('color-warning', '#faad14')
 };
 
 export class VBadge extends HtmlElementNode {
@@ -35,10 +36,10 @@ export class VBadge extends HtmlElementNode {
     });
     this._badgeBox = new HtmlElementNode('span').className('yoya-vbadge-count').styles({
       alignItems: 'center',
-      background: '#ff4d4f',
+      background: themeValue('color-danger', '#ff4d4f'),
       borderRadius: '10px',
       boxSizing: 'border-box',
-      color: '#ffffff',
+      color: themeValue('color-text-inverse', '#ffffff'),
       display: 'none',
       fontSize: '12px',
       fontWeight: '700',
@@ -56,7 +57,7 @@ export class VBadge extends HtmlElementNode {
       zIndex: '1'
     });
     this._textBox = new HtmlElementNode('span').className('yoya-vbadge-text').styles({
-      color: '#475569',
+      color: themeValue('color-text-secondary', '#475569'),
       display: 'none',
       fontSize: '12px',
       lineHeight: '1'
@@ -295,7 +296,8 @@ export class VBadge extends HtmlElementNode {
     const status = this._status;
     const dotMode = Boolean(status || this._dot);
     const visible = dotMode || this._countVisible();
-    const background = this._color || (status ? statusColors[status] : '#ff4d4f');
+    const background =
+      this._color || (status ? statusColors[status] : themeValue('color-danger', '#ff4d4f'));
 
     this._contentBox.style('display', hasContent ? 'inline-flex' : 'none');
     this._textBox.style(

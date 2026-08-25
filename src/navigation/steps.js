@@ -4,7 +4,8 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeValue
 } from '../components/shared.js';
 
 export class VSteps extends HtmlElementNode {
@@ -222,11 +223,11 @@ export class VStep extends HtmlElementNode {
     });
     this._indicatorBox.styles({
       alignItems: 'center',
-      background: '#ffffff',
-      border: '2px solid #cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      border: `2px solid ${themeValue('color-border-strong', '#cbd5e1')}`,
       borderRadius: '50%',
       boxSizing: 'border-box',
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       display: 'inline-flex',
       fontSize: '14px',
       fontWeight: '700',
@@ -242,18 +243,18 @@ export class VStep extends HtmlElementNode {
       paddingTop: '3px'
     });
     this._titleBox.styles({
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       fontSize: '14px',
       fontWeight: '700',
       lineHeight: '1.35'
     });
     this._descriptionBox.styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px',
       lineHeight: '1.5'
     });
     this._connector.styles({
-      background: '#d8dee8',
+      background: themeValue('color-border', '#d8dee8'),
       display: 'none',
       height: '2px',
       position: 'absolute'
@@ -414,7 +415,12 @@ export class VStep extends HtmlElementNode {
     }
 
     this._connector.style('display', this._index < this._total - 1 ? null : 'none');
-    this._connector.style('background', status === 'finish' ? '#2563eb' : '#d8dee8');
+    this._connector.style(
+      'background',
+      status === 'finish'
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-border', '#d8dee8')
+    );
 
     if (this._stepsDirection === 'vertical') {
       this.style('gridTemplateColumns', 'auto minmax(0, 1fr)');
@@ -469,32 +475,32 @@ function normalizeStepItem(item) {
 function stepIndicatorStyles(status) {
   if (status === 'finish') {
     return {
-      background: '#16a34a',
-      borderColor: '#16a34a',
-      color: '#ffffff'
+      background: themeValue('color-success', '#16a34a'),
+      borderColor: themeValue('color-success', '#16a34a'),
+      color: themeValue('color-text-inverse', '#ffffff')
     };
   }
 
   if (status === 'error') {
     return {
-      background: '#dc2626',
-      borderColor: '#dc2626',
-      color: '#ffffff'
+      background: themeValue('color-danger', '#dc2626'),
+      borderColor: themeValue('color-danger', '#dc2626'),
+      color: themeValue('color-text-inverse', '#ffffff')
     };
   }
 
   if (status === 'process') {
     return {
-      background: '#2563eb',
-      borderColor: '#2563eb',
-      color: '#ffffff'
+      background: themeValue('color-primary', '#2563eb'),
+      borderColor: themeValue('color-primary', '#2563eb'),
+      color: themeValue('color-text-inverse', '#ffffff')
     };
   }
 
   return {
-    background: '#ffffff',
-    borderColor: '#cbd5e1',
-    color: '#64748b'
+    background: themeValue('color-surface', '#ffffff'),
+    borderColor: themeValue('color-border-strong', '#cbd5e1'),
+    color: themeValue('color-text-muted', '#64748b')
   };
 }
 

@@ -7,7 +7,9 @@ import {
   isPlainObject,
   normalizeChildren,
   replaceChildren,
-  resolveTextValue
+  resolveTextValue,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 let paginationSequence = 0;
@@ -83,14 +85,14 @@ export function VPagination(first = null, second = null, third = null) {
     .className('yoya-vpagination-jump-label')
     .attr('for', pageInputId)
     .styles({
-      color: '#475569',
+      color: themeValue('color-text-secondary', '#475569'),
       fontSize: '12px',
       fontWeight: '600'
     });
   const jumpSuffix = new HtmlElementNode('span')
     .className('yoya-vpagination-jump-suffix')
     .styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px'
     })
     .text('页');
@@ -98,7 +100,7 @@ export function VPagination(first = null, second = null, third = null) {
     .className('yoya-vpagination-size-label')
     .attr('for', pageSizeId)
     .styles({
-      color: '#475569',
+      color: themeValue('color-text-secondary', '#475569'),
       fontSize: '12px',
       fontWeight: '600'
     });
@@ -341,10 +343,10 @@ export function VPagination(first = null, second = null, third = null) {
         type: 'button'
       })
       .styles({
-        background: '#ffffff',
-        border: '1px solid #cbd5e1',
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border-strong', '#cbd5e1'),
         borderRadius: '6px',
-        color: '#172033',
+        color: themeValue('color-text', '#172033'),
         cursor: 'pointer',
         font: 'inherit',
         lineHeight: '1',

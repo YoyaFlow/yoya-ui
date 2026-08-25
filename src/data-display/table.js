@@ -5,7 +5,9 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 export class VTable extends HtmlElementNode {
@@ -26,19 +28,19 @@ export class VTable extends HtmlElementNode {
       minWidth: '0'
     });
     this._scroll.styles({
-      background: '#ffffff',
-      border: '1px solid #d8dee8',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       overflowX: 'auto'
     });
     this._table.styles({
       borderCollapse: 'collapse',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       width: '100%'
     });
     this._captionBox.styles({
       captionSide: 'top',
-      color: '#111827',
+      color: themeValue('color-text-strong', '#111827'),
       fontWeight: '700',
       padding: '0 0 12px',
       textAlign: 'left'
@@ -188,7 +190,7 @@ export class VTable extends HtmlElementNode {
 
       emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
       emptyCell.styles({
-        color: '#64748b',
+        color: themeValue('color-text-muted', '#64748b'),
         padding: '18px 14px',
         textAlign: 'center'
       });
@@ -317,7 +319,7 @@ function applyTableCellStyles(node, column, section) {
   const isHead = section === 'head';
 
   node.styles({
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: themeBorder('color-border-faint', '#e2e8f0'),
     fontWeight: isHead ? '700' : '400',
     padding: '12px 14px',
     textAlign: column.align || 'left',
@@ -326,10 +328,10 @@ function applyTableCellStyles(node, column, section) {
   });
 
   if (isHead) {
-    node.style('background', '#f8fafc');
-    node.style('color', '#334155');
+    node.style('background', themeValue('color-surface-hover', '#f8fafc'));
+    node.style('color', themeValue('color-text-secondary', '#334155'));
   } else {
-    node.style('color', '#172033');
+    node.style('color', themeValue('color-text', '#172033'));
   }
 
   if (column.className !== undefined) {

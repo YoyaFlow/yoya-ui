@@ -6,20 +6,16 @@
   "private": false,
   "main": "./dist/yoya-ui.umd.js",
   "module": "./dist/yoya.ui.js",
+  "style": "./dist/yoya.ui.css",
   "exports": {
     ".": {
       "import": "./dist/yoya.ui.js",
       "require": "./dist/yoya-ui.umd.js"
     },
-    "./async": "./dist/yoya.async.js",
-    "./base": "./dist/yoya.base.js",
-    "./data": "./dist/yoya.data.js",
-    "./dist": "./dist/yoya.ui.js",
-    "./feedback": "./dist/yoya.feedback.js",
-    "./form": "./dist/yoya.form.js",
-    "./navigation": "./dist/yoya.navigation.js",
-    "./router": "./dist/yoya.router.js",
-    "./ui": "./dist/yoya.ui.js"
+    "./core": "./dist/yoya.core.js",
+    "./ui": "./dist/yoya.ui.js",
+    "./ui.css": "./dist/yoya.ui.css",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"

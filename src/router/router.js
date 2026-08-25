@@ -6,6 +6,7 @@ import {
   ViewNode,
   vText
 } from '../core/index.js';
+import { themeBorder, themeValue } from '../components/shared.js';
 
 const maxVisibleTitles = 8;
 let scrollbarStyle = null;
@@ -27,19 +28,19 @@ function ensureScrollbarStyle() {
   width: 0;
 }
 .yoya-vrouter-views-popup-item:hover {
-  background: #eef3f9;
+  background: var(--yoya-color-surface-hover, #eef3f9);
 }
 .yoya-vrouter-views-popup-item[aria-current='true'] {
-  background: #e8f0fe;
-  color: #1f6feb;
+  background: var(--yoya-color-primary-subtle, #e8f0fe);
+  color: var(--yoya-color-primary, #1f6feb);
 }
 .yoya-vrouter-views-popup-close {
-  color: #57606a;
+  color: var(--yoya-color-text-secondary, #57606a);
   opacity: 0.65;
 }
 .yoya-vrouter-views-popup-item:hover .yoya-vrouter-views-popup-close,
 .yoya-vrouter-views-popup-close:hover {
-  color: #b91c1c;
+  color: var(--yoya-color-text-danger, #b91c1c);
   opacity: 1;
 }`;
   document.head?.appendChild(scrollbarStyle);
@@ -436,7 +437,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       alignItems: 'center',
       background: 'transparent',
       border: '0',
-      color: '#57606a',
+      color: themeValue('color-text-secondary', '#57606a'),
       cursor: 'pointer',
       display: 'none',
       flexShrink: '0',
@@ -456,8 +457,8 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     .className('yoya-vrouter-views-popup')
     .attr({ role: 'menu', 'aria-label': '已打开页面' })
     .styles({
-      background: '#ffffff',
-      border: '1px solid #d0d7de',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d0d7de'),
       borderRadius: '8px',
       boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
       display: 'none',
@@ -485,15 +486,15 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
 
   node.className('yoya-vrouter-views');
   node.styles({
-    border: '1px solid #d0d7de',
+    border: themeBorder('color-border', '#d0d7de'),
     borderRadius: '8px',
     overflow: 'hidden'
   });
   titleNode.styles({
-    background: '#f6f8fa',
-    borderBottom: '1px solid #d0d7de',
+    background: themeValue('color-surface-hover', '#f6f8fa'),
+    borderBottom: themeBorder('color-border', '#d0d7de'),
     boxSizing: 'border-box',
-    color: '#57606a',
+    color: themeValue('color-text-secondary', '#57606a'),
     display: 'flex',
     flexWrap: 'nowrap',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
@@ -518,12 +519,18 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       display: vertical ? 'flex' : null
     });
     titleNode.styles({
-      background: '#f6f8fa',
-      borderBottom: vertical ? null : '1px solid #d0d7de',
-      borderLeft: position === 'right' ? '1px solid #d0d7de' : null,
-      borderRight: position === 'left' ? '1px solid #d0d7de' : null,
+      background: themeValue('color-surface-hover', '#f6f8fa'),
+      borderBottom: vertical ? null : themeBorder('color-border', '#d0d7de'),
+      borderLeft: position === 'right' ? '1px solid' : null,
+      borderLeftColor: position === 'right' ? themeValue('color-border', '#d0d7de') : null,
+      borderLeftStyle: position === 'right' ? 'solid' : null,
+      borderLeftWidth: position === 'right' ? '1px' : null,
+      borderRight: position === 'left' ? '1px solid' : null,
+      borderRightColor: position === 'left' ? themeValue('color-border', '#d0d7de') : null,
+      borderRightStyle: position === 'left' ? 'solid' : null,
+      borderRightWidth: position === 'left' ? '1px' : null,
       boxSizing: 'border-box',
-      color: '#57606a',
+      color: themeValue('color-text-secondary', '#57606a'),
       display: 'flex',
       flexDirection: vertical ? 'column' : 'row',
       flexShrink: vertical ? '0' : null,
@@ -577,14 +584,33 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       .querySelector('.yoya-vrouter-views-label')
       ?.setAttribute('aria-selected', String(active));
     tab.styles({
-      background: active ? '#ffffff' : '#eaeef2',
-      border: '1px solid #d0d7de',
-      borderBottomColor: position === 'top' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
-      borderLeftColor: position === 'right' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
+      background: active
+        ? themeValue('color-surface', '#ffffff')
+        : themeValue('color-surface-active', '#eaeef2'),
+      border: themeBorder('color-border', '#d0d7de'),
+      borderBottomColor:
+        position === 'top'
+          ? active
+            ? themeValue('color-surface', '#ffffff')
+            : themeValue('color-border', '#d0d7de')
+          : themeValue('color-border', '#d0d7de'),
+      borderLeftColor:
+        position === 'right'
+          ? active
+            ? themeValue('color-surface', '#ffffff')
+            : themeValue('color-border', '#d0d7de')
+          : themeValue('color-border', '#d0d7de'),
       borderRadius:
         position === 'left' ? '6px 0 0 6px' : position === 'right' ? '0 6px 6px 0' : '6px 6px 0 0',
-      borderRightColor: position === 'left' ? (active ? '#ffffff' : '#d0d7de') : '#d0d7de',
-      color: active ? '#24292f' : '#57606a',
+      borderRightColor:
+        position === 'left'
+          ? active
+            ? themeValue('color-surface', '#ffffff')
+            : themeValue('color-border', '#d0d7de')
+          : themeValue('color-border', '#d0d7de'),
+      color: active
+        ? themeValue('color-text', '#24292f')
+        : themeValue('color-text-secondary', '#57606a'),
       fontWeight: active ? '600' : '400',
       marginBottom: position === 'top' ? '-9px' : '0',
       marginLeft: position === 'right' ? '-9px' : '0',
@@ -683,7 +709,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
           .styles({
             alignItems: 'center',
             borderRadius: '6px',
-            color: '#24292f',
+            color: themeValue('color-text', '#24292f'),
             cursor: 'pointer',
             display: 'flex',
             fontSize: '13px',
@@ -717,7 +743,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
           .text('×');
         if (path === routerInstance.currentPath()) {
           item.attr('aria-current', 'true');
-          item.styles({ background: '#e8f0fe', color: '#1f6feb' });
+          item.styles({
+            background: themeValue('color-primary-subtle', '#e8f0fe'),
+            color: themeValue('color-primary', '#1f6feb')
+          });
         }
         const activate = () => {
           closePopup();

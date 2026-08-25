@@ -57,24 +57,21 @@ npm run build
 
 The build outputs:
 
+- `dist/yoya.core.js`
 - `dist/yoya.ui.js`
+- `dist/yoya.ui.css`
 - `dist/yoya-ui.umd.js`
-- `dist/yoya.base.js`
-- `dist/yoya.form.js`
-- `dist/yoya.navigation.js`
-- `dist/yoya.feedback.js`
-- `dist/yoya.data.js`
-- `dist/yoya.async.js`
-- `dist/yoya.router.js`
 - `dist/examples/Index.html` 和 `dist/examples/assets/`
 
 按模块引入：
 
 ```js
-import { div } from 'yoya-ui/base';
-import { vForm } from 'yoya-ui/form';
-import { vTree } from 'yoya-ui/data';
+import { div, svg, createI18n } from 'yoya-ui/core';
+import { vButton, vCard, vForm, vTable, vTree } from 'yoya-ui/ui';
+import 'yoya-ui/ui.css';
 ```
+
+`yoya.core.js` 只包含原生 HTML、SVG 和核心逻辑，不附带组件样式。`yoya.ui.js` 聚合所有不需要第三方依赖的预定义组件和布局能力，`yoya.ui.css` 提供配套的默认样式与主题变量。发布入口只保留 `yoya-ui/core`、`yoya-ui/ui` 和 `yoya-ui/ui.css`。
 
 ## Usage
 
@@ -460,10 +457,14 @@ For backend-rendered pages, build the library and serve `dist/yoya.ui.js` as a s
 
 ```html
 <div id="app"></div>
+<link rel="stylesheet" href="/static/yoya.ui.css" />
 <script type="module">
-  import { div } from '/static/yoya.ui.js';
+  import { div } from '/static/yoya.core.js';
+  import { vButton } from '/static/yoya.ui.js';
 
-  div('Ready').bindTo('#app');
+  div((page) => {
+    page.child(vButton('Ready'));
+  }).bindTo('#app');
 </script>
 ```
 
@@ -517,12 +518,12 @@ src/
     index.js           Complex component exports
   examples/
     Index.html         Compound component docs app
-  index.js             Public library API
-  yoya.base.js         Base ESM entry
-  yoya.form.js         Form ESM entry
-  yoya.data.js         Data display ESM entry
+  index.js             Public library API (dev aggregator)
+  yoya.core.js         Core ESM entry
+  yoya.ui.js           Component ESM entry
+  yoya.ui.css          Default styles and theme variables
 scripts/
-  build-entries.mjs    Build standalone yoya.* ESM bundles
+  build-entries.mjs    Build yoya.core.js and yoya.ui.js ESM bundles
 vite.config.js         Vite library and Vitest config
 vite.umd.config.js     Full UMD bundle config
 ```

@@ -7,7 +7,9 @@ import {
   normalizeChildren,
   normalizeComponentArguments,
   replaceChildren,
-  resolveTextValue
+  resolveTextValue,
+  themeBorder,
+  themeValue
 } from '../components/shared.js';
 
 let treeSequence = 0;
@@ -262,8 +264,8 @@ export function VTree(first = null, second = null, third = null) {
       role: 'tree'
     })
     .styles({
-      background: '#ffffff',
-      border: '1px solid #d8dee8',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       boxSizing: 'border-box',
       minWidth: '0',
@@ -279,7 +281,7 @@ export function VTree(first = null, second = null, third = null) {
     .className('yoya-vtree-empty')
     .attr('role', 'status')
     .styles({
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       display: 'none',
       fontSize: '0.88rem',
       padding: '18px 10px',
@@ -746,11 +748,15 @@ export function VTree(first = null, second = null, third = null) {
       })
       .styles({
         alignItems: 'center',
-        background: selected ? '#eff6ff' : 'transparent',
-        border: selected ? '1px solid #bfdbfe' : '1px solid transparent',
+        background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
+        border: selected ? themeBorder('color-primary-border', '#bfdbfe') : '1px solid transparent',
         borderRadius: '6px',
         boxSizing: 'border-box',
-        color: selected ? '#1d4ed8' : node.disabled ? '#94a3b8' : '#172033',
+        color: selected
+          ? themeValue('color-primary-hover', '#1d4ed8')
+          : node.disabled
+            ? themeValue('color-text-muted', '#94a3b8')
+            : themeValue('color-text', '#172033'),
         cursor: state.selectable && !node.disabled ? 'pointer' : 'default',
         display: 'flex',
         gap: '4px',
@@ -775,14 +781,18 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       row.styles({
-        background: selected ? '#dbeafe' : '#f1f5f9',
-        borderColor: selected ? '#93c5fd' : '#e2e8f0'
+        background: selected
+          ? themeValue('color-primary-active-subtle', '#dbeafe')
+          : themeValue('color-surface-hover', '#f1f5f9'),
+        borderColor: selected
+          ? themeValue('color-primary-border', '#93c5fd')
+          : themeValue('color-border-faint', '#e2e8f0')
       });
     });
     row.on('mouseleave', () => {
       row.styles({
-        background: selected ? '#eff6ff' : 'transparent',
-        borderColor: selected ? '#bfdbfe' : 'transparent'
+        background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
+        borderColor: selected ? themeValue('color-primary-border', '#bfdbfe') : 'transparent'
       });
     });
 
@@ -842,7 +852,7 @@ export function VTree(first = null, second = null, third = null) {
         background: 'transparent',
         border: '0',
         borderRadius: '4px',
-        color: '#475569',
+        color: themeValue('color-text-secondary', '#475569'),
         cursor: 'pointer',
         display: 'inline-flex',
         flex: '0 0 auto',
@@ -912,7 +922,7 @@ export function VTree(first = null, second = null, third = null) {
   function createTreeNodeIcon(content) {
     const iconBox = new HtmlElementNode('span').className('yoya-vtree-icon').styles({
       alignItems: 'center',
-      color: '#64748b',
+      color: themeValue('color-text-muted', '#64748b'),
       display: 'inline-flex',
       flex: '0 0 auto',
       fontSize: '0.82rem',

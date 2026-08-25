@@ -4,7 +4,8 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren
+  replaceChildren,
+  themeValue
 } from '../components/shared.js';
 
 export class VDialog extends HtmlElementNode {
@@ -12,11 +13,11 @@ export class VDialog extends HtmlElementNode {
     super('dialog', null);
     this.className(componentClass, 'yoya-vdialog');
     this.styles({
-      background: '#ffffff',
+      background: themeValue('color-surface', '#ffffff'),
       border: 'none',
       borderRadius: '10px',
       boxSizing: 'border-box',
-      color: '#172033',
+      color: themeValue('color-text', '#172033'),
       maxWidth: 'min(92vw, 680px)',
       padding: '0',
       boxShadow: '0 24px 72px rgba(15, 23, 42, 0.2)',

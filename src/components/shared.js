@@ -6,6 +6,14 @@ import {
 
 export const componentClass = 'yoya-component';
 
+export function themeValue(token, fallback) {
+  return `var(--yoya-${token}, ${fallback})`;
+}
+
+export function themeBorder(token, fallback, width = '1px') {
+  return `${width} solid ${themeValue(token, fallback)}`;
+}
+
 export function normalizeComponentArguments(first = null, second = null, third = null) {
   return normalizeSetupArguments(first, second, third);
 }
@@ -162,10 +170,10 @@ export function normalizePoint(pointOrX, y) {
 export function buttonVariantStyles(variant) {
   const variants = {
     danger: {
-      background: '#dc2626',
-      borderColor: '#b91c1c',
+      background: themeValue('color-danger', '#dc2626'),
+      borderColor: themeValue('color-danger-hover', '#b91c1c'),
       boxShadow: '0 1px 2px rgba(185, 28, 28, 0.16)',
-      color: '#ffffff',
+      color: themeValue('color-text-inverse', '#ffffff'),
       outline: 'none',
       outlineOffset: '2px',
       opacity: '1',
@@ -175,27 +183,27 @@ export function buttonVariantStyles(variant) {
       background: 'transparent',
       borderColor: 'transparent',
       boxShadow: 'none',
-      color: '#2563eb',
+      color: themeValue('color-primary', '#2563eb'),
       outline: 'none',
       outlineOffset: '2px',
       opacity: '1',
       transform: 'translateY(0px)'
     },
     primary: {
-      background: '#2563eb',
-      borderColor: '#1d4ed8',
+      background: themeValue('color-primary', '#2563eb'),
+      borderColor: themeValue('color-primary-hover', '#1d4ed8'),
       boxShadow: '0 1px 2px rgba(37, 99, 235, 0.18)',
-      color: '#ffffff',
+      color: themeValue('color-text-inverse', '#ffffff'),
       outline: 'none',
       outlineOffset: '2px',
       opacity: '1',
       transform: 'translateY(0px)'
     },
     secondary: {
-      background: '#ffffff',
-      borderColor: '#cbd5e1',
+      background: themeValue('color-surface', '#ffffff'),
+      borderColor: themeValue('color-border-strong', '#cbd5e1'),
       boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
-      color: '#1f2937',
+      color: themeValue('color-text', '#1f2937'),
       outline: 'none',
       outlineOffset: '2px',
       opacity: '1',
@@ -211,68 +219,68 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
   const variants = {
     danger: {
       active: {
-        background: '#991b1b',
-        borderColor: '#7f1d1d',
+        background: themeValue('color-danger-active', '#991b1b'),
+        borderColor: themeValue('color-danger-deep', '#7f1d1d'),
         boxShadow: 'inset 0 1px 2px rgba(127, 29, 29, 0.24)',
         transform: 'translateY(0px)'
       },
       focus: {
-        outline: '3px solid rgba(220, 38, 38, 0.24)'
+        outline: `3px solid ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.24)')}`
       },
       hover: {
-        background: '#b91c1c',
-        borderColor: '#991b1b',
+        background: themeValue('color-danger-hover', '#b91c1c'),
+        borderColor: themeValue('color-danger-active', '#991b1b'),
         boxShadow: '0 8px 18px rgba(220, 38, 38, 0.22)',
         transform: 'translateY(-1px)'
       }
     },
     ghost: {
       active: {
-        background: '#dbeafe',
-        borderColor: '#bfdbfe',
+        background: themeValue('color-primary-active-subtle', '#dbeafe'),
+        borderColor: themeValue('color-primary-border', '#bfdbfe'),
         boxShadow: 'none',
         transform: 'translateY(0px)'
       },
       focus: {
-        outline: '3px solid rgba(37, 99, 235, 0.22)'
+        outline: `3px solid ${themeValue('color-primary-ring', 'rgba(37, 99, 235, 0.22)')}`
       },
       hover: {
-        background: '#eff6ff',
-        borderColor: '#bfdbfe',
+        background: themeValue('color-primary-subtle', '#eff6ff'),
+        borderColor: themeValue('color-primary-border', '#bfdbfe'),
         boxShadow: 'none',
         transform: 'translateY(-1px)'
       }
     },
     primary: {
       active: {
-        background: '#1e40af',
-        borderColor: '#1e3a8a',
+        background: themeValue('color-primary-active', '#1e40af'),
+        borderColor: themeValue('color-primary-deep', '#1e3a8a'),
         boxShadow: 'inset 0 1px 2px rgba(30, 58, 138, 0.28)',
         transform: 'translateY(0px)'
       },
       focus: {
-        outline: '3px solid rgba(37, 99, 235, 0.28)'
+        outline: `3px solid ${themeValue('color-primary-ring', 'rgba(37, 99, 235, 0.28)')}`
       },
       hover: {
-        background: '#1d4ed8',
-        borderColor: '#1e40af',
+        background: themeValue('color-primary-hover', '#1d4ed8'),
+        borderColor: themeValue('color-primary-active', '#1e40af'),
         boxShadow: '0 8px 18px rgba(37, 99, 235, 0.24)',
         transform: 'translateY(-1px)'
       }
     },
     secondary: {
       active: {
-        background: '#eef2f7',
-        borderColor: '#94a3b8',
+        background: themeValue('color-surface-active', '#eef2f7'),
+        borderColor: themeValue('color-border-muted', '#94a3b8'),
         boxShadow: 'inset 0 1px 2px rgba(15, 23, 42, 0.12)',
         transform: 'translateY(0px)'
       },
       focus: {
-        outline: '3px solid rgba(100, 116, 139, 0.24)'
+        outline: `3px solid ${themeValue('color-border-ring', 'rgba(100, 116, 139, 0.24)')}`
       },
       hover: {
-        background: '#f8fafc',
-        borderColor: '#94a3b8',
+        background: themeValue('color-surface-hover', '#f8fafc'),
+        borderColor: themeValue('color-border-muted', '#94a3b8'),
         boxShadow: '0 8px 18px rgba(15, 23, 42, 0.10)',
         transform: 'translateY(-1px)'
       }
@@ -322,24 +330,24 @@ export function buttonSizeStyles(size) {
 export function messageTypeStyles(type) {
   const styles = {
     error: {
-      background: '#fef2f2',
-      borderColor: '#fecaca',
-      color: '#991b1b'
+      background: themeValue('color-danger-subtle', '#fef2f2'),
+      borderColor: themeValue('color-danger-border', '#fecaca'),
+      color: themeValue('color-danger-text', '#991b1b')
     },
     info: {
-      background: '#eff6ff',
-      borderColor: '#bfdbfe',
-      color: '#1e3a8a'
+      background: themeValue('color-info-subtle', '#eff6ff'),
+      borderColor: themeValue('color-info-border', '#bfdbfe'),
+      color: themeValue('color-info-text', '#1e3a8a')
     },
     success: {
-      background: '#ecfdf5',
-      borderColor: '#bbf7d0',
-      color: '#166534'
+      background: themeValue('color-success-subtle', '#ecfdf5'),
+      borderColor: themeValue('color-success-border', '#bbf7d0'),
+      color: themeValue('color-success-text', '#166534')
     },
     warning: {
-      background: '#fffbeb',
-      borderColor: '#fde68a',
-      color: '#92400e'
+      background: themeValue('color-warning-subtle', '#fffbeb'),
+      borderColor: themeValue('color-warning-border', '#fde68a'),
+      color: themeValue('color-warning-text', '#92400e')
     }
   };
 

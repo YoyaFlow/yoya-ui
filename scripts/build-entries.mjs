@@ -1,14 +1,9 @@
 import { build } from 'vite';
+import { cpSync } from 'node:fs';
 
 const entries = [
-  ['ui', 'src/index.js'],
-  ['base', 'src/yoya.base.js'],
-  ['form', 'src/yoya.form.js'],
-  ['navigation', 'src/yoya.navigation.js'],
-  ['feedback', 'src/yoya.feedback.js'],
-  ['data', 'src/yoya.data.js'],
-  ['async', 'src/yoya.async.js'],
-  ['router', 'src/yoya.router.js']
+  ['ui', 'src/yoya.ui.js'],
+  ['core', 'src/yoya.core.js']
 ];
 
 for (const [name, entry] of entries) {
@@ -26,3 +21,5 @@ for (const [name, entry] of entries) {
     }
   });
 }
+
+cpSync('src/yoya.ui.css', 'dist/yoya.ui.css');
