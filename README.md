@@ -369,6 +369,7 @@ Available compound component exports:
 - `vTreeNode`
 - `vProgress`
 - `vScroll`
+- `vCarousel`
 - `toast`
 
 Browser demo:

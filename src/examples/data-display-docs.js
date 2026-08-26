@@ -4,6 +4,7 @@ import {
   vAvatarUpload,
   vAvatar,
   vBadge,
+  vCarousel,
   vButton,
   vCard,
   vDetail,
@@ -607,6 +608,88 @@ const dataDisplayDocsDefinitions = Object.freeze({
       '列表到底后需要停止请求时，调用 block(true)。',
       '需要不断重复同一批数据时，用 loop(true) 开启循环加载。'
     ]
+  }),
+  carousel: createDataDisplayDocsDefinition({
+    apiIntro:
+      'vCarousel 用于在容器内横向切换多张幻灯片。它支持 slides/renderItem 数据驱动、自动播放、循环切换、箭头、指示点和键盘操作。',
+    apiRows: [
+      [
+        'vCarousel({ slides, renderItem, autoplay, loop, arrows, dots })',
+        '创建走马灯，slides 提供数据，renderItem 负责渲染每一项。',
+        'vCarousel({ slides: [1, 2], renderItem: (item) => div(item) })'
+      ],
+      [
+        'carousel.slides(data, renderItem)',
+        '替换全部幻灯片，并回到第一项。',
+        'carousel.slides(cards, (card) => cardNode)'
+      ],
+      [
+        'carousel.active(index) / carousel.goTo(index)',
+        '切换到指定索引，loop 开启时自动取模。',
+        'carousel.active(2)'
+      ],
+      [
+        'carousel.on("change", handler)',
+        '监听当前项变化，event.detail 包含 index 和 count。',
+        'carousel.on("change", ({ detail }) => console.log(detail.index))'
+      ],
+      ['carousel.next() / carousel.prev()', '切换到下一项或上一项。', 'carousel.next()'],
+      ['carousel.loop(value)', '开启或关闭循环切换。', 'carousel.loop(true)'],
+      [
+        'carousel.autoplay(value) / start() / stop()',
+        '开启或关闭自动播放。',
+        'carousel.autoplay(true)'
+      ],
+      ['carousel.interval(value)', '设置自动播放间隔，单位毫秒。', 'carousel.interval(3000)'],
+      ['carousel.arrows(value)', '显示或隐藏左右箭头。', 'carousel.arrows(false)'],
+      ['carousel.dots(value)', '显示或隐藏底部指示点。', 'carousel.dots(false)'],
+      ['carousel.height(value)', '设置容器高度，支持任意 CSS 长度。', "carousel.height('260px')"]
+    ],
+    apiSignature: `const carousel = vCarousel({
+  slides: cards,
+  renderItem: (item) => div(item),
+  autoplay: true,
+  interval: 3000,
+  loop: true
+});`,
+    examples: [
+      {
+        component: CarouselBasicExample1,
+        description: 'slides 和 renderItem 驱动内容，箭头与指示点可以直接切换。',
+        id: 'basic',
+        imports: ['div', 'vCarousel', 'vCard'],
+        sourceTitle: '基础走马灯核心源码',
+        title: '基础走马灯'
+      },
+      {
+        component: CarouselAutoplayExample1,
+        description: 'autoplay 和 interval 控制自动轮播，悬停或聚焦时自动暂停。',
+        id: 'autoplay',
+        imports: ['vCarousel', 'vCard', 'vText'],
+        sourceTitle: '自动播放核心源码',
+        title: '自动播放'
+      },
+      {
+        component: CarouselLoopExample1,
+        description: 'loop 开启时首尾循环，关闭后到达边界会禁用对应箭头。',
+        id: 'loop',
+        imports: ['vButton', 'vCarousel', 'vCard', 'vText'],
+        sourceTitle: '循环切换核心源码',
+        title: '循环切换'
+      }
+    ],
+    examplesIntro: '下面三个示例分别展示基础走马灯、自动播放和循环切换。',
+    heading: 'vCarousel 走马灯',
+    intro:
+      '走马灯用于在有限空间内顺序展示图片、卡片或运营内容。vCarousel 把滑动切换、自动播放、循环、指示点和键盘交互收敛在同一个组件 API 中。',
+    key: 'carousel',
+    routeItem: 'data-display:10',
+    title: '走马灯',
+    usageItems: [
+      '首页横幅、服务卡片和运营位需要轮播展示时，用 vCarousel 承载多张内容。',
+      '需要自动轮播时开启 autoplay，用户悬停或聚焦时会自动暂停。',
+      '首尾需要连续播放时开启 loop，到底后需要停在边界时可关闭 loop。'
+    ]
   })
 });
 
@@ -636,6 +719,10 @@ export function ProgressDocumentationPage() {
 
 export function ScrollDocumentationPage() {
   return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.scroll);
+}
+
+export function CarouselDocumentationPage() {
+  return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.carousel);
 }
 
 function createDataDisplayDocsDefinition(config) {
@@ -2150,6 +2237,194 @@ function ScrollAsyncExample1() {
             button.on('click', () => {
               scroll.reset();
               scroll.check();
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function CarouselBasicExample1() {
+  const colors = ['#eff6ff', '#ecfdf5', '#fffbeb', '#fef2f2'];
+  const slides = [
+    { text: '统一管理服务生命周期、版本和负责人。', title: '服务治理' },
+    { text: '从构建到上线自动串联审批和回滚。', title: '发布流水线' },
+    { text: '汇总健康检查、指标和告警状态。', title: '运行监控' }
+  ];
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础走马灯');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('slides + renderItem 生成每一页，箭头和指示点负责切换。');
+            content.child(
+              vCarousel((carousel) => {
+                carousel.height('240px');
+                carousel.slides(slides, (item, index) =>
+                  div((block) => {
+                    block.className('carousel-demo-slide');
+                    block.styles({
+                      background: colors[index % colors.length],
+                      borderRadius: '8px',
+                      boxSizing: 'border-box',
+                      display: 'grid',
+                      alignContent: 'center',
+                      gap: '8px',
+                      height: '100%',
+                      padding: '24px'
+                    });
+                    block.h3(item.title);
+                    block.p(item.text);
+                  })
+                );
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function CarouselAutoplayExample1() {
+  const status = vText('当前：1 / 3');
+  const slides = ['自动播放 A', '自动播放 B', '自动播放 C'];
+  const colors = ['#eef2ff', '#ecfeff', '#fdf4ff'];
+  const carousel = vCarousel((carousel) => {
+    carousel.height('220px');
+    carousel.interval(2500);
+    carousel.slides(slides, (item, index) =>
+      div((block) => {
+        block.styles({
+          alignItems: 'center',
+          background: colors[index % colors.length],
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          height: '100%',
+          justifyContent: 'center',
+          fontSize: '18px',
+          fontWeight: '700'
+        });
+        block.text(item);
+      })
+    );
+    carousel.autoplay(true);
+    carousel.on('change', (event) => {
+      status.textContent(`当前：${event.detail.index + 1} / ${event.detail.count}`);
+    });
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('自动播放');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('autoplay 和 interval 控制自动轮播，悬停或聚焦时会暂停。');
+            content.child(carousel);
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('当前项');
+              row.spacer();
+              row.output((output) =>
+                output.attr('data-carousel-autoplay-status', 'true').child(status)
+              );
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.hstack((actions) => {
+            actions.style({ alignItems: 'center', gap: '10px' });
+            actions.vButton((button) => {
+              button.label('上一项');
+              button.on('click', () => carousel.prev());
+            });
+            actions.vButton((button) => {
+              button.label('下一项');
+              button.variant('primary');
+              button.on('click', () => carousel.next());
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function CarouselLoopExample1() {
+  const status = vText('loop：true');
+  const slides = ['循环 A', '循环 B', '循环 C'];
+  const carousel = vCarousel((carousel) => {
+    carousel.height('220px');
+    carousel.slides(slides, (item, index) =>
+      div((block) => {
+        block.styles({
+          alignItems: 'center',
+          background: index % 2 === 0 ? '#f0f9ff' : '#f8fafc',
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          height: '100%',
+          justifyContent: 'center',
+          fontSize: '18px',
+          fontWeight: '700'
+        });
+        block.text(item);
+      })
+    );
+    carousel.on('change', syncStatus);
+  });
+
+  function syncStatus() {
+    status.textContent(
+      `loop：${carousel.loop()}，当前 ${carousel.active() + 1} / ${carousel.slides().length}`
+    );
+  }
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('循环切换');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('loop 开启时首尾连续切换，关闭后到达边界会禁用箭头。');
+            content.child(carousel);
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('当前状态');
+              row.spacer();
+              row.output((output) =>
+                output.attr('data-carousel-loop-status', 'true').child(status)
+              );
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.hstack((actions) => {
+            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+            actions.vButton((button) => {
+              button.label('切换循环');
+              button.variant('secondary');
+              button.on('click', () => {
+                carousel.loop(!carousel.loop());
+                syncStatus();
+              });
+            });
+            actions.vButton((button) => {
+              button.label('上一项');
+              button.on('click', () => carousel.prev());
+            });
+            actions.vButton((button) => {
+              button.label('下一项');
+              button.variant('primary');
+              button.on('click', () => carousel.next());
             });
           });
         });

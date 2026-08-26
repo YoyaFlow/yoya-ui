@@ -148,6 +148,19 @@ const scrollSelectors = [
   '.yoya-vscroll-status'
 ];
 
+const carouselSelectors = [
+  '.yoya-vcarousel',
+  '.yoya-vcarousel-viewport',
+  '.yoya-vcarousel-track',
+  '.yoya-vcarousel-slide',
+  '.yoya-vcarousel-arrow',
+  '.yoya-vcarousel-arrow--prev',
+  '.yoya-vcarousel-arrow--next',
+  '.yoya-vcarousel-dots',
+  '.yoya-vcarousel-dot',
+  ".yoya-vcarousel-dot[aria-selected='true']"
+];
+
 describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
@@ -175,6 +188,12 @@ describe('CSS style contract', () => {
 
   it('covers the infinite scroll selectors', () => {
     scrollSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the carousel selectors', () => {
+    carouselSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

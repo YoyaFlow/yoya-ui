@@ -2,6 +2,7 @@ import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VAvatar, vAvatar } from './avatar.js';
 import { VBadge, vBadge } from './badge.js';
+import { VCarousel, vCarousel } from './carousel.js';
 import { VCode, vCode } from './code.js';
 import { VDetail, VDetailItem, vDetail, vDetailItem } from './detail.js';
 import { VPagination, vPagination } from './pagination.js';
@@ -23,6 +24,7 @@ import { VScroll, vScroll } from './vscroll.js';
 const dataDisplayFactories = {
   vAvatar,
   vBadge,
+  vCarousel,
   vCard,
   vCardBody,
   vCardFooter,
@@ -42,6 +44,7 @@ registerChildFactories(HtmlElementNode, dataDisplayFactories);
 export {
   VAvatar,
   VBadge,
+  VCarousel,
   VCard,
   VCardBody,
   VCardFooter,
@@ -57,6 +60,7 @@ export {
   VTreeNode,
   vAvatar,
   vBadge,
+  vCarousel,
   vCard,
   vCardBody,
   vCardFooter,

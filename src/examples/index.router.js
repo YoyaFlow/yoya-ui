@@ -18,6 +18,7 @@ import { ButtonDocumentationPage } from './button-docs.js';
 import {
   AvatarDocumentationPage,
   BadgeDocumentationPage,
+  CarouselDocumentationPage,
   DetailDocumentationPage,
   ProgressDocumentationPage,
   ScrollDocumentationPage,
@@ -139,7 +140,8 @@ const componentMenuSections = [
       { label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
       { label: '图表', details: 'vChart' },
       { label: '进度条', details: 'vProgress' },
-      { label: '滚动组件', details: 'vScroll' }
+      { label: '滚动组件', details: 'vScroll' },
+      { label: '走马灯', details: 'vCarousel' }
     ]
   },
   {
@@ -213,7 +215,8 @@ const dataDisplayDocumentationPages = Object.freeze({
   4: TableDocumentationPage,
   5: TreeDocumentationPage,
   8: ProgressDocumentationPage,
-  9: ScrollDocumentationPage
+  9: ScrollDocumentationPage,
+  10: CarouselDocumentationPage
 });
 
 const locale = createI18n({

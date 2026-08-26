@@ -121,7 +121,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(52);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(53);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -331,6 +331,43 @@ describe('renderExamplesIndex', () => {
 
     blockButton.click();
     expect(loopDemo.querySelector('.yoya-vscroll').dataset.blocked).toBe('true');
+  });
+
+  it('renders the carousel docs with API and demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/10');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('走马灯');
+    });
+
+    const page = document.querySelector('[data-data-display-docs="carousel"]');
+    const demos = page.querySelectorAll('[data-data-display-demo]');
+    const basic = page.querySelector('[data-data-display-demo="basic"]');
+    const loopDemo = page.querySelector('[data-data-display-demo="loop"]');
+
+    expect(page.querySelector('h1').textContent).toBe('vCarousel 走马灯');
+    expect(page.textContent).toContain('carousel.autoplay(value)');
+    expect(demos).toHaveLength(3);
+    expect(basic.querySelector('.yoya-vcarousel')).not.toBeNull();
+    expect(basic.querySelector('[data-source-example]').textContent).toContain(
+      'CarouselBasicExample1'
+    );
+
+    const toggleLoopButton = [...loopDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('切换循环')
+    );
+    const nextButton = [...loopDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('下一项')
+    );
+
+    toggleLoopButton.click();
+    nextButton.click();
+
+    expect(loopDemo.querySelector('.yoya-vcarousel').dataset.loop).toBeUndefined();
+    expect(loopDemo.querySelector('[data-carousel-loop-status]').textContent).toContain(
+      '当前 2 / 3'
+    );
   });
 
   it('renders the third-party ECharts demo page', async () => {

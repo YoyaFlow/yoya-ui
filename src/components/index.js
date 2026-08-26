@@ -5,6 +5,7 @@ export * from '../feedback/tooltip.js';
 export * from '../form/index.js';
 export * from '../data-display/avatar.js';
 export * from '../data-display/badge.js';
+export * from '../data-display/carousel.js';
 export * from '../data-display/surface.js';
 export * from '../data-display/detail.js';
 export * from '../data-display/code.js';

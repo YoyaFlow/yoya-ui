@@ -63,6 +63,7 @@
 8. 图表 vChart
 9. 进度条 vProgress
 10. 滚动组件 vScroll
+11. 走马灯 vCarousel
 
 ### 异步
 

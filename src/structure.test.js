@@ -54,6 +54,8 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./data-display/progress.test.js')).toBe(true);
     expect(existsInSrc('./data-display/vscroll.js')).toBe(true);
     expect(existsInSrc('./data-display/vscroll.test.js')).toBe(true);
+    expect(existsInSrc('./data-display/carousel.js')).toBe(true);
+    expect(existsInSrc('./data-display/carousel.test.js')).toBe(true);
     expect(existsInSrc('./data-display/surface.js')).toBe(true);
     expect(existsInSrc('./data-display/table.js')).toBe(true);
     expect(existsInSrc('./data-display/tree.js')).toBe(true);
@@ -178,6 +180,8 @@ describe('foundation module structure', () => {
     expect(api.VProgress).toBe(dataDisplay.VProgress);
     expect(api.vScroll).toBe(dataDisplay.vScroll);
     expect(api.VScroll).toBe(dataDisplay.VScroll);
+    expect(api.vCarousel).toBe(dataDisplay.vCarousel);
+    expect(api.VCarousel).toBe(dataDisplay.VCarousel);
     expect(api.vAvatar).toBe(dataDisplay.vAvatar);
     expect(api.VAvatar).toBe(dataDisplay.VAvatar);
     expect(api.vChart).toBe(dataDisplay.vChart);
@@ -196,6 +200,7 @@ describe('foundation module structure', () => {
     expect(api.vTreeNode).toBe(components.vTreeNode);
     expect(api.vProgress).toBe(components.vProgress);
     expect(api.vScroll).toBe(components.vScroll);
+    expect(api.vCarousel).toBe(components.vCarousel);
     expect(api.vTooltip).toBe(components.vTooltip);
     expect(api.toast).toBe(components.toast);
     expect(coreEntry.div).toBe(html.div);
@@ -212,6 +217,7 @@ describe('foundation module structure', () => {
     expect(uiEntry.toast).toBe(feedback.toast);
     expect(uiEntry.vTooltip).toBe(feedback.vTooltip);
     expect(uiEntry.vScroll).toBe(dataDisplay.vScroll);
+    expect(uiEntry.vCarousel).toBe(dataDisplay.vCarousel);
     expect(uiEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(uiEntry.vUpload).toBe(form.vUpload);
     expect(uiEntry.vRate).toBe(form.vRate);
