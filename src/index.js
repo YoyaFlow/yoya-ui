@@ -8,4 +8,5 @@ export * from './feedback/index.js';
 export * from './form/index.js';
 export * from './data-display/index.js';
 export * from './async/index.js';
+export * from './i18n/index.js';
 export * from './router/index.js';

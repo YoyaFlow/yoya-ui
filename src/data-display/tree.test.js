@@ -97,6 +97,28 @@ describe('vTree', () => {
     expect(toggleIcon).toHaveBeenCalledWith(expect.anything(), true);
   });
 
+  it('supports separate collapsed and expanded toggle icons', () => {
+    const tree = vTree({
+      nodes: [
+        {
+          children: [{ id: 'leaf', label: '子节点' }],
+          id: 'root',
+          label: '根节点'
+        }
+      ]
+    });
+    tree.toggleIcon(div('关'), div('开'));
+    const element = tree.render().renderDom();
+    const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+
+    expect(rootToggle.textContent).toBe('关');
+
+    rootToggle.click();
+
+    const expandedToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    expect(expandedToggle.textContent).toBe('开');
+  });
+
   it('toggles expandable nodes that have no children', () => {
     const tree = vTree({
       nodes: [{ expandable: true, id: 'empty', label: '空文件夹' }]

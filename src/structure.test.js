@@ -117,6 +117,8 @@ describe('foundation module structure', () => {
     expect(api.div).toBe(html.div);
     expect(api.svg).toBe(svg.svg);
     expect(api.flex).toBeTypeOf('function');
+    expect(api.mobileLayout).toBeTypeOf('function');
+    expect(api.vMobileLayout).toBeTypeOf('function');
     expect(api.router).toBe(routerModule.router);
     expect(api.createRouter).toBe(routerModule.createRouter);
     expect(api.Router).toBe(routerModule.Router);
@@ -180,6 +182,7 @@ describe('foundation module structure', () => {
     expect(uiEntry.SearchOutlined).toBeTypeOf('function');
     expect(uiEntry.vButton).toBe(actions.vButton);
     expect(uiEntry.flex).toBeTypeOf('function');
+    expect(uiEntry.mobileLayout).toBeTypeOf('function');
     expect(uiEntry.toast).toBe(feedback.toast);
     expect(uiEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(uiEntry.vUpload).toBe(form.vUpload);

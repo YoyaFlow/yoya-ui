@@ -193,6 +193,9 @@ const svgChildElementDefinitions = [
 function createSvgElementFactory(tagName) {
   return function svgElementFactory(...setups) {
     const node = new SvgElementNode(tagName);
+    if (tagName === 'svg') {
+      node.style('display', 'block');
+    }
 
     setups.forEach((setup) => {
       if (setup !== null && setup !== undefined) {

@@ -321,6 +321,10 @@ export function VPagination(first = null, second = null, third = null) {
         state.page = normalizePageValue(page);
       }
 
+      if (totalPages === undefined && state.total > 0) {
+        state.totalPages = Math.max(1, Math.ceil(state.total / state.pageSize));
+      }
+
       if (typeof change === 'function') {
         changeHandler = change;
       } else if (typeof onChange === 'function') {

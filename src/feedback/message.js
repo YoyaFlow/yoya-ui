@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { vText } from '../core/index.js';
+import { CloseOutlined } from '../svg/icons.js';
 import {
   componentClass,
   createComponentFactory,
@@ -36,12 +37,34 @@ export class VMessage extends HtmlElementNode {
       .style('display', 'none');
     this._countdownText = vText('');
     this._countdownBox.child(this._countdownText);
-    this._closeButton = new HtmlElementNode('button')
+    this._closeButton = new HtmlElementNode('span')
       .className('yoya-vmessage-close')
-      .attr({ type: 'button', 'aria-label': 'Close message' })
+      .attr({ role: 'button', tabindex: '0', 'aria-label': '关闭消息' })
+      .styles({
+        alignItems: 'center',
+        background: 'transparent',
+        border: '0',
+        borderRadius: '50%',
+        color: 'inherit',
+        cursor: 'pointer',
+        display: 'inline-flex',
+        flexShrink: '0',
+        height: '20px',
+        justifyContent: 'center',
+        marginLeft: 'auto',
+        opacity: '0.72',
+        padding: '0',
+        width: '20px'
+      })
       .style('display', 'none')
-      .text('x')
-      .on('click', () => this.close());
+      .child(CloseOutlined().styles({ height: '14px', width: '14px' }))
+      .on('click', () => this.close())
+      .on('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          this.close();
+        }
+      });
     this._progressBar = new HtmlElementNode('span')
       .className('yoya-vmessage-countdown-bar')
       .attr('aria-hidden', 'true')

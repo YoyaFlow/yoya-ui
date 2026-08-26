@@ -1,5 +1,5 @@
-import { ViewNode } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { ViewNode } from '../core/node.js';
 import {
   applyComponentArguments,
   componentClass,
@@ -14,6 +14,27 @@ import {
 
 let treeSequence = 0;
 let treeNodeSequence = 0;
+
+class TemplateIconNode extends ViewNode {
+  constructor(html) {
+    super();
+    this._html = html;
+  }
+
+  renderDom() {
+    if (!this._el) {
+      const template = document.createElement('template');
+      template.innerHTML = this._html;
+      this._el = template.content.firstElementChild;
+    }
+
+    return this._el;
+  }
+
+  toHTML() {
+    return this._html;
+  }
+}
 
 export class VTreeNode {
   constructor(setup = null) {
@@ -552,12 +573,24 @@ export function VTree(first = null, second = null, third = null) {
 
       return api.expandNode(id, !state.expandedKeys.has(id));
     },
-    toggleIcon(value) {
-      if (value === undefined) {
+    toggleIcon(value, expandedValue) {
+      if (value === undefined && expandedValue === undefined) {
         return state.toggleIcon;
       }
 
-      state.toggleIcon = value;
+      if (expandedValue !== undefined) {
+        state.toggleIcon = {
+          collapsed: normalizeToggleIconValue(value),
+          expanded: normalizeToggleIconValue(expandedValue)
+        };
+      } else if (isPlainObject(value) && 'collapsed' in value) {
+        state.toggleIcon = {
+          collapsed: normalizeToggleIconValue(value.collapsed),
+          expanded: normalizeToggleIconValue(value.expanded)
+        };
+      } else {
+        state.toggleIcon = normalizeToggleIconValue(value);
+      }
       sync();
       return api;
     },
@@ -871,14 +904,21 @@ export function VTree(first = null, second = null, third = null) {
         justifyContent: 'center',
         lineHeight: '1'
       });
+      const toggleIcon = isPlainObject(state.toggleIcon)
+        ? expanded
+          ? state.toggleIcon.expanded
+          : state.toggleIcon.collapsed
+        : state.toggleIcon;
 
-      if (typeof state.toggleIcon === 'function') {
-        const result = state.toggleIcon(iconBox, expanded);
+      if (typeof toggleIcon === 'function') {
+        const result = toggleIcon(iconBox, expanded);
         if (result && result !== iconBox) {
           iconBox.child(result);
         }
+      } else if (typeof toggleIcon === 'string') {
+        iconBox.child(new TemplateIconNode(toggleIcon));
       } else {
-        replaceChildren(iconBox, normalizeChildren(state.toggleIcon));
+        replaceChildren(iconBox, normalizeChildren(toggleIcon));
       }
 
       toggle.child(iconBox);
@@ -1143,6 +1183,14 @@ export function vTree(first = null, second = null, third = null) {
 
 export function vTreeNode(setup = null) {
   return setup instanceof VTreeNode ? setup : new VTreeNode(setup);
+}
+
+function normalizeToggleIconValue(value) {
+  if (value && typeof value.toHTML === 'function') {
+    return value.toHTML();
+  }
+
+  return value;
 }
 
 function normalizeTreeNode(value, index, parentId = null) {

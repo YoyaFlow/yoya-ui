@@ -242,4 +242,95 @@ describe('I18n', () => {
 
     expect(node.textContent()).toBe('你好，Ada');
   });
+
+  it('persists language through localStorage with storageKey', () => {
+    const storageKey = 'yoya-ui:test-language';
+    localStorage.removeItem(storageKey);
+
+    const first = yoya.createI18n({
+      language: 'zh-CN',
+      storageKey,
+      messages: {
+        'zh-CN': { greeting: '你好' },
+        en: { greeting: 'Hello' }
+      }
+    });
+
+    first.setLanguage('en');
+
+    expect(localStorage.getItem(storageKey)).toBe('en');
+
+    const second = yoya.createI18n({
+      language: 'zh-CN',
+      storageKey
+    });
+
+    expect(second.getLanguage()).toBe('en');
+
+    second.clearPersistedLanguage();
+
+    expect(localStorage.getItem(storageKey)).toBeNull();
+
+    const third = yoya.createI18n({
+      language: 'zh-CN',
+      storageKey
+    });
+
+    expect(third.getLanguage()).toBe('zh-CN');
+  });
+
+  it('supports custom storage adapters', () => {
+    const values = new Map();
+    const storage = {
+      getItem(key) {
+        return values.get(key) ?? null;
+      },
+      setItem(key, value) {
+        values.set(key, value);
+      },
+      removeItem(key) {
+        values.delete(key);
+      }
+    };
+
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      storage,
+      storageKey: 'language'
+    });
+
+    locale.setLanguage('en');
+
+    const restored = yoya.createI18n({
+      language: 'zh-CN',
+      storage,
+      storageKey: 'language'
+    });
+
+    expect(restored.getLanguage()).toBe('en');
+  });
+
+  it('ignores unavailable storage without throwing', () => {
+    const storage = {
+      getItem() {
+        throw new Error('storage blocked');
+      },
+      setItem() {
+        throw new Error('storage blocked');
+      },
+      removeItem() {
+        throw new Error('storage blocked');
+      }
+    };
+
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      storage,
+      storageKey: 'language'
+    });
+
+    expect(locale.getLanguage()).toBe('zh-CN');
+    expect(() => locale.setLanguage('en')).not.toThrow();
+    expect(locale.getLanguage()).toBe('en');
+  });
 });

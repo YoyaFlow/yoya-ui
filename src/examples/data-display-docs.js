@@ -6,6 +6,8 @@ import {
   vButton,
   vCard,
   vDetail,
+  FolderOpenOutlined,
+  FolderOutlined,
   vPagination,
   vTable,
   vText,
@@ -346,9 +348,9 @@ const dataDisplayDocsDefinitions = Object.freeze({
         'icon: (icon) => icon.svg(...)'
       ],
       [
-        'tree.toggleIcon(callback)',
-        '自定义展开/收起图标，回调接收 (iconBox, expanded)。',
-        'tree.toggleIcon((icon, expanded) => ...)'
+        'tree.toggleIcon(collapsedIcon, expandedIcon)',
+        '自定义收起和展开图标，也支持单个图标或回调。',
+        'tree.toggleIcon(FolderOutlined(), FolderOpenOutlined())'
       ],
       [
         'tree.vTreeNode(setup)',
@@ -406,7 +408,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeFileManagerExample1,
         description: '目录树和文件详情并排展示，选择节点后显示类型、大小和更新时间。',
         id: 'file-manager',
-        imports: ['vButton', 'vCard', 'vText', 'vTree'],
+        imports: ['FolderOpenOutlined', 'FolderOutlined', 'vButton', 'vCard', 'vText', 'vTree'],
         sourceTitle: '文件管理器核心源码',
         title: '文件管理器'
       },
@@ -1235,44 +1237,44 @@ function TablePaginationExample1() {
 
 function TreeBasicExample1() {
   const status = vText('当前：未选择');
-  const tree = vTree({
-    ariaLabel: '服务目录',
-    nodes: [
-      {
-        children: [
-          { id: 'web', icon: 'W', label: 'Web 门户' },
-          { id: 'console', icon: 'C', label: '控制台' }
-        ],
-        expanded: true,
-        icon: 'F',
-        id: 'frontend',
-        label: '前端服务'
-      },
-      {
-        children: [
-          { id: 'api', icon: 'A', label: 'API 网关' },
-          { id: 'worker', icon: 'T', label: '任务 Worker' },
-          { id: 'scheduler', icon: 'S', label: '调度器' }
-        ],
-        icon: 'B',
-        id: 'backend',
-        label: '后端服务'
-      },
-      {
-        children: [
-          { id: 'database', icon: 'D', label: '数据库' },
-          { id: 'object-store', icon: 'O', label: '对象存储' }
-        ],
-        icon: 'R',
-        id: 'storage',
-        label: '存储'
-      }
-    ],
-    change({ label, type }) {
+  const tree = vTree((root) => {
+    root.ariaLabel('服务目录').change(({ label, type }) => {
       if (type === 'select') {
         status.textContent(`当前：${label}`);
       }
-    }
+    });
+    root.vTreeNode((node) =>
+      node
+        .id('frontend')
+        .label('前端服务')
+        .icon('F')
+        .expanded(true)
+        .child([
+          { id: 'web', icon: 'W', label: 'Web 门户' },
+          { id: 'console', icon: 'C', label: '控制台' }
+        ])
+    );
+    root.vTreeNode((node) =>
+      node
+        .id('backend')
+        .label('后端服务')
+        .icon('B')
+        .child([
+          { id: 'api', icon: 'A', label: 'API 网关' },
+          { id: 'worker', icon: 'T', label: '任务 Worker' },
+          { id: 'scheduler', icon: 'S', label: '调度器' }
+        ])
+    );
+    root.vTreeNode((node) =>
+      node
+        .id('storage')
+        .label('存储')
+        .icon('R')
+        .child([
+          { id: 'database', icon: 'D', label: '数据库' },
+          { id: 'object-store', icon: 'O', label: '对象存储' }
+        ])
+    );
   });
 
   return {
@@ -1282,45 +1284,44 @@ function TreeBasicExample1() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.child(tree);
-            content.hstack((row) => {
+            content.child(tree).hstack((row) => {
               row.style({ alignItems: 'center', gap: '10px' });
               row.span('当前选择');
               row.spacer();
-              row.output((output) => {
-                output.attr('data-tree-demo-status', 'true');
-                output.child(status);
-              });
+              row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
             });
           });
         });
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('展开全部');
-              button.variant('secondary');
-              button.on('click', () => {
-                tree.expandAll();
-                status.textContent('已展开全部节点');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('收起全部');
-              button.variant('secondary');
-              button.on('click', () => {
-                tree.collapseAll();
-                status.textContent('已收起全部节点');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('清除选择');
-              button.variant('ghost');
-              button.on('click', () => {
-                tree.selectedKeys([]);
-                status.textContent('当前：未选择');
-              });
-            });
+            actions.vButton((button) =>
+              button
+                .label('展开全部')
+                .variant('secondary')
+                .on('click', () => {
+                  tree.expandAll();
+                  status.textContent('已展开全部节点');
+                })
+            );
+            actions.vButton((button) =>
+              button
+                .label('收起全部')
+                .variant('secondary')
+                .on('click', () => {
+                  tree.collapseAll();
+                  status.textContent('已收起全部节点');
+                })
+            );
+            actions.vButton((button) =>
+              button
+                .label('清除选择')
+                .variant('ghost')
+                .on('click', () => {
+                  tree.selectedKeys([]);
+                  status.textContent('当前：未选择');
+                })
+            );
           });
         });
       });
@@ -1330,48 +1331,49 @@ function TreeBasicExample1() {
 
 function TreeCheckableExample1() {
   const status = vText('已选 0 项');
-  const tree = vTree({
-    ariaLabel: '资源选择',
-    checkable: true,
-    nodes: [
-      {
-        children: [
+  const tree = vTree((root) => {
+    root
+      .ariaLabel('资源选择')
+      .checkable(true)
+      .change(({ checkedKeys, type }) => {
+        if (type === 'check') {
+          status.textContent(`已选 ${checkedKeys.length} 项`);
+        }
+      });
+    root.vTreeNode((node) =>
+      node
+        .id('infra')
+        .label('基础设施')
+        .expanded(true)
+        .child([
           {
+            id: 'compute',
+            label: '计算资源',
+            expanded: true,
             children: [
               { id: 'api-gateway', label: 'API 网关' },
               { id: 'worker-pool', label: 'Worker 池' }
-            ],
-            expanded: true,
-            id: 'compute',
-            label: '计算资源'
+            ]
           },
           {
+            id: 'network',
+            label: '网络',
             children: [
               { id: 'vpc', label: 'VPC' },
               { id: 'load-balancer', label: '负载均衡' }
-            ],
-            id: 'network',
-            label: '网络'
+            ]
           }
-        ],
-        expanded: true,
-        id: 'infra',
-        label: '基础设施'
-      },
-      {
-        children: [
+        ])
+    );
+    root.vTreeNode((node) =>
+      node
+        .id('security')
+        .label('安全合规')
+        .child([
           { id: 'readonly-log', label: '审计日志' },
           { id: 'backup', label: '备份策略' }
-        ],
-        id: 'security',
-        label: '安全合规'
-      }
-    ],
-    change({ checkedKeys, type }) {
-      if (type === 'check') {
-        status.textContent(`已选 ${checkedKeys.length} 项`);
-      }
-    }
+        ])
+    );
   });
 
   return {
@@ -1381,31 +1383,29 @@ function TreeCheckableExample1() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.child(tree);
-            content.hstack((row) => {
+            content.child(tree).hstack((row) => {
               row.style({ alignItems: 'center', gap: '10px' });
               row.span('勾选状态');
               row.spacer();
-              row.output((output) => {
-                output.attr('data-tree-check-status', 'true');
-                output.child(status);
-              });
+              row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
             });
           });
         });
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('全选');
-              button.variant('primary');
-              button.on('click', () => tree.checkAll(true));
-            });
-            actions.vButton((button) => {
-              button.label('清空');
-              button.variant('secondary');
-              button.on('click', () => tree.checkAll(false));
-            });
+            actions.vButton((button) =>
+              button
+                .label('全选')
+                .variant('primary')
+                .on('click', () => tree.checkAll(true))
+            );
+            actions.vButton((button) =>
+              button
+                .label('清空')
+                .variant('secondary')
+                .on('click', () => tree.checkAll(false))
+            );
           });
         });
       });
@@ -1425,88 +1425,65 @@ function TreeFileManagerExample1() {
     'README.md': { size: '12 KB', type: 'Markdown', updated: '8 月 23 日' },
     'tree.js': { size: '18 KB', type: 'JavaScript', updated: '今天 14:32' }
   };
-  const folderToggleIcon = (icon, expanded) => {
-    icon.svg((svg) => {
-      svg.attr({
-        fill: 'none',
-        stroke: '#1f2937',
-        'stroke-linecap': 'round',
-        'stroke-linejoin': 'round',
-        'stroke-width': '2',
-        viewBox: '0 0 24 24'
-      });
-      svg.styles({ display: 'block', height: '18px', width: '18px' });
-      svg.path({
-        d: expanded
-          ? 'm6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2'
-          : 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'
-      });
-    });
-  };
+  const folderIcon = FolderOutlined().styles({ height: '18px', width: '18px' });
+  const folderOpenIcon = FolderOpenOutlined().styles({ height: '18px', width: '18px' });
   const tree = vTree((root) => {
-    root.ariaLabel('文件目录');
-    root.toggleIcon(folderToggleIcon);
-    root.change(({ id, label, node, type }) => {
-      if (type !== 'select') {
-        return;
-      }
+    root
+      .ariaLabel('文件目录')
+      .toggleIcon(folderIcon, folderOpenIcon)
+      .change(({ id, label, node, type }) => {
+        if (type !== 'select') {
+          return;
+        }
 
-      const meta = fileMeta[id] ?? {
-        size: '--',
-        type: node?.children?.length ? '文件夹' : '文件',
-        updated: '--'
-      };
+        const meta = fileMeta[id] ?? {
+          size: '--',
+          type: node?.children?.length ? '文件夹' : '文件',
+          updated: '--'
+        };
 
-      fileName.textContent(label);
-      fileType.textContent(meta.type);
-      fileSize.textContent(meta.size);
-      fileUpdated.textContent(meta.updated);
-      status.textContent(`当前：${label}`);
-    });
-    root.vTreeNode((node) => {
-      node.id('projects');
-      node.label('projects');
-      node.expanded(true);
-      node.vTreeNode((child) => {
-        child.id('yoya-ui');
-        child.label('yoya-ui');
-        child.expanded(true);
-        child.vTreeNode((folder) => {
-          folder.id('src');
-          folder.label('src');
-          folder.expanded(true);
-          folder.vTreeNode((emptyFolder) => {
-            emptyFolder.expandable(true);
-            emptyFolder.id('components');
-            emptyFolder.label('components');
-          });
-          folder.vTreeNode((file) => {
-            file.id('tree.js');
-            file.label('tree.js');
-          });
-        });
-        child.vTreeNode((file) => {
-          file.id('README.md');
-          file.label('README.md');
-        });
+        fileName.textContent(label);
+        fileType.textContent(meta.type);
+        fileSize.textContent(meta.size);
+        fileUpdated.textContent(meta.updated);
+        status.textContent(`当前：${label}`);
       });
-      node.vTreeNode((folder) => {
-        folder.id('design');
-        folder.label('design');
-        folder.vTreeNode((file) => {
-          file.id('logo.svg');
-          file.label('logo.svg');
-        });
-      });
-    });
-    root.vTreeNode((folder) => {
-      folder.id('documents');
-      folder.label('documents');
-      folder.vTreeNode((file) => {
-        file.id('release-notes.md');
-        file.label('release-notes.md');
-      });
-    });
+    root.vTreeNode((node) =>
+      node
+        .id('projects')
+        .label('projects')
+        .expanded(true)
+        .child([
+          (child) =>
+            child
+              .id('yoya-ui')
+              .label('yoya-ui')
+              .expanded(true)
+              .child([
+                (folder) =>
+                  folder
+                    .id('src')
+                    .label('src')
+                    .expanded(true)
+                    .child([
+                      { id: 'components', label: 'components', expandable: true },
+                      { id: 'tree.js', label: 'tree.js' }
+                    ]),
+                { id: 'README.md', label: 'README.md' }
+              ]),
+          (folder) =>
+            folder
+              .id('design')
+              .label('design')
+              .child([{ id: 'logo.svg', label: 'logo.svg' }])
+        ])
+    );
+    root.vTreeNode((folder) =>
+      folder
+        .id('documents')
+        .label('documents')
+        .child([{ id: 'release-notes.md', label: 'release-notes.md' }])
+    );
   });
 
   return {
@@ -1530,12 +1507,10 @@ function TreeFileManagerExample1() {
                 padding: '16px'
               });
               panel.h3((heading) => {
-                heading.attr('data-tree-file-name', 'true');
-                heading.child(fileName);
+                heading.attr('data-tree-file-name', 'true').child(fileName);
               });
               panel.p((description) => {
-                description.attr('data-tree-file-status', 'true');
-                description.child(status);
+                description.attr('data-tree-file-status', 'true').child(status);
               });
               panel.div((metaRow) => {
                 metaRow.style({
@@ -1548,24 +1523,21 @@ function TreeFileManagerExample1() {
                   item.style({ display: 'grid', gap: '2px' });
                   item.span('类型');
                   item.strong((value) => {
-                    value.attr('data-tree-file-type', 'true');
-                    value.child(fileType);
+                    value.attr('data-tree-file-type', 'true').child(fileType);
                   });
                 });
                 metaRow.div((item) => {
                   item.style({ display: 'grid', gap: '2px' });
                   item.span('大小');
                   item.strong((value) => {
-                    value.attr('data-tree-file-size', 'true');
-                    value.child(fileSize);
+                    value.attr('data-tree-file-size', 'true').child(fileSize);
                   });
                 });
                 metaRow.div((item) => {
                   item.style({ display: 'grid', gap: '2px' });
                   item.span('更新时间');
                   item.strong((value) => {
-                    value.attr('data-tree-file-updated', 'true');
-                    value.child(fileUpdated);
+                    value.attr('data-tree-file-updated', 'true').child(fileUpdated);
                   });
                 });
               });
@@ -1575,21 +1547,24 @@ function TreeFileManagerExample1() {
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('新建文件夹');
-              button.variant('secondary');
-              button.on('click', () => status.textContent('已创建新文件夹'));
-            });
-            actions.vButton((button) => {
-              button.label('上传文件');
-              button.variant('primary');
-              button.on('click', () => status.textContent('已开始上传文件'));
-            });
-            actions.vButton((button) => {
-              button.label('刷新');
-              button.variant('ghost');
-              button.on('click', () => status.textContent('目录已刷新'));
-            });
+            actions.vButton((button) =>
+              button
+                .label('新建文件夹')
+                .variant('secondary')
+                .on('click', () => status.textContent('已创建新文件夹'))
+            );
+            actions.vButton((button) =>
+              button
+                .label('上传文件')
+                .variant('primary')
+                .on('click', () => status.textContent('已开始上传文件'))
+            );
+            actions.vButton((button) =>
+              button
+                .label('刷新')
+                .variant('ghost')
+                .on('click', () => status.textContent('目录已刷新'))
+            );
           });
         });
       });
@@ -1599,77 +1574,77 @@ function TreeFileManagerExample1() {
 
 function TreeBuilderExample1() {
   const status = vText('当前：未选择');
-  const addRowAction = (node) => {
-    node.actions((actions) => {
-      actions.vButton((button) => {
-        button.label('⋯');
-        button.size('small');
-        button.variant('ghost');
-        button.attr({
-          'aria-label': `扩展操作：${node.label()}`,
-          'data-tree-builder-action': node.id()
-        });
-        button.on('click', () => status.textContent(`操作：${node.label()}`));
-      });
-    });
-  };
+  const addRowAction = (node) =>
+    node.actions((actions) =>
+      actions.vButton((button) =>
+        button
+          .label('⋯')
+          .size('small')
+          .variant('ghost')
+          .attr({
+            'aria-label': `扩展操作：${node.label()}`,
+            'data-tree-builder-action': node.id()
+          })
+          .on('click', () => status.textContent(`操作：${node.label()}`))
+      )
+    );
+  const leaf =
+    (id, label, { icon = label[0], selected = false } = {}) =>
+    (node) => {
+      node
+        .id(id)
+        .label(label)
+        .icon((iconBox) => iconBox.text(icon));
+      if (selected) {
+        node.selected(true);
+      }
+      addRowAction(node);
+    };
   const tree = vTree((root) => {
-    root.ariaLabel('权限目录');
-    root.change(({ label, type }) => {
+    root.ariaLabel('权限目录').change(({ label, type }) => {
       if (type === 'select') {
         status.textContent(`当前：${label}`);
       }
     });
     root.vTreeNode((node) => {
-      node.id('organization');
-      node.label('组织架构');
-      node.expanded(true);
-      node.icon((icon) => icon.text('O'));
-      node.vTreeNode((group) => {
-        group.id('platform');
-        group.label('平台组');
-        group.expanded(true);
-        group.icon((icon) => icon.text('P'));
-        group.vTreeNode((item) => {
-          item.id('sre');
-          item.label('SRE');
-          item.selected(true);
-          item.icon((icon) => icon.text('S'));
-          addRowAction(item);
-        });
-        group.vTreeNode((item) => {
-          item.id('qa');
-          item.label('QA');
-          item.icon((icon) => icon.text('Q'));
-          addRowAction(item);
-        });
-        addRowAction(group);
-      });
-      node.vTreeNode((group) => {
-        group.id('business');
-        group.label('业务组');
-        group.expanded(true);
-        group.icon((icon) => icon.text('B'));
-        group.vTreeNode((item) => {
-          item.id('finance');
-          item.label('财务');
-          item.icon((icon) => icon.text('F'));
-          addRowAction(item);
-        });
-        group.vTreeNode((item) => {
-          item.id('operations');
-          item.label('运营');
-          item.icon((icon) => icon.text('O'));
-          addRowAction(item);
-        });
-        addRowAction(group);
-      });
+      node
+        .id('organization')
+        .label('组织架构')
+        .expanded(true)
+        .icon((icon) => icon.text('O'))
+        .child([
+          (group) => {
+            group
+              .id('platform')
+              .label('平台组')
+              .expanded(true)
+              .icon((icon) => icon.text('P'))
+              .child([
+                leaf('sre', 'SRE', { icon: 'S', selected: true }),
+                leaf('qa', 'QA', { icon: 'Q' })
+              ]);
+            addRowAction(group);
+          },
+          (group) => {
+            group
+              .id('business')
+              .label('业务组')
+              .expanded(true)
+              .icon((icon) => icon.text('B'))
+              .child([
+                leaf('finance', '财务', { icon: 'F' }),
+                leaf('operations', '运营', { icon: 'O' })
+              ]);
+            addRowAction(group);
+          }
+        ]);
       addRowAction(node);
     });
     root.vTreeNode((node) => {
-      node.id('security');
-      node.label('安全中心');
-      node.icon((icon) => icon.text('S'));
+      node
+        .id('security')
+        .label('安全中心')
+        .icon((icon) => icon.text('S'));
       addRowAction(node);
     });
   });
@@ -1681,31 +1656,29 @@ function TreeBuilderExample1() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.child(tree);
-            content.hstack((row) => {
+            content.child(tree).hstack((row) => {
               row.style({ alignItems: 'center', gap: '10px' });
               row.span('当前选择');
               row.spacer();
-              row.output((output) => {
-                output.attr('data-tree-builder-status', 'true');
-                output.child(status);
-              });
+              row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
             });
           });
         });
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('展开全部');
-              button.variant('secondary');
-              button.on('click', () => tree.expandAll());
-            });
-            actions.vButton((button) => {
-              button.label('收起全部');
-              button.variant('secondary');
-              button.on('click', () => tree.collapseAll());
-            });
+            actions.vButton((button) =>
+              button
+                .label('展开全部')
+                .variant('secondary')
+                .on('click', () => tree.expandAll())
+            );
+            actions.vButton((button) =>
+              button
+                .label('收起全部')
+                .variant('secondary')
+                .on('click', () => tree.collapseAll())
+            );
           });
         });
       });

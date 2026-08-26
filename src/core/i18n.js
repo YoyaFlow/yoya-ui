@@ -1,12 +1,15 @@
 import { VTextNode } from './node.js';
 
 /**
- * I18n 是最小国际化管理器：负责语言、词典、订阅通知和文本翻译。
+ * I18n 是最小国际化管理器：负责语言、词典、订阅通知、持久化和文本翻译。
  */
 export class I18n {
   constructor(options = {}) {
-    this._language = options.language || 'zh-CN';
-    this._fallbackLanguage = options.fallbackLanguage || this._language;
+    const defaultLanguage = options.language || 'zh-CN';
+    this._storage = resolveStorage(options.storage);
+    this._storageKey = options.storageKey || null;
+    this._fallbackLanguage = options.fallbackLanguage || defaultLanguage;
+    this._language = this._readStoredLanguage(defaultLanguage);
     this._messages = {};
     this._listeners = new Set();
 
@@ -23,6 +26,7 @@ export class I18n {
     }
 
     this._language = language;
+    this._persistLanguage();
     this._notify();
     return this;
   }
@@ -38,6 +42,20 @@ export class I18n {
 
     this._fallbackLanguage = language;
     this._notify();
+    return this;
+  }
+
+  clearPersistedLanguage() {
+    if (!this._storageKey) {
+      return this;
+    }
+
+    try {
+      this._storage.removeItem(this._storageKey);
+    } catch {
+      // Storage 不可用时保持静默，不阻止界面切换。
+    }
+
     return this;
   }
 
@@ -101,6 +119,30 @@ export class I18n {
     return () => {
       this._listeners.delete(listener);
     };
+  }
+
+  _readStoredLanguage(defaultLanguage) {
+    if (!this._storageKey) {
+      return defaultLanguage;
+    }
+
+    try {
+      return this._storage.getItem(this._storageKey) || defaultLanguage;
+    } catch {
+      return defaultLanguage;
+    }
+  }
+
+  _persistLanguage() {
+    if (!this._storageKey) {
+      return;
+    }
+
+    try {
+      this._storage.setItem(this._storageKey, this._language);
+    } catch {
+      // Storage 不可用时保持静默，不阻止界面切换。
+    }
   }
 
   _notify() {
@@ -252,11 +294,45 @@ function isPlainObject(value) {
 }
 
 function normalizeCorpusList(corpus) {
-  return Array.isArray(corpus) ? corpus.flatMap((item) => normalizeCorpusList(item)) : [corpus || {}];
+  return Array.isArray(corpus)
+    ? corpus.flatMap((item) => normalizeCorpusList(item))
+    : [corpus || {}];
 }
 
 function normalizeMessageList(messages) {
   return Array.isArray(messages)
     ? messages.flatMap((messagePart) => normalizeMessageList(messagePart))
     : [messages || {}];
+}
+
+function resolveStorage(storage) {
+  if (storage) {
+    return storage;
+  }
+
+  try {
+    if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
+      return globalThis.localStorage;
+    }
+  } catch {
+    // 隐私模式或受限环境下无法访问 localStorage，退回内存存储。
+  }
+
+  return memoryStorage();
+}
+
+const memoryStorageData = new Map();
+
+function memoryStorage() {
+  return {
+    getItem(key) {
+      return memoryStorageData.has(key) ? memoryStorageData.get(key) : null;
+    },
+    setItem(key, value) {
+      memoryStorageData.set(key, String(value));
+    },
+    removeItem(key) {
+      memoryStorageData.delete(key);
+    }
+  };
 }

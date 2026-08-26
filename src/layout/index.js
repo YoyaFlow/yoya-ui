@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { MenuOutlined } from '../svg/icons.js';
 import {
   applyComponentArguments,
   normalizeComponentArguments,
@@ -9,9 +10,12 @@ import {
 const layoutOptionNames = new Set([
   'align',
   'areas',
+  'asideWidth',
   'autoFlow',
+  'breakpoint',
   'columns',
   'direction',
+  'drawer',
   'gutter',
   'offset',
   'pull',
@@ -26,12 +30,16 @@ const layoutOptionNames = new Set([
   'justify',
   'maxWidth',
   'minColumnWidth',
+  'mobileDirection',
+  'mobileGap',
   'orientation',
   'padding',
   'paddingInline',
   'rows',
+  'safeArea',
   'size',
   'breakpoints',
+  'viewport',
   'wrap'
 ]);
 
@@ -446,6 +454,182 @@ export function vContainer(first = null, second = null, third = null) {
   return applyComponentArguments(node, args.options, args.callback);
 }
 
+export function mobileLayout(first = null, second = null, third = null) {
+  const args = normalizeComponentArguments(first, second, third);
+  const node = new HtmlElementNode('div');
+
+  node.className('yoya-layout', 'yoya-mobile-layout', 'yoya-vmobile-layout');
+  node.attr('data-mobile-layout', 'false');
+  node.styles({ boxSizing: 'border-box', display: 'flex', minWidth: '0', width: '100%' });
+  node._breakpoint = 768;
+  node._desktopDirection = 'row';
+  node._mobileDirection = 'column';
+  node._desktopGap = 0;
+  node._mobileGap = 12;
+  node._asideWidth = 280;
+  node._safeArea = false;
+  node._safeAreaApplied = false;
+  node._viewport = false;
+  node._mobile = false;
+  node._drawerEnabled = true;
+  node._asideOpen = false;
+  node._asideBackdrop = new HtmlElementNode('div')
+    .className('yoya-vmobile-layout-backdrop')
+    .attr('aria-hidden', 'true')
+    .style('display', 'none')
+    .on('click', () => node.closeAside());
+  node._asideToggle = new HtmlElementNode('button')
+    .className('yoya-vmobile-layout-toggle')
+    .attr({ type: 'button', 'aria-label': '打开导航', 'aria-expanded': 'false' })
+    .style('display', 'none')
+    .child(MenuOutlined().styles({ height: '18px', width: '18px' }))
+    .on('click', () => node.toggleAside());
+
+  node._refreshMobileLayout = () => {
+    const width = typeof window === 'undefined' ? null : window.innerWidth;
+    const mobile = width !== null && width <= node._breakpoint;
+    node._mobile = mobile;
+    if (!mobile) {
+      node._asideOpen = false;
+    }
+    node.attr('data-mobile-layout', mobile ? 'true' : 'false');
+    node.attr('data-aside-open', mobile && node._asideOpen ? 'true' : null);
+    node.styles({
+      flexDirection: mobile ? node._mobileDirection : node._desktopDirection,
+      gap: mobile ? node._mobileGap : node._desktopGap,
+      height: node._viewport ? '100dvh' : null,
+      minHeight: node._viewport ? '100vh' : null,
+      overflow: node._viewport ? 'hidden' : null
+    });
+
+    if (node._safeArea) {
+      node._safeAreaApplied = true;
+      node.style('paddingLeft', mobile ? 'max(env(safe-area-inset-left), 0px)' : null);
+      node.style('paddingRight', mobile ? 'max(env(safe-area-inset-right), 0px)' : null);
+      node.style('paddingTop', mobile ? 'max(env(safe-area-inset-top), 0px)' : null);
+      node.style('paddingBottom', mobile ? 'max(env(safe-area-inset-bottom), 0px)' : null);
+    } else if (node._safeAreaApplied) {
+      node._safeAreaApplied = false;
+      node.style('paddingLeft', null);
+      node.style('paddingRight', null);
+      node.style('paddingTop', null);
+      node.style('paddingBottom', null);
+    }
+
+    node.children().forEach((child) => syncMobileLayoutChild(node, child));
+    syncMobileLayoutChrome(node);
+    return node;
+  };
+  node.refresh = node._refreshMobileLayout;
+
+  node.breakpoint = (value) => {
+    if (value === undefined) return node._breakpoint;
+    node._breakpoint = Number(value);
+    if (!Number.isFinite(node._breakpoint) || node._breakpoint <= 0) {
+      node._breakpoint = 768;
+    }
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.direction = (desktop, mobile) => {
+    if (desktop === undefined) return node._desktopDirection;
+    node._desktopDirection = desktop || 'row';
+    if (mobile !== undefined) {
+      node._mobileDirection = mobile || 'column';
+    }
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.mobileDirection = (value) => {
+    if (value === undefined) return node._mobileDirection;
+    node._mobileDirection = value || 'column';
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.gap = (desktop, mobile) => {
+    if (desktop === undefined) return node._desktopGap;
+    node._desktopGap = normalizeLength(desktop);
+    if (mobile !== undefined) {
+      node._mobileGap = normalizeLength(mobile);
+    }
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.mobileGap = (value) => {
+    if (value === undefined) return node._mobileGap;
+    node._mobileGap = normalizeLength(value);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.asideWidth = (value) => {
+    if (value === undefined) return node._asideWidth;
+    node._asideWidth = normalizeLength(value);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.viewport = (value = true) => {
+    if (value === undefined) return node._viewport;
+    node._viewport = Boolean(value);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.safeArea = (value = true) => {
+    if (value === undefined) return node._safeArea;
+    node._safeArea = Boolean(value);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.drawer = (value = true) => {
+    if (value === undefined) return node._drawerEnabled;
+    node._drawerEnabled = Boolean(value);
+    if (!node._drawerEnabled) {
+      node._asideOpen = false;
+    }
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.asideOpen = (value) => {
+    if (value === undefined) return node._asideOpen;
+    node._asideOpen = Boolean(value);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  node.openAside = () => node.asideOpen(true);
+  node.closeAside = () => node.asideOpen(false);
+  node.toggleAside = () => node.asideOpen(!node._asideOpen);
+
+  node.mobile = () => node._mobile;
+
+  const originalChild = node.child.bind(node);
+  node.child = (...children) => {
+    originalChild(...children);
+    node._refreshMobileLayout();
+    return node;
+  };
+
+  applyLayoutSetup(node, args.first, applyMobileLayoutOptions);
+  node.child(node._asideBackdrop, node._asideToggle);
+  if (typeof window !== 'undefined') {
+    node._mobileLayoutResize = () => node._refreshMobileLayout();
+    window.addEventListener('resize', node._mobileLayoutResize);
+    wrapMobileLayoutDestroy(node);
+  }
+  node._refreshMobileLayout();
+  return applyComponentArguments(node, args.options, args.callback);
+}
+
+export const vMobileLayout = mobileLayout;
+
 export function vHeader(first = null, second = null, third = null) {
   return createLayoutNode(
     'vheader',
@@ -546,7 +730,9 @@ const layoutFactories = {
   divider,
   flex,
   grid,
+  mobileLayout,
   responsiveGrid,
+  vMobileLayout,
   vBody,
   hstack,
   spacer,
@@ -839,6 +1025,170 @@ function wrapColResponsiveDestroy(node) {
   };
 }
 
+function wrapMobileLayoutDestroy(node) {
+  if (node._mobileLayoutDestroyWrapped) return;
+  node._mobileLayoutDestroyWrapped = true;
+  const destroy = node.destroy.bind(node);
+  node.destroy = () => {
+    if (node._mobileLayoutResize) {
+      window.removeEventListener('resize', node._mobileLayoutResize);
+    }
+    return destroy();
+  };
+}
+
+function syncMobileLayoutChild(layout, child) {
+  const target = child?._resolved ?? child?._resolve?.() ?? child;
+  if (!target || typeof target.styles !== 'function') {
+    return;
+  }
+
+  const classes = target._classes;
+  const drawerAside = Boolean(
+    classes?.has('yoya-vaside') && layout._mobile && layout._drawerEnabled
+  );
+
+  if (drawerAside) {
+    target.styles({
+      bottom: '0',
+      boxShadow: layout._asideOpen ? '0 12px 36px rgba(15, 23, 42, 0.28)' : 'none',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100dvh',
+      left: '0',
+      maxWidth: '84vw',
+      minHeight: '100vh',
+      minWidth: '0',
+      pointerEvents: layout._asideOpen ? 'auto' : 'none',
+      position: 'fixed',
+      top: '0',
+      transform: layout._asideOpen ? 'translateX(0)' : 'translateX(-100%)',
+      transition: 'transform 180ms ease, box-shadow 180ms ease, visibility 180ms ease',
+      visibility: layout._asideOpen ? 'visible' : 'hidden',
+      width: '320px',
+      zIndex: '40'
+    });
+    target.attr('aria-hidden', layout._asideOpen ? null : 'true');
+    target._mobileDrawerAriaHiddenApplied = true;
+    target._mobileDrawerStylesApplied = true;
+
+    if (!target._mobileDrawerClickBound) {
+      target._mobileDrawerClickBound = true;
+      target.on('click', (event) => {
+        if (
+          event.target?.closest?.('.yoya-vmenu-item') &&
+          !event.target.closest?.('.yoya-vsubmenu-trigger')
+        ) {
+          layout.closeAside();
+        }
+      });
+    }
+    return;
+  }
+
+  if (classes?.has('yoya-vaside')) {
+    if (target._mobileDrawerStylesApplied) {
+      target._mobileDrawerStylesApplied = false;
+      target.styles({
+        bottom: null,
+        boxShadow: null,
+        display: null,
+        height: null,
+        left: null,
+        minHeight: null,
+        minWidth: null,
+        pointerEvents: null,
+        position: null,
+        top: null,
+        transform: null,
+        transition: null,
+        visibility: null,
+        zIndex: null
+      });
+    }
+    if (target._mobileDrawerAriaHiddenApplied) {
+      target._mobileDrawerAriaHiddenApplied = false;
+      target.attr('aria-hidden', null);
+    }
+    const width = layout._mobile ? '100%' : normalizeLength(layout._asideWidth);
+    target.styles({
+      flex: '0 0 auto',
+      maxWidth: width,
+      width
+    });
+    return;
+  }
+
+  if (classes?.has('yoya-vmain')) {
+    target.styles({
+      flex: '1 1 auto',
+      minHeight: '0',
+      minWidth: '0'
+    });
+    if (layout._mobile && layout._drawerEnabled) {
+      target.styles({
+        maxWidth: '100%',
+        width: '100%'
+      });
+      target._mobileDrawerMainStylesApplied = true;
+    } else if (target._mobileDrawerMainStylesApplied) {
+      target._mobileDrawerMainStylesApplied = false;
+      target.styles({
+        maxWidth: null,
+        width: null
+      });
+    }
+  }
+}
+
+function syncMobileLayoutChrome(layout) {
+  const drawerMode = layout._mobile && layout._drawerEnabled && layoutHasMobileAside(layout);
+  const open = drawerMode && layout._asideOpen;
+  const backdrop = layout._asideBackdrop;
+  const toggle = layout._asideToggle;
+
+  if (toggle) {
+    toggle
+      .attr('aria-expanded', open ? 'true' : 'false')
+      .attr('aria-label', open ? '关闭导航' : '打开导航')
+      .styles({
+        alignItems: 'center',
+        background: 'var(--yoya-color-surface, #ffffff)',
+        border: '0',
+        borderRadius: '10px',
+        boxShadow: drawerMode ? '0 2px 10px rgba(15, 23, 42, 0.18)' : 'none',
+        color: '#172033',
+        cursor: 'pointer',
+        display: drawerMode ? 'inline-flex' : 'none',
+        height: '38px',
+        justifyContent: 'center',
+        left: '12px',
+        padding: '0',
+        position: 'fixed',
+        top: 'max(env(safe-area-inset-top), 10px)',
+        width: '38px',
+        zIndex: '45'
+      });
+  }
+
+  if (backdrop) {
+    backdrop.styles({
+      background: open ? 'rgba(15, 23, 42, 0.42)' : null,
+      display: open ? 'block' : 'none',
+      inset: '0',
+      position: 'fixed',
+      zIndex: open ? '35' : null
+    });
+  }
+}
+
+function layoutHasMobileAside(layout) {
+  return layout.children().some((child) => {
+    const target = child?._resolved ?? child?._resolve?.() ?? child;
+    return Boolean(target?._classes?.has('yoya-vaside'));
+  });
+}
+
 function layoutChildIsHeaderOrFooter(child) {
   const target = child?._resolved ?? child?._resolve?.() ?? child;
   const classes = target?._classes;
@@ -851,6 +1201,48 @@ function applyContainerLayoutOptions(node, options) {
   }
 
   node.styles(compactStyles({ gap: options.gap }));
+}
+
+function applyMobileLayoutOptions(node, options) {
+  node.styles(
+    compactStyles({
+      alignItems: options.align,
+      flexWrap: normalizeWrap(options.wrap),
+      justifyContent: options.justify
+    })
+  );
+
+  if (options.direction !== undefined) {
+    node.direction(options.direction, options.mobileDirection);
+  } else if (options.mobileDirection !== undefined) {
+    node.mobileDirection(options.mobileDirection);
+  }
+
+  if (options.gap !== undefined) {
+    node.gap(options.gap, options.mobileGap);
+  } else if (options.mobileGap !== undefined) {
+    node.mobileGap(options.mobileGap);
+  }
+
+  if (options.breakpoint !== undefined) {
+    node.breakpoint(options.breakpoint);
+  }
+
+  if (options.asideWidth !== undefined) {
+    node.asideWidth(options.asideWidth);
+  }
+
+  if (options.drawer !== undefined) {
+    node.drawer(options.drawer);
+  }
+
+  if (options.viewport !== undefined) {
+    node.viewport(options.viewport);
+  }
+
+  if (options.safeArea !== undefined) {
+    node.safeArea(options.safeArea);
+  }
 }
 
 function applyHeaderOptions(node, options) {

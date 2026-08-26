@@ -30,6 +30,7 @@
 - 不依赖大型框架的小型业务页面。
 
 不推荐场景：
+
 - 强依赖 React/Vue 生态的项目。
 
 ## 核心抽象
@@ -67,7 +68,7 @@ Tag 实例
 库同时保留 Class 和工厂函数，但面向使用者时更推荐工厂函数：
 
 ```js
-div(d => {
+div((d) => {
   d.h1('标题');
   d.p('内容');
 }).bindTo('#app');
@@ -98,11 +99,7 @@ div(d => {
 大多数方法返回 `this`，例如：
 
 ```js
-div()
-  .id('panel')
-  .className('surface')
-  .style('padding', '16px')
-  .text('Ready');
+div().id('panel').className('surface').style('padding', '16px').text('Ready');
 ```
 
 链式调用降低了模板和 DOM API 的切换成本，也让组件封装更一致。
@@ -112,9 +109,9 @@ div()
 `Tag` 原型扩展了常见元素方法，因此父元素内部可以直接写：
 
 ```js
-div(page => {
+div((page) => {
   page.header('标题');
-  page.main(main => {
+  page.main((main) => {
     main.p('正文');
   });
 });
@@ -248,9 +245,10 @@ i18n 模块提供轻量国际化：
 - `initI18n()`
 - `createText()`
 - 本地存储语言选择。
+- `vLanguageSwitch()` 预置语言下拉切换。
 - 嵌套 key 查询和参数替换。
 
-`yoya-ui` 当前先把最小 I18n 文本绑定放入 core：`I18n` 管理语言和词典，`I18nTextNode` 继承 `ViewTextNode`，语言切换时自动刷新文本节点。字符串快捷写法使用 `"内容".s("content-key")`，字符串本身只作为默认文案，key、语言包和当前语言都由外部 `I18n` 实例控制。语料库支持嵌套 JSON 和多个文件数组合并，例如 `messages: [commonCorpus, pageCorpus]`。完整语言包异步加载、持久化和复杂格式化仍建议后续作为 `i18n` 扩展入口补齐。
+`yoya-ui` 当前先把最小 I18n 文本绑定放入 core：`I18n` 管理语言和词典，`I18nTextNode` 继承 `ViewTextNode`，语言切换时自动刷新文本节点。字符串快捷写法使用 `"内容".s("content-key")`，字符串本身只作为默认文案，key、语言包和当前语言都由外部 `I18n` 实例控制。语料库支持嵌套 JSON 和多个文件数组合并，例如 `messages: [commonCorpus, pageCorpus]`。语言选择可以通过 `storageKey` 持久化，`vLanguageSwitch` 提供预置下拉切换；完整语言包异步加载和复杂格式化仍建议后续作为 `i18n` 扩展入口补齐。
 
 ### 动态加载
 
@@ -329,7 +327,7 @@ ComponentNode  组件节点
 工厂函数仍保持 HTML DSL 风格：
 
 ```js
-div(page => {
+div((page) => {
   page.h1('标题');
   page.p('内容');
 });

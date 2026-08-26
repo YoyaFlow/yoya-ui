@@ -1,4 +1,4 @@
-import { section, vBody, vCard, vDialog, vForm, vText } from '../index.js';
+import { mobileLayout, section, vBody, vCard, vDialog, vForm, vText } from '../index.js';
 import { applyDemoStyles } from './demo-styles.js';
 import { ComponentSource } from './component-source.js';
 
@@ -439,6 +439,89 @@ const layoutDocsDefinitions = Object.freeze({
       '云工作台强调侧栏资源菜单与主体工作区的组合。',
       '个人主页和技术文档同样由 header / aside / main / footer 组合。'
     ]
+  }),
+  mobile: createLayoutDocsDefinition({
+    apiIntro: 'mobileLayout 在窄屏自动切换为手机布局，侧栏默认收进抽屉，内容区保持全宽可用。',
+    apiRows: [
+      [
+        'mobileLayout({ breakpoint })',
+        '默认在 768px 以下自动切换为手机布局。',
+        'mobileLayout({ breakpoint: 768 })'
+      ],
+      [
+        'mobileLayout({ direction, mobileDirection })',
+        '宽屏与手机分别使用不同方向。',
+        "mobileLayout({ direction: 'row', mobileDirection: 'column' })"
+      ],
+      [
+        'mobileLayout({ gap, mobileGap })',
+        '分别设置宽屏和手机间距。',
+        'mobileLayout({ gap: 0, mobileGap: 12 })'
+      ],
+      ['layout.asideWidth(width)', '设置桌面侧栏宽度，手机端自动铺满。', 'layout.asideWidth(280)'],
+      ['layout.drawer(value)', '开启或关闭手机端抽屉侧栏，默认开启。', 'layout.drawer(true)'],
+      [
+        'layout.openAside() / closeAside() / toggleAside()',
+        '控制手机抽屉导航的打开与关闭。',
+        'shell.toggleAside()'
+      ],
+      [
+        'layout.viewport() / layout.safeArea()',
+        '占满视口，并为刘海屏预留安全区。',
+        'layout.viewport().safeArea()'
+      ]
+    ],
+    apiSignature: `mobileLayout(
+  { breakpoint: 768, asideWidth: 280, drawer: true },
+  (shell) => {
+    shell.vHeader('顶部导航');
+    shell.vAside('抽屉导航');
+    shell.vMain('内容');
+  }
+)`,
+    examples: [
+      {
+        component: MobileLayoutExample1,
+        description: '宽屏使用侧栏，手机端侧栏收进抽屉，主体保持全宽可用。',
+        id: 'shell',
+        imports: [
+          'hstack',
+          'mobileLayout',
+          'spacer',
+          'vAside',
+          'vCard',
+          'vFooter',
+          'vHeader',
+          'vMain',
+          'vMenu',
+          'vMenuItem'
+        ],
+        phone: true,
+        sourceTitle: '移动适配骨架核心源码',
+        title: '移动骨架'
+      },
+      {
+        component: MobileFlexExample1,
+        description: '把一组横向内容在手机端自动改为纵向排列。',
+        id: 'stack',
+        imports: ['mobileLayout', 'vButton', 'vCard'],
+        phone: true,
+        sourceTitle: '移动换列核心源码',
+        title: '横向换纵向'
+      }
+    ],
+    examplesIntro: '两个示例都放在手机尺寸 iframe 中演示，可直接查看移动端适配效果。',
+    heading: 'mobileLayout 移动布局',
+    intro: 'mobileLayout 在桌面使用侧栏，在手机端自动把侧栏收进抽屉，并保持内容区全宽。',
+    key: 'mobile',
+    routeItem: 'layout:7',
+    title: '移动布局',
+    usageItems: [
+      '手机端侧栏应该收进抽屉，而不是占用内容区高度。',
+      '管理后台需要保留侧栏，但手机端希望主体保持全宽可用。',
+      '同一组卡片、表单或操作区需要在窄屏下由横排改为纵排。',
+      '移动端页面需要安全区、视口高度和更紧凑的间距。'
+    ]
   })
 });
 
@@ -468,6 +551,10 @@ export function PopupDocumentationPage() {
 
 export function TemplateDocumentationPage() {
   return createLayoutDocumentationPage(layoutDocsDefinitions.templates);
+}
+
+export function MobileDocumentationPage() {
+  return createLayoutDocumentationPage(layoutDocsDefinitions.mobile);
 }
 
 export function LayoutDocumentationPage() {
@@ -586,10 +673,15 @@ function LayoutExampleSection(demo) {
         example.div((live) => {
           live.className('components-layout-demo-live');
           live.attr('data-layout-demo-live', 'true');
-          if (demo.frame) {
+          if (demo.frame || demo.phone) {
+            const phone = Boolean(demo.phone);
+            const frameClass = phone
+              ? 'components-layout-demo-phone'
+              : 'components-layout-demo-frame';
+            const frameDataAttr = phone ? 'data-layout-demo-phone' : 'data-layout-demo-frame';
             live.iframe((frame) => {
-              frame.className('components-layout-demo-frame');
-              frame.attr('data-layout-demo-frame', 'true');
+              frame.className(frameClass);
+              frame.attr(frameDataAttr, 'true');
               frame.attr('title', `${demo.title} 演示`);
 
               let mounted = false;
@@ -605,7 +697,10 @@ function LayoutExampleSection(demo) {
                 return destroy();
               };
 
-              frame.attr('srcdoc', '<!doctype html><html><head></head><body></body></html>');
+              frame.attr(
+                'srcdoc',
+                `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>`
+              );
             });
           } else {
             live.child(liveDemo);
@@ -638,7 +733,8 @@ function mountLayoutDemoInFrame(frameNode, demoNode) {
   });
 
   const body = doc.body;
-  body.style.background = '#f5f7fa';
+  const phone = frame.hasAttribute('data-layout-demo-phone');
+  body.style.background = phone ? '#eef2f7' : '#f5f7fa';
   body.style.color = '#172033';
   body.style.fontFamily =
     "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -882,6 +978,95 @@ function GridRowColExample1() {
                 cell.span('右侧');
               });
             });
+          });
+        });
+      });
+    }
+  };
+}
+
+function MobileLayoutExample1() {
+  return {
+    render() {
+      return mobileLayout(
+        { breakpoint: 680, asideWidth: 220, mobileGap: 0, viewport: true },
+        (shell) => {
+          shell.vHeader({ height: 48 }, (header) => {
+            header.className('components-mobile-shell-header');
+            header.style('paddingLeft', '56px');
+            header.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%', paddingRight: '14px' });
+              row.strong('移动工作台');
+              row.spacer();
+              row.span('已同步');
+            });
+          });
+
+          shell.vAside({ width: 220 }, (aside) => {
+            aside.className('components-mobile-drawer');
+            aside.vstack((nav) => {
+              nav.style('gap', '8px');
+              nav.strong('导航');
+              nav.vMenu((menu) => {
+                menu.style('gap', '6px');
+                ['概览', '工作台', '审批', '设置'].forEach((label) => {
+                  menu.vMenuItem((item) => item.text(label));
+                });
+              });
+            });
+          });
+
+          shell.vMain((main) => {
+            main.className('components-mobile-main');
+            main.vstack((content) => {
+              content.style('gap', '12px');
+              content.h2('今天的工作');
+              content.p('手机端侧栏会收进抽屉，点击左上角菜单按钮即可打开。');
+              content.vCard((card) => {
+                card.vCardHeader('待办');
+                card.vCardBody((body) => {
+                  body.p('4 项待处理，2 项需要审批。');
+                });
+              });
+            });
+          });
+
+          shell.vFooter({ height: 52 }, (footer) => {
+            footer.className('components-mobile-tabbar');
+            footer.hstack((row) => {
+              row.style({ alignItems: 'center', height: '100%' });
+              ['首页', '工作台', '我的'].forEach((label) => {
+                row.span((item) => {
+                  item.className('components-mobile-tab');
+                  item.text(label);
+                });
+              });
+            });
+          });
+        }
+      );
+    }
+  };
+}
+
+function MobileFlexExample1() {
+  return {
+    render() {
+      return mobileLayout({ breakpoint: 720, gap: 12, mobileGap: 12 }, (content) => {
+        content.vCard((card) => {
+          card.vCardHeader('横向内容');
+          card.vCardBody((body) => {
+            body.p('宽屏时与另一张卡片并排，手机端自动纵向排列。');
+            body.vButton((button) => {
+              button.label('查看');
+              button.variant('secondary');
+            });
+          });
+        });
+        content.vCard((card) => {
+          card.vCardHeader('详情');
+          card.vCardBody((body) => {
+            body.p('mobileLayout 也可以用于普通内容区，不限定页面骨架。');
           });
         });
       });

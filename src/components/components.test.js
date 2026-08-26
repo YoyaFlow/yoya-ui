@@ -366,8 +366,14 @@ describe('compound components', () => {
     const closed = vi.fn();
     const message = vMessage('保存成功').type('success').closable(true).onClose(closed);
     const messageElement = message.renderDom();
+    const closeElement = messageElement.querySelector('.yoya-vmessage-close');
 
-    messageElement.querySelector('button').click();
+    expect(closeElement.tagName).toBe('SPAN');
+    expect(closeElement.style.borderWidth).toBe('0px');
+    expect(closeElement.style.marginLeft).toBe('auto');
+    expect(closeElement.querySelector('svg')).not.toBeNull();
+
+    closeElement.click();
 
     expect(closed).toHaveBeenCalledTimes(1);
     expect(message.toHTML()).toBe('');
@@ -1725,6 +1731,24 @@ describe('compound components', () => {
     expect(previous.disabled).toBe(true);
     expect(next.disabled).toBe(true);
     expect(last.disabled).toBe(true);
+  });
+
+  it('enables next and last pages when initialized with total and pageSize', () => {
+    const pagination = vPagination({
+      page: 1,
+      pageSize: 2,
+      total: 5
+    });
+    const element = pagination.render().renderDom();
+    const next = element.querySelector('[data-action="next"]');
+    const last = element.querySelector('[data-action="last"]');
+
+    expect(element.dataset.totalPages).toBe('3');
+    expect(next.disabled).toBe(false);
+    expect(last.disabled).toBe(false);
+
+    next.click();
+    expect(pagination.page()).toBe(2);
   });
 
   it('renders form inputs with values, placeholders and options', () => {

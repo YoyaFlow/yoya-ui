@@ -27,6 +27,7 @@ import { FieldDocumentationPage, FormDocumentationPage } from './form-docs.js';
 import { ComponentDefinitionDocumentationPage } from './component-definition-docs.js';
 import { EchartsDocumentationPage } from './echarts-docs.js';
 import { IconsDocumentationPage } from './icons-docs.js';
+import { I18nDocumentationPage } from './i18n-docs.js';
 import {
   AnchorDocumentationPage,
   BreadcrumbDocumentationPage,
@@ -41,6 +42,7 @@ import {
   DividerDocumentationPage,
   FlexDocumentationPage,
   GridDocumentationPage,
+  MobileDocumentationPage,
   PopupDocumentationPage,
   TemplateDocumentationPage,
   SpacerDocumentationPage
@@ -51,7 +53,10 @@ const componentMenuSections = [
   {
     id: 'guides',
     title: '开发指南',
-    items: [{ label: '定义组件', details: 'function + render()' }]
+    items: [
+      { label: '定义组件', details: 'function + render()' },
+      { label: '国际化', details: 'I18n / createI18n / i18nText' }
+    ]
   },
   {
     id: 'general',
@@ -74,6 +79,7 @@ const componentMenuSections = [
       { label: '间距', details: 'spacer' },
       { label: '弹窗', details: 'vDialog' },
       { label: '布局模板', details: 'admin / cloud / profile / docs' },
+      { label: '移动布局', details: 'mobileLayout / vMobileLayout', hidden: true },
       { label: '分隔面板', details: 'Splitter', status: 'planned' }
     ]
   },
@@ -158,7 +164,9 @@ function getTopNavigationItems() {
   return [
     { categoryId: 'intro', label: '说明', path: '/components' },
     ...componentMenuSections.map((category) => {
-      const firstReadyIndex = category.items.findIndex((item) => item.status !== 'planned');
+      const firstReadyIndex = category.items.findIndex(
+        (item) => item.status !== 'planned' && !item.hidden
+      );
       return {
         categoryId: category.id,
         label: category.title,
@@ -175,7 +183,8 @@ const layoutDocumentationPages = Object.freeze({
   3: BodyDocumentationPage,
   4: SpacerDocumentationPage,
   5: PopupDocumentationPage,
-  6: TemplateDocumentationPage
+  6: TemplateDocumentationPage,
+  7: MobileDocumentationPage
 });
 
 const feedbackDocumentationPages = Object.freeze({
@@ -344,6 +353,10 @@ function createComponentsView(appRouter) {
         groupNode.style('gap', '4px');
 
         category.items.forEach((item, itemIndex) => {
+          if (item.hidden) {
+            return;
+          }
+
           const status = item.status === 'planned' ? 'planned' : 'ready';
           const path = buildComponentItemPath(category.id, itemIndex);
           const menuItem = vMenuItem((entryView) => {
@@ -451,6 +464,10 @@ function createComponentsIntroView() {
 function createComponentItemView(category, item, itemIndex, context) {
   if (category.id === 'guides' && itemIndex === 0) {
     return ComponentDefinitionDocumentationPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 1) {
+    return I18nDocumentationPage().render();
   }
 
   if (category.id === 'third-party' && itemIndex === 0) {
@@ -637,6 +654,10 @@ function buildComponentItemPath(categoryId, itemIndex) {
 function countComponentMenuItems(sections, status = null) {
   return sections.reduce((total, sectionEntry) => {
     const sectionCount = sectionEntry.items.filter((item) => {
+      if (item.hidden) {
+        return false;
+      }
+
       if (status === null) {
         return true;
       }

@@ -77,3 +77,4 @@
 ### 开发指南
 
 1. 定义组件 function + render()
+2. 国际化 I18n / createI18n / i18nText / vLanguageSwitch

@@ -51,6 +51,7 @@ describe('SVG element factories', () => {
     expect(icon.tagName()).toBe('svg');
     expect(element.namespaceURI).toBe(SVG_NS);
     expect(element.tagName).toBe('svg');
+    expect(element.style.display).toBe('block');
 
     svgOnlyFactoryNames.forEach((exportName) => {
       expect(yoya[exportName], `${exportName} should stay scoped to svg nodes`).toBeUndefined();
@@ -118,7 +119,14 @@ describe('SVG element factories', () => {
 
     const children = icon.children();
 
-    expect(children.map((child) => child.tagName())).toEqual(['title', 'text', 'style', 'a', 'script', 'switch']);
+    expect(children.map((child) => child.tagName())).toEqual([
+      'title',
+      'text',
+      'style',
+      'a',
+      'script',
+      'switch'
+    ]);
     expect(children[0].textContent()).toBe('SVG title');
     expect(children[1].textContent()).toBe('SVG text');
     expect(children[2].textContent()).toBe('.status-text { font-weight: 700; }');

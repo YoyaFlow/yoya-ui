@@ -9,9 +9,14 @@ let root = null;
 
 function openRoute(path) {
   const item = document.querySelector(`[data-component-path="${path}"]`);
-  expect(item).not.toBeNull();
-  item.click();
-  return item;
+  if (item) {
+    item.click();
+    return item;
+  }
+
+  window.history.replaceState(null, '', `#${path}`);
+  window.dispatchEvent(new Event('hashchange'));
+  return null;
 }
 
 function selectedRouteTitle() {
@@ -115,7 +120,8 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(46);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(47);
+    expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
     ).toContain('开发指南');
@@ -337,6 +343,16 @@ describe('renderExamplesIndex', () => {
 
   it.each([
     [
+      '/components/guides/1',
+      '国际化',
+      'i18n',
+      'I18n 国际化',
+      'reactive',
+      'I18nReactiveExample1',
+      'createI18n(',
+      4
+    ],
+    [
       '/components/layout/0',
       '分割线',
       'divider',
@@ -396,6 +412,16 @@ describe('renderExamplesIndex', () => {
       'AdminTemplateExample1',
       'vContainer(',
       4
+    ],
+    [
+      '/components/layout/7',
+      '移动布局',
+      'mobile',
+      'mobileLayout 移动布局',
+      'shell',
+      'MobileLayoutExample1',
+      'mobileLayout(',
+      2
     ],
     [
       '/components/navigation/0',
@@ -534,7 +560,7 @@ describe('renderExamplesIndex', () => {
       'vTree 树形控件',
       'basic',
       'TreeBasicExample1',
-      'vTree({',
+      'vTree((root) =>',
       4
     ]
   ])(
@@ -557,23 +583,98 @@ describe('renderExamplesIndex', () => {
       });
 
       const page = document.querySelector(
-        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"]`
+        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"]`
       );
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
       const demoNodes = page.querySelectorAll(
-        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo]'
+        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo]'
       );
       expect(demoNodes).toHaveLength(demoCount);
 
       const source = page.querySelector(
-        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example]`
+        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example]`
       );
       expect(source).not.toBeNull();
       expect(source.textContent).toContain(`export function ${sourceName}`);
       expect(source.textContent).toContain(sourceSnippet);
     }
   );
+
+  it('switches reactive I18n demos between languages', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/guides/1');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('国际化');
+    });
+
+    const page = document.querySelector('[data-i18n-docs]');
+    const reactive = page.querySelector('[data-i18n-demo="reactive"] .components-i18n-demo-live');
+    expect(reactive.textContent).toContain('服务控制台');
+    expect(reactive.textContent).toContain('你好，Ada');
+    expect(reactive.querySelector('.yoya-vlanguage-switch')).not.toBeNull();
+
+    reactive.querySelector('.yoya-vdropdown-trigger').click();
+    const reactiveEnglish = reactive.querySelector('.yoya-vmenu-item[data-language="en"]');
+    reactiveEnglish.click();
+
+    expect(reactive.textContent).toContain('Service Console');
+    expect(reactive.textContent).toContain('Hello, Ada');
+    expect(localStorage.getItem('yoya-ui:i18n-demo-language')).toBe('en');
+    expect(reactive.querySelector('.yoya-vmenu-item[data-language="en"]').dataset.active).toBe(
+      'true'
+    );
+
+    const params = page.querySelector('[data-i18n-demo="params"] .components-i18n-demo-live');
+    const paramsEnglish = [...params.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('English')
+    );
+    paramsEnglish.click();
+
+    expect(params.textContent).toContain('Users: 1');
+    expect(params.textContent).toContain('未知状态');
+
+    const patchButton = [...params.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('注册英文补丁')
+    );
+    patchButton.click();
+
+    expect(params.textContent).toContain('Unknown status');
+
+    const plusButton = [...params.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('数量 +1')
+    );
+    plusButton.click();
+
+    expect(params.textContent).toContain('Users: 2');
+
+    const shortcut = page.querySelector('[data-i18n-demo="shortcut"] .components-i18n-demo-live');
+    const shortcutEnglish = [...shortcut.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('English')
+    );
+    shortcutEnglish.click();
+
+    expect(shortcut.textContent).toContain('Saved');
+    expect(shortcut.textContent).toContain('Hello, Ada');
+
+    const extend = page.querySelector('[data-i18n-demo="extend"] .components-i18n-demo-live');
+    expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);
+
+    const addJapanese = [...extend.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('添加日语')
+    );
+    addJapanese.click();
+
+    expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(3);
+
+    const japaneseItem = extend.querySelector('.yoya-vmenu-item[data-language="ja"]');
+    expect(japaneseItem).not.toBeNull();
+    japaneseItem.click();
+
+    expect(extend.textContent).toContain('こんにちは、Ada');
+    expect(extend.querySelector('.yoya-vdropdown-trigger').textContent).toContain('日本語');
+  });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
     root = renderExamplesIndex('#app');
@@ -644,6 +745,25 @@ describe('renderExamplesIndex', () => {
     expect(frames).toHaveLength(4);
     frames.forEach((frame) => {
       expect(frame.tagName).toBe('IFRAME');
+    });
+  });
+
+  it('renders mobile layout demos inside phone-shaped iframes', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/layout/7');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('移动布局');
+    });
+
+    const page = document.querySelector('[data-layout-docs="mobile"]');
+    const phoneFrames = page.querySelectorAll('[data-layout-demo-phone]');
+
+    expect(phoneFrames).toHaveLength(2);
+    phoneFrames.forEach((frame) => {
+      expect(frame.tagName).toBe('IFRAME');
+      expect(frame.style.width).toBe('360px');
+      expect(frame.style.borderRadius).toContain('34px');
     });
   });
 

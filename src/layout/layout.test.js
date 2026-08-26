@@ -8,11 +8,13 @@ import {
   flex,
   grid,
   hstack,
+  mobileLayout,
   responsiveGrid,
   spacer,
   stack,
   vCol,
   vContainer,
+  vMobileLayout,
   vRow,
   vBody,
   vstack
@@ -296,6 +298,108 @@ describe('layout components', () => {
       { minWidth: 1000, columns: 4 }
     ]);
     root.destroy();
+  });
+
+  it('switches mobile layout regions between row and column at the breakpoint', () => {
+    const originalWidth = window.innerWidth;
+    const originalAdd = window.addEventListener;
+    const originalRemove = window.removeEventListener;
+    const listeners = new Map();
+    window.addEventListener = (type, listener) => listeners.set(type, listener);
+    window.removeEventListener = (type, listener) => {
+      if (listeners.get(type) === listener) listeners.delete(type);
+    };
+
+    try {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 });
+      const layout = mobileLayout({ breakpoint: 768, asideWidth: 240, mobileGap: 12 }, (shell) => {
+        shell.vAside({ width: 180 }, 'Nav');
+        shell.vMain('Content');
+      });
+      const element = layout.renderDom();
+      const aside = element.querySelector('.yoya-vaside');
+      const main = element.querySelector('.yoya-vmain');
+
+      expect(element.classList.contains('yoya-mobile-layout')).toBe(true);
+      expect(element.classList.contains('yoya-vmobile-layout')).toBe(true);
+      expect(element.dataset.mobileLayout).toBe('false');
+      expect(element.style.flexDirection).toBe('row');
+      expect(aside.style.width).toBe('240px');
+      expect(main.style.flex).toBe('1 1 auto');
+
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 600 });
+      listeners.get('resize')();
+
+      expect(element.dataset.mobileLayout).toBe('true');
+      expect(element.style.flexDirection).toBe('column');
+      expect(element.style.gap).toBe('12px');
+      expect(aside.style.position).toBe('fixed');
+      expect(aside.style.width).toBe('320px');
+      expect(aside.style.maxWidth).toBe('84vw');
+      expect(aside.style.transform).toContain('translateX(-100%)');
+      expect(aside.getAttribute('aria-hidden')).toBe('true');
+      expect(main.style.width).toBe('100%');
+      expect(layout.mobile()).toBe(true);
+
+      const toggle = element.querySelector('.yoya-vmobile-layout-toggle');
+      const backdrop = element.querySelector('.yoya-vmobile-layout-backdrop');
+      expect(toggle.style.display).toBe('inline-flex');
+      expect(backdrop.style.display).toBe('none');
+
+      toggle.click();
+
+      expect(element.dataset.asideOpen).toBe('true');
+      expect(aside.style.transform).toBe('translateX(0)');
+      expect(aside.getAttribute('aria-hidden')).toBeNull();
+      expect(backdrop.style.display).toBe('block');
+
+      layout.closeAside();
+      expect(backdrop.style.display).toBe('none');
+      expect(element.dataset.asideOpen).toBeUndefined();
+
+      layout.drawer(false);
+      expect(aside.style.width).toBe('100%');
+      expect(aside.style.position).toBe('');
+      expect(main.style.width).toBe('');
+
+      layout.destroy();
+      expect(listeners.has('resize')).toBe(false);
+    } finally {
+      window.addEventListener = originalAdd;
+      window.removeEventListener = originalRemove;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
+  });
+
+  it('supports mobile direction, viewport, safe area, and the vMobileLayout alias', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 480 });
+    const layout = mobileLayout({
+      breakpoint: 900,
+      direction: 'row',
+      mobileDirection: 'column-reverse',
+      gap: 8,
+      mobileGap: 16,
+      viewport: true,
+      safeArea: true
+    });
+    const element = layout.renderDom();
+
+    expect(element.dataset.mobileLayout).toBe('true');
+    expect(element.style.flexDirection).toBe('column-reverse');
+    expect(element.style.gap).toBe('16px');
+    expect(element.style.height).toContain('100');
+    expect(layout._safeArea).toBe(true);
+
+    layout.safeArea(false).viewport(false).breakpoint(500).direction('row', 'column');
+
+    expect(element.style.height).toBe('');
+    expect(element.style.flexDirection).toBe('column');
+    const alias = vMobileLayout({ breakpoint: 640 });
+    const aliasElement = alias.renderDom();
+    expect(aliasElement.classList.contains('yoya-mobile-layout')).toBe(true);
+    expect(aliasElement.classList.contains('yoya-vmobile-layout')).toBe(true);
+    layout.destroy();
+    alias.destroy();
   });
 
   it('creates a page body with stable surface and content hooks', () => {

@@ -3,7 +3,8 @@ const documentationThemes = [
   { accent: '#2563eb', prefix: 'layout' },
   { accent: '#0f766e', prefix: 'navigation' },
   { accent: '#7c3aed', prefix: 'data-display' },
-  { accent: '#0f766e', prefix: 'feedback' }
+  { accent: '#0f766e', prefix: 'feedback' },
+  { accent: '#047857', prefix: 'i18n' }
 ];
 
 function documentationRules(prefix, accent) {
@@ -486,6 +487,22 @@ const layoutExtraRules = [
   ['.components-layout-popup-sheet', { display: 'grid', gap: '14px', padding: '0' }],
   ['.components-layout-demo-live', { minWidth: '0', width: '100%' }],
   ['.components-layout-demo-frame', { display: 'block', height: '540px', width: '100%' }],
+  [
+    '.components-layout-demo-phone',
+    {
+      background: '#f8fafc',
+      border: '8px solid #111827',
+      borderRadius: '34px',
+      boxShadow: '0 20px 48px rgba(15, 23, 42, 0.24), 0 4px 14px rgba(15, 23, 42, 0.12)',
+      boxSizing: 'border-box',
+      display: 'block',
+      height: '640px',
+      margin: '0 auto',
+      maxWidth: 'min(100%, 360px)',
+      overflow: 'hidden',
+      width: '360px'
+    }
+  ],
   ['.components-layout-docs--popup .yoya-vdialog', { border: 'none' }],
   [
     '.components-layout-docs--popup .yoya-vdialog-content',
@@ -527,6 +544,39 @@ const layoutExtraRules = [
   ],
   ['.components-layout-template-aside', { padding: '12px' }],
   ['.components-layout-template-main', { padding: '14px' }],
+  [
+    '.components-mobile-shell-header',
+    {
+      background: 'var(--yoya-color-surface, #ffffff)',
+      borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+      color: '#172033'
+    }
+  ],
+  [
+    '.components-mobile-drawer',
+    {
+      background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+      borderRight: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+      padding: '16px 12px'
+    }
+  ],
+  ['.components-mobile-main', { background: '#f5f7fa', padding: '16px' }],
+  [
+    '.components-mobile-tabbar',
+    {
+      background: 'var(--yoya-color-surface, #ffffff)',
+      borderTop: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+      color: '#475569'
+    }
+  ],
+  [
+    '.components-mobile-tab',
+    {
+      flex: '1 1 0',
+      fontSize: '13px',
+      textAlign: 'center'
+    }
+  ],
   ['.structure-region', { boxSizing: 'border-box', minWidth: '0' }],
   [
     '.structure-header, .structure-footer',
@@ -953,6 +1003,24 @@ const definitionExtraRules = [
   ['.wizard-child-panel p', { color: '#5a6575' }]
 ];
 
+const i18nExtraRules = [
+  [
+    '.components-i18n-demo-live .yoya-vcard',
+    {
+      maxWidth: '640px',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-i18n-demo-live .yoya-vcard-footer',
+    {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  ]
+];
+
 const demoRules = [
   ...baseRules,
   ...documentationThemes.flatMap(({ accent, prefix }) => documentationRules(prefix, accent)),
@@ -964,6 +1032,7 @@ const demoRules = [
   ...iconExtraRules,
   ...thirdPartyExtraRules,
   ...definitionExtraRules,
+  ...i18nExtraRules,
   ...genericRules
 ];
 

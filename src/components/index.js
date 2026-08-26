@@ -10,3 +10,4 @@ export * from '../data-display/code.js';
 export * from '../data-display/table.js';
 export * from '../data-display/pagination.js';
 export * from '../data-display/tree.js';
+export * from '../i18n/index.js';
