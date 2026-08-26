@@ -5,6 +5,7 @@ import { VBadge, vBadge } from './badge.js';
 import { VCode, vCode } from './code.js';
 import { VDetail, VDetailItem, vDetail, vDetailItem } from './detail.js';
 import { VPagination, vPagination } from './pagination.js';
+import { VProgress, vProgress } from './progress.js';
 import {
   VCard,
   VCardBody,
@@ -17,6 +18,7 @@ import {
 } from './surface.js';
 import { VTable, vTable } from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
+import { VScroll, vScroll } from './vscroll.js';
 
 const dataDisplayFactories = {
   vAvatar,
@@ -29,6 +31,8 @@ const dataDisplayFactories = {
   vDetail,
   vDetailItem,
   vPagination,
+  vProgress,
+  vScroll,
   vTable,
   vTree
 };
@@ -46,6 +50,8 @@ export {
   VDetail,
   VDetailItem,
   VPagination,
+  VProgress,
+  VScroll,
   VTable,
   VTree,
   VTreeNode,
@@ -59,6 +65,8 @@ export {
   vDetail,
   vDetailItem,
   vPagination,
+  vProgress,
+  vScroll,
   vTable,
   vTree,
   vTreeNode

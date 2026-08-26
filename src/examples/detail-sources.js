@@ -21,12 +21,15 @@ import {
   vMessageManager,
   vMenu,
   vPagination,
+  vRate,
   vSelect,
+  vScroll,
   vSwitch,
   vTable,
   vTextarea,
   vTimer,
   vTimerRange,
+  vTabs,
   vUpload,
   vText,
   vChart,
@@ -302,17 +305,21 @@ export function PaginationExample1() {
 }
 
 export function TabsExample1() {
-  const appRouter = vRouter({
-    default: '/overview',
-    routes: [
-      vRoute('/overview', { title: '概览', view: () => div('概览内容') }),
-      vRoute('/settings', { title: '设置', view: () => div('设置内容') })
-    ]
-  });
-
   return {
     render() {
-      return vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
+      return vTabs((tabs) => {
+        tabs.ariaLabel('服务标签');
+        tabs.vTab((tab) => {
+          tab.key('overview');
+          tab.label('概览');
+          tab.content('服务概览');
+        });
+        tabs.vTab((tab) => {
+          tab.key('logs');
+          tab.label('日志');
+          tab.content('运行日志');
+        });
+      });
     }
   };
 }
@@ -458,6 +465,19 @@ export function UploadExample1() {
   };
 }
 
+export function RateExample1() {
+  return {
+    render() {
+      return vRate({
+        allowHalf: true,
+        count: 5,
+        name: 'quality',
+        value: 4
+      });
+    }
+  };
+}
+
 export function DetailExample1() {
   return {
     render() {
@@ -583,6 +603,28 @@ export function MessageManagerExample1() {
   };
 }
 
+export function ScrollExample1() {
+  const source = Array.from({ length: 24 }, (_, index) => `条目 ${index + 1}`);
+
+  return {
+    render() {
+      return vScroll((scroll) => {
+        scroll.style('height', '280px');
+        scroll.items(source.slice(0, 6), (item) => div(item));
+        scroll.loadMore(({ append, block, page }) => {
+          const start = page * 6;
+          const next = source.slice(start, start + 6);
+          append(next);
+          if (start + next.length >= source.length) {
+            block(true);
+          }
+        });
+        scroll.threshold(48);
+      });
+    }
+  };
+}
+
 export const detailSourceRegistry = Object.freeze({
   'general:0': { component: ButtonExample1, imports: ['vButton'] },
   'layout:0': { component: DividerExample1, imports: ['divider', 'stack'] },
@@ -593,10 +635,7 @@ export const detailSourceRegistry = Object.freeze({
   'navigation:2': { component: DropdownMenuExample1, imports: ['vDropdownMenu'] },
   'navigation:3': { component: MenuExample1, imports: ['vMenu'] },
   'navigation:4': { component: PaginationExample1, imports: ['vPagination'] },
-  'navigation:6': {
-    component: TabsExample1,
-    imports: ['div', 'vRoute', 'vRouter', 'vRouterViews']
-  },
+  'navigation:6': { component: TabsExample1, imports: ['vTabs'] },
   'navigation:7': { component: RouterExample1, imports: ['div', 'hstack', 'router'] },
   'navigation:8': {
     component: RouterViewsExample1,
@@ -612,11 +651,13 @@ export const detailSourceRegistry = Object.freeze({
   'form:8': { component: TimerExample1, imports: ['vTimer'] },
   'form:9': { component: TimerRangeExample1, imports: ['vTimerRange'] },
   'form:10': { component: UploadExample1, imports: ['vUpload'] },
+  'form:11': { component: RateExample1, imports: ['vRate'] },
   'data-display:2': { component: DetailExample1, imports: ['vDetail'] },
   'data-display:3': { component: CodeExample1, imports: ['vCode'] },
   'data-display:4': { component: TableExample1, imports: ['vTable'] },
   'data-display:5': { component: CardExample1, imports: ['vCard'] },
   'data-display:6': { component: ChartExample1, imports: ['vChart'] },
+  'data-display:9': { component: ScrollExample1, imports: ['div', 'vScroll'] },
   'async:0': { component: DynamicLoaderExample1, imports: ['div', 'vDynamicLoader'] },
   'feedback:0': { component: MessageExample1, imports: ['stack', 'vMessageContainer'] },
   'feedback:1': { component: MessageManagerExample1, imports: ['stack', 'vMessageManager'] }

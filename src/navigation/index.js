@@ -18,6 +18,7 @@ import {
 } from './menu.js';
 import { VNavbar, vNavbar } from './navbar.js';
 import { VStep, VSteps, vStep, vSteps } from './steps.js';
+import { VTab, VTabs, vTab, vTabs } from './tabs.js';
 
 const navigationFactories = {
   vAnchor,
@@ -32,10 +33,12 @@ const navigationFactories = {
   vSidebar,
   vStep,
   vSteps,
-  vSubMenu
+  vSubMenu,
+  vTabs
 };
 
 registerChildFactories(HtmlElementNode, navigationFactories);
+registerChildFactories(VTabs, { vTab });
 
 export {
   VAnchor,
@@ -49,6 +52,8 @@ export {
   VNavbar,
   VStep,
   VSteps,
+  VTab,
+  VTabs,
   VSidebar,
   VSubMenu,
   vAnchor,
@@ -63,5 +68,7 @@ export {
   vSidebar,
   vStep,
   vSteps,
-  vSubMenu
+  vSubMenu,
+  vTab,
+  vTabs
 };

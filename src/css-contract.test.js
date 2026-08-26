@@ -60,6 +60,17 @@ const navigationSelectors = [
   ".yoya-vstep[data-status='process'] .yoya-vsteps-indicator",
   ".yoya-vstep[data-status='error'] .yoya-vsteps-indicator",
   ".yoya-vstep[data-status='finish'] .yoya-vsteps-connector",
+  '.yoya-vtabs',
+  ".yoya-vtabs[data-orientation='vertical']",
+  '.yoya-vtabs-nav',
+  '.yoya-vtabs-panels',
+  '.yoya-vtab-trigger',
+  ".yoya-vtab-trigger[data-active='true']",
+  '.yoya-vtab-trigger[disabled]',
+  '.yoya-vtab-panel',
+  '.yoya-vtab-panel[hidden]',
+  ".yoya-vtabs[data-variant='card'] .yoya-vtab-trigger[data-active='true']",
+  ".yoya-vtabs[data-variant='pills'] .yoya-vtab-trigger[data-active='true']",
   '.yoya-vbreadcrumb',
   '.yoya-vbreadcrumb-list',
   '.yoya-vbreadcrumb-item',
@@ -91,6 +102,15 @@ const navigationSelectors = [
   '.yoya-vavatar-upload-fallback',
   '.yoya-vavatar-upload-hint',
   '.yoya-vavatar-upload-remove',
+  '.yoya-vprogress',
+  '.yoya-vprogress-track',
+  '.yoya-vprogress-bar',
+  '.yoya-vprogress-label',
+  '.yoya-vprogress-text',
+  ".yoya-vprogress[data-size='small'] .yoya-vprogress-track",
+  ".yoya-vprogress[data-size='large'] .yoya-vprogress-track",
+  ".yoya-vprogress[data-indeterminate='true'] .yoya-vprogress-bar",
+  '@keyframes yoya-vprogress-indeterminate',
   '.yoya-vechart'
 ];
 
@@ -108,6 +128,26 @@ const avatarSelectors = [
   ".yoya-vavatar[data-status='away'] .yoya-vavatar-status"
 ];
 
+const feedbackSelectors = [
+  '.yoya-vtooltip',
+  '.yoya-vtooltip-target',
+  '.yoya-vtooltip-panel',
+  ".yoya-vtooltip[data-open='true'] > .yoya-vtooltip-panel",
+  ".yoya-vtooltip[data-placement='top'] > .yoya-vtooltip-panel::after",
+  ".yoya-vtooltip[data-placement='bottom'] > .yoya-vtooltip-panel::after",
+  ".yoya-vtooltip[data-placement='left'] > .yoya-vtooltip-panel::after",
+  ".yoya-vtooltip[data-placement='right'] > .yoya-vtooltip-panel::after"
+];
+
+const scrollSelectors = [
+  '.yoya-vscroll',
+  '.yoya-vscroll-list',
+  '.yoya-vscroll-footer',
+  ".yoya-vscroll[data-loading='true'] > .yoya-vscroll-footer",
+  ".yoya-vscroll[data-blocked='true'] > .yoya-vscroll-footer",
+  '.yoya-vscroll-status'
+];
+
 describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
@@ -123,6 +163,18 @@ describe('CSS style contract', () => {
 
   it('covers the avatar selectors', () => {
     avatarSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the feedback tooltip selectors', () => {
+    feedbackSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the infinite scroll selectors', () => {
+    scrollSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

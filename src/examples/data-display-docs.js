@@ -1,4 +1,5 @@
 import {
+  div,
   section,
   vAvatarUpload,
   vAvatar,
@@ -9,6 +10,8 @@ import {
   FolderOpenOutlined,
   FolderOutlined,
   vPagination,
+  vProgress,
+  vScroll,
   vTable,
   vText,
   vTree
@@ -433,6 +436,177 @@ const dataDisplayDocsDefinitions = Object.freeze({
       '需要批量选择资源或权限时，开启 checkable 并使用 checkedKeys。',
       '需要维护当前聚焦节点时，使用 selectedKeys 或 change 回调保持状态一致。'
     ]
+  }),
+  progress: createDataDisplayDocsDefinition({
+    apiIntro:
+      'vProgress 用轨道和填充条展示任务完成度，支持 value/max、百分比文本、状态色、尺寸、自定义格式和 indeterminate 动画。',
+    apiRows: [
+      [
+        'vProgress({ value, max, label, showText })',
+        '创建进度条，value 超过 max 时自动收敛到 max。',
+        'vProgress({ value: 64, max: 100 })'
+      ],
+      ['progress.value(value)', '读取或设置当前进度值。', 'progress.value(88)'],
+      ['progress.max(value)', '设置进度上限，并重新计算百分比。', 'progress.max(200)'],
+      ['progress.percent(value)', '读取或设置百分比，内部同步 value。', 'progress.percent(45)'],
+      [
+        'progress.status(value)',
+        '切换 normal / success / warning / error / processing 状态色。',
+        "progress.status('success')"
+      ],
+      ['progress.size(value)', '切换 small / default / large 轨道高度。', "progress.size('small')"],
+      [
+        'progress.strokeColor(value)',
+        '用自定义颜色覆盖状态色。',
+        "progress.strokeColor('#7c3aed')"
+      ],
+      ['progress.label(content)', '在轨道左侧显示简短标签。', "progress.label('构建')"],
+      ['progress.text(content)', '覆盖右侧文本，支持任意 ViewNode。', "progress.text('处理中')"],
+      [
+        'progress.format((value, percent) => content)',
+        '自定义百分比文本的渲染方式。',
+        'progress.format((value, percent) => `${value} (${Math.round(percent)}%)`)'
+      ],
+      [
+        'progress.indeterminate(value) / progress.active(value)',
+        '切换不确定进度动画，适合等待接口返回。',
+        'progress.indeterminate(true)'
+      ]
+    ],
+    apiSignature: `const progress = vProgress({
+  label: '部署',
+  max: 200,
+  value: 136,
+  status: 'processing',
+  format: (value, percent) => \`\${value} / 200 (\${Math.round(percent)}%)\`
+});`,
+    examples: [
+      {
+        component: ProgressBasicExample1,
+        description: 'value/max 驱动百分比，label 和 format 让进度条更贴合业务字段。',
+        id: 'basic',
+        imports: ['vCard', 'vProgress'],
+        sourceTitle: '基础进度条核心源码',
+        title: '基础进度条'
+      },
+      {
+        component: ProgressStatusExample1,
+        description: 'status 切换语义色，适合构建、发布、告警和同步等任务状态。',
+        id: 'status',
+        imports: ['vCard', 'vProgress'],
+        sourceTitle: '状态进度条核心源码',
+        title: '状态进度条'
+      },
+      {
+        component: ProgressDynamicExample1,
+        description: '按钮驱动 value 更新，达到 max 后自动切换为 success。',
+        id: 'dynamic',
+        imports: ['vButton', 'vCard', 'vProgress', 'vText'],
+        sourceTitle: '动态进度条核心源码',
+        title: '动态进度条'
+      }
+    ],
+    examplesIntro: '下面三个示例分别展示基础用法、状态组合和动态更新。',
+    heading: 'vProgress 进度条',
+    intro:
+      '进度条用于展示任务完成度，比如构建、发布、上传和资源分配。vProgress 把数值换算、语义状态、尺寸和可访问性统一起来，适合卡片、详情页和任务列表。',
+    key: 'progress',
+    routeItem: 'data-display:8',
+    title: '进度条',
+    usageItems: [
+      '需要展示任务完成百分比或资源用量时，用 vProgress 替代手写 div + width。',
+      '构建、发布、告警等不同场景使用 status 表达语义色。',
+      '接口未返回具体进度时，用 indeterminate 表示正在处理。'
+    ]
+  }),
+  scroll: createDataDisplayDocsDefinition({
+    apiIntro:
+      'vScroll 是滚动容器组件，滚动到接近底部时自动触发 loadMore。它支持 items/renderItem 数据驱动、loop 循环加载、block 阻止加载、threshold 触发距离和 reset 重置。',
+    apiRows: [
+      [
+        'vScroll({ items, renderItem, loadMore, loop, block, threshold })',
+        '创建滚动组件，items 提供首批数据，loadMore 负责后续分页。',
+        'vScroll({ items: [1, 2], renderItem: (item) => div(item) })'
+      ],
+      [
+        'scroll.items(data, renderItem)',
+        '替换全部数据，并用 renderItem 渲染每一条。',
+        'scroll.items(rows, (row) => div(row.name))'
+      ],
+      [
+        'scroll.append(data, renderItem)',
+        '追加下一页数据，可复用已设置的 renderItem。',
+        'scroll.append(nextRows)'
+      ],
+      [
+        'scroll.loadMore(handler)',
+        '设置加载回调，context 提供 append、block、done、page、scroll。',
+        'scroll.loadMore(({ append, block }) => { append(next); block(true); })'
+      ],
+      ['scroll.loop(value)', '开启循环加载并解除 block。', 'scroll.loop(true)'],
+      [
+        'scroll.block(value) / scroll.blocked(value)',
+        '阻止后续加载，并显示结束文案。',
+        'scroll.block(true)'
+      ],
+      ['scroll.loading(value)', '读取或设置加载中状态。', 'scroll.loading(true)'],
+      ['scroll.threshold(value)', '设置距离底部多少像素时触发加载。', 'scroll.threshold(48)'],
+      ['scroll.load()', '手动触发一次加载。', 'scroll.load()'],
+      ['scroll.reset()', '清空数据、页码和结束状态。', 'scroll.reset()'],
+      [
+        'scroll.loadingText(content) / scroll.endText(content)',
+        '自定义加载中和结束文案。',
+        "scroll.endText('没有更多了')"
+      ]
+    ],
+    apiSignature: `const scroll = vScroll({
+  items: firstPage,
+  renderItem: (item) => div(item.label),
+  loadMore: ({ append, block, page }) => {
+    const next = loadPage(page);
+    append(next);
+    if (next.length === 0) block(true);
+  },
+  threshold: 48
+});`,
+    examples: [
+      {
+        component: ScrollBasicExample1,
+        description: '首批数据由 items 提供，滚动到底部后自动追加后续页。',
+        id: 'basic',
+        imports: ['div', 'vCard', 'vScroll'],
+        sourceTitle: '基础滚动核心源码',
+        title: '基础滚动'
+      },
+      {
+        component: ScrollLoopBlockExample1,
+        description: 'loop 开启循环加载，block 阻止后续请求，按钮可以实时切换。',
+        id: 'loop-block',
+        imports: ['div', 'vButton', 'vCard', 'vScroll', 'vText'],
+        sourceTitle: '循环与阻止核心源码',
+        title: '循环与阻止'
+      },
+      {
+        component: ScrollAsyncExample1,
+        description: 'loadMore 支持返回 Promise，适合接入真实接口并展示加载状态。',
+        id: 'async',
+        imports: ['div', 'vButton', 'vCard', 'vScroll'],
+        sourceTitle: '异步加载核心源码',
+        title: '异步加载'
+      }
+    ],
+    examplesIntro: '下面三个示例分别展示基础滚动、循环/阻止控制和异步加载。',
+    heading: 'vScroll 滚动组件',
+    intro:
+      '滚动组件用于在固定高度的容器内按需加载和展示列表，适合日志、消息流、审计记录和长数据列表。',
+    key: 'scroll',
+    routeItem: 'data-display:9',
+    title: '滚动组件',
+    usageItems: [
+      '日志、消息流和长列表需要按需加载时，用 vScroll 代替一次性渲染全部数据。',
+      '列表到底后需要停止请求时，调用 block(true)。',
+      '需要不断重复同一批数据时，用 loop(true) 开启循环加载。'
+    ]
   })
 });
 
@@ -454,6 +628,14 @@ export function DetailDocumentationPage() {
 
 export function TreeDocumentationPage() {
   return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.tree);
+}
+
+export function ProgressDocumentationPage() {
+  return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.progress);
+}
+
+export function ScrollDocumentationPage() {
+  return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.scroll);
 }
 
 function createDataDisplayDocsDefinition(config) {
@@ -1679,6 +1861,296 @@ function TreeBuilderExample1() {
                 .variant('secondary')
                 .on('click', () => tree.collapseAll())
             );
+          });
+        });
+      });
+    }
+  };
+}
+
+function ProgressBasicExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础进度条');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('value 和 max 决定当前进度，右侧默认显示百分比。');
+            content.child(
+              vProgress((progress) => {
+                progress.label('部署进度');
+                progress.value(64);
+              })
+            );
+            content.child(
+              vProgress((progress) => {
+                progress.format((value, percent) => `${value} / 200（${Math.round(percent)}%）`);
+                progress.max(200);
+                progress.value(136);
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function ProgressStatusExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('状态进度条');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('status 切换语义色，适合构建、发布、告警和同步等任务状态。');
+            content.child(
+              vProgress((progress) => {
+                progress.label('构建');
+                progress.status('success');
+                progress.value(80);
+              })
+            );
+            content.child(
+              vProgress((progress) => {
+                progress.label('同步');
+                progress.status('processing');
+                progress.value(55);
+              })
+            );
+            content.child(
+              vProgress((progress) => {
+                progress.label('告警');
+                progress.status('warning');
+                progress.value(72);
+              })
+            );
+            content.child(
+              vProgress((progress) => {
+                progress.label('发布');
+                progress.status('error');
+                progress.value(34);
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function ProgressDynamicExample1() {
+  const progress = vProgress((progress) => {
+    progress.label('任务');
+    progress.status('processing');
+    progress.value(40);
+  });
+  const status = vText('当前 40%');
+  const update = (value) => {
+    progress.value(value);
+    progress.status(value >= 100 ? 'success' : 'processing');
+    status.textContent(`当前 ${Math.round(progress.percent())}%`);
+  };
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('动态进度条');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.child(progress);
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('当前进度');
+              row.spacer();
+              row.output((output) => {
+                output.attr('data-progress-dynamic-status', 'true');
+                output.child(status);
+              });
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.hstack((actions) => {
+            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+            actions.vButton((button) => {
+              button.label('减 10');
+              button.variant('secondary');
+              button.on('click', () => update(progress.value() - 10));
+            });
+            actions.vButton((button) => {
+              button.label('加 10');
+              button.variant('primary');
+              button.on('click', () => update(progress.value() + 10));
+            });
+            actions.vButton((button) => {
+              button.label('重置');
+              button.variant('ghost');
+              button.on('click', () => update(0));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function ScrollBasicExample1() {
+  const source = Array.from({ length: 30 }, (_, index) => `日志 ${index + 1}`);
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础滚动');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('items 提供首批数据，滚动接近底部时自动调用 loadMore 追加下一页。');
+            content.child(
+              vScroll((scroll) => {
+                scroll.style('height', '280px');
+                scroll.items(source.slice(0, 6), (item) => div(item));
+                scroll.loadMore(({ append, block, page }) => {
+                  const start = page * 6;
+                  const next = source.slice(start, start + 6);
+                  append(next);
+                  if (start + next.length >= source.length) {
+                    block(true);
+                  }
+                });
+                scroll.threshold(48);
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function ScrollLoopBlockExample1() {
+  const source = Array.from({ length: 12 }, (_, index) => `任务 ${index + 1}`);
+  const status = vText('当前：block');
+  const scroll = vScroll((scroll) => {
+    scroll.style('height', '220px');
+    scroll.items(source.slice(0, 4), (item) => div(item));
+    scroll.loadMore(({ append, block, page, scroll: api }) => {
+      if (api.loop()) {
+        const start = ((page - 1) % 3) * 4;
+        append(source.slice(start, start + 4));
+      } else {
+        const start = (page - 1) * 4;
+        const next = source.slice(start, start + 4);
+        append(next);
+        if (start + next.length >= source.length) {
+          block(true);
+        }
+      }
+    });
+    scroll.threshold(40);
+    scroll.block(true);
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('循环与阻止');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('loop 开启后数据会循环追加；block 会停止后续加载。');
+            content.child(scroll);
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('当前模式');
+              row.spacer();
+              row.output((output) => {
+                output.attr('data-scroll-loop-status', 'true');
+                output.child(status);
+              });
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.hstack((actions) => {
+            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+            actions.vButton((button) => {
+              button.label('开启循环');
+              button.variant('primary');
+              button.on('click', () => {
+                scroll.loop(true);
+                status.textContent('loop：循环加载');
+                scroll.check();
+              });
+            });
+            actions.vButton((button) => {
+              button.label('阻止加载');
+              button.variant('secondary');
+              button.on('click', () => {
+                scroll.block(true);
+                status.textContent('block：停止加载');
+              });
+            });
+            actions.vButton((button) => {
+              button.label('重置');
+              button.variant('ghost');
+              button.on('click', () => {
+                scroll.reset().loop(false).check();
+                status.textContent('已重置');
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function ScrollAsyncExample1() {
+  const source = Array.from({ length: 20 }, (_, index) => `消息 ${index + 1}`);
+  const scroll = vScroll((scroll) => {
+    scroll.style('height', '260px');
+    scroll.items(source.slice(0, 5), (item) => div(item));
+    scroll.loadMore(
+      ({ append, block, page }) =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            const start = page * 5;
+            const next = source.slice(start, start + 5);
+            append(next);
+            if (start + next.length >= source.length) {
+              block(true);
+            }
+            resolve();
+          }, 400);
+        })
+    );
+    scroll.loadingText('异步加载中…');
+    scroll.endText('没有更多消息');
+    scroll.threshold(40);
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('异步加载');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('loadMore 可以返回 Promise，组件会在返回前保持 loading 状态。');
+            content.child(scroll);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton((button) => {
+            button.label('重新加载');
+            button.on('click', () => {
+              scroll.reset();
+              scroll.check();
+            });
           });
         });
       });

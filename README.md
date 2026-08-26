@@ -359,12 +359,16 @@ Available compound component exports:
 - `vCard`, `vCardHeader`, `vCardBody`, `vCardFooter`
 - `vMenu`, `vMenuItem`, `vDropdownMenu`, `vContextMenu`
 - `vMessage`, `vMessageContainer`
-- `vInput`, `vSelect`, `vTextarea`, `vCheckbox`, `vCheckboxes`, `vSwitch`, `vField`, `vForm`
+- `vTooltip`
+- `vTabs`, `vTab`
+- `vInput`, `vSelect`, `vTextarea`, `vCheckbox`, `vCheckboxes`, `vSwitch`, `vRate`, `vField`, `vForm`
 - `vTimer` (`date`, `datetime-local`, and `time` modes)
 - `vAvatarUpload`
 - `vUpload`
 - `vTree`
 - `vTreeNode`
+- `vProgress`
+- `vScroll`
 - `toast`
 
 Browser demo:

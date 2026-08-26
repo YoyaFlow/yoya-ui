@@ -1,4 +1,13 @@
-import { section, toast, vCard, vMessage, vMessageContainer, vText } from '../index.js';
+import {
+  section,
+  toast,
+  vButton,
+  vCard,
+  vMessage,
+  vMessageContainer,
+  vText,
+  vTooltip
+} from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 const feedbackDocsDefinitions = Object.freeze({
@@ -87,11 +96,70 @@ toast.use(host);`,
       '页面内需要保留上下文的状态提示，用 vMessage 放在相关区域旁边。',
       '同一业务状态反复变化时，给消息设置 id，让容器替换旧消息而不是堆叠。'
     ]
+  }),
+  tooltip: createFeedbackDocsDefinition({
+    apiIntro:
+      'vTooltip 用浮层在目标附近补充简短说明，默认 hover/focus 触发，也支持 click 和 manual。',
+    apiRows: [
+      [
+        'vTooltip({ target, content, placement, trigger })',
+        '创建提示浮层。',
+        "vTooltip({ target: '保存', content: '立即发布配置' })"
+      ],
+      ['tooltip.target(content)', '设置被包裹的触发目标。', "tooltip.target('保存')"],
+      ['tooltip.content(content)', '设置提示内容。', "tooltip.content('发布后不可撤销')"],
+      [
+        'tooltip.placement(value)',
+        '设置 top/bottom/left/right、start/end，以及 top-left、bottom-left 等别名。',
+        "tooltip.placement('bottom-left')"
+      ],
+      ['tooltip.trigger(value)', '设置 hover/focus/click/manual。', "tooltip.trigger('click')"],
+      ['tooltip.open(value) / close() / toggle()', '程序化控制浮层。', 'tooltip.open(true)']
+    ],
+    apiSignature: `const tip = vTooltip({
+  target: vButton('保存'),
+  content: '保存后立即发布',
+  placement: 'top',
+  trigger: 'hover'
+});`,
+    examples: [
+      {
+        component: TooltipPlacementExample1,
+        description: '把简短说明放在目标四周，默认使用 top，也可指定其余方向。',
+        id: 'placement',
+        imports: ['section', 'vTooltip'],
+        sourceTitle: 'Tooltip 位置核心源码',
+        title: '位置'
+      },
+      {
+        component: TooltipTriggerExample1,
+        description: 'click 触发适合按钮或行操作，Escape 和外部点击都可以关闭。',
+        id: 'trigger',
+        imports: ['section', 'vButton', 'vTooltip'],
+        sourceTitle: 'Tooltip 触发核心源码',
+        title: '触发方式'
+      }
+    ],
+    examplesIntro: '下面两个示例分别展示常用位置和 click 触发。',
+    heading: 'vTooltip 提示',
+    intro: 'Tooltip 用于在元素附近显示简短、非阻塞的补充说明，不打断当前操作。',
+    key: 'tooltip',
+    routeItem: 'feedback:2',
+    title: '提示',
+    usageItems: [
+      '图标、按钮、表格字段的缩写或附加信息适合用 Tooltip 补充。',
+      '需要用户主动确认的说明不要只放进 Tooltip，应使用消息或弹窗。',
+      '键盘用户可以通过 focus 触发获得同样的说明。'
+    ]
   })
 });
 
 export function MessageDocumentationPage() {
   return createFeedbackDocumentationPage(feedbackDocsDefinitions.message);
+}
+
+export function TooltipDocumentationPage() {
+  return createFeedbackDocumentationPage(feedbackDocsDefinitions.tooltip);
 }
 
 function createFeedbackDocsDefinition(config) {
@@ -432,6 +500,69 @@ function CountdownMessageExample1() {
             });
           });
         });
+      });
+    }
+  };
+}
+
+function TooltipPlacementExample1() {
+  const items = [
+    ['top', '上方'],
+    ['top-left', '左上'],
+    ['top-right', '右上'],
+    ['right', '右侧'],
+    ['bottom', '下方'],
+    ['bottom-left', '左下'],
+    ['bottom-right', '右下'],
+    ['left', '左侧']
+  ];
+
+  return {
+    render() {
+      return section((content) => {
+        content.style({
+          alignItems: 'center',
+          display: 'grid',
+          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+          justifyItems: 'center'
+        });
+        items.forEach(([placement, label]) => {
+          content.child(
+            vTooltip((tooltip) =>
+              tooltip.placement(placement).target(label).content(`${placement} 方向说明`)
+            )
+          );
+        });
+      });
+    }
+  };
+}
+
+function TooltipTriggerExample1() {
+  return {
+    render() {
+      return section((content) => {
+        content.style({
+          alignItems: 'center',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px'
+        });
+        content.p('点击目标查看触发说明');
+        content.child(
+          vTooltip((tooltip) =>
+            tooltip
+              .trigger('click')
+              .target(
+                vButton((button) => {
+                  button.label('查看规则');
+                  button.variant('secondary');
+                })
+              )
+              .content('再次点击外部区域或按 Escape 关闭。')
+          )
+        );
       });
     }
   };

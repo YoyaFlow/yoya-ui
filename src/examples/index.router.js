@@ -19,10 +19,12 @@ import {
   AvatarDocumentationPage,
   BadgeDocumentationPage,
   DetailDocumentationPage,
+  ProgressDocumentationPage,
+  ScrollDocumentationPage,
   TableDocumentationPage,
   TreeDocumentationPage
 } from './data-display-docs.js';
-import { MessageDocumentationPage } from './feedback-docs.js';
+import { MessageDocumentationPage, TooltipDocumentationPage } from './feedback-docs.js';
 import { FieldDocumentationPage, FormDocumentationPage } from './form-docs.js';
 import { ComponentDefinitionDocumentationPage } from './component-definition-docs.js';
 import { EchartsDocumentationPage } from './echarts-docs.js';
@@ -36,7 +38,8 @@ import {
   NavbarDocumentationPage,
   RouterDocumentationPage,
   RouterViewsDocumentationPage,
-  StepsDocumentationPage
+  StepsDocumentationPage,
+  TabsDocumentationPage
 } from './navigation-docs.js';
 import {
   BodyDocumentationPage,
@@ -99,7 +102,7 @@ const componentMenuSections = [
       },
       { label: '分页', details: 'vPagination' },
       { label: '步骤条', details: 'vSteps / vStep' },
-      { label: '标签页', details: 'vRouterViews' },
+      { label: '标签页', details: 'vTabs / vTab' },
       { label: '路由', details: 'Router / vRouter / vLink / vRoute' },
       { label: '路由视图', details: 'vRouterView / vRouterViews' },
       { label: '导航栏', details: 'vNavbar / vMenu / vButton' }
@@ -119,7 +122,8 @@ const componentMenuSections = [
       { label: '字段', details: 'vField' },
       { label: '日期时间', details: 'vTimer' },
       { label: '日期范围', details: 'vTimerRange' },
-      { label: '文件上传', details: 'vUpload' }
+      { label: '文件上传', details: 'vUpload' },
+      { label: '评分', details: 'vRate' }
     ]
   },
   {
@@ -133,7 +137,9 @@ const componentMenuSections = [
       { label: '表格', details: 'vTable' },
       { label: '树形控件', details: 'vTree' },
       { label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
-      { label: '图表', details: 'vChart' }
+      { label: '图表', details: 'vChart' },
+      { label: '进度条', details: 'vProgress' },
+      { label: '滚动组件', details: 'vScroll' }
     ]
   },
   {
@@ -146,7 +152,8 @@ const componentMenuSections = [
     title: '反馈',
     items: [
       { label: '消息', details: 'vMessage / vMessageContainer / toast' },
-      { label: '消息管理器', details: 'vMessageManager' }
+      { label: '消息管理器', details: 'vMessageManager' },
+      { label: '提示', details: 'vTooltip' }
     ]
   },
   {
@@ -190,7 +197,8 @@ const layoutDocumentationPages = Object.freeze({
 });
 
 const feedbackDocumentationPages = Object.freeze({
-  0: MessageDocumentationPage
+  0: MessageDocumentationPage,
+  2: TooltipDocumentationPage
 });
 
 const formDocumentationPages = Object.freeze({
@@ -203,7 +211,9 @@ const dataDisplayDocumentationPages = Object.freeze({
   1: BadgeDocumentationPage,
   2: DetailDocumentationPage,
   4: TableDocumentationPage,
-  5: TreeDocumentationPage
+  5: TreeDocumentationPage,
+  8: ProgressDocumentationPage,
+  9: ScrollDocumentationPage
 });
 
 const locale = createI18n({
@@ -510,6 +520,10 @@ function createComponentItemView(category, item, itemIndex, context) {
 
   if (category.id === 'navigation' && itemIndex === 5) {
     return StepsDocumentationPage().render();
+  }
+
+  if (category.id === 'navigation' && itemIndex === 6) {
+    return TabsDocumentationPage().render();
   }
 
   if (category.id === 'navigation' && itemIndex === 9) {

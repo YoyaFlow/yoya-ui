@@ -1,6 +1,7 @@
 export * from '../actions/index.js';
 export * from '../navigation/index.js';
 export * from '../feedback/message.js';
+export * from '../feedback/tooltip.js';
 export * from '../form/index.js';
 export * from '../data-display/avatar.js';
 export * from '../data-display/badge.js';
@@ -9,5 +10,7 @@ export * from '../data-display/detail.js';
 export * from '../data-display/code.js';
 export * from '../data-display/table.js';
 export * from '../data-display/pagination.js';
+export * from '../data-display/progress.js';
+export * from '../data-display/vscroll.js';
 export * from '../data-display/tree.js';
 export * from '../i18n/index.js';

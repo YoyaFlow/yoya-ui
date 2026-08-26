@@ -1,4 +1,14 @@
-import { section, toast, vBreadcrumb, vBreadcrumbItem, vCard, vSteps, vText } from '../index.js';
+import {
+  section,
+  toast,
+  vBreadcrumb,
+  vBreadcrumbItem,
+  vCard,
+  vSteps,
+  vTab,
+  vTabs,
+  vText
+} from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   AdminSidebarCard,
@@ -538,6 +548,92 @@ const navigationDocsDefinitions = Object.freeze({
       '当前步骤失败时，用 status("error") 表达需要处理的状态。',
       '表单或审批流空间不足时，使用 vertical 或 small 模式。'
     ]
+  }),
+  tabs: createNavigationDocsDefinition({
+    apiIntro:
+      'vTabs 用 tablist/tabpanel 组织内容区域，vTab 负责单个标签和面板。active 支持 key 或索引，箭头键会切换并聚焦标签。',
+    apiRows: [
+      [
+        'vTabs({ active, items, orientation, variant, size })',
+        '创建标签页，active 可用 key 或索引。',
+        "vTabs({ active: 'overview', items: [...] })"
+      ],
+      ['tabs.active(value)', '读取或设置当前标签，支持 key 或索引。', "tabs.active('logs')"],
+      [
+        'tabs.items(value)',
+        '替换全部标签数据。',
+        "tabs.items([{ label: '概览', content: '概览内容' }])"
+      ],
+      [
+        'tabs.change(handler) / tabs.onChange(handler)',
+        '监听标签切换事件。',
+        'tabs.change(({ active }) => ...)'
+      ],
+      ['tabs.orientation(value)', '切换 horizontal 或 vertical。', "tabs.orientation('vertical')"],
+      ['tabs.variant(value)', '切换 line / card / pills 三种样式。', "tabs.variant('pills')"],
+      ['tabs.size(value)', '切换 small / default / large。', "tabs.size('small')"],
+      [
+        'tabs.vTab(setup)',
+        '用回调声明单个标签和面板。',
+        "tabs.vTab((tab) => tab.label('概览').content('概览内容'))"
+      ],
+      [
+        'tab.label() / tab.content() / tab.key() / tab.disabled()',
+        '设置标签文案、面板内容、key 和禁用状态。',
+        'tab.disabled(true)'
+      ]
+    ],
+    apiSignature: `const tabs = vTabs((tabs) => {
+  tabs.active('overview');
+  tabs.vTab((tab) => {
+    tab.key('overview');
+    tab.label('概览');
+    tab.content((panel) => panel.p('服务概览'));
+  });
+  tabs.vTab((tab) => {
+    tab.key('logs');
+    tab.label('日志');
+    tab.content('运行日志');
+  });
+});`,
+    examples: [
+      {
+        component: TabsBasicExample1,
+        description: 'key 驱动当前标签，点击或方向键切换后同步状态文案。',
+        id: 'basic',
+        imports: ['vCard', 'vTabs', 'vText'],
+        sourceTitle: '基础标签页核心源码',
+        title: '基础标签页'
+      },
+      {
+        component: TabsVerticalExample1,
+        description: 'vertical 模式把标签放在左侧，适合详情页或设置页。',
+        id: 'vertical',
+        imports: ['vCard', 'vTabs'],
+        sourceTitle: '纵向标签页核心源码',
+        title: '纵向标签页'
+      },
+      {
+        component: TabsCustomExample1,
+        description: 'card 样式、small 尺寸和禁用标签适合紧凑的管理工具。',
+        id: 'custom',
+        imports: ['vCard', 'vTab', 'vTabs'],
+        sourceTitle: '紧凑标签页核心源码',
+        title: '紧凑标签页'
+      }
+    ],
+    examplesIntro: '下面三个示例分别展示基础切换、纵向布局和紧凑样式。',
+    heading: 'vTabs 标签页',
+    intro:
+      '标签页用于在同一区域内切换相关视图，避免把内容全部摊开。vTabs 提供语义化 tablist/tabpanel、键盘导航、禁用标签和多种视觉样式。',
+    key: 'tabs',
+    routeItem: 'navigation:6',
+    title: '标签页',
+    usageItems: [
+      '详情页、设置页和同一对象的多类信息需要分区展示时使用。',
+      '需要键盘可访问的标签切换时，使用 vTabs 而不是手写按钮和 hidden 面板。',
+      '空间紧凑时使用 small、card 或 pills，垂直模式适合侧栏式布局。'
+    ]
   })
 });
 
@@ -567,6 +663,10 @@ export function NavbarDocumentationPage() {
 
 export function StepsDocumentationPage() {
   return createNavigationDocumentationPage(navigationDocsDefinitions.steps);
+}
+
+export function TabsDocumentationPage() {
+  return createNavigationDocumentationPage(navigationDocsDefinitions.tabs);
 }
 
 function createNavigationDocsDefinition(config) {
@@ -1009,6 +1109,142 @@ function StepsCustomExample1() {
                   step.description('准备上线');
                   step.icon('3');
                 });
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function TabsBasicExample1() {
+  const status = vText('当前：概览');
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('基础标签页');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('key 驱动当前标签，点击或方向键切换后同步状态文案。');
+            content.child(
+              vTabs((tabs) => {
+                tabs.ariaLabel('服务详情标签');
+                tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
+                tabs.vTab((tab) => {
+                  tab.key('overview');
+                  tab.label('概览');
+                  tab.content((panel) => {
+                    panel.p('服务概览');
+                    panel.p('展示核心指标和近期变更。');
+                  });
+                });
+                tabs.vTab((tab) => {
+                  tab.key('logs');
+                  tab.label('日志');
+                  tab.content((panel) => panel.p('最近运行日志会显示在这里。'));
+                });
+                tabs.vTab((tab) => {
+                  tab.key('audit');
+                  tab.label('审计');
+                  tab.content((panel) => panel.p('审计记录和操作历史。'));
+                });
+              })
+            );
+            content.div((row) => {
+              row.style('alignItems', 'center');
+              row.style('display', 'flex');
+              row.style('justifyContent', 'space-between');
+              row.span('当前标签');
+              row.output((output) => {
+                output.attr('data-tabs-basic-status', 'true');
+                output.child(status);
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function TabsVerticalExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('纵向标签页');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('vertical 模式把标签放在左侧，适合详情页或设置页。');
+            content.child(
+              vTabs((tabs) => {
+                tabs.ariaLabel('设置页导航');
+                tabs.orientation('vertical');
+                tabs.variant('pills');
+                tabs.vTab((tab) => {
+                  tab.key('profile');
+                  tab.label('基本信息');
+                  tab.content((panel) => {
+                    panel.p('服务名称、负责人和环境信息。');
+                  });
+                });
+                tabs.vTab((tab) => {
+                  tab.key('permissions');
+                  tab.label('权限');
+                  tab.content((panel) => {
+                    panel.p('成员和角色权限设置。');
+                  });
+                });
+                tabs.vTab((tab) => {
+                  tab.key('notifications');
+                  tab.label('通知');
+                  tab.content((panel) => {
+                    panel.p('消息通知偏好。');
+                  });
+                });
+              })
+            );
+          });
+        });
+      });
+    }
+  };
+}
+
+function TabsCustomExample1() {
+  const auditTab = vTab({
+    content: '审计记录暂未开放',
+    disabled: true,
+    label: '审计'
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('紧凑标签页');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('card 样式和 small 尺寸适合嵌入工具栏或详情卡片。');
+            content.child(
+              vTabs((tabs) => {
+                tabs.ariaLabel('服务标签');
+                tabs.size('small');
+                tabs.variant('card');
+                tabs.vTab((tab) => {
+                  tab.key('overview');
+                  tab.label('概览');
+                  tab.content((panel) => panel.p('服务状态与核心指标。'));
+                });
+                tabs.vTab((tab) => {
+                  tab.key('logs');
+                  tab.label('日志');
+                  tab.content((panel) => panel.p('查看最近日志。'));
+                });
+                tabs.child(auditTab);
               })
             );
           });

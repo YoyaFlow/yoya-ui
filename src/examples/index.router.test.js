@@ -121,7 +121,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(48);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(52);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -283,6 +283,54 @@ describe('renderExamplesIndex', () => {
     const page = document.querySelector('[data-component-route-item="form:10"]');
     expect(page.querySelector('.yoya-vupload')).not.toBeNull();
     expect(page.querySelector('[data-source-example]').textContent).toContain('UploadExample1');
+  });
+
+  it('renders the rating demo page with live component and source', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/form/11');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('评分');
+    });
+
+    const page = document.querySelector('[data-component-route-item="form:11"]');
+    expect(page.querySelector('.yoya-vrate')).not.toBeNull();
+    expect(page.querySelector('[data-source-example]').textContent).toContain('RateExample1');
+  });
+
+  it('renders the scroll component docs with API and detailed demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/9');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('滚动组件');
+    });
+
+    const page = document.querySelector('[data-data-display-docs="scroll"]');
+    const demos = page.querySelectorAll('[data-data-display-demo]');
+    const basic = page.querySelector('[data-data-display-demo="basic"]');
+
+    expect(page.querySelector('h1').textContent).toBe('vScroll 滚动组件');
+    expect(page.textContent).toContain('scroll.loadMore(handler)');
+    expect(demos).toHaveLength(3);
+    expect(basic.querySelector('.yoya-vscroll')).not.toBeNull();
+    expect(basic.querySelector('[data-source-example]').textContent).toContain(
+      'ScrollBasicExample1'
+    );
+
+    const loopDemo = page.querySelector('[data-data-display-demo="loop-block"]');
+    const loopButton = [...loopDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('开启循环')
+    );
+    const blockButton = [...loopDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('阻止加载')
+    );
+
+    loopButton.click();
+    expect(loopDemo.querySelector('.yoya-vscroll').dataset.loop).toBe('true');
+
+    blockButton.click();
+    expect(loopDemo.querySelector('.yoya-vscroll').dataset.blocked).toBe('true');
   });
 
   it('renders the third-party ECharts demo page', async () => {
@@ -475,6 +523,16 @@ describe('renderExamplesIndex', () => {
       3
     ],
     [
+      '/components/navigation/6',
+      '标签页',
+      'tabs',
+      'vTabs 标签页',
+      'basic',
+      'TabsBasicExample1',
+      'vTabs((tabs)',
+      3
+    ],
+    [
       '/components/navigation/9',
       '导航栏',
       'navbar',
@@ -573,6 +631,16 @@ describe('renderExamplesIndex', () => {
       'TreeBasicExample1',
       'vTree((root) =>',
       4
+    ],
+    [
+      '/components/data-display/8',
+      '进度条',
+      'progress',
+      'vProgress 进度条',
+      'basic',
+      'ProgressBasicExample1',
+      'vProgress((progress)',
+      3
     ]
   ])(
     'renders detailed docs for %s',
@@ -868,6 +936,28 @@ describe('renderExamplesIndex', () => {
     expect(demo.querySelectorAll('.yoya-vstep')[2].dataset.status).toBe('process');
   });
 
+  it('switches tabs in the tabs docs demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/navigation/6');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('标签页');
+    });
+
+    const demo = document.querySelector('[data-navigation-demo="basic"]');
+    const status = demo.querySelector('[data-tabs-basic-status]');
+    const triggers = demo.querySelectorAll('.yoya-vtab-trigger');
+
+    expect(status.textContent).toBe('当前：概览');
+    expect(triggers[0].getAttribute('aria-selected')).toBe('true');
+
+    triggers[1].click();
+
+    expect(status.textContent).toBe('当前：日志');
+    expect(triggers[1].getAttribute('aria-selected')).toBe('true');
+    expect(demo.querySelector('.yoya-vtab-panel').hidden).toBe(true);
+  });
+
   it('switches the active item in the breadcrumb docs demo', async () => {
     root = renderExamplesIndex('#app');
 
@@ -1022,6 +1112,43 @@ describe('renderExamplesIndex', () => {
     expect(status.textContent).toBe('已选择 worker');
     expect(tableDemo.querySelector('.yoya-vtable-caption').textContent).toBe('服务列表');
     expect(tableDemo.querySelectorAll('.yoya-vtable-row')).toHaveLength(3);
+  });
+
+  it('updates value and status in the progress docs demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/8');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('进度条');
+    });
+
+    const demo = document.querySelector('[data-data-display-demo="dynamic"]');
+    const progress = demo.querySelector('.yoya-vprogress');
+    const status = demo.querySelector('[data-progress-dynamic-status]');
+    const addButton = [...demo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('加 10')
+    );
+    const resetButton = [...demo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('重置')
+    );
+
+    expect(status.textContent).toBe('当前 40%');
+    expect(progress.dataset.status).toBe('processing');
+
+    addButton.click();
+    addButton.click();
+    addButton.click();
+    addButton.click();
+    addButton.click();
+    addButton.click();
+
+    expect(status.textContent).toBe('当前 100%');
+    expect(progress.dataset.status).toBe('success');
+
+    resetButton.click();
+
+    expect(status.textContent).toBe('当前 0%');
+    expect(progress.dataset.status).toBe('processing');
   });
 
   it('updates badge counts and overflow text in the badge docs demo', async () => {
@@ -1356,6 +1483,45 @@ describe('renderExamplesIndex', () => {
       '校验未通过'
     );
     expect(validationDemo.textContent).toContain('服务名称不能为空');
+  });
+
+  it('renders the tooltip documentation page with placement and trigger demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/feedback/2');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('提示');
+    });
+
+    const page = document.querySelector('[data-feedback-docs="tooltip"]');
+    const demos = page.querySelectorAll('[data-feedback-demo]');
+    const placementDemo = page.querySelector('[data-feedback-demo="placement"]');
+    const placementTargets = placementDemo.querySelectorAll('.yoya-vtooltip');
+
+    expect(page.querySelector('h1').textContent).toBe('vTooltip 提示');
+    expect(demos).toHaveLength(2);
+    expect(placementTargets).toHaveLength(8);
+
+    placementTargets[0]
+      .querySelector('.yoya-vtooltip-target')
+      .dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+    expect(placementTargets[0].dataset.open).toBe('true');
+
+    const triggerDemo = page.querySelector('[data-feedback-demo="trigger"]');
+    triggerDemo.querySelector('.yoya-vbutton').click();
+    expect(triggerDemo.querySelector('.yoya-vtooltip').dataset.open).toBe('true');
+
+    document
+      .querySelector('.components-workspace')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(triggerDemo.querySelector('.yoya-vtooltip').dataset.open).toBeUndefined();
+
+    const placementSource = placementDemo.querySelector('[data-source-example]').textContent;
+    expect(placementSource).toContain('export function TooltipPlacementExample1');
+    expect(placementSource).toContain("import { section } from 'yoya-ui';");
+    expect(placementSource).toContain("import { vTooltip } from 'yoya-ui';");
+    expect(placementSource).toContain("'top-left'");
+    expect(placementSource).toContain("'bottom-left'");
   });
 
   it('shows a planned entry with placeholder source', async () => {

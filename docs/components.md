@@ -30,7 +30,7 @@
 4. 菜单 vMenu / vMenuItem / vMenuGroup / vMenuDivider / vSubMenu / vSidebar
 5. 分页 vPagination
 6. 步骤条 vSteps / vStep
-7. 标签页 vRouterViews
+7. 标签页 vTabs / vTab
 8. 路由 Router / vRouter / vLink / vRoute
 9. 路由视图 vRouterView / vRouterViews
 10. 导航栏 vNavbar / vMenu / vButton
@@ -49,6 +49,7 @@
 10. 日期范围 vTimerRange
 11. 文件上传 vUpload
 12. 头像上传 vAvatarUpload
+13. 评分 vRate
 
 ### 数据展示
 
@@ -60,6 +61,8 @@
 6. 树形控件 vTree
 7. 卡片 vCard / vCardHeader / vCardBody / vCardFooter
 8. 图表 vChart
+9. 进度条 vProgress
+10. 滚动组件 vScroll
 
 ### 异步
 
@@ -69,6 +72,7 @@
 
 1. 消息 vMessage / vMessageContainer / toast
 2. 消息管理器 vMessageManager
+3. 提示 vTooltip
 
 ### 第三方扩展
 

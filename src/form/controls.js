@@ -1,6 +1,7 @@
 import { ViewNode, VTextNode, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
+import { VRate } from './rate.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -2303,9 +2304,10 @@ export class VFormItem extends HtmlElementNode {
   }
 
   _validate(formValues) {
+    const control = findFieldControl(this._editorBox);
     const value = this.value();
 
-    if (this._required && isEmptyFormValue(value)) {
+    if (this._required && isEmptyFormValue(value, control)) {
       this.error(this._requiredMessage);
       return false;
     }
@@ -2572,7 +2574,11 @@ function normalizeValueList(value) {
     : [resolveTextValue(value)];
 }
 
-function isEmptyFormValue(value) {
+function isEmptyFormValue(value, control = null) {
+  if (control instanceof VRate && value === 0) {
+    return true;
+  }
+
   if (value === null || value === undefined || value === '') {
     return true;
   }
@@ -2754,6 +2760,10 @@ function readControlValue(control) {
     return control.value();
   }
 
+  if (control instanceof VRate) {
+    return control.value();
+  }
+
   if (control instanceof VCheckbox || control instanceof VSwitch) {
     return control.value();
   }
@@ -2807,6 +2817,11 @@ function applyControlValue(control, value) {
   }
 
   if (control instanceof VCheckboxes) {
+    control.value(value);
+    return;
+  }
+
+  if (control instanceof VRate) {
     control.value(value);
     return;
   }
@@ -2896,7 +2911,8 @@ function collectFormValues(node, result) {
     node instanceof VSelect ||
     node instanceof VTextarea ||
     node instanceof VCheckbox ||
-    node instanceof VSwitch
+    node instanceof VSwitch ||
+    node instanceof VRate
   ) {
     const name = node.name();
     if (name) {
@@ -2987,12 +3003,17 @@ function validateFormControls(node, formValues = {}) {
       current instanceof VTextarea ||
       current instanceof VCheckbox ||
       current instanceof VSwitch ||
+      current instanceof VRate ||
       (typeof current.tagName === 'function' &&
         ['input', 'select', 'textarea'].includes(current.tagName()));
 
     if (isControl) {
       if (!isControlDisabled(current) && isControlRequired(current)) {
         const value = readControlValue(current);
+        if (current instanceof VRate && value === 0) {
+          valid = false;
+          return;
+        }
         if (Array.isArray(value)) {
           valid = value.length > 0;
         } else if (typeof value === 'boolean') {
@@ -3057,7 +3078,8 @@ function findFieldControl(node) {
     node instanceof VTextarea ||
     node instanceof VCheckboxes ||
     node instanceof VCheckbox ||
-    node instanceof VSwitch
+    node instanceof VSwitch ||
+    node instanceof VRate
   ) {
     return node;
   }

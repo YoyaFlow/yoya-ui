@@ -6,6 +6,7 @@ import {
   vCheckboxes,
   vInput,
   vMessageContainer,
+  vRate,
   vSelect,
   vSwitch,
   vTextarea,
@@ -30,12 +31,13 @@ import {
 import { BodyPageCard } from './demos/layout.js';
 import { AnchorStandaloneDemo } from './demos/anchor.js';
 import { CommandMenuCard } from './demos/navigation.js';
+import { RouterNavigationCard, RouterViewsEditorStandalone } from './demos/router.js';
 import {
-  RouterNavigationCard,
-  RouterViewsEditorCard,
-  RouterViewsEditorStandalone
-} from './demos/router.js';
-import { detailSourceRegistry, DropdownMenuExample1 } from './detail-sources.js';
+  detailSourceRegistry,
+  DropdownMenuExample1,
+  ScrollExample1,
+  TabsExample1
+} from './detail-sources.js';
 
 function DividerDemo() {
   return {
@@ -610,6 +612,57 @@ function UploadDemo() {
   };
 }
 
+function RateDemo() {
+  const rate = vRate({
+    allowHalf: true,
+    count: 5,
+    name: 'quality',
+    value: 4
+  });
+  const state = vText('当前评分：4');
+  const syncState = () => state.textContent(`当前评分：${rate.value()}`);
+
+  rate.on('change', syncState);
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('评分');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('vRate 支持整数和半星评分，可清空、禁用并跟随 vForm 收集。');
+            content.child(rate);
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('评分状态');
+              row.spacer();
+              row.output((output) => output.child(state));
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.hstack((actions) => {
+            actions.style({ flexWrap: 'wrap', gap: '10px' });
+            actions.vButton((button) => {
+              button.label('重置为 3.5');
+              button.variant('secondary');
+              button.on('click', () => {
+                rate.value(3.5);
+                syncState();
+              });
+            });
+            actions.vButton((button) => {
+              button.label('清空');
+              button.on('click', () => rate.clear());
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 const detailEntries = new Map([
   [
     'general:0',
@@ -725,12 +778,12 @@ const detailEntries = new Map([
   [
     'navigation:6',
     freezeEntry({
-      behavior: ['vRouterViews 会把访问过的路由保留成标签页。'],
-      component: RouterViewsEditorCard,
-      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
-      notes: ['标签页式路由视图更像 IDE。'],
-      sourceTitle: 'IDE 风格路由视图核心源码',
-      summary: '标签页式路由视图。',
+      behavior: ['vTabs 提供语义化 tablist/tabpanel 和键盘切换。'],
+      component: TabsExample1,
+      imports: ['vTabs'],
+      notes: ['适合详情页、设置页等分区内容。'],
+      sourceTitle: '标签页核心源码',
+      summary: '语义化标签页切换。',
       title: '标签页'
     })
   ],
@@ -879,6 +932,21 @@ const detailEntries = new Map([
     })
   ],
   [
+    'form:11',
+    freezeEntry({
+      behavior: [
+        '点击星星评分，再次点击当前值会清空。',
+        'allowHalf 支持半星，方向键和 Home/End 可以微调评分。'
+      ],
+      component: RateDemo,
+      imports: ['vCard', 'vRate', 'vText'],
+      notes: ['适合满意度、服务质量和任务优先级评分。'],
+      sourceTitle: '评分核心源码',
+      summary: '整数与半星评分输入。',
+      title: '评分'
+    })
+  ],
+  [
     'data-display:2',
     freezeEntry({
       behavior: ['只读信息适合用 label/value 的结构来展示。'],
@@ -936,6 +1004,18 @@ const detailEntries = new Map([
       sourceTitle: '图表宿主核心源码',
       summary: '图表宿主与适配器。',
       title: '图表'
+    })
+  ],
+  [
+    'data-display:9',
+    freezeEntry({
+      behavior: ['滚动到接近底部时会自动加载下一页，loop 可循环加载，block 可停止请求。'],
+      component: ScrollExample1,
+      imports: ['div', 'vScroll'],
+      notes: ['loop 可以持续循环加载，block 可以停止后续请求。'],
+      sourceTitle: '滚动组件核心源码',
+      summary: '滚动到底部自动加载更多数据。',
+      title: '滚动组件'
     })
   ],
   [
