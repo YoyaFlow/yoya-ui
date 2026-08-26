@@ -29,6 +29,69 @@ describe('router', () => {
     expect(document.querySelector('#app').textContent).toContain('标签 profile');
   });
 
+  it('supports history mode navigation and popstate', () => {
+    const appRouter = router((r) => {
+      r.default('/home');
+      r.route('/home', () => div('首页'));
+      r.route('/user/:id', ({ params, query }) => div(`${params.id}:${query.tab}`));
+      r.notFound(({ path }) => div(`404 ${path}`));
+    });
+
+    appRouter.mode('history');
+    appRouter.bindTo('#app').start();
+
+    expect(appRouter.mode()).toBe('history');
+    expect(appRouter.currentPath()).toBe('/home');
+    expect(window.location.pathname).toBe('/home');
+
+    appRouter.navigate('/user/42?tab=profile');
+
+    expect(appRouter.currentPath()).toBe('/user/42?tab=profile');
+    expect(window.location.pathname).toBe('/user/42');
+    expect(window.location.search).toBe('?tab=profile');
+    expect(document.querySelector('#app').textContent).toBe('42:profile');
+
+    window.history.pushState(null, '', '/user/7?tab=back');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(appRouter.currentPath()).toBe('/user/7?tab=back');
+    expect(document.querySelector('#app').textContent).toBe('7:back');
+    appRouter.stop();
+  });
+
+  it('renders vLink href without hash in history mode', () => {
+    const appRouter = router((r) => {
+      r.route('/users/:id', () => div('用户'));
+    });
+
+    appRouter.mode('history');
+    const link = vLink(appRouter, {
+      label: '用户资料',
+      to: '/users/42'
+    });
+    const element = link.renderDom();
+
+    expect(element.getAttribute('href')).toBe('/users/42');
+
+    appRouter.navigate('/users/42', { replace: true });
+    expect(element.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('supports mode through declarative vRouter config', () => {
+    const appRouter = vRouter({
+      default: '/docs',
+      mode: 'history',
+      routes: [vRoute('/docs', () => div('文档'))]
+    });
+
+    appRouter.bindTo('#app').start();
+
+    expect(appRouter.mode()).toBe('history');
+    expect(appRouter.currentPath()).toBe('/docs');
+    expect(window.location.pathname).toBe('/docs');
+    expect(document.querySelector('#app').textContent).toBe('文档');
+  });
+
   it('uses default and notFound views for missing routes', () => {
     const appRouter = router((r) => {
       r.default('/home');

@@ -55,6 +55,7 @@ describe('renderExamplesIndex', () => {
     const pages = {
       'anchor.html': 'AnchorStandaloneDemo',
       'declarative-router.html': 'DeclarativeRouterCard',
+      'router-history.html': 'RouterHistoryCard',
       'router-links.html': 'RouterNavigationCard',
       'router-views-top.html': 'RouterViewsTopStandalone',
       'router-views.html': 'RouterViewsEditorStandalone'
@@ -481,7 +482,7 @@ describe('renderExamplesIndex', () => {
       'links',
       'RouterNavigationCard',
       'vRouterView(',
-      2
+      3
     ],
     [
       '/components/navigation/8',
@@ -1375,11 +1376,16 @@ export function SampleCard() {
     const declarativeFrame = routerPage.querySelector(
       '[data-navigation-demo="declarative"] [data-navigation-demo-frame]'
     );
+    const historyFrame = routerPage.querySelector(
+      '[data-navigation-demo="history"] [data-navigation-demo-frame]'
+    );
 
     expect(linksFrame).not.toBeNull();
     expect(declarativeFrame).not.toBeNull();
+    expect(historyFrame).not.toBeNull();
     expect(linksFrame.getAttribute('src')).toContain('router-links.html');
     expect(declarativeFrame.getAttribute('src')).toContain('declarative-router.html');
+    expect(historyFrame.getAttribute('src')).toContain('router-history.html');
     expect(routerPage.querySelector('.yoya-vrouter-view')).toBeNull();
     expect(window.location.hash).toContain('/components/navigation/7');
 

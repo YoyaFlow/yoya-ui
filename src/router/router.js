@@ -90,8 +90,10 @@ export class Router extends ElementNode {
     this._outlet = this;
     this._subscribers = new Set();
     this._ignoreNextHashPath = null;
+    this._mode = 'hash';
     this._started = false;
     this._onHashChange = () => this._handleHashChange();
+    this._onPopState = () => this._handlePopState();
     this.attr('data-yoya-router', '');
 
     if (setup !== null) {
@@ -113,6 +115,31 @@ export class Router extends ElementNode {
    */
   default(path) {
     this._defaultPath = normalizePath(path);
+    return this;
+  }
+
+  mode(value) {
+    if (value === undefined) {
+      return this._mode;
+    }
+
+    const nextMode = value === 'history' ? 'history' : 'hash';
+
+    if (nextMode === this._mode) {
+      return this;
+    }
+
+    const wasStarted = this._started;
+    if (wasStarted) {
+      this.stop();
+    }
+
+    this._mode = nextMode;
+
+    if (wasStarted) {
+      this.start();
+    }
+
     return this;
   }
 
@@ -143,11 +170,21 @@ export class Router extends ElementNode {
 
   start() {
     if (!this._started && typeof window !== 'undefined') {
-      window.addEventListener('hashchange', this._onHashChange);
+      if (this._mode === 'history') {
+        window.addEventListener('popstate', this._onPopState);
+      } else {
+        window.addEventListener('hashchange', this._onHashChange);
+      }
       this._started = true;
     }
 
-    if (!window.location.hash && this._defaultPath) {
+    const currentPath = readPath(this._mode);
+    const isDefaultLocation =
+      this._mode === 'history'
+        ? currentPath === '/' || currentPath === '/index.html'
+        : !window.location.hash;
+
+    if (isDefaultLocation && this._defaultPath) {
       return this.navigate(this._defaultPath, { replace: true });
     }
 
@@ -156,7 +193,11 @@ export class Router extends ElementNode {
 
   stop() {
     if (this._started && typeof window !== 'undefined') {
-      window.removeEventListener('hashchange', this._onHashChange);
+      if (this._mode === 'history') {
+        window.removeEventListener('popstate', this._onPopState);
+      } else {
+        window.removeEventListener('hashchange', this._onHashChange);
+      }
       this._started = false;
     }
 
@@ -174,8 +215,8 @@ export class Router extends ElementNode {
       return this;
     }
 
-    const hashChanged = writeHashPath(nextPath, options);
-    if (hashChanged && !options.replace) {
+    const pathChanged = writePath(nextPath, options, this._mode);
+    if (pathChanged && !options.replace && this._mode === 'hash') {
       this._ignoreNextHashPath = nextPath;
     }
     this._renderResolved(resolved);
@@ -183,7 +224,7 @@ export class Router extends ElementNode {
   }
 
   refresh() {
-    const nextPath = readHashPath();
+    const nextPath = readPath(this._mode);
     const resolved = this._resolve(nextPath);
 
     if (!this._canEnter(resolved.context)) {
@@ -275,6 +316,11 @@ export class Router extends ElementNode {
       return this;
     }
 
+    this._ignoreNextHashPath = null;
+    return this.refresh();
+  }
+
+  _handlePopState() {
     this._ignoreNextHashPath = null;
     return this.refresh();
   }
@@ -1168,7 +1214,7 @@ function updateLink(node, state, routerInstance) {
   node.attr({
     'aria-current': active ? 'page' : null,
     class: [...classes].join(' '),
-    href: `#${target}`
+    href: routerInstance.mode() === 'history' ? target : `#${target}`
   });
   return node;
 }
@@ -1278,6 +1324,18 @@ function readHashPath() {
   return normalizePath(window.location.hash.replace(/^#/, '') || '/');
 }
 
+function readPath(mode = 'hash') {
+  if (typeof window === 'undefined') {
+    return '/';
+  }
+
+  if (mode === 'history') {
+    return normalizePath(`${window.location.pathname}${window.location.search}`);
+  }
+
+  return readHashPath();
+}
+
 function writeHashPath(path, options = {}) {
   if (typeof window === 'undefined') {
     return false;
@@ -1295,6 +1353,31 @@ function writeHashPath(path, options = {}) {
   }
 
   window.location.hash = hash;
+  return true;
+}
+
+function writePath(path, options = {}, mode = 'hash') {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (mode !== 'history') {
+    return writeHashPath(path, options);
+  }
+
+  const target = normalizePath(path);
+  const currentPath = readPath('history');
+
+  if (!options.replace && currentPath === target) {
+    return false;
+  }
+
+  if (options.replace) {
+    window.history.replaceState(null, '', target);
+  } else {
+    window.history.pushState(null, '', target);
+  }
+
   return true;
 }
 

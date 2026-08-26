@@ -1,4 +1,13 @@
-import { div, router, vCard, vContainer, vRoute, vRouter, vRouterViews } from '../../index.js';
+import {
+  div,
+  router,
+  vCard,
+  vContainer,
+  vRoute,
+  vRouter,
+  vRouterViews,
+  vText
+} from '../../index.js';
 
 export function RouterNavigationCard() {
   const appRouter = router((routes) => {
@@ -82,6 +91,62 @@ export function DeclarativeRouterCard() {
           });
         });
         appRouter.navigate('/home', { replace: true });
+      });
+    }
+  };
+}
+
+export function RouterHistoryCard() {
+  const appRouter = vRouter({
+    mode: 'history',
+    notFound: ({ path }) => div(`History 404：${path}`),
+    routes: [
+      vRoute('/overview', () =>
+        div((page) => {
+          page.h3('History 概览');
+          page.p('这个视图运行在 iframe 内部，URL 使用 history 模式。');
+        })
+      ),
+      vRoute('/projects/:id', ({ params, query }) =>
+        div((page) => {
+          page.h3(`项目 ${params.id}`);
+          page.p(`当前标签：${query.tab || 'overview'}`);
+        })
+      )
+    ]
+  });
+  const currentPath = vText('');
+  appRouter.subscribe(({ path }) => currentPath.textContent(`当前地址：${path}`));
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('History 路由');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('iframe 内部使用 history 模式，pushState 和 popstate 不会影响父级演示。');
+            stack.hstack((nav) => {
+              nav.className('router-demo-navigation');
+              nav.styles({ flexWrap: 'wrap', gap: '10px' });
+              nav.vLink(appRouter, { label: '概览', to: '/overview' });
+              nav.vLink(appRouter, {
+                label: '项目 42',
+                params: { id: 42 },
+                query: { tab: 'tasks' },
+                to: '/projects/:id'
+              });
+              nav.vLink(appRouter, { label: '未匹配', to: '/missing' });
+            });
+            stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+            stack.output((output) => {
+              output.className('history-url-output');
+              output.child(currentPath);
+            });
+          });
+        });
+        appRouter.navigate('/overview', { replace: true });
+        appRouter.start();
       });
     }
   };

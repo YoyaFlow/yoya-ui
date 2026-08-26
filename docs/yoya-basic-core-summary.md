@@ -266,9 +266,9 @@ i18n 模块提供轻量国际化：
 
 ### 路由
 
-`VRouter` 是轻量 Hash 路由：
+`VRouter` 是轻量 hash/history 路由：
 
-- hash 路由模式。
+- hash 和 history 路由模式。
 - 动态参数：`/user/:id`
 - query 参数解析。
 - 默认路由。
@@ -382,7 +382,7 @@ src/
     index.js        布局工厂
   components/
     index.js        复杂组件入口
-  router.js         hash 路由出口
+  router.js         hash/history 路由出口
   theme/
     index.js        主题入口
   extras/

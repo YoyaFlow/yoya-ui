@@ -10,6 +10,7 @@ import {
 import { AnchorStandaloneDemo } from './demos/anchor.js';
 import {
   DeclarativeRouterCard,
+  RouterHistoryCard,
   RouterNavigationCard,
   RouterViewsEditorStandalone,
   RouterViewsTopStandalone
@@ -164,9 +165,14 @@ const navigationDocsDefinitions = Object.freeze({
         "router((r) => r.route('/overview', view))"
       ],
       [
-        'vRouter({ default, routes, notFound })',
+        'vRouter({ mode, default, routes, notFound })',
         '声明式创建路由。',
-        'vRouter({ default: "/home", routes: [...] })'
+        "vRouter({ mode: 'history', default: '/home', routes: [...] })"
+      ],
+      [
+        "router.mode('hash' | 'history')",
+        '切换 URL 模式，默认是 hash。',
+        "appRouter.mode('history')"
       ],
       ['vRoute(pattern, config)', '描述路径、标题和视图。', "vRoute('/users/:id', view)"],
       [
@@ -204,9 +210,20 @@ const navigationDocsDefinitions = Object.freeze({
         sourceComponent: DeclarativeRouterCard,
         sourceTitle: '声明式路由核心源码',
         title: '声明式路由'
+      },
+      {
+        component: RouterHistoryCard,
+        description: 'history 模式在独立 iframe 中运行，pushState 不会修改父级演示页地址。',
+        frame: true,
+        frameSrc: './router-history.html',
+        id: 'history',
+        imports: ['div', 'vCard', 'vRoute', 'vRouter', 'vText'],
+        sourceComponent: RouterHistoryCard,
+        sourceTitle: 'History 路由核心源码',
+        title: 'History 路由'
       }
     ],
-    examplesIntro: '两个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
+    examplesIntro: '三个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
     heading: 'Router 路由',
     intro:
       '路由组件负责把 URL、参数和视图连接起来。为了不让演示路由改动组件目录自身的 hash，这里全部使用 iframe 隔离运行。',
@@ -214,9 +231,9 @@ const navigationDocsDefinitions = Object.freeze({
     routeItem: 'navigation:7',
     title: '路由',
     usageItems: [
-      '需要 hash 路由、参数解析和视图切换时使用 Router / vRouter。',
-      '页面跳转入口统一交给 vLink，不要在业务代码里手写 hash。',
-      '路由演示放在 iframe 中，避免干扰父级演示页面的地址。'
+      '需要 hash 或 history 路由、参数解析和视图切换时使用 Router / vRouter。',
+      '页面跳转入口统一交给 vLink，不要在业务代码里手写 URL。',
+      '路由演示放在 iframe 中，history 模式只影响 iframe 自己的地址。'
     ]
   }),
   routerViews: createNavigationDocsDefinition({

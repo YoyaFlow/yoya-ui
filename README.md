@@ -16,7 +16,7 @@ Yoya UI is a small vanilla JavaScript UI foundation library built with Vite. It 
   - Full conforming HTML element factories from the WHATWG HTML standard.
   - Namespace-aware `svg()` tag entry with SVG-only child element extensions.
   - Layout factories such as `flex`, `grid`, `stack`, `hstack`, `vstack`, `center`, `container`, `spacer`, `divider`, `vRow` / `vCol`, and `vContainer` / `vHeader` / `vAside` / `vMain` / `vFooter`.
-  - A compact hash `Router` in `router.js` for route matching and ViewNode rendering.
+  - A compact `Router` in `router.js` for hash/history route matching and ViewNode rendering.
   - Reserved or conflicting names use explicit aliases: `varTag()` creates `<var>`, and parent nodes use `styleTag()` to create `<style>` without replacing `.style()`.
 
 ## Project Documents
