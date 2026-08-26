@@ -213,6 +213,7 @@ UI 组件 > 布局组件 > SVG 组件 > 基础元素
 - 注册状态处理器：`registerStateHandler()`
 - 状态拦截：`registerStateInterceptor()`
 - 状态快照：`saveStateSnapshot()` / `restoreStateSnapshot()`
+- 状态组件封装：`vStateNode()` 提供 `state()` / `render()` / `update()`
 - 组件内置常见状态：`disabled`、`active`、`error`、`loading` 等。
 
 这使组件可以把交互状态和样式变化收敛到内部，而不是让业务页面直接操作 CSS。

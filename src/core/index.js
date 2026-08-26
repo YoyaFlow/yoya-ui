@@ -23,3 +23,4 @@ export {
   i18nText,
   installI18nStringShortcut
 } from './i18n.js';
+export { vStateNode } from './state-node.js';

@@ -4,7 +4,8 @@ const documentationThemes = [
   { accent: '#0f766e', prefix: 'navigation' },
   { accent: '#7c3aed', prefix: 'data-display' },
   { accent: '#0f766e', prefix: 'feedback' },
-  { accent: '#047857', prefix: 'i18n' }
+  { accent: '#047857', prefix: 'i18n' },
+  { accent: '#0f766e', prefix: 'state' }
 ];
 
 function documentationRules(prefix, accent) {
@@ -1021,6 +1022,31 @@ const i18nExtraRules = [
   ]
 ];
 
+const stateExtraRules = [
+  [
+    '.components-state-demo-live .yoya-vcard',
+    {
+      maxWidth: '640px',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-state-demo-live .yoya-vcard-footer',
+    {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  ],
+  [
+    '.components-state-demo-live .yoya-vcard-body output',
+    {
+      color: '#172033',
+      fontWeight: '600'
+    }
+  ]
+];
+
 const demoRules = [
   ...baseRules,
   ...documentationThemes.flatMap(({ accent, prefix }) => documentationRules(prefix, accent)),
@@ -1033,6 +1059,7 @@ const demoRules = [
   ...thirdPartyExtraRules,
   ...definitionExtraRules,
   ...i18nExtraRules,
+  ...stateExtraRules,
   ...genericRules
 ];
 

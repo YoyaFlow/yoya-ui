@@ -28,6 +28,7 @@ import { ComponentDefinitionDocumentationPage } from './component-definition-doc
 import { EchartsDocumentationPage } from './echarts-docs.js';
 import { IconsDocumentationPage } from './icons-docs.js';
 import { I18nDocumentationPage } from './i18n-docs.js';
+import { StateNodeDocumentationPage } from './state-node-docs.js';
 import {
   AnchorDocumentationPage,
   BreadcrumbDocumentationPage,
@@ -55,7 +56,8 @@ const componentMenuSections = [
     title: '开发指南',
     items: [
       { label: '定义组件', details: 'function + render()' },
-      { label: '国际化', details: 'I18n / createI18n / i18nText' }
+      { label: '国际化', details: 'I18n / createI18n / i18nText' },
+      { label: '状态节点', details: 'vStateNode' }
     ]
   },
   {
@@ -468,6 +470,10 @@ function createComponentItemView(category, item, itemIndex, context) {
 
   if (category.id === 'guides' && itemIndex === 1) {
     return I18nDocumentationPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 2) {
+    return StateNodeDocumentationPage().render();
   }
 
   if (category.id === 'third-party' && itemIndex === 0) {

@@ -121,7 +121,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(47);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(48);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -354,6 +354,16 @@ describe('renderExamplesIndex', () => {
       4
     ],
     [
+      '/components/guides/2',
+      '状态节点',
+      'state',
+      'vStateNode 状态节点',
+      'counter',
+      'StateCounterExample1',
+      'vStateNode(',
+      3
+    ],
+    [
       '/components/layout/0',
       '分割线',
       'divider',
@@ -584,17 +594,17 @@ describe('renderExamplesIndex', () => {
       });
 
       const page = document.querySelector(
-        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"]`
+        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"]`
       );
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
       const demoNodes = page.querySelectorAll(
-        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo]'
+        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo], [data-state-demo]'
       );
       expect(demoNodes).toHaveLength(demoCount);
 
       const source = page.querySelector(
-        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example]`
+        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example], [data-state-demo="${firstDemoId}"] [data-source-example]`
       );
       expect(source).not.toBeNull();
       expect(source.textContent).toContain(`export function ${sourceName}`);
@@ -675,6 +685,43 @@ describe('renderExamplesIndex', () => {
 
     expect(extend.textContent).toContain('こんにちは、Ada');
     expect(extend.querySelector('.yoya-vdropdown-trigger').textContent).toContain('日本語');
+  });
+
+  it('runs state node demos with update and rebuild modes', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/guides/2');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('状态节点');
+    });
+
+    const page = document.querySelector('[data-state-docs="state"]');
+    const counter = page.querySelector('[data-state-demo="counter"] .components-state-demo-live');
+    const plusButton = [...counter.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('+1')
+    );
+
+    expect(counter.textContent).toContain('0');
+    plusButton.click();
+    expect(counter.textContent).toContain('1');
+
+    const rebuild = page.querySelector('[data-state-demo="rebuild"] .components-state-demo-live');
+    const executeButton = [...rebuild.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('执行')
+    );
+    executeButton.click();
+
+    expect(rebuild.textContent).toContain('状态：running');
+    expect(rebuild.textContent).toContain('次数：1');
+
+    const toggle = page.querySelector('[data-state-demo="toggle"] .components-state-demo-live');
+    const toggleButton = [...toggle.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('隐藏')
+    );
+    toggleButton.click();
+
+    expect(toggle.textContent).toContain('当前内容已隐藏');
+    expect(toggle.querySelector('button').textContent).toBe('显示');
   });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
