@@ -96,6 +96,13 @@ describe('non-color token contract', () => {
 });
 
 describe('density contract', () => {
+  it('places the compact density block after the token block so it wins on the document root', () => {
+    const tokenBlock = css.indexOf(':root,');
+    const densityBlock = css.indexOf("[data-yoya-density='compact']");
+    expect(tokenBlock).toBeGreaterThan(-1);
+    expect(densityBlock).toBeGreaterThan(tokenBlock);
+  });
+
   it('provides a compact density switch that tightens spacing and controls', () => {
     expect(css).toContain("[data-yoya-density='compact']");
     expect(css).toContain('--yoya-space-3: 10px;');

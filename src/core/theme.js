@@ -27,7 +27,11 @@ export function setYoyaMode(mode = 'light', options = {}) {
   }
 
   if (options.persist && hasStorage()) {
-    localStorage.setItem(STORAGE_MODE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_MODE_KEY, next);
+    } catch {
+      // 隐私模式或配额限制下忽略持久化失败。
+    }
   }
 
   return next;
@@ -70,7 +74,11 @@ export function setYoyaTheme(name = '', options = {}) {
       delete root.dataset.yoyaTheme;
     }
     if (options.persist && hasStorage()) {
-      localStorage.removeItem(STORAGE_THEME_KEY);
+      try {
+        localStorage.removeItem(STORAGE_THEME_KEY);
+      } catch {
+        // 隐私模式或配额限制下忽略持久化失败。
+      }
     }
     return '';
   }
@@ -79,7 +87,11 @@ export function setYoyaTheme(name = '', options = {}) {
     root.dataset.yoyaTheme = name;
   }
   if (options.persist && hasStorage()) {
-    localStorage.setItem(STORAGE_THEME_KEY, name);
+    try {
+      localStorage.setItem(STORAGE_THEME_KEY, name);
+    } catch {
+      // 隐私模式或配额限制下忽略持久化失败。
+    }
   }
 
   return name;

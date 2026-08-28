@@ -19,7 +19,7 @@
 | 颜色     | `--yoya-color-*`、`--yoya-raw-*`                                                                          | 语义色 + 品牌色板派生（见 §3）                 |
 | 间距     | `--yoya-space-{1..8}`                                                                                     | 4/8/12/16/24/32/48/64，紧凑模式整体收紧        |
 | 字体排印 | `--yoya-font-family`、`--yoya-font-size-{xs,sm,base,lg,xl}`、`--yoya-font-weight-*`、`--yoya-line-height` | 字号比例尺、字重、行高                         |
-| 控件尺寸 | `--yoya-control-height-{sm,md,lg}`                                                                        | 28/34/40 → 30/34/38 默认（按钮等）             |
+| 控件尺寸 | `--yoya-control-height-{sm,md,lg}`                                                                        | 30/34/38 默认；compact 26/30/34                |
 | 圆角     | `--yoya-radius-{sm,md,lg}`                                                                                | 4/6/8                                          |
 | 阴影     | `--yoya-shadow-{sm,md,lg}`                                                                                | 明暗双值（`light-dark`）                       |
 | 动效     | `--yoya-motion-{fast,base,slow}`、`--yoya-ease-{in,out,in-out}`                                           | 时长 + 缓动；`prefers-reduced-motion` 全局降级 |
@@ -81,6 +81,7 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 - 默认（无属性）为浅色，与历史行为一致；`dark` 强制深色；`system` 跟随操作系统。
 - 不依赖 `prefers-color-scheme` 媒体查询复制 token，不存在重复的暗色定义块。
 - 品牌主题 `[data-yoya-theme]` 只覆盖 raw token，浅/深自动派生跟随。
+- 页面级模式/密度切换需将 `data-yoya-mode` / `data-yoya-density` 设置在 `documentElement`（token 在 `:root` 解析后继承）；局部容器上的属性只改变该容器自身的 `color-scheme`，不会为该容器重新着色。
 
 ## 5. 密度模式
 
@@ -94,19 +95,20 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 }
 ```
 
-组件只有消费 space / control token（而不是硬编码 px）才会响应密度切换。
+组件只有消费 space / control token（而不是硬编码 px）才会响应密度切换。vButton 尺寸与 vTable 单元格/表头间距已迁移为 token 消费（间距归一化到 4px 刻度）。
 
 ## 6. 定制阶梯
 
-| 层级 | 定制口                    | 手段                                                                     |
-| ---- | ------------------------- | ------------------------------------------------------------------------ |
-| L0   | token 覆盖（全局/作用域） | 重定义 `--yoya-*`，或在任意容器上局部重定义实现局部换肤                  |
-| L0.5 | 剥离预设皮肤              | `replaceClassName(old, next, tolerate)` + 用户自己的 CSS 文件            |
-| L2   | 微调覆盖                  | 库规则在 `@layer yoya` 内且基础规则用 `:where()`，未分层用户规则天然优先 |
-| L3   | 实例级                    | 行内 `styles()` / `style()`                                              |
-| L4   | 业务钩子                  | `className('my-x')` 追加自定义类                                         |
-| L5   | 组件 API                  | `type/size/disabled/…`，禁止用 CSS 硬改组件变体                          |
-| L6   | 完全替换                  | 按标准自建/包装组件                                                      |
+| 层级 | 定制口             | 手段                                                                     |
+| ---- | ------------------ | ------------------------------------------------------------------------ |
+| L0   | token 覆盖（全局） | 重定义 `--yoya-*` 实现整站换肤                                           |
+| L1   | 作用域 token 覆盖  | 在任意容器上局部重定义 `--yoya-*` 实现局部换肤                           |
+| L2   | 剥离预设皮肤       | `replaceClassName(old, next, tolerate)` + 用户自己的 CSS 文件            |
+| L3   | 微调覆盖           | 库规则在 `@layer yoya` 内且基础规则用 `:where()`，未分层用户规则天然优先 |
+| L4   | 实例级             | 行内 `styles()` / `style()`                                              |
+| L5   | 业务钩子           | `className('my-x')` 追加自定义类                                         |
+| L6   | 组件 API           | `type/size/disabled/…`，禁止用 CSS 硬改组件变体                          |
+| L7   | 完全替换           | 按标准自建/包装组件                                                      |
 
 ### replaceClassName
 
@@ -120,7 +122,7 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 vCard((card) => card.replaceClassName('yoya-vcard', 'acme-card'));
 ```
 
-预设样式全部从根类作用域书写（无孤儿部件选择器），因此替换根类后整棵子树与预设样式脱钩。
+预设样式全部从根类作用域书写（无孤儿部件选择器），因此替换根类后整棵子树与预设样式脱钩；基于根类的 `data-*` 状态选择器（如 `.yoya-vtabs .yoya-vtab-trigger[data-active]`）同样随之失效，状态钩子样式需要一并由用户 CSS 接管。
 
 ## 7. className 契约
 
@@ -156,6 +158,7 @@ initYoyaTheme({ persist: true }); // 恢复上次选择的 mode / theme
 
 - 组件规则统一放在 `@layer yoya` 内，未分层（用户）规则天然优先，无需 `!important`。
 - 基础根规则使用 `:where()` 降特异度。
+- 例外：`@media (prefers-reduced-motion: reduce)` 全局降级出于无障碍目的使用 `!important`，是唯一不受"用户规则优先"约束的库规则。
 - token 与模式/密度块留在层外（`@layer yoya;` 之前），保证用户 token 覆盖优先。
 
 ## 9. SSR 与集成

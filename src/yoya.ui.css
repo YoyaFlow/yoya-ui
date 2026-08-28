@@ -15,19 +15,6 @@
 [data-yoya-mode='system'] {
   color-scheme: light dark;
 }
-[data-yoya-density='compact'] {
-  --yoya-space-1: 3px;
-  --yoya-space-2: 6px;
-  --yoya-space-3: 10px;
-  --yoya-space-4: 12px;
-  --yoya-space-5: 18px;
-  --yoya-space-6: 24px;
-  --yoya-space-7: 36px;
-  --yoya-space-8: 48px;
-  --yoya-control-height-sm: 26px;
-  --yoya-control-height-md: 30px;
-  --yoya-control-height-lg: 34px;
-}
 
 @property --yoya-raw-primary {
   syntax: '<color>';
@@ -79,7 +66,10 @@
   --yoya-color-surface-hover: light-dark(#f8fafc, #182338);
   --yoya-color-surface-muted: light-dark(#fbfcfe, #0f172a);
   --yoya-color-text: light-dark(#172033, #e6edf7);
-  --yoya-color-text-active: light-dark(#1d4ed8, #60a5fa);
+  --yoya-color-text-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary), black 20%),
+    color-mix(in srgb, var(--yoya-raw-primary), white 40%)
+  );
   --yoya-color-text-danger: light-dark(#b91c1c, #f87171);
   --yoya-color-text-inverse: light-dark(#ffffff, #ffffff);
   --yoya-color-text-muted: light-dark(#64748b, #8494aa);
@@ -288,6 +278,20 @@
   --yoya-z-popover: 120;
   --yoya-z-overlay: 300;
   --yoya-z-toast: 500;
+}
+
+[data-yoya-density='compact'] {
+  --yoya-space-1: 3px;
+  --yoya-space-2: 6px;
+  --yoya-space-3: 10px;
+  --yoya-space-4: 12px;
+  --yoya-space-5: 18px;
+  --yoya-space-6: 24px;
+  --yoya-space-7: 36px;
+  --yoya-space-8: 48px;
+  --yoya-control-height-sm: 26px;
+  --yoya-control-height-md: 30px;
+  --yoya-control-height-lg: 34px;
 }
 @layer yoya {
   .yoya-component {
