@@ -35,6 +35,7 @@ yoya-ui 采用「标准与实现分离」的架构，核心的目标不是“做
 - [yoya-basic core summary](docs/yoya-basic-core-summary.md)
 - [component development spec](docs/component-development-spec.md)
 - [component library authoring guide](docs/component-library-authoring.md)
+- [theme styling spec](docs/theme-styling.md)
 
 ## Requirements
 

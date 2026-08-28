@@ -90,6 +90,13 @@ export function vStatusDot(first = null, second = null, third = null) {
 - 第三方组件建议使用自己的类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
 - 颜色、间距等样式优先使用主题变量 `var(--yoya-<token>, fallback)`，主题根为 `:root, [data-yoya-theme]`（见 `yoya.ui.css`）。
 
+## 4.1 样式定制与主题
+
+- 组件预设样式必须从根类作用域书写（`.yoya-v<name> ...`），并让用户可以通过 `replaceClassName('yoya-v<name>', 'my-class')` 剥离预设、用自定义 CSS 接管。
+- 实例级定制应通过组件 API 或行内 `styles()` 提供；全局定制通过覆盖 `--yoya-*` token 或多个维度开关实现。
+- 库组件自身运行在 `@layer yoya` 内且基础规则低特异度，用户规则天然优先；第三方组件建议遵循相同约定。
+- 主题变量体系、换肤维度、明暗/密度模式与定制阶梯详见 [主题样式规范](theme-styling.md)。
+
 ## 5. 文本与 i18n 契约
 
 组件的文案输入应统一兼容以下四种写法（由 `vText` / `child()` 自动归一）：

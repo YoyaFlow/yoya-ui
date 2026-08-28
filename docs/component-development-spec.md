@@ -118,6 +118,19 @@
 - 每个组件批次至少配一个 examples 页面，展示常用元素、事件和动态状态。
 - 测试优先复用现有 Vitest + jsdom 环境，不新增浏览器自动化依赖，除非浮层定位或真实交互需要。
 
+## 样式与定制契约
+
+组件样式与主题遵循统一契约，详见 [主题样式规范](theme-styling.md)，核心条款：
+
+- **类名契约**：组件根 `yoya-component yoya-v<name>`、部件 `yoya-v<name>-<part>`、修饰符 `yoya-v<name>--<modifier>`；状态一律 kebab-case 的 `data-*` 属性。
+- **预设根类作用域**：组件预设规则必须从根类作用域书写，禁止孤儿部件选择器，保证替换根类后整棵子树与预设样式脱钩。
+- **层叠保障**：组件规则在 `@layer yoya` 内、基础规则用 `:where()`，用户未分层规则天然优先；token 与模式/密度块留在层外供覆盖。
+- **预设可剥离**：组件必须允许用户通过 `replaceClassName(old, next, tolerate)` 替换预设类；实例级定制走行内 `styles()` 或组件 API。
+- **主题 token**：样式优先引用 `--yoya-*` token（颜色/间距/字体/控件尺寸/阴影/动效/层级/边框），禁止硬编码可 token 化数值；换肤只覆盖 token。
+- **明暗与密度**：`data-yoya-mode`（light/dark/system）与 `data-yoya-density`（默认/compact）是正交开关，由 CSS 变量覆盖实现。
+
+新增组件必须满足以上契约，并由 `className-contract` / `preset-scope` / `cascade-layer` / `theme-tokens` 契约测试把关。
+
 ## Out of Scope
 
 - 本规格不包含立即实现所有组件。
