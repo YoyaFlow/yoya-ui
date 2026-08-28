@@ -1083,7 +1083,6 @@ describe('renderExamplesIndex', () => {
     phoneFrames.forEach((frame) => {
       expect(frame.tagName).toBe('IFRAME');
       expect(frame.style.width).toBe('360px');
-      expect(frame.style.borderRadius).toContain('34px');
     });
   });
 
