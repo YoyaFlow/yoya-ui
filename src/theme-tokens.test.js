@@ -51,3 +51,46 @@ describe('theme token contract', () => {
     }
   });
 });
+
+describe('non-color token contract', () => {
+  it('defines spacing, typography, control, elevation, motion and border tokens', () => {
+    for (const token of [
+      '--yoya-space-1',
+      '--yoya-space-4',
+      '--yoya-space-8',
+      '--yoya-font-size-sm',
+      '--yoya-font-size-lg',
+      '--yoya-font-weight-semibold',
+      '--yoya-control-height-sm',
+      '--yoya-control-height-md',
+      '--yoya-control-height-lg',
+      '--yoya-z-dropdown',
+      '--yoya-z-popover',
+      '--yoya-z-overlay',
+      '--yoya-z-toast',
+      '--yoya-ease-in',
+      '--yoya-ease-out',
+      '--yoya-ease-in-out',
+      '--yoya-motion-slow',
+      '--yoya-border-width',
+      '--yoya-border-width-strong'
+    ]) {
+      expect(css).toContain(`${token}:`);
+    }
+  });
+
+  it('lets components consume the tokens instead of hard-coded sizes', () => {
+    expect(css).toMatch(
+      /\.yoya-vbutton\[data-size='medium'\] \{\s*font-size: var\(--yoya-font-size-base\);\s*min-height: var\(--yoya-control-height-md\);/
+    );
+  });
+
+  it('derives elevated layers from z-index tokens', () => {
+    expect(css).toMatch(/z-index: var\(--yoya-z-popover\);/);
+    expect(css).toMatch(/z-index: var\(--yoya-z-dropdown\);/);
+  });
+
+  it('respects reduced-motion preferences', () => {
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+  });
+});
