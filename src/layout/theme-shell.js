@@ -62,6 +62,9 @@ export class VThemeShell extends HtmlElementNode {
   }
 
   renderDom() {
+    if (this._deleted) {
+      return null;
+    }
     if (this._virtualMode) {
       const child = this._requireSingleShellChild();
       const target = this._virtualTarget();
@@ -72,6 +75,9 @@ export class VThemeShell extends HtmlElementNode {
   }
 
   toHTML() {
+    if (this._deleted) {
+      return '';
+    }
     if (this._virtualMode) {
       return this._requireSingleShellChild().toHTML();
     }

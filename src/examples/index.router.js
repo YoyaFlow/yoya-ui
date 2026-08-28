@@ -3,13 +3,15 @@ import {
   router,
   section,
   toast,
+  vBody,
   vContainer,
   vMessageContainer,
   vMenu,
   vMenuGroup,
   vMenuItem,
   vNavbar,
-  vRouterViews
+  vRouterViews,
+  vThemeShell
 } from '../index.js';
 import '../yoya.ui.css';
 import { ComponentSource } from './component-source.js';
@@ -437,12 +439,17 @@ function createComponentsView(appRouter) {
     });
   });
 
-  const root = vContainer((view) => {
+  const appShell = vContainer((view) => {
     view.className('components-demo-shell');
     view.attr('data-components-demo-shell', 'true');
     view.viewport();
     view.child(topNav);
     view.child(workspace);
+  });
+
+  const root = vThemeShell((shell) => {
+    shell.virtual();
+    shell.child(vBody({ children: [appShell], gap: 0, maxWidth: '100%', padding: 0 }));
   });
 
   const applyStyles = () => applyDemoStyles(root);
