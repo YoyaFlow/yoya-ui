@@ -286,7 +286,7 @@ export class VTable extends HtmlElementNode {
       emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
       emptyCell.styles({
         color: themeValue('color-text-muted', '#64748b'),
-        padding: '18px 14px',
+        padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
         textAlign: 'center'
       });
       appendTableCellContent(emptyCell, this._emptyContent);
@@ -515,7 +515,7 @@ function applyTableCellStyles(node, column, section) {
   node.styles({
     borderBottom: themeBorder('color-border-faint', '#e2e8f0'),
     fontWeight: isHead ? '700' : '400',
-    padding: '12px 14px',
+    padding: 'var(--yoya-space-3, 12px) var(--yoya-space-3, 12px)',
     textAlign: column.align || 'left',
     verticalAlign: 'top',
     whiteSpace: column.wrap === false ? 'nowrap' : 'normal'

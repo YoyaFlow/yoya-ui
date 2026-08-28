@@ -94,3 +94,13 @@ describe('non-color token contract', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
   });
 });
+
+describe('density contract', () => {
+  it('provides a compact density switch that tightens spacing and controls', () => {
+    expect(css).toContain("[data-yoya-density='compact']");
+    expect(css).toContain('--yoya-space-3: 10px;');
+    expect(css).toContain('--yoya-control-height-sm: 26px;');
+    expect(css).toContain('--yoya-control-height-md: 30px;');
+    expect(css).toContain('--yoya-control-height-lg: 34px;');
+  });
+});

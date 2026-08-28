@@ -15,6 +15,19 @@
 [data-yoya-mode='system'] {
   color-scheme: light dark;
 }
+[data-yoya-density='compact'] {
+  --yoya-space-1: 3px;
+  --yoya-space-2: 6px;
+  --yoya-space-3: 10px;
+  --yoya-space-4: 12px;
+  --yoya-space-5: 18px;
+  --yoya-space-6: 24px;
+  --yoya-space-7: 36px;
+  --yoya-space-8: 48px;
+  --yoya-control-height-sm: 26px;
+  --yoya-control-height-md: 30px;
+  --yoya-control-height-lg: 34px;
+}
 
 @property --yoya-raw-primary {
   syntax: '<color>';
