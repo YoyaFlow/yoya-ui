@@ -90,11 +90,28 @@ describe('VThemeShell virtual mode', () => {
     expect(shell.toHTML()).toBe(body.toHTML());
   });
 
-  it('requires exactly one child in virtual mode', () => {
-    expect(() => vThemeShell().virtual()).toThrow(/exactly one child/i);
-    expect(() => vThemeShell().child(div('a')).child(div('b')).virtual()).toThrow(
-      /exactly one child/i
-    );
+  it('requires exactly one child in virtual mode when rendering', () => {
+    expect(() => vThemeShell().virtual().renderDom()).toThrow(/exactly one child/i);
+    expect(() =>
+      vThemeShell((shell) => {
+        shell.virtual();
+        shell.child(div('a'));
+        shell.child(div('b'));
+      }).renderDom()
+    ).toThrow(/exactly one child/i);
+  });
+
+  it('supports the declarative setup style for virtual mode', () => {
+    const shell = vThemeShell((s) => {
+      s.virtual();
+      s.child(vBody('内容'));
+    });
+
+    const element = shell.renderDom();
+
+    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.style.background).toBe('var(--yoya-color-surface, #ffffff)');
+    expect(element.style.borderRadius).toBe('var(--yoya-radius-md, 6px)');
   });
 
   it('renders its own node again when virtual is disabled', () => {
