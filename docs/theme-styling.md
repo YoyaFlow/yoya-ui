@@ -131,6 +131,27 @@ vCard((card) => card.replaceClassName('yoya-vcard', 'acme-card'));
 - 动态类名仅允许 `yoya-v${name}-<part>` 与 `yoya-${kind}` 两种模板形态。
 - 由 `src/className-contract.test.js` 与 `src/preset-scope.test.js` 自动校验。
 
+### 主题切换 JS API（可选）
+
+纯 CSS 已支持模式切换；需要编程控制、持久化或在 system 模式下感知系统偏好时，使用核心导出的轻量 API（零依赖）：
+
+```js
+import {
+  setYoyaMode,
+  getYoyaMode,
+  resolveYoyaMode,
+  setYoyaTheme,
+  getYoyaTheme,
+  initYoyaTheme
+} from 'yoya-ui/core';
+
+setYoyaMode('dark'); // data-yoya-mode="dark"
+setYoyaMode('system', { persist: true }); // 持久化，下次 initYoyaTheme() 自动恢复
+resolveYoyaMode(); // 'light' | 'dark'（system 时按系统偏好解析）
+setYoyaTheme('violet'); // data-yoya-theme="violet"
+initYoyaTheme({ persist: true }); // 恢复上次选择的 mode / theme
+```
+
 ## 8. 层叠与覆盖保障
 
 - 组件规则统一放在 `@layer yoya` 内，未分层（用户）规则天然优先，无需 `!important`。
