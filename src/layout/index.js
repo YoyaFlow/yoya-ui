@@ -288,12 +288,12 @@ export function vBody(first = null, second = null, third = null) {
   node.className('yoya-layout', 'yoya-vbody');
   node.attr('data-page-body', 'true');
   node.styles({
-    background: themeValue('color-bg', '#f5f7fa'),
+    background: themeValue('color-bg', '#f9f9f9'),
     boxSizing: 'border-box',
-    color: themeValue('color-text', '#172033'),
+    color: themeValue('color-text', '#0d0d0d'),
     fontFamily: themeValue(
       'font-family',
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
     ),
     fontSize: themeValue('font-size', '14px'),
     lineHeight: themeValue('line-height', '1.5'),

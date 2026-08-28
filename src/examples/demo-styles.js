@@ -890,10 +890,10 @@ function applyGlobalStyles() {
 
   const body = document.body;
   if (body) {
-    body.style.background = 'var(--yoya-color-bg, #f6f7f9)';
-    body.style.color = 'var(--yoya-color-text, #172033)';
+    body.style.background = 'var(--yoya-color-bg, #f9f9f9)';
+    body.style.color = 'var(--yoya-color-text, #0d0d0d)';
     body.style.fontFamily =
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+      "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
     body.style.lineHeight = '1.5';
     body.style.margin = '0';
     body.style.minHeight = '100%';

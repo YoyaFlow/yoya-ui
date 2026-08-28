@@ -50,31 +50,31 @@
   --yoya-raw-warning: #f59e0b;
   --yoya-raw-info: #0284c7;
 
-  --yoya-color-bg: light-dark(#f5f7fa, #0b1220);
-  --yoya-color-border: light-dark(#d8dee8, #243349);
-  --yoya-color-border-faint: light-dark(#e2e8f0, #1f2c44);
-  --yoya-color-border-muted: light-dark(#94a3b8, #64748b);
-  --yoya-color-border-ring: light-dark(rgba(100, 116, 139, 0.24), rgba(100, 116, 139, 0.3));
-  --yoya-color-border-strong: light-dark(#cbd5e1, #31445f);
-  --yoya-color-code-badge: light-dark(#e2e8f0, #243349);
-  --yoya-color-code-badge-text: light-dark(#334155, #aab8c9);
-  --yoya-color-code-bg: light-dark(#fbfcfe, #0f172a);
-  --yoya-color-code-border: light-dark(#e2e8f0, #243349);
-  --yoya-color-code-header: light-dark(#f8fafc, #111a2e);
-  --yoya-color-surface: light-dark(#ffffff, #111a2e);
-  --yoya-color-surface-active: light-dark(#eef2f7, #1f2c44);
-  --yoya-color-surface-hover: light-dark(#f8fafc, #182338);
-  --yoya-color-surface-muted: light-dark(#fbfcfe, #0f172a);
-  --yoya-color-text: light-dark(#172033, #e6edf7);
+  --yoya-color-bg: light-dark(#f9f9f9, #171717);
+  --yoya-color-border: light-dark(#e5e5e5, #3c3c3c);
+  --yoya-color-border-faint: light-dark(#efefef, #2a2a2a);
+  --yoya-color-border-muted: light-dark(#b3b3b3, #5c5c5c);
+  --yoya-color-border-ring: light-dark(rgba(13, 13, 13, 0.14), rgba(255, 255, 255, 0.22));
+  --yoya-color-border-strong: light-dark(#d9d9d9, #484848);
+  --yoya-color-code-badge: light-dark(#ececec, #2e2e2e);
+  --yoya-color-code-badge-text: light-dark(#4b4b4b, #b9b9b9);
+  --yoya-color-code-bg: light-dark(#f7f7f8, #0f0f0f);
+  --yoya-color-code-border: light-dark(#ececec, #2c2c2c);
+  --yoya-color-code-header: light-dark(#fafafa, #191919);
+  --yoya-color-surface: light-dark(#ffffff, #212121);
+  --yoya-color-surface-active: light-dark(#e9e9e9, #2b2b2b);
+  --yoya-color-surface-hover: light-dark(#f3f3f3, #262626);
+  --yoya-color-surface-muted: light-dark(#f5f5f5, #1c1c1c);
+  --yoya-color-text: light-dark(#0d0d0d, #ececec);
   --yoya-color-text-active: light-dark(
     color-mix(in srgb, var(--yoya-raw-primary), black 20%),
     color-mix(in srgb, var(--yoya-raw-primary), white 40%)
   );
   --yoya-color-text-danger: light-dark(#b91c1c, #f87171);
   --yoya-color-text-inverse: light-dark(#ffffff, #ffffff);
-  --yoya-color-text-muted: light-dark(#64748b, #8494aa);
-  --yoya-color-text-secondary: light-dark(#475569, #aab8c9);
-  --yoya-color-text-strong: light-dark(#111827, #f8fafc);
+  --yoya-color-text-muted: light-dark(#8f8f8f, #8a8a8a);
+  --yoya-color-text-secondary: light-dark(#6f6f6f, #a6a6a6);
+  --yoya-color-text-strong: light-dark(#0a0a0a, #f5f5f5);
   --yoya-color-success-text: light-dark(
     color-mix(in srgb, var(--yoya-raw-success), black 35%),
     color-mix(in srgb, var(--yoya-raw-success), white 50%)
@@ -237,7 +237,7 @@
   );
   --yoya-color-info-ring: color-mix(in srgb, var(--yoya-raw-info) 30%, transparent);
   --yoya-font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --yoya-font-size: 14px;
   --yoya-line-height: 1.5;
   --yoya-radius-sm: 4px;
