@@ -5,6 +5,7 @@ afterEach(() => {
   delete document.documentElement.dataset.yoyaMode;
   delete document.documentElement.dataset.yoyaDensity;
   document.documentElement.style.removeProperty('--yoya-raw-primary');
+  localStorage.clear();
 });
 
 describe('theme playground demo', () => {

@@ -1,22 +1,9 @@
-import { setYoyaMode, div, input, vButton, vCard, vText } from '../index.js';
+import { div, input, vButton, vCard, vText, vThemeModeSwitch } from '../index.js';
 
-function modeButtonRow(modeText) {
+function modeSwitchRow() {
   return div((row) => {
     row.className('demo-theme-row');
-    [
-      ['light', '浅色'],
-      ['dark', '深色'],
-      ['system', '跟随系统']
-    ].forEach(([mode, label]) => {
-      row.child(
-        vButton(label)
-          .attr('data-theme-mode', mode)
-          .on('click', () => {
-            modeText.textContent(`当前：${label}`);
-            setYoyaMode(mode);
-          })
-      );
-    });
+    row.child(vThemeModeSwitch({ persist: true }));
   });
 }
 
@@ -58,7 +45,6 @@ function sampleControls() {
  * 主题切换演示：明暗模式、紧凑密度、品牌主色（raw 覆盖）。
  */
 export function renderThemeDemo() {
-  const modeText = vText('当前：浅色');
   const densityText = vText('密度：舒适');
   const compact = { value: false };
 
@@ -67,8 +53,7 @@ export function renderThemeDemo() {
       return vCard((card) => {
         card.vCardHeader('主题切换');
         card.vCardBody((body) => {
-          body.p(modeText);
-          body.child(modeButtonRow(modeText));
+          body.child(modeSwitchRow());
           body.p(densityText);
           body.child(densityButton(compact, densityText));
           body.p('品牌主色（覆盖 --yoya-raw-primary）');

@@ -16,6 +16,7 @@ const libraryDirs = [
   'src/async',
   'src/i18n',
   'src/router',
+  'src/theme',
   'src/components'
 ];
 
