@@ -17,7 +17,22 @@ import {
   vCardFooter,
   vCardHeader
 } from './surface.js';
-import { VTable, vTable } from './table.js';
+import {
+  VTable,
+  VTbody,
+  VTd,
+  VTfoot,
+  VTh,
+  VThead,
+  VTr,
+  vTable,
+  vTbody,
+  vTd,
+  vTfoot,
+  vTh,
+  vThead,
+  vTr
+} from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
 import { VScroll, vScroll } from './vscroll.js';
 
@@ -56,6 +71,12 @@ export {
   VProgress,
   VScroll,
   VTable,
+  VTbody,
+  VTd,
+  VTfoot,
+  VTh,
+  VThead,
+  VTr,
   VTree,
   VTreeNode,
   vAvatar,
@@ -72,6 +93,12 @@ export {
   vProgress,
   vScroll,
   vTable,
+  vTbody,
+  vTd,
+  vTfoot,
+  vTh,
+  vThead,
+  vTr,
   vTree,
   vTreeNode
 };

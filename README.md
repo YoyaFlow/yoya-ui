@@ -382,7 +382,7 @@ Then open `/src/examples/Index.html#/components`.
 
 ## I18n Text
 
-`I18n` creates language-aware text nodes. The node is still a `ViewTextNode`, so changing language updates DOM text and `toHTML()` output without rebuilding the surrounding `ViewNode` tree.
+`I18n` creates language-aware text nodes. The node is still a `ViewTextNode`, so changing language updates DOM text without rebuilding the surrounding `ViewNode` tree.
 
 ```js
 import { createI18n, div, installI18nStringShortcut } from 'yoya-ui';
@@ -433,7 +433,7 @@ div((page) => {
 locale.setLanguage('en');
 ```
 
-`'内容'.s('content-key')` returns an `I18nTextNode`. The string itself is only the default text, and `content-key` is the translation key. Locale messages and the active language are controlled externally through the `I18n` instance.
+`'内容'.s('content-key')` returns an `I18nTextNode`. The string itself is only the default text, and `content-key` is the translation key. When there are multiple I18n instances, pass the locale explicitly: `'内容'.s('content-key', locale)` or `'内容'.s('content-key', { name: 'Ada' }, locale)`. If no locale is passed, `installI18nStringShortcut(locale)` controls the default instance; missing language content falls back to the default language content.
 
 Message corpora can be nested JSON and can be split across multiple files:
 
@@ -482,6 +482,15 @@ locale.registerMessages([
 ]);
 ```
 
+YAML/TOML files are not parsed by the library. Parse them into a JS object first, then register the same way:
+
+```js
+import { parse } from 'yaml';
+import enYaml from './locales/en.yaml?raw';
+
+locale.registerMessages(parse(enYaml));
+```
+
 ## Server Template Integration
 
 For backend-rendered pages, build the library and serve `dist/yoya.ui.js` as a static asset:
@@ -521,14 +530,29 @@ router((r) => {
   .start();
 ```
 
+路由视图函数也可以返回 Promise（例如用动态 `import()` 按需加载页面模块）。Router 会先渲染加载视图，Promise 完成后切换为真实视图，并丢弃过期导航的结果：
+
+```js
+router((r) => {
+  r.loading(() => div('页面加载中…'));
+  r.route('/dashboard', () =>
+    import('./dashboard.js').then((module) => module.DashboardPage().render())
+  );
+});
+```
+
+路由级配置 `{ loading, error }` 可以覆盖全局默认；异步视图失败时会渲染错误视图（默认展示错误信息）。
+
 Useful methods:
 
-- `route(pattern, view | { view, beforeEnter })`
+- `route(pattern, view | { view, loading, error, beforeEnter, title })`
+- `loading(view)`：设置异步视图加载中的默认视图（ViewNode、文本或 `(context) => view` 函数）
+- `error(view)`：设置异步视图加载失败的默认视图（ViewNode、文本或 `(error, context) => view` 函数）
 - `default(path)`
-- `notFound(view)`
+- `notFound(view)`（也可返回 Promise 的异步视图）
 - `beforeEach((to, from, router) => true)`
 - `navigate(path, { replace })`
-- `currentPath()`、`currentParams()`、`currentQuery()`
+- `currentPath()`、`currentParams()`、`currentQuery()`、`currentView()`
 
 ## Project Layout
 

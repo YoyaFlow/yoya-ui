@@ -20,7 +20,7 @@ const i18nDemoDefinitions = Object.freeze([
   {
     id: 'params',
     title: '参数与回退',
-    description: '参数插值、增量注册和 fallbackLanguage 可以组合使用。',
+    description: '参数插值、增量注册和默认语言回退可以组合使用。',
     component: I18nParamsExample1,
     sourceComponent: I18nParamsExample1,
     imports: ['createI18n', 'vCard'],
@@ -74,6 +74,10 @@ export function I18nDocumentationPage() {
             list.li('文案包含名称、数量等运行时参数。');
             list.li('语料按页面或模块拆分，运行时增量合并。');
             list.li('语言变化时只更新文本节点，不重建整个视图树。');
+            list.li('JSON 语料可以直接 import 注册，YAML/TOML 等先解析成对象再注册。');
+            list.li(
+              '演示文案优先使用 “默认语言内容”.s(key, locale?)，未注册语言内容回退默认文案。'
+            );
           });
         });
 
@@ -139,13 +143,18 @@ export function I18nDocumentationPage() {
                 ],
                 [
                   'locale.registerMessages(corpus)',
-                  '注册一个或多个语料文件。',
+                  '注册一个或多个语料文件，JSON 可直接注册，YAML 等先解析为对象。',
                   'locale.registerMessages([commonCorpus, pageCorpus])'
                 ],
                 [
                   'installI18nStringShortcut(locale)',
                   '启用字符串 s(key, params) 快捷写法。',
                   'installI18nStringShortcut(locale)'
+                ],
+                [
+                  '"内容".s(key, params?, locale?)',
+                  '用默认语言内容创建响应式文本，可显式指定 locale。',
+                  "'你好，{name}'.s('greeting', { name: 'Ada' }, locale)"
                 ]
               ].forEach(([name, purpose, example]) => {
                 body.tr((row) => {
@@ -155,6 +164,22 @@ export function I18nDocumentationPage() {
                 });
               });
             });
+          });
+
+          api.p('语料文件注册：JSON 可以直接 import，YAML/TOML 等先解析成 JS 对象。');
+          api.pre((pre) => {
+            pre.className('i18n-api-signature');
+            pre.code(`import zh from './locales/zh.json';
+import en from './locales/en.json';
+
+i18n.registerMessages([zh, en]);`);
+          });
+          api.pre((pre) => {
+            pre.className('i18n-api-signature');
+            pre.code(`import { parse } from 'yaml';
+import enYaml from './locales/en.yaml?raw';
+
+i18n.registerMessages(parse(enYaml));`);
           });
         });
 

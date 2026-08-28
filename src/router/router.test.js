@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { div, router, vLink, vRoute, vRouter, vRouterView, vRouterViews, vText } from '../index.js';
 
+const flush = async () => {};
+
 describe('router', () => {
   beforeEach(() => {
     document.body.innerHTML = '<main id="app"></main>';
@@ -730,5 +732,232 @@ describe('router', () => {
     expect(content.style.minHeight).toBe('120px');
 
     root.destroy();
+  });
+
+  it('renders async route views after the returned promise resolves', async () => {
+    let resolveView;
+    const appRouter = router((r) => {
+      r.route(
+        '/async',
+        () =>
+          new Promise((resolve) => {
+            resolveView = resolve;
+          })
+      );
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/async', { replace: true });
+
+    expect(appRouter.currentPath()).toBe('/async');
+    expect(document.querySelector('#app').textContent).toBe('加载中…');
+
+    resolveView(div('异步完成'));
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('异步完成');
+    expect(appRouter.currentView().renderDom().textContent).toBe('异步完成');
+  });
+
+  it('supports route-level and router-level loading views', async () => {
+    let resolveOne;
+    let resolveTwo;
+    const appRouter = router((r) => {
+      r.loading(() => div('全局加载中'));
+      r.route('/one', {
+        loading: () => div('读取模块一'),
+        view: () =>
+          new Promise((resolve) => {
+            resolveOne = resolve;
+          })
+      });
+      r.route(
+        '/two',
+        () =>
+          new Promise((resolve) => {
+            resolveTwo = resolve;
+          })
+      );
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/one', { replace: true });
+    expect(document.querySelector('#app').textContent).toBe('读取模块一');
+
+    resolveOne(div('模块一'));
+    await flush();
+    expect(document.querySelector('#app').textContent).toBe('模块一');
+
+    appRouter.navigate('/two', { replace: true });
+    expect(document.querySelector('#app').textContent).toBe('全局加载中');
+
+    resolveTwo(div('模块二'));
+    await flush();
+    expect(document.querySelector('#app').textContent).toBe('模块二');
+  });
+
+  it('renders a default error view when an async route rejects', async () => {
+    const appRouter = router((r) => {
+      r.route('/boom', () => Promise.reject(new Error('模块加载失败')));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/boom', { replace: true });
+
+    expect(appRouter.currentPath()).toBe('/boom');
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toContain('模块加载失败');
+  });
+
+  it('supports custom error views with the error and route context', async () => {
+    const appRouter = router((r) => {
+      r.error((error, context) => div(`出错：${error.message}（${context.path}）`));
+      r.route('/boom', () => Promise.reject(new Error('boom')));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/boom', { replace: true });
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('出错：boom（/boom）');
+  });
+
+  it('ignores stale async resolutions after navigating away', async () => {
+    let resolveSlow;
+    const appRouter = router((r) => {
+      r.route(
+        '/slow',
+        () =>
+          new Promise((resolve) => {
+            resolveSlow = resolve;
+          })
+      );
+      r.route('/fast', () => div('快速页'));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/slow', { replace: true });
+    expect(document.querySelector('#app').textContent).toBe('加载中…');
+
+    appRouter.navigate('/fast', { replace: true });
+    expect(document.querySelector('#app').textContent).toBe('快速页');
+
+    resolveSlow(div('迟到内容'));
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('快速页');
+    expect(appRouter.currentPath()).toBe('/fast');
+  });
+
+  it('keeps the newest async route when multiple loads overlap', async () => {
+    let resolveFirst;
+    let resolveSecond;
+    const appRouter = router((r) => {
+      r.route(
+        '/first',
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          })
+      );
+      r.route(
+        '/second',
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve;
+          })
+      );
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/first', { replace: true });
+    appRouter.navigate('/second', { replace: true });
+
+    resolveSecond(div('第二个'));
+    await flush();
+    expect(document.querySelector('#app').textContent).toBe('第二个');
+
+    resolveFirst(div('第一个'));
+    await flush();
+    expect(document.querySelector('#app').textContent).toBe('第二个');
+    expect(appRouter.currentPath()).toBe('/second');
+  });
+
+  it('renders an error view when an async view resolves to an invalid value', async () => {
+    const appRouter = router((r) => {
+      r.error((error) => div(`格式错误：${error.message}`));
+      r.route('/bad', () => Promise.resolve({ not: 'a view' }));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/bad', { replace: true });
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toContain('格式错误');
+  });
+
+  it('supports async notFound views', async () => {
+    const appRouter = router((r) => {
+      r.notFound(({ path }) => Promise.resolve(div(`异步 404：${path}`)));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/missing', { replace: true });
+    expect(document.querySelector('#app').textContent).toBe('加载中…');
+    await flush();
+    expect(document.querySelector('#app').textContent).toBe('异步 404：/missing');
+  });
+
+  it('cancels pending async views when the router is destroyed', async () => {
+    let resolveView;
+    const appRouter = router((r) => {
+      r.route(
+        '/pending',
+        () =>
+          new Promise((resolve) => {
+            resolveView = resolve;
+          })
+      );
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/pending', { replace: true });
+    appRouter.destroy();
+    resolveView(div('太迟了'));
+    await flush();
+
+    expect(appRouter._currentView).toBeNull();
+  });
+
+  it('updates vRouterViews titles while an async route is loading', async () => {
+    let resolveView;
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/async', {
+          title: '异步页',
+          view: () =>
+            new Promise((resolve) => {
+              resolveView = resolve;
+            })
+        })
+      ]
+    });
+    const views = vRouterViews(appRouter);
+    div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/async', { replace: true });
+
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-label').textContent).toBe('异步页');
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '加载中…'
+    );
+
+    resolveView(div('异步内容'));
+    await flush();
+
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '异步内容'
+    );
   });
 });

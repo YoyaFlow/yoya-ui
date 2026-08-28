@@ -87,6 +87,9 @@ export class Router extends ElementNode {
     this._currentQuery = {};
     this._currentRoute = null;
     this._currentView = null;
+    this._loadingView = null;
+    this._errorView = null;
+    this._navigationGeneration = 0;
     this._outlet = this;
     this._subscribers = new Set();
     this._ignoreNextHashPath = null;
@@ -157,6 +160,22 @@ export class Router extends ElementNode {
    */
   notFound(view) {
     this._notFoundView = view;
+    return this;
+  }
+
+  /**
+   * 设置异步路由视图加载中的默认视图。支持 ViewNode、文本或 (context) => view 函数。
+   */
+  loading(view) {
+    this._loadingView = view;
+    return this;
+  }
+
+  /**
+   * 设置异步路由视图加载失败的默认视图。支持 ViewNode、文本或 (error, context) => view 函数。
+   */
+  error(view) {
+    this._errorView = view;
     return this;
   }
 
@@ -251,6 +270,10 @@ export class Router extends ElementNode {
     return this._currentRoute;
   }
 
+  currentView() {
+    return this._currentView;
+  }
+
   outlet(value) {
     if (value === undefined) return this._outlet;
     if (!(value instanceof ElementNode)) {
@@ -283,6 +306,7 @@ export class Router extends ElementNode {
 
   destroy() {
     this.stop();
+    this._navigationGeneration += 1;
     this._destroyCurrentView();
     this._subscribers.clear();
     return super.destroy();
@@ -317,6 +341,11 @@ export class Router extends ElementNode {
     }
 
     this._ignoreNextHashPath = null;
+
+    if (nextPath === this._currentPath) {
+      return this;
+    }
+
     return this.refresh();
   }
 
@@ -347,7 +376,39 @@ export class Router extends ElementNode {
   _renderResolved(resolved) {
     const { context, route, view } = resolved;
     const result = typeof view === 'function' ? view(context) : view;
-    const nextView = normalizeRouteView(result);
+
+    this._navigationGeneration += 1;
+
+    if (!isPromiseLike(result)) {
+      this._commitView(resolved, normalizeRouteView(result));
+      return;
+    }
+
+    const generation = this._navigationGeneration;
+    this._commitView(resolved, this._buildLoadingView(route, context));
+    Promise.resolve(result).then(
+      (value) => {
+        if (generation !== this._navigationGeneration || this._deleted) return value;
+        let nextView;
+        try {
+          nextView = normalizeRouteView(value);
+        } catch (error) {
+          this._commitView(resolved, this._buildErrorView(route, context, error));
+          return value;
+        }
+        this._commitView(resolved, nextView);
+        return value;
+      },
+      (error) => {
+        if (generation !== this._navigationGeneration || this._deleted) return error;
+        this._commitView(resolved, this._buildErrorView(route, context, error));
+        return error;
+      }
+    );
+  }
+
+  _commitView(resolved, nextView) {
+    const { context, route } = resolved;
     const outlet = this._outlet;
 
     this._destroyCurrentView();
@@ -364,6 +425,14 @@ export class Router extends ElementNode {
     this._currentRoute = route;
     this._currentView = nextView;
     this._subscribers.forEach((listener) => listener(context, this));
+  }
+
+  _buildLoadingView(route, context) {
+    return resolveRouteEntry(route?.loading ?? this._loadingView ?? defaultLoadingView, [context]);
+  }
+
+  _buildErrorView(route, context, error) {
+    return resolveRouteEntry(route?.error ?? this._errorView ?? defaultErrorView, [error, context]);
   }
 
   _destroyCurrentView() {
@@ -988,6 +1057,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     }
 
     contentNode.clearChildren().commit();
+    routerInstance._navigationGeneration += 1;
     routerInstance._currentView = null;
   };
 
@@ -1120,6 +1190,8 @@ registerChildFactories(ElementNode, { vLink, vRouter, vRouterView, vRouterViews 
 function normalizeRoute(pattern, config) {
   const route = {
     beforeEnter: null,
+    error: null,
+    loading: null,
     pattern: normalizePattern(pattern),
     title: null,
     view: null
@@ -1132,6 +1204,8 @@ function normalizeRoute(pattern, config) {
 
   if (config && typeof config === 'object') {
     route.beforeEnter = config.beforeEnter || null;
+    route.error = config.error ?? null;
+    route.loading = config.loading ?? null;
     route.title = config.title ?? null;
     route.view = config.view || config.component || null;
   }
@@ -1156,10 +1230,20 @@ function applyDeclarativeRouterSetup(node, setup) {
   }
   if (!setup || typeof setup !== 'object') return node;
 
-  const { beforeEach, default: defaultPath, notFound, routes = [], ...elementConfig } = setup;
+  const {
+    beforeEach,
+    default: defaultPath,
+    error,
+    loading,
+    notFound,
+    routes = [],
+    ...elementConfig
+  } = setup;
   if (Object.keys(elementConfig).length) node.setup(elementConfig);
   if (defaultPath !== undefined) node.default(defaultPath);
   if (beforeEach) node.beforeEach(beforeEach);
+  if (loading !== undefined) node.loading(loading);
+  if (error !== undefined) node.error(error);
   routes.forEach((declaration) => {
     if (declaration?.pattern !== undefined) node.vRoute(declaration.pattern, declaration.config);
   });
@@ -1270,6 +1354,23 @@ function normalizeRouteView(view) {
   }
 
   throw new TypeError('Router route view must be a ViewNode, string, number, null, or undefined');
+}
+
+const defaultLoadingView = () => '加载中…';
+
+const defaultErrorView = (error) => `加载失败：${error?.message ?? String(error)}`;
+
+function isPromiseLike(value) {
+  return (
+    value !== null &&
+    (typeof value === 'object' || typeof value === 'function') &&
+    typeof value.then === 'function'
+  );
+}
+
+function resolveRouteEntry(entry, args) {
+  const value = typeof entry === 'function' ? entry(...args) : entry;
+  return normalizeRouteView(value);
 }
 
 function matchRoute(pattern, path) {

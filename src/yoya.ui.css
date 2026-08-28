@@ -1399,6 +1399,23 @@
   padding: 12px;
 }
 
+.yoya-vscroll[data-virtual='true'] .yoya-vscroll-list {
+  display: block;
+  gap: 0;
+  padding: 0;
+  position: relative;
+}
+
+.yoya-vscroll-virtual-item {
+  box-sizing: border-box;
+  left: 0;
+  min-width: 0;
+  overflow: visible;
+  position: absolute;
+  right: 0;
+  width: 100%;
+}
+
 .yoya-vscroll-footer {
   align-items: center;
   border-top: 1px solid var(--yoya-color-border-faint, #e2e8f0);

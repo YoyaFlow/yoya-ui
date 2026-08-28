@@ -32,6 +32,14 @@ import { EchartsDocumentationPage } from './echarts-docs.js';
 import { IconsDocumentationPage } from './icons-docs.js';
 import { I18nDocumentationPage } from './i18n-docs.js';
 import { StateNodeDocumentationPage } from './state-node-docs.js';
+import { SvgDocumentationPage } from './svg-docs.js';
+import {
+  GuideAdvantagesPage,
+  GuideDesignPhilosophyPage,
+  GuideInstallationPage,
+  GuideOverviewPage,
+  GuidePositioningPage
+} from './guide-docs.js';
 import {
   AnchorDocumentationPage,
   BreadcrumbDocumentationPage,
@@ -59,6 +67,11 @@ const componentMenuSections = [
     id: 'guides',
     title: '开发指南',
     items: [
+      { label: '概述', details: 'Overview' },
+      { label: '定位', details: 'Positioning' },
+      { label: '优势', details: 'Advantages' },
+      { label: '设计理念', details: 'Design Philosophy' },
+      { label: '安装方式', details: 'Installation' },
       { label: '定义组件', details: 'function + render()' },
       { label: '国际化', details: 'I18n / createI18n / i18nText' },
       { label: '状态节点', details: 'vStateNode' }
@@ -71,7 +84,8 @@ const componentMenuSections = [
       { label: '按钮', details: 'vButton' },
       { label: '按钮组', details: 'vButtons', status: 'planned' },
       { label: '悬浮按钮', details: 'vFloatButton', status: 'planned' },
-      { label: '图标', details: 'SearchOutlined / UploadOutlined' }
+      { label: '图标', details: 'SearchOutlined / UploadOutlined' },
+      { label: 'SVG 动画', details: 'requestAnimationFrame / stroke-dashoffset' }
     ]
   },
   {
@@ -173,7 +187,7 @@ const componentMenuStats = {
 
 function getTopNavigationItems() {
   return [
-    { categoryId: 'intro', label: '说明', path: '/components' },
+    { categoryId: 'overview', label: '概述', path: '/components' },
     ...componentMenuSections.map((category) => {
       const firstReadyIndex = category.items.findIndex(
         (item) => item.status !== 'planned' && !item.hidden
@@ -251,12 +265,16 @@ export function renderExamplesIndex(target = '#app') {
   appRouter = router((r) => {
     r.default('/components');
     r.route('/components', {
-      title: '说明',
-      view: () => createComponentsIntroView()
+      title: '概述',
+      view: () => createOverviewView()
+    });
+    r.route('/components/overview', {
+      title: '概述',
+      view: () => createOverviewView()
     });
     r.route('/components/intro', {
-      title: '说明',
-      view: () => createComponentsIntroView()
+      title: '概述',
+      view: () => createOverviewView()
     });
 
     registerComponentsWorkspaceRoutes(r, { locale, toast });
@@ -321,8 +339,10 @@ function createComponentsView(appRouter) {
 
     topNavItemRefs.forEach(({ node, entry }) => {
       const active =
-        entry.categoryId === 'intro'
-          ? currentPath === '/components' || currentPath === '/components/intro'
+        entry.categoryId === 'overview'
+          ? currentPath === '/components' ||
+            currentPath === '/components/overview' ||
+            currentPath === '/components/intro'
           : currentPath.startsWith(`/components/${entry.categoryId}/`);
       node.active(active);
       node.attr('data-active-path', active ? 'true' : null);
@@ -445,12 +465,58 @@ function createComponentsView(appRouter) {
   return root;
 }
 
-function createComponentsIntroView() {
+function createOverviewView() {
   return section((view) => {
-    view.className('components-route-page components-route-page--intro');
-    view.h2('说明');
-    view.p('左侧菜单按 docs/components.md 的内容整理，右侧显示实时演示和源码。');
-    view.p('点击菜单项后可以直接查看对应组件的详细页面。');
+    view.className('components-route-page components-route-page--overview');
+    view.attr('data-overview-page', 'true');
+    view.h2('概述');
+    view.p(
+      'yoya-ui 是面向后端与全栈开发者的轻量原生 JS UI 基础库，用 ViewNode DSL 构建可嵌入、可组合、低依赖的 Web UI。'
+    );
+    view.p('左侧菜单查看组件分类，右侧页面包含实时演示、源码面板和开发指南。');
+
+    view.section((principles) => {
+      principles.className('components-overview-principles');
+      principles.h3('定位与设计');
+      principles.div((grid) => {
+        grid.className('components-overview-grid components-overview-principles-grid');
+        [
+          {
+            title: '定位',
+            points: [
+              '面向后端与全栈开发者的轻量原生JS基础库，同时提供常用UI组件库。',
+              '回归本质，使用浏览器原生环境提供超越VUE和ReactJS的开发体验。',
+              'AI生成组件直接可使用，避免环境问题，返工率极低。'
+            ]
+          },
+          {
+            title: '优势',
+            points: [
+              '无复杂框架运行时依赖，直接构建真实 DOM。适合长期运维项目，如客户内部环境部署。',
+              '支持局部挂载、单页应用。',
+              '组件、布局、路由、i18n、图表按模块扩展。'
+            ]
+          },
+          {
+            title: '设计理念',
+            points: [
+              '浏览器原生优先，用声明式组件组织视图。',
+              '小核加扩展，组件边界清晰，能力按需引入。',
+              '后端友好：可嵌入、可组合、可阅读、可复制。'
+            ]
+          }
+        ].forEach((principle) => {
+          grid.article((card) => {
+            card.className('components-overview-card components-overview-principle-card');
+            card.attr('data-overview-principle', principle.title);
+            card.h3(principle.title);
+            card.ul((list) => {
+              principle.points.forEach((point) => list.li(point));
+            });
+          });
+        });
+      });
+    });
 
     view.div((metaGrid) => {
       metaGrid.className('components-route-meta-grid');
@@ -473,19 +539,100 @@ function createComponentsIntroView() {
         meta.strong(String(componentMenuStats.planned));
       });
     });
+
+    view.section((categories) => {
+      categories.className('components-overview-section');
+      categories.h3('分类导航');
+      categories.div((grid) => {
+        grid.className('components-overview-grid');
+        componentMenuSections.forEach((category) => {
+          const firstReadyIndex = category.items.findIndex(
+            (item) => item.status !== 'planned' && !item.hidden
+          );
+          const path = buildComponentItemPath(
+            category.id,
+            firstReadyIndex >= 0 ? firstReadyIndex : 0
+          );
+          const readyItems = category.items.filter(
+            (item) => !item.hidden && item.status !== 'planned'
+          );
+
+          grid.a((card) => {
+            card.className('components-overview-card');
+            card.attr({
+              'data-overview-category': category.id,
+              href: `#${path}`
+            });
+            card.h3(category.title);
+            card.p(`${readyItems.length} 个可用演示`);
+            card.p(
+              readyItems
+                .slice(0, 4)
+                .map((item) => item.label)
+                .join(' / ')
+            );
+            card.strong('查看分类');
+          });
+        });
+      });
+    });
+
+    view.section((guides) => {
+      guides.className('components-overview-guides');
+      guides.h3('开发指南');
+      guides.div((grid) => {
+        grid.className('components-overview-grid');
+        [
+          { label: '定义组件', path: '/components/guides/5', details: 'function + render()' },
+          { label: '国际化', path: '/components/guides/6', details: 'I18n / createI18n / .s()' },
+          { label: '状态节点', path: '/components/guides/7', details: 'vStateNode' }
+        ].forEach((guide) => {
+          grid.a((card) => {
+            card.className('components-overview-card components-overview-guide-card');
+            card.attr({
+              'data-overview-guide': guide.path,
+              href: `#${guide.path}`
+            });
+            card.h3(guide.label);
+            card.p(guide.details);
+            card.strong('打开指南');
+          });
+        });
+      });
+    });
   });
 }
 
 function createComponentItemView(category, item, itemIndex, context) {
   if (category.id === 'guides' && itemIndex === 0) {
-    return ComponentDefinitionDocumentationPage().render();
+    return GuideOverviewPage().render();
   }
 
   if (category.id === 'guides' && itemIndex === 1) {
-    return I18nDocumentationPage().render();
+    return GuidePositioningPage().render();
   }
 
   if (category.id === 'guides' && itemIndex === 2) {
+    return GuideAdvantagesPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 3) {
+    return GuideDesignPhilosophyPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 4) {
+    return GuideInstallationPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 5) {
+    return ComponentDefinitionDocumentationPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 6) {
+    return I18nDocumentationPage().render();
+  }
+
+  if (category.id === 'guides' && itemIndex === 7) {
     return StateNodeDocumentationPage().render();
   }
 
@@ -499,6 +646,10 @@ function createComponentItemView(category, item, itemIndex, context) {
 
   if (category.id === 'general' && itemIndex === 3) {
     return IconsDocumentationPage().render();
+  }
+
+  if (category.id === 'general' && itemIndex === 4) {
+    return SvgDocumentationPage().render();
   }
 
   if (category.id === 'navigation' && itemIndex === 3) {

@@ -31,6 +31,12 @@ export default [
     }
   },
   {
+    files: ['src/examples/demos/**/*.js'],
+    rules: {
+      'max-len': ['error', { code: 100, ignoreUrls: true }]
+    }
+  },
+  {
     files: ['**/*.test.js'],
     languageOptions: {
       globals: {

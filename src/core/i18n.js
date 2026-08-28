@@ -219,7 +219,7 @@ let stringShortcutI18n = i18n;
 
 /**
  * 安装字符串快捷写法："内容".s("content-key")。
- * 字符串本身作为默认文案，参数作为翻译 key；语言和词典由外部 I18n 实例控制。
+ * 字符串本身作为默认文案，参数作为翻译 key；未显式指定 locale 时使用安装的默认 I18n 实例。
  */
 export function installI18nStringShortcut(locale = i18n) {
   stringShortcutI18n = locale;
@@ -237,9 +237,22 @@ export function installI18nStringShortcut(locale = i18n) {
   Object.defineProperty(String.prototype, 's', {
     configurable: true,
     enumerable: false,
-    value: function stringShortcut(key, params = {}) {
+    value: function stringShortcut(key, paramsOrLocale, maybeLocale) {
       const defaultValue = String(this);
-      return stringShortcutI18n.text(key || defaultValue, params, defaultValue);
+      let params = {};
+      let locale = stringShortcutI18n;
+
+      if (paramsOrLocale && typeof paramsOrLocale.text === 'function') {
+        locale = paramsOrLocale;
+      } else {
+        params = paramsOrLocale || {};
+
+        if (maybeLocale && typeof maybeLocale.text === 'function') {
+          locale = maybeLocale;
+        }
+      }
+
+      return locale.text(key || defaultValue, params, defaultValue);
     }
   });
 

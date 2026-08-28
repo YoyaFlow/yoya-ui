@@ -18,9 +18,98 @@ describe('vScroll', () => {
     expect(element.classList.contains('yoya-vscroll')).toBe(true);
     expect(element.dataset.page).toBe('0');
     expect(element.dataset.blocked).toBe('true');
+    expect(element.dataset.virtual).toBeUndefined();
     expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
     expect(element.textContent).toContain('A');
     expect(element.textContent).toContain('B');
+  });
+
+  it('forces virtual mode when enabled explicitly', () => {
+    const scroll = vScroll({
+      items: ['A'],
+      renderItem: (item) => div(item),
+      virtual: true
+    });
+    const element = scroll.renderDom();
+
+    expect(scroll.virtual()).toBe(true);
+    expect(element.dataset.virtual).toBe('true');
+    expect(element.querySelectorAll('.yoya-vscroll-virtual-item')).toHaveLength(1);
+  });
+
+  it('virtualizes large item lists and keeps a real scroll height', () => {
+    const items = Array.from({ length: 1000 }, (_, index) => `项目 ${index}`);
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 40,
+      items,
+      overscan: 2,
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    let wrappers = element.querySelectorAll('.yoya-vscroll-list > .yoya-vscroll-virtual-item');
+
+    expect(element.dataset.virtual).toBe('true');
+    expect(scroll.itemHeight()).toBe(40);
+    expect(scroll.overscan()).toBe(2);
+    expect(wrappers).toHaveLength(6);
+    expect(wrappers[0].dataset.index).toBe('0');
+    expect(element.querySelector('.yoya-vscroll-list').style.height).toBe('48016px');
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 480 });
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    wrappers = element.querySelectorAll('.yoya-vscroll-list > .yoya-vscroll-virtual-item');
+    expect(wrappers).toHaveLength(9);
+    expect(wrappers[0].dataset.index).toBe('7');
+    expect(wrappers[wrappers.length - 1].dataset.index).toBe('15');
+
+    const html = scroll.toHTML();
+    expect(html.match(/yoya-vscroll-virtual-item/g)).toHaveLength(1000);
+    expect(html).toContain('项目 999');
+
+    scroll.virtual(false);
+
+    expect(element.dataset.virtual).toBeUndefined();
+    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(1000);
+  });
+
+  it('virtualizes appended data without rendering every row', () => {
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 30,
+      items: ['A'],
+      overscan: 2,
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    scroll.append(Array.from({ length: 100 }, (_, index) => `第 ${index + 2} 项`));
+
+    expect(scroll.items()).toHaveLength(101);
+    expect(element.querySelectorAll('.yoya-vscroll-virtual-item')).toHaveLength(2);
+    expect(element.querySelector('.yoya-vscroll-virtual-item').getAttribute('aria-setsize')).toBe(
+      '101'
+    );
+    expect(element.querySelector('.yoya-vscroll-list').style.height).toBe('3854px');
+  });
+
+  it('keeps static content non-virtualized', () => {
+    const scroll = vScroll((scroller) => {
+      scroller.content((list) => {
+        list.div('A');
+        list.div('B');
+      });
+    });
+    const element = scroll.renderDom();
+
+    expect(element.dataset.virtual).toBeUndefined();
+    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
   });
 
   it('loads more when the scroll position reaches the threshold', () => {

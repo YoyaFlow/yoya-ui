@@ -4,3 +4,4 @@ dist
 node_modules
 package-lock.json
 src/chart/echarts.min.js
+src/examples/demos/

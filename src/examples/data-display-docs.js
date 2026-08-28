@@ -266,7 +266,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
   }),
   table: createDataDisplayDocsDefinition({
     apiIntro:
-      'vTable 用列定义描述表头、对齐、宽度和单元格渲染，用 rows 描述当前数据。空状态、行操作和分页都可以在同一个表格实例上更新。',
+      'vTable 既可以用 columns / rows 描述数据，也可以用 vThead / vTbody / vTfoot / vTr / vTh / vTd 逐层声明内部结构。空状态、行操作和分页都可以在同一个表格实例上更新。',
     apiRows: [
       [
         'vTable({ caption, columns, rows, emptyText })',
@@ -286,7 +286,17 @@ const dataDisplayDocsDefinitions = Object.freeze({
         '渲染自定义单元格，适合状态标签和行操作。',
         'render: (row) => vButton(row.name)'
       ],
-      ['column.align / width / minWidth', '控制单元格对齐和列宽。', "align: 'right', width: 120"]
+      ['column.align / width / minWidth', '控制单元格对齐和列宽。', "align: 'right', width: 120"],
+      [
+        'table.vThead / vTbody / vTfoot(setup)',
+        '用回调声明式构建表头、主体和表尾。',
+        'table.vTbody((body) => body.vTr(...))'
+      ],
+      [
+        'section.vTr / row.vTh / row.vTd(setup)',
+        '在表格分区和行内逐层声明单元格。',
+        'row.vTd("运行中")'
+      ]
     ],
     apiSignature: `vTable({
   caption: '服务列表',
@@ -321,9 +331,18 @@ const dataDisplayDocsDefinitions = Object.freeze({
         imports: ['vCard', 'vPagination', 'vTable', 'vText'],
         sourceTitle: '分页表格核心源码',
         title: '分页联动'
+      },
+      {
+        component: TableDeclarativeExample1,
+        description:
+          'vThead / vTbody / vTr / vTh / vTd 支持逐层声明式控制，适合合并单元格和自定义表格结构。',
+        id: 'declarative',
+        imports: ['vButton', 'vCard', 'vTable', 'vText'],
+        sourceTitle: '声明式表格源码',
+        title: '声明式内部结构'
       }
     ],
-    examplesIntro: '下面三个示例分别展示基础表格、空状态和分页联动。',
+    examplesIntro: '下面四个示例分别展示基础表格、空状态、分页联动和声明式内部结构。',
     heading: 'vTable 表格',
     intro:
       '表格用于展示结构化列表数据。vTable 把列定义、行数据、空状态和自定义单元格统一起来，适合后台列表、服务清单和审批队列。',
@@ -522,12 +541,12 @@ const dataDisplayDocsDefinitions = Object.freeze({
   }),
   scroll: createDataDisplayDocsDefinition({
     apiIntro:
-      'vScroll 是滚动容器组件，滚动到接近底部时自动触发 loadMore。它支持 items/renderItem 数据驱动、loop 循环加载、block 阻止加载、threshold 触发距离和 reset 重置。',
+      'vScroll 是滚动容器组件，滚动到接近底部时自动触发 loadMore。它支持 items/renderItem 数据驱动、大数据自动虚拟滚动、loop 循环加载、block 阻止加载、threshold 触发距离和 reset 重置。',
     apiRows: [
       [
-        'vScroll({ items, renderItem, loadMore, loop, block, threshold })',
-        '创建滚动组件，items 提供首批数据，loadMore 负责后续分页。',
-        'vScroll({ items: [1, 2], renderItem: (item) => div(item) })'
+        'vScroll({ items, renderItem, virtual, itemHeight, overscan, loadMore })',
+        '创建滚动组件，items 数据较多时自动开启虚拟滚动，只渲染可视窗口。',
+        'vScroll({ items, renderItem: (item) => div(item), itemHeight: 48 })'
       ],
       [
         'scroll.items(data, renderItem)',
@@ -543,6 +562,21 @@ const dataDisplayDocsDefinitions = Object.freeze({
         'scroll.loadMore(handler)',
         '设置加载回调，context 提供 append、block、done、page、scroll。',
         'scroll.loadMore(({ append, block }) => { append(next); block(true); })'
+      ],
+      [
+        'scroll.virtual(value) / scroll.virtualize(value)',
+        '查询或开关虚拟滚动；数据超过阈值时默认自动开启。',
+        'scroll.virtual(false)'
+      ],
+      [
+        'scroll.itemHeight(value)',
+        '设置每条数据的固定行高，用于计算可视窗口和滚动高度。',
+        'scroll.itemHeight(56)'
+      ],
+      [
+        'scroll.overscan(value)',
+        '设置可视区域外额外渲染的条数，值越大滚动时越少闪白。',
+        'scroll.overscan(6)'
       ],
       ['scroll.loop(value)', '开启循环加载并解除 block。', 'scroll.loop(true)'],
       [
@@ -563,6 +597,9 @@ const dataDisplayDocsDefinitions = Object.freeze({
     apiSignature: `const scroll = vScroll({
   items: firstPage,
   renderItem: (item) => div(item.label),
+  virtual: true,
+  itemHeight: 48,
+  overscan: 5,
   loadMore: ({ append, block, page }) => {
     const next = loadPage(page);
     append(next);
@@ -594,9 +631,17 @@ const dataDisplayDocsDefinitions = Object.freeze({
         imports: ['div', 'vButton', 'vCard', 'vScroll'],
         sourceTitle: '异步加载核心源码',
         title: '异步加载'
+      },
+      {
+        component: ScrollVirtualExample1,
+        description: '20000 条数据只渲染可视窗口和少量 overscan，滚动高度仍保持完整。',
+        id: 'virtual',
+        imports: ['div', 'vCard', 'vScroll'],
+        sourceTitle: '虚拟滚动核心源码',
+        title: '虚拟滚动'
       }
     ],
-    examplesIntro: '下面三个示例分别展示基础滚动、循环/阻止控制和异步加载。',
+    examplesIntro: '下面四个示例分别展示基础滚动、循环/阻止控制、异步加载和虚拟滚动。',
     heading: 'vScroll 滚动组件',
     intro:
       '滚动组件用于在固定高度的容器内按需加载和展示列表，适合日志、消息流、审计记录和长数据列表。',
@@ -1504,6 +1549,65 @@ function TablePaginationExample1() {
   };
 }
 
+function TableDeclarativeExample1() {
+  const status = vText('自定义表头已就绪');
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('声明式内部结构');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.vTable((table) => {
+              table.vThead((head) => {
+                head.vTr((row) => {
+                  row.vTh('服务名称');
+                  row.vTh('状态');
+                  row.vTh('操作');
+                });
+              });
+              table.vTbody((tbody) => {
+                tbody.vTr((row) => {
+                  row.vTd('api-gateway');
+                  row.vTd('运行中');
+                  row.vTd(
+                    vButton((button) => {
+                      button.label('查看');
+                      button.size('small');
+                      button.variant('secondary');
+                      button.on('click', () => status.textContent('已查看 api-gateway'));
+                    })
+                  );
+                });
+                tbody.vTr((row) => {
+                  row.vTd('worker');
+                  row.vTd('维护中');
+                  row.vTd('处理');
+                });
+              });
+              table.vTfoot((foot) => {
+                foot.vTr((row) => {
+                  row.vTd((cell) => {
+                    cell.attr('colspan', 3);
+                    cell.text('表尾单元格可以跨列');
+                  });
+                });
+              });
+            });
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('操作反馈');
+              row.spacer();
+              row.output((output) => output.child(status));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 function TreeBasicExample1() {
   const status = vText('当前：未选择');
   const tree = vTree((root) => {
@@ -2238,6 +2342,51 @@ function ScrollAsyncExample1() {
               scroll.reset();
               scroll.check();
             });
+          });
+        });
+      });
+    }
+  };
+}
+
+function ScrollVirtualExample1() {
+  const rows = Array.from({ length: 20000 }, (_, index) => ({
+    id: index + 1,
+    name: `服务 ${index + 1}`,
+    status: index % 4 === 0 ? '运行中' : index % 4 === 1 ? '告警' : '已停止'
+  }));
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('虚拟滚动');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('20000 条数据只渲染可视窗口，滚动时再按需切换。');
+            content.child(
+              vScroll((scroll) => {
+                scroll.style('height', '320px');
+                scroll.itemHeight(52);
+                scroll.overscan(4);
+                scroll.items(rows, (row) =>
+                  div((item) => {
+                    item.styles({
+                      alignItems: 'center',
+                      borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      gap: '10px',
+                      height: '100%',
+                      justifyContent: 'space-between',
+                      padding: '0 4px'
+                    });
+                    item.strong(row.name);
+                    item.span(row.status);
+                  })
+                );
+              })
+            );
           });
         });
       });

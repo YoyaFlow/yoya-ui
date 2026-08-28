@@ -6,7 +6,7 @@
 
 `yoya-basic` 是一个浏览器原生 HTML DSL 库：用 JS 函数和链式 API 描述 DOM、布局、组件、状态和主题，面向后端/全栈开发者在服务端渲染、微前端嵌入、后台管理页面和轻量交互页面中快速构建 Web UI。
 
-它的核心不是“再造 React/Vue”，而是提供一个更接近 Kotlin HTML DSL 的浏览器原生 UI 构建语法。
+它的核心是提供一个更接近 Kotlin HTML DSL 的浏览器原生 UI 构建语法。
 
 ## 项目形态
 
@@ -47,7 +47,6 @@
 - 提供 `bindTo()` 挂载到 DOM。
 - 提供 `renderDom()` 渲染/更新元素树。
 - 提供 `destroy()` 生命周期清理。
-- 提供 `toHTML()` 输出 HTML 字符串。
 - 提供状态注册、状态处理器、状态快照和状态拦截器。
 
 `yoya-basic` 的底层模型可以理解为：
@@ -132,7 +131,7 @@ div((page) => {
 - 样式设置：`style()` / `styles()`
 - 事件绑定：`on()`、对象配置中的 `onclick`
 - 内容管理：`text()`、`html()`、`child()`、`clear()`
-- DOM 管理：`bindTo()`、`renderDom()`、`destroy()`、`toHTML()`
+- DOM 管理：`bindTo()`、`renderDom()`、`destroy()`
 
 命名约定：
 
@@ -276,6 +275,7 @@ i18n 模块提供轻量国际化：
 - 全局前置守卫和后置钩子。
 - 路由级守卫。
 - 404 处理。
+- 异步路由视图：`view` 可返回 Promise（如动态 `import()`），支持 loading / error 视图并丢弃过期导航。
 - `vLink` 和 `vRouterView`。
 
 它是 SPA 能力的最小补充，不是完整路由框架。
@@ -293,11 +293,10 @@ i18n 模块提供轻量国际化：
 - 类名支持空格、多个参数和数组。
 - 表单元素属性必须同步到 DOM。
 - `bindTo()` 能挂载到选择器或 DOM 元素。
-- `toHTML()` 能输出基础 HTML 字符串。
 - 删除标记元素不应继续渲染。
 - 组件示例页面应能正常加载。
 - `vField` 应支持编辑、保存、悬停、自动保存等交互。
-- `VRouter` 应支持导航、动态参数、守卫、404、浏览器前进后退。
+- `VRouter` 应支持导航、动态参数、守卫、404、浏览器前进后退、异步路由视图（loading/error、过期导航丢弃）。
 
 这些契约是后续 `yoya-ui` 重建底层结构时最值得保留的部分。
 
@@ -342,7 +341,7 @@ div((page) => {
 - setup 函数 / 字符串 / 对象三种初始化方式。
 - 链式 API。
 - 父元素快捷子元素 API。
-- `bindTo()` / `renderDom()` / `destroy()` / `toHTML()` 生命周期。
+- `bindTo()` / `renderDom()` / `destroy()` 生命周期。
 - 属性、类名、样式、事件、子元素统一管理。
 - 最小状态系统：注册状态、设置状态、状态处理器。
 - 最小布局系统：`flex`、`grid`、`stack`、`hstack`、`vstack`、`center`、`container`。
@@ -413,7 +412,7 @@ src/
 
 1. 先实现 `ViewNode` 内核和基础元素工厂。
 2. 补齐 `setup` 三种输入和链式 API。
-3. 建立 DOM 生命周期：`bindTo`、`renderDom`、`destroy`、`toHTML`。
+3. 建立 DOM 生命周期：`bindTo`、`renderDom`、`destroy`。
 4. 加入事件绑定和自动清理。
 5. 加入最小状态机。
 6. 加入布局组件。
@@ -534,4 +533,4 @@ yoya-ui/i18n
 - 每一层只依赖更底层模块。
 - 不让组件反向污染 core。
 - 建立 API 冻结规则：核心 API 少改，扩展 API 可迭代。
-- 测试覆盖核心契约：setup、child、render、bind、destroy、state、event、toHTML。
+- 测试覆盖核心契约：setup、child、render、bind、destroy、state、event。

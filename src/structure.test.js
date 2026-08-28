@@ -58,6 +58,7 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./data-display/carousel.test.js')).toBe(true);
     expect(existsInSrc('./data-display/surface.js')).toBe(true);
     expect(existsInSrc('./data-display/table.js')).toBe(true);
+    expect(existsInSrc('./data-display/table.test.js')).toBe(true);
     expect(existsInSrc('./data-display/tree.js')).toBe(true);
     expect(existsInSrc('./data-display/avatar.js')).toBe(true);
     expect(existsInSrc('./data-display/avatar.test.js')).toBe(true);
@@ -171,6 +172,12 @@ describe('foundation module structure', () => {
     expect(api.vAvatarUpload).toBe(form.vAvatarUpload);
     expect(api.VAvatarUpload).toBe(form.VAvatarUpload);
     expect(api.vTable).toBe(dataDisplay.vTable);
+    expect(api.vThead).toBe(dataDisplay.vThead);
+    expect(api.vTbody).toBe(dataDisplay.vTbody);
+    expect(api.vTfoot).toBe(dataDisplay.vTfoot);
+    expect(api.vTr).toBe(dataDisplay.vTr);
+    expect(api.vTh).toBe(dataDisplay.vTh);
+    expect(api.vTd).toBe(dataDisplay.vTd);
     expect(api.vTree).toBe(dataDisplay.vTree);
     expect(api.vTreeNode).toBe(dataDisplay.vTreeNode);
     expect(api.VTreeNode).toBe(dataDisplay.VTreeNode);
@@ -203,6 +210,12 @@ describe('foundation module structure', () => {
     expect(api.vCarousel).toBe(components.vCarousel);
     expect(api.vTooltip).toBe(components.vTooltip);
     expect(api.toast).toBe(components.toast);
+    expect(api.vThead).toBe(components.vThead);
+    expect(api.vTbody).toBe(components.vTbody);
+    expect(api.vTfoot).toBe(components.vTfoot);
+    expect(api.vTr).toBe(components.vTr);
+    expect(api.vTh).toBe(components.vTh);
+    expect(api.vTd).toBe(components.vTd);
     expect(coreEntry.div).toBe(html.div);
     expect(coreEntry.svg).toBe(svg.svg);
     expect(coreEntry.HtmlElementNode).toBeTypeOf('function');

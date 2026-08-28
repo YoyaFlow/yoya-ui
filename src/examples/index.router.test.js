@@ -88,7 +88,7 @@ describe('renderExamplesIndex', () => {
     outer.remove();
   });
 
-  it('renders the menu workspace and intro page', () => {
+  it('renders the menu workspace and overview page', () => {
     root = renderExamplesIndex('#app');
 
     expect(document.querySelector('[data-components-demo-shell]')).not.toBeNull();
@@ -119,15 +119,20 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('.components-workspace')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
-    expect(document.querySelector('.components-route-page--intro')).not.toBeNull();
+    expect(document.querySelector('.components-route-page--overview')).not.toBeNull();
+    expect(document.querySelector('[data-overview-page]')).not.toBeNull();
+    expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(9);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(53);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(59);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
     ).toContain('开发指南');
     expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(4);
-    expect(selectedRouteTitle()).toBe('说明');
+    expect(selectedRouteTitle()).toBe('概述');
   });
 
   it('navigates and highlights the top navigation when a category is selected', async () => {
@@ -135,9 +140,9 @@ describe('renderExamplesIndex', () => {
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
     expect(navItems).toHaveLength(10);
-    expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
-      'page'
-    );
+    expect(
+      document.querySelector('[data-top-nav-item="overview"]').getAttribute('aria-current')
+    ).toBe('page');
 
     const layoutItem = document.querySelector('[data-top-nav-item="layout"]');
     expect(layoutItem.getAttribute('data-top-nav-path')).toBe('/components/layout/0');
@@ -148,9 +153,9 @@ describe('renderExamplesIndex', () => {
       expect(selectedRouteTitle()).toBe('分割线');
     });
 
-    expect(document.querySelector('[data-top-nav-item="intro"]').getAttribute('aria-current')).toBe(
-      null
-    );
+    expect(
+      document.querySelector('[data-top-nav-item="overview"]').getAttribute('aria-current')
+    ).toBe(null);
     expect(layoutItem.getAttribute('aria-current')).toBe('page');
   });
 
@@ -272,6 +277,52 @@ describe('renderExamplesIndex', () => {
     });
   });
 
+  it('renders the standalone SVG animation demo page', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/general/4');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('SVG 动画');
+    });
+
+    const page = document.querySelector('[data-svg-page]');
+    expect(page.querySelector('h1').textContent).toBe('SVG 动画');
+    const ringDemo = page.querySelector('[data-svg-demo="ring"]');
+    expect(ringDemo).not.toBeNull();
+    expect(ringDemo.querySelector('h2').textContent).toBe('可中断的环形进度');
+    const ringLive = ringDemo.querySelector('[data-svg-demo-live]');
+    const ring = ringLive.querySelector('svg [stroke-dasharray]');
+    const fullOffset = Number(ring.getAttribute('stroke-dashoffset'));
+    expect(fullOffset).toBeGreaterThan(0);
+    expect(ringLive.querySelector('svg').namespaceURI).toBe('http://www.w3.org/2000/svg');
+    expect(ringDemo.querySelector('[data-source-example]').textContent).toContain(
+      'SvgProgressRingExample1'
+    );
+    const ringButtons = Array.from(ringLive.querySelectorAll('button'));
+    const clickButton = (label) => {
+      ringButtons.find((button) => button.textContent.trim() === label).click();
+    };
+
+    clickButton('25%');
+    await vi.waitFor(
+      () => {
+        expect(Number(ring.getAttribute('stroke-dashoffset'))).toBeCloseTo(fullOffset * 0.75, 0);
+      },
+      { timeout: 3000 }
+    );
+    expect(ringLive.querySelector('svg text').textContent).toContain('25%');
+
+    clickButton('70%');
+    clickButton('40%');
+    await vi.waitFor(
+      () => {
+        expect(Number(ring.getAttribute('stroke-dashoffset'))).toBeCloseTo(fullOffset * 0.6, 0);
+      },
+      { timeout: 3000 }
+    );
+    expect(ringLive.querySelector('svg text').textContent).toContain('40%');
+  });
+
   it('renders the file upload demo page with live component and source', async () => {
     root = renderExamplesIndex('#app');
 
@@ -312,10 +363,17 @@ describe('renderExamplesIndex', () => {
 
     expect(page.querySelector('h1').textContent).toBe('vScroll 滚动组件');
     expect(page.textContent).toContain('scroll.loadMore(handler)');
-    expect(demos).toHaveLength(3);
+    expect(demos).toHaveLength(4);
     expect(basic.querySelector('.yoya-vscroll')).not.toBeNull();
     expect(basic.querySelector('[data-source-example]').textContent).toContain(
       'ScrollBasicExample1'
+    );
+
+    const virtualDemo = page.querySelector('[data-data-display-demo="virtual"]');
+    expect(virtualDemo.querySelector('.yoya-vscroll').dataset.virtual).toBe('true');
+    expect(virtualDemo.querySelectorAll('.yoya-vscroll-virtual-item').length).toBeGreaterThan(0);
+    expect(virtualDemo.querySelector('[data-source-example]').textContent).toContain(
+      'ScrollVirtualExample1'
     );
 
     const loopDemo = page.querySelector('[data-data-display-demo="loop-block"]');
@@ -392,7 +450,7 @@ describe('renderExamplesIndex', () => {
   it('renders the component definition guide with define and compose demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/0');
+    openRoute('/components/guides/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('定义组件');
     });
@@ -427,9 +485,28 @@ describe('renderExamplesIndex', () => {
     );
   });
 
+  it('renders the development guide overview and installation pages', async () => {
+    root = renderExamplesIndex('#app');
+    const guideCases = [
+      ['/components/guides/0', '概述', 'overview'],
+      ['/components/guides/1', '定位', 'positioning'],
+      ['/components/guides/2', '优势', 'advantages'],
+      ['/components/guides/3', '设计理念', 'philosophy'],
+      ['/components/guides/4', '安装方式', 'installation']
+    ];
+
+    for (const [path, title, pageId] of guideCases) {
+      openRoute(path);
+      await vi.waitFor(() => {
+        expect(selectedRouteTitle()).toBe(title);
+      });
+      expect(document.querySelector(`[data-guide-page="${pageId}"]`)).not.toBeNull();
+    }
+  });
+
   it.each([
     [
-      '/components/guides/1',
+      '/components/guides/6',
       '国际化',
       'i18n',
       'I18n 国际化',
@@ -439,14 +516,14 @@ describe('renderExamplesIndex', () => {
       4
     ],
     [
-      '/components/guides/2',
+      '/components/guides/7',
       '状态节点',
       'state',
       'vStateNode 状态节点',
       'counter',
       'StateCounterExample1',
       'vStateNode(',
-      3
+      4
     ],
     [
       '/components/layout/0',
@@ -657,7 +734,7 @@ describe('renderExamplesIndex', () => {
       'basic',
       'TableBasicExample1',
       'vTable({',
-      3
+      4
     ],
     [
       '/components/data-display/5',
@@ -720,7 +797,7 @@ describe('renderExamplesIndex', () => {
   it('switches reactive I18n demos between languages', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/1');
+    openRoute('/components/guides/6');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('国际化');
     });
@@ -795,7 +872,7 @@ describe('renderExamplesIndex', () => {
   it('runs state node demos with update and rebuild modes', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/2');
+    openRoute('/components/guides/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
@@ -810,7 +887,22 @@ describe('renderExamplesIndex', () => {
     plusButton.click();
     expect(counter.textContent).toContain('1');
 
+    const inputDemo = page.querySelector('[data-state-demo="input"] .components-state-demo-live');
+    const inputElement = inputDemo.querySelector('input[data-state-demo-input]');
+    inputElement.focus();
+    inputElement.value = 'yoya';
+    inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(inputDemo.querySelector('[data-state-input-output]').textContent).toContain(
+      '当前输入：yoya，长度：4'
+    );
+    expect(document.activeElement).toBe(inputElement);
+    expect(inputDemo.querySelector('input')).toBe(inputElement);
+
     const rebuild = page.querySelector('[data-state-demo="rebuild"] .components-state-demo-live');
+    const rebuildCard = rebuild.querySelector('.yoya-vcard');
+    const rebuildWidth = rebuildCard.style.width;
+    const rebuildMaxWidth = rebuildCard.style.maxWidth;
     const executeButton = [...rebuild.querySelectorAll('button')].find((button) =>
       button.textContent.includes('执行')
     );
@@ -818,8 +910,14 @@ describe('renderExamplesIndex', () => {
 
     expect(rebuild.textContent).toContain('状态：running');
     expect(rebuild.textContent).toContain('次数：1');
+    expect(rebuild.querySelector('.yoya-vcard')).not.toBe(rebuildCard);
+    expect(rebuild.querySelector('.yoya-vcard').style.width).toBe(rebuildWidth);
+    expect(rebuild.querySelector('.yoya-vcard').style.maxWidth).toBe(rebuildMaxWidth);
 
     const toggle = page.querySelector('[data-state-demo="toggle"] .components-state-demo-live');
+    const toggleCard = toggle.querySelector('.yoya-vcard');
+    const toggleWidth = toggleCard.style.width;
+    const toggleMaxWidth = toggleCard.style.maxWidth;
     const toggleButton = [...toggle.querySelectorAll('button')].find((button) =>
       button.textContent.includes('隐藏')
     );
@@ -827,6 +925,9 @@ describe('renderExamplesIndex', () => {
 
     expect(toggle.textContent).toContain('当前内容已隐藏');
     expect(toggle.querySelector('button').textContent).toBe('显示');
+    expect(toggle.querySelector('.yoya-vcard')).not.toBe(toggleCard);
+    expect(toggle.querySelector('.yoya-vcard').style.width).toBe(toggleWidth);
+    expect(toggle.querySelector('.yoya-vcard').style.maxWidth).toBe(toggleMaxWidth);
   });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
@@ -1149,6 +1250,27 @@ describe('renderExamplesIndex', () => {
     expect(status.textContent).toBe('已选择 worker');
     expect(tableDemo.querySelector('.yoya-vtable-caption').textContent).toBe('服务列表');
     expect(tableDemo.querySelectorAll('.yoya-vtable-row')).toHaveLength(3);
+  });
+
+  it('shows declarative table sections in the table documentation demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    openRoute('/components/data-display/4');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('表格');
+    });
+
+    const declarativeDemo = document.querySelector('[data-data-display-demo="declarative"]');
+
+    expect(declarativeDemo).not.toBeNull();
+    const tableElement = declarativeDemo.querySelector('.yoya-vtable-table');
+    expect(tableElement.querySelector('.yoya-vtable-head th:nth-child(2)').textContent).toBe(
+      '状态'
+    );
+    expect(tableElement.querySelectorAll('.yoya-vtable-table > tbody tr')).toHaveLength(2);
+    expect(tableElement.querySelector('.yoya-vtable-foot td').textContent).toBe(
+      '表尾单元格可以跨列'
+    );
   });
 
   it('updates value and status in the progress docs demo', async () => {

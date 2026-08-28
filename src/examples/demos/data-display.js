@@ -141,6 +141,60 @@ export function ServiceTableCard({ toast }) {
   };
 }
 
+export function DeclarativeServiceTableCard() {
+  const status = vText('声明式结构已就绪');
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.attr('data-demo-card', 'declarative-service-table');
+        card.vCardHeader('声明式表格');
+        card.vCardBody((body) => {
+          body.vstack((stack) => {
+            stack.style('gap', '14px');
+            stack.p('vThead / vTbody / vTr / vTh / vTd 可以逐层控制表格内部结构。');
+            stack.vTable((table) => {
+              table.vThead((head) => {
+                head.vTr((row) => {
+                  row.vTh('服务名称');
+                  row.vTh('状态');
+                  row.vTh('负责人');
+                });
+              });
+              table.vTbody((tbody) => {
+                tbody.vTr((row) => {
+                  row.vTd('api-gateway');
+                  row.vTd('运行中');
+                  row.vTd('SRE');
+                });
+                tbody.vTr((row) => {
+                  row.vTd('worker');
+                  row.vTd('维护中');
+                  row.vTd('Data');
+                });
+              });
+              table.vTfoot((foot) => {
+                foot.vTr((row) => {
+                  row.vTd((cell) => {
+                    cell.attr('colspan', 3);
+                    cell.text('共 2 条服务');
+                  });
+                });
+              });
+            });
+            stack.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '10px' });
+              row.span('演示状态');
+              row.spacer();
+              row.output((output) => output.child(status));
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 export function PagedServiceTableCard() {
   const services = [
     { name: '样本 1', status: '运行中', owner: '示例组' },
@@ -278,7 +332,7 @@ export function ChartAdapterCard() {
 }
 
 export const dataDisplayCategory = {
-  description: '详情面板、代码片段、表格、分页与图表宿主。',
+  description: '详情面板、代码片段、声明式表格、分页与图表宿主。',
   id: 'data-display',
   title: '数据展示',
   demos: [
@@ -297,6 +351,11 @@ export const dataDisplayCategory = {
       component: ServiceTableCard,
       imports: ['vButton', 'vCard'],
       title: '表格操作核心源码'
+    },
+    {
+      component: DeclarativeServiceTableCard,
+      imports: ['vCard', 'vTable', 'vText'],
+      title: '声明式表格核心源码'
     },
     {
       component: PagedServiceTableCard,

@@ -2,6 +2,7 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   StateCounterExample1,
+  StateInputExample1,
   StateRebuildExample1,
   StateToggleExample1
 } from './demos/state-node.js';
@@ -15,6 +16,15 @@ const stateDemoDefinitions = Object.freeze([
     sourceComponent: StateCounterExample1,
     imports: ['vCard', 'vStateNode', 'vText'],
     sourceTitle: '局部更新核心源码'
+  },
+  {
+    id: 'input',
+    title: '输入保持焦点',
+    description: 'update 只更新输出文本，输入框 DOM 保持复用，焦点不会丢失。',
+    component: StateInputExample1,
+    sourceComponent: StateInputExample1,
+    imports: ['vCard', 'vStateNode', 'vText'],
+    sourceTitle: '输入保持焦点核心源码'
   },
   {
     id: 'rebuild',
@@ -41,8 +51,10 @@ export function StateNodeDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-state-docs');
-        page.attr('data-component-route-item', 'guides:2');
-        page.attr('data-state-docs', 'state');
+        page.attr({
+          'data-component-route-item': 'guides:2',
+          'data-state-docs': 'state'
+        });
 
         page.header((header) => {
           header.className('components-state-docs-header');
@@ -122,7 +134,7 @@ export function StateNodeDocumentationPage() {
         page.section((examples) => {
           examples.className('components-state-docs-examples');
           examples.h2('代码演示');
-          examples.p('三个示例分别展示局部更新、全量重建和结构切换。');
+          examples.p('四个示例分别展示局部更新、输入保持焦点、全量重建和结构切换。');
           stateDemoDefinitions.forEach((demo) => {
             examples.child(StateExampleSection(demo));
           });

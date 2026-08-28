@@ -243,6 +243,46 @@ describe('I18n', () => {
     expect(node.textContent()).toBe('你好，Ada');
   });
 
+  it('allows the s shortcut to specify an explicit locale', () => {
+    const defaultLocale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: {
+        'zh-CN': {
+          greeting: '默认问候'
+        }
+      }
+    });
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: {
+        'zh-CN': {
+          greeting: '你好，{name}',
+          status: '运行中'
+        },
+        en: {
+          greeting: 'Hello, {name}',
+          status: 'Running'
+        }
+      }
+    });
+
+    yoya.installI18nStringShortcut(defaultLocale);
+
+    const defaultNode = '默认内容'.s('missing-key');
+    const statusNode = '运行中'.s('status', locale);
+    const paramNode = '你好，{name}'.s('greeting', { name: 'Ada' }, locale);
+
+    expect(defaultNode.textContent()).toBe('默认内容');
+    expect(statusNode.textContent()).toBe('运行中');
+    expect(paramNode.textContent()).toBe('你好，Ada');
+
+    locale.setLanguage('en');
+
+    expect(statusNode.textContent()).toBe('Running');
+    expect(paramNode.textContent()).toBe('Hello, Ada');
+    expect(defaultNode.textContent()).toBe('默认内容');
+  });
+
   it('persists language through localStorage with storageKey', () => {
     const storageKey = 'yoya-ui:test-language';
     localStorage.removeItem(storageKey);

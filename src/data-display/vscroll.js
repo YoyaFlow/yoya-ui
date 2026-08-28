@@ -8,6 +8,10 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
+const VIRTUAL_GAP = 8;
+const VIRTUAL_PADDING = 12;
+const AUTO_VIRTUAL_THRESHOLD = 100;
+
 export class VScroll extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
@@ -20,6 +24,10 @@ export class VScroll extends HtmlElementNode {
     this._loadMoreHandler = null;
     this._renderItem = null;
     this._itemsData = [];
+    this._virtual = null;
+    this._itemHeight = 48;
+    this._overscan = 5;
+    this._resizeObserver = null;
     this._loadingContent = '加载中…';
     this._endContent = '没有更多了';
 
@@ -33,6 +41,8 @@ export class VScroll extends HtmlElementNode {
     this.attr({
       'aria-busy': 'false',
       'aria-live': 'polite',
+      'data-item-height': '48',
+      'data-overscan': '5',
       'data-page': '0',
       'data-threshold': '80',
       role: 'feed'
@@ -47,6 +57,7 @@ export class VScroll extends HtmlElementNode {
     this.child(this._list, this._footer);
     this.on('scroll', () => this._handleScroll());
     this._setupScroll(setup);
+    this._syncVirtualState();
     this._syncFooter();
   }
 
@@ -58,6 +69,7 @@ export class VScroll extends HtmlElementNode {
     this._itemsData = [];
     this._renderItem = null;
     setupContentSlot(this._list, setup);
+    this._syncVirtualState();
     this._scheduleCheck();
     return this;
   }
@@ -177,6 +189,51 @@ export class VScroll extends HtmlElementNode {
     return this;
   }
 
+  virtual(value) {
+    if (value === undefined) {
+      return this._isVirtualEnabled();
+    }
+
+    this._virtual = Boolean(value);
+    this._syncVirtualState();
+    if (this._itemsData.length > 0) {
+      this._renderItems();
+    }
+    return this;
+  }
+
+  virtualize(value) {
+    return this.virtual(value);
+  }
+
+  itemHeight(value) {
+    if (value === undefined) {
+      return this._itemHeight;
+    }
+
+    const parsed = Number(value);
+    this._itemHeight = Number.isFinite(parsed) && parsed > 0 ? Math.max(1, parsed) : 48;
+    this.attr('data-item-height', String(this._itemHeight));
+    if (this._itemsData.length > 0) {
+      this._renderItems();
+    }
+    return this;
+  }
+
+  overscan(value) {
+    if (value === undefined) {
+      return this._overscan;
+    }
+
+    const parsed = Number(value);
+    this._overscan = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 5;
+    this.attr('data-overscan', String(this._overscan));
+    if (this._itemsData.length > 0) {
+      this._renderItems();
+    }
+    return this;
+  }
+
   page(value) {
     if (value === undefined) {
       return this._page;
@@ -219,6 +276,7 @@ export class VScroll extends HtmlElementNode {
     this.attr('data-page', '0');
     this.attr('aria-busy', 'false');
     replaceChildren(this._list, []);
+    this._syncVirtualState();
     this._syncFooter();
     return this;
   }
@@ -283,24 +341,175 @@ export class VScroll extends HtmlElementNode {
     return this._checkLoad();
   }
 
+  toHTML() {
+    if (!this._isVirtualEnabled() || this._itemsData.length === 0) {
+      return super.toHTML();
+    }
+
+    const count = this._itemsData.length;
+    const allItems = this._itemsData.map((item, index) => {
+      const content = this._renderItem ? this._renderItem(item, index, this) : item;
+      return this._createVirtualItem(content, index, count);
+    });
+    const originalChildren = this._list._children;
+    this._list._children = allItems;
+
+    try {
+      return super.toHTML();
+    } finally {
+      this._list._children = originalChildren;
+    }
+  }
+
   renderDom() {
     const element = super.renderDom();
+    if (this._isVirtualEnabled() && this._itemsData.length > 0) {
+      this._renderItems();
+      this._observeSize();
+    }
     this._scheduleCheck();
     return element;
   }
 
+  destroy() {
+    this._disconnectSizeObserver();
+    return super.destroy();
+  }
+
   _renderItems() {
-    replaceChildren(
-      this._list,
-      this._itemsData.map((item, index) =>
-        this._renderItem ? this._renderItem(item, index, this) : item
-      )
-    );
+    this._syncVirtualState();
+    const count = this._itemsData.length;
+
+    if (!this._isVirtualEnabled() || count === 0) {
+      replaceChildren(
+        this._list,
+        this._itemsData.map((item, index) =>
+          this._renderItem ? this._renderItem(item, index, this) : item
+        )
+      );
+      return this;
+    }
+
+    const { end, start } = this._visibleRange(count);
+    const nodes = [];
+
+    for (let index = start; index < end; index += 1) {
+      const content = this._renderItem
+        ? this._renderItem(this._itemsData[index], index, this)
+        : this._itemsData[index];
+      nodes.push(this._createVirtualItem(content, index, count));
+    }
+
+    replaceChildren(this._list, nodes);
+    this._list.style('height', `${this._virtualListHeight(count)}px`);
     return this;
   }
 
   _handleScroll() {
+    if (this._isVirtualEnabled() && this._itemsData.length > 0) {
+      this._renderItems();
+    }
     this._checkLoad();
+  }
+
+  _visibleRange(count) {
+    const pitch = this._itemHeight + VIRTUAL_GAP;
+    const scrollTop = this._el ? Number(this._el.scrollTop) || 0 : 0;
+    const clientHeight = this._el ? Number(this._el.clientHeight) || 0 : 0;
+    const start = Math.max(0, Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - this._overscan);
+    const end = Math.min(
+      count,
+      Math.max(0, Math.ceil((scrollTop + clientHeight - VIRTUAL_PADDING) / pitch) + this._overscan)
+    );
+
+    return { end, start };
+  }
+
+  _createVirtualItem(content, index, count) {
+    const pitch = this._itemHeight + VIRTUAL_GAP;
+    const top = VIRTUAL_PADDING + index * pitch;
+
+    return new HtmlElementNode('div')
+      .className('yoya-vscroll-virtual-item')
+      .attr({
+        'aria-posinset': String(index + 1),
+        'aria-setsize': String(count),
+        'data-index': String(index)
+      })
+      .styles({
+        boxSizing: 'border-box',
+        height: `${this._itemHeight}px`,
+        left: '0',
+        minWidth: '0',
+        overflow: 'visible',
+        position: 'absolute',
+        right: '0',
+        top: `${top}px`,
+        width: '100%'
+      })
+      .child(content);
+  }
+
+  _virtualListHeight(count) {
+    if (count === 0) {
+      return 0;
+    }
+
+    return VIRTUAL_PADDING * 2 + count * this._itemHeight + (count - 1) * VIRTUAL_GAP;
+  }
+
+  _syncVirtualState() {
+    const enabled = this._isVirtualEnabled() && this._itemsData.length > 0;
+    this.attr('data-virtual', enabled ? 'true' : null);
+
+    if (enabled) {
+      this._list.styles({
+        display: 'block',
+        gap: '0',
+        padding: '0',
+        position: 'relative'
+      });
+      this._observeSize();
+    } else {
+      this._list.styles({
+        display: null,
+        gap: null,
+        height: null,
+        padding: null,
+        position: null
+      });
+      this._disconnectSizeObserver();
+    }
+
+    return this;
+  }
+
+  _isVirtualEnabled() {
+    return (
+      this._virtual === true ||
+      (this._virtual === null && this._itemsData.length >= AUTO_VIRTUAL_THRESHOLD)
+    );
+  }
+
+  _observeSize() {
+    if (!this._el || typeof ResizeObserver !== 'function' || this._resizeObserver) {
+      return;
+    }
+
+    this._resizeObserver = new ResizeObserver(() => {
+      if (this._deleted || !this._isVirtualEnabled() || this._itemsData.length === 0) {
+        return;
+      }
+      this._renderItems();
+    });
+    this._resizeObserver.observe(this._el);
+  }
+
+  _disconnectSizeObserver() {
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
   }
 
   _checkLoad() {
@@ -366,16 +575,19 @@ export class VScroll extends HtmlElementNode {
         children,
         content,
         endText,
+        itemHeight,
         items,
         loadMore,
         loading,
         loadingText,
         loop,
         onLoadMore,
+        overscan,
         page,
         renderItem,
         reset,
         threshold,
+        virtual,
         ...elementConfig
       } = setup;
 
@@ -385,6 +597,18 @@ export class VScroll extends HtmlElementNode {
 
       if (renderItem !== undefined) {
         this.renderItem(renderItem);
+      }
+
+      if (virtual !== undefined) {
+        this.virtual(virtual);
+      }
+
+      if (itemHeight !== undefined) {
+        this.itemHeight(itemHeight);
+      }
+
+      if (overscan !== undefined) {
+        this.overscan(overscan);
       }
 
       if (content !== undefined) {

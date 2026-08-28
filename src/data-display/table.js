@@ -1,6 +1,7 @@
-import { ViewNode } from '../core/node.js';
+import { ViewNode, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
+  applyComponentSetup,
   componentClass,
   createComponentFactory,
   isPlainObject,
@@ -16,6 +17,7 @@ export class VTable extends HtmlElementNode {
     this._columns = [];
     this._rows = [];
     this._emptyContent = '暂无数据';
+    this._hasDeclarativeSections = false;
     this._captionBox = new HtmlElementNode('caption').className('yoya-vtable-caption');
     this._head = new HtmlElementNode('thead').className('yoya-vtable-head');
     this._body = new HtmlElementNode('tbody').className('yoya-vtable-body');
@@ -141,7 +143,100 @@ export class VTable extends HtmlElementNode {
     return this;
   }
 
+  child(...children) {
+    children.flat(Infinity).forEach((child) => {
+      if (child instanceof VThead || child instanceof VTbody || child instanceof VTfoot) {
+        this._addDeclarativeSection(child);
+        return;
+      }
+
+      if (child instanceof VTr) {
+        this.vTr(child);
+        return;
+      }
+
+      super.child(child);
+    });
+
+    return this;
+  }
+
+  vThead(setup) {
+    return this._addDeclarativeSection(setup instanceof VThead ? setup : vThead(setup));
+  }
+
+  vTbody(setup) {
+    return this._addDeclarativeSection(setup instanceof VTbody ? setup : vTbody(setup));
+  }
+
+  vTfoot(setup) {
+    return this._addDeclarativeSection(setup instanceof VTfoot ? setup : vTfoot(setup));
+  }
+
+  vTr(setup) {
+    const row = setup instanceof VTr ? setup : vTr(setup);
+
+    if (this._hasDeclarativeSections) {
+      const body = this._table.children().find((child) => child instanceof VTbody);
+
+      if (body) {
+        body.child(row);
+      } else {
+        this.vTbody((section) => section.child(row));
+      }
+
+      return this;
+    }
+
+    this._body.child(row);
+    return this;
+  }
+
+  _addDeclarativeSection(section) {
+    if (!this._hasDeclarativeSections) {
+      this._hasDeclarativeSections = true;
+      this._detachAutoSections();
+    }
+
+    this._table.child(section);
+    return this;
+  }
+
+  _detachAutoSections() {
+    this._table._children = this._table._children.filter(
+      (child) => child !== this._head && child !== this._body
+    );
+    this._table._childrenDirty = true;
+
+    if (this._table._el) {
+      this._head._el?.remove();
+      this._body._el?.remove();
+    }
+  }
+
+  _resetTableShell() {
+    const customSections = this._table._children.filter(
+      (child) => child instanceof VThead || child instanceof VTbody || child instanceof VTfoot
+    );
+
+    customSections.forEach((section) => section.destroy());
+    this._table._children = [this._captionBox, this._head, this._body];
+    this._table._childrenDirty = true;
+
+    if (this._table._el) {
+      this._table._el.replaceChildren(
+        this._captionBox.renderDom(),
+        this._head.renderDom(),
+        this._body.renderDom()
+      );
+    }
+
+    this._hasDeclarativeSections = false;
+  }
+
   _renderTable() {
+    this._resetTableShell();
+
     const resolvedColumns =
       this._columns.length > 0 ? this._columns : inferTableColumns(this._rows);
     const bodyColumns =
@@ -205,6 +300,16 @@ export class VTable extends HtmlElementNode {
       return;
     }
 
+    if (setup instanceof VThead || setup instanceof VTbody || setup instanceof VTfoot) {
+      this._addDeclarativeSection(setup);
+      return;
+    }
+
+    if (setup instanceof VTr) {
+      this.vTr(setup);
+      return;
+    }
+
     if (typeof setup === 'function') {
       setup(this);
       return;
@@ -227,6 +332,95 @@ export class VTable extends HtmlElementNode {
 export function vTable(first = null, second = null, third = null) {
   return createComponentFactory(VTable, first, second, third);
 }
+
+export class VThead extends HtmlElementNode {
+  constructor(setup = null) {
+    super('thead', null);
+    this.className('yoya-vtable-head');
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vThead(first = null, second = null, third = null) {
+  return createComponentFactory(VThead, first, second, third);
+}
+
+export class VTbody extends HtmlElementNode {
+  constructor(setup = null) {
+    super('tbody', null);
+    this.className('yoya-vtable-body');
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vTbody(first = null, second = null, third = null) {
+  return createComponentFactory(VTbody, first, second, third);
+}
+
+export class VTfoot extends HtmlElementNode {
+  constructor(setup = null) {
+    super('tfoot', null);
+    this.className('yoya-vtable-foot');
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vTfoot(first = null, second = null, third = null) {
+  return createComponentFactory(VTfoot, first, second, third);
+}
+
+export class VTr extends HtmlElementNode {
+  constructor(setup = null) {
+    super('tr', null);
+    this.className('yoya-vtable-row');
+    this._setupTr(setup);
+  }
+
+  _setupTr(setup) {
+    if (Array.isArray(setup)) {
+      setup.forEach((cell) => this.child(vTd(cell)));
+      return;
+    }
+
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vTr(first = null, second = null, third = null) {
+  return createComponentFactory(VTr, first, second, third);
+}
+
+export class VTh extends HtmlElementNode {
+  constructor(setup = null) {
+    super('th', null);
+    this.className('yoya-vtable-head-cell');
+    this.attr('scope', 'col');
+    applyTableCellStyles(this, {}, 'head');
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vTh(first = null, second = null, third = null) {
+  return createComponentFactory(VTh, first, second, third);
+}
+
+export class VTd extends HtmlElementNode {
+  constructor(setup = null) {
+    super('td', null);
+    this.className('yoya-vtable-cell');
+    applyTableCellStyles(this, {}, 'body');
+    applyComponentSetup(this, setup);
+  }
+}
+
+export function vTd(first = null, second = null, third = null) {
+  return createComponentFactory(VTd, first, second, third);
+}
+
+registerChildFactories(VThead, { vTr });
+registerChildFactories(VTbody, { vTr });
+registerChildFactories(VTfoot, { vTr });
+registerChildFactories(VTr, { vTh, vTd });
 
 function normalizeTableColumns(columns) {
   if (!Array.isArray(columns)) {

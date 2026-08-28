@@ -142,6 +142,8 @@ const feedbackSelectors = [
 const scrollSelectors = [
   '.yoya-vscroll',
   '.yoya-vscroll-list',
+  ".yoya-vscroll[data-virtual='true'] .yoya-vscroll-list",
+  '.yoya-vscroll-virtual-item',
   '.yoya-vscroll-footer',
   ".yoya-vscroll[data-loading='true'] > .yoya-vscroll-footer",
   ".yoya-vscroll[data-blocked='true'] > .yoya-vscroll-footer",

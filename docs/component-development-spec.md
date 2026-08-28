@@ -19,7 +19,7 @@
 - `div()`、`section()`、`form()`、`input()` 等基础工厂保持 HTML 原始语义。
 - `vCard()`、`vButton()`、`vMenu()`、`vField()` 等表示由多个元素、状态、样式和交互组合出的 UI 组件。
 - 组件仍然遵循 `ViewNode` 的 setup callback 风格，可以自然写成 `vCard(card => { card.vCardHeader('标题'); card.vButton('保存'); })`。
-- 所有文本输入仍支持原始字符串、`VTextNode`、`I18nTextNode` 和 `"默认文案".s("key")`。
+- 所有文本输入仍支持原始字符串、`VTextNode`、`I18nTextNode` 和 `"默认文案".s("key", locale?)`。
 
 第一阶段不追求一次性复刻 `yoya-basic` 的所有组件，而是优先建立最常用、最能证明组件层价值的组件。
 
@@ -79,6 +79,20 @@
 - 第六批组件为 `vEchart` 或 `vChart`。图表组件应在确认依赖策略后再实现，避免过早引入大型运行时依赖。
 - 复杂组件默认导出工厂函数，类导出保留给高级扩展和测试使用。
 - 父节点快捷注册应复用现有 child factory 机制，并确保不会覆盖基础 HTML/SVG 方法。
+
+## Demo Code Readability Rule
+
+演示源码会通过 `ComponentSource` 直接展示给使用者，可读性比“代码行数最少”更重要。写演示时需要同时权衡代码量、总行数和单行长度。
+
+- 一行内点式链式调用不超过 3 个，超过时按组件边界换行。
+- 单行不超过 100 个字符，与 Prettier `printWidth: 100` 一致，由 ESLint `max-len` 检查。
+- 单个演示函数建议不超过 60 行，但不作为编译检查；超过时优先拆分为多个演示，或提取内部 helper。
+- 链式调用只合并简单设置（`attr`、`style`、`className` 等），不把嵌套 setup、条件逻辑和长参数压进一行。
+- `.on()` 等带回调内容的方法，回调逻辑较大或单行接近 100 字符时，在 `.on()` 前换行，回调内容独立成行。
+- 同一节点需要设置多个属性时，优先合并为 `node.attr({ ... })` 对象写法；动态属性、条件赋值或运行时计算值可以继续使用 `attr()`。
+- `src/examples/demos/` 已加入 `.prettierignore`，演示代码的换行格式不被 Prettier 自动合并。
+- i18n 演示优先使用 `"默认语言内容".s("key", locale?)` 字符串快捷写法；未指定 locale 时使用默认 locale，未注册的语言内容使用默认语言内容。
+- 自动检查：`demo-readability.test.js` 扫描 `src/examples/demos/*.js` 的点式链数量，违规时 `npm test` 失败。
 
 ## Testing Decisions
 

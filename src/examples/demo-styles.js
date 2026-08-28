@@ -329,7 +329,93 @@ const baseRules = [
 ];
 
 const genericRules = [
-  ['.components-route-page--intro', { gap: '12px' }],
+  ['.components-route-page--intro, .components-route-page--overview', { gap: '12px' }],
+  ['.components-guide-page', { display: 'grid', gap: '16px' }],
+  ['.components-guide-page > h2', { color: '#172033', fontSize: '1.35rem', margin: '0' }],
+  ['.components-guide-page > p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-guide-section',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '10px',
+      padding: '16px'
+    }
+  ],
+  ['.components-guide-section h3', { color: '#172033', fontSize: '1rem', margin: '0' }],
+  ['.components-guide-section p, .components-guide-section li', { color: '#5a6575' }],
+  [
+    '.components-guide-section ul',
+    { display: 'grid', gap: '6px', margin: '0', paddingLeft: '20px' }
+  ],
+  [
+    '.guide-code',
+    {
+      background: '#fbfcfe',
+      border: '1px solid #e2e8f0',
+      borderRadius: '6px',
+      margin: '0',
+      overflow: 'auto',
+      padding: '12px 14px'
+    }
+  ],
+  [
+    '.guide-code code',
+    {
+      color: '#172033',
+      fontFamily: "'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace",
+      fontSize: '0.84rem',
+      whiteSpace: 'pre'
+    }
+  ],
+  [
+    '.components-overview-section, .components-overview-guides',
+    { display: 'grid', gap: '10px', minWidth: '0' }
+  ],
+  [
+    '.components-overview-section h3, .components-overview-guides h3',
+    { color: '#172033', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-overview-grid',
+    {
+      display: 'grid',
+      gap: '12px',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))'
+    }
+  ],
+  [
+    '.components-overview-card',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      color: 'inherit',
+      display: 'grid',
+      gap: '6px',
+      minWidth: '0',
+      padding: '14px 16px',
+      textDecoration: 'none'
+    }
+  ],
+  ['.components-overview-card h3', { color: '#172033', fontSize: '0.98rem', margin: '0' }],
+  ['.components-overview-card p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-overview-card strong',
+    { color: '#2563eb', fontSize: '0.86rem', fontWeight: '600' }
+  ],
+  ['.components-overview-principles-grid', { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }],
+  [
+    '.components-overview-card ul',
+    { display: 'grid', gap: '6px', margin: '0', paddingLeft: '18px' }
+  ],
+  ['.components-overview-card li', { color: '#5a6575' }],
+  [
+    '.components-overview-card:hover',
+    { borderColor: '#bfdbfe', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.08)' }
+  ],
   [
     '.components-route-meta-grid',
     {
@@ -877,6 +963,52 @@ const iconExtraRules = [
   ]
 ];
 
+const svgExtraRules = [
+  ['.components-svg-page', { display: 'grid', gap: '20px' }],
+  ['.components-svg-page h1', { color: '#172033', fontSize: '1.45rem' }],
+  ['.components-svg-page > p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-svg-demo',
+    {
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '10px',
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-svg-demo h2', { color: '#172033', fontSize: '1.05rem', margin: '0' }],
+  ['.components-svg-demo > p', { color: '#5a6575', margin: '0' }],
+  [
+    '.components-svg-demo-live .yoya-vcard',
+    {
+      maxWidth: '640px',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-svg-demo-live .yoya-vcard-footer',
+    {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  ],
+  ['.components-svg-tips', { display: 'grid', gap: '8px' }],
+  ['.components-svg-tips h2', { color: '#172033', fontSize: '1.05rem', margin: '0' }],
+  [
+    '.components-svg-tips ul',
+    {
+      color: '#5a6575',
+      margin: '0',
+      paddingLeft: '20px'
+    }
+  ],
+  ['.components-svg-tips li', { lineHeight: '1.8' }]
+];
+
 const thirdPartyExtraRules = [
   ['.components-echarts-page', { display: 'grid', gap: '20px' }],
   ['.components-echarts-page h1', { color: '#172033', fontSize: '1.45rem' }],
@@ -1056,6 +1188,7 @@ const demoRules = [
   ...feedbackExtraRules,
   ...navigationExtraRules,
   ...iconExtraRules,
+  ...svgExtraRules,
   ...thirdPartyExtraRules,
   ...definitionExtraRules,
   ...i18nExtraRules,

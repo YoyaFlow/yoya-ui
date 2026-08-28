@@ -30,20 +30,20 @@ export function I18nReactiveExample1() {
   return {
     render() {
       return vCard((card) => {
-        card.vCardHeader(locale.text('title'));
+        card.vCardHeader('服务控制台'.s('title', locale));
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p(locale.text('greeting', { name: 'Ada' }));
+            stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
             stack.hstack((row) => {
               row.style('alignItems', 'center');
-              row.span(locale.text('currentLanguage'));
+              row.span('当前语言'.s('currentLanguage', locale));
               row.spacer();
               row.output((output) => output.child(language));
             });
             stack.hstack((row) => {
               row.style('alignItems', 'center');
-              row.span(locale.text('status'));
+              row.span('运行中'.s('status', locale));
             });
           });
         });
@@ -62,6 +62,8 @@ export function I18nReactiveExample1() {
 
 export function I18nParamsExample1() {
   let count = 1;
+  let userCount = null;
+  let unknownStatus = null;
   const locale = createI18n({
     fallbackLanguage: 'zh-CN',
     language: 'zh-CN',
@@ -85,17 +87,18 @@ export function I18nParamsExample1() {
       }
     }
   });
-  const userCount = locale.text('page.stats.users', { count });
-  const unknownStatus = locale.text('status.unknown');
 
   return {
     render() {
+      userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
+      unknownStatus = '未知状态'.s('status.unknown', locale);
+
       return vCard((card) => {
         card.vCardHeader('参数与回退');
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('词典支持 dot path 和 {param} 插值，缺失文案会回退到 fallbackLanguage。');
+            stack.p('词典支持 dot path 和 {param} 插值，未注册语言内容会回退到默认语言内容。');
             stack.hstack((row) => {
               row.style('alignItems', 'center');
               row.span('统计');
@@ -159,13 +162,12 @@ export function I18nShortcutExample1() {
     }
   });
 
-  installI18nStringShortcut(locale);
-
-  const saveMessage = '保存成功'.s('save.message');
-  const greeting = '你好，{name}'.s('greeting.message', { name: 'Ada' });
-
   return {
     render() {
+      installI18nStringShortcut(locale);
+      const saveMessage = '保存成功'.s('save.message');
+      const greeting = '你好，{name}'.s('greeting.message', { name: 'Ada' });
+
       return vCard((card) => {
         card.vCardHeader('字符串快捷写法');
         card.vCardBody((body) => {
@@ -259,21 +261,21 @@ export function I18nExtendExample1() {
   return {
     render() {
       return vCard((card) => {
-        card.vCardHeader(locale.text('title'));
+        card.vCardHeader('扩展新语言'.s('title', locale));
         card.vCardBody((body) => {
           body.vstack((stack) => {
             stack.style('gap', '14px');
             stack.p('vLanguageSwitch 接受任意 languages，可以先 register 词典，再把它加入下拉项。');
-            stack.p(locale.text('greeting', { name: 'Ada' }));
+            stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
             stack.hstack((row) => {
               row.style('alignItems', 'center');
-              row.span(locale.text('currentLanguage'));
+              row.span('当前语言'.s('currentLanguage', locale));
               row.spacer();
               row.output((output) => output.child(language));
             });
             stack.hstack((row) => {
               row.style('alignItems', 'center');
-              row.span(locale.text('status'));
+              row.span('运行中'.s('status', locale));
             });
           });
         });
