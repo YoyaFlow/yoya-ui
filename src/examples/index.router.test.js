@@ -106,23 +106,17 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-components-top-nav]')).not.toBeNull();
     expect(document.querySelector('.components-demo-shell').style.display).toBe('grid');
     expect(document.querySelector('.components-demo-shell').style.gap).toBe('0px');
-    expect(document.querySelector('.components-demo-shell').style.background).toBe(
-      'var(--yoya-color-bg, #f6f7f9)'
-    );
+    expect(document.querySelector('.components-demo-shell').style.background).toBe('');
     expect(document.querySelector('.components-demo-shell').style.height).toContain('100');
     expect(document.querySelector('[data-components-top-nav]').style.position).toBe('sticky');
-    expect(document.querySelector('[data-components-top-nav]').style.background).toBe(
-      'var(--yoya-color-surface, #ffffff)'
-    );
-    expect(document.querySelector('[data-components-top-nav]').style.minHeight).toBe('52px');
-    expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('0px');
-    expect(document.querySelector('[data-components-menu]').style.background).toBe(
-      'var(--yoya-color-surface, #ffffff)'
-    );
+    expect(document.querySelector('[data-components-top-nav]').style.background).toBe('');
+    expect(document.querySelector('[data-components-top-nav]').style.minHeight).toBe('');
+    expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('');
+    expect(document.querySelector('[data-components-menu]').style.background).toBe('');
     expect(document.querySelector('[data-components-menu]').style.overflow).toBe('auto');
     expect(document.querySelector('[data-components-menu]').style.height).toBe('100%');
-    expect(document.querySelector('[data-components-menu]').style.scrollbarWidth).toBe('none');
-    expect(document.head.querySelector('[data-demo-menu-scrollbar-style]')).not.toBeNull();
+    expect(document.querySelector('[data-components-menu]').style.scrollbarWidth).toBe('');
+    expect(document.head.querySelector('[data-demo-menu-scrollbar-style]')).toBeNull();
     expect(document.querySelector('[data-components-router-views]').style.overflow).toBe('auto');
     expect(document.querySelector('[data-components-router-views]').style.height).toBe('100%');
     expect(document.querySelector('.yoya-vrouter-views').dataset.titleLocked).toBe('true');

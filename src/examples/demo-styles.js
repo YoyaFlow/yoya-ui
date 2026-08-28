@@ -169,7 +169,6 @@ const baseRules = [
   [
     '.components-demo-shell',
     {
-      background: 'var(--yoya-color-bg, #f6f7f9)',
       boxSizing: 'border-box',
       display: 'grid',
       gap: '0px',
@@ -182,59 +181,9 @@ const baseRules = [
     }
   ],
   [
-    '.components-demo-shell > .yoya-vnavbar',
-    {
-      background: 'var(--yoya-color-surface, #ffffff)',
-      border: '0',
-      borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
-      borderRadius: '0',
-      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
-      minHeight: '52px',
-      padding: '0 16px',
-      zIndex: '30'
-    }
-  ],
-  [
-    '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand',
-    { borderRightColor: 'var(--yoya-color-border-faint, #e2e8f0)' }
-  ],
-  [
-    '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand-title',
-    { color: 'var(--yoya-color-text, #172033)' }
-  ],
-  [
-    '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-brand-subtitle',
-    { color: 'var(--yoya-color-text-muted, #64748b)' }
-  ],
-  [
-    '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item',
-    {
-      borderColor: 'transparent',
-      color: 'var(--yoya-color-text-secondary, #445065)',
-      minHeight: '32px',
-      padding: '6px 10px'
-    }
-  ],
-  [
-    ".components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item[data-active='true']",
-    {
-      background: 'var(--yoya-color-primary-subtle, #e8f0fe)',
-      color: 'var(--yoya-color-text-active, #1d4ed8)'
-    }
-  ],
-  [
-    ".components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu .yoya-vmenu-item[data-hovered='true']:not([data-active='true'])",
-    {
-      background: 'var(--yoya-color-surface-hover, #f1f5f9)',
-      borderColor: 'var(--yoya-color-border-faint, #e2e8f0)',
-      color: 'var(--yoya-color-text, #172033)'
-    }
-  ],
-  [
     '.components-workspace',
     {
       alignItems: 'stretch',
-      background: 'var(--yoya-color-bg, #f6f7f9)',
       boxSizing: 'border-box',
       display: 'grid',
       gap: '0px',
@@ -252,31 +201,15 @@ const baseRules = [
     '.components-menu',
     {
       alignContent: 'start',
-      background: 'var(--yoya-color-surface, #ffffff)',
-      border: '0',
-      borderRight: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
-      borderRadius: '0px',
       display: 'grid',
       gap: '10px',
       height: '100%',
-      msOverflowStyle: 'none',
       overflow: 'auto',
       padding: '14px 12px 18px',
-      scrollbarWidth: 'none',
       width: '100%'
     }
   ],
-  [
-    '.components-router-panel',
-    {
-      background: 'var(--yoya-color-bg, #f6f7f9)',
-      border: '0',
-      borderRadius: '0px',
-      height: '100%',
-      overflow: 'auto',
-      width: '100%'
-    }
-  ],
+  ['.components-router-panel', { height: '100%', overflow: 'auto', width: '100%' }],
   ['.components-menu-intro', { display: 'grid', gap: '6px' }],
   [
     `.components-menu-intro h2,
@@ -303,68 +236,8 @@ const baseRules = [
      .components-not-found p`,
     { letterSpacing: '0', margin: '0' }
   ],
-  ['.components-menu-intro h2', { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem' }],
-  ['.components-menu-intro p', { color: 'var(--yoya-color-text-muted, #5a6575)' }],
+  ['.components-menu-intro h2', { fontSize: '1rem' }],
   ['.components-menu-list', { minWidth: '0', padding: '0', width: '100%' }],
-  ['.components-menu-list .yoya-vmenu', { gap: '3px', minWidth: '0', padding: '0', width: '100%' }],
-  ['.components-menu-list .yoya-vmenu-group', { gap: '2px', padding: '0 0 10px' }],
-  [
-    '.components-menu-list .yoya-vmenu-group-label',
-    {
-      color: 'var(--yoya-color-text-secondary, #344054)',
-      fontSize: '0.78rem',
-      fontWeight: '700',
-      padding: '6px 10px 4px',
-      textTransform: 'none'
-    }
-  ],
-  [
-    ".components-menu-list .yoya-vmenu-group[data-active='true'] .yoya-vmenu-group-label",
-    { color: 'var(--yoya-color-text-active, #1d4ed8)' }
-  ],
-  [
-    '.components-menu-list .yoya-vmenu-item',
-    { color: 'var(--yoya-color-text, #1f2937)', minHeight: '34px' }
-  ],
-  [
-    ".components-menu-list .yoya-vmenu-item[data-active='true']",
-    {
-      background: 'var(--yoya-color-primary-subtle, #eff6ff)',
-      borderColor: 'var(--yoya-color-primary-border, #bfdbfe)',
-      color: 'var(--yoya-color-text-active, #1d4ed8)'
-    }
-  ],
-  [
-    ".components-menu-list .yoya-vmenu-item[data-hovered='true']:not([data-active='true'])",
-    {
-      background: 'var(--yoya-color-surface-hover, #f1f5f9)',
-      borderColor: 'var(--yoya-color-border-faint, #e2e8f0)',
-      color: 'var(--yoya-color-text, #172033)'
-    }
-  ],
-  [
-    '.components-menu-list .yoya-vmenu-item-shortcut',
-    {
-      alignSelf: 'center',
-      background: '#eef3f9',
-      borderRadius: '999px',
-      color: 'var(--yoya-color-text-muted, #5a6575)',
-      fontSize: '0.8rem',
-      justifySelf: 'end',
-      lineHeight: '1.2',
-      padding: '2px 8px',
-      textAlign: 'right',
-      whiteSpace: 'normal'
-    }
-  ],
-  [
-    ".components-menu-list .yoya-vmenu-item[data-component-status='planned'] .yoya-vmenu-item-shortcut",
-    { background: '#fff6db', color: '#8a5b00' }
-  ],
-  [
-    '.components-router-panel .yoya-vrouter-views',
-    { border: '0', borderRadius: '0px', height: '100%', minHeight: '100%', overflow: 'hidden' }
-  ],
   ['.components-route-page', { display: 'grid', gap: '16px' }]
 ];
 
@@ -1373,22 +1246,6 @@ function applyGlobalStyles() {
   const app = document.querySelector('#app');
   if (app) {
     app.style.minHeight = '100vh';
-  }
-
-  if (!document.head.querySelector('[data-demo-backdrop-style]')) {
-    const backdropStyle = document.createElement('style');
-    backdropStyle.setAttribute('data-demo-backdrop-style', 'true');
-    backdropStyle.textContent =
-      '.components-layout-docs--popup .yoya-vdialog::backdrop { background: rgba(15, 23, 42, 0.28); }';
-    document.head.appendChild(backdropStyle);
-  }
-
-  if (!document.head.querySelector('[data-demo-menu-scrollbar-style]')) {
-    const scrollbarStyle = document.createElement('style');
-    scrollbarStyle.setAttribute('data-demo-menu-scrollbar-style', 'true');
-    scrollbarStyle.textContent =
-      '.components-menu::-webkit-scrollbar { display: none; height: 0; width: 0; }';
-    document.head.appendChild(scrollbarStyle);
   }
 }
 
