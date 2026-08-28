@@ -42,20 +42,20 @@ export function GuideOverviewPage() {
     id: 'overview',
     title: '概述',
     intro:
-      'yoya-ui 是面向后端与全栈开发者的浏览器原生 JS 基础库，同时提供常用 UI 组件库，AI 生成组件可直接使用。',
+      'yoya-ui 是以浏览器原生能力替代 React/Vue 类框架的 UI 库：声明式 HTML DSL、组件库、路由、布局与 i18n，零构建直接运行，AI 生成组件可直接使用。',
     sections: [
       {
         title: '是什么',
         paragraphs: [
-          'yoya-ui 回归浏览器原生 DOM，提供声明式 HTML DSL、布局、组件、状态、路由、i18n 和图表适配，并直接支持 AI 生成组件。'
+          'yoya-ui 回归浏览器原生 DOM，消除虚拟 DOM、JSX/SFC 编译与框架运行时等因早期 Web 标准不足而发明的技术特性，提供声明式 HTML DSL、组件、布局、状态、路由、i18n 和图表适配，并直接支持 AI 生成组件。'
         ]
       },
       {
         title: '适合什么场景',
         points: [
-          '服务端模板嵌入和局部交互。',
+          '整站 SPA：路由（hash/history）、标签页视图、懒加载、布局、状态与 i18n 一应俱全。',
           '后台管理系统和 CRUD 页面。',
-          '微前端中的独立功能块。',
+          '服务端模板、微前端中的渐进接管与局部交互。',
           'AI 生成组件直接使用，避免环境问题，返工率极低。'
         ]
       },
@@ -71,27 +71,31 @@ export function GuidePositioningPage() {
   return createGuidePage({
     id: 'positioning',
     title: '定位',
-    intro: 'yoya-ui 回归浏览器原生环境，提供常用 UI 组件库，并面向 AI 生成组件场景。',
+    intro: 'yoya-ui 回归浏览器原生环境，以声明式 DSL 与完整组件、路由、布局能力替代前端框架。',
     sections: [
       {
         title: '目标用户',
         points: [
-          '后端与全栈开发者。',
-          '希望在服务端模板中逐步接管局部交互的团队。',
+          '所有 Web 开发者，尤其是希望摆脱框架运行时与构建链的团队。',
+          '希望同一套技术同时覆盖整站 SPA 与服务端页面的团队。',
           '使用 AI 生成组件并希望直接运行的项目。'
         ]
       },
       {
         title: '边界',
         points: [
-          '回归浏览器原生，不需要额外编译过程，源码可直接运行。',
-          '支持但不强制整站 SPA。',
+          '回归浏览器原生，无虚拟 DOM 与框架运行时，不需要编译过程，源码可直接运行。',
+          '完整支持整站 SPA，也能从单个局部交互开始渐进接管。',
           '不绑定业务视觉主题。'
         ]
       },
       {
         title: '适用场景',
-        points: ['后台管理。', '表单、表格和详情页。', '局部挂载、微前端和 AI 生成 UI。']
+        points: [
+          '整站 SPA 与后台管理系统。',
+          '表单、表格和详情页。',
+          '服务端渐进接管、微前端和 AI 生成 UI。'
+        ]
       }
     ]
   });
@@ -101,11 +105,19 @@ export function GuideAdvantagesPage() {
   return createGuidePage({
     id: 'advantages',
     title: '优势',
-    intro: 'yoya-ui 把浏览器原生能力和轻量 DSL 组合起来，减少框架层抽象。',
+    intro: 'yoya-ui 把浏览器原生能力与声明式 DSL 组合起来，替代框架层抽象。',
     sections: [
       {
         title: '运行时轻量',
         points: ['无虚拟 DOM 运行时。', '无第三方框架依赖。', '核心包可按子入口引入。']
+      },
+      {
+        title: '完整 SPA 能力',
+        points: [
+          '内置路由（hash/history），标签页视图与页面懒加载。',
+          '布局、状态、i18n 与图表开箱即用。',
+          '可整套搭建整站应用，不依赖第三方生态。'
+        ]
       },
       {
         title: '后端友好',
@@ -127,11 +139,13 @@ export function GuideDesignPhilosophyPage() {
   return createGuidePage({
     id: 'philosophy',
     title: '设计理念',
-    intro: '设计上优先保持浏览器原生、声明式、小核加扩展和后端友好。',
+    intro: '设计上优先保持浏览器原生、声明式、完整能力与零构建交付。',
     sections: [
       {
         title: '浏览器原生优先',
-        paragraphs: ['直接使用真实 DOM，避免不必要的虚拟层和运行时依赖。']
+        paragraphs: [
+          '直接使用真实 DOM，消除虚拟 DOM、JSX/SFC 编译和框架运行时这类为弥补早期 Web 标准不足而发明的技术特性。'
+        ]
       },
       {
         title: '小核加扩展',
@@ -143,7 +157,7 @@ export function GuideDesignPhilosophyPage() {
       },
       {
         title: '后端友好',
-        paragraphs: ['可嵌入、可组合、可阅读、可复制，适合逐步接管服务端渲染页面。']
+        paragraphs: ['可嵌入、可组合、可阅读、可复制，从服务端渲染页面渐进接管到整站 SPA 均适用。']
       }
     ]
   });

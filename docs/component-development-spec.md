@@ -23,6 +23,16 @@
 
 第一阶段不追求一次性复刻 `yoya-basic` 的所有组件，而是优先建立最常用、最能证明组件层价值的组件。
 
+## 标准定位
+
+本规格定义的是 yoya-ui 的组件标准，架构遵循「小核心 + 自带组件 + 开放扩展」：
+
+- **核心很小，提供标准**：`ViewNode` 等核心仅约 1,000 行，只定义节点生命周期、属性快照、组件包装与状态机制，不承载具体业务组件。
+- **自带组件与快捷组件**：库内组件（`vButton`、`vCard`、`vTable`、`vForm` 等）与快捷组件（`toast`、`vText`、布局工厂等）是标准的第一方实现，也是标准可用性的证明和第三方实现的参照。
+- **开发者可基于标准自建组件库**：任何团队或个人都可以按本规格开发第三方组件库。只要遵守命名（`v` 前缀）、形态（薄工厂 / 对象组件 / 类节点组件）、组合（`child()` + setup callback）与文本/i18n 契约，即可与内置组件在同一视图树中互操作，并可通过 `registerChildFactories` 注册为父节点快捷方法。
+
+第三方组件库开发指南见 [组件库开发规范（第三方开发者指南）](component-library-authoring.md)。
+
 ## User Stories
 
 1. As a backend developer, I want to call `vButton('保存')`, so that I can create a standard action button without manually assembling classes and states.

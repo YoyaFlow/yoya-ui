@@ -1,7 +1,7 @@
 {
   "name": "yoya-ui",
   "version": "0.1.0",
-  "description": "A small vanilla JavaScript UI foundation library for backend and full-stack developers.",
+  "description": "A browser-native UI library that replaces React/Vue-style frameworks: declarative HTML DSL, component library, router, i18n and layout, with zero build steps.",
   "type": "module",
   "private": false,
   "main": "./dist/yoya-ui.umd.js",

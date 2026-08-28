@@ -1,36 +1,6 @@
 import { section, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
-function HtmlNativeExample1() {
-  const result = vText('原生输入：等待');
-
-  return {
-    render() {
-      return section((page) => {
-        page.className('html-native-demo');
-        page.h3('HTML 原生元素');
-        page.p('button、input、output 等原生元素可以直接组合，适合底层自由拼装。');
-        page.div((box) => {
-          box.className('html-native-box');
-          box.input((input) => {
-            input.id('html-native-name');
-            input.attr({ placeholder: '输入名称', type: 'text' });
-          });
-          box.button((button) => {
-            button.className('html-native-button');
-            button.text('更新');
-            button.on('click', () => {
-              const value = document.getElementById('html-native-name')?.value || '';
-              result.textContent(`原生输入：${value || '空'}`);
-            });
-          });
-          box.output((output) => output.child(result));
-        });
-      });
-    }
-  };
-}
-
 function DefineComponentExample1() {
   const status = vText('待发布');
 
@@ -210,14 +180,55 @@ function InteractiveComposeExample1() {
   };
 }
 
-const componentDefinitionDemos = [
+const componentPatterns = [
   {
-    component: HtmlNativeExample1,
-    id: 'html-native',
-    imports: ['section', 'vText'],
-    sourceTitle: 'HTML 原生源码',
-    title: 'HTML 原生元素'
+    title: '形态 A：薄工厂 —— 函数直接返回 ViewNode',
+    intro: '适用于无内部状态、纯配置化组合；函数直接返回 ViewNode，代码量最小。',
+    code: `function ServiceTag(options) {
+  return vBadge(options);
+}`,
+    references: ['库内参考：flex / stack / grid / container / spacer / divider、vDynamicLoader。']
   },
+  {
+    title: '形态 B：对象组件 —— 返回 { render(), ... }',
+    intro:
+      '适用于常规独立组件（默认形态）。render() 返回 ViewNode，状态保存在闭包或返回对象上，' +
+      '可暴露命令/状态方法。',
+    code: `function RateCard() {
+  const state = { value: 0 };
+  return {
+    render() {
+      return vRate((rate) => {
+        rate.value(state.value);
+      });
+    },
+    value(next) {
+      state.value = next;
+      return this;
+    }
+  };
+}`,
+    references: ['库内参考：VPagination（render() + update/change 等状态 API）。']
+  },
+  {
+    title: '形态 C：类节点组件 —— class VXxx extends HtmlElementNode',
+    intro:
+      '适用于 VTable↔VTr 这类父子嵌套、需操作子实例或重写节点生命周期' +
+      '（renderDom/destroy/child）的细粒度场景；同时导出成对 vXxx 工厂并注册进嵌套 DSL。',
+    code: `export class VTr extends HtmlElementNode {
+  // 嵌套关系与细粒度操作
+}
+export function vTr(first = null, second = null, third = null) {
+  return createComponentFactory(VTr, first, second, third);
+}`,
+    references: [
+      '库内参考：VButton / VCard / VTable / VTr / VTabs 等组件库主体。',
+      'CustomNode 统一基类为未实现特性（planned），当前以 HtmlElementNode / ViewNode / SvgElementNode 为基类。'
+    ]
+  }
+];
+
+const componentDefinitionDemos = [
   {
     component: DefineComponentExample1,
     id: 'define',
@@ -273,7 +284,26 @@ export function ComponentDefinitionDocumentationPage() {
         page.className('components-route-page components-definition-page');
         page.attr('data-definition-page', 'true');
         page.h1('定义组件');
-        page.p('使用参数函数 + render() 定义组件，并通过 child() 组合多个组件。');
+        page.p('yoya-ui 支持三种组件定义形态，按场景选用：A 薄工厂、B 对象组件、C 类节点组件。');
+        page.p(
+          'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
+            '字符串/数字，三种形态均可作为子节点传入页面组合。'
+        );
+
+        componentPatterns.forEach((pattern) => {
+          page.section((block) => {
+            block.className('components-guide-section components-definition-pattern');
+            block.h3(pattern.title);
+            block.p(pattern.intro);
+            block.pre((pre) => {
+              pre.className('guide-code');
+              pre.code(pattern.code);
+            });
+            block.ul((list) => {
+              pattern.references.forEach((reference) => list.li(reference));
+            });
+          });
+        });
 
         componentDefinitionDemos.forEach((demo) => {
           page.child(ComponentDefinitionDemoSection(demo));

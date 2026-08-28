@@ -1,6 +1,16 @@
 # Yoya UI
 
-Yoya UI is a small vanilla JavaScript UI foundation library built with Vite. It is meant for backend and full-stack developers who want enough structure to build web UI screens without adopting a large frontend framework.
+Yoya UI is a browser-native UI library designed to replace React/Vue-style frameworks. It offers a declarative HTML DSL, a built-in component library, router, i18n, layout and state system — running directly on the real DOM with no virtual DOM, no JSX/SFC compilation, and no build-chain requirement.
+
+## 设计定位：小核心 = 标准，组件 = 可插拔生态
+
+yoya-ui 采用「标准与实现分离」的架构，核心的目标不是“做大运行时”，而是“定义标准”：
+
+- **核心很小，提供标准**：核心源码约 1,000 行，只定义组件标准本身——节点生命周期（`renderDom` / `bindTo` / `destroy`）、属性快照模型、组件包装（`ComponentNode`）、状态机制（`setState` / `registerStateHandler` / `vStateNode`）以及 HTML/SVG 元素工厂。核心不依赖任何第三方库。
+- **自带组件与快捷组件**：`yoya.ui.js` 聚合官方组件库（动作、导航、反馈、表单、数据展示等）与快捷组件（`toast`、`vText`、布局工厂等），开箱即用，覆盖后台 CRUD 高频场景。
+- **标准开放，可自建组件库**：命名（`v` 前缀）、三种组件形态（薄工厂 / 对象组件 / 类节点组件）、`child()` 组合、setup callback 风格、文本与 i18n 处理、CSS token 契约共同构成公开标准。第三方开发者可以按标准开发自己的组件库，并与内置组件在同一视图树中无缝互操作。
+
+组件标准与开发指南见 [组件库开发规范（第三方开发者指南）](docs/component-library-authoring.md) 与 [组件开发规格](docs/component-development-spec.md)。
 
 ## What Is Included
 
@@ -24,6 +34,7 @@ Yoya UI is a small vanilla JavaScript UI foundation library built with Vite. It 
 
 - [yoya-basic core summary](docs/yoya-basic-core-summary.md)
 - [component development spec](docs/component-development-spec.md)
+- [component library authoring guide](docs/component-library-authoring.md)
 
 ## Requirements
 

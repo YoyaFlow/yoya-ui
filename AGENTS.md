@@ -13,27 +13,67 @@ Always prefer MCP graph tools over grep, glob, or file search for code discovery
 
 Fall back to text search for string literals, configuration, non-code files, or when the graph is stale or insufficient.
 
-## Component Encapsulation Convention
+## Component Definition Patterns
 
-All reusable components and every component demo must use the object component pattern:
+组件定义支持多种形态，按场景选用；新组件应从下列三种形态中选择，避免在模板之外另起结构。
+
+### A. 薄工厂：函数直接返回 ViewNode
+
+适用：无内部状态、纯配置化组合，代码量最小。
 
 ```js
-function ComponentName(options) {
+function ServiceTag(options) {
+  return vBadge(options);
+}
+```
+
+### B. 对象组件：返回 { render(), ... }
+
+适用：常规独立组件（默认形态）。render() 返回 ViewNode（包括 vCard(...) 这类复合节点），状态保存在闭包或返回对象上，可暴露命令/状态方法。
+
+```js
+function RateCard() {
+  const state = { value: 0 };
   return {
     render() {
-      return viewNode;
+      return vRate((rate) => {
+        rate.value(state.value);
+      });
+    },
+    value(next) {
+      state.value = next;
+      return this;
     }
   };
 }
 ```
 
-- Component names use PascalCase and describe the UI unit, for example `ServiceTableCard`.
-- `render()` must return a `ViewNode` (including compound nodes such as `vCard(...)`).
-- The returned object may expose additional public commands or state methods alongside `render()`.
-- Demo source code must show the complete object component wrapper; do not show a component that directly returns `ViewNode` or a bare `() => ViewNode` factory.
-- Demo source panels must reuse `ComponentSource` from `examples/components/component-source.js`; do not maintain duplicate source strings or reimplement the source panel.
-- Page composition should pass the component object to `child(...)`, which resolves and caches its `render()` result.
-- Low-level element and `v*` factories remain valid inside `render()`; this rule governs reusable component boundaries and demo code.
+### C. 类节点组件：class VXxx extends HtmlElementNode
+
+适用：VTable↔VTr 这类父子嵌套关系、需要操作子实例或重写节点生命周期（renderDom/destroy/child）的细粒度场景；必须同时导出成对 vXxx 工厂，并在分类 index.js 通过 registerChildFactories 注册进嵌套 DSL。
+
+```js
+export class VTr extends HtmlElementNode {
+  // 嵌套关系与细粒度操作
+}
+export function vTr(first = null, second = null, third = null) {
+  return createComponentFactory(VTr, first, second, third);
+}
+```
+
+- 组件名 PascalCase 并描述 UI 单元，例如 ServiceTableCard、VButton；形态 C 使用 VXxx 类 + vXxx 工厂、yoya-vxxx CSS 类。
+- CustomNode 统一基类为未实现特性（planned），暂不提供；当前形态 C 使用 HtmlElementNode / ViewNode / SvgElementNode 作为基类，业务用户可在业务代码中用形态 C 自定义类组件。
+- 库内参考实现：
+  - 形态 A：layout 的 flex/stack/grid/container/spacer/divider、vDynamicLoader；
+  - 形态 B：VPagination（render() + update/change 等状态 API）；
+  - 形态 C：VButton/VCard/VTable/VTr/VTabs 等组件库主体。
+- child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
+- 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
+
+### Demo 演示组件
+
+- 演示代码（examples/demos）以形态 B 为主，通过完整组件包装展示状态操作空间；确需演示形态 A/C 时允许直接书写对应形态。
+- 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 
 ## Declarative-First Component Rule
 

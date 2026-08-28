@@ -25,7 +25,8 @@ const componentMenuSections = [
       { label: '优势', details: 'Advantages' },
       { label: '设计理念', details: 'Design Philosophy' },
       { label: '安装方式', details: 'Installation' },
-      { label: '定义组件', details: 'function + render()' },
+      { label: 'HTML 原生元素', details: 'div / button / input / output' },
+      { label: '定义组件', details: 'A 薄工厂 / B 对象组件 / C 类节点' },
       { label: '国际化', details: 'I18n / createI18n / i18nText' },
       { label: '状态节点', details: 'vStateNode' }
     ]
@@ -172,10 +173,11 @@ const docsRouteLoaders = Object.freeze({
   'guides:2': () => import('./guide-docs.js').then((m) => m.GuideAdvantagesPage()),
   'guides:3': () => import('./guide-docs.js').then((m) => m.GuideDesignPhilosophyPage()),
   'guides:4': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
-  'guides:5': () =>
+  'guides:5': () => import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
+  'guides:6': () =>
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
-  'guides:6': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
-  'guides:7': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:7': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
+  'guides:8': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:3': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
   'general:4': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
@@ -563,9 +565,18 @@ function createOverviewView() {
       guides.div((grid) => {
         grid.className('components-overview-grid');
         [
-          { label: '定义组件', path: '/components/guides/5', details: 'function + render()' },
-          { label: '国际化', path: '/components/guides/6', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/7', details: 'vStateNode' }
+          {
+            label: 'HTML 原生元素',
+            path: '/components/guides/5',
+            details: 'div / button / input / output'
+          },
+          {
+            label: '定义组件',
+            path: '/components/guides/6',
+            details: 'A 薄工厂 / B 对象组件 / C 类节点'
+          },
+          { label: '国际化', path: '/components/guides/7', details: 'I18n / createI18n / .s()' },
+          { label: '状态节点', path: '/components/guides/8', details: 'vStateNode' }
         ].forEach((guide) => {
           grid.a((card) => {
             card.className('components-overview-card components-overview-guide-card');

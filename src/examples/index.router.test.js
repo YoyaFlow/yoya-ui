@@ -135,9 +135,9 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(10);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(4);
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(10);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(65);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(66);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -494,24 +494,17 @@ describe('renderExamplesIndex', () => {
   it('renders the component definition guide with define and compose demos', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/5');
+    await openRoute('/components/guides/6');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('定义组件');
     });
 
     const page = document.querySelector('[data-definition-page]');
     expect(page.querySelector('h1').textContent).toBe('定义组件');
-    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(4);
+    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(3);
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
-      'html-native'
+      'define'
     );
-    expect(
-      page.querySelector('[data-definition-demo="html-native"] [data-source-example]').textContent
-    ).toContain('render()');
-    const htmlDemo = page.querySelector('[data-definition-demo="html-native"]');
-    htmlDemo.querySelector('input').value = 'yoya';
-    htmlDemo.querySelector('button').click();
-    expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
     expect(page.querySelector('[data-definition-demo="compose"] .yoya-vavatar')).not.toBeNull();
     expect(page.querySelector('[data-definition-demo="compose"] .yoya-vbadge')).not.toBeNull();
 
@@ -527,6 +520,24 @@ describe('renderExamplesIndex', () => {
     expect(interactiveDemo.querySelector('[data-parent-log]').textContent).toContain(
       '父组件收到：第 3 步完成'
     );
+  });
+
+  it('renders the HTML native elements guide page with a live input demo', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/5');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('HTML 原生元素');
+    });
+
+    const page = document.querySelector('[data-html-native-page]');
+    expect(page.querySelector('h1').textContent).toBe('HTML 原生元素');
+    const htmlDemo = page.querySelector('.components-html-native-demo');
+    const inputElement = htmlDemo.querySelector('input');
+    inputElement.value = 'yoya';
+    htmlDemo.querySelector('button').click();
+    expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
+    expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
   });
 
   it('renders the development guide overview and installation pages', async () => {
@@ -550,7 +561,7 @@ describe('renderExamplesIndex', () => {
 
   it.each([
     [
-      '/components/guides/6',
+      '/components/guides/7',
       '国际化',
       'i18n',
       'I18n 国际化',
@@ -560,7 +571,7 @@ describe('renderExamplesIndex', () => {
       4
     ],
     [
-      '/components/guides/7',
+      '/components/guides/8',
       '状态节点',
       'state',
       'vStateNode 状态节点',
@@ -841,7 +852,7 @@ describe('renderExamplesIndex', () => {
   it('switches reactive I18n demos between languages', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/6');
+    await openRoute('/components/guides/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('国际化');
     });
@@ -916,7 +927,7 @@ describe('renderExamplesIndex', () => {
   it('runs state node demos with update and rebuild modes', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/7');
+    await openRoute('/components/guides/8');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
