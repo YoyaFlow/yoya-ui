@@ -36,7 +36,7 @@ export function ThemeDemonstrationPage() {
             ComponentSource({
               component: renderThemeDemo,
               sourceComponent: renderThemeDemo,
-              imports: ['setYoyaMode', 'vButton', 'vCard', 'vText'],
+              imports: ['div', 'input', 'vButton', 'vCard', 'vText', 'vThemeModeSwitch'],
               title: '主题切换演示源码'
             })
           );

@@ -1,12 +1,5 @@
 import { div, input, vButton, vCard, vText, vThemeModeSwitch } from '../index.js';
 
-function modeSwitchRow() {
-  return div((row) => {
-    row.className('demo-theme-row');
-    row.child(vThemeModeSwitch({ persist: true }));
-  });
-}
-
 function densityButton(compact, densityText) {
   return vButton('切换密度')
     .attr('data-theme-density', '')
@@ -53,7 +46,8 @@ export function renderThemeDemo() {
       return vCard((card) => {
         card.vCardHeader('主题切换');
         card.vCardBody((body) => {
-          body.child(modeSwitchRow());
+          body.p('点击按钮切换主题模式，切换后自动保存（刷新页面由 initYoyaTheme 恢复）');
+          body.child(vThemeModeSwitch({ persist: true }));
           body.p(densityText);
           body.child(densityButton(compact, densityText));
           body.p('品牌主色（覆盖 --yoya-raw-primary）');
