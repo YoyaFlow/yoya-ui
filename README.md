@@ -535,13 +535,32 @@ router((r) => {
 ```js
 router((r) => {
   r.loading(() => div('页面加载中…'));
-  r.route('/dashboard', () =>
-    import('./dashboard.js').then((module) => module.DashboardPage().render())
-  );
+  r.route('/dashboard', () => import('./dashboard.js').then((module) => module.DashboardPage()));
 });
 ```
 
 路由级配置 `{ loading, error }` 可以覆盖全局默认；异步视图失败时会渲染错误视图（默认展示错误信息）。
+
+页面文件可以用 `export default` 定义组件构建函数，Router 会自动取默认导出、调用并传入路由 context（`params`/`query`/`path` 等），列如：
+
+```js
+// dashboard.js
+export default function DashboardPage({ params, query }) {
+  return {
+    render() {
+      return div(`表盘 ${params.id} 标签 ${query.tab}`);
+    }
+  };
+}
+```
+
+```js
+router((r) => {
+  r.route('/dashboard/:id', () => import('./dashboard.js'));
+});
+```
+
+loader 直接返回模块即可，不需要手动 `.render()`；`export default` 也支持直接导出组件对象 `{ render() {...} }` 或 ViewNode。
 
 Useful methods:
 

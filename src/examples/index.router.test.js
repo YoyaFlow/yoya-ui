@@ -7,16 +7,25 @@ import { renderExamplesIndex } from './index.router.js';
 
 let root = null;
 
-function openRoute(path) {
+async function openRoute(path) {
   const item = document.querySelector(`[data-component-path="${path}"]`);
   if (item) {
     item.click();
-    return item;
+  } else {
+    window.history.replaceState(null, '', `#${path}`);
+    window.dispatchEvent(new Event('hashchange'));
   }
 
-  window.history.replaceState(null, '', `#${path}`);
-  window.dispatchEvent(new Event('hashchange'));
-  return null;
+  await vi.waitFor(
+    () => {
+      const content = document.querySelector('.yoya-vrouter-views-content');
+      if (!content || content.textContent === '加载中…') {
+        throw new Error(`路由 ${path} 仍在加载中`);
+      }
+    },
+    { timeout: 5000 }
+  );
+  return item;
 }
 
 function selectedRouteTitle() {
@@ -56,7 +65,9 @@ describe('renderExamplesIndex', () => {
       'anchor.html': 'AnchorStandaloneDemo',
       'declarative-router.html': 'DeclarativeRouterCard',
       'router-history.html': 'RouterHistoryCard',
+      'router-async.html': 'RouterAsyncCard',
       'router-links.html': 'RouterNavigationCard',
+      'router-params.html': 'RouterParamsCard',
       'router-views-top.html': 'RouterViewsTopStandalone',
       'router-views.html': 'RouterViewsEditorStandalone'
     };
@@ -123,10 +134,10 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-overview-page]')).not.toBeNull();
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(9);
+    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(10);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(9);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(59);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(10);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(65);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -139,7 +150,7 @@ describe('renderExamplesIndex', () => {
     root = renderExamplesIndex('#app');
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
-    expect(navItems).toHaveLength(10);
+    expect(navItems).toHaveLength(11);
     expect(
       document.querySelector('[data-top-nav-item="overview"]').getAttribute('aria-current')
     ).toBe('page');
@@ -198,7 +209,7 @@ describe('renderExamplesIndex', () => {
   it('renders the SVG icon library in a responsive grid', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/3');
+    await openRoute('/components/general/3');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('图标');
     });
@@ -280,7 +291,7 @@ describe('renderExamplesIndex', () => {
   it('renders the standalone SVG animation demo page', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/4');
+    await openRoute('/components/general/4');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('SVG 动画');
     });
@@ -326,7 +337,7 @@ describe('renderExamplesIndex', () => {
   it('renders the file upload demo page with live component and source', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/form/10');
+    await openRoute('/components/form/10');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('文件上传');
     });
@@ -339,7 +350,7 @@ describe('renderExamplesIndex', () => {
   it('renders the rating demo page with live component and source', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/form/11');
+    await openRoute('/components/form/11');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('评分');
     });
@@ -349,10 +360,43 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-source-example]').textContent).toContain('RateExample1');
   });
 
+  it('renders the digital board demo page with live component and source', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/board/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('数字看板');
+    });
+
+    const page = document.querySelector('[data-component-route-item="board:0"]');
+    expect(page.querySelector('.yoya-vdigital-board')).not.toBeNull();
+    expect(page.querySelectorAll('.yoya-vdigital-board-item').length).toBeGreaterThan(0);
+    expect(page.querySelector('[data-source-example]').textContent).toContain('DigitalBoardDemo');
+  });
+  it('renders the dashboard family demo pages', async () => {
+    root = renderExamplesIndex('#app');
+
+    const cases = [
+      ['/components/board/1', 'yoya-vtrend-card', 'TrendCardDemo'],
+      ['/components/board/2', 'yoya-vsparkline', 'SparklineDemo'],
+      ['/components/board/3', 'yoya-vring-stat', 'RingStatDemo'],
+      ['/components/board/4', 'yoya-vgauge', 'GaugeDemo'],
+      ['/components/board/5', 'yoya-vtimeline', 'TimelineDemo']
+    ];
+    for (const [path, className, demoName] of cases) {
+      await openRoute(path);
+      const itemIndex = path.split('/').pop();
+      const page = document.querySelector(`[data-component-route-item="board:${itemIndex}"]`);
+      expect(page).not.toBeNull();
+      expect(page.querySelector(`.${className}`)).not.toBeNull();
+      expect(page.querySelector('[data-source-example]').textContent).toContain(demoName);
+    }
+  });
+
   it('renders the scroll component docs with API and detailed demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/9');
+    await openRoute('/components/data-display/9');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('滚动组件');
     });
@@ -394,7 +438,7 @@ describe('renderExamplesIndex', () => {
   it('renders the carousel docs with API and demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/10');
+    await openRoute('/components/data-display/10');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('走马灯');
     });
@@ -431,7 +475,7 @@ describe('renderExamplesIndex', () => {
   it('renders the third-party ECharts demo page', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/third-party/0');
+    await openRoute('/components/third-party/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('ECharts 图表');
     });
@@ -450,7 +494,7 @@ describe('renderExamplesIndex', () => {
   it('renders the component definition guide with define and compose demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/5');
+    await openRoute('/components/guides/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('定义组件');
     });
@@ -496,7 +540,7 @@ describe('renderExamplesIndex', () => {
     ];
 
     for (const [path, title, pageId] of guideCases) {
-      openRoute(path);
+      await openRoute(path);
       await vi.waitFor(() => {
         expect(selectedRouteTitle()).toBe(title);
       });
@@ -664,7 +708,7 @@ describe('renderExamplesIndex', () => {
       'links',
       'RouterNavigationCard',
       'vRouterView(',
-      3
+      5
     ],
     [
       '/components/navigation/8',
@@ -770,7 +814,7 @@ describe('renderExamplesIndex', () => {
     ) => {
       root = renderExamplesIndex('#app');
 
-      openRoute(_path);
+      await openRoute(_path);
       await vi.waitFor(() => {
         expect(selectedRouteTitle()).toBe(routeTitle);
       });
@@ -797,7 +841,7 @@ describe('renderExamplesIndex', () => {
   it('switches reactive I18n demos between languages', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/6');
+    await openRoute('/components/guides/6');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('国际化');
     });
@@ -872,7 +916,7 @@ describe('renderExamplesIndex', () => {
   it('runs state node demos with update and rebuild modes', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/guides/7');
+    await openRoute('/components/guides/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
@@ -933,7 +977,7 @@ describe('renderExamplesIndex', () => {
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/layout/5');
+    await openRoute('/components/layout/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('弹窗');
     });
@@ -952,7 +996,7 @@ describe('renderExamplesIndex', () => {
   it('validates a vForm inside the popup form demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/layout/5');
+    await openRoute('/components/layout/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('弹窗');
     });
@@ -989,7 +1033,7 @@ describe('renderExamplesIndex', () => {
   it('renders layout template demos inside isolated iframes', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/layout/6');
+    await openRoute('/components/layout/6');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('布局模板');
     });
@@ -1005,7 +1049,7 @@ describe('renderExamplesIndex', () => {
   it('renders mobile layout demos inside phone-shaped iframes', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/layout/7');
+    await openRoute('/components/layout/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('移动布局');
     });
@@ -1024,7 +1068,7 @@ describe('renderExamplesIndex', () => {
   it('shows interactive state changes in the horizontal navbar demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/9');
+    await openRoute('/components/navigation/9');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('导航栏');
     });
@@ -1052,7 +1096,7 @@ describe('renderExamplesIndex', () => {
   it('moves the current step in the steps docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/5');
+    await openRoute('/components/navigation/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('步骤条');
     });
@@ -1077,7 +1121,7 @@ describe('renderExamplesIndex', () => {
   it('switches tabs in the tabs docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/6');
+    await openRoute('/components/navigation/6');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('标签页');
     });
@@ -1099,7 +1143,7 @@ describe('renderExamplesIndex', () => {
   it('switches the active item in the breadcrumb docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/1');
+    await openRoute('/components/navigation/1');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('面包屑');
     });
@@ -1126,7 +1170,7 @@ describe('renderExamplesIndex', () => {
   it('shows tree selection and checkbox state changes in the tree docs demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/5');
+    await openRoute('/components/data-display/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('树形控件');
     });
@@ -1201,7 +1245,7 @@ describe('renderExamplesIndex', () => {
   it('shows the updated dropdown menu docs page with sticky selection state', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/2');
+    await openRoute('/components/navigation/2');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('下拉菜单');
     });
@@ -1234,7 +1278,7 @@ describe('renderExamplesIndex', () => {
   it('shows interactive row actions in the table documentation demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/4');
+    await openRoute('/components/data-display/4');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('表格');
     });
@@ -1255,7 +1299,7 @@ describe('renderExamplesIndex', () => {
   it('shows declarative table sections in the table documentation demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/4');
+    await openRoute('/components/data-display/4');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('表格');
     });
@@ -1276,7 +1320,7 @@ describe('renderExamplesIndex', () => {
   it('updates value and status in the progress docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/8');
+    await openRoute('/components/data-display/8');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('进度条');
     });
@@ -1313,7 +1357,7 @@ describe('renderExamplesIndex', () => {
   it('updates badge counts and overflow text in the badge docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/1');
+    await openRoute('/components/data-display/1');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('徽标数');
     });
@@ -1337,7 +1381,7 @@ describe('renderExamplesIndex', () => {
   it('switches avatar status in the avatar docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/0');
+    await openRoute('/components/data-display/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('头像');
     });
@@ -1356,7 +1400,7 @@ describe('renderExamplesIndex', () => {
   it('renders image avatars in the avatar docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/0');
+    await openRoute('/components/data-display/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('头像');
     });
@@ -1373,7 +1417,7 @@ describe('renderExamplesIndex', () => {
   it('renders the avatar upload demo below the avatar demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/0');
+    await openRoute('/components/data-display/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('头像');
     });
@@ -1391,7 +1435,7 @@ describe('renderExamplesIndex', () => {
   it('updates detail values when switching services in the detail docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/2');
+    await openRoute('/components/data-display/2');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('详情');
     });
@@ -1414,7 +1458,7 @@ describe('renderExamplesIndex', () => {
   it('dynamically changes detail column counts in the detail docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/data-display/2');
+    await openRoute('/components/data-display/2');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('详情');
     });
@@ -1440,7 +1484,7 @@ describe('renderExamplesIndex', () => {
   it('keeps the button source compact and directly reusable', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/0');
+    await openRoute('/components/general/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('按钮');
     });
@@ -1463,7 +1507,7 @@ describe('renderExamplesIndex', () => {
   it('renders the vButton documentation page as stacked interactive examples', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/0');
+    await openRoute('/components/general/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('按钮');
     });
@@ -1504,7 +1548,7 @@ describe('renderExamplesIndex', () => {
   it('renders visibly different button sizes in the size example', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/0');
+    await openRoute('/components/general/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('按钮');
     });
@@ -1523,7 +1567,7 @@ describe('renderExamplesIndex', () => {
   it('renders an interactive form demo', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/form/1');
+    await openRoute('/components/form/1');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('输入框');
     });
@@ -1543,7 +1587,7 @@ describe('renderExamplesIndex', () => {
   it('renders the form documentation page with basic and validated demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/form/0');
+    await openRoute('/components/form/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('表单');
     });
@@ -1588,7 +1632,7 @@ describe('renderExamplesIndex', () => {
   it('renders vField docs combined with vDetail and saves edited values', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/form/7');
+    await openRoute('/components/form/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('字段');
     });
@@ -1647,7 +1691,7 @@ describe('renderExamplesIndex', () => {
   it('renders the tooltip documentation page with placement and trigger demos', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/feedback/2');
+    await openRoute('/components/feedback/2');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('提示');
     });
@@ -1686,7 +1730,7 @@ describe('renderExamplesIndex', () => {
   it('shows a planned entry with placeholder source', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/general/1');
+    await openRoute('/components/general/1');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('按钮组');
     });
@@ -1736,7 +1780,7 @@ export function SampleCard() {
   it('renders router demos inside isolated iframes without touching the parent URL', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/7');
+    await openRoute('/components/navigation/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('路由');
     });
@@ -1761,7 +1805,7 @@ export function SampleCard() {
     expect(routerPage.querySelector('.yoya-vrouter-view')).toBeNull();
     expect(window.location.hash).toContain('/components/navigation/7');
 
-    openRoute('/components/navigation/8');
+    await openRoute('/components/navigation/8');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('路由视图');
     });
@@ -1785,7 +1829,7 @@ export function SampleCard() {
   it('renders the anchor demo inside an isolated iframe', async () => {
     root = renderExamplesIndex('#app');
 
-    openRoute('/components/navigation/0');
+    await openRoute('/components/navigation/0');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('锚点');
     });

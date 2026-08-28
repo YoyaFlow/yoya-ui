@@ -12,8 +12,10 @@ export default defineConfig({
         anchor: 'anchor.html',
         index: 'Index.html',
         'declarative-router': 'declarative-router.html',
+        'router-async': 'router-async.html',
         'router-history': 'router-history.html',
         'router-links': 'router-links.html',
+        'router-params': 'router-params.html',
         'router-views': 'router-views.html',
         'router-views-top': 'router-views-top.html'
       },

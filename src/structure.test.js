@@ -231,6 +231,14 @@ describe('foundation module structure', () => {
     expect(uiEntry.vTooltip).toBe(feedback.vTooltip);
     expect(uiEntry.vScroll).toBe(dataDisplay.vScroll);
     expect(uiEntry.vCarousel).toBe(dataDisplay.vCarousel);
+    expect(uiEntry.vDigitalBoard).toBe(dataDisplay.vDigitalBoard);
+    expect(uiEntry.vDigitalBoardItem).toBe(dataDisplay.vDigitalBoardItem);
+    expect(uiEntry.vSparkline).toBe(dataDisplay.vSparkline);
+    expect(uiEntry.vTrendCard).toBe(dataDisplay.vTrendCard);
+    expect(uiEntry.vRingStat).toBe(dataDisplay.vRingStat);
+    expect(uiEntry.vGauge).toBe(dataDisplay.vGauge);
+    expect(uiEntry.vTimeline).toBe(dataDisplay.vTimeline);
+    expect(uiEntry.vTimelineItem).toBe(dataDisplay.vTimelineItem);
     expect(uiEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(uiEntry.vUpload).toBe(form.vUpload);
     expect(uiEntry.vRate).toBe(form.vRate);

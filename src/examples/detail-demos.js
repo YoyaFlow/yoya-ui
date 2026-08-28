@@ -33,6 +33,14 @@ import { AnchorStandaloneDemo } from './demos/anchor.js';
 import { CommandMenuCard } from './demos/navigation.js';
 import { RouterNavigationCard, RouterViewsEditorStandalone } from './demos/router.js';
 import {
+  DigitalBoardDemo,
+  GaugeDemo,
+  RingStatDemo,
+  SparklineDemo,
+  TimelineDemo,
+  TrendCardDemo
+} from './demos/board.js';
+import {
   detailSourceRegistry,
   DropdownMenuExample1,
   ScrollExample1,
@@ -1132,6 +1140,78 @@ const detailEntries = new Map([
       planned: true,
       summary: '徽标数目前仍在排期中。',
       title: '徽标数'
+    })
+  ],
+  [
+    'board:0',
+    freezeEntry({
+      behavior: ['数字看板用响应式卡片网格展示关键指标，支持数值、单位、趋势和主题色。'],
+      component: DigitalBoardDemo,
+      imports: ['vCard', 'vDigitalBoard', 'vDigitalBoardItem'],
+      notes: ['适合首页概览、监控大屏和管理统计。'],
+      sourceTitle: '数字看板核心源码',
+      summary: '关键指标卡片网格。',
+      title: '数字看板'
+    })
+  ],
+  [
+    'board:1',
+    freezeEntry({
+      behavior: ['趋势卡组合数值、涨跌和迷你走势，适合放在看板顶部。'],
+      component: TrendCardDemo,
+      imports: ['vCard', 'vTrendCard'],
+      notes: ['走势数据可以随时更新。'],
+      sourceTitle: '趋势卡核心源码',
+      summary: '组合趋势的统计卡。',
+      title: '趋势卡'
+    })
+  ],
+  [
+    'board:2',
+    freezeEntry({
+      behavior: ['vSparkline 为无坐标轴的轻量折线图，支持面积填充和主题色。'],
+      component: SparklineDemo,
+      imports: ['vCard', 'vSparkline'],
+      notes: ['适合卡片底部的趋势缩略图。'],
+      sourceTitle: '迷你走势核心源码',
+      summary: '无坐标轴轻量折线图。',
+      title: '迷你走势'
+    })
+  ],
+  [
+    'board:3',
+    freezeEntry({
+      behavior: ['环形统计用圆环展示占比，中心默认显示百分比。'],
+      component: RingStatDemo,
+      imports: ['vCard', 'vRingStat'],
+      notes: ['适合成功率、容量占用等比例指标。'],
+      sourceTitle: '环形统计核心源码',
+      summary: '圆环占比与中心值。',
+      title: '环形统计'
+    })
+  ],
+  [
+    'board:4',
+    freezeEntry({
+      behavior: ['仪表盘用半圆刻度与指针展示区间指标。'],
+      component: GaugeDemo,
+      imports: ['vCard', 'vGauge'],
+      notes: ['适合负载、使用率等区间指标。'],
+      sourceTitle: '仪表盘核心源码',
+      summary: '半圆仪表盘与指针。',
+      title: '仪表盘'
+    })
+  ],
+  [
+    'board:5',
+    freezeEntry({
+      behavior: ['时间线用节点状态色区分成功、失败和进行中。'],
+      component: TimelineDemo,
+      imports: ['vCard', 'vTimeline', 'vTimelineItem'],
+      notes: ['适合执行历史、告警事件流。'],
+      sourceTitle: '时间线核心源码',
+      summary: '竖向事件流。',
+      title: '时间线'
     })
   ]
 ]);

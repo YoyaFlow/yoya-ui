@@ -14,53 +14,6 @@ import {
 import '../yoya.ui.css';
 import { ComponentSource } from './component-source.js';
 import { applyDemoStyles } from './demo-styles.js';
-import { ButtonDocumentationPage } from './button-docs.js';
-import {
-  AvatarDocumentationPage,
-  BadgeDocumentationPage,
-  CarouselDocumentationPage,
-  DetailDocumentationPage,
-  ProgressDocumentationPage,
-  ScrollDocumentationPage,
-  TableDocumentationPage,
-  TreeDocumentationPage
-} from './data-display-docs.js';
-import { MessageDocumentationPage, TooltipDocumentationPage } from './feedback-docs.js';
-import { FieldDocumentationPage, FormDocumentationPage } from './form-docs.js';
-import { ComponentDefinitionDocumentationPage } from './component-definition-docs.js';
-import { EchartsDocumentationPage } from './echarts-docs.js';
-import { IconsDocumentationPage } from './icons-docs.js';
-import { I18nDocumentationPage } from './i18n-docs.js';
-import { StateNodeDocumentationPage } from './state-node-docs.js';
-import { SvgDocumentationPage } from './svg-docs.js';
-import {
-  GuideAdvantagesPage,
-  GuideDesignPhilosophyPage,
-  GuideInstallationPage,
-  GuideOverviewPage,
-  GuidePositioningPage
-} from './guide-docs.js';
-import {
-  AnchorDocumentationPage,
-  BreadcrumbDocumentationPage,
-  MenuDocumentationPage,
-  NavbarDocumentationPage,
-  RouterDocumentationPage,
-  RouterViewsDocumentationPage,
-  StepsDocumentationPage,
-  TabsDocumentationPage
-} from './navigation-docs.js';
-import {
-  BodyDocumentationPage,
-  DividerDocumentationPage,
-  FlexDocumentationPage,
-  GridDocumentationPage,
-  MobileDocumentationPage,
-  PopupDocumentationPage,
-  TemplateDocumentationPage,
-  SpacerDocumentationPage
-} from './layout-docs.js';
-import { getComponentDetail } from './detail-demos.js';
 
 const componentMenuSections = [
   {
@@ -159,6 +112,18 @@ const componentMenuSections = [
     ]
   },
   {
+    id: 'board',
+    title: '看板',
+    items: [
+      { label: '数字看板', details: 'vDigitalBoard / vDigitalBoardItem' },
+      { label: '趋势卡', details: 'vTrendCard' },
+      { label: '迷你走势', details: 'vSparkline' },
+      { label: '环形统计', details: 'vRingStat' },
+      { label: '仪表盘', details: 'vGauge' },
+      { label: '时间线', details: 'vTimeline / vTimelineItem' }
+    ]
+  },
+  {
     id: 'async',
     title: '异步',
     items: [{ label: '动态加载', details: 'vDynamicLoader' }]
@@ -201,36 +166,51 @@ function getTopNavigationItems() {
   ];
 }
 
-const layoutDocumentationPages = Object.freeze({
-  0: DividerDocumentationPage,
-  1: FlexDocumentationPage,
-  2: GridDocumentationPage,
-  3: BodyDocumentationPage,
-  4: SpacerDocumentationPage,
-  5: PopupDocumentationPage,
-  6: TemplateDocumentationPage,
-  7: MobileDocumentationPage
-});
-
-const feedbackDocumentationPages = Object.freeze({
-  0: MessageDocumentationPage,
-  2: TooltipDocumentationPage
-});
-
-const formDocumentationPages = Object.freeze({
-  0: FormDocumentationPage,
-  7: FieldDocumentationPage
-});
-
-const dataDisplayDocumentationPages = Object.freeze({
-  0: AvatarDocumentationPage,
-  1: BadgeDocumentationPage,
-  2: DetailDocumentationPage,
-  4: TableDocumentationPage,
-  5: TreeDocumentationPage,
-  8: ProgressDocumentationPage,
-  9: ScrollDocumentationPage,
-  10: CarouselDocumentationPage
+const docsRouteLoaders = Object.freeze({
+  'guides:0': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
+  'guides:1': () => import('./guide-docs.js').then((m) => m.GuidePositioningPage()),
+  'guides:2': () => import('./guide-docs.js').then((m) => m.GuideAdvantagesPage()),
+  'guides:3': () => import('./guide-docs.js').then((m) => m.GuideDesignPhilosophyPage()),
+  'guides:4': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
+  'guides:5': () =>
+    import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
+  'guides:6': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
+  'guides:7': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
+  'general:3': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
+  'general:4': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
+  'layout:0': () => import('./layout-docs.js').then((m) => m.DividerDocumentationPage()),
+  'layout:1': () => import('./layout-docs.js').then((m) => m.FlexDocumentationPage()),
+  'layout:2': () => import('./layout-docs.js').then((m) => m.GridDocumentationPage()),
+  'layout:3': () => import('./layout-docs.js').then((m) => m.BodyDocumentationPage()),
+  'layout:4': () => import('./layout-docs.js').then((m) => m.SpacerDocumentationPage()),
+  'layout:5': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
+  'layout:6': () => import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
+  'layout:7': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
+  'navigation:0': () => import('./navigation-docs.js').then((m) => m.AnchorDocumentationPage()),
+  'navigation:1': () => import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
+  'navigation:3': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
+  'navigation:5': () => import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
+  'navigation:6': () => import('./navigation-docs.js').then((m) => m.TabsDocumentationPage()),
+  'navigation:7': () => import('./navigation-docs.js').then((m) => m.RouterDocumentationPage()),
+  'navigation:8': () =>
+    import('./navigation-docs.js').then((m) => m.RouterViewsDocumentationPage()),
+  'navigation:9': () => import('./navigation-docs.js').then((m) => m.NavbarDocumentationPage()),
+  'feedback:0': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
+  'feedback:2': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
+  'form:0': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
+  'form:7': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
+  'data-display:0': () => import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
+  'data-display:1': () => import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
+  'data-display:2': () => import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
+  'data-display:4': () => import('./data-display-docs.js').then((m) => m.TableDocumentationPage()),
+  'data-display:5': () => import('./data-display-docs.js').then((m) => m.TreeDocumentationPage()),
+  'data-display:8': () =>
+    import('./data-display-docs.js').then((m) => m.ProgressDocumentationPage()),
+  'data-display:9': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
+  'data-display:10': () =>
+    import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
+  'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage())
 });
 
 const locale = createI18n({
@@ -604,103 +584,19 @@ function createOverviewView() {
 }
 
 function createComponentItemView(category, item, itemIndex, context) {
-  if (category.id === 'guides' && itemIndex === 0) {
-    return GuideOverviewPage().render();
+  const loadDocsView = docsRouteLoaders[`${category.id}:${itemIndex}`];
+
+  if (loadDocsView) {
+    return loadDocsView();
   }
 
-  if (category.id === 'guides' && itemIndex === 1) {
-    return GuidePositioningPage().render();
-  }
+  return import('./detail-demos.js').then((module) => {
+    const detail = module.getComponentDetail(category.id, itemIndex, item);
+    return createDetailItemView(category, item, itemIndex, context, detail);
+  });
+}
 
-  if (category.id === 'guides' && itemIndex === 2) {
-    return GuideAdvantagesPage().render();
-  }
-
-  if (category.id === 'guides' && itemIndex === 3) {
-    return GuideDesignPhilosophyPage().render();
-  }
-
-  if (category.id === 'guides' && itemIndex === 4) {
-    return GuideInstallationPage().render();
-  }
-
-  if (category.id === 'guides' && itemIndex === 5) {
-    return ComponentDefinitionDocumentationPage().render();
-  }
-
-  if (category.id === 'guides' && itemIndex === 6) {
-    return I18nDocumentationPage().render();
-  }
-
-  if (category.id === 'guides' && itemIndex === 7) {
-    return StateNodeDocumentationPage().render();
-  }
-
-  if (category.id === 'third-party' && itemIndex === 0) {
-    return EchartsDocumentationPage().render();
-  }
-
-  if (category.id === 'general' && itemIndex === 0) {
-    return ButtonDocumentationPage().render();
-  }
-
-  if (category.id === 'general' && itemIndex === 3) {
-    return IconsDocumentationPage().render();
-  }
-
-  if (category.id === 'general' && itemIndex === 4) {
-    return SvgDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 3) {
-    return MenuDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 1) {
-    return BreadcrumbDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 0) {
-    return AnchorDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 7) {
-    return RouterDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 8) {
-    return RouterViewsDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 5) {
-    return StepsDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 6) {
-    return TabsDocumentationPage().render();
-  }
-
-  if (category.id === 'navigation' && itemIndex === 9) {
-    return NavbarDocumentationPage().render();
-  }
-
-  if (category.id === 'layout' && layoutDocumentationPages[itemIndex]) {
-    return layoutDocumentationPages[itemIndex]().render();
-  }
-
-  if (category.id === 'feedback' && feedbackDocumentationPages[itemIndex]) {
-    return feedbackDocumentationPages[itemIndex]().render();
-  }
-
-  if (category.id === 'form' && formDocumentationPages[itemIndex]) {
-    return formDocumentationPages[itemIndex]().render();
-  }
-
-  if (category.id === 'data-display' && dataDisplayDocumentationPages[itemIndex]) {
-    return dataDisplayDocumentationPages[itemIndex]().render();
-  }
-
-  const detail = getComponentDetail(category.id, itemIndex, item);
+function createDetailItemView(category, item, itemIndex, context, detail) {
   const liveComponent = detail.component ? detail.component(context) : null;
   const sourcePanel = detail.component
     ? ComponentSource({

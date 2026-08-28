@@ -2,6 +2,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { div, router, vLink, vRoute, vRouter, vRouterView, vRouterViews, vText } from '../index.js';
 
 const flush = async () => {};
+function openTabMenu(path) {
+  const tab = document.querySelector(`[data-router-view-path="${path}"]`);
+  tab.dispatchEvent(
+    new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 120,
+      clientY: 90
+    })
+  );
+  return tab;
+}
+
+function clickMenuItem(label) {
+  const items = document.querySelectorAll('.yoya-vrouter-views-context-item');
+  const item = Array.from(items).find((node) => node.textContent === label);
+  item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  return item;
+}
+
+function createViewsWithRoutes(routes) {
+  const appRouter = vRouter({ routes });
+  const views = vRouterViews(appRouter);
+  const root = div((page) => page.child(views)).bindTo('#app');
+  return { appRouter, root, views };
+}
 
 describe('router', () => {
   beforeEach(() => {
@@ -959,5 +985,281 @@ describe('router', () => {
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '异步内容'
     );
+  });
+
+  it('resolves async route views that return render() component objects', async () => {
+    const appRouter = router((r) => {
+      r.route('/page', () =>
+        Promise.resolve({
+          render() {
+            return div('组件对象内容');
+          }
+        })
+      );
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/page', { replace: true });
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('组件对象内容');
+    expect(appRouter.currentView().renderDom().textContent).toBe('组件对象内容');
+  });
+
+  it('calls lazy factories with the route context when a view resolves to a function', async () => {
+    function createUserPage({ params }) {
+      return {
+        render() {
+          return div('用户 ' + params.id);
+        }
+      };
+    }
+    const appRouter = router((r) => {
+      r.route('/user/:id', () => Promise.resolve(createUserPage));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/user/42', { replace: true });
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('用户 42');
+  });
+
+  it('supports render() component objects as synchronous route views', () => {
+    const appRouter = router((r) => {
+      r.route('/sync', () => ({
+        render() {
+          return div('同步组件');
+        }
+      }));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/sync', { replace: true });
+
+    expect(document.querySelector('#app').textContent).toBe('同步组件');
+  });
+
+  it('invokes the default-export page function from a module with the route context', async () => {
+    window.history.replaceState(null, '', '/');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const appRouter = router((r) => {
+      r.route('/fixture/:id', () => import('./page-fixture.js'));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/fixture/7?tab=hot', { replace: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('#app').textContent).toBe('fixture:7:hot');
+    });
+  });
+
+  it('renders default-export component objects from modules without a factory call', async () => {
+    window.history.replaceState(null, '', '/');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const appRouter = router((r) => {
+      r.route('/fixture-object', () => import('./page-object-fixture.js'));
+    });
+    appRouter.bindTo('#app').start();
+
+    appRouter.navigate('/fixture-object', { replace: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('#app').textContent).toBe('fixture-object');
+    });
+  });
+  it('opens a right-click context menu on title tabs with all actions', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: '页面 A', view: () => div('A') }),
+      vRoute('/b', { title: '页面 B', view: () => div('B') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+
+    openTabMenu('/a');
+    const menu = document.querySelector('.yoya-vrouter-views-context');
+    expect(menu).not.toBeNull();
+    expect(menu.style.display).toBe('block');
+    expect(
+      Array.from(
+        menu.querySelectorAll('.yoya-vrouter-views-context-item'),
+        (item) => item.textContent
+      )
+    ).toEqual(['刷新', '复制链接', '关闭', '关闭其他', '关闭左侧', '关闭右侧', '关闭全部']);
+    expect(menu.querySelectorAll('.yoya-vrouter-views-context-separator')).toHaveLength(2);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(menu.style.display).toBe('none');
+    create.root.destroy();
+  });
+
+  it('opens a menu with a right-click and closes it on outside click', () => {
+    const create = createViewsWithRoutes([vRoute('/a', { title: 'A', view: () => div('A') })]);
+    create.appRouter.navigate('/a', { replace: true });
+
+    const tab = openTabMenu('/a');
+    const menu = document.querySelector('.yoya-vrouter-views-context');
+    expect(tab).not.toBeNull();
+    expect(menu.style.display).toBe('block');
+
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    expect(menu.style.display).toBe('none');
+    create.root.destroy();
+  });
+
+  it('closes the clicked tab from its context menu', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+
+    openTabMenu('/a');
+    clickMenuItem('关闭');
+
+    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(document.querySelector('[data-router-view-path="/a"]')).toBeNull();
+    expect(create.appRouter.currentPath()).toBe('/b');
+    create.root.destroy();
+  });
+
+  it('closes all other tabs and activates the clicked one', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') }),
+      vRoute('/c', { title: 'C', view: () => div('C') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+    create.appRouter.navigate('/c', { replace: true });
+
+    openTabMenu('/b');
+    clickMenuItem('关闭其他');
+
+    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(create.appRouter.currentPath()).toBe('/b');
+    expect(document.querySelector('[data-router-view-path="/b"]')).not.toBeNull();
+    create.root.destroy();
+  });
+
+  it('closes tabs to the left of the clicked tab', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') }),
+      vRoute('/c', { title: 'C', view: () => div('C') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+    create.appRouter.navigate('/c', { replace: true });
+
+    openTabMenu('/b');
+    clickMenuItem('关闭左侧');
+
+    const labels = Array.from(
+      document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+      (label) => label.textContent
+    );
+    expect(labels).toEqual(['B', 'A']);
+    expect(create.appRouter.currentPath()).toBe('/b');
+    create.root.destroy();
+  });
+
+  it('closes tabs to the right of the clicked tab', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') }),
+      vRoute('/c', { title: 'C', view: () => div('C') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+    create.appRouter.navigate('/c', { replace: true });
+
+    openTabMenu('/b');
+    clickMenuItem('关闭右侧');
+
+    const labels = Array.from(
+      document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+      (label) => label.textContent
+    );
+    expect(labels).toEqual(['C', 'B']);
+    expect(create.appRouter.currentPath()).toBe('/c');
+    create.root.destroy();
+  });
+
+  it('closes all tabs and clears the active view', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+
+    openTabMenu('/b');
+    clickMenuItem('关闭全部');
+
+    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(0);
+    expect(document.querySelector('.yoya-vrouter-views-content').textContent).toBe('');
+    expect(create.appRouter.currentView()).toBeNull();
+    create.root.destroy();
+  });
+
+  it('refreshes the tab view from the context menu', () => {
+    const view = vi.fn(() => div('刷新页'));
+    const appRouter = router((r) => {
+      r.route('/a', view);
+    });
+    const views = vRouterViews(appRouter);
+    const root = div((page) => page.child(views)).bindTo('#app');
+    appRouter.navigate('/a', { replace: true });
+    expect(view).toHaveBeenCalledTimes(1);
+
+    openTabMenu('/a');
+    clickMenuItem('刷新');
+
+    expect(view).toHaveBeenCalledTimes(2);
+    root.destroy();
+  });
+
+  it('copies the tab URL from the context menu', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    });
+    const create = createViewsWithRoutes([vRoute('/a', { title: 'A', view: () => div('A') })]);
+    create.appRouter.navigate('/a', { replace: true });
+
+    openTabMenu('/a');
+    clickMenuItem('复制链接');
+
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}${window.location.pathname}#/a`
+    );
+    create.root.destroy();
+  });
+
+  it('keeps the title order when clicking an already visible tab', () => {
+    const create = createViewsWithRoutes([
+      vRoute('/a', { title: 'A', view: () => div('A') }),
+      vRoute('/b', { title: 'B', view: () => div('B') }),
+      vRoute('/c', { title: 'C', view: () => div('C') })
+    ]);
+    create.appRouter.navigate('/a', { replace: true });
+    create.appRouter.navigate('/b', { replace: true });
+    create.appRouter.navigate('/c', { replace: true });
+
+    const labels = () =>
+      Array.from(
+        document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+        (label) => label.textContent
+      );
+    expect(labels()).toEqual(['C', 'B', 'A']);
+
+    create.appRouter.navigate('/b', { replace: true });
+    expect(create.appRouter.currentPath()).toBe('/b');
+    expect(labels()).toEqual(['C', 'B', 'A']);
+    create.root.destroy();
   });
 });

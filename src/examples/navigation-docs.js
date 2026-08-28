@@ -25,6 +25,8 @@ import {
   RouterViewsEditorStandalone,
   RouterViewsTopStandalone
 } from './demos/router.js';
+import { RouterAsyncCard } from './demos/router-async.js';
+import { RouterParamsCard } from './demos/router-params.js';
 
 const examplesBaseUrl = import.meta.env?.BASE_URL || './';
 
@@ -167,7 +169,8 @@ const navigationDocsDefinitions = Object.freeze({
   }),
   router: createNavigationDocsDefinition({
     apiIntro:
-      '路由示例都运行在独立 iframe 页面中，不会修改组件目录自身的 hash 地址。vLink 委托 Router 导航，vRouterView 负责承载匹配视图。',
+      '路由示例都运行在独立 iframe 页面中，不会修改组件目录自身的 hash 地址。' +
+      'vLink 委托 Router 导航，vRouterView 负责承载匹配视图；Router 同时支持异步视图与按需加载。',
     apiRows: [
       [
         'router({ default, route, notFound })',
@@ -190,7 +193,43 @@ const navigationDocsDefinitions = Object.freeze({
         '创建路由链接。',
         "vLink(appRouter, { label: '概览', to: '/overview' })"
       ],
-      ['vRouterView(router, setup)', '承载当前匹配视图。', 'vRouterView(appRouter)']
+      ['vRouterView(router, setup)', '承载当前匹配视图。', 'vRouterView(appRouter)'],
+      [
+        'view: () => import("./page.js")',
+        '异步视图：动态加载模块，自动解包 export default、调用工厂并传入 context。',
+        "r.route('/a', () => import('./a.js'))"
+      ],
+      [
+        'context 参数',
+        '页面工厂收到的第一个参数：{ params, query, path, pathname, route, router }。',
+        'export default function Page({ params }) {}'
+      ],
+      [
+        '视图形态：ViewNode / 文本 / 组件对象 / 工厂 / 模块',
+        'Resolver 自动归一：组件对象调 render()，工厂以 context 调用，模块解包 default。',
+        'import("./a.js").then((m) => m.Page)'
+      ],
+      [
+        'loading(view) / error(view)',
+        '设置全局异步加载与失败视图；路由级 { loading, error } 可覆盖。',
+        "r.loading(() => div('加载中…'))"
+      ],
+      [
+        'currentPath() / currentParams() / currentQuery()',
+        '读取当前路径、参数和 query（返回拷贝）。',
+        'appRouter.currentParams()'
+      ],
+      [
+        'currentRoute() / currentView()',
+        '读取当前路由记录与已渲染视图。',
+        'appRouter.currentView()'
+      ],
+      [
+        'subscribe(listener)',
+        '订阅路由变化，回调收到 (context, router)，返回解绉函数。',
+        'const off = appRouter.subscribe(() => {})'
+      ],
+      ['notFound(view)', '404 视图，同样支持异步、组件对象和工厂。', "r.notFound(() => div('404'))"]
     ],
     apiSignature: `vRouter({
   default: '/home',
@@ -231,9 +270,33 @@ const navigationDocsDefinitions = Object.freeze({
         sourceComponent: RouterHistoryCard,
         sourceTitle: 'History 路由核心源码',
         title: 'History 路由'
+      },
+      {
+        component: RouterAsyncCard,
+        description:
+          '路由视图返回 import() 模块：先显示 loading，模块就绪后自动执行 export default 页面并传入 context。',
+        frame: true,
+        frameSrc: './router-async.html',
+        id: 'async',
+        imports: ['div', 'router', 'vCard', 'vRouterView'],
+        sourceComponent: RouterAsyncCard,
+        sourceTitle: '异步加载路由核心源码',
+        title: '异步加载路由'
+      },
+      {
+        component: RouterParamsCard,
+        description:
+          'default 页面函数接收 context（params/query），参数传给子组件，subscribe 监听路由变化。',
+        frame: true,
+        frameSrc: './router-params.html',
+        id: 'params',
+        imports: ['div', 'router', 'vCard', 'vRouterView', 'vText'],
+        sourceComponent: RouterParamsCard,
+        sourceTitle: '参数传递路由核心源码',
+        title: '参数传递路由'
       }
     ],
-    examplesIntro: '三个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
+    examplesIntro: '五个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
     heading: 'Router 路由',
     intro:
       '路由组件负责把 URL、参数和视图连接起来。为了不让演示路由改动组件目录自身的 hash，这里全部使用 iframe 隔离运行。',
@@ -243,7 +306,9 @@ const navigationDocsDefinitions = Object.freeze({
     usageItems: [
       '需要 hash 或 history 路由、参数解析和视图切换时使用 Router / vRouter。',
       '页面跳转入口统一交给 vLink，不要在业务代码里手写 URL。',
-      '路由演示放在 iframe 中，history 模式只影响 iframe 自己的地址。'
+      '路由演示放在 iframe 中，history 模式只影响 iframe 自己的地址。',
+      '异步页面按需加载：view 直接返回 import()，模块用 export default 导出页面工厂。',
+      '组件内取路由参数：页面工厂收 context；任意位置用 router.currentParams()；跟随变化用 subscribe()。'
     ]
   }),
   routerViews: createNavigationDocsDefinition({
@@ -300,7 +365,8 @@ const navigationDocsDefinitions = Object.freeze({
     usageItems: [
       '需要同时保留多个路由页面时使用 vRouterViews。',
       '空间紧凑时用 titlePosition("left")，页面主区用顶部标题栏。',
-      '路由相关演示建议放入 iframe，避免路由 hash 和文档页冲突。'
+      '路由相关演示建议放入 iframe，避免路由 hash 和文档页冲突。',
+      '标签项支持右键菜单：刷新、复制链接、关闭、关闭其他、关闭左侧/右侧、关闭全部。'
     ]
   }),
   menu: createNavigationDocsDefinition({

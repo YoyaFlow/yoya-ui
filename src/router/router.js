@@ -42,6 +42,14 @@ function ensureScrollbarStyle() {
 .yoya-vrouter-views-popup-close:hover {
   color: var(--yoya-color-text-danger, #b91c1c);
   opacity: 1;
+}
+.yoya-vrouter-views-context-item:hover {
+  background: var(--yoya-color-surface-hover, #f6f8fa);
+}
+.yoya-vrouter-views-context-separator {
+  background: var(--yoya-color-border, #d0d7de);
+  height: 1px;
+  margin: 4px 6px;
 }`;
   document.head?.appendChild(scrollbarStyle);
 }
@@ -380,7 +388,7 @@ export class Router extends ElementNode {
     this._navigationGeneration += 1;
 
     if (!isPromiseLike(result)) {
-      this._commitView(resolved, normalizeRouteView(result));
+      this._commitView(resolved, normalizeRouteView(result, context));
       return;
     }
 
@@ -391,7 +399,7 @@ export class Router extends ElementNode {
         if (generation !== this._navigationGeneration || this._deleted) return value;
         let nextView;
         try {
-          nextView = normalizeRouteView(value);
+          nextView = normalizeRouteView(value, context);
         } catch (error) {
           this._commitView(resolved, this._buildErrorView(route, context, error));
           return value;
@@ -1029,8 +1037,8 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   };
   node.titleLocked = node.lockTitle;
 
-  const closeTitleTab = (path, event) => {
-    event.stopPropagation();
+  const closeTitleTab = (path, event = null) => {
+    if (event) event.stopPropagation();
     const entries = Array.from(state.tabs.entries());
     const closingIndex = entries.findIndex(([tabPath]) => tabPath === path);
     const entry = state.tabs.get(path);
@@ -1061,8 +1069,184 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     routerInstance._currentView = null;
   };
 
+  const titleContextMenu = new ElementNode('div')
+    .className('yoya-vrouter-views-context')
+    .attr({ role: 'menu', 'aria-label': '标签页操作' })
+    .styles({
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d0d7de'),
+      borderRadius: '8px',
+      boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
+      display: 'none',
+      minWidth: '180px',
+      padding: '6px',
+      position: 'fixed',
+      zIndex: '100'
+    });
+  let contextMenuCleanup = null;
+
+  const closeTabContextMenu = () => {
+    titleContextMenu.styles({ display: 'none' });
+    titleContextMenu.clearChildren();
+    titleContextMenu._el?.remove();
+    if (contextMenuCleanup) {
+      contextMenuCleanup();
+      contextMenuCleanup = null;
+    }
+  };
+
+  const closeTabs = (pathsToClose, activatePath = null) => {
+    const closing = new Set(pathsToClose);
+    const entries = Array.from(state.tabs.entries());
+    const closingIndex = entries.findIndex(([tabPath]) => closing.has(tabPath));
+
+    entries.forEach(([tabPath, entry]) => {
+      if (!closing.has(tabPath)) return;
+      state.tabs.delete(tabPath);
+      titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
+      titleNode._childrenDirty = true;
+      entry.tab.destroy();
+    });
+    syncMoreButton();
+    persistTabs();
+    if (state.popupOpen) buildPopup();
+
+    if (!closing.has(routerInstance.currentPath())) return;
+
+    const remaining = Array.from(state.tabs.keys());
+    if (remaining.length === 0) {
+      contentNode.clearChildren().commit();
+      routerInstance._navigationGeneration += 1;
+      routerInstance._currentView = null;
+      return;
+    }
+
+    const target =
+      activatePath && state.tabs.has(activatePath)
+        ? activatePath
+        : remaining[Math.min(Math.max(closingIndex, 0), remaining.length - 1)];
+    routerInstance.navigate(target, { replace: true });
+  };
+
+  const copyTabUrl = (path) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
+    const url =
+      routerInstance.mode() === 'history'
+        ? `${origin}${pathname}${path}`
+        : `${origin}${pathname}#${path}`;
+    navigator.clipboard.writeText(url).catch(() => {});
+  };
+
+  const openTabContextMenu = (path, event) => {
+    if (state.popupOpen) closePopup();
+    closeTabContextMenu();
+
+    const entries = Array.from(state.tabs.entries());
+    const clickedIndex = entries.findIndex(([tabPath]) => tabPath === path);
+    const closeOthers = () =>
+      closeTabs(
+        entries.filter(([tabPath]) => tabPath !== path).map(([tabPath]) => tabPath),
+        path
+      );
+    const closeLeft = () =>
+      closeTabs(
+        entries.slice(0, clickedIndex).map(([tabPath]) => tabPath),
+        path
+      );
+    const closeRight = () =>
+      closeTabs(
+        entries.slice(clickedIndex + 1).map(([tabPath]) => tabPath),
+        path
+      );
+    const closeAll = () => closeTabs(entries.map(([tabPath]) => tabPath));
+
+    const addItem = (label, action, danger = false, disabled = false) => {
+      const item = new ElementNode('div')
+        .className('yoya-vrouter-views-context-item')
+        .attr({ role: 'menuitem', tabIndex: '0' })
+        .text(label)
+        .styles({
+          alignItems: 'center',
+          borderRadius: '6px',
+          color: danger
+            ? themeValue('color-text-danger', '#b91c1c')
+            : themeValue('color-text', '#24292f'),
+          cursor: disabled ? 'default' : 'pointer',
+          display: 'flex',
+          fontSize: '13px',
+          gap: '8px',
+          padding: '7px 10px',
+          width: '100%'
+        });
+      if (disabled) {
+        item.attr('aria-disabled', 'true');
+        item.styles({ opacity: '0.4' });
+      } else {
+        item.on('click', () => {
+          closeTabContextMenu();
+          action();
+        });
+      }
+      titleContextMenu.child(item);
+      return item;
+    };
+    const addSeparator = () =>
+      titleContextMenu.child(
+        new ElementNode('div').className('yoya-vrouter-views-context-separator')
+      );
+
+    addItem('刷新', () => routerInstance.navigate(path, { replace: true }));
+    addItem('复制链接', () => copyTabUrl(path));
+    addSeparator();
+    addItem('关闭', () => closeTitleTab(path), true);
+    addItem('关闭其他', closeOthers, false, entries.length <= 1);
+    addItem('关闭左侧', closeLeft, false, clickedIndex <= 0);
+    addItem('关闭右侧', closeRight, false, clickedIndex === entries.length - 1);
+    addSeparator();
+    addItem('关闭全部', closeAll, true, entries.length === 0);
+
+    document.body.appendChild(titleContextMenu.renderDom());
+    titleContextMenu.styles({ display: 'block' });
+
+    const rect = titleContextMenu._el.getBoundingClientRect();
+    const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth || 0;
+    const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight || 0;
+    const edge = 8;
+    const left = Math.max(edge, Math.min(event.clientX || 0, viewportWidth - rect.width - edge));
+    const top = Math.max(edge, Math.min(event.clientY || 0, viewportHeight - rect.height - edge));
+    titleContextMenu.styles({ left: `${left}px`, top: `${top}px` });
+
+    const handlePointerDown = (pointerEvent) => {
+      if (!titleContextMenu._el?.contains(pointerEvent.target)) {
+        closeTabContextMenu();
+      }
+    };
+    const handleKeydown = (keyEvent) => {
+      if (keyEvent.key === 'Escape') closeTabContextMenu();
+    };
+    const handleScroll = () => closeTabContextMenu();
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeydown);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+    contextMenuCleanup = () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  };
+
   const updateTitle = (context = {}) => {
     const path = context.path || routerInstance.currentPath();
+    const visiblePaths = new Set(
+      state.titlePosition === 'top'
+        ? Array.from(state.tabs.keys()).slice(0, maxVisibleTitles)
+        : Array.from(state.tabs.keys())
+    );
     let entry = state.tabs.get(path);
 
     if (!entry) {
@@ -1101,6 +1285,11 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       });
       closeButton.text('×');
       closeButton.on('click', (event) => closeTitleTab(path, event));
+      tab.on('contextmenu', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openTabContextMenu(path, event);
+      });
       tab.child(label, closeButton);
       titleNode.child(tab);
       styleTitleTab(tab, false);
@@ -1112,8 +1301,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       entry.closeButton.attr('aria-label', `关闭 ${title}`);
     }
 
-    state.tabs.delete(path);
-    state.tabs = new Map([[path, entry], ...state.tabs]);
+    if (!visiblePaths.has(path)) {
+      state.tabs.delete(path);
+      state.tabs = new Map([[path, entry], ...state.tabs]);
+    }
     state.tabs.forEach(({ tab }, tabPath) => styleTitleTab(tab, tabPath === path));
     syncMoreButton();
     if (state.popupOpen) buildPopup();
@@ -1174,6 +1365,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
     if (state.popupOpen) closePopup();
+    closeTabContextMenu();
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', handleResize);
     }
@@ -1340,7 +1532,7 @@ function shouldHandleLinkClick(event, node) {
   );
 }
 
-function normalizeRouteView(view) {
+function normalizeRouteView(view, context) {
   if (view instanceof ViewNode) {
     return view;
   }
@@ -1353,7 +1545,26 @@ function normalizeRouteView(view) {
     return vText(view);
   }
 
-  throw new TypeError('Router route view must be a ViewNode, string, number, null, or undefined');
+  if (
+    view !== null &&
+    typeof view === 'object' &&
+    typeof view.default !== 'undefined' &&
+    typeof view.render !== 'function'
+  ) {
+    return normalizeRouteView(view.default, context);
+  }
+
+  if (typeof view === 'function') {
+    return normalizeRouteView(view(context), context);
+  }
+
+  if (typeof view === 'object' && typeof view.render === 'function') {
+    return normalizeRouteView(view.render(), context);
+  }
+
+  throw new TypeError(
+    'Router route view must be a ViewNode, string, number, null, undefined, a render() component object, a factory returning one, or a module with a default export'
+  );
 }
 
 const defaultLoadingView = () => '加载中…';
@@ -1370,7 +1581,7 @@ function isPromiseLike(value) {
 
 function resolveRouteEntry(entry, args) {
   const value = typeof entry === 'function' ? entry(...args) : entry;
-  return normalizeRouteView(value);
+  return normalizeRouteView(value, args[args.length - 1]);
 }
 
 function matchRoute(pattern, path) {

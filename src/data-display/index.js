@@ -1,6 +1,7 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VAvatar, vAvatar } from './avatar.js';
+import { VDigitalBoard, VDigitalBoardItem, vDigitalBoard, vDigitalBoardItem } from './board.js';
 import { VBadge, vBadge } from './badge.js';
 import { VCarousel, vCarousel } from './carousel.js';
 import { VCode, vCode } from './code.js';
@@ -34,10 +35,23 @@ import {
   vTr
 } from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
+import { VGauge, vGauge } from './gauge.js';
+import { VRingStat, vRingStat } from './ring-stat.js';
+import { VSparkline, vSparkline } from './sparkline.js';
+import { VTimeline, VTimelineItem, vTimeline, vTimelineItem } from './timeline.js';
+import { VTrendCard, vTrendCard } from './trend-card.js';
 import { VScroll, vScroll } from './vscroll.js';
 
 const dataDisplayFactories = {
   vAvatar,
+  vDigitalBoard,
+  vDigitalBoardItem,
+  vGauge,
+  vRingStat,
+  vSparkline,
+  vTimeline,
+  vTimelineItem,
+  vTrendCard,
   vBadge,
   vCarousel,
   vCard,
@@ -59,6 +73,14 @@ registerChildFactories(HtmlElementNode, dataDisplayFactories);
 export {
   VAvatar,
   VBadge,
+  VDigitalBoard,
+  VDigitalBoardItem,
+  VGauge,
+  VRingStat,
+  VSparkline,
+  VTimeline,
+  VTimelineItem,
+  VTrendCard,
   VCarousel,
   VCard,
   VCardBody,
@@ -81,6 +103,14 @@ export {
   VTreeNode,
   vAvatar,
   vBadge,
+  vDigitalBoard,
+  vDigitalBoardItem,
+  vGauge,
+  vRingStat,
+  vSparkline,
+  vTimeline,
+  vTimelineItem,
+  vTrendCard,
   vCarousel,
   vCard,
   vCardBody,
