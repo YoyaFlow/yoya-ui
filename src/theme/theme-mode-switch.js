@@ -1,13 +1,18 @@
 import { ElementNode, registerChildFactories } from '../core/node.js';
 import { getYoyaMode, setYoyaMode } from '../core/theme.js';
 import { HtmlElementNode } from '../html/index.js';
-import { applyComponentArguments, normalizeComponentArguments } from '../components/shared.js';
+import {
+  applyComponentArguments,
+  normalizeComponentArguments,
+  themeValue
+} from '../components/shared.js';
 import { vButton } from '../actions/button.js';
+import { MonitorOutlined, MoonOutlined, SunOutlined } from '../svg/icons.js';
 
 const DEFAULT_MODES = [
-  { mode: 'light', label: '浅色' },
-  { mode: 'dark', label: '深色' },
-  { mode: 'system', label: '跟随系统' }
+  { mode: 'light', label: '浅色', icon: SunOutlined },
+  { mode: 'dark', label: '深色', icon: MoonOutlined },
+  { mode: 'system', label: '跟随系统', icon: MonitorOutlined }
 ];
 
 const MODE_LABELS = {
@@ -15,9 +20,16 @@ const MODE_LABELS = {
   dark: '深色',
   system: '跟随系统'
 };
+const MODE_ICONS = {
+  light: SunOutlined,
+  dark: MoonOutlined,
+  system: MonitorOutlined
+};
 function normalizeModes(value) {
   return value.map((entry) =>
-    typeof entry === 'string' ? { mode: entry, label: MODE_LABELS[entry] || entry } : entry
+    typeof entry === 'string'
+      ? { mode: entry, label: MODE_LABELS[entry] || entry, icon: MODE_ICONS[entry] }
+      : entry
   );
 }
 
@@ -75,8 +87,23 @@ export class VThemeModeSwitch extends HtmlElementNode {
   _rebuildButtons() {
     this.clearChildren();
     this._buttons.clear();
-    this._modes.forEach(({ mode, label }) => {
-      const button = vButton(label).attr('data-theme-mode', mode);
+    this._modes.forEach(({ mode, label, icon }) => {
+      const Icon = icon || MODE_ICONS[mode] || null;
+      const iconNode = Icon ? Icon() : null;
+      if (iconNode) {
+        iconNode.styles({ height: '16px', width: '16px' });
+      }
+      const button = vButton(iconNode || label)
+        .attr('data-theme-mode', mode)
+        .attr('aria-label', label)
+        .attr('title', label)
+        .styles({
+          borderRadius: '50%',
+          flex: '0 0 auto',
+          height: '32px',
+          padding: '0',
+          width: '32px'
+        });
       button.on('click', () => {
         setYoyaMode(mode, { persist: this._persist });
         this.sync();
@@ -91,7 +118,19 @@ export class VThemeModeSwitch extends HtmlElementNode {
     const current = getYoyaMode();
     this._buttons.forEach((button, mode) => {
       const active = mode === current;
-      button.type(active ? 'primary' : 'secondary');
+      button.styles(
+        active
+          ? {
+              background: themeValue('color-primary-subtle', '#eff6ff'),
+              borderColor: themeValue('color-primary-border', '#bfdbfe'),
+              color: themeValue('color-text-active', '#1d4ed8')
+            }
+          : {
+              background: 'transparent',
+              borderColor: 'transparent',
+              color: themeValue('color-text-secondary', '#6f6f6f')
+            }
+      );
       button.attr('data-active', active ? 'true' : null);
     });
     return this;

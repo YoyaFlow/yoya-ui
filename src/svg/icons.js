@@ -758,3 +758,66 @@ export function WarningOutlined() {
     root.path({ d: 'M12 17h.01' });
   });
 }
+export function SunOutlined() {
+  return svg((root) => {
+    root
+      .className('yoya-icon')
+      .attr({
+        'aria-hidden': 'true',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-width': '2',
+        viewBox: '0 0 24 24'
+      })
+      .styles({ height: '24px', width: '24px' });
+    root.circle({ cx: '12', cy: '12', r: '4' });
+    root.path({ d: 'M12 2v2' });
+    root.path({ d: 'M12 20v2' });
+    root.path({ d: 'm4.93 4.93 1.41 1.41' });
+    root.path({ d: 'm17.66 17.66 1.41 1.41' });
+    root.path({ d: 'M2 12h2' });
+    root.path({ d: 'M20 12h2' });
+    root.path({ d: 'm6.34 17.66-1.41 1.41' });
+    root.path({ d: 'm19.07 4.93-1.41 1.41' });
+  });
+}
+
+export function MoonOutlined() {
+  return svg((root) => {
+    root
+      .className('yoya-icon')
+      .attr({
+        'aria-hidden': 'true',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-width': '2',
+        viewBox: '0 0 24 24'
+      })
+      .styles({ height: '24px', width: '24px' });
+    root.path({ d: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' });
+  });
+}
+
+export function MonitorOutlined() {
+  return svg((root) => {
+    root
+      .className('yoya-icon')
+      .attr({
+        'aria-hidden': 'true',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-width': '2',
+        viewBox: '0 0 24 24'
+      })
+      .styles({ height: '24px', width: '24px' });
+    root.rect({ height: '14', rx: '2', width: '20', x: '2', y: '3' });
+    root.path({ d: 'M8 21h8' });
+    root.path({ d: 'M12 17v4' });
+  });
+}

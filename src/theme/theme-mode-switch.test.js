@@ -7,12 +7,17 @@ afterEach(() => {
 });
 
 describe('VThemeModeSwitch', () => {
-  it('renders a mode switch with light, dark and system buttons', () => {
+  it('renders round icon buttons with light, dark and system symbols', () => {
     const element = vThemeModeSwitch().renderDom();
+    const buttons = element.querySelectorAll('[data-theme-mode]');
 
-    expect(element.querySelector("[data-theme-mode='light']")).toBeTruthy();
-    expect(element.querySelector("[data-theme-mode='dark']")).toBeTruthy();
-    expect(element.querySelector("[data-theme-mode='system']")).toBeTruthy();
+    expect(buttons).toHaveLength(3);
+    buttons.forEach((button) => {
+      expect(button.style.borderRadius).toContain('50%');
+      expect(button.style.width).toBe('32px');
+      expect(button.querySelector('svg')).toBeTruthy();
+      expect(button.getAttribute('aria-label')).toBeTruthy();
+    });
   });
 
   it('switches the document mode and persists it by default', () => {
