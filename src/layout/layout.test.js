@@ -427,6 +427,15 @@ describe('layout components', () => {
     ).toBe('Local');
   });
 
+  it('applies themed background, text color and typography defaults', () => {
+    const element = vBody().renderDom();
+
+    expect(element.style.background).toBe('var(--yoya-color-bg, #f5f7fa)');
+    expect(element.style.color).toBe('var(--yoya-color-text, #172033)');
+    expect(element.style.fontFamily).toContain('var(--yoya-font-family');
+    expect(element.style.fontSize).toBe('var(--yoya-font-size, 14px)');
+    expect(element.style.lineHeight).toBe('var(--yoya-line-height, 1.5)');
+  });
   it('serializes page body styles for server rendering', () => {
     expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
       'class="yoya-layout yoya-vbody"'

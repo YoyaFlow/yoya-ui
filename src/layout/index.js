@@ -290,6 +290,13 @@ export function vBody(first = null, second = null, third = null) {
   node.styles({
     background: themeValue('color-bg', '#f5f7fa'),
     boxSizing: 'border-box',
+    color: themeValue('color-text', '#172033'),
+    fontFamily: themeValue(
+      'font-family',
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    ),
+    fontSize: themeValue('font-size', '14px'),
+    lineHeight: themeValue('line-height', '1.5'),
     minHeight: '100%',
     padding: 'clamp(16px, 3vw, 32px)',
     width: '100%'

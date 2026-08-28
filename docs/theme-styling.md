@@ -97,6 +97,15 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 
 组件只有消费 space / control token（而不是硬编码 px）才会响应密度切换。vButton 尺寸与 vTable 单元格/表头间距已迁移为 token 消费（间距归一化到 4px 刻度）。
 
+## 5.1 页面壳 vBody
+
+`vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。
+
+```js
+import { vBody } from 'yoya-ui/ui';
+vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
+```
+
 ## 6. 定制阶梯
 
 | 层级 | 定制口             | 手段                                                                     |
