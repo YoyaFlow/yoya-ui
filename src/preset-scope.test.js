@@ -79,6 +79,20 @@ for (const dir of libraryDirs) {
   }
 }
 
+// 布局区域根类（vContainer 内部节点，不带 componentClass 但属于合法根）
+const LAYOUT_ROOT_CLASSES = [
+  'yoya-vaside',
+  'yoya-vmain',
+  'yoya-vheader',
+  'yoya-vfooter',
+  'yoya-vcontainer',
+  'yoya-vbody',
+  'yoya-vrow',
+  'yoya-vcol'
+];
+for (const root of LAYOUT_ROOT_CLASSES) {
+  roots.add(root);
+}
 // Parts whose prefix differs from the owning root class
 const ROOT_ALIASES = {
   'yoya-vtab-': 'yoya-vtabs',

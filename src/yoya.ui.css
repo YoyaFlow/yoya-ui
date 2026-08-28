@@ -300,6 +300,18 @@
     font-size: var(--yoya-font-size);
     line-height: var(--yoya-line-height);
   }
+  :where(.yoya-vaside),
+  :where(.yoya-vmain) {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  :where(.yoya-vaside)::-webkit-scrollbar,
+  :where(.yoya-vmain)::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
   :where(.yoya-vbutton) {
     align-items: center;
     border-radius: var(--yoya-radius-md, 6px);
