@@ -140,6 +140,22 @@ describe('renderExamplesIndex', () => {
     expect(selectedRouteTitle()).toBe('概述');
   });
 
+  it('provides a theme mode switch in the top navigation that persists the mode', async () => {
+    root = renderExamplesIndex('#app');
+
+    const switchGroup = document.querySelector('[data-components-top-nav]');
+    expect(switchGroup.querySelector("[data-theme-mode='light']")).toBeTruthy();
+    expect(switchGroup.querySelector("[data-theme-mode='dark']")).toBeTruthy();
+    expect(switchGroup.querySelector("[data-theme-mode='system']")).toBeTruthy();
+
+    switchGroup.querySelector("[data-theme-mode='dark']").click();
+
+    expect(document.documentElement.dataset.yoyaMode).toBe('dark');
+    expect(localStorage.getItem('yoya-theme-mode')).toBe('dark');
+
+    delete document.documentElement.dataset.yoyaMode;
+    localStorage.clear();
+  });
   it('navigates and highlights the top navigation when a category is selected', async () => {
     root = renderExamplesIndex('#app');
 

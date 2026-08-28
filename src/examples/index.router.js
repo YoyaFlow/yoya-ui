@@ -12,6 +12,7 @@ import {
   vMenuItem,
   vNavbar,
   vRouterViews,
+  vThemeModeSwitch,
   vThemeShell
 } from '../index.js';
 import '../yoya.ui.css';
@@ -349,6 +350,10 @@ function createComponentsView(appRouter) {
     navbar.ariaLabel('演示页面导航');
     navbar.title('yoya-ui');
     navbar.subtitle('组件演示');
+
+    navbar.actions((actions) => {
+      actions.child(vThemeModeSwitch());
+    });
 
     navbar.menuContent((menu) => {
       topNavigationItems.forEach((entry) => {
