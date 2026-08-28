@@ -142,6 +142,11 @@ const componentMenuSections = [
     id: 'third-party',
     title: '第三方扩展',
     items: [{ label: 'ECharts 图表', details: 'vEchart / VEchart' }]
+  },
+  {
+    id: 'theme',
+    title: '主题',
+    items: [{ label: '主题切换', details: 'light / dark / system / compact / raw-primary' }]
   }
 ];
 
@@ -212,7 +217,8 @@ const docsRouteLoaders = Object.freeze({
   'data-display:9': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
   'data-display:10': () =>
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
-  'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage())
+  'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
+  'theme:0': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
 });
 
 const locale = createI18n({

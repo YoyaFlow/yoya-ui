@@ -134,10 +134,10 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-overview-page]')).not.toBeNull();
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(10);
+    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(11);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(4);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(10);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(66);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(11);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(67);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
@@ -150,7 +150,7 @@ describe('renderExamplesIndex', () => {
     root = renderExamplesIndex('#app');
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
-    expect(navItems).toHaveLength(11);
+    expect(navItems).toHaveLength(12);
     expect(
       document.querySelector('[data-top-nav-item="overview"]').getAttribute('aria-current')
     ).toBe('page');
@@ -491,6 +491,23 @@ describe('renderExamplesIndex', () => {
     ).toContain("import { vEchart } from 'yoya-ui/echart';");
   });
 
+  it('renders the theme playground demo page', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/theme/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('主题切换');
+    });
+
+    const page = document.querySelector('[data-theme-docs]');
+    expect(page).toBeTruthy();
+    expect(page.querySelector("[data-theme-mode='light']")).toBeTruthy();
+    expect(page.querySelector("[data-theme-mode='dark']")).toBeTruthy();
+    expect(page.querySelector("[data-theme-mode='system']")).toBeTruthy();
+    expect(page.querySelector('[data-theme-density]')).toBeTruthy();
+    expect(page.querySelector('[data-theme-accent]')).toBeTruthy();
+    expect(page.querySelector('[data-source-example]')).toBeTruthy();
+  });
   it('renders the component definition guide with define and compose demos', async () => {
     root = renderExamplesIndex('#app');
 
