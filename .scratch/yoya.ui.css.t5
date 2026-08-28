@@ -16,31 +16,11 @@
   color-scheme: light dark;
 }
 
-@property --yoya-raw-primary {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #2563eb;
-}
-@property --yoya-raw-success {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #16a34a;
-}
-@property --yoya-raw-danger {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #dc2626;
-}
-@property --yoya-raw-warning {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #f59e0b;
-}
-@property --yoya-raw-info {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #0284c7;
-}
+@property --yoya-raw-primary { syntax: '<color>'; inherits: true; initial-value: #2563eb; }
+@property --yoya-raw-success { syntax: '<color>'; inherits: true; initial-value: #16a34a; }
+@property --yoya-raw-danger { syntax: '<color>'; inherits: true; initial-value: #dc2626; }
+@property --yoya-raw-warning { syntax: '<color>'; inherits: true; initial-value: #f59e0b; }
+@property --yoya-raw-info { syntax: '<color>'; inherits: true; initial-value: #0284c7; }
 
 :root,
 [data-yoya-theme] {
@@ -72,169 +52,51 @@
   --yoya-color-text-muted: light-dark(#64748b, #8494aa);
   --yoya-color-text-secondary: light-dark(#475569, #aab8c9);
   --yoya-color-text-strong: light-dark(#111827, #f8fafc);
-  --yoya-color-success-text: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success), black 35%),
-    color-mix(in srgb, var(--yoya-raw-success), white 50%)
-  );
-  --yoya-color-danger-text: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger), black 35%),
-    color-mix(in srgb, var(--yoya-raw-danger), white 50%)
-  );
-  --yoya-color-warning-text: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning), black 35%),
-    color-mix(in srgb, var(--yoya-raw-warning), white 50%)
-  );
-  --yoya-color-info-text: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info), black 35%),
-    color-mix(in srgb, var(--yoya-raw-info), white 50%)
-  );
-  --yoya-color-primary: light-dark(
-    var(--yoya-raw-primary),
-    color-mix(in srgb, var(--yoya-raw-primary), white 16%)
-  );
-  --yoya-color-primary-hover: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary), black 12%),
-    color-mix(in srgb, var(--yoya-raw-primary), white 28%)
-  );
-  --yoya-color-primary-active: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary), black 22%),
-    color-mix(in srgb, var(--yoya-raw-primary), white 8%)
-  );
-  --yoya-color-primary-deep: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary), black 36%),
-    color-mix(in srgb, var(--yoya-raw-primary), black 40%)
-  );
-  --yoya-color-primary-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary) 12%, white),
-    color-mix(in srgb, var(--yoya-raw-primary) 26%, black)
-  );
-  --yoya-color-primary-active-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary) 20%, white),
-    color-mix(in srgb, var(--yoya-raw-primary) 34%, black)
-  );
-  --yoya-color-primary-border: light-dark(
-    color-mix(in srgb, var(--yoya-raw-primary) 30%, white),
-    color-mix(in srgb, var(--yoya-raw-primary) 40%, black)
-  );
+  --yoya-color-success-text: light-dark(color-mix(in srgb, var(--yoya-raw-success), black 35%), color-mix(in srgb, var(--yoya-raw-success), white 50%));
+  --yoya-color-danger-text: light-dark(color-mix(in srgb, var(--yoya-raw-danger), black 35%), color-mix(in srgb, var(--yoya-raw-danger), white 50%));
+  --yoya-color-warning-text: light-dark(color-mix(in srgb, var(--yoya-raw-warning), black 35%), color-mix(in srgb, var(--yoya-raw-warning), white 50%));
+  --yoya-color-info-text: light-dark(color-mix(in srgb, var(--yoya-raw-info), black 35%), color-mix(in srgb, var(--yoya-raw-info), white 50%));
+  --yoya-color-primary: light-dark(var(--yoya-raw-primary), color-mix(in srgb, var(--yoya-raw-primary), white 16%));
+  --yoya-color-primary-hover: light-dark(color-mix(in srgb, var(--yoya-raw-primary), black 12%), color-mix(in srgb, var(--yoya-raw-primary), white 28%));
+  --yoya-color-primary-active: light-dark(color-mix(in srgb, var(--yoya-raw-primary), black 22%), color-mix(in srgb, var(--yoya-raw-primary), white 8%));
+  --yoya-color-primary-deep: light-dark(color-mix(in srgb, var(--yoya-raw-primary), black 36%), color-mix(in srgb, var(--yoya-raw-primary), black 40%));
+  --yoya-color-primary-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-primary) 12%, white), color-mix(in srgb, var(--yoya-raw-primary) 26%, black));
+  --yoya-color-primary-active-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-primary) 20%, white), color-mix(in srgb, var(--yoya-raw-primary) 34%, black));
+  --yoya-color-primary-border: light-dark(color-mix(in srgb, var(--yoya-raw-primary) 30%, white), color-mix(in srgb, var(--yoya-raw-primary) 40%, black));
   --yoya-color-primary-ring: color-mix(in srgb, var(--yoya-raw-primary) 30%, transparent);
-  --yoya-color-success: light-dark(
-    var(--yoya-raw-success),
-    color-mix(in srgb, var(--yoya-raw-success), white 16%)
-  );
-  --yoya-color-success-hover: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success), black 12%),
-    color-mix(in srgb, var(--yoya-raw-success), white 28%)
-  );
-  --yoya-color-success-active: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success), black 22%),
-    color-mix(in srgb, var(--yoya-raw-success), white 8%)
-  );
-  --yoya-color-success-deep: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success), black 36%),
-    color-mix(in srgb, var(--yoya-raw-success), black 40%)
-  );
-  --yoya-color-success-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success) 12%, white),
-    color-mix(in srgb, var(--yoya-raw-success) 26%, black)
-  );
-  --yoya-color-success-active-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success) 20%, white),
-    color-mix(in srgb, var(--yoya-raw-success) 34%, black)
-  );
-  --yoya-color-success-border: light-dark(
-    color-mix(in srgb, var(--yoya-raw-success) 30%, white),
-    color-mix(in srgb, var(--yoya-raw-success) 40%, black)
-  );
+  --yoya-color-success: light-dark(var(--yoya-raw-success), color-mix(in srgb, var(--yoya-raw-success), white 16%));
+  --yoya-color-success-hover: light-dark(color-mix(in srgb, var(--yoya-raw-success), black 12%), color-mix(in srgb, var(--yoya-raw-success), white 28%));
+  --yoya-color-success-active: light-dark(color-mix(in srgb, var(--yoya-raw-success), black 22%), color-mix(in srgb, var(--yoya-raw-success), white 8%));
+  --yoya-color-success-deep: light-dark(color-mix(in srgb, var(--yoya-raw-success), black 36%), color-mix(in srgb, var(--yoya-raw-success), black 40%));
+  --yoya-color-success-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-success) 12%, white), color-mix(in srgb, var(--yoya-raw-success) 26%, black));
+  --yoya-color-success-active-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-success) 20%, white), color-mix(in srgb, var(--yoya-raw-success) 34%, black));
+  --yoya-color-success-border: light-dark(color-mix(in srgb, var(--yoya-raw-success) 30%, white), color-mix(in srgb, var(--yoya-raw-success) 40%, black));
   --yoya-color-success-ring: color-mix(in srgb, var(--yoya-raw-success) 30%, transparent);
-  --yoya-color-danger: light-dark(
-    var(--yoya-raw-danger),
-    color-mix(in srgb, var(--yoya-raw-danger), white 16%)
-  );
-  --yoya-color-danger-hover: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger), black 12%),
-    color-mix(in srgb, var(--yoya-raw-danger), white 28%)
-  );
-  --yoya-color-danger-active: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger), black 22%),
-    color-mix(in srgb, var(--yoya-raw-danger), white 8%)
-  );
-  --yoya-color-danger-deep: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger), black 36%),
-    color-mix(in srgb, var(--yoya-raw-danger), black 40%)
-  );
-  --yoya-color-danger-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger) 12%, white),
-    color-mix(in srgb, var(--yoya-raw-danger) 26%, black)
-  );
-  --yoya-color-danger-active-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger) 20%, white),
-    color-mix(in srgb, var(--yoya-raw-danger) 34%, black)
-  );
-  --yoya-color-danger-border: light-dark(
-    color-mix(in srgb, var(--yoya-raw-danger) 30%, white),
-    color-mix(in srgb, var(--yoya-raw-danger) 40%, black)
-  );
+  --yoya-color-danger: light-dark(var(--yoya-raw-danger), color-mix(in srgb, var(--yoya-raw-danger), white 16%));
+  --yoya-color-danger-hover: light-dark(color-mix(in srgb, var(--yoya-raw-danger), black 12%), color-mix(in srgb, var(--yoya-raw-danger), white 28%));
+  --yoya-color-danger-active: light-dark(color-mix(in srgb, var(--yoya-raw-danger), black 22%), color-mix(in srgb, var(--yoya-raw-danger), white 8%));
+  --yoya-color-danger-deep: light-dark(color-mix(in srgb, var(--yoya-raw-danger), black 36%), color-mix(in srgb, var(--yoya-raw-danger), black 40%));
+  --yoya-color-danger-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-danger) 12%, white), color-mix(in srgb, var(--yoya-raw-danger) 26%, black));
+  --yoya-color-danger-active-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-danger) 20%, white), color-mix(in srgb, var(--yoya-raw-danger) 34%, black));
+  --yoya-color-danger-border: light-dark(color-mix(in srgb, var(--yoya-raw-danger) 30%, white), color-mix(in srgb, var(--yoya-raw-danger) 40%, black));
   --yoya-color-danger-ring: color-mix(in srgb, var(--yoya-raw-danger) 30%, transparent);
-  --yoya-color-warning: light-dark(
-    var(--yoya-raw-warning),
-    color-mix(in srgb, var(--yoya-raw-warning), white 16%)
-  );
-  --yoya-color-warning-hover: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning), black 12%),
-    color-mix(in srgb, var(--yoya-raw-warning), white 28%)
-  );
-  --yoya-color-warning-active: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning), black 22%),
-    color-mix(in srgb, var(--yoya-raw-warning), white 8%)
-  );
-  --yoya-color-warning-deep: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning), black 36%),
-    color-mix(in srgb, var(--yoya-raw-warning), black 40%)
-  );
-  --yoya-color-warning-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning) 12%, white),
-    color-mix(in srgb, var(--yoya-raw-warning) 26%, black)
-  );
-  --yoya-color-warning-active-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning) 20%, white),
-    color-mix(in srgb, var(--yoya-raw-warning) 34%, black)
-  );
-  --yoya-color-warning-border: light-dark(
-    color-mix(in srgb, var(--yoya-raw-warning) 30%, white),
-    color-mix(in srgb, var(--yoya-raw-warning) 40%, black)
-  );
+  --yoya-color-warning: light-dark(var(--yoya-raw-warning), color-mix(in srgb, var(--yoya-raw-warning), white 16%));
+  --yoya-color-warning-hover: light-dark(color-mix(in srgb, var(--yoya-raw-warning), black 12%), color-mix(in srgb, var(--yoya-raw-warning), white 28%));
+  --yoya-color-warning-active: light-dark(color-mix(in srgb, var(--yoya-raw-warning), black 22%), color-mix(in srgb, var(--yoya-raw-warning), white 8%));
+  --yoya-color-warning-deep: light-dark(color-mix(in srgb, var(--yoya-raw-warning), black 36%), color-mix(in srgb, var(--yoya-raw-warning), black 40%));
+  --yoya-color-warning-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-warning) 12%, white), color-mix(in srgb, var(--yoya-raw-warning) 26%, black));
+  --yoya-color-warning-active-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-warning) 20%, white), color-mix(in srgb, var(--yoya-raw-warning) 34%, black));
+  --yoya-color-warning-border: light-dark(color-mix(in srgb, var(--yoya-raw-warning) 30%, white), color-mix(in srgb, var(--yoya-raw-warning) 40%, black));
   --yoya-color-warning-ring: color-mix(in srgb, var(--yoya-raw-warning) 30%, transparent);
-  --yoya-color-info: light-dark(
-    var(--yoya-raw-info),
-    color-mix(in srgb, var(--yoya-raw-info), white 16%)
-  );
-  --yoya-color-info-hover: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info), black 12%),
-    color-mix(in srgb, var(--yoya-raw-info), white 28%)
-  );
-  --yoya-color-info-active: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info), black 22%),
-    color-mix(in srgb, var(--yoya-raw-info), white 8%)
-  );
-  --yoya-color-info-deep: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info), black 36%),
-    color-mix(in srgb, var(--yoya-raw-info), black 40%)
-  );
-  --yoya-color-info-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info) 12%, white),
-    color-mix(in srgb, var(--yoya-raw-info) 26%, black)
-  );
-  --yoya-color-info-active-subtle: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info) 20%, white),
-    color-mix(in srgb, var(--yoya-raw-info) 34%, black)
-  );
-  --yoya-color-info-border: light-dark(
-    color-mix(in srgb, var(--yoya-raw-info) 30%, white),
-    color-mix(in srgb, var(--yoya-raw-info) 40%, black)
-  );
+  --yoya-color-info: light-dark(var(--yoya-raw-info), color-mix(in srgb, var(--yoya-raw-info), white 16%));
+  --yoya-color-info-hover: light-dark(color-mix(in srgb, var(--yoya-raw-info), black 12%), color-mix(in srgb, var(--yoya-raw-info), white 28%));
+  --yoya-color-info-active: light-dark(color-mix(in srgb, var(--yoya-raw-info), black 22%), color-mix(in srgb, var(--yoya-raw-info), white 8%));
+  --yoya-color-info-deep: light-dark(color-mix(in srgb, var(--yoya-raw-info), black 36%), color-mix(in srgb, var(--yoya-raw-info), black 40%));
+  --yoya-color-info-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-info) 12%, white), color-mix(in srgb, var(--yoya-raw-info) 26%, black));
+  --yoya-color-info-active-subtle: light-dark(color-mix(in srgb, var(--yoya-raw-info) 20%, white), color-mix(in srgb, var(--yoya-raw-info) 34%, black));
+  --yoya-color-info-border: light-dark(color-mix(in srgb, var(--yoya-raw-info) 30%, white), color-mix(in srgb, var(--yoya-raw-info) 40%, black));
   --yoya-color-info-ring: color-mix(in srgb, var(--yoya-raw-info) 30%, transparent);
-  --yoya-font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --yoya-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --yoya-font-size: 14px;
   --yoya-line-height: 1.5;
   --yoya-radius-sm: 4px;
