@@ -1336,3 +1336,5 @@ function compactStyles(styles) {
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
+
+export * from './theme-shell.js';
