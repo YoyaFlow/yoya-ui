@@ -1,5 +1,6 @@
 import {
   createI18n,
+  initYoyaTheme,
   router,
   section,
   toast,
@@ -246,6 +247,7 @@ const locale = createI18n({
 });
 
 export function renderExamplesIndex(target = '#app') {
+  initYoyaTheme({ persist: true });
   const previousToastContainer = toast._container ?? null;
   const messageHost = vMessageContainer({ placement: 'top-right' }).bindTo(document.body);
   toast.use(messageHost);
