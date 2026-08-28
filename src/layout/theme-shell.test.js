@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, VThemeShell, vThemeShell } from '../index.js';
+import { div, vBody, VThemeShell, vThemeShell } from '../index.js';
 
 describe('VThemeShell', () => {
   it('applies themed container defaults', () => {
@@ -55,5 +55,57 @@ describe('VThemeShell', () => {
       shell.p('Text');
     });
     expect(direct.renderDom().innerHTML).toContain('<p>Text</p>');
+  });
+});
+
+describe('VThemeShell virtual mode', () => {
+  it('acts as the shell of its single child without its own DOM node', () => {
+    const body = vBody('内容');
+    const shell = vThemeShell(body).virtual();
+
+    const element = shell.renderDom();
+
+    expect(element).toBe(body.renderDom());
+    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.style.background).toBe('var(--yoya-color-surface, #ffffff)');
+    expect(element.style.border).toBe('1px solid var(--yoya-color-border, #d8dee8)');
+    expect(element.style.borderRadius).toBe('var(--yoya-radius-md, 6px)');
+  });
+
+  it('keeps per-instance shell overrides applied to the child node', () => {
+    const body = vBody('内容');
+    const shell = vThemeShell(body).virtual().background('#f5f5f5').radius('12px').scrollable();
+
+    const element = shell.renderDom();
+
+    expect(element.style.background).toBe('rgb(245, 245, 245)');
+    expect(element.style.borderRadius).toBe('12px');
+    expect(element.style.overflow).toBe('auto');
+  });
+
+  it('serializes through the child node in virtual mode', () => {
+    const body = vBody('内容');
+    const shell = vThemeShell(body).virtual();
+
+    expect(shell.toHTML()).toBe(body.toHTML());
+  });
+
+  it('requires exactly one child in virtual mode', () => {
+    expect(() => vThemeShell().virtual()).toThrow(/exactly one child/i);
+    expect(() => vThemeShell().child(div('a')).child(div('b')).virtual()).toThrow(
+      /exactly one child/i
+    );
+  });
+
+  it('renders its own node again when virtual is disabled', () => {
+    const body = vBody('内容');
+    const shell = vThemeShell(body);
+    shell.virtual();
+    shell.virtual(false);
+
+    const element = shell.renderDom();
+
+    expect(element).not.toBe(body.renderDom());
+    expect(element.classList.contains('yoya-vtheme-shell')).toBe(true);
   });
 });

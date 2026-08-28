@@ -23,6 +23,71 @@ export class VThemeShell extends HtmlElementNode {
     applyComponentSetup(this, setup);
   }
 
+  _singleShellChild() {
+    const children = this.children();
+    return children.length === 1 ? children[0] : null;
+  }
+
+  _virtualTarget() {
+    const child = this._singleShellChild();
+    if (!child) {
+      return null;
+    }
+    return typeof child._resolve === 'function' ? child._resolve() : child;
+  }
+
+  _syncShellStyles(target) {
+    if (!target || typeof target.styles !== 'function') {
+      return;
+    }
+    target.styles({
+      background: this._styles.background,
+      border: this._styles.border,
+      borderColor: this._styles.borderColor,
+      borderRadius: this._styles.borderRadius,
+      boxSizing: this._styles.boxSizing,
+      color: this._styles.color,
+      minWidth: this._styles.minWidth,
+      overflow: this._styles.overflow
+    });
+  }
+
+  /**
+   * 虚拟节点模式：自身不创建 DOM，把外壳样式应用到唯一子节点。
+   * 需在渲染前开启，且容器内只有一个子节点。
+   */
+  virtual(next = true) {
+    this._virtualMode = Boolean(next);
+    if (this._virtualMode) {
+      const child = this._singleShellChild();
+      if (!child) {
+        throw new TypeError('vThemeShell virtual mode requires exactly one child');
+      }
+    }
+    return this;
+  }
+
+  renderDom() {
+    if (this._virtualMode) {
+      const child = this._singleShellChild();
+      if (!child) {
+        return null;
+      }
+      const target = this._virtualTarget();
+      this._syncShellStyles(target);
+      return child.renderDom();
+    }
+    return super.renderDom();
+  }
+
+  toHTML() {
+    if (this._virtualMode) {
+      const child = this._singleShellChild();
+      return child ? child.toHTML() : '';
+    }
+    return super.toHTML();
+  }
+
   background(value) {
     if (value === undefined) {
       return this._styles.background;
