@@ -9,6 +9,7 @@ import {
   input,
   p,
   span,
+  vCard,
   vText
 } from '../index.js';
 
@@ -39,10 +40,7 @@ describe('ViewNode core', () => {
       className: ['surface', 'active'],
       style: { color: 'red' },
       onclick: action,
-      children: [
-        h1('Users'),
-        p((paragraph) => paragraph.text('Created from function setup'))
-      ]
+      children: [h1('Users'), p((paragraph) => paragraph.text('Created from function setup'))]
     });
 
     const element = root.renderDom();
@@ -214,5 +212,78 @@ describe('ViewNode core', () => {
 
     expect(root.children()).toEqual([child]);
     expect(element.innerHTML).toBe('<p>keep</p>');
+  });
+});
+
+describe('ElementNode class replacement', () => {
+  it('replaces an existing preset class with a custom class', () => {
+    const node = div().className('yoya-vcard', 'preset-a');
+
+    node.replaceClassName('preset-a', 'acme-card');
+
+    expect(node.className()).toBe('yoya-vcard acme-card');
+    expect(node.renderDom().className).toBe('yoya-vcard acme-card');
+  });
+
+  it('keeps the rendered DOM class list in sync after replacement', () => {
+    const node = div().className('yoya-vbutton');
+    node.renderDom();
+
+    node.replaceClassName('yoya-vbutton', 'acme-btn');
+
+    expect(node.renderDom().classList.contains('yoya-vbutton')).toBe(false);
+    expect(node.renderDom().classList.contains('acme-btn')).toBe(true);
+  });
+
+  it('does nothing when the old class is missing and tolerate is false', () => {
+    const node = div().className('keep');
+
+    node.replaceClassName('missing', 'acme-btn');
+
+    expect(node.className()).toBe('keep');
+  });
+
+  it('adds the new class when the old class is missing and tolerate is true', () => {
+    const node = div().className('keep');
+
+    node.replaceClassName('missing', 'acme-btn', true);
+
+    expect(node.className()).toBe('keep acme-btn');
+  });
+
+  it('supports multiple new classes separated by spaces', () => {
+    const node = div().className('preset-a');
+
+    node.replaceClassName('preset-a', 'acme-btn acme-btn-primary');
+
+    expect(node.className()).toBe('acme-btn acme-btn-primary');
+  });
+
+  it('is a no-op when old and next are the same', () => {
+    const node = div().className('same');
+
+    node.replaceClassName('same', 'same');
+
+    expect(node.className()).toBe('same');
+  });
+
+  it('detaches preset part styles from the subtree when the root class is replaced', () => {
+    const card = vCard((instance) => instance.vCardHeader('标题'));
+    const element = card.renderDom();
+    const header = element.querySelector('.yoya-vcard-header');
+
+    expect(header.matches('.yoya-vcard .yoya-vcard-header')).toBe(true);
+
+    card.replaceClassName('yoya-vcard', 'acme-card');
+
+    expect(card.className()).not.toContain('yoya-vcard');
+    expect(header.matches('.yoya-vcard .yoya-vcard-header')).toBe(false);
+    expect(header.matches('.acme-card .yoya-vcard-header')).toBe(true);
+  });
+
+  it('is chainable', () => {
+    const node = div().className('preset-a');
+
+    expect(node.replaceClassName('preset-a', 'acme-btn')).toBe(node);
   });
 });

@@ -738,7 +738,7 @@ const iconExtraRules = [
   ['.components-icons-page h1', { color: '#172033', fontSize: '1.45rem' }],
   ['.components-icons-page h2', { color: '#172033', fontSize: '1.05rem' }],
   ['.components-icons-page > p', { color: '#5a6575', margin: '0' }],
-  ['.components-icons-page .yoya-code-block', { minWidth: '0', width: '100%' }],
+  ['.components-icons-page .yoya-vcode-block', { minWidth: '0', width: '100%' }],
   [
     '.components-icons-grid',
     {
@@ -826,7 +826,7 @@ const iconExtraRules = [
     '.components-icons-source-section > p, .components-icons-api > p',
     { color: '#5a6575', margin: '0' }
   ],
-  ['.components-icons-source-section .yoya-code-block', { minWidth: '0', width: '100%' }],
+  ['.components-icons-source-section .yoya-vcode-block', { minWidth: '0', width: '100%' }],
   [
     '.components-icons-api table',
     {

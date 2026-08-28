@@ -606,6 +606,22 @@ export class ElementNode extends ViewNode {
   class(...classes) {
     return this.className(...classes);
   }
+  /**
+   * 替换预设类名：移除 old 并添加 next（支持空格分隔多个）。
+   * old 不存在时，tolerate 为 true 则仅添加 next；默认 false 为无操作。
+   */
+  replaceClassName(old, next, tolerate = false) {
+    if (!old || !next || old === next) {
+      return this;
+    }
+
+    if (!this._classes.has(old)) {
+      return tolerate ? this.className(next) : this;
+    }
+
+    this._classes.delete(old);
+    return this.className(next);
+  }
 
   /**
    * 读写单个样式；传入对象时转给 styles() 批量处理。

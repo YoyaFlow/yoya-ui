@@ -80,7 +80,14 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 - 基础 HTML 元素保持原生标签名：`button()`、`div()`、`input()`。
 - 复合组件工厂统一 `v` 前缀（PascalCase）：`vButton`、`vCard`、`vStatusBadge`。
-- CSS 类名：内置组件使用 `yoya-<kebab-case>`；第三方组件建议使用自己的前缀（如 `acme-status-badge`），避免与内置样式冲突。
+- **类名契约**（内置组件，由 `className-contract.test.js` 自动校验）：
+  - 共享标记：所有组件根节点带 `yoya-component`。
+  - 组件与部件类：`yoya-v<name>`（根，如 `yoya-vcard`）、`yoya-v<name>-<part>`（部件，如 `yoya-vcard-header`）、`yoya-v<name>--<modifier>`（修饰符，如 `yoya-vcarousel-arrow--prev`）。
+  - 共享/工具类：`yoya-<feature>-<part>`（如 `yoya-layout`、`yoya-icon`、`yoya-control-clear`），仅用于不属于单一组件的能力。
+  - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），类名不承载状态。
+  - 动态类名仅允许 `yoya-v${name}-<part>` 与 `yoya-${kind}` 两种模板形态。
+  - 组件预设规则必须从根类作用域书写（禁止孤儿部件选择器），保证替换根类后整棵子树与预设样式脱钩。
+- 第三方组件建议使用自己的类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
 - 颜色、间距等样式优先使用主题变量 `var(--yoya-<token>, fallback)`，主题根为 `:root, [data-yoya-theme]`（见 `yoya.ui.css`）。
 
 ## 5. 文本与 i18n 契约

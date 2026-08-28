@@ -5,7 +5,7 @@ import { createComponentFactory } from '../components/shared.js';
 export class CodeBlock extends VCode {
   constructor(setup = null) {
     super(setup);
-    this.className('yoya-code-block');
+    this.className('yoya-vcode-block');
   }
 }
 

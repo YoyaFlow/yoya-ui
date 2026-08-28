@@ -11,7 +11,7 @@ describe('CodeBlock', () => {
     const element = block.renderDom();
 
     expect(block).toBeInstanceOf(CodeBlock);
-    expect(element.classList.contains('yoya-code-block')).toBe(true);
+    expect(element.classList.contains('yoya-vcode-block')).toBe(true);
     expect(element.dataset.language).toBe('sql');
     expect(element.querySelector('.yoya-vcode-content').textContent).toBe(
       'SELECT * FROM services;'
@@ -29,7 +29,7 @@ describe('CodeBlock', () => {
     const direct = new CodeBlock({ content: 'const ready = true;', language: 'js' });
     const root = div((page) => page.codeBlock({ content: 'console.log(ready);', language: 'js' }));
 
-    expect(direct.toHTML()).toContain('yoya-code-block');
+    expect(direct.toHTML()).toContain('yoya-vcode-block');
     expect(root.children()[0]).toBeInstanceOf(CodeBlock);
     expect(root.children()[0].language()).toBe('js');
   });
