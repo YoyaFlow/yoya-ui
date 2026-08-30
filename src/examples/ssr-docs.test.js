@@ -31,6 +31,10 @@ describe('SSR docs page', () => {
     const host = document.querySelector('#ssr-live-host');
 
     expect(element.getAttribute('data-ssr-page')).toBe('true');
+    expect(element.querySelector('[data-ssr-copy-guide]')).not.toBeNull();
+    expect(element.textContent).toContain('server.mjs');
+    expect(element.textContent).toContain('client.js');
+    expect(element.textContent).toContain('renderToString');
     expect(host.textContent).toContain('欢迎使用服务端渲染');
 
     document.body.removeChild(element);
@@ -45,7 +49,7 @@ describe('SSR docs page', () => {
     const findButton = (label) =>
       [...element.querySelectorAll('button')].find((button) => button.textContent === label);
     const host = () => document.querySelector('#ssr-live-host');
-    const outputPanel = () => element.querySelector('.ssr-demo-output');
+    const outputPanel = () => element.querySelector('[data-ssr-live-output]');
 
     expect(findButton('非 SSR 模式')).not.toBeUndefined();
 

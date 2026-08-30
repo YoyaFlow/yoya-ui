@@ -1,7 +1,8 @@
-import { section, vCard, vText } from '../index.js';
+import { section, vButton, vCard, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
+import { clientSnippet, pageSnippet, serverSnippet, setupNotes } from './ssr/guide-snippets.js';
 import { createSsrPage } from './ssr/page.js';
 
 const createDemoPage = (state) => createSsrPage(state, { echartsLib: echarts });
@@ -20,6 +21,45 @@ const outputStyles = {
   whiteSpace: 'pre-wrap',
   width: '100%'
 };
+
+function CopyButton(text) {
+  const button = vButton('复制');
+  button.size('small');
+  button.variant('secondary');
+  button.on('click', async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      button.label('已复制');
+      setTimeout(() => button.label('复制'), 1600);
+    } catch {
+      button.label('复制失败');
+    }
+  });
+  return button;
+}
+
+function renderCopySnippet(parent, title, code) {
+  parent.div((entry) => {
+    entry.className('ssr-copy-snippet');
+    entry.styles({ margin: '16px 0' });
+    entry.div((header) => {
+      header.className('ssr-copy-snippet-header');
+      header.styles({
+        alignItems: 'center',
+        display: 'flex',
+        gap: '8px',
+        justifyContent: 'space-between'
+      });
+      header.h3(title);
+      header.child(CopyButton(code));
+    });
+    entry.pre((pre) => {
+      pre.className('ssr-demo-output');
+      pre.styles(outputStyles);
+      pre.code(code);
+    });
+  });
+}
 
 /**
  * SSR 交互演示：浏览器内调用 renderToString 生成服务端 HTML，
@@ -123,6 +163,7 @@ function SsrLiveDemo() {
           body.h3('renderToString 输出的 HTML');
           body.pre((pre) => {
             pre.className('ssr-demo-output');
+            pre.attr('data-ssr-live-output', 'true');
             pre.styles(outputStyles);
             pre.code(htmlText);
           });
@@ -130,6 +171,7 @@ function SsrLiveDemo() {
           body.h3('序列化状态 __YOYA_DATA__');
           body.pre((pre) => {
             pre.className('ssr-demo-output');
+            pre.attr('data-ssr-live-output', 'true');
             pre.styles(outputStyles);
             pre.code(stateText);
           });
@@ -220,6 +262,24 @@ export function SsrDocumentationPage() {
         pre.code(
           '服务端：createSsrPage(requestState) → renderToString → HTML + __YOYA_DATA__\n客户端：parseState → createSsrPage(state) → hydrate("#app") → 事件可用'
         );
+      });
+    });
+
+    page.section((guide) => {
+      guide.className('components-ssr-copy');
+      guide.attr('data-ssr-copy-guide', 'true');
+      guide.h2('复制即用：最小 SSR 项目');
+      guide.p(
+        '以下三个文件构成最小 SSR 项目，复制到你的工程即可运行（先 npm run build 生成 dist）。'
+      );
+
+      renderCopySnippet(guide, 'page.js（页面工厂，两端共用）', pageSnippet);
+      renderCopySnippet(guide, 'server.mjs（服务端入口）', serverSnippet);
+      renderCopySnippet(guide, 'client.js（浏览器启动）', clientSnippet);
+
+      guide.h3('运行与关键信息');
+      guide.ul((list) => {
+        setupNotes.forEach((note) => list.li(note));
       });
     });
 
