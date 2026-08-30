@@ -191,6 +191,13 @@ export class VInput extends HtmlElementNode {
     return this;
   }
 
+  hydrateSnapshot() {
+    if (this._input._el) {
+      this.value(this._input._el.value);
+    }
+    return this;
+  }
+
   text(value) {
     return this.value(value);
   }
@@ -590,6 +597,13 @@ export class VTimerRange extends HtmlElementNode {
     }
   }
 
+  hydrateSnapshot() {
+    this._startTimer.hydrateSnapshot?.();
+    this._endTimer.hydrateSnapshot?.();
+    this._validate();
+    return this;
+  }
+
   _validate() {
     const { start, end } = this.value();
     const invalid = Boolean(start && end && end < start);
@@ -729,6 +743,13 @@ export class VTextarea extends HtmlElementNode {
     }
 
     this._syncClear();
+    return this;
+  }
+
+  hydrateSnapshot() {
+    if (this._input._el) {
+      this.value(this._input._el.value);
+    }
     return this;
   }
 
@@ -1044,6 +1065,13 @@ export class VSelect extends HtmlElementNode {
     this._value = resolveTextValue(value);
     this._renderOptions();
     this._syncClear();
+    return this;
+  }
+
+  hydrateSnapshot() {
+    if (this._input._el) {
+      this.value(this._input._el.value);
+    }
     return this;
   }
 
@@ -1422,6 +1450,13 @@ class VBooleanControl extends HtmlElementNode {
     this.setState('indeterminate', enabled);
     if (this._input._el) {
       this._input._el.indeterminate = enabled;
+    }
+    return this;
+  }
+
+  hydrateSnapshot() {
+    if (this._input._el) {
+      this.checked(this._input._el.checked);
     }
     return this;
   }

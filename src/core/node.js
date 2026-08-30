@@ -312,6 +312,13 @@ export class ViewNode {
   toHTML() {
     return '';
   }
+
+  /**
+   * hydration 后同步钩子：子类可在此从真实 DOM 回读状态（如表单控件值）。
+   */
+  hydrateSnapshot() {
+    return this;
+  }
 }
 
 /**

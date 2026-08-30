@@ -119,6 +119,7 @@ export function hydrate(component, target, state = null) {
       const rootElement = parent.firstElementChild;
       if (rootElement) {
         adoptElement(node, rootElement);
+        syncSnapshots(node);
         bindElement(node);
         node.renderDom();
       } else {
@@ -175,6 +176,23 @@ function bindElement(node) {
   }
 
   node.children().forEach(bindElement);
+}
+
+function syncSnapshots(node) {
+  if (node instanceof ComponentNode) {
+    syncSnapshots(node._resolve());
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  node.children().forEach(syncSnapshots);
+
+  if (typeof node.hydrateSnapshot === 'function') {
+    node.hydrateSnapshot();
+  }
 }
 
 function replaceExisting(existing, created) {
