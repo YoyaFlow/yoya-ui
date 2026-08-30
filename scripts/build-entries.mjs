@@ -2,10 +2,10 @@ import { build } from 'vite';
 import { cpSync } from 'node:fs';
 
 const entries = [
-  ['echart', 'src/yoya.echart.js'],
-  ['ssr', 'src/yoya.ssr.js'],
   ['ui', 'src/yoya.ui.js'],
-  ['core', 'src/yoya.core.js']
+  ['core', 'src/yoya.core.js'],
+  ['echart', 'src/yoya.echart.js'],
+  ['ssr', 'src/yoya.ssr.js']
 ];
 
 for (const [name, entry] of entries) {
