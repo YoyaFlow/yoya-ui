@@ -21,7 +21,8 @@ export {
   createI18n,
   i18n,
   i18nText,
-  installI18nStringShortcut
+  installI18nStringShortcut,
+  withI18nStringShortcut
 } from './i18n.js';
 export { vStateNode } from './state-node.js';
 export * from './theme.js';

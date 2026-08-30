@@ -259,6 +259,20 @@ export function installI18nStringShortcut(locale = i18n) {
   return locale;
 }
 
+/**
+ * 在指定 I18n 实例作用域内执行构建，使字符串快捷写法 ".s()" 使用该实例；
+ * 结束后恢复外层实例，共享单例不被请求修改。
+ */
+export function withI18nStringShortcut(locale, build) {
+  const previous = stringShortcutI18n;
+  stringShortcutI18n = locale || previous;
+  try {
+    return build();
+  } finally {
+    stringShortcutI18n = previous;
+  }
+}
+
 installI18nStringShortcut(i18n);
 
 function readMessage(messages, key) {
