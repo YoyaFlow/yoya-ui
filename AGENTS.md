@@ -115,3 +115,12 @@ function ServiceDetailCard() {
 - `src/examples/demos/` 已加入 `.prettierignore`，演示代码的换行格式不被 Prettier 自动合并。
 - i18n 演示优先使用 `"默认语言内容".s("key", locale?)` 字符串快捷写法；未指定 locale 时使用默认 locale，未注册的语言内容使用默认语言内容。
 - `src/examples/demos/*.js` 由 `demo-readability.test.js` 自动检查点式链数量，`npm test` 会拦截违规。
+
+## SSR 开发纪律
+
+- 页面按 `createPage(requestState)` 工厂约定编写，服务端与客户端复用同一份工厂与初始状态；`renderToString`/`hydrate`/`mount` 见 `docs/ssr.md`。
+- `render()` 与 `toHTML()` 路径保持 DOM-free 且确定性：不读 `document`/`window`，不用 `Date.now()`/`Math.random()` 影响输出。
+- 浏览器 API 一律加 `typeof xxx === 'undefined'` 守卫，且只放在事件路径或 `renderDom()` 中。
+- 模块级可变状态（注册表、id 计数器）不跨请求共享；id 使用 `allocateId` 渲染上下文分配器。
+- 服务端渲染使用每请求 i18n 实例（`createI18n`），`.s()` 快捷方式用 `withI18nStringShortcut` 作用域化。
+- 服务端保持无状态：渲染后销毁组件树、输出只依赖请求输入。
