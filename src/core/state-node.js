@@ -1,8 +1,13 @@
 import { ElementNode, registerChildFactories } from './node.js';
 
+const lifecycleKeys = new Set(['state', 'render', 'update']);
+const builtinKeys = new Set(['destroy', 'getState', 'setState', 'subscribe']);
+
 /**
  * vStateNode 返回带状态的对象组件：state 保存状态，render 构建初始视图，
  * update 在状态变化后做局部更新；未提供 update 时回退为全量重建。
+ * config 上除 state/render/update 外的自定义函数会挂到返回对象上，
+ * 外部可以直接调用；render 与 update 是内部生命周期函数，不对外暴露。
  */
 export function vStateNode(config = {}) {
   if (typeof config.render !== 'function') {
@@ -14,10 +19,10 @@ export function vStateNode(config = {}) {
   let destroyed = false;
   let root = null;
 
-  const api = {
+  const component = {
     destroy() {
       if (destroyed) {
-        return api;
+        return component;
       }
 
       destroyed = true;
@@ -27,10 +32,10 @@ export function vStateNode(config = {}) {
         root.destroy();
       }
 
-      return api;
+      return component;
     },
     getState() {
-      return api.state();
+      return component.state();
     },
     render() {
       if (destroyed) {
@@ -51,13 +56,13 @@ export function vStateNode(config = {}) {
     },
     setState(patch) {
       if (destroyed || patch === null || patch === undefined) {
-        return api;
+        return component;
       }
 
       const nextPatch = typeof patch === 'function' ? patch({ ...state }) : patch;
 
       if (!nextPatch || typeof nextPatch !== 'object') {
-        return api;
+        return component;
       }
 
       const changed = new Set();
@@ -74,10 +79,10 @@ export function vStateNode(config = {}) {
           applyStateChange(changed);
         }
 
-        listeners.forEach((listener) => listener(state, api));
+        listeners.forEach((listener) => listener(state, component));
       }
 
-      return api;
+      return component;
     },
     state() {
       return { ...state };
@@ -92,16 +97,32 @@ export function vStateNode(config = {}) {
     }
   };
 
-  return api;
+  for (const key of Object.keys(config)) {
+    if (lifecycleKeys.has(key) || typeof config[key] !== 'function') {
+      continue;
+    }
+
+    if (builtinKeys.has(key)) {
+      throw new TypeError(`vStateNode config key "${key}" conflicts with the built-in API`);
+    }
+
+    component[key] = config[key];
+  }
+
+  return component;
 
   function rebuild() {
-    const nextView = config.render(state, api);
-    root.clearChildren().child(nextView).commit();
+    const nextView = config.render.call(component, state, component);
+    root.clearChildren().child(nextView);
+
+    if (root._el) {
+      root.commit();
+    }
   }
 
   function applyStateChange(changed) {
     if (typeof config.update === 'function') {
-      if (config.update(state, api, changed) === true) {
+      if (config.update.call(component, state, component, changed) === true) {
         rebuild();
       }
       return;

@@ -1119,14 +1119,6 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:4',
-    freezeEntry({
-      planned: true,
-      summary: '单选框目前仍在排期中。',
-      title: '单选框'
-    })
-  ],
-  [
     'data-display:0',
     freezeEntry({
       planned: true,

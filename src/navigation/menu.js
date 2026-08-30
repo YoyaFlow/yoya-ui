@@ -11,9 +11,7 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
-let menuGroupSequence = 0;
-let sidebarSequence = 0;
-let submenuSequence = 0;
+import { allocateId } from '../core/id.js';
 
 export class VMenu extends HtmlElementNode {
   constructor(setup = null) {
@@ -363,7 +361,7 @@ export class VMenuDivider extends HtmlElementNode {
 export class VMenuGroup extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
-    const labelId = `yoya-vmenu-group-label-${++menuGroupSequence}`;
+    const labelId = allocateId('yoya-vmenu-group-label');
     this._orientation = 'vertical';
     this._labelBox = new HtmlElementNode('div').className('yoya-vmenu-group-label').id(labelId);
 
@@ -426,7 +424,7 @@ export class VMenuGroup extends HtmlElementNode {
 export class VSubMenu extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
-    const panelId = `yoya-vsubmenu-panel-${++submenuSequence}`;
+    const panelId = allocateId('yoya-vsubmenu-panel');
     this._globalCloseCleanup = null;
     this._trigger = new VMenuItem()
       .className('yoya-vsubmenu-trigger')
@@ -718,7 +716,7 @@ function applyMenuOrientation(child, orientation) {
 export class VSidebar extends HtmlElementNode {
   constructor(setup = null) {
     super('aside', null);
-    const menuId = `yoya-vsidebar-menu-${++sidebarSequence}`;
+    const menuId = allocateId('yoya-vsidebar-menu');
     this._responsiveCleanup = null;
     this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
     this._toggle = new VButton('‹')

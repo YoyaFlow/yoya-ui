@@ -1,12 +1,11 @@
 import { HtmlElementNode } from '../html/index.js';
+import { allocateId } from '../core/id.js';
 import {
   componentClass,
   createComponentFactory,
   isPlainObject,
   setupContentSlot
 } from '../components/shared.js';
-
-let tooltipSequence = 0;
 
 const tooltipPlacementStyles = {
   bottom: { left: '50%', top: 'calc(100% + 8px)', transform: 'translateX(-50%)' },
@@ -57,7 +56,7 @@ export class VTooltip extends HtmlElementNode {
     super('div', null);
     this._triggerMode = 'hover';
     this._globalCloseCleanup = null;
-    this._panelId = `yoya-vtooltip-panel-${++tooltipSequence}`;
+    this._panelId = allocateId('yoya-vtooltip-panel');
 
     this._target = new HtmlElementNode('span')
       .className('yoya-vtooltip-target')

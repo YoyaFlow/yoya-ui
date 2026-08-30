@@ -78,6 +78,7 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./chart/echart.test.js')).toBe(true);
     expect(existsInSrc('./chart/echarts.min.js')).toBe(true);
     expect(existsInSrc('./yoya.echart.js')).toBe(true);
+    expect(existsInSrc('./yoya.ssr.js')).toBe(true);
     expect(existsInSrc('./feedback/message-manager.js')).toBe(true);
     expect(existsInSrc('./feedback/message-manager.test.js')).toBe(true);
     expect(existsInSrc('./components/index.js')).toBe(true);
@@ -142,6 +143,8 @@ describe('foundation module structure', () => {
     expect(api.SearchOutlined).toBeTypeOf('function');
     expect(api.circle).toBeUndefined();
     expect(api.vButton).toBe(actions.vButton);
+    expect(api.vButtons).toBe(actions.vButtons);
+    expect(api.vFloatButton).toBe(actions.vFloatButton);
     expect(api.vMenu).toBe(navigation.vMenu);
     expect(api.vAnchor).toBe(navigation.vAnchor);
     expect(api.vAnchorItem).toBe(navigation.vAnchorItem);
@@ -165,6 +168,8 @@ describe('foundation module structure', () => {
     expect(api.vTooltip).toBe(feedback.vTooltip);
     expect(api.VTooltip).toBe(feedback.VTooltip);
     expect(api.vForm).toBe(form.vForm);
+    expect(api.vRadio).toBe(form.vRadio);
+    expect(api.vRadios).toBe(form.vRadios);
     expect(api.vUpload).toBe(form.vUpload);
     expect(api.VUpload).toBe(form.VUpload);
     expect(api.vRate).toBe(form.vRate);
@@ -196,6 +201,10 @@ describe('foundation module structure', () => {
     expect(api.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(api.vCard).toBe(components.vCard);
     expect(api.vButton).toBe(components.vButton);
+    expect(api.vButtons).toBe(components.vButtons);
+    expect(api.vFloatButton).toBe(components.vFloatButton);
+    expect(api.vRadio).toBe(components.vRadio);
+    expect(api.vRadios).toBe(components.vRadios);
     expect(api.vAnchor).toBe(components.vAnchor);
     expect(api.vAnchorItem).toBe(components.vAnchorItem);
     expect(api.vBreadcrumb).toBe(components.vBreadcrumb);
@@ -221,10 +230,18 @@ describe('foundation module structure', () => {
     expect(coreEntry.HtmlElementNode).toBeTypeOf('function');
     expect(coreEntry.SearchOutlined).toBeTypeOf('function');
     expect(coreEntry.vButton).toBeUndefined();
+    expect(coreEntry.vButtons).toBeUndefined();
+    expect(coreEntry.vFloatButton).toBeUndefined();
+    expect(coreEntry.vRadio).toBeUndefined();
+    expect(coreEntry.vRadios).toBeUndefined();
     expect(coreEntry.flex).toBeUndefined();
     expect(uiEntry.div).toBe(html.div);
     expect(uiEntry.SearchOutlined).toBeTypeOf('function');
     expect(uiEntry.vButton).toBe(actions.vButton);
+    expect(uiEntry.vButtons).toBe(actions.vButtons);
+    expect(uiEntry.vFloatButton).toBe(actions.vFloatButton);
+    expect(uiEntry.vRadio).toBe(form.vRadio);
+    expect(uiEntry.vRadios).toBe(form.vRadios);
     expect(uiEntry.flex).toBeTypeOf('function');
     expect(uiEntry.mobileLayout).toBeTypeOf('function');
     expect(uiEntry.toast).toBe(feedback.toast);

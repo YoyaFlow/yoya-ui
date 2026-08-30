@@ -209,22 +209,6 @@ const componentPatterns = [
   };
 }`,
     references: ['库内参考：VPagination（render() + update/change 等状态 API）。']
-  },
-  {
-    title: '形态 C：类节点组件 —— class VXxx extends HtmlElementNode',
-    intro:
-      '适用于 VTable↔VTr 这类父子嵌套、需操作子实例或重写节点生命周期' +
-      '（renderDom/destroy/child）的细粒度场景；同时导出成对 vXxx 工厂并注册进嵌套 DSL。',
-    code: `export class VTr extends HtmlElementNode {
-  // 嵌套关系与细粒度操作
-}
-export function vTr(first = null, second = null, third = null) {
-  return createComponentFactory(VTr, first, second, third);
-}`,
-    references: [
-      '库内参考：VButton / VCard / VTable / VTr / VTabs 等组件库主体。',
-      'CustomNode 统一基类为未实现特性（planned），当前以 HtmlElementNode / ViewNode / SvgElementNode 为基类。'
-    ]
   }
 ];
 
@@ -284,10 +268,10 @@ export function ComponentDefinitionDocumentationPage() {
         page.className('components-route-page components-definition-page');
         page.attr('data-definition-page', 'true');
         page.h1('定义组件');
-        page.p('yoya-ui 支持三种组件定义形态，按场景选用：A 薄工厂、B 对象组件、C 类节点组件。');
+        page.p('yoya-ui 支持两种组件定义形态，按场景选用：A 薄工厂、B 对象组件。');
         page.p(
           'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
-            '字符串/数字，三种形态均可作为子节点传入页面组合。'
+            '字符串/数字，两种形态均可作为子节点传入页面组合。'
         );
 
         componentPatterns.forEach((pattern) => {

@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { ViewNode } from '../core/node.js';
+import { allocateId } from '../core/id.js';
 import {
   applyComponentArguments,
   componentClass,
@@ -11,9 +12,6 @@ import {
   themeBorder,
   themeValue
 } from '../components/shared.js';
-
-let treeSequence = 0;
-let treeNodeSequence = 0;
 
 class TemplateIconNode extends ViewNode {
   constructor(html) {
@@ -36,6 +34,23 @@ class TemplateIconNode extends ViewNode {
   }
 }
 
+/**
+ * 树形勾选框输入节点。indeterminate 是 DOM property，无法序列化成 HTML 属性，
+ * 因此在 renderDom 阶段补设；toHTML 阶段用 aria-checked="mixed" 表达半选态。
+ */
+class TreeCheckboxInput extends HtmlElementNode {
+  constructor(indeterminate = false) {
+    super('input');
+    this._treeIndeterminate = Boolean(indeterminate);
+  }
+
+  renderDom() {
+    const element = super.renderDom();
+    element.indeterminate = this._treeIndeterminate;
+    return element;
+  }
+}
+
 export class VTreeNode {
   constructor(setup = null) {
     this._children = [];
@@ -46,7 +61,7 @@ export class VTreeNode {
       expandable: false,
       expanded: false,
       icon: null,
-      id: `tree-node-${++treeNodeSequence}`,
+      id: allocateId('tree-node'),
       label: '',
       selected: false
     };
@@ -256,9 +271,9 @@ export class VTreeNode {
 
 export function VTree(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const sequence = ++treeSequence;
   const state = {
     ariaLabel: '树形控件',
+    building: true,
     builderNodes: [],
     checkable: false,
     checkedKeys: new Set(),
@@ -266,9 +281,11 @@ export function VTree(first = null, second = null, third = null) {
     expandedKeys: new Set(),
     multiple: false,
     nodes: [],
+    rowsDirty: false,
     selectable: true,
     selectedKeys: new Set(),
     toggleIcon: null,
+    treeDirty: true,
     visibleNodes: []
   };
   let changeHandler = null;
@@ -281,7 +298,7 @@ export function VTree(first = null, second = null, third = null) {
     .attr({
       'aria-label': state.ariaLabel,
       'data-tree': 'true',
-      id: `yoya-vtree-${sequence}`,
+      id: allocateId('yoya-vtree'),
       role: 'tree'
     })
     .styles({
@@ -320,6 +337,7 @@ export function VTree(first = null, second = null, third = null) {
 
       state.ariaLabel = resolveTextValue(value) || '树形控件';
       root.attr('aria-label', state.ariaLabel);
+      requestSync();
       return api;
     },
     change(handler) {
@@ -338,7 +356,7 @@ export function VTree(first = null, second = null, third = null) {
         return api.checkedKeys();
       }
 
-      return api.checkedKeys(value);
+      return Array.isArray(value) ? api.checkedKeys(value) : state.checkedKeys.has(String(value));
     },
     checkedKeys(value) {
       if (value === undefined) {
@@ -346,7 +364,7 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.checkedKeys = new Set(toKeyList(value));
-      sync();
+      requestSync();
       return api;
     },
     check(id, value = undefined) {
@@ -357,7 +375,7 @@ export function VTree(first = null, second = null, third = null) {
 
       const checked = value === undefined ? !state.checkedKeys.has(node.id) : Boolean(value);
       setNodeChecked(node, checked);
-      sync();
+      requestSync();
       emitChange('check', node);
       return api;
     },
@@ -367,12 +385,18 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.checkable = Boolean(value);
-      sync();
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     checkAll(value = true) {
       const checked = Boolean(value);
-      const ids = collectAllNodeIds(state.nodes);
+      const ids = [];
+      collectExpandableNodes(state.nodes, (node) => {
+        if (!node.disabled) {
+          ids.push(node.id);
+        }
+      });
 
       if (checked) {
         ids.forEach((id) => state.checkedKeys.add(id));
@@ -380,13 +404,14 @@ export function VTree(first = null, second = null, third = null) {
         ids.forEach((id) => state.checkedKeys.delete(id));
       }
 
-      sync();
+      requestSync();
       emitChange('check', null);
       return api;
     },
     collapseAll() {
       state.expandedKeys.clear();
-      sync();
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     collapseNode(id) {
@@ -401,7 +426,7 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.emptyText = value;
-      sync();
+      requestSync();
       return api;
     },
     expandAll() {
@@ -413,7 +438,8 @@ export function VTree(first = null, second = null, third = null) {
         }
       });
       state.expandedKeys = new Set(ids);
-      sync();
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     expandedKeys(value) {
@@ -422,7 +448,8 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.expandedKeys = new Set(toKeyList(value));
-      sync();
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     expandNode(id, value = true) {
@@ -442,7 +469,8 @@ export function VTree(first = null, second = null, third = null) {
         state.expandedKeys.delete(node.id);
       }
 
-      sync();
+      state.treeDirty = true;
+      requestSync();
       emitChange('expand', node);
       return api;
     },
@@ -452,7 +480,7 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.multiple = Boolean(value);
-      sync();
+      requestSync();
       return api;
     },
     nodes(value) {
@@ -467,7 +495,9 @@ export function VTree(first = null, second = null, third = null) {
       state.selectedKeys = new Set();
       state.checkedKeys = new Set();
       hydrateNodeState(state, state.nodes);
-      sync();
+      attachNodeIds(state.nodes);
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     vTreeNode(setup) {
@@ -477,7 +507,9 @@ export function VTree(first = null, second = null, third = null) {
         normalizeTreeNode(builderNode, index)
       );
       hydrateNodeState(state, state.nodes);
-      sync();
+      attachNodeIds(state.nodes);
+      state.treeDirty = true;
+      requestSync();
       return node;
     },
     node(setup) {
@@ -532,11 +564,11 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       if (wasSelected === next) {
-        sync();
+        requestSync();
         return api;
       }
 
-      sync();
+      requestSync();
       emitChange('select', node);
       return api;
     },
@@ -546,7 +578,8 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.selectable = Boolean(value);
-      sync();
+      state.rowsDirty = true;
+      requestSync();
       return api;
     },
     selected(value) {
@@ -554,7 +587,7 @@ export function VTree(first = null, second = null, third = null) {
         return collectNodesById(state.nodes, state.selectedKeys);
       }
 
-      return api.selectedKeys(value);
+      return Array.isArray(value) ? api.selectedKeys(value) : state.selectedKeys.has(String(value));
     },
     selectedKeys(value) {
       if (value === undefined) {
@@ -562,7 +595,7 @@ export function VTree(first = null, second = null, third = null) {
       }
 
       state.selectedKeys = new Set(toKeyList(value));
-      sync();
+      requestSync();
       return api;
     },
     toggleNode(id) {
@@ -591,19 +624,34 @@ export function VTree(first = null, second = null, third = null) {
       } else {
         state.toggleIcon = normalizeToggleIconValue(value);
       }
-      sync();
+      state.treeDirty = true;
+      requestSync();
       return api;
     },
     update(value) {
+      state.building = true;
       applyTreeSetup(value);
+      state.building = false;
+      sync();
+      return api;
+    },
+    destroy() {
+      root.destroy();
       return api;
     }
   };
 
   applyTreeSetup(args.first);
+  state.building = false;
   sync();
   applyComponentArguments(api, args.options, args.callback);
   return api;
+
+  function requestSync() {
+    if (!state.building) {
+      sync();
+    }
+  }
 
   function applyTreeSetup(value) {
     if (value === null || value === undefined) {
@@ -744,21 +792,130 @@ export function VTree(first = null, second = null, third = null) {
       replaceChildren(emptyBox, normalizeChildren(state.emptyText));
     }
 
-    state.visibleNodes = [];
-    replaceChildren(list, []);
+    writeBackNodeState();
 
-    if (hasNodes) {
-      state.nodes.forEach((node) => appendNode(node, 0, null));
+    if (state.treeDirty || state.visibleNodes.length === 0) {
+      rebuildRows();
+      state.treeDirty = false;
+      state.rowsDirty = false;
+    } else {
+      updateRows(state.rowsDirty);
+      state.rowsDirty = false;
     }
 
     setTabStops(0);
   }
 
+  function rebuildRows() {
+    state.visibleNodes = [];
+    replaceChildren(list, []);
+
+    if (state.nodes.length > 0) {
+      state.nodes.forEach((node) => appendNode(node, 0, null));
+    }
+  }
+
+  function updateRows(force = false) {
+    state.visibleNodes.forEach((entry) => {
+      const { checkbox, node, row, toggle } = entry;
+      const selected = state.selectedKeys.has(node.id);
+      const expanded = isBranchNode(node) && state.expandedKeys.has(node.id);
+
+      if (entry.selected !== selected || force) {
+        applyRowVisual(row, node, selected, entry.level);
+        entry.selected = selected;
+      }
+
+      if (toggle && entry.expanded !== expanded) {
+        updateToggleContent(entry, expanded);
+        row.attr('aria-expanded', String(expanded));
+        entry.expanded = expanded;
+      }
+
+      if (checkbox) {
+        const checked = state.checkedKeys.has(node.id);
+        const indeterminate = isIndeterminate(node);
+        if (entry.checked !== checked || entry.indeterminate !== indeterminate) {
+          updateCheckbox(checkbox, node, checked, indeterminate);
+          entry.checked = checked;
+          entry.indeterminate = indeterminate;
+        }
+      }
+    });
+  }
+
+  function applyRowVisual(row, node, selected, level) {
+    row.styles(createRowStyles(node, selected, level));
+    row.attr('aria-selected', state.selectable ? String(selected) : null);
+  }
+
+  function updateToggleContent(entry, expanded) {
+    const { iconBox, node, toggle } = entry;
+    const labelText = resolveTextValue(node.label) || node.id;
+
+    toggle.attr('aria-expanded', String(expanded));
+    toggle.attr('aria-label', expanded ? `收起 ${labelText}` : `展开 ${labelText}`);
+
+    if (state.toggleIcon) {
+      const toggleIcon = isPlainObject(state.toggleIcon)
+        ? expanded
+          ? state.toggleIcon.expanded
+          : state.toggleIcon.collapsed
+        : state.toggleIcon;
+      replaceChildren(iconBox, []);
+      if (typeof toggleIcon === 'function') {
+        const result = toggleIcon(iconBox, expanded);
+        if (result && result !== iconBox) {
+          iconBox.child(result);
+        }
+      } else if (typeof toggleIcon === 'string') {
+        iconBox.child(new TemplateIconNode(toggleIcon));
+      } else {
+        replaceChildren(iconBox, normalizeChildren(toggleIcon));
+      }
+    } else {
+      replaceChildren(toggle, normalizeChildren(expanded ? '▾' : '▸'));
+    }
+  }
+
+  function updateCheckbox(checkbox, node, checked, indeterminate) {
+    checkbox.attr('checked', checked ? true : null);
+    checkbox.attr('aria-checked', indeterminate ? 'mixed' : checked ? 'true' : 'false');
+    checkbox._treeIndeterminate = indeterminate;
+    if (checkbox._el) {
+      checkbox._el.indeterminate = indeterminate;
+    }
+  }
+
+  function writeBackNodeState() {
+    const visit = (nodes) => {
+      nodes.forEach((node) => {
+        node.checked = state.checkedKeys.has(node.id);
+        node.selected = state.selectedKeys.has(node.id);
+        node.expanded = state.expandedKeys.has(node.id);
+        visit(node.children);
+      });
+    };
+    visit(state.nodes);
+  }
+
   function appendNode(node, level, parentId) {
     const expanded = isBranchNode(node) && state.expandedKeys.has(node.id);
-    const row = createTreeNodeRow(node, level, expanded);
+    const { checkbox, iconBox, row, toggle } = createTreeNodeRow(node, level, expanded);
 
-    state.visibleNodes.push({ level, node, parentId, row });
+    state.visibleNodes.push({
+      checked: state.checkedKeys.has(node.id),
+      checkbox,
+      expanded,
+      iconBox,
+      indeterminate: isIndeterminate(node),
+      level,
+      node,
+      parentId,
+      row,
+      selected: state.selectedKeys.has(node.id),
+      toggle
+    });
     list.child(row);
 
     if (expanded) {
@@ -779,26 +936,7 @@ export function VTree(first = null, second = null, third = null) {
         role: 'treeitem',
         tabindex: '-1'
       })
-      .styles({
-        alignItems: 'center',
-        background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
-        border: selected ? themeBorder('color-primary-border', '#bfdbfe') : '1px solid transparent',
-        borderRadius: '6px',
-        boxSizing: 'border-box',
-        color: selected
-          ? themeValue('color-primary-hover', '#1d4ed8')
-          : node.disabled
-            ? themeValue('color-text-muted', '#94a3b8')
-            : themeValue('color-text', '#172033'),
-        cursor: state.selectable && !node.disabled ? 'pointer' : 'default',
-        display: 'flex',
-        gap: '4px',
-        minHeight: '34px',
-        minWidth: '0',
-        padding: `2px 8px 2px ${8 + level * 18}px`,
-        transition: 'background 120ms ease, border-color 120ms ease',
-        width: '100%'
-      });
+      .styles(createRowStyles(node, selected, level));
 
     row.on('click', () => {
       if (node.disabled || !state.selectable) {
@@ -813,24 +951,30 @@ export function VTree(first = null, second = null, third = null) {
         return;
       }
 
+      const isSelected = state.selectedKeys.has(node.id);
       row.styles({
-        background: selected
+        background: isSelected
           ? themeValue('color-primary-active-subtle', '#dbeafe')
           : themeValue('color-surface-hover', '#f1f5f9'),
-        borderColor: selected
+        borderColor: isSelected
           ? themeValue('color-primary-border', '#93c5fd')
           : themeValue('color-border-faint', '#e2e8f0')
       });
     });
     row.on('mouseleave', () => {
-      row.styles({
-        background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
-        borderColor: selected ? themeValue('color-primary-border', '#bfdbfe') : 'transparent'
-      });
+      const isSelected = state.selectedKeys.has(node.id);
+      row.styles(createRowStyles(node, isSelected, level));
     });
 
+    let checkbox = null;
+    let iconBox = null;
+    let toggle = null;
+
     if (isBranchNode(node)) {
-      row.child(createToggle(node, expanded));
+      const built = createToggle(node, expanded);
+      toggle = built.toggle;
+      iconBox = built.iconBox;
+      row.child(toggle);
     } else {
       row.child(
         new HtmlElementNode('span')
@@ -840,7 +984,8 @@ export function VTree(first = null, second = null, third = null) {
     }
 
     if (state.checkable) {
-      row.child(createCheckbox(node));
+      checkbox = createCheckbox(node);
+      row.child(checkbox);
     }
 
     if (node.icon !== null && node.icon !== undefined) {
@@ -861,13 +1006,30 @@ export function VTree(first = null, second = null, third = null) {
       row.child(createNodeActions(node));
     }
 
-    const rowElement = row.renderDom();
-    const checkbox = rowElement.querySelector('.yoya-vtree-checkbox');
-    if (checkbox) {
-      checkbox.indeterminate = isIndeterminate(node);
-    }
+    return { checkbox, iconBox, row, toggle };
+  }
 
-    return row;
+  function createRowStyles(node, selected, level) {
+    return {
+      alignItems: 'center',
+      background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
+      border: selected ? themeBorder('color-primary-border', '#bfdbfe') : '1px solid transparent',
+      borderRadius: '6px',
+      boxSizing: 'border-box',
+      color: selected
+        ? themeValue('color-primary-hover', '#1d4ed8')
+        : node.disabled
+          ? themeValue('color-text-muted', '#94a3b8')
+          : themeValue('color-text', '#172033'),
+      cursor: state.selectable && !node.disabled ? 'pointer' : 'default',
+      display: 'flex',
+      gap: '4px',
+      minHeight: '34px',
+      minWidth: '0',
+      padding: `2px 8px 2px ${8 + level * 18}px`,
+      transition: 'background 120ms ease, border-color 120ms ease',
+      width: '100%'
+    };
   }
 
   function createToggle(node, expanded) {
@@ -896,9 +1058,10 @@ export function VTree(first = null, second = null, third = null) {
         padding: '0',
         width: '20px'
       });
+    let iconBox = null;
 
     if (state.toggleIcon) {
-      const iconBox = new HtmlElementNode('span').className('yoya-vtree-toggle-icon').styles({
+      iconBox = new HtmlElementNode('span').className('yoya-vtree-toggle-icon').styles({
         alignItems: 'center',
         display: 'inline-flex',
         justifyContent: 'center',
@@ -931,14 +1094,16 @@ export function VTree(first = null, second = null, third = null) {
       api.toggleNode(node.id);
       focusNodeRow(node.id);
     });
-    return toggle;
+    return { iconBox, toggle };
   }
 
   function createCheckbox(node) {
     const checked = state.checkedKeys.has(node.id);
-    const input = new HtmlElementNode('input')
+    const indeterminate = isIndeterminate(node);
+    const input = new TreeCheckboxInput(indeterminate)
       .className('yoya-vtree-checkbox')
       .attr({
+        'aria-checked': indeterminate ? 'mixed' : checked ? 'true' : 'false',
         'aria-label': `选择 ${resolveTextValue(node.label) || node.id}`,
         checked: checked ? true : null,
         disabled: node.disabled ? true : null,
@@ -1010,7 +1175,7 @@ export function VTree(first = null, second = null, third = null) {
       return false;
     }
 
-    const ids = collectNodeIds(node);
+    const ids = node.ids || collectNodeIds(node);
     const anyChecked = ids.some((id) => state.checkedKeys.has(id));
     const allChecked = ids.every((id) => state.checkedKeys.has(id));
     return anyChecked && !allChecked;
@@ -1319,18 +1484,11 @@ function collectNodeIds(node, ids = []) {
   return ids;
 }
 
-function collectAllNodeIds(nodes) {
-  const ids = [];
-
-  const visit = (nodes) => {
-    nodes.forEach((node) => {
-      ids.push(node.id);
-      visit(node.children);
-    });
-  };
-
-  visit(nodes);
-  return ids;
+function attachNodeIds(nodes) {
+  nodes.forEach((node) => {
+    node.ids = collectNodeIds(node);
+    attachNodeIds(node.children);
+  });
 }
 
 function collectExpandableNodes(nodes, callback) {

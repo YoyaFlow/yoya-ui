@@ -1,4 +1,5 @@
 import { ViewNode } from '../core/node.js';
+import { allocateNumber } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
   componentClass,
@@ -10,8 +11,6 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
-let tabSequence = 0;
-
 export class VTab extends ViewNode {
   constructor(setup = null) {
     super(null);
@@ -21,7 +20,7 @@ export class VTab extends ViewNode {
     this._key = null;
     this._parent = null;
 
-    const sequence = ++tabSequence;
+    const sequence = allocateNumber();
     this._tabId = `yoya-vtab-trigger-${sequence}`;
     this._panelId = `yoya-vtab-panel-${sequence}`;
     this._iconBox = new HtmlElementNode('span')

@@ -13,7 +13,9 @@ import {
   toast,
   vChart,
   vCode,
+  vButtons,
   vButton,
+  vFloatButton,
   vCard,
   vCardBody,
   vCardFooter,
@@ -36,6 +38,8 @@ import {
   vSubMenu,
   vMessage,
   vMessageContainer,
+  vRadio,
+  vRadios,
   vSelect,
   vSwitch,
   vTextarea,
@@ -78,6 +82,262 @@ describe('compound components', () => {
     expect(submitElement.type).toBe('submit');
     expect(submitElement.dataset.variant).toBe('primary');
     expect(resetElement.type).toBe('reset');
+  });
+
+  it('creates buttons from options with a shared default variant and size', () => {
+    const group = vButtons({
+      options: ['复制', '粘贴', '剪切'],
+      variant: 'secondary',
+      size: 'small'
+    });
+    const element = group.renderDom();
+
+    expect(element.tagName).toBe('DIV');
+    expect(element.getAttribute('role')).toBe('group');
+    expect(element.classList.contains('yoya-vbuttons')).toBe(true);
+    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(3);
+    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('复制');
+    expect(element.querySelector('.yoya-vbutton').dataset.size).toBe('small');
+    expect(element.querySelector('.yoya-vbutton').dataset.variant).toBe('secondary');
+  });
+
+  it('supports exclusive selection with value and change', () => {
+    const change = vi.fn();
+    const group = vButtons({
+      options: [
+        { label: '全部', value: 'all' },
+        { label: '运行中', value: 'running' },
+        { label: '已停止', value: 'stopped' }
+      ],
+      selectable: true,
+      value: 'all',
+      change
+    });
+    const element = group.renderDom();
+    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+
+    expect(group.value()).toBe('all');
+    expect(buttons[0].dataset.selected).toBe('true');
+    expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+
+    buttons[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(group.value()).toBe('running');
+    expect(change).toHaveBeenCalledWith('running', group);
+    expect(buttons[0].dataset.selected).toBeUndefined();
+    expect(buttons[1].dataset.selected).toBe('true');
+    expect(buttons[1].dataset.variant).toBe('primary');
+  });
+
+  it('groups manually added vButton children and keeps their own variant', () => {
+    const group = vButtons((container) => {
+      container.vButton('保存').variant('primary');
+      container.vButton('取消');
+    });
+    const element = group.renderDom();
+    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].textContent).toBe('保存');
+    expect(buttons[0].dataset.variant).toBe('primary');
+    expect(buttons[1].dataset.variant).toBe('secondary');
+  });
+
+  it('applies disabled and replaces options on demand', () => {
+    const group = vButtons({
+      options: [{ label: '运行', value: 'run' }, '停止'],
+      selectable: true
+    });
+    const element = group.renderDom();
+    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+
+    group.disabled(true);
+    expect(buttons.every((button) => button.disabled)).toBe(true);
+
+    group.options([{ label: '刷新', value: 'refresh' }]);
+
+    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(1);
+    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('刷新');
+  });
+
+  it('renders a joined segmented group with shared borders and outer radius', () => {
+    const group = vButtons({
+      options: ['列表', '卡片', '看板'],
+      joined: true,
+      selectable: true,
+      value: '列表'
+    });
+    const element = group.renderDom();
+    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+
+    expect(element.style.gap).toBe('0px');
+    expect(element.style.flexWrap).toBe('nowrap');
+    expect(buttons[0].style.borderRadius).toBe(
+      'var(--yoya-radius-md, 6px) 0 0 var(--yoya-radius-md, 6px)'
+    );
+    expect(buttons[1].style.borderRadius).toBe('0px');
+    expect(buttons[2].style.borderRadius).toBe(
+      '0 var(--yoya-radius-md, 6px) var(--yoya-radius-md, 6px) 0'
+    );
+    expect(buttons[0].style.marginLeft).toBe('');
+    expect(buttons[1].style.marginLeft).toBe('-1px');
+    expect(buttons[2].style.marginLeft).toBe('-1px');
+    expect(buttons[0].dataset.selected).toBe('true');
+    expect(buttons[0].style.zIndex).toBe('1');
+
+    group.joined(false);
+
+    expect(element.style.gap).toBe('8px');
+    expect(element.style.flexWrap).toBe('wrap');
+    expect(buttons[0].style.borderRadius).toBe('');
+    expect(buttons[1].style.marginLeft).toBe('');
+    expect(buttons[0].style.zIndex).toBe('');
+  });
+
+  it('creates a button group through the parent shortcut', () => {
+    const root = div((page) => {
+      page.vButtons(['复制', '粘贴']);
+    });
+    const element = root.renderDom();
+
+    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(2);
+  });
+
+  it('renders an exclusive radio group with value, selection and change', () => {
+    const change = vi.fn();
+    const radios = vRadios({
+      name: 'env',
+      options: [
+        { label: '开发', value: 'dev' },
+        { label: '预发', value: 'staging' },
+        { label: '生产', value: 'prod' }
+      ],
+      value: 'staging',
+      change
+    });
+    const element = radios.renderDom();
+    const items = [...element.querySelectorAll('.yoya-vradio')];
+
+    expect(radios.value()).toBe('staging');
+    expect(items).toHaveLength(3);
+    expect(items[1].dataset.checked).toBe('true');
+
+    const prodInput = items[2].querySelector('input');
+    prodInput.checked = true;
+    prodInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(radios.value()).toBe('prod');
+    expect(change).toHaveBeenCalledWith('prod', radios);
+    expect(items[1].dataset.checked).toBeUndefined();
+    expect(items[2].dataset.checked).toBe('true');
+  });
+
+  it('renders a single radio with label, checked and disabled states', () => {
+    const radio = vRadio((item) => {
+      item.label('启用自动部署');
+      item.description('发布后自动执行');
+      item.checked(true);
+    });
+    const disabled = vRadio({ label: '定时发布', disabled: true });
+    const page = div((root) => root.child(radio, disabled));
+    const element = page.renderDom();
+    const items = [...element.querySelectorAll('.yoya-vradio')];
+
+    expect(items[0].querySelector('.yoya-vradio-label').textContent).toBe('启用自动部署');
+    expect(items[0].querySelector('.yoya-vradio-description').textContent).toBe('发布后自动执行');
+    expect(items[0].dataset.checked).toBe('true');
+    expect(items[0].querySelector('.yoya-vradio-dot')).not.toBeNull();
+    expect(items[1].dataset.checked).toBeUndefined();
+    expect(items[1].querySelector('input').disabled).toBe(true);
+  });
+
+  it('collects radio group values inside a form', () => {
+    const form = vForm((form) => {
+      form.vRadios((radios) => {
+        radios.name('plan');
+        radios.options([
+          { label: '滚动发布', value: 'rolling' },
+          { label: '全量发布', value: 'full' }
+        ]);
+        radios.value('rolling');
+      });
+    });
+
+    expect(form.values()).toEqual({ plan: 'rolling' });
+  });
+
+  it('keeps same-name standalone radios mutually exclusive', () => {
+    const first = vRadio((radio) => {
+      radio.name('deploy');
+      radio.label('自动部署');
+      radio.checked(true);
+    });
+    const second = vRadio((radio) => {
+      radio.name('deploy');
+      radio.label('保留历史');
+    });
+    const page = div((root) => root.child(first, second));
+    const element = page.renderDom();
+    const items = [...element.querySelectorAll('.yoya-vradio')];
+
+    expect(first.checked()).toBe(true);
+
+    const secondInput = items[1].querySelector('input');
+    secondInput.checked = true;
+    secondInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(first.checked()).toBe(false);
+    expect(second.checked()).toBe(true);
+    expect(items[0].dataset.checked).toBeUndefined();
+    expect(items[1].dataset.checked).toBe('true');
+  });
+
+  it('renders a circular float button with icon and label slots', () => {
+    const action = vFloatButton({
+      icon: '＋',
+      label: '新建任务',
+      variant: 'primary',
+      size: 'small'
+    });
+    const element = action.renderDom();
+
+    expect(element.tagName).toBe('BUTTON');
+    expect(element.type).toBe('button');
+    expect(element.classList.contains('yoya-vfloat-button')).toBe(true);
+    expect(element.dataset.variant).toBe('primary');
+    expect(element.dataset.size).toBe('small');
+    expect(element.dataset.icon).toBe('true');
+    expect(element.dataset.label).toBe('true');
+    expect(element.querySelector('.yoya-vfloat-button-icon').textContent).toBe('＋');
+    expect(element.querySelector('.yoya-vfloat-button-label').textContent).toBe('新建任务');
+    expect(element.style.paddingLeft).toBe('18px');
+  });
+
+  it('keeps an icon-only float button round without label padding', () => {
+    const action = vFloatButton({ icon: '＋' });
+    const element = action.renderDom();
+
+    expect(element.dataset.icon).toBe('true');
+    expect(element.dataset.label).toBeUndefined();
+    expect(element.style.paddingLeft).not.toBe('18px');
+    expect(element.style.borderRadius).toBe('9999px');
+    expect(element.querySelector('.yoya-vfloat-button-label').style.display).toBe('none');
+  });
+
+  it('applies disabled and fixed position presets', () => {
+    const action = vFloatButton({
+      icon: '↑',
+      disabled: true,
+      fixed: true,
+      position: 'bottom-right'
+    });
+    const element = action.renderDom();
+
+    expect(element.disabled).toBe(true);
+    expect(element.style.position).toBe('fixed');
+    expect(element.style.bottom).toBe('24px');
+    expect(element.style.right).toBe('24px');
+    expect(element.style.zIndex).toBe('100');
   });
 
   it('accepts label, element options, and a final button setup callback', () => {

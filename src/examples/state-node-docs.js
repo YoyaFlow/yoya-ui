@@ -1,6 +1,11 @@
 import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
+  dynamicFormFieldsSource,
+  StateMethodsDemo,
+  StateMethodsExample,
+  StateDynamicFormDemo,
+  StateDynamicFormExample,
   StateCounterExample1,
   StateInputExample1,
   StateRebuildExample1,
@@ -43,6 +48,25 @@ const stateDemoDefinitions = Object.freeze([
     sourceComponent: StateToggleExample1,
     imports: ['vCard', 'vStateNode'],
     sourceTitle: '结构切换核心源码'
+  },
+  {
+    id: 'dynamic-form',
+    title: '动态表单',
+    description: '下拉框切换类型时按配置重建字段，输入值变化只收集不重建。',
+    component: StateDynamicFormDemo,
+    sourceComponent: StateDynamicFormExample,
+    imports: ['div', 'vForm', 'vFormItem', 'vInput', 'vSelect', 'vStateNode'],
+    sourceTitle: '动态表单核心源码',
+    extraSource: dynamicFormFieldsSource
+  },
+  {
+    id: 'methods',
+    title: '自定义方法',
+    description: 'config 上定义的操作方法会挂到组件对象，外部可直接调用。',
+    component: StateMethodsDemo,
+    sourceComponent: StateMethodsExample,
+    imports: ['div', 'vStateNode', 'vText'],
+    sourceTitle: '自定义方法核心源码'
   }
 ]);
 
@@ -108,6 +132,11 @@ export function StateNodeDocumentationPage() {
                   '合并状态并触发 update 或重建。',
                   'component.setState({ count: 1 })'
                 ],
+                [
+                  'config 自定义方法',
+                  'config 上的自定义函数会挂到组件对象，外部可直接调用。',
+                  'component.increment()'
+                ],
                 ['component.state()', '返回当前状态的浅拷贝。', 'component.state().count'],
                 [
                   'component.subscribe(listener)',
@@ -116,7 +145,7 @@ export function StateNodeDocumentationPage() {
                 ],
                 [
                   'update(state, api, changed)',
-                  '局部更新；返回 true 可强制重建。',
+                  'vStateNode 内部生命周期函数，不对外暴露；返回 true 可强制重建。',
                   'update(state, api, changed) { return true; }'
                 ],
                 ['component.destroy()', '清理订阅和内部视图。', 'component.destroy()']
@@ -134,7 +163,9 @@ export function StateNodeDocumentationPage() {
         page.section((examples) => {
           examples.className('components-state-docs-examples');
           examples.h2('代码演示');
-          examples.p('四个示例分别展示局部更新、输入保持焦点、全量重建和结构切换。');
+          examples.p(
+            '六个示例分别展示局部更新、输入保持焦点、全量重建、结构切换、动态表单和自定义方法。'
+          );
           stateDemoDefinitions.forEach((demo) => {
             examples.child(StateExampleSection(demo));
           });
@@ -150,7 +181,8 @@ function StateExampleSection(demo) {
     component: demo.component,
     sourceComponent: demo.sourceComponent,
     imports: demo.imports,
-    title: demo.sourceTitle
+    title: demo.sourceTitle,
+    extraSource: demo.extraSource
   });
 
   return {

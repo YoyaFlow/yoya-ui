@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VMenu } from '../navigation/menu.js';
 import { VButton } from './button.js';
+import { allocateId } from '../core/id.js';
 import {
   createComponentFactory,
   componentClass,
@@ -10,14 +11,12 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
-let dropdownSequence = 0;
-
 export class VDropdownMenu extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
-    this._panelId = `yoya-vdropdown-panel-${++dropdownSequence}`;
+    this._panelId = allocateId('yoya-vdropdown-panel');
     this._trigger = new VButton('操作')
       .className('yoya-vdropdown-trigger')
       .attr({

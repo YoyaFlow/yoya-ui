@@ -74,6 +74,8 @@ export function vTr(first = null, second = null, third = null) {
 
 - 演示代码（examples/demos）以形态 B 为主，通过完整组件包装展示状态操作空间；确需演示形态 A/C 时允许直接书写对应形态。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
+- 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
+- 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
 
 ## Declarative-First Component Rule
 

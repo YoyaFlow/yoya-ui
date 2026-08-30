@@ -1,4 +1,5 @@
 import { ViewNode, VTextNode, registerChildFactories } from '../core/node.js';
+import { allocateId } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { VRate } from './rate.js';
@@ -14,8 +15,6 @@ import {
   themeBorder,
   themeValue
 } from '../components/shared.js';
-
-let timerRangeSequence = 0;
 
 function createClearButton(className, position = {}) {
   return new HtmlElementNode('button')
@@ -431,7 +430,7 @@ export class VTimer extends VInput {
 export class VTimerRange extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
-    const errorId = `yoya-vtimer-range-error-${++timerRangeSequence}`;
+    const errorId = allocateId('yoya-vtimer-range-error');
     this._name = '';
     this._startTimer = vTimer()
       .className('yoya-vtimer-range-start')
@@ -1790,6 +1789,289 @@ export class VCheckboxes extends HtmlElementNode {
   }
 }
 
+export class VRadio extends VBooleanControl {
+  constructor(setup = null) {
+    super('radio');
+    this._input.attr('type', 'radio');
+    this._visualBox.styles({
+      alignItems: 'center',
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
+      borderRadius: '999px',
+      boxSizing: 'border-box',
+      display: 'inline-flex',
+      height: '16px',
+      justifyContent: 'center',
+      lineHeight: '1',
+      transition: 'background 120ms ease, border-color 120ms ease',
+      width: '16px'
+    });
+    this._syncVisual(false);
+    this._setupBoolean(setup);
+    registerRadio(this);
+  }
+
+  name(value) {
+    if (value === undefined) {
+      return super.name();
+    }
+
+    unregisterRadio(this);
+    const result = super.name(value);
+    registerRadio(this);
+    return result;
+  }
+
+  checked(value) {
+    if (value !== undefined && value && this.name()) {
+      const group = radioGroups.get(this.name());
+      group?.forEach((other) => {
+        if (other !== this && other.checked()) {
+          other.checked(false);
+        }
+      });
+    }
+
+    return super.checked(value);
+  }
+
+  destroy() {
+    unregisterRadio(this);
+    return super.destroy();
+  }
+
+  _syncVisual(enabled) {
+    this._visualBox.styles({
+      borderColor: enabled
+        ? themeValue('color-primary', '#2563eb')
+        : themeValue('color-border-strong', '#cbd5e1')
+    });
+    replaceChildren(this._visualBox, enabled ? [createRadioDot()] : []);
+  }
+}
+
+export const radioGroups = new Map();
+
+function registerRadio(radio) {
+  const name = radio.name();
+  if (!name) {
+    return;
+  }
+
+  let group = radioGroups.get(name);
+  if (!group) {
+    group = new Set();
+    radioGroups.set(name, group);
+  }
+  group.add(radio);
+}
+
+function unregisterRadio(radio) {
+  const name = radio.name();
+  if (!name) {
+    return;
+  }
+
+  const group = radioGroups.get(name);
+  group?.delete(radio);
+  if (group && group.size === 0) {
+    radioGroups.delete(name);
+  }
+}
+
+function createRadioDot() {
+  return new HtmlElementNode('span').className('yoya-vradio-dot').styles({
+    background: themeValue('color-primary', '#2563eb'),
+    borderRadius: '999px',
+    height: '8px',
+    width: '8px'
+  });
+}
+
+export class VRadios extends HtmlElementNode {
+  constructor(setup = null) {
+    super('div', null);
+    this._name = '';
+    this._required = false;
+    this._changeHandler = null;
+    this._items = [];
+    this._options = [];
+
+    this.className(componentClass, 'yoya-vradios');
+    this.styles({
+      display: 'grid',
+      gap: '8px',
+      minWidth: '0'
+    });
+
+    this._setupRadios(setup);
+  }
+
+  name(value) {
+    if (value === undefined) {
+      return this._name;
+    }
+
+    this._name = resolveTextValue(value);
+    this.attr('data-name', this._name || null);
+    this._items.forEach((item) => item.name(this._name));
+    return this;
+  }
+
+  required(value) {
+    if (value === undefined) {
+      return this._required;
+    }
+
+    this._required = Boolean(value);
+    this.attr('data-required', this._required ? 'true' : null);
+    return this;
+  }
+
+  disabled(value) {
+    if (value === undefined) {
+      return this.getBooleanState('disabled');
+    }
+
+    const enabled = Boolean(value);
+
+    this.setState('disabled', enabled);
+    this.attr('aria-disabled', enabled ? 'true' : null);
+    this.style('opacity', enabled ? '0.64' : '1');
+    this._items.forEach((item) => item.disabled(enabled));
+    return this;
+  }
+
+  change(handler) {
+    if (handler === undefined) {
+      return this._changeHandler;
+    }
+
+    this._changeHandler = typeof handler === 'function' ? handler : null;
+    return this;
+  }
+
+  options(value) {
+    if (value === undefined) {
+      return this._options.slice();
+    }
+
+    this._options = Array.isArray(value) ? value.slice() : [];
+    this._renderOptions();
+    return this;
+  }
+
+  value(value) {
+    if (value === undefined) {
+      const selected = this._items.find((item) => item.checked());
+      return selected ? selected.optionValue() : null;
+    }
+
+    const target = value === null || value === undefined ? null : String(resolveTextValue(value));
+
+    this._items.forEach((item) => {
+      item.checked(String(item.optionValue()) === target);
+    });
+
+    return this;
+  }
+
+  checkedValue(value) {
+    return this.value(value);
+  }
+
+  clear() {
+    return this.value(null);
+  }
+
+  _renderOptions() {
+    const normalizedItems = this._options.map((option, index) =>
+      createRadioGroupItem(option, index)
+    );
+
+    this._items = normalizedItems;
+    replaceChildren(this, normalizedItems);
+    this._items.forEach((item) => {
+      item.on('change', () => this._handleItemChange(item));
+      if (this._name) {
+        item.name(this._name);
+      }
+    });
+    this.value(this.value());
+  }
+
+  _handleItemChange(item) {
+    if (!item.checked()) {
+      return;
+    }
+
+    this._items.forEach((otherItem) => {
+      if (otherItem !== item) {
+        otherItem.checked(false);
+      }
+    });
+
+    if (typeof this._changeHandler === 'function') {
+      this._changeHandler(item.optionValue(), this);
+    }
+  }
+
+  _setupRadios(setup) {
+    if (setup === null || setup === undefined) {
+      return;
+    }
+
+    if (typeof setup === 'function') {
+      setup(this);
+      return;
+    }
+
+    if (isPlainObject(setup)) {
+      const { children, change, disabled, name, options, required, value, ...elementConfig } =
+        setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        this.setup(elementConfig);
+      }
+
+      if (name !== undefined) {
+        this.name(name);
+      }
+
+      if (change !== undefined) {
+        this.change(change);
+      }
+
+      if (options !== undefined) {
+        this.options(options);
+      } else if (children !== undefined) {
+        this.options(children);
+      }
+
+      if (required !== undefined) {
+        this.required(required);
+      }
+
+      if (disabled !== undefined) {
+        this.disabled(disabled);
+      }
+
+      if (value !== undefined) {
+        this.value(value);
+      }
+
+      return;
+    }
+
+    if (Array.isArray(setup)) {
+      this.options(setup);
+      return;
+    }
+
+    this.options([setup]);
+  }
+}
+
 export class VField extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
@@ -2524,6 +2806,14 @@ export function vCheckboxes(first = null, second = null, third = null) {
   return createComponentFactory(VCheckboxes, first, second, third);
 }
 
+export function vRadio(first = null, second = null, third = null) {
+  return createComponentFactory(VRadio, first, second, third);
+}
+
+export function vRadios(first = null, second = null, third = null) {
+  return createComponentFactory(VRadios, first, second, third);
+}
+
 export function vField(first = null, second = null, third = null) {
   return createComponentFactory(VField, first, second, third);
 }
@@ -2543,6 +2833,8 @@ const formComponentFactories = {
   vForm,
   vFormItem,
   vInput,
+  vRadio,
+  vRadios,
   vSelect,
   vSwitch,
   vTimer,
@@ -2747,6 +3039,85 @@ function normalizeCheckboxGroupOption(option, index) {
   };
 }
 
+function createRadioGroupItem(option, index) {
+  if (option instanceof VRadio) {
+    return option;
+  }
+
+  if (option instanceof ViewNode && !(option instanceof HtmlElementNode)) {
+    return vRadio(option);
+  }
+
+  const normalized = normalizeRadioGroupOption(option, index);
+
+  return new VRadio({
+    checked: normalized.checked,
+    description: normalized.description,
+    disabled: normalized.disabled,
+    label: normalized.label,
+    optionValue: normalized.value,
+    required: normalized.required
+  });
+}
+
+function normalizeRadioGroupOption(option, index) {
+  if (typeof option === 'string' || typeof option === 'number' || typeof option === 'boolean') {
+    const text = resolveTextValue(option);
+    return {
+      label: text,
+      value: text
+    };
+  }
+
+  if (Array.isArray(option) && option.length > 0) {
+    const [value, label = value] = option;
+    return {
+      label: label ?? value ?? '',
+      value: resolveTextValue(value)
+    };
+  }
+
+  if (option instanceof VRadio) {
+    return {
+      checked: option.checked(),
+      description: option.description(),
+      disabled: option.disabled(),
+      label: option.label(),
+      required: option.required(),
+      value: option.optionValue()
+    };
+  }
+
+  if (option instanceof ViewNode) {
+    const text = option.textContent();
+    return {
+      label: option,
+      value: text
+    };
+  }
+
+  if (isPlainObject(option)) {
+    const value =
+      option.value ?? option.key ?? option.id ?? option.label ?? option.text ?? `option-${index}`;
+    const label = option.label ?? option.text ?? option.content ?? option.title ?? value;
+
+    return {
+      checked: Boolean(option.checked),
+      description: option.description,
+      disabled: Boolean(option.disabled),
+      label,
+      required: Boolean(option.required),
+      value: resolveTextValue(value)
+    };
+  }
+
+  const text = resolveTextValue(option);
+  return {
+    label: text,
+    value: text
+  };
+}
+
 function readControlValue(control) {
   if (!control) {
     return undefined;
@@ -2760,11 +3131,15 @@ function readControlValue(control) {
     return control.value();
   }
 
+  if (control instanceof VRadios) {
+    return control.value();
+  }
+
   if (control instanceof VRate) {
     return control.value();
   }
 
-  if (control instanceof VCheckbox || control instanceof VSwitch) {
+  if (control instanceof VCheckbox || control instanceof VSwitch || control instanceof VRadio) {
     return control.value();
   }
 
@@ -2821,12 +3196,17 @@ function applyControlValue(control, value) {
     return;
   }
 
+  if (control instanceof VRadios) {
+    control.value(value);
+    return;
+  }
+
   if (control instanceof VRate) {
     control.value(value);
     return;
   }
 
-  if (control instanceof VCheckbox || control instanceof VSwitch) {
+  if (control instanceof VCheckbox || control instanceof VSwitch || control instanceof VRadio) {
     control.value(value);
     return;
   }
@@ -2906,11 +3286,20 @@ function collectFormValues(node, result) {
     return result;
   }
 
+  if (node instanceof VRadios) {
+    const name = node.name();
+    if (name) {
+      assignFormValue(result, name, node.value());
+    }
+    return result;
+  }
+
   if (
     node instanceof VInput ||
     node instanceof VSelect ||
     node instanceof VTextarea ||
     node instanceof VCheckbox ||
+    node instanceof VRadio ||
     node instanceof VSwitch ||
     node instanceof VRate
   ) {
@@ -2998,10 +3387,12 @@ function validateFormControls(node, formValues = {}) {
 
     const isControl =
       current instanceof VCheckboxes ||
+      current instanceof VRadios ||
       current instanceof VInput ||
       current instanceof VSelect ||
       current instanceof VTextarea ||
       current instanceof VCheckbox ||
+      current instanceof VRadio ||
       current instanceof VSwitch ||
       current instanceof VRate ||
       (typeof current.tagName === 'function' &&
@@ -3077,7 +3468,9 @@ function findFieldControl(node) {
     node instanceof VSelect ||
     node instanceof VTextarea ||
     node instanceof VCheckboxes ||
+    node instanceof VRadios ||
     node instanceof VCheckbox ||
+    node instanceof VRadio ||
     node instanceof VSwitch ||
     node instanceof VRate
   ) {

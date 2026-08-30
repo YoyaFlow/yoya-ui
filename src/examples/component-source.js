@@ -1,6 +1,6 @@
 import { aside } from '../index.js';
 
-export function componentSource(Component, imports = []) {
+function buildImportBlock(imports = []) {
   const importSource = imports
     .map((entry) => {
       if (typeof entry === 'string') {
@@ -10,12 +10,20 @@ export function componentSource(Component, imports = []) {
       return `import { ${entry.names.join(', ')} } from '${entry.from}';`;
     })
     .join('\n');
-  const importBlock = importSource ? `${importSource}\n\n` : '';
-  const functionSource = dedentFunctionSource(
+  return importSource ? `${importSource}\n\n` : '';
+}
+
+function buildFunctionSource(Component) {
+  return dedentFunctionSource(
     Component.toString()
       .replace(/\(0,\s*__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)\)/g, '$1')
       .replace(/__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)/g, '$1')
   );
+}
+
+export function componentSource(Component, imports = []) {
+  const importBlock = buildImportBlock(imports);
+  const functionSource = buildFunctionSource(Component);
 
   return `${importBlock}export ${functionSource}`;
 }
@@ -24,13 +32,17 @@ export function ComponentSource({
   component,
   sourceComponent = component,
   imports = [],
-  title = `${sourceComponent.name} 源码`
+  title = `${sourceComponent.name} 源码`,
+  extraSource = ''
 }) {
-  const source = componentSource(sourceComponent, imports);
+  const importBlock = buildImportBlock(imports);
+  const functionSource = buildFunctionSource(sourceComponent);
+  const extraBlock = extraSource ? `${extraSource}\n\n` : '';
+  const fullSource = `${importBlock}${extraBlock}export ${functionSource}`;
 
   return {
     source() {
-      return source;
+      return fullSource;
     },
     render() {
       return aside((panel) => {
@@ -41,7 +53,7 @@ export function ComponentSource({
           pre.className('source-code');
           pre.code((code) => {
             code.attr('data-source-example', title);
-            code.text(source);
+            code.text(fullSource);
           });
         });
       });

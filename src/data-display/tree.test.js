@@ -335,6 +335,144 @@ describe('vTree', () => {
     expect(document.activeElement.getAttribute('data-node-id')).toBe('enabled');
   });
 
+  it('reports fresh node state in change events', () => {
+    const details = [];
+    const tree = vTree({
+      change: (detail) => details.push(detail),
+      checkable: true,
+      nodes: [
+        {
+          children: [{ id: 'leaf', label: '叶子' }],
+          expanded: true,
+          id: 'root',
+          label: '根节点'
+        }
+      ]
+    });
+
+    tree.check('leaf');
+    expect(details.at(-1).node.checked).toBe(true);
+    expect(details.at(-1).checkedKeys).toEqual(['leaf']);
+
+    tree.select('root');
+    expect(details.at(-1).node.selected).toBe(true);
+    expect(details.at(-1).selectedKeys).toEqual(['root']);
+
+    tree.collapseNode('root');
+    expect(details.at(-1).node.expanded).toBe(false);
+  });
+
+  it('queries checked and selected state without mutating keys', () => {
+    const tree = vTree({
+      checkable: true,
+      checkedKeys: ['a'],
+      nodes: [
+        { id: 'a', label: 'A' },
+        { id: 'b', label: 'B' }
+      ]
+    });
+
+    expect(tree.checked('a')).toBe(true);
+    expect(tree.checked('b')).toBe(false);
+    expect(tree.checkedKeys()).toEqual(['a']);
+
+    tree.select('b');
+    expect(tree.selected('b')).toBe(true);
+    expect(tree.selected('a')).toBe(false);
+    expect(tree.selectedKeys()).toEqual(['b']);
+
+    tree.checked(['a', 'b']);
+    expect(tree.checkedKeys()).toEqual(['a', 'b']);
+  });
+
+  it('skips disabled nodes when checking all', () => {
+    const tree = vTree({
+      checkable: true,
+      nodes: [
+        { disabled: true, id: 'off', label: '禁用' },
+        { id: 'on', label: '可用' }
+      ]
+    });
+
+    tree.checkAll(true);
+
+    expect(tree.checkedKeys()).toEqual(['on']);
+
+    tree.checkAll(false);
+    expect(tree.checkedKeys()).toEqual([]);
+  });
+
+  it('updates rows in place when selection changes', () => {
+    const tree = vTree({
+      nodes: [
+        { id: 'a', label: 'A' },
+        { id: 'b', label: 'B' }
+      ]
+    });
+    const element = tree.render().renderDom();
+    const rowA = element.querySelector('[data-node-id="a"]');
+
+    rowA.click();
+
+    expect(element.querySelector('[data-node-id="a"]')).toBe(rowA);
+    expect(rowA.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('updates checkbox rows in place without recreating them', () => {
+    const tree = vTree({
+      checkable: true,
+      nodes: [
+        {
+          children: [
+            { id: 'leaf-a', label: '节点 A' },
+            { id: 'leaf-b', label: '节点 B' }
+          ],
+          expanded: true,
+          id: 'root',
+          label: '分组'
+        }
+      ]
+    });
+    const element = tree.render().renderDom();
+    const rootInput = element.querySelector('[data-node-id="root"] input');
+    const leafInput = element.querySelector('[data-node-id="leaf-a"] input');
+
+    leafInput.checked = true;
+    leafInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(element.querySelector('[data-node-id="root"] input')).toBe(rootInput);
+    expect(element.querySelector('[data-node-id="leaf-a"] input')).toBe(leafInput);
+    expect(rootInput.indeterminate).toBe(true);
+    expect(rootInput.getAttribute('aria-checked')).toBe('mixed');
+  });
+
+  it('builds rows once during declarative setup', () => {
+    const icon = vi.fn((iconBox) => iconBox.span('F'));
+
+    vTree({
+      checkable: true,
+      multiple: true,
+      nodes: [{ icon, id: 'a', label: 'A' }],
+      selectable: true
+    });
+
+    expect(icon).toHaveBeenCalledTimes(1);
+  });
+
+  it('reflects selectable changes on existing rows', () => {
+    const tree = vTree({
+      nodes: [{ id: 'a', label: 'A' }]
+    });
+    const element = tree.render().renderDom();
+    const row = element.querySelector('[data-node-id="a"]');
+
+    expect(row.getAttribute('aria-selected')).toBe('false');
+
+    tree.selectable(false);
+
+    expect(row.getAttribute('aria-selected')).toBeNull();
+  });
+
   it('registers vTree as a v-prefixed parent shortcut', () => {
     const page = div((root) => {
       root.vTree({

@@ -1,4 +1,5 @@
-import { vCard, vStateNode, vText } from '../../index.js';
+import { div, vCard, vForm, vStateNode, vText } from '../../index.js';
+import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
   let output = null;
@@ -130,4 +131,156 @@ export function StateToggleExample1() {
       return changed.has('visible');
     }
   });
+}
+
+// 动态字段部分：不导出的独立组件函数，只被 StateDynamicFormExample 组合使用。
+function DynamicFormFields() {
+  const schemas = {
+    text: [{ name: 'content', label: '文本内容', placeholder: '输入文本', type: 'text' }],
+    number: [
+      { name: 'min', label: '最小值', placeholder: '0', type: 'number' },
+      { name: 'max', label: '最大值', placeholder: '100', type: 'number' }
+    ],
+    date: [{ name: 'date', label: '日期', type: 'date' }]
+  };
+
+  return vStateNode({
+    state: () => ({ type: 'text', values: {} }),
+    render(state, api) {
+      return div((body) => {
+        (schemas[state.type] || []).forEach((field) => {
+          body.vFormItem((item) => {
+            item.label(field.label);
+            item.control((editor) => {
+              editor.vInput((input) => {
+                input.attr({
+                  name: field.name,
+                  placeholder: field.placeholder || '',
+                  type: field.type || 'text'
+                });
+                input.on('input', (event) => {
+                  api.setState({
+                    values: { ...state.values, [field.name]: event.target.value }
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    },
+    update(state, api, changed) {
+      return changed.has('type');
+    },
+    setType(next) {
+      this.setState({ type: next });
+      return this;
+    }
+  });
+}
+
+export const dynamicFormFieldsSource = componentSource(DynamicFormFields, []);
+
+export function StateDynamicFormExample() {
+  const dynamicForm = DynamicFormFields();
+
+  return {
+    render() {
+      return vForm((form) => {
+        form.vFormItem((item) => {
+          item.label('类型');
+          item.control((editor) => {
+            editor.vSelect((select) => {
+              select.attr('data-state-dynamic-select', 'true');
+              select.options(['text', 'number', 'date']);
+              select.on('change', (event) => {
+                dynamicForm.setType(event.target.value);
+              });
+            });
+          });
+        });
+        form.child(dynamicForm);
+      });
+    }
+  };
+}
+
+export function StateDynamicFormDemo() {
+  const form = StateDynamicFormExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('动态表单');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('切换类型重建字段；输入值只写入 state，不重建输入框。');
+            stack.child(form);
+          });
+        });
+      });
+    }
+  };
+}
+
+export function StateMethodsExample() {
+  let countText = null;
+
+  return vStateNode({
+    state: () => ({ count: 0 }),
+    render(state) {
+      countText = vText(String(state.count));
+
+      return div((body) => {
+        body.div((row) => {
+          row.span('当前计数：');
+          row.span((el) => el.attr('data-state-methods-count', 'true').child(countText));
+        });
+      });
+    },
+    update(state) {
+      countText.textContent(String(state.count));
+    },
+    increment() {
+      this.setState({ count: this.state().count + 1 });
+      return this;
+    },
+    decrement() {
+      this.setState({ count: this.state().count - 1 });
+      return this;
+    },
+    reset() {
+      this.setState({ count: 0 });
+      return this;
+    }
+  });
+}
+
+export function StateMethodsDemo() {
+  const counter = StateMethodsExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('自定义方法');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('config 上定义的操作方法会挂到组件对象，外部按钮直接调用。');
+            stack.child(counter);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('+1', (button) => {
+            button.variant('primary').on('click', () => counter.increment());
+          });
+          footer.vButton('-1', (button) => {
+            button.on('click', () => counter.decrement());
+          });
+          footer.vButton('重置', (button) => {
+            button.on('click', () => counter.reset());
+          });
+        });
+      });
+    }
+  };
 }

@@ -1,4 +1,5 @@
 import { ViewNode, VTextNode } from '../core/node.js';
+import { allocateNumber } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
   componentClass,
@@ -12,11 +13,9 @@ import {
   themeValue
 } from '../components/shared.js';
 
-let paginationSequence = 0;
-
 export function VPagination(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const sequence = ++paginationSequence;
+  const sequence = allocateNumber();
   const state = {
     ariaLabel: '分页',
     page: 1,

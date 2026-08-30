@@ -129,4 +129,57 @@ describe('vStateNode', () => {
       'vStateNode requires a render function'
     );
   });
+
+  it('exposes custom methods defined on the config object', () => {
+    const component = vStateNode({
+      state: () => ({ count: 0 }),
+      render(state) {
+        return div(vText(String(state.count)));
+      },
+      increment() {
+        this.setState({ count: this.state().count + 1 });
+        return this;
+      },
+      reset() {
+        this.setState({ count: 0 });
+      }
+    });
+
+    expect(typeof component.increment).toBe('function');
+    expect(component.increment()).toBe(component);
+    expect(component.state()).toEqual({ count: 1 });
+
+    component.reset();
+    expect(component.state()).toEqual({ count: 0 });
+  });
+
+  it('keeps update and config render internal to vStateNode', () => {
+    const configRender = vi.fn(() => div(vText('0')));
+    const update = vi.fn();
+    const component = vStateNode({
+      state: () => ({ count: 0 }),
+      render: configRender,
+      update
+    });
+
+    expect(component.update).toBeUndefined();
+    expect(component.render()).toBe(component.render());
+
+    component.setState({ count: 1 });
+
+    expect(configRender).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws when a custom method collides with the built-in API', () => {
+    expect(() =>
+      vStateNode({
+        state: () => ({ count: 0 }),
+        render() {
+          return div(vText('0'));
+        },
+        setState() {}
+      })
+    ).toThrow(/conflicts with the built-in API/);
+  });
 });

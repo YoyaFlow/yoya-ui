@@ -12,12 +12,12 @@ import {
   themeBorder
 } from '../components/shared.js';
 
-let navbarSequence = 0;
+import { allocateId } from '../core/id.js';
 
 export class VNavbar extends HtmlElementNode {
   constructor(setup = null) {
     super('nav', null);
-    const menuId = `yoya-vnavbar-menu-${++navbarSequence}`;
+    const menuId = allocateId('yoya-vnavbar-menu');
 
     this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title');
     this._brandSubtitle = new HtmlElementNode('span').className('yoya-vnavbar-brand-subtitle');
