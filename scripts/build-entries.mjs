@@ -24,4 +24,5 @@ for (const [name, entry] of entries) {
   });
 }
 
+cpSync('src/chart/echarts.min.js', 'dist/echarts.min.js');
 cpSync('src/yoya.ui.css', 'dist/yoya.ui.css');

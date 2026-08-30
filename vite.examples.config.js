@@ -1,4 +1,21 @@
 import { defineConfig } from 'vite';
+import { cpSync } from 'node:fs';
+
+const injectEchartsScript = {
+  name: 'yoya-examples-inject-echarts',
+  transformIndexHtml(html, ctx) {
+    const filename = String(ctx.filename || '').toLowerCase();
+    if (!filename.endsWith('index.html')) {
+      return html;
+    }
+
+    const src = ctx.server ? '/src/chart/echarts.min.js' : './echarts.min.js';
+    return html.replace('</head>', `    <script src="${src}"></script>\n  </head>`);
+  },
+  closeBundle() {
+    cpSync('src/chart/echarts.min.js', 'dist/examples/echarts.min.js');
+  }
+};
 
 export default defineConfig({
   root: 'src/examples',
@@ -18,18 +35,8 @@ export default defineConfig({
         'router-params': 'router-params.html',
         'router-views': 'router-views.html',
         'router-views-top': 'router-views-top.html'
-      },
-      output: {
-        manualChunks(id) {
-          if (
-            id.includes('src/chart/echarts.min.js') ||
-            id.includes('src/chart/echarts-loader.js')
-          ) {
-            return 'echarts';
-          }
-          return undefined;
-        }
       }
     }
-  }
+  },
+  plugins: [injectEchartsScript]
 });
