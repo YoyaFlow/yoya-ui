@@ -14,11 +14,7 @@ export class ClientOnlyNode extends ViewNode {
 
   _resolve() {
     if (!this._resolved) {
-      const resolved = typeof this._loader === 'function' ? this._loader() : this._loader;
-      if (!(resolved instanceof ViewNode)) {
-        throw new TypeError('vClientOnly loader must return a ViewNode');
-      }
-      this._resolved = resolved;
+      this._resolved = resolveClientOnly(this._loader);
     }
     return this._resolved;
   }
@@ -62,4 +58,23 @@ export class ClientOnlyNode extends ViewNode {
 
 export function vClientOnly(loader) {
   return new ClientOnlyNode(loader);
+}
+
+/**
+ * 与 renderToString 的 createRootNode 一致：支持 ViewNode、函数工厂与带 render() 的对象组件。
+ */
+function resolveClientOnly(value) {
+  if (value instanceof ViewNode) {
+    return value;
+  }
+
+  if (typeof value === 'function') {
+    return resolveClientOnly(value());
+  }
+
+  if (value && typeof value.render === 'function') {
+    return resolveClientOnly(value.render());
+  }
+
+  throw new TypeError('vClientOnly loader must return a ViewNode or a component object');
 }
