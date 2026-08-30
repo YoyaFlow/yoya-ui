@@ -262,6 +262,21 @@ export class Router extends ElementNode {
     return this;
   }
 
+  /**
+   * 服务端渲染入口：按路径解析并渲染匹配视图到自身节点，不依赖 window。
+   * 守卫返回 false 时不提交；异步视图在服务端序列化其 loading 视图。
+   */
+  renderPath(path) {
+    const resolved = this._resolve(path);
+
+    if (!this._canEnter(resolved.context)) {
+      return this;
+    }
+
+    this._renderResolved(resolved);
+    return this;
+  }
+
   currentPath() {
     return this._currentPath;
   }
