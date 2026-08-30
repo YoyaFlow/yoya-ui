@@ -17,7 +17,8 @@ const libraryDirs = [
   'src/i18n',
   'src/router',
   'src/theme',
-  'src/components'
+  'src/components',
+  'src/effects'
 ];
 
 const SHARED_CLASS = 'yoya-component';

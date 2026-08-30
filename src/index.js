@@ -11,3 +11,4 @@ export * from './async/index.js';
 export * from './i18n/index.js';
 export * from './theme/index.js';
 export * from './router/index.js';
+export * from './effects/index.js';

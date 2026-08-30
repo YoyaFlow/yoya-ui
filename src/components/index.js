@@ -15,3 +15,4 @@ export * from '../data-display/progress.js';
 export * from '../data-display/vscroll.js';
 export * from '../data-display/tree.js';
 export * from '../i18n/index.js';
+export * from '../effects/index.js';
