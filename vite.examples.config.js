@@ -5,6 +5,7 @@ export default defineConfig({
   base: './',
   build: {
     emptyOutDir: true,
+    minify: false,
     outDir: '../../dist/examples',
     rollupOptions: {
       external: ['yoya-ui/ui'],
