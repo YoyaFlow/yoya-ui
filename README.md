@@ -1,13 +1,13 @@
 # yoya-ui
 
-> Browser-native UI library with a declarative HTML DSL — no virtual DOM, no JSX/SFC, no build chain.
+> Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build chain.
 > 面向后端与全栈开发者的轻量原生 JS UI 基础库：小核心 + 开放标准 + 官方组件库。
 
-yoya-ui 直接在真实 DOM 上构建视图：声明式 HTML DSL、组件库、路由、i18n、主题与状态系统开箱即用，支持服务端渲染（SSR）与纯客户端渲染同代码切换。
+yoya-ui 直接在真实 DOM 上构建视图：声明式 HTML 写法、组件库、路由、i18n、主题与状态系统开箱即用，支持服务端渲染（SSR）与纯客户端渲染同代码切换。
 
 ## 特性
 
-- **声明式 HTML DSL**：直接用原生元素描述界面，无需 JSX/SFC 与编译步骤
+- **声明式 HTML 构建**：直接用原生元素描述界面，无需 JSX/SFC 与编译步骤
 - **开箱即用的组件库**：表单、导航、反馈、数据展示、布局、图表等高频场景开箱即用
 - **内置路由 / i18n / 主题 / 状态管理**：单页应用所需能力自带，无需额外选型
 - **服务端渲染**：一套代码双模式可切换，整站服务端渲染与局部组件客户端加载加强均可用
@@ -84,7 +84,7 @@ import 'yoya-ui/ui.css'; // 默认样式与主题变量
 
 | 分类        | 内容                                                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| HTML DSL    | WHATWG 全量元素工厂，`HtmlElementNode` 嵌套快捷方法                                                                       |
+| HTML 元素   | WHATWG 全量元素工厂，`HtmlElementNode` 嵌套快捷方法                                                                       |
 | SVG         | `svg()` 命名空间入口与内置图标（`SearchOutlined` 等）                                                                     |
 | 布局        | `flex` / `grid` / `stack` / `container` / `vRow` / `vCol` / `vContainer` / `mobileLayout` / `themeShell`                  |
 | 动作        | `vButton` / `vButtons` / `vFloatButton` / `vDropdownMenu` / `vContextMenu`                                                |
