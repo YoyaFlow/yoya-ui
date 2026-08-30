@@ -163,6 +163,23 @@ const carouselSelectors = [
   ".yoya-vcarousel-dot[aria-selected='true']"
 ];
 
+const effectsSelectors = [
+  '.yoya-vglow-button',
+  '.yoya-vglow-button .yoya-vbutton-label',
+  '.yoya-vglow-button .yoya-vbutton-spinner',
+  '.yoya-vglow-button::before',
+  ".yoya-vglow-button[data-glow-play='hover']",
+  ".yoya-vglow-button[data-glow-play='hover']:hover::before",
+  ".yoya-vglow-button[data-glow-speed='slow']",
+  ".yoya-vglow-button[data-glow-speed='fast']",
+  ".yoya-vglow-button[data-glow-direction='rtl']",
+  ".yoya-vglow-button[data-glow-strength='soft']",
+  '.yoya-vglow-button[disabled]::before',
+  '.yoya-vglow-button .yoya-vglow-button-ripple',
+  '@keyframes yoya-glow-button-sweep',
+  '@keyframes yoya-glow-button-ripple'
+];
+
 describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
@@ -196,6 +213,12 @@ describe('CSS style contract', () => {
 
   it('covers the carousel selectors', () => {
     carouselSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the effects glow button selectors', () => {
+    effectsSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });
