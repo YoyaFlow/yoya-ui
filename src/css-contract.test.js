@@ -223,6 +223,17 @@ describe('CSS style contract', () => {
     });
   });
 
+  it('keeps a static glow sheen under prefers-reduced-motion', () => {
+    const reducedBlocks =
+      css.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g) ?? [];
+    const glowBlock =
+      reducedBlocks.find((block) => block.includes('.yoya-vglow-button::before')) ?? '';
+
+    expect(glowBlock).toContain('animation: none !important;');
+    expect(glowBlock).toContain('left: 35%');
+    expect(glowBlock).toContain('width: 30%');
+  });
+
   it('hides scrollbars on aside and main layout regions', () => {
     expect(css).toMatch(
       /:where\(\.yoya-vaside\),\s*:where\(\.yoya-vmain\) \{\s*-ms-overflow-style: none;\s*scrollbar-width: none;/

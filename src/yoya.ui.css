@@ -1974,3 +1974,23 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .yoya-vglow-button::before {
+    animation: none !important;
+    left: 35%;
+    width: 30%;
+  }
+
+  .yoya-vglow-button[data-glow-play='hover']::before,
+  .yoya-vglow-button[data-glow-play='off']::before,
+  .yoya-vglow-button[disabled]::before,
+  .yoya-vglow-button[data-interaction='disabled']::before {
+    opacity: 0 !important;
+  }
+
+  .yoya-vglow-button[data-glow-play='hover']:hover::before,
+  .yoya-vglow-button[data-glow-play='hover']:focus-visible::before {
+    opacity: 1 !important;
+  }
+}
