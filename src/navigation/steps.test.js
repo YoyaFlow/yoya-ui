@@ -82,6 +82,16 @@ describe('vSteps', () => {
     expect(connectors[2].style.display).toBe('none');
   });
 
+  it('shows an explicit visible display on non-last connectors', () => {
+    const steps = vSteps({ items: ['A', 'B', 'C'] });
+    const element = steps.renderDom();
+    const connectors = element.querySelectorAll('.yoya-vsteps-connector');
+
+    expect(connectors[0].style.display).toBe('block');
+    expect(connectors[1].style.display).toBe('block');
+    expect(connectors[2].style.display).toBe('none');
+  });
+
   it('replaces items and registers vSteps as a parent shortcut', () => {
     const root = div();
     root.vSteps({ current: 0, items: ['X'] });

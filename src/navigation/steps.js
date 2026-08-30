@@ -348,7 +348,7 @@ export class VStep extends HtmlElementNode {
       );
     }
 
-    this._connector.style('display', this._index < this._total - 1 ? null : 'none');
+    this._connector.style('display', this._index < this._total - 1 ? 'block' : 'none');
 
     if (this._stepsDirection === 'vertical') {
       this.style('gridTemplateColumns', 'auto minmax(0, 1fr)');
