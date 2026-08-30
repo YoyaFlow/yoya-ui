@@ -129,9 +129,9 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(12);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(4);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(5);
     expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(12);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(69);
+    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(70);
     expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
     expect(
       document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent

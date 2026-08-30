@@ -31,6 +31,7 @@ const chartOption = {
 export function createSsrPage(initial = {}) {
   const locale = createI18n({ language: initial.locale || 'zh-CN', messages });
   const router = createRouter();
+  router.mode(initial.mode || 'hash');
   router.route('/home', locale.t('welcome'));
   router.route('/chart', locale.t('chartPage'));
   router.notFound('未找到');

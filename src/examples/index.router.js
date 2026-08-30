@@ -32,7 +32,8 @@ const componentMenuSections = [
       { label: 'HTML 原生元素', details: 'div / button / input / output' },
       { label: '组件', details: 'A 薄工厂 / B 对象组件' },
       { label: '国际化', details: 'I18n / createI18n / i18nText' },
-      { label: '状态节点', details: 'vStateNode' }
+      { label: '状态节点', details: 'vStateNode' },
+      { label: '服务端渲染', details: 'renderToString / hydrate / mount' }
     ]
   },
   {
@@ -195,6 +196,7 @@ const docsRouteLoaders = Object.freeze({
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
   'guides:7': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:8': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:9': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
   'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:1': () => import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
   'general:2': () => import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
@@ -607,7 +609,12 @@ function createOverviewView() {
             details: 'A 薄工厂 / B 对象组件'
           },
           { label: '国际化', path: '/components/guides/7', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/8', details: 'vStateNode' }
+          { label: '状态节点', path: '/components/guides/8', details: 'vStateNode' },
+          {
+            label: '服务端渲染',
+            path: '/components/guides/9',
+            details: 'renderToString / hydrate / mount'
+          }
         ].forEach((guide) => {
           grid.a((card) => {
             card.className('components-overview-card components-overview-guide-card');
