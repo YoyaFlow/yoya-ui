@@ -1,4 +1,4 @@
-import { ComponentNode, resolveTarget, ViewNode } from './node.js';
+import { ComponentNode, resolveTarget, ViewNode, VTextNode } from './node.js';
 import { createIdAllocator, withIdAllocator } from './id.js';
 
 /**
@@ -104,4 +104,81 @@ export function mount(component, target, state = null) {
 
     return node;
   });
+}
+
+/**
+ * 客户端 hydration：收养服务端生成的 DOM（不重建元素），绑定 pending 事件，
+ * 并让属性/文本按客户端树对齐。渲染确定性的前提下，节点身份保持不变。
+ */
+export function hydrate(component, target, state = null) {
+  return withIdAllocator(createIdAllocator(), () => {
+    const node = createRootNode(component, state);
+    const parent = resolveTarget(target);
+
+    if (parent) {
+      const rootElement = parent.firstElementChild;
+      if (rootElement) {
+        adoptElement(node, rootElement);
+        bindElement(node);
+        node.renderDom();
+      } else {
+        parent.appendChild(node.renderDom());
+      }
+    }
+
+    return node;
+  });
+}
+
+function adoptElement(node, existing) {
+  if (node instanceof ComponentNode) {
+    adoptElement(node._resolve(), existing);
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    if (existing && existing.nodeType === 3) {
+      node._textNode = existing;
+      node._el = existing;
+      if (existing.textContent !== node._content) {
+        existing.textContent = node._content;
+      }
+    } else {
+      replaceExisting(existing, node.renderDom());
+    }
+    return;
+  }
+
+  if (existing && existing.nodeType === 1 && existing.tagName.toLowerCase() === node._tagName) {
+    node._el = existing;
+    node._hydrated = true;
+    const childNodes = Array.from(existing.childNodes);
+    node.children().forEach((child, index) => adoptElement(child, childNodes[index]));
+    return;
+  }
+
+  replaceExisting(existing, node.renderDom());
+}
+
+function bindElement(node) {
+  if (node instanceof ComponentNode) {
+    bindElement(node._resolve());
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  if (node._el && node._hydrated) {
+    node._applyBindingsToElement();
+  }
+
+  node.children().forEach(bindElement);
+}
+
+function replaceExisting(existing, created) {
+  if (existing && existing.parentNode) {
+    existing.parentNode.replaceChild(created, existing);
+  }
 }

@@ -723,7 +723,7 @@ export class ElementNode extends ViewNode {
   /**
    * DOM 首次创建时，把之前记录的属性、样式、事件和子节点一次性同步。
    */
-  _applySnapshotToElement() {
+  _applyBindingsToElement() {
     Object.entries(this._attrs).forEach(([name, value]) => applyAttribute(this._el, name, value));
     this._syncClassName();
     Object.entries(this._styles).forEach(([name, value]) => {
@@ -735,6 +735,10 @@ export class ElementNode extends ViewNode {
         this._cleanup.push(() => this._el.removeEventListener(eventName, handler, options));
       });
     });
+  }
+
+  _applySnapshotToElement() {
+    this._applyBindingsToElement();
     this._children.forEach((child) => {
       const childElement = child.renderDom();
       if (childElement) {
