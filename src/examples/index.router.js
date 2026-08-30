@@ -30,7 +30,7 @@ const componentMenuSections = [
       { label: '设计理念', details: 'Design Philosophy' },
       { label: '安装方式', details: 'Installation' },
       { label: 'HTML 原生元素', details: 'div / button / input / output' },
-      { label: '定义组件', details: 'A 薄工厂 / B 对象组件 / C 类节点' },
+      { label: '组件', details: 'A 薄工厂 / B 对象组件' },
       { label: '国际化', details: 'I18n / createI18n / i18nText' },
       { label: '状态节点', details: 'vStateNode' }
     ]
@@ -40,11 +40,16 @@ const componentMenuSections = [
     title: '通用',
     items: [
       { label: '按钮', details: 'vButton' },
-      { label: '按钮组', details: 'vButtons', status: 'planned' },
-      { label: '悬浮按钮', details: 'vFloatButton', status: 'planned' },
+      { label: '按钮组', details: 'vButtons' },
+      { label: '悬浮按钮', details: 'vFloatButton' },
       { label: '图标', details: 'SearchOutlined / UploadOutlined' },
       { label: 'SVG 动画', details: 'requestAnimationFrame / stroke-dashoffset' }
     ]
+  },
+  {
+    id: 'effects',
+    title: '特效组件',
+    items: [{ label: '按钮', details: 'vGlowButton' }]
   },
   {
     id: 'layout',
@@ -89,7 +94,7 @@ const componentMenuSections = [
       { label: '输入框', details: 'vInput' },
       { label: '选择框', details: 'vSelect' },
       { label: '多选框', details: 'vCheckbox / vCheckboxes' },
-      { label: '单选框', details: 'vRadio', status: 'planned' },
+      { label: '单选框', details: 'vRadio' },
       { label: '文本域', details: 'vTextarea' },
       { label: '开关', details: 'vSwitch' },
       { label: '字段', details: 'vField' },
@@ -145,7 +150,10 @@ const componentMenuSections = [
   {
     id: 'third-party',
     title: '第三方扩展',
-    items: [{ label: 'ECharts 图表', details: 'vEchart / VEchart' }]
+    items: [
+      { label: 'ECharts 图表', details: 'vEchart / VEchart' },
+      { label: 'Signals 状态管理', details: 'signal / computed / effect' }
+    ]
   },
   {
     id: 'theme',
@@ -188,8 +196,11 @@ const docsRouteLoaders = Object.freeze({
   'guides:7': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:8': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
+  'general:1': () => import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
+  'general:2': () => import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
   'general:3': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
   'general:4': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
+  'effects:0': () => import('./effects-docs.js').then((m) => m.GlowButtonDocumentationPage()),
   'layout:0': () => import('./layout-docs.js').then((m) => m.DividerDocumentationPage()),
   'layout:1': () => import('./layout-docs.js').then((m) => m.FlexDocumentationPage()),
   'layout:2': () => import('./layout-docs.js').then((m) => m.GridDocumentationPage()),
@@ -211,6 +222,7 @@ const docsRouteLoaders = Object.freeze({
   'feedback:2': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:0': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
   'form:7': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
+  'form:4': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
   'data-display:0': () => import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
   'data-display:1': () => import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
   'data-display:2': () => import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
@@ -222,6 +234,7 @@ const docsRouteLoaders = Object.freeze({
   'data-display:10': () =>
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
   'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
+  'third-party:1': () => import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
   'theme:0': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
 });
 
@@ -401,8 +414,6 @@ function createComponentsView(appRouter) {
             entryView.text(item.label);
             if (item.status === 'planned') {
               entryView.shortcut('待开发');
-            } else if (item.details) {
-              entryView.shortcut(item.details);
             }
             entryView.on('click', () => appRouter.navigate(path));
           });
@@ -591,9 +602,9 @@ function createOverviewView() {
             details: 'div / button / input / output'
           },
           {
-            label: '定义组件',
+            label: '组件',
             path: '/components/guides/6',
-            details: 'A 薄工厂 / B 对象组件 / C 类节点'
+            details: 'A 薄工厂 / B 对象组件'
           },
           { label: '国际化', path: '/components/guides/7', details: 'I18n / createI18n / .s()' },
           { label: '状态节点', path: '/components/guides/8', details: 'vStateNode' }

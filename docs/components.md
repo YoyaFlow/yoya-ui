@@ -9,6 +9,10 @@
 3. 悬浮按钮 vFloatButton（待开发）
 4. SVG 图标 SearchOutlined / UploadOutlined 等
 
+### 特效组件
+
+1. 流光按钮 vGlowButton
+
 ### 布局
 
 1. 分割线 divider

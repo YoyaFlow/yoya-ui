@@ -389,6 +389,136 @@ const buttonExtraRules = [
   ['.button-demo-form', { display: 'grid', gap: '12px' }]
 ];
 
+const buttonGroupExtraRules = [
+  ['.components-button-group-docs', { display: 'grid', gap: '20px' }],
+  [
+    '.components-button-group-docs h1',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }
+  ],
+  [
+    '.components-button-group-docs > p',
+    { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }
+  ],
+  [
+    '.components-button-group-demo',
+    {
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  [
+    '.components-button-group-demo h3',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-button-group-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-button-group-demo .yoya-vcard', { margin: '0' }],
+  ['.components-button-group-demo-live .yoya-vcard-body', { width: '100%' }]
+];
+
+const floatButtonExtraRules = [
+  ['.components-float-button-docs', { display: 'grid', gap: '20px' }],
+  [
+    '.components-float-button-docs h1',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }
+  ],
+  [
+    '.components-float-button-docs > p',
+    { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }
+  ],
+  [
+    '.components-float-button-demo',
+    {
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  [
+    '.components-float-button-demo h3',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-float-button-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-float-button-demo .yoya-vcard', { margin: '0' }],
+  ['.components-float-button-demo-live .yoya-vcard-body', { width: '100%' }]
+];
+
+const effectsExtraRules = [
+  ['.components-glow-button-docs', { display: 'grid', gap: '20px' }],
+  [
+    '.components-glow-button-docs h1',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }
+  ],
+  [
+    '.components-glow-button-docs > p',
+    { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }
+  ],
+  [
+    '.components-glow-button-demo',
+    {
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  [
+    '.components-glow-button-demo h3',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-glow-button-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-glow-button-demo .yoya-vcard', { margin: '0' }],
+  ['.components-glow-button-demo-live .yoya-vcard-body', { width: '100%' }]
+];
+
+const radioExtraRules = [
+  ['.components-radio-docs', { display: 'grid', gap: '20px' }],
+  ['.components-radio-docs h1', { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }],
+  ['.components-radio-docs > p', { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }],
+  [
+    '.components-radio-demo',
+    {
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  [
+    '.components-radio-demo h3',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-radio-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-radio-demo .yoya-vcard', { margin: '0' }],
+  ['.components-radio-demo-live .yoya-vcard-body', { width: '100%' }]
+];
+
 const dataDisplayExtraRules = [
   ['.components-data-display-demo-live .yoya-vtable', { width: '100%' }]
 ];
@@ -703,6 +833,66 @@ const thirdPartyExtraRules = [
   ['.components-echarts-demo .yoya-vechart', { minWidth: '0', width: '100%' }]
 ];
 
+const signalsExtraRules = [
+  ['.components-signals-page', { display: 'grid', gap: '20px' }],
+  [
+    '.components-signals-page h1',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }
+  ],
+  ['.components-signals-page > p', { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }],
+  [
+    '.components-signals-grid',
+    {
+      display: 'grid',
+      gap: '16px',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      minWidth: '0',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-signals-demo',
+    {
+      display: 'grid',
+      gap: '12px',
+      minWidth: '0',
+      padding: '20px 0 0'
+    }
+  ],
+  [
+    '.components-signals-demo h3',
+    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
+  ],
+  [
+    '.components-signals-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-signals-demo .yoya-vcard', { margin: '0' }],
+  [
+    '.components-signals-shared-grid',
+    {
+      display: 'grid',
+      gap: '12px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+      minWidth: '0',
+      width: '100%'
+    }
+  ],
+  ['.components-signals-shared-grid .yoya-vcard', { margin: '0' }],
+  ['.components-signals-usage, .components-signals-advantages', { display: 'grid', gap: '10px' }],
+  [
+    '.components-signals-usage ul, .components-signals-advantages ul',
+    { display: 'grid', gap: '6px', margin: '0', paddingLeft: '20px' }
+  ],
+  [
+    '.components-signals-usage li, .components-signals-advantages li',
+    { color: 'var(--yoya-color-text-muted, #5a6575)', lineHeight: '1.6' }
+  ]
+];
+
 const definitionExtraRules = [
   ['.components-definition-page', { display: 'grid', gap: '20px' }],
   [
@@ -823,12 +1013,17 @@ const demoRules = [
   ...baseRules,
   ...layoutExtraRules,
   ...buttonExtraRules,
+  ...buttonGroupExtraRules,
+  ...floatButtonExtraRules,
+  ...effectsExtraRules,
+  ...radioExtraRules,
   ...dataDisplayExtraRules,
   ...feedbackExtraRules,
   ...navigationExtraRules,
   ...iconExtraRules,
   ...svgExtraRules,
   ...thirdPartyExtraRules,
+  ...signalsExtraRules,
   ...definitionExtraRules,
   ...i18nExtraRules,
   ...stateExtraRules,
