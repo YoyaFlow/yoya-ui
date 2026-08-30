@@ -11,7 +11,8 @@ describe('SSR example page', () => {
     expect(html).toContain('SSR 示例');
     expect(html).toContain('欢迎使用服务端渲染');
     expect(html).toContain('该项为必填');
-    expect(html).toContain('yoya-vechart');
+    expect(html).toContain('data-client-only');
+    expect(html).not.toContain('yoya-vechart');
 
     document.body.innerHTML = `<div id="app">${html}</div>`;
     hydrate(createSsrPage, '#app', parseState(state));
@@ -19,6 +20,7 @@ describe('SSR example page', () => {
     expect(document.querySelector('#app').textContent).toContain('欢迎使用服务端渲染');
     expect(document.querySelector('#app [data-error]')).not.toBeNull();
     expect(document.querySelector('#app').textContent).not.toContain('图表页');
+    expect(document.querySelector('#app .yoya-vechart')).not.toBeNull();
 
     const input = document.querySelector('#app input[name="email"]');
     input.value = 'user@example.com';

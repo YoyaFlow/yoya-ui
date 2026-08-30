@@ -15,6 +15,7 @@ export {
   text,
   vText
 } from './node.js';
+export { ClientOnlyNode, vClientOnly } from './client-only.js';
 export {
   I18n,
   I18nTextNode,

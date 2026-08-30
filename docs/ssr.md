@@ -33,6 +33,20 @@ function createPage(initial) {
 - 表单校验规则保持纯函数：服务端先 `validate()` 把错误状态烘焙进首屏 HTML，客户端同一套规则继续校验；用户 JS 加载前的输入由 hydration 阶段从 DOM 回写。
 - i18n 每请求创建 `createI18n()` 实例；`.s()` 快捷方式用 `withI18nStringShortcut(locale, build)` 作用域化，共享单例不被请求修改。
 
+## 局部客户端加载（Islands）
+
+页面整体服务端渲染时，个别非 SSR 组件模块（如 ECharts 图表）用 `vClientOnly(loader)` 标记：
+
+- 服务端 `toHTML()` 只输出占位 div（`data-client-only`），不加载模块；
+- hydration 阶段占位被真实组件替换，模块在浏览器端加载并初始化；
+- 组件交互仍由自身客户端渲染路径提供。
+
+```js
+div((root) => {
+  root.child(vClientOnly(() => vEchart({ option: chartOption })));
+});
+```
+
 ## 开发纪律
 
 - `render()` 与 `toHTML()` 路径保持 DOM-free 且确定性：不读 `document`/`window`，不用 `Date.now()`/`Math.random()` 影响输出。

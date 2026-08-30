@@ -1,4 +1,13 @@
-import { createI18n, createRouter, div, vForm, vFormItem, vInput, vLink } from '../../index.js';
+import {
+  createI18n,
+  createRouter,
+  div,
+  vClientOnly,
+  vForm,
+  vFormItem,
+  vInput,
+  vLink
+} from '../../index.js';
 import { vEchart } from '../../yoya.echart.js';
 
 const messages = {
@@ -50,7 +59,7 @@ export function createSsrPage(initial = {}) {
     });
     root.child(router);
     root.child(form);
-    root.child(vEchart({ option: chartOption }));
+    root.child(vClientOnly(() => vEchart({ option: chartOption })));
   });
 
   router.renderPath(initial.path || '/home');

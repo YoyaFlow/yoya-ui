@@ -112,7 +112,9 @@ function SsrLiveDemo() {
             host.span('等待 hydration…');
           });
           body.p('填写邮箱可清除服务端烘焙的必填错误；点击导航链接切换路由。');
-          body.p('页面底部为 ECharts 占位容器，hydration 后由浏览器初始化柱状图。');
+          body.p(
+            '图表是局部客户端加载模块：服务端 HTML 只有占位 div，hydration 后浏览器加载并初始化柱状图。'
+          );
         });
       });
     },
