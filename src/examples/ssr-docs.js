@@ -1,5 +1,6 @@
 import { section, vCard, vText } from '../index.js';
 import { hydrate, parseState, renderToString } from '../yoya.ssr.js';
+import '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
 import { createSsrPage } from './ssr/page.js';
 
@@ -111,6 +112,7 @@ function SsrLiveDemo() {
             host.span('等待 hydration…');
           });
           body.p('填写邮箱可清除服务端烘焙的必填错误；点击导航链接切换路由。');
+          body.p('页面底部为 ECharts 占位容器，hydration 后由浏览器初始化柱状图。');
         });
       });
     },
