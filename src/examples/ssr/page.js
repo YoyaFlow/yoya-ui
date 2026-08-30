@@ -37,7 +37,7 @@ const chartOption = {
  * SSR 页面工厂：每请求创建独立实例，locale 与当前路由来自请求上下文。
  * 服务端与客户端都调用 createSsrPage(initialState)，保证双端一致。
  */
-export function createSsrPage(initial = {}) {
+export function createSsrPage(initial = {}, deps = {}) {
   const locale = createI18n({ language: initial.locale || 'zh-CN', messages });
   const router = createRouter();
   router.mode(initial.mode || 'hash');
@@ -59,7 +59,15 @@ export function createSsrPage(initial = {}) {
     });
     root.child(router);
     root.child(form);
-    root.child(vClientOnly(() => vEchart({ option: chartOption })));
+    root.child(
+      vClientOnly(() =>
+        vEchart({
+          echartsLib: deps.echartsLib,
+          option: chartOption,
+          renderer: 'svg'
+        })
+      )
+    );
   });
 
   router.renderPath(initial.path || '/home');

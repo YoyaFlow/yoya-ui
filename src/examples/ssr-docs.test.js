@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { SsrDocumentationPage } from './ssr-docs.js';
 
+const mockCanvasContext = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      if (prop === 'canvas') {
+        return document.createElement('canvas');
+      }
+      if (prop === 'measureText') {
+        return () => ({ width: 0 });
+      }
+      return typeof prop === 'string' ? () => {} : undefined;
+    }
+  }
+);
+
+beforeAll(() => {
+  HTMLCanvasElement.prototype.getContext = () => mockCanvasContext;
+});
+
 describe('SSR docs page', () => {
   it('renders the demo and hydrates the live host', async () => {
     const page = SsrDocumentationPage();

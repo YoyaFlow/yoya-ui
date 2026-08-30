@@ -1,8 +1,10 @@
 import { section, vCard, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
-import '../chart/echarts-loader.js';
+import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
 import { createSsrPage } from './ssr/page.js';
+
+const createDemoPage = (state) => createSsrPage(state, { echartsLib: echarts });
 
 const outputStyles = {
   background: 'var(--yoya-color-surface-hover, #f6f8fa)',
@@ -44,7 +46,7 @@ function SsrLiveDemo() {
   });
 
   const renderServer = () => {
-    serverResult = renderToString(createSsrPage, { state: currentState() });
+    serverResult = renderToString(createDemoPage, { state: currentState() });
     htmlText.textContent(serverResult.html);
     stateText.textContent(serverResult.state);
     modeText.textContent('当前模式：服务端渲染（renderToString → hydrate）');
@@ -64,9 +66,9 @@ function SsrLiveDemo() {
 
     if (state.renderMode === 'ssr') {
       host.innerHTML = serverResult.html;
-      hydrate(createSsrPage, host, parseState(serverResult.state));
+      hydrate(createDemoPage, host, parseState(serverResult.state));
     } else {
-      mount(createSsrPage, host, currentState());
+      mount(createDemoPage, host, currentState());
     }
   };
 
