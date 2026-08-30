@@ -176,6 +176,8 @@ const effectsSelectors = [
   ".yoya-vglow-button[data-glow-strength='soft']",
   '.yoya-vglow-button[disabled]::before',
   '.yoya-vglow-button .yoya-vglow-button-ripple',
+  ".yoya-vglow-button[data-glow-motion='always']::before",
+  ".yoya-vglow-button[data-glow-motion='always'] .yoya-vglow-button-ripple",
   '@keyframes yoya-glow-button-sweep',
   '@keyframes yoya-glow-button-ripple'
 ];
@@ -228,10 +230,14 @@ describe('CSS style contract', () => {
       css.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g) ?? [];
     const glowBlock =
       reducedBlocks.find((block) => block.includes('.yoya-vglow-button::before')) ?? '';
+    const alwaysBlock =
+      reducedBlocks.find((block) => block.includes("data-glow-motion='always'")) ?? '';
 
     expect(glowBlock).toContain('animation: none !important;');
     expect(glowBlock).toContain('left: 35%');
     expect(glowBlock).toContain('width: 30%');
+    expect(alwaysBlock).toContain('animation: yoya-glow-button-sweep');
+    expect(alwaysBlock).toContain('!important');
   });
 
   it('hides scrollbars on aside and main layout regions', () => {

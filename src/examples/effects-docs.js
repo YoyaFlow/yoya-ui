@@ -4,7 +4,7 @@ import { ComponentSource } from './component-source.js';
 // 核心组件：只包含流光按钮内容，不包含 Card。
 function GlowButtonBasicExample() {
   const output = vText('等待点击');
-  const button = vGlowButton('立即部署').variant('primary');
+  const button = vGlowButton('立即部署').variant('primary').glow({ motion: 'always' });
 
   button.on('click', () => {
     output.textContent('已启动部署');
@@ -26,15 +26,19 @@ function GlowButtonBasicExample() {
 function GlowButtonSpeedDirectionExample() {
   return hstack({ gap: '12px' }, (row) => {
     row.style('alignItems', 'center');
-    row.child(vGlowButton('慢速 · 从左到右').glow({ speed: 'slow', direction: 'ltr' }));
-    row.child(vGlowButton('快速 · 从右到左').glow({ speed: 'fast', direction: 'rtl' }));
+    row.child(
+      vGlowButton('慢速 · 从左到右').glow({ motion: 'always', speed: 'slow', direction: 'ltr' })
+    );
+    row.child(
+      vGlowButton('快速 · 从右到左').glow({ motion: 'always', speed: 'fast', direction: 'rtl' })
+    );
   });
 }
 
 function GlowButtonHoverExample() {
   return hstack({ gap: '12px' }, (row) => {
     row.style('alignItems', 'center');
-    row.child(vGlowButton('悬停触发流光').glow({ play: 'hover' }));
+    row.child(vGlowButton('悬停触发流光').glow({ motion: 'always', play: 'hover' }));
     row.child(vGlowButton('关闭流光').glow({ play: 'off' }));
   });
 }
@@ -43,7 +47,7 @@ function GlowButtonVariantsExample() {
   return hstack({ gap: '12px' }, (row) => {
     row.style('alignItems', 'center');
     ['primary', 'secondary', 'danger', 'ghost'].forEach((variant) => {
-      row.child(vGlowButton(variant).variant(variant));
+      row.child(vGlowButton(variant).variant(variant).glow({ motion: 'always' }));
     });
   });
 }
@@ -51,7 +55,7 @@ function GlowButtonVariantsExample() {
 function GlowButtonStatesExample() {
   return hstack({ gap: '12px' }, (row) => {
     row.style('alignItems', 'center');
-    row.child(vGlowButton('执行中').variant('primary').loading(true));
+    row.child(vGlowButton('执行中').variant('primary').loading(true).glow({ motion: 'always' }));
     row.child(vGlowButton('不可用').disabled(true));
   });
 }
@@ -257,9 +261,14 @@ export function GlowButtonDocumentationPage() {
                   "vGlowButton('立即部署')"
                 ],
                 [
-                  'button.glow({ play, speed, direction, strength, ripple })',
+                  'button.glow({ motion, play, speed, direction, strength, ripple })',
                   '批量配置流光与点击涟漪参数。',
                   "button.glow({ speed: 'fast', direction: 'rtl' })"
+                ],
+                [
+                  "button.motion('auto' | 'always')",
+                  '动画策略：auto 遵循系统减少动态效果（无动画时保留静态光影），always 强制流光动画。',
+                  "button.motion('always')"
                 ],
                 [
                   "button.play('auto' | 'hover' | 'off')",

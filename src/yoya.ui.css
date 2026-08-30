@@ -1982,6 +1982,20 @@
     width: 30%;
   }
 
+  .yoya-vglow-button[data-glow-motion='always']::before {
+    animation: yoya-glow-button-sweep var(--yoya-glow-duration) ease-in-out infinite !important;
+    left: -45%;
+    width: 40%;
+  }
+
+  .yoya-vglow-button[data-glow-direction='rtl'][data-glow-motion='always']::before {
+    animation-name: yoya-glow-button-sweep-rtl !important;
+  }
+
+  .yoya-vglow-button[data-glow-motion='always'] .yoya-vglow-button-ripple {
+    animation: yoya-glow-button-ripple 520ms ease-out forwards !important;
+  }
+
   .yoya-vglow-button[data-glow-play='hover']::before,
   .yoya-vglow-button[data-glow-play='off']::before,
   .yoya-vglow-button[disabled]::before,

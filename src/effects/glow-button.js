@@ -4,6 +4,7 @@ import { HtmlElementNode } from '../html/index.js';
 
 const GLOW_DEFAULTS = {
   direction: 'ltr',
+  motion: 'auto',
   play: 'auto',
   ripple: 'on',
   speed: 'normal',
@@ -12,6 +13,7 @@ const GLOW_DEFAULTS = {
 
 const GLOW_OPTIONS = {
   direction: new Set(['ltr', 'rtl']),
+  motion: new Set(['auto', 'always']),
   play: new Set(['auto', 'hover', 'off']),
   ripple: new Set(['on', 'off']),
   speed: new Set(['slow', 'normal', 'fast']),
@@ -20,6 +22,8 @@ const GLOW_OPTIONS = {
 
 /**
  * vGlowButton 流光按钮：在 vButton 语义上叠加流光扫过、光影反馈与点击光波涟漪。
+ * motion 控制动画策略：auto 遵循系统 reduced-motion（无动画时保留静态光影），
+ * always 强制流光动画（用于特效演示等需要恒定动效的场景）。
  */
 export class VGlowButton extends VButton {
   constructor(setup = null, options = null, callback = null) {
@@ -39,6 +43,7 @@ export class VGlowButton extends VButton {
     if (options === undefined) {
       return {
         direction: this.direction(),
+        motion: this.motion(),
         play: this.play(),
         ripple: this.ripple(),
         speed: this.speed(),
@@ -47,7 +52,10 @@ export class VGlowButton extends VButton {
     }
 
     if (options && typeof options === 'object') {
-      const { direction, play, ripple, speed, strength } = options;
+      const { direction, motion, play, ripple, speed, strength } = options;
+      if (motion !== undefined) {
+        this.motion(motion);
+      }
       if (play !== undefined) {
         this.play(play);
       }
@@ -94,6 +102,13 @@ export class VGlowButton extends VButton {
       return this.attr('data-glow-strength');
     }
     return this.attr('data-glow-strength', GLOW_OPTIONS.strength.has(value) ? value : 'strong');
+  }
+
+  motion(value) {
+    if (value === undefined) {
+      return this.attr('data-glow-motion');
+    }
+    return this.attr('data-glow-motion', GLOW_OPTIONS.motion.has(value) ? value : 'auto');
   }
 
   ripple(value) {

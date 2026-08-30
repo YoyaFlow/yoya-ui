@@ -17,9 +17,10 @@ describe('vGlowButton', () => {
     expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('立即部署');
   });
 
-  it('defaults to auto loop, normal speed, ltr direction, strong strength and ripple on', () => {
+  it('defaults to auto loop, auto motion, normal speed, ltr direction, strong strength and ripple on', () => {
     const element = vGlowButton('部署').renderDom();
 
+    expect(element.dataset.glowMotion).toBe('auto');
     expect(element.dataset.glowPlay).toBe('auto');
     expect(element.dataset.glowSpeed).toBe('normal');
     expect(element.dataset.glowDirection).toBe('ltr');
@@ -30,6 +31,7 @@ describe('vGlowButton', () => {
   it('configures glow options and keeps inherited button states', () => {
     const button = vGlowButton('部署').glow({
       direction: 'rtl',
+      motion: 'always',
       play: 'hover',
       ripple: 'off',
       speed: 'fast',
@@ -41,14 +43,24 @@ describe('vGlowButton', () => {
 
     expect(button.glow()).toEqual({
       direction: 'rtl',
+      motion: 'always',
       play: 'hover',
       ripple: 'off',
       speed: 'fast',
       strength: 'soft'
     });
+    expect(element.dataset.glowMotion).toBe('always');
     expect(element.dataset.variant).toBe('danger');
     expect(element.dataset.size).toBe('small');
     expect(element.getAttribute('disabled')).not.toBeNull();
+  });
+
+  it('falls back to auto motion on invalid motion values', () => {
+    const button = vGlowButton('部署').motion('invalid');
+    const element = button.renderDom();
+
+    expect(button.motion()).toBe('auto');
+    expect(element.dataset.glowMotion).toBe('auto');
   });
 
   it('supports object creation with glow options and click handlers', () => {
