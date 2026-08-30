@@ -70,8 +70,9 @@ describe('vScroll', () => {
     expect(wrappers[wrappers.length - 1].dataset.index).toBe('15');
 
     const html = scroll.toHTML();
-    expect(html.match(/yoya-vscroll-virtual-item/g)).toHaveLength(1000);
-    expect(html).toContain('项目 999');
+    expect(html.match(/yoya-vscroll-virtual-item/g)).toHaveLength(9);
+    expect(html).toContain('data-index="7"');
+    expect(html).not.toContain('项目 999');
 
     scroll.virtual(false);
 

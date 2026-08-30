@@ -347,12 +347,19 @@ export class VScroll extends HtmlElementNode {
     }
 
     const count = this._itemsData.length;
-    const allItems = this._itemsData.map((item, index) => {
-      const content = this._renderItem ? this._renderItem(item, index, this) : item;
-      return this._createVirtualItem(content, index, count);
-    });
+    const { end, start } = this._visibleRange(count);
+    const windowItems = [];
+
+    for (let index = start; index < end; index += 1) {
+      const content = this._renderItem
+        ? this._renderItem(this._itemsData[index], index, this)
+        : this._itemsData[index];
+      windowItems.push(this._createVirtualItem(content, index, count));
+    }
+
     const originalChildren = this._list._children;
-    this._list._children = allItems;
+    this._list._children = windowItems;
+    this._list.style('height', `${this._virtualListHeight(count)}px`);
 
     try {
       return super.toHTML();
