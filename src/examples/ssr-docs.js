@@ -1,5 +1,5 @@
 import { section, vCard, vText } from '../index.js';
-import { hydrate, parseState, renderToString } from '../yoya.ssr.js';
+import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
 import { createSsrPage } from './ssr/page.js';
@@ -21,39 +21,66 @@ const outputStyles = {
 
 /**
  * SSR 交互演示：浏览器内调用 renderToString 生成服务端 HTML，
- * 展示产物与序列化状态，再注入容器并 hydrate，演示事件接管。
+ * 展示产物与序列化状态，再注入容器并 hydrate；也可切换到非 SSR 模式直接 mount。
+ * 两种模式使用同一份 createSsrPage 页面工厂。
  */
 function SsrLiveDemo() {
   const hostId = 'ssr-live-host';
   const state = {
     locale: 'zh-CN',
     mode: 'history',
-    path: '/home'
+    path: '/home',
+    renderMode: 'ssr'
   };
   const htmlText = vText('');
   const stateText = vText('');
+  const modeText = vText('');
   let serverResult = null;
 
+  const currentState = () => ({
+    locale: state.locale,
+    mode: state.mode,
+    path: state.path
+  });
+
   const renderServer = () => {
-    serverResult = renderToString(createSsrPage, { state: { ...state } });
+    serverResult = renderToString(createSsrPage, { state: currentState() });
     htmlText.textContent(serverResult.html);
     stateText.textContent(serverResult.state);
+    modeText.textContent('当前模式：服务端渲染（renderToString → hydrate）');
   };
 
-  const hydrateLive = () => {
+  const renderClient = () => {
+    htmlText.textContent('非 SSR 模式：页面由 mount() 直接客户端渲染，不经过服务端。');
+    stateText.textContent(JSON.stringify(currentState()));
+    modeText.textContent('当前模式：纯客户端渲染（mount）');
+  };
+
+  const renderLive = () => {
     const host = document.getElementById(hostId);
-    if (!host || !serverResult) {
+    if (!host) {
       return;
     }
 
-    host.innerHTML = serverResult.html;
-    hydrate(createSsrPage, host, parseState(serverResult.state));
+    if (state.renderMode === 'ssr') {
+      host.innerHTML = serverResult.html;
+      hydrate(createSsrPage, host, parseState(serverResult.state));
+    } else {
+      mount(createSsrPage, host, currentState());
+    }
   };
 
-  renderServer();
+  const sync = () => {
+    if (state.renderMode === 'ssr') {
+      renderServer();
+    } else {
+      renderClient();
+    }
+    renderLive();
+  };
 
   if (typeof requestAnimationFrame === 'function') {
-    requestAnimationFrame(hydrateLive);
+    requestAnimationFrame(sync);
   }
 
   const component = {
@@ -64,6 +91,14 @@ function SsrLiveDemo() {
           body.div((controls) => {
             controls.className('ssr-demo-controls');
             controls.styles({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
+            controls.vButton('SSR 模式', (button) => {
+              button.variant(state.renderMode === 'ssr' ? 'primary' : 'secondary');
+              button.on('click', () => component.setRenderMode('ssr'));
+            });
+            controls.vButton('非 SSR 模式', (button) => {
+              button.variant(state.renderMode === 'client' ? 'primary' : 'secondary');
+              button.on('click', () => component.setRenderMode('client'));
+            });
             controls.vButton('中文', (button) => {
               button.variant(state.locale === 'zh-CN' ? 'primary' : 'secondary');
               button.on('click', () => component.setLocale('zh-CN'));
@@ -82,6 +117,7 @@ function SsrLiveDemo() {
             });
           });
 
+          body.p(modeText);
           body.h3('renderToString 输出的 HTML');
           body.pre((pre) => {
             pre.className('ssr-demo-output');
@@ -120,14 +156,17 @@ function SsrLiveDemo() {
     },
     setLocale(locale) {
       state.locale = locale;
-      renderServer();
-      hydrateLive();
+      sync();
       return component;
     },
     setPath(path) {
       state.path = path;
-      renderServer();
-      hydrateLive();
+      sync();
+      return component;
+    },
+    setRenderMode(mode) {
+      state.renderMode = mode === 'client' ? 'client' : 'ssr';
+      sync();
       return component;
     }
   };
