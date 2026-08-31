@@ -36,7 +36,8 @@
   "files": [
     "dist",
     "types",
-    "!types/tests"
+    "!types/tests",
+    "!dist/examples"
   ],
   "scripts": {
     "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
@@ -66,8 +67,16 @@
     "web-components",
     "frontend"
   ],
-  "author": "",
+  "author": "zhanglj",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoyaflow/yoya-ui.git"
+  },
+  "homepage": "https://github.com/yoyaflow/yoya-ui#readme",
+  "bugs": {
+    "url": "https://github.com/yoyaflow/yoya-ui/issues"
+  },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
