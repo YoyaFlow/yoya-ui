@@ -3,6 +3,10 @@ import { allocateId } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { VRate } from './rate.js';
+import { VSlider } from './slider.js';
+import { VCascader } from './cascader.js';
+import { VTagsInput } from './tags-input.js';
+import { VAutocomplete } from './autocomplete.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -80,7 +84,7 @@ export class VInput extends HtmlElementNode {
         boxSizing: 'border-box',
         color: themeValue('color-text', '#172033'),
         font: 'inherit',
-        minHeight: '34px',
+        minHeight: 'var(--yoya-control-height-md, 34px)',
         outline: 'none',
         padding: '0 12px',
         width: '100%'
@@ -968,7 +972,7 @@ export class VSelect extends HtmlElementNode {
       color: themeValue('color-text', '#172033'),
       cursor: 'pointer',
       font: 'inherit',
-      minHeight: '34px',
+      minHeight: 'var(--yoya-control-height-md, 34px)',
       outline: 'none',
       padding: '0 32px 0 12px',
       width: '100%'
@@ -2160,7 +2164,7 @@ export class VField extends HtmlElementNode {
       border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '6px',
       color: themeValue('color-text', '#172033'),
-      minHeight: '34px',
+      minHeight: 'var(--yoya-control-height-md, 34px)',
       padding: '8px 12px'
     });
     this._editorBox.styles({
@@ -3174,6 +3178,15 @@ function readControlValue(control) {
     return control.value();
   }
 
+  if (
+    control instanceof VSlider ||
+    control instanceof VCascader ||
+    control instanceof VTagsInput ||
+    control instanceof VAutocomplete
+  ) {
+    return control.value();
+  }
+
   if (control instanceof VCheckbox || control instanceof VSwitch || control instanceof VRadio) {
     return control.value();
   }
@@ -3237,6 +3250,16 @@ function applyControlValue(control, value) {
   }
 
   if (control instanceof VRate) {
+    control.value(value);
+    return;
+  }
+
+  if (
+    control instanceof VSlider ||
+    control instanceof VCascader ||
+    control instanceof VTagsInput ||
+    control instanceof VAutocomplete
+  ) {
     control.value(value);
     return;
   }
@@ -3336,7 +3359,11 @@ function collectFormValues(node, result) {
     node instanceof VCheckbox ||
     node instanceof VRadio ||
     node instanceof VSwitch ||
-    node instanceof VRate
+    node instanceof VRate ||
+    node instanceof VSlider ||
+    node instanceof VCascader ||
+    node instanceof VTagsInput ||
+    node instanceof VAutocomplete
   ) {
     const name = node.name();
     if (name) {
@@ -3430,6 +3457,10 @@ function validateFormControls(node, formValues = {}) {
       current instanceof VRadio ||
       current instanceof VSwitch ||
       current instanceof VRate ||
+      current instanceof VSlider ||
+      current instanceof VCascader ||
+      current instanceof VTagsInput ||
+      current instanceof VAutocomplete ||
       (typeof current.tagName === 'function' &&
         ['input', 'select', 'textarea'].includes(current.tagName()));
 
@@ -3507,7 +3538,11 @@ function findFieldControl(node) {
     node instanceof VCheckbox ||
     node instanceof VRadio ||
     node instanceof VSwitch ||
-    node instanceof VRate
+    node instanceof VRate ||
+    node instanceof VSlider ||
+    node instanceof VCascader ||
+    node instanceof VTagsInput ||
+    node instanceof VAutocomplete
   ) {
     return node;
   }
