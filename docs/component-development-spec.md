@@ -4,7 +4,7 @@
 
 当前项目已经完成 `ViewNode`、HTML、SVG、布局、I18n 和 Router 的底层能力，具备创建复杂 UI 组件的基础。但如果直接把 `button()`、`div()`、`input()` 继续暴露到页面开发层作为主要拼装方式，页面代码会逐渐回到“用基础标签堆界面”的模式。
 
-后端和全栈工程师需要的是一套更聚合的 JS Web UI 基础库：基础元素用于构建底层结构，复合组件用于承载业务页面中的常见交互、状态和视觉语义。尤其是 `button` 这类名称，如果同时代表原生 HTML 元素和复杂交互组件，会导致 API 语义混乱。
+Web 开发者需要一套更聚合的 JS Web UI 基础库：基础元素用于构建底层结构，复合组件用于承载业务页面中的常见交互、状态和视觉语义。相比 React/Vue，后端与全栈开发者也能更低门槛地上手。尤其是 `button` 这类名称，如果同时代表原生 HTML 元素和复杂交互组件，会导致 API 语义混乱。
 
 因此组件层必须建立清晰基调：基础 HTML 元素继续使用原始标签名，复杂多元素组件统一使用 `v` 前缀，例如 `vButton`、`vCard`、`vInput`、`vMenu`。
 
@@ -35,9 +35,9 @@
 
 ## User Stories
 
-1. As a backend developer, I want to call `vButton('保存')`, so that I can create a standard action button without manually assembling classes and states.
-2. As a backend developer, I want `button('保存')` to keep meaning native HTML button, so that I can still create low-level markup when needed.
-3. As a full-stack developer, I want compound components to use the `v` prefix, so that component APIs are distinguishable from HTML element factories.
+1. As a developer, I want to call `vButton('保存')`, so that I can create a standard action button without manually assembling classes and states.
+2. As a developer, I want `button('保存')` to keep meaning native HTML button, so that I can still create low-level markup when needed.
+3. As a developer, I want compound components to use the `v` prefix, so that component APIs are distinguishable from HTML element factories.
 4. As a page author, I want `page.vButton('提交')` inside setup callbacks, so that child component creation has the same ergonomic style as `page.div()` and `page.h1()`.
 5. As a page author, I want `vCard(card => { ... })`, so that common content blocks have a consistent container structure.
 6. As a page author, I want `card.vCardHeader()`、`card.vCardBody()` and `card.vCardFooter()`, so that card slots are explicit and do not conflict with HTML `header()` or `footer()`.
@@ -48,7 +48,7 @@
 11. As a page author, I want toast success, error, warning and info helpers, so that common feedback states are easy to express.
 12. As a page author, I want `vMenu` and `vMenuItem`, so that navigation and command lists have consistent keyboard and pointer behavior.
 13. As a page author, I want `vDropdownMenu`, so that secondary actions can be grouped without hand-writing overlay behavior.
-14. As a page author, I want `vContextMenu`, so that right-click actions can be attached to backend/admin data views.
+14. As a page author, I want `vContextMenu`, so that right-click actions can be attached to data views.
 15. As a page author, I want `vDetail` and `vDetailItem`, so that read-only business objects can be displayed with label/value structure.
 16. As a page author, I want `vCode`, so that code snippets, SQL fragments or logs can be displayed with copy support.
 17. As a page author, I want form components such as `vInput`, `vSelect`, `vTextarea` and `vSwitch`, so that form screens do not require repetitive native input wiring.
@@ -56,7 +56,7 @@
 19. As a page author, I want `vCheckboxes`, so that single-select and multi-select option groups can share one component API.
 20. As a page author, I want `vForm`, so that form-level value collection and validation can be added in one place.
 21. As a page author, I want `vTimer` and a date range component, so that date, datetime, time and range inputs are standardized.
-22. As a page author, I want `vTable`, so that common admin tables can render rows, empty states and row actions predictably.
+22. As a page author, I want `vTable`, so that common data tables can render rows, empty states and row actions predictably.
 23. As a page author, I want component text to support I18n nodes, so that language switching works without rebuilding the component tree.
 24. As a page author, I want components to return `ViewNode` instances, so that they compose with HTML, SVG, layout and router outlets.
 25. As a library maintainer, I want component modules grouped by domain instead of one file per tiny component, so that the project stays compact.
@@ -79,11 +79,11 @@
 - I18n 继续由外部 `I18n` 实例控制语言。组件不保存全局语言状态，只消费可渲染文本节点。
 - 组件层保持紧凑模块组织。初期可以集中在组件入口或少量领域模块中，随着复杂度增加按 action、surface、feedback、menu、form、data 等领域分组，避免一个组件一个文件造成过度碎片化。
 - 组件样式第一阶段采用零依赖策略。默认提供可用的内联样式和稳定 class hook，后续主题系统再统一抽象。
-- 组件优先服务后台、管理台和服务端模板嵌入场景。视觉策略应克制、清晰、可扫描，避免营销页式装饰。
+- 组件优先服务数据密集的业务页面与服务端模板嵌入场景。视觉策略应克制、清晰、可扫描，避免营销页式装饰。
 - 组件定义和演示代码以声明式写法优先：优先使用 setup callback、父节点快捷方法和链式方法组合；参数对象写法作为 API 说明保留一个完整案例，不在每个演示中重复。
 - 第一批组件为 `vButton`、`vCard`、`vMessage`、`toast`，用于建立组件命名、结构缓存、事件和状态模式。
 - 第二批组件为 `vMenu`、`vMenuItem`、`vDropdownMenu`、`vContextMenu`，用于建立浮层、命令项和可选键盘交互模式。
-- 第三批组件为 `vDetail`、`vCode`、`vTable`，用于支撑后台常见详情、日志、代码和数据表展示。
+- 第三批组件为 `vDetail`、`vCode`、`vTable`，用于支撑详情、日志、代码和数据表等数据密集展示。
 - 第四批组件为 `vField`、`vInput`、`vSelect`、`vTextarea`、`vCheckbox`、`vCheckboxes`、`vSwitch`、`vForm`，用于支撑表单构建。
 - 第五批组件为 `vTimer` 和日期范围组件。日期范围组件命名优先评估 `vTimerRange`，如果为了兼容 `yoya-basic` 再考虑 `vTimer2`。
 - 第六批组件为 `vEchart` 或 `vChart`。图表组件应在确认依赖策略后再实现，避免过早引入大型运行时依赖。

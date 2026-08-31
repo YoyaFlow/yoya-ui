@@ -2,21 +2,23 @@
 
 > **English** | [简体中文](./README.zh-CN.md)
 
-> Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build chain.
+> Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build step required.
 
 yoya-ui builds views directly on the real DOM: declarative HTML authoring, a component library, router, i18n, theming and state out of the box, with server-side rendering (SSR) and pure client rendering switchable from the same code.
 
 ## Features
 
-- **Low-barrier declarative authoring**: describe UI with native elements; only HTML and plain JS are required, with no framework-specific concepts
-- **Backend/full-stack friendly**: built for backend and full-stack developers to quickly build admin and management interfaces without frontend framework experience
-- **Microservice-cohesive delivery**: ship UI together with the backend service, suitable for atomic per-service deployment
-- **AI-friendly**: declarative structure plus zero build chain means AI-generated component code runs directly
+- **Low-barrier declarative authoring**: build UI with declarative structured JS elements — view and logic live in the same language, eliminating the friction between HTML markup and complex manipulation logic; only HTML and plain JS are required, with no framework-specific concepts
+- **General-purpose UI foundation**: a general-purpose library for every web developer — the same declarative codebase builds admin consoles, dashboards, tools and content pages, and backend or full-stack developers can get started more easily than with React/Vue
+- **Flexible delivery**: embed in server-rendered templates, ship together with backend services for atomic per-service deployment, or run as a standalone SPA — same code, no changes
+- **Build-tool optional**: use the shipped files directly in a plain page (no Vite/bundler needed), or install via npm and bundle with Vite/webpack — both are first-class
+- **AI-friendly**: declarative structure means AI-generated component code runs directly, with or without a build step
 - **Ready-to-use component library**: forms, navigation, feedback, data display, layout, charts and more for high-frequency scenarios
 - **Built-in router / i18n / theme / state**: everything a SPA needs, no extra selection required
 - **Server-side rendering**: one codebase, two modes — full-site SSR and island-style client enhancement both work
 - **Small core, zero dependencies, easy to extend**: follows standard component patterns; third-party components compose seamlessly with built-ins; import per module fits any project
 - **Maintenance-friendly**: the core stays stable, so long-lived projects don't fear version churn or rewrites
+- **Frontend-fatigue friendly**: for developers tired of endless new concepts, new frameworks and breaking version upgrades — plain HTML and JS syntax, and a stable core that don't churn
 
 ## Installation
 
@@ -192,6 +194,10 @@ vite.config.js / vite.umd.config.js / vite.examples.config.js
 - [Theme Styling Spec](docs/theme-styling.md) (Chinese)
 - [Component Catalog](docs/components.md) (Chinese)
 - [Core Implementation Summary](docs/yoya-basic-core-summary.md) (Chinese)
+
+## Codex Skill
+
+Use yoya-ui inside Codex: install the [yoya-ui skill](skills/yoya-ui/README.md) (Chinese) to give Codex guidance on the component DSL, page composition, forms, theming, SSR/hydrate and i18n.
 
 ## License
 

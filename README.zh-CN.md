@@ -2,22 +2,24 @@
 
 > [English](./README.md) | **简体中文**
 
-> Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build chain.
-> 面向后端与全栈开发者的轻量原生 JS UI 基础库：小核心 + 开放标准 + 官方组件库。
+> Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build step required.
+> 轻量原生 JS UI 基础库：小核心 + 开放标准 + 官方组件库，覆盖管理台、看板、工具与内容页等通用 Web 界面。
 
 yoya-ui 直接在真实 DOM 上构建视图：声明式 HTML 写法、组件库、路由、i18n、主题与状态系统开箱即用，支持服务端渲染（SSR）与纯客户端渲染同代码切换。
 
 ## 特性
 
-- **低门槛声明式构建**：直接用原生元素描述界面，只学 HTML 与原生 JS 即可使用，无框架专属概念
-- **后端全栈友好**：面向后端与全栈开发者，无需前端框架经验即可快速构建后台与管理界面
-- **微服务一体发布**：UI 与后端服务同包发布、随服务整体交付，适合微服务独立部署（原子化发布）
-- **AI 友好**：声明式结构 + 零构建链，AI 生成的组件代码可直接运行
+- **低门槛声明式构建**：采用声明式结构化 JS 元素构建方案，视图与操作逻辑同源，消除 HTML 标签化语言与复杂操作逻辑不兼容的问题；只学 HTML 与原生 JS 即可使用，无框架专属概念
+- **通用 UI 基础**：面向所有 Web 开发者的通用 UI 库，同一套声明式代码可构建管理台、看板、工具类与内容类页面；相比 React/Vue，后端与全栈开发者也能更低门槛地上手
+- **交付方式灵活**：可嵌入服务端模板、随后端服务同包发布（适合微服务原子化部署），也可作为独立 SPA 运行，同一套代码无需改动
+- **构建可选、工程化可用**：构建产物可直接在普通页面中运行，无需 Vite 等打包工具；也支持 npm 安装后在 Vite/webpack 等工程化项目中使用
+- **AI 友好**：声明式结构让 AI 生成的组件代码可直接运行，无论是否使用构建工具
 - **开箱即用的组件库**：表单、导航、反馈、数据展示、布局、图表等高频场景开箱即用
 - **内置路由 / i18n / 主题 / 状态管理**：单页应用所需能力自带，无需额外选型
 - **服务端渲染**：一套代码双模式可切换，整站服务端渲染与局部组件客户端加载加强均可用
 - **小核心、零依赖、易扩展**：遵循标准组件形态，第三方组件可与内置组件无缝组合，按模块引入适配任意工程
 - **长期维护友好**：核心库保持稳定，长期项目无需担心版本过时或升级重写
+- **远离前端疲劳**：适合厌倦层出不穷的新概念、新框架与破坏性版本更新的开发者，语法回归原生 HTML 和 JS，核心保持稳定
 
 ## 安装
 
@@ -87,7 +89,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 
 ## TypeScript 支持
 
-源码保持纯 JavaScript（零构建、可直接运行），通过随包发布的类型声明提供完整的 TypeScript 体验。`types/` 目录覆盖四个入口（根入口 / `core` / `echart` / `ssr`），并包含节点类、工厂函数签名、组件状态 API 与父节点快捷方法（如 `page.vButton(...)`）的类型。
+源码保持纯 JavaScript（无需构建也可直接运行，同样兼容工程化构建），通过随包发布的类型声明提供完整的 TypeScript 体验。`types/` 目录覆盖四个入口（根入口 / `core` / `echart` / `ssr`），并包含节点类、工厂函数签名、组件状态 API 与父节点快捷方法（如 `page.vButton(...)`）的类型。
 
 TypeScript 项目无需额外配置即可获得提示与类型检查：
 
@@ -193,6 +195,10 @@ vite.config.js / vite.umd.config.js / vite.examples.config.js
 - [主题样式规范](docs/theme-styling.md)
 - [组件目录](docs/components.md)
 - [核心实现摘要](docs/yoya-basic-core-summary.md)
+
+## Codex 技能
+
+在 Codex 中使用 yoya-ui：按[技能安装说明](skills/yoya-ui/README.md)安装 yoya-ui 技能，Codex 即可获得组件 DSL、页面组合、表单、主题、SSR/hydrate 与 i18n 的使用指导。
 
 ## License
 

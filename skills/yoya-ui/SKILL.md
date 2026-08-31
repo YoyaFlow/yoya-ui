@@ -5,7 +5,7 @@ description: 在项目中正确使用 yoya-ui UI 库时使用：声明式组件 
 
 # Yoya UI
 
-yoya-ui 是零框架依赖、服务端渲染优先的 JS UI 库：ViewNode 视图树 + 声明式 DSL，不依赖 React/Vue。本 skill 教你在**使用方项目**中正确地用它拼页面、收集表单、定制主题、做 SSR 与 i18n。
+yoya-ui 是服务端渲染优先、核心保持稳定的 JS UI 库：ViewNode 视图树 + 声明式 DSL，基于浏览器原生能力构建。本 skill 教你在**使用方项目**中正确地用它拼页面、收集表单、定制主题、做 SSR 与 i18n。
 
 ## 快速开始
 
