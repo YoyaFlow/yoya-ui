@@ -16,7 +16,7 @@
 **形态 A：薄工厂**（无内部状态、纯配置组合）
 
 ```js
-import { vBadge } from 'yoya-ui/ui';
+import { vBadge } from '@yoyaflow/yoya-ui/ui';
 
 export function ServiceTag(options) {
   return vBadge(options);
@@ -26,7 +26,7 @@ export function ServiceTag(options) {
 **形态 B：对象组件**（常规默认形态，返回 `{ render() }`）
 
 ```js
-import { vRate } from 'yoya-ui/ui';
+import { vRate } from '@yoyaflow/yoya-ui/ui';
 
 export function RateCard() {
   const state = { value: 0 };
@@ -45,7 +45,7 @@ export function RateCard() {
 **形态 C：类节点组件**（父子嵌套或重写生命周期，需导出成对 `vXxx` 工厂）
 
 ```js
-import { HtmlElementNode, createElementFactory } from 'yoya-ui/core';
+import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
 
 export class VStatusDot extends HtmlElementNode {
   // 细粒度生命周期与子实例操作
@@ -84,7 +84,7 @@ yoya-ui 没有自动响应式系统，状态变化后由组件决定就地更新
 ## 注册父节点快捷方法
 
 ```js
-import { ViewNode, registerChildFactories } from 'yoya-ui/core';
+import { ViewNode, registerChildFactories } from '@yoyaflow/yoya-ui/core';
 import { vStatusBadge } from './status-badge.js';
 
 registerChildFactories(ViewNode, { vStatusBadge }); // 页面内 page.vStatusBadge(...)

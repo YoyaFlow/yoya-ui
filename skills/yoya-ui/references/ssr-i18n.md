@@ -30,7 +30,7 @@ export function createPage(initial = {}) {
 ## 渲染入口
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/ssr';
 
 const initial = {
   locale: resolveLocale(
@@ -52,7 +52,7 @@ const { exceeded, html, state } = renderToString(createPage, {
 ## 客户端启动（client.js）
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/ssr';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
 import { createPage } from './page.js';
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);

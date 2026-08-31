@@ -40,7 +40,7 @@
 ## 主题切换 JS API（可选）
 
 ```js
-import { setYoyaMode, resolveYoyaMode, setYoyaTheme, initYoyaTheme } from 'yoya-ui/core';
+import { setYoyaMode, resolveYoyaMode, setYoyaTheme, initYoyaTheme } from '@yoyaflow/yoya-ui/core';
 
 setYoyaMode('dark');              // data-yoya-mode="dark"
 setYoyaMode('system', { persist: true });

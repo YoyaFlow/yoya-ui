@@ -1,5 +1,5 @@
 {
-  "name": "yoya-ui",
+  "name": "@yoyaflow/yoya-ui",
   "version": "0.1.0",
   "description": "A browser-native UI library that replaces React/Vue-style frameworks: declarative HTML authoring, component library, router, i18n and layout, with zero build steps.",
   "type": "module",

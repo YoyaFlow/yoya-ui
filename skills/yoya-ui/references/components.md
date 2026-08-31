@@ -136,7 +136,7 @@ vBreadcrumb((crumb) => {
 消息提示。命令式：`toast.success('已保存')`、`toast.error(msg)`、`toast.warning`、`toast.info`；容器组件 `placement()/closable()/countdown()`。
 
 ```js
-import { toast } from 'yoya-ui';
+import { toast } from '@yoyaflow/yoya-ui';
 toast.success('操作成功');
 ```
 

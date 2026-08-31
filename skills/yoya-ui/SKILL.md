@@ -10,7 +10,7 @@ yoya-ui 是零框架依赖、服务端渲染优先的 JS UI 库：ViewNode 视�
 ## 快速开始
 
 ```js
-import { div, vButton, vCard } from 'yoya-ui';
+import { div, vButton, vCard } from '@yoyaflow/yoya-ui';
 
 const page = div((root) => {
   root.vCard((card) => {

@@ -1,110 +1,111 @@
 # yoya-ui
 
+> **English** | [简体中文](./README.zh-CN.md)
+
 > Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build chain.
-> 面向后端与全栈开发者的轻量原生 JS UI 基础库：小核心 + 开放标准 + 官方组件库。
 
-yoya-ui 直接在真实 DOM 上构建视图：声明式 HTML 写法、组件库、路由、i18n、主题与状态系统开箱即用，支持服务端渲染（SSR）与纯客户端渲染同代码切换。
+yoya-ui builds views directly on the real DOM: declarative HTML authoring, a component library, router, i18n, theming and state out of the box, with server-side rendering (SSR) and pure client rendering switchable from the same code.
 
-## 特性
+## Features
 
-- **低门槛声明式构建**：直接用原生元素描述界面，只学 HTML 与原生 JS 即可使用，无框架专属概念
-- **后端全栈友好**：面向后端与全栈开发者，无需前端框架经验即可快速构建后台与管理界面
-- **微服务一体发布**：UI 与后端服务同包发布、随服务整体交付，适合微服务独立部署（原子化发布）
-- **AI 友好**：声明式结构 + 零构建链，AI 生成的组件代码可直接运行
-- **开箱即用的组件库**：表单、导航、反馈、数据展示、布局、图表等高频场景开箱即用
-- **内置路由 / i18n / 主题 / 状态管理**：单页应用所需能力自带，无需额外选型
-- **服务端渲染**：一套代码双模式可切换，整站服务端渲染与局部组件客户端加载加强均可用
-- **小核心、零依赖、易扩展**：遵循标准组件形态，第三方组件可与内置组件无缝组合，按模块引入适配任意工程
-- **长期维护友好**：核心库保持稳定，长期项目无需担心版本过时或升级重写
+- **Low-barrier declarative authoring**: describe UI with native elements; only HTML and plain JS are required, with no framework-specific concepts
+- **Backend/full-stack friendly**: built for backend and full-stack developers to quickly build admin and management interfaces without frontend framework experience
+- **Microservice-cohesive delivery**: ship UI together with the backend service, suitable for atomic per-service deployment
+- **AI-friendly**: declarative structure plus zero build chain means AI-generated component code runs directly
+- **Ready-to-use component library**: forms, navigation, feedback, data display, layout, charts and more for high-frequency scenarios
+- **Built-in router / i18n / theme / state**: everything a SPA needs, no extra selection required
+- **Server-side rendering**: one codebase, two modes — full-site SSR and island-style client enhancement both work
+- **Small core, zero dependencies, easy to extend**: follows standard component patterns; third-party components compose seamlessly with built-ins; import per module fits any project
+- **Maintenance-friendly**: the core stays stable, so long-lived projects don't fear version churn or rewrites
 
-## 安装
+## Installation
 
 ```bash
-npm install yoya-ui
+npm install @yoyaflow/yoya-ui
 ```
 
-## 快速开始
+## Quick Start
 
 ```js
-import { div, vButton, toast } from 'yoya-ui';
-import 'yoya-ui/ui.css';
+import { div, vButton, toast } from '@yoyaflow/yoya-ui';
+import '@yoyaflow/yoya-ui/ui.css';
 
 div((page) => {
-  page.vButton('启动任务', (button) => {
+  page.vButton('Start task', (button) => {
     button.variant('primary');
-    button.on('click', () => toast.success('任务已启动'));
+    button.on('click', () => toast.success('Task started'));
   });
 }).bindTo('#app');
 ```
 
-页面只需要一个 `<div id="app"></div>`，用模块脚本加载即可。
+The page only needs a `<div id="app"></div>` loaded with a module script.
 
-## 服务端渲染（SSR）
+## Server-Side Rendering (SSR)
 
-同一份页面工厂代码，服务端渲染与客户端渲染可切换：
+The same page factory switches between server rendering and client rendering:
 
 ```js
-// 服务端
-import { renderToString } from 'yoya-ui/ssr';
+// Server
+import { renderToString } from '@yoyaflow/yoya-ui/ssr';
 const { html, state } = renderToString(createPage, { state: { path: '/home' } });
 
-// 客户端
-import { hydrate, mount, parseState } from 'yoya-ui/ssr';
+// Client
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
 const app = document.getElementById('app');
 if (app.firstElementChild) {
-  hydrate(createPage, app, data); // 有服务端 HTML：收养 DOM、绑定事件
+  hydrate(createPage, app, data); // Server HTML exists: adopt DOM, bind events
 } else {
-  mount(createPage, app, data); // 空壳：全量客户端渲染
+  mount(createPage, app, data); // Empty shell: full client render
 }
 ```
 
-要点：
+Key points:
 
-- `vClientOnly(loader)`：非 SSR 模块（如 ECharts）服务端只出占位，hydration 后客户端加载
-- `Router.renderPath(path)`：服务端按请求路径渲染匹配路由（参数 / 守卫 / 404）
-- 每请求 i18n 实例、渲染上下文 id 分配器、渲染后自动销毁——服务端保持无状态
-- `maxNodes` 超限自动回退客户端渲染
+- `vClientOnly(loader)`: non-SSR modules (e.g. ECharts) emit a placeholder on the server and load on the client after hydration
+- `Router.renderPath(path)`: renders the matching route for a request path (params / guards / 404)
+- Per-request i18n instance, render-context id allocator, auto-destroy after render — the server stays stateless
+- `maxNodes` falls back to client rendering automatically when exceeded
 
-完整集成指南见 [docs/ssr.md](docs/ssr.md)；可运行示例：
+Full integration guide: [docs/ssr.md](docs/ssr.md) (Chinese); runnable example:
 
 ```bash
 npm run build
 node src/examples/ssr/server-http.mjs
 ```
 
-## 按需引入
+## Import per Module
 
 ```js
-import { div, svg, createI18n } from 'yoya-ui/core'; // 核心 HTML/SVG/状态
-import { vButton, vCard, vForm, vTable } from 'yoya-ui/ui'; // 官方组件库
-import { vEchart } from 'yoya-ui/echart'; // ECharts 组件（需自行引入 echarts）
-import { renderToString, hydrate } from 'yoya-ui/ssr'; // 服务端渲染
-import 'yoya-ui/ui.css'; // 默认样式与主题变量
+import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/state
+import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official component library
+import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts component (bring your own echarts)
+import { renderToString, hydrate } from '@yoyaflow/yoya-ui/ssr'; // server-side rendering
+import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
 
-## TypeScript 支持
+## TypeScript Support
 
-源码保持纯 JavaScript（零构建、可直接运行），通过随包发布的类型声明提供完整的 TypeScript 体验。`types/` 目录覆盖四个入口（根入口 / `core` / `echart` / `ssr`），并包含节点类、工厂函数签名、组件状态 API 与父节点快捷方法（如 `page.vButton(...)`）的类型。
+The source stays plain JavaScript (zero build, runs directly); full TypeScript experience comes from the type declarations shipped with the package. The `types/` directory covers all four entry points (root / `core` / `echart` / `ssr`) and includes node classes, factory signatures, component state APIs and parent shortcut methods (e.g. `page.vButton(...)`).
 
-TypeScript 项目无需额外配置即可获得提示与类型检查：
+TypeScript projects get hints and type checking with no extra configuration:
 
 ```ts
-import { div, vButton, vCard, vTable, toast } from 'yoya-ui';
-import { createI18n } from 'yoya-ui/core';
-import { renderToString } from 'yoya-ui/ssr';
-import 'yoya-ui/ui.css';
+import { div, vButton, vCard, vTable, toast } from '@yoyaflow/yoya-ui';
+import { createI18n } from '@yoyaflow/yoya-ui/core';
+import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import '@yoyaflow/yoya-ui/ui.css';
 
 div((page) => {
   page.className('app');
-  page.vButton('启动任务', (button) => {
+  page.vButton('Start task', (button) => {
     button.variant('primary');
-    button.on('click', () => toast.success('任务已启动'));
+    button.on('click', () => toast.success('Task started'));
   });
   page.vCard((card) => {
     card.vCardBody((body) => {
       body.vTable((table) => {
-        table.columns([{ key: 'name', title: '名称', dataIndex: 'name' }]);
+        table.columns([{ key: 'name', title: 'Name', dataIndex: 'name' }]);
         table.rows([{ name: 'api-gateway' }]);
       });
     });
@@ -112,85 +113,85 @@ div((page) => {
 });
 ```
 
-库内维护类型声明质量：
+Type declaration quality is maintained in-repo:
 
 ```bash
-npm run typecheck    # 校验声明文件与 consumer 类型测试
-npm run test:types   # 同 typecheck
+npm run typecheck    # validates declaration files and consumer type tests
+npm run test:types   # same as typecheck
 ```
 
-## 核心能力
+## Core Capabilities
 
-| 分类        | 内容                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| HTML 元素   | WHATWG 全量元素工厂，`HtmlElementNode` 嵌套快捷方法                                                                       |
-| SVG         | `svg()` 命名空间入口与内置图标（`SearchOutlined` 等）                                                                     |
-| 布局        | `flex` / `grid` / `stack` / `container` / `vRow` / `vCol` / `vContainer` / `mobileLayout` / `themeShell`                  |
-| 动作        | `vButton` / `vButtons` / `vFloatButton` / `vDropdownMenu` / `vContextMenu`                                                |
-| 导航        | `vMenu` / `vBreadcrumb` / `vSteps` / `vTabs` / `vAnchor` / `vNavbar` / Router / `vLink`                                   |
-| 反馈        | `vDialog` / `vTooltip` / `vMessage` / `vMessageManager` / `toast`                                                         |
-| 表单        | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                      |
-| 数据展示    | `vCard` / `vTable` / `vTree` / `vPagination` / `vProgress` / `vScroll` / `vCarousel` / `vTimeline` / `vDetail` / 看板系列 |
-| 图表        | `vEchart`（基于 ECharts，按需引入）                                                                                       |
-| 异步        | `vDynamicLoader`                                                                                                          |
-| 状态        | `vStateNode` / `@preact/signals-core` 扩展                                                                                |
-| i18n / 主题 | `createI18n` / `withI18nStringShortcut` / 主题 token 与明暗模式                                                           |
+| Category   | Content                                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| HTML       | Full WHATWG element factories with `HtmlElementNode` nested shortcuts                                                        |
+| SVG        | `svg()` namespace entry and built-in icons (`SearchOutlined`, etc.)                                                          |
+| Layout     | `flex` / `grid` / `stack` / `container` / `vRow` / `vCol` / `vContainer` / `mobileLayout` / `themeShell`                     |
+| Actions    | `vButton` / `vButtons` / `vFloatButton` / `vDropdownMenu` / `vContextMenu`                                                   |
+| Navigation | `vMenu` / `vBreadcrumb` / `vSteps` / `vTabs` / `vAnchor` / `vNavbar` / Router / `vLink`                                      |
+| Feedback   | `vDialog` / `vTooltip` / `vMessage` / `vMessageManager` / `toast`                                                            |
+| Forms      | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                         |
+| Data       | `vCard` / `vTable` / `vTree` / `vPagination` / `vProgress` / `vScroll` / `vCarousel` / `vTimeline` / `vDetail` / board series |
+| Charts     | `vEchart` (ECharts-based, import on demand)                                                                                  |
+| Async      | `vDynamicLoader`                                                                                                             |
+| State      | `vStateNode` / `@preact/signals-core` extension                                                                              |
+| i18n/Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                  |
 
-完整组件与交互演示见示例站（`npm run examples:html` 后打开 `http://localhost:5173/#/components`）。
+Full component demos live in the example site (`npm run examples:html`, then open `http://localhost:5173/#/components`).
 
-## 构建产物
+## Build Output
 
 ```bash
 npm run build
 ```
 
-`dist/` 输出：
+`dist/` contains:
 
-- `yoya.core.js` / `yoya.ui.js` — 核心与组件库 ESM 入口
-- `yoya.echart.js` — ECharts 组件入口（不包含 echarts 本体）
-- `yoya.ssr.js` — 服务端渲染入口（`renderToString` / `hydrate` / `mount`）
-- `echarts.min.js` — ECharts 本体（用 `<script>` 标签全局引入）
-- `yoya.ui.css` — 默认样式与主题变量
-- `yoya-ui.umd.js` — UMD 版（`window.YoyaUI`）
+- `yoya.core.js` / `yoya.ui.js` — core and component library ESM entries
+- `yoya.echart.js` — ECharts component entry (does not bundle echarts itself)
+- `yoya.ssr.js` — server rendering entry (`renderToString` / `hydrate` / `mount`)
+- `echarts.min.js` — ECharts core (load globally via `<script>`)
+- `yoya.ui.css` — default styles and theme variables
+- `yoya-ui.umd.js` — UMD build (`window.YoyaUI`)
 
-## 开发
+## Development
 
 ```bash
 npm install
-npm test              # vitest 全量测试
+npm test              # vitest full suite
 npm run lint          # eslint
-npm run build         # 全量构建
-npm run examples:html # 示例站（localhost:5173）
+npm run build         # full build
+npm run examples:html # example site (localhost:5173)
 npm run format        # prettier
 ```
 
-## 目录结构
+## Project Structure
 
 ```text
 src/
-  core/        ViewNode/ElementNode 核心、状态、i18n、主题、id 分配器、SSR 助手
-  html/ svg/   HTML/SVG 元素工厂
-  layout/      布局工厂
+  core/        ViewNode/ElementNode core, state, i18n, theme, id allocator, SSR helpers
+  html/ svg/   HTML/SVG element factories
+  layout/      layout factories
   actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
-               官方组件库各分类
-  components/  组件聚合与共享逻辑
-  examples/    示例站（含 SSR 演示与复制即用指南）
-  index.js     开发聚合入口
+               official component categories
+  components/  component aggregation and shared logic
+  examples/    example site (SSR demos and copy-paste guides)
+  index.js     dev aggregate entry
   yoya.core.js / yoya.ui.js / yoya.echart.js / yoya.ssr.js / yoya.ui.css
 scripts/
-  build-entries.mjs        ESM 入口构建
-  copy-example-modules.mjs 示例资源拷贝
+  build-entries.mjs        ESM entry build
+  copy-example-modules.mjs example asset copy
 vite.config.js / vite.umd.config.js / vite.examples.config.js
 ```
 
-## 文档
+## Documentation
 
-- [服务端渲染集成指南](docs/ssr.md)
-- [组件开发规格](docs/component-development-spec.md)
-- [组件库开发规范（第三方开发者）](docs/component-library-authoring.md)
-- [主题样式规范](docs/theme-styling.md)
-- [组件目录](docs/components.md)
-- [核心实现摘要](docs/yoya-basic-core-summary.md)
+- [Server-Side Rendering Guide](docs/ssr.md) (Chinese)
+- [Component Development Spec](docs/component-development-spec.md) (Chinese)
+- [Component Library Authoring Guide](docs/component-library-authoring.md) (Chinese)
+- [Theme Styling Spec](docs/theme-styling.md) (Chinese)
+- [Component Catalog](docs/components.md) (Chinese)
+- [Core Implementation Summary](docs/yoya-basic-core-summary.md) (Chinese)
 
 ## License
 

@@ -3,7 +3,7 @@
 ## 基本用法
 
 ```js
-import { vForm, vFormItem, vInput, vSelect } from 'yoya-ui';
+import { vForm, vFormItem, vInput, vSelect } from '@yoyaflow/yoya-ui';
 
 const form = vForm((form) => {
   form.vFormItem((item) => {
