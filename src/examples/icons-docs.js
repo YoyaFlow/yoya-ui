@@ -125,7 +125,7 @@ export function IconsDocumentationPage() {
                   background: 'transparent',
                   border: '0',
                   boxShadow: 'none',
-                  color: '#64748b',
+                  color: 'var(--yoya-color-text-muted, #64748b)',
                   cursor: 'pointer',
                   height: '16px',
                   outline: 'none',
@@ -246,26 +246,20 @@ export function IconsDocumentationPage() {
                 descriptionNode.className('components-icon-description');
                 descriptionNode.text(description);
               });
-              cell.button((sourceButton) => {
+              cell.vSymbolButton((sourceButton) => {
                 sourceButton.className('components-icon-source-trigger');
-                sourceButton.attr({
-                  'aria-label': '查看源码定义',
-                  title: '源码定义',
-                  type: 'button'
-                });
-                sourceButton.child(CodeOutlined());
+                sourceButton.ariaLabel('查看源码定义');
+                sourceButton.attr('title', '源码定义');
+                sourceButton.icon(CodeOutlined());
                 sourceButton.on('click', (event) => {
                   event.stopPropagation();
                   showIconSource(name, factory);
                 });
               });
-              cell.button((button) => {
+              cell.vSymbolButton((button) => {
                 button.className('components-icon-copy');
-                button.attr({
-                  'aria-label': `复制 ${name} 代码`,
-                  type: 'button'
-                });
-                button.child(CopyOutlined({ size: 14 }));
+                button.ariaLabel(`复制 ${name} 代码`);
+                button.icon(CopyOutlined());
                 button.on('click', (event) => {
                   event.stopPropagation();
                   void copyIconUsage(name);

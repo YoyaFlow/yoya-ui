@@ -126,6 +126,54 @@ const layoutDocsDefinitions = Object.freeze({
       '如果只是想拉开大块距离，优先用 gap 或 stack。'
     ]
   }),
+  split: createLayoutDocsDefinition({
+    apiIntro: 'vSplitPanel 提供两块面板和一条可拖拽分隔条，支持横向/纵向、键盘微调与双击复位。',
+    apiRows: [
+      [
+        'vSplitPanel({ direction, size, minSize })',
+        '创建分隔面板。',
+        'vSplitPanel({ size: "40%" })'
+      ],
+      [
+        'panel.first(setup) / panel.second(setup)',
+        '设置左右/上下两块面板内容。',
+        'panel.first((left) => ...)'
+      ],
+      ['panel.size(value)', '读写首面板尺寸。', 'panel.size("45%")'],
+      ['panel.minSize(value)', '拖拽最小尺寸（px）。', 'panel.minSize(80)'],
+      ['panel.reset()', '恢复首面板 50%。', 'panel.reset()']
+    ],
+    apiSignature: `vSplitPanel({ direction: 'horizontal', size: '50%' })`,
+    examples: [
+      {
+        component: SplitHorizontalExample1,
+        description: '左右两块面板，拖拽分隔条调整宽度。',
+        id: 'horizontal',
+        imports: ['vSplitPanel'],
+        sourceTitle: '左右分隔核心源码',
+        title: '左右分隔'
+      },
+      {
+        component: SplitVerticalExample1,
+        description: '上下两块面板，拖拽分隔条调整高度。',
+        id: 'vertical',
+        imports: ['vSplitPanel'],
+        sourceTitle: '上下分隔核心源码',
+        title: '上下分隔'
+      }
+    ],
+    examplesIntro: '横向与纵向分隔各一个示例，分隔条支持拖拽、键盘方向键和双击复位。',
+    heading: 'vSplitPanel 分隔面板',
+    intro: 'vSplitPanel 用可拖拽分隔条把内容分成两块，适合工作台、代码预览和编辑区布局。',
+    key: 'split',
+    routeItem: 'layout:8',
+    title: '分隔面板',
+    usageItems: [
+      '需要两块内容并排或上下展示，且用户可调整占比时。',
+      '工作台、代码预览、编辑区等需要拖拽分割的场景。',
+      '分隔条支持方向键微调与双击复位，键盘可达。'
+    ]
+  }),
   flex: createLayoutDocsDefinition({
     apiIntro: 'flex 负责通用弹性排布，stack / vstack / hstack / center 是常见的专用写法。',
     apiRows: [
@@ -537,6 +585,10 @@ export function GridDocumentationPage() {
   return createLayoutDocumentationPage(layoutDocsDefinitions.grid);
 }
 
+export function SplitPanelDocumentationPage() {
+  return createLayoutDocumentationPage(layoutDocsDefinitions.split);
+}
+
 export function BodyDocumentationPage() {
   return createLayoutDocumentationPage(layoutDocsDefinitions.body);
 }
@@ -764,6 +816,62 @@ function DividerSectionExample1() {
   };
 }
 
+function SplitHorizontalExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('左右分隔');
+        card.vCardBody((body) => {
+          body.vSplitPanel((panel) => {
+            panel.styles({ height: '260px' });
+            panel.first((left) => {
+              left.styles({
+                background: 'var(--yoya-color-surface-muted, #f5f5f5)',
+                padding: '12px'
+              });
+              left.strong('导航区');
+              left.p('拖拽中间分隔条调整两侧宽度。');
+            });
+            panel.second((right) => {
+              right.styles({ padding: '12px' });
+              right.strong('内容区');
+              right.p('次面板占满剩余空间。');
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
+function SplitVerticalExample1() {
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('上下分隔');
+        card.vCardBody((body) => {
+          body.vSplitPanel({ direction: 'vertical', size: '40%' }, (panel) => {
+            panel.styles({ height: '260px' });
+            panel.first((top) => {
+              top.styles({
+                background: 'var(--yoya-color-surface-muted, #f5f5f5)',
+                padding: '12px'
+              });
+              top.strong('上部');
+              top.p('上下拖拽分隔条调整高度。');
+            });
+            panel.second((bottom) => {
+              bottom.styles({ padding: '12px' });
+              bottom.strong('下部');
+              bottom.p('双击分隔条恢复 50%。');
+            });
+          });
+        });
+      });
+    }
+  };
+}
+
 function DividerToolbarExample1() {
   return {
     render() {
@@ -892,7 +1000,9 @@ function GridFixedExample1() {
                 ['请求量', '128k'],
                 ['成功率', '99.92%'],
                 ['队列积压', '42'],
-                ['告警', '3']
+                ['告警', '3'],
+                ['P99 延迟', '82ms'],
+                ['实例', '12']
               ].forEach(([label, value]) => {
                 matrix.article((cell) => {
                   cell.className('detail-grid-cell');
@@ -909,6 +1019,17 @@ function GridFixedExample1() {
 }
 
 function GridResponsiveExample1() {
+  const widthText = vText('768px');
+  let frame = null;
+
+  const setWidth = (next) => {
+    const width = Math.max(280, Math.min(1200, Number(next) || 768));
+    widthText.textContent(`${width}px`);
+    if (frame) {
+      frame.style('width', `${width}px`);
+    }
+  };
+
   return {
     render() {
       return vCard((card) => {
@@ -916,31 +1037,60 @@ function GridResponsiveExample1() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.p('responsiveGrid 会根据最小列宽和断点自动换列。');
-            content.responsiveGrid(
-              {
-                breakpoints: [
-                  { minWidth: 640, columns: 2 },
-                  { minWidth: 960, columns: 3 }
-                ],
-                minColumnWidth: 180
-              },
-              (cards) => {
-                cards.style('gap', '12px');
-                [
-                  ['上线', '稳定'],
-                  ['维护', '处理中'],
-                  ['告警', '待确认'],
-                  ['观察', '跟踪中']
-                ].forEach(([label, value]) => {
-                  cards.article((cell) => {
-                    cell.className('detail-grid-cell');
-                    cell.strong(label);
-                    cell.span(value);
+            content.p('拖动宽度滑杆或点预设宽度，iframe 内同一套内容会自动换列。');
+            content.hstack((row) => {
+              row.style({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
+              row.span('容器宽度');
+              row.input((slider) => {
+                slider.attr({
+                  'data-grid-responsive-width': 'true',
+                  max: '1200',
+                  min: '280',
+                  step: '20',
+                  type: 'range',
+                  value: '768'
+                });
+                slider.style({ width: '160px' });
+                slider.on('input', (event) => setWidth(event.target.value));
+              });
+              [480, 768, 1100].forEach((preset) => {
+                row.vButton(String(preset), (button) => {
+                  button.attr('data-grid-responsive-preset', String(preset));
+                  button.size('small');
+                  button.variant('secondary');
+                  button.on('click', () => {
+                    const slider = document.querySelector('[data-grid-responsive-width]');
+                    if (slider) {
+                      slider.value = String(preset);
+                    }
+                    setWidth(preset);
                   });
                 });
-              }
-            );
+              });
+              row.span((text) => {
+                text.className('components-route-note');
+                text.attr('data-grid-responsive-width-text', 'true');
+                text.child(widthText);
+              });
+            });
+            content.iframe((iframe) => {
+              frame = iframe;
+              iframe.className('components-grid-responsive-frame');
+              iframe.attr({
+                'data-grid-responsive-frame': 'true',
+                src: './grid-responsive.html',
+                title: '响应式栅格演示'
+              });
+              iframe.styles({
+                background: 'var(--yoya-color-surface, #ffffff)',
+                border: '1px solid var(--yoya-color-border, #d8dee8)',
+                borderRadius: '8px',
+                boxSizing: 'border-box',
+                height: '280px',
+                width: '768px'
+              });
+            });
+            content.p('断点：<640px 1 列，640–960px 2 列，≥960px 3 列。');
           });
         });
       });
@@ -976,6 +1126,18 @@ function GridRowColExample1() {
                 cell.className('detail-grid-cell');
                 cell.strong('6');
                 cell.span('右侧');
+              });
+            });
+            content.vRow({ gutter: 12 }, (row) => {
+              row.vCol({ span: 6, push: 6 }, (cell) => {
+                cell.className('detail-grid-cell');
+                cell.strong('6');
+                cell.span('push 6');
+              });
+              row.vCol({ span: 6, pull: 6 }, (cell) => {
+                cell.className('detail-grid-cell');
+                cell.strong('6');
+                cell.span('pull 6');
               });
             });
           });
@@ -1102,7 +1264,6 @@ function BodyShellExample1() {
   return {
     render() {
       const page = vBody((shell) => {
-        shell.background('#f8fafc');
         shell.maxWidth(1000);
         shell.padding('clamp(16px, 4vw, 28px)');
         shell.gap(18);

@@ -51,28 +51,26 @@ export function GuideOverviewPage() {
         ]
       },
       {
-        title: '适合什么场景',
+        title: '版本演进友好',
         points: [
-          '整站 SPA：路由（hash/history）、标签页视图、懒加载、布局、状态与 i18n 一应俱全。',
-          '后台管理系统和 CRUD 页面。',
-          '服务端模板、微前端中的渐进接管与局部交互。',
-          'AI 生成组件直接使用，避免环境问题，返工率极低。'
+          '视图语法基于原生 HTML 与声明式结构，消除 UI 库语法版本变更带来的迁移负担。',
+          '核心描述 html 原生元素，保持稳定，既有代码不随 UI 库版本变动重写。',
+          '既有代码、示例与 AI 生成组件在新版本中持续可用。',
+          '路由、i18n、图表等按需引入。',
+          '组件边界清晰，模块可组合。'
         ]
       },
       {
-        title: '演示页面',
-        paragraphs: ['左侧菜单按分类组织，右侧提供实时演示和源码面板。']
-      }
-    ]
-  });
-}
-
-export function GuidePositioningPage() {
-  return createGuidePage({
-    id: 'positioning',
-    title: '定位',
-    intro: 'yoya-ui 回归浏览器原生环境，以声明式 DSL 与完整组件、路由、布局能力替代前端框架。',
-    sections: [
+        title: '使用场景',
+        points: [
+          '整站应用：以路由（hash/history）、标签页视图、懒加载、布局、状态与 i18n 搭建完整 SPA，覆盖后台管理、数据看板与工具型产品。',
+          '服务端集成：整站 SSR 与局部组件客户端加载同代码切换；可直接嵌入服务端模板，从单个交互渐进接管到整站。',
+          '后端与全栈交付：UI 与后端服务同包发布、随服务整体交付，适合微服务独立部署与客户内网等受限环境。',
+          '高频业务页面：表单、表格、详情页、图表与消息反馈等后台常见场景开箱即用，零构建直接运行。',
+          'AI 与低代码协作：声明式结构 + 零构建链，AI 生成的组件代码可直接运行，适合原型快速迭代与批量生成页面。',
+          '长期维护项目：核心库保持稳定，降低版本升级与重写成本，适合需要长期运维的系统。'
+        ]
+      },
       {
         title: '目标用户',
         points: [
@@ -90,28 +88,6 @@ export function GuidePositioningPage() {
         ]
       },
       {
-        title: '适用场景',
-        points: [
-          '整站 SPA 与后台管理系统。',
-          '表单、表格和详情页。',
-          '服务端渐进接管、微前端和 AI 生成 UI。'
-        ]
-      }
-    ]
-  });
-}
-
-export function GuideAdvantagesPage() {
-  return createGuidePage({
-    id: 'advantages',
-    title: '优势',
-    intro: 'yoya-ui 把浏览器原生能力与声明式 DSL 组合起来，替代框架层抽象。',
-    sections: [
-      {
-        title: '运行时轻量',
-        points: ['无虚拟 DOM 运行时。', '无第三方框架依赖。', '核心包可按子入口引入。']
-      },
-      {
         title: '完整 SPA 能力',
         points: [
           '内置路由（hash/history），标签页视图与页面懒加载。',
@@ -121,7 +97,8 @@ export function GuideAdvantagesPage() {
       },
       {
         title: '后端友好',
-        points: ['bindTo() 支持局部挂载。', '可直接嵌入服务端模板。']
+        points: ['bindTo() 支持局部挂载。', '可直接嵌入服务端模板。'],
+        paragraphs: ['同一套代码可服务端渲染也可客户端渲染，从局部组件渐进接管到整站 SPA 均适用。']
       },
       {
         title: '能力完整',
@@ -130,34 +107,14 @@ export function GuideAdvantagesPage() {
           '扩展能力按需引入，不进入核心概念。',
           '演示源码面板可复制到业务项目。'
         ]
-      }
-    ]
-  });
-}
-
-export function GuideDesignPhilosophyPage() {
-  return createGuidePage({
-    id: 'philosophy',
-    title: '设计理念',
-    intro: '设计上优先保持浏览器原生、声明式、完整能力与零构建交付。',
-    sections: [
+      },
       {
-        title: '浏览器原生优先',
-        paragraphs: [
-          '直接使用真实 DOM，消除虚拟 DOM、JSX/SFC 编译和框架运行时这类为弥补早期 Web 标准不足而发明的技术特性。'
+        title: '样式可定制',
+        points: [
+          '提供独立 CSS 样式文件（yoya.ui.css），引入即用，也可自行修改定制。',
+          '样式由 --yoya-* CSS 变量（主题 token）驱动，可定制配色、明暗模式与品牌主题。',
+          '组件样式与主题解耦，定制无需改动组件源码与页面结构。'
         ]
-      },
-      {
-        title: '小核加扩展',
-        points: ['核心保持稳定。', '路由、i18n、图表等按需引入。', '组件边界清晰，模块可组合。']
-      },
-      {
-        title: '声明式 DSL',
-        paragraphs: ['用函数、setup callback 和链式方法描述视图，代码可读且接近页面结构。']
-      },
-      {
-        title: '后端友好',
-        paragraphs: ['可嵌入、可组合、可阅读、可复制，从服务端渲染页面渐进接管到整站 SPA 均适用。']
       }
     ]
   });

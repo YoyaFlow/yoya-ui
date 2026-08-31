@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { div, router, vLink, vRoute, vRouter, vRouterView, vRouterViews, vText } from '../index.js';
+import {
+  createI18n,
+  div,
+  router,
+  vLink,
+  vRoute,
+  vRouter,
+  vRouterView,
+  vRouterViews,
+  vText
+} from '../index.js';
 
 const flush = async () => {};
 function openTabMenu(path) {
@@ -272,6 +282,22 @@ describe('router', () => {
 
     root.destroy();
     expect(appRouter._subscribers.size).toBe(0);
+  });
+
+  it('renders ViewNode labels (e.g. I18n text nodes) instead of stringifying them', () => {
+    const locale = createI18n({
+      language: 'en',
+      messages: { en: { home: 'Home' }, 'zh-CN': { home: '首页' } }
+    });
+    const appRouter = router((r) => r.route('/home', () => div('home')));
+    const link = vLink(appRouter, { label: '首页'.s('home', locale), to: '/home' });
+
+    document.body.innerHTML = '';
+    document.body.appendChild(link.renderDom());
+
+    const label = document.querySelector('.yoya-vlink');
+    expect(label.textContent).toBe('Home');
+    expect(label.textContent).not.toContain('[object');
   });
 
   it('declares routes through vRoute descriptors and renders with vRouter', () => {

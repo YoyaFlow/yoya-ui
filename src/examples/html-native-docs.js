@@ -34,8 +34,33 @@ function HtmlNativeExample1() {
 const htmlNativeNotes = [
   '原生工厂覆盖 WHATWG 全部 conforming 标签，例如 div、button、input、output、a、table。',
   '遇到 JS 关键字或节点方法冲突时提供别名：style → styleTag、var → varTag。',
-  '原生元素提供 attr / styles / text / on / child 等节点方法，适合底层自由拼装。'
+  '原生元素提供 attr / styles / text / on / child 等节点方法，适合底层自由拼装。',
+  '子工厂快捷方法返回父节点；绑定事件请用回调参数：box.button("文字", (btn) => btn.on("click", ...))。'
 ];
+
+function HtmlNativeUsageNote() {
+  return {
+    render() {
+      return section((usage) => {
+        usage.className('components-html-native-usage');
+        usage.attr('data-html-native-usage', 'true');
+        usage.h2('事件绑定约定');
+        usage.p(
+          'box.button(...) 这类子工厂快捷方法返回父节点，用于继续追加元素；' +
+            'click 等事件要绑定在按钮自身，使用回调参数，不要在快捷方法后面链 .on()。'
+        );
+        usage.pre((pre) => {
+          pre.className('guide-code');
+          pre.code(`// 正确：回调参数里绑定按钮自身的事件
+box.button('保存', (btn) => btn.on('click', save));
+
+// 错误：.on() 实际挂到了 box 容器上，点击容器内任意按钮都会触发
+box.button('保存').on('click', save);`);
+        });
+      });
+    }
+  };
+}
 
 function HtmlNativeDemoSection() {
   const liveDemo = HtmlNativeExample1();
@@ -72,6 +97,7 @@ export function HtmlNativeDocumentationPage() {
         page.ul((list) => {
           htmlNativeNotes.forEach((note) => list.li(note));
         });
+        page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
       });
     }

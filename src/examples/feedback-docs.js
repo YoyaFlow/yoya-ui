@@ -310,16 +310,7 @@ function MessageContainerExample1() {
   const host = vMessageContainer({ placement: 'top-right' });
   const status = vText('等待消息');
 
-  host.styles({
-    bottom: null,
-    left: null,
-    maxWidth: 'none',
-    position: 'static',
-    right: null,
-    top: null,
-    transform: null,
-    width: '100%'
-  });
+  host.inline();
 
   return {
     render() {
@@ -428,16 +419,7 @@ function CountdownMessageExample1() {
   const host = vMessageContainer({ placement: 'top-right' });
   const status = vText('等待计时消息');
 
-  host.styles({
-    bottom: null,
-    left: null,
-    maxWidth: 'none',
-    position: 'static',
-    right: null,
-    top: null,
-    transform: null,
-    width: '100%'
-  });
+  host.inline();
 
   return {
     render() {

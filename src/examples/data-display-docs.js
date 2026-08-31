@@ -1872,8 +1872,8 @@ function TreeFileManagerExample1() {
             });
             layout.div((panel) => {
               panel.style({
-                background: '#fbfcfe',
-                border: '1px solid #e2e8f0',
+                background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+                border: '1px solid var(--yoya-color-border, #e2e8f0)',
                 borderRadius: '8px',
                 flex: '2 1 320px',
                 minWidth: '0',
@@ -2395,7 +2395,12 @@ function ScrollVirtualExample1() {
 }
 
 function CarouselBasicExample1() {
-  const colors = ['#eff6ff', '#ecfdf5', '#fffbeb', '#fef2f2'];
+  const colors = [
+    'var(--yoya-color-primary-subtle, #eff6ff)',
+    'var(--yoya-color-success-subtle, #ecfdf5)',
+    'var(--yoya-color-warning-subtle, #fffbeb)',
+    'var(--yoya-color-danger-subtle, #fef2f2)'
+  ];
   const slides = [
     { text: '统一管理服务生命周期、版本和负责人。', title: '服务治理' },
     { text: '从构建到上线自动串联审批和回滚。', title: '发布流水线' },
@@ -2442,7 +2447,11 @@ function CarouselBasicExample1() {
 function CarouselAutoplayExample1() {
   const status = vText('当前：1 / 3');
   const slides = ['自动播放 A', '自动播放 B', '自动播放 C'];
-  const colors = ['#eef2ff', '#ecfeff', '#fdf4ff'];
+  const colors = [
+    'var(--yoya-color-primary-subtle, #eef2ff)',
+    'var(--yoya-color-info-subtle, #ecfeff)',
+    'var(--yoya-color-primary-subtle, #fdf4ff)'
+  ];
   const carousel = vCarousel((carousel) => {
     carousel.height('220px');
     carousel.interval(2500);
@@ -2515,7 +2524,10 @@ function CarouselLoopExample1() {
       div((block) => {
         block.styles({
           alignItems: 'center',
-          background: index % 2 === 0 ? '#f0f9ff' : '#f8fafc',
+          background:
+            index % 2 === 0
+              ? 'var(--yoya-color-primary-subtle, #f0f9ff)'
+              : 'var(--yoya-color-surface-muted, #f8fafc)',
           borderRadius: '8px',
           boxSizing: 'border-box',
           display: 'flex',

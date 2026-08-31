@@ -110,4 +110,11 @@ describe('density contract', () => {
     expect(css).toContain('--yoya-control-height-md: 30px;');
     expect(css).toContain('--yoya-control-height-lg: 34px;');
   });
+
+  it('wires vButton data-size rules to the control-size tokens', () => {
+    expect(css).toContain(".yoya-vbutton[data-size='small']");
+    expect(css).toContain('min-height: var(--yoya-control-height-sm);');
+    expect(css).toContain('min-height: var(--yoya-control-height-md);');
+    expect(css).toContain('min-height: var(--yoya-control-height-lg);');
+  });
 });

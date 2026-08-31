@@ -283,8 +283,8 @@ export function ChartAdapterCard() {
         bar.textContent = String(value);
         bar.style.height = `${value}px`;
         bar.style.width = '28px';
-        bar.style.background = '#1f6feb';
-        bar.style.color = '#fff';
+        bar.style.background = 'var(--yoya-color-primary, #1f6feb)';
+        bar.style.color = 'var(--yoya-color-text-inverse, #ffffff)';
         bar.style.display = 'inline-flex';
         bar.style.alignItems = 'flex-end';
         bar.style.justifyContent = 'center';

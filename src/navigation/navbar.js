@@ -36,6 +36,11 @@ export class VNavbar extends HtmlElementNode {
     this._menu.horizontal();
     this._menuWrapper = new HtmlElementNode('div')
       .className('yoya-vnavbar-menu-slot')
+      .styles({
+        boxSizing: 'border-box',
+        minWidth: '0',
+        overflowX: 'auto'
+      })
       .child(this._menu);
     this._actionsBox = new HtmlElementNode('div').className('yoya-vnavbar-actions');
 

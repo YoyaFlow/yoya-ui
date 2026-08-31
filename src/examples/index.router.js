@@ -1,5 +1,7 @@
 import {
   createI18n,
+  FolderOpenOutlined,
+  FolderOutlined,
   initYoyaTheme,
   router,
   section,
@@ -7,13 +9,12 @@ import {
   vBody,
   vContainer,
   vMessageContainer,
-  vMenu,
-  vMenuGroup,
-  vMenuItem,
   vNavbar,
   vRouterViews,
+  vSplitPanel,
   vThemeModeSwitch,
-  vThemeShell
+  vThemeShell,
+  vTree
 } from '../index.js';
 import '../yoya.ui.css';
 import { ComponentSource } from './component-source.js';
@@ -25,9 +26,6 @@ const componentMenuSections = [
     title: '开发指南',
     items: [
       { label: '概述', details: 'Overview' },
-      { label: '定位', details: 'Positioning' },
-      { label: '优势', details: 'Advantages' },
-      { label: '设计理念', details: 'Design Philosophy' },
       { label: '安装方式', details: 'Installation' },
       { label: 'HTML 原生元素', details: 'div / button / input / output' },
       { label: '组件', details: 'A 薄工厂 / B 对象组件' },
@@ -64,7 +62,7 @@ const componentMenuSections = [
       { label: '弹窗', details: 'vDialog' },
       { label: '布局模板', details: 'admin / cloud / profile / docs' },
       { label: '移动布局', details: 'mobileLayout / vMobileLayout', hidden: true },
-      { label: '分隔面板', details: 'Splitter', status: 'planned' }
+      { label: '分隔面板', details: 'vSplitPanel' }
     ]
   },
   {
@@ -102,7 +100,12 @@ const componentMenuSections = [
       { label: '日期时间', details: 'vTimer' },
       { label: '日期范围', details: 'vTimerRange' },
       { label: '文件上传', details: 'vUpload' },
-      { label: '评分', details: 'vRate' }
+      { label: '评分', details: 'vRate' },
+      { label: '颜色选择器', details: 'vColorPicker' },
+      { label: '滑动条', details: 'vSlider' },
+      { label: '级联选择', details: 'vCascader' },
+      { label: '标签输入', details: 'vTagsInput' },
+      { label: '自动完成', details: 'vAutocomplete' }
     ]
   },
   {
@@ -116,7 +119,6 @@ const componentMenuSections = [
       { label: '表格', details: 'vTable' },
       { label: '树形控件', details: 'vTree' },
       { label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
-      { label: '图表', details: 'vChart' },
       { label: '进度条', details: 'vProgress' },
       { label: '滚动组件', details: 'vScroll' },
       { label: '走马灯', details: 'vCarousel' }
@@ -187,16 +189,13 @@ function getTopNavigationItems() {
 
 const docsRouteLoaders = Object.freeze({
   'guides:0': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
-  'guides:1': () => import('./guide-docs.js').then((m) => m.GuidePositioningPage()),
-  'guides:2': () => import('./guide-docs.js').then((m) => m.GuideAdvantagesPage()),
-  'guides:3': () => import('./guide-docs.js').then((m) => m.GuideDesignPhilosophyPage()),
-  'guides:4': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
-  'guides:5': () => import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
-  'guides:6': () =>
+  'guides:1': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
+  'guides:2': () => import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
+  'guides:3': () =>
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
-  'guides:7': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
-  'guides:8': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
-  'guides:9': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'guides:4': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
+  'guides:5': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:6': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
   'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:1': () => import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
   'general:2': () => import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
@@ -211,6 +210,7 @@ const docsRouteLoaders = Object.freeze({
   'layout:5': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
   'layout:6': () => import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
   'layout:7': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
+  'layout:8': () => import('./layout-docs.js').then((m) => m.SplitPanelDocumentationPage()),
   'navigation:0': () => import('./navigation-docs.js').then((m) => m.AnchorDocumentationPage()),
   'navigation:1': () => import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
   'navigation:3': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
@@ -225,15 +225,20 @@ const docsRouteLoaders = Object.freeze({
   'form:0': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
   'form:7': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:4': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
+  'form:12': () => import('./color-picker-docs.js').then((m) => m.ColorPickerDocumentationPage()),
+  'form:13': () => import('./form-controls-docs.js').then((m) => m.SliderDocumentationPage()),
+  'form:14': () => import('./form-controls-docs.js').then((m) => m.CascaderDocumentationPage()),
+  'form:15': () => import('./form-controls-docs.js').then((m) => m.TagsInputDocumentationPage()),
+  'form:16': () => import('./form-controls-docs.js').then((m) => m.AutocompleteDocumentationPage()),
   'data-display:0': () => import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
   'data-display:1': () => import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
   'data-display:2': () => import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
   'data-display:4': () => import('./data-display-docs.js').then((m) => m.TableDocumentationPage()),
   'data-display:5': () => import('./data-display-docs.js').then((m) => m.TreeDocumentationPage()),
-  'data-display:8': () =>
+  'data-display:7': () =>
     import('./data-display-docs.js').then((m) => m.ProgressDocumentationPage()),
-  'data-display:9': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
-  'data-display:10': () =>
+  'data-display:8': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
+  'data-display:9': () =>
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
   'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
   'third-party:1': () => import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
@@ -324,26 +329,22 @@ function registerComponentsWorkspaceRoutes(routerInstance, context) {
 }
 
 function createComponentsView(appRouter) {
-  const menuItemRefs = [];
-  const groupRefs = [];
   const topNavItemRefs = [];
   const routerViews = vRouterViews(appRouter, { lockTitle: true, title: '组件目录' });
 
   const syncSelection = () => {
     const currentPath = appRouter.currentPath();
 
-    menuItemRefs.forEach(({ node, path, categoryId }) => {
-      node.active(path === currentPath);
-      node.attr('data-active-path', path === currentPath ? 'true' : null);
-
-      const group = groupRefs.find((item) => item.categoryId === categoryId);
-      if (group) {
-        const active =
-          currentPath === `/components/${categoryId}` ||
-          currentPath.startsWith(`/components/${categoryId}/`);
-        group.node.attr('data-active', active ? 'true' : null);
-      }
-    });
+    const activeCategory = componentMenuSections.find((category) =>
+      category.items.some(
+        (item, itemIndex) =>
+          !item.hidden && buildComponentItemPath(category.id, itemIndex) === currentPath
+      )
+    );
+    if (activeCategory && menuTree) {
+      menuTree.expandedKeys([...menuTree.expandedKeys(), activeCategory.id]);
+      menuTree.selectedKeys([currentPath]);
+    }
 
     topNavItemRefs.forEach(({ node, entry }) => {
       const active =
@@ -386,76 +387,62 @@ function createComponentsView(appRouter) {
   });
   topNav.sticky();
 
-  const menu = vMenu((nav) => {
-    nav.className('components-menu-list');
-    nav.style('minWidth', '0');
-    nav.style('padding', '0');
-    nav.style('width', '100%');
-    nav.style('gap', '4px');
-
-    componentMenuSections.forEach((category, categoryIndex) => {
-      const group = vMenuGroup((groupNode) => {
-        groupNode.label(category.title);
-        groupNode.attr('data-component-category', category.id);
-        groupNode.style('gap', '4px');
-
-        category.items.forEach((item, itemIndex) => {
-          if (item.hidden) {
-            return;
-          }
-
-          const status = item.status === 'planned' ? 'planned' : 'ready';
-          const path = buildComponentItemPath(category.id, itemIndex);
-          const menuItem = vMenuItem((entryView) => {
-            entryView.attr({
-              'data-component-category': category.id,
-              'data-component-menu-index': `${categoryIndex}:${itemIndex}`,
-              'data-component-status': status,
-              'data-component-path': path
-            });
-            entryView.text(item.label);
-            if (item.status === 'planned') {
-              entryView.shortcut('待开发');
-            }
-            entryView.on('click', () => appRouter.navigate(path));
-          });
-
-          groupNode.child(menuItem);
-          menuItemRefs.push({ categoryId: category.id, node: menuItem, path });
-        });
-      });
-
-      groupRefs.push({ categoryId: category.id, node: group });
-      nav.child(group);
-    });
+  const menuTree = vTree({
+    ariaLabel: '组件菜单',
+    className: 'components-menu-tree',
+    nodes: componentMenuSections.map((category, categoryIndex) => ({
+      children: category.items
+        .filter((item) => !item.hidden)
+        .map((item, itemIndex) => ({
+          id: buildComponentItemPath(category.id, itemIndex),
+          label: item.label
+        })),
+      expanded: categoryIndex === 0,
+      id: category.id,
+      label: category.title
+    })),
+    onSelect: ({ id }) => {
+      const path = String(id);
+      if (path.startsWith('/components/')) {
+        appRouter.navigate(path);
+      }
+    },
+    selectable: true,
+    toggleIcon: {
+      collapsed: FolderOutlined().styles({ height: '16px', width: '16px' }),
+      expanded: FolderOpenOutlined().styles({ height: '16px', width: '16px' })
+    }
   });
 
-  const workspace = vContainer((body) => {
-    body.className('components-workspace');
-    body.fill();
-    body.style('gap', '16px');
-    body.direction('row');
+  const workspace = vSplitPanel((panel) => {
+    panel.className('components-workspace');
+    panel.style('flex', '1 1 auto');
+    panel.style('minHeight', '0');
+    panel.size('280px');
+    panel.minSize(180);
 
-    body.vAside((sidebar) => {
-      sidebar.className('components-menu');
-      sidebar.attr('data-components-menu', 'true');
-      sidebar.attr('aria-label', '组件菜单');
-      sidebar.scrollable();
-
-      sidebar.div((intro) => {
-        intro.className('components-menu-intro');
-        intro.h2('组件菜单');
-        intro.p('按 docs/components.md 的分组顺序整理。');
+    panel.first((sidebar) => {
+      sidebar.style('overflow', 'hidden');
+      sidebar.div((menuBox) => {
+        menuBox.className('components-menu');
+        menuBox.attr('data-components-menu', 'true');
+        menuBox.attr('aria-label', '组件菜单');
+        menuBox.div((intro) => {
+          intro.className('components-menu-intro');
+          intro.h2('组件菜单');
+          intro.p('按 docs/components.md 的分组顺序整理。');
+        });
+        menuBox.child(menuTree);
       });
-
-      sidebar.child(menu);
     });
 
-    body.vMain((panel) => {
-      panel.className('components-router-panel');
-      panel.attr('data-components-router-views', 'true');
-      panel.scrollable();
-      panel.child(routerViews);
+    panel.second((content) => {
+      content.style('overflow', 'hidden');
+      content.div((routerBox) => {
+        routerBox.className('components-router-panel');
+        routerBox.attr('data-components-router-views', 'true');
+        routerBox.child(routerViews);
+      });
     });
   });
 
@@ -507,9 +494,10 @@ function createOverviewView() {
           {
             title: '优势',
             points: [
-              '无复杂框架运行时依赖，直接构建真实 DOM。适合长期运维项目，如客户内部环境部署。',
+              '核心库保持稳定，直接构建真实 DOM。适合长期运维项目，如客户内部环境部署。',
               '支持局部挂载、单页应用。',
-              '组件、布局、路由、i18n、图表按模块扩展。'
+              '组件、布局、路由、i18n、图表按模块扩展。',
+              '视图语法基于原生 HTML 与声明式结构，消除 UI 库语法版本变更带来的迁移负担。'
             ]
           },
           {
@@ -517,7 +505,7 @@ function createOverviewView() {
             points: [
               '浏览器原生优先，用声明式组件组织视图。',
               '小核加扩展，组件边界清晰，能力按需引入。',
-              '后端友好：可嵌入、可组合、可阅读、可复制。'
+              '后端友好：可嵌入、可组合，支持局部挂载与服务端模板嵌入。'
             ]
           }
         ].forEach((principle) => {
@@ -600,19 +588,19 @@ function createOverviewView() {
         [
           {
             label: 'HTML 原生元素',
-            path: '/components/guides/5',
+            path: '/components/guides/2',
             details: 'div / button / input / output'
           },
           {
             label: '组件',
-            path: '/components/guides/6',
+            path: '/components/guides/3',
             details: 'A 薄工厂 / B 对象组件'
           },
-          { label: '国际化', path: '/components/guides/7', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/8', details: 'vStateNode' },
+          { label: '国际化', path: '/components/guides/4', details: 'I18n / createI18n / .s()' },
+          { label: '状态节点', path: '/components/guides/5', details: 'vStateNode' },
           {
             label: '服务端渲染',
-            path: '/components/guides/9',
+            path: '/components/guides/6',
             details: 'renderToString / hydrate / mount'
           }
         ].forEach((guide) => {

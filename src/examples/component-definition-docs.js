@@ -273,6 +273,11 @@ export function ComponentDefinitionDocumentationPage() {
           'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
             '字符串/数字，两种形态均可作为子节点传入页面组合。'
         );
+        page.p(
+          '子工厂快捷方法（row.button(...)、actions.vButton(...)）返回父节点用于继续追加元素；' +
+            '事件绑定使用回调参数：row.button("保存", (btn) => btn.on("click", ...))，' +
+            '不要写成 row.button("保存").on("click", ...)。'
+        );
 
         componentPatterns.forEach((pattern) => {
           page.section((block) => {

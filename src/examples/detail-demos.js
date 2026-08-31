@@ -16,7 +16,6 @@ import {
 import { DeploymentTaskCard } from './demos/actions.js';
 import { DynamicModuleCard } from './demos/async.js';
 import {
-  ChartAdapterCard,
   PagedServiceTableCard,
   ServiceDetailCard,
   ServiceTableCard
@@ -402,6 +401,7 @@ function SwitchDemo() {
 
 function CardSurfaceDemo() {
   const statusState = vText('在线');
+  const compactState = vText('草稿');
 
   return {
     render() {
@@ -410,7 +410,7 @@ function CardSurfaceDemo() {
         card.vCardBody((body) => {
           body.vstack((content) => {
             content.style('gap', '14px');
-            content.p('vCardHeader / vCardBody / vCardFooter 能组合出完整的面板结构。');
+            content.p('vCardHeader / vCardBody / vCardFooter 可自由组合成完整或精简的面板。');
             content.vCard((sample) => {
               sample.vCardHeader('服务总览');
               sample.vCardBody((section) => {
@@ -439,6 +439,21 @@ function CardSurfaceDemo() {
                 footer.vButton((button) => {
                   button.label('查看详情');
                   button.variant('primary');
+                });
+              });
+            });
+            content.vCard((compact) => {
+              compact.vCardHeader('精简卡片');
+              compact.vCardBody((section) => {
+                section.vstack((stackNode) => {
+                  stackNode.style('gap', '8px');
+                  stackNode.p('只有 Header 和 Body 的轻量信息块，可嵌套在页面任意位置。');
+                  stackNode.hstack((row) => {
+                    row.style('alignItems', 'center');
+                    row.span('文档状态');
+                    row.spacer();
+                    row.output((output) => output.child(compactState));
+                  });
                 });
               });
             });
@@ -481,13 +496,7 @@ function CodeDisplayDemo() {
 
 function MessageDemo() {
   const messageHost = vMessageContainer({ placement: 'top-right' });
-  messageHost.styles({
-    maxWidth: 'none',
-    position: 'static',
-    right: null,
-    top: null,
-    width: '100%'
-  });
+  messageHost.inline();
 
   return {
     render() {
@@ -991,31 +1000,19 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:5',
+    'data-display:6',
     freezeEntry({
-      behavior: ['vCardHeader/body/footer 能组合成完整的卡片页面。'],
+      behavior: ['vCardHeader / vCardBody / vCardFooter 可自由组合成完整或精简的面板。'],
       component: CardSurfaceDemo,
       imports: ['vButton', 'vCard', 'vCardBody', 'vCardFooter', 'vCardHeader', 'vText'],
       notes: ['适合需要明显容器边界的内容。'],
       sourceTitle: '卡片核心源码',
-      summary: '卡片表面结构组合。',
+      summary: '完整面板与精简信息块。',
       title: '卡片'
     })
   ],
   [
-    'data-display:6',
-    freezeEntry({
-      behavior: ['图表绘制由 adapter 负责，组件只管理宿主生命周期。'],
-      component: ChartAdapterCard,
-      imports: ['vCard', 'vChart'],
-      notes: ['适合接入第三方图表库。'],
-      sourceTitle: '图表宿主核心源码',
-      summary: '图表宿主与适配器。',
-      title: '图表'
-    })
-  ],
-  [
-    'data-display:9',
+    'data-display:8',
     freezeEntry({
       behavior: ['滚动到接近底部时会自动加载下一页，loop 可循环加载，block 可停止请求。'],
       component: ScrollExample1,

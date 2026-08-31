@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { renderThemeDemo } from './theme-demo.js';
 
 afterEach(() => {
+  document.body.innerHTML = '';
   delete document.documentElement.dataset.yoyaMode;
   delete document.documentElement.dataset.yoyaDensity;
   document.documentElement.style.removeProperty('--yoya-raw-primary');
@@ -10,8 +11,7 @@ afterEach(() => {
 
 describe('theme playground demo', () => {
   it('renders mode, density and accent controls', () => {
-    const demo = renderThemeDemo();
-    const element = demo.render().renderDom();
+    const element = renderThemeDemo().render().renderDom();
 
     expect(element.querySelector("[data-theme-mode='light']")).toBeTruthy();
     expect(element.querySelector("[data-theme-mode='dark']")).toBeTruthy();
@@ -43,13 +43,13 @@ describe('theme playground demo', () => {
     expect(document.documentElement.dataset.yoyaDensity).toBeUndefined();
   });
 
-  it('applies a raw accent color override through the color input', () => {
+  it('applies a raw accent color override through the color picker', () => {
     const element = renderThemeDemo().render().renderDom();
-    const input = element.querySelector('[data-theme-accent]');
+    const picker = element.querySelector('[data-theme-accent]');
 
-    input.value = '#7c3aed';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    picker.querySelector('[data-vcolor-trigger]').click();
+    picker.querySelector('[data-vcolor-palette] [data-vcolor-swatch="#3b82f6"]').click();
 
-    expect(document.documentElement.style.getPropertyValue('--yoya-raw-primary')).toBe('#7c3aed');
+    expect(document.documentElement.style.getPropertyValue('--yoya-raw-primary')).toBe('#3b82f6');
   });
 });

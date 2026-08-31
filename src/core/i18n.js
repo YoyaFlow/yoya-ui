@@ -1,19 +1,36 @@
 import { VTextNode } from './node.js';
 
+/** 多 key locale 共享存储的默认记录键。 */
+const DEFAULT_LOCALES_STORAGE_KEY = 'yoya-ui:i18n';
+
+/** 全局 I18n 实例注册表：key → 实例，供多 locale 场景按 key 查找与使用。 */
+const i18nRegistry = new Map();
+
 /**
  * I18n 是最小国际化管理器：负责语言、词典、订阅通知、持久化和文本翻译。
  */
 export class I18n {
   constructor(options = {}) {
     const defaultLanguage = options.language || 'zh-CN';
+    this._key = options.key || null;
     this._storage = resolveStorage(options.storage);
     this._storageKey = options.storageKey || null;
+    this._sharedStorageKey = this._key ? DEFAULT_LOCALES_STORAGE_KEY : null;
     this._fallbackLanguage = options.fallbackLanguage || defaultLanguage;
     this._language = this._readStoredLanguage(defaultLanguage);
     this._messages = {};
     this._listeners = new Set();
 
     this.registerMessages(options.messages || {});
+
+    if (this._key) {
+      registerI18n(this);
+    }
+  }
+
+  /** 返回该实例的 locale key；未配置时为 null。 */
+  key() {
+    return this._key;
   }
 
   getLanguage() {
@@ -47,6 +64,13 @@ export class I18n {
 
   clearPersistedLanguage() {
     if (!this._storageKey) {
+      if (!this._sharedStorageKey) {
+        return this;
+      }
+
+      const record = readStorageRecord(this._storage, this._sharedStorageKey);
+      delete record[this._key];
+      writeStorageRecord(this._storage, this._sharedStorageKey, record);
       return this;
     }
 
@@ -122,26 +146,37 @@ export class I18n {
   }
 
   _readStoredLanguage(defaultLanguage) {
-    if (!this._storageKey) {
-      return defaultLanguage;
+    if (this._storageKey) {
+      try {
+        return this._storage.getItem(this._storageKey) || defaultLanguage;
+      } catch {
+        return defaultLanguage;
+      }
     }
 
-    try {
-      return this._storage.getItem(this._storageKey) || defaultLanguage;
-    } catch {
-      return defaultLanguage;
+    if (this._sharedStorageKey) {
+      const record = readStorageRecord(this._storage, this._sharedStorageKey);
+      return record[this._key] || defaultLanguage;
     }
+
+    return defaultLanguage;
   }
 
   _persistLanguage() {
-    if (!this._storageKey) {
+    if (this._storageKey) {
+      try {
+        this._storage.setItem(this._storageKey, this._language);
+      } catch {
+        // Storage 不可用时保持静默，不阻止界面切换。
+      }
       return;
     }
 
-    try {
-      this._storage.setItem(this._storageKey, this._language);
-    } catch {
-      // Storage 不可用时保持静默，不阻止界面切换。
+    if (this._sharedStorageKey) {
+      // 共享记录写入整个 key 映射，多个 locale 标识被同时保存。
+      const record = readStorageRecord(this._storage, this._sharedStorageKey);
+      record[this._key] = this._language;
+      writeStorageRecord(this._storage, this._sharedStorageKey, record);
     }
   }
 
@@ -242,13 +277,17 @@ export function installI18nStringShortcut(locale = i18n) {
       let params = {};
       let locale = stringShortcutI18n;
 
-      if (paramsOrLocale && typeof paramsOrLocale.text === 'function') {
+      if (isLocaleLike(paramsOrLocale)) {
         locale = paramsOrLocale;
+      } else if (typeof paramsOrLocale === 'string') {
+        locale = getI18n(paramsOrLocale) || stringShortcutI18n;
       } else {
         params = paramsOrLocale || {};
 
-        if (maybeLocale && typeof maybeLocale.text === 'function') {
+        if (isLocaleLike(maybeLocale)) {
           locale = maybeLocale;
+        } else if (typeof maybeLocale === 'string') {
+          locale = getI18n(maybeLocale) || stringShortcutI18n;
         }
       }
 
@@ -270,6 +309,83 @@ export function withI18nStringShortcut(locale, build) {
     return build();
   } finally {
     stringShortcutI18n = previous;
+  }
+}
+
+function isLocaleLike(value) {
+  return Boolean(value && typeof value.text === 'function');
+}
+
+/**
+ * 注册 I18n 实例到全局注册表，按实例 key 索引；未配置 key 时不注册。
+ * 返回取消注册函数。
+ */
+export function registerI18n(instance) {
+  const key = instance?.key?.();
+  if (!key) {
+    return () => {};
+  }
+
+  i18nRegistry.set(key, instance);
+  return () => {
+    if (i18nRegistry.get(key) === instance) {
+      i18nRegistry.delete(key);
+    }
+  };
+}
+
+/** 从全局注册表移除实例（接受 key 或实例）。 */
+export function unregisterI18n(keyOrInstance) {
+  const key = typeof keyOrInstance === 'string' ? keyOrInstance : keyOrInstance?.key?.();
+  if (key) {
+    i18nRegistry.delete(key);
+  }
+  return key;
+}
+
+/** 按 key 查找全局注册的 I18n 实例；未找到返回 null。 */
+export function getI18n(key) {
+  return key ? i18nRegistry.get(key) || null : null;
+}
+
+/** 返回全局注册的 { key: instance } 副本。 */
+export function listI18n() {
+  return new Map(i18nRegistry);
+}
+
+/** 读取多 key locale 共享存储中的全部标识（{ key: language }）。 */
+export function getPersistedI18nLocales(storage) {
+  const target = storage || resolveStorage();
+  return readStorageRecord(target, DEFAULT_LOCALES_STORAGE_KEY);
+}
+
+function readStorageRecord(storage, key) {
+  if (!storage) {
+    return {};
+  }
+
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStorageRecord(storage, key, record) {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(key, JSON.stringify(record));
+  } catch {
+    // Storage 不可用时保持静默，不阻止界面切换。
   }
 }
 

@@ -231,6 +231,7 @@ export class VMessageContainer extends HtmlElementNode {
     super('div', null);
     this._nextId = 1;
     this._messages = new Map();
+    this._inline = false;
     this.className(componentClass, 'yoya-vmessage-container');
     this.attr({ 'aria-live': 'polite', 'data-placement': 'top-right' });
     this.styles({
@@ -253,6 +254,37 @@ export class VMessageContainer extends HtmlElementNode {
 
     this.attr('data-placement', value || 'top-right');
     this.styles(placementStyles(value || 'top-right'));
+    return this;
+  }
+
+  /** 内嵌模式：容器静态定位并占满宽度，适合放在卡片/局部区域；false 恢复浮层定位。 */
+  inline(value = true) {
+    this._inline = Boolean(value);
+
+    if (this._inline) {
+      this.styles({
+        bottom: null,
+        left: null,
+        maxWidth: 'none',
+        position: 'static',
+        right: null,
+        top: null,
+        transform: null,
+        width: '100%',
+        zIndex: null
+      });
+      return this;
+    }
+
+    this.styles({
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      maxWidth: '360px',
+      position: 'fixed',
+      zIndex: '1000'
+    });
+    this.placement(this.placement() || 'top-right');
     return this;
   }
 
@@ -341,7 +373,7 @@ export class VMessageContainer extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const { placement, ...elementConfig } = setup;
+      const { inline, placement, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
         this.setup(elementConfig);
@@ -349,6 +381,9 @@ export class VMessageContainer extends HtmlElementNode {
 
       if (placement !== undefined) {
         this.placement(placement);
+      }
+      if (inline !== undefined) {
+        this.inline(inline);
       }
     }
   }

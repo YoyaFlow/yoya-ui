@@ -15,7 +15,7 @@ yoya-ui 直接在真实 DOM 上构建视图：声明式 HTML 写法、组件库�
 - **内置路由 / i18n / 主题 / 状态管理**：单页应用所需能力自带，无需额外选型
 - **服务端渲染**：一套代码双模式可切换，整站服务端渲染与局部组件客户端加载加强均可用
 - **小核心、零依赖、易扩展**：遵循标准组件形态，第三方组件可与内置组件无缝组合，按模块引入适配任意工程
-- **长期维护友好**：基于浏览器原生平台、不依赖框架运行时，长期项目无需担心版本过时或升级重写
+- **长期维护友好**：核心库保持稳定，长期项目无需担心版本过时或升级重写
 
 ## 安装
 
@@ -81,6 +81,42 @@ import { vButton, vCard, vForm, vTable } from 'yoya-ui/ui'; // 官方组件库
 import { vEchart } from 'yoya-ui/echart'; // ECharts 组件（需自行引入 echarts）
 import { renderToString, hydrate } from 'yoya-ui/ssr'; // 服务端渲染
 import 'yoya-ui/ui.css'; // 默认样式与主题变量
+```
+
+## TypeScript 支持
+
+源码保持纯 JavaScript（零构建、可直接运行），通过随包发布的类型声明提供完整的 TypeScript 体验。`types/` 目录覆盖四个入口（根入口 / `core` / `echart` / `ssr`），并包含节点类、工厂函数签名、组件状态 API 与父节点快捷方法（如 `page.vButton(...)`）的类型。
+
+TypeScript 项目无需额外配置即可获得提示与类型检查：
+
+```ts
+import { div, vButton, vCard, vTable, toast } from 'yoya-ui';
+import { createI18n } from 'yoya-ui/core';
+import { renderToString } from 'yoya-ui/ssr';
+import 'yoya-ui/ui.css';
+
+div((page) => {
+  page.className('app');
+  page.vButton('启动任务', (button) => {
+    button.variant('primary');
+    button.on('click', () => toast.success('任务已启动'));
+  });
+  page.vCard((card) => {
+    card.vCardBody((body) => {
+      body.vTable((table) => {
+        table.columns([{ key: 'name', title: '名称', dataIndex: 'name' }]);
+        table.rows([{ name: 'api-gateway' }]);
+      });
+    });
+  });
+});
+```
+
+库内维护类型声明质量：
+
+```bash
+npm run typecheck    # 校验声明文件与 consumer 类型测试
+npm run test:types   # 同 typecheck
 ```
 
 ## 核心能力

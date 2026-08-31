@@ -26,13 +26,22 @@ yoya-ui 的声明式视图树支持服务端渲染：服务端把页面渲染成
 
 ```js
 // page.js —— 服务端与客户端共用
+const messages = {
+  'zh-CN': { title: 'SSR 示例', welcome: '欢迎', email: '邮箱' },
+  'en-US': { title: 'SSR Demo', welcome: 'Welcome', email: 'Email' }
+};
+
+// 由渲染入口的 i18n 选项接收，让 ".s()" 自动按请求语言翻译
+export const createLocale = (initial = {}) =>
+  createI18n({ language: initial.locale || 'zh-CN', messages });
+
 export function createSsrPage(initial = {}, deps = {}) {
-  const locale = createI18n({ language: initial.locale, messages });
   const router = createRouter();
-  router.route('/home', locale.t('welcome'));
+  router.route('/home', '欢迎'.s('welcome'));
   // ...
 
   const page = div((root) => {
+    root.h1('SSR 示例'.s('title'));
     root.child(router);
     root.child(form);
     root.child(vClientOnly(() => vEchart({ echartsLib: deps.echartsLib, option })));
@@ -48,6 +57,7 @@ export function createSsrPage(initial = {}, deps = {}) {
 - **工厂必须是函数**，`renderToString`/`hydrate`/`mount` 都会调用 `createPage(requestState)`；
 - 请求状态只放可序列化的数据（路径、locale、表单初值等），不放函数；
 - `deps` 用于注入不可序列化的客户端依赖（如 ECharts 库实例）；
+- 语言：`createLocale(state)` 传给渲染入口的 `i18n` 选项，页面内直接写 `"文案".s(key)` 即可，无需手动传 locale；
 - 表单校验在工厂内执行一次：服务端把错误状态烘焙进 HTML，客户端同一套规则继续校验。
 
 ## 3. 服务端初始化（配合你的服务端代码）
@@ -59,13 +69,14 @@ export function createSsrPage(initial = {}, deps = {}) {
 完整可运行示例见 `src/examples/ssr/server-http.mjs`（`node src/examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
 
 ```js
-import { renderToString, serializeState } from 'yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from 'yoya-ui/ssr';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
   const { exceeded, html, state } = renderToString(createSsrPage, {
     maxNodes: 5000, // 超大页面回退客户端渲染
-    state: initial
+    state: initial,
+    i18n: createLocale // 可选：自动把 ".s()" 作用域到请求语言
   });
 
   // exceeded 时只输出空壳，客户端自动走 mount()
@@ -74,16 +85,25 @@ function renderPage(initial) {
 
 // 每个请求：
 const initial = {
-  locale: detectLocale(req), // cookie / header / query
+  locale: resolveLocale(
+    {
+      cookie: req.headers.cookie,
+      url: req.url,
+      acceptLanguage: req.headers['accept-language']
+    },
+    { cookieKey: 'yoya-lang' }
+  ), // cookie > query > Accept-Language
   mode: 'history',
   path: url.pathname
 };
 res.end(renderPage(initial));
 ```
 
+语言标识由客户端通过 cookie 携带：切换语言时写 `document.cookie = 'yoya-lang=' + value + '; path=/'`，之后每次请求自动带上。`resolveLocale` 只接收已取好的原始字段（cookie / url / acceptLanguage），不依赖具体请求对象形态，取值由各框架自行完成：Node 系取 `req.headers.cookie`，Fetch 系取 `request.headers.get('cookie')`，Hono 取 `c.req.header('cookie')` 等。页面工厂、渲染、hydration 都不感知 cookie。若服务端做了页面级缓存，需要 `Vary: Cookie` 或按语言拆缓存。
+
 ### 3.2 每请求上下文（保持无状态）
 
-- **locale/主题**：从请求解析，经 `createI18n({ language })` 每请求建实例；`.s()` 快捷方式用 `withI18nStringShortcut(locale, build)` 作用域化，共享单例不被修改；
+- **locale/主题**：从请求解析，经 `createI18n({ language })` 每请求建实例；`.s()` 快捷方式由渲染入口的 `i18n` 选项自动作用域化（`renderToString`/`mount`/`hydrate` 均支持，`i18n` 可传实例或 `(state) => I18n` 工厂），也可用 `withI18nStringShortcut(locale, build)` 手动包裹；共享单例不被修改；
 - **id 分配器**：`renderToString`/`hydrate`/`mount` 内部已用 `withIdAllocator` 包裹，同输入渲染产出相同 id，跨请求隔离；
 - **渲染后清理**：工厂创建的树序列化后自动 `destroy()`，模块级注册表（如表单单选框组）不跨请求泄漏。
 
@@ -146,10 +166,10 @@ const app = document.getElementById('app');
 
 if (app.firstElementChild) {
   // 有服务端 HTML → 收养 DOM、回读表单快照、绑定事件
-  hydrate(createSsrPage, app, data);
+  hydrate(createSsrPage, app, data, { i18n: createLocale });
 } else {
   // 空壳（exceeded 回退或纯客户端模式）→ 全量渲染
-  mount(createSsrPage, app, data);
+  mount(createSsrPage, app, data, { i18n: createLocale });
 }
 ```
 
@@ -177,6 +197,7 @@ div((root) => {
 
 - `node src/examples/ssr/server.mjs`：直接把页面 HTML 输出到 stdout，看产物用；
 - `node src/examples/ssr/server-http.mjs`：完整 HTTP 服务（无打包最小演示），演示请求解析、SSR 渲染、静态资源提供、客户端 hydrate/mount 分支。先运行 `npm run build`。
+- `dist/examples/ssr-demo.html`（构建 examples 后）：独立 SSR 演示页，浏览器内 renderToString → hydrate，演示按钮、弹窗、表单与中英文切换。
 - 示例站（`npm run build:examples` + `npx vite preview`）：开发指南 → 服务端渲染页，含 SSR/非 SSR 模式切换交互演示。
 
 ## 8. 开发纪律与常见错误

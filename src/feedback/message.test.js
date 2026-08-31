@@ -49,4 +49,19 @@ describe('VMessage countdown', () => {
     message.destroy();
     expect(message._countdownTimer).toBeNull();
   });
+
+  it('supports inline mode for local embedding and restores the floating layout', () => {
+    const host = vMessageContainer({ inline: true, placement: 'top-right' });
+    const element = host.renderDom();
+
+    expect(element.style.position).toBe('static');
+    expect(element.style.maxWidth).toBe('none');
+    expect(element.style.width).toBe('100%');
+    expect(element.style.top).toBe('');
+
+    host.inline(false);
+    expect(element.style.position).toBe('fixed');
+    expect(element.style.maxWidth).toBe('360px');
+    expect(element.style.right).toBe('16px');
+  });
 });

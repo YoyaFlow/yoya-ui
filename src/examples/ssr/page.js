@@ -37,25 +37,27 @@ const chartOption = {
  * SSR 页面工厂：每请求创建独立实例，locale 与当前路由来自请求上下文。
  * 服务端与客户端都调用 createSsrPage(initialState)，保证双端一致。
  */
+export const createLocale = (initial = {}) =>
+  createI18n({ language: initial.locale || 'zh-CN', messages });
+
 export function createSsrPage(initial = {}, deps = {}) {
-  const locale = createI18n({ language: initial.locale || 'zh-CN', messages });
   const router = createRouter();
   router.mode(initial.mode || 'hash');
-  router.route('/home', locale.t('welcome'));
-  router.route('/chart', locale.t('chartPage'));
+  router.route('/home', '欢迎使用服务端渲染'.s('welcome'));
+  router.route('/chart', '图表页'.s('chartPage'));
   router.notFound('未找到');
 
   const form = vForm();
-  const emailItem = vFormItem({ label: locale.t('email'), name: 'email', required: true });
-  emailItem.control(vInput({ name: 'email', placeholder: locale.t('email') }));
+  const emailItem = vFormItem({ label: '邮箱'.s('email'), name: 'email', required: true });
+  emailItem.control(vInput({ name: 'email', placeholder: '邮箱'.s('email') }));
   form.child(emailItem);
   form.validate();
 
   const page = div((root) => {
-    root.h1(locale.t('title'));
+    root.h1('SSR 示例'.s('title'));
     root.nav((nav) => {
-      nav.child(vLink(router, { label: locale.t('welcome'), to: '/home' }));
-      nav.child(vLink(router, { label: locale.t('chart'), to: '/chart' }));
+      nav.child(vLink(router, { label: '欢迎使用服务端渲染'.s('welcome'), to: '/home' }));
+      nav.child(vLink(router, { label: '图表'.s('chart'), to: '/chart' }));
     });
     root.child(router);
     root.child(form);

@@ -7,39 +7,57 @@
   "main": "./dist/yoya-ui.umd.js",
   "module": "./dist/yoya.ui.js",
   "style": "./dist/yoya.ui.css",
+  "types": "./types/index.d.ts",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./dist/yoya.ui.js",
       "require": "./dist/yoya-ui.umd.js"
     },
-    "./core": "./dist/yoya.core.js",
-    "./echart": "./dist/yoya.echart.js",
-    "./ssr": "./dist/yoya.ssr.js",
-    "./ui": "./dist/yoya.ui.js",
+    "./core": {
+      "types": "./types/yoya.core.d.ts",
+      "import": "./dist/yoya.core.js"
+    },
+    "./echart": {
+      "types": "./types/yoya.echart.d.ts",
+      "import": "./dist/yoya.echart.js"
+    },
+    "./ssr": {
+      "types": "./types/yoya.ssr.d.ts",
+      "import": "./dist/yoya.ssr.js"
+    },
+    "./ui": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/yoya.ui.js"
+    },
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "types",
+    "!types/tests"
   ],
   "scripts": {
     "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "build:entries": "node scripts/build-entries.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "build:umd": "vite build --config vite.umd.config.js",
-    "examples:html": "vite src/examples --host 0.0.0.0",
-    "examples:i18n": "vite src/examples --host 0.0.0.0 --port 5174",
-    "examples:layout": "vite src/examples --host 0.0.0.0 --port 5175",
-    "examples:svg": "vite src/examples --host 0.0.0.0 --port 5176",
-    "examples:router": "vite src/examples --host 0.0.0.0 --port 5177",
-    "examples:admin": "vite src/examples --host 0.0.0.0 --port 5179",
-    "examples:components": "vite src/examples --host 0.0.0.0 --port 5178",
+    "examples:html": "vite --config vite.examples.config.js --host 0.0.0.0",
+    "examples:i18n": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5174",
+    "examples:layout": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5175",
+    "examples:svg": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5176",
+    "examples:router": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5177",
+    "examples:admin": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5179",
+    "examples:components": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5178",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:types": "npm run typecheck"
   },
   "keywords": [
     "vite",
@@ -60,6 +78,7 @@
     "globals": "^17.11.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
+    "typescript": "^7.0.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"
   }

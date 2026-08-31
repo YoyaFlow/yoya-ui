@@ -8,7 +8,9 @@ import { renderExamplesIndex } from './index.router.js';
 let root = null;
 
 async function openRoute(path) {
-  const item = document.querySelector(`[data-component-path="${path}"]`);
+  const item =
+    document.querySelector(`[data-node-id="${path}"]`) ||
+    document.querySelector(`[data-component-path="${path}"]`);
   if (item) {
     item.click();
   } else {
@@ -89,11 +91,11 @@ describe('renderExamplesIndex', () => {
     document.body.appendChild(outer);
 
     applyDemoStyles(outer);
-    expect(outer.style.display).toBe('grid');
+    expect(outer.style.display).toBe('flex');
     expect(outer.style.height).toBe('100%');
 
     applyDemoStyles(child);
-    expect(outer.style.display).toBe('grid');
+    expect(outer.style.display).toBe('flex');
     expect(outer.style.height).toBe('100%');
 
     outer.remove();
@@ -122,6 +124,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('.yoya-vrouter-views').dataset.titleLocked).toBe('true');
     expect(document.querySelector('.yoya-vrouter-views-content').style.overflow).toBe('auto');
     expect(document.querySelector('.components-workspace')).not.toBeNull();
+    expect(document.querySelector('.yoya-vsplit-panel')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--overview')).not.toBeNull();
@@ -130,13 +133,19 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(12);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(5);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(12);
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(70);
-    expect(document.querySelector('[data-component-path="/components/layout/7"]')).toBeNull();
+    expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
+    expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
+    expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
     expect(
-      document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')[0].textContent
+      document.querySelector('[data-components-menu] [data-node-id="guides"]').textContent
     ).toContain('开发指南');
-    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(1);
+    expect(
+      document.querySelector('[data-components-menu] [data-node-id="/components/guides/0"]')
+    ).not.toBeNull();
+    expect(
+      document.querySelector('[data-components-menu] [data-node-id="/components/layout/7"]')
+    ).toBeNull();
+    expect(document.querySelectorAll('[data-component-status="planned"]')).toHaveLength(0);
     expect(selectedRouteTitle()).toBe('概述');
   });
 
@@ -201,19 +210,17 @@ describe('renderExamplesIndex', () => {
       '[data-components-top-nav] .yoya-vmenu-item[data-active="true"]'
     );
     const activeMenuItems = document.querySelectorAll(
-      '[data-components-menu] .yoya-vmenu-item[data-active="true"]'
+      '[data-components-menu] .yoya-vtree-node[aria-selected="true"]'
     );
 
     expect(activeTopItems).toHaveLength(1);
     expect(activeMenuItems).toHaveLength(1);
     expect(activeTopItems[0].getAttribute('data-top-nav-path')).toBe(dataPath);
-    expect(activeMenuItems[0].getAttribute('data-component-path')).toBe(
-      '/components/data-display/0'
-    );
+    expect(activeMenuItems[0].getAttribute('data-node-id')).toBe('/components/data-display/0');
     expect(layoutItem.style.background).toBe('');
     expect(
-      document.querySelector('[data-component-path="/components/layout/0"]').style.background
-    ).toBe('');
+      document.querySelector('[data-node-id="/components/layout/0"]').getAttribute('aria-selected')
+    ).toBe('false');
   });
 
   it('renders the SVG icon library in a responsive grid', async () => {
@@ -344,6 +351,217 @@ describe('renderExamplesIndex', () => {
     expect(ringLive.querySelector('svg text').textContent).toContain('40%');
   });
 
+  it('renders the color picker docs page with favorites interaction', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/form/12');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('颜色选择器');
+    });
+
+    const page = document.querySelector('[data-color-picker-docs]');
+    expect(page.querySelector('h1').textContent).toBe('vColorPicker 颜色选择器');
+    expect(page.querySelector('[data-color-picker-demo="basic"]')).not.toBeNull();
+    expect(page.querySelector('[data-color-picker-demo="alpha"]')).not.toBeNull();
+
+    const basicLive = page.querySelector('[data-color-picker-demo="basic"]');
+    basicLive.querySelector('[data-vcolor-trigger]').click();
+    basicLive.querySelector('[data-vcolor-palette] [data-vcolor-swatch="#3b82f6"]').click();
+    expect(basicLive.querySelector('[data-color-picker-output]').textContent).toBe('#3b82f6');
+
+    const alphaLive = page.querySelector('[data-color-picker-demo="alpha"]');
+    const alphaInput = alphaLive.querySelector('[data-vcolor-alpha]');
+    alphaInput.value = '50';
+    alphaInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(alphaLive.querySelector('[data-color-picker-alpha-output]').textContent).toBe(
+      'rgba(37, 99, 235, 0.5)'
+    );
+  });
+
+  it.each([
+    [
+      '/components/form/13',
+      '滑动条',
+      'slider',
+      'vSlider 滑动条',
+      'basic',
+      'SliderBasicExample',
+      'vSlider({'
+    ],
+    [
+      '/components/form/14',
+      '级联选择',
+      'cascader',
+      'vCascader 级联选择',
+      'basic',
+      'CascaderBasicExample',
+      'vCascader({'
+    ],
+    [
+      '/components/form/15',
+      '标签输入',
+      'tags-input',
+      'vTagsInput 标签输入',
+      'basic',
+      'TagsBasicExample',
+      'vTagsInput({'
+    ],
+    [
+      '/components/form/16',
+      '自动完成',
+      'autocomplete',
+      'vAutocomplete 自动完成',
+      'basic',
+      'AutocompleteBasicExample',
+      'vAutocomplete({'
+    ]
+  ])(
+    'renders the %s form control docs page with live demos',
+    async (path, routeTitle, docsKey, heading, firstDemoId, sourceName, sourceSnippet) => {
+      root = renderExamplesIndex('#app');
+
+      await openRoute(path);
+      await vi.waitFor(() => {
+        expect(selectedRouteTitle()).toBe(routeTitle);
+      });
+
+      const page = document.querySelector(`[data-form-docs="${docsKey}"]`);
+      expect(page).not.toBeNull();
+      expect(page.querySelector('h1').textContent).toBe(heading);
+
+      const demo = page.querySelector(`[data-form-demo="${firstDemoId}"]`);
+      expect(demo).not.toBeNull();
+      const source = demo.querySelector('[data-source-example]');
+      expect(source).not.toBeNull();
+      expect(source.textContent).toContain(`export function ${sourceName}`);
+      expect(source.textContent).toContain(sourceSnippet);
+    }
+  );
+
+  it('interacts with the slider, cascader, tags and autocomplete live demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/form/13');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('滑动条');
+    });
+    let page = document.querySelector('[data-form-docs="slider"]');
+    const sliderLive = page.querySelector('[data-form-demo="basic"]');
+    const sliderInput = sliderLive.querySelector('[data-vslider-input]');
+    sliderInput.value = '85';
+    sliderInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(sliderLive.querySelector('[data-slider-output]').textContent).toBe('85');
+
+    const sliderStateLive = page.querySelector('[data-form-demo="state"]');
+    const stateButtons = [...sliderStateLive.querySelectorAll('button')];
+    const hideButton = stateButtons.find((button) => button.textContent.includes('隐藏数值'));
+    const toggleButton = stateButtons.find((button) => button.textContent.includes('禁用'));
+    hideButton.click();
+    expect(sliderStateLive.querySelector('[data-vslider-input]').disabled).toBe(false);
+    expect(sliderStateLive.querySelector('[data-vslider-value]').style.display).toBe('none');
+    toggleButton.click();
+    expect(sliderStateLive.querySelector('[data-vslider-input]').disabled).toBe(true);
+
+    const verticalLive = page.querySelector('[data-form-demo="vertical"]');
+    expect(verticalLive.querySelector('[data-vslider-input]').style.writingMode).toBe(
+      'vertical-lr'
+    );
+    const verticalInput = verticalLive.querySelector('[data-vslider-input]');
+    verticalInput.value = '35';
+    verticalInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(verticalLive.querySelector('[data-slider-vertical-output]').textContent).toBe('35');
+
+    await openRoute('/components/form/14');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('级联选择');
+    });
+    page = document.querySelector('[data-form-docs="cascader"]');
+    const cascaderLive = page.querySelector('[data-form-demo="basic"]');
+    cascaderLive.querySelector('[data-vcascader-trigger]').click();
+    cascaderLive.querySelector('[data-vcascader-option="guangdong"]').click();
+    cascaderLive.querySelector('[data-vcascader-option="shenzhen"]').click();
+    expect(cascaderLive.querySelector('[data-cascader-output]').textContent).toBe(
+      'guangdong / shenzhen'
+    );
+
+    const cascaderStateLive = page.querySelector('[data-form-demo="state"]');
+    const cascaderButtons = [...cascaderStateLive.querySelectorAll('button')];
+    cascaderButtons.find((button) => button.textContent.includes('回填广东')).click();
+    expect(cascaderStateLive.querySelector('[data-vcascader-trigger]').textContent).toContain(
+      '广东 / 深圳'
+    );
+    cascaderButtons.find((button) => button.textContent.includes('禁用')).click();
+    expect(cascaderStateLive.querySelector('[data-vcascader-trigger]').disabled).toBe(true);
+
+    await openRoute('/components/form/15');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('标签输入');
+    });
+    page = document.querySelector('[data-form-docs="tags-input"]');
+    const tagsLive = page.querySelector('[data-form-demo="basic"]');
+    const tagsField = tagsLive.querySelector('[data-vtags-input]');
+    tagsField.value = 'vue';
+    tagsField.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    expect(tagsLive.querySelector('[data-tags-output]').textContent).toBe('vue');
+
+    await openRoute('/components/form/16');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('自动完成');
+    });
+    page = document.querySelector('[data-form-docs="autocomplete"]');
+    const acLive = page.querySelector('[data-form-demo="basic"]');
+    const acField = acLive.querySelector('[data-vautocomplete-input]');
+    acField.value = 'Vue';
+    acField.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(acLive.querySelector('[data-vautocomplete-list]').style.display).not.toBe('none');
+    });
+    acLive
+      .querySelector('[data-vautocomplete-list] [data-vautocomplete-option="Vue"]')
+      .dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    expect(acLive.querySelector('[data-autocomplete-output]').textContent).toBe('Vue');
+  });
+
+  it('renders the split panel docs page with draggable dividers', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/layout/8');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('分隔面板');
+    });
+
+    const page = document.querySelector('[data-component-route-item="layout:8"]');
+    expect(page.querySelector('[data-layout-demo="horizontal"]')).not.toBeNull();
+    expect(page.querySelector('[data-layout-demo="vertical"]')).not.toBeNull();
+    const divider = page.querySelector('[data-vsplit-divider]');
+    expect(divider).not.toBeNull();
+    expect(divider.getAttribute('role')).toBe('separator');
+  });
+
+  it('adjusts the responsive grid iframe width to demo auto column switching', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/layout/2');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('栅格');
+    });
+
+    const page = document.querySelector('[data-component-route-item="layout:2"]');
+    const iframe = page.querySelector('[data-grid-responsive-frame]');
+    expect(iframe).not.toBeNull();
+    expect(iframe.getAttribute('src')).toBe('./grid-responsive.html');
+    expect(iframe.style.width).toBe('768px');
+
+    const slider = page.querySelector('[data-grid-responsive-width]');
+    slider.value = '480';
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(page.querySelector('[data-grid-responsive-width-text]').textContent).toBe('480px');
+    expect(iframe.style.width).toBe('480px');
+
+    page.querySelector('[data-grid-responsive-preset="1100"]').click();
+    expect(iframe.style.width).toBe('1100px');
+  });
+
   it('renders the file upload demo page with live component and source', async () => {
     root = renderExamplesIndex('#app');
 
@@ -406,7 +624,7 @@ describe('renderExamplesIndex', () => {
   it('renders the scroll component docs with API and detailed demos', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/data-display/9');
+    await openRoute('/components/data-display/8');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('滚动组件');
     });
@@ -448,7 +666,7 @@ describe('renderExamplesIndex', () => {
   it('renders the carousel docs with API and demos', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/data-display/10');
+    await openRoute('/components/data-display/9');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('走马灯');
     });
@@ -569,7 +787,7 @@ describe('renderExamplesIndex', () => {
   it('switches the vStateNode dynamic form by type', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/8');
+    await openRoute('/components/guides/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
@@ -602,7 +820,7 @@ describe('renderExamplesIndex', () => {
   it('calls custom methods defined on a vStateNode config', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/8');
+    await openRoute('/components/guides/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
@@ -650,7 +868,7 @@ describe('renderExamplesIndex', () => {
   it('renders the component definition guide with define and compose demos', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/6');
+    await openRoute('/components/guides/3');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('组件');
     });
@@ -681,7 +899,7 @@ describe('renderExamplesIndex', () => {
   it('renders the HTML native elements guide page with a live input demo', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/5');
+    await openRoute('/components/guides/2');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('HTML 原生元素');
     });
@@ -694,16 +912,18 @@ describe('renderExamplesIndex', () => {
     htmlDemo.querySelector('button').click();
     expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
     expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
+
+    const usageNote = page.querySelector('[data-html-native-usage]');
+    expect(usageNote).not.toBeNull();
+    expect(usageNote.textContent).toContain("box.button('保存', (btn) => btn.on('click', save))");
+    expect(usageNote.textContent).toContain("box.button('保存').on('click', save)");
   });
 
   it('renders the development guide overview and installation pages', async () => {
     root = renderExamplesIndex('#app');
     const guideCases = [
       ['/components/guides/0', '概述', 'overview'],
-      ['/components/guides/1', '定位', 'positioning'],
-      ['/components/guides/2', '优势', 'advantages'],
-      ['/components/guides/3', '设计理念', 'philosophy'],
-      ['/components/guides/4', '安装方式', 'installation']
+      ['/components/guides/1', '安装方式', 'installation']
     ];
 
     for (const [path, title, pageId] of guideCases) {
@@ -717,7 +937,7 @@ describe('renderExamplesIndex', () => {
 
   it.each([
     [
-      '/components/guides/7',
+      '/components/guides/4',
       '国际化',
       'i18n',
       'I18n 国际化',
@@ -727,7 +947,7 @@ describe('renderExamplesIndex', () => {
       4
     ],
     [
-      '/components/guides/8',
+      '/components/guides/5',
       '状态节点',
       'state',
       'vStateNode 状态节点',
@@ -958,7 +1178,7 @@ describe('renderExamplesIndex', () => {
       4
     ],
     [
-      '/components/data-display/8',
+      '/components/data-display/7',
       '进度条',
       'progress',
       'vProgress 进度条',
@@ -1008,7 +1228,7 @@ describe('renderExamplesIndex', () => {
   it('switches reactive I18n demos between languages', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/7');
+    await openRoute('/components/guides/4');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('国际化');
     });
@@ -1083,7 +1303,7 @@ describe('renderExamplesIndex', () => {
   it('runs state node demos with update and rebuild modes', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/guides/8');
+    await openRoute('/components/guides/5');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('状态节点');
     });
@@ -1486,7 +1706,7 @@ describe('renderExamplesIndex', () => {
   it('updates value and status in the progress docs demo', async () => {
     root = renderExamplesIndex('#app');
 
-    await openRoute('/components/data-display/8');
+    await openRoute('/components/data-display/7');
     await vi.waitFor(() => {
       expect(selectedRouteTitle()).toBe('进度条');
     });

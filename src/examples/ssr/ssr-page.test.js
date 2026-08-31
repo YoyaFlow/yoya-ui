@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { hydrate, parseState, renderToString } from '../../yoya.ssr.js';
-import { createSsrPage } from './page.js';
+import { createLocale, createSsrPage } from './page.js';
 
 describe('SSR example page', () => {
   it('renders, hydrates and stays interactive end to end', () => {
     const { html, state } = renderToString(createSsrPage, {
-      state: { locale: 'zh-CN', path: '/home' }
+      state: { locale: 'zh-CN', path: '/home' },
+      i18n: createLocale
     });
 
     expect(html).toContain('SSR 示例');
@@ -15,7 +16,7 @@ describe('SSR example page', () => {
     expect(html).not.toContain('yoya-vechart');
 
     document.body.innerHTML = `<div id="app">${html}</div>`;
-    hydrate(createSsrPage, '#app', parseState(state));
+    hydrate(createSsrPage, '#app', parseState(state), { i18n: createLocale });
 
     expect(document.querySelector('#app').textContent).toContain('欢迎使用服务端渲染');
     expect(document.querySelector('#app [data-error]')).not.toBeNull();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from './index.js';
+import { createI18n, div, vStateNode } from './index.js';
 import { mount, parseState, renderToString } from './yoya.ssr.js';
 
 function createCounterPage(initialState = { count: 0 }) {
@@ -30,5 +30,23 @@ describe('mount after server render', () => {
 
     expect(app.textContent).toContain('计数：4');
     expect(app.querySelector('button').textContent).toBe('+4');
+  });
+});
+
+describe('mount i18n option', () => {
+  it('scopes the string shortcut to the page locale', () => {
+    const messages = {
+      'zh-CN': { welcome: '欢迎' },
+      'en-US': { welcome: 'Welcome' }
+    };
+    const createLocale = (state) => createI18n({ language: state?.locale || 'zh-CN', messages });
+    const page = () => div((root) => root.span('welcome'.s('welcome')));
+
+    document.body.innerHTML = '<div id="app"></div>';
+
+    const node = mount(page, '#app', { locale: 'en-US' }, { i18n: createLocale });
+
+    expect(document.querySelector('#app').textContent).toBe('Welcome');
+    node.destroy();
   });
 });

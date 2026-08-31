@@ -6,6 +6,7 @@ import {
   normalizeComponentArguments,
   themeValue
 } from '../components/shared.js';
+import { VSplitPanel, vSplitPanel } from './split-panel.js';
 
 const layoutOptionNames = new Set([
   'align',
@@ -732,6 +733,7 @@ const layoutFactories = {
   vHeader,
   vMain,
   vRow,
+  vSplitPanel,
   center,
   container,
   divider,
@@ -748,6 +750,8 @@ const layoutFactories = {
 };
 
 registerChildFactories(HtmlElementNode, layoutFactories);
+
+export { VSplitPanel, vSplitPanel };
 
 function createLayoutNode(
   kind,

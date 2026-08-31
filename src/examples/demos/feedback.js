@@ -2,15 +2,7 @@ import { vCard, vMessageManager } from '../../index.js';
 
 export function LocalMessageManagerCard() {
   const manager = vMessageManager({ placement: 'top-right' });
-  manager.container().styles({
-    bottom: null,
-    left: null,
-    maxWidth: 'none',
-    position: 'static',
-    right: null,
-    top: null,
-    width: '100%'
-  });
+  manager.container().inline();
 
   return {
     render() {

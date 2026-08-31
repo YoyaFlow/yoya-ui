@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 import { cpSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const echartsSource = fileURLToPath(new URL('./src/chart/echarts.min.js', import.meta.url));
 
 const injectEchartsScript = {
   name: 'yoya-examples-inject-echarts',
@@ -9,11 +12,12 @@ const injectEchartsScript = {
       return html;
     }
 
-    const src = ctx.server ? '/src/chart/echarts.min.js' : './echarts.min.js';
+    // dev 下 root 是 src/examples，echarts 文件在 root 之外，用 /@fs/ 绝对路径提供
+    const src = ctx.server ? `/@fs/${echartsSource.replace(/\\/g, '/')}` : './echarts.min.js';
     return html.replace('</head>', `    <script src="${src}"></script>\n  </head>`);
   },
   closeBundle() {
-    cpSync('src/chart/echarts.min.js', 'dist/examples/echarts.min.js');
+    cpSync(echartsSource, 'dist/examples/echarts.min.js');
   }
 };
 
@@ -27,7 +31,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         anchor: 'anchor.html',
+        'grid-responsive': 'grid-responsive.html',
         index: 'Index.html',
+        'ssr-demo': 'ssr-demo.html',
         'declarative-router': 'declarative-router.html',
         'router-async': 'router-async.html',
         'router-history': 'router-history.html',

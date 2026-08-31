@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { createSsrPage } from './page.js';
-import { renderToString, serializeState } from '../../yoya.ssr.js';
+import { createLocale, createSsrPage } from './page.js';
+import { renderToString, resolveLocale, serializeState } from '../../yoya.ssr.js';
 
 const PORT = Number(globalThis.process.env.SSR_PORT || 3000);
 const DIST = join(import.meta.dirname, '../../../dist');
@@ -33,9 +33,24 @@ const {
 // 无打包的最小演示：客户端页面工厂与服务端保持一致。
 // 实际项目请把 page.js 通过打包器同时供两端使用，避免重复维护。
 const messages = {
-  'zh-CN': { chart: '图表', chartPage: '图表页', email: '邮箱', title: 'SSR 示例', welcome: '欢迎使用服务端渲染' },
-  'en-US': { chart: 'Chart', chartPage: 'Chart Page', email: 'Email', title: 'SSR Demo', welcome: 'Welcome to SSR' }
+  'zh-CN': {
+    chart: '图表',
+    chartPage: '图表页',
+    email: '邮箱',
+    title: 'SSR 示例',
+    welcome: '欢迎使用服务端渲染'
+  },
+  'en-US': {
+    chart: 'Chart',
+    chartPage: 'Chart Page',
+    email: 'Email',
+    title: 'SSR Demo',
+    welcome: 'Welcome to SSR'
+  }
 };
+const createLocale = (initial = {}) =>
+  createI18n({ language: initial.locale || 'zh-CN', messages });
+
 const chartOption = {
   xAxis: { data: ['A', 'B', 'C'], type: 'category' },
   yAxis: { type: 'value' },
@@ -43,24 +58,23 @@ const chartOption = {
 };
 
 function createPage(initial = {}) {
-  const locale = createI18n({ language: initial.locale || 'zh-CN', messages });
   const router = createRouter();
   router.mode(initial.mode || 'hash');
-  router.route('/home', locale.t('welcome'));
-  router.route('/chart', locale.t('chartPage'));
+  router.route('/home', '欢迎使用服务端渲染'.s('welcome'));
+  router.route('/chart', '图表页'.s('chartPage'));
   router.notFound('未找到');
 
   const form = vForm();
-  const emailItem = vFormItem({ label: locale.t('email'), name: 'email', required: true });
-  emailItem.control(vInput({ name: 'email', placeholder: locale.t('email') }));
+  const emailItem = vFormItem({ label: '邮箱'.s('email'), name: 'email', required: true });
+  emailItem.control(vInput({ name: 'email', placeholder: '邮箱'.s('email') }));
   form.child(emailItem);
   form.validate();
 
   const page = div((root) => {
-    root.h1(locale.t('title'));
+    root.h1('SSR 示例'.s('title'));
     root.nav((nav) => {
-      nav.child(vLink(router, { label: locale.t('welcome'), to: '/home' }));
-      nav.child(vLink(router, { label: locale.t('chart'), to: '/chart' }));
+      nav.child(vLink(router, { label: '欢迎使用服务端渲染'.s('welcome'), to: '/home' }));
+      nav.child(vLink(router, { label: '图表'.s('chart'), to: '/chart' }));
     });
     root.child(router);
     root.child(form);
@@ -83,9 +97,9 @@ const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
 const app = document.getElementById('app');
 
 if (app.firstElementChild) {
-  hydrate(createPage, app, data);
+  hydrate(createPage, app, data, { i18n: createLocale });
 } else {
-  mount(createPage, app, data);
+  mount(createPage, app, data, { i18n: createLocale });
 }
 `;
 
@@ -109,7 +123,8 @@ function buildShell(initial, html, state) {
 function renderPage(initial) {
   const { exceeded, html, state } = renderToString(createSsrPage, {
     maxNodes: MAX_NODES,
-    state: initial
+    state: initial,
+    i18n: createLocale
   });
 
   if (exceeded) {
@@ -149,7 +164,14 @@ const server = createServer((req, res) => {
     return;
   }
 
-  const locale = url.searchParams.get('locale') || 'zh-CN';
+  const locale = resolveLocale(
+    {
+      cookie: req.headers.cookie,
+      url: req.url,
+      acceptLanguage: req.headers['accept-language']
+    },
+    { cookieKey: 'yoya-lang' }
+  );
   const initial = {
     locale,
     mode: 'history',

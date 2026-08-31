@@ -274,8 +274,8 @@ export function AdminSidebarCard({ toast }) {
             layout.div((panel) => {
               panel.className('admin-menu-preview');
               panel.styles({
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
+                background: 'var(--yoya-color-surface-muted, #f8fafc)',
+                border: '1px solid var(--yoya-color-border, #e2e8f0)',
                 borderRadius: '8px',
                 flex: '1',
                 minWidth: '0',

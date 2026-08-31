@@ -6,7 +6,12 @@ import {
   ViewNode,
   vText
 } from '../core/index.js';
-import { themeBorder, themeValue } from '../components/shared.js';
+import {
+  normalizeChildren,
+  replaceChildren,
+  themeBorder,
+  themeValue
+} from '../components/shared.js';
 
 const maxVisibleTitles = 8;
 let scrollbarStyle = null;
@@ -505,7 +510,7 @@ export function vLink(routerInstance, setup = null, callback = null) {
     replace: false,
     to: '/'
   };
-  const labelNode = vText('');
+  const labelNode = new ElementNode('span').className('yoya-vlink-label');
 
   node.className('yoya-vlink');
   node.attr('data-router-link', 'true');
@@ -518,7 +523,7 @@ export function vLink(routerInstance, setup = null, callback = null) {
   node.label = (value) => {
     if (value === undefined) return state.label;
     state.label = value;
-    labelNode.textContent(value);
+    replaceChildren(labelNode, normalizeChildren(value));
     return node;
   };
 
@@ -1478,13 +1483,15 @@ function applyLinkSetup(node, state, setup) {
   if (replace !== undefined) state.replace = Boolean(replace);
   if (exact !== undefined) state.exact = Boolean(exact);
   state.label = label ?? state.to;
-  node.children()[0].textContent(state.label);
+  node.label(state.label);
 }
 
 function updateLinkValue(node, state, key, value) {
   if (value === undefined) return state[key];
   state[key] = value;
-  if (key === 'to' && state.label === null) node.children()[0].textContent(value);
+  if (key === 'to' && state.label === null) {
+    replaceChildren(node.children()[0], normalizeChildren(value));
+  }
   const routerInstance = node._routerInstance;
   if (routerInstance) updateLink(node, state, routerInstance);
   return node;

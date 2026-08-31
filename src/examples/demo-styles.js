@@ -18,9 +18,7 @@ const baseRules = [
     {
       alignItems: 'stretch',
       boxSizing: 'border-box',
-      display: 'grid',
-      gap: '0px',
-      gridTemplateColumns: 'minmax(248px, 288px) minmax(0, 1fr)',
+      display: 'flex',
       height: '100%',
       margin: '0',
       minHeight: '0',
@@ -230,8 +228,14 @@ const genericRules = [
   [
     '.detail-grid-cell',
     {
+      alignContent: 'center',
+      background: 'var(--yoya-color-surface-muted, #f5f5f5)',
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: '8px',
+      boxSizing: 'border-box',
       display: 'grid',
       gap: '6px',
+      minHeight: '56px',
       minWidth: '0',
       padding: '12px 14px'
     }
@@ -306,18 +310,7 @@ const layoutExtraRules = [
       width: '360px'
     }
   ],
-  ['.components-layout-docs--popup .yoya-vdialog', { border: 'none' }],
-  [
-    '.components-layout-docs--popup .yoya-vdialog-content',
-    { display: 'grid', gap: '14px', padding: '18px 20px 20px' }
-  ],
-  ['.components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard', { margin: '0' }],
-  [
-    `.components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-header,
-     .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-body,
-     .components-layout-docs--popup .yoya-vdialog-content > .yoya-vcard .yoya-vcard-footer`,
-    { paddingLeft: '0', paddingRight: '0' }
-  ],
+  ['.components-layout-docs--popup .yoya-vdialog-content', { display: 'grid', gap: '14px' }],
   ['.components-layout-docs--templates', { gap: '24px' }],
   [
     '.components-layout-template-shell',
@@ -419,8 +412,7 @@ const buttonGroupExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-button-group-demo .yoya-vcard', { margin: '0' }],
-  ['.components-button-group-demo-live .yoya-vcard-body', { width: '100%' }]
+  ['.components-button-group-demo-live', { minWidth: '0' }]
 ];
 
 const floatButtonExtraRules = [
@@ -453,8 +445,7 @@ const floatButtonExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-float-button-demo .yoya-vcard', { margin: '0' }],
-  ['.components-float-button-demo-live .yoya-vcard-body', { width: '100%' }]
+  ['.components-float-button-demo-live', { minWidth: '0' }]
 ];
 
 const effectsExtraRules = [
@@ -487,8 +478,7 @@ const effectsExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-glow-button-demo .yoya-vcard', { margin: '0' }],
-  ['.components-glow-button-demo-live .yoya-vcard-body', { width: '100%' }]
+  ['.components-glow-button-demo-live', { minWidth: '0' }]
 ];
 
 const radioExtraRules = [
@@ -515,13 +505,10 @@ const radioExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-radio-demo .yoya-vcard', { margin: '0' }],
-  ['.components-radio-demo-live .yoya-vcard-body', { width: '100%' }]
+  ['.components-radio-demo-live', { minWidth: '0' }]
 ];
 
-const dataDisplayExtraRules = [
-  ['.components-data-display-demo-live .yoya-vtable', { width: '100%' }]
-];
+const dataDisplayExtraRules = [];
 
 const feedbackExtraRules = [
   ['.components-feedback-demo-live .yoya-vmessage-container', { minHeight: '44px' }]
@@ -560,6 +547,8 @@ const iconExtraRules = [
       alignContent: 'stretch',
       alignItems: 'stretch',
       aspectRatio: '1 / 1',
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: '10px',
       display: 'grid',
       gap: '6px',
       gridTemplateRows: 'minmax(0, 1fr) auto auto',
@@ -692,10 +681,8 @@ const iconExtraRules = [
   ],
   [
     '.components-icon-source-dialog .yoya-vcard',
-    { border: '0', borderRadius: '8px', boxShadow: 'none', margin: '0' }
+    { border: '0', borderRadius: '8px', boxShadow: 'none' }
   ],
-  ['.components-icon-source-dialog .yoya-vcard-header', { padding: '10px 12px' }],
-  ['.components-icon-source-dialog .yoya-vcard-body', { padding: '0' }],
   [
     '.components-icon-source-dialog-code',
     {
@@ -829,8 +816,7 @@ const thirdPartyExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-echarts-demo .yoya-vcard', { margin: '0' }],
-  ['.components-echarts-demo .yoya-vechart', { minWidth: '0', width: '100%' }]
+  ['.components-echarts-demo .yoya-vechart', { minWidth: '0' }]
 ];
 
 const signalsExtraRules = [
@@ -870,7 +856,6 @@ const signalsExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-signals-demo .yoya-vcard', { margin: '0' }],
   [
     '.components-signals-shared-grid',
     {
@@ -881,7 +866,6 @@ const signalsExtraRules = [
       width: '100%'
     }
   ],
-  ['.components-signals-shared-grid .yoya-vcard', { margin: '0' }],
   ['.components-signals-usage, .components-signals-advantages', { display: 'grid', gap: '10px' }],
   [
     '.components-signals-usage ul, .components-signals-advantages ul',
@@ -923,8 +907,7 @@ const definitionExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-definition-demo .yoya-vcard', { margin: '0' }],
-  ['.components-definition-demo .yoya-vcard-body', { width: '100%' }],
+  ['.components-definition-demo', { minWidth: '0' }],
   [
     '.html-native-demo',
     {
@@ -1005,8 +988,7 @@ const stateExtraRules = [
       flexWrap: 'wrap',
       gap: '10px'
     }
-  ],
-  ['.components-state-demo-live .yoya-vcard-body output', {}]
+  ]
 ];
 
 const demoRules = [
@@ -1078,6 +1060,8 @@ function applyRules(element, rules) {
 }
 
 function applyGlobalStyles() {
+  ensureMenuTreeStyle();
+
   const documentElement = document.documentElement;
   if (documentElement) {
     documentElement.style.minHeight = '100%';
@@ -1100,6 +1084,27 @@ function applyGlobalStyles() {
   }
 }
 
+/**
+ * 左侧菜单树的紧凑样式：通过容器 CSS 变量驱动 vTree 行高/符号尺寸，
+ * 组件交互重渲染后依然生效，避免演示层覆盖被内联样式冲掉。
+ */
+function ensureMenuTreeStyle() {
+  if (typeof document === 'undefined' || document.querySelector('[data-components-menu-style]')) {
+    return;
+  }
+
+  const style = document.createElement('style');
+  style.setAttribute('data-components-menu-style', '');
+  style.textContent = `
+.components-menu-tree {
+  font-size: 13px;
+  --yoya-tree-row-height: 28px;
+  --yoya-tree-toggle-size: 18px;
+}
+`;
+  document.head.appendChild(style);
+}
+
 function applyResponsiveStyles(element) {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return;
@@ -1117,16 +1122,17 @@ function applyResponsiveStyles(element) {
     padding: '0',
     width: '100%'
   });
-  applySelector(element, '.components-workspace', { height: 'auto', overflow: 'visible' });
+  applySelector(element, '.components-workspace', {
+    flexDirection: 'column',
+    height: 'auto',
+    overflow: 'visible'
+  });
   applySelector(element, '.components-menu, .components-router-panel', {
     height: 'auto',
     minHeight: '0'
   });
   applySelector(element, '.components-menu', {
     maxHeight: '360px'
-  });
-  applySelector(element, '.components-demo-shell > .yoya-vnavbar .yoya-vnavbar-menu-slot', {
-    overflowX: 'auto'
   });
   applySelector(
     element,

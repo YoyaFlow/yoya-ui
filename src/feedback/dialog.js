@@ -19,7 +19,7 @@ export class VDialog extends HtmlElementNode {
       boxSizing: 'border-box',
       color: themeValue('color-text', '#172033'),
       maxWidth: 'min(92vw, 680px)',
-      padding: '0',
+      padding: '16px',
       boxShadow: '0 24px 72px rgba(15, 23, 42, 0.2)',
       width: '100%'
     });

@@ -1024,7 +1024,7 @@ export function VTree(first = null, second = null, third = null) {
       cursor: state.selectable && !node.disabled ? 'pointer' : 'default',
       display: 'flex',
       gap: '4px',
-      minHeight: '34px',
+      minHeight: 'var(--yoya-tree-row-height, 34px)',
       minWidth: '0',
       padding: `2px 8px 2px ${8 + level * 18}px`,
       transition: 'background 120ms ease, border-color 120ms ease',
@@ -1052,11 +1052,11 @@ export function VTree(first = null, second = null, third = null) {
         display: 'inline-flex',
         flex: '0 0 auto',
         font: 'inherit',
-        height: '20px',
+        height: 'var(--yoya-tree-toggle-size, 20px)',
         justifyContent: 'center',
         lineHeight: '1',
         padding: '0',
-        width: '20px'
+        width: 'var(--yoya-tree-toggle-size, 20px)'
       });
     let iconBox = null;
 

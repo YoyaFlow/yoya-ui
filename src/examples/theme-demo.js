@@ -1,4 +1,4 @@
-import { div, input, vButton, vCard, vText, vThemeModeSwitch } from '../index.js';
+import { vButton, vCard, vColorPicker, vText, vThemeModeSwitch } from '../index.js';
 
 function densityButton(compact, densityText) {
   return vButton('切换密度')
@@ -16,21 +16,11 @@ function densityButton(compact, densityText) {
 }
 
 function accentInput() {
-  return input()
-    .attr({ type: 'color', 'data-theme-accent': '' })
-    .on('input', (event) => {
-      document.documentElement.style.setProperty('--yoya-raw-primary', event.target.value);
+  return vColorPicker((picker) => {
+    picker.attr('data-theme-accent', '');
+    picker.onChange((color) => {
+      document.documentElement.style.setProperty('--yoya-raw-primary', color);
     });
-}
-
-function sampleControls() {
-  return div((row) => {
-    row.className('demo-theme-row');
-    row.child(
-      vButton('小').size('small'),
-      vButton('中').size('medium'),
-      vButton('大').size('large')
-    );
   });
 }
 
@@ -52,8 +42,6 @@ export function renderThemeDemo() {
           body.child(densityButton(compact, densityText));
           body.p('品牌主色（覆盖 --yoya-raw-primary）');
           body.child(accentInput());
-          body.p('示例控件（大小随控件尺寸 token 变化）');
-          body.child(sampleControls());
         });
       });
     }

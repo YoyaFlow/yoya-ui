@@ -373,4 +373,93 @@ describe('I18n', () => {
     expect(() => locale.setLanguage('en')).not.toThrow();
     expect(locale.getLanguage()).toBe('en');
   });
+
+  describe('locale keys and registry', () => {
+    function createMemoryStorage() {
+      const values = new Map();
+      return {
+        getItem(key) {
+          return values.get(key) ?? null;
+        },
+        setItem(key, value) {
+          values.set(key, value);
+        },
+        removeItem(key) {
+          values.delete(key);
+        }
+      };
+    }
+
+    it('persists the language per locale key and restores it', () => {
+      const storage = createMemoryStorage();
+      const first = yoya.createI18n({ key: 'app', language: 'zh-CN', storage });
+
+      first.setLanguage('en');
+      expect(yoya.getPersistedI18nLocales(storage)).toEqual({ app: 'en' });
+
+      const restored = yoya.createI18n({ key: 'app', language: 'zh-CN', storage });
+      expect(restored.getLanguage()).toBe('en');
+
+      yoya.unregisterI18n('app');
+      expect(yoya.getI18n('app')).toBeNull();
+    });
+
+    it('saves multiple locale identifiers together in the shared record', () => {
+      const storage = createMemoryStorage();
+      const app = yoya.createI18n({ key: 'app', language: 'en', storage });
+      const admin = yoya.createI18n({ key: 'admin', language: 'zh-CN', storage });
+
+      app.setLanguage('zh-CN');
+      admin.setLanguage('en-US');
+
+      expect(yoya.getPersistedI18nLocales(storage)).toEqual({
+        app: 'zh-CN',
+        admin: 'en-US'
+      });
+
+      app.clearPersistedLanguage();
+      expect(yoya.getPersistedI18nLocales(storage)).toEqual({ admin: 'en-US' });
+
+      yoya.unregisterI18n('admin');
+    });
+
+    it('registers keyed instances and resolves locale keys in the s shortcut', () => {
+      const storage = createMemoryStorage();
+      const app = yoya.createI18n({
+        key: 'app',
+        language: 'zh-CN',
+        storage,
+        messages: {
+          'zh-CN': { greeting: '你好，{name}' },
+          en: { greeting: 'Hello, {name}' }
+        }
+      });
+      const admin = yoya.createI18n({
+        key: 'admin',
+        language: 'en',
+        storage,
+        messages: {
+          'zh-CN': { greeting: '你好，{name}' },
+          en: { greeting: 'Hello, {name}' }
+        }
+      });
+
+      expect(yoya.getI18n('app')).toBe(app);
+      expect(yoya.getI18n('admin')).toBe(admin);
+      expect(yoya.listI18n().has('admin')).toBe(true);
+
+      const appNode = '你好，{name}'.s('greeting', { name: 'Ada' }, 'app');
+      expect(appNode.textContent()).toBe('你好，Ada');
+
+      app.setLanguage('en');
+      expect(appNode.textContent()).toBe('Hello, Ada');
+
+      const adminNode = '你好，{name}'.s('greeting', { name: 'Ada' }, 'admin');
+      expect(adminNode.textContent()).toBe('Hello, Ada');
+
+      yoya.unregisterI18n('app');
+      expect(yoya.getI18n('app')).toBeNull();
+      yoya.unregisterI18n('admin');
+    });
+  });
 });

@@ -7,7 +7,6 @@ export function BodyPageCard() {
         card.vCardHeader('页面容器');
         card.vCardBody((body) => {
           body.vBody((page) => {
-            page.background('#f8fafc');
             page.maxWidth(880);
             page.padding('clamp(16px, 4vw, 28px)');
             page.gap(18);

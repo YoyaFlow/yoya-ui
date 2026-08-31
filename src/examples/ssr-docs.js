@@ -3,7 +3,7 @@ import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
 import { clientSnippet, pageSnippet, serverSnippet, setupNotes } from './ssr/guide-snippets.js';
-import { createSsrPage } from './ssr/page.js';
+import { createLocale, createSsrPage } from './ssr/page.js';
 
 const createDemoPage = (state) => createSsrPage(state, { echartsLib: echarts });
 
@@ -86,7 +86,10 @@ function SsrLiveDemo() {
   });
 
   const renderServer = () => {
-    serverResult = renderToString(createDemoPage, { state: currentState() });
+    serverResult = renderToString(createDemoPage, {
+      state: currentState(),
+      i18n: createLocale
+    });
     htmlText.textContent(serverResult.html);
     stateText.textContent(serverResult.state);
     modeText.textContent('当前模式：服务端渲染（renderToString → hydrate）');
@@ -106,9 +109,9 @@ function SsrLiveDemo() {
 
     if (state.renderMode === 'ssr') {
       host.innerHTML = serverResult.html;
-      hydrate(createDemoPage, host, parseState(serverResult.state));
+      hydrate(createDemoPage, host, parseState(serverResult.state), { i18n: createLocale });
     } else {
-      mount(createDemoPage, host, currentState());
+      mount(createDemoPage, host, currentState(), { i18n: createLocale });
     }
   };
 
@@ -240,6 +243,27 @@ export function SsrDocumentationPage() {
     page.p(
       '服务端渲染（SSR）：服务端把声明式页面渲染成完整 HTML，浏览器端收养这份 HTML 并绑定事件。'
     );
+    page.a((entry) => {
+      entry.attr({
+        'data-ssr-standalone-link': 'true',
+        href: './ssr-demo.html',
+        rel: 'noopener',
+        target: '_blank'
+      });
+      entry.className('ssr-standalone-entry');
+      entry.styles({
+        background: 'var(--yoya-color-primary, #2563eb)',
+        borderRadius: '8px',
+        color: '#ffffff',
+        display: 'inline-block',
+        fontSize: '14px',
+        fontWeight: '600',
+        margin: '4px 0 12px',
+        padding: '8px 14px',
+        textDecoration: 'none'
+      });
+      entry.text('打开独立演示页面（新标签页）');
+    });
 
     page.section((usage) => {
       usage.className('components-ssr-usage');
