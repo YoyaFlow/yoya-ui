@@ -1,5 +1,16 @@
 # 快速开始与常用 API
 
+## 快速搭建项目
+
+```bash
+npm create yoya-ui@latest my-app
+cd my-app
+npm install
+npm run dev
+```
+
+模板包含：页面壳（vBody）、按钮与事件、表单收集校验、明暗主题切换，可直接运行。
+
 ## 导入入口
 
 - `yoya-ui`：组件与全部能力（core、html、svg、layout、actions、navigation、feedback、form、data-display、async、i18n、theme、router、effects）

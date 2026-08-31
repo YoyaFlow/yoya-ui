@@ -1,0 +1,23 @@
+{
+  "name": "create-yoya-ui",
+  "version": "0.1.0",
+  "description": "Scaffold a new yoya-ui project with Vite: quick start template with example page, form and theme switching.",
+  "type": "module",
+  "bin": {
+    "create-yoya-ui": "bin/create-yoya-ui.js"
+  },
+  "files": [
+    "bin",
+    "templates"
+  ],
+  "keywords": [
+    "yoya-ui",
+    "scaffold",
+    "vite",
+    "template"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  }
+}
