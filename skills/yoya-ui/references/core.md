@@ -11,6 +11,17 @@
 | 状态 | `vStateNode` |
 | 国际化 | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut` |
 
+## vText 文本节点
+
+`vText(content)` 创建动态文本节点，渲染为真实 Text 节点；`textContent(value)` 读写并原地更新 DOM，`toHTML()` 输出自动转义。它接受任意子节点位置，与字符串、i18n 文本节点自动归一。
+
+```js
+import { vText } from '@yoyaflow/yoya-ui/core';
+
+const title = vText('默认标题');
+title.textContent('新标题'); // 原地更新，无需重建视图
+```
+
 ## 三种组件形态
 
 **形态 A：薄工厂**（无内部状态、纯配置组合）

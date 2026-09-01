@@ -30,6 +30,7 @@ npm run dev
 |---|---|
 | 按钮 | `vButton(label, cb)`，variant：primary/secondary/danger，`disabled()`/`loading()` |
 | 卡片 | `vCard` + `vCardHeader`/`vCardBody`/`vCardFooter` |
+| 文本/状态 | `vText('文案')`：动态文本节点，`textContent()` 读写并原地更新，可放进任何子节点位置 |
 | 布局 | `div`/`section`、`hstack`/`vstack`/`grid`/`container`/`spacer`、`vSplitPanel` |
 | 表单 | `vForm`、`vFormItem`、`vInput`、`vSelect`、`vCheckbox(es)`、`vRadio(s)`、`vTextarea`、`vSwitch`、`vRate`、`vSlider`、`vCascader`、`vTagsInput`、`vAutocomplete`、`vColorPicker`、`vUpload` |
 | 数据展示 | `vTable`、`vTree`、`vBadge`、`vDetail`、`vAvatar`、`vProgress`、`vCarousel` |

@@ -34,6 +34,25 @@ document.querySelector('#app').appendChild(page.renderDom());
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
 
+## 文本与状态
+
+动态文本用 `vText()` 创建：渲染为真实 Text 节点，`textContent()` 读写并原地更新，可放进任何接受子节点的位置；SSR 输出自动转义。
+
+```js
+import { div, vButton, vText } from '@yoyaflow/yoya-ui';
+
+const message = vText('加载中…');
+
+div((root) => {
+  root.p(message);
+  root.vButton('完成', (button) => {
+    button.on('click', () => message.textContent('已完成'));
+  });
+}).bindTo('#app');
+```
+
+字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
+
 ## 表单
 
 `vForm` + `vFormItem` 收集与校验；控件设 `name()` 后自动进 `form.values()`；`form.validate()` 校验必填与自定义规则。详见 references/forms.md。

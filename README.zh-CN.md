@@ -7,54 +7,26 @@
 
 yoya-ui 是一套新的业务界面构建形式，也是一个 Web 基础库：直接在真实 DOM 上构建视图，声明式 HTML 写法、路由、i18n、主题与状态系统开箱即用，支持服务端渲染（SSR）与纯客户端渲染同代码切换。自带 UI 组件只是为了开箱即用，组件清单并不代表库的能力边界——原生元素与第三方组件以同样方式自由组合。
 
-## Hello World——同一份演示，另一种技术栈
+## Hello World——声明式构建与响应式 i18n
 
 没有框架运行时、没有虚拟 DOM、没有 JSX 构建链：视图就是由原生 JS 描述的真实 DOM，i18n 只是字符串快捷方式。
 
 ```js
-// HelloWorldExample —— 声明式构建 + 状态 + 事件
-import { div, vButton, vText } from '@yoyaflow/yoya-ui';
-import '@yoyaflow/yoya-ui/ui.css';
-
+// HelloWorldExample —— 声明式构建
 function HelloWorldExample() {
-  const message = vText('Hello, yoya-ui!');
   return div((root) => {
-    root.vButton('Say hello', (button) => {
-      button.variant('primary');
-      button.on('click', () => message.textContent('你好，yoya-ui！'));
-    });
-    root.p(message);
+    root.p('Hello，World！');
   });
 }
-
-HelloWorldExample().bindTo('#app');
 ```
 
 ```js
-// HelloWorldExampleI18n —— 同一份代码，语言响应式切换
-import { createI18n, installI18nStringShortcut, div, vButton } from '@yoyaflow/yoya-ui';
-
-const i18n = createI18n({
-  language: 'zh-CN',
-  messages: {
-    'zh-CN': { hello: '你好，yoya-ui！', toggle: '切换语言' },
-    en: { hello: 'Hello, yoya-ui!', toggle: 'Switch language' }
-  }
-});
-installI18nStringShortcut(i18n);
-
+// HelloWorldExampleI18n —— 响应式 i18n 文本（带参数）
 function HelloWorldExampleI18n() {
   return div((root) => {
-    root.p('你好，yoya-ui！'.s('hello'));
-    root.vButton('切换语言'.s('toggle'), (button) => {
-      button.on('click', () =>
-        i18n.setLanguage(i18n.getLanguage() === 'zh-CN' ? 'en' : 'zh-CN')
-      );
-    });
+    root.p('Hello, {name}!'.s('greeting.hello', { name: 'yoya-ui' }));
   });
 }
-
-HelloWorldExampleI18n().bindTo('#app');
 ```
 
 ## 特性
