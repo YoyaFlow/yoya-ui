@@ -1,6 +1,4 @@
-import { svg, vCard, vChart } from '@yoyaflow/yoya-ui';
-
-/* global document */
+import { div, svg, vCard, vChart } from '@yoyaflow/yoya-ui';
 
 const VIEW_BOX = { height: 260, width: 640 };
 const PAD = { bottom: 34, left: 44, right: 16, top: 14 };
@@ -52,28 +50,37 @@ function createSvgAdapter() {
 function renderChart(instance, context) {
   const root = buildChartSvg(context.data, context.options);
   const legend = buildLegend(context.data?.series ?? []);
-  instance.host.replaceChildren(legend, root.renderDom());
+  instance.host.replaceChildren(legend.renderDom(), root.renderDom());
 }
 
 function buildLegend(series) {
-  const legend = document.createElement('div');
-  legend.style.cssText =
-    'display:flex;flex-wrap:wrap;gap:14px;margin-bottom:8px;' +
-    'font-size:12px;color:var(--yoya-color-text-muted,#64748b);';
-  series.forEach((entry, index) => {
-    const color = entry.color ?? SERIES_COLORS[index % SERIES_COLORS.length];
-    const dot = document.createElement('span');
-    dot.style.cssText =
-      `background:${color};border-radius:2px;display:inline-block;` +
-      'height:8px;margin-right:5px;width:8px;';
-    const text = document.createElement('span');
-    text.textContent = entry.name ?? `系列 ${index + 1}`;
-    const item = document.createElement('span');
-    item.style.cssText = 'align-items:center;display:inline-flex;';
-    item.append(dot, text);
-    legend.appendChild(item);
+  return div((legend) => {
+    legend.style({
+      color: 'var(--yoya-color-text-muted, #64748b)',
+      display: 'flex',
+      flexWrap: 'wrap',
+      fontSize: '12px',
+      gap: '14px',
+      marginBottom: '8px'
+    });
+    series.forEach((entry, index) => {
+      const color = entry.color ?? SERIES_COLORS[index % SERIES_COLORS.length];
+      legend.span((item) => {
+        item.style({ alignItems: 'center', display: 'inline-flex' });
+        item.span((dot) => {
+          dot.style({
+            background: color,
+            borderRadius: '2px',
+            display: 'inline-block',
+            height: '8px',
+            marginRight: '5px',
+            width: '8px'
+          });
+        });
+        item.span((text) => text.child(entry.name ?? `系列 ${index + 1}`));
+      });
+    });
   });
-  return legend;
 }
 
 function buildChartSvg(data, options) {
