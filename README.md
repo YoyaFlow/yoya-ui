@@ -44,6 +44,19 @@ function HelloWorldExampleI18n() {
 
 ## Installation
 
+### Scaffold a new project
+
+```bash
+npx create-yoya-ui@latest my-app                 # basic template (SPA)
+npx create-yoya-ui@latest my-app --template ssr  # SSR template (renderPage + hydrateOrMount)
+cd my-app
+npm install
+npm run dev          # basic: dev server
+# SSR: npm run build && npm start
+```
+
+### Install into an existing project
+
 ```bash
 npm install @yoyaflow/yoya-ui
 ```

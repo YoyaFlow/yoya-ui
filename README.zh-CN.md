@@ -45,6 +45,19 @@ function HelloWorldExampleI18n() {
 
 ## 安装
 
+### 脚手架快速搭建
+
+```bash
+npx create-yoya-ui@latest my-app                 # basic 模板（SPA）
+npx create-yoya-ui@latest my-app --template ssr  # SSR 模板（renderPage + hydrateOrMount）
+cd my-app
+npm install
+npm run dev          # basic：开发服务器
+# SSR：npm run build && npm start
+```
+
+### 已有项目引入
+
 ```bash
 npm install @yoyaflow/yoya-ui
 ```

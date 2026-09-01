@@ -127,8 +127,19 @@ export function GuideInstallationPage() {
   return createGuidePage({
     id: 'installation',
     title: '安装方式',
-    intro: '目前通过 ES Module 的 import 直接引入 basepath 下的 yoya.*.js 构建文件。',
+    intro: '用 create-yoya-ui 脚手架快速搭建，或通过 ES Module 直接引入构建产物。',
     sections: [
+      {
+        title: '脚手架',
+        paragraphs: ['create-yoya-ui 内置 basic（SPA）与 ssr（服务端渲染）两个模板。'],
+        code: `npx create-yoya-ui@latest my-app
+npx create-yoya-ui@latest my-app --template ssr
+
+cd my-app
+npm install
+npm run dev        # basic 模板
+# SSR 模板：npm run build && npm start`
+      },
       {
         title: '构建产物',
         paragraphs: ['dist 目录提供 yoya.core.js、yoya.ui.js、yoya.echart.js 和 yoya.ui.css。']
