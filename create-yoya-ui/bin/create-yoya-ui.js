@@ -13,7 +13,7 @@ const templateName =
 const templateRoot = resolve(fileURLToPath(new URL(`../templates/${templateName}`, import.meta.url)));
 
 if (!existsSync(templateRoot)) {
-  console.error(`未知模板：${templateName}（可用：basic、ssr）`);
+  console.error(`未知模板：${templateName}（可用：basic、ssr、admin）`);
   process.exit(1);
 }
 
@@ -40,7 +40,9 @@ if (templateName === 'ssr') {
   console.log('\nSSR 模板：renderPage 整页渲染 + hydrateOrMount 客户端接入。\n');
 } else {
   console.log('  npm run dev');
-  console.log('\n更多：npm run build 构建，npm run preview 预览产物。\n');
+  console.log(
+    `\n${templateName === 'admin' ? '管理后台模板：顶部导航 + 可折叠侧栏 + RouterViews 内容区。' : ''}更多：npm run build 构建，npm run preview 预览产物。\n`
+  );
 }
 
 function sanitizeName(name) {
