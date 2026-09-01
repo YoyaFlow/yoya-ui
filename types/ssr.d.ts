@@ -1,4 +1,5 @@
 import type { ComponentLike, I18n, ViewNode } from './core.js';
+import type { HtmlElementNode } from './html.js';
 
 export type PageFactory<S = unknown> = (state: S) => ViewNode | ComponentLike | PageFactory<S>;
 
@@ -79,3 +80,45 @@ export function hydrate<S = unknown>(
   state?: S | null,
   options?: SsrI18nOption<S>
 ): ViewNode;
+
+/** Document builder node used by renderPage: head/body callbacks build the page. */
+export class PageDocumentNode extends HtmlElementNode {
+  head(callback: (node: HtmlElementNode, state: unknown) => void): PageDocumentNode;
+  body(callback: (node: HtmlElementNode, state: unknown) => void): PageDocumentNode;
+  vBody(...args: unknown[]): PageDocumentNode;
+}
+
+export interface RenderPageConfig<S = unknown> {
+  page: (page: PageDocumentNode, state: S | null) => void;
+}
+
+export interface RenderPageOptions<S = unknown> extends SsrI18nOption<S> {
+  /** Per-request dictionary; builds an I18n instance from state.lang. */
+  messages?: Record<string, any>;
+  maxNodes?: number;
+  /** State container id. Defaults to "__YOYA_DATA__". */
+  stateId?: string;
+  /** Hydration container id. Defaults to "app". */
+  containerId?: string;
+  /** Client entry script src. Defaults to "/client.js". */
+  client?: string;
+}
+
+/** Renders a complete HTML document from DSL-defined head/body. */
+export function renderPage<S = unknown>(
+  config: RenderPageConfig<S>,
+  state?: S | null,
+  options?: RenderPageOptions<S>
+): string;
+
+export interface HydrateOrMountOptions<S = unknown> extends SsrI18nOption<S> {
+  messages?: Record<string, any>;
+  stateId?: string;
+  target?: string | ParentNode;
+}
+
+/** Client bootstrap: reads state and hydrates or mounts in one call. */
+export function hydrateOrMount<S = unknown>(
+  component: ViewNode | ComponentLike | PageFactory<S>,
+  options?: HydrateOrMountOptions<S>
+): ViewNode | null;
