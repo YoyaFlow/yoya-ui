@@ -760,14 +760,12 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     return title ?? '';
   };
 
-  const styleTitleTab = (tab, active) => {
+  const styleTitleTab = (entry, active) => {
+    const tab = entry.tab;
     const position = state.titlePosition;
     const vertical = position !== 'top';
 
-    tab
-      .renderDom()
-      .querySelector('.yoya-vrouter-views-label')
-      ?.setAttribute('aria-selected', String(active));
+    entry.label.attr('aria-selected', String(active));
     tab.styles({
       background: active
         ? themeValue('color-surface', '#ffffff')
@@ -1034,8 +1032,8 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     titleNode.attr('aria-orientation', state.titlePosition === 'top' ? 'horizontal' : 'vertical');
     applyTitlePosition(state.titlePosition);
     syncMoreButton();
-    state.tabs.forEach(({ tab }, path) => {
-      styleTitleTab(tab, path === routerInstance.currentPath());
+    state.tabs.forEach((entry, path) => {
+      styleTitleTab(entry, path === routerInstance.currentPath());
     });
     updateOverflow();
     return node;
@@ -1307,9 +1305,9 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       });
       tab.child(label, closeButton);
       titleNode.child(tab);
-      styleTitleTab(tab, false);
-      entry = { closeButton, tab, text };
+      entry = { closeButton, label, tab, text };
       state.tabs.set(path, entry);
+      styleTitleTab(entry, false);
     } else {
       const title = resolveTitle(context);
       entry.text.textContent(title);
@@ -1320,7 +1318,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       state.tabs.delete(path);
       state.tabs = new Map([[path, entry], ...state.tabs]);
     }
-    state.tabs.forEach(({ tab }, tabPath) => styleTitleTab(tab, tabPath === path));
+    state.tabs.forEach((entry, tabPath) => styleTitleTab(entry, tabPath === path));
     syncMoreButton();
     if (state.popupOpen) buildPopup();
     persistTabs();
