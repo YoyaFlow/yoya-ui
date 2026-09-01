@@ -147,6 +147,17 @@ npm run dev        # basic / admin 模板
 # 以及数据概览看板、成员/角色/权限/字典管理等业务域示例`
       },
       {
+        title: 'admin 模板（推荐）',
+        paragraphs: [
+          'yoya-ui 拥有自己独特的开发范式：声明式节点 DSL、页面编排、feature 模块组织与 api 分层。推荐使用 admin 模板创建项目来了解这些范式。',
+          'admin 模板开箱即用：顶部导航 + 可折叠侧栏 + RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。'
+        ],
+        code: `npx create-yoya-ui@latest my-app --template admin
+cd my-app
+npm install
+npm run dev`
+      },
+      {
         title: '构建产物',
         paragraphs: ['dist 目录提供 yoya.core.js、yoya.ui.js、yoya.echart.js 和 yoya.ui.css。']
       },

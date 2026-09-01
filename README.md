@@ -58,6 +58,8 @@ npm run dev          # basic / admin: dev server
 
 `--template admin` scaffolds a standard admin console: top navigation, collapsible sidebar and a titled RouterViews content area, with feature examples for dashboard (data boards & charts), member / role / permission management, and dictionary management (type table with an item editor dialog).
 
+yoya-ui has its own unique development paradigm — declarative node DSL, page composition, and feature-module organization. The admin template is the recommended way to get familiar with it: it demonstrates the full stack of a real admin console (shell, routing, tables / forms / dialogs, dashboard boards & charts) using the library's idiomatic patterns.
+
 ### Install into an existing project
 
 ```bash
