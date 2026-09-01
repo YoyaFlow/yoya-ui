@@ -83,23 +83,41 @@ div((page) => {
 
 ## 服务端渲染（SSR）
 
-同一份页面工厂代码，服务端渲染与客户端渲染可切换：
+同一份页面工厂代码，服务端渲染与客户端渲染可切换。整页场景直接使用高层入口：`renderPage` 输出完整 HTML 文档（head/body 用 DSL 定义），`hydrateOrMount` 一行完成客户端接入：
 
 ```js
-// 服务端
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
-const { html, state } = renderToString(createPage, { state: { path: '/home' } });
+// 服务端：按请求渲染完整 HTML 文档
+import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
 
-// 客户端
-import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
-const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
-const app = document.getElementById('app');
-if (app.firstElementChild) {
-  hydrate(createPage, app, data); // 有服务端 HTML：收养 DOM、绑定事件
-} else {
-  mount(createPage, app, data); // 空壳：全量客户端渲染
-}
+const html = renderPage(
+  {
+    page: (page, state) => {
+      page.head((head) => {
+        head.title('SSR 示例'.s('title'));
+        head.meta({ charset: 'utf-8' });
+        head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
+      });
+      page.body((body) => {
+        body.vBody((shell) => {
+          shell.child(HomePage(state)); // state = { lang, path, mode }
+        });
+      });
+    }
+  },
+  { lang, mode: 'history', path },
+  { messages } // 每请求 i18n，.s() 自动作用域
+);
+
+// 客户端：自动读取 __YOYA_DATA__，有服务端 HTML 走 hydrate，否则 mount
+import '@yoyaflow/yoya-ui/ui.css';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+hydrateOrMount(HomePage, { messages });
 ```
+
+底层原语（`renderToString` / `serializeState` / `parseState` / `mount` / `hydrate`）仍然可用，适合需要细粒度控制的场景，例如把 HTML 片段嵌入自有服务端模板。
 
 要点：
 
@@ -108,7 +126,16 @@ if (app.firstElementChild) {
 - 每请求 i18n 实例、渲染上下文 id 分配器、渲染后自动销毁——服务端保持无状态
 - `maxNodes` 超限自动回退客户端渲染
 
-完整集成指南见 [docs/ssr.md](docs/ssr.md)；可运行示例：
+完整集成指南见 [docs/ssr.md](docs/ssr.md)；用 SSR 模板快速开始：
+
+```bash
+npx create-yoya-ui@latest my-app --template ssr
+cd my-app
+npm install
+npm run build && npm start
+```
+
+或运行仓库内示例：
 
 ```bash
 npm run build
@@ -121,7 +148,7 @@ node src/examples/ssr/server-http.mjs
 import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SVG/状态
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件库
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 组件（需自行引入 echarts）
-import { renderToString, hydrate } from '@yoyaflow/yoya-ui/ssr'; // 服务端渲染
+import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr'; // 服务端渲染
 import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ```
 
@@ -134,7 +161,7 @@ TypeScript 项目无需额外配置即可获得提示与类型检查：
 ```ts
 import { div, vButton, vCard, vTable, toast } from '@yoyaflow/yoya-ui';
 import { createI18n } from '@yoyaflow/yoya-ui/core';
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/ssr';
 import '@yoyaflow/yoya-ui/ui.css';
 
 div((page) => {
@@ -190,7 +217,7 @@ npm run build
 
 - `yoya.core.js` / `yoya.ui.js` — 核心与组件库 ESM 入口
 - `yoya.echart.js` — ECharts 组件入口（不包含 echarts 本体）
-- `yoya.ssr.js` — 服务端渲染入口（`renderToString` / `hydrate` / `mount`）
+- `yoya.ssr.js` — 服务端渲染入口（`renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`）
 - `echarts.min.js` — ECharts 本体（用 `<script>` 标签全局引入）
 - `yoya.ui.css` — 默认样式与主题变量
 - `yoya-ui.umd.js` — UMD 版（`window.YoyaUI`）

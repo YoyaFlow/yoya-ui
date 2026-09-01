@@ -82,23 +82,41 @@ The page only needs a `<div id="app"></div>` loaded with a module script.
 
 ## Server-Side Rendering (SSR)
 
-The same page factory switches between server rendering and client rendering:
+The same page factory switches between server rendering and client rendering. For a full page, use the high-level entry points — `renderPage` builds a complete HTML document (head/body in DSL) and `hydrateOrMount` bootstraps the client in one call:
 
 ```js
-// Server
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
-const { html, state } = renderToString(createPage, { state: { path: '/home' } });
+// Server — render a complete HTML document per request
+import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
 
-// Client
-import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
-const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
-const app = document.getElementById('app');
-if (app.firstElementChild) {
-  hydrate(createPage, app, data); // Server HTML exists: adopt DOM, bind events
-} else {
-  mount(createPage, app, data); // Empty shell: full client render
-}
+const html = renderPage(
+  {
+    page: (page, state) => {
+      page.head((head) => {
+        head.title('SSR Example'.s('title'));
+        head.meta({ charset: 'utf-8' });
+        head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
+      });
+      page.body((body) => {
+        body.vBody((shell) => {
+          shell.child(HomePage(state)); // state = { lang, path, mode }
+        });
+      });
+    }
+  },
+  { lang, mode: 'history', path },
+  { messages } // per-request i18n; .s() is scoped automatically
+);
+
+// Client — reads __YOYA_DATA__; hydrates when server HTML exists, otherwise mounts
+import '@yoyaflow/yoya-ui/ui.css';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+hydrateOrMount(HomePage, { messages });
 ```
+
+Lower-level primitives (`renderToString` / `serializeState` / `parseState` / `mount` / `hydrate`) remain available for fine-grained control, e.g. embedding an HTML fragment into your own server template.
 
 Key points:
 
@@ -107,7 +125,16 @@ Key points:
 - Per-request i18n instance, render-context id allocator, auto-destroy after render — the server stays stateless
 - `maxNodes` falls back to client rendering automatically when exceeded
 
-Full integration guide: [docs/ssr.md](docs/ssr.md) (Chinese); runnable example:
+Full integration guide: [docs/ssr.md](docs/ssr.md) (Chinese); quick start with the SSR template:
+
+```bash
+npx create-yoya-ui@latest my-app --template ssr
+cd my-app
+npm install
+npm run build && npm start
+```
+
+Or run the in-repo example:
 
 ```bash
 npm run build
@@ -120,7 +147,7 @@ node src/examples/ssr/server-http.mjs
 import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/state
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official component library
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts component (bring your own echarts)
-import { renderToString, hydrate } from '@yoyaflow/yoya-ui/ssr'; // server-side rendering
+import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr'; // server-side rendering
 import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
 
@@ -133,7 +160,7 @@ TypeScript projects get hints and type checking with no extra configuration:
 ```ts
 import { div, vButton, vCard, vTable, toast } from '@yoyaflow/yoya-ui';
 import { createI18n } from '@yoyaflow/yoya-ui/core';
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/ssr';
 import '@yoyaflow/yoya-ui/ui.css';
 
 div((page) => {
@@ -189,7 +216,7 @@ npm run build
 
 - `yoya.core.js` / `yoya.ui.js` — core and component library ESM entries
 - `yoya.echart.js` — ECharts component entry (does not bundle echarts itself)
-- `yoya.ssr.js` — server rendering entry (`renderToString` / `hydrate` / `mount`)
+- `yoya.ssr.js` — server rendering entry (`renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`)
 - `echarts.min.js` — ECharts core (load globally via `<script>`)
 - `yoya.ui.css` — default styles and theme variables
 - `yoya-ui.umd.js` — UMD build (`window.YoyaUI`)
