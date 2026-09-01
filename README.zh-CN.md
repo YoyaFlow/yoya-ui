@@ -50,11 +50,14 @@ function HelloWorldExampleI18n() {
 ```bash
 npx create-yoya-ui@latest my-app                 # basic 模板（SPA）
 npx create-yoya-ui@latest my-app --template ssr  # SSR 模板（renderPage + hydrateOrMount）
+npx create-yoya-ui@latest my-app --template admin # admin 后台管理模板（顶部导航 + 可折叠侧栏 + RouterViews）
 cd my-app
 npm install
-npm run dev          # basic：开发服务器
+npm run dev          # basic / admin：开发服务器
 # SSR：npm run build && npm start
 ```
+
+`--template admin` 生成标准后台管理模板：顶部导航 + 可折叠侧栏 + 带标题的 RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。
 
 ### 已有项目引入
 

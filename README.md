@@ -49,11 +49,14 @@ function HelloWorldExampleI18n() {
 ```bash
 npx create-yoya-ui@latest my-app                 # basic template (SPA)
 npx create-yoya-ui@latest my-app --template ssr  # SSR template (renderPage + hydrateOrMount)
+npx create-yoya-ui@latest my-app --template admin # admin console template (top nav + collapsible sidebar + RouterViews)
 cd my-app
 npm install
-npm run dev          # basic: dev server
+npm run dev          # basic / admin: dev server
 # SSR: npm run build && npm start
 ```
+
+`--template admin` scaffolds a standard admin console: top navigation, collapsible sidebar and a titled RouterViews content area, with feature examples for dashboard (data boards & charts), member / role / permission management, and dictionary management (type table with an item editor dialog).
 
 ### Install into an existing project
 

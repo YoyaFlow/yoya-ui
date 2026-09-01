@@ -20,4 +20,4 @@ npm install
 
 - `templates/basic`：页面壳、按钮事件、表单收集校验、主题切换
 - `templates/ssr`：home-page.js（页面组件 + 词典）、server.mjs（node:http + renderPage）、client.js（hydrateOrMount）
-- `templates/admin`：管理后台壳（logo/系统名、顶级导航、用户头像、可折叠菜单、带标题内容区）
+- `templates/admin`：标准后台管理模板（logo/系统名、顶部导航、用户头像、可折叠菜单、带标题内容区），内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理示例

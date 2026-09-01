@@ -282,12 +282,11 @@ describe('renderExamplesIndex', () => {
       'ArrowDownOutlined'
     );
     const dialogClose = dialog.querySelector('[aria-label="关闭"]');
-    expect(dialogClose.tagName).toBe('svg');
+    expect(dialogClose.tagName).toBe('BUTTON');
     expect(dialogClose.getAttribute('aria-label')).toBe('关闭');
-    expect(dialogClose.style.width).toBe('16px');
-    expect(dialogClose.style.height).toBe('16px');
+    expect(dialogClose.style.width).toBe('28px');
+    expect(dialogClose.style.height).toBe('28px');
     expect(dialogClose.style.borderWidth).toBe('0px');
-    expect(dialogClose.style.outline).toBe('none');
     expect(dialog.querySelector('.components-icon-source-dialog-header').style.display).toBe(
       'flex'
     );

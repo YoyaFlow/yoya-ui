@@ -131,14 +131,20 @@ export function GuideInstallationPage() {
     sections: [
       {
         title: '脚手架',
-        paragraphs: ['create-yoya-ui 内置 basic（SPA）与 ssr（服务端渲染）两个模板。'],
+        paragraphs: [
+          'create-yoya-ui 内置 basic（SPA）、ssr（服务端渲染）与 admin（后台管理）三个模板。'
+        ],
         code: `npx create-yoya-ui@latest my-app
 npx create-yoya-ui@latest my-app --template ssr
+npx create-yoya-ui@latest my-app --template admin
 
 cd my-app
 npm install
-npm run dev        # basic 模板
-# SSR 模板：npm run build && npm start`
+npm run dev        # basic / admin 模板
+# SSR 模板：npm run build && npm start
+
+# admin 模板包含：顶部导航 + 可折叠侧栏 + RouterViews 内容区，
+# 以及数据概览看板、成员/角色/权限/字典管理等业务域示例`
       },
       {
         title: '构建产物',

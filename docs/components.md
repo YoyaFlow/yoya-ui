@@ -88,3 +88,12 @@
 1. 定义组件 function + render()
 2. 国际化 I18n / createI18n / i18nText / vLanguageSwitch
 3. 状态节点 vStateNode
+
+## 后台管理模板（admin）
+
+`npx create-yoya-ui@latest my-app --template admin` 生成标准后台管理模板，可直接作为管理后台起点：
+
+- 页面壳：顶部导航 + 可折叠侧栏 + 带标题的 RouterViews 内容区
+- 工作台「数据概览」：vDigitalBoard 数字看板、vTrendCard 趋势卡、vChart 图表（内置 SVG 柱状/折线适配器）、vRingStat / vGauge、vTimeline
+- 业务域示例：成员管理（表格 CRUD）、角色管理、权限管理（vTree）、字典管理（类型表格 + 编辑弹窗内维护字典值表格）
+- api 分层：mgr / req / views / state + 内存 mock，接入真实后端时替换 mock 即可

@@ -29,23 +29,6 @@ describe('vTreeRanger layout verify', () => {
     const seconds = element.querySelectorAll('.yoya-vsplit-panel-second');
     const columns = element.querySelectorAll('.yoya-vtreeranger-column');
 
-    const info = [
-      ['panels', panels.length],
-      ['dividers', dividers.length],
-      ['columns', columns.length],
-      ['root flexDirection', element.style.flexDirection],
-      ['outer panel', panels[0]?.getAttribute('style')],
-      ['outer second', seconds[0]?.getAttribute('style')],
-      ['inner panel', panels[1]?.getAttribute('style')],
-      ['divider0', dividers[0]?.getAttribute('style')],
-      ['divider1', dividers[1]?.getAttribute('style')],
-      ['col1', columns[1]?.getAttribute('style')],
-      ['col2', columns[2]?.getAttribute('style')]
-    ]
-      .map(([key, value]) => `${key}: ${value ?? 'null'}`)
-      .join('\n');
-    throw new Error(`LAYOUT INFO\n${info}`);
-
     expect(panels.length).toBe(2);
     expect(dividers.length).toBe(2);
     expect(columns.length).toBe(3);

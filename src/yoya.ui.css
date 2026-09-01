@@ -644,7 +644,7 @@ body {
     display: block;
   }
 
-  .yoya-vdialog-close:hover {
+  .yoya-vdialog .yoya-vdialog-close:hover {
     background: var(--yoya-color-surface-hover, #eef0f3);
     color: var(--yoya-color-text, #172033);
   }
@@ -950,11 +950,11 @@ body {
     width: 0;
   }
 
-  .yoya-vtreeranger-list {
+  .yoya-vtreeranger .yoya-vtreeranger-list {
     scrollbar-width: none;
   }
 
-  .yoya-vtreeranger-list::-webkit-scrollbar {
+  .yoya-vtreeranger .yoya-vtreeranger-list::-webkit-scrollbar {
     display: none;
     height: 0;
     width: 0;
