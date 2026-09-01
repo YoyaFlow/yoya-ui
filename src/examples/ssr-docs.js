@@ -270,10 +270,14 @@ export function SsrDocumentationPage() {
       usage.h2('核心 API');
       usage.ul((list) => {
         list.li(
-          'renderToString(component, { state }) 输出 { html, state }；工厂创建的树序列化后自动销毁。'
+          'renderPage({ page }, state, { messages }) 输出完整 HTML 文档；head/body 用 DSL 定义，状态只传一次。'
         );
-        list.li('hydrate(component, target, state) 收养服务端 DOM、回读表单快照并绑定事件。');
-        list.li('serializeState / parseState 让状态可安全内联进 script 标签。');
+        list.li(
+          'hydrateOrMount(component, { messages }) 客户端一行接入：自动读状态并选择 hydrate 或 mount。'
+        );
+        list.li(
+          'renderToString / hydrate / mount 为底层原语，需要细粒度控制时使用；serializeState / parseState 安全内联状态。'
+        );
         list.li('Router.renderPath(path) 在服务端按请求路径渲染匹配路由。');
       });
     });
@@ -284,7 +288,7 @@ export function SsrDocumentationPage() {
       flow.pre((pre) => {
         pre.styles(outputStyles);
         pre.code(
-          '服务端：createSsrPage(requestState) → renderToString → HTML + __YOYA_DATA__\n客户端：parseState → createSsrPage(state) → hydrate("#app") → 事件可用'
+          '服务端：renderPage({ page }, { lang, path }, { messages }) → 完整 HTML + __YOYA_DATA__\n客户端：hydrateOrMount(HomePage, { messages }) → 收养 DOM、绑定事件'
         );
       });
     });
@@ -297,7 +301,7 @@ export function SsrDocumentationPage() {
         '以下三个文件构成最小 SSR 项目，复制到你的工程即可运行（先 npm run build 生成 dist）。'
       );
 
-      renderCopySnippet(guide, 'page.js（页面工厂，两端共用）', pageSnippet);
+      renderCopySnippet(guide, 'home-page.js（页面组件，两端共用）', pageSnippet);
       renderCopySnippet(guide, 'server.mjs（服务端入口）', serverSnippet);
       renderCopySnippet(guide, 'client.js（浏览器启动）', clientSnippet);
 
