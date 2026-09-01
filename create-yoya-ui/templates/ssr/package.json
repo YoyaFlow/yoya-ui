@@ -1,12 +1,12 @@
 {
-  "name": "yoya-ui-app",
+  "name": "yoya-ui-ssr-app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "start": "node src/server.mjs",
+    "preview": "npm run build && npm start"
   },
   "dependencies": {
     "@yoyaflow/yoya-ui": "^0.2.0"
