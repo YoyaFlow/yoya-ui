@@ -131,7 +131,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('[data-overview-page]')).not.toBeNull();
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(12);
+    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(5);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
@@ -169,7 +169,7 @@ describe('renderExamplesIndex', () => {
     root = renderExamplesIndex('#app');
 
     const navItems = document.querySelectorAll('[data-components-top-nav] [data-top-nav-item]');
-    expect(navItems).toHaveLength(13);
+    expect(navItems).toHaveLength(14);
     expect(
       document.querySelector('[data-top-nav-item="overview"]').getAttribute('aria-current')
     ).toBe('page');
@@ -678,7 +678,7 @@ describe('renderExamplesIndex', () => {
 
     expect(page.querySelector('h1').textContent).toBe('vCarousel 走马灯');
     expect(page.textContent).toContain('carousel.autoplay(value)');
-    expect(demos).toHaveLength(3);
+    expect(demos).toHaveLength(4);
     expect(basic.querySelector('.yoya-vcarousel')).not.toBeNull();
     expect(basic.querySelector('[data-source-example]').textContent).toContain(
       'CarouselBasicExample1'
@@ -698,6 +698,64 @@ describe('renderExamplesIndex', () => {
     expect(loopDemo.querySelector('[data-carousel-loop-status]').textContent).toContain(
       '当前 2 / 3'
     );
+  });
+
+  it('renders the C-end docs category pages', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/c-end/0');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('骨架屏');
+    });
+
+    const skeletonPage = document.querySelector('[data-c-end-docs="skeleton"]');
+    expect(skeletonPage.querySelector('h1').textContent).toBe('vSkeleton 骨架屏');
+    expect(skeletonPage.querySelector('.yoya-vskeleton')).not.toBeNull();
+    expect(skeletonPage.querySelectorAll('[data-c-end-demo]').length).toBeGreaterThan(0);
+
+    const toggleDemo = skeletonPage.querySelector('[data-c-end-demo="toggle"]');
+    const loadedButton = [...toggleDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('切换为真实内容')
+    );
+    loadedButton.click();
+    loadedButton.click();
+    const contentHeadings = [...toggleDemo.querySelectorAll('h3')].filter((heading) =>
+      heading.textContent.includes('订单 #1024')
+    );
+    expect(contentHeadings).toHaveLength(1);
+
+    await openRoute('/components/c-end/4');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('图片预览');
+    });
+
+    const previewPage = document.querySelector('[data-c-end-docs="image-preview"]');
+    expect(previewPage.querySelector('h1').textContent).toBe('vImagePreview 图片预览');
+    expect(previewPage.querySelector('.yoya-vimagepreview')).not.toBeNull();
+
+    await openRoute('/components/c-end/2');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('过渡动效');
+    });
+
+    const transitionPage = document.querySelector('[data-c-end-docs="transition"]');
+    const forceDemo = transitionPage.querySelector('[data-c-end-demo="force"]');
+    const toggleButton = [...forceDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('切换显示')
+    );
+    toggleButton.click();
+    expect(forceDemo.querySelector('.yoya-vtransition').dataset.state).toBe('leave');
+
+    await openRoute('/components/c-end/3');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('瀑布流');
+    });
+
+    const masonryPage = document.querySelector('[data-c-end-docs="masonry"]');
+    const scrollDemo = masonryPage.querySelector('[data-c-end-demo="scroll"]');
+    const scrollBox = scrollDemo.querySelector('[data-masonry-scroll]');
+    expect(scrollDemo.querySelectorAll('.yoya-vmasonry > *')).toHaveLength(24);
+    expect(scrollBox.style.overflow).toBe('auto');
   });
 
   it('renders the third-party ECharts demo page', async () => {

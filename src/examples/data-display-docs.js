@@ -644,19 +644,20 @@ const dataDisplayDocsDefinitions = Object.freeze({
     examplesIntro: '下面四个示例分别展示基础滚动、循环/阻止控制、异步加载和虚拟滚动。',
     heading: 'vScroll 滚动组件',
     intro:
-      '滚动组件用于在固定高度的容器内按需加载和展示列表，适合日志、消息流、审计记录和长数据列表。',
+      '滚动组件用于在固定高度的容器内按需加载和展示列表，适合日志、消息流、审计记录和长数据列表。触底加载（loadMore）即无限滚动能力，数据量大时可自动开启虚拟滚动。',
     key: 'scroll',
     routeItem: 'data-display:9',
     title: '滚动组件',
     usageItems: [
       '日志、消息流和长列表需要按需加载时，用 vScroll 代替一次性渲染全部数据。',
       '列表到底后需要停止请求时，调用 block(true)。',
-      '需要不断重复同一批数据时，用 loop(true) 开启循环加载。'
+      '需要不断重复同一批数据时，用 loop(true) 开启循环加载。',
+      '触底加载即无限滚动，无需额外组件；数据量超过阈值时自动虚拟化，只渲染可视窗口。'
     ]
   }),
   carousel: createDataDisplayDocsDefinition({
     apiIntro:
-      'vCarousel 用于在容器内横向切换多张幻灯片。它支持 slides/renderItem 数据驱动、自动播放、循环切换、箭头、指示点和键盘操作。',
+      'vCarousel 用于在容器内横向切换多张幻灯片。它支持 slides/renderItem 数据驱动、自动播放、循环切换、触摸/鼠标滑动、箭头、指示点和键盘操作。',
     apiRows: [
       [
         'vCarousel({ slides, renderItem, autoplay, loop, arrows, dots })',
@@ -721,9 +722,17 @@ const dataDisplayDocsDefinitions = Object.freeze({
         imports: ['vButton', 'vCarousel', 'vCard', 'vText'],
         sourceTitle: '循环切换核心源码',
         title: '循环切换'
+      },
+      {
+        component: CarouselSwipeExample1,
+        description: '按住水平拖动即可切换，垂直滚动不受影响，滑动期间自动播放暂停。',
+        id: 'swipe',
+        imports: ['div', 'vCarousel', 'vCard'],
+        sourceTitle: '触摸滑动核心源码',
+        title: '触摸滑动'
       }
     ],
-    examplesIntro: '下面三个示例分别展示基础走马灯、自动播放和循环切换。',
+    examplesIntro: '下面四个示例分别展示基础走马灯、自动播放、循环切换和触摸滑动。',
     heading: 'vCarousel 走马灯',
     intro:
       '走马灯用于在有限空间内顺序展示图片、卡片或运营内容。vCarousel 把滑动切换、自动播放、循环、指示点和键盘交互收敛在同一个组件 API 中。',
@@ -733,7 +742,8 @@ const dataDisplayDocsDefinitions = Object.freeze({
     usageItems: [
       '首页横幅、服务卡片和运营位需要轮播展示时，用 vCarousel 承载多张内容。',
       '需要自动轮播时开启 autoplay，用户悬停或聚焦时会自动暂停。',
-      '首尾需要连续播放时开启 loop，到底后需要停在边界时可关闭 loop。'
+      '首尾需要连续播放时开启 loop，到底后需要停在边界时可关闭 loop。',
+      '桌面端按住左右拖动、移动端触摸滑动即可切换，垂直滚动不受影响。'
     ]
   })
 });
@@ -2587,6 +2597,47 @@ function CarouselLoopExample1() {
               button.variant('primary');
               button.on('click', () => carousel.next());
             });
+          });
+        });
+      });
+    }
+  };
+}
+
+function CarouselSwipeExample1() {
+  const slides = ['滑动 A', '滑动 B', '滑动 C'];
+  const carousel = vCarousel((carousel) => {
+    carousel.height('220px');
+    carousel.slides(slides, (item, index) =>
+      div((block) => {
+        block.styles({
+          alignItems: 'center',
+          background:
+            index % 2 === 0
+              ? 'var(--yoya-color-primary-subtle, #f0f9ff)'
+              : 'var(--yoya-color-surface-muted, #f8fafc)',
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          height: '100%',
+          justifyContent: 'center',
+          fontSize: '18px',
+          fontWeight: '700'
+        });
+        block.text(item);
+      })
+    );
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('触摸滑动');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p('在走马灯上按住并水平拖动即可切换，垂直滚动不受影响；滑动期间自动播放暂停。');
+            content.child(carousel);
           });
         });
       });

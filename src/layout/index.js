@@ -7,6 +7,7 @@ import {
   themeValue
 } from '../components/shared.js';
 import { VSplitPanel, vSplitPanel } from './split-panel.js';
+import { VMasonry, vMasonry } from './masonry.js';
 
 const layoutOptionNames = new Set([
   'align',
@@ -732,6 +733,7 @@ const layoutFactories = {
   vFooter,
   vHeader,
   vMain,
+  vMasonry,
   vRow,
   vSplitPanel,
   center,
@@ -751,7 +753,7 @@ const layoutFactories = {
 
 registerChildFactories(HtmlElementNode, layoutFactories);
 
-export { VSplitPanel, vSplitPanel };
+export { VMasonry, vMasonry, VSplitPanel, vSplitPanel };
 
 function createLayoutNode(
   kind,

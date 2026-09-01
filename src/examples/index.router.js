@@ -142,6 +142,17 @@ const componentMenuSections = [
     items: [{ label: '动态加载', details: 'vDynamicLoader' }]
   },
   {
+    id: 'c-end',
+    title: 'C 端体验',
+    items: [
+      { label: '骨架屏', details: 'vSkeleton' },
+      { label: '懒加载图片', details: 'vLazyImage' },
+      { label: '过渡动效', details: 'vTransition' },
+      { label: '瀑布流', details: 'vMasonry' },
+      { label: '图片预览', details: 'vImagePreview' }
+    ]
+  },
+  {
     id: 'feedback',
     title: '反馈',
     items: [
@@ -240,6 +251,11 @@ const docsRouteLoaders = Object.freeze({
   'data-display:8': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
   'data-display:9': () =>
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
+  'c-end:0': () => import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
+  'c-end:1': () => import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
+  'c-end:2': () => import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
+  'c-end:3': () => import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
+  'c-end:4': () => import('./c-end-docs.js').then((m) => m.ImagePreviewDocumentationPage()),
   'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
   'third-party:1': () => import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
   'theme:0': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
@@ -486,6 +502,7 @@ function createOverviewView() {
           {
             title: '定位',
             points: [
+              '这是一套新的业务界面构建形式：Web 基础库，自带 UI 组件仅为开箱即用，不代表库的能力边界。',
               '面向所有 Web 开发者的轻量原生 JS 基础库，同时提供常用 UI 组件库；相比 React/Vue，后端与全栈开发者也能更低门槛地上手。',
               '回归本质，直接基于浏览器原生环境构建，相比 React/Vue 更轻、上手更直接。',
               'AI生成组件直接可使用，避免环境问题，返工率极低。',

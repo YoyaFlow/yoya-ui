@@ -49,6 +49,72 @@ describe('vCarousel', () => {
     expect(carousel.active()).toBe(1);
   });
 
+  it('swipes horizontally to change slides', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 60, clientY: 24 }));
+    expect(carousel.active()).toBe(1);
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 60, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 160, clientY: 26 }));
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('does not swipe on small or vertical drags', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 100, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 90, clientY: 22 }));
+    expect(carousel.active()).toBe(0);
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 100, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 110, clientY: 160 }));
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('pauses autoplay while swiping and resumes after', () => {
+    vi.useFakeTimers();
+    const carousel = vCarousel({
+      autoplay: true,
+      interval: 1000,
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
+    );
+    vi.advanceTimersByTime(2500);
+    expect(carousel.active()).toBe(0);
+
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 60, clientY: 24 }));
+    expect(carousel.active()).toBe(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(carousel.active()).toBe(2);
+  });
+
   it('updates slides from dots and keyboard controls', () => {
     const carousel = vCarousel({
       renderItem: (item) => div(item),

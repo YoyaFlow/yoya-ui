@@ -7,6 +7,8 @@ import {
   replaceChildren
 } from '../components/shared.js';
 
+const SWIPE_THRESHOLD = 40;
+
 export class VCarousel extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
@@ -34,6 +36,13 @@ export class VCarousel extends HtmlElementNode {
       .attr({ 'aria-label': '下一项', type: 'button' })
       .child(ArrowRightOutlined())
       .on('click', () => this.next());
+    this._swipeStart = null;
+    this._swipeCleanup = null;
+    this._viewport
+      .style('touchAction', 'pan-y')
+      .on('pointerdown', (event) => this._swipeDown(event))
+      .on('mousedown', (event) => this._swipeDown(event))
+      .on('touchstart', (event) => this._swipeDown(event));
     this._dots = new HtmlElementNode('div')
       .className('yoya-vcarousel-dots')
       .attr({ 'aria-label': '轮播指示', role: 'tablist' });
@@ -239,7 +248,28 @@ export class VCarousel extends HtmlElementNode {
 
   destroy() {
     this._clearTimer();
+    if (this._swipeCleanup) {
+      this._swipeCleanup();
+      this._swipeCleanup = null;
+    }
     return super.destroy();
+  }
+
+  renderDom() {
+    const element = super.renderDom();
+
+    if (!this._swipeCleanup && typeof document !== 'undefined') {
+      const onUp = (event) => this._swipeUp(event);
+      document.addEventListener('pointerup', onUp);
+      document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchend', onUp);
+      this._swipeCleanup = () => {
+        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchend', onUp);
+      };
+    }
+    return element;
   }
 
   _handleKeydown(event) {
@@ -256,6 +286,60 @@ export class VCarousel extends HtmlElementNode {
       event.preventDefault();
       this.active(this._itemsData.length - 1);
     }
+  }
+
+  _swipeDown(event) {
+    if (this._swipeStart) {
+      return;
+    }
+
+    const point = this._resolvePoint(event);
+    if (!point) {
+      return;
+    }
+
+    this._swipeStart = point;
+    this._pause();
+  }
+
+  _swipeUp(event) {
+    if (!this._swipeStart) {
+      return;
+    }
+
+    const point = this._resolvePoint(event);
+    const start = this._swipeStart;
+    this._swipeStart = null;
+    this._resume();
+
+    if (!point) {
+      return;
+    }
+
+    const deltaX = point.x - start.x;
+    const deltaY = point.y - start.y;
+
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      this.next();
+    } else {
+      this.prev();
+    }
+  }
+
+  _resolvePoint(event) {
+    const touch = event.touches?.[0] ?? event.changedTouches?.[0];
+    const x = touch?.clientX ?? event.clientX;
+    const y = touch?.clientY ?? event.clientY;
+
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      return null;
+    }
+
+    return { x, y };
   }
 
   _renderSlides() {

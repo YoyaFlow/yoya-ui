@@ -41,6 +41,7 @@ import { VSparkline, vSparkline } from './sparkline.js';
 import { VTimeline, VTimelineItem, vTimeline, vTimelineItem } from './timeline.js';
 import { VTrendCard, vTrendCard } from './trend-card.js';
 import { VScroll, vScroll } from './vscroll.js';
+import { VImagePreview, vImagePreview } from './image-preview.js';
 
 const dataDisplayFactories = {
   vAvatar,
@@ -61,6 +62,7 @@ const dataDisplayFactories = {
   vCode,
   vDetail,
   vDetailItem,
+  vImagePreview,
   vPagination,
   vProgress,
   vScroll,
@@ -76,6 +78,7 @@ export {
   VDigitalBoard,
   VDigitalBoardItem,
   VGauge,
+  VImagePreview,
   VRingStat,
   VSparkline,
   VTimeline,
@@ -89,6 +92,7 @@ export {
   VCode,
   VDetail,
   VDetailItem,
+  vImagePreview,
   VPagination,
   VProgress,
   VScroll,
