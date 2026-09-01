@@ -4,7 +4,7 @@
 
 > Browser-native UI library with declarative HTML authoring — no virtual DOM, no JSX/SFC, no build step required.
 
-yoya-ui builds views directly on the real DOM: declarative HTML authoring, a component library, router, i18n, theming and state out of the box, with server-side rendering (SSR) and pure client rendering switchable from the same code.
+yoya-ui is a web foundation library — a new form of business UI construction. Views are built directly on the real DOM: declarative HTML authoring, router, i18n, theming, state and server-side rendering (SSR) out of the box, with pure client rendering switchable from the same code. Bundled UI components exist for out-of-the-box convenience; they are not the boundary of the library — native elements and third-party components compose the same way.
 
 ## Features
 
@@ -13,7 +13,7 @@ yoya-ui builds views directly on the real DOM: declarative HTML authoring, a com
 - **Flexible delivery**: embed in server-rendered templates, ship together with backend services for atomic per-service deployment, or run as a standalone SPA — same code, no changes
 - **Build-tool optional**: use the shipped files directly in a plain page (no Vite/bundler needed), or install via npm and bundle with Vite/webpack — both are first-class
 - **AI-friendly**: declarative structure means AI-generated component code runs directly, with or without a build step
-- **Ready-to-use component library**: forms, navigation, feedback, data display, layout, charts and more for high-frequency scenarios
+- **Ready-to-use component library**: forms, navigation, feedback, data display, layout, charts and more for high-frequency scenarios — convenience on top of the foundation, not its boundary
 - **Built-in router / i18n / theme / state**: everything a SPA needs, no extra selection required
 - **Server-side rendering**: one codebase, two modes — full-site SSR and island-style client enhancement both work
 - **Small core, zero dependencies, easy to extend**: follows standard component patterns; third-party components compose seamlessly with built-ins; import per module fits any project
