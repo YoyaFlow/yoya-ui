@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-ui",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A browser-native JS UI library with declarative HTML authoring: component library, router, i18n, theming and layout, works with or without a build tool, SSR-ready.",
   "type": "module",
   "private": false,
