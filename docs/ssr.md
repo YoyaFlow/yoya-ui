@@ -22,6 +22,8 @@ yoya-ui 的声明式视图树支持服务端渲染：服务端把页面渲染成
 
 关键约定：**服务端与客户端使用同一份页面工厂 `createPage(requestState) => ViewNode`**。工厂接收请求状态（路径、locale 等），两边用相同输入构建出相同的树，hydration 才能按节点对齐。
 
+> **入口约定**：页面工厂与渲染原语统一从 `yoya-ui/ssr` 导入（该入口已包含 core / html / layout / router / i18n），避免与主入口形成双副本导致 `instanceof` 失配；客户端由打包器去重为同一份模块。
+
 ## 2. 页面工厂约定
 
 ```js

@@ -14,6 +14,8 @@
 
 **服务端与客户端必须使用同一份工厂** `createPage(requestState) => ViewNode`，两端用相同输入构建同一棵树，hydration 才能按节点对齐。
 
+页面工厂与渲染原语统一从 `@yoyaflow/yoya-ui/ssr` 导入（已包含 core / html / layout / router / i18n），避免与主入口双副本导致 `instanceof` 失配。
+
 ```js
 // page.js —— 两端共用
 export function createPage(initial = {}) {

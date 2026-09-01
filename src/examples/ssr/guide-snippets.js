@@ -4,7 +4,7 @@
  */
 
 export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
-import { createRouter, div } from 'yoya-ui';
+import { createRouter, div } from 'yoya-ui/ssr';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
