@@ -192,7 +192,6 @@ export function vTreeRanger(first = null, second = null, third = null) {
     root.clearChildren();
     root.child(crumbs);
     root.child(buildSplit(0));
-    root.renderDom();
   }
 
   function buildSplit(slot) {

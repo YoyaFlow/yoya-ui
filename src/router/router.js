@@ -1057,11 +1057,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     const entry = state.tabs.get(path);
     if (!entry) return;
 
-    const wasActive =
-      entry.tab
-        .renderDom()
-        .querySelector('.yoya-vrouter-views-label')
-        .getAttribute('aria-selected') === 'true';
+    const wasActive = entry.label.attr('aria-selected') === 'true';
     state.tabs.delete(path);
     titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
     titleNode._childrenDirty = true;
