@@ -1,4 +1,12 @@
-import type { ChildInput, ElementNode, ElementOptions, SetupCallback, SetupInput } from './core.js';
+import type {
+  ChildInput,
+  ElementFactory,
+  ElementNode,
+  ElementOptions,
+  SetupCallback,
+  SetupInput
+} from './core.js';
+import type { HtmlElementNode } from './html.js';
 
 export type DynamicLoaderStatus = 'pending' | 'loading' | 'loaded' | 'error';
 
@@ -51,8 +59,50 @@ export function preloadDynamicModule(
 /** Clears the shared module cache (all entries when cacheKey is omitted). */
 export function clearDynamicModuleCache(cacheKey?: string | null): void;
 
+export type SkeletonVariant = 'paragraph' | 'avatar' | 'block';
+
+/** Loading placeholder with paragraph / avatar / block variants. */
+export class VSkeleton extends HtmlElementNode {
+  variant(): SkeletonVariant;
+  variant(value: SkeletonVariant): VSkeleton;
+  rows(): number;
+  rows(value: number): VSkeleton;
+  barHeight(): number;
+  barHeight(value: number): VSkeleton;
+  gap(): number;
+  gap(value: number): VSkeleton;
+  avatarSize(): number;
+  avatarSize(value: number): VSkeleton;
+  active(): boolean;
+  active(value: boolean): VSkeleton;
+  motion(): string;
+  motion(value: string): VSkeleton;
+}
+
+export const vSkeleton: ElementFactory<VSkeleton>;
+
+/** Lazy image with native lazy loading and loading / loaded / error states. */
+export class VLazyImage extends HtmlElementNode {
+  src(): string | null;
+  src(value: string | null): VLazyImage;
+  alt(): string;
+  alt(value: string): VLazyImage;
+  defer(): boolean;
+  defer(value: boolean): VLazyImage;
+  state(): 'loading' | 'loaded' | 'error';
+  retry(): VLazyImage;
+}
+
+export const vLazyImage: ElementFactory<VLazyImage>;
+
 /**
  * Parent-shortcut surface merged onto HtmlElementNode. vDynamicLoader is
  * registered on ElementNode and inherited, so it is declared there.
  */
-export interface AsyncParentShortcuts {}
+export interface AsyncParentShortcuts {
+  vSkeleton(first?: SetupInput<VSkeleton> | null, callback?: SetupCallback<VSkeleton>): VSkeleton;
+  vLazyImage(
+    first?: SetupInput<VLazyImage> | null,
+    callback?: SetupCallback<VLazyImage>
+  ): VLazyImage;
+}

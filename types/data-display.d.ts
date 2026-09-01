@@ -461,6 +461,27 @@ export const vTimeline: ElementFactory<VTimeline>;
 export const vTimelineItem: ElementFactory<VTimelineItem>;
 export const vTrendCard: ElementFactory<VTrendCard>;
 
+/** Image lightbox with lazy large image, zoom / pan and ESC close. */
+export class VImagePreview extends HtmlElementNode {
+  src(): string | null;
+  src(value: string | null): VImagePreview;
+  thumb(): string | null;
+  thumb(value: string | null): VImagePreview;
+  alt(): string;
+  alt(value: string): VImagePreview;
+  zoom(): number;
+  zoom(value: number): VImagePreview;
+  resetZoom(): VImagePreview;
+  state(): 'open' | 'closed';
+  open(): VImagePreview;
+  close(): VImagePreview;
+  toggle(): VImagePreview;
+}
+
+export const vImagePreview: ElementFactory<VImagePreview> & {
+  (first?: SetupInput<VImagePreview> | null, callback?: SetupCallback<VImagePreview>): VImagePreview;
+};
+
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface DataDisplayParentShortcuts {
   vAvatar(first?: SetupInput<VAvatar> | null, callback?: SetupCallback<VAvatar>): VAvatar;
@@ -488,6 +509,10 @@ export interface DataDisplayParentShortcuts {
     callback?: SetupCallback<VDigitalBoardItem>
   ): VDigitalBoardItem;
   vGauge(first?: SetupInput<VGauge> | null, callback?: SetupCallback<VGauge>): VGauge;
+  vImagePreview(
+    first?: SetupInput<VImagePreview> | null,
+    callback?: SetupCallback<VImagePreview>
+  ): VImagePreview;
   vPagination(
     first?: SetupInput<PaginationComponent> | null,
     callback?: SetupCallback<PaginationComponent>

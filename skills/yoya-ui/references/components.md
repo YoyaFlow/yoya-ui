@@ -331,6 +331,60 @@ vTable({ columns: ['名称', '状态'], rows: [['api-gateway', '运行中']] });
 
 图表容器：`adapter()`（ECharts 等）、`data()/options()`、`resize()`；ECharts 版本用 `vEchart`，需先以 `<script>` 引入 `echarts.min.js` 再传 `echartsLib`。
 
+## C 端体验
+
+### vSkeleton
+
+加载占位（骨架屏）：`variant('paragraph'|'avatar'|'block')`、`rows()`、`barHeight()`（文字行盒高度）、`gap()`（行间距）、`avatarSize()`、`motion('auto'|'always')`。`active(false)` 移除占位并展示真实内容，切换前用 `barHeight`+`gap` 对齐内容行高可避免跳动。
+
+```js
+vSkeleton({ rows: 3, barHeight: 20, gap: 8 }, (skeleton) => {
+  // 数据到达后：skeleton.active(false) 并挂载真实内容
+});
+```
+
+### vLazyImage
+
+图片懒加载：进入视口才加载，原生 `loading="lazy"` 兜底；`src()/alt()`、`defer()` 开启 IntersectionObserver 延迟、`state()`（loading/loaded/error）、`retry()` 失败重试。
+
+```js
+vLazyImage({ src: '/cover.png', alt: '封面', defer: true });
+```
+
+### vTransition
+
+通用进出场过渡：`show()/enter()/leave()/toggle()`，`duration()` 控制时长。`motion('auto')` 走 CSS 动画并跟随系统“减少动态效果”；`motion('always')` 改用 Web Animations API 强制播放，不受系统设置影响。
+
+```js
+vTransition({ motion: 'always' }, (transition) => {
+  transition.child('内容');
+  transition.toggle();
+});
+```
+
+### vMasonry
+
+瀑布流布局（CSS 多列）：`columns()`/`gap()` 固定列数与间距，`minColumnWidth()` 让列数随容器宽度自适应；子项按顺序落入各列，常用固定高度容器 + `overflow: auto` 实现滚动查看更多。
+
+```js
+vMasonry({ columns: 3, gap: 16 }, (masonry) => {
+  masonry.div('卡片 1');
+  masonry.div('卡片 2');
+});
+```
+
+### vImagePreview
+
+图片预览灯箱：`src()` 大图、`thumb()` 缩略图、`alt()`；点击缩略图打开，`open()/close()/toggle()`、`zoom()`/`resetZoom()` 缩放与平移，ESC 关闭；大图复用 vLazyImage 的加载/失败态。
+
+```js
+vImagePreview({ src: '/big.png', thumb: '/small.png', alt: '示例' });
+```
+
+### vCarousel 触摸滑动
+
+vCarousel 内置水平拖动/触摸滑动切换（垂直滚动不拦截，滑动期间自动播放暂停），无需额外配置；`loop()`/`autoplay()`/`arrows()`/`dots()` 见上文数据展示。
+
 ## 布局
 
 - `vstack({ gap })`：纵向 flex；`hstack` 横向；`vRow/vCol` 栅格；`vContainer` 定宽容器

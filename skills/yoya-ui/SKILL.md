@@ -38,6 +38,10 @@ document.querySelector('#app').appendChild(page.renderDom());
 
 `vForm` + `vFormItem` 收集与校验；控件设 `name()` 后自动进 `form.values()`；`form.validate()` 校验必填与自定义规则。详见 references/forms.md。
 
+## C 端体验组件
+
+面向内容站、工具与展示类页面的开箱组件：`vSkeleton` 骨架屏、`vLazyImage` 图片懒加载、`vTransition` 进出场过渡（`motion: 'always'` 强制动画）、`vMasonry` 瀑布流、`vImagePreview` 图片灯箱；`vCarousel` 已支持触摸/鼠标滑动。每种组件的用途与关键 API 见 references/components.md。
+
 ## 主题与样式
 
 组件自带内聚样式；颜色、间距、控件尺寸等用 `--yoya-*` CSS 变量，换肤只覆盖变量；明暗/密度由 `data-yoya-mode`/`data-yoya-density` 切换。详见 references/theming.md。

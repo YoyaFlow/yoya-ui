@@ -339,6 +339,20 @@ export const vSplitPanel: ElementFactory<VSplitPanel> & {
   (first?: SetupInput<VSplitPanel> | null, callback?: SetupCallback<VSplitPanel>): VSplitPanel;
 };
 
+/** Masonry layout built on CSS multi-columns with configurable columns and gap. */
+export class VMasonry extends HtmlElementNode {
+  columns(): number;
+  columns(value: number): VMasonry;
+  gap(): number;
+  gap(value: number): VMasonry;
+  minColumnWidth(): number | null;
+  minColumnWidth(value: number | null): VMasonry;
+}
+
+export const vMasonry: ElementFactory<VMasonry> & {
+  (first?: SetupInput<VMasonry> | null, callback?: SetupCallback<VMasonry>): VMasonry;
+};
+
 // ---------------------------------------------------------------------------
 // Theme shell
 // ---------------------------------------------------------------------------
@@ -424,6 +438,7 @@ export interface LayoutParentShortcuts {
     first?: SetupInput<VSplitPanel> | null,
     callback?: SetupCallback<VSplitPanel>
   ): VSplitPanel;
+  vMasonry(first?: SetupInput<VMasonry> | null, callback?: SetupCallback<VMasonry>): VMasonry;
 }
 
 export type { ElementOptions, SetupInput };

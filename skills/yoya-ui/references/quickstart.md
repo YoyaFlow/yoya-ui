@@ -33,6 +33,7 @@ npm run dev
 | 布局 | `div`/`section`、`hstack`/`vstack`/`grid`/`container`/`spacer`、`vSplitPanel` |
 | 表单 | `vForm`、`vFormItem`、`vInput`、`vSelect`、`vCheckbox(es)`、`vRadio(s)`、`vTextarea`、`vSwitch`、`vRate`、`vSlider`、`vCascader`、`vTagsInput`、`vAutocomplete`、`vColorPicker`、`vUpload` |
 | 数据展示 | `vTable`、`vTree`、`vBadge`、`vDetail`、`vAvatar`、`vProgress`、`vCarousel` |
+| C 端体验 | `vSkeleton`（骨架屏）、`vLazyImage`（懒加载）、`vTransition`（进出场）、`vMasonry`（瀑布流）、`vImagePreview`（灯箱） |
 | 反馈 | `vMessage`/`toast`、`vDialog`、`vTooltip` |
 | 导航 | `vMenu`、`vTabs`、`vSteps`、`vNavbar`、`vBreadcrumb`、`vAnchor` |
 
