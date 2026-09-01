@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { bindWindowEvent } from '../core/document-events.js';
 import { MenuOutlined } from '../svg/icons.js';
 import {
   applyComponentArguments,
@@ -205,9 +206,9 @@ export function vCol(first = null, second = null, third = null) {
   applyLayoutSetup(node, args.first, applyColOptions);
   node._refreshCol();
 
-  if (node._responsiveCols.length && typeof window !== 'undefined') {
+  if (node._responsiveCols.length) {
     node._colResize = () => node._refreshCol();
-    window.addEventListener('resize', node._colResize);
+    node._colResizeUnbind = bindWindowEvent('resize', node._colResize);
     wrapColResponsiveDestroy(node);
   }
 
@@ -261,10 +262,10 @@ export function responsiveGrid(first = null, second = null, third = null) {
     if (
       node._responsiveGridBreakpoints.length &&
       !node._responsiveGridResize &&
-      typeof window !== 'undefined'
+      !node._responsiveGridResizeUnbind
     ) {
       node._responsiveGridResize = () => node._responsiveGridRefresh();
-      window.addEventListener('resize', node._responsiveGridResize);
+      node._responsiveGridResizeUnbind = bindWindowEvent('resize', node._responsiveGridResize);
       wrapResponsiveGridDestroy(node);
     }
     node._responsiveGridRefresh();
@@ -272,9 +273,9 @@ export function responsiveGrid(first = null, second = null, third = null) {
   };
   node._responsiveGridRefresh();
 
-  if (node._responsiveGridBreakpoints.length && typeof window !== 'undefined') {
+  if (node._responsiveGridBreakpoints.length) {
     node._responsiveGridResize = () => node._responsiveGridRefresh();
-    window.addEventListener('resize', node._responsiveGridResize);
+    node._responsiveGridResizeUnbind = bindWindowEvent('resize', node._responsiveGridResize);
     wrapResponsiveGridDestroy(node);
   }
 
@@ -366,9 +367,7 @@ function wrapResponsiveGridDestroy(node) {
   node._responsiveGridDestroyWrapped = true;
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
-    if (node._responsiveGridResize) {
-      window.removeEventListener('resize', node._responsiveGridResize);
-    }
+    node._responsiveGridResizeUnbind?.();
     return destroy();
   };
 }
@@ -628,11 +627,9 @@ export function mobileLayout(first = null, second = null, third = null) {
 
   applyLayoutSetup(node, args.first, applyMobileLayoutOptions);
   node.child(node._asideBackdrop, node._asideToggle);
-  if (typeof window !== 'undefined') {
-    node._mobileLayoutResize = () => node._refreshMobileLayout();
-    window.addEventListener('resize', node._mobileLayoutResize);
-    wrapMobileLayoutDestroy(node);
-  }
+  node._mobileLayoutResize = () => node._refreshMobileLayout();
+  node._mobileLayoutResizeUnbind = bindWindowEvent('resize', node._mobileLayoutResize);
+  wrapMobileLayoutDestroy(node);
   node._refreshMobileLayout();
   return applyComponentArguments(node, args.options, args.callback);
 }
@@ -1031,9 +1028,7 @@ function wrapColResponsiveDestroy(node) {
   node._colDestroyWrapped = true;
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
-    if (node._colResize) {
-      window.removeEventListener('resize', node._colResize);
-    }
+    node._colResizeUnbind?.();
     return destroy();
   };
 }
@@ -1043,9 +1038,7 @@ function wrapMobileLayoutDestroy(node) {
   node._mobileLayoutDestroyWrapped = true;
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
-    if (node._mobileLayoutResize) {
-      window.removeEventListener('resize', node._mobileLayoutResize);
-    }
+    node._mobileLayoutResizeUnbind?.();
     return destroy();
   };
 }

@@ -34,6 +34,7 @@ document.querySelector('#app').appendChild(page.renderDom());
 - **事件绑定铁律**：快捷方法返回父节点而非子元素，事件必须用回调参数：
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
+- **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
 
 ## 文本与状态
 

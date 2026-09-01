@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import { allocateId } from '../core/id.js';
 import {
   componentClass,
@@ -150,11 +151,12 @@ export class VTooltip extends HtmlElementNode {
   }
 
   _bindGlobalCloseHandlers() {
-    if (this._globalCloseCleanup || typeof document === 'undefined') {
+    if (this._globalCloseCleanup) {
       return;
     }
 
     let clickBound = false;
+    let unbindPointer = () => {};
     const handlePointer = (event) => {
       if (!this._el?.contains(event.target)) {
         this.close();
@@ -173,16 +175,16 @@ export class VTooltip extends HtmlElementNode {
     };
 
     if (this._triggerMode === 'click') {
-      document.addEventListener('click', handlePointer);
+      unbindPointer = bindDocumentEvent('click', handlePointer);
       clickBound = true;
     }
-    document.addEventListener('keydown', handleKey);
+    const unbindKey = bindDocumentEvent('keydown', handleKey);
 
     this._globalCloseCleanup = () => {
       if (clickBound) {
-        document.removeEventListener('click', handlePointer);
+        unbindPointer();
       }
-      document.removeEventListener('keydown', handleKey);
+      unbindKey();
       this._globalCloseCleanup = null;
     };
   }

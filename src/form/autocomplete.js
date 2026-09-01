@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { registerChildFactories } from '../core/node.js';
+import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
 import {
   applyComponentArguments,
   componentClass,
@@ -298,34 +299,39 @@ export class VAutocomplete extends HtmlElementNode {
   }
 
   _bindOutsideClose(enabled) {
-    if (enabled && !this._outsideListener) {
+    if (enabled && !this._outsideUnbind) {
       this._outsideListener = (event) => {
         if (!this._el || !this._el.contains(event.target)) {
           this.close();
         }
       };
-      document.addEventListener('mousedown', this._outsideListener);
+      this._outsideUnbind = bindDocumentEvent('mousedown', this._outsideListener);
       return;
     }
 
-    if (!enabled && this._outsideListener) {
-      document.removeEventListener('mousedown', this._outsideListener);
+    if (!enabled && this._outsideUnbind) {
+      this._outsideUnbind();
       this._outsideListener = null;
+      this._outsideUnbind = null;
     }
   }
 
   _bindReposition(enabled) {
-    if (enabled && !this._repositionListener) {
+    if (enabled && !this._repositionUnbind) {
       this._repositionListener = () => this._positionList();
-      window.addEventListener('scroll', this._repositionListener, true);
-      window.addEventListener('resize', this._repositionListener);
+      const unbindScroll = bindWindowEvent('scroll', this._repositionListener, true);
+      const unbindResize = bindWindowEvent('resize', this._repositionListener);
+      this._repositionUnbind = () => {
+        unbindScroll();
+        unbindResize();
+      };
       return;
     }
 
-    if (!enabled && this._repositionListener) {
-      window.removeEventListener('scroll', this._repositionListener, true);
-      window.removeEventListener('resize', this._repositionListener);
+    if (!enabled && this._repositionUnbind) {
+      this._repositionUnbind();
       this._repositionListener = null;
+      this._repositionUnbind = null;
     }
   }
 

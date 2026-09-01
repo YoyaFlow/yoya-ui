@@ -7,6 +7,11 @@ import {
   vText
 } from '../core/index.js';
 import {
+  bindDocumentEvent,
+  bindWindowEvent,
+  injectDocumentStyle
+} from '../core/document-events.js';
+import {
   normalizeChildren,
   replaceChildren,
   themeBorder,
@@ -17,11 +22,10 @@ const maxVisibleTitles = 8;
 let scrollbarStyle = null;
 
 function ensureScrollbarStyle() {
-  if (typeof document === 'undefined' || scrollbarStyle) return;
+  if (scrollbarStyle) return;
 
-  scrollbarStyle = document.createElement('style');
-  scrollbarStyle.setAttribute('data-yoya-vrouter-views-popup-style', '');
-  scrollbarStyle.textContent = `.yoya-vrouter-views-titlebar,
+  scrollbarStyle = injectDocumentStyle(
+    `.yoya-vrouter-views-titlebar,
 .yoya-vrouter-views-popup {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -55,8 +59,9 @@ function ensureScrollbarStyle() {
   background: var(--yoya-color-border, #d0d7de);
   height: 1px;
   margin: 4px 6px;
-}`;
-  document.head?.appendChild(scrollbarStyle);
+}`,
+    'data-yoya-vrouter-views-popup-style'
+  );
 }
 
 function createRouterViewsStorageKey(routerInstance) {
@@ -201,11 +206,11 @@ export class Router extends ElementNode {
   }
 
   start() {
-    if (!this._started && typeof window !== 'undefined') {
+    if (!this._started) {
       if (this._mode === 'history') {
-        window.addEventListener('popstate', this._onPopState);
+        this._stopListening = bindWindowEvent('popstate', this._onPopState);
       } else {
-        window.addEventListener('hashchange', this._onHashChange);
+        this._stopListening = bindWindowEvent('hashchange', this._onHashChange);
       }
       this._started = true;
     }
@@ -224,12 +229,9 @@ export class Router extends ElementNode {
   }
 
   stop() {
-    if (this._started && typeof window !== 'undefined') {
-      if (this._mode === 'history') {
-        window.removeEventListener('popstate', this._onPopState);
-      } else {
-        window.removeEventListener('hashchange', this._onHashChange);
-      }
+    if (this._started) {
+      this._stopListening?.();
+      this._stopListening = null;
       this._started = false;
     }
 
@@ -969,15 +971,15 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     const handleScroll = () => placePopup();
     const handleResize = () => placePopup();
 
-    document.addEventListener('click', handleDocumentClick);
-    document.addEventListener('keydown', handleKeydown);
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
+    const unbindClick = bindDocumentEvent('click', handleDocumentClick);
+    const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
+    const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
+    const unbindResize = bindWindowEvent('resize', handleResize);
     popupCleanup = () => {
-      document.removeEventListener('click', handleDocumentClick);
-      document.removeEventListener('keydown', handleKeydown);
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleResize);
+      unbindClick();
+      unbindKeydown();
+      unbindScroll();
+      unbindResize();
     };
 
     function placePopup() {
@@ -1220,7 +1222,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     addSeparator();
     addItem('关闭全部', closeAll, true, entries.length === 0);
 
-    document.body.appendChild(titleContextMenu.renderDom());
+    titleContextMenu.bindTo(document.body);
     titleContextMenu.styles({ display: 'block' });
 
     const rect = titleContextMenu._el.getBoundingClientRect();
@@ -1241,15 +1243,15 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     };
     const handleScroll = () => closeTabContextMenu();
 
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeydown);
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleScroll);
+    const unbindPointerDown = bindDocumentEvent('mousedown', handlePointerDown);
+    const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
+    const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
+    const unbindResize = bindWindowEvent('resize', handleScroll);
     contextMenuCleanup = () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeydown);
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleScroll);
+      unbindPointerDown();
+      unbindKeydown();
+      unbindScroll();
+      unbindResize();
     };
   };
 
@@ -1371,17 +1373,13 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
 
   const handleResize = () => updateOverflow();
-  if (typeof window !== 'undefined') {
-    window.addEventListener('resize', handleResize);
-  }
+  const unbindResize = bindWindowEvent('resize', handleResize);
 
   const destroy = node.destroy.bind(node);
   node.destroy = () => {
     if (state.popupOpen) closePopup();
     closeTabContextMenu();
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', handleResize);
-    }
+    unbindResize();
     unsubscribe();
     if (routerInstance.outlet() === contentNode) routerInstance.outlet(routerInstance);
     return destroy();

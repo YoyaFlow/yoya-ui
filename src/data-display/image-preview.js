@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
 import { VLazyImage } from '../async/lazy-image.js';
 
@@ -113,7 +114,7 @@ export class VImagePreview extends HtmlElementNode {
         this.close();
       }
     };
-    document.addEventListener('keydown', this._escHandler);
+    this._escUnbind = bindDocumentEvent('keydown', this._escHandler);
     return this;
   }
 
@@ -127,8 +128,9 @@ export class VImagePreview extends HtmlElementNode {
     this._endPan();
 
     if (this._escHandler) {
-      document.removeEventListener('keydown', this._escHandler);
+      this._escUnbind?.();
       this._escHandler = null;
+      this._escUnbind = null;
     }
     if (this._overlay) {
       this._overlay.destroy();
@@ -240,8 +242,8 @@ export class VImagePreview extends HtmlElementNode {
     };
     this._onPanMove = (moveEvent) => this._panMove(moveEvent);
     this._onPanEnd = () => this._endPan();
-    document.addEventListener('mousemove', this._onPanMove);
-    document.addEventListener('mouseup', this._onPanEnd);
+    this._panMoveUnbind = bindDocumentEvent('mousemove', this._onPanMove);
+    this._panEndUnbind = bindDocumentEvent('mouseup', this._onPanEnd);
   }
 
   _panMove(event) {
@@ -257,12 +259,14 @@ export class VImagePreview extends HtmlElementNode {
   _endPan() {
     this._drag = null;
     if (this._onPanMove) {
-      document.removeEventListener('mousemove', this._onPanMove);
+      this._panMoveUnbind?.();
       this._onPanMove = null;
+      this._panMoveUnbind = null;
     }
     if (this._onPanEnd) {
-      document.removeEventListener('mouseup', this._onPanEnd);
+      this._panEndUnbind?.();
       this._onPanEnd = null;
+      this._panEndUnbind = null;
     }
   }
 

@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { registerChildFactories } from '../core/node.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import {
   applyComponentArguments,
   componentClass,
@@ -187,8 +188,8 @@ export class VSplitPanel extends HtmlElementNode {
 
     this._dragMove = (moveEvent) => this._onDrag(moveEvent);
     this._dragUp = () => this._endDrag();
-    document.addEventListener('mousemove', this._dragMove);
-    document.addEventListener('mouseup', this._dragUp);
+    this._dragUnbindMove = bindDocumentEvent('mousemove', this._dragMove);
+    this._dragUnbindUp = bindDocumentEvent('mouseup', this._dragUp);
   }
 
   _onDrag(event) {
@@ -229,12 +230,14 @@ export class VSplitPanel extends HtmlElementNode {
 
   _endDrag() {
     if (this._dragMove) {
-      document.removeEventListener('mousemove', this._dragMove);
+      this._dragUnbindMove?.();
       this._dragMove = null;
+      this._dragUnbindMove = null;
     }
     if (this._dragUp) {
-      document.removeEventListener('mouseup', this._dragUp);
+      this._dragUnbindUp?.();
       this._dragUp = null;
+      this._dragUnbindUp = null;
     }
     this._drag = null;
   }

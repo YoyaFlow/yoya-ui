@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '../svg/icons.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import {
   componentClass,
   createComponentFactory,
@@ -258,15 +259,15 @@ export class VCarousel extends HtmlElementNode {
   renderDom() {
     const element = super.renderDom();
 
-    if (!this._swipeCleanup && typeof document !== 'undefined') {
+    if (!this._swipeCleanup) {
       const onUp = (event) => this._swipeUp(event);
-      document.addEventListener('pointerup', onUp);
-      document.addEventListener('mouseup', onUp);
-      document.addEventListener('touchend', onUp);
+      const unbindPointerUp = bindDocumentEvent('pointerup', onUp);
+      const unbindMouseUp = bindDocumentEvent('mouseup', onUp);
+      const unbindTouchEnd = bindDocumentEvent('touchend', onUp);
       this._swipeCleanup = () => {
-        document.removeEventListener('pointerup', onUp);
-        document.removeEventListener('mouseup', onUp);
-        document.removeEventListener('touchend', onUp);
+        unbindPointerUp();
+        unbindMouseUp();
+        unbindTouchEnd();
       };
     }
     return element;

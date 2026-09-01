@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
 import {
   componentClass,
   createComponentFactory,
@@ -262,7 +263,7 @@ export class VAnchor extends HtmlElementNode {
   }
 
   _bindScrollTracking() {
-    if (this._trackingBound || typeof window === 'undefined' || typeof document === 'undefined') {
+    if (this._trackingBound) {
       return;
     }
 
@@ -270,11 +271,11 @@ export class VAnchor extends HtmlElementNode {
     const handler = () => this._syncActiveFromScroll();
     const options = { capture: true, passive: true };
 
-    window.addEventListener('scroll', handler, options);
-    document.addEventListener('scroll', handler, options);
+    const unbindWindow = bindWindowEvent('scroll', handler, options);
+    const unbindDocument = bindDocumentEvent('scroll', handler, options);
     this._cleanup.push(() => {
-      window.removeEventListener('scroll', handler, { capture: true });
-      document.removeEventListener('scroll', handler, { capture: true });
+      unbindWindow();
+      unbindDocument();
     });
     this._syncActiveFromScroll();
   }

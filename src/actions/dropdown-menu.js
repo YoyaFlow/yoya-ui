@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VMenu } from '../navigation/menu.js';
 import { VButton } from './button.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import { allocateId } from '../core/id.js';
 import {
   createComponentFactory,
@@ -122,7 +123,7 @@ export class VDropdownMenu extends HtmlElementNode {
   }
 
   _bindGlobalCloseHandlers() {
-    if (this._globalCloseCleanup || typeof document === 'undefined') {
+    if (this._globalCloseCleanup) {
       return;
     }
 
@@ -141,11 +142,11 @@ export class VDropdownMenu extends HtmlElementNode {
       }
     };
 
-    document.addEventListener('click', handlePointer);
-    document.addEventListener('keydown', handleKey);
+    const unbindPointer = bindDocumentEvent('click', handlePointer);
+    const unbindKey = bindDocumentEvent('keydown', handleKey);
     this._globalCloseCleanup = () => {
-      document.removeEventListener('click', handlePointer);
-      document.removeEventListener('keydown', handleKey);
+      unbindPointer();
+      unbindKey();
       this._globalCloseCleanup = null;
     };
   }

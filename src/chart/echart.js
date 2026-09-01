@@ -1,5 +1,6 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { bindWindowEvent } from '../core/document-events.js';
 import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
 
 export class VEchart extends HtmlElementNode {
@@ -327,7 +328,7 @@ export class VEchart extends HtmlElementNode {
     }
 
     this._resizeHandler = () => this._handleResize();
-    window.addEventListener('resize', this._resizeHandler);
+    this._resizeUnbind = bindWindowEvent('resize', this._resizeHandler);
   }
 
   _handleResize(width, height) {
@@ -351,8 +352,9 @@ export class VEchart extends HtmlElementNode {
       this._resizeObserver = null;
     }
     if (this._resizeHandler) {
-      window.removeEventListener('resize', this._resizeHandler);
+      this._resizeUnbind?.();
       this._resizeHandler = null;
+      this._resizeUnbind = null;
     }
     if (this._chartInstance) {
       this._chartInstance.dispose();

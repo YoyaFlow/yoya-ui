@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
+import { bindDocumentEvent } from '../core/document-events.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -627,19 +628,18 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   _bindGlobalCloseHandlers() {
-    if (this._globalCloseCleanup || typeof document === 'undefined') {
+    if (this._globalCloseCleanup) {
       return;
     }
 
-    const handlers = [];
+    const unbinds = [];
     if (!this._inline) {
       const handlePointer = (event) => {
         if (!this._el?.contains(event.target)) {
           this.close();
         }
       };
-      document.addEventListener('click', handlePointer);
-      handlers.push(['click', handlePointer]);
+      unbinds.push(bindDocumentEvent('click', handlePointer));
     }
 
     const handleKey = (event) => {
@@ -647,11 +647,10 @@ export class VSubMenu extends HtmlElementNode {
         this.close();
       }
     };
-    document.addEventListener('keydown', handleKey);
-    handlers.push(['keydown', handleKey]);
+    unbinds.push(bindDocumentEvent('keydown', handleKey));
 
     this._globalCloseCleanup = () => {
-      handlers.forEach(([type, handler]) => document.removeEventListener(type, handler));
+      unbinds.forEach((unbind) => unbind());
       this._globalCloseCleanup = null;
     };
   }

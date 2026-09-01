@@ -537,6 +537,30 @@ export function resolveYoyaMode(): 'light' | 'dark';
 export function setYoyaTheme(name?: string, options?: ThemePersistOptions): string;
 export function getYoyaTheme(): string;
 
+/** Binds a document-level event listener (outside click, drag, Escape, scroll). */
+export function bindDocumentEvent(
+  type: string,
+  handler: (event: Event) => void,
+  options?: AddEventListenerOptions | boolean
+): () => void;
+
+/** Removes a document-level event listener. */
+export function unbindDocumentEvent(
+  type: string,
+  handler: (event: Event) => void,
+  options?: AddEventListenerOptions | boolean
+): void;
+
+/** Binds a window-level global listener (scroll / resize / popstate). */
+export function bindWindowEvent(
+  type: string,
+  handler: (event: Event) => void,
+  options?: AddEventListenerOptions | boolean
+): () => void;
+
+/** Injects a <style> into <head>; dataAttribute is used for dedup and identification. */
+export function injectDocumentStyle(styleText: string, dataAttribute?: string | null): HTMLStyleElement | null;
+
 /** Initializes theme mode/name from explicit values or persisted storage. */
 export function initYoyaTheme(options?: InitYoyaThemeOptions): {
   mode: YoyaMode;

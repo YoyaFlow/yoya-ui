@@ -1,4 +1,13 @@
-import { codeBlock, vButton, vCard, vChart, vPagination, vTable, vText } from '../../index.js';
+import {
+  codeBlock,
+  span,
+  vButton,
+  vCard,
+  vChart,
+  vPagination,
+  vTable,
+  vText
+} from '../../index.js';
 
 export function ServiceDetailCard({ toast }) {
   const serviceState = vText('运行中');
@@ -278,17 +287,21 @@ export function ChartAdapterCard() {
     update(instance, context) {
       instance.host.replaceChildren();
       context.data.forEach((value, index) => {
-        const bar = document.createElement('span');
-        bar.dataset.chartBar = String(index);
-        bar.textContent = String(value);
-        bar.style.height = `${value}px`;
-        bar.style.width = '28px';
-        bar.style.background = 'var(--yoya-color-primary, #1f6feb)';
-        bar.style.color = 'var(--yoya-color-text-inverse, #ffffff)';
-        bar.style.display = 'inline-flex';
-        bar.style.alignItems = 'flex-end';
-        bar.style.justifyContent = 'center';
-        instance.host.appendChild(bar);
+        instance.host.appendChild(
+          span((bar) => {
+            bar.attr('data-chart-bar', String(index));
+            bar.text(String(value));
+            bar.style({
+              alignItems: 'flex-end',
+              background: 'var(--yoya-color-primary, #1f6feb)',
+              color: 'var(--yoya-color-text-inverse, #ffffff)',
+              display: 'inline-flex',
+              height: `${value}px`,
+              justifyContent: 'center',
+              width: '28px'
+            });
+          }).renderDom()
+        );
       });
     },
     resize(instance, context) {

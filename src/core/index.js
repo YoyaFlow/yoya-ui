@@ -17,6 +17,12 @@ export {
 } from './node.js';
 export { ClientOnlyNode, vClientOnly } from './client-only.js';
 export {
+  bindDocumentEvent,
+  bindWindowEvent,
+  injectDocumentStyle,
+  unbindDocumentEvent
+} from './document-events.js';
+export {
   I18n,
   I18nTextNode,
   createI18n,
