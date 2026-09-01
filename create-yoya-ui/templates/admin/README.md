@@ -37,6 +37,9 @@ src/
     app-sidebar.js              AppSidebar 左侧导航外壳
     sidebar-menu.js             SidebarMenu 模块菜单组件
   features/
+    dashboard/                  工作台（数据概览示例：数字看板 / 趋势卡 / 图表）
+      pages/dashboard-overview-page.js 页面编排：核心指标看板 + 趋势卡 + 图表 + 资源使用
+      components/dashboard-chart.js     vChart 内置 SVG 适配器（柱状图 / 折线图）
     members/                    成员管理业务域（CRUD 示例）
       pages/member-list-page.js 页面编排：组合工具栏、表格、弹窗与分页
       components/

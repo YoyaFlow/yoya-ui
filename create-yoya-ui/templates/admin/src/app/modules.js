@@ -2,6 +2,7 @@ import { MemberListPage } from '../features/members/pages/member-list-page.js';
 import { PermissionListPage } from '../features/permissions/pages/permission-list-page.js';
 import { RoleListPage } from '../features/roles/pages/role-list-page.js';
 import { DictListPage } from '../features/dicts/pages/dict-list-page.js';
+import { DashboardOverviewPage } from '../features/dashboard/pages/dashboard-overview-page.js';
 
 export const modules = [
   {
@@ -9,7 +10,7 @@ export const modules = [
     label: '工作台',
     icon: 'D',
     routes: [
-      { path: '/dashboard/overview', title: '数据概览', text: '关键指标、趋势与告警一览。' },
+      { path: '/dashboard/overview', title: '数据概览', view: DashboardOverviewPage },
       { path: '/dashboard/todos', title: '待办审批', text: '待处理审批与任务。' }
     ]
   },
