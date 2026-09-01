@@ -60,6 +60,71 @@ export function createSsrPage(initial = {}, deps = {}) {
 - 语言：`createLocale(state)` 传给渲染入口的 `i18n` 选项，页面内直接写 `"文案".s(key)` 即可，无需手动传 locale；
 - 表单校验在工厂内执行一次：服务端把错误状态烘焙进 HTML，客户端同一套规则继续校验。
 
+### 2.1 高层入口（推荐）：renderPage + hydrateOrMount
+
+把“语言实例 + 渲染 + 外壳组装 + 序列化”收敛成一次调用，页面 head/body 都用 DSL 定义，状态只传一次。底层原语 `renderToString`/`hydrate`/`mount` 保持可用。
+
+```js
+// home-page.js —— 页面即形态 A 组件，两端共用
+import { createRouter, div } from 'yoya-ui';
+
+export const messages = {
+  'zh-CN': { title: 'SSR 示例', home: '首页' },
+  'en-US': { title: 'SSR Demo', home: 'Home' }
+};
+
+export function HomePage(state) {
+  const router = createRouter();
+  router.mode(state.mode || 'history');
+  router.route('/home', '首页'.s('home'));
+  router.renderPath(state.path || '/home');
+
+  return div((root) => {
+    root.h1('SSR 示例'.s('title'));
+    root.child(router);
+  });
+}
+```
+
+```js
+// server.mjs
+import { renderPage } from 'yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+const html = renderPage(
+  {
+    page: (page, state) => {
+      page.head((head) => {
+        head.title('SSR 示例'.s('title'));
+        head.meta({ charset: 'utf-8' });
+        head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
+      });
+      page.body((body) => {
+        body.vBody((shell) => {
+          shell.h1('SSR 示例'.s('title'));
+          shell.child(HomePage(state)); // state = { lang, path, mode }
+        });
+      });
+    }
+  },
+  { lang, path, mode: 'history' }, // 状态唯一来源
+  { messages }                    // 按 state.lang 建每请求 i18n，.s() 自动作用域
+);
+
+res.end(html);
+```
+
+```js
+// client.js —— 打包器构建，一行接入
+import { hydrateOrMount } from 'yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+hydrateOrMount(HomePage, { messages });
+// 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate，否则 mount
+```
+
+`renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本 + 客户端入口。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
+
 ## 3. 服务端初始化（配合你的服务端代码）
 
 库本身不依赖任何框架，`node:http`、Express、Hono、Koa 均可。核心只有两步：`renderToString` + 组装外壳。

@@ -1,6 +1,7 @@
 import { ComponentNode, resolveTarget, ViewNode, VTextNode } from './node.js';
 import { createIdAllocator, withIdAllocator } from './id.js';
-import { withI18nStringShortcut } from './i18n.js';
+import { createI18n, withI18nStringShortcut } from './i18n.js';
+import { HtmlElementNode } from '../html/index.js';
 
 /**
  * 从已取好的请求字段解析语言标识，优先级：cookie > query > Accept-Language > 默认值。
@@ -160,6 +161,132 @@ export function renderToString(component, options = {}) {
 
     return scopeI18nBuild(i18n, state, build);
   });
+}
+
+/**
+ * 页面文档构建节点：暴露 head(cb) / body(cb) 两个结构方法与 vBody 快捷写法。
+ * 只用于 renderPage 内部，不直接渲染为 DOM 元素。
+ */
+export class PageDocumentNode extends HtmlElementNode {
+  constructor() {
+    super('html', null);
+    this._headCallback = null;
+    this._bodyCallback = null;
+  }
+
+  head(callback) {
+    this._headCallback = typeof callback === 'function' ? callback : null;
+    return this;
+  }
+
+  body(callback) {
+    this._bodyCallback = typeof callback === 'function' ? callback : null;
+    return this;
+  }
+
+  /** vBody 快捷写法：等价 page.body((body) => body.vBody(...))。 */
+  vBody(...args) {
+    return this.body((body) => body.vBody(...args));
+  }
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，
+ * 状态序列化进可自定义 id 的 script（默认 __YOYA_DATA__），末尾挂客户端入口。
+ * state 是唯一请求状态来源，回调签名 (node, state)；options.messages 或 i18n
+ * 二选一用于按 state.lang 建每请求实例。
+ */
+export function renderPage(pageConfig, state = {}, options = {}) {
+  const {
+    client = '/client.js',
+    containerId = 'app',
+    i18n = null,
+    maxNodes = Infinity,
+    messages,
+    stateId = '__YOYA_DATA__'
+  } = options || {};
+  const pageState = state || {};
+
+  if (!pageConfig || typeof pageConfig.page !== 'function') {
+    throw new TypeError('renderPage requires { page: (page, state) => {} }');
+  }
+
+  const i18nFactory =
+    i18n ||
+    (messages
+      ? () => createI18n({ language: pageState.lang || 'zh-CN', messages })
+      : null);
+  const serialized = serializeState(pageState);
+
+  return withIdAllocator(createIdAllocator(), () =>
+    scopeI18nBuild(i18nFactory, pageState, () => {
+      const page = new PageDocumentNode();
+      pageConfig.page(page, pageState);
+
+      const headNode = new HtmlElementNode('head');
+      if (page._headCallback) {
+        page._headCallback(headNode, pageState);
+      }
+
+      const bodyNode = new HtmlElementNode('body');
+      if (page._bodyCallback) {
+        page._bodyCallback(bodyNode, pageState);
+      }
+
+      const bodyExceeded = countNodes(bodyNode) > maxNodes;
+      const headHtml = headNode.toHTML();
+      const appContainer = `<div id="${escapeHtmlAttribute(containerId)}">`;
+      const bodyHtml = bodyExceeded
+        ? `${appContainer}</div>`
+        : `${appContainer}${bodyNode.toHTML()}</div>`;
+      const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
+      const clientScript = `<script type="module" src="${escapeHtmlAttribute(client)}"></script>`;
+
+      headNode.destroy();
+      bodyNode.destroy();
+
+      return `<!doctype html>
+<html lang="${escapeHtmlAttribute(pageState.lang || 'zh-CN')}">
+${headHtml}
+<body>
+${bodyHtml}
+${stateScript}
+${clientScript}
+</body>
+</html>`;
+    })
+  );
+}
+
+/**
+ * 客户端一行接入：读取 stateId 对应的序列化状态，目标容器有服务端 HTML 时
+ * hydrate（收养 DOM、绑事件），否则 mount（全量客户端渲染）。
+ * options：{ messages?, i18n?, stateId = '__YOYA_DATA__', target = '#app' }。
+ */
+export function hydrateOrMount(component, options = {}) {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const { messages, i18n = null, stateId = '__YOYA_DATA__', target = '#app' } = options || {};
+  const stateElement = document.getElementById(stateId);
+  const state = parseState(stateElement ? stateElement.textContent : '');
+  const i18nOption =
+    i18n ||
+    (messages ? () => createI18n({ language: state?.lang || 'zh-CN', messages }) : null);
+  const parent = resolveTarget(target);
+
+  if (parent && parent.firstElementChild) {
+    return hydrate(component, target, state, { i18n: i18nOption });
+  }
+
+  return mount(component, target, state, { i18n: i18nOption });
 }
 
 /**

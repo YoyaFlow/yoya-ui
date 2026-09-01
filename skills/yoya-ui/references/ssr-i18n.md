@@ -29,6 +29,30 @@ export function createPage(initial = {}) {
 
 ## 渲染入口
 
+**推荐：`renderPage` 一行渲染整页文档**（head/body 用 DSL 定义，状态只传一次）：
+
+```js
+import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+const html = renderPage(
+  {
+    page: (page, state) => {
+      page.head((head) => {
+        head.title('SSR 示例'.s('title'));
+        head.meta({ charset: 'utf-8' });
+        head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
+      });
+      page.body((body) => body.child(HomePage(state)));
+    }
+  },
+  { lang, path, mode: 'history' }, // 状态唯一来源：lang 由你的服务端解析
+  { messages }                    // 按 state.lang 建每请求 i18n
+);
+```
+
+底层原语等价写法（需要定制时使用）：
+
 ```js
 import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/ssr';
 
@@ -50,6 +74,18 @@ const { exceeded, html, state } = renderToString(createPage, {
 客户端切换语言时写 cookie（如 `document.cookie = 'yoya-lang=en; path=/'`），之后请求自动带上；页面级缓存需 `Vary: Cookie` 或按语言拆缓存。
 
 ## 客户端启动（client.js）
+
+**推荐：`hydrateOrMount` 一行接入**（自动读状态、判断服务端 HTML、hydrate/mount 二选一）：
+
+```js
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { HomePage, messages } from './home-page.js';
+
+hydrateOrMount(HomePage, { messages });
+// 多局部：hydrateOrMount(createStats, { messages, stateId: 'yoya-data-stats', target: '#stats' })
+```
+
+底层原语等价写法：
 
 ```js
 import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
