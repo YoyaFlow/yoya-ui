@@ -6,6 +6,56 @@
 
 yoya-ui is a web foundation library — a new form of business UI construction. Views are built directly on the real DOM: declarative HTML authoring, router, i18n, theming, state and server-side rendering (SSR) out of the box, with pure client rendering switchable from the same code. Bundled UI components exist for out-of-the-box convenience; they are not the boundary of the library — native elements and third-party components compose the same way.
 
+## Hello World — the same demo, a different stack
+
+No framework runtime, no virtual DOM, no JSX build step: views are real DOM nodes described in plain JS, and i18n is a string shortcut.
+
+```js
+// HelloWorldExample — declarative UI + state + events
+import { div, vButton, vText } from '@yoyaflow/yoya-ui';
+import '@yoyaflow/yoya-ui/ui.css';
+
+function HelloWorldExample() {
+  const message = vText('Hello, yoya-ui!');
+  return div((root) => {
+    root.vButton('Say hello', (button) => {
+      button.variant('primary');
+      button.on('click', () => message.textContent('你好，yoya-ui！'));
+    });
+    root.p(message);
+  });
+}
+
+HelloWorldExample().bindTo('#app');
+```
+
+```js
+// HelloWorldExampleI18n — same code, language switches reactively
+import { createI18n, installI18nStringShortcut, div, vButton } from '@yoyaflow/yoya-ui';
+
+const i18n = createI18n({
+  language: 'zh-CN',
+  messages: {
+    'zh-CN': { hello: '你好，yoya-ui！', toggle: '切换语言' },
+    en: { hello: 'Hello, yoya-ui!', toggle: 'Switch language' }
+  }
+});
+installI18nStringShortcut(i18n);
+
+function HelloWorldExampleI18n() {
+  return div((root) => {
+    root.p('你好，yoya-ui！'.s('hello'));
+    root.vButton('切换语言'.s('toggle'), (button) => {
+      button.on('click', () =>
+        i18n.setLanguage(i18n.getLanguage() === 'zh-CN' ? 'en' : 'zh-CN')
+      );
+    });
+  });
+}
+
+HelloWorldExampleI18n().bindTo('#app');
+```
+
 ## Features
 
 - **Low-barrier declarative authoring**: build UI with declarative structured JS elements — view and logic live in the same language, eliminating the friction between HTML markup and complex manipulation logic; only HTML and plain JS are required, with no framework-specific concepts
