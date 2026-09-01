@@ -60,7 +60,6 @@ createServer((req, res) => {
         });
         page.body((body) => {
           body.vBody((shell) => {
-            shell.h1('SSR 示例'.s('title'));
             shell.child(HomePage(state)); // state = { lang, path, mode }
           });
         });
