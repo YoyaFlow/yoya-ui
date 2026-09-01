@@ -538,7 +538,7 @@ const cEndDocsDefinitions = Object.freeze({
     heading: 'vSkeleton 骨架屏',
     intro: '骨架屏在数据加载期间提供占位视觉，降低等待感，加载完成后无缝切换为真实内容。',
     key: 'skeleton',
-    routeItem: 'c-end:0',
+    routeItem: 'c-end:skeleton',
     title: '骨架屏',
     usageItems: [
       '列表、详情或卡片内容需要异步加载时，用骨架屏代替空白区域。',
@@ -584,7 +584,7 @@ const cEndDocsDefinitions = Object.freeze({
     heading: 'vLazyImage 图片懒加载',
     intro: '图片进入视口才发起加载，减少首屏流量，长列表和内容站点场景开箱即用。',
     key: 'lazy-image',
-    routeItem: 'c-end:1',
+    routeItem: 'c-end:lazy-image',
     title: '懒加载图片',
     usageItems: [
       '长列表、内容流或首屏以下的大图需要延迟加载时。',
@@ -648,7 +648,7 @@ const cEndDocsDefinitions = Object.freeze({
     heading: 'vTransition 通用过渡',
     intro: '为任意内容块提供统一的进出场动画，适合弹层、插卡、列表项等场景。',
     key: 'transition',
-    routeItem: 'c-end:2',
+    routeItem: 'c-end:transition',
     title: '过渡动效',
     usageItems: [
       '弹层、插卡、列表项等需要统一的进出场动画时。',
@@ -703,7 +703,7 @@ const cEndDocsDefinitions = Object.freeze({
     heading: 'vMasonry 瀑布流',
     intro: '瀑布流用于图片墙、商品卡、内容流等高度不一的卡片布局。',
     key: 'masonry',
-    routeItem: 'c-end:3',
+    routeItem: 'c-end:masonry',
     title: '瀑布流',
     usageItems: [
       '图片墙、商品卡、内容流等高度不一的卡片布局。',
@@ -743,7 +743,7 @@ const cEndDocsDefinitions = Object.freeze({
     heading: 'vImagePreview 图片预览',
     intro: '商品图、内容配图等场景点击放大查看，浮层定位自洽，不依赖使用方容器。',
     key: 'image-preview',
-    routeItem: 'c-end:4',
+    routeItem: 'c-end:image-preview',
     title: '图片预览',
     usageItems: [
       '商品图、内容配图需要点击放大查看时。',

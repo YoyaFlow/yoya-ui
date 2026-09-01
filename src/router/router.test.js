@@ -410,7 +410,7 @@ describe('router', () => {
     expect(titleLabel.textContent).toBe('项目概览');
     expect(titleLabel.getAttribute('role')).toBe('tab');
     expect(titleTab.style.display).toBe('inline-flex');
-    expect(titleTab.style.borderRadius).toBe('6px 6px 0 0');
+    expect(titleTab.style.borderRadius).toBe('');
     expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
       '概览内容'
     );
@@ -730,7 +730,7 @@ describe('router', () => {
     expect(titlebar.style.overflowY).toBe('auto');
     expect(titlebar.querySelector('.yoya-vrouter-views-expand')).toBeNull();
     expect(element.firstElementChild).toBe(titlebar);
-    expect(overviewTab.style.borderRadius).toBe('6px 0 0 6px');
+    expect(overviewTab.style.borderRadius).toBe('');
     expect(overviewTab.style.marginRight).toBe('-9px');
 
     views.titlePosition('right');
@@ -739,7 +739,7 @@ describe('router', () => {
     expect(titlebar.style.borderLeftWidth).toBe('1px');
     expect(titlebar.style.borderRightWidth).toBe('');
     expect(element.children[1]).toBe(titlebar);
-    expect(overviewTab.style.borderRadius).toBe('0 6px 6px 0');
+    expect(overviewTab.style.borderRadius).toBe('');
     expect(overviewTab.style.marginLeft).toBe('-9px');
 
     root.destroy();

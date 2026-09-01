@@ -180,7 +180,7 @@ export function ButtonGroupDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-button-group-docs');
-        page.attr('data-component-route-item', 'general:1');
+        page.attr('data-component-route-item', 'general:button-group');
         page.attr('data-button-group-docs', 'true');
         page.h1('vButtons 按钮组');
         page.p('把多个按钮收敛到同一容器，支持配置式创建和单选联动。');

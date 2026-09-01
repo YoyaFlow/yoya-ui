@@ -75,7 +75,7 @@ const layoutDocsDefinitions = Object.freeze({
     intro:
       'vBody 统一页面背景、内容宽度和留白，vContainer 负责 header / aside / main / footer 骨架。',
     key: 'body',
-    routeItem: 'layout:3',
+    routeItem: 'layout:body',
     title: '布局',
     usageItems: [
       '整页工作台需要统一背景和阅读宽度。',
@@ -118,7 +118,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: 'divider 分割线',
     intro: 'divider 负责把相邻内容块切开，帮助读者看清层级和分区。',
     key: 'divider',
-    routeItem: 'layout:0',
+    routeItem: 'layout:divider',
     title: '分割线',
     usageItems: [
       '列表、详情页和设置页里，用它拆开相邻区块。',
@@ -166,7 +166,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: 'vSplitPanel 分隔面板',
     intro: 'vSplitPanel 用可拖拽分隔条把内容分成两块，适合工作台、代码预览和编辑区布局。',
     key: 'split',
-    routeItem: 'layout:8',
+    routeItem: 'layout:split-panel',
     title: '分隔面板',
     usageItems: [
       '需要两块内容并排或上下展示，且用户可调整占比时。',
@@ -218,7 +218,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: 'flex 弹性布局',
     intro: 'flex、stack、hstack、vstack 和 center 组成了最常用的基础排版工具箱。',
     key: 'flex',
-    routeItem: 'layout:1',
+    routeItem: 'layout:flex',
     title: '弹性布局',
     usageItems: [
       '标题栏、筛选条和操作区适合用 flex / hstack。',
@@ -288,7 +288,7 @@ const layoutDocsDefinitions = Object.freeze({
     intro:
       'grid 负责固定轨道，responsiveGrid 负责自适应换列，vRow / vCol 负责 Element UI 风格 24 栅格。',
     key: 'grid',
-    routeItem: 'layout:2',
+    routeItem: 'layout:grid',
     title: '栅格',
     usageItems: [
       '固定列数的指标面板适合用 grid。',
@@ -331,7 +331,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: 'spacer 间距',
     intro: 'spacer 负责吞掉剩余空间，最适合把一行内容推到两侧。',
     key: 'spacer',
-    routeItem: 'layout:4',
+    routeItem: 'layout:spacer',
     title: '间距',
     usageItems: [
       '一行中的标题和动作要自动分居两侧。',
@@ -397,7 +397,7 @@ const layoutDocsDefinitions = Object.freeze({
     intro:
       'vDialog 让弹窗成为一个独立的对象组件，外层按钮负责触发，内层内容负责确认、取消和临时表单。',
     key: 'popup',
-    routeItem: 'layout:5',
+    routeItem: 'layout:dialog',
     title: '弹窗',
     usageItems: [
       '提交、删除、发布这类动作需要二次确认。',
@@ -479,7 +479,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: '布局模板',
     intro: '布局模板用可识别的区域块展示完整页面结构，用于检查布局能力覆盖面和复用骨架。',
     key: 'templates',
-    routeItem: 'layout:6',
+    routeItem: 'layout:templates',
     tableHeaders: ['模板', '适用场景', '布局骨架'],
     title: '布局模板',
     usageItems: [
@@ -562,7 +562,7 @@ const layoutDocsDefinitions = Object.freeze({
     heading: 'mobileLayout 移动布局',
     intro: 'mobileLayout 在桌面使用侧栏，在手机端自动把侧栏收进抽屉，并保持内容区全宽。',
     key: 'mobile',
-    routeItem: 'layout:7',
+    routeItem: 'layout:mobile',
     title: '移动布局',
     usageItems: [
       '手机端侧栏应该收进抽屉，而不是占用内容区高度。',

@@ -105,7 +105,7 @@ describe('vNavbar', () => {
 
     const element = navbar.renderDom();
 
-    expect(element.querySelector('.yoya-vnavbar-brand-custom').style.display).toBe('');
+    expect(element.querySelector('.yoya-vnavbar-brand-custom').style.display).toBe('grid');
     expect(element.querySelector('.yoya-vnavbar-brand').textContent).toBe('控制台');
   });
 

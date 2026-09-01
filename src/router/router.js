@@ -633,7 +633,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   node.className('yoya-vrouter-views');
   node.styles({
     border: themeBorder('color-border', '#d0d7de'),
-    borderRadius: '8px',
+    boxSizing: 'border-box',
     overflow: 'hidden'
   });
   titleNode.styles({
@@ -645,7 +645,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     flexWrap: 'nowrap',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: '13px',
-    gap: '4px',
+    gap: '0px',
     msOverflowStyle: 'none',
     overflowX: 'auto',
     overflowY: 'hidden',
@@ -719,7 +719,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       flexWrap: 'nowrap',
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
       fontSize: '13px',
-      gap: '4px',
+      gap: '0px',
       msOverflowStyle: 'none',
       overflowX: vertical ? 'hidden' : 'auto',
       overflowY: vertical ? 'auto' : 'hidden',
@@ -777,14 +777,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
             ? themeValue('color-surface', '#ffffff')
             : themeValue('color-border', '#d0d7de')
           : themeValue('color-border', '#d0d7de'),
-      borderLeftColor:
-        position === 'right'
-          ? active
-            ? themeValue('color-surface', '#ffffff')
-            : themeValue('color-border', '#d0d7de')
-          : themeValue('color-border', '#d0d7de'),
-      borderRadius:
-        position === 'left' ? '6px 0 0 6px' : position === 'right' ? '0 6px 6px 0' : '6px 6px 0 0',
+      borderLeftColor: 'transparent',
       borderRightColor:
         position === 'left'
           ? active

@@ -137,6 +137,7 @@ export function FolderOutlined(): SvgElementNode;
 export function FolderOpenOutlined(): SvgElementNode;
 export function HeartOutlined(): SvgElementNode;
 export function HomeOutlined(): SvgElementNode;
+export function ImageOutlined(): SvgElementNode;
 export function InfoOutlined(): SvgElementNode;
 export function LockOutlined(): SvgElementNode;
 export function LogoutOutlined(): SvgElementNode;

@@ -222,7 +222,7 @@ export function RadioDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-radio-docs');
-        page.attr('data-component-route-item', 'form:4');
+        page.attr('data-component-route-item', 'form:radio');
         page.attr('data-radio-docs', 'true');
         page.h1('vRadio 单选框');
         page.p('互斥选项选择控件，支持单选组、单选项与表单校验集成。');

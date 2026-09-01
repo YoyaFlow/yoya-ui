@@ -128,7 +128,7 @@ export class VNavbar extends HtmlElementNode {
 
   _showCustomBrand() {
     this._brandDefault.style('display', 'none');
-    this._brandCustom.style('display', null);
+    this._brandCustom.style('display', 'grid');
     return this;
   }
 

@@ -51,7 +51,7 @@ export function I18nDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-i18n-docs');
-        page.attr('data-component-route-item', 'guides:1');
+        page.attr('data-component-route-item', 'guides:i18n');
         page.attr('data-i18n-docs', 'i18n');
 
         page.header((header) => {

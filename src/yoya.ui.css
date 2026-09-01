@@ -1,5 +1,9 @@
 @layer yoya;
 
+body {
+  margin: 0;
+}
+
 :root {
   color-scheme: light;
 }
@@ -640,6 +644,11 @@
     display: block;
   }
 
+  .yoya-vdialog-close:hover {
+    background: var(--yoya-color-surface-hover, #eef0f3);
+    color: var(--yoya-color-text, #172033);
+  }
+
   :where(.yoya-vtooltip) {
     box-sizing: border-box;
     display: inline-flex;
@@ -906,8 +915,8 @@
   }
 
   :where(.yoya-vsidebar) {
-    background: var(--yoya-color-surface, #ffffff);
-    border: 1px solid var(--yoya-color-border, #d8dee8);
+    align-content: start;
+    background: transparent;
     border-radius: 8px;
     box-sizing: border-box;
     display: grid;
@@ -929,24 +938,39 @@
     justify-content: space-between;
   }
 
+  .yoya-vsidebar .yoya-vsidebar-menu {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .yoya-vsidebar .yoya-vsidebar-menu::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  .yoya-vtreeranger-list {
+    scrollbar-width: none;
+  }
+
+  .yoya-vtreeranger-list::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
   :where(.yoya-vnavbar) {
     align-items: center;
-    background: var(--yoya-color-surface, #ffffff);
-    border: 1px solid var(--yoya-color-border, #dde3ec);
+    background: transparent;
     border-radius: 8px;
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 8px 20px rgba(15, 23, 42, 0.05);
     box-sizing: border-box;
     column-gap: 16px;
     display: flex;
     flex-wrap: wrap;
     min-height: 56px;
-    padding: 10px 16px;
     row-gap: 8px;
-    transition:
-      border-color 160ms ease,
-      box-shadow 160ms ease;
+    transition: border-color 160ms ease;
     width: 100%;
   }
 

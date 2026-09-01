@@ -29,6 +29,7 @@ document.querySelector('#app').appendChild(page.renderDom());
 
 - **v 前缀工厂是复合组件**：`vButton`、`vCard`、`vForm`、`vInput`、`vSlider` 等；**原生标签工厂保留原义**：`div()`、`button()`、`input()` 始终是原生元素
 - **setup callback 风格**：`vCard((card) => { card.vCardBody(...) })`，父节点快捷方法（`page.vButton`、`card.vCardHeader`）随处可用
+- **setup 回调参数语义化命名**：回调收到的节点按职责命名（如 `vFormItem` 用 `itemOfLabel` / `labelField`），避免与闭包外层业务数据同名遮蔽；节点方法名与业务字段同名（label/value/status）时，漏掉 `()` 会拿到函数对象
 - **文本**：字符串、`vText()`、i18n 节点、`'文案'.s('key')` 四种写法自动归一
 - **事件绑定铁律**：快捷方法返回父节点而非子元素，事件必须用回调参数：
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）

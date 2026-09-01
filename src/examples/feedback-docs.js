@@ -89,7 +89,7 @@ toast.use(host);`,
     intro:
       '消息组件用于反馈一次操作的结果或状态变化。它既可以作为局部组件放在卡片中，也可以交给全局 toast 容器统一显示。',
     key: 'message',
-    routeItem: 'feedback:0',
+    routeItem: 'feedback:message',
     title: '消息',
     usageItems: [
       '表单保存、发布、同步这类短反馈，优先用 toast 或局部消息容器。',
@@ -144,7 +144,7 @@ toast.use(host);`,
     heading: 'vTooltip 提示',
     intro: 'Tooltip 用于在元素附近显示简短、非阻塞的补充说明，不打断当前操作。',
     key: 'tooltip',
-    routeItem: 'feedback:2',
+    routeItem: 'feedback:tooltip',
     title: '提示',
     usageItems: [
       '图标、按钮、表格字段的缩写或附加信息适合用 Tooltip 补充。',

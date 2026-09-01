@@ -43,7 +43,8 @@ import {
   detailSourceRegistry,
   DropdownMenuExample1,
   ScrollExample1,
-  TabsExample1
+  TabsExample1,
+  TreeRangerExample
 } from './detail-sources.js';
 
 function DividerDemo() {
@@ -682,7 +683,7 @@ function RateDemo() {
 
 const detailEntries = new Map([
   [
-    'general:0',
+    'general:button',
     freezeEntry({
       behavior: [
         '默认是 type="button"，不会误触发表单提交。',
@@ -697,7 +698,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:0',
+    'layout:divider',
     freezeEntry({
       behavior: ['横向与纵向分割都能处理，spacer 可以吸收剩余空间。'],
       component: DividerDemo,
@@ -709,7 +710,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:1',
+    'layout:flex',
     freezeEntry({
       behavior: ['flex 负责横向弹性排版，stack/vstack 负责纵向堆叠，center 适合空状态。'],
       component: FlexDemo,
@@ -721,7 +722,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:2',
+    'layout:grid',
     freezeEntry({
       behavior: ['grid 适合固定列，responsiveGrid 会根据视口宽度自动换列。'],
       component: GridDemo,
@@ -733,7 +734,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:3',
+    'layout:body',
     freezeEntry({
       behavior: ['vBody 负责页面背景、内容宽度和统一留白。'],
       component: BodyPageCard,
@@ -745,7 +746,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:4',
+    'layout:spacer',
     freezeEntry({
       behavior: ['spacer 会撑满剩余空间，最适合一行的左右对齐。'],
       component: SpacerDemo,
@@ -757,7 +758,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:2',
+    'navigation:dropdown',
     freezeEntry({
       behavior: ['下拉菜单和上下文菜单都属于浮层操作入口。'],
       component: DropdownMenuExample1,
@@ -769,7 +770,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:3',
+    'navigation:menu',
     freezeEntry({
       behavior: ['方向键会自动跳过分组标题、分隔线和禁用项。'],
       component: CommandMenuCard,
@@ -781,7 +782,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:4',
+    'navigation:pagination',
     freezeEntry({
       behavior: ['分页状态可以直接驱动表格切片。'],
       component: PagedServiceTableCard,
@@ -793,7 +794,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:6',
+    'navigation:tabs',
     freezeEntry({
       behavior: ['vTabs 提供语义化 tablist/tabpanel 和键盘切换。'],
       component: TabsExample1,
@@ -805,7 +806,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:7',
+    'navigation:router',
     freezeEntry({
       behavior: ['vLink 负责导航，vRouterView 负责承载路由结果。'],
       component: RouterNavigationCard,
@@ -817,7 +818,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:8',
+    'navigation:router-views',
     freezeEntry({
       behavior: ['访问过的路由会保留为文件标签。'],
       component: RouterViewsEditorStandalone,
@@ -829,7 +830,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:0',
+    'form:form',
     freezeEntry({
       behavior: ['表单提交和字段状态由调用方掌控。'],
       component: ServiceFormCard,
@@ -841,7 +842,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:1',
+    'form:input',
     freezeEntry({
       behavior: ['输入后会即时同步到右侧状态。'],
       component: InputDemo,
@@ -853,7 +854,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:2',
+    'form:select',
     freezeEntry({
       behavior: ['选项变化后会即时回写。'],
       component: SelectDemo,
@@ -865,7 +866,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:3',
+    'form:checkbox',
     freezeEntry({
       behavior: ['vCheckbox 适合单一布尔项，vCheckboxes 适合多项选择。'],
       component: CheckboxDemo,
@@ -877,7 +878,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:5',
+    'form:textarea',
     freezeEntry({
       behavior: ['输入较长内容时更适合用文本域。'],
       component: TextareaDemo,
@@ -889,7 +890,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:6',
+    'form:switch',
     freezeEntry({
       behavior: ['布尔状态开关比复选框更直观。'],
       component: SwitchDemo,
@@ -901,7 +902,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:7',
+    'form:field',
     freezeEntry({
       behavior: ['查看态和编辑态共用一份字段节点。'],
       component: OwnerFieldCard,
@@ -913,7 +914,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:8',
+    'form:timer',
     freezeEntry({
       behavior: ['date、datetime-local 和 time 三种模式可以切换。'],
       component: ScheduleTimerCard,
@@ -925,7 +926,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:9',
+    'form:timer-range',
     freezeEntry({
       behavior: ['结束值早于开始值时会显示错误。'],
       component: TimerRangeCard,
@@ -937,7 +938,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:10',
+    'form:upload',
     freezeEntry({
       behavior: ['支持点击选择、拖拽上传、删除文件和模拟上传进度。'],
       component: UploadDemo,
@@ -949,7 +950,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'form:11',
+    'form:rate',
     freezeEntry({
       behavior: [
         '点击星星评分，再次点击当前值会清空。',
@@ -964,7 +965,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:2',
+    'data-display:detail',
     freezeEntry({
       behavior: ['只读信息适合用 label/value 的结构来展示。'],
       component: ServiceDetailCard,
@@ -976,7 +977,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:3',
+    'data-display:code',
     freezeEntry({
       behavior: ['短片段和长日志各自有更合适的展示组件。'],
       component: CodeDisplayDemo,
@@ -988,7 +989,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:4',
+    'data-display:table',
     freezeEntry({
       behavior: ['列定义、空状态和行操作都可以放在同一个表格组件里。'],
       component: ServiceTableCard,
@@ -1000,7 +1001,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:6',
+    'data-display:card',
     freezeEntry({
       behavior: ['vCardHeader / vCardBody / vCardFooter 可自由组合成完整或精简的面板。'],
       component: CardSurfaceDemo,
@@ -1012,7 +1013,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:8',
+    'data-display:scroll',
     freezeEntry({
       behavior: ['滚动到接近底部时会自动加载下一页，loop 可循环加载，block 可停止请求。'],
       component: ScrollExample1,
@@ -1024,7 +1025,21 @@ const detailEntries = new Map([
     })
   ],
   [
-    'async:0',
+    'data-display:tree-ranger',
+    freezeEntry({
+      behavior: [
+        '多列浏览：选中左侧条目自动加载右列；每列虚拟滚动，只渲染可见行，适合大批量层级数据。'
+      ],
+      component: TreeRangerExample,
+      imports: ['div', 'vTreeRanger'],
+      notes: ['← → 切换列，↑ ↓ 移动，Enter 选择，Backspace 返回。'],
+      sourceTitle: '多列浏览器核心源码',
+      summary: 'ranger 式多列浏览 + 虚拟滚动。',
+      title: '多列浏览器'
+    })
+  ],
+  [
+    'async:dynamic-loader',
     freezeEntry({
       behavior: ['失败后可以重试，成功后会保持缓存状态。'],
       component: DynamicModuleCard,
@@ -1036,7 +1051,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'feedback:0',
+    'feedback:message',
     freezeEntry({
       behavior: ['局部消息区域和全局 toast 都属于反馈层。'],
       component: MessageDemo,
@@ -1048,7 +1063,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'feedback:1',
+    'feedback:message-manager',
     freezeEntry({
       behavior: ['消息管理器会接管消息容器的完整生命周期。'],
       component: LocalMessageManagerCard,
@@ -1060,7 +1075,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:1',
+    'navigation:breadcrumb',
     freezeEntry({
       behavior: ['链接层级可以返回上级，当前层级通过 aria-current 标记。'],
       component: BreadcrumbDemo,
@@ -1072,7 +1087,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'general:1',
+    'general:button-group',
     freezeEntry({
       planned: true,
       summary: '按钮组仍在排期中。',
@@ -1080,7 +1095,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'general:2',
+    'general:float-button',
     freezeEntry({
       planned: true,
       summary: '悬浮按钮仍在排期中。',
@@ -1088,7 +1103,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'layout:5',
+    'layout:dialog',
     freezeEntry({
       planned: true,
       summary: '分隔面板仍在排期中。',
@@ -1096,7 +1111,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:0',
+    'navigation:anchor',
     freezeEntry({
       behavior: ['点击链接会平滑滚动，滚动时自动高亮当前章节。'],
       component: AnchorStandaloneDemo,
@@ -1108,7 +1123,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'navigation:5',
+    'navigation:steps',
     freezeEntry({
       planned: true,
       summary: '步骤条目前仍在排期中。',
@@ -1116,7 +1131,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:0',
+    'data-display:avatar',
     freezeEntry({
       planned: true,
       summary: '头像目前仍在排期中。',
@@ -1124,7 +1139,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'data-display:1',
+    'data-display:badge',
     freezeEntry({
       planned: true,
       summary: '徽标数目前仍在排期中。',
@@ -1132,7 +1147,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:0',
+    'board:digital-board',
     freezeEntry({
       behavior: ['数字看板用响应式卡片网格展示关键指标，支持数值、单位、趋势和主题色。'],
       component: DigitalBoardDemo,
@@ -1144,7 +1159,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:1',
+    'board:trend-card',
     freezeEntry({
       behavior: ['趋势卡组合数值、涨跌和迷你走势，适合放在看板顶部。'],
       component: TrendCardDemo,
@@ -1156,7 +1171,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:2',
+    'board:sparkline',
     freezeEntry({
       behavior: ['vSparkline 为无坐标轴的轻量折线图，支持面积填充和主题色。'],
       component: SparklineDemo,
@@ -1168,7 +1183,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:3',
+    'board:ring-stat',
     freezeEntry({
       behavior: ['环形统计用圆环展示占比，中心默认显示百分比。'],
       component: RingStatDemo,
@@ -1180,7 +1195,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:4',
+    'board:gauge',
     freezeEntry({
       behavior: ['仪表盘用半圆刻度与指针展示区间指标。'],
       component: GaugeDemo,
@@ -1192,7 +1207,7 @@ const detailEntries = new Map([
     })
   ],
   [
-    'board:5',
+    'board:timeline',
     freezeEntry({
       behavior: ['时间线用节点状态色区分成功、失败和进行中。'],
       component: TimelineDemo,
@@ -1205,8 +1220,8 @@ const detailEntries = new Map([
   ]
 ]);
 
-export function getComponentDetail(categoryId, itemIndex, item) {
-  const key = `${categoryId}:${itemIndex}`;
+export function getComponentDetail(categoryId, itemKey, item) {
+  const key = `${categoryId}:${itemKey}`;
   const detail = detailEntries.get(key);
   const source = detailSourceRegistry[key];
 

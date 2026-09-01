@@ -56,7 +56,7 @@ export function ButtonDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-button-docs');
-        page.attr('data-component-route-item', 'general:0');
+        page.attr('data-component-route-item', 'general:button');
         page.attr('data-button-docs', 'true');
 
         page.header((header) => {

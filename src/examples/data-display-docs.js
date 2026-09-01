@@ -15,9 +15,16 @@ import {
   vScroll,
   vTable,
   vText,
-  vTree
+  vTree,
+  vTreeRanger
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
+import {
+  TreeRangerActionsExample,
+  TreeRangerExample,
+  TreeRangerFileExample,
+  TreeRangerLazyExample
+} from './detail-sources.js';
 
 const dataDisplayDocsDefinitions = Object.freeze({
   avatar: createDataDisplayDocsDefinition({
@@ -91,7 +98,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '头像用于在列表、详情、导航和操作区域中标识用户或对象。vAvatar 把文字、图片、图标和状态统一收敛到一个组件 API 中。',
     key: 'avatar',
-    routeItem: 'data-display:0',
+    routeItem: 'data-display:avatar',
     title: '头像',
     usageItems: [
       '用户列表或成员卡片中展示姓名首字母或头像图片。',
@@ -162,7 +169,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '徽标数用于在图标、按钮或文本右上角展示数量、提醒点或状态。vBadge 把数字上限、零值显示和状态色收敛在同一个组件 API 中。',
     key: 'badge',
-    routeItem: 'data-display:1',
+    routeItem: 'data-display:badge',
     title: '徽标数',
     usageItems: [
       '需要在入口或按钮上展示未读数量、告警数量时，用 vBadge 包裹目标内容。',
@@ -255,7 +262,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '详情组件用于展示服务、用户、任务等只读对象。vDetail 把标签列、值列和字段间隔统一起来，适合详情页、资料页和卡片摘要。',
     key: 'detail',
-    routeItem: 'data-display:2',
+    routeItem: 'data-display:detail',
     title: '详情',
     usageItems: [
       '需要展示只读业务对象时，用 vDetail 统一 label/value 布局。',
@@ -347,7 +354,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '表格用于展示结构化列表数据。vTable 把列定义、行数据、空状态和自定义单元格统一起来，适合后台列表、服务清单和审批队列。',
     key: 'table',
-    routeItem: 'data-display:4',
+    routeItem: 'data-display:table',
     title: '表格',
     usageItems: [
       '需要按列扫描一组同构数据时，用 vTable。',
@@ -449,12 +456,98 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       'vTree 用于展示有层级的业务数据，比如组织架构、服务目录和权限配置。它把展开状态、选中状态和勾选状态收敛在同一个组件 API 中。',
     key: 'tree',
-    routeItem: 'data-display:5',
+    routeItem: 'data-display:tree',
     title: '树形控件',
     usageItems: [
       '需要展示父子层级或可折叠目录时，用 vTree 代替手写多层列表。',
       '需要批量选择资源或权限时，开启 checkable 并使用 checkedKeys。',
       '需要维护当前聚焦节点时，使用 selectedKeys 或 change 回调保持状态一致。'
+    ]
+  }),
+  treeRanger: createDataDisplayDocsDefinition({
+    examples: [
+      {
+        component: TreeRangerExample,
+        description: '大量数据下按列浏览：虚拟滚动保证流畅，键盘 ← → ↑ ↓ / Enter / Backspace 导航。',
+        id: 'tree-ranger',
+        imports: ['div', 'vTreeRanger'],
+        sourceTitle: '多列浏览器核心源码',
+        title: '多列浏览器'
+      },
+      {
+        component: TreeRangerFileExample,
+        description:
+          '模仿文件管理器：列配置 icon 回调按条目类型返回文件夹、文件、图片图标，图标内容由业务侧决定。',
+        id: 'tree-ranger-files',
+        imports: ['div', 'vTreeRanger', 'FileOutlined', 'FolderOutlined', 'ImageOutlined'],
+        sourceTitle: '文件图标核心源码',
+        title: '文件管理图标'
+      },
+      {
+        component: TreeRangerActionsExample,
+        description: '每一行后部追加操作符号，点击符号不会触发行选中。',
+        id: 'tree-ranger-actions',
+        imports: ['div', 'vTreeRanger', 'DownloadOutlined', 'MoreHorizontalOutlined', 'TrashOutlined'],
+        sourceTitle: '行尾操作符号核心源码',
+        title: '行尾操作符号'
+      },
+      {
+        component: TreeRangerLazyExample,
+        description:
+          '10000 条数据分页加载：每页 200 条，滚动接近底部自动请求下一页，配合虚拟滚动保持流畅。',
+        id: 'tree-ranger-lazy',
+        imports: ['div', 'vTreeRanger'],
+        sourceTitle: '增量加载核心源码',
+        title: '增量加载'
+      }
+    ],
+    examplesIntro: '下面四个示例分别展示基础多列浏览、文件管理图标、行尾操作符号和增量加载。',
+    apiIntro:
+      'vTreeRanger 是 ranger 式多列浏览器：选中左侧条目自动加载右列，每列独立虚拟滚动（只渲染可见行），适合大批量层级数据（字典、权限菜单）浏览。',
+    apiRows: [
+      [
+        'vTreeRanger({ columns, itemHeight, overscan, columnWidth })',
+        '创建多列浏览器；columns 每项包含 title / load(ctx) / renderItem / itemKey，icon(item) 可自定义行首图标。',
+        'vTreeRanger({ columns: [{ title: "类型", load: fetchTypes, renderItem: (t) => div(t.name) }] })'
+      ],
+      [
+        'load 返回 { items, hasMore }',
+        'load 上下文携带 page / pageSize / offset；hasMore 为 true 时滚动接近底部自动请求下一页并追加。',
+        'load: ({ page, pageSize }) => fetchPage(page, pageSize)'
+      ],
+      [
+        'load 返回数组',
+        '返回数组表示一次性全量数据，不触发增量加载。',
+        'load: () => Promise.resolve(rows)'
+      ],
+      ['browser.columns(columns)', '重新设置列定义并加载第一列。', 'browser.columns(nextColumns)'],
+      [
+        'browser.selectedKeys() / selectedItems()',
+        '读取每列选中 key 与选中条目路径。',
+        'browser.selectedKeys()'
+      ],
+      ['browser.back() / reload()', '返回上一列 / 重新加载整个浏览器。', 'browser.back()'],
+      [
+        '顶部面包屑',
+        '选中后顶部显示当前层级路径，点击中间段可回到对应层级。',
+        '一级目录 / 类型 A / 字典项'
+      ],
+      [
+        'browser.change(handler)',
+        '选择、前进、返回时回调，携带 selections 路径。',
+        'browser.change((e) => console.log(e.selections))'
+      ]
+    ],
+    heading: 'vTreeRanger 多列浏览器',
+    intro:
+      'vTreeRanger 是 ranger 式多列浏览器：选中左侧条目自动加载右列，每列独立虚拟滚动（只渲染可见行），适合大批量层级数据（字典、权限菜单）浏览。',
+    key: 'treeRanger',
+    routeItem: 'data-display:tree-ranger',
+    title: '多列浏览器',
+    usageItems: [
+      '需要在大批量层级数据里按列浏览（字典类型 → 字典项 → 详情、权限菜单层级）时，用 vTreeRanger。',
+      '每列数据通过 columns.load(ctx) 异步加载，选中上一列条目自动驱动下一列。',
+      '数据量很大时依赖每列虚拟滚动，不要一次渲染整列。'
     ]
   }),
   progress: createDataDisplayDocsDefinition({
@@ -531,7 +624,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '进度条用于展示任务完成度，比如构建、发布、上传和资源分配。vProgress 把数值换算、语义状态、尺寸和可访问性统一起来，适合卡片、详情页和任务列表。',
     key: 'progress',
-    routeItem: 'data-display:8',
+    routeItem: 'data-display:progress',
     title: '进度条',
     usageItems: [
       '需要展示任务完成百分比或资源用量时，用 vProgress 替代手写 div + width。',
@@ -646,7 +739,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '滚动组件用于在固定高度的容器内按需加载和展示列表，适合日志、消息流、审计记录和长数据列表。触底加载（loadMore）即无限滚动能力，数据量大时可自动开启虚拟滚动。',
     key: 'scroll',
-    routeItem: 'data-display:9',
+    routeItem: 'data-display:scroll',
     title: '滚动组件',
     usageItems: [
       '日志、消息流和长列表需要按需加载时，用 vScroll 代替一次性渲染全部数据。',
@@ -737,7 +830,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
     intro:
       '走马灯用于在有限空间内顺序展示图片、卡片或运营内容。vCarousel 把滑动切换、自动播放、循环、指示点和键盘交互收敛在同一个组件 API 中。',
     key: 'carousel',
-    routeItem: 'data-display:10',
+    routeItem: 'data-display:carousel',
     title: '走马灯',
     usageItems: [
       '首页横幅、服务卡片和运营位需要轮播展示时，用 vCarousel 承载多张内容。',
@@ -778,6 +871,10 @@ export function ScrollDocumentationPage() {
 
 export function CarouselDocumentationPage() {
   return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.carousel);
+}
+
+export function TreeRangerDocumentationPage() {
+  return createDataDisplayDocumentationPage(dataDisplayDocsDefinitions.treeRanger);
 }
 
 function createDataDisplayDocsDefinition(config) {

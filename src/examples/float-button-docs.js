@@ -156,7 +156,7 @@ export function FloatButtonDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-float-button-docs');
-        page.attr('data-component-route-item', 'general:2');
+        page.attr('data-component-route-item', 'general:float-button');
         page.attr('data-float-button-docs', 'true');
         page.h1('vFloatButton 悬浮按钮');
         page.p('圆形常驻操作入口，支持图标、扩展标签和固定定位。');

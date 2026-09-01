@@ -66,6 +66,27 @@ export class VColorPicker extends HtmlElementNode {
   ): VColorPicker;
 }
 
+/** SVG icon picker with a dialog: opens an icon grid for selection. */
+export class VSvgIconPicker extends HtmlElementNode {
+  value(): string | null;
+  value(next: string | null): VSvgIconPicker;
+  clearValue(): VSvgIconPicker;
+  disabled(): boolean;
+  disabled(next: boolean): VSvgIconPicker;
+  name(): string;
+  name(next: string): VSvgIconPicker;
+  required(): boolean;
+  required(next: boolean): VSvgIconPicker;
+  icons(): string[];
+  icons(next: Array<string | { icon: () => any; name: string }>): VSvgIconPicker;
+  open(value?: boolean): VSvgIconPicker;
+  close(): VSvgIconPicker;
+  toggle(): VSvgIconPicker;
+  change(): Array<(name: string | null, picker: VSvgIconPicker) => void>;
+  change(handler: (name: string | null, picker: VSvgIconPicker) => void): VSvgIconPicker;
+  onChange(handler: (name: string | null, picker: VSvgIconPicker) => void): VSvgIconPicker;
+}
+
 /** Slider input with min/max/step constraints. */
 export class VSlider extends HtmlElementNode {
   value(): number;

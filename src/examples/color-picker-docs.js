@@ -134,7 +134,7 @@ export function ColorPickerDocumentationPage() {
       return section((page) => {
         page.className('components-route-page components-color-picker-docs');
         page.attr('data-color-picker-docs', 'true');
-        page.attr('data-component-route-item', 'form:12');
+        page.attr('data-component-route-item', 'form:color-picker');
         page.h1('vColorPicker 颜色选择器');
         page.p('自定义弹窗颜色选择器：预设色板、透明度调节与已选颜色效果预览。');
 

@@ -32,3 +32,5 @@ export {
 } from './i18n.js';
 export { vStateNode } from './state-node.js';
 export * from './theme.js';
+export * from './request.js';
+export * from './result.js';

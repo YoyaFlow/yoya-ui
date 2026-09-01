@@ -272,6 +272,83 @@ export class VScroll extends HtmlElementNode {
 }
 
 // ---------------------------------------------------------------------------
+// Tree Ranger
+// ---------------------------------------------------------------------------
+
+export interface TreeRangerColumnContext {
+  column: number;
+  offset: number;
+  page: number;
+  pageSize: number;
+  selection: unknown[];
+  selections: unknown[];
+}
+
+export interface TreeRangerLoadResult {
+  hasMore?: boolean;
+  items: unknown[];
+  pageSize?: number;
+}
+
+export interface TreeRangerColumn {
+  icon?: (item: unknown, index: number) => ChildInput;
+  itemText?: (item: unknown) => string;
+  pageSize?: number;
+  title?: ChildInput;
+  load?: (
+    context: TreeRangerColumnContext
+  ) => Promise<TreeRangerLoadResult | unknown[]> | TreeRangerLoadResult | unknown[];
+  renderItem?: (item: unknown, index: number) => ChildInput;
+  itemKey?: (item: unknown) => unknown;
+}
+
+export interface TreeRangerChangePayload {
+  current: number;
+  detail: unknown;
+  selections: unknown[];
+  type: string;
+}
+
+export interface TreeRangerOptions {
+  ariaLabel?: string;
+  columns?: TreeRangerColumn[];
+  columnWidth?: number;
+  emptyText?: string;
+  itemHeight?: number;
+  loadingText?: string;
+  minSize?: number;
+  overscan?: number;
+  visibleColumns?: number;
+  change?: (payload: TreeRangerChangePayload) => void;
+  onChange?: (payload: TreeRangerChangePayload) => void;
+}
+
+export interface TreeRanger {
+  ariaLabel(value?: string): TreeRanger;
+  columns(): TreeRangerColumn[];
+  columns(value: TreeRangerColumn[]): TreeRanger;
+  itemHeight(value?: number): number | TreeRanger;
+  overscan(value?: number): number | TreeRanger;
+  columnWidth(value?: number): number | TreeRanger;
+  minSize(value?: number): number | TreeRanger;
+  visibleColumns(value?: number): number | TreeRanger;
+  selectedKeys(): unknown[];
+  selectedItems(): unknown[];
+  current(): number;
+  back(): TreeRanger;
+  reload(): TreeRanger;
+  refresh(): TreeRanger;
+  render(): HtmlElementNode;
+  change(handler: (payload: TreeRangerChangePayload) => void): TreeRanger;
+  onChange(handler: (payload: TreeRangerChangePayload) => void): TreeRanger;
+  [key: string]: any;
+}
+
+export function vTreeRanger(setup?: TreeRangerColumn[] | TreeRangerOptions | SetupCallback<TreeRanger>): TreeRanger;
+export const treeRanger: typeof vTreeRanger;
+export function vTreeRangerColumn(setup?: unknown): unknown;
+
+// ---------------------------------------------------------------------------
 // Table
 // ---------------------------------------------------------------------------
 

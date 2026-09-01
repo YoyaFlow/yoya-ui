@@ -75,7 +75,7 @@ const formDocsDefinition = Object.freeze({
   intro:
     '表单文档页把字段、值收集、校验和提交动作放在同一个可复制的示例里，适合资料编辑、配置管理和搜索条件。',
   key: 'form',
-  routeItem: 'form:0',
+  routeItem: 'form:form',
   title: '表单',
   usageItems: [
     '多个输入控件需要一起读取或回填时，用 vForm.values()。',
@@ -151,7 +151,7 @@ const fieldDocsDefinition = Object.freeze({
   heading: 'vField 字段',
   intro: 'vField 把查看态和编辑态收在一个字段节点里，适合作为 vDetail 的值节点构建可编辑详情。',
   key: 'field',
-  routeItem: 'form:7',
+  routeItem: 'form:field',
   title: '字段',
   usageItems: [
     '详情页需要局部编辑时，用 vField 替代手写查看/编辑切换。',

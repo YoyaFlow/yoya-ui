@@ -226,7 +226,7 @@ export function GlowButtonDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-glow-button-docs');
-        page.attr('data-component-route-item', 'effects:0');
+        page.attr('data-component-route-item', 'effects:glow-button');
         page.attr('data-glow-button-docs', 'true');
         page.h1('vGlowButton 流光按钮');
         page.p('在 vButton 语义上叠加流光扫过、悬停加速、按压光影反馈与点击光波涟漪。');

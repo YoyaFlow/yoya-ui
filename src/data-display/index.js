@@ -41,6 +41,7 @@ import { VSparkline, vSparkline } from './sparkline.js';
 import { VTimeline, VTimelineItem, vTimeline, vTimelineItem } from './timeline.js';
 import { VTrendCard, vTrendCard } from './trend-card.js';
 import { VScroll, vScroll } from './vscroll.js';
+import { vTreeRanger, treeRanger, vTreeRangerColumn } from './tree-ranger.js';
 import { VImagePreview, vImagePreview } from './image-preview.js';
 
 const dataDisplayFactories = {
@@ -67,7 +68,8 @@ const dataDisplayFactories = {
   vProgress,
   vScroll,
   vTable,
-  vTree
+  vTree,
+  vTreeRanger
 };
 
 registerChildFactories(HtmlElementNode, dataDisplayFactories);
@@ -105,6 +107,7 @@ export {
   VTr,
   VTree,
   VTreeNode,
+  treeRanger,
   vAvatar,
   vBadge,
   vDigitalBoard,
@@ -134,7 +137,9 @@ export {
   vThead,
   vTr,
   vTree,
-  vTreeNode
+  vTreeNode,
+  vTreeRanger,
+  vTreeRangerColumn
 };
 
 export { CodeBlock, codeBlock } from './code-block.js';

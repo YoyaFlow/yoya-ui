@@ -21,13 +21,44 @@ export class VDialog extends HtmlElementNode {
       maxWidth: 'min(92vw, 680px)',
       padding: '16px',
       boxShadow: '0 24px 72px rgba(15, 23, 42, 0.2)',
+      position: 'relative',
       width: '100%'
     });
     this.attr('aria-modal', 'true');
     this.attr('role', 'dialog');
     this._pendingOpenSync = false;
+    this._closable = true;
+    this._closeHandler = null;
+    this._closeButton = new HtmlElementNode('button')
+      .className('yoya-vdialog-close')
+      .attr({ type: 'button', 'aria-label': '关闭' })
+      .styles({
+        alignItems: 'center',
+        background: 'transparent',
+        border: '0',
+        borderRadius: '50%',
+        boxSizing: 'border-box',
+        color: themeValue('color-text-secondary', '#57606a'),
+        cursor: 'pointer',
+        display: 'inline-flex',
+        font: 'inherit',
+        height: '28px',
+        justifyContent: 'center',
+        lineHeight: '1',
+        marginBottom: '4px',
+        marginLeft: 'auto',
+        padding: '0',
+        width: '28px'
+      })
+      .text('×')
+      .on('click', () => this.close());
+    this._header = new HtmlElementNode('div').className('yoya-vdialog-header').styles({
+      alignItems: 'center',
+      display: 'flex'
+    });
+    this._header.child(this._closeButton);
     this._content = new HtmlElementNode('div').className('yoya-vdialog-content');
-    this.child(this._content);
+    this.child(this._header, this._content);
     this.on('cancel', (event) => {
       event.preventDefault();
       this.close();
@@ -54,6 +85,7 @@ export class VDialog extends HtmlElementNode {
 
   open(value = true) {
     const enabled = Boolean(value);
+    const wasOpen = this.getBooleanState('open');
 
     this.setState('open', enabled);
     this.attr('data-open', enabled ? 'true' : null);
@@ -61,6 +93,9 @@ export class VDialog extends HtmlElementNode {
     if (enabled) {
       this._openElement();
     } else {
+      if (wasOpen && typeof this._closeHandler === 'function') {
+        this._closeHandler();
+      }
       this._closeElement();
     }
 
@@ -69,6 +104,21 @@ export class VDialog extends HtmlElementNode {
 
   close() {
     return this.open(false);
+  }
+
+  onClose(handler) {
+    if (handler === undefined) {
+      return this._closeHandler;
+    }
+
+    this._closeHandler = typeof handler === 'function' ? handler : null;
+    return this;
+  }
+
+  closable(value = true) {
+    this._closable = Boolean(value);
+    this._header.style('display', this._closable ? null : 'none');
+    return this;
   }
 
   renderDom() {
@@ -92,7 +142,7 @@ export class VDialog extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const { children, content, open, ...elementConfig } = setup;
+      const { children, closable, content, onClose, open, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
         this.setup(elementConfig);
@@ -102,6 +152,14 @@ export class VDialog extends HtmlElementNode {
         this.content(content);
       } else if (children !== undefined) {
         this.content(children);
+      }
+
+      if (closable !== undefined) {
+        this.closable(closable);
+      }
+
+      if (onClose !== undefined) {
+        this.onClose(onClose);
       }
 
       if (open !== undefined) {

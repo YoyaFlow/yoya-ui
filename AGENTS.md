@@ -103,6 +103,28 @@ function ServiceDetailCard() {
 - 演示代码同样以声明式写法为主，参数对象只作为 API 说明保留。
 - 每个组件或演示集最多保留一个完整的参数对象案例，其余示例使用声明式写法。
 
+## Setup 回调节点命名规则
+
+setup 回调参数是节点（ViewNode / 组件），命名按职责语义化，避免与闭包外层业务数据同名，防止变量遮蔽：
+
+- 回调参数使用能说明“这是哪个节点”的名字，例如 `vFormItem` 用 `itemOfLabel` / `labelField`，`vForm` 用 `form`，`vCardBody` 用 `body`；不要一律叫 `item` / `node`。
+- 当业务数据变量与节点常用名相同（如字典值 `item`）时，节点参数必须改名区分，禁止同名遮蔽：
+
+```js
+// 反例：item 被 vFormItem 回调参数遮蔽，item?.label 取到的是节点方法
+form.vFormItem((item) => {
+  item.control((editor) => editor.vInput({ name: 'label', value: item?.label ?? '' }));
+});
+
+// 正例：节点参数语义化命名，业务数据 item 保持可访问
+form.vFormItem((itemOfLabel) => {
+  itemOfLabel.control((editor) => editor.vInput({ name: 'label', value: item?.label ?? '' }));
+});
+```
+
+- 节点方法与业务字段同名（label / value / status …）时尤其小心：漏掉 `()` 会得到函数对象，可能被宽松地转成源码文本。
+- 建议开启 ESLint `no-shadow` 兜底。
+
 ## Demo Code Readability Rule
 
 - 演示代码要在代码量、总行数和单行长度之间取平衡，优先使用链式调用减少中间变量。

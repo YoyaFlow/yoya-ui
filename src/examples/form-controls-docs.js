@@ -555,7 +555,7 @@ export function SliderDocumentationPage() {
     docsKey: 'slider',
     heading: 'vSlider 滑动条',
     intro: 'min/max/step 约束的滑动输入，可放入 vFormItem 参与表单收集。',
-    routeKey: 'form:13'
+    routeKey: 'form:slider'
   });
 }
 
@@ -571,7 +571,7 @@ export function CascaderDocumentationPage() {
     docsKey: 'cascader',
     heading: 'vCascader 级联选择',
     intro: '按层级从选项树中逐级选择，选中路径以数组形式取值。',
-    routeKey: 'form:14'
+    routeKey: 'form:cascader'
   });
 }
 
@@ -587,7 +587,7 @@ export function TagsInputDocumentationPage() {
     docsKey: 'tags-input',
     heading: 'vTagsInput 标签输入',
     intro: '回车或逗号添加标签、退格或 × 移除，值以字符串数组收集。',
-    routeKey: 'form:15'
+    routeKey: 'form:tags-input'
   });
 }
 
@@ -603,6 +603,6 @@ export function AutocompleteDocumentationPage() {
     docsKey: 'autocomplete',
     heading: 'vAutocomplete 自动完成',
     intro: '输入时过滤建议，支持键盘选择，可放入 vFormItem 参与表单收集。',
-    routeKey: 'form:16'
+    routeKey: 'form:autocomplete'
   });
 }

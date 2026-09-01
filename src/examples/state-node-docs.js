@@ -76,7 +76,7 @@ export function StateNodeDocumentationPage() {
       return section((page) => {
         page.className('components-route-page components-state-docs');
         page.attr({
-          'data-component-route-item': 'guides:2',
+          'data-component-route-item': 'guides:state-node',
           'data-state-docs': 'state'
         });
 

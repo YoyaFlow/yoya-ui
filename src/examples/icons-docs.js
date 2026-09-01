@@ -35,6 +35,7 @@ const iconDescriptions = Object.freeze({
   FolderOpenOutlined: '文件夹打开',
   HeartOutlined: '收藏',
   HomeOutlined: '首页',
+  ImageOutlined: '图片',
   InfoOutlined: '信息提示',
   LockOutlined: '锁定',
   LogoutOutlined: '退出登录',

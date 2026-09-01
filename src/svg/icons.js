@@ -359,6 +359,26 @@ export function FileOutlined() {
   });
 }
 
+export function ImageOutlined() {
+  return svg((root) => {
+    root
+      .className('yoya-icon')
+      .attr({
+        'aria-hidden': 'true',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        'stroke-width': '2',
+        viewBox: '0 0 24 24'
+      })
+      .styles({ height: '24px', width: '24px' });
+    root.rect({ height: '18', rx: '2', width: '18', x: '3', y: '3' });
+    root.circle({ cx: '9', cy: '9', r: '2' });
+    root.path({ d: 'm21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21' });
+  });
+}
+
 export function FolderOutlined() {
   return svg((root) => {
     root

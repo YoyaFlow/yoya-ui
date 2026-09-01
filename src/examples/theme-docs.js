@@ -11,7 +11,7 @@ export function ThemeDemonstrationPage() {
       return section((page) => {
         page.className('components-route-page components-theme-docs');
         page.attr({
-          'data-component-route-item': 'theme:0',
+          'data-component-route-item': 'theme:theme',
           'data-theme-docs': 'playground'
         });
 

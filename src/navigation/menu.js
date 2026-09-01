@@ -631,22 +631,27 @@ export class VSubMenu extends HtmlElementNode {
       return;
     }
 
-    const handlePointer = (event) => {
-      if (!this._el?.contains(event.target)) {
-        this.close();
-      }
-    };
+    const handlers = [];
+    if (!this._inline) {
+      const handlePointer = (event) => {
+        if (!this._el?.contains(event.target)) {
+          this.close();
+        }
+      };
+      document.addEventListener('click', handlePointer);
+      handlers.push(['click', handlePointer]);
+    }
+
     const handleKey = (event) => {
       if (event.key === 'Escape') {
         this.close();
       }
     };
-
-    document.addEventListener('click', handlePointer);
     document.addEventListener('keydown', handleKey);
+    handlers.push(['keydown', handleKey]);
+
     this._globalCloseCleanup = () => {
-      document.removeEventListener('click', handlePointer);
-      document.removeEventListener('keydown', handleKey);
+      handlers.forEach(([type, handler]) => document.removeEventListener(type, handler));
       this._globalCloseCleanup = null;
     };
   }
@@ -718,6 +723,7 @@ export class VSidebar extends HtmlElementNode {
     super('aside', null);
     const menuId = allocateId('yoya-vsidebar-menu');
     this._responsiveCleanup = null;
+    this._collapsible = true;
     this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
     this._toggle = new VButton('‹')
       .className('yoya-vsidebar-toggle')
@@ -747,7 +753,12 @@ export class VSidebar extends HtmlElementNode {
     this.className(componentClass, 'yoya-vsidebar');
     this.attr('aria-label', '侧边导航');
     this.on('keydown', (event) => {
-      if (event.key !== 'Escape' || event.defaultPrevented || this.getBooleanState('collapsed')) {
+      if (
+        !this._collapsible ||
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        this.getBooleanState('collapsed')
+      ) {
         return;
       }
 
@@ -797,6 +808,10 @@ export class VSidebar extends HtmlElementNode {
   }
 
   collapsed(value = true) {
+    if (!this._collapsible && value) {
+      return this;
+    }
+
     const collapsed = Boolean(value);
     this.setState('collapsed', collapsed);
     this.attr('data-collapsed', collapsed ? 'true' : null);
@@ -806,6 +821,12 @@ export class VSidebar extends HtmlElementNode {
       .attr('aria-label', collapsed ? '展开侧边导航' : '收起侧边导航');
     setSidebarContentCollapsed(this._menu, collapsed, this);
     setSidebarVisuallyHidden(this._titleBox, collapsed);
+    return this;
+  }
+
+  collapsible(value = true) {
+    this._collapsible = Boolean(value);
+    this._toggle.style('display', this._collapsible ? null : 'none');
     return this;
   }
 
@@ -863,7 +884,16 @@ export class VSidebar extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const { ariaLabel, children, content, menu, menuContent, title, ...elementConfig } = setup;
+      const {
+        ariaLabel,
+        children,
+        collapsible,
+        content,
+        menu,
+        menuContent,
+        title,
+        ...elementConfig
+      } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
         super._setupObject(elementConfig);
@@ -871,6 +901,7 @@ export class VSidebar extends HtmlElementNode {
 
       if (title !== undefined) this.title(title);
       if (ariaLabel !== undefined) this.ariaLabel(ariaLabel);
+      if (collapsible !== undefined) this.collapsible(collapsible);
       const navigation = menuContent ?? menu ?? content ?? children;
       if (navigation !== undefined) this.menuContent(navigation);
       return;

@@ -25,154 +25,157 @@ const componentMenuSections = [
     id: 'guides',
     title: '开发指南',
     items: [
-      { label: '概述', details: 'Overview' },
-      { label: '安装方式', details: 'Installation' },
-      { label: 'HTML 原生元素', details: 'div / button / input / output' },
-      { label: '组件', details: 'A 薄工厂 / B 对象组件' },
-      { label: '国际化', details: 'I18n / createI18n / i18nText' },
-      { label: '状态节点', details: 'vStateNode' },
-      { label: '服务端渲染', details: 'renderToString / hydrate / mount' }
+      { key: 'overview', label: '概述', details: 'Overview' },
+      { key: 'installation', label: '安装方式', details: 'Installation' },
+      { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
+      { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
+      { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
+      { key: 'state-node', label: '状态节点', details: 'vStateNode' },
+      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
     ]
   },
   {
     id: 'general',
     title: '通用',
     items: [
-      { label: '按钮', details: 'vButton' },
-      { label: '按钮组', details: 'vButtons' },
-      { label: '悬浮按钮', details: 'vFloatButton' },
-      { label: '图标', details: 'SearchOutlined / UploadOutlined' },
-      { label: 'SVG 动画', details: 'requestAnimationFrame / stroke-dashoffset' }
+      { key: 'button', label: '按钮', details: 'vButton' },
+      { key: 'button-group', label: '按钮组', details: 'vButtons' },
+      { key: 'float-button', label: '悬浮按钮', details: 'vFloatButton' },
+      { key: 'icons', label: '图标', details: 'SearchOutlined / UploadOutlined' },
+      { key: 'svg', label: 'SVG 动画', details: 'requestAnimationFrame / stroke-dashoffset' }
     ]
   },
   {
     id: 'effects',
     title: '特效组件',
-    items: [{ label: '按钮', details: 'vGlowButton' }]
+    items: [{ key: 'glow-button', label: '按钮', details: 'vGlowButton' }]
   },
   {
     id: 'layout',
     title: '布局',
     items: [
-      { label: '分割线', details: 'divider' },
-      { label: '弹性布局', details: 'flex / stack / hstack / vstack / center' },
-      { label: '栅格', details: 'grid / responsiveGrid' },
-      { label: '页面容器', details: 'vBody / container / grid / responsiveGrid' },
-      { label: '间距', details: 'spacer' },
-      { label: '弹窗', details: 'vDialog' },
-      { label: '布局模板', details: 'admin / cloud / profile / docs' },
-      { label: '移动布局', details: 'mobileLayout / vMobileLayout', hidden: true },
-      { label: '分隔面板', details: 'vSplitPanel' }
+      { key: 'divider', label: '分割线', details: 'divider' },
+      { key: 'flex', label: '弹性布局', details: 'flex / stack / hstack / vstack / center' },
+      { key: 'grid', label: '栅格', details: 'grid / responsiveGrid' },
+      { key: 'body', label: '页面容器', details: 'vBody / container / grid / responsiveGrid' },
+      { key: 'spacer', label: '间距', details: 'spacer' },
+      { key: 'dialog', label: '弹窗', details: 'vDialog' },
+      { key: 'templates', label: '布局模板', details: 'admin / cloud / profile / docs' },
+      { key: 'mobile', label: '移动布局', details: 'mobileLayout / vMobileLayout', hidden: true },
+      { key: 'split-panel', label: '分隔面板', details: 'vSplitPanel' }
     ]
   },
   {
     id: 'navigation',
     title: '导航',
     items: [
-      { label: '锚点', details: 'vAnchor / vAnchorItem' },
-      { label: '面包屑', details: 'vBreadcrumb / vBreadcrumbItem' },
-      { label: '下拉菜单', details: 'vDropdownMenu / vContextMenu' },
+      { key: 'anchor', label: '锚点', details: 'vAnchor / vAnchorItem' },
+      { key: 'breadcrumb', label: '面包屑', details: 'vBreadcrumb / vBreadcrumbItem' },
+      { key: 'dropdown', label: '下拉菜单', details: 'vDropdownMenu / vContextMenu' },
       {
+        key: 'menu',
         label: '菜单',
         details:
           'vMenu / vMenuItem / vMenuGroup / vMenuDivider / vSubMenu / vSidebar / vDropdownMenu / vContextMenu'
       },
-      { label: '分页', details: 'vPagination' },
-      { label: '步骤条', details: 'vSteps / vStep' },
-      { label: '标签页', details: 'vTabs / vTab' },
-      { label: '路由', details: 'Router / vRouter / vLink / vRoute' },
-      { label: '路由视图', details: 'vRouterView / vRouterViews' },
-      { label: '导航栏', details: 'vNavbar / vMenu / vButton' }
+      { key: 'pagination', label: '分页', details: 'vPagination' },
+      { key: 'steps', label: '步骤条', details: 'vSteps / vStep' },
+      { key: 'tabs', label: '标签页', details: 'vTabs / vTab' },
+      { key: 'router', label: '路由', details: 'Router / vRouter / vLink / vRoute' },
+      { key: 'router-views', label: '路由视图', details: 'vRouterView / vRouterViews' },
+      { key: 'navbar', label: '导航栏', details: 'vNavbar / vMenu / vButton' }
     ]
   },
   {
     id: 'form',
     title: '表单与数据录入',
     items: [
-      { label: '表单', details: 'vForm' },
-      { label: '输入框', details: 'vInput' },
-      { label: '选择框', details: 'vSelect' },
-      { label: '多选框', details: 'vCheckbox / vCheckboxes' },
-      { label: '单选框', details: 'vRadio' },
-      { label: '文本域', details: 'vTextarea' },
-      { label: '开关', details: 'vSwitch' },
-      { label: '字段', details: 'vField' },
-      { label: '日期时间', details: 'vTimer' },
-      { label: '日期范围', details: 'vTimerRange' },
-      { label: '文件上传', details: 'vUpload' },
-      { label: '评分', details: 'vRate' },
-      { label: '颜色选择器', details: 'vColorPicker' },
-      { label: '滑动条', details: 'vSlider' },
-      { label: '级联选择', details: 'vCascader' },
-      { label: '标签输入', details: 'vTagsInput' },
-      { label: '自动完成', details: 'vAutocomplete' }
+      { key: 'form', label: '表单', details: 'vForm' },
+      { key: 'input', label: '输入框', details: 'vInput' },
+      { key: 'select', label: '选择框', details: 'vSelect' },
+      { key: 'checkbox', label: '多选框', details: 'vCheckbox / vCheckboxes' },
+      { key: 'radio', label: '单选框', details: 'vRadio' },
+      { key: 'textarea', label: '文本域', details: 'vTextarea' },
+      { key: 'switch', label: '开关', details: 'vSwitch' },
+      { key: 'field', label: '字段', details: 'vField' },
+      { key: 'timer', label: '日期时间', details: 'vTimer' },
+      { key: 'timer-range', label: '日期范围', details: 'vTimerRange' },
+      { key: 'upload', label: '文件上传', details: 'vUpload' },
+      { key: 'rate', label: '评分', details: 'vRate' },
+      { key: 'color-picker', label: '颜色选择器', details: 'vColorPicker' },
+      { key: 'slider', label: '滑动条', details: 'vSlider' },
+      { key: 'cascader', label: '级联选择', details: 'vCascader' },
+      { key: 'tags-input', label: '标签输入', details: 'vTagsInput' },
+      { key: 'autocomplete', label: '自动完成', details: 'vAutocomplete' },
+      { key: 'svg-icon-picker', label: '图标选择器', details: 'vSvgIconPicker' }
     ]
   },
   {
     id: 'data-display',
     title: '数据展示',
     items: [
-      { label: '头像', details: 'vAvatar' },
-      { label: '徽标数', details: 'vBadge' },
-      { label: '详情', details: 'vDetail / vDetailItem' },
-      { label: '代码', details: 'vCode / codeBlock' },
-      { label: '表格', details: 'vTable' },
-      { label: '树形控件', details: 'vTree' },
-      { label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
-      { label: '进度条', details: 'vProgress' },
-      { label: '滚动组件', details: 'vScroll' },
-      { label: '走马灯', details: 'vCarousel' }
+      { key: 'avatar', label: '头像', details: 'vAvatar' },
+      { key: 'badge', label: '徽标数', details: 'vBadge' },
+      { key: 'detail', label: '详情', details: 'vDetail / vDetailItem' },
+      { key: 'code', label: '代码', details: 'vCode / codeBlock' },
+      { key: 'table', label: '表格', details: 'vTable' },
+      { key: 'tree', label: '树形控件', details: 'vTree' },
+      { key: 'card', label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
+      { key: 'progress', label: '进度条', details: 'vProgress' },
+      { key: 'scroll', label: '滚动组件', details: 'vScroll' },
+      { key: 'carousel', label: '走马灯', details: 'vCarousel' },
+      { key: 'tree-ranger', label: '多列浏览器', details: 'vTreeRanger' }
     ]
   },
   {
     id: 'board',
     title: '看板',
     items: [
-      { label: '数字看板', details: 'vDigitalBoard / vDigitalBoardItem' },
-      { label: '趋势卡', details: 'vTrendCard' },
-      { label: '迷你走势', details: 'vSparkline' },
-      { label: '环形统计', details: 'vRingStat' },
-      { label: '仪表盘', details: 'vGauge' },
-      { label: '时间线', details: 'vTimeline / vTimelineItem' }
+      { key: 'digital-board', label: '数字看板', details: 'vDigitalBoard / vDigitalBoardItem' },
+      { key: 'trend-card', label: '趋势卡', details: 'vTrendCard' },
+      { key: 'sparkline', label: '迷你走势', details: 'vSparkline' },
+      { key: 'ring-stat', label: '环形统计', details: 'vRingStat' },
+      { key: 'gauge', label: '仪表盘', details: 'vGauge' },
+      { key: 'timeline', label: '时间线', details: 'vTimeline / vTimelineItem' }
     ]
   },
   {
     id: 'async',
     title: '异步',
-    items: [{ label: '动态加载', details: 'vDynamicLoader' }]
+    items: [{ key: 'dynamic-loader', label: '动态加载', details: 'vDynamicLoader' }]
   },
   {
     id: 'c-end',
     title: 'C 端体验',
     items: [
-      { label: '骨架屏', details: 'vSkeleton' },
-      { label: '懒加载图片', details: 'vLazyImage' },
-      { label: '过渡动效', details: 'vTransition' },
-      { label: '瀑布流', details: 'vMasonry' },
-      { label: '图片预览', details: 'vImagePreview' }
+      { key: 'skeleton', label: '骨架屏', details: 'vSkeleton' },
+      { key: 'lazy-image', label: '懒加载图片', details: 'vLazyImage' },
+      { key: 'transition', label: '过渡动效', details: 'vTransition' },
+      { key: 'masonry', label: '瀑布流', details: 'vMasonry' },
+      { key: 'image-preview', label: '图片预览', details: 'vImagePreview' }
     ]
   },
   {
     id: 'feedback',
     title: '反馈',
     items: [
-      { label: '消息', details: 'vMessage / vMessageContainer / toast' },
-      { label: '消息管理器', details: 'vMessageManager' },
-      { label: '提示', details: 'vTooltip' }
+      { key: 'message', label: '消息', details: 'vMessage / vMessageContainer / toast' },
+      { key: 'message-manager', label: '消息管理器', details: 'vMessageManager' },
+      { key: 'tooltip', label: '提示', details: 'vTooltip' }
     ]
   },
   {
     id: 'third-party',
     title: '第三方扩展',
     items: [
-      { label: 'ECharts 图表', details: 'vEchart / VEchart' },
-      { label: 'Signals 状态管理', details: 'signal / computed / effect' }
+      { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
+      { key: 'signals', label: 'Signals 状态管理', details: 'signal / computed / effect' }
     ]
   },
   {
     id: 'theme',
     title: '主题',
-    items: [{ label: '主题切换', details: 'light / dark / system / compact / raw-primary' }]
+    items: [{ key: 'theme', label: '主题切换', details: 'light / dark / system / compact / raw-primary' }]
   }
 ];
 
@@ -186,79 +189,118 @@ function getTopNavigationItems() {
   return [
     { categoryId: 'overview', label: '概述', path: '/components' },
     ...componentMenuSections.map((category) => {
-      const firstReadyIndex = category.items.findIndex(
+      const firstReadyItem = category.items.find(
         (item) => item.status !== 'planned' && !item.hidden
       );
       return {
         categoryId: category.id,
         label: category.title,
-        path: buildComponentItemPath(category.id, firstReadyIndex >= 0 ? firstReadyIndex : 0)
+        path: buildComponentItemPath(
+          category.id,
+          firstReadyItem?.key ?? category.items[0].key
+        )
       };
     })
   ];
 }
 
 const docsRouteLoaders = Object.freeze({
-  'guides:0': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
-  'guides:1': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
-  'guides:2': () => import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
-  'guides:3': () =>
+  'guides:overview': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
+  'guides:installation': () =>
+    import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
+  'guides:html-native': () =>
+    import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
+  'guides:component': () =>
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
-  'guides:4': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
-  'guides:5': () => import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
-  'guides:6': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
-  'general:0': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
-  'general:1': () => import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
-  'general:2': () => import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
-  'general:3': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
-  'general:4': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
-  'effects:0': () => import('./effects-docs.js').then((m) => m.GlowButtonDocumentationPage()),
-  'layout:0': () => import('./layout-docs.js').then((m) => m.DividerDocumentationPage()),
-  'layout:1': () => import('./layout-docs.js').then((m) => m.FlexDocumentationPage()),
-  'layout:2': () => import('./layout-docs.js').then((m) => m.GridDocumentationPage()),
-  'layout:3': () => import('./layout-docs.js').then((m) => m.BodyDocumentationPage()),
-  'layout:4': () => import('./layout-docs.js').then((m) => m.SpacerDocumentationPage()),
-  'layout:5': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
-  'layout:6': () => import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
-  'layout:7': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
-  'layout:8': () => import('./layout-docs.js').then((m) => m.SplitPanelDocumentationPage()),
-  'navigation:0': () => import('./navigation-docs.js').then((m) => m.AnchorDocumentationPage()),
-  'navigation:1': () => import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
-  'navigation:3': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
-  'navigation:5': () => import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
-  'navigation:6': () => import('./navigation-docs.js').then((m) => m.TabsDocumentationPage()),
-  'navigation:7': () => import('./navigation-docs.js').then((m) => m.RouterDocumentationPage()),
-  'navigation:8': () =>
+  'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
+  'guides:state-node': () =>
+    import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
+  'general:button-group': () =>
+    import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
+  'general:float-button': () =>
+    import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
+  'general:icons': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
+  'general:svg': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
+  'effects:glow-button': () =>
+    import('./effects-docs.js').then((m) => m.GlowButtonDocumentationPage()),
+  'layout:divider': () => import('./layout-docs.js').then((m) => m.DividerDocumentationPage()),
+  'layout:flex': () => import('./layout-docs.js').then((m) => m.FlexDocumentationPage()),
+  'layout:grid': () => import('./layout-docs.js').then((m) => m.GridDocumentationPage()),
+  'layout:body': () => import('./layout-docs.js').then((m) => m.BodyDocumentationPage()),
+  'layout:spacer': () => import('./layout-docs.js').then((m) => m.SpacerDocumentationPage()),
+  'layout:dialog': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
+  'layout:templates': () =>
+    import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
+  'layout:mobile': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
+  'layout:split-panel': () =>
+    import('./layout-docs.js').then((m) => m.SplitPanelDocumentationPage()),
+  'navigation:anchor': () =>
+    import('./navigation-docs.js').then((m) => m.AnchorDocumentationPage()),
+  'navigation:breadcrumb': () =>
+    import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
+  'navigation:menu': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
+  'navigation:steps': () =>
+    import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
+  'navigation:tabs': () => import('./navigation-docs.js').then((m) => m.TabsDocumentationPage()),
+  'navigation:router': () =>
+    import('./navigation-docs.js').then((m) => m.RouterDocumentationPage()),
+  'navigation:router-views': () =>
     import('./navigation-docs.js').then((m) => m.RouterViewsDocumentationPage()),
-  'navigation:9': () => import('./navigation-docs.js').then((m) => m.NavbarDocumentationPage()),
-  'feedback:0': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
-  'feedback:2': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
-  'form:0': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
-  'form:7': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
-  'form:4': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
-  'form:12': () => import('./color-picker-docs.js').then((m) => m.ColorPickerDocumentationPage()),
-  'form:13': () => import('./form-controls-docs.js').then((m) => m.SliderDocumentationPage()),
-  'form:14': () => import('./form-controls-docs.js').then((m) => m.CascaderDocumentationPage()),
-  'form:15': () => import('./form-controls-docs.js').then((m) => m.TagsInputDocumentationPage()),
-  'form:16': () => import('./form-controls-docs.js').then((m) => m.AutocompleteDocumentationPage()),
-  'data-display:0': () => import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
-  'data-display:1': () => import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
-  'data-display:2': () => import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
-  'data-display:4': () => import('./data-display-docs.js').then((m) => m.TableDocumentationPage()),
-  'data-display:5': () => import('./data-display-docs.js').then((m) => m.TreeDocumentationPage()),
-  'data-display:7': () =>
+  'navigation:navbar': () =>
+    import('./navigation-docs.js').then((m) => m.NavbarDocumentationPage()),
+  'feedback:message': () =>
+    import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
+  'feedback:tooltip': () =>
+    import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
+  'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
+  'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
+  'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
+  'form:color-picker': () =>
+    import('./color-picker-docs.js').then((m) => m.ColorPickerDocumentationPage()),
+  'form:slider': () => import('./form-controls-docs.js').then((m) => m.SliderDocumentationPage()),
+  'form:cascader': () =>
+    import('./form-controls-docs.js').then((m) => m.CascaderDocumentationPage()),
+  'form:tags-input': () =>
+    import('./form-controls-docs.js').then((m) => m.TagsInputDocumentationPage()),
+  'form:autocomplete': () =>
+    import('./form-controls-docs.js').then((m) => m.AutocompleteDocumentationPage()),
+  'form:svg-icon-picker': () =>
+    import('./svg-icon-picker-docs.js').then((m) => m.SvgIconPickerDocumentationPage()),
+  'data-display:avatar': () =>
+    import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
+  'data-display:badge': () =>
+    import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
+  'data-display:detail': () =>
+    import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
+  'data-display:table': () =>
+    import('./data-display-docs.js').then((m) => m.TableDocumentationPage()),
+  'data-display:tree': () =>
+    import('./data-display-docs.js').then((m) => m.TreeDocumentationPage()),
+  'data-display:progress': () =>
     import('./data-display-docs.js').then((m) => m.ProgressDocumentationPage()),
-  'data-display:8': () => import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
-  'data-display:9': () =>
+  'data-display:scroll': () =>
+    import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
+  'data-display:carousel': () =>
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
-  'c-end:0': () => import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
-  'c-end:1': () => import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
-  'c-end:2': () => import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
-  'c-end:3': () => import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
-  'c-end:4': () => import('./c-end-docs.js').then((m) => m.ImagePreviewDocumentationPage()),
-  'third-party:0': () => import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
-  'third-party:1': () => import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
-  'theme:0': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
+  'data-display:tree-ranger': () =>
+    import('./data-display-docs.js').then((m) => m.TreeRangerDocumentationPage()),
+  'c-end:skeleton': () =>
+    import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
+  'c-end:lazy-image': () =>
+    import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
+  'c-end:transition': () =>
+    import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
+  'c-end:masonry': () =>
+    import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
+  'c-end:image-preview': () =>
+    import('./c-end-docs.js').then((m) => m.ImagePreviewDocumentationPage()),
+  'third-party:echarts': () =>
+    import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
+  'third-party:signals': () =>
+    import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
+  'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
 });
 
 const locale = createI18n({
@@ -335,10 +377,10 @@ export function renderExamplesIndex(target = '#app') {
 
 function registerComponentsWorkspaceRoutes(routerInstance, context) {
   componentMenuSections.forEach((category) => {
-    category.items.forEach((item, itemIndex) => {
-      routerInstance.route(buildComponentItemPath(category.id, itemIndex), {
+    category.items.forEach((item) => {
+      routerInstance.route(buildComponentItemPath(category.id, item.key), {
         title: item.label,
-        view: () => createComponentItemView(category, item, itemIndex, context)
+        view: () => createComponentItemView(category, item, context)
       });
     });
   });
@@ -353,8 +395,7 @@ function createComponentsView(appRouter) {
 
     const activeCategory = componentMenuSections.find((category) =>
       category.items.some(
-        (item, itemIndex) =>
-          !item.hidden && buildComponentItemPath(category.id, itemIndex) === currentPath
+        (item) => !item.hidden && buildComponentItemPath(category.id, item.key) === currentPath
       )
     );
     if (activeCategory && menuTree) {
@@ -409,8 +450,8 @@ function createComponentsView(appRouter) {
     nodes: componentMenuSections.map((category, categoryIndex) => ({
       children: category.items
         .filter((item) => !item.hidden)
-        .map((item, itemIndex) => ({
-          id: buildComponentItemPath(category.id, itemIndex),
+        .map((item) => ({
+          id: buildComponentItemPath(category.id, item.key),
           label: item.label
         })),
       expanded: categoryIndex === 0,
@@ -567,12 +608,12 @@ function createOverviewView() {
       categories.div((grid) => {
         grid.className('components-overview-grid');
         componentMenuSections.forEach((category) => {
-          const firstReadyIndex = category.items.findIndex(
+          const firstReadyItem = category.items.find(
             (item) => item.status !== 'planned' && !item.hidden
           );
           const path = buildComponentItemPath(
             category.id,
-            firstReadyIndex >= 0 ? firstReadyIndex : 0
+            firstReadyItem?.key ?? category.items[0].key
           );
           const readyItems = category.items.filter(
             (item) => !item.hidden && item.status !== 'planned'
@@ -606,19 +647,19 @@ function createOverviewView() {
         [
           {
             label: 'HTML 原生元素',
-            path: '/components/guides/2',
+            path: '/components/guides/html-native',
             details: 'div / button / input / output'
           },
           {
             label: '组件',
-            path: '/components/guides/3',
+            path: '/components/guides/component',
             details: 'A 薄工厂 / B 对象组件'
           },
-          { label: '国际化', path: '/components/guides/4', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/5', details: 'vStateNode' },
+          { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
+          { label: '状态节点', path: '/components/guides/state-node', details: 'vStateNode' },
           {
             label: '服务端渲染',
-            path: '/components/guides/6',
+            path: '/components/guides/ssr',
             details: 'renderToString / hydrate / mount'
           }
         ].forEach((guide) => {
@@ -638,20 +679,20 @@ function createOverviewView() {
   });
 }
 
-function createComponentItemView(category, item, itemIndex, context) {
-  const loadDocsView = docsRouteLoaders[`${category.id}:${itemIndex}`];
+function createComponentItemView(category, item, context) {
+  const loadDocsView = docsRouteLoaders[`${category.id}:${item.key}`];
 
   if (loadDocsView) {
     return loadDocsView();
   }
 
   return import('./detail-demos.js').then((module) => {
-    const detail = module.getComponentDetail(category.id, itemIndex, item);
-    return createDetailItemView(category, item, itemIndex, context, detail);
+    const detail = module.getComponentDetail(category.id, item.key, item);
+    return createDetailItemView(category, item, context, detail);
   });
 }
 
-function createDetailItemView(category, item, itemIndex, context, detail) {
+function createDetailItemView(category, item, context, detail) {
   const liveComponent = detail.component ? detail.component(context) : null;
   const sourcePanel = detail.component
     ? ComponentSource({
@@ -664,7 +705,7 @@ function createDetailItemView(category, item, itemIndex, context, detail) {
 
   return section((view) => {
     view.className('components-route-page components-route-page--item');
-    view.attr('data-component-route-item', `${category.id}:${itemIndex}`);
+    view.attr('data-component-route-item', `${category.id}:${item.key}`);
 
     view.div((header) => {
       header.className('components-route-header');
@@ -714,7 +755,7 @@ function createDetailItemView(category, item, itemIndex, context, detail) {
       metaGrid.article((meta) => {
         meta.className('components-route-meta');
         meta.h3('路径');
-        meta.code(buildComponentItemPath(category.id, itemIndex));
+        meta.code(buildComponentItemPath(category.id, item.key));
       });
     });
 
@@ -772,8 +813,8 @@ function createPlannedSourcePanel(item, detail) {
   });
 }
 
-function buildComponentItemPath(categoryId, itemIndex) {
-  return `/components/${categoryId}/${itemIndex}`;
+function buildComponentItemPath(categoryId, itemKey) {
+  return `/components/${categoryId}/${itemKey}`;
 }
 
 function countComponentMenuItems(sections, status = null) {

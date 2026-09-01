@@ -86,7 +86,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '锚点组件用于长文档、详情页和管理后台的章节导航。它把页面区块组织成目录，点击后平滑滚动，并随滚动自动高亮当前章节。',
     key: 'anchor',
-    routeItem: 'navigation:0',
+    routeItem: 'navigation:anchor',
     title: '锚点',
     usageItems: [
       '长文档、帮助中心和详情页需要章节导航时使用。',
@@ -159,7 +159,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '面包屑用于告诉用户当前所在位置，并允许通过上一级链接快速返回。vBreadcrumb 默认提供语义化 nav/ol 结构、可配置分隔符和当前页状态。',
     key: 'breadcrumb',
-    routeItem: 'navigation:1',
+    routeItem: 'navigation:breadcrumb',
     title: '面包屑',
     usageItems: [
       '详情页、管理后台和文档站点需要表达当前位置时使用。',
@@ -301,7 +301,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '路由组件负责把 URL、参数和视图连接起来。为了不让演示路由改动组件目录自身的 hash，这里全部使用 iframe 隔离运行。',
     key: 'router',
-    routeItem: 'navigation:7',
+    routeItem: 'navigation:router',
     title: '路由',
     usageItems: [
       '需要 hash 或 history 路由、参数解析和视图切换时使用 Router / vRouter。',
@@ -360,7 +360,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '路由视图适合把访问过的页面保留为标签，方便在多个路由之间切换。演示放在独立 iframe 中，标签状态和 URL 都不会和组件目录互相干扰。',
     key: 'router-views',
-    routeItem: 'navigation:8',
+    routeItem: 'navigation:router-views',
     title: '路由视图',
     usageItems: [
       '需要同时保留多个路由页面时使用 vRouterViews。',
@@ -462,7 +462,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       'vMenu 负责把导航动作整理成可扫描的列表，常见于命令面板、下拉菜单和后台侧栏。它和 vSubMenu、vSidebar、vDropdownMenu、vContextMenu 配合起来，足够覆盖大多数菜单场景。',
     key: 'menu',
-    routeItem: 'navigation:3',
+    routeItem: 'navigation:menu',
     title: '菜单',
     usageItems: [
       '命令列表、页面跳转和设置入口都适合先收进 vMenu。',
@@ -530,7 +530,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       'vNavbar 负责把品牌、主导航和页面动作放进一条横向顶栏里。它内部沿用 vMenu 的焦点管理和键盘导航，所以横向菜单的可访问性不会丢。',
     key: 'navbar',
-    routeItem: 'navigation:9',
+    routeItem: 'navigation:navbar',
     title: '导航栏',
     usageItems: [
       '页面最上方需要品牌、主导航和动作区时用它。',
@@ -607,7 +607,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '步骤条用于展示多阶段流程，比如发布、审批和表单填写。vSteps 用当前索引统一计算每个步骤的状态，适合驱动完整向导。',
     key: 'steps',
-    routeItem: 'navigation:5',
+    routeItem: 'navigation:steps',
     title: '步骤条',
     usageItems: [
       '流程步骤固定且需要展示进度时，用 vSteps 替代手写序号和连接线。',
@@ -693,7 +693,7 @@ const navigationDocsDefinitions = Object.freeze({
     intro:
       '标签页用于在同一区域内切换相关视图，避免把内容全部摊开。vTabs 提供语义化 tablist/tabpanel、键盘导航、禁用标签和多种视觉样式。',
     key: 'tabs',
-    routeItem: 'navigation:6',
+    routeItem: 'navigation:tabs',
     title: '标签页',
     usageItems: [
       '详情页、设置页和同一对象的多类信息需要分区展示时使用。',
