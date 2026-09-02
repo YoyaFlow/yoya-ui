@@ -3,8 +3,18 @@ import { RequestBase } from '@yoyaflow/yoya-ui';
 import Dicts from './dict.views.js';
 
 class QueryTypes extends RequestBase {
+  constructor({ page = 1, pageSize = 10 } = {}) {
+    super();
+    this.page = page;
+    this.pageSize = pageSize;
+  }
+
   address() {
     return '/dicts/types';
+  }
+
+  params() {
+    return { page: this.page, pageSize: this.pageSize };
   }
 
   toItem(row) {

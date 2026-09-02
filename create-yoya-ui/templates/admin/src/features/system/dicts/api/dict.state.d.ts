@@ -10,6 +10,11 @@ export default class DictsPageState {
   selectedTypeId(): number | null;
   selectedType(): DictTypeInstance | null;
   items(): DictItemInstance[];
+  page(): number;
+  pageSize(): number;
+  total(): number;
+  setPage(value: number): void;
+  setPageSize(value: number): void;
   subscribe(listener: () => void): () => void;
   loadTypes(): Promise<unknown>;
   selectType(id: number): void;

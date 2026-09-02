@@ -6,6 +6,9 @@ export default class DictsPageState {
     this._types = [];
     this._selectedTypeId = null;
     this._items = [];
+    this._page = 1;
+    this._pageSize = 10;
+    this._total = 0;
     this._listeners = new Set();
   }
 
@@ -25,14 +28,38 @@ export default class DictsPageState {
     return this._items;
   }
 
+  page() {
+    return this._page;
+  }
+
+  pageSize() {
+    return this._pageSize;
+  }
+
+  total() {
+    return this._total;
+  }
+
+  setPage(value) {
+    this._page = Math.max(1, Number(value) || 1);
+  }
+
+  setPageSize(value) {
+    this._pageSize = Math.max(1, Number(value) || 10);
+  }
+
   subscribe(listener) {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
   }
 
   async loadTypes() {
-    const result = await DictMgr.QueryTypes().submit();
+    const result = await DictMgr.QueryTypes({
+      page: this._page,
+      pageSize: this._pageSize
+    }).submit();
     this._types = result.data;
+    this._total = result.total;
     if (!this._selectedTypeId && this._types.length > 0) {
       this._selectedTypeId = this._types[0].id;
     }
@@ -59,6 +86,7 @@ export default class DictsPageState {
 
   async addType(payload) {
     await DictMgr.CreateType(payload).submit();
+    this._page = 1;
     await this.loadTypes();
     return payload;
   }
@@ -73,6 +101,9 @@ export default class DictsPageState {
     await DictMgr.RemoveType({ id }).submit();
     if (this._selectedTypeId === id) {
       this._selectedTypeId = null;
+    }
+    if (this._types.length === 1 && this._page > 1) {
+      this._page -= 1;
     }
     await this.loadTypes();
   }

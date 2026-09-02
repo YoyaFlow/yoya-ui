@@ -6,7 +6,9 @@ type DictTypeInstance = InstanceType<typeof Dicts.DictTypeItem>;
 type DictItemInstance = InstanceType<typeof Dicts.DictItem>;
 
 declare class QueryTypes extends RequestBase {
+  constructor(init?: { page?: number; pageSize?: number });
   address(): string;
+  params(): { page: number; pageSize: number };
   toItem(row: Record<string, unknown>): DictTypeInstance;
 }
 
@@ -63,7 +65,7 @@ declare class RemoveItem extends RequestBase {
 }
 
 declare const DictMgr: {
-  QueryTypes: (init?: unknown) => QueryTypes;
+  QueryTypes: (init?: { page?: number; pageSize?: number }) => QueryTypes;
   CreateType: (
     init?: { name?: string; code?: string; status?: DictStatus; remark?: string }
   ) => CreateType;

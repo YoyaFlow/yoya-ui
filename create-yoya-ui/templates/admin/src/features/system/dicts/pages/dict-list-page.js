@@ -1,4 +1,4 @@
-import { toast, vDialog, vTable, vstack } from '@yoyaflow/yoya-ui';
+import { toast, vDialog, vPagination, vTable, vstack } from '@yoyaflow/yoya-ui';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import DictsPageState from '../api/dict.state.js';
 import { DictEditorDialog } from '../components/dict-editor-dialog.js';
@@ -8,13 +8,30 @@ export function DictListPage() {
   const state = new DictsPageState();
   const editorDialog = DictEditorDialog({ state, onSubmit: saveType });
   const confirmDialog = vDialog();
+  const pagination = vPagination({
+    pageSize: 10,
+    pageSizes: [10, 20, 50],
+    onChange({ page: nextPage, pageSize: nextSize }) {
+      state.setPage(nextPage);
+      state.setPageSize(nextSize);
+      state.loadTypes();
+    }
+  });
   let typesBody = null;
 
-  state.subscribe(render);
+  state.subscribe(() => {
+    renderTypes();
+    syncPagination();
+  });
   state.loadTypes();
 
-  function render() {
-    renderTypes();
+  function syncPagination() {
+    pagination.update({
+      page: state.page(),
+      pageSize: state.pageSize(),
+      total: state.total(),
+      totalPages: Math.max(1, Math.ceil(state.total() / state.pageSize()))
+    });
   }
 
   function renderTypes() {
@@ -93,23 +110,26 @@ export function DictListPage() {
             });
           });
           card.vCardBody((body) => {
-            body.child(
-              vTable((table) => {
-                table.vThead((head) => {
-                  head.vTr((row) => {
-                    row.vTh('名称');
-                    row.vTh('编码');
-                    row.vTh('状态');
-                    row.vTh('备注');
-                    row.vTh('操作');
+            body.vstack({ gap: '12px' }, (content) => {
+              content.child(
+                vTable((table) => {
+                  table.vThead((head) => {
+                    head.vTr((row) => {
+                      row.vTh('名称');
+                      row.vTh('编码');
+                      row.vTh('状态');
+                      row.vTh('备注');
+                      row.vTh('操作');
+                    });
                   });
-                });
-                table.vTbody((bodyNode) => {
-                  typesBody = bodyNode;
-                  renderTypes();
-                });
-              })
-            );
+                  table.vTbody((bodyNode) => {
+                    typesBody = bodyNode;
+                    renderTypes();
+                  });
+                })
+              );
+              content.child(pagination);
+            });
           });
         });
         stack.child(editorDialog);
