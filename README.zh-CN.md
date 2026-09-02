@@ -45,19 +45,20 @@ function HelloWorldExampleI18n() {
 
 ## 安装
 
-### 脚手架快速搭建
+### 快速体验
 
 ```bash
-npx create-yoya-ui@latest my-app                 # basic 模板（SPA）
-npx create-yoya-ui@latest my-app --template ssr  # SSR 模板（renderPage + hydrateOrMount）
-npx create-yoya-ui@latest my-app --template admin # admin 后台管理模板（顶部导航 + 可折叠侧栏 + RouterViews）
+# 安装脚手架
+npm install -g create-yoya-ui
+
+# 使用 admin 模板创建项目
+create-yoya-ui my-app --template admin
 cd my-app
 npm install
-npm run dev          # basic / admin：开发服务器
-# SSR：npm run build && npm start
+npm run dev
 ```
 
-`--template admin` 生成标准后台管理模板：顶部导航 + 可折叠侧栏 + 带标题的 RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。
+`--template admin` 生成标准后台管理模板：顶部导航 + 左侧菜单 + 带标题的 RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。
 
 yoya-ui 拥有自己独特的开发范式：声明式节点 DSL、页面编排与 feature 模块组织。推荐使用 admin 模板创建项目来了解这些范式——它用库的原生写法完整展示了一个真实后台（页面壳、路由、表格/表单/弹窗、数据看板与图表）。
 
@@ -128,16 +129,7 @@ hydrateOrMount(HomePage, { messages });
 - 每请求 i18n 实例、渲染上下文 id 分配器、渲染后自动销毁——服务端保持无状态
 - `maxNodes` 超限自动回退客户端渲染
 
-完整集成指南见 [docs/ssr.md](docs/ssr.md)；用 SSR 模板快速开始：
-
-```bash
-npx create-yoya-ui@latest my-app --template ssr
-cd my-app
-npm install
-npm run build && npm start
-```
-
-或运行仓库内示例：
+完整集成指南见 [docs/ssr.md](docs/ssr.md)。或运行仓库内示例：
 
 ```bash
 npm run build

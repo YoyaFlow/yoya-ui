@@ -13,16 +13,17 @@
 
 ```text
 src/
-  features/                  # 业务域（按业务划分，如 orders / users / dashboard）
-    orders/
-      pages/                 # 页面模块（createPage 工厂 / 对象组件）
-      components/            # 业务组件（形态 A 薄工厂 / 形态 B 对象组件）
-      service/               # 数据请求与纯业务操作（不依赖 UI）
-      state/                 # 共享状态（createXxxState 工厂 / vStateNode）
-      utils/                 # 业务工具
-      i18n/                  # 模块文案（可选，集中管理时放全局 messages）
-  shared/                    # 跨业务域共享的业务组件（如用户选择器弹窗），自包含
-  ui/                        # 通用 UI 组件（无业务语义，可选）
+  features/                  # 业务域 = 父模块节点（对应顶级导航/菜单），下按菜单项分子模块
+    orders/                  # 父模块（如订单管理，key 与路由前缀一致）
+      order-list/            # 菜单项对应的子模块
+        pages/               # 页面模块（createPage 工厂 / 对象组件）
+        components/          # 业务组件（形态 A 薄工厂 / 形态 B 对象组件）
+        api/                 # 请求命令与状态：mgr / req / views / state / mock
+        utils/               # 业务工具
+        i18n/                # 模块文案（可选，集中管理时放全局 messages）
+      order-detail/          # 另一个菜单项子模块
+        ...
+  shared/                    # 跨业务域共享（按类别集中：ui.buttons.js / ui.pages.js 等）
 ```
 
 ## 页面模块
@@ -32,15 +33,15 @@ src/
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
 
 ```js
-// features/orders/pages/order-list.js
+// features/orders/order-list/pages/order-list-page.js
 export function createOrderListPage(initial = {}) {
-  const state = createOrdersState(initial.filters); // 状态模块
+  const state = new OrdersPageState(initial.filters); // api/order.state.js
 
   return div((page) => {
     page.h1('订单列表'.s('orders.title'));
     page.vButton('刷新', (btn) =>
       btn.on('click', async () => {
-        state.setItems(await fetchOrders(initial.filters)); // service 提供数据
+        await state.load(); // api/order.state.js 构造请求命令并 submit
       })
     );
     page.child(OrderFilterBar({ filters: state.filters() }));
@@ -49,56 +50,96 @@ export function createOrderListPage(initial = {}) {
 }
 ```
 
-## service 目录（数据请求与纯业务操作）
+## api 目录（请求命令与状态）
 
-每个业务域下的 `service/` 存放不依赖 UI 的数据请求与纯业务逻辑，页面与组件只调用、不内联实现：
+每个业务域下的 `api/` 存放请求命令与状态，按文件职责分层（以 admin 模板代码为准）：
 
-- **数据请求**：API 调用（fetch/axios 等）、请求参数组装、响应解析与错误归一化
-- **纯业务操作**：不涉及 DOM 的业务规则（校验、计算、状态转换、领域动作编排）
+- `mgr.js`：本域管理请求命令（增删改查等），命令类继承 `RequestBase`
+- `req.js`：对外能力入口（其他模块调用本域时使用）
+- `views.js`：领域结果结构（纯数据类），由命令的 `toItem / toDetail` 映射
+- `state.js`：状态类，持有数据与筛选，动作构造命令并 `submit()` 后写入状态
+- `mock.js`：演示用内存 mock（接入真实后端后删除）
+
+命令统一范式：构造器收单一 `init` 对象（`id` / `parentId` 等字段也放里面）；导出为工厂 `命令名: (init) => new 命令类(init)`；消费方 `Mgr.命令({ ... }).submit()`。
 
 ```js
-// features/orders/service/orders.js
-export async function fetchOrders(filters) {
-  const query = new URLSearchParams(filters).toString();
-  const res = await fetch(`/api/orders?${query}`);
-  if (!res.ok) {
-    throw new Error(`orders request failed: ${res.status}`);
+// features/orders/order-list/api/order.mgr.js
+import { RequestBase } from '@yoyaflow/yoya-ui';
+import Orders from './order.views.js';
+
+class Query extends RequestBase {
+  constructor({ page = 1, pageSize = 10, keyword = '' } = {}) {
+    super();
+    this.page = page;
+    this.pageSize = pageSize;
+    this.keyword = keyword;
   }
-  return res.json();
+
+  address() {
+    return '/orders';
+  }
+
+  params() {
+    return { page: this.page, pageSize: this.pageSize, keyword: this.keyword };
+  }
+
+  toItem(row) {
+    return new Orders.ListItem(row);
+  }
 }
 
-export function computeOrderTotal(items) {
-  return items.reduce((sum, item) => sum + item.amount, 0);
-}
+export default {
+  Query: (init) => new Query(init)
+};
 ```
 
 约定：
 
-- **service 与 state 分工**：service 负责「取数和动作」，state 负责「持有数据并驱动视图」；页面/组件调用 service 后把结果写入 state，不在组件里拼请求或写业务规则
-- **保持纯逻辑**：service 不碰 DOM、不绑定事件、不引用视图节点，SSR 场景下可直接在服务端调用
-- **依赖注入**：数据请求需要的请求上下文（cookie、token、locale）由调用方或工厂参数传入，service 内部不读全局可变状态，避免跨请求串数据
-- **统一错误处理**：请求失败在 service 归一化抛错，组件层统一提示（如 `toast.error`），不在多处重复 try/catch
+- **state 负责「持有数据并驱动视图」**：页面/组件只调用 state 动作，不在组件里拼请求或写业务规则
+- **保持纯逻辑**：命令与状态不碰 DOM、不绑定事件、不引用视图节点，SSR 场景下可直接在服务端调用
+- **统一错误处理**：请求失败在 mock 或真实传输层归一化抛错，组件层统一提示（如 `toast.error`），不在多处重复 try/catch
 
 ## 状态模块
 
 - **局部状态**：对象组件闭包或返回对象上的属性
-- **跨组件共享**：`vStateNode({ state, render, update })`，或自建 `createXxxState(initial)` 工厂返回 `{ 数据读取, 动作 }`
-- 命名：`create<Domain>State` 工厂风格
-- 状态模块保持纯数据：不碰 DOM、不绑定事件；`update` 返回 `true` 时由 vStateNode 全量重建
+- **页面状态类**：`api/<domain>.state.js` 默认导出状态类，持有数据与筛选，暴露动作方法；`subscribe(listener)` 通知视图更新（如模板 `MembersPageState`）
+- **跨组件共享**：`vStateNode({ state, render, update })`，或自建状态工厂返回 `{ 数据读取, 动作 }`
+- 状态保持纯数据：不碰 DOM、不绑定事件；动作构造请求命令并 `submit()` 后写入状态
 
 ```js
-// features/orders/state/orders.js
-export function createOrdersState(initial = []) {
-  let items = initial;
-  return {
-    items: () => items,
-    add(item) {
-      items = [...items, item];
-    },
-    remove(id) {
-      items = items.filter((item) => item.id !== id);
-    }
-  };
+// features/orders/order-list/api/order.state.js
+import OrderMgr from './order.mgr.js';
+
+export default class OrdersPageState {
+  constructor(initial = {}) {
+    this._filters = initial;
+    this._items = [];
+    this._listeners = new Set();
+  }
+
+  filters() {
+    return this._filters;
+  }
+
+  items() {
+    return this._items;
+  }
+
+  subscribe(listener) {
+    this._listeners.add(listener);
+    return () => this._listeners.delete(listener);
+  }
+
+  async load() {
+    const result = await OrderMgr.Query(this._filters).submit();
+    this._items = result.data;
+    this._emit();
+    return result;
+  }
+
+  _emit() {
+    this._listeners.forEach((listener) => listener());
+  }
 }
 ```
 
@@ -111,25 +152,25 @@ export function createOrdersState(initial = []) {
 
 ## 共享业务组件
 
-跨模块复用的组件按有无业务语义分两类放置：
-
-- **通用 UI 组件**（无业务语义，如按钮、卡片封装）：放 `ui/`，或直接复用 yoya-ui 内置组件，不做业务封装
-- **业务共享组件**（带业务语义且多模块使用，如「用户选择器弹窗」）：放 `shared/`，**自包含**（组件 + 状态/数据加载 + 文案），对外只暴露组件工厂
+跨模块复用的组件统一放 `shared/`，按类别集中组织：通用 UI 组件按类别建文件（如按钮类 `ui.buttons.js`、页面类 `ui.pages.js`）；带业务语义的共享组件自包含一个子目录（组件 + 状态 + 文案），对外只暴露组件工厂。
 
 ```text
 src/
   shared/
+    ui.buttons.js             # 通用 UI：按钮类（RowActionButton 等，无业务语义）
+    ui.pages.js               # 通用 UI：页面类（PlaceholderPage 等）
     user-picker/
       user-picker.js          # 组件（形态 B 对象组件）
-      user-picker-state.js    # 用户查询/分页状态工厂
+      user-picker-state.js    # 组件状态（查询/分页等，数据走所属域 req.js）
       user-picker.messages.js # 文案（可选）
 ```
 
 约定：
 
-- **判据**：组件一旦承载业务语义（数据源、权限、业务字段），即使被多个模块使用也不放进 `ui/`；`ui/` 只放纯展示、无业务依赖的组件
-- **自包含**：弹窗、下拉、数据加载、open/close 状态全部内聚在共享组件内，页面只调 `picker.open()`；共享组件对外暴露工厂与必要方法（如 `open()/close()/value()`），不暴露内部状态实现
-- **依赖注入**：数据源（如用户列表 API）经工厂参数或状态工厂注入，共享组件不直接深层 import 某个业务域的内部实现，避免 `features/a` → `features/b` 的强耦合
+- **判据**：组件一旦承载业务语义（数据源、权限、业务字段），从 `shared/` 的类别文件提升为自包含子目录；纯展示、无业务依赖的组件留在 `ui.*.js` 类别文件中
+- **数据获取走 req.js**：共享组件需要业务数据时，调用所属域 `api/<域>.req.js` 的公开能力（如 `MemberReq.QueryAvailable().submit()`），不自造数据请求；`shared → features/<域>/api/req.js` 是允许的公开单向依赖
+- **不深层 import**：共享组件不 import 业务域的 pages / components / state 内部实现；只有 `req.js`（对外能力入口）可以被跨模块引用
+- **自包含 UI 与状态**：弹窗、下拉、open/close 状态内聚在共享组件内，页面只调 `picker.open()`；对外暴露工厂与必要方法（如 `open()/close()/value()`），不暴露内部状态实现
 - **浮层自洽**：弹窗/下拉类共享组件使用 fixed 定位浮层（`getBoundingClientRect` 计算坐标 + scroll/resize 重定位），组件自带定位逻辑，不依赖使用方容器样式
 - **命名**：业务前缀（`UserPicker`），与库内 `v` 前缀组件区分；如需进 `vForm` 实现 `_collectValue()`
 

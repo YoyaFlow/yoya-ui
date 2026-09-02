@@ -1,18 +1,22 @@
 import { initYoyaTheme } from '@yoyaflow/yoya-ui';
 import '@yoyaflow/yoya-ui/ui.css';
 import './api/domain.api.js';
-import './features/members/api/member.mock.js';
-import './features/permissions/api/permission.mock.js';
-import './features/roles/api/role.mock.js';
-import './features/dicts/api/dict.mock.js';
-import { modules } from './app/modules.js';
-import { createAppRouter } from './app/router.js';
-import { AdminShell } from './app/admin-shell.js';
+import './features/system/members/api/member.mock.js';
+import './features/system/permissions/api/permission.mock.js';
+import './features/system/roles/api/role.mock.js';
+import './features/system/dicts/api/dict.mock.js';
+import './shell/api/shell.mock.js';
+import ShellState from './shell/api/shell.state.js';
+import { AdminShell } from './shell/components/admin-shell.js';
 
 initYoyaTheme();
 
-const router = createAppRouter();
-const shell = AdminShell({ router, modules });
-shell.render().bindTo('#app');
-router.start();
-shell.syncFromUrl();
+async function bootstrap() {
+  const state = new ShellState();
+  await state.load();
+  const shell = AdminShell({ state });
+  shell.render().bindTo('#app');
+  state.start();
+}
+
+bootstrap();

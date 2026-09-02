@@ -127,32 +127,32 @@ export function GuideInstallationPage() {
   return createGuidePage({
     id: 'installation',
     title: '安装方式',
-    intro: '用 create-yoya-ui 脚手架快速搭建，或通过 ES Module 直接引入构建产物。',
+    intro: '安装 create-yoya-ui 脚手架快速体验，或通过 ES Module 直接引入构建产物。',
     sections: [
       {
-        title: '脚手架',
+        title: '快速体验',
         paragraphs: [
-          'create-yoya-ui 内置 basic（SPA）、ssr（服务端渲染）与 admin（后台管理）三个模板。'
+          'create-yoya-ui 提供 admin 后台管理模板，可直接作为管理后台起点。'
         ],
-        code: `npx create-yoya-ui@latest my-app
-npx create-yoya-ui@latest my-app --template ssr
-npx create-yoya-ui@latest my-app --template admin
+        code: `# 安装脚手架
+npm install -g create-yoya-ui
 
+# 使用 admin 模板创建项目
+create-yoya-ui my-app --template admin
 cd my-app
 npm install
-npm run dev        # basic / admin 模板
-# SSR 模板：npm run build && npm start
+npm run dev
 
-# admin 模板包含：顶部导航 + 可折叠侧栏 + RouterViews 内容区，
+# admin 模板包含：顶部导航 + 左侧菜单 + RouterViews 内容区，
 # 以及数据概览看板、成员/角色/权限/字典管理等业务域示例`
       },
       {
         title: 'admin 模板（推荐）',
         paragraphs: [
           'yoya-ui 拥有自己独特的开发范式：声明式节点 DSL、页面编排、feature 模块组织与 api 分层。推荐使用 admin 模板创建项目来了解这些范式。',
-          'admin 模板开箱即用：顶部导航 + 可折叠侧栏 + RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。'
+          'admin 模板开箱即用：顶部导航 + 左侧菜单 + RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。'
         ],
-        code: `npx create-yoya-ui@latest my-app --template admin
+        code: `create-yoya-ui my-app --template admin
 cd my-app
 npm install
 npm run dev`

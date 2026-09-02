@@ -44,19 +44,20 @@ function HelloWorldExampleI18n() {
 
 ## Installation
 
-### Scaffold a new project
+### Quick experience
 
 ```bash
-npx create-yoya-ui@latest my-app                 # basic template (SPA)
-npx create-yoya-ui@latest my-app --template ssr  # SSR template (renderPage + hydrateOrMount)
-npx create-yoya-ui@latest my-app --template admin # admin console template (top nav + collapsible sidebar + RouterViews)
+# Install the scaffold
+npm install -g create-yoya-ui
+
+# Create a project with the admin template
+create-yoya-ui my-app --template admin
 cd my-app
 npm install
-npm run dev          # basic / admin: dev server
-# SSR: npm run build && npm start
+npm run dev
 ```
 
-`--template admin` scaffolds a standard admin console: top navigation, collapsible sidebar and a titled RouterViews content area, with feature examples for dashboard (data boards & charts), member / role / permission management, and dictionary management (type table with an item editor dialog).
+`--template admin` scaffolds a standard admin console: top navigation, sidebar and a titled RouterViews content area, with feature examples for dashboard (data boards & charts), member / role / permission management, and dictionary management (type table with an item editor dialog).
 
 yoya-ui has its own unique development paradigm — declarative node DSL, page composition, and feature-module organization. The admin template is the recommended way to get familiar with it: it demonstrates the full stack of a real admin console (shell, routing, tables / forms / dialogs, dashboard boards & charts) using the library's idiomatic patterns.
 
@@ -127,16 +128,7 @@ Key points:
 - Per-request i18n instance, render-context id allocator, auto-destroy after render — the server stays stateless
 - `maxNodes` falls back to client rendering automatically when exceeded
 
-Full integration guide: [docs/ssr.md](docs/ssr.md) (Chinese); quick start with the SSR template:
-
-```bash
-npx create-yoya-ui@latest my-app --template ssr
-cd my-app
-npm install
-npm run build && npm start
-```
-
-Or run the in-repo example:
+Full integration guide: [docs/ssr.md](docs/ssr.md) (Chinese). Or run the in-repo example:
 
 ```bash
 npm run build

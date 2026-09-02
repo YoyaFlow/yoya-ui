@@ -41,7 +41,7 @@ if (templateName === 'ssr') {
 } else {
   console.log('  npm run dev');
   console.log(
-    `\n${templateName === 'admin' ? '管理后台模板：顶部导航 + 可折叠侧栏 + RouterViews 内容区。' : ''}更多：npm run build 构建，npm run preview 预览产物。\n`
+    `\n${templateName === 'admin' ? '管理后台模板：顶部导航 + 左侧菜单 + RouterViews 内容区。' : ''}更多：npm run build 构建，npm run preview 预览产物。\n`
   );
 }
 
