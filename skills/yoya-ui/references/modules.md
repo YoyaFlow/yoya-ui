@@ -31,6 +31,8 @@ src/
 - 一个页面 = 一个工厂（SSR 场景用 `createPage(requestState)`，服务端与客户端复用同一份）或对象组件（`render()` + 状态方法）
 - 页面只做编排：组合业务组件、绑定事件、调用状态动作
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
+- 页面文件命名 `<名字>-page.js`（如 `order-list-page.js`）
+- **简单页只放一个文件**：无数据交互的简单/占位页只放 `pages/<页面>-page.js`（可复用 shared 的占位页组件）；有数据交互的页面才展开 api / components / pages / utils 完整模块
 
 ```js
 // features/orders/order-list/pages/order-list-page.js
@@ -59,6 +61,8 @@ export function createOrderListPage(initial = {}) {
 - `views.js`：领域结果结构（纯数据类），由命令的 `toItem / toDetail` 映射
 - `state.js`：状态类，持有数据与筛选，动作构造命令并 `submit()` 后写入状态
 - `mock.js`：演示用内存 mock（接入真实后端后删除）
+- 文件命名 `<域>.<层>.js`（如 `order.mgr.js`、`order.state.js`）；有管理动作用 `mgr.js`，只对外提供查询/能力用 `req.js`，两者可并存
+- mock 返回 `{ ok, data }` 结构，统一经 `Result.from` 解析；接入真实后端删除 mock，调用方零改动
 
 命令统一范式：构造器收单一 `init` 对象（`id` / `parentId` 等字段也放里面）；导出为工厂 `命令名: (init) => new 命令类(init)`；消费方 `Mgr.命令({ ... }).submit()`。
 
@@ -180,6 +184,20 @@ const picker = UserPicker({ select: (user) => assignUser(user) });
 page.child(picker);
 page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 ```
+
+## 应用外壳与导航状态
+
+应用外壳（管理台布局、顶栏 / 侧栏 / 内容区）同样按模块组织：`api/`（请求与状态）+ `components/`（外壳组件），参考 admin 模板。
+
+- **导航状态单一事实源**：当前模块 / 当前路径只存在状态对象（如 `ShellState`），持有 router，暴露 `switchModule(module)` / `navigate(path)`
+- **路由订阅驱动**：`router.subscribe((context) => state.syncFromPath(context.path))`，状态变化时通知订阅者
+- **组件只派生**：顶栏 / 侧栏从状态读取高亮，不持有自己的激活状态；外壳组件只做装配，不直接操作 router
+- 前进 / 后退、同模块内切换路由的高亮同步由状态管道自动完成，不需要手动调用
+
+## 类型声明同步
+
+- 改了 `mgr / req / views / state` 的 js 接口，必须同步对应 `d.ts`
+- `d.ts` 与运行时一致：命令导出为工厂函数类型（如 `(init?) => Query`），不用 `typeof` 构造器类型
 
 ## 复用与组合
 

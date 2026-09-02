@@ -79,7 +79,7 @@ div((root) => {
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
-- [references/modules.md](references/modules.md)：业务模块组织规则（feature 目录、共享业务组件、状态工厂、页面编排）
+- [references/modules.md](references/modules.md)：业务模块组织规则（feature 目录、api 分层、命令范式、共享组件、导航状态）
 
 ## 交付物说明
 
