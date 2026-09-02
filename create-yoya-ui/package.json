@@ -1,6 +1,6 @@
 {
   "name": "create-yoya-ui",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Scaffold a new yoya-ui project with Vite: basic template (SPA) or SSR template (renderPage + hydrateOrMount).",
   "type": "module",
   "bin": {
