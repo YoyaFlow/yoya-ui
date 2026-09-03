@@ -2272,7 +2272,7 @@ export class VField extends HtmlElementNode {
     if (!control || !control._input || control._input._tagName !== 'textarea') {
       return this;
     }
-    control._input.style('border', null);
+    control._input.style('border', '0');
     control._input.style('boxShadow', null);
     control._input.style('background', 'transparent');
     return this;
