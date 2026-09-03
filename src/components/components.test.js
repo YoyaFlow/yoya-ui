@@ -2326,7 +2326,7 @@ describe('compound components', () => {
     const element = field.renderDom();
 
     expect(element.dataset.mode).toBe('edit');
-    expect(element.querySelector('.yoya-vfield-display').style.display).toBe('none');
+    expect(element.querySelector('.yoya-vfield-display').style.display).toBe('flex');
     expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
 
     field.value('worker');

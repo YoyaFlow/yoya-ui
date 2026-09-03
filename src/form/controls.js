@@ -313,6 +313,19 @@ export class VInput extends HtmlElementNode {
     return this;
   }
 
+  /**
+   * 权限状态落位：只读时用自身 disabled() 禁用内层输入。
+   */
+  _applyAccessState(state) {
+    if (state === 'readonly') {
+      this._accessDisabled = true;
+      this.disabled(true);
+    } else if (this._accessDisabled) {
+      this._accessDisabled = false;
+      this.disabled(false);
+    }
+  }
+
   _setupInput(setup) {
     if (setup === null || setup === undefined) {
       return;
@@ -2161,14 +2174,29 @@ export class VField extends HtmlElementNode {
       lineHeight: '1.35'
     });
     this._displayBox.styles({
+      alignItems: 'center',
       border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '6px',
+      boxSizing: 'border-box',
       color: themeValue('color-text', '#172033'),
+      display: 'flex',
       minHeight: 'var(--yoya-control-height-md, 34px)',
-      padding: '8px 12px'
+      padding: '0 12px',
+      width: '100%'
     });
     this._editorBox.styles({
-      minWidth: '0'
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border-strong', '#cbd5e1'),
+      borderRadius: '6px',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.14)',
+      boxSizing: 'border-box',
+      left: '0',
+      minHeight: 'var(--yoya-control-height-md, 34px)',
+      minWidth: '0',
+      position: 'fixed',
+      top: '0',
+      width: '100%',
+      zIndex: 'var(--yoya-z-overlay, 1200)'
     });
     this._hintBox.styles({
       color: themeValue('color-text-muted', '#64748b'),
@@ -2190,6 +2218,15 @@ export class VField extends HtmlElementNode {
     });
     this._headerBox.child(this._labelBox, this._actionButton);
     this.child(this._headerBox, this._displayBox, this._editorBox, this._hintBox, this._errorBox);
+    this._editorBox.on('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.view();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.cancel();
+      }
+    });
     this.on('mouseenter', () => {
       this._hovered = true;
       this._syncActionButton();
@@ -2200,6 +2237,57 @@ export class VField extends HtmlElementNode {
     });
     this._setupField(setup);
     this._syncActionButton();
+    this.on('dblclick', (event) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (this._mode === 'view' && this.control()) {
+        this.edit();
+      }
+    });
+    this.on('focusout', (event) => {
+      if (this._mode !== 'edit') {
+        return;
+      }
+      const related = event.relatedTarget;
+      if (!related || !this._el || !this._el.contains(related)) {
+        this.view();
+      }
+    });
+  }
+
+  renderDom() {
+    const element = super.renderDom();
+    if (this._mode === 'edit') {
+      this._positionEditor();
+      this._focusEditor();
+    }
+    return element;
+  }
+
+  _positionEditor() {
+    if (!this._el) {
+      return this;
+    }
+    const rect = this._el.getBoundingClientRect();
+    this._editorBox.styles({
+      left: rect.left + 'px',
+      minHeight: rect.height + 'px',
+      top: rect.top + 'px',
+      width: rect.width + 'px'
+    });
+    return this;
+  }
+
+  _focusEditor() {
+    if (!this._editorBox._el) {
+      return this;
+    }
+    const field = this._editorBox._el.querySelector('input, textarea, select');
+    if (field && typeof field.focus === 'function') {
+      field.focus();
+    }
+    return this;
   }
 
   label(value) {
@@ -2295,11 +2383,12 @@ export class VField extends HtmlElementNode {
     this.attr('data-mode', this._mode);
 
     if (this._mode === 'edit') {
-      this._displayBox.style('display', 'none');
+      this._editSnapshot = this.control() ? readControlValue(this.control()) : null;
       this._editorBox.style('display', null);
+      this._positionEditor();
+      this._focusEditor();
     } else {
       this._editorBox.style('display', 'none');
-      this._displayBox.style('display', null);
       this._syncDisplayFromControl();
     }
 
@@ -2314,6 +2403,15 @@ export class VField extends HtmlElementNode {
 
   edit() {
     return this.mode('edit');
+  }
+
+  cancel() {
+    const control = this.control();
+    if (control && this._editSnapshot !== null && this._editSnapshot !== undefined) {
+      applyControlValue(control, this._editSnapshot);
+    }
+    this._editSnapshot = null;
+    return this.view();
   }
 
   _syncDisplayFromControl() {

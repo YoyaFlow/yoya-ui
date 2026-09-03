@@ -58,7 +58,9 @@ export class VSuperTable extends HtmlElementNode {
     this._expandable = null;
     this._expandedRows = new Set();
     this._editing = null;
-    this._editingValue = undefined;
+    this._editingColumn = null;
+    this._editorOverlay = null;
+    this._editorInput = null;
     this._editError = null;
     this._dragStore = null;
     this._virtual = false;
@@ -360,44 +362,115 @@ export class VSuperTable extends HtmlElementNode {
     this._emit();
   }
 
-  _beginEdit(row, column) {
+  _beginEdit(row, column, tdEl) {
+    const rect =
+      tdEl && typeof tdEl.getBoundingClientRect === 'function'
+        ? tdEl.getBoundingClientRect()
+        : null;
     this._editing = { rowKey: String(this._rowKey(row, 0)), columnKey: column.key };
-    this._editingValue = readRowValue(row, column);
+    this._editingColumn = column;
     this._editError = null;
-    this._render();
+    this._openEditorOverlay(row, column, rect);
   }
 
-  _pendingEdit(column, value) {
-    this._editingValue = value;
+  _openEditorOverlay(row, column, rect) {
+    if (typeof document === 'undefined' || !document.body) {
+      return;
+    }
+    this._closeEditor();
+
+    const value = readRowValue(row, column);
+    const overlay = new HtmlElementNode('div').className('yoya-vsupertable-editor').style(
+      rect
+        ? {
+            left: `${rect.left}px`,
+            minHeight: `${rect.height}px`,
+            top: `${rect.top}px`,
+            width: `${rect.width}px`
+          }
+        : {}
+    );
+
+    const editor =
+      typeof column.editor === 'function'
+        ? column.editor(value, {
+            commit: (next) => this._submitEdit(next === undefined ? value : next),
+            cancel: () => this._cancelEdit()
+          })
+        : null;
+
+    if (editor) {
+      overlay.child(editor);
+    } else {
+      const input = new HtmlElementNode('input')
+        .attr({ type: 'text', value: String(value ?? '') })
+        .on('keydown', (event) => {
+          if (event.key === 'Enter') {
+            this._submitEdit(event.target.value);
+          } else if (event.key === 'Escape') {
+            this._cancelEdit();
+          }
+        })
+        .on('blur', (event) => this._submitEdit(event.target.value));
+      overlay.child(input);
+      this._editorInput = input;
+    }
+
+    overlay.bindTo(document.body);
+    this._editorOverlay = overlay;
+    if (this._editorInput && this._editorInput._el) {
+      this._editorInput._el.focus();
+    }
+  }
+
+  _submitEdit(value) {
+    const column = this._editingColumn;
+    if (!column) {
+      return;
+    }
     const error = column.validate ? column.validate(value) : null;
     if (error) {
       this._editError = error;
-      this._render();
+      if (this._editorOverlay) {
+        this._editorOverlay.attr('data-error', 'true');
+      }
       return;
     }
-    this._commitEdit(column, value);
+    this._finishEdit(true, value);
   }
 
-  _commitEdit(column, value) {
-    const row = this._findEditingRow();
+  _cancelEdit() {
+    this._finishEdit(false);
+  }
+
+  _finishEdit(commit, value) {
+    const column = this._editingColumn;
+    const rowKey = this._editing ? this._editing.rowKey : null;
+    this._closeEditor();
+    this._editing = null;
+    this._editingColumn = null;
+    this._editError = null;
+    if (!commit || !column) {
+      return;
+    }
+    let row = null;
+    if (rowKey !== null && rowKey !== undefined) {
+      row = this._rows.find((entry, index) => String(this._rowKey(entry, index)) === rowKey);
+    }
     const dataIndex = column.dataIndex || column.key;
     if (row && dataIndex) {
       row[dataIndex] = value;
     }
-    this._editing = null;
-    this._editingValue = undefined;
-    this._editError = null;
     this._emit();
     this._render();
   }
 
-  _findEditingRow() {
-    if (!this._editing) {
-      return null;
+  _closeEditor() {
+    if (this._editorOverlay) {
+      this._editorOverlay.destroy();
+      this._editorOverlay = null;
     }
-    return this._rows.find(
-      (row, index) => String(this._rowKey(row, index)) === this._editing.rowKey
-    );
+    this._editorInput = null;
   }
 
   _dragStart(column, event) {
@@ -593,7 +666,7 @@ export class VSuperTable extends HtmlElementNode {
       );
     }
 
-    this._columns.forEach((column) => tr.child(this._renderCell(row, column, index, key)));
+    this._columns.forEach((column) => tr.child(this._renderCell(row, column, index)));
 
     const detailColumnCount =
       this._columns.length + (this._selection ? 1 : 0) + (this._expandable ? 1 : 0);
@@ -611,33 +684,17 @@ export class VSuperTable extends HtmlElementNode {
     return [tr];
   }
 
-  _renderCell(row, column, index, key) {
-    const editing =
-      this._editing && this._editing.rowKey === key && this._editing.columnKey === column.key;
+  _renderCell(row, column, index) {
     const value = readRowValue(row, column);
     const td = new HtmlElementNode('td')
       .attr('data-key', column.key)
       .attr(column.fixed ? { 'data-fixed': column.fixed } : {})
       .style(fixedStyle(column.fixed));
 
-    if (editing) {
-      td.child(
-        new HtmlElementNode('input')
-          .attr({ type: 'text', value: String(this._editingValue ?? value ?? '') })
-          .attr(this._editError ? { 'data-error': this._editError } : { class: undefined })
-          .on('change', (event) => this._pendingEdit(column, event.target.value))
-      );
-      return td;
-    }
-
     if (column.editable) {
-      td.child(
-        new HtmlElementNode('button')
-          .attr({ type: 'button', 'data-role': 'cell-edit' })
-          .text(String(value ?? ''))
-          .on('click', () => this._beginEdit(row, column))
-      );
-      return td;
+      td.attr('data-editable', 'true');
+      td.attr('data-role', 'cell-edit');
+      td.on('dblclick', (event) => this._beginEdit(row, column, event.currentTarget));
     }
 
     const content =
