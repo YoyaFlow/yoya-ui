@@ -1,5 +1,37 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
+import { currentAccess, parseAccessSpec, withAccess } from './access.js';
+import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
+
 const booleanAttributes = new Set(['checked', 'disabled', 'readonly', 'selected']);
+
+// access 写锁会禁用的可交互标签；readonly 仅对 input / textarea 生效。
+const accessDisabledTags = new Set([
+  'input',
+  'select',
+  'textarea',
+  'button',
+  'fieldset',
+  'option',
+  'optgroup',
+  'keygen'
+]);
+const accessReadOnlyTags = new Set(['input', 'textarea']);
+
+// 渲染期作用域栈：自上而下携带“最近声明的权限”，供子元素继承（就近覆盖）。
+const renderScopeStack = [];
+
+function currentInheritedScope() {
+  return renderScopeStack.length > 0 ? renderScopeStack[renderScopeStack.length - 1] : null;
+}
+
+function withRenderScope(spec, build) {
+  renderScopeStack.push(spec);
+  try {
+    return build();
+  } finally {
+    renderScopeStack.pop();
+  }
+}
 
 // 无闭合标签的 HTML 元素，toHTML 时不能追加结束标签。
 const voidElements = new Set([
@@ -114,6 +146,8 @@ export class ViewNode {
     this._pendingRemovals = new Set();
     this._childrenDirty = false;
     this._deleted = false;
+    this._access = null;
+    this._accessContext = currentAccess(); // 构建时捕获的权限上下文
 
     if (setup !== null) {
       this.setup(setup);
@@ -135,6 +169,52 @@ export class ViewNode {
     }
 
     return this;
+  }
+
+  /**
+   * 声明当前节点的权限：只写裸资源码（如 "system:member"）。
+   * 无读不渲染，有读无写则只读/禁用；作用域就近覆盖。
+   */
+  access(spec) {
+    const parsed = parseAccessSpec(spec);
+    this._access = parsed ? { code: parsed.code, level: 'write' } : null;
+    return this;
+  }
+
+  /**
+   * 计算本节点（在当前作用域下）的权限状态。
+   * 规则：自身声明覆盖继承作用域，无声明则继承最近的祖先声明。
+   * @returns {'active' | 'readonly' | 'hidden'}
+   */
+  _permissionState() {
+    const spec = this._access ?? currentInheritedScope();
+    if (!spec) {
+      return 'active';
+    }
+
+    const access = this._accessContext || currentAccess();
+    if (!access) {
+      return 'active';
+    }
+
+    if (!access.canRead(spec.code)) {
+      return 'hidden';
+    }
+
+    if (spec.level === 'write' && !access.canWrite(spec.code)) {
+      return 'readonly';
+    }
+
+    return 'active';
+  }
+
+  /**
+   * 把权限状态落位到组件自身：只读/禁用由组件按自身语义处理；
+   * hidden 由渲染管线统一拒绝挂载，本方法无需处理 hidden。
+   * 基类 ViewNode 无操作；ElementNode 处理可交互标签，vInput / vButton 等重写。
+   */
+  _applyAccessState(_state) {
+    // 基类默认无操作
   }
 
   _setupObject(config) {
@@ -294,6 +374,9 @@ export class ViewNode {
    * 销毁节点：清理事件、递归销毁子节点，并从 DOM 中移除自身。
    */
   destroy() {
+    if (isDevtoolsEnabled()) {
+      emitDevtools({ type: 'destroy', node: this });
+    }
     this._deleted = true;
     this._cleanup.forEach((cleanup) => cleanup());
     this._cleanup = [];
@@ -345,7 +428,7 @@ export class VTextNode extends ViewNode {
   }
 
   renderDom() {
-    if (this._deleted) {
+    if (this._deleted || this._permissionState() === 'hidden') {
       return null;
     }
 
@@ -358,7 +441,7 @@ export class VTextNode extends ViewNode {
   }
 
   toHTML() {
-    return this._deleted ? '' : escapeHtml(this._content);
+    return this._deleted || this._permissionState() === 'hidden' ? '' : escapeHtml(this._content);
   }
 }
 
@@ -378,8 +461,9 @@ export class ComponentNode extends ViewNode {
       return this._resolved;
     }
 
-    const resolved =
+    const build = () =>
       typeof this._component === 'function' ? this._component() : this._component.render();
+    const resolved = withAccess(this._accessContext || currentAccess(), build);
     if (!(resolved instanceof ViewNode)) {
       throw new TypeError('Component render must return a ViewNode');
     }
@@ -398,17 +482,27 @@ export class ComponentNode extends ViewNode {
   }
 
   renderDom() {
-    if (this._deleted) {
+    if (this._deleted || this._permissionState() === 'hidden') {
       return null;
     }
 
-    const element = this._resolve().renderDom();
-    this._el = element;
-    return element;
+    const inherited = currentInheritedScope();
+    const resolved = this._resolve();
+    return withRenderScope(this._access ?? inherited, () => {
+      const element = resolved.renderDom();
+      this._el = element;
+      return element;
+    });
   }
 
   toHTML() {
-    return this._deleted ? '' : this._resolve().toHTML();
+    if (this._deleted || this._permissionState() === 'hidden') {
+      return '';
+    }
+
+    const inherited = currentInheritedScope();
+    const resolved = this._resolve();
+    return withRenderScope(this._access ?? inherited, () => resolved.toHTML());
   }
 
   destroy() {
@@ -675,7 +769,9 @@ export class ElementNode extends ViewNode {
       this._childrenDirty = true;
 
       if (this._el) {
-        const childElement = viewNode.renderDom();
+        const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
+          viewNode.renderDom()
+        );
         if (childElement && childElement.parentNode !== this._el) {
           this._el.appendChild(childElement);
         }
@@ -686,6 +782,32 @@ export class ElementNode extends ViewNode {
   }
 
   /**
+   * 把只读/禁用落到原生元素：readonly 给可交互标签加属性，active 撤销，
+   * 支持权限热切换时原树复用。复合组件（vInput / vButton 等）各自重写。
+   */
+  _applyAccessState(state) {
+    if (state === 'readonly') {
+      this._accessAttrsApplied = true;
+      const tag = this._tagName;
+      if (accessDisabledTags.has(tag)) {
+        this.attr('disabled', true);
+      }
+      if (accessReadOnlyTags.has(tag)) {
+        this.attr('readonly', true);
+      }
+      this.attr('aria-disabled', 'true');
+      return;
+    }
+
+    if (this._accessAttrsApplied) {
+      this._accessAttrsApplied = false;
+      this.attr('disabled', null);
+      this.attr('readonly', null);
+      this.attr('aria-disabled', null);
+    }
+  }
+
+  /**
    * 创建或复用真实 DOM 元素。
    */
   renderDom() {
@@ -693,19 +815,34 @@ export class ElementNode extends ViewNode {
       return null;
     }
 
-    if (!this._el) {
-      this._el = document.createElement(this._tagName);
-      this._applySnapshotToElement();
+    const state = this._permissionState();
+    if (state === 'hidden') {
+      return null;
     }
 
+    const inherited = this._access ?? currentInheritedScope();
+
+    if (!this._el) {
+      this._el = document.createElement(this._tagName);
+      withRenderScope(inherited, () => this._applySnapshotToElement());
+    }
+
+    this._applyAccessState(state);
     this._commitChildren();
     this._children.forEach((child) => {
-      const childElement = child.renderDom();
-      if (childElement && childElement.parentNode !== this._el) {
-        this._el.appendChild(childElement);
-      }
+      withRenderScope(inherited, () => {
+        const childElement = child.renderDom();
+        if (childElement && childElement.parentNode !== this._el) {
+          this._el.appendChild(childElement);
+        } else if (!childElement && child._el && child._el.parentNode === this._el) {
+          this._el.removeChild(child._el);
+        }
+      });
     });
 
+    if (isDevtoolsEnabled()) {
+      emitDevtools({ type: 'commit', node: this });
+    }
     return this._el;
   }
 
@@ -717,14 +854,24 @@ export class ElementNode extends ViewNode {
       return '';
     }
 
-    const attrs = this._serializeAttributes();
-    const startTag = attrs ? `<${this._tagName} ${attrs}>` : `<${this._tagName}>`;
-
-    if (voidElements.has(this._tagName)) {
-      return startTag;
+    const state = this._permissionState();
+    if (state === 'hidden') {
+      return '';
     }
 
-    return `${startTag}${this._children.map((child) => child.toHTML()).join('')}</${this._tagName}>`;
+    this._applyAccessState(state);
+    const inherited = this._access ?? currentInheritedScope();
+
+    return withRenderScope(inherited, () => {
+      const attrs = this._serializeAttributes();
+      const startTag = attrs ? `<${this._tagName} ${attrs}>` : `<${this._tagName}>`;
+
+      if (voidElements.has(this._tagName)) {
+        return startTag;
+      }
+
+      return `${startTag}${this._children.map((child) => child.toHTML()).join('')}</${this._tagName}>`;
+    });
   }
 
   /**
@@ -839,3 +986,4 @@ export function registerChildFactories(NodeClass, factories, options = {}) {
 }
 
 export { VTextNode as TextNode, VTextNode as ViewTextNode, vText as text };
+
