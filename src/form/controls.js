@@ -2420,11 +2420,13 @@ export class VField extends HtmlElementNode {
 
     if (this._mode === 'edit') {
       this._editSnapshot = this.control() ? readControlValue(this.control()) : null;
+      this._displayBox.style('visibility', 'hidden');
       this._editorBox.style('display', null);
       this._positionEditor();
       this._focusEditor();
     } else {
       this._editorBox.style('display', 'none');
+      this._displayBox.style('visibility', null);
       this._syncDisplayFromControl();
     }
 

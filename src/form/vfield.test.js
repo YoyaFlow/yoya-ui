@@ -138,6 +138,20 @@ describe('vField floating edit', () => {
     expect(el.querySelector('.yoya-vfield-display').classList.contains('my-display')).toBe(true);
     expect(el.querySelector('.yoya-vfield-display').style.color).toBe('rgb(220, 38, 38)');
   });
+
+  it('hides the display box behind the floating editor in edit mode', () => {
+    const field = makeField();
+    field.displayStyle({ minHeight: '72px' });
+    const el = field.renderDom();
+    const display = el.querySelector('.yoya-vfield-display');
+
+    expect(display.style.visibility).not.toBe('hidden');
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(display.style.visibility).toBe('hidden');
+
+    el.querySelector('.yoya-vfield-editor input').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    );
+    expect(display.style.visibility).not.toBe('hidden');
+  });
 });
-
-
