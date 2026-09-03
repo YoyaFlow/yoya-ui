@@ -36,7 +36,23 @@ export {
   unregisterI18n,
   withI18nStringShortcut
 } from './i18n.js';
+export {
+  createAccess,
+  currentAccess,
+  installAccess,
+  parseAccessSpec,
+  stripAccessCode,
+  withAccess
+} from './access.js';
 export { vStateNode } from './state-node.js';
+export {
+  clearInstalledContext,
+  currentContext,
+  installContext,
+  snapshotContext,
+  withContext
+} from './context.js';
 export * from './theme.js';
 export * from './request.js';
 export * from './result.js';
+

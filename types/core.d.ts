@@ -58,6 +58,7 @@ export interface ElementOptions {
   attrs?: Record<string, AttrValue>;
   style?: StyleInput;
   children?: ChildInput;
+  access?: AccessSpec;
   [key: `on${string}`]: EventHandler | undefined;
   [key: string]: unknown;
 }
@@ -84,6 +85,82 @@ export type StateType = 'boolean' | 'string' | 'number' | null | undefined;
 export type StateHandler<N = ViewNode> = (value: unknown, node: N, oldValue: unknown) => void;
 
 // ---------------------------------------------------------------------------
+// Access control
+// ---------------------------------------------------------------------------
+
+export type AccessLevel = 'read' | 'write';
+
+/** Permission code on a node. Components pass bare resource codes, e.g. "system:member"; read/write level is decided by the user's grants. */
+export type AccessSpec = string;
+
+/** Options accepted by createAccess(). */
+export interface AccessOptions {
+  /** Granted permission strings, e.g. ["r.system:member", "w.system:member"]. */
+  permissions?: string[];
+  /** Roles held by the current request, e.g. ["admin"]. */
+  roles?: string[];
+  /** Roles that bypass every check (default ["super_admin"]). */
+  superAdmins?: string[];
+}
+
+/** Per-request permission context: decided by withAccess scope. */
+export interface AccessContext {
+  roles(): string[];
+  permissions(): string[];
+  isSuper(): boolean;
+  /** True when any grant (bare / r. / w.) covers the code. */
+  has(spec: AccessSpec): boolean;
+  /** True when a read grant (bare / r. / w.) covers the code. */
+  canRead(spec: AccessSpec): boolean;
+  /** True when a write grant (bare or w.) covers the code. */
+  canWrite(spec: AccessSpec): boolean;
+  setPermissions(permissions: string[]): AccessContext;
+  subscribe(listener: () => void): () => void;
+}
+
+/** Creates a per-request access context. */
+export function createAccess(options?: AccessOptions): AccessContext;
+
+/** Normalizes an access spec into { code, level }. */
+export function parseAccessSpec(
+  spec: AccessSpec | { code: string; level?: AccessLevel }
+): { code: string; level: AccessLevel } | null;
+
+/** Returns the resource code of a spec, without the read/write prefix. */
+export function stripAccessCode(spec: AccessSpec): string;
+
+/** Runs build() with the access context active, then restores the outer one. */
+export function withAccess<T>(access: AccessContext | null, build: () => T): T;
+
+/** Returns the access context active in the current render scope. */
+export function currentAccess(): AccessContext | null;
+
+/** Installs a global access context (single-user SPA); overridden by SSR options.access or withAccess scope. */
+export function installAccess(access: AccessContext | null): AccessContext | null;
+
+// ---
+// Generic scoped context
+// ---
+
+/** Per-render provider map injected by withContext / SSR options.context. */
+export type ContextProviders = Record<string, unknown>;
+
+/** Runs build() with the providers active, then restores the outer scope. */
+export function withContext<T>(providers: ContextProviders | null | undefined, build: () => T): T;
+
+/** Installs a global fallback context (single-user SPA). */
+export function installContext(providers: ContextProviders | null | undefined): ContextProviders | null;
+
+/** Removes the globally installed fallback context. */
+export function clearInstalledContext(): null;
+
+/** Returns the nearest value for a key; falls back to installed context and defaultValue. */
+export function currentContext<T = unknown>(key: string, defaultValue?: T): T | undefined;
+
+/** Returns a shallow merged snapshot of the active context. */
+export function snapshotContext(): ContextProviders;
+
+// ---------------------------------------------------------------------------
 // View tree nodes
 // ---------------------------------------------------------------------------
 
@@ -108,6 +185,9 @@ export class ViewNode {
 
   /** Adds a text child. */
   text(content: string | number): this;
+
+  /** Declares access control: bare default read, "w.xxx" write, "r.xxx" read. */
+  access(spec: AccessSpec): this;
 
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
@@ -559,7 +639,10 @@ export function bindWindowEvent(
 ): () => void;
 
 /** Injects a <style> into <head>; dataAttribute is used for dedup and identification. */
-export function injectDocumentStyle(styleText: string, dataAttribute?: string | null): HTMLStyleElement | null;
+export function injectDocumentStyle(
+  styleText: string,
+  dataAttribute?: string | null
+): HTMLStyleElement | null;
 
 /** Initializes theme mode/name from explicit values or persisted storage. */
 export function initYoyaTheme(options?: InitYoyaThemeOptions): {
@@ -580,3 +663,4 @@ declare global {
     ): I18nTextNode;
   }
 }
+

@@ -1,6 +1,8 @@
 import { ComponentNode, resolveTarget, ViewNode, VTextNode } from './node.js';
 import { createIdAllocator, withIdAllocator } from './id.js';
 import { createI18n, withI18nStringShortcut } from './i18n.js';
+import { withContext } from './context.js';
+import { withAccess } from './access.js';
 import { HtmlElementNode } from '../html/index.js';
 
 /**
@@ -84,6 +86,30 @@ function readAcceptLanguage(header) {
  * 有 i18n 配置时，在构建期间把 ".s()" 快捷方式作用域到指定 I18n 实例；
  * i18n 可传 createI18n 工厂（接收 state）或直接传实例，构建结束后恢复外层实例。
  */
+function scopeAccessBuild(access, build) {
+  if (!access) {
+    return build();
+  }
+
+  const ctx = typeof access === 'function' ? access() : access;
+  return withAccess(ctx, build);
+}
+
+function scopeBuild(access, context, i18n, state, build) {
+  return scopeAccessBuild(access, () =>
+    scopeContextBuild(context, state, () => scopeI18nBuild(i18n, state, build))
+  );
+}
+
+function scopeContextBuild(context, state, build) {
+  if (!context) {
+    return build();
+  }
+
+  const providers = typeof context === 'function' ? context(state) : context;
+  return withContext(providers, build);
+}
+
 function scopeI18nBuild(i18n, state, build) {
   if (!i18n) {
     return build();
@@ -135,7 +161,7 @@ function countNodes(node) {
  * maxNodes 超限时返回 exceeded，服务端可回退客户端渲染。
  */
 export function renderToString(component, options = {}) {
-  const { maxNodes = Infinity, state = null, i18n = null } = options || {};
+  const { access = null, context = null, maxNodes = Infinity, state = null, i18n = null } = options || {};
   const serialized = serializeState(state);
 
   return withIdAllocator(createIdAllocator(), () => {
@@ -159,7 +185,7 @@ export function renderToString(component, options = {}) {
       return result;
     };
 
-    return scopeI18nBuild(i18n, state, build);
+    return scopeBuild(access, context, i18n, state, build);
   });
 }
 
@@ -206,6 +232,8 @@ export function renderPage(pageConfig, state = {}, options = {}) {
   const {
     client = '/client.js',
     containerId = 'app',
+    access = null,
+    context = null,
     i18n = null,
     maxNodes = Infinity,
     messages,
@@ -218,14 +246,11 @@ export function renderPage(pageConfig, state = {}, options = {}) {
   }
 
   const i18nFactory =
-    i18n ||
-    (messages
-      ? () => createI18n({ language: pageState.lang || 'zh-CN', messages })
-      : null);
+    i18n || (messages ? () => createI18n({ language: pageState.lang || 'zh-CN', messages }) : null);
   const serialized = serializeState(pageState);
 
   return withIdAllocator(createIdAllocator(), () =>
-    scopeI18nBuild(i18nFactory, pageState, () => {
+    scopeBuild(access, context, i18nFactory, pageState, () => {
       const page = new PageDocumentNode();
       pageConfig.page(page, pageState);
 
@@ -278,15 +303,14 @@ export function hydrateOrMount(component, options = {}) {
   const stateElement = document.getElementById(stateId);
   const state = parseState(stateElement ? stateElement.textContent : '');
   const i18nOption =
-    i18n ||
-    (messages ? () => createI18n({ language: state?.lang || 'zh-CN', messages }) : null);
+    i18n || (messages ? () => createI18n({ language: state?.lang || 'zh-CN', messages }) : null);
   const parent = resolveTarget(target);
 
   if (parent && parent.firstElementChild) {
-    return hydrate(component, target, state, { i18n: i18nOption });
+    return hydrate(component, target, state, { access: options.access, context: options.context, i18n: i18nOption });
   }
 
-  return mount(component, target, state, { i18n: i18nOption });
+  return mount(component, target, state, { access: options.access, context: options.context, i18n: i18nOption });
 }
 
 /**
@@ -328,7 +352,7 @@ export function mount(component, target, state = null, options = {}) {
       return node;
     };
 
-    return scopeI18nBuild(options.i18n, state, build);
+    return scopeBuild(options.access, options.context, options.i18n, state, build);
   });
 }
 
@@ -357,7 +381,7 @@ export function hydrate(component, target, state = null, options = {}) {
       return node;
     };
 
-    return scopeI18nBuild(options.i18n, state, build);
+    return scopeBuild(options.access, options.context, options.i18n, state, build);
   });
 }
 
@@ -430,3 +454,5 @@ function replaceExisting(existing, created) {
     existing.parentNode.replaceChild(created, existing);
   }
 }
+
+

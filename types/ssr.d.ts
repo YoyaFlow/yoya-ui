@@ -1,4 +1,4 @@
-import type { ComponentLike, I18n, ViewNode } from './core.js';
+import type { AccessContext, ComponentLike, ContextProviders, ElementNode, I18n, ViewNode } from './core.js';
 import type { HtmlElementNode } from './html.js';
 
 export type PageFactory<S = unknown> = (state: S) => ViewNode | ComponentLike | PageFactory<S>;
@@ -12,7 +12,17 @@ export interface SsrI18nOption<S = unknown> {
   i18n?: I18n | ((state: S | null) => I18n);
 }
 
-export interface RenderOptions<S = unknown> extends SsrI18nOption<S> {
+/** Optional access binding: an AccessContext, or a factory resolved per build. */
+export interface SsrAccessOption {
+  access?: AccessContext | (() => AccessContext | null) | null;
+}
+
+/** Optional generic context binding: a provider map, or a factory resolved per build. */
+export interface SsrContextOption {
+  context?: ContextProviders | ((state: unknown) => ContextProviders);
+}
+
+export interface RenderOptions<S = unknown> extends SsrI18nOption<S>, SsrAccessOption, SsrContextOption {
   maxNodes?: number;
   state?: S | null;
 }
@@ -70,7 +80,7 @@ export function mount<S = unknown>(
   component: ViewNode | ComponentLike | PageFactory<S>,
   target: string | ParentNode,
   state?: S | null,
-  options?: SsrI18nOption<S>
+  options?: SsrI18nOption<S> & SsrAccessOption & SsrContextOption
 ): ViewNode;
 
 /** Hydrates server-rendered DOM: adopts elements and binds pending events. */
@@ -78,11 +88,11 @@ export function hydrate<S = unknown>(
   component: ViewNode | ComponentLike | PageFactory<S>,
   target: string | ParentNode,
   state?: S | null,
-  options?: SsrI18nOption<S>
+  options?: SsrI18nOption<S> & SsrAccessOption & SsrContextOption
 ): ViewNode;
 
 /** Document builder node used by renderPage: head/body callbacks build the page. */
-export class PageDocumentNode extends HtmlElementNode {
+export class PageDocumentNode extends ElementNode {
   head(callback: (node: HtmlElementNode, state: unknown) => void): PageDocumentNode;
   body(callback: (node: HtmlElementNode, state: unknown) => void): PageDocumentNode;
   vBody(...args: unknown[]): PageDocumentNode;
@@ -92,7 +102,7 @@ export interface RenderPageConfig<S = unknown> {
   page: (page: PageDocumentNode, state: S | null) => void;
 }
 
-export interface RenderPageOptions<S = unknown> extends SsrI18nOption<S> {
+export interface RenderPageOptions<S = unknown> extends SsrI18nOption<S>, SsrAccessOption, SsrContextOption {
   /** Per-request dictionary; builds an I18n instance from state.lang. */
   messages?: Record<string, any>;
   maxNodes?: number;
@@ -111,7 +121,7 @@ export function renderPage<S = unknown>(
   options?: RenderPageOptions<S>
 ): string;
 
-export interface HydrateOrMountOptions<S = unknown> extends SsrI18nOption<S> {
+export interface HydrateOrMountOptions<S = unknown> extends SsrI18nOption<S>, SsrAccessOption, SsrContextOption {
   messages?: Record<string, any>;
   stateId?: string;
   target?: string | ParentNode;
@@ -122,3 +132,4 @@ export function hydrateOrMount<S = unknown>(
   component: ViewNode | ComponentLike | PageFactory<S>,
   options?: HydrateOrMountOptions<S>
 ): ViewNode | null;
+
