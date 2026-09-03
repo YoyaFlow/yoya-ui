@@ -160,6 +160,36 @@ export function currentContext<T = unknown>(key: string, defaultValue?: T): T | 
 /** Returns a shallow merged snapshot of the active context. */
 export function snapshotContext(): ContextProviders;
 
+// ---
+// Accessibility primitives
+// ---
+
+export interface FocusTrapOptions {
+  onEscape?: (event: Event) => void;
+  restoreFocus?: boolean;
+}
+
+export interface FocusTrapHandle {
+  activate(): void;
+  destroy(): void;
+}
+
+export function getFocusableElements(root: Element | null | undefined): Element[];
+export function createFocusTrap(
+  root: Element | null | undefined,
+  options?: FocusTrapOptions
+): FocusTrapHandle;
+export function announce(
+  message: string,
+  options?: { politeness?: 'polite' | 'assertive'; dedupeKey?: string }
+): HTMLElement | null;
+export function moveByKey(options: {
+  key: string;
+  items: readonly unknown[];
+  currentIndex?: number;
+  shiftKey?: boolean;
+}): number;
+
 // ---------------------------------------------------------------------------
 // View tree nodes
 // ---------------------------------------------------------------------------
@@ -663,4 +693,6 @@ declare global {
     ): I18nTextNode;
   }
 }
+
+
 
