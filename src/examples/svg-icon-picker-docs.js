@@ -43,7 +43,13 @@ function SvgIconPickerBasicExample() {
 function SvgIconPickerCustomExample() {
   const output = vText('未选择');
   const picker = vSvgIconPicker((picker) => {
-    picker.icons(['StarOutlined', 'HeartOutlined', 'CheckOutlined', 'BellOutlined', 'HomeOutlined']);
+    picker.icons([
+      'StarOutlined',
+      'HeartOutlined',
+      'CheckOutlined',
+      'BellOutlined',
+      'HomeOutlined'
+    ]);
     picker.onChange((name) => output.textContent(name || '未选择'));
   });
 

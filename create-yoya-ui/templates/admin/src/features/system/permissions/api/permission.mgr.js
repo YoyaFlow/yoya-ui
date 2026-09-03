@@ -34,7 +34,13 @@ class Create extends RequestBase {
   }
 
   body() {
-    return { parentId: this.parentId, name: this.name, code: this.code, type: this.type, sort: this.sort };
+    return {
+      parentId: this.parentId,
+      name: this.name,
+      code: this.code,
+      type: this.type,
+      sort: this.sort
+    };
   }
 }
 

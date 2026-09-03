@@ -13,9 +13,10 @@ describe('vConfirm', () => {
     });
     const dialog = document.querySelector('.yoya-vdialog');
     expect(dialog).toBeTruthy();
-    const confirmBtn = Array.from(dialog.querySelectorAll('button')).find(
-      (b) => b.textContent.includes('确定')
+    const confirmBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
+      b.textContent.includes('确定')
     );
+    expect(confirmBtn.closest('.yoya-vstack')?.style.justifyContent).toBe('flex-end');
     confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await expect(promise).resolves.toBe(true);
     expect(confirmed).toBe(true);
@@ -32,8 +33,8 @@ describe('vConfirm', () => {
       }
     });
     const dialog = document.querySelector('.yoya-vdialog');
-    const cancelBtn = Array.from(dialog.querySelectorAll('button')).find(
-      (b) => b.textContent.includes('取消')
+    const cancelBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
+      b.textContent.includes('取消')
     );
     cancelBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await expect(promise).resolves.toBe(false);
@@ -59,8 +60,8 @@ describe('vConfirm', () => {
       onConfirm: () => gate
     });
     const dialog = document.querySelector('.yoya-vdialog');
-    const confirmBtn = Array.from(dialog.querySelectorAll('button')).find(
-      (b) => b.textContent.includes('确定')
+    const confirmBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
+      b.textContent.includes('确定')
     );
     confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     // Second click while pending is ignored
@@ -74,9 +75,7 @@ describe('vConfirm', () => {
     const original = globalThis.document;
     globalThis.document = undefined;
     try {
-      await expect(
-        vConfirm({ content: 'x' })
-      ).resolves.toBe(false);
+      await expect(vConfirm({ content: 'x' })).resolves.toBe(false);
     } finally {
       globalThis.document = original;
     }

@@ -17,7 +17,10 @@ const makeColumns = () => [
     load: ({ selection }) =>
       Promise.resolve(
         selection[0]?.id === 'a'
-          ? [{ id: 'a1', name: '项 1' }, { id: 'a2', name: '项 2' }]
+          ? [
+              { id: 'a1', name: '项 1' },
+              { id: 'a2', name: '项 2' }
+            ]
           : [{ id: 'b1', name: '项 X' }]
       ),
     renderItem: (item) => item.name,
@@ -102,7 +105,10 @@ describe('vTreeRanger', () => {
   });
 
   it('refreshes the current columns in place and keeps the selection', async () => {
-    let typeItems = [{ id: 'a1', name: '项 1' }, { id: 'a2', name: '项 2' }];
+    let typeItems = [
+      { id: 'a1', name: '项 1' },
+      { id: 'a2', name: '项 2' }
+    ];
     const browser = vTreeRanger({
       columns: [
         {
@@ -117,8 +123,7 @@ describe('vTreeRanger', () => {
         },
         {
           title: '字典项',
-          load: ({ selection }) =>
-            Promise.resolve(selection[0]?.id === 'a' ? typeItems : []),
+          load: ({ selection }) => Promise.resolve(selection[0]?.id === 'a' ? typeItems : []),
           renderItem: (item) => item.name,
           itemKey: (item) => item.id
         }
@@ -132,7 +137,10 @@ describe('vTreeRanger', () => {
     const secondColumn = element.querySelectorAll('.yoya-vtreeranger-column')[1];
     expect(secondColumn.textContent).toContain('项 2');
 
-    typeItems = [{ id: 'a1', name: '项 1' }, { id: 'a3', name: '项 3' }];
+    typeItems = [
+      { id: 'a1', name: '项 1' },
+      { id: 'a3', name: '项 3' }
+    ];
     browser.refresh();
     await new Promise((resolve) => setTimeout(resolve, 20));
 

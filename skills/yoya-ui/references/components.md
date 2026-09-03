@@ -20,8 +20,9 @@ vButton('保存', (btn) => {
 按钮组：`selectable()` 单选、`joined()` 合并圆角、`options()` 配置项、`value()` 读写选中值。
 
 ```js
-vButtons({ options: ['dev', 'prod'], value: 'dev', selectable: true })
-  .on('change', (e) => console.log(e.detail));
+vButtons({ options: ['dev', 'prod'], value: 'dev', selectable: true }).on('change', (e) =>
+  console.log(e.detail)
+);
 ```
 
 ### vFloatButton
@@ -220,7 +221,9 @@ vSlider({ min: 0, max: 100, step: 5, value: 60, vertical: true });
 级联选择：`options({label, value, children}[])`、`value()` 返回路径数组、`placeholder()`、`open()/close()`。
 
 ```js
-vCascader({ options: [{ label: '浙江', value: 'zj', children: [{ label: '杭州', value: 'hz' }] }] });
+vCascader({
+  options: [{ label: '浙江', value: 'zj', children: [{ label: '杭州', value: 'hz' }] }]
+});
 ```
 
 ### vTagsInput
@@ -421,3 +424,14 @@ router.start();
 ### vDynamicLoader
 
 异步加载占位：传入异步组件工厂，加载中/失败可自定义；常用于按需加载大模块。
+
+## 权限控制（基础能力）
+
+非组件，而是所有节点共有的权限声明：
+
+- `node.access('system:member')` 裸资源码：无读 → 不渲染（SSR 也不输出），有读无写 → 可交互控件只读/禁用，有写 → 正常
+- 容器声明即整块作用域；子节点自行声明就近覆盖
+- 注入：`installAccess(createAccess({ permissions, roles }))`（SPA 一次）；`renderToString(page, { access })` / `mount(..., { access })`（SSR / 入口）
+- 权限码语义：裸码 = 读+写、`r.` = 只读、`w.` = 读+写；`superAdmins` 全放行
+
+详见 access-control.md。

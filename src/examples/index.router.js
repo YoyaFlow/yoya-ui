@@ -32,7 +32,12 @@ const componentMenuSections = [
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
-      { key: 'super-table', label: '增强表格', details: 'vSuperTable 排序 / 筛选 / 行选 / 编辑' },
+      {
+        key: 'super-table',
+        label: '增强表格',
+        details: 'vSuperTable 排序 / 筛选 / 行选 / 编辑',
+        status: 'planned'
+      },
       { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
       { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
@@ -219,8 +224,6 @@ const docsRouteLoaders = Object.freeze({
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'guides:access-control': () =>
     import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
-  'guides:super-table': () =>
-    import('./vsupertable-docs.js').then((m) => m.SuperTableDocumentationPage()),
   'guides:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
   'guides:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
@@ -260,6 +263,7 @@ const docsRouteLoaders = Object.freeze({
   'feedback:message': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
   'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
+  'form:checkbox': () => import('./checkbox-docs.js').then((m) => m.CheckboxDocumentationPage()),
   'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
   'form:color-picker': () =>
@@ -453,7 +457,7 @@ function createComponentsView(appRouter) {
         .filter((item) => !item.hidden)
         .map((item) => ({
           id: buildComponentItemPath(category.id, item.key),
-          label: item.label
+          label: item.status === 'planned' ? `${item.label}（待开发）` : item.label
         })),
       expanded: categoryIndex === 0,
       id: category.id,

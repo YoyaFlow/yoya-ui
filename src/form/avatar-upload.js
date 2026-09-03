@@ -243,16 +243,14 @@ export class VAvatarUpload extends HtmlElementNode {
       );
     } else {
       this._preview.child(
-        new HtmlElementNode('div')
-          .className('yoya-vavatar-upload-fallback')
-          .child(
-            UserOutlined().styles({
-              color: themeValue('color-text-muted', '#64748b'),
-              height: '28px',
-              width: '28px'
-            }),
-            new HtmlElementNode('span').className('yoya-vavatar-upload-hint').text('点击上传头像')
-          )
+        new HtmlElementNode('div').className('yoya-vavatar-upload-fallback').child(
+          UserOutlined().styles({
+            color: themeValue('color-text-muted', '#64748b'),
+            height: '28px',
+            width: '28px'
+          }),
+          new HtmlElementNode('span').className('yoya-vavatar-upload-hint').text('点击上传头像')
+        )
       );
     }
 

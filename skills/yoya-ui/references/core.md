@@ -4,12 +4,12 @@
 
 ## 公共 API
 
-| 类别 | API |
-|---|---|
-| 节点类 | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode` |
+| 类别       | API                                                                                                                                            |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                   |
 | 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态 | `vStateNode` |
-| 国际化 | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut` |
+| 状态       | `vStateNode`                                                                                                                                   |
+| 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
 
 ## vText 文本节点
 

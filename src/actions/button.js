@@ -61,6 +61,19 @@ export class VButton extends HtmlElementNode {
     return this.type(value);
   }
 
+  /**
+   * 权限状态落位：只读时用自身 disabled() 禁用按钮。
+   */
+  _applyAccessState(state) {
+    if (state === 'readonly') {
+      this._accessDisabled = true;
+      this.disabled(true);
+    } else if (this._accessDisabled) {
+      this._accessDisabled = false;
+      this.disabled(false);
+    }
+  }
+
   formType(value) {
     if (value === undefined) {
       return this.attr('type');

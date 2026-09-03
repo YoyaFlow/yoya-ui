@@ -15,6 +15,16 @@ npm install
 npm run dev
 ```
 
+### 本地仓库联调（推荐在仓库内预览）
+
+模板通过 npm 安装线上 `@yoyaflow/yoya-ui`。若要在 yoya-ui 本地仓库中直接预览**最新源码**（如权限能力），模板的 `vite.config.js` 会自动把 `@yoyaflow/yoya-ui` 指到仓库 `src/`（对应路径不存在时回退 npm 包解析，脚手架生成的项目不受影响）：
+
+```bash
+cd create-yoya-ui/templates/admin
+node ../../../node_modules/vite/bin/vite.js
+# 打开 http://127.0.0.1:5173
+```
+
 ## TypeScript
 
 模板默认支持 TypeScript，非侵入接入：现有 `.js` 文件保持不动（`tsconfig.json` 已开启 `allowJs`），需要类型时直接新建或改写为 `.ts` 文件即可（Vite 原生支持）。运行 `npm run typecheck` 做类型检查。

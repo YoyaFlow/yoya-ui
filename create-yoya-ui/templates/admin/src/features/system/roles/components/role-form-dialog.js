@@ -46,15 +46,17 @@ export function RoleFormDialog({ onSubmit }) {
           item.styles(rowStyle);
           item.label('状态').name('status');
           item.control((editor) =>
-            editor.vSelect({ name: 'status', options: statusOptions, value: role?.status ?? 'active' })
+            editor.vSelect({
+              name: 'status',
+              options: statusOptions,
+              value: role?.status ?? 'active'
+            })
           );
         });
         form.vFormItem((item) => {
           item.styles(rowStyle);
           item.label('排序').name('sort');
-          item.control((editor) =>
-            editor.vInput({ name: 'sort', value: String(role?.sort ?? 0) })
-          );
+          item.control((editor) => editor.vInput({ name: 'sort', value: String(role?.sort ?? 0) }));
         });
         form.vButton('保存', (btn) => {
           btn.variant('primary');

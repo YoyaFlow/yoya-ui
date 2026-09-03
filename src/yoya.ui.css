@@ -1074,6 +1074,12 @@ body {
     padding-left: 10px;
   }
 
+  .yoya-vtreetable thead th:first-child,
+  .yoya-vtreetable tbody td:first-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+
   .yoya-vsupertable th[data-fixed='left'],
   .yoya-vsupertable td[data-fixed='left'],
   .yoya-vsupertable th[data-fixed='right'],
@@ -1121,6 +1127,33 @@ body {
   .yoya-vsupertable .yoya-vsupertable-viewport {
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
+  }
+
+  .yoya-vsupertable-editor {
+    background: var(--yoya-color-surface, light-dark(#ffffff, #212121));
+    border: 1px solid var(--yoya-color-border-strong, light-dark(#d9d9d9, #484848));
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(13, 13, 13, 0.12);
+    box-sizing: border-box;
+    padding: 2px 4px;
+  }
+
+  .yoya-vsupertable-editor input[type='text'] {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    outline: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  .yoya-vsupertable-editor input[type='text']:focus-visible {
+    outline: 1px solid
+      var(--yoya-color-border-ring, light-dark(rgba(13, 13, 13, 0.28), rgba(255, 255, 255, 0.4)));
+    outline-offset: 1px;
+    border-radius: 2px;
   }
 
   :where(.yoya-vnavbar) {

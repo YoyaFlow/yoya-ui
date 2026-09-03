@@ -19,10 +19,16 @@ export function MemberTable({ rows, onEdit, onRemove }) {
         row.vTd(statusText[member.status] ?? member.status);
         row.vTd((cell) => {
           cell.hstack({ gap: '8px' }, (actions) => {
-            actions.child(RowActionButton('编辑', (btn) => btn.on('click', () => onEdit(member))));
+            actions.child(
+              RowActionButton('编辑', (btn) => {
+                btn.access('system:member:update');
+                btn.on('click', () => onEdit(member));
+              })
+            );
             actions.child(
               RowActionButton('删除', (btn) => {
                 btn.variant('danger');
+                btn.access('system:member:remove');
                 btn.on('click', () => onRemove(member));
               })
             );

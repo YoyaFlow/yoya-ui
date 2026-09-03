@@ -27,9 +27,7 @@ export function RoleToolbar({ onSearch, onAdd }) {
         f.vFormItem((item) => {
           item.style({ display: 'flex', alignItems: 'center', gap: '8px' });
           item.label('关键词').name('keyword');
-          item.control((editor) =>
-            editor.vInput({ name: 'keyword', placeholder: '名称 / 标识' })
-          );
+          item.control((editor) => editor.vInput({ name: 'keyword', placeholder: '名称 / 标识' }));
         });
         f.vFormItem((item) => {
           item.style({ display: 'flex', alignItems: 'center', gap: '8px' });

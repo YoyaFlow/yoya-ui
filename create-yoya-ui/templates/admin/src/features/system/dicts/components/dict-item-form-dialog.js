@@ -46,7 +46,11 @@ export function DictItemFormDialog({ onSubmit }) {
           field.styles(rowStyle);
           field.label('状态').name('status');
           field.control((editor) =>
-            editor.vSelect({ name: 'status', options: statusOptions, value: item?.status ?? 'active' })
+            editor.vSelect({
+              name: 'status',
+              options: statusOptions,
+              value: item?.status ?? 'active'
+            })
           );
         });
         form.vButton('保存', (btn) => {

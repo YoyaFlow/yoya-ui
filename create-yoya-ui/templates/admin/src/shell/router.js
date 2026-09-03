@@ -35,6 +35,9 @@ export function createAppRouter(menus) {
     });
     r.notFound(() => PlaceholderPage({ title: '未找到', text: '该页面不存在。' }));
   });
-  router.default(menus[0].routes[0].path);
+  const firstPath = menus[0]?.routes?.[0]?.path;
+  if (firstPath) {
+    router.default(firstPath);
+  }
   return router;
 }

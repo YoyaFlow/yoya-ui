@@ -109,7 +109,7 @@ const html = renderPage(
     }
   },
   { lang, path, mode: 'history' }, // 状态唯一来源
-  { messages }                    // 按 state.lang 建每请求 i18n，.s() 自动作用域
+  { messages } // 按 state.lang 建每请求 i18n，.s() 自动作用域
 );
 
 res.end(html);

@@ -16,34 +16,48 @@ function dragEvent(type) {
 describe('vSuperTable advanced', () => {
   it('expands and collapses a detail row', () => {
     const table = vSuperTable({
-      columns: [{ key: 'name', title: '姓名', dataIndex: 'name' }, { key: 'age', title: '年龄', dataIndex: 'age' }],
+      columns: [
+        { key: 'name', title: '姓名', dataIndex: 'name' },
+        { key: 'age', title: '年龄', dataIndex: 'age' }
+      ],
       rows: people.map((p) => ({ ...p })).map((p) => ({ ...p })),
       expandable: () => '这是详情'
     });
     let el = table.renderDom();
     expect(el.querySelector('[data-role="row-detail"]')).toBeNull();
-    el.querySelector('[data-role="row-expand"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    el.querySelector('[data-role="row-expand"]').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
     el = table.renderDom();
     expect(el.querySelector('[data-role="row-detail"]')).toBeTruthy();
     expect(el.querySelector('[data-role="row-detail"]').textContent).toContain('这是详情');
   });
 
-  it('edits a cell and commits the value back to data', () => {
+  it('edits a cell by double click and commits through the floating editor', () => {
     const table = vSuperTable({
-      columns: [
-        { key: 'age', title: '年龄', dataIndex: 'age', editable: true }
-      ],
+      columns: [{ key: 'age', title: '年龄', dataIndex: 'age', editable: true }],
       rows: people.map((p) => ({ ...p }))
     });
     const el = table.renderDom();
-    el.querySelector('[data-role="cell-edit"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    const input = table.renderDom().querySelector('input[type="text"]');
+    const td = el.querySelector('td[data-key="age"]');
+    td.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const editor = document.body.querySelector('.yoya-vsupertable-editor');
+    expect(editor.style.position).toBe('fixed');
+    expect(editor.style.zIndex).toBe('var(--yoya-z-overlay, 1200)');
+    expect(editor.style.left).toMatch(/px$/);
+    expect(editor.style.top).toMatch(/px$/);
+    expect(editor.style.width).toMatch(/px$/);
+    const input = editor.querySelector('input');
+    expect(input.style.border).toBe('0px');
     input.value = '88';
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    );
     expect(String(table.rows()[0].age)).toBe('88');
+    document.body.innerHTML = '';
   });
 
-  it('keeps editing on failed validation without losing input', () => {
+  it('keeps the floating editor open on failed validation without losing input', () => {
     const table = vSuperTable({
       columns: [
         {
@@ -57,12 +71,17 @@ describe('vSuperTable advanced', () => {
       rows: people.map((p) => ({ ...p }))
     });
     const el = table.renderDom();
-    el.querySelector('[data-role="cell-edit"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    const input = table.renderDom().querySelector('input[type="text"]');
+    el.querySelector('td[data-key="age"]').dispatchEvent(
+      new MouseEvent('dblclick', { bubbles: true })
+    );
+    const input = document.body.querySelector('.yoya-vsupertable-editor input');
     input.value = '-5';
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(table.renderDom().querySelector('input[type="text"]')).toBeTruthy();
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    );
+    expect(document.body.querySelector('.yoya-vsupertable-editor')).toBeTruthy();
     expect(table.rows()[0].age).toBe(30);
+    document.body.innerHTML = '';
   });
 
   it('marks fixed columns on headers and cells', () => {
@@ -91,7 +110,9 @@ describe('vSuperTable advanced', () => {
     ageTh.dispatchEvent(dragEvent('dragstart', ageTh));
     const nameTh = el.querySelector('th[data-key="name"]');
     nameTh.dispatchEvent(dragEvent('drop', nameTh));
-    const headers = Array.from(table.renderDom().querySelectorAll('th')).map((th) => th.getAttribute('data-key'));
+    const headers = Array.from(table.renderDom().querySelectorAll('th')).map((th) =>
+      th.getAttribute('data-key')
+    );
     expect(headers.indexOf('age')).toBeLessThan(headers.indexOf('name'));
   });
 
@@ -118,5 +139,3 @@ describe('vSuperTable advanced', () => {
     expect(afterCount).toBeLessThan(60);
   });
 });
-
-

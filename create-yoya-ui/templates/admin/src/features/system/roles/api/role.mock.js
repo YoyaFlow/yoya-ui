@@ -2,7 +2,14 @@
 import { mockRequest } from '../../../../api/domain.api.js';
 
 let roles = [
-  { id: 1, name: '超级管理员', code: 'super_admin', description: '拥有全部权限', status: 'active', sort: 1 },
+  {
+    id: 1,
+    name: '超级管理员',
+    code: 'super_admin',
+    description: '拥有全部权限',
+    status: 'active',
+    sort: 1
+  },
   { id: 2, name: '管理员', code: 'admin', description: '后台管理操作', status: 'active', sort: 2 },
   { id: 3, name: '运维', code: 'ops', description: '运维与部署', status: 'active', sort: 3 },
   { id: 4, name: '审计员', code: 'auditor', description: '只读审计', status: 'disabled', sort: 4 },
@@ -22,9 +29,7 @@ function filterRoles({ keyword = '', status = '' } = {}) {
   const text = String(keyword).trim().toLowerCase();
   return roles.filter((role) => {
     const matchKeyword =
-      !text ||
-      role.name.toLowerCase().includes(text) ||
-      role.code.toLowerCase().includes(text);
+      !text || role.name.toLowerCase().includes(text) || role.code.toLowerCase().includes(text);
     const matchStatus = !status || role.status === status;
     return matchKeyword && matchStatus;
   });

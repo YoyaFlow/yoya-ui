@@ -47,6 +47,15 @@ export default [
     }
   },
   {
+    files: ['create-yoya-ui/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node
+      }
+    }
+  },
+  {
     files: ['eslint.config.js', 'vite.config.js', 'vite.examples.config.js'],
     languageOptions: {
       globals: globals.node

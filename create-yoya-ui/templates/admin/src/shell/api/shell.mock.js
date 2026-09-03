@@ -13,8 +13,18 @@ mockRequest('GET', '/menus', async () => {
         label: '工作台',
         icon: 'D',
         routes: [
-          { path: '/dashboard/overview', title: '数据概览', viewKey: 'dashboard-overview' },
-          { path: '/dashboard/todos', title: '待办审批', viewKey: 'todo-approval' }
+          {
+            path: '/dashboard/overview',
+            title: '数据概览',
+            viewKey: 'dashboard-overview',
+            permCode: 'dashboard:overview'
+          },
+          {
+            path: '/dashboard/todos',
+            title: '待办审批',
+            viewKey: 'todo-approval',
+            permCode: 'dashboard:todos'
+          }
         ]
       },
       {
@@ -22,8 +32,18 @@ mockRequest('GET', '/menus', async () => {
         label: '运维',
         icon: 'O',
         routes: [
-          { path: '/ops/services', title: '服务清单', viewKey: 'service-list' },
-          { path: '/ops/deploys', title: '部署任务', viewKey: 'deploy-list' }
+          {
+            path: '/ops/services',
+            title: '服务清单',
+            viewKey: 'service-list',
+            permCode: 'ops:service'
+          },
+          {
+            path: '/ops/deploys',
+            title: '部署任务',
+            viewKey: 'deploy-list',
+            permCode: 'ops:deploy'
+          }
         ]
       },
       {
@@ -31,10 +51,30 @@ mockRequest('GET', '/menus', async () => {
         label: '系统',
         icon: 'S',
         routes: [
-          { path: '/system/members', title: '成员管理', viewKey: 'member-list' },
-          { path: '/system/roles', title: '角色管理', viewKey: 'role-list' },
-          { path: '/system/permissions', title: '权限管理', viewKey: 'permission-list' },
-          { path: '/system/dicts', title: '字典管理', viewKey: 'dict-list' }
+          {
+            path: '/system/members',
+            title: '成员管理',
+            viewKey: 'member-list',
+            permCode: 'system:member'
+          },
+          {
+            path: '/system/roles',
+            title: '角色管理',
+            viewKey: 'role-list',
+            permCode: 'system:role'
+          },
+          {
+            path: '/system/permissions',
+            title: '权限管理',
+            viewKey: 'permission-list',
+            permCode: 'system:permission'
+          },
+          {
+            path: '/system/dicts',
+            title: '字典管理',
+            viewKey: 'dict-list',
+            permCode: 'system:dict'
+          }
         ]
       }
     ]

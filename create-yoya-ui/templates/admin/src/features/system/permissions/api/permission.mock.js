@@ -7,9 +7,30 @@ let permissions = [
   { id: 12, parentId: 1, name: '待办审批', code: 'dashboard:todos', type: 'menu', sort: 2 },
   { id: 2, parentId: null, name: '系统管理', code: 'system', type: 'menu', sort: 2 },
   { id: 21, parentId: 2, name: '成员管理', code: 'system:member', type: 'menu', sort: 1 },
-  { id: 211, parentId: 21, name: '新增成员', code: 'system:member:create', type: 'button', sort: 1 },
-  { id: 212, parentId: 21, name: '编辑成员', code: 'system:member:update', type: 'button', sort: 2 },
-  { id: 213, parentId: 21, name: '删除成员', code: 'system:member:remove', type: 'button', sort: 3 },
+  {
+    id: 211,
+    parentId: 21,
+    name: '新增成员',
+    code: 'system:member:create',
+    type: 'button',
+    sort: 1
+  },
+  {
+    id: 212,
+    parentId: 21,
+    name: '编辑成员',
+    code: 'system:member:update',
+    type: 'button',
+    sort: 2
+  },
+  {
+    id: 213,
+    parentId: 21,
+    name: '删除成员',
+    code: 'system:member:remove',
+    type: 'button',
+    sort: 3
+  },
   { id: 22, parentId: 2, name: '角色管理', code: 'system:role', type: 'menu', sort: 2 },
   { id: 23, parentId: 2, name: '权限管理', code: 'system:permission', type: 'menu', sort: 3 },
   { id: 24, parentId: 2, name: '字典管理', code: 'system:dict', type: 'menu', sort: 4 }

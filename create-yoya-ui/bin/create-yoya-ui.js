@@ -10,7 +10,9 @@ const targetDir = resolve(process.cwd(), targetName);
 const templateArgIndex = args.indexOf('--template');
 const templateName =
   templateArgIndex !== -1 && args[templateArgIndex + 1] ? args[templateArgIndex + 1] : 'basic';
-const templateRoot = resolve(fileURLToPath(new URL(`../templates/${templateName}`, import.meta.url)));
+const templateRoot = resolve(
+  fileURLToPath(new URL(`../templates/${templateName}`, import.meta.url))
+);
 
 if (!existsSync(templateRoot)) {
   console.error(`未知模板：${templateName}（可用：basic、ssr、admin）`);

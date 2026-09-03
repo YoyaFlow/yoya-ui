@@ -139,6 +139,10 @@ describe('renderExamplesIndex', () => {
     expect(
       document.querySelector('[data-components-menu] [data-node-id="guides"]').textContent
     ).toContain('开发指南');
+    const superTableMenuItem = document.querySelector(
+      '[data-components-menu] [data-node-id="/components/guides/super-table"]'
+    );
+    expect(superTableMenuItem.textContent).toContain('增强表格（待开发）');
     expect(
       document.querySelector('[data-components-menu] [data-node-id="/components/guides/overview"]')
     ).not.toBeNull();

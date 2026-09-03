@@ -26,16 +26,14 @@ declare class Create extends RequestBase {
 }
 
 declare class Update extends RequestBase {
-  constructor(
-    init?: {
-      id: number;
-      name?: string;
-      code?: string;
-      description?: string;
-      status?: RoleStatus;
-      sort?: number;
-    }
-  );
+  constructor(init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    description?: string;
+    status?: RoleStatus;
+    sort?: number;
+  });
   method(): 'PUT';
   address(): string;
   body(): { name: string; code: string; description: string; status: RoleStatus; sort: number };
@@ -48,22 +46,22 @@ declare class Remove extends RequestBase {
 }
 
 declare const RoleMgr: {
-  Query: (
-    init?: { page?: number; pageSize?: number; keyword?: string; status?: string }
-  ) => Query;
-  Create: (
-    init?: { name?: string; code?: string; description?: string; status?: RoleStatus; sort?: number }
-  ) => Create;
-  Update: (
-    init?: {
-      id: number;
-      name?: string;
-      code?: string;
-      description?: string;
-      status?: RoleStatus;
-      sort?: number;
-    }
-  ) => Update;
+  Query: (init?: { page?: number; pageSize?: number; keyword?: string; status?: string }) => Query;
+  Create: (init?: {
+    name?: string;
+    code?: string;
+    description?: string;
+    status?: RoleStatus;
+    sort?: number;
+  }) => Create;
+  Update: (init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    description?: string;
+    status?: RoleStatus;
+    sort?: number;
+  }) => Update;
   Remove: (init?: { id: number }) => Remove;
 };
 

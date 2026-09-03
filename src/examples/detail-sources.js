@@ -742,15 +742,13 @@ export function TreeRangerActionsExample() {
 
   function actionIcon(icon, title) {
     return div((action) => {
-      action
-        .attr({ role: 'button', tabindex: '0', title })
-        .styles({
-          cursor: 'pointer',
-          display: 'inline-flex',
-          marginLeft: '6px',
-          opacity: '0.55',
-          padding: '2px'
-        });
+      action.attr({ role: 'button', tabindex: '0', title }).styles({
+        cursor: 'pointer',
+        display: 'inline-flex',
+        marginLeft: '6px',
+        opacity: '0.55',
+        padding: '2px'
+      });
       action.on('click', (event) => {
         event.stopPropagation();
       });
@@ -877,5 +875,8 @@ export const detailSourceRegistry = Object.freeze({
   'data-display:tree-ranger': { component: TreeRangerExample, imports: ['div', 'vTreeRanger'] },
   'async:dynamic-loader': { component: DynamicLoaderExample1, imports: ['div', 'vDynamicLoader'] },
   'feedback:message': { component: MessageExample1, imports: ['stack', 'vMessageContainer'] },
-  'feedback:message-manager': { component: MessageManagerExample1, imports: ['stack', 'vMessageManager'] }
+  'feedback:message-manager': {
+    component: MessageManagerExample1,
+    imports: ['stack', 'vMessageManager']
+  }
 });

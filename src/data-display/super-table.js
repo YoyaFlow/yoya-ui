@@ -380,16 +380,17 @@ export class VSuperTable extends HtmlElementNode {
     this._closeEditor();
 
     const value = readRowValue(row, column);
-    const overlay = new HtmlElementNode('div').className('yoya-vsupertable-editor').style(
-      rect
-        ? {
-            left: `${rect.left}px`,
-            minHeight: `${rect.height}px`,
-            top: `${rect.top}px`,
-            width: `${rect.width}px`
-          }
-        : {}
-    );
+    const overlay = new HtmlElementNode('div')
+      .className('yoya-vsupertable-editor')
+      .style({ position: 'fixed', zIndex: 'var(--yoya-z-overlay, 1200)' });
+    if (rect) {
+      overlay.style({
+        left: `${rect.left}px`,
+        minHeight: `${rect.height}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`
+      });
+    }
 
     const editor =
       typeof column.editor === 'function'
@@ -404,6 +405,16 @@ export class VSuperTable extends HtmlElementNode {
     } else {
       const input = new HtmlElementNode('input')
         .attr({ type: 'text', value: String(value ?? '') })
+        .styles({
+          background: 'transparent',
+          border: '0',
+          boxShadow: 'none',
+          color: 'inherit',
+          font: 'inherit',
+          outline: 'none',
+          padding: '0',
+          width: '100%'
+        })
         .on('keydown', (event) => {
           if (event.key === 'Enter') {
             this._submitEdit(event.target.value);

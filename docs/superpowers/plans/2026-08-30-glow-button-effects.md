@@ -25,28 +25,29 @@
 
 ## File Structure
 
-| 文件 | 动作 | 职责 |
-| --- | --- | --- |
-| `src/effects/glow-button.js` | 新建 | VGlowButton 类与 vGlowButton 工厂（继承 VButton + glow 配置 API） |
-| `src/effects/index.js` | 新建 | effects 域入口，registerChildFactories 注册 vGlowButton |
-| `src/effects/glow-button.test.js` | 新建 | 组件单元测试（公共 API 层） |
-| `src/className-contract.test.js` | 修改 | libraryDirs 加入 `src/effects`，让新域受命名契约约束 |
-| `src/index.js` | 修改 | 追加 `export * from './effects/index.js';` |
-| `src/yoya.ui.js` | 修改 | 追加 `export * from './effects/index.js';` |
-| `src/components/index.js` | 修改 | 追加 `export * from '../effects/index.js';` |
-| `src/yoya.ui.css` | 修改 | `@layer yoya` 内新增流光样式与 keyframes |
-| `src/css-contract.test.js` | 修改 | 新增 effects 选择器契约批次与测试 |
-| `src/examples/effects-docs.js` | 新建 | GlowButtonDocumentationPage 演示页（5 个演示） |
-| `src/examples/index.router.js` | 修改 | 新增「特效组件」分类与 `effects:0` 路由 loader |
-| `src/examples/demo-styles.js` | 修改 | 新增 effectsExtraRules 并合入 demoRules |
-| `src/examples/index.router.test.js` | 修改 | 菜单数量断言更新 + 特效组件路由测试 |
-| `docs/components.md` | 修改 | 新增「特效组件」清单 |
+| 文件                                | 动作 | 职责                                                              |
+| ----------------------------------- | ---- | ----------------------------------------------------------------- |
+| `src/effects/glow-button.js`        | 新建 | VGlowButton 类与 vGlowButton 工厂（继承 VButton + glow 配置 API） |
+| `src/effects/index.js`              | 新建 | effects 域入口，registerChildFactories 注册 vGlowButton           |
+| `src/effects/glow-button.test.js`   | 新建 | 组件单元测试（公共 API 层）                                       |
+| `src/className-contract.test.js`    | 修改 | libraryDirs 加入 `src/effects`，让新域受命名契约约束              |
+| `src/index.js`                      | 修改 | 追加 `export * from './effects/index.js';`                        |
+| `src/yoya.ui.js`                    | 修改 | 追加 `export * from './effects/index.js';`                        |
+| `src/components/index.js`           | 修改 | 追加 `export * from '../effects/index.js';`                       |
+| `src/yoya.ui.css`                   | 修改 | `@layer yoya` 内新增流光样式与 keyframes                          |
+| `src/css-contract.test.js`          | 修改 | 新增 effects 选择器契约批次与测试                                 |
+| `src/examples/effects-docs.js`      | 新建 | GlowButtonDocumentationPage 演示页（5 个演示）                    |
+| `src/examples/index.router.js`      | 修改 | 新增「特效组件」分类与 `effects:0` 路由 loader                    |
+| `src/examples/demo-styles.js`       | 修改 | 新增 effectsExtraRules 并合入 demoRules                           |
+| `src/examples/index.router.test.js` | 修改 | 菜单数量断言更新 + 特效组件路由测试                               |
+| `docs/components.md`                | 修改 | 新增「特效组件」清单                                              |
 
 ---
 
 ### Task 1: VGlowButton 组件与 effects 域入口
 
 **Files:**
+
 - Create: `src/effects/glow-button.js`
 - Create: `src/effects/index.js`
 - Test: `src/effects/glow-button.test.js`
@@ -56,6 +57,7 @@
 - Modify: `src/className-contract.test.js`（libraryDirs 数组追加 `'src/effects'`）
 
 **Interfaces:**
+
 - Consumes: `VButton` from `../actions/button.js`；`componentClass` from `../components/shared.js`；`registerChildFactories` from `../core/node.js`；`HtmlElementNode` from `../html/index.js`。
 - Produces:
   - `class VGlowButton extends VButton`，构造签名 `(setup = null, options = null, callback = null)`。
@@ -395,10 +397,12 @@ git commit -m "feat(effects): 新增流光按钮 vGlowButton 组件与 effects �
 ### Task 2: 流光与光影 CSS
 
 **Files:**
+
 - Modify: `src/yoya.ui.css`（`@layer yoya` 内、`.yoya-vbutton[disabled]` 规则块之后插入）
 - Test: `src/css-contract.test.js`
 
 **Interfaces:**
+
 - Consumes: `data-glow-play` / `data-glow-speed` / `data-glow-direction` / `data-glow-strength` / `data-glow-ripple`，class `yoya-vglow-button`，以及 vButton 已提供的 `yoya-vbutton-label`、`yoya-vbutton-spinner`、`[disabled]`、`[data-interaction='disabled']`。
 - Produces: CSS 规则与 keyframes `yoya-glow-button-sweep`、`yoya-glow-button-sweep-rtl`、`yoya-glow-button-ripple`；流光带通过 `::before` 呈现，label/spinner 位于其上（z-index），hover 时流光加速，disabled 时流光暂停并隐藏；点击光波 `.yoya-vglow-button-ripple` 在按钮内部扩散并淡出（按钮自身特效）。
 
@@ -428,11 +432,11 @@ const effectsSelectors = [
 在 `describe('CSS style contract', ...)` 内、最后一个测试之前追加：
 
 ```js
-  it('covers the effects glow button selectors', () => {
-    effectsSelectors.forEach((selector) => {
-      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
-    });
+it('covers the effects glow button selectors', () => {
+  effectsSelectors.forEach((selector) => {
+    expect(css, `missing CSS rule for ${selector}`).toContain(selector);
   });
+});
 ```
 
 - [ ] **Step 2: 运行测试，确认失败**
@@ -445,113 +449,113 @@ Expected: FAIL，报 `missing CSS rule for .yoya-vglow-button`。
 在 `src/yoya.ui.css` 的 `@layer yoya` 内，`.yoya-vbutton[disabled],\n  .yoya-vbutton[data-interaction='disabled'] { ... }` 规则块之后插入：
 
 ```css
-  :where(.yoya-vglow-button) {
-    --yoya-glow-alpha: 0.4;
-    --yoya-glow-duration: 2.8s;
-    isolation: isolate;
-    overflow: hidden;
-    position: relative;
-  }
+:where(.yoya-vglow-button) {
+  --yoya-glow-alpha: 0.4;
+  --yoya-glow-duration: 2.8s;
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
 
-  .yoya-vglow-button .yoya-vbutton-label,
-  .yoya-vglow-button .yoya-vbutton-spinner {
-    position: relative;
-    z-index: 1;
-  }
+.yoya-vglow-button .yoya-vbutton-label,
+.yoya-vglow-button .yoya-vbutton-spinner {
+  position: relative;
+  z-index: 1;
+}
 
-  .yoya-vglow-button::before {
-    animation: yoya-glow-button-sweep var(--yoya-glow-duration) ease-in-out infinite;
-    background: linear-gradient(
-      105deg,
-      transparent 0%,
-      rgba(255, 255, 255, var(--yoya-glow-alpha)) 50%,
-      transparent 100%
-    );
-    bottom: 0;
-    content: '';
-    left: -45%;
-    pointer-events: none;
-    position: absolute;
-    top: 0;
+.yoya-vglow-button::before {
+  animation: yoya-glow-button-sweep var(--yoya-glow-duration) ease-in-out infinite;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, var(--yoya-glow-alpha)) 50%,
+    transparent 100%
+  );
+  bottom: 0;
+  content: '';
+  left: -45%;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translate3d(0, 0, 0) skewX(-14deg);
+  width: 40%;
+  z-index: 0;
+}
+
+.yoya-vglow-button[data-glow-play='hover']::before,
+.yoya-vglow-button[data-glow-play='off']::before,
+.yoya-vglow-button[disabled]::before,
+.yoya-vglow-button[data-interaction='disabled']::before {
+  animation-play-state: paused;
+  opacity: 0;
+}
+
+.yoya-vglow-button[data-glow-play='hover']:hover::before,
+.yoya-vglow-button[data-glow-play='hover']:focus-visible::before {
+  animation-play-state: running;
+  opacity: 1;
+}
+
+.yoya-vglow-button[data-glow-speed='slow'] {
+  --yoya-glow-duration: 4.2s;
+}
+
+.yoya-vglow-button[data-glow-speed='fast'] {
+  --yoya-glow-duration: 1.5s;
+}
+
+.yoya-vglow-button[data-glow-strength='soft'] {
+  --yoya-glow-alpha: 0.22;
+}
+
+.yoya-vglow-button:hover::before {
+  animation-duration: calc(var(--yoya-glow-duration) * 0.6);
+}
+
+.yoya-vglow-button[data-glow-direction='rtl']::before {
+  animation-name: yoya-glow-button-sweep-rtl;
+}
+
+@keyframes yoya-glow-button-sweep {
+  0%,
+  45% {
     transform: translate3d(0, 0, 0) skewX(-14deg);
-    width: 40%;
-    z-index: 0;
   }
-
-  .yoya-vglow-button[data-glow-play='hover']::before,
-  .yoya-vglow-button[data-glow-play='off']::before,
-  .yoya-vglow-button[disabled]::before,
-  .yoya-vglow-button[data-interaction='disabled']::before {
-    animation-play-state: paused;
-    opacity: 0;
+  100% {
+    transform: translate3d(420%, 0, 0) skewX(-14deg);
   }
+}
 
-  .yoya-vglow-button[data-glow-play='hover']:hover::before,
-  .yoya-vglow-button[data-glow-play='hover']:focus-visible::before {
-    animation-play-state: running;
-    opacity: 1;
+@keyframes yoya-glow-button-sweep-rtl {
+  0%,
+  45% {
+    transform: translate3d(420%, 0, 0) skewX(-14deg);
   }
-
-  .yoya-vglow-button[data-glow-speed='slow'] {
-    --yoya-glow-duration: 4.2s;
+  100% {
+    transform: translate3d(0, 0, 0) skewX(-14deg);
   }
+}
 
-  .yoya-vglow-button[data-glow-speed='fast'] {
-    --yoya-glow-duration: 1.5s;
-  }
+.yoya-vglow-button .yoya-vglow-button-ripple {
+  animation: yoya-glow-button-ripple 520ms ease-out forwards;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(0);
+  z-index: 0;
+}
 
-  .yoya-vglow-button[data-glow-strength='soft'] {
-    --yoya-glow-alpha: 0.22;
-  }
-
-  .yoya-vglow-button:hover::before {
-    animation-duration: calc(var(--yoya-glow-duration) * 0.6);
-  }
-
-  .yoya-vglow-button[data-glow-direction='rtl']::before {
-    animation-name: yoya-glow-button-sweep-rtl;
-  }
-
-  @keyframes yoya-glow-button-sweep {
-    0%,
-    45% {
-      transform: translate3d(0, 0, 0) skewX(-14deg);
-    }
-    100% {
-      transform: translate3d(420%, 0, 0) skewX(-14deg);
-    }
-  }
-
-  @keyframes yoya-glow-button-sweep-rtl {
-    0%,
-    45% {
-      transform: translate3d(420%, 0, 0) skewX(-14deg);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) skewX(-14deg);
-    }
-  }
-
-  .yoya-vglow-button .yoya-vglow-button-ripple {
-    animation: yoya-glow-button-ripple 520ms ease-out forwards;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 65%);
-    border-radius: 50%;
-    pointer-events: none;
-    position: absolute;
+@keyframes yoya-glow-button-ripple {
+  0% {
+    opacity: 0.9;
     transform: scale(0);
-    z-index: 0;
   }
-
-  @keyframes yoya-glow-button-ripple {
-    0% {
-      opacity: 0.9;
-      transform: scale(0);
-    }
-    100% {
-      opacity: 0;
-      transform: scale(1);
-    }
+  100% {
+    opacity: 0;
+    transform: scale(1);
   }
+}
 ```
 
 - [ ] **Step 4: 运行测试，确认通过**
@@ -571,6 +575,7 @@ git commit -m "feat(effects): vGlowButton 流光扫过与光影反馈 CSS"
 ### Task 3: 「特效组件/按钮」演示页与菜单
 
 **Files:**
+
 - Create: `src/examples/effects-docs.js`
 - Modify: `src/examples/index.router.js`
 - Modify: `src/examples/demo-styles.js`
@@ -578,6 +583,7 @@ git commit -m "feat(effects): vGlowButton 流光扫过与光影反馈 CSS"
 - Docs: `docs/components.md`
 
 **Interfaces:**
+
 - Consumes: `vGlowButton`（Task 1）、CSS class `yoya-vglow-button`（Task 2）、`ComponentSource`、`applyDemoStyles`、`docsRouteLoaders` 机制。
 - Produces: `GlowButtonDocumentationPage()`（route key `effects:0`，页面 data 钩子 `data-glow-button-docs`）；菜单分类 `{ id: 'effects', title: '特效组件' }`，条目 `{ label: '按钮', details: 'vGlowButton' }`，路径 `/components/effects/0`。
 
@@ -585,45 +591,45 @@ git commit -m "feat(effects): vGlowButton 流光扫过与光影反馈 CSS"
 
 `src/examples/index.router.test.js`：
 
-1) 概览测试（约第 131–134 行）三个数量断言改为：
+1. 概览测试（约第 131–134 行）三个数量断言改为：
 
 ```js
-    expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(12);
+expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(12);
 ```
 
 ```js
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(12);
+expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-group')).toHaveLength(12);
 ```
 
 ```js
-    expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(69);
+expect(document.querySelectorAll('[data-components-menu] .yoya-vmenu-item')).toHaveLength(69);
 ```
 
-2) 顶栏导航测试（约第 163 行）改为：
+2. 顶栏导航测试（约第 163 行）改为：
 
 ```js
-    expect(navItems).toHaveLength(13);
+expect(navItems).toHaveLength(13);
 ```
 
-3) 在文件末尾追加新的路由测试：
+3. 在文件末尾追加新的路由测试：
 
 ```js
-  it('opens the glow button demo under the effects category', async () => {
-    root = renderExamplesIndex('#app');
+it('opens the glow button demo under the effects category', async () => {
+  root = renderExamplesIndex('#app');
 
-    await openRoute('/components/effects/0');
+  await openRoute('/components/effects/0');
 
-    await vi.waitFor(() => {
-      expect(selectedRouteTitle()).toBe('按钮');
-    });
-
-    const page = document.querySelector('[data-glow-button-docs]');
-    expect(page).not.toBeNull();
-    expect(page.querySelectorAll('.yoya-vglow-button').length).toBeGreaterThan(0);
-    const glowButton = page.querySelector('.yoya-vglow-button');
-    expect(glowButton.classList.contains('yoya-vbutton')).toBe(true);
-    expect(glowButton.dataset.glowPlay).toBe('auto');
+  await vi.waitFor(() => {
+    expect(selectedRouteTitle()).toBe('按钮');
   });
+
+  const page = document.querySelector('[data-glow-button-docs]');
+  expect(page).not.toBeNull();
+  expect(page.querySelectorAll('.yoya-vglow-button').length).toBeGreaterThan(0);
+  const glowButton = page.querySelector('.yoya-vglow-button');
+  expect(glowButton.classList.contains('yoya-vbutton')).toBe(true);
+  expect(glowButton.dataset.glowPlay).toBe('auto');
+});
 ```
 
 - [ ] **Step 2: 运行测试，确认失败**
@@ -704,7 +710,9 @@ function GlowButtonBasicDemo() {
         card.vCardHeader('基础流光');
         card.vCardBody((body) => {
           body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('流光带自动扫过按钮表面，是按钮自带的常驻特效；点击时按钮表面泛起一圈光波涟漪，只产生按钮自身的变化。');
+            stack.p(
+              '流光带自动扫过按钮表面，是按钮自带的常驻特效；点击时按钮表面泛起一圈光波涟漪，只产生按钮自身的变化。'
+            );
             stack.child(content);
           });
         });
@@ -902,21 +910,9 @@ export function GlowButtonDocumentationPage() {
                   '流光自身运行方式：常驻自动循环、仅悬停/聚焦显示、关闭。',
                   "button.play('hover')"
                 ],
-                [
-                  "button.speed('slow' | 'normal' | 'fast')",
-                  '流光速度。',
-                  "button.speed('fast')"
-                ],
-                [
-                  "button.direction('ltr' | 'rtl')",
-                  '流光扫过方向。',
-                  "button.direction('rtl')"
-                ],
-                [
-                  "button.strength('soft' | 'strong')",
-                  '流光亮度。',
-                  "button.strength('soft')"
-                ],
+                ["button.speed('slow' | 'normal' | 'fast')", '流光速度。', "button.speed('fast')"],
+                ["button.direction('ltr' | 'rtl')", '流光扫过方向。', "button.direction('rtl')"],
+                ["button.strength('soft' | 'strong')", '流光亮度。', "button.strength('soft')"],
                 [
                   "button.ripple('on' | 'off')",
                   '点击光波涟漪开关（默认开启，涟漪只在按钮内部扩散，属于按钮自身特效）。',
@@ -953,7 +949,7 @@ export function GlowButtonDocumentationPage() {
 
 `src/examples/index.router.js`：
 
-1) 在 `general` 分类块之后插入新分类：
+1. 在 `general` 分类块之后插入新分类：
 
 ```js
   {
@@ -963,7 +959,7 @@ export function GlowButtonDocumentationPage() {
   },
 ```
 
-2) 在 `docsRouteLoaders` 中追加：
+2. 在 `docsRouteLoaders` 中追加：
 
 ```js
   'effects:0': () => import('./effects-docs.js').then((m) => m.GlowButtonDocumentationPage()),
@@ -971,7 +967,7 @@ export function GlowButtonDocumentationPage() {
 
 `src/examples/demo-styles.js`：
 
-1) 在 `floatButtonExtraRules` 之后追加：
+1. 在 `floatButtonExtraRules` 之后追加：
 
 ```js
 const effectsExtraRules = [
@@ -1009,7 +1005,7 @@ const effectsExtraRules = [
 ];
 ```
 
-2) `demoRules` 数组在 `...floatButtonExtraRules,` 之后追加 `...effectsExtraRules,`。
+2. `demoRules` 数组在 `...floatButtonExtraRules,` 之后追加 `...effectsExtraRules,`。
 
 `docs/components.md`：在「### 通用」小节之后插入：
 

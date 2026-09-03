@@ -15,8 +15,7 @@ import {
   vScroll,
   vTable,
   vText,
-  vTree,
-  vTreeRanger
+  vTree
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
@@ -468,7 +467,8 @@ const dataDisplayDocsDefinitions = Object.freeze({
     examples: [
       {
         component: TreeRangerExample,
-        description: '大量数据下按列浏览：虚拟滚动保证流畅，键盘 ← → ↑ ↓ / Enter / Backspace 导航。',
+        description:
+          '大量数据下按列浏览：虚拟滚动保证流畅，键盘 ← → ↑ ↓ / Enter / Backspace 导航。',
         id: 'tree-ranger',
         imports: ['div', 'vTreeRanger'],
         sourceTitle: '多列浏览器核心源码',
@@ -487,7 +487,13 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeRangerActionsExample,
         description: '每一行后部追加操作符号，点击符号不会触发行选中。',
         id: 'tree-ranger-actions',
-        imports: ['div', 'vTreeRanger', 'DownloadOutlined', 'MoreHorizontalOutlined', 'TrashOutlined'],
+        imports: [
+          'div',
+          'vTreeRanger',
+          'DownloadOutlined',
+          'MoreHorizontalOutlined',
+          'TrashOutlined'
+        ],
         sourceTitle: '行尾操作符号核心源码',
         title: '行尾操作符号'
       },

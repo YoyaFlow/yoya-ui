@@ -35,13 +35,15 @@ declare class Remove extends RequestBase {
 }
 
 declare const MemberMgr: {
-  Query: (
-    init?: { page?: number; pageSize?: number; keyword?: string; status?: string }
-  ) => Query;
+  Query: (init?: { page?: number; pageSize?: number; keyword?: string; status?: string }) => Query;
   Create: (init?: { name?: string; email?: string; role?: string; status?: string }) => Create;
-  Update: (
-    init?: { id: number; name?: string; email?: string; role?: string; status?: string }
-  ) => Update;
+  Update: (init?: {
+    id: number;
+    name?: string;
+    email?: string;
+    role?: string;
+    status?: string;
+  }) => Update;
   Remove: (init?: { id: number }) => Remove;
 };
 

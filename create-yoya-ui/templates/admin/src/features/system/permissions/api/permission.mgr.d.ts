@@ -10,18 +10,32 @@ declare class QueryTree extends RequestBase {
 }
 
 declare class Create extends RequestBase {
-  constructor(
-    init?: { parentId: number | null; name?: string; code?: string; type?: PermissionType; sort?: number }
-  );
+  constructor(init?: {
+    parentId: number | null;
+    name?: string;
+    code?: string;
+    type?: PermissionType;
+    sort?: number;
+  });
   method(): 'POST';
   address(): string;
-  body(): { parentId: number | null; name: string; code: string; type: PermissionType; sort: number };
+  body(): {
+    parentId: number | null;
+    name: string;
+    code: string;
+    type: PermissionType;
+    sort: number;
+  };
 }
 
 declare class Update extends RequestBase {
-  constructor(
-    init?: { id: number; name?: string; code?: string; type?: PermissionType; sort?: number }
-  );
+  constructor(init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    type?: PermissionType;
+    sort?: number;
+  });
   method(): 'PUT';
   address(): string;
   body(): { name: string; code: string; type: PermissionType; sort: number };
@@ -35,12 +49,20 @@ declare class Remove extends RequestBase {
 
 declare const PermissionMgr: {
   QueryTree: (init?: unknown) => QueryTree;
-  Create: (
-    init?: { parentId: number | null; name?: string; code?: string; type?: PermissionType; sort?: number }
-  ) => Create;
-  Update: (
-    init?: { id: number; name?: string; code?: string; type?: PermissionType; sort?: number }
-  ) => Update;
+  Create: (init?: {
+    parentId: number | null;
+    name?: string;
+    code?: string;
+    type?: PermissionType;
+    sort?: number;
+  }) => Create;
+  Update: (init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    type?: PermissionType;
+    sort?: number;
+  }) => Update;
   Remove: (init?: { id: number }) => Remove;
 };
 

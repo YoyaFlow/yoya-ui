@@ -98,8 +98,15 @@ export default {
 
 `main.js` 固定顺序：
 
-1. 导入并注册所有 mock（含 `shell.mock.js`）
-2. `state.load()`：获取菜单 + 创建路由 + 订阅导航
+1. 导入并注册所有 mock（含 `shell.mock.js` / `auth.mock.js`）
+2. `state.load()`：内部先 `loadSession()` 加载会话并 `installAccess(...)` 注入全局权限，再获取菜单（按权限过滤）+ 创建路由 + 订阅导航
 3. `AdminShell({ state })` 装配外壳
 4. `shell.render().bindTo('#app')`
 5. `state.start()` 启动路由
+
+## 12. 权限接入
+
+- **会话与权限**：会话请求命令并入 `shell.req.js`（`ShellReq.Me()`），`shell/api/auth.mock.js` 提供 `/auth/me` 演示数据；会话状态融合进 `ShellState`（`user()` / `roles()` / `permissions()`），`loadSession()` 内 `installAccess` 注入全局。
+- **菜单 / 路由**：`shell.mock.js` 的每条路由声明 `permCode`（与权限管理页的 code 对齐），`ShellState.load()` 按 `currentAccess().canRead(permCode)` 过滤菜单；无读的路由不注册，直达 URL 落到未找到页。
+- **按钮 / 操作**：直接在按钮上声明 `.access('system:member:create')` 等裸码，无写权限自动禁用、无读自动隐藏（见 member-toolbar / member-table）。
+- **体验层**：前端只做显隐 / 禁用，真正的拦截必须由后端按权限码校验。

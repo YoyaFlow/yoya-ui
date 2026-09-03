@@ -165,16 +165,7 @@ export class VSkeleton extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const {
-        active,
-        avatarSize,
-        barHeight,
-        gap,
-        motion,
-        rows,
-        variant,
-        ...elementConfig
-      } = setup;
+      const { active, avatarSize, barHeight, gap, motion, rows, variant, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
         this.setup(elementConfig);

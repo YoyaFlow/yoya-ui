@@ -1,9 +1,10 @@
 // 外壳结果结构（纯数据）：菜单模块与路由，服务端返回后由 toItem 映射。
 class Route {
-  constructor({ path, title, viewKey }) {
+  constructor({ path, title, viewKey, permCode = null }) {
     this.path = path;
     this.title = title;
     this.viewKey = viewKey;
+    this.permCode = permCode;
   }
 }
 

@@ -12,16 +12,7 @@ const rows = [
 const columns = [
   { key: 'name', title: '服务名', dataIndex: 'name', sorter: true, fixed: 'left' },
   { key: 'env', title: '环境', dataIndex: 'env' },
-  {
-    key: 'status',
-    title: '状态',
-    dataIndex: 'status',
-    filterOptions: [
-      { label: '全部', value: '' },
-      { label: '运行中', value: '运行中' },
-      { label: '停止', value: '停止' }
-    ]
-  },
+  { key: 'status', title: '状态', dataIndex: 'status' },
   { key: 'qps', title: 'QPS', dataIndex: 'qps', sorter: true, editable: true }
 ];
 

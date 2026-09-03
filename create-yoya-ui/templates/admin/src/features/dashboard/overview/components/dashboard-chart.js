@@ -5,7 +5,13 @@ const PAD = { bottom: 34, left: 44, right: 16, top: 14 };
 const SERIES_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#8b5cf6'];
 
 // vChart 内置 SVG 适配器：bar 柱状图 / line 折线图，零外部依赖。
-export function DashboardChart({ labels = [], series = [], title = '', type = 'bar', height = 280 } = {}) {
+export function DashboardChart({
+  labels = [],
+  series = [],
+  title = '',
+  type = 'bar',
+  height = 280
+} = {}) {
   const chart = vChart({
     adapter: createSvgAdapter(),
     data: { labels, series },

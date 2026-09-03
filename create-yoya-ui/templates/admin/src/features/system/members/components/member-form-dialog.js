@@ -43,7 +43,11 @@ export function MemberFormDialog({ onSubmit }) {
       item.styles(rowStyle);
       item.label('状态').name('status');
       item.control((editor) =>
-        editor.vSelect({ name: 'status', options: statusOptions, value: member?.status ?? 'active' })
+        editor.vSelect({
+          name: 'status',
+          options: statusOptions,
+          value: member?.status ?? 'active'
+        })
       );
     });
   }

@@ -12,6 +12,13 @@ class QueryMenus extends RequestBase {
   }
 }
 
+class Me extends RequestBase {
+  address() {
+    return '/auth/me';
+  }
+}
+
 export default {
-  QueryMenus: (init) => new QueryMenus(init)
+  QueryMenus: (init) => new QueryMenus(init),
+  Me: (init) => new Me(init)
 };

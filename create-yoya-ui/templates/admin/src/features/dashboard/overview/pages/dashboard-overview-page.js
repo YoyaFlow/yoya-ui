@@ -140,7 +140,10 @@ export function DashboardOverviewPage() {
                   box.style({ textAlign: 'center' });
                   box.child(vGauge({ unit: '%', value: 72, tone: 'warning' }));
                   box.p((text) => {
-                    text.style({ color: 'var(--yoya-color-text-muted, #64748b)', fontSize: '12px' });
+                    text.style({
+                      color: 'var(--yoya-color-text-muted, #64748b)',
+                      fontSize: '12px'
+                    });
                     text.text('CPU 使用率');
                   });
                 });
@@ -148,7 +151,10 @@ export function DashboardOverviewPage() {
                   box.style({ textAlign: 'center' });
                   box.child(vGauge({ unit: '%', value: 58, tone: 'primary' }));
                   box.p((text) => {
-                    text.style({ color: 'var(--yoya-color-text-muted, #64748b)', fontSize: '12px' });
+                    text.style({
+                      color: 'var(--yoya-color-text-muted, #64748b)',
+                      fontSize: '12px'
+                    });
                     text.text('内存使用率');
                   });
                 });
@@ -164,9 +170,7 @@ export function DashboardOverviewPage() {
                     item.status('success');
                     item.title('服务发布成功');
                     item.time('09:32 · 2026-09-01');
-                    item.content((box) =>
-                      box.p('api-gateway v2.4.1 已上线，金丝雀批次全部通过。')
-                    );
+                    item.content((box) => box.p('api-gateway v2.4.1 已上线，金丝雀批次全部通过。'));
                   });
                   timeline.vTimelineItem((item) => {
                     item.status('processing');

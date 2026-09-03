@@ -183,20 +183,20 @@ npm run test:types   # same as typecheck
 
 ## Core Capabilities
 
-| Category   | Content                                                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| HTML       | Full WHATWG element factories with `HtmlElementNode` nested shortcuts                                                        |
-| SVG        | `svg()` namespace entry and built-in icons (`SearchOutlined`, etc.)                                                          |
-| Layout     | `flex` / `grid` / `stack` / `container` / `vRow` / `vCol` / `vContainer` / `mobileLayout` / `themeShell`                     |
-| Actions    | `vButton` / `vButtons` / `vFloatButton` / `vDropdownMenu` / `vContextMenu`                                                   |
-| Navigation | `vMenu` / `vBreadcrumb` / `vSteps` / `vTabs` / `vAnchor` / `vNavbar` / Router / `vLink`                                      |
-| Feedback   | `vDialog` / `vTooltip` / `vMessage` / `vMessageManager` / `toast`                                                            |
-| Forms      | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                         |
+| Category   | Content                                                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| HTML       | Full WHATWG element factories with `HtmlElementNode` nested shortcuts                                                         |
+| SVG        | `svg()` namespace entry and built-in icons (`SearchOutlined`, etc.)                                                           |
+| Layout     | `flex` / `grid` / `stack` / `container` / `vRow` / `vCol` / `vContainer` / `mobileLayout` / `themeShell`                      |
+| Actions    | `vButton` / `vButtons` / `vFloatButton` / `vDropdownMenu` / `vContextMenu`                                                    |
+| Navigation | `vMenu` / `vBreadcrumb` / `vSteps` / `vTabs` / `vAnchor` / `vNavbar` / Router / `vLink`                                       |
+| Feedback   | `vDialog` / `vTooltip` / `vMessage` / `vMessageManager` / `toast`                                                             |
+| Forms      | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                          |
 | Data       | `vCard` / `vTable` / `vTree` / `vPagination` / `vProgress` / `vScroll` / `vCarousel` / `vTimeline` / `vDetail` / board series |
-| Charts     | `vEchart` (ECharts-based, import on demand)                                                                                  |
-| Async      | `vDynamicLoader`                                                                                                             |
-| State      | `vStateNode` / `@preact/signals-core` extension                                                                              |
-| i18n/Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                  |
+| Charts     | `vEchart` (ECharts-based, import on demand)                                                                                   |
+| Async      | `vDynamicLoader`                                                                                                              |
+| State      | `vStateNode` / `@preact/signals-core` extension                                                                               |
+| i18n/Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                   |
 
 Full component demos live in the example site (`npm run examples:html`, then open `http://localhost:5173/#/components`).
 
@@ -248,6 +248,7 @@ vite.config.js / vite.umd.config.js / vite.examples.config.js
 ## Documentation
 
 - [Server-Side Rendering Guide](docs/ssr.md) (Chinese)
+- [Highlight Details](docs/highlights.md) (Chinese)
 - [Component Development Spec](docs/component-development-spec.md) (Chinese)
 - [Component Library Authoring Guide](docs/component-library-authoring.md) (Chinese)
 - [Theme Styling Spec](docs/theme-styling.md) (Chinese)

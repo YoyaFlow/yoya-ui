@@ -25,7 +25,6 @@ describe('vTreeRanger layout verify', () => {
 
     const panels = element.querySelectorAll('.yoya-vsplit-panel');
     const dividers = element.querySelectorAll('.yoya-vsplit-panel-divider');
-    const firsts = element.querySelectorAll('.yoya-vsplit-panel-first');
     const seconds = element.querySelectorAll('.yoya-vsplit-panel-second');
     const columns = element.querySelectorAll('.yoya-vtreeranger-column');
 

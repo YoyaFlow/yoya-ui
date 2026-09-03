@@ -20,9 +20,13 @@ declare class CreateType extends RequestBase {
 }
 
 declare class UpdateType extends RequestBase {
-  constructor(
-    init?: { id: number; name?: string; code?: string; status?: DictStatus; remark?: string }
-  );
+  constructor(init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    status?: DictStatus;
+    remark?: string;
+  });
   method(): 'PUT';
   address(): string;
   body(): { name: string; code: string; status: DictStatus; remark: string };
@@ -41,18 +45,26 @@ declare class QueryItems extends RequestBase {
 }
 
 declare class CreateItem extends RequestBase {
-  constructor(
-    init?: { typeId: number; label?: string; value?: string; sort?: number; status?: DictStatus }
-  );
+  constructor(init?: {
+    typeId: number;
+    label?: string;
+    value?: string;
+    sort?: number;
+    status?: DictStatus;
+  });
   method(): 'POST';
   address(): string;
   body(): { label: string; value: string; sort: number; status: DictStatus };
 }
 
 declare class UpdateItem extends RequestBase {
-  constructor(
-    init?: { id: number; label?: string; value?: string; sort?: number; status?: DictStatus }
-  );
+  constructor(init?: {
+    id: number;
+    label?: string;
+    value?: string;
+    sort?: number;
+    status?: DictStatus;
+  });
   method(): 'PUT';
   address(): string;
   body(): { label: string; value: string; sort: number; status: DictStatus };
@@ -66,20 +78,35 @@ declare class RemoveItem extends RequestBase {
 
 declare const DictMgr: {
   QueryTypes: (init?: { page?: number; pageSize?: number }) => QueryTypes;
-  CreateType: (
-    init?: { name?: string; code?: string; status?: DictStatus; remark?: string }
-  ) => CreateType;
-  UpdateType: (
-    init?: { id: number; name?: string; code?: string; status?: DictStatus; remark?: string }
-  ) => UpdateType;
+  CreateType: (init?: {
+    name?: string;
+    code?: string;
+    status?: DictStatus;
+    remark?: string;
+  }) => CreateType;
+  UpdateType: (init?: {
+    id: number;
+    name?: string;
+    code?: string;
+    status?: DictStatus;
+    remark?: string;
+  }) => UpdateType;
   RemoveType: (init?: { id: number }) => RemoveType;
   QueryItems: (init?: { typeId: number }) => QueryItems;
-  CreateItem: (
-    init?: { typeId: number; label?: string; value?: string; sort?: number; status?: DictStatus }
-  ) => CreateItem;
-  UpdateItem: (
-    init?: { id: number; label?: string; value?: string; sort?: number; status?: DictStatus }
-  ) => UpdateItem;
+  CreateItem: (init?: {
+    typeId: number;
+    label?: string;
+    value?: string;
+    sort?: number;
+    status?: DictStatus;
+  }) => CreateItem;
+  UpdateItem: (init?: {
+    id: number;
+    label?: string;
+    value?: string;
+    sort?: number;
+    status?: DictStatus;
+  }) => UpdateItem;
   RemoveItem: (init?: { id: number }) => RemoveItem;
 };
 

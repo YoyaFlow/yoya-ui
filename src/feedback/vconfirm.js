@@ -80,7 +80,7 @@ export function vConfirm(options = {}) {
       .child(title ? new HtmlElementNode('div').className('yoya-vconfirm-title').text(title) : null)
       .child(new HtmlElementNode('div').className('yoya-vconfirm-message').text(content));
 
-    const actions = vstack({ gap: '8px', direction: 'row' }, (row) => {
+    const actions = vstack({ direction: 'row', gap: '8px', justify: 'flex-end' }, (row) => {
       row.child(confirmButton, cancelButton);
     });
 
@@ -95,5 +95,3 @@ export function vConfirm(options = {}) {
     trap.activate();
   });
 }
-
-

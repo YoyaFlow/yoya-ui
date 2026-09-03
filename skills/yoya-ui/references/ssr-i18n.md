@@ -49,7 +49,7 @@ const html = renderPage(
     }
   },
   { lang, path, mode: 'history' }, // 状态唯一来源：lang 由你的服务端解析
-  { messages }                    // 按 state.lang 建每请求 i18n
+  { messages } // 按 state.lang 建每请求 i18n
 );
 ```
 
@@ -125,12 +125,12 @@ if (app.firstElementChild) {
 
 ## 常见错误
 
-| 现象 | 原因 |
-|---|---|
-| `renderToString/mount requires a ViewNode...` | 工厂返回非 ViewNode，或库被打了双份导致 `instanceof` 失配 |
-| hydration 后表单值被重置 | 绑定阶段重放服务端快照；确认使用先回读快照再绑定的版本 |
-| 服务端 id 每次不同 | 模块级计数器被跨请求共享；组件应使用 `allocateId` |
-| ECharts 相关报错 | 需用 `<script>` 引入 `echarts.min.js`，避免打包器按 CommonJS 包裹 |
+| 现象                                          | 原因                                                              |
+| --------------------------------------------- | ----------------------------------------------------------------- |
+| `renderToString/mount requires a ViewNode...` | 工厂返回非 ViewNode，或库被打了双份导致 `instanceof` 失配         |
+| hydration 后表单值被重置                      | 绑定阶段重放服务端快照；确认使用先回读快照再绑定的版本            |
+| 服务端 id 每次不同                            | 模块级计数器被跨请求共享；组件应使用 `allocateId`                 |
+| ECharts 相关报错                              | 需用 `<script>` 引入 `echarts.min.js`，避免打包器按 CommonJS 包裹 |
 
 ## i18n
 

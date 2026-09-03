@@ -57,7 +57,8 @@ export function vTreeRanger(first = null, second = null, third = null) {
     visibleColumns(value) {
       if (value === undefined) return state.visibleColumns;
       const parsed = Number(value);
-      state.visibleColumns = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : DEFAULT_VISIBLE_COLUMNS;
+      state.visibleColumns =
+        Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : DEFAULT_VISIBLE_COLUMNS;
       return api;
     },
     itemHeight(value) {
@@ -214,31 +215,27 @@ export function vTreeRanger(first = null, second = null, third = null) {
   }
 
   function createColumnView(slot) {
-    const status = new HtmlElementNode('div')
-      .className('yoya-vtreeranger-column-status')
-      .styles({
-        boxSizing: 'border-box',
-        color: themeValue('color-text-muted', '#8b949e'),
-        flex: '0 0 auto',
-        fontSize: '12px',
-        lineHeight: '1.4',
-        padding: '6px 10px'
-      });
+    const status = new HtmlElementNode('div').className('yoya-vtreeranger-column-status').styles({
+      boxSizing: 'border-box',
+      color: themeValue('color-text-muted', '#8b949e'),
+      flex: '0 0 auto',
+      fontSize: '12px',
+      lineHeight: '1.4',
+      padding: '6px 10px'
+    });
 
     const viewport = new HtmlElementNode('div')
       .className('yoya-vtreeranger-viewport')
       .styles({ boxSizing: 'border-box', minHeight: '100%', position: 'relative' });
-    const list = new HtmlElementNode('div')
-      .className('yoya-vtreeranger-list')
-      .styles({
-        boxSizing: 'border-box',
-        flex: '1 1 auto',
-        minHeight: '0',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
-        position: 'relative',
-        scrollbarWidth: 'none'
-      });
+    const list = new HtmlElementNode('div').className('yoya-vtreeranger-list').styles({
+      boxSizing: 'border-box',
+      flex: '1 1 auto',
+      minHeight: '0',
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+      position: 'relative',
+      scrollbarWidth: 'none'
+    });
     list.child(viewport);
     list.on('scroll', () => {
       const view = columnViews[slot];
@@ -394,14 +391,12 @@ export function vTreeRanger(first = null, second = null, third = null) {
     const iconContent =
       config && typeof config.icon === 'function' ? config.icon(item, itemIndex) : null;
     if (iconContent !== null && iconContent !== undefined) {
-      const iconBox = new HtmlElementNode('span')
-        .className('yoya-vtreeranger-icon')
-        .styles({
-          flex: '0 0 auto',
-          fontSize: '12px',
-          marginRight: '6px',
-          opacity: '0.75'
-        });
+      const iconBox = new HtmlElementNode('span').className('yoya-vtreeranger-icon').styles({
+        flex: '0 0 auto',
+        fontSize: '12px',
+        marginRight: '6px',
+        opacity: '0.75'
+      });
       iconBox.child(iconContent);
       row.child(iconBox);
     }
@@ -582,7 +577,10 @@ export function vTreeRanger(first = null, second = null, third = null) {
 
   function mergeItems(levelIndex, existing, incoming) {
     const seen = new Set(existing.map((item) => String(itemKey(levelIndex, item))));
-    return [...existing, ...incoming.filter((item) => !seen.has(String(itemKey(levelIndex, item))))];
+    return [
+      ...existing,
+      ...incoming.filter((item) => !seen.has(String(itemKey(levelIndex, item))))
+    ];
   }
 
   function maybeLoadMore(view) {

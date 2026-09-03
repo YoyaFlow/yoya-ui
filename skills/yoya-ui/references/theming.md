@@ -4,17 +4,17 @@
 
 ## token 维度
 
-| 维度 | token |
-|---|---|
-| 颜色 | `--yoya-color-*`、`--yoya-raw-*`（语义色 + 品牌 raw 色板） |
-| 间距 | `--yoya-space-{1..8}`（4/8/12/16/24/32/48/64） |
-| 字体 | `--yoya-font-family`、`--yoya-font-size-{xs,sm,base,lg,xl}`、`--yoya-font-weight-*`、`--yoya-line-height` |
-| 控件尺寸 | `--yoya-control-height-{sm,md,lg}`（默认 30/34/38，compact 26/30/34） |
-| 圆角 | `--yoya-radius-{sm,md,lg}`（4/6/8） |
-| 阴影 | `--yoya-shadow-{sm,md,lg}`（明暗双值） |
-| 动效 | `--yoya-motion-{fast,base,slow}`、`--yoya-ease-{in,out,in-out}` |
-| 层级 | `--yoya-z-{dropdown,popover,overlay,toast}` |
-| 边框 | `--yoya-border-width`、`--yoya-border-width-strong` |
+| 维度     | token                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| 颜色     | `--yoya-color-*`、`--yoya-raw-*`（语义色 + 品牌 raw 色板）                                                |
+| 间距     | `--yoya-space-{1..8}`（4/8/12/16/24/32/48/64）                                                            |
+| 字体     | `--yoya-font-family`、`--yoya-font-size-{xs,sm,base,lg,xl}`、`--yoya-font-weight-*`、`--yoya-line-height` |
+| 控件尺寸 | `--yoya-control-height-{sm,md,lg}`（默认 30/34/38，compact 26/30/34）                                     |
+| 圆角     | `--yoya-radius-{sm,md,lg}`（4/6/8）                                                                       |
+| 阴影     | `--yoya-shadow-{sm,md,lg}`（明暗双值）                                                                    |
+| 动效     | `--yoya-motion-{fast,base,slow}`、`--yoya-ease-{in,out,in-out}`                                           |
+| 层级     | `--yoya-z-{dropdown,popover,overlay,toast}`                                                               |
+| 边框     | `--yoya-border-width`、`--yoya-border-width-strong`                                                       |
 
 ## 换肤机制
 
@@ -25,15 +25,15 @@
 
 ## 定制阶梯（按优先级）
 
-| 层级 | 手段 |
-|---|---|
-| L0 | 全局覆盖 `--yoya-*` token（整站换肤） |
-| L1 | 任意容器局部重定义 `--yoya-*`（局部换肤） |
-| L2 | `node.replaceClassName('yoya-v<name>', 'my-class')` 剥离预设，用自己的 CSS 接管 |
-| L3 | 未分层用户规则天然优先（库规则在 `@layer yoya` 内、基础规则用 `:where()`） |
-| L4 | 实例级 `node.styles(...)` |
-| L5 | `className('my-x')` 追加自定义类 |
-| L6 | 组件 API（`variant`/`size`/`disabled`），不用 CSS 硬改变体 |
+| 层级 | 手段                                                                            |
+| ---- | ------------------------------------------------------------------------------- |
+| L0   | 全局覆盖 `--yoya-*` token（整站换肤）                                           |
+| L1   | 任意容器局部重定义 `--yoya-*`（局部换肤）                                       |
+| L2   | `node.replaceClassName('yoya-v<name>', 'my-class')` 剥离预设，用自己的 CSS 接管 |
+| L3   | 未分层用户规则天然优先（库规则在 `@layer yoya` 内、基础规则用 `:where()`）      |
+| L4   | 实例级 `node.styles(...)`                                                       |
+| L5   | `className('my-x')` 追加自定义类                                                |
+| L6   | 组件 API（`variant`/`size`/`disabled`），不用 CSS 硬改变体                      |
 
 `replaceClassName(old, next, tolerate = false)`：`old` 存在则替换（支持多类空格分隔）；不存在时 `tolerate=true` 才添加；替换根类后整棵子树与预设样式脱钩。
 
@@ -42,10 +42,10 @@
 ```js
 import { setYoyaMode, resolveYoyaMode, setYoyaTheme, initYoyaTheme } from '@yoyaflow/yoya-ui/core';
 
-setYoyaMode('dark');              // data-yoya-mode="dark"
+setYoyaMode('dark'); // data-yoya-mode="dark"
 setYoyaMode('system', { persist: true });
-resolveYoyaMode();                // 'light' | 'dark'
-setYoyaTheme('violet');           // data-yoya-theme="violet"
+resolveYoyaMode(); // 'light' | 'dark'
+setYoyaTheme('violet'); // data-yoya-theme="violet"
 initYoyaTheme({ persist: true }); // 恢复上次 mode/theme
 ```
 

@@ -214,3 +214,10 @@ page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 
 - 页面工厂 `render()/toHTML()` DOM-free 且确定性：不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出
 - 请求状态显式传入，渲染后组件树销毁；共享状态实例不要跨请求复用
+
+## 权限接入
+
+- 组件只声明裸资源码 `.access('system:member')`；用户持有 裸码 = 读+写、`r.` = 只读、`w.` = 读+写（显式）
+- 容器声明即整块作用域（无读整块隐藏），子节点自行声明就近覆盖
+- SPA 启动 `installAccess(createAccess({ permissions, roles }))` 一次；SSR 入口 `options.access` 每请求注入
+- admin 脚手架：`ShellState.load()` 加载会话并注入全局权限 → 菜单按 `permCode` 过滤 → 按钮裸码 `.access()`（详见 access-control.md）

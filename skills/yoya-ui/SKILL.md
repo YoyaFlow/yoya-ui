@@ -71,6 +71,10 @@ div((root) => {
 
 `renderToString` 输出完整 HTML，`hydrate` 收养并绑定事件；页面用 `createPage(requestState)` 工厂，服务端与客户端复用同一份定义；i18n 每请求实例，`'文案'.s('key')` 自动按请求语言翻译。详见 references/ssr-i18n.md。
 
+## 权限控制
+
+组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。详见 references/access-control.md。
+
 ## 参考文件（按需读取）
 
 - [references/quickstart.md](references/quickstart.md)：安装导入、语法与挂载、常用组件 API 速查
@@ -78,6 +82,7 @@ div((root) => {
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
+- [references/access-control.md](references/access-control.md)：权限控制（read/write、scope、SPA/SSR 注入、admin 接线）
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
 - [references/modules.md](references/modules.md)：业务模块组织规则（feature 目录、api 分层、命令范式、共享组件、导航状态）
 

@@ -74,7 +74,7 @@ export class VSvgIconPicker extends HtmlElementNode {
   disabled(): boolean;
   disabled(next: boolean): VSvgIconPicker;
   name(): string;
-  name(next: string): VSvgIconPicker;
+  name(next: string): this;
   required(): boolean;
   required(next: boolean): VSvgIconPicker;
   icons(): string[];

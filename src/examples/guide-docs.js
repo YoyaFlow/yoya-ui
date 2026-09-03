@@ -131,9 +131,7 @@ export function GuideInstallationPage() {
     sections: [
       {
         title: '快速体验',
-        paragraphs: [
-          'create-yoya-ui 提供 admin 后台管理模板，可直接作为管理后台起点。'
-        ],
+        paragraphs: ['create-yoya-ui 提供 admin 后台管理模板，可直接作为管理后台起点。'],
         code: `# 安装脚手架
 npm install -g create-yoya-ui
 

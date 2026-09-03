@@ -249,6 +249,7 @@ vite.config.js / vite.umd.config.js / vite.examples.config.js
 ## 文档
 
 - [服务端渲染集成指南](docs/ssr.md)
+- [亮点细节](docs/highlights.md)
 - [组件开发规格](docs/component-development-spec.md)
 - [组件库开发规范（第三方开发者）](docs/component-library-authoring.md)
 - [主题样式规范](docs/theme-styling.md)

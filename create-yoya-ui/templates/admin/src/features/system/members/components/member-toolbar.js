@@ -27,9 +27,7 @@ export function MemberToolbar({ onSearch, onAdd }) {
         f.vFormItem((item) => {
           item.style({ display: 'flex', alignItems: 'center', gap: '8px' });
           item.label('关键词').name('keyword');
-          item.control((editor) =>
-            editor.vInput({ name: 'keyword', placeholder: '姓名 / 邮箱' })
-          );
+          item.control((editor) => editor.vInput({ name: 'keyword', placeholder: '姓名 / 邮箱' }));
         });
         f.vFormItem((item) => {
           item.style({ display: 'flex', alignItems: 'center', gap: '8px' });
@@ -46,6 +44,7 @@ export function MemberToolbar({ onSearch, onAdd }) {
         f.vButton('新增成员', (btn) => {
           btn.variant('primary');
           btn.style('marginLeft', 'auto');
+          btn.access('system:member:create');
           btn.on('click', onAdd);
         });
         f.on('submit', (event) => {

@@ -10,9 +10,5 @@ const asyncFactories = {
 
 registerChildFactories(HtmlElementNode, asyncFactories);
 
-export {
-  clearDynamicModuleCache,
-  preloadDynamicModule,
-  vDynamicLoader
-} from './dynamic-loader.js';
+export { clearDynamicModuleCache, preloadDynamicModule, vDynamicLoader } from './dynamic-loader.js';
 export { VLazyImage, vLazyImage, VSkeleton, vSkeleton };
