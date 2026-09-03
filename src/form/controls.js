@@ -2219,7 +2219,9 @@ export class VField extends HtmlElementNode {
     this._headerBox.child(this._labelBox, this._actionButton);
     this.child(this._headerBox, this._displayBox, this._editorBox, this._hintBox, this._errorBox);
     this._editorBox.on('keydown', (event) => {
-      if (event.key === 'Enter') {
+      const targetName =
+        event.target && event.target.nodeName ? event.target.nodeName.toLowerCase() : '';
+      if (event.key === 'Enter' && targetName !== 'textarea') {
         event.preventDefault();
         this.view();
       } else if (event.key === 'Escape') {
@@ -2263,6 +2265,17 @@ export class VField extends HtmlElementNode {
       this._focusEditor();
     }
     return element;
+  }
+
+  _syncEditorSurface() {
+    const control = this.control();
+    if (!control || !control._input || control._input._tagName !== 'textarea') {
+      return this;
+    }
+    control._input.style('border', null);
+    control._input.style('boxShadow', null);
+    control._input.style('background', 'transparent');
+    return this;
   }
 
   _positionEditor() {
@@ -2376,6 +2389,7 @@ export class VField extends HtmlElementNode {
 
     setupContentSlot(this._editorBox, setup);
     this._control = findFieldControl(this._editorBox);
+    this._syncEditorSurface();
 
     if (this._mode === 'view') {
       this._syncDisplayFromControl();

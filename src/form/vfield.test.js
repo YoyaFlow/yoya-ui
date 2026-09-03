@@ -154,4 +154,34 @@ describe('vField floating edit', () => {
     );
     expect(display.style.visibility).not.toBe('hidden');
   });
+
+  it('removes the textarea inline border inside the floating editor', () => {
+    const field = vField((item) => {
+      item.label('备注');
+      item.control((editor) => editor.vTextarea({ name: 'notes', value: '第一行' }));
+    });
+    const el = field.renderDom();
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const textarea = el.querySelector('.yoya-vfield-editor textarea');
+    expect(textarea.style.border).not.toContain('1px');
+  });
+
+  it('Enter keeps editing inside a textarea; focusout saves', () => {
+    const field = vField((item) => {
+      item.label('备注');
+      item.control((editor) => editor.vTextarea({ name: 'notes', value: '第一行' }));
+    });
+    const el = field.renderDom();
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const textarea = el.querySelector('.yoya-vfield-editor textarea');
+    textarea.value = '第一行\n第二行';
+    textarea.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    );
+    expect(field.mode()).toBe('edit');
+
+    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+    expect(field.mode()).toBe('view');
+    expect(field.value()).toBe('第一行\n第二行');
+  });
 });
