@@ -960,6 +960,67 @@ body {
     width: 0;
   }
 
+  .yoya-vsupertable,
+  .yoya-vtreetable {
+    box-sizing: border-box;
+    font-family: var(--yoya-font-family, inherit);
+    width: 100%;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-table,
+  .yoya-vtreetable .yoya-vtreetable-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .yoya-vsupertable th,
+  .yoya-vsupertable td,
+  .yoya-vtreetable th,
+  .yoya-vtreetable td {
+    border-bottom: 1px solid var(--yoya-color-border, #d0d7de);
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .yoya-vsupertable thead th,
+  .yoya-vtreetable thead th {
+    background: var(--yoya-color-surface-subtle, #f6f8fa);
+    color: var(--yoya-color-text-secondary, #57606a);
+    font-weight: 600;
+  }
+
+  .yoya-vsupertable tbody tr:hover,
+  .yoya-vtreetable tbody tr:hover {
+    background: var(--yoya-color-surface-hover, #f6f8fa);
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-footer {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 8px 0;
+  }
+
+  .yoya-vsupertable th button,
+  .yoya-vsupertable .yoya-vsupertable-footer button,
+  .yoya-vtreetable button[data-role='expand'],
+  .yoya-vtreetable button[data-role='cell-edit'] {
+    background: transparent;
+    border: 1px solid var(--yoya-color-border, #d0d7de);
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+    padding: 2px 8px;
+  }
+
+  .yoya-vsupertable th[data-fixed='left'],
+  .yoya-vsupertable td[data-fixed='left'],
+  .yoya-vsupertable th[data-fixed='right'],
+  .yoya-vsupertable td[data-fixed='right'] {
+    background: var(--yoya-color-surface, #ffffff);
+  }
+
   :where(.yoya-vnavbar) {
     align-items: center;
     background: transparent;

@@ -72,7 +72,8 @@ const dataDisplayFactories = {
   vSuperTable,
   vTable,
   vTree,
-  vTreeRanger
+  vTreeRanger,
+  vTreeTable
 };
 
 registerChildFactories(HtmlElementNode, dataDisplayFactories);
@@ -151,6 +152,3 @@ export {
 
 export { CodeBlock, codeBlock } from './code-block.js';
 export { VChart, vChart } from './chart.js';
-
-
-
