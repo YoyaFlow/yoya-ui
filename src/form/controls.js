@@ -2186,13 +2186,13 @@ export class VField extends HtmlElementNode {
     });
     this._editorBox.styles({
       background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border-strong', '#cbd5e1'),
       borderRadius: '6px',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.14)',
+      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18)',
       boxSizing: 'border-box',
       left: '0',
       minHeight: 'var(--yoya-control-height-md, 34px)',
       minWidth: '0',
+      padding: '0',
       position: 'fixed',
       top: '0',
       width: '100%',
