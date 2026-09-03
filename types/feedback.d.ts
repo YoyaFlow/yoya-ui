@@ -93,6 +93,19 @@ export const toast: {
   clear(): VMessageContainer;
 };
 
+export interface ConfirmOptions {
+  title?: ChildInput;
+  content?: ChildInput;
+  confirmText?: ChildInput;
+  cancelText?: ChildInput;
+  danger?: boolean;
+  onConfirm?: () => boolean | void | Promise<boolean>;
+  onCancel?: () => void;
+}
+
+/** 命令式确认弹窗：resolves true on confirm, false on cancel / danger. */
+export function vConfirm(options?: ConfirmOptions): Promise<boolean>;
+
 export const vDialog: ElementFactory<VDialog>;
 export const vMessage: ElementFactory<VMessage>;
 export const vMessageContainer: ElementFactory<VMessageContainer>;
@@ -117,3 +130,4 @@ export interface FeedbackParentShortcuts {
 }
 
 export type { ElementOptions };
+

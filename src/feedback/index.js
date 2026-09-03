@@ -17,3 +17,6 @@ export { VMessageManager, vMessageManager } from './message-manager.js';
 export { VDialog, vDialog } from './dialog.js';
 export { VMessage, VMessageContainer, toast, vMessage, vMessageContainer };
 export { VTooltip, vTooltip };
+
+export { vConfirm } from './vconfirm.js';
+
