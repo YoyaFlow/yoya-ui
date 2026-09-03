@@ -344,7 +344,9 @@ export interface TreeRanger {
   [key: string]: any;
 }
 
-export function vTreeRanger(setup?: TreeRangerColumn[] | TreeRangerOptions | SetupCallback<TreeRanger>): TreeRanger;
+export function vTreeRanger(
+  setup?: TreeRangerColumn[] | TreeRangerOptions | SetupCallback<TreeRanger>
+): TreeRanger;
 export const treeRanger: typeof vTreeRanger;
 export function vTreeRangerColumn(setup?: unknown): unknown;
 
@@ -518,6 +520,45 @@ export const vProgress: ElementFactory<VProgress>;
 export const vRingStat: ElementFactory<VRingStat>;
 export const vScroll: ElementFactory<VScroll>;
 export const vSparkline: ElementFactory<VSparkline>;
+export interface SuperTableColumn {
+  key?: string;
+  title?: ChildInput;
+  dataIndex?: string;
+  sorter?: boolean;
+  filterOptions?: Array<{ label: ChildInput; value: string | number }>;
+  render?: (value: unknown, row: Record<string, unknown>, index: number) => ChildInput;
+  width?: string | number;
+  [key: string]: any;
+}
+
+export interface SuperTableSort {
+  key: string | null;
+  order: 'asc' | 'desc' | null;
+}
+
+export interface SuperTableChangePayload {
+  sort: SuperTableSort;
+  filters: Record<string, unknown>;
+  pagination?: { current: number; pageSize: number };
+  selectedKeys: Array<string | number>;
+}
+
+/** Column-driven enhanced table: sorting, filtering, selection, pagination. */
+export class VSuperTable extends HtmlElementNode {
+  columns(value?: Array<string | number | SuperTableColumn>): this;
+  rows(value?: Array<Record<string, unknown>>): this;
+  rowKey(handler?: (row: Record<string, unknown>, index: number) => string | number): this;
+  rowSelection(value?: boolean): boolean | VSuperTable;
+  pagination(value?: boolean | { pageSize?: number }): boolean | VSuperTable;
+  pageSize(value?: number): number | VSuperTable;
+  page(value?: number): number | VSuperTable;
+  selectedRowKeys(value?: Array<string | number>): Array<string | number> | VSuperTable;
+  sort(value?: SuperTableSort): SuperTableSort | VSuperTable;
+  change(handler?: (payload: SuperTableChangePayload) => void): VSuperTable;
+  onChange(handler: (payload: SuperTableChangePayload) => void): VSuperTable;
+}
+
+export const vSuperTable: ElementFactory<VSuperTable>;
 export const vTable: ElementFactory<VTable>;
 export const vTbody: ElementFactory<VTbody>;
 export const vTd: ElementFactory<VTd>;
@@ -556,7 +597,10 @@ export class VImagePreview extends HtmlElementNode {
 }
 
 export const vImagePreview: ElementFactory<VImagePreview> & {
-  (first?: SetupInput<VImagePreview> | null, callback?: SetupCallback<VImagePreview>): VImagePreview;
+  (
+    first?: SetupInput<VImagePreview> | null,
+    callback?: SetupCallback<VImagePreview>
+  ): VImagePreview;
 };
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
@@ -601,6 +645,7 @@ export interface DataDisplayParentShortcuts {
     first?: SetupInput<VSparkline> | null,
     callback?: SetupCallback<VSparkline>
   ): VSparkline;
+  vSuperTable(first?: SetupInput<VSuperTable> | null, callback?: SetupCallback<VSuperTable>): VSuperTable;
   vTable(first?: SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
   vTimeline(first?: SetupInput<VTimeline> | null, callback?: SetupCallback<VTimeline>): VTimeline;
   vTimelineItem(
@@ -618,3 +663,4 @@ export interface DataDisplayParentShortcuts {
 }
 
 export type { ElementOptions, ViewNode };
+
