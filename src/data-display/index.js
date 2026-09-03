@@ -35,6 +35,7 @@ import {
   vTr
 } from './table.js';
 import { VTree, VTreeNode, vTree, vTreeNode } from './tree.js';
+import { VTreeTable, vTreeTable } from './tree-table.js';
 import { VGauge, vGauge } from './gauge.js';
 import { VRingStat, vRingStat } from './ring-stat.js';
 import { VSparkline, vSparkline } from './sparkline.js';
@@ -109,6 +110,7 @@ export {
   VThead,
   VTr,
   VTree,
+  VTreeTable,
   VTreeNode,
   treeRanger,
   vAvatar,
@@ -141,6 +143,7 @@ export {
   vThead,
   vTr,
   vTree,
+  vTreeTable,
   vTreeNode,
   vTreeRanger,
   vTreeRangerColumn
@@ -148,4 +151,6 @@ export {
 
 export { CodeBlock, codeBlock } from './code-block.js';
 export { VChart, vChart } from './chart.js';
+
+
 

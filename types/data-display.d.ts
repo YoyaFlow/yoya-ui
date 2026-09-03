@@ -559,6 +559,25 @@ export class VSuperTable extends HtmlElementNode {
 }
 
 export const vSuperTable: ElementFactory<VSuperTable>;
+/** Tree table: flat rows with indent, expand/collapse, selection linkage, lazy load. */
+export class VTreeTable extends HtmlElementNode {
+  columns(value?: Array<string | number | SuperTableColumn>): this;
+  nodes(value?: Array<Record<string, any>>): this;
+  rowKey(handler?: (node: Record<string, unknown>, index: number) => string | number): this;
+  rowSelection(value?: boolean): boolean | VTreeTable;
+  lazyLoad(
+    handler?: (node: Record<string, unknown>) =>
+      Array<Record<string, unknown>> | Promise<Array<Record<string, unknown>>>
+  ): VTreeTable;
+  expandedKeys(value?: Array<string>): Array<string> | VTreeTable;
+  expandKeys(value?: Array<string>): VTreeTable;
+  checkedKeys(value?: Array<string>): Array<string> | VTreeTable;
+  expandAll(): VTreeTable;
+  collapseAll(): VTreeTable;
+  visibleRowCount(): number;
+}
+
+export const vTreeTable: ElementFactory<VTreeTable>;
 export const vTable: ElementFactory<VTable>;
 export const vTbody: ElementFactory<VTbody>;
 export const vTd: ElementFactory<VTd>;
@@ -646,6 +665,7 @@ export interface DataDisplayParentShortcuts {
     callback?: SetupCallback<VSparkline>
   ): VSparkline;
   vSuperTable(first?: SetupInput<VSuperTable> | null, callback?: SetupCallback<VSuperTable>): VSuperTable;
+  vTreeTable(first?: SetupInput<VTreeTable> | null, callback?: SetupCallback<VTreeTable>): VTreeTable;
   vTable(first?: SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
   vTimeline(first?: SetupInput<VTimeline> | null, callback?: SetupCallback<VTimeline>): VTimeline;
   vTimelineItem(
@@ -663,4 +683,5 @@ export interface DataDisplayParentShortcuts {
 }
 
 export type { ElementOptions, ViewNode };
+
 
