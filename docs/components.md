@@ -5,8 +5,8 @@
 ### 通用
 
 1. 按钮 vButton
-2. 按钮组 vButtons（待开发）
-3. 悬浮按钮 vFloatButton（待开发）
+2. 按钮组 vButtons
+3. 悬浮按钮 vFloatButton
 4. SVG 图标 SearchOutlined / UploadOutlined 等
 
 ### 特效组件
@@ -24,7 +24,7 @@
 7. 间距 spacer
 8. 弹窗 vDialog
 9. 布局模板 admin / cloud / profile / docs
-10. 分隔面板 Splitter（待开发）
+10. 分隔面板 vSplitPanel（Splitter）
 
 ### 导航
 
@@ -45,7 +45,7 @@
 2. 输入框 vInput
 3. 选择框 vSelect
 4. 多选框 vCheckbox / vCheckboxes
-5. 单选框 vRadio（待开发）
+5. 单选框 vRadio
 6. 文本域 vTextarea
 7. 开关 vSwitch
 8. 字段 vField
@@ -88,6 +88,8 @@
 1. 定义组件 function + render()
 2. 国际化 I18n / createI18n / i18nText / vLanguageSwitch
 3. 状态节点 vStateNode
+4. 权限控制 access / createAccess / withAccess（详见 access-control.md）
+5. 源码演示规则（详见 source-demo-spec.md）
 
 ## 后台管理模板（admin）
 
@@ -97,3 +99,4 @@
 - 工作台「数据概览」：vDigitalBoard 数字看板、vTrendCard 趋势卡、vChart 图表（内置 SVG 柱状/折线适配器）、vRingStat / vGauge、vTimeline
 - 业务域示例：成员管理（表格 CRUD）、角色管理、权限管理（vTree）、字典管理（类型表格 + 编辑弹窗内维护字典值表格）
 - api 分层：mgr / req / views / state + 内存 mock，接入真实后端时替换 mock 即可
+
