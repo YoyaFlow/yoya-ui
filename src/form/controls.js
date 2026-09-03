@@ -2133,6 +2133,7 @@ export class VField extends HtmlElementNode {
     this._hovered = false;
     this._headerBox = new HtmlElementNode('div').className('yoya-vfield-header');
     this._displayBox = new HtmlElementNode('div').className('yoya-vfield-display');
+    this._editInteraction = false;
     this._editorBox = new HtmlElementNode('div')
       .className('yoya-vfield-editor')
       .style('display', 'none');
@@ -2218,6 +2219,12 @@ export class VField extends HtmlElementNode {
     });
     this._headerBox.child(this._labelBox, this._actionButton);
     this.child(this._headerBox, this._displayBox, this._editorBox, this._hintBox, this._errorBox);
+    this._editorBox.on('mousedown', () => {
+      this._editInteraction = true;
+      queueMicrotask(() => {
+        this._editInteraction = false;
+      });
+    });
     this._editorBox.on('keydown', (event) => {
       const targetName =
         event.target && event.target.nodeName ? event.target.nodeName.toLowerCase() : '';
@@ -2248,7 +2255,7 @@ export class VField extends HtmlElementNode {
       }
     });
     this.on('focusout', (event) => {
-      if (this._mode !== 'edit') {
+      if (this._mode !== 'edit' || this._editInteraction) {
         return;
       }
       const related = event.relatedTarget;

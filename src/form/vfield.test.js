@@ -184,4 +184,41 @@ describe('vField floating edit', () => {
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('第一行\n第二行');
   });
+
+  it('mouse interactions inside the floating editor do not close it', async () => {
+    const field = vField((item) => {
+      item.label('能力');
+      item.control((editor) =>
+        editor.vCheckboxes({
+          name: 'capabilities',
+          options: [
+            { label: '监控告警', value: 'monitor' },
+            { label: '自动扩容', value: 'scale' },
+            { label: '日志采集', value: 'log' }
+          ],
+          value: ['monitor']
+        })
+      );
+    });
+    const el = field.renderDom();
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    expect(field.mode()).toBe('edit');
+
+    const boxes = el.querySelectorAll('.yoya-vfield-editor input[type="checkbox"]');
+    boxes[1].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    boxes[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    boxes[1].dispatchEvent(new Event('change', { bubbles: true }));
+    // any focusout that follows an inside-editor interaction is ignored
+    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    expect(field.mode()).toBe('edit');
+
+    // let the interaction microtask drain; the editor must stay open
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(field.mode()).toBe('edit');
+
+    // clicking outside the field still saves
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+    expect(field.mode()).toBe('view');
+  });
 });
