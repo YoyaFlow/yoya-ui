@@ -1,4 +1,4 @@
-import { div, section, vCard, vDetail, vField, vForm, vText } from '../index.js';
+import { div, section, vBadge, vCard, vDetail, vField, vForm, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 const formDocsDefinition = Object.freeze({
@@ -106,6 +106,16 @@ const fieldDocsDefinition = Object.freeze({
     ['field.view() / field.edit()', '快捷进入查看或编辑模式。', 'field.edit()'],
     ['field.value(value)', '读取或设置字段当前值。', 'field.value()'],
     [
+      'field.formatter((value) => node)',
+      '自定义查看态渲染；编辑保存后格式仍保留。',
+      'field.formatter((value) => vBadge(String(value)))'
+    ],
+    [
+      'field.displayStyle(styles)',
+      '自定义查看盒外观，如撑高适配多行文本。',
+      "field.displayStyle({ minHeight: '72px' })"
+    ],
+    [
       'field.hint(content) / field.error(content)',
       '展示提示或错误信息。',
       "field.error('不能为空')"
@@ -145,9 +155,25 @@ const fieldDocsDefinition = Object.freeze({
       imports: ['vButton', 'vCard', 'vDetail', 'vField', 'vInput', 'vText'],
       sourceTitle: '校验提示核心源码',
       title: '校验提示'
+    },
+    {
+      component: FieldTextareaExample1,
+      description: '多行文本字段：查看态撑高到与 textarea 一致，双击进入多行编辑。',
+      id: 'textarea',
+      imports: ['vCard', 'vField', 'vTextarea'],
+      sourceTitle: '多行文本核心源码',
+      title: '多行文本'
+    },
+    {
+      component: FieldCustomExample1,
+      description: '复杂显示 + 输入：查看态用 formatter 渲染徽标，编辑态用 select 下拉浮层。',
+      id: 'custom',
+      imports: ['div', 'vBadge', 'vCard', 'vField', 'vSelect'],
+      sourceTitle: '复杂显示输入核心源码',
+      title: '复杂显示与输入'
     }
   ],
-  examplesIntro: '下面三个示例都使用声明式回调写法，展示 vField 与 vDetail 的组合方式。',
+  examplesIntro: '下面五个示例使用声明式回调写法，涵盖 vDetail 组合、多行文本与复杂显示输入。',
   heading: 'vField 字段',
   intro: 'vField 把查看态和编辑态收在一个字段节点里，适合作为 vDetail 的值节点构建可编辑详情。',
   key: 'field',
@@ -704,6 +730,86 @@ function FieldValidationExample1() {
               button.variant('primary');
               button.on('click', validate);
             });
+          });
+        });
+      });
+    }
+  };
+}
+
+function FieldTextareaExample1() {
+  const notes = vField((field) => {
+    field.label('备注');
+    field.display('自动部署开关已打开，灰度 10 分钟后回滚观察。');
+    field.displayStyle({
+      alignItems: 'flex-start',
+      minHeight: '72px',
+      padding: '8px 12px',
+      whiteSpace: 'pre-line'
+    });
+    field.control((editor) => {
+      editor.vTextarea((area) => {
+        area.name('notes');
+        area.value('自动部署开关已打开，灰度 10 分钟后回滚观察。');
+      });
+    });
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('多行文本');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p(
+              '查看态用 displayStyle 撑高到与 textarea 一致，双击进入多行编辑，浮层不挤布局。'
+            );
+            content.child(notes);
+          });
+        });
+      });
+    }
+  };
+}
+
+function FieldCustomExample1() {
+  const environment = vField((field) => {
+    field.label('部署环境');
+    field.display('prod');
+    field.formatter((value) =>
+      div((row) => {
+        row.style('alignItems', 'center');
+        row.style('display', 'flex');
+        row.style('gap', '8px');
+        row.child(vBadge(String(value)).status(value === 'prod' ? 'success' : 'warning'));
+        row.span(String(value));
+      })
+    );
+    field.control((editor) => {
+      editor.vSelect((select) => {
+        select.name('env');
+        select.options([
+          { label: '生产 prod', value: 'prod' },
+          { label: '预发 staging', value: 'staging' },
+          { label: '开发 dev', value: 'dev' }
+        ]);
+        select.value('prod');
+      });
+    });
+  });
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('复杂显示与输入');
+        card.vCardBody((body) => {
+          body.vstack((content) => {
+            content.style('gap', '14px');
+            content.p(
+              '查看态用 formatter 渲染徽标 + 文本；编辑态用 select 下拉，编辑区悬浮不影响布局。'
+            );
+            content.child(environment);
           });
         });
       });

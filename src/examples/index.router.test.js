@@ -1193,7 +1193,7 @@ describe('renderExamplesIndex', () => {
       'detail',
       'FieldDetailExample1',
       'vDetail((detail)',
-      3
+      5
     ],
     [
       '/components/data-display/avatar',
@@ -2093,7 +2093,7 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-form-docs="field"]');
     expect(page.querySelector('h1').textContent).toBe('vField 字段');
-    expect(page.querySelectorAll('[data-form-demo]')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-form-demo]')).toHaveLength(5);
 
     const detailDemo = page.querySelector('[data-form-demo="detail"]');
     const detailField = detailDemo.querySelector('.yoya-vfield');
