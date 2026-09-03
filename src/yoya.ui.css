@@ -964,6 +964,8 @@ body {
   .yoya-vtreetable {
     box-sizing: border-box;
     font-family: var(--yoya-font-family, inherit);
+    font-size: var(--yoya-font-size-sm, 13px);
+    line-height: 1.5;
     max-width: 100%;
     overflow-x: auto;
     width: 100%;
@@ -980,7 +982,7 @@ body {
   .yoya-vtreetable th,
   .yoya-vtreetable td {
     border-bottom: 1px solid var(--yoya-color-border-faint, light-dark(#efefef, #2a2a2a));
-    padding: 10px 12px;
+    padding: 6px 10px;
     text-align: left;
     vertical-align: middle;
   }
@@ -1003,7 +1005,7 @@ body {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
-    padding: 10px 0 0;
+    padding: 8px 0 0;
   }
 
   .yoya-vsupertable .yoya-vsupertable-footer button {
@@ -1028,8 +1030,8 @@ body {
     color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
     cursor: pointer;
     font: inherit;
-    margin-left: 4px;
-    padding: 0 4px;
+    margin-left: 2px;
+    padding: 0 3px;
   }
 
   .yoya-vsupertable .yoya-vsupertable-sort:hover,
@@ -1050,8 +1052,8 @@ body {
     border-radius: 6px;
     color: var(--yoya-color-text, light-dark(#0d0d0d, #ececec));
     font: inherit;
-    margin-top: 4px;
-    padding: 4px 8px;
+    margin-top: 2px;
+    padding: 3px 6px;
   }
 
   .yoya-vsupertable .yoya-vsupertable-filter:focus-visible {
@@ -1069,7 +1071,7 @@ body {
   .yoya-vsupertable tbody td:first-child,
   .yoya-vtreetable thead th:first-child,
   .yoya-vtreetable tbody td:first-child {
-    padding-left: 14px;
+    padding-left: 10px;
   }
 
   .yoya-vsupertable th[data-fixed='left'],
@@ -1082,6 +1084,38 @@ body {
 
   .yoya-vsupertable [data-role='row-detail'] td {
     background: var(--yoya-color-surface-muted, light-dark(#f5f5f5, #1c1c1c));
+  }
+
+  .yoya-vsupertable [data-role='cell-edit'] {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-align: left;
+  }
+
+  .yoya-vsupertable [data-role='cell-edit']:hover {
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-table input[type='text'] {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    outline: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-table input[type='text']:focus-visible {
+    outline: 1px solid
+      var(--yoya-color-border-ring, light-dark(rgba(13, 13, 13, 0.28), rgba(255, 255, 255, 0.4)));
+    outline-offset: 1px;
+    border-radius: 2px;
   }
 
   .yoya-vsupertable .yoya-vsupertable-viewport {
