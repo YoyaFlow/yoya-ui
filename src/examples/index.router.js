@@ -31,6 +31,10 @@ const componentMenuSections = [
       { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
+      { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
+      { key: 'super-table', label: '增强表格', details: 'vSuperTable 排序 / 筛选 / 行选 / 编辑' },
+      { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
+      { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
     ]
   },
@@ -175,7 +179,9 @@ const componentMenuSections = [
   {
     id: 'theme',
     title: '主题',
-    items: [{ key: 'theme', label: '主题切换', details: 'light / dark / system / compact / raw-primary' }]
+    items: [
+      { key: 'theme', label: '主题切换', details: 'light / dark / system / compact / raw-primary' }
+    ]
   }
 ];
 
@@ -195,10 +201,7 @@ function getTopNavigationItems() {
       return {
         categoryId: category.id,
         label: category.title,
-        path: buildComponentItemPath(
-          category.id,
-          firstReadyItem?.key ?? category.items[0].key
-        )
+        path: buildComponentItemPath(category.id, firstReadyItem?.key ?? category.items[0].key)
       };
     })
   ];
@@ -206,8 +209,7 @@ function getTopNavigationItems() {
 
 const docsRouteLoaders = Object.freeze({
   'guides:overview': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
-  'guides:installation': () =>
-    import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
+  'guides:installation': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
   'guides:html-native': () =>
     import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
   'guides:component': () =>
@@ -215,6 +217,13 @@ const docsRouteLoaders = Object.freeze({
   'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:state-node': () =>
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:access-control': () =>
+    import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
+  'guides:super-table': () =>
+    import('./vsupertable-docs.js').then((m) => m.SuperTableDocumentationPage()),
+  'guides:tree-table': () =>
+    import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
+  'guides:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
   'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:button-group': () =>
@@ -231,8 +240,7 @@ const docsRouteLoaders = Object.freeze({
   'layout:body': () => import('./layout-docs.js').then((m) => m.BodyDocumentationPage()),
   'layout:spacer': () => import('./layout-docs.js').then((m) => m.SpacerDocumentationPage()),
   'layout:dialog': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
-  'layout:templates': () =>
-    import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
+  'layout:templates': () => import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
   'layout:mobile': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
   'layout:split-panel': () =>
     import('./layout-docs.js').then((m) => m.SplitPanelDocumentationPage()),
@@ -241,8 +249,7 @@ const docsRouteLoaders = Object.freeze({
   'navigation:breadcrumb': () =>
     import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
   'navigation:menu': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
-  'navigation:steps': () =>
-    import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
+  'navigation:steps': () => import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
   'navigation:tabs': () => import('./navigation-docs.js').then((m) => m.TabsDocumentationPage()),
   'navigation:router': () =>
     import('./navigation-docs.js').then((m) => m.RouterDocumentationPage()),
@@ -250,10 +257,8 @@ const docsRouteLoaders = Object.freeze({
     import('./navigation-docs.js').then((m) => m.RouterViewsDocumentationPage()),
   'navigation:navbar': () =>
     import('./navigation-docs.js').then((m) => m.NavbarDocumentationPage()),
-  'feedback:message': () =>
-    import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
-  'feedback:tooltip': () =>
-    import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
+  'feedback:message': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
+  'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
   'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
@@ -286,14 +291,10 @@ const docsRouteLoaders = Object.freeze({
     import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
   'data-display:tree-ranger': () =>
     import('./data-display-docs.js').then((m) => m.TreeRangerDocumentationPage()),
-  'c-end:skeleton': () =>
-    import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
-  'c-end:lazy-image': () =>
-    import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
-  'c-end:transition': () =>
-    import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
-  'c-end:masonry': () =>
-    import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
+  'c-end:skeleton': () => import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
+  'c-end:lazy-image': () => import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
+  'c-end:transition': () => import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
+  'c-end:masonry': () => import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
   'c-end:image-preview': () =>
     import('./c-end-docs.js').then((m) => m.ImagePreviewDocumentationPage()),
   'third-party:echarts': () =>
@@ -657,6 +658,26 @@ function createOverviewView() {
           },
           { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
           { label: '状态节点', path: '/components/guides/state-node', details: 'vStateNode' },
+          {
+            label: '权限控制',
+            path: '/components/guides/access-control',
+            details: 'createAccess / withAccess / access'
+          },
+          {
+            label: '增强表格',
+            path: '/components/guides/super-table',
+            details: 'vSuperTable 排序 / 筛选 / 行选'
+          },
+          {
+            label: '树形表格',
+            path: '/components/guides/tree-table',
+            details: 'vTreeTable 树形层级'
+          },
+          {
+            label: '确认弹窗',
+            path: '/components/guides/confirm',
+            details: 'vConfirm 命令式确认'
+          },
           {
             label: '服务端渲染',
             path: '/components/guides/ssr',

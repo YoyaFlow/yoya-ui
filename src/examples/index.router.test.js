@@ -132,7 +132,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(5);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(9);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
@@ -219,7 +219,9 @@ describe('renderExamplesIndex', () => {
     expect(activeMenuItems[0].getAttribute('data-node-id')).toBe('/components/data-display/avatar');
     expect(layoutItem.style.background).toBe('');
     expect(
-      document.querySelector('[data-node-id="/components/layout/divider"]').getAttribute('aria-selected')
+      document
+        .querySelector('[data-node-id="/components/layout/divider"]')
+        .getAttribute('aria-selected')
     ).toBe('false');
   });
 
@@ -1033,7 +1035,16 @@ describe('renderExamplesIndex', () => {
       'flex(',
       3
     ],
-    ['/components/layout/grid', '栅格', 'grid', 'grid 栅格', 'fixed', 'GridFixedExample1', 'grid(', 3],
+    [
+      '/components/layout/grid',
+      '栅格',
+      'grid',
+      'grid 栅格',
+      'fixed',
+      'GridFixedExample1',
+      'grid(',
+      3
+    ],
     [
       '/components/layout/body',
       '页面容器',
