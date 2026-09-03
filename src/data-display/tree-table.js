@@ -138,7 +138,10 @@ export class VTreeTable extends HtmlElementNode {
   }
 
   _hasChildren(node) {
-    return Boolean(node) && (Boolean(node.hasChildren) || (Array.isArray(node.children) && node.children.length > 0));
+    return (
+      Boolean(node) &&
+      (Boolean(node.hasChildren) || (Array.isArray(node.children) && node.children.length > 0))
+    );
   }
 
   _childNodes(node) {
@@ -280,7 +283,10 @@ export class VTreeTable extends HtmlElementNode {
     const body = this._flat.map((item, index) => this._renderRow(item, index));
     const table = new HtmlElementNode('table')
       .className('yoya-vtreetable-table')
-      .child(new HtmlElementNode('thead').child(headRow), new HtmlElementNode('tbody').child(...body));
+      .child(
+        new HtmlElementNode('thead').child(headRow),
+        new HtmlElementNode('tbody').child(...body)
+      );
     replaceChildren(this, [table]);
     return this;
   }
@@ -297,6 +303,7 @@ export class VTreeTable extends HtmlElementNode {
       const open = this._expanded.has(key);
       structureCell.child(
         new HtmlElementNode('button')
+          .className('yoya-vtreetable-expand')
           .attr({ type: 'button', 'data-role': 'expand', 'aria-expanded': open ? 'true' : 'false' })
           .style('marginLeft', `${depth * 16}px`)
           .text(open ? '▾' : '▸')
@@ -304,7 +311,9 @@ export class VTreeTable extends HtmlElementNode {
       );
     } else {
       structureCell.child(
-        new HtmlElementNode('span').style('display', 'inline-block').style('width', `${depth * 16 + 16}px`)
+        new HtmlElementNode('span')
+          .style('display', 'inline-block')
+          .style('width', `${depth * 16 + 16}px`)
       );
     }
 
@@ -313,7 +322,9 @@ export class VTreeTable extends HtmlElementNode {
     this._columns.forEach((column) => {
       const value = readRowValue(node, column);
       const content =
-        typeof column.render === 'function' ? column.render(value, node, index) : String(value ?? '');
+        typeof column.render === 'function'
+          ? column.render(value, node, index)
+          : String(value ?? '');
       tr.child(new HtmlElementNode('td').attr('data-key', column.key).child(content));
     });
 
@@ -324,6 +335,7 @@ export class VTreeTable extends HtmlElementNode {
     const { node } = item;
     const state = this._stateForNode(node);
     return new HtmlElementNode('input')
+      .className('yoya-vtreetable-select')
       .attr({
         type: 'checkbox',
         checked: state.checked ? true : null,

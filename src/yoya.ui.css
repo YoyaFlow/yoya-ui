@@ -964,6 +964,8 @@ body {
   .yoya-vtreetable {
     box-sizing: border-box;
     font-family: var(--yoya-font-family, inherit);
+    max-width: 100%;
+    overflow-x: auto;
     width: 100%;
   }
 
@@ -977,21 +979,23 @@ body {
   .yoya-vsupertable td,
   .yoya-vtreetable th,
   .yoya-vtreetable td {
-    border-bottom: 1px solid var(--yoya-color-border, #d0d7de);
+    border-bottom: 1px solid var(--yoya-color-border-faint, light-dark(#efefef, #2a2a2a));
     padding: 10px 12px;
     text-align: left;
+    vertical-align: middle;
   }
 
   .yoya-vsupertable thead th,
   .yoya-vtreetable thead th {
-    background: var(--yoya-color-surface-subtle, #f6f8fa);
-    color: var(--yoya-color-text-secondary, #57606a);
+    background: var(--yoya-color-surface-muted, light-dark(#f5f5f5, #1c1c1c));
+    color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
     font-weight: 600;
+    white-space: nowrap;
   }
 
   .yoya-vsupertable tbody tr:hover,
   .yoya-vtreetable tbody tr:hover {
-    background: var(--yoya-color-surface-hover, #f6f8fa);
+    background: var(--yoya-color-surface-hover, light-dark(#f3f3f3, #262626));
   }
 
   .yoya-vsupertable .yoya-vsupertable-footer {
@@ -999,26 +1003,90 @@ body {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
-    padding: 8px 0;
+    padding: 10px 0 0;
   }
 
-  .yoya-vsupertable th button,
-  .yoya-vsupertable .yoya-vsupertable-footer button,
-  .yoya-vtreetable button[data-role='expand'],
-  .yoya-vtreetable button[data-role='cell-edit'] {
-    background: transparent;
-    border: 1px solid var(--yoya-color-border, #d0d7de);
-    border-radius: 4px;
+  .yoya-vsupertable .yoya-vsupertable-footer button {
+    background: var(--yoya-color-surface, light-dark(#ffffff, #212121));
+    border: 1px solid var(--yoya-color-border-strong, light-dark(#d9d9d9, #484848));
+    border-radius: 6px;
+    color: var(--yoya-color-text, light-dark(#0d0d0d, #ececec));
     cursor: pointer;
     font: inherit;
-    padding: 2px 8px;
+    padding: 4px 12px;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-footer button:hover {
+    background: var(--yoya-color-surface-hover, light-dark(#f3f3f3, #262626));
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-sort,
+  .yoya-vtreetable .yoya-vtreetable-expand {
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
+    cursor: pointer;
+    font: inherit;
+    margin-left: 4px;
+    padding: 0 4px;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-sort:hover,
+  .yoya-vtreetable .yoya-vtreetable-expand:hover {
+    background: transparent;
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-sort:focus-visible,
+  .yoya-vtreetable .yoya-vtreetable-expand:focus-visible {
+    outline: 2px solid var(--yoya-color-primary-ring, rgba(31, 111, 235, 0.35));
+    outline-offset: 1px;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-filter {
+    background: var(--yoya-color-surface, light-dark(#ffffff, #212121));
+    border: 1px solid var(--yoya-color-border-strong, light-dark(#d9d9d9, #484848));
+    border-radius: 6px;
+    color: var(--yoya-color-text, light-dark(#0d0d0d, #ececec));
+    font: inherit;
+    margin-top: 4px;
+    padding: 4px 8px;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-filter:focus-visible {
+    outline: 2px solid var(--yoya-color-primary-ring, rgba(31, 111, 235, 0.35));
+    outline-offset: 1px;
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-select,
+  .yoya-vtreetable .yoya-vtreetable-select {
+    accent-color: var(--yoya-color-primary, #1f6feb);
+    margin: 0;
+  }
+
+  .yoya-vsupertable thead th:first-child,
+  .yoya-vsupertable tbody td:first-child,
+  .yoya-vtreetable thead th:first-child,
+  .yoya-vtreetable tbody td:first-child {
+    padding-left: 14px;
   }
 
   .yoya-vsupertable th[data-fixed='left'],
   .yoya-vsupertable td[data-fixed='left'],
   .yoya-vsupertable th[data-fixed='right'],
   .yoya-vsupertable td[data-fixed='right'] {
-    background: var(--yoya-color-surface, #ffffff);
+    background: var(--yoya-color-surface, light-dark(#ffffff, #212121));
+    z-index: 1;
+  }
+
+  .yoya-vsupertable [data-role='row-detail'] td {
+    background: var(--yoya-color-surface-muted, light-dark(#f5f5f5, #1c1c1c));
+  }
+
+  .yoya-vsupertable .yoya-vsupertable-viewport {
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
   }
 
   :where(.yoya-vnavbar) {

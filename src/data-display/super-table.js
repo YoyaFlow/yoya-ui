@@ -159,7 +159,9 @@ export class VSuperTable extends HtmlElementNode {
       return this._sort;
     }
     this._sort =
-      value && value.key ? { key: value.key, order: value.order || null } : { key: null, order: null };
+      value && value.key
+        ? { key: value.key, order: value.order || null }
+        : { key: null, order: null };
     this._render();
     return this;
   }
@@ -444,8 +446,10 @@ export class VSuperTable extends HtmlElementNode {
     if (this._virtual) {
       const ih = this._itemHeight;
       const startIdx = Math.max(0, Math.floor(this._scrollTop / ih) - this._overscan);
-      const endIdx =
-        Math.min(total, Math.ceil((this._scrollTop + this._viewportHeight) / ih) + this._overscan);
+      const endIdx = Math.min(
+        total,
+        Math.ceil((this._scrollTop + this._viewportHeight) / ih) + this._overscan
+      );
       bodyRows = processed.slice(startIdx, endIdx);
     }
 
@@ -512,13 +516,18 @@ export class VSuperTable extends HtmlElementNode {
       .on('dragover', (event) => event.preventDefault())
       .on('drop', (event) => this._dropColumn(column, event));
 
-    th.child(new HtmlElementNode('span').text(column.title ?? column.label ?? column.key ?? ''));
+    th.child(
+      new HtmlElementNode('span')
+        .className('yoya-vsupertable-th-label')
+        .text(column.title ?? column.label ?? column.key ?? '')
+    );
 
     if (column.sorter) {
       const order = this._sort.key === column.key ? this._sort.order : null;
       const mark = order === 'asc' ? ' ↑' : order === 'desc' ? ' ↓' : ' ⇅';
       th.child(
         new HtmlElementNode('button')
+          .className('yoya-vsupertable-sort')
           .attr({ type: 'button', 'data-sort': '' })
           .text(mark)
           .on('click', () => this._toggleSort(column.key))
@@ -527,6 +536,7 @@ export class VSuperTable extends HtmlElementNode {
 
     if (Array.isArray(column.filterOptions)) {
       const select = new HtmlElementNode('select')
+        .className('yoya-vsupertable-filter')
         .attr('data-filter', column.key)
         .child(
           column.filterOptions.map((option) => {
@@ -564,7 +574,12 @@ export class VSuperTable extends HtmlElementNode {
       tr.child(
         new HtmlElementNode('td').child(
           new HtmlElementNode('button')
-            .attr({ type: 'button', 'data-role': 'row-expand', 'aria-expanded': open ? 'true' : 'false' })
+            .className('yoya-vsupertable-row-expand')
+            .attr({
+              type: 'button',
+              'data-role': 'row-expand',
+              'aria-expanded': open ? 'true' : 'false'
+            })
             .text(open ? '−' : '+')
             .on('click', () => {
               if (this._expandedRows.has(key)) {
@@ -580,13 +595,16 @@ export class VSuperTable extends HtmlElementNode {
 
     this._columns.forEach((column) => tr.child(this._renderCell(row, column, index, key)));
 
-    const detailColumnCount = this._columns.length + (this._selection ? 1 : 0) + (this._expandable ? 1 : 0);
+    const detailColumnCount =
+      this._columns.length + (this._selection ? 1 : 0) + (this._expandable ? 1 : 0);
     const expanded = this._expandable && this._expandedRows.has(key);
     const detail = expanded && this._expandable ? this._expandable(row, index) : null;
 
     if (detail) {
       const detailRow = new HtmlElementNode('tr').attr('data-role', 'row-detail');
-      detailRow.child(new HtmlElementNode('td').attr('colspan', String(detailColumnCount)).child(detail));
+      detailRow.child(
+        new HtmlElementNode('td').attr('colspan', String(detailColumnCount)).child(detail)
+      );
       return [tr, detailRow];
     }
 
@@ -648,4 +666,3 @@ export class VSuperTable extends HtmlElementNode {
 export function vSuperTable(first = null, second = null, third = null) {
   return createComponentFactory(VSuperTable, first, second, third);
 }
-
