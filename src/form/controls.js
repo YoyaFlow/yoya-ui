@@ -2269,7 +2269,8 @@ export class VField extends HtmlElementNode {
     if (!this._el) {
       return this;
     }
-    const rect = this._el.getBoundingClientRect();
+    const anchor = this._displayBox._el || this._el;
+    const rect = anchor.getBoundingClientRect();
     this._editorBox.styles({
       left: rect.left + 'px',
       minHeight: rect.height + 'px',

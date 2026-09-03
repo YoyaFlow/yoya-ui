@@ -72,4 +72,27 @@ describe('vField floating edit', () => {
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Ray');
   });
+
+  it('anchors the floating editor to the display box, not the whole field', () => {
+    const field = makeField();
+    const el = field.renderDom();
+    const display = el.querySelector('.yoya-vfield-display');
+    const editor = el.querySelector('.yoya-vfield-editor');
+
+    display.getBoundingClientRect = () => ({
+      bottom: 80,
+      height: 34,
+      left: 120,
+      right: 360,
+      top: 46,
+      width: 240
+    });
+
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    expect(editor.style.left).toBe('120px');
+    expect(editor.style.top).toBe('46px');
+    expect(editor.style.width).toBe('240px');
+    expect(editor.style.minHeight).toBe('34px');
+  });
 });
