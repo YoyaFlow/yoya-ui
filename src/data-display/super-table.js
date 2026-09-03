@@ -25,8 +25,19 @@ function readRowValue(row, column) {
   return row?.[dataIndex];
 }
 
+function fixedStyle(position) {
+  if (position === 'left') {
+    return { position: 'sticky', left: '0', zIndex: '1' };
+  }
+  if (position === 'right') {
+    return { position: 'sticky', right: '0', zIndex: '1' };
+  }
+  return {};
+}
+
 /**
- * 列配置驱动的增强表格：排序、筛选、跨分页行选择、分页联动。
+ * 列配置驱动的增强表格：排序、筛选、跨分页行选择、分页联动、
+ * 行展开、单元格编辑+校验、列固定与拖拽调序、虚拟滚动。
  */
 export class VSuperTable extends HtmlElementNode {
   constructor(setup = null) {
@@ -36,6 +47,7 @@ export class VSuperTable extends HtmlElementNode {
     this._columns = [];
     this._rows = [];
     this._rowKey = defaultRowKey;
+    this._selection = false;
     this._pagination = false;
     this._pageSize = 10;
     this._page = 1;
@@ -43,6 +55,17 @@ export class VSuperTable extends HtmlElementNode {
     this._sort = { key: null, order: null };
     this._filters = new Map();
     this._changeHandler = null;
+    this._expandable = null;
+    this._expandedRows = new Set();
+    this._editing = null;
+    this._editingValue = undefined;
+    this._editError = null;
+    this._dragStore = null;
+    this._virtual = false;
+    this._itemHeight = 40;
+    this._overscan = 5;
+    this._scrollTop = 0;
+    this._viewportHeight = 0;
 
     this._applySetup(setup);
     this._render();
@@ -135,7 +158,8 @@ export class VSuperTable extends HtmlElementNode {
     if (value === undefined) {
       return this._sort;
     }
-    this._sort = value && value.key ? { key: value.key, order: value.order || null } : { key: null, order: null };
+    this._sort =
+      value && value.key ? { key: value.key, order: value.order || null } : { key: null, order: null };
     this._render();
     return this;
   }
@@ -152,6 +176,46 @@ export class VSuperTable extends HtmlElementNode {
     return this.change(handler);
   }
 
+  expandable(handler) {
+    if (handler === undefined) {
+      return this._expandable;
+    }
+    this._expandable = typeof handler === 'function' ? handler : null;
+    this._render();
+    return this;
+  }
+
+  expandedRowKeys(value) {
+    if (value === undefined) {
+      return Array.from(this._expandedRows);
+    }
+    this._expandedRows = new Set(Array.isArray(value) ? value : []);
+    this._render();
+    return this;
+  }
+
+  virtualize(value) {
+    if (value === undefined) {
+      return this._virtual;
+    }
+    this._virtual = Boolean(value);
+    if (this._virtual) {
+      this._pagination = false;
+    }
+    this._scrollTop = 0;
+    this._viewportHeight = 0;
+    this._render();
+    return this;
+  }
+
+  itemHeight(value) {
+    if (value === undefined) {
+      return this._itemHeight;
+    }
+    this._itemHeight = Number(value) > 0 ? Number(value) : this._itemHeight;
+    return this;
+  }
+
   _applySetup(setup) {
     if (setup === null || setup === undefined) {
       return;
@@ -164,6 +228,9 @@ export class VSuperTable extends HtmlElementNode {
       const {
         change: changeHandler,
         columns,
+        expandable,
+        expandedRowKeys,
+        itemHeight,
         onChange,
         page,
         pageSize,
@@ -173,6 +240,7 @@ export class VSuperTable extends HtmlElementNode {
         rows,
         selectedRowKeys,
         sort,
+        virtualize,
         ...rest
       } = setup;
       Object.keys(rest).forEach((key) => {
@@ -189,6 +257,10 @@ export class VSuperTable extends HtmlElementNode {
       if (sort !== undefined) this.sort(sort);
       if (rowSelection !== undefined) this.rowSelection(rowSelection);
       if (selectedRowKeys !== undefined) this.selectedRowKeys(selectedRowKeys);
+      if (expandable !== undefined) this.expandable(expandable);
+      if (expandedRowKeys !== undefined) this.expandedRowKeys(expandedRowKeys);
+      if (itemHeight !== undefined) this.itemHeight(itemHeight);
+      if (virtualize !== undefined) this.virtualize(virtualize);
       if (changeHandler !== undefined) this.change(changeHandler);
       if (onChange !== undefined) this.change(onChange);
     }
@@ -218,7 +290,10 @@ export class VSuperTable extends HtmlElementNode {
           if (av === bv) return 0;
           if (av === undefined || av === null) return 1;
           if (bv === undefined || bv === null) return -1;
-          const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
+          const cmp =
+            typeof av === 'number' && typeof bv === 'number'
+              ? av - bv
+              : String(av).localeCompare(String(bv), undefined, { numeric: true });
           return cmp * direction;
         });
       }
@@ -283,45 +358,161 @@ export class VSuperTable extends HtmlElementNode {
     this._emit();
   }
 
+  _beginEdit(row, column) {
+    this._editing = { rowKey: String(this._rowKey(row, 0)), columnKey: column.key };
+    this._editingValue = readRowValue(row, column);
+    this._editError = null;
+    this._render();
+  }
+
+  _pendingEdit(column, value) {
+    this._editingValue = value;
+    const error = column.validate ? column.validate(value) : null;
+    if (error) {
+      this._editError = error;
+      this._render();
+      return;
+    }
+    this._commitEdit(column, value);
+  }
+
+  _commitEdit(column, value) {
+    const row = this._findEditingRow();
+    const dataIndex = column.dataIndex || column.key;
+    if (row && dataIndex) {
+      row[dataIndex] = value;
+    }
+    this._editing = null;
+    this._editingValue = undefined;
+    this._editError = null;
+    this._emit();
+    this._render();
+  }
+
+  _findEditingRow() {
+    if (!this._editing) {
+      return null;
+    }
+    return this._rows.find(
+      (row, index) => String(this._rowKey(row, index)) === this._editing.rowKey
+    );
+  }
+
+  _dragStart(column, event) {
+    this._dragStore = column.key;
+    event.dataTransfer.effectAllowed = 'move';
+  }
+
+  _dropColumn(targetColumn, event) {
+    event.preventDefault();
+    const sourceKey = this._dragStore;
+    if (!sourceKey || sourceKey === targetColumn.key) {
+      this._dragStore = null;
+      return;
+    }
+    const from = this._columns.findIndex((c) => c.key === sourceKey);
+    const to = this._columns.findIndex((c) => c.key === targetColumn.key);
+    if (from === -1 || to === -1) {
+      this._dragStore = null;
+      return;
+    }
+    const columns = this._columns.slice();
+    const [moved] = columns.splice(from, 1);
+    columns.splice(to, 0, moved);
+    this._columns = columns;
+    this._dragStore = null;
+    this._render();
+  }
+
+  _onVirtualScroll(event) {
+    this._scrollTop = Number(event.target.scrollTop) || 0;
+    this._viewportHeight = Number(event.target.clientHeight) || 0;
+    this._render();
+  }
+
   _render() {
     const processed = this._process();
     const total = processed.length;
     const pageCount = this._pageCount(total);
     this._page = Math.min(Math.max(1, this._page), pageCount);
-    const start = this._pagination ? (this._page - 1) * this._pageSize : 0;
-    const pageRows = this._pagination ? processed.slice(start, start + this._pageSize) : processed;
+    const pageStart = this._pagination ? (this._page - 1) * this._pageSize : 0;
+    const pageRows = this._pagination
+      ? processed.slice(pageStart, pageStart + this._pageSize)
+      : processed;
+
+    let bodyRows = pageRows;
+    if (this._virtual) {
+      const ih = this._itemHeight;
+      const startIdx = Math.max(0, Math.floor(this._scrollTop / ih) - this._overscan);
+      const endIdx =
+        Math.min(total, Math.ceil((this._scrollTop + this._viewportHeight) / ih) + this._overscan);
+      bodyRows = processed.slice(startIdx, endIdx);
+    }
 
     const headRow = new HtmlElementNode('tr');
     if (this._selection) {
       headRow.child(this._th(null));
     }
+    if (this._expandable) {
+      headRow.child(this._th(null));
+    }
     this._columns.forEach((column) => headRow.child(this._renderHeader(column)));
 
-    const body = pageRows.map((row, index) => this._renderRow(row, index));
+    const body = [];
+    bodyRows.forEach((row, index) => {
+      body.push(...this._renderRows(row, index));
+    });
 
     const table = new HtmlElementNode('table')
       .className('yoya-vsupertable-table')
-      .child(new HtmlElementNode('thead').child(headRow), new HtmlElementNode('tbody').child(...body));
+      .child(
+        new HtmlElementNode('thead').child(headRow),
+        new HtmlElementNode('tbody').child(...body)
+      );
 
-    const children = [table];
-    if (this._pagination) {
-      children.push(this._renderFooter(pageCount));
+    const children = [];
+    if (this._virtual) {
+      children.push(
+        new HtmlElementNode('div')
+          .className('yoya-vsupertable-viewport')
+          .style('height', `${Math.max(120, total * this._itemHeight)}px`)
+          .style('overflowY', 'auto')
+          .child(table)
+          .on('scroll', (event) => this._onVirtualScroll(event))
+      );
+    } else {
+      children.push(table);
+      if (this._pagination) {
+        children.push(this._renderFooter(pageCount));
+      }
     }
+
     replaceChildren(this, children);
+    if (this._virtual && this._el) {
+      const viewport = this._el.querySelector('.yoya-vsupertable-viewport');
+      if (viewport) {
+        viewport.scrollTop = this._scrollTop;
+      }
+    }
     return this;
   }
 
-  _th(content) {
-    return new HtmlElementNode('th').attr({ 'data-key': null })
-      .attr((content && content.key) ? { 'data-key': content.key } : {})
-      .child(content);
+  _th() {
+    return new HtmlElementNode('th');
   }
 
   _renderHeader(column) {
-    const th = new HtmlElementNode('th').attr('data-key', column.key);
+    const th = new HtmlElementNode('th')
+      .attr('data-key', column.key)
+      .attr(column.fixed ? { 'data-fixed': column.fixed } : {})
+      .attr('data-col', column.key)
+      .attr('draggable', true)
+      .style(fixedStyle(column.fixed))
+      .on('dragstart', (event) => this._dragStart(column, event))
+      .on('dragover', (event) => event.preventDefault())
+      .on('drop', (event) => this._dropColumn(column, event));
 
-    const label = new HtmlElementNode('span').text(column.title ?? column.label ?? column.key ?? '');
-    th.child(label);
+    th.child(new HtmlElementNode('span').text(column.title ?? column.label ?? column.key ?? ''));
 
     if (column.sorter) {
       const order = this._sort.key === column.key ? this._sort.order : null;
@@ -353,28 +544,88 @@ export class VSuperTable extends HtmlElementNode {
     return th;
   }
 
-  _renderRow(row, index) {
-    const key = this._rowKey(row, index);
-    const tr = new HtmlElementNode('tr').attr('data-row-key', String(key));
+  _renderRows(row, index) {
+    const key = String(this._rowKey(row, index));
+    const tr = new HtmlElementNode('tr').attr('data-row-key', key);
 
     if (this._selection) {
-      const keyStr = String(key);
-      const checked = this._selectedKeys.has(keyStr);
-      const box = new HtmlElementNode('input')
-        .attr({ type: 'checkbox', checked: checked ? true : null })
-        .on('change', () => this._toggleSelect(keyStr));
-      tr.child(new HtmlElementNode('td').child(box));
+      const checked = this._selectedKeys.has(key);
+      tr.child(
+        new HtmlElementNode('td').child(
+          new HtmlElementNode('input')
+            .attr({ type: 'checkbox', checked: checked ? true : null })
+            .on('change', () => this._toggleSelect(key))
+        )
+      );
     }
 
-    this._columns.forEach((column) => {
-      const value = readRowValue(row, column);
-      const content =
-        typeof column.render === 'function' ? column.render(value, row, index) : String(value ?? '');
-      const td = new HtmlElementNode('td').attr('data-key', column.key).child(content);
-      tr.child(td);
-    });
+    if (this._expandable) {
+      const open = this._expandedRows.has(key);
+      tr.child(
+        new HtmlElementNode('td').child(
+          new HtmlElementNode('button')
+            .attr({ type: 'button', 'data-role': 'row-expand', 'aria-expanded': open ? 'true' : 'false' })
+            .text(open ? '−' : '+')
+            .on('click', () => {
+              if (this._expandedRows.has(key)) {
+                this._expandedRows.delete(key);
+              } else {
+                this._expandedRows.add(key);
+              }
+              this._render();
+            })
+        )
+      );
+    }
 
-    return tr;
+    this._columns.forEach((column) => tr.child(this._renderCell(row, column, index, key)));
+
+    const detailColumnCount = this._columns.length + (this._selection ? 1 : 0) + (this._expandable ? 1 : 0);
+    const expanded = this._expandable && this._expandedRows.has(key);
+    const detail = expanded && this._expandable ? this._expandable(row, index) : null;
+
+    if (detail) {
+      const detailRow = new HtmlElementNode('tr').attr('data-role', 'row-detail');
+      detailRow.child(new HtmlElementNode('td').attr('colspan', String(detailColumnCount)).child(detail));
+      return [tr, detailRow];
+    }
+
+    return [tr];
+  }
+
+  _renderCell(row, column, index, key) {
+    const editing =
+      this._editing && this._editing.rowKey === key && this._editing.columnKey === column.key;
+    const value = readRowValue(row, column);
+    const td = new HtmlElementNode('td')
+      .attr('data-key', column.key)
+      .attr(column.fixed ? { 'data-fixed': column.fixed } : {})
+      .style(fixedStyle(column.fixed));
+
+    if (editing) {
+      td.child(
+        new HtmlElementNode('input')
+          .attr({ type: 'text', value: String(this._editingValue ?? value ?? '') })
+          .attr(this._editError ? { 'data-error': this._editError } : { class: undefined })
+          .on('change', (event) => this._pendingEdit(column, event.target.value))
+      );
+      return td;
+    }
+
+    if (column.editable) {
+      td.child(
+        new HtmlElementNode('button')
+          .attr({ type: 'button', 'data-role': 'cell-edit' })
+          .text(String(value ?? ''))
+          .on('click', () => this._beginEdit(row, column))
+      );
+      return td;
+    }
+
+    const content =
+      typeof column.render === 'function' ? column.render(value, row, index) : String(value ?? '');
+    td.child(content);
+    return td;
   }
 
   _renderFooter(pageCount) {
@@ -397,3 +648,4 @@ export class VSuperTable extends HtmlElementNode {
 export function vSuperTable(first = null, second = null, third = null) {
   return createComponentFactory(VSuperTable, first, second, third);
 }
+

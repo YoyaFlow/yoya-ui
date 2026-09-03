@@ -527,6 +527,9 @@ export interface SuperTableColumn {
   sorter?: boolean;
   filterOptions?: Array<{ label: ChildInput; value: string | number }>;
   render?: (value: unknown, row: Record<string, unknown>, index: number) => ChildInput;
+  editable?: boolean;
+  fixed?: 'left' | 'right' | string;
+  validate?: (value: unknown) => string | null | undefined;
   width?: string | number;
   [key: string]: any;
 }
@@ -554,6 +557,10 @@ export class VSuperTable extends HtmlElementNode {
   page(value?: number): number | VSuperTable;
   selectedRowKeys(value?: Array<string | number>): Array<string | number> | VSuperTable;
   sort(value?: SuperTableSort): SuperTableSort | VSuperTable;
+  expandable(handler?: (row: Record<string, unknown>, index: number) => ChildInput | null): VSuperTable;
+  expandedRowKeys(value?: Array<string>): Array<string> | VSuperTable;
+  virtualize(value?: boolean): boolean | VSuperTable;
+  itemHeight(value?: number): number | VSuperTable;
   change(handler?: (payload: SuperTableChangePayload) => void): VSuperTable;
   onChange(handler: (payload: SuperTableChangePayload) => void): VSuperTable;
 }
@@ -683,5 +690,6 @@ export interface DataDisplayParentShortcuts {
 }
 
 export type { ElementOptions, ViewNode };
+
 
 
