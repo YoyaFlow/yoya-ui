@@ -472,6 +472,9 @@ export class I18n {
   /** Registers or merges a dictionary for one language. */
   register(language: string, messages?: Record<string, unknown>): this;
 
+  /** Lazily registers a language; returns a promise resolved after merge and notify. */
+  registerLocale(name: string, loader: () => Record<string, unknown> | Promise<Record<string, unknown>>): Promise<this>;
+
   /** Registers one or more corpora: multi-language files or { language, messages }. */
   registerMessages(corpus?: Record<string, unknown> | Array<unknown>): this;
 
@@ -693,6 +696,7 @@ declare global {
     ): I18nTextNode;
   }
 }
+
 
 
 

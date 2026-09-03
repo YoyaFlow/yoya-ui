@@ -84,6 +84,27 @@ export class I18n {
   }
 
   /**
+   * 懒加载注册语言：loader 返回词典对象或 Promise，加载完成后合并并刷新订阅者。
+   */
+  registerLocale(name, loader) {
+    if (!name || typeof loader !== 'function') {
+      return Promise.reject(new TypeError('registerLocale requires a language name and a loader'));
+    }
+
+    let result;
+    try {
+      result = loader();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+
+    return Promise.resolve(result).then((messages) => {
+      this.register(name, messages || {});
+      return this;
+    });
+  }
+
+  /**
    * 注册或增量合并某个语言的词典。
    */
   register(language, messages = {}) {
@@ -128,7 +149,7 @@ export class I18n {
       key;
 
     const value = typeof message === 'function' ? message(params, this) : message;
-    return interpolate(value, params);
+    return interpolate(value, params, this);
   }
 
   /**
@@ -411,11 +432,148 @@ function readMessage(messages, key) {
     }, messages);
 }
 
-function interpolate(value, params) {
-  return String(value).replace(/\{([^{}]+)\}/g, (match, name) => {
-    const paramValue = params?.[name.trim()];
-    return paramValue === undefined || paramValue === null ? match : String(paramValue);
-  });
+function interpolate(value, params, i18n) {
+  const str = String(value);
+  const parts = [];
+  let index = 0;
+  while (index < str.length) {
+    const ch = str.charAt(index);
+    if (ch === '{') {
+      const end = findBalancedEnd(str, index);
+      const expr = str.slice(index + 1, end).trim();
+      parts.push(resolveInterpolation(expr, params, i18n, str.slice(index, end + 1)));
+      index = end + 1;
+    } else {
+      parts.push(ch);
+      index += 1;
+    }
+  }
+  return parts.join('');
+}
+
+function findBalancedEnd(str, start) {
+  let depth = 0;
+  for (let index = start; index < str.length; index += 1) {
+    const ch = str.charAt(index);
+    if (ch === '{') {
+      depth += 1;
+    } else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+  return str.length - 1;
+}
+
+function resolveInterpolation(expr, params, i18n, fallback) {
+  const parts = splitTopLevel(expr);
+  if (parts.length === 1) {
+    return readParam(params, parts[0], fallback);
+  }
+
+  const [key, type, ...rest] = parts;
+  const value = readParam(params, key, undefined);
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  const language = i18n?.getLanguage?.() || 'zh-CN';
+
+  if (/^number$/i.test(type || '')) {
+    return formatNumber(value, language);
+  }
+
+  if (/^date$/i.test(type || '')) {
+    return formatDate(value, language, rest[0]);
+  }
+
+  if (/^plural$/i.test(type || '')) {
+    const category = pluralCategory(value, language);
+    const map = parsePluralMap(parts.slice(2).join(','));
+    const exact = map[`=${value}`];
+    const selected = exact ?? map[category] ?? map.other ?? fallback;
+    return interpolate(selected, params, i18n);
+  }
+
+  return fallback;
+}
+
+function splitTopLevel(expr) {
+  const parts = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of String(expr)) {
+    if (ch === '{') {
+      depth += 1;
+    } else if (ch === '}') {
+      depth -= 1;
+    }
+    if (ch === ',' && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current) {
+    parts.push(current.trim());
+  }
+  return parts;
+}
+
+function readParam(params, key, fallback) {
+  const value = params?.[key];
+  return value === undefined ? fallback : value;
+}
+
+function parsePluralMap(text) {
+  const map = {};
+  const re = /([^\s{}]+)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+  let match;
+  while ((match = re.exec(text))) {
+    map[match[1].trim()] = match[2].trim();
+  }
+  return map;
+}
+
+function pluralCategory(count, language) {
+  const numeric = Number(count);
+  if (typeof Intl === 'undefined' || typeof Intl.PluralRules !== 'function') {
+    return numeric === 1 ? 'one' : 'other';
+  }
+  try {
+    return new Intl.PluralRules(language).select(numeric);
+  } catch {
+    return numeric === 1 ? 'one' : 'other';
+  }
+}
+
+function formatNumber(value, language) {
+  if (typeof Intl === 'undefined' || typeof Intl.NumberFormat !== 'function') {
+    return String(value);
+  }
+  try {
+    return new Intl.NumberFormat(language).format(value);
+  } catch {
+    return String(value);
+  }
+}
+
+const DATE_STYLES = new Set(['full', 'long', 'medium', 'short']);
+
+function formatDate(value, language, style = 'medium') {
+  if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') {
+    return String(value);
+  }
+  try {
+    return new Intl.DateTimeFormat(language, {
+      dateStyle: DATE_STYLES.has(style) ? style : 'medium'
+    }).format(new Date(value));
+  } catch {
+    return String(value);
+  }
 }
 
 function mergeMessages(target, source) {
@@ -479,3 +637,6 @@ function memoryStorage() {
     }
   };
 }
+
+
+
