@@ -2133,7 +2133,6 @@ export class VField extends HtmlElementNode {
     this._hovered = false;
     this._headerBox = new HtmlElementNode('div').className('yoya-vfield-header');
     this._displayBox = new HtmlElementNode('div').className('yoya-vfield-display');
-    this._editInteraction = false;
     this._editorBox = new HtmlElementNode('div')
       .className('yoya-vfield-editor')
       .style('display', 'none');
@@ -2219,23 +2218,6 @@ export class VField extends HtmlElementNode {
     });
     this._headerBox.child(this._labelBox, this._actionButton);
     this.child(this._headerBox, this._displayBox, this._editorBox, this._hintBox, this._errorBox);
-    this._editorBox.on('mousedown', () => {
-      this._editInteraction = true;
-      queueMicrotask(() => {
-        this._editInteraction = false;
-      });
-    });
-    this._editorBox.on('keydown', (event) => {
-      const targetName =
-        event.target && event.target.nodeName ? event.target.nodeName.toLowerCase() : '';
-      if (event.key === 'Enter' && targetName !== 'textarea') {
-        event.preventDefault();
-        this.view();
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        this.cancel();
-      }
-    });
     this.on('mouseenter', () => {
       this._hovered = true;
       this._syncActionButton();
@@ -2252,15 +2234,6 @@ export class VField extends HtmlElementNode {
       }
       if (this._mode === 'view' && this.control()) {
         this.edit();
-      }
-    });
-    this.on('focusout', (event) => {
-      if (this._mode !== 'edit' || this._editInteraction) {
-        return;
-      }
-      const related = event.relatedTarget;
-      if (!related || !this._el || !this._el.contains(related)) {
-        this.view();
       }
     });
   }
@@ -2397,6 +2370,45 @@ export class VField extends HtmlElementNode {
     setupContentSlot(this._editorBox, setup);
     this._control = findFieldControl(this._editorBox);
     this._syncEditorSurface();
+    this._confirmButton = new HtmlElementNode('button')
+      .className('yoya-vfield-confirm')
+      .attr({ 'aria-label': '确认', title: '确认', type: 'button' })
+      .text('✓ 确认')
+      .styles({
+        background: themeValue('color-primary', '#1f6feb'),
+        border: '0',
+        borderRadius: '6px',
+        color: themeValue('color-text-inverse', '#ffffff'),
+        cursor: 'pointer',
+        font: 'inherit',
+        padding: '4px 10px'
+      })
+      .on('click', () => this.view());
+    this._cancelButton = new HtmlElementNode('button')
+      .className('yoya-vfield-cancel')
+      .attr({ 'aria-label': '取消', title: '取消', type: 'button' })
+      .text('✕ 取消')
+      .styles({
+        background: 'transparent',
+        border: themeBorder('color-border-strong', '#cbd5e1'),
+        borderRadius: '6px',
+        color: themeValue('color-text', '#172033'),
+        cursor: 'pointer',
+        font: 'inherit',
+        padding: '4px 10px'
+      })
+      .on('click', () => this.cancel());
+    this._editorActions = new HtmlElementNode('div')
+      .className('yoya-vfield-editor-actions')
+      .styles({
+        alignItems: 'center',
+        display: 'flex',
+        gap: '8px',
+        justifyContent: 'flex-end',
+        paddingTop: '6px'
+      });
+    this._editorActions.child(this._confirmButton, this._cancelButton);
+    this._editorBox.child(this._editorActions);
 
     if (this._mode === 'view') {
       this._syncDisplayFromControl();
@@ -2493,9 +2505,9 @@ export class VField extends HtmlElementNode {
     }
 
     const hasControl = Boolean(this.control());
-    const visible = hasControl && (this._hovered || this._mode === 'edit');
-    const label = this._mode === 'edit' ? '完成' : '编辑';
-    const symbol = this._mode === 'edit' ? '✓' : '✎';
+    const visible = hasControl && this._mode === 'view' && this._hovered;
+    const label = '编辑';
+    const symbol = '✎';
 
     this._actionButton.label(symbol);
     this._actionButton.attr({

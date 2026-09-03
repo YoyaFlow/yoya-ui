@@ -2368,8 +2368,9 @@ describe('compound components', () => {
     action.click();
 
     expect(element.dataset.mode).toBe('edit');
-    expect(action.textContent).toBe('✓');
-    expect(action.getAttribute('aria-label')).toBe('完成');
+    expect(action.textContent).toBe('✎');
+    expect(action.getAttribute('aria-label')).toBe('编辑');
+    expect(action.style.opacity).toBe('0');
     expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
     expect(element.querySelector('.yoya-vinput').value).toBe('SRE Team');
   });

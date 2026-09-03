@@ -33,35 +33,35 @@ describe('vField floating edit', () => {
     expect(editor.style.position).toBe('fixed');
   });
 
-  it('Enter saves and restores display to the new value', () => {
+  it('confirm button saves and restores display to the new value', () => {
     const field = makeField();
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     const input = el.querySelector('.yoya-vfield-editor input');
     input.value = 'Zoe';
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Zoe');
     expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Zoe');
   });
 
-  it('Escape cancels and restores the previous value', () => {
+  it('cancel button cancels and restores the previous value', () => {
     const field = makeField('Ada');
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     const input = el.querySelector('.yoya-vfield-editor input');
     input.value = 'Zoe';
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    el.querySelector('.yoya-vfield-cancel').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Ada');
     expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Ada');
   });
 
-  it('blurring outside the field commits', () => {
+  it('focus loss does not close the editor; confirm saves', () => {
     const field = makeField();
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
@@ -69,6 +69,10 @@ describe('vField floating edit', () => {
     input.value = 'Ray';
     input.dispatchEvent(new MouseEvent('blur', { bubbles: true }));
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+    expect(field.mode()).toBe('edit');
+    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Ray');
   });
@@ -121,8 +125,8 @@ describe('vField floating edit', () => {
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     const input = el.querySelector('.yoya-vfield-editor input');
     input.value = 'Zoe';
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
     );
     expect(el.querySelector('.yoya-vfield-display .yoya-vbadge')).toBeTruthy();
     expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Zoe');
@@ -149,8 +153,8 @@ describe('vField floating edit', () => {
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(display.style.visibility).toBe('hidden');
 
-    el.querySelector('.yoya-vfield-editor input').dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+    el.querySelector('.yoya-vfield-cancel').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
     );
     expect(display.style.visibility).not.toBe('hidden');
   });
@@ -181,6 +185,11 @@ describe('vField floating edit', () => {
     expect(field.mode()).toBe('edit');
 
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+    expect(field.mode()).toBe('edit');
+
+    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('第一行\n第二行');
   });
@@ -216,9 +225,13 @@ describe('vField floating edit', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(field.mode()).toBe('edit');
 
-    // clicking outside the field still saves
+    // clicking outside still does not close; only confirm does
     document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
+    expect(field.mode()).toBe('edit');
+    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
     expect(field.mode()).toBe('view');
   });
 });
