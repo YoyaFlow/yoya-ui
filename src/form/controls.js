@@ -2330,7 +2330,42 @@ export class VField extends HtmlElementNode {
       return this._displayBox.textContent();
     }
 
+    if (typeof value === 'function') {
+      setupContentSlot(this._displayBox, value);
+      return this;
+    }
+
     replaceChildren(this._displayBox, normalizeChildren(value));
+    return this;
+  }
+
+  formatter(handler) {
+    if (handler === undefined) {
+      return this._formatter;
+    }
+
+    this._formatter = typeof handler === 'function' ? handler : null;
+    if (this._mode === 'view') {
+      this._syncDisplayFromControl();
+    }
+    return this;
+  }
+
+  displayClass(...classes) {
+    if (classes.length === 0) {
+      return this._displayBox.className();
+    }
+
+    this._displayBox.className(...classes);
+    return this;
+  }
+
+  displayStyle(value) {
+    if (value === undefined) {
+      return this._displayBox.styles();
+    }
+
+    this._displayBox.styles(value);
     return this;
   }
 
@@ -2423,8 +2458,9 @@ export class VField extends HtmlElementNode {
     }
 
     const value = readControlValue(control);
+    const content = this._formatter ? this._formatter(value, this) : formatDisplayValue(value);
 
-    replaceChildren(this._displayBox, normalizeChildren(formatDisplayValue(value)));
+    replaceChildren(this._displayBox, normalizeChildren(content ?? value));
     return this;
   }
 
@@ -2465,8 +2501,11 @@ export class VField extends HtmlElementNode {
         children,
         control,
         display,
+        displayClass,
+        displayStyle,
         editor,
         error,
+        formatter,
         hint,
         label,
         mode,
@@ -2488,6 +2527,18 @@ export class VField extends HtmlElementNode {
 
       if (display !== undefined) {
         this.display(display);
+      }
+
+      if (formatter !== undefined) {
+        this.formatter(formatter);
+      }
+
+      if (displayClass !== undefined) {
+        this.displayClass(...(Array.isArray(displayClass) ? displayClass : [displayClass]));
+      }
+
+      if (displayStyle !== undefined) {
+        this.displayStyle(displayStyle);
       }
 
       if (editor !== undefined) {

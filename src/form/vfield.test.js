@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { vField } from '../index.js';
+import { vBadge, vField } from '../index.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -95,4 +95,49 @@ describe('vField floating edit', () => {
     expect(editor.style.width).toBe('240px');
     expect(editor.style.minHeight).toBe('34px');
   });
+
+  it('display accepts a function setup for custom content', () => {
+    const field = vField((item) => {
+      item.label('负责人');
+      item.display((box) => {
+        box.strong('SRE');
+        box.text(' 团队');
+      });
+    });
+    const el = field.renderDom();
+    const display = el.querySelector('.yoya-vfield-display');
+    expect(display.querySelector('strong')?.textContent).toBe('SRE');
+    expect(display.textContent).toContain('团队');
+  });
+
+  it('formatter customizes how the control value renders in view mode', () => {
+    const field = makeField('Ada');
+    field.formatter((value) => vBadge(String(value)).status('success'));
+    const el = field.renderDom();
+    expect(el.querySelector('.yoya-vfield-display .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Ada');
+
+    // edit then save: formatting persists (still a badge), value updated
+    el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = el.querySelector('.yoya-vfield-editor input');
+    input.value = 'Zoe';
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    );
+    expect(el.querySelector('.yoya-vfield-display .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Zoe');
+  });
+
+  it('displayClass and displayStyle customize the display box', () => {
+    const field = makeField();
+    const el = field.renderDom();
+    const display = el.querySelector('.yoya-vfield-display');
+    expect(display.classList.contains('yoya-vfield-display')).toBe(true);
+    field.displayClass('my-display');
+    field.displayStyle({ color: 'rgb(220, 38, 38)' });
+    expect(el.querySelector('.yoya-vfield-display').classList.contains('my-display')).toBe(true);
+    expect(el.querySelector('.yoya-vfield-display').style.color).toBe('rgb(220, 38, 38)');
+  });
 });
+
+
