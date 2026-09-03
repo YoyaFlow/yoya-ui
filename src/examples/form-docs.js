@@ -166,9 +166,9 @@ const fieldDocsDefinition = Object.freeze({
     },
     {
       component: FieldCustomExample1,
-      description: '复杂显示 + 输入：查看态用 formatter 渲染徽标，编辑态用 select 下拉浮层。',
+      description: '复杂显示 + 输入：查看态用 formatter 渲染多个徽标，编辑态用复选框多选。',
       id: 'custom',
-      imports: ['div', 'vBadge', 'vCard', 'vField', 'vSelect'],
+      imports: ['div', 'vBadge', 'vCard', 'vField'],
       sourceTitle: '复杂显示输入核心源码',
       title: '复杂显示与输入'
     }
@@ -774,27 +774,41 @@ function FieldTextareaExample1() {
 }
 
 function FieldCustomExample1() {
-  const environment = vField((field) => {
-    field.label('部署环境');
-    field.display('prod');
-    field.formatter((value) =>
-      div((row) => {
+  const capabilityLabels = {
+    canary: '灰度发布',
+    log: '日志采集',
+    monitor: '监控告警',
+    scale: '自动扩容'
+  };
+  const capabilities = vField((field) => {
+    field.label('能力');
+    field.display(['monitor']);
+    field.formatter((values) => {
+      const list = Array.isArray(values) ? values : values ? [values] : [];
+      return div((row) => {
         row.style('alignItems', 'center');
         row.style('display', 'flex');
+        row.style('flexWrap', 'wrap');
         row.style('gap', '8px');
-        row.child(vBadge(String(value)).status(value === 'prod' ? 'success' : 'warning'));
-        row.span(String(value));
-      })
-    );
+        if (list.length === 0) {
+          row.span('未配置');
+          return;
+        }
+        list.forEach((value) => {
+          row.child(vBadge(capabilityLabels[value] ?? String(value)).status('success'));
+        });
+      });
+    });
     field.control((editor) => {
-      editor.vSelect((select) => {
-        select.name('env');
-        select.options([
-          { label: '生产 prod', value: 'prod' },
-          { label: '预发 staging', value: 'staging' },
-          { label: '开发 dev', value: 'dev' }
-        ]);
-        select.value('prod');
+      editor.vCheckboxes({
+        name: 'capabilities',
+        options: [
+          { label: '监控告警', value: 'monitor' },
+          { label: '自动扩容', value: 'scale' },
+          { label: '日志采集', value: 'log' },
+          { label: '灰度发布', value: 'canary' }
+        ],
+        value: ['monitor']
       });
     });
   });
@@ -807,9 +821,9 @@ function FieldCustomExample1() {
           body.vstack((content) => {
             content.style('gap', '14px');
             content.p(
-              '查看态用 formatter 渲染徽标 + 文本；编辑态用 select 下拉，编辑区悬浮不影响布局。'
+              '查看态用 formatter 把多选值渲染成一排徽标；编辑态用复选框多选，悬浮编辑不挤布局。'
             );
-            content.child(environment);
+            content.child(capabilities);
           });
         });
       });
