@@ -1652,6 +1652,7 @@ export class VCheckboxes extends HtmlElementNode {
     this._items = [];
     this._options = [];
 
+    this._columns = null;
     this.className(componentClass, 'yoya-vcheckboxes');
     this.styles({
       display: 'grid',
@@ -1759,6 +1760,18 @@ export class VCheckboxes extends HtmlElementNode {
     return this.value(this._multiple ? [] : null);
   }
 
+  columns(value) {
+    if (value === undefined) {
+      return this._columns;
+    }
+    this._columns = Number(value) >= 1 ? Number(value) : null;
+    this.style(
+      'gridTemplateColumns',
+      this._columns ? 'repeat(' + this._columns + ', minmax(0, 1fr))' : null
+    );
+    return this;
+  }
+
   _renderOptions() {
     const normalizedItems = this._options.map((option, index) =>
       createCheckboxGroupItem(option, index)
@@ -1796,8 +1809,17 @@ export class VCheckboxes extends HtmlElementNode {
     }
 
     if (isPlainObject(setup)) {
-      const { children, disabled, multiple, name, options, required, value, ...elementConfig } =
-        setup;
+      const {
+        children,
+        disabled,
+        multiple,
+        name,
+        options,
+        required,
+        value,
+        columns,
+        ...elementConfig
+      } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
         this.setup(elementConfig);
@@ -1815,6 +1837,10 @@ export class VCheckboxes extends HtmlElementNode {
         this.options(options);
       } else if (children !== undefined) {
         this.options(children);
+      }
+
+      if (columns !== undefined) {
+        this.columns(columns);
       }
 
       if (required !== undefined) {
