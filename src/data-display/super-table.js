@@ -381,7 +381,7 @@ export class VSuperTable extends HtmlElementNode {
 
     const value = readRowValue(row, column);
     const overlay = new HtmlElementNode('div')
-      .className('yoya-vsupertable-editor')
+      .className(componentClass, 'yoya-vsupertable-editor')
       .style({ position: 'fixed', zIndex: 'var(--yoya-z-overlay, 1200)' });
     if (rect) {
       overlay.style({

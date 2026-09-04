@@ -177,6 +177,12 @@ const componentMenuSections = [
     id: 'third-party',
     title: '第三方扩展',
     items: [
+      { key: 'overview', label: '互操作概览', details: '真实 DOM 互操作演示与约束' },
+      { key: 'quill', label: 'Quill 富文本', details: 'Quill 富文本编辑器' },
+      { key: 'ag-grid', label: 'AG Grid 表格', details: 'AG Grid Community' },
+      { key: 'leaflet', label: 'Leaflet 地图', details: 'Leaflet' },
+      { key: 'codemirror', label: 'CodeMirror 编辑', details: 'CodeMirror 6' },
+      { key: 'markdown-viewer', label: 'Markdown 查看', details: 'Toast UI Viewer' },
       { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
       { key: 'signals', label: 'Signals 状态管理', details: 'signal / computed / effect' }
     ]
@@ -305,6 +311,15 @@ const docsRouteLoaders = Object.freeze({
     import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
   'third-party:signals': () =>
     import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
+  'third-party:overview': () => import('./interop-docs.js').then((m) => m.InteropOverviewPage()),
+  'third-party:quill': () => import('./quill-docs.js').then((m) => m.QuillDocumentationPage()),
+  'third-party:ag-grid': () => import('./ag-grid-docs.js').then((m) => m.AgGridDocumentationPage()),
+  'third-party:leaflet': () =>
+    import('./leaflet-docs.js').then((m) => m.LeafletDocumentationPage()),
+  'third-party:codemirror': () =>
+    import('./codemirror-docs.js').then((m) => m.CodeMirrorDocumentationPage()),
+  'third-party:markdown-viewer': () =>
+    import('./markdown-viewer-docs.js').then((m) => m.MarkdownViewerDocumentationPage()),
   'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
 });
 
