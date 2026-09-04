@@ -41,11 +41,12 @@ describe('Quill editor interop demo', () => {
   it('mounts Quill on the rendered container', () => {
     const demo = QuillEditorExample();
     const el = demo.render().renderDom();
+    const editorEl = el.querySelector('[data-quill-editor]');
 
     expect(el.dataset.quillHost).toBe('true');
     expect(el.tagName).toBe('DIV');
     expect(quillInstances).toHaveLength(1);
-    expect(quillInstances[0].root).toBe(el);
+    expect(quillInstances[0].root).toBe(editorEl);
     expect(quillInstances[0].options.theme).toBe('snow');
     el.remove();
   });

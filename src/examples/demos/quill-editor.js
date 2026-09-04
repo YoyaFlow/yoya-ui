@@ -1,4 +1,4 @@
-import { HtmlElementNode } from '../../index.js';
+import { HtmlElementNode, div } from '../../index.js';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
@@ -7,8 +7,11 @@ export class QuillEditorNode extends HtmlElementNode {
     super('div', null);
     this._content = content;
     this._editor = null;
+    this._editorContainer = div();
+    this._editorContainer.attr('data-quill-editor', 'true');
+    this._editorContainer.styles({ height: '240px' });
     this.attr('data-quill-host', 'true');
-    this.styles({ height: '240px' });
+    this.child(this._editorContainer);
   }
 
   renderDom() {
@@ -16,10 +19,11 @@ export class QuillEditorNode extends HtmlElementNode {
     if (this._editor) {
       return element;
     }
+    const editorElement = this._editorContainer.renderDom();
     if (this._content) {
-      element.innerHTML = this._content;
+      editorElement.innerHTML = this._content;
     }
-    this._editor = new Quill(element, {
+    this._editor = new Quill(editorElement, {
       modules: {
         toolbar: [
           [{ header: [2, 3, false] }],
