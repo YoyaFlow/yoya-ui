@@ -104,7 +104,8 @@
 
 /* ---------- AG Grid Community（quartz） ---------- */
 
-[data-ag-grid-host].ag-theme-quartz {
+[data-ag-grid-host].ag-theme-quartz,
+[data-ag-grid-host] .ag-styled-root {
   --ag-background-color: var(--yoya-color-surface);
   --ag-border-color: var(--yoya-color-border);
   --ag-foreground-color: var(--yoya-color-text);
@@ -117,6 +118,46 @@
   --ag-row-hover-color: var(--yoya-color-surface-hover);
   --ag-secondary-border-color: var(--yoya-color-border-faint);
   --ag-selected-row-background-color: var(--yoya-color-primary-subtle);
+}
+
+[data-yoya-mode='dark'] [data-ag-grid-host].ag-theme-quartz,
+[data-yoya-mode='dark'] [data-ag-grid-host] .ag-styled-root {
+  --ag-background-color: #212121;
+  --ag-browser-color-scheme: dark;
+  --ag-border-color: #3c3c3c;
+  --ag-data-background-color: #212121;
+  --ag-foreground-color: #ececec;
+  --ag-header-background-color: #1c1c1c;
+  --ag-header-foreground-color: #a6a6a6;
+  --ag-odd-row-background-color: #212121;
+  --ag-row-background-color: #212121;
+  --ag-row-border-color: #2a2a2a;
+  --ag-row-hover-color: #262626;
+  --ag-secondary-border-color: #2a2a2a;
+  --ag-selected-row-background-color: color-mix(in srgb, #2563eb 26%, black);
+  --ag-text-color: #ececec;
+  --ag-wrapper-background-color: #212121;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-yoya-mode='system'] [data-ag-grid-host].ag-theme-quartz,
+  [data-yoya-mode='system'] [data-ag-grid-host] .ag-styled-root {
+    --ag-background-color: #212121;
+    --ag-browser-color-scheme: dark;
+    --ag-border-color: #3c3c3c;
+    --ag-data-background-color: #212121;
+    --ag-foreground-color: #ececec;
+    --ag-header-background-color: #1c1c1c;
+    --ag-header-foreground-color: #a6a6a6;
+    --ag-odd-row-background-color: #212121;
+    --ag-row-background-color: #212121;
+    --ag-row-border-color: #2a2a2a;
+    --ag-row-hover-color: #262626;
+    --ag-secondary-border-color: #2a2a2a;
+    --ag-selected-row-background-color: color-mix(in srgb, #2563eb 26%, black);
+    --ag-text-color: #ececec;
+    --ag-wrapper-background-color: #212121;
+  }
 }
 
 /* ---------- Leaflet ---------- */
