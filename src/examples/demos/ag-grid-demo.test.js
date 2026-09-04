@@ -54,6 +54,16 @@ describe('AG Grid interop demo', () => {
     el.remove();
   });
 
+  it('does not re-create the grid when renderDom runs again', () => {
+    const demo = AgGridExample();
+    const node = demo.render();
+
+    node.renderDom();
+    node.renderDom();
+
+    expect(gridInstances).toHaveLength(1);
+  });
+
   it('destroys the grid and tolerates updates after destroy', () => {
     const demo = AgGridExample();
     const el = demo.render().renderDom();

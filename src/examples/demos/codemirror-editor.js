@@ -20,6 +20,9 @@ export class CodeMirrorDemoNode extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
+    if (this._view) {
+      return element;
+    }
     this._view = new EditorView({
       doc: this._doc,
       extensions: [basicSetup, javascript()],

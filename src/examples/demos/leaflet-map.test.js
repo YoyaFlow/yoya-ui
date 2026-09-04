@@ -54,6 +54,16 @@ describe('Leaflet map interop demo', () => {
     el.remove();
   });
 
+  it('does not initialize the map twice when renderDom runs again', () => {
+    const demo = LeafletMapExample();
+    const node = demo.render();
+
+    node.renderDom();
+    node.renderDom();
+
+    expect(mapInstances).toHaveLength(1);
+  });
+
   it('removes the map instance on destroy', () => {
     const demo = LeafletMapExample();
     const el = demo.render().renderDom();

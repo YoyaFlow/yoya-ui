@@ -66,6 +66,16 @@ describe('CodeMirror 6 interop demo', () => {
     el.remove();
   });
 
+  it('does not create a second EditorView on repeated renderDom', () => {
+    const demo = CodeMirrorExample();
+    const node = demo.render();
+
+    node.renderDom();
+    node.renderDom();
+
+    expect(editorViewInstances).toHaveLength(1);
+  });
+
   it('destroys the editor view on destroy', () => {
     const demo = CodeMirrorExample();
     const el = demo.render().renderDom();

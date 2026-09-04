@@ -49,6 +49,16 @@ describe('Toast UI Viewer interop demo', () => {
     el.remove();
   });
 
+  it('does not create a second viewer on repeated renderDom', () => {
+    const demo = MarkdownViewerExample();
+    const node = demo.render();
+
+    node.renderDom();
+    node.renderDom();
+
+    expect(viewerInstances).toHaveLength(1);
+  });
+
   it('cleans up the viewer instance on destroy', () => {
     const demo = MarkdownViewerExample();
     const el = demo.render().renderDom();

@@ -27,6 +27,9 @@ export class AgGridDemoNode extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
+    if (this._api) {
+      return element;
+    }
     this._api = createGrid(element, {
       columnDefs: COLUMN_DEFS,
       defaultColDef: { resizable: true },

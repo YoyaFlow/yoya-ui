@@ -61,6 +61,16 @@ describe('Quill editor interop demo', () => {
     el.remove();
   });
 
+  it('does not re-initialize Quill when renderDom runs again', () => {
+    const demo = QuillEditorExample();
+    const node = demo.render();
+
+    node.renderDom();
+    node.renderDom();
+
+    expect(quillInstances).toHaveLength(1);
+  });
+
   it('clears the editor reference after destroy', () => {
     const demo = QuillEditorExample();
     const el = demo.render().renderDom();

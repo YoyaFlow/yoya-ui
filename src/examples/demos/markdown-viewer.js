@@ -28,6 +28,9 @@ export class MarkdownViewerDemoNode extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
+    if (this._viewer) {
+      return element;
+    }
     this._viewer = new Viewer({
       el: element,
       initialValue: this._markdown

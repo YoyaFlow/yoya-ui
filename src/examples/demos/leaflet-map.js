@@ -16,6 +16,9 @@ export class LeafletMapDemoNode extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
+    if (this._map) {
+      return element;
+    }
     this._map = L.map(element, {
       center: this._center,
       scrollWheelZoom: false,

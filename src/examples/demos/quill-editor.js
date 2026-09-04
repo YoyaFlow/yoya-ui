@@ -13,6 +13,9 @@ export class QuillEditorNode extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
+    if (this._editor) {
+      return element;
+    }
     if (this._content) {
       element.innerHTML = this._content;
     }
