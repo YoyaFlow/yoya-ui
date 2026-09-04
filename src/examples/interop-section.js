@@ -1,5 +1,6 @@
 import { section, vClientOnly, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
+import './interop-theme.css';
 
 export function InteropExampleSection(options) {
   const live = options.component();

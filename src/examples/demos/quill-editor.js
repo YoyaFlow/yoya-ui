@@ -8,7 +8,7 @@ export class QuillEditorNode extends HtmlElementNode {
     this._content = content;
     this._editor = null;
     this.attr('data-quill-host', 'true');
-    this.styles({ background: '#fff', height: '240px' });
+    this.styles({ height: '240px' });
   }
 
   renderDom() {
