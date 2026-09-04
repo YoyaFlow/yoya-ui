@@ -3,9 +3,7 @@ import { MarkdownViewerDemoNode, MarkdownViewerExample } from './demos/markdown-
 
 const MARKDOWN_DEMO = Object.freeze({
   id: 'markdown-viewer',
-  title: 'Toast UI Viewer Markdown 查看',
-  description:
-    'Markdown 内容交给 Toast UI Viewer 在真实容器中渲染：标题、列表与代码块排版由查看器负责，内容可随时切换。',
+  description: '查看器渲染标题、列表与代码块；按钮在「互操作概览」与「发布说明」两篇文档间切换。',
   component: MarkdownViewerExample,
   sourceComponent: MarkdownViewerDemoNode,
   imports: ['HtmlElementNode'],
@@ -52,13 +50,13 @@ export function MarkdownViewerDocumentationPage() {
   return interopPageFrame({
     docsKey: 'markdown-viewer',
     heading: 'Toast UI Viewer Markdown 查看',
-    lead: '文档、说明页与富内容展示需要 Markdown 渲染时，用 Viewer 保持排版一致并避免自研渲染管线。',
+    lead: '文档、说明页与富内容展示需要 Markdown 排版时，用 Toast UI Viewer 保持渲染一致。',
     usage: [
       '需要把 Markdown 文案渲染为排版文档（标题、列表、代码块）。',
       '内容来自业务侧且会动态切换。',
       '希望查看器与编辑能力来自同一生态。'
     ],
-    note: 'Toast UI Viewer 只在客户端创建，页面组合处用 vClientOnly 包住；切换内容调用 viewer.setMarkdown，销毁时释放实例。',
+    note: 'Viewer 只在客户端创建并经 vClientOnly 挂载；切换内容调用 setMarkdown，销毁时释放实例。',
     demos: [MARKDOWN_DEMO]
   });
 }

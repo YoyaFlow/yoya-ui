@@ -3,9 +3,7 @@ import { CodeMirrorDemoNode, CodeMirrorExample } from './demos/codemirror-editor
 
 const CODE_DEMO = Object.freeze({
   id: 'codemirror',
-  title: 'CodeMirror 6 代码编辑',
-  description:
-    'CodeMirror 6 以 EditorView 挂载真实容器：基础编辑能力、语法高亮与文档读写都来自 CodeMirror 自身。',
+  description: '直接编辑代码体验高亮；「写入示例片段」替换文档，「导出内容」显示当前全文。',
   component: CodeMirrorExample,
   sourceComponent: CodeMirrorDemoNode,
   imports: ['HtmlElementNode'],
@@ -34,13 +32,13 @@ export function CodeMirrorDocumentationPage() {
   return interopPageFrame({
     docsKey: 'codemirror',
     heading: 'CodeMirror 6 代码编辑',
-    lead: '配置页、代码片段管理与开发者工具的代码编辑，直接复用 CodeMirror 6 的成熟能力。',
+    lead: '配置页、代码片段与开发者工具需要带高亮的代码编辑时，直接复用 CodeMirror 6。',
     usage: [
       '页面需要带语法高亮的代码输入或查看。',
       '需要 CodeMirror 生态的补全、lint 与键位扩展。',
       '想让编辑器内容与外部状态双向同步。'
     ],
-    note: 'CodeMirror 只在客户端创建 EditorView，页面组合处用 vClientOnly 包住；内容通过 dispatch 更新，销毁时调用 view.destroy。',
+    note: 'CodeMirror 只在客户端创建 EditorView，经 vClientOnly 挂载；内容更新走 dispatch，销毁时调用 view.destroy。',
     demos: [CODE_DEMO]
   });
 }

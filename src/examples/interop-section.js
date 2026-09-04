@@ -11,7 +11,6 @@ export function InteropExampleSection(options) {
       return section((example) => {
         example.className('components-interop-demo');
         example.attr('data-third-party-demo', options.id);
-        example.h3(options.title);
         example.p(options.description);
 
         if (options.controls.length > 0) {
@@ -67,20 +66,8 @@ export function interopPageFrame({ docsKey, heading, lead, usage, note, demos })
 
         page.section((noteSection) => {
           noteSection.className('components-third-party-note');
-          noteSection.h2('集成要点');
+          noteSection.h2('集成方式');
           noteSection.p(note);
-          noteSection.pre((pre) => {
-            pre.className('interop-policy-signature');
-            pre.code(
-              [
-                '// 第三方库不需要支持服务端渲染：',
-                '// 用 vClientOnly 包住 live demo，服务端只输出占位。',
-                "import { vClientOnly } from '@yoyaflow/yoya-ui';",
-                '',
-                'page.child(vClientOnly(() => demo.render()));'
-              ].join('\n')
-            );
-          });
         });
 
         page.section((examples) => {

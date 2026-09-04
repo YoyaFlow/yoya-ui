@@ -3,9 +3,7 @@ import { LeafletMapDemoNode, LeafletMapExample } from './demos/leaflet-map.js';
 
 const LEAF_DEMO = Object.freeze({
   id: 'leaflet',
-  title: 'Leaflet 地图',
-  description:
-    '地图容器由 yoya-ui 提供，Leaflet 在真实 DOM 上初始化瓦片图层与标记点，地图交互完全由 Leaflet 管理。',
+  description: '拖动或缩放地图查看瓦片与标记点；用按钮在上海与杭州之间跳转定位。',
   component: LeafletMapExample,
   sourceComponent: LeafletMapDemoNode,
   imports: ['HtmlElementNode'],
@@ -40,7 +38,7 @@ export function LeafletDocumentationPage() {
       '不想把地图方案绑定进 UI 库本体。',
       '需要地图与页面其他声明式组件并存于同一视图树。'
     ],
-    note: 'Leaflet 依赖浏览器地图渲染，只在客户端初始化并用 vClientOnly 包住；销毁节点时调用 map.remove 清理实例。',
+    note: 'Leaflet 只在客户端初始化并经 vClientOnly 挂载；销毁时调用 map.remove 清理实例。',
     demos: [LEAF_DEMO]
   });
 }
