@@ -48,6 +48,13 @@ afterEach(() => {
 });
 
 describe('renderExamplesIndex', () => {
+  it('groups yoya-ui imports into one import statement in source panels', () => {
+    const source = componentSource(() => null, ['div', 'vText']);
+
+    expect(source).toContain("import { div, vText } from 'yoya-ui';");
+    expect(source).not.toContain("import { div } from 'yoya-ui';");
+  });
+
   it('keeps example styles inside the component module instead of Index.html', () => {
     const html = readFileSync('./src/examples/Index.html', 'utf8');
 
@@ -2249,8 +2256,7 @@ describe('renderExamplesIndex', () => {
 
     const placementSource = placementDemo.querySelector('[data-source-example]').textContent;
     expect(placementSource).toContain('export function TooltipPlacementExample1');
-    expect(placementSource).toContain("import { section } from 'yoya-ui';");
-    expect(placementSource).toContain("import { vTooltip } from 'yoya-ui';");
+    expect(placementSource).toContain("import { section, vTooltip } from 'yoya-ui';");
     expect(placementSource).toContain("'top-left'");
     expect(placementSource).toContain("'bottom-left'");
   });
@@ -2304,7 +2310,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-float-button-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-float-button-demo="basic"] [data-source-example]').textContent
-    ).toContain("import { vFloatButton } from 'yoya-ui';");
+    ).toContain("import { PlusOutlined, div, vFloatButton, vText } from 'yoya-ui';");
 
     const basicDemo = page.querySelector('[data-float-button-demo="basic"]');
     basicDemo.querySelector('.yoya-vfloat-button').click();
@@ -2328,7 +2334,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-radio-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-radio-demo="group"] [data-source-example]').textContent
-    ).toContain("import { vRadios } from 'yoya-ui';");
+    ).toContain("import { div, vRadios, vText } from 'yoya-ui';");
 
     const groupDemo = page.querySelector('[data-radio-demo="group"]');
     const prodInput = [...groupDemo.querySelectorAll('input')][2];

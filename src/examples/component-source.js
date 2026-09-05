@@ -1,15 +1,20 @@
 import { aside } from '../index.js';
 
 function buildImportBlock(imports = []) {
-  const importSource = imports
-    .map((entry) => {
-      if (typeof entry === 'string') {
-        return `import { ${entry} } from 'yoya-ui';`;
-      }
+  const yoyaNames = imports.filter((entry) => typeof entry === 'string').join(', ');
+  const importLines = [];
 
-      return `import { ${entry.names.join(', ')} } from '${entry.from}';`;
-    })
-    .join('\n');
+  if (yoyaNames) {
+    importLines.push(`import { ${yoyaNames} } from 'yoya-ui';`);
+  }
+
+  imports
+    .filter((entry) => typeof entry !== 'string')
+    .forEach((entry) => {
+      importLines.push(`import { ${entry.names.join(', ')} } from '${entry.from}';`);
+    });
+
+  const importSource = importLines.join('\n');
   return importSource ? `${importSource}\n\n` : '';
 }
 
