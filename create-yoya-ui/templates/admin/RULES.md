@@ -61,6 +61,8 @@ export default {
 - **不深层 import**：只允许跨模块引用 `req.js`，不 import 业务域的 pages / components / state 内部实现
 - **自包含 UI 与状态**：弹窗、下拉、open/close 状态内聚在组件内，对外暴露工厂与必要方法（`open()/close()/value()`），不暴露内部状态实现
 - **浮层自洽**：弹窗/下拉类共享组件自带 fixed 定位逻辑，不依赖使用方容器样式
+- **危险确认统一 vConfirm**：删除/危险操作调用 `vConfirm({ title, content, danger, confirmText })`
+  返回 `Promise<boolean>`，不自建 vDialog 确认层（表单类编辑弹窗仍用 vDialog）
 
 ## 6. 外壳与导航状态
 

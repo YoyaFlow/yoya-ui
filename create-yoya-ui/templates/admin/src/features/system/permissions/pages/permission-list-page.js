@@ -1,4 +1,4 @@
-import { toast, vDialog, vTree, vstack } from '@yoyaflow/yoya-ui';
+import { toast, vConfirm, vTree, vstack } from '@yoyaflow/yoya-ui';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import PermissionsPageState from '../api/permission.state.js';
 import { PermissionFormDialog } from '../components/permission-form-dialog.js';
@@ -6,7 +6,6 @@ import { PermissionFormDialog } from '../components/permission-form-dialog.js';
 export function PermissionListPage() {
   const state = new PermissionsPageState();
   const dialog = PermissionFormDialog({ onSubmit: savePermission });
-  const confirmDialog = vDialog();
   const tree = vTree({ ariaLabel: '权限树' });
 
   state.subscribe(() => {
@@ -39,23 +38,18 @@ export function PermissionListPage() {
     }));
   }
 
-  function askRemove(node) {
-    confirmDialog.content((content) => {
-      content.p(`确定删除权限「${node.name}」及其子权限？`);
-      content.hstack({ gap: '8px' }, (row) => {
-        row.spacer();
-        row.vButton('取消', (btn) => btn.on('click', () => confirmDialog.close()));
-        row.vButton('删除', (btn) => {
-          btn.variant('danger');
-          btn.on('click', async () => {
-            confirmDialog.close();
-            await state.remove(node.id);
-            toast.success(`已删除 ${node.name}`);
-          });
-        });
-      });
+  async function askRemove(node) {
+    const ok = await vConfirm({
+      title: '删除权限',
+      content: `确定删除权限「${node.name}」及其子权限？`,
+      danger: true,
+      confirmText: '删除'
     });
-    confirmDialog.open(true);
+    if (!ok) {
+      return;
+    }
+    await state.remove(node.id);
+    toast.success(`已删除 ${node.name}`);
   }
 
   async function savePermission(editingId, parentId, payload) {
@@ -88,7 +82,6 @@ export function PermissionListPage() {
           });
         });
         stack.child(dialog);
-        stack.child(confirmDialog);
       });
     },
     refresh() {

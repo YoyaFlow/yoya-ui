@@ -1,4 +1,4 @@
-import { toast, vDialog, vPagination, vstack } from '@yoyaflow/yoya-ui';
+import { toast, vConfirm, vPagination, vstack } from '@yoyaflow/yoya-ui';
 import RolesPageState from '../api/role.state.js';
 import { RoleToolbar } from '../components/role-toolbar.js';
 import { RoleTable } from '../components/role-table.js';
@@ -7,7 +7,6 @@ import { RoleFormDialog } from '../components/role-form-dialog.js';
 export function RoleListPage() {
   const state = new RolesPageState();
   const dialog = RoleFormDialog({ onSubmit: saveRole });
-  const confirmDialog = vDialog();
   const toolbar = RoleToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) });
   const table = RoleTable({
     rows: () => state.items(),
@@ -46,23 +45,18 @@ export function RoleListPage() {
     state.load();
   }
 
-  function askRemove(role) {
-    confirmDialog.content((content) => {
-      content.p(`确定删除角色「${role.name}」？`);
-      content.hstack({ gap: '8px' }, (row) => {
-        row.spacer();
-        row.vButton('取消', (btn) => btn.on('click', () => confirmDialog.close()));
-        row.vButton('删除', (btn) => {
-          btn.variant('danger');
-          btn.on('click', async () => {
-            confirmDialog.close();
-            await state.remove(role.id);
-            toast.success(`已删除 ${role.name}`);
-          });
-        });
-      });
+  async function askRemove(role) {
+    const ok = await vConfirm({
+      title: '删除角色',
+      content: `确定删除角色「${role.name}」？`,
+      danger: true,
+      confirmText: '删除'
     });
-    confirmDialog.open(true);
+    if (!ok) {
+      return;
+    }
+    await state.remove(role.id);
+    toast.success(`已删除 ${role.name}`);
   }
 
   async function saveRole(editingId, payload) {
@@ -90,7 +84,6 @@ export function RoleListPage() {
           });
         });
         stack.child(dialog);
-        stack.child(confirmDialog);
       });
     },
     refresh() {

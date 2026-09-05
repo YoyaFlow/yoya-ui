@@ -1,4 +1,4 @@
-import { toast, vDialog, vPagination, vTable, vstack } from '@yoyaflow/yoya-ui';
+import { toast, vConfirm, vPagination, vTable, vstack } from '@yoyaflow/yoya-ui';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import DictsPageState from '../api/dict.state.js';
 import { DictEditorDialog } from '../components/dict-editor-dialog.js';
@@ -7,7 +7,6 @@ import { statusText } from '../utils/options.js';
 export function DictListPage() {
   const state = new DictsPageState();
   const editorDialog = DictEditorDialog({ state, onSubmit: saveType });
-  const confirmDialog = vDialog();
   const pagination = vPagination({
     pageSize: 10,
     pageSizes: [10, 20, 50],
@@ -62,23 +61,18 @@ export function DictListPage() {
     });
   }
 
-  function askRemoveType(type) {
-    confirmDialog.content((content) => {
-      content.p(`确定删除字典「${type.name}」及其所有字典值？`);
-      content.hstack({ gap: '8px' }, (row) => {
-        row.spacer();
-        row.vButton('取消', (btn) => btn.on('click', () => confirmDialog.close()));
-        row.vButton('删除', (btn) => {
-          btn.variant('danger');
-          btn.on('click', async () => {
-            confirmDialog.close();
-            await state.removeType(type.id);
-            toast.success(`已删除 ${type.name}`);
-          });
-        });
-      });
+  async function askRemoveType(type) {
+    const ok = await vConfirm({
+      title: '删除字典',
+      content: `确定删除字典「${type.name}」及其所有字典值？`,
+      danger: true,
+      confirmText: '删除'
     });
-    confirmDialog.open(true);
+    if (!ok) {
+      return;
+    }
+    await state.removeType(type.id);
+    toast.success(`已删除 ${type.name}`);
   }
 
   async function saveType(editingId, payload) {
@@ -133,7 +127,6 @@ export function DictListPage() {
           });
         });
         stack.child(editorDialog);
-        stack.child(confirmDialog);
       });
     },
     refresh() {

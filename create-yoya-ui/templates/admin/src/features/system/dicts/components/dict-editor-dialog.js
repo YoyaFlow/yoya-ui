@@ -1,4 +1,4 @@
-import { toast, vDialog, vTable } from '@yoyaflow/yoya-ui';
+import { toast, vConfirm, vDialog, vTable } from '@yoyaflow/yoya-ui';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import { DictItemFormDialog } from './dict-item-form-dialog.js';
 import { statusOptions, statusText } from '../utils/options.js';
@@ -15,7 +15,6 @@ const rowStyle = {
 export function DictEditorDialog({ state, onSubmit }) {
   const dialog = vDialog();
   const itemDialog = DictItemFormDialog({ onSubmit: saveItem });
-  const confirmDialog = vDialog();
   let editingId = null;
   let itemsBody = null;
   let itemsCountText = null;
@@ -123,7 +122,6 @@ export function DictEditorDialog({ state, onSubmit }) {
         });
 
         stack.child(itemDialog);
-        stack.child(confirmDialog);
       });
     });
 
@@ -168,24 +166,19 @@ export function DictEditorDialog({ state, onSubmit }) {
     }
   }
 
-  function askRemoveItem(item) {
-    confirmDialog.content((content) => {
-      content.p(`确定删除字典值「${item.label}」？`);
-      content.hstack({ gap: '8px' }, (row) => {
-        row.spacer();
-        row.vButton('取消', (btn) => btn.on('click', () => confirmDialog.close()));
-        row.vButton('删除', (btn) => {
-          btn.variant('danger');
-          btn.on('click', async () => {
-            confirmDialog.close();
-            await state.removeItem(item.id);
-            toast.success(`已删除 ${item.label}`);
-            renderItems();
-          });
-        });
-      });
+  async function askRemoveItem(item) {
+    const ok = await vConfirm({
+      title: '删除字典值',
+      content: `确定删除字典值「${item.label}」？`,
+      danger: true,
+      confirmText: '删除'
     });
-    confirmDialog.open(true);
+    if (!ok) {
+      return;
+    }
+    await state.removeItem(item.id);
+    toast.success(`已删除 ${item.label}`);
+    renderItems();
   }
 
   async function saveItem(itemId, payload) {
