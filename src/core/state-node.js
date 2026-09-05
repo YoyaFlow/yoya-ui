@@ -1,4 +1,5 @@
 import { ElementNode, ViewNode, registerChildFactories, withBindingScope } from './node.js';
+import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 
 const lifecycleKeys = new Set(['state', 'render', 'update']);
 const builtinKeys = new Set([
@@ -78,20 +79,35 @@ export function vStateNode(config = {}) {
       }
 
       const changed = new Set();
+      const changedDetails = isDevtoolsEnabled() ? {} : null;
 
       Object.entries(nextPatch).forEach(([key, value]) => {
         if (state[key] !== value) {
+          if (changedDetails) {
+            changedDetails[key] = { from: state[key], to: value };
+          }
           state[key] = value;
           changed.add(key);
         }
       });
 
+      let handling = 'none';
       if (changed.size > 0) {
         if (roots) {
-          applyStateChange(changed);
+          handling = applyStateChange(changed);
         }
 
         listeners.forEach((listener) => listener(state, component));
+
+        if (isDevtoolsEnabled() && changedDetails) {
+          emitDevtools({
+            type: 'state',
+            node: host || undefined,
+            changed: changedDetails,
+            state: { ...state },
+            handling
+          });
+        }
       }
 
       return component;
@@ -188,18 +204,21 @@ export function vStateNode(config = {}) {
     if (typeof config.update === 'function') {
       if (config.update.call(component, state, component, changed) === true) {
         rebuild();
+        return 'rebuild';
       } else if (bindings.length > 0) {
         flushBindings();
+        return 'bindings';
       }
-      return;
+      return 'update';
     }
 
     if (bindings.length > 0) {
       flushBindings();
-      return;
+      return 'bindings';
     }
 
     rebuild();
+    return 'rebuild';
   }
 }
 

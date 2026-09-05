@@ -62,6 +62,17 @@ export interface DevtoolsTextEvent extends DevtoolsEventBase {
   to: string;
 }
 
+/** Emitted when a vStateNode state change is applied. */
+export interface DevtoolsStateEvent extends DevtoolsEventBase {
+  type: 'state';
+  /** Per-key before/after values for the changed state entries. */
+  changed: Record<string, { from: unknown; to: unknown }>;
+  /** Full state snapshot after the change was applied. */
+  state: Record<string, unknown>;
+  /** How the change was applied: update | bindings | rebuild | pending. */
+  handling: 'update' | 'bindings' | 'rebuild' | 'pending' | 'none';
+}
+
 /** Lifecycle events currently emitted by the devtools hook. */
 export type DevtoolsEvent =
   | DevtoolsCommitEvent
@@ -69,7 +80,8 @@ export type DevtoolsEvent =
   | DevtoolsAttrEvent
   | DevtoolsStyleEvent
   | DevtoolsChildEvent
-  | DevtoolsTextEvent;
+  | DevtoolsTextEvent
+  | DevtoolsStateEvent;
 
 /** Listener callback for the devtools event stream. */
 export type DevtoolsListener = (event: DevtoolsEvent) => void;

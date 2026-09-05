@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vText } from '../index.js';
+import { div, vStateNode, vText } from '../index.js';
 import {
   disableDevtools,
   emitDevtools,
@@ -208,6 +208,86 @@ describe('devtools hook (core)', () => {
     events.forEach((event) => {
       expect(event.nodeId).toBeTypeOf('number');
     });
+    unsubscribe();
+  });
+
+  it('reports vStateNode setState changes with before/after values', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const demo = vStateNode({
+      state: { count: 0 },
+      render: (state) => div(String(state.count))
+    });
+    const root = div().child(demo);
+    root.renderDom();
+
+    demo.setState({ count: 1 });
+
+    const stateEvents = events.filter((event) => event.type === 'state');
+    expect(stateEvents).toHaveLength(1);
+    expect(stateEvents[0].changed).toEqual({ count: { from: 0, to: 1 } });
+    expect(stateEvents[0].state).toEqual({ count: 1 });
+    expect(stateEvents[0].handling).toBe('rebuild');
+    expect(stateEvents[0].nodeId).toBeTypeOf('number');
+    unsubscribe();
+    root.destroy();
+  });
+
+  it('reports function patches through their resolved state change', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const demo = vStateNode({
+      state: { count: 0 },
+      render: (state) => div(String(state.count))
+    });
+    const root = div().child(demo);
+    root.renderDom();
+
+    demo.setState((state) => ({ count: state.count + 2 }));
+
+    const stateEvents = events.filter((event) => event.type === 'state');
+    expect(stateEvents[0].changed).toEqual({ count: { from: 0, to: 2 } });
+    unsubscribe();
+    root.destroy();
+  });
+
+  it('labels binding flush handling and pairs it with text events', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const demo = vStateNode({
+      state: { label: 'before' },
+      render: (state) => div().text((current) => current.label)
+    });
+    const root = div().child(demo);
+    root.renderDom();
+
+    demo.setState({ label: 'after' });
+
+    const stateEvents = events.filter((event) => event.type === 'state');
+    const textEvents = events.filter((event) => event.type === 'text');
+    expect(stateEvents).toHaveLength(1);
+    expect(stateEvents[0].handling).toBe('bindings');
+    expect(textEvents.some((event) => event.from === 'before' && event.to === 'after')).toBe(
+      true
+    );
+    unsubscribe();
+    root.destroy();
+  });
+
+  it('keeps standalone vStateNode instances safe when devtools emits', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const demo = vStateNode({
+      state: { value: 0 },
+      render: (state) => div(String(state.value))
+    });
+
+    expect(() => demo.setState({ value: 5 })).not.toThrow();
+    expect(events.some((event) => event.type === 'state')).toBe(true);
     unsubscribe();
   });
 });
