@@ -958,6 +958,13 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   const originalOpen = submenu.open.bind(submenu);
   submenu.open = (value) => {
     const result = originalOpen(value);
+    if (
+      value &&
+      !submenu.getBooleanState('disabled') &&
+      sidebar.getBooleanState('collapsed')
+    ) {
+      sidebar.collapsed(false);
+    }
     sidebar.style(
       'overflow',
       submenu.getBooleanState('open') && !submenu._inline ? 'visible' : 'hidden'
@@ -967,15 +974,13 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   if (submenu.getBooleanState('open')) {
     sidebar.style('overflow', submenu._inline ? 'hidden' : 'visible');
   }
-  const expandSidebar = () => {
-    if (!submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
-      sidebar.collapsed(false);
-    }
-  };
-  submenu._trigger.on('click', expandSidebar);
   submenu._trigger.on('keydown', (event) => {
-    if (['ArrowRight', 'Enter', ' ', 'Spacebar'].includes(event.key)) {
-      expandSidebar();
+    if (
+      !submenu.getBooleanState('disabled') &&
+      sidebar.getBooleanState('collapsed') &&
+      ['ArrowRight', 'Enter', ' ', 'Spacebar'].includes(event.key)
+    ) {
+      sidebar.collapsed(false);
     }
   });
 }
