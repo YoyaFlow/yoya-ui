@@ -91,7 +91,7 @@ export function DevtoolsInspectorDemo() {
     }
     state.events = [];
     stopSubscription = subscribeDevtools((event) => {
-      if (!isInsideInspectedTree(event.node)) {
+      if (!isInsideInspectedTree(event)) {
         return;
       }
       state.events.push(event);
@@ -105,12 +105,13 @@ export function DevtoolsInspectorDemo() {
     renderEvents();
   }
 
-  function isInsideInspectedTree(node) {
-    const rootElement = inspectRoot && inspectRoot._el;
-    if (!rootElement || !node || !node._el) {
+  function isInsideInspectedTree(event) {
+    const rootElement = state.tree ? getDevtoolsDom(state.tree.id) : null;
+    const domNode = getDevtoolsDom(event.nodeId);
+    if (!rootElement || !domNode) {
       return false;
     }
-    let current = node._el;
+    let current = domNode.parentNode;
     while (current) {
       if (current === rootElement) {
         return true;

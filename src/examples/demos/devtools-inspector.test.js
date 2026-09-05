@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { disableDevtools } from '../../yoya.devtools.js';
+import { disableDevtools, getDevtoolsDom } from '../../yoya.devtools.js';
 import { DevtoolsInspectorDemo } from './devtools-inspector.js';
 
 afterEach(() => {
@@ -37,8 +37,11 @@ describe('devtools inspector demo', () => {
     expect(filteredText.length).toBeGreaterThan(0);
     expect(filteredText.every((text) => text.includes(' text '))).toBe(true);
 
-    element.querySelector('.devtools-tree-button').click();
+    const treeButton = element.querySelector('.devtools-tree-button');
+    const treeDomId = Number(treeButton.dataset.devtoolsTreeId);
+    treeButton.click();
     expect(element.querySelector('[data-devtools-detail]')).toBeTruthy();
+    expect(getDevtoolsDom(treeDomId).style.outline).toContain('2px');
 
     demo.destroy();
   });

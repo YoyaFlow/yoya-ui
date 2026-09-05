@@ -17,8 +17,9 @@ import {
 } from '@yoyaflow/yoya-ui/devtools';
 ```
 
-主入口（`@yoyaflow/yoya-ui`、`@yoyaflow/yoya-ui/core`）不导出这些符号，生产构建
-不会因为引入 devtools 而膨胀；devtools 自身只增加默认关闭的运行时守卫。
+主入口（`@yoyaflow/yoya-ui`、`@yoyaflow/yoya-ui/core`）不导出这些符号；devtools
+运行时逻辑只随独立子路径加载，主包渲染路径仅保留默认关闭的 bridge 守卫，
+未导入 devtools 时不影响渲染行为。
 
 ## 快速开始
 

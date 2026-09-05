@@ -311,3 +311,24 @@ export function getDevtoolsSnapshot(root) {
   }
   return serializeDevtoolsNode(root);
 }
+
+// 挂到共享 bridge：主入口与 devtools 子路径无论各自打包成几份模块，都会
+// 读到同一个开关/事件流/注册表。仅导入 devtools 入口时执行一次。
+const devtoolsBridgeKey = Symbol.for('yoya.devtools.bridge');
+
+function installDevtoolsBridge() {
+  if (typeof globalThis === 'undefined') {
+    return;
+  }
+  globalThis[devtoolsBridgeKey] = {
+    captureScope: captureDevtoolsNodeScope,
+    commit: commitDevtoolsNode,
+    emit: emitDevtools,
+    enabled: () => enabled,
+    ensureId: ensureDevtoolsNodeId,
+    notify: notifyDevtoolsMutation,
+    unregister: unregisterDevtoolsNode
+  };
+}
+
+installDevtoolsBridge();

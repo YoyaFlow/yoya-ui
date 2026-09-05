@@ -1,14 +1,58 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
-import {
-  commitDevtoolsNode,
-  captureDevtoolsNodeScope,
-  emitDevtools,
-  ensureDevtoolsNodeId,
-  isDevtoolsEnabled,
-  notifyDevtoolsMutation,
-  unregisterDevtoolsNode
-} from './devtools.js';
+
+// Devtools 运行时通过 globalThis 上的共享 bridge 接入，保证主入口与独立
+// devtools 子路径各自打包时仍共享同一开关/事件流；未导入 devtools 时全部 no-op。
+const devtoolsBridgeKey = Symbol.for('yoya.devtools.bridge');
+
+function currentDevtoolsBridge() {
+  return typeof globalThis === 'undefined' ? null : globalThis[devtoolsBridgeKey] || null;
+}
+
+function isDevtoolsEnabled() {
+  const bridge = currentDevtoolsBridge();
+  return bridge ? bridge.enabled() : false;
+}
+
+function emitDevtools(event) {
+  const bridge = currentDevtoolsBridge();
+  if (bridge) {
+    bridge.emit(event);
+  }
+}
+
+function unregisterDevtoolsNode(node) {
+  const bridge = currentDevtoolsBridge();
+  if (bridge) {
+    bridge.unregister(node);
+  }
+}
+
+function captureDevtoolsNodeScope(node) {
+  const bridge = currentDevtoolsBridge();
+  if (bridge) {
+    bridge.captureScope(node);
+  }
+}
+
+function ensureDevtoolsNodeId(node) {
+  const bridge = currentDevtoolsBridge();
+  return bridge ? bridge.ensureId(node) : undefined;
+}
+
+function notifyDevtoolsMutation(node, type, details) {
+  const bridge = currentDevtoolsBridge();
+  if (bridge) {
+    bridge.notify(node, type, details);
+  }
+}
+
+function commitDevtoolsNode(node) {
+  const bridge = currentDevtoolsBridge();
+  if (bridge) {
+    bridge.commit(node);
+  }
+}
 
 const booleanAttributes = new Set(['checked', 'disabled', 'readonly', 'selected']);
 
@@ -364,9 +408,13 @@ export class ViewNode {
       this._children.splice(index, 1);
     }
     this._childrenDirty = true;
+    const removedId =
+      this._el && isDevtoolsEnabled() && !this._devtoolsRendering
+        ? ensureDevtoolsNodeId(viewNode)
+        : null;
     viewNode.destroy();
-    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering) {
-      notifyDevtoolsMutation(this, 'child', { removed: [ensureDevtoolsNodeId(viewNode)] });
+    if (removedId !== null) {
+      notifyDevtoolsMutation(this, 'child', { removed: [removedId] });
     }
     return this;
   }
@@ -567,8 +615,8 @@ export class ViewNode {
    */
   destroy() {
     if (isDevtoolsEnabled()) {
-      unregisterDevtoolsNode(this);
       emitDevtools({ type: 'destroy', node: this });
+      unregisterDevtoolsNode(this);
     }
     this._deleted = true;
     this._cleanup.forEach((cleanup) => cleanup());
