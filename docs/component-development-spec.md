@@ -131,6 +131,14 @@ Web 开发者需要一套更聚合的 JS Web UI 基础库：基础元素用于�
 
 新增组件必须满足以上契约，并由 `className-contract` / `preset-scope` / `cascade-layer` / `theme-tokens` 契约测试把关。
 
+## 事件注册契约
+
+- ViewNode 是事件注册表：每个 (节点, 事件) 只保留一个 handler。
+- 重复 `.on(event, handler)` 覆盖上一次 handler。
+- 真实 DOM 只挂转发 adapter；handler 变化不重建 DOM listener，options 变化时重建。
+- 组件销毁时 adapter 随 `_cleanup` 移除。
+- setup 重跑时对同一节点重复 `.on` 是安全的：覆盖而不是叠加。
+
 ## Out of Scope
 
 - 本规格不包含立即实现所有组件。

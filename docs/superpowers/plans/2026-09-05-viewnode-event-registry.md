@@ -225,18 +225,18 @@ it('binds events registered after the node is mounted without duplicates', () =>
   expect(second).toHaveBeenCalledTimes(1);
 });
 
-it('rebinds the adapter only when listener options change', () => {
+it('rebinds the adapter when listener options change', () => {
   const node = div();
   const element = node.renderDom();
   const handler = vi.fn();
 
-  node.on('click', handler, { capture: true });
+  node.on('click', handler, { once: true });
   element.dispatchEvent(new Event('click', { bubbles: true }));
-  expect(handler).not.toHaveBeenCalled();
+  expect(handler).toHaveBeenCalledTimes(1);
 
   node.on('click', handler, undefined);
   element.dispatchEvent(new Event('click', { bubbles: true }));
-  expect(handler).toHaveBeenCalledTimes(1);
+  expect(handler).toHaveBeenCalledTimes(2);
 });
 
 it('supports once semantics and removes the adapter after firing', () => {
