@@ -308,7 +308,18 @@ export function StateKeyedExample1() {
   let sequence = 2;
   let keys = ['k1', 'k2'];
 
-  const itemNode = (key, label) => div((item) => item.text(label));
+  const itemNode = (key, label) =>
+    div((item) => {
+      item.styles({
+        backgroundColor: 'rgba(37, 99, 235, 0.08)',
+        borderRadius: '999px',
+        color: '#2563eb',
+        display: 'inline-block',
+        margin: '4px',
+        padding: '2px 10px'
+      });
+      item.text(label);
+    });
 
   const api = {
     add() {
@@ -355,17 +366,20 @@ export function StateKeyedExample1() {
 
 export function StateEventOverwriteExample1() {
   let target = null;
+  let outputElement = null;
   let textNode = null;
 
   const api = {
     registerA() {
       target.on('click', () => {
+        outputElement.style('color', '#2563eb');
         textNode.textContent('A 处理器已响应');
       });
       return api;
     },
     registerB() {
       target.on('click', () => {
+        outputElement.style('color', '#dc2626');
         textNode.textContent('B 处理器已响应');
       });
       return api;
@@ -379,10 +393,23 @@ export function StateEventOverwriteExample1() {
             target = area;
             area.attr('data-event-target', 'true');
             area.className('yoya-event-target');
+            area.styles({
+              border: '1px dashed #cbd5e1',
+              borderRadius: '8px',
+              color: '#475569',
+              cursor: 'pointer',
+              padding: '16px',
+              textAlign: 'center'
+            });
             area.text('点击区域');
           });
           body.output((out) => {
+            outputElement = out;
             out.attr('data-event-output', 'true');
+            out.styles({
+              fontWeight: '600',
+              minHeight: '1.4em'
+            });
             textNode = vText('尚无处理器');
             out.child(textNode);
           });
@@ -404,6 +431,19 @@ export function StateEventOverwriteExample1() {
 }
 
 export function StateDynamicAttrsExample1() {
+  const tone = {
+    error: '#dc2626',
+    idle: '#64748b',
+    saving: '#2563eb',
+    success: '#16a34a'
+  };
+  const panelTone = {
+    error: 'rgba(220, 38, 38, 0.1)',
+    idle: 'transparent',
+    saving: 'rgba(37, 99, 235, 0.1)',
+    success: 'rgba(22, 163, 74, 0.12)'
+  };
+
   return vStateNode({
     state: () => ({ status: 'idle' }),
     render(state, api) {
@@ -412,6 +452,13 @@ export function StateDynamicAttrsExample1() {
         card.vCardBody((body) => {
           body.div((panel) => {
             panel.attr('data-dynamic-status', (s) => s.status);
+            panel.styles({
+              backgroundColor: (s) => panelTone[s.status] || panelTone.idle,
+              borderRadius: '8px',
+              color: (s) => tone[s.status] || tone.idle,
+              fontWeight: '600',
+              padding: '8px 12px'
+            });
             panel.child(vText((s) => (s.status === 'saving' ? '保存中…' : '已就绪')));
           });
           body.vButton('保存', (button) => {
