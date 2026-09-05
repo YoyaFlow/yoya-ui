@@ -167,6 +167,20 @@ export function toKebabStyleName(name) {
   return String(name).replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 }
 
+function sameEventListenerOptions(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
+    return false;
+  }
+  return (
+    Boolean(a.capture) === Boolean(b.capture) &&
+    Boolean(a.once) === Boolean(b.once) &&
+    Boolean(a.passive) === Boolean(b.passive)
+  );
+}
+
 /**
  * ViewNode 是 yoya-ui 的基础视图节点。
  * 它只管理视图树通用能力：子节点、事件清理、状态和生命周期。
@@ -176,6 +190,7 @@ export class ViewNode {
     this._children = [];
     this._childKeys = new Map();
     this._events = new Map();
+    this._domAdapters = new Map();
     this._cleanup = [];
     this._states = {};
     this._stateTypes = {};
@@ -363,21 +378,72 @@ export class ViewNode {
   }
 
   /**
-   * 注册事件。若 DOM 已创建，立即绑定；否则延迟到 renderDom 阶段绑定。
+   * 注册事件。同一节点同一事件只保留最新 handler；
+   * 真实 DOM 上每个事件最多挂一个转发 adapter。
    */
   on(eventName, handler, options) {
-    if (!this._events.has(eventName)) {
-      this._events.set(eventName, []);
+    if (typeof handler !== 'function') {
+      throw new TypeError('ViewNode event handler must be a function');
     }
 
-    this._events.get(eventName).push({ handler, options });
+    const previous = this._events.get(eventName);
+    this._events.set(eventName, { handler, options });
 
     if (this._el) {
-      this._el.addEventListener(eventName, handler, options);
-      this._cleanup.push(() => this._el.removeEventListener(eventName, handler, options));
+      this._bindDomAdapter(eventName, previous?.options, options);
     }
 
     return this;
+  }
+
+  off(eventName) {
+    this._events.delete(eventName);
+    const entry = this._domAdapters.get(eventName);
+    if (entry) {
+      entry.cleanup();
+      this._removeCleanup(entry.cleanup);
+      this._domAdapters.delete(eventName);
+    }
+    return this;
+  }
+
+  _bindDomAdapter(eventName, previousOptions, nextOptions) {
+    const existing = this._domAdapters.get(eventName);
+    if (existing) {
+      if (sameEventListenerOptions(previousOptions, nextOptions)) {
+        return;
+      }
+      existing.cleanup();
+      this._removeCleanup(existing.cleanup);
+      this._domAdapters.delete(eventName);
+    }
+
+    const adapter = (event) => {
+      const current = this._events.get(eventName);
+      if (!current || typeof current.handler !== 'function') {
+        return;
+      }
+      current.handler.call(this, event);
+      if (current.options?.once) {
+        this.off(eventName);
+      }
+    };
+    const cleanup = () => {
+      if (this._el) {
+        this._el.removeEventListener(eventName, adapter, nextOptions);
+      }
+    };
+
+    this._el.addEventListener(eventName, adapter, nextOptions);
+    this._domAdapters.set(eventName, { cleanup });
+    this._cleanup.push(cleanup);
+  }
+
+  _removeCleanup(cleanup) {
+    const index = this._cleanup.indexOf(cleanup);
+    if (index !== -1) {
+      this._cleanup.splice(index, 1);
+    }
   }
 
   /**
@@ -1134,11 +1200,8 @@ export class ElementNode extends ViewNode {
     Object.entries(this._styles).forEach(([name, value]) => {
       this._el.style[name] = value;
     });
-    this._events.forEach((listeners, eventName) => {
-      listeners.forEach(({ handler, options }) => {
-        this._el.addEventListener(eventName, handler, options);
-        this._cleanup.push(() => this._el.removeEventListener(eventName, handler, options));
-      });
+    this._events.forEach((descriptor, eventName) => {
+      this._bindDomAdapter(eventName, undefined, descriptor.options);
     });
   }
 
