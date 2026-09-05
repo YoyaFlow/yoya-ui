@@ -4,6 +4,7 @@ import {
   disableDevtools,
   emitDevtools,
   enableDevtools,
+  getDevtoolsDom,
   getDevtoolsSnapshot,
   isDevtoolsEnabled,
   subscribeDevtools
@@ -58,9 +59,64 @@ describe('devtools hook (core)', () => {
     expect(events).toEqual([]);
   });
 
-  it('getDevtoolsSnapshot walks the node tree shape', () => {
-    const snapshot = getDevtoolsSnapshot(div('a').child('b'));
+  it('getDevtoolsSnapshot returns a plain element/text tree', () => {
+    const snapshot = getDevtoolsSnapshot(div().attr('role', 'banner').child('b'));
+    expect(snapshot.kind).toBe('element');
     expect(snapshot.tagName).toBe('div');
-    expect(snapshot.children).toBeDefined();
+    expect(snapshot.attrs).toEqual({ role: 'banner' });
+    expect(snapshot.children).toHaveLength(1);
+    expect(snapshot.children[0].kind).toBe('text');
+    expect(snapshot.children[0].text).toBe('b');
+  });
+
+  it('exposes keyed children through their mirrored data attribute', () => {
+    const root = div().addChild('row-1', div('r'));
+    const snapshot = getDevtoolsSnapshot(root);
+    expect(snapshot.children[0].kind).toBe('element');
+    expect(snapshot.children[0].attrs['data-row-key']).toBe('row-1');
+  });
+
+  it('shows component boundaries and multi-root fragments', () => {
+    const fragment = {
+      render: () => [div('first'), div('second')]
+    };
+    const root = div().child(fragment);
+    root.renderDom();
+
+    const snapshot = getDevtoolsSnapshot(root);
+    const component = snapshot.children[0];
+    expect(component.kind).toBe('component');
+    expect(component.children.map((child) => child.tagName)).toEqual(['div', 'div']);
+    expect(component.children.map((child) => child.children[0].text)).toEqual([
+      'first',
+      'second'
+    ]);
+  });
+
+  it('assigns stable ids and resolves rendered DOM by id until destroy', () => {
+    enableDevtools();
+    const root = div('hello');
+    const element = root.renderDom();
+    const first = getDevtoolsSnapshot(root).id;
+    const second = getDevtoolsSnapshot(root).id;
+
+    expect(second).toBe(first);
+    expect(getDevtoolsDom(first)).toBe(element);
+
+    root.destroy();
+    expect(getDevtoolsDom(first)).toBeNull();
+  });
+
+  it('resolves text node DOM by id and clears it on destroy', () => {
+    enableDevtools();
+    const root = div().child('label');
+    root.renderDom();
+    const snapshot = getDevtoolsSnapshot(root);
+    const textNodeId = snapshot.children[0].id;
+
+    expect(getDevtoolsDom(textNodeId).nodeType).toBe(3);
+
+    root.destroy();
+    expect(getDevtoolsDom(textNodeId)).toBeNull();
   });
 });

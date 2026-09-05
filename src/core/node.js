@@ -1,6 +1,6 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
-import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
+import { emitDevtools, isDevtoolsEnabled, unregisterDevtoolsNode } from './devtools.js';
 
 const booleanAttributes = new Set(['checked', 'disabled', 'readonly', 'selected']);
 
@@ -542,6 +542,7 @@ export class ViewNode {
    */
   destroy() {
     if (isDevtoolsEnabled()) {
+      unregisterDevtoolsNode(this);
       emitDevtools({ type: 'destroy', node: this });
     }
     this._deleted = true;

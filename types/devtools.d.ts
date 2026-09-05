@@ -47,17 +47,30 @@ export function isDevtoolsEnabled(): boolean;
  */
 export function subscribeDevtools(listener: DevtoolsListener): () => void;
 
+/** Attribute values reflected from the node's attribute map. */
+export type DevtoolsAttrValue = string | number | boolean;
+
 /** Plain-shape snapshot of a node subtree for inspection. */
 export interface DevtoolsSnapshot {
-  /** Node kind: element | text | component (extended by richer shapes). */
+  /** Node kind: element | text | component | view | root. */
   kind: string;
   /** Stable per-node identifier assigned while devtools is active. */
   id?: number;
   /** Element tag name for element nodes. */
   tagName?: string;
+  /** Element attribute map, including the mirrored class attribute. */
+  attrs?: Record<string, DevtoolsAttrValue>;
+  /** Text content for text nodes. */
+  text?: string;
   /** Child snapshots. */
   children: DevtoolsSnapshot[];
 }
 
 /** Returns a plain-shape snapshot of a node subtree. */
 export function getDevtoolsSnapshot(root: ViewNode | null): DevtoolsSnapshot;
+
+/**
+ * Returns the rendered DOM node for a snapshot id (element or text node),
+ * or null when the node is not rendered or has been destroyed.
+ */
+export function getDevtoolsDom(id: number): Element | Text | null;
