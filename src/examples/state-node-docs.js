@@ -7,7 +7,10 @@ import {
   StateDynamicFormDemo,
   StateDynamicFormExample,
   StateCounterExample1,
+  StateEventOverwriteExample1,
+  StateFragmentExample1,
   StateInputExample1,
+  StateKeyedExample1,
   StateRebuildExample1,
   StateToggleExample1
 } from './demos/state-node.js';
@@ -67,6 +70,33 @@ const stateDemoDefinitions = Object.freeze([
     sourceComponent: StateMethodsExample,
     imports: ['div', 'vStateNode', 'vText'],
     sourceTitle: '自定义方法核心源码'
+  },
+  {
+    id: 'fragment',
+    title: '多根 fragment',
+    description: 'vStateNode 的 render 返回数组时，父容器直接落实多个并列子节点。',
+    component: StateFragmentExample1,
+    sourceComponent: StateFragmentExample1,
+    imports: ['vCard', 'vStateNode', 'vTr'],
+    sourceTitle: '多根 fragment 核心源码'
+  },
+  {
+    id: 'keyed-children',
+    title: 'Keyed 子节点',
+    description: 'addChild(key, node) 登记唯一 key，元素子节点自动带 data-row-key。',
+    component: StateKeyedExample1,
+    sourceComponent: StateKeyedExample1,
+    imports: ['div', 'vCard'],
+    sourceTitle: 'Keyed 子节点核心源码'
+  },
+  {
+    id: 'event-overwrite',
+    title: '事件覆盖',
+    description: '同一节点重复 on() 覆盖上次 handler，不会叠加触发。',
+    component: StateEventOverwriteExample1,
+    sourceComponent: StateEventOverwriteExample1,
+    imports: ['div', 'vCard'],
+    sourceTitle: '事件覆盖核心源码'
   }
 ]);
 
@@ -170,7 +200,7 @@ export function StateNodeDocumentationPage() {
           examples.className('components-state-docs-examples');
           examples.h2('代码演示');
           examples.p(
-            '六个示例分别展示函数值绑定、输入值绑定、全量重建、结构切换、动态表单和自定义方法。'
+            '九个示例分别展示函数值绑定、输入值绑定、全量重建、结构切换、动态表单、自定义方法、多根 fragment、Keyed 子节点与事件覆盖。'
           );
           stateDemoDefinitions.forEach((demo) => {
             examples.child(StateExampleSection(demo));

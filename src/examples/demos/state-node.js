@@ -1,4 +1,4 @@
-import { div, vCard, vForm, vStateNode, vText } from '../../index.js';
+import { div, vCard, vForm, vStateNode, vText, vTr } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
@@ -275,4 +275,130 @@ export function StateMethodsDemo() {
       });
     }
   };
+}
+
+export function StateFragmentExample1() {
+  return vStateNode({
+    state: () => ({ names: ['Ada', 'Bob'] }),
+    render(state) {
+      return vCard((card) => {
+        card.vCardHeader('多根 fragment');
+        card.vCardBody((body) => {
+          body.p('render 返回 ViewNode 数组时，父节点直接落实多个并列子节点。');
+          body.vTable((table) => {
+            table.vTbody((tbody) => {
+              tbody.child(
+                vStateNode({
+                  state: () => ({ names: state.names }),
+                  render(s) {
+                    return s.names.map((name) => vTr((tr) => tr.vTd(name)));
+                  }
+                })
+              );
+            });
+          });
+        });
+      });
+    }
+  });
+}
+
+export function StateKeyedExample1() {
+  let box = null;
+  let sequence = 2;
+  let keys = ['k1', 'k2'];
+
+  const itemNode = (key, label) => div((item) => item.text(label));
+
+  const api = {
+    add() {
+      sequence += 1;
+      const key = `k${sequence}`;
+      keys.push(key);
+      box.addChild(key, itemNode(key, `条目 ${sequence}`));
+      return api;
+    },
+    removeFirst() {
+      const key = keys.shift();
+      if (key) {
+        box.removeChild(key);
+      }
+      return api;
+    },
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('Keyed 子节点');
+        card.vCardBody((body) => {
+          body.p('addChild(key, node) 登记唯一 key，元素子节点自动带 data-row-key。');
+          body.div((list) => {
+            box = list;
+            keys.forEach((key, index) => {
+              list.addChild(key, itemNode(key, `条目 ${index + 1}`));
+            });
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('追加', (button) => {
+            button.variant('primary');
+            button.on('click', () => api.add());
+          });
+          footer.vButton('移除第一条', (button) => {
+            button.on('click', () => api.removeFirst());
+          });
+        });
+      });
+    }
+  };
+
+  return api;
+}
+
+export function StateEventOverwriteExample1() {
+  let target = null;
+  let textNode = null;
+
+  const api = {
+    registerA() {
+      target.on('click', () => {
+        textNode.textContent('A 处理器已响应');
+      });
+      return api;
+    },
+    registerB() {
+      target.on('click', () => {
+        textNode.textContent('B 处理器已响应');
+      });
+      return api;
+    },
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('事件覆盖');
+        card.vCardBody((body) => {
+          body.p('同一节点重复 on() 覆盖上次 handler，不会产生重复 DOM 监听。');
+          body.div((area) => {
+            target = area;
+            area.attr('data-event-target', 'true');
+            area.className('yoya-event-target');
+            area.text('点击区域');
+          });
+          body.output((out) => {
+            out.attr('data-event-output', 'true');
+            textNode = vText('尚无处理器');
+            out.child(textNode);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('注册 A', (button) => {
+            button.variant('primary');
+            button.on('click', () => api.registerA());
+          });
+          footer.vButton('注册 B', (button) => {
+            button.on('click', () => api.registerB());
+          });
+        });
+      });
+    }
+  };
+
+  return api;
 }

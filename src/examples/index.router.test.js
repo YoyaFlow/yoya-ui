@@ -911,6 +911,54 @@ describe('renderExamplesIndex', () => {
     expect(sourceText).toContain('reset()');
   });
 
+  it('drives the fragment, keyed and event-overwrite state demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/state-node');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('状态节点');
+    });
+
+    const page = document.querySelector('[data-state-docs="state"]');
+    const fragment = page.querySelector('[data-state-demo="fragment"] .components-state-demo-live');
+    expect(fragment.querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(fragment.querySelector('tbody').firstElementChild.tagName).toBe('TR');
+
+    const keyed = page.querySelector(
+      '[data-state-demo="keyed-children"] .components-state-demo-live'
+    );
+    expect(keyed.querySelectorAll('[data-row-key]')).toHaveLength(2);
+    const appendButton = [...keyed.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('追加')
+    );
+    appendButton.click();
+    expect(keyed.querySelectorAll('[data-row-key]')).toHaveLength(3);
+    const removeButton = [...keyed.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('移除第一条')
+    );
+    removeButton.click();
+    expect(keyed.querySelectorAll('[data-row-key]')).toHaveLength(2);
+
+    const eventDemo = page.querySelector(
+      '[data-state-demo="event-overwrite"] .components-state-demo-live'
+    );
+    const eventTarget = eventDemo.querySelector('[data-event-target]');
+    const eventOutput = eventDemo.querySelector('[data-event-output]');
+    const registerB = [...eventDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('注册 B')
+    );
+    registerB.click();
+    eventTarget.click();
+    eventTarget.click();
+    expect(eventOutput.textContent).toBe('B 处理器已响应');
+    const registerA = [...eventDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('注册 A')
+    );
+    registerA.click();
+    eventTarget.click();
+    expect(eventOutput.textContent).toBe('A 处理器已响应');
+  });
+
   it('renders the theme playground demo page', async () => {
     root = renderExamplesIndex('#app');
 
@@ -1017,7 +1065,7 @@ describe('renderExamplesIndex', () => {
       'counter',
       'StateCounterExample1',
       'vStateNode(',
-      6
+      9
     ],
     [
       '/components/layout/divider',
