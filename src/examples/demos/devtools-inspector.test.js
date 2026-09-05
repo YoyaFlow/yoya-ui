@@ -18,6 +18,14 @@ describe('devtools inspector demo', () => {
     expect(overlay.style.display).not.toBe('none');
     expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
     expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBeGreaterThan(1);
+    const treeRowsAfterOpen = element.querySelectorAll('[data-devtools-tree-row]').length;
+
+    element.querySelector('[data-devtools-refresh]').click();
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
+
+    element.querySelector('[data-devtools-toggle]').click();
+    element.querySelector('[data-devtools-toggle]').click();
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
 
     const plusButton = [...element.querySelectorAll('button')].find((button) =>
       button.textContent.includes('+1')

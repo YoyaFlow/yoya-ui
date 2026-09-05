@@ -93,6 +93,7 @@ export function DevtoolsInspectorDemo() {
       renderStateList();
       if (treeHost) {
         treeHost.clearChildren();
+        flushHost(treeHost);
       }
       return;
     }
@@ -147,13 +148,21 @@ export function DevtoolsInspectorDemo() {
     statusText.text(state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用');
   }
 
+  function flushHost(host) {
+    if (host) {
+      host.commit();
+    }
+  }
+
   function refreshTree() {
     if (!treeHost || !state.enabled) {
       return;
     }
     state.tree = getDevtoolsSnapshot(inspectRoot);
     treeHost.clearChildren();
+    flushHost(treeHost);
     treeHost.child(TreeBranch(state.tree, 0));
+    flushHost(treeHost);
   }
 
   function TreeBranch(snapshot, depth) {
@@ -207,6 +216,7 @@ export function DevtoolsInspectorDemo() {
       return;
     }
     detailHost.clearChildren();
+    flushHost(detailHost);
     if (state.selectedId === null) {
       return;
     }
@@ -228,6 +238,7 @@ export function DevtoolsInspectorDemo() {
         );
       });
     });
+    flushHost(detailHost);
   }
 
   function findSnapshotNode(root, id) {
@@ -251,6 +262,7 @@ export function DevtoolsInspectorDemo() {
       return;
     }
     eventHost.clearChildren();
+    flushHost(eventHost);
     const visibleEvents = [...state.events]
       .slice(-30)
       .filter((event) => state.eventFilter === 'all' || event.type === state.eventFilter);
@@ -260,6 +272,7 @@ export function DevtoolsInspectorDemo() {
       row.className('devtools-event-row');
       row.attr('data-devtools-event', 'true');
     });
+    flushHost(eventHost);
   }
 
   function describeEvent(event) {
@@ -280,12 +293,14 @@ export function DevtoolsInspectorDemo() {
       return;
     }
     stateHost.clearChildren();
+    flushHost(stateHost);
     Object.entries(stateByNode).forEach(([nodeId, componentState]) => {
       const row = stateHost.pre();
       row.className('devtools-state-row');
       row.attr('data-devtools-state-row', 'true');
       row.text(`${nodeId}: ${JSON.stringify(componentState)}`);
     });
+    flushHost(stateHost);
   }
 
   function switchTab(name) {
@@ -371,6 +386,7 @@ export function DevtoolsInspectorDemo() {
               toggleButton = button;
             });
             header.vButton('刷新快照', (button) => {
+              button.attr('data-devtools-refresh', 'true');
               button.on('click', () => {
                 state.selectedId = null;
                 clearHighlight();
