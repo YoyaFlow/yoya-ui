@@ -128,3 +128,27 @@ export function getDevtoolsSnapshot(root: ViewNode | null): DevtoolsSnapshot;
  * or null when the node is not rendered or has been destroyed.
  */
 export function getDevtoolsDom(id: number): Element | Text | null;
+
+/** Declared access spec on a node. */
+export interface DevtoolsAccessDetail {
+  code: string;
+  level: 'write' | 'read';
+}
+
+/** Scope details for a snapshot id (access/context/i18n). */
+export interface DevtoolsScope {
+  id: number;
+  access: DevtoolsAccessDetail | null;
+  /** Effective permission result for the node, when available. */
+  permissionState?: 'active' | 'readonly' | 'hidden';
+  /** Context captured while the node was built, when devtools was on. */
+  context: Record<string, unknown> | null;
+  /** i18n instance detail for translated text nodes. */
+  i18n: { key?: string; language: string } | null;
+}
+
+/**
+ * Returns scope details for a snapshot id, or null when the node has been
+ * destroyed (or the id is unknown).
+ */
+export function getDevtoolsScope(id: number): DevtoolsScope | null;

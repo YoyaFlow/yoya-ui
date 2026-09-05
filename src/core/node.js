@@ -2,6 +2,7 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import {
   commitDevtoolsNode,
+  captureDevtoolsNodeScope,
   emitDevtools,
   ensureDevtoolsNodeId,
   isDevtoolsEnabled,
@@ -207,6 +208,10 @@ export class ViewNode {
     this._deleted = false;
     this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
+
+    if (isDevtoolsEnabled()) {
+      captureDevtoolsNodeScope(this);
+    }
 
     if (setup !== null) {
       this.setup(setup);

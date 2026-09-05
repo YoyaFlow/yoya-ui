@@ -1,3 +1,5 @@
+import { snapshotContext } from './context.js';
+
 /** Dev-facing tree instrumentation. Opt-in, zero-cost when disabled. */
 let enabled = false;
 const listeners = new Set();
@@ -71,6 +73,39 @@ export function unregisterDevtoolsNode(node) {
   if (id !== undefined) {
     liveNodes.delete(id);
   }
+}
+
+/** Internal: capture the context scope visible while a node is built. */
+export function captureDevtoolsNodeScope(node) {
+  const context = snapshotContext();
+  const keys = Object.keys(context);
+  node._devtoolsContext = keys.length > 0 ? context : null;
+}
+
+/** Returns scope details (access/context/i18n) for a snapshot id. */
+export function getDevtoolsScope(id) {
+  const node = liveNodes.get(id);
+  if (!node || node._deleted) {
+    return null;
+  }
+
+  const declared = node._access;
+  const scope = {
+    id,
+    access: declared ? { code: declared.code, level: declared.level } : null,
+    context: node._devtoolsContext || null,
+    i18n: null
+  };
+  if (typeof node._permissionState === 'function') {
+    scope.permissionState = node._permissionState();
+  }
+  if (node._i18n && typeof node._i18n.getLanguage === 'function') {
+    scope.i18n = {
+      key: node._key ?? undefined,
+      language: node._i18n.getLanguage()
+    };
+  }
+  return scope;
 }
 
 /** Returns the rendered DOM node (element or text) for a snapshot id. */

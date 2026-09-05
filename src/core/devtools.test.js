@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode, vText } from '../index.js';
+import {
+  createAccess,
+  div,
+  i18nText,
+  vStateNode,
+  vText,
+  withAccess,
+  withContext
+} from '../index.js';
 import {
   disableDevtools,
   emitDevtools,
   enableDevtools,
   getDevtoolsDom,
+  getDevtoolsScope,
   getDevtoolsSnapshot,
   isDevtoolsEnabled,
   subscribeDevtools
@@ -289,5 +298,65 @@ describe('devtools hook (core)', () => {
     expect(() => demo.setState({ value: 5 })).not.toThrow();
     expect(events.some((event) => event.type === 'state')).toBe(true);
     unsubscribe();
+  });
+
+  it('reports declared access and its effective permission state', () => {
+    enableDevtools();
+    const access = createAccess({ permissions: ['r.doc:edit'] });
+    let node;
+    withAccess(access, () => {
+      node = div().access('doc:edit');
+    });
+
+    const id = getDevtoolsSnapshot(node).id;
+    expect(getDevtoolsScope(id)).toMatchObject({
+      access: { code: 'doc:edit', level: 'write' },
+      permissionState: 'readonly'
+    });
+  });
+
+  it('captures Context layers for nodes built while devtools is enabled', () => {
+    enableDevtools();
+    let node;
+    withContext({ user: { name: 'Ada' } }, () => {
+      node = div('x');
+    });
+
+    const id = getDevtoolsSnapshot(node).id;
+    expect(getDevtoolsScope(id).context.user).toEqual({ name: 'Ada' });
+  });
+
+  it('does not capture Context for nodes built before devtools is enabled', () => {
+    disableDevtools();
+    let node;
+    withContext({ user: { name: 'Bob' } }, () => {
+      node = div('x');
+    });
+
+    enableDevtools();
+    const id = getDevtoolsSnapshot(node).id;
+    expect(getDevtoolsScope(id).context).toBeNull();
+  });
+
+  it('surfaces the i18n language of translated text nodes', () => {
+    enableDevtools();
+    const root = div().child(i18nText('welcome'));
+    root.renderDom();
+    const id = getDevtoolsSnapshot(root).children[0].id;
+
+    expect(getDevtoolsScope(id).i18n).toMatchObject({
+      key: 'welcome',
+      language: 'zh-CN'
+    });
+  });
+
+  it('returns null for scope queries of destroyed nodes', () => {
+    enableDevtools();
+    const node = div('x');
+    node.renderDom();
+    const id = getDevtoolsSnapshot(node).id;
+    node.destroy();
+
+    expect(getDevtoolsScope(id)).toBeNull();
   });
 });
