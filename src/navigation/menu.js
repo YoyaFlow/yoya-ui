@@ -958,11 +958,7 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   const originalOpen = submenu.open.bind(submenu);
   submenu.open = (value) => {
     const result = originalOpen(value);
-    if (
-      value &&
-      !submenu.getBooleanState('disabled') &&
-      sidebar.getBooleanState('collapsed')
-    ) {
+    if (value && !submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
       sidebar.collapsed(false);
     }
     sidebar.style(
