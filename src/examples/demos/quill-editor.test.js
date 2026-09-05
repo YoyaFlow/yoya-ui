@@ -38,16 +38,25 @@ describe('Quill editor interop demo', () => {
     quillInstances.length = 0;
   });
 
-  it('mounts Quill on the rendered container', () => {
+  it('mounts Quill on the rendered container with a rich toolbar', () => {
     const demo = QuillEditorExample();
     const el = demo.render().renderDom();
     const editorEl = el.querySelector('[data-quill-editor]');
+    const toolbar = quillInstances[0].options.modules.toolbar;
+    const flat = toolbar.flat(Infinity).map((item) =>
+      typeof item === 'string' ? item : JSON.stringify(item)
+    );
 
     expect(el.dataset.quillHost).toBe('true');
-    expect(el.tagName).toBe('DIV');
-    expect(quillInstances).toHaveLength(1);
     expect(quillInstances[0].root).toBe(editorEl);
     expect(quillInstances[0].options.theme).toBe('snow');
+    expect(flat.some((item) => item.includes('color'))).toBe(true);
+    expect(flat.some((item) => item.includes('background'))).toBe(true);
+    expect(flat).toContain('strike');
+    expect(flat).toContain('code-block');
+    expect(flat).toContain('image');
+    expect(flat.some((item) => item.includes('align'))).toBe(true);
+    expect(flat.some((item) => item.includes('indent'))).toBe(true);
     el.remove();
   });
 
@@ -70,6 +79,22 @@ describe('Quill editor interop demo', () => {
     node.renderDom();
 
     expect(quillInstances).toHaveLength(1);
+  });
+
+  it('adds the standalone quill-dark class when the docs mode is dark', () => {
+    const root = document.documentElement;
+    root.dataset.yoyaMode = 'dark';
+    const demo = QuillEditorExample();
+    const el = demo.render().renderDom();
+
+    try {
+      expect(el.classList.contains('quill-dark')).toBe(true);
+      expect(el.style.borderRadius).toBe('10px');
+    } finally {
+      demo.destroy();
+      delete root.dataset.yoyaMode;
+      el.remove();
+    }
   });
 
   it('clears the editor reference after destroy', () => {

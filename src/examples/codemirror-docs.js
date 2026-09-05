@@ -8,10 +8,14 @@ const CODE_DEMO = Object.freeze({
   sourceComponent: CodeMirrorDemoNode,
   imports: ['HtmlElementNode'],
   extraSource: [
+    "import { Compartment } from '@codemirror/state';",
+    "import { oneDark } from '@codemirror/theme-one-dark';",
     "import { EditorView, basicSetup } from 'codemirror';",
     "import { javascript } from '@codemirror/lang-javascript';"
   ].join('\n'),
   sourceTitle: 'CodeMirror 6 胶水类源码',
+  usageImports: [{ from: './demos/codemirror-editor.js', names: ['CodeMirrorDemoNode'] }],
+  usageTitle: 'CodeMirror 使用案例源码',
   outputText: '编辑器默认展示一段可编辑示例代码。',
   controls: [
     {
@@ -38,7 +42,8 @@ export function CodeMirrorDocumentationPage() {
       '需要 CodeMirror 生态的补全、lint 与键位扩展。',
       '想让编辑器内容与外部状态双向同步。'
     ],
-    note: 'CodeMirror 只在客户端创建 EditorView，经 vClientOnly 挂载；内容更新走 dispatch，销毁时调用 view.destroy。',
+    note:
+      'CodeMirror 只在客户端创建 EditorView，经 vClientOnly 挂载；内容更新走 dispatch，销毁时调用 view.destroy。明暗配色由 CodeMirror 自己的主题扩展负责：浅色用默认主题，深色用官方 @codemirror/theme-one-dark，示例站不再改写编辑器内部配色。',
     demos: [CODE_DEMO]
   });
 }

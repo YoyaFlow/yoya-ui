@@ -1,0 +1,394 @@
+/*
+ * AG Grid 场景演示（Performance / Finance / HR / Inventory）专属样式。
+ * 只作用于 .components-ag-grid-showcase 页面，避免影响其他第三方演示页。
+ */
+
+.components-ag-grid-showcase .components-interop-demo {
+  background: var(--yoya-color-surface, #ffffff);
+  border: 1px solid var(--yoya-color-border-faint, #e5e7eb);
+  border-radius: 14px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px 18px;
+  width: 100%;
+}
+
+.components-ag-grid-showcase .components-interop-demo-kicker {
+  color: var(--yoya-color-primary, #2563eb);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.components-ag-grid-showcase .components-interop-demo h3 {
+  color: var(--yoya-color-text, #172033);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.components-ag-grid-showcase .components-interop-demo > p {
+  color: var(--yoya-color-text-muted, #5a6575);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.components-ag-grid-showcase .components-interop-demo-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .components-interop-demo-toolbar p {
+  color: var(--yoya-color-text-secondary, #4b5563);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.components-ag-grid-showcase .components-interop-demo-live {
+  border: 1px solid var(--yoya-color-border, #d8dee8);
+  border-radius: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.components-ag-grid-showcase .components-interop-demo .source-panel {
+  background: var(--yoya-color-surface-muted, #f5f5f5);
+  border: 1px solid var(--yoya-color-border-faint, #e5e7eb);
+  border-radius: 10px;
+}
+
+.components-ag-grid-showcase .components-interop-demo .source-code {
+  background: var(--yoya-color-code-bg, #0f172a);
+  color: var(--yoya-color-code-text, #e2e8f0);
+}
+
+/* ---------- Finance ---------- */
+
+.components-ag-grid-showcase .ag-cell .fin-ticker {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .fin-logo {
+  align-items: center;
+  border-radius: 6px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.components-ag-grid-showcase .fin-copy {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .fin-copy b {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.components-ag-grid-showcase .fin-copy small {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.components-ag-grid-showcase .fin-up {
+  color: #16a34a;
+  font-variant-numeric: tabular-nums;
+}
+
+.components-ag-grid-showcase .fin-down {
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+}
+
+.components-ag-grid-showcase .fin-spark {
+  display: block;
+  margin: 3px 0;
+}
+
+.components-ag-grid-showcase .fin-spark .fin-bar {
+  fill: #3b82f6;
+}
+
+.components-ag-grid-showcase .fin-sector {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ---------- HR ---------- */
+
+.components-ag-grid-showcase .hr-member {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .hr-caret {
+  background: transparent;
+  border: 0;
+  color: var(--ag-foreground-color, #181d1f);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.75;
+  padding: 3px 5px;
+}
+
+.components-ag-grid-showcase .hr-caret:hover {
+  color: #3b82f6;
+}
+
+.components-ag-grid-showcase .hr-avatar {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    #3b82f6 18%,
+    var(--ag-background-color, #ffffff)
+  );
+  border-radius: 50%;
+  color: var(--ag-foreground-color, #181d1f);
+  display: inline-flex;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.components-ag-grid-showcase .hr-copy,
+.components-ag-grid-showcase .hr-group {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .hr-copy b,
+.components-ag-grid-showcase .hr-group b {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.components-ag-grid-showcase .hr-copy small,
+.components-ag-grid-showcase .hr-group small {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.components-ag-grid-showcase .hr-group small {
+  font-weight: 400;
+}
+
+.components-ag-grid-showcase .hr-status {
+  align-items: center;
+  color: var(--ag-foreground-color, #181d1f);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.components-ag-grid-showcase .hr-status i {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.components-ag-grid-showcase .hr-status-paid i {
+  background: #16a34a;
+}
+
+.components-ag-grid-showcase .hr-status-pending i {
+  background: #d97706;
+}
+
+.components-ag-grid-showcase .hr-status-overdue i {
+  background: #dc2626;
+}
+
+.components-ag-grid-showcase .hr-contact {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 12px;
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+/* ---------- Inventory ---------- */
+
+.components-ag-grid-showcase .inv-product {
+  align-items: center;
+  display: inline-flex;
+  gap: 9px;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .inv-tile {
+  align-items: center;
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.components-ag-grid-showcase .inv-copy {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .inv-copy b {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.components-ag-grid-showcase .inv-copy small {
+  color: var(--ag-foreground-color, #181d1f);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.components-ag-grid-showcase .inv-status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.components-ag-grid-showcase .inv-status i {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.components-ag-grid-showcase .inv-status-sale {
+  color: #16a34a;
+}
+
+.components-ag-grid-showcase .inv-status-sale i {
+  background: #16a34a;
+}
+
+.components-ag-grid-showcase .inv-status-pause {
+  color: #d97706;
+}
+
+.components-ag-grid-showcase .inv-status-pause i {
+  background: #d97706;
+}
+
+.components-ag-grid-showcase .inv-status-empty {
+  color: #dc2626;
+}
+
+.components-ag-grid-showcase .inv-status-empty i {
+  background: #dc2626;
+}
+
+.components-ag-grid-showcase .inv-stock {
+  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.components-ag-grid-showcase .inv-stock-text {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.components-ag-grid-showcase .inv-stock-bar {
+  background: color-mix(
+    in srgb,
+    transparent,
+    var(--ag-foreground-color, #181d1f) 8%
+  );
+  border-radius: 4px;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  width: 72px;
+}
+
+.components-ag-grid-showcase .inv-stock-bar i {
+  border-radius: 4px;
+  display: block;
+  height: 100%;
+}
+
+.components-ag-grid-showcase .inv-stock-ok .inv-stock-bar i {
+  background: #16a34a;
+}
+
+.components-ag-grid-showcase .inv-stock-low .inv-stock-bar i {
+  background: #d97706;
+}
+
+.components-ag-grid-showcase .inv-stock-empty .inv-stock-bar i {
+  background: #dc2626;
+}
+
+.components-ag-grid-showcase .inv-actions {
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.components-ag-grid-showcase .inv-action {
+  background: var(--ag-background-color, #ffffff);
+  border: 1px solid color-mix(
+    in srgb,
+    transparent,
+    var(--ag-foreground-color, #181d1f) 16%
+  );
+  border-radius: 6px;
+  color: var(--ag-foreground-color, #181d1f);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.components-ag-grid-showcase .inv-action:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.components-ag-grid-showcase .inv-action-danger {
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.components-ag-grid-showcase .inv-action-danger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}

@@ -32,7 +32,20 @@ export class LeafletMapDemoNode extends HtmlElementNode {
       color: '#2563eb',
       radius: 8
     }).addTo(this._map);
+    this._scheduleSizeRefresh();
     return element;
+  }
+
+  _scheduleSizeRefresh() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const refresh = () => this._map?.invalidateSize();
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(refresh);
+      return;
+    }
+    window.setTimeout(refresh, 0);
   }
 
   flyTo(center, zoom = 13) {

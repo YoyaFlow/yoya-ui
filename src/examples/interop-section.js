@@ -3,6 +3,7 @@ import { ComponentSource } from './component-source.js';
 import './interop-theme.css';
 
 export function InteropExampleSection(options) {
+  const controls = options.controls ?? [];
   const live = options.component();
   const output = vText(options.outputText ?? '');
   const clientOnlyHost = vClientOnly(() => live.render());
@@ -12,12 +13,21 @@ export function InteropExampleSection(options) {
       return section((example) => {
         example.className('components-interop-demo');
         example.attr('data-third-party-demo', options.id);
+        if (options.kicker) {
+          example.div((meta) => {
+            meta.className('components-interop-demo-kicker');
+            meta.strong(options.kicker);
+          });
+        }
+        if (options.title) {
+          example.h3(options.title);
+        }
         example.p(options.description);
 
-        if (options.controls.length > 0) {
+        if (controls.length > 0) {
           example.div((toolbar) => {
             toolbar.className('components-interop-demo-toolbar');
-            options.controls.forEach((control) => {
+            controls.forEach((control) => {
               toolbar.vButton(control.label, (button) => {
                 button.on('click', () => control.run(live, output));
               });
@@ -32,25 +42,54 @@ export function InteropExampleSection(options) {
           liveBox.child(clientOnlyHost);
         });
 
-        example.child(
-          ComponentSource({
-            component: options.component,
-            extraSource: options.extraSource,
-            imports: options.imports,
-            sourceComponent: options.sourceComponent,
-            title: options.sourceTitle
-          })
-        );
+        if (options.glue !== false) {
+          example.child(
+            ComponentSource({
+              component: options.component,
+              extraSource: options.extraSource,
+              imports: options.imports,
+              sourceComponent: options.sourceComponent,
+              title: options.sourceTitle
+            })
+          );
+        }
+
+        if (options.usageTitle) {
+          example.child(
+            ComponentSource({
+              component: options.component,
+              imports: options.usageImports,
+              sourceComponent: options.usageComponent ?? options.component,
+              title: options.usageTitle
+            })
+          );
+        }
       });
     }
   };
 }
 
-export function interopPageFrame({ docsKey, heading, lead, usage, note, demos }) {
+export function interopPageFrame({
+  demos,
+  docsKey,
+  gluePanel = null,
+  heading,
+  lead,
+  note,
+  pageClass = '',
+  usage
+}) {
   return {
     render() {
       return section((page) => {
-        page.className('components-route-page components-third-party-docs');
+        const fullClass = [
+          'components-route-page',
+          'components-third-party-docs',
+          pageClass
+        ]
+          .filter(Boolean)
+          .join(' ');
+        page.className(fullClass);
         page.attr('data-third-party-docs', docsKey);
         page.header((header) => {
           header.className('components-third-party-docs-header');
@@ -73,6 +112,9 @@ export function interopPageFrame({ docsKey, heading, lead, usage, note, demos })
 
         page.section((examples) => {
           examples.h2('代码演示');
+          if (gluePanel) {
+            examples.child(gluePanel);
+          }
           demos.forEach((demo) => {
             examples.child(InteropExampleSection(demo));
           });

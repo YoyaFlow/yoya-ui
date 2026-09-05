@@ -1,0 +1,105 @@
+/*
+ * Quill snow 的独立 dark 主题：颜色全部写死，不引用 yoya-ui 主题变量。
+ * 由演示节点在深色 / 系统深色时给宿主加 .quill-dark 触发。
+ */
+
+.quill-dark .ql-toolbar.ql-snow,
+.quill-dark .ql-container.ql-snow {
+  background: #1e1e1e;
+  border-color: #3a3a3a;
+  color: #e6e6e6;
+}
+
+.quill-dark .ql-container.ql-snow {
+  border-top: 0;
+}
+
+.quill-dark .ql-editor {
+  color: #e6e6e6;
+}
+
+.quill-dark .ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.quill-dark .ql-editor blockquote {
+  border-left-color: #5a5a5a;
+}
+
+.quill-dark .ql-editor a {
+  color: #6cb2ff;
+}
+
+.quill-dark .ql-editor code,
+.quill-dark .ql-editor .ql-code-block-container {
+  background-color: #333333;
+  color: #f0f0f0;
+}
+
+.quill-dark .ql-toolbar.ql-snow .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow .ql-stroke-miter {
+  stroke: #c9c9c9;
+}
+
+.quill-dark .ql-toolbar.ql-snow .ql-fill,
+.quill-dark .ql-toolbar.ql-snow .ql-stroke.ql-fill {
+  fill: #c9c9c9;
+}
+
+.quill-dark .ql-toolbar.ql-snow .ql-picker {
+  color: #d8d8d8;
+}
+
+.quill-dark .ql-toolbar.ql-snow .ql-picker-options {
+  background: #262626;
+  border-color: #3f3f3f;
+}
+
+.quill-dark .ql-toolbar.ql-snow .ql-picker-item {
+  color: #d8d8d8;
+}
+
+.quill-dark .ql-toolbar.ql-snow button:hover,
+.quill-dark .ql-toolbar.ql-snow button.ql-active,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label:hover,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label.ql-active,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-item:hover,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-item.ql-selected {
+  color: #6cb2ff;
+}
+
+.quill-dark .ql-toolbar.ql-snow button:hover .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow button.ql-active .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label:hover .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label.ql-active .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-item:hover .ql-stroke,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-item.ql-selected .ql-stroke {
+  stroke: #6cb2ff;
+}
+
+.quill-dark .ql-toolbar.ql-snow button:hover .ql-fill,
+.quill-dark .ql-toolbar.ql-snow button.ql-active .ql-fill,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label:hover .ql-fill,
+.quill-dark .ql-toolbar.ql-snow .ql-picker-label.ql-active .ql-fill {
+  fill: #6cb2ff;
+}
+
+.quill-dark .ql-snow .ql-tooltip {
+  background: #262626;
+  border-color: #3f3f3f;
+  color: #e6e6e6;
+}
+
+.quill-dark .ql-snow .ql-tooltip input[type='text'] {
+  background: #1e1e1e;
+  border-color: #3f3f3f;
+  color: #e6e6e6;
+}
+
+.quill-dark .ql-snow a {
+  color: #6cb2ff;
+}
+
+.quill-dark .ql-snow .ql-editor table td {
+  border-color: #4a4a4a;
+}

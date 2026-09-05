@@ -6,7 +6,11 @@ const {
   mapApi
 } = vi.hoisted(() => {
   const mapInstances = [];
-  const mapApi = { flyTo: vi.fn(), remove: vi.fn() };
+  const mapApi = {
+    flyTo: vi.fn(),
+    invalidateSize: vi.fn(),
+    remove: vi.fn()
+  };
 
   const fakeMap = {
     map: vi.fn(() => {

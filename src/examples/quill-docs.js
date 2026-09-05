@@ -4,13 +4,19 @@ import { QuillEditorExample, QuillEditorNode } from './demos/quill-editor.js';
 const quillDemo = Object.freeze({
   id: 'quill',
   description:
-    '在下方输入并排版内容，用「导出 HTML / 导出纯文本」读取结果；离开页面时编辑器实例自动释放。',
+    '全宽编辑区提供字号、字体、颜色、对齐、缩进、代码块、图片与公式等常用操作；「导出 HTML / 导出纯文本」读取内容。',
   component: QuillEditorExample,
   sourceComponent: QuillEditorNode,
   imports: ['HtmlElementNode'],
-  extraSource: "import Quill from 'quill';\nimport 'quill/dist/quill.snow.css';",
+  extraSource: [
+    "import Quill from 'quill';",
+    "import 'quill/dist/quill.snow.css';",
+    "import '../quill-dark.css';"
+  ].join('\n'),
   sourceTitle: 'Quill 胶水类源码',
-  outputText: '点击按钮读取编辑器内容。',
+  usageImports: [{ from: './demos/quill-editor.js', names: ['QuillEditorNode'] }],
+  usageTitle: 'Quill 使用案例源码',
+  outputText: '在编辑区内直接排版，用导出按钮读取内容。',
   controls: [
     {
       label: '导出 HTML',
@@ -33,7 +39,8 @@ export function QuillDocumentationPage() {
       '编辑器内容需要导出为 HTML 或纯文本交给业务逻辑。',
       '想展示「第三方 DOM 库 + vClientOnly」的标准互操作写法。'
     ],
-    note: 'Quill 只在客户端初始化并经 vClientOnly 挂载，无需为其做 SSR 适配；销毁时释放引用并随节点移除。',
+    note:
+      'Quill 只在客户端初始化并经 vClientOnly 挂载，无需 SSR 适配。暗色样式独立在 quill-dark.css（不引用 yoya-ui 配色），由宿主类跟随页面浅色 / 深色 / 系统切换。',
     demos: [quillDemo]
   });
 }

@@ -5,7 +5,7 @@ const INTEROP_DEMOS = Object.freeze([
   [
     'ag-grid',
     'AG Grid Community 数据表格',
-    '专业网格交互（排序 / 过滤 / 虚拟滚动）直接交给 AG Grid。'
+    'Performance / Finance / HR / Inventory 四个大型场景直接交给 AG Grid。'
   ],
   ['leaflet', 'Leaflet 地图', '地图瓦片、标记与交互用真实容器挂载 Leaflet。'],
   ['codemirror', 'CodeMirror 6 代码编辑', '代码输入、语法高亮与编辑器生态直接复用 CodeMirror 6。'],

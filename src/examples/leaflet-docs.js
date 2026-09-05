@@ -9,6 +9,8 @@ const LEAF_DEMO = Object.freeze({
   imports: ['HtmlElementNode'],
   extraSource: "import L from 'leaflet';\nimport 'leaflet/dist/leaflet.css';",
   sourceTitle: 'Leaflet 胶水类源码',
+  usageImports: [{ from: './demos/leaflet-map.js', names: ['LeafletMapDemoNode'] }],
+  usageTitle: 'Leaflet 使用案例源码',
   outputText: '地图默认定位上海，可尝试切换城市。',
   controls: [
     {

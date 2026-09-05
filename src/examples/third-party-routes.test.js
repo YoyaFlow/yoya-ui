@@ -23,6 +23,10 @@ vi.mock('quill', () => {
 
 vi.mock('ag-grid-community', () => {
   return {
+    AllCommunityModule: { moduleName: 'AllCommunity' },
+    colorSchemeDark: {},
+    ModuleRegistry: { registerModules: vi.fn() },
+    themeQuartz: { withPart: vi.fn(() => ({})) },
     createGrid: (root, options) => ({
       destroy() {},
       options,
@@ -34,7 +38,11 @@ vi.mock('ag-grid-community', () => {
 
 vi.mock('leaflet', () => {
   const layer = { addTo: vi.fn() };
-  const map = { flyTo: vi.fn(), remove: vi.fn() };
+  const map = {
+    flyTo: vi.fn(),
+    invalidateSize: vi.fn(),
+    remove: vi.fn()
+  };
 
   return {
     default: {
@@ -74,6 +82,22 @@ vi.mock('@toast-ui/editor/viewer', () => ({
     destroy() {}
 
     setMarkdown() {}
+  }
+}));
+
+vi.mock('@toast-ui/editor', () => ({
+  default: class FakeEditor {
+    constructor(config) {
+      this.config = config;
+    }
+
+    destroy() {}
+
+    getMarkdown() {
+      return this.config.initialValue;
+    }
+
+    on() {}
   }
 }));
 
@@ -160,13 +184,36 @@ describe('third-party interop routes', () => {
       const page = document.querySelector(`[data-third-party-docs="${key}"]`);
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
-      expect(page.querySelector('[data-third-party-demo-live]')).not.toBeNull();
-      expect(
-        page.querySelector(
-          hostAttribute === 'data-quill-host' ? '[data-quill-host]' : `[${hostAttribute}]`
-        )
-      ).not.toBeNull();
-      expect(page.querySelector('[data-source-example]')).not.toBeNull();
+      const demoSections = page.querySelectorAll('[data-third-party-demo]');
+      expect(demoSections.length).toBe(key === 'ag-grid' ? 4 : 1);
+      demoSections.forEach((demoSection) => {
+        expect(demoSection.querySelector('[data-third-party-demo-live]')).not.toBeNull();
+        expect(
+          demoSection.querySelector(
+            hostAttribute === 'data-quill-host' ? '[data-quill-host]' : `[${hostAttribute}]`
+          )
+        ).not.toBeNull();
+        const sourceExamples = Array.from(demoSection.querySelectorAll('[data-source-example]'));
+        if (key === 'ag-grid') {
+          expect(sourceExamples.length).toBe(1);
+          expect(
+            sourceExamples.some((node) => node.dataset.sourceExample.includes('使用案例源码'))
+          ).toBe(true);
+        } else {
+          expect(sourceExamples.length).toBe(2);
+          expect(
+            sourceExamples.some((node) => node.dataset.sourceExample.includes('胶水类源码'))
+          ).toBe(true);
+          expect(
+            sourceExamples.some((node) => node.dataset.sourceExample.includes('使用案例源码'))
+          ).toBe(true);
+        }
+      });
+      if (key === 'ag-grid') {
+        expect(
+          page.querySelector('[data-source-example="AG Grid 统一胶水入口源码"]')
+        ).not.toBeNull();
+      }
     }
   );
 });
