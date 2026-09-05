@@ -267,25 +267,71 @@ export function DevtoolsInspectorDemo() {
       .slice(-30)
       .filter((event) => state.eventFilter === 'all' || event.type === state.eventFilter);
     visibleEvents.forEach((event) => {
-      const text = `${event.seq} ${event.type} ${describeEvent(event)} #${event.nodeId}`;
+      const text = `${event.seq}. ${describeEvent(event)}（#${event.nodeId}）`;
       const row = eventHost.p(text);
       row.className('devtools-event-row');
       row.attr('data-devtools-event', 'true');
+      row.attr('data-devtools-event-type', event.type);
     });
     flushHost(eventHost);
   }
 
+  function formatLogValue(value) {
+    if (value === undefined || value === null) {
+      return '（无）';
+    }
+    const text = typeof value === 'string' ? value : JSON.stringify(value);
+    return text.length > 30 ? `${text.slice(0, 30)}…` : text;
+  }
+
   function describeEvent(event) {
+    const where = event.nodeLabel || `节点 #${event.nodeId}`;
+    if (event.type === 'commit') {
+      return `渲染 ${where}`;
+    }
+    if (event.type === 'destroy') {
+      return `销毁 ${where}`;
+    }
     if (event.type === 'attr' || event.type === 'style') {
-      return event.name;
+      const noun = event.type === 'attr' ? '属性' : '样式';
+      const before = formatLogValue(event.previous);
+      const after = formatLogValue(event.next);
+      return `${where} 的${noun} ${event.name}：${before} → ${after}`;
+    }
+    if (event.type === 'child') {
+      const parts = [];
+      if ((event.added || []).length > 0) {
+        parts.push(`添加 ${event.added.length} 个子节点`);
+      }
+      if ((event.removed || []).length > 0) {
+        parts.push(`移除 ${event.removed.length} 个`);
+      }
+      if (event.reordered) {
+        parts.push('子节点重排');
+      }
+      return `${where} ${parts.join('，')}`;
     }
     if (event.type === 'text') {
-      return `${event.from} -> ${event.to}`;
+      return `${where} 文本：${formatLogValue(event.from)} → ${formatLogValue(event.to)}`;
     }
     if (event.type === 'state') {
-      return `state ${Object.keys(event.changed || {}).join(',')}`;
+      const summary = Object.entries(event.changed || {})
+        .map(
+          ([key, change]) =>
+            `${key}: ${formatLogValue(change.from)} → ${formatLogValue(change.to)}`
+        )
+        .join('，');
+      const path =
+        {
+          bindings: '绑定写回',
+          none: '',
+          pending: '未挂载',
+          rebuild: '重建视图',
+          update: 'update 回调'
+        }[event.handling] || event.handling;
+      return `${where} 状态更新：${summary}（${path}）`;
     }
-    return '';
+    return `${where} ${event.type}`;
   }
 
   function renderStateList() {

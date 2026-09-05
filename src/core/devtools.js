@@ -40,6 +40,9 @@ export function emitDevtools(event) {
   if (enriched.node && typeof enriched.node === 'object' && enriched.nodeId === undefined) {
     enriched.nodeId = ensureDevtoolsNode(enriched.node);
   }
+  if (enriched.node && typeof enriched.node === 'object' && enriched.nodeLabel === undefined) {
+    enriched.nodeLabel = devtoolsNodeLabel(enriched.node);
+  }
   listeners.forEach((listener) => {
     try {
       listener(enriched);
@@ -140,6 +143,28 @@ function devtoolsNodeChildren(node, kind) {
     return Array.isArray(node._resolvedList) ? node._resolvedList : [];
   }
   return Array.isArray(node._children) ? node._children : [];
+}
+
+function devtoolsNodeLabel(node) {
+  const kind = devtoolsNodeKind(node);
+  if (kind === 'element') {
+    const classes = node._classes ? [...node._classes].slice(0, 2) : [];
+    const classText = classes
+      .map((name) => String(name).replace(/\s+/g, ''))
+      .filter(Boolean)
+      .map((name) => `.${name}`)
+      .join('');
+    return `${node._tagName || 'element'}${classText}`;
+  }
+  if (kind === 'text') {
+    const content = typeof node._content === 'string' ? node._content : '';
+    const short = content.length > 24 ? `${content.slice(0, 24)}…` : content;
+    return `文本 "${short}"`;
+  }
+  if (kind === 'component') {
+    return '组件';
+  }
+  return '节点';
 }
 
 function serializeDevtoolsNode(node) {

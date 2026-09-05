@@ -35,9 +35,9 @@ describe('devtools inspector demo', () => {
     const eventText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
       node.textContent
     );
-    expect(eventText.some((text) => text.includes('state'))).toBe(true);
+    expect(eventText.some((text) => text.includes('状态更新'))).toBe(true);
     expect(
-      eventText.some((text) => text.includes('text') && text.includes('0') && text.includes('1'))
+      eventText.some((text) => text.includes('文本') && text.includes('0 → 1'))
     ).toBe(true);
 
     const stateTab = element.querySelector('[data-devtools-tab="state"]');
@@ -63,11 +63,9 @@ describe('devtools inspector demo', () => {
     const filter = element.querySelector('[data-devtools-filter]');
     filter.value = 'text';
     filter.dispatchEvent(new Event('change'));
-    const filteredText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
-      node.textContent
-    );
-    expect(filteredText.length).toBeGreaterThan(0);
-    expect(filteredText.every((text) => text.includes(' text '))).toBe(true);
+    const filteredEvents = [...element.querySelectorAll('[data-devtools-event]')];
+    expect(filteredEvents.length).toBeGreaterThan(0);
+    expect(filteredEvents.every((node) => node.dataset.devtoolsEventType === 'text')).toBe(true);
     filter.value = 'all';
     filter.dispatchEvent(new Event('change'));
 

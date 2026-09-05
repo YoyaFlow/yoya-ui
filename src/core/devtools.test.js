@@ -44,6 +44,21 @@ describe('devtools hook (core)', () => {
     expect(events.some((e) => e.type === 'destroy')).toBe(true);
   });
 
+  it('labels events with human-readable node descriptions', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const node = div('hello');
+    node.renderDom();
+    node.destroy();
+
+    const commit = events.find((event) => event.type === 'commit');
+    const destroy = events.find((event) => event.type === 'destroy');
+    expect(commit.nodeLabel).toBe('div');
+    expect(destroy.nodeLabel).toBe('div');
+    unsubscribe();
+  });
+
   it('does not emit after unsubscribe', () => {
     enableDevtools();
     const events = [];

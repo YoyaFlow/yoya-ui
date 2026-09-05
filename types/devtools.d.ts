@@ -18,6 +18,8 @@ export interface DevtoolsEventBase {
   seq: number;
   /** Stable id of the node the event belongs to. */
   nodeId?: number;
+  /** Human-readable node description (tag/classes/text/component). */
+  nodeLabel?: string;
 }
 
 /** Emitted when an element is first rendered into the DOM. */
