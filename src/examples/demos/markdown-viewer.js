@@ -4,6 +4,7 @@ import Viewer from '@toast-ui/editor/viewer';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 import '@toast-ui/editor/dist/theme/toastui-editor-dark.css';
+import '../markdown-viewer-toolbar.css';
 
 const DEFAULT_MARKDOWN = [
   '## 实时编辑与查看',
