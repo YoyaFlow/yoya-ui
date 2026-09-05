@@ -174,6 +174,7 @@ export function toKebabStyleName(name) {
 export class ViewNode {
   constructor(setup = null) {
     this._children = [];
+    this._childKeys = new Map();
     this._events = new Map();
     this._cleanup = [];
     this._states = {};
@@ -267,12 +268,76 @@ export class ViewNode {
   }
 
   clearChildren() {
+    this._dropChildKeys(this._children);
     this._children.forEach((child) => {
       this._pendingRemovals.add(child);
     });
     this._children = [];
     this._childrenDirty = true;
     return this;
+  }
+
+  /**
+   * 带显式 key 添加子节点；key 在同一父节点内必须唯一。
+   * 元素子节点会把 key 镜像为 data-row-key，便于 SSR 与调试。
+   */
+  addChild(key, child) {
+    const rawKey = String(key);
+    if (this._childKeys.has(rawKey)) {
+      throw new TypeError(`duplicate key "${rawKey}"`);
+    }
+
+    const viewNode = normalizeChild(child);
+    this._childKeys.set(rawKey, viewNode);
+    if (typeof viewNode.attr === 'function') {
+      viewNode.attr('data-row-key', rawKey);
+    }
+    this._pendingRemovals.delete(viewNode);
+    this._children.push(viewNode);
+    this._childrenDirty = true;
+
+    if (this._el) {
+      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
+        viewNode.renderDom()
+      );
+      if (childElement && childElement.parentNode !== this._el) {
+        this._el.appendChild(childElement);
+      }
+    }
+
+    return this;
+  }
+
+  /** 按 key 读取子节点；不存在返回 null。 */
+  getChild(key) {
+    return this._childKeys.get(String(key)) || null;
+  }
+
+  /** 按 key 移除并销毁子节点。 */
+  removeChild(key) {
+    const rawKey = String(key);
+    const viewNode = this._childKeys.get(rawKey);
+    if (!viewNode) {
+      return this;
+    }
+
+    this._childKeys.delete(rawKey);
+    const index = this._children.indexOf(viewNode);
+    if (index !== -1) {
+      this._children.splice(index, 1);
+    }
+    this._childrenDirty = true;
+    viewNode.destroy();
+    return this;
+  }
+
+  _dropChildKeys(nodes) {
+    const doomed = new Set(nodes);
+    this._childKeys.forEach((child, key) => {
+      if (doomed.has(child)) {
+        this._childKeys.delete(key);
+      }
+    });
   }
 
   /**
@@ -420,6 +485,7 @@ export class ViewNode {
     this._pendingRemovals.forEach((child) => child.destroy());
     this._pendingRemovals.clear();
     this._children = [];
+    this._childKeys.clear();
 
     if (this._el?.parentNode) {
       this._el.parentNode.removeChild(this._el);
@@ -517,7 +583,41 @@ export class ComponentNode extends ViewNode {
     }
 
     this._resolved = resolved;
+    if (
+      this._component &&
+      typeof this._component === 'object' &&
+      typeof this._component._attachHost === 'function'
+    ) {
+      this._component._attachHost(this);
+    }
     return resolved;
+  }
+
+  /**
+   * 组件主动替换解析结果：已挂载时在父元素中原位换 DOM，再销毁旧视图。
+   */
+  _replaceResolved(nextView) {
+    const previous = this._resolved;
+    if (previous === nextView) {
+      return;
+    }
+
+    this._resolved = nextView;
+    if (!previous) {
+      return;
+    }
+
+    const previousElement = previous._el;
+    if (previousElement && previousElement.parentNode) {
+      const inherited = currentInheritedScope();
+      const element = withRenderScope(this._access ?? inherited, () => nextView.renderDom());
+      if (element) {
+        previousElement.parentNode.replaceChild(element, previousElement);
+        this._el = element;
+      }
+    }
+
+    previous.destroy();
   }
 
   children() {
@@ -554,6 +654,14 @@ export class ComponentNode extends ViewNode {
   }
 
   destroy() {
+    if (
+      this._component &&
+      typeof this._component === 'object' &&
+      typeof this._component.destroy === 'function'
+    ) {
+      this._component.destroy();
+    }
+
     if (this._resolved) {
       this._resolved.destroy();
     }

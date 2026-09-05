@@ -1,10 +1,17 @@
-import { ElementNode, registerChildFactories, withBindingScope } from './node.js';
+import { ElementNode, ViewNode, registerChildFactories, withBindingScope } from './node.js';
 
 const lifecycleKeys = new Set(['state', 'render', 'update']);
-const builtinKeys = new Set(['destroy', 'getState', 'setState', 'subscribe']);
+const builtinKeys = new Set([
+  '_attachHost',
+  'destroy',
+  'getState',
+  'setState',
+  'subscribe'
+]);
 
 /**
- * vStateNode 返回带状态的对象组件：state 保存状态，render 构建初始视图，
+ * vStateNode 返回带状态的对象组件：不产生自己的 DOM 元素，
+ * render 返回的视图根直接成为父节点落实的子节点；state 保存状态，
  * update 在状态变化后做局部更新；未提供 update 时，render 中登记的函数值
  * 绑定（vText/attr/style）会在 setState 后统一求值写回，没有绑定时回退为全量重建。
  * config 上除 state/render/update 外的自定义函数会挂到返回对象上，
@@ -18,10 +25,15 @@ export function vStateNode(config = {}) {
   const state = typeof config.state === 'function' ? config.state() : { ...(config.state || {}) };
   const listeners = new Set();
   let destroyed = false;
-  let root = null;
+  let view = null;
+  let host = null;
   let bindings = [];
 
   const component = {
+    _attachHost(hostNode) {
+      host = hostNode;
+      return component;
+    },
     destroy() {
       if (destroyed) {
         return component;
@@ -30,9 +42,12 @@ export function vStateNode(config = {}) {
       destroyed = true;
       bindings = [];
       listeners.clear();
+      host = null;
 
-      if (root) {
-        root.destroy();
+      if (view) {
+        const currentView = view;
+        view = null;
+        currentView.destroy();
       }
 
       return component;
@@ -42,20 +57,14 @@ export function vStateNode(config = {}) {
     },
     render() {
       if (destroyed) {
-        return root;
+        return view;
       }
 
-      if (!root) {
-        root = new ElementNode('div');
-        const destroyRoot = root.destroy.bind(root);
-        root.destroy = () => {
-          listeners.clear();
-          return destroyRoot();
-        };
+      if (!view) {
         rebuild();
       }
 
-      return root;
+      return view;
     },
     setState(patch) {
       if (destroyed || patch === null || patch === undefined) {
@@ -78,7 +87,7 @@ export function vStateNode(config = {}) {
       });
 
       if (changed.size > 0) {
-        if (root) {
+        if (view) {
           applyStateChange(changed);
         }
 
@@ -115,6 +124,7 @@ export function vStateNode(config = {}) {
   return component;
 
   function rebuild() {
+    const previous = view;
     bindings = [];
     const scope = {
       bindings,
@@ -123,11 +133,26 @@ export function vStateNode(config = {}) {
     const nextView = withBindingScope(scope, () =>
       config.render.call(component, state, component)
     );
-    root.clearChildren().child(nextView);
+    if (!(nextView instanceof ViewNode)) {
+      throw new TypeError('vStateNode render must return a ViewNode');
+    }
+
+    view = nextView;
     flushBindings();
 
-    if (root._el) {
-      root.commit();
+    if (host) {
+      host._replaceResolved(nextView);
+      return;
+    }
+
+    if (previous && previous !== nextView) {
+      if (previous._el && previous._el.parentNode) {
+        const element = nextView.renderDom();
+        if (element) {
+          previous._el.parentNode.replaceChild(element, previous._el);
+        }
+      }
+      previous.destroy();
     }
   }
 

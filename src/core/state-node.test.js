@@ -40,7 +40,8 @@ describe('vStateNode', () => {
         return div(vText(String(state.count)));
       }
     });
-    const element = component.render().renderDom();
+    const host = div().child(component);
+    const element = host.renderDom();
 
     expect(element.textContent).toBe('0');
 
@@ -61,7 +62,8 @@ describe('vStateNode', () => {
       },
       update
     });
-    const element = component.render().renderDom();
+    const host = div().child(component);
+    const element = host.renderDom();
 
     component.setState({ count: 1 });
 

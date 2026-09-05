@@ -32,18 +32,17 @@ describe('vStateNode function-value bindings', () => {
       }
     });
     const element = component.render().renderDom();
-    const view = element.firstElementChild;
 
-    expect(view.getAttribute('data-busy')).toBeNull();
+    expect(element.getAttribute('data-busy')).toBeNull();
 
     component.setState({ busy: true });
 
-    expect(view.getAttribute('data-busy')).toBe('true');
+    expect(element.getAttribute('data-busy')).toBe('true');
     expect(box.attr('data-busy')).toBe('true');
 
     component.setState({ busy: false });
 
-    expect(view.getAttribute('data-busy')).toBeNull();
+    expect(element.getAttribute('data-busy')).toBeNull();
     expect(box.attr('data-busy')).toBeUndefined();
   });
 
@@ -66,21 +65,20 @@ describe('vStateNode function-value bindings', () => {
     expect(panel.style('cursor')).toBe('default');
 
     const element = root.renderDom();
-    const view = element.firstElementChild;
 
-    expect(view.style.display).toBe('block');
-    expect(view.style.opacity).toBe('');
-    expect(view.style.cursor).toBe('default');
+    expect(element.style.display).toBe('block');
+    expect(element.style.opacity).toBe('');
+    expect(element.style.cursor).toBe('default');
 
     component.setState({ saving: true });
 
-    expect(view.style.opacity).toBe('0.65');
-    expect(view.style.cursor).toBe('wait');
+    expect(element.style.opacity).toBe('0.65');
+    expect(element.style.cursor).toBe('wait');
 
     component.setState({ saving: false });
 
-    expect(view.style.opacity).toBe('');
-    expect(view.style.cursor).toBe('default');
+    expect(element.style.opacity).toBe('');
+    expect(element.style.cursor).toBe('default');
     expect(panel.style('opacity')).toBeUndefined();
   });
 
@@ -96,7 +94,8 @@ describe('vStateNode function-value bindings', () => {
         return changed.has('visible');
       }
     });
-    const element = component.render().renderDom();
+    const host = div().child(component);
+    const element = host.renderDom();
 
     component.setState({ label: 'y' });
 
