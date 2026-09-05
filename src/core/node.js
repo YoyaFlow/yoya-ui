@@ -33,6 +33,42 @@ function withRenderScope(spec, build) {
   }
 }
 
+// 函数值绑定作用域：vStateNode render 期间把 (state) => value 登记为绑定，
+// 由状态组件统一求值写回；非状态作用域下的函数值会被拒绝。
+let activeBindingScope = null;
+
+/**
+ * 在指定绑定作用域内执行 build。scope 形如 { bindings: [], getState(): state }，
+ * 其中的 setter 收到函数值时会登记绑定。
+ */
+export function withBindingScope(scope, build) {
+  const previous = activeBindingScope;
+  activeBindingScope = scope;
+  try {
+    return build();
+  } finally {
+    activeBindingScope = previous;
+  }
+}
+
+function registerNodeBinding(kind, key, read, commit) {
+  if (!activeBindingScope) {
+    throw new TypeError(
+      `vStateNode binding scope required for function value (${kind}${key ? ` "${key}"` : ''})`
+    );
+  }
+
+  const scope = activeBindingScope;
+  scope.bindings.push({
+    commit,
+    committed: false,
+    evaluate: () => read(scope.getState()),
+    key,
+    kind,
+    last: undefined
+  });
+}
+
 // 无闭合标签的 HTML 元素，toHTML 时不能追加结束标签。
 const voidElements = new Set([
   'area',
@@ -411,13 +447,25 @@ export class ViewNode {
 export class VTextNode extends ViewNode {
   constructor(content = '') {
     super(null);
-    this._content = String(content);
+    this._content = '';
     this._textNode = null;
+
+    if (typeof content === 'function') {
+      registerNodeBinding('text', null, content, (next) => this.textContent(next));
+      return;
+    }
+
+    this._content = String(content);
   }
 
   textContent(value) {
     if (value === undefined) {
       return this._content;
+    }
+
+    if (typeof value === 'function') {
+      registerNodeBinding('text', null, value, (next) => this.textContent(next));
+      return this;
     }
 
     this._content = String(value);
@@ -660,6 +708,11 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
+    if (typeof value === 'function') {
+      registerNodeBinding('attr', name, value, (next) => this.attr(name, next));
+      return this;
+    }
+
     if (value === null || value === undefined || value === false) {
       delete this._attrs[name];
     } else {
@@ -734,6 +787,11 @@ export class ElementNode extends ViewNode {
 
     if (name && typeof name === 'object') {
       return this.styles(name);
+    }
+
+    if (typeof value === 'function') {
+      registerNodeBinding('style', name, value, (next) => this.style(name, next));
+      return this;
     }
 
     if (value === null || value === undefined || value === '') {
