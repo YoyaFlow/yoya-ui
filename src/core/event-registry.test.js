@@ -83,4 +83,20 @@ describe('ViewNode event registry', () => {
 
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it('does not double-bind when a setup-style callback re-registers handlers', () => {
+    const node = div();
+    const element = node.renderDom();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    node.on('click', first);
+    node.on('click', second);
+
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(2);
+  });
 });
