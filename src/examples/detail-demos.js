@@ -1043,7 +1043,7 @@ const detailEntries = new Map([
     freezeEntry({
       behavior: ['失败后可以重试，成功后会保持缓存状态。'],
       component: DynamicModuleCard,
-      imports: ['div', 'vCard', 'vDynamicLoader'],
+      imports: ['div', 'vCard', 'vDynamicLoader', 'vText'],
       notes: ['适合延迟加载和错误兜底。'],
       sourceTitle: '动态模块加载核心源码',
       summary: '异步模块加载与重试。',
