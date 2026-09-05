@@ -1,0 +1,113 @@
+.yoya-devtools-inspector {
+  display: grid;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.devtools-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.devtools-controls label {
+  color: var(--yoya-color-text-secondary, #444);
+  font-size: 14px;
+}
+
+.devtools-controls select {
+  min-height: 32px;
+  border: 1px solid var(--yoya-color-border, #cbd5e1);
+  border-radius: 6px;
+  background: var(--yoya-color-surface, #fff);
+  color: var(--yoya-color-text, #1f2937);
+  padding: 0 8px;
+}
+
+.devtools-stage {
+  min-width: 0;
+}
+
+.devtools-inspect-root,
+.devtools-target-card {
+  border: 1px solid var(--yoya-color-border-muted, #dbe2ea);
+  border-radius: 8px;
+  background: var(--yoya-color-surface, #fff);
+  padding: 12px 14px;
+}
+
+.devtools-inspect-root {
+  box-shadow: 0 1px 2px var(--yoya-color-border-faint, transparent);
+}
+
+.devtools-target-card p {
+  margin: 4px 0;
+}
+
+.devtools-columns {
+  min-width: 0;
+}
+
+.devtools-columns h4 {
+  margin: 10px 0 6px;
+  color: var(--yoya-color-text-secondary, #444);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.devtools-tree-row {
+  line-height: 1.7;
+}
+
+.devtools-tree-button {
+  max-width: 100%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--yoya-color-text, #1f2937);
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--yoya-font-mono, monospace);
+  font-size: 13px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devtools-tree-button:hover,
+.devtools-tree-button:focus-visible {
+  background: var(--yoya-color-surface-hover, #eef2f7);
+  outline: none;
+}
+
+.devtools-detail-code {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--yoya-color-code-border, #dbe2ea);
+  border-radius: 6px;
+  background: var(--yoya-color-code-bg, #f8fafc);
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.devtools-detail-code code {
+  color: var(--yoya-color-code-text, #334155);
+  font-family: var(--yoya-font-mono, monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.devtools-event-row {
+  overflow: hidden;
+  border-left: 2px solid var(--yoya-color-border-muted, #dbe2ea);
+  margin: 2px 0;
+  padding: 2px 8px;
+  color: var(--yoya-color-text-secondary, #475569);
+  font-family: var(--yoya-font-mono, monospace);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

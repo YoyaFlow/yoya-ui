@@ -21,6 +21,7 @@ const devtoolsDemoDefinitions = Object.freeze([
       ],
       from: '@yoyaflow/yoya-ui/devtools'
     },
+    extraSource: "import '../devtools-inspector.css';",
     sourceTitle: '参考调试面板源码'
   }
 ]);
@@ -110,6 +111,7 @@ function DevtoolsExampleSection(demo) {
     component: demo.component,
     sourceComponent: demo.sourceComponent,
     imports: [...demo.imports, { names: demo.extraImports.names, from: demo.extraImports.from }],
+    extraSource: demo.extraSource,
     title: demo.sourceTitle
   });
 

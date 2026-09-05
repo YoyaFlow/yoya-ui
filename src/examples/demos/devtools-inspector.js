@@ -1,4 +1,5 @@
 import { div, vStateNode, vText } from '../../index.js';
+import '../devtools-inspector.css';
 import {
   disableDevtools,
   enableDevtools,
