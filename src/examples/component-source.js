@@ -5,7 +5,7 @@ function buildImportBlock(imports = []) {
   const importLines = [];
 
   if (yoyaNames) {
-    importLines.push(`import { ${yoyaNames} } from 'yoya-ui';`);
+    importLines.push(`import { ${yoyaNames} } from '@yoyaflow/yoya-ui';`);
   }
 
   imports

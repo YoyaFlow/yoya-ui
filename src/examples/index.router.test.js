@@ -51,8 +51,8 @@ describe('renderExamplesIndex', () => {
   it('groups yoya-ui imports into one import statement in source panels', () => {
     const source = componentSource(() => null, ['div', 'vText']);
 
-    expect(source).toContain("import { div, vText } from 'yoya-ui';");
-    expect(source).not.toContain("import { div } from 'yoya-ui';");
+    expect(source).toContain("import { div, vText } from '@yoyaflow/yoya-ui';");
+    expect(source).not.toContain("import { div } from '@yoyaflow/yoya-ui';");
   });
 
   it('keeps example styles inside the component module instead of Index.html', () => {
@@ -2027,7 +2027,7 @@ describe('renderExamplesIndex', () => {
     const page = document.querySelector('[data-component-route-item="general:button"]');
     const source = page.querySelector('[data-source-example]').textContent;
 
-    expect(source).toContain("import { vButton } from 'yoya-ui';");
+    expect(source).toContain("import { vButton } from '@yoyaflow/yoya-ui';");
     expect(source).toContain('export function ButtonExample1()');
     expect(source).toContain('return {');
     expect(source).toContain('render()');
@@ -2256,7 +2256,7 @@ describe('renderExamplesIndex', () => {
 
     const placementSource = placementDemo.querySelector('[data-source-example]').textContent;
     expect(placementSource).toContain('export function TooltipPlacementExample1');
-    expect(placementSource).toContain("import { section, vTooltip } from 'yoya-ui';");
+    expect(placementSource).toContain("import { section, vTooltip } from '@yoyaflow/yoya-ui';");
     expect(placementSource).toContain("'top-left'");
     expect(placementSource).toContain("'bottom-left'");
   });
@@ -2275,7 +2275,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-button-group-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-button-group-demo="basic"] [data-source-example]').textContent
-    ).toContain("import { vButtons } from 'yoya-ui';");
+    ).toContain("import { vButtons } from '@yoyaflow/yoya-ui';");
 
     const selectDemo = page.querySelector('[data-button-group-demo="select"]');
     const runningButton = [...selectDemo.querySelectorAll('.yoya-vbutton')].find((button) =>
@@ -2310,7 +2310,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-float-button-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-float-button-demo="basic"] [data-source-example]').textContent
-    ).toContain("import { PlusOutlined, div, vFloatButton, vText } from 'yoya-ui';");
+    ).toContain("import { PlusOutlined, div, vFloatButton, vText } from '@yoyaflow/yoya-ui';");
 
     const basicDemo = page.querySelector('[data-float-button-demo="basic"]');
     basicDemo.querySelector('.yoya-vfloat-button').click();
@@ -2334,7 +2334,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-radio-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-radio-demo="group"] [data-source-example]').textContent
-    ).toContain("import { div, vRadios, vText } from 'yoya-ui';");
+    ).toContain("import { div, vRadios, vText } from '@yoyaflow/yoya-ui';");
 
     const groupDemo = page.querySelector('[data-radio-demo="group"]');
     const prodInput = [...groupDemo.querySelectorAll('input')][2];
@@ -2374,7 +2374,7 @@ describe('renderExamplesIndex', () => {
     });
     const element = sourcePanel.render().renderDom();
 
-    expect(sourceText).toBe(`import { vCard } from 'yoya-ui';
+    expect(sourceText).toBe(`import { vCard } from '@yoyaflow/yoya-ui';
 
 export function SampleCard() {
   return {

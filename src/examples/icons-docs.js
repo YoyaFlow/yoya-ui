@@ -63,7 +63,7 @@ const iconEntries = Object.keys(icons)
     name
   }));
 
-const exampleSource = `import { SearchOutlined, SettingsOutlined, UploadOutlined } from 'yoya-ui';
+const exampleSource = `import { SearchOutlined, SettingsOutlined, UploadOutlined } from '@yoyaflow/yoya-ui';
 
 div((page) => {
   page.child(SearchOutlined());
