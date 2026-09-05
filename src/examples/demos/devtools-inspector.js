@@ -27,6 +27,7 @@ export function DevtoolsInspectorDemo() {
   let detailHost = null;
   let eventHost = null;
   let highlighted = null;
+  const stateByNode = {};
 
   const target = vStateNode({
     state: () => ({ count: 0, mode: 'normal' }),
@@ -93,6 +94,9 @@ export function DevtoolsInspectorDemo() {
     stopSubscription = subscribeDevtools((event) => {
       if (!isInsideInspectedTree(event)) {
         return;
+      }
+      if (event.type === 'state') {
+        stateByNode[event.nodeId] = event.state;
       }
       state.events.push(event);
       if (state.events.length > 100) {
@@ -200,7 +204,8 @@ export function DevtoolsInspectorDemo() {
           JSON.stringify(
             {
               node: snapshot,
-              scope: getDevtoolsScope(state.selectedId)
+              scope: getDevtoolsScope(state.selectedId),
+              state: stateByNode[state.selectedId] || null
             },
             null,
             2

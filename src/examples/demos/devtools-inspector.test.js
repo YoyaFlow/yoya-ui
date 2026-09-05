@@ -28,6 +28,15 @@ describe('devtools inspector demo', () => {
       eventText.some((text) => text.includes('text') && text.includes('0') && text.includes('1'))
     ).toBe(true);
 
+    const componentButton = [...element.querySelectorAll('.devtools-tree-button')].find(
+      (button) => button.textContent.includes('component')
+    );
+    componentButton.click();
+    expect(JSON.parse(element.querySelector('[data-devtools-detail]').textContent).state).toEqual({
+      count: 1,
+      mode: 'normal'
+    });
+
     const filter = element.querySelector('[data-devtools-filter]');
     filter.value = 'text';
     filter.dispatchEvent(new Event('change'));
