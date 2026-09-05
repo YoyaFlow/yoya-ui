@@ -501,7 +501,6 @@ function createComponentsView(appRouter) {
         menuBox.div((intro) => {
           intro.className('components-menu-intro');
           intro.h2('组件菜单');
-          intro.p('按 docs/components.md 的分组顺序整理。');
         });
         menuBox.child(menuTree);
       });
