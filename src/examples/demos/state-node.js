@@ -402,3 +402,50 @@ export function StateEventOverwriteExample1() {
 
   return api;
 }
+
+export function StateDynamicAttrsExample1() {
+  return vStateNode({
+    state: () => ({ status: 'idle' }),
+    render(state, api) {
+      return vCard((card) => {
+        card.vCardHeader('动态属性');
+        card.vCardBody((body) => {
+          body.div((panel) => {
+            panel.attr('data-dynamic-status', (s) => s.status);
+            panel.child(vText((s) => (s.status === 'saving' ? '保存中…' : '已就绪')));
+          });
+          body.vButton('保存', (button) => {
+            button
+              .variant('primary')
+              .attr('disabled', (s) => s.status === 'saving')
+              .attr('aria-busy', (s) => (s.status === 'saving' ? 'true' : null))
+              .style('opacity', (s) => (s.status === 'saving' ? '0.6' : null))
+              .style('cursor', (s) => (s.status === 'saving' ? 'wait' : null))
+              .on('click', () => api.startSave());
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('完成', (button) => {
+            button.variant('primary');
+            button.on('click', () => api.finish());
+          });
+          footer.vButton('失败', (button) => {
+            button.on('click', () => api.fail());
+          });
+        });
+      });
+    },
+    startSave() {
+      this.setState({ status: 'saving' });
+      return this;
+    },
+    finish() {
+      this.setState({ status: 'success' });
+      return this;
+    },
+    fail() {
+      this.setState({ status: 'error' });
+      return this;
+    }
+  });
+}

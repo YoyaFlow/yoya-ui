@@ -2,6 +2,7 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   dynamicFormFieldsSource,
+  StateDynamicAttrsExample1,
   StateMethodsDemo,
   StateMethodsExample,
   StateDynamicFormDemo,
@@ -97,6 +98,15 @@ const stateDemoDefinitions = Object.freeze([
     sourceComponent: StateEventOverwriteExample1,
     imports: ['div', 'vCard'],
     sourceTitle: '事件覆盖核心源码'
+  },
+  {
+    id: 'dynamic-attrs',
+    title: '动态属性绑定',
+    description: 'attr/style 接收函数值后随状态更新，返回 null 时移除属性或样式。',
+    component: StateDynamicAttrsExample1,
+    sourceComponent: StateDynamicAttrsExample1,
+    imports: ['vCard', 'vStateNode', 'vText'],
+    sourceTitle: '动态属性绑定核心源码'
   }
 ]);
 
@@ -200,7 +210,7 @@ export function StateNodeDocumentationPage() {
           examples.className('components-state-docs-examples');
           examples.h2('代码演示');
           examples.p(
-            '九个示例分别展示函数值绑定、输入值绑定、全量重建、结构切换、动态表单、自定义方法、多根 fragment、Keyed 子节点与事件覆盖。'
+            '十个示例分别展示函数值绑定、输入值绑定、全量重建、结构切换、动态表单、自定义方法、多根 fragment、Keyed 子节点、事件覆盖与动态属性绑定。'
           );
           stateDemoDefinitions.forEach((demo) => {
             examples.child(StateExampleSection(demo));

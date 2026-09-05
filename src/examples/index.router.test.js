@@ -957,6 +957,32 @@ describe('renderExamplesIndex', () => {
     registerA.click();
     eventTarget.click();
     expect(eventOutput.textContent).toBe('A 处理器已响应');
+
+    const dynamic = page.querySelector(
+      '[data-state-demo="dynamic-attrs"] .components-state-demo-live'
+    );
+    const statusBox = dynamic.querySelector('[data-dynamic-status]');
+    const saveButton = [...dynamic.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('保存')
+    );
+    expect(statusBox.getAttribute('data-dynamic-status')).toBe('idle');
+    expect(saveButton.disabled).toBe(false);
+    expect(saveButton.getAttribute('aria-busy')).toBeNull();
+
+    saveButton.click();
+    expect(statusBox.getAttribute('data-dynamic-status')).toBe('saving');
+    expect(saveButton.disabled).toBe(true);
+    expect(saveButton.getAttribute('aria-busy')).toBe('true');
+    expect(saveButton.style.opacity).toBe('0.6');
+
+    const finishButton = [...dynamic.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('完成')
+    );
+    finishButton.click();
+    expect(statusBox.getAttribute('data-dynamic-status')).toBe('success');
+    expect(saveButton.disabled).toBe(false);
+    expect(saveButton.getAttribute('aria-busy')).toBeNull();
+    expect(saveButton.style.opacity).toBe('');
   });
 
   it('renders the theme playground demo page', async () => {
@@ -1065,7 +1091,7 @@ describe('renderExamplesIndex', () => {
       'counter',
       'StateCounterExample1',
       'vStateNode(',
-      9
+      10
     ],
     [
       '/components/layout/divider',
