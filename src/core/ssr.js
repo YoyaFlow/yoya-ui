@@ -149,7 +149,10 @@ function countNodes(node) {
 
   if (typeof node.children === 'function') {
     node.children().forEach((child) => {
-      count += countNodes(child instanceof ComponentNode ? child._resolve() : child);
+      const roots = child instanceof ComponentNode ? child._resolveList() : [child];
+      roots.forEach((root) => {
+        count += countNodes(root);
+      });
     });
   }
 
@@ -387,7 +390,14 @@ export function hydrate(component, target, state = null, options = {}) {
 
 function adoptElement(node, existing) {
   if (node instanceof ComponentNode) {
-    adoptElement(node._resolve(), existing);
+    const roots = node._resolveList();
+    if (roots.length === 1) {
+      adoptElement(roots[0], existing);
+      return;
+    }
+
+    const childNodes = existing ? Array.from(existing.childNodes) : [];
+    roots.forEach((root, index) => adoptElement(root, childNodes[index]));
     return;
   }
 
@@ -408,7 +418,14 @@ function adoptElement(node, existing) {
     node._el = existing;
     node._hydrated = true;
     const childNodes = Array.from(existing.childNodes);
-    node.children().forEach((child, index) => adoptElement(child, childNodes[index]));
+    let cursor = 0;
+    node.children().forEach((child) => {
+      const roots = child instanceof ComponentNode ? child._resolveList() : [child];
+      roots.forEach((root) => {
+        adoptElement(root, childNodes[cursor]);
+        cursor += 1;
+      });
+    });
     return;
   }
 
@@ -417,7 +434,7 @@ function adoptElement(node, existing) {
 
 function bindElement(node) {
   if (node instanceof ComponentNode) {
-    bindElement(node._resolve());
+    node._resolveList().forEach((root) => bindElement(root));
     return;
   }
 
@@ -434,7 +451,7 @@ function bindElement(node) {
 
 function syncSnapshots(node) {
   if (node instanceof ComponentNode) {
-    syncSnapshots(node._resolve());
+    node._resolveList().forEach((root) => syncSnapshots(root));
     return;
   }
 

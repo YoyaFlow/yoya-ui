@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from './index.js';
+import { div, span, vStateNode } from './index.js';
 import { hydrate, parseState, renderToString } from './yoya.ssr.js';
 
 function createCounterPage(initialState = { count: 0 }) {
@@ -84,5 +84,24 @@ describe('hydrate', () => {
     expect(document.querySelector('#app button').textContent).toBe('+5');
     document.querySelector('#app button').click();
     expect(document.querySelector('#app span').textContent).toBe('计数：6');
+  });
+
+  it('hydrates nested multi-root fragments without rebuilding them', () => {
+    const page = () =>
+      div((root) => {
+        root.child(() => [span('a'), span('b')]);
+      });
+    const { html } = renderToString(page);
+    document.body.innerHTML = `<div id="app">${html}</div>`;
+    const spansBefore = Array.from(document.querySelectorAll('#app span'));
+
+    hydrate(page, '#app');
+
+    const spans = Array.from(document.querySelectorAll('#app span'));
+    expect(spans).toHaveLength(2);
+    expect(spans[0]).toBe(spansBefore[0]);
+    expect(spans[1]).toBe(spansBefore[1]);
+    expect(spans[0].textContent).toBe('a');
+    expect(spans[1].textContent).toBe('b');
   });
 });

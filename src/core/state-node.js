@@ -25,7 +25,7 @@ export function vStateNode(config = {}) {
   const state = typeof config.state === 'function' ? config.state() : { ...(config.state || {}) };
   const listeners = new Set();
   let destroyed = false;
-  let view = null;
+  let roots = null;
   let host = null;
   let bindings = [];
 
@@ -44,10 +44,10 @@ export function vStateNode(config = {}) {
       listeners.clear();
       host = null;
 
-      if (view) {
-        const currentView = view;
-        view = null;
-        currentView.destroy();
+      if (roots) {
+        const currentRoots = roots;
+        roots = null;
+        currentRoots.forEach((root) => root.destroy());
       }
 
       return component;
@@ -57,14 +57,14 @@ export function vStateNode(config = {}) {
     },
     render() {
       if (destroyed) {
-        return view;
+        return renderOutput();
       }
 
-      if (!view) {
+      if (!roots) {
         rebuild();
       }
 
-      return view;
+      return renderOutput();
     },
     setState(patch) {
       if (destroyed || patch === null || patch === undefined) {
@@ -87,7 +87,7 @@ export function vStateNode(config = {}) {
       });
 
       if (changed.size > 0) {
-        if (view) {
+        if (roots) {
           applyStateChange(changed);
         }
 
@@ -124,36 +124,53 @@ export function vStateNode(config = {}) {
   return component;
 
   function rebuild() {
-    const previous = view;
+    const previousRoots = roots || [];
     bindings = [];
     const scope = {
       bindings,
       getState: () => state
     };
-    const nextView = withBindingScope(scope, () =>
+    const nextResult = withBindingScope(scope, () =>
       config.render.call(component, state, component)
     );
-    if (!(nextView instanceof ViewNode)) {
-      throw new TypeError('vStateNode render must return a ViewNode');
-    }
+    const nextRoots = Array.isArray(nextResult) ? nextResult.slice() : [nextResult];
+    nextRoots.forEach((root) => {
+      if (!(root instanceof ViewNode)) {
+        throw new TypeError('vStateNode render must return a ViewNode or an array of ViewNodes');
+      }
+    });
 
-    view = nextView;
+    roots = nextRoots;
     flushBindings();
 
     if (host) {
-      host._replaceResolved(nextView);
+      host._replaceResolved(renderOutput());
       return;
     }
 
-    if (previous && previous !== nextView) {
-      if (previous._el && previous._el.parentNode) {
-        const element = nextView.renderDom();
+    if (previousRoots.length > 0) {
+      const previousSingle = previousRoots.length === 1 ? previousRoots[0] : null;
+      if (
+        previousSingle &&
+        previousSingle._el &&
+        previousSingle._el.parentNode &&
+        nextRoots.length === 1
+      ) {
+        const element = nextRoots[0].renderDom();
         if (element) {
-          previous._el.parentNode.replaceChild(element, previous._el);
+          previousSingle._el.parentNode.replaceChild(element, previousSingle._el);
         }
       }
-      previous.destroy();
+      previousRoots.forEach((root) => root.destroy());
     }
+  }
+
+  function renderOutput() {
+    if (!roots) {
+      return null;
+    }
+
+    return roots.length === 1 ? roots[0] : roots;
   }
 
   function flushBindings() {

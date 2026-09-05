@@ -561,28 +561,37 @@ export class VTextNode extends ViewNode {
 
 /**
  * ComponentNode 延迟解析函数 Factory 或带 render() 的组件对象。
- * 组件只在第一次需要真实节点时解析，并复用解析后的节点。
+ * render 返回单个 ViewNode 时按普通组件处理；返回 ViewNode 数组时按
+ * 多根 fragment 处理：不产生包装元素，父元素直接落实全部根节点。
  */
 export class ComponentNode extends ViewNode {
   constructor(component) {
     super(null);
     this._component = component;
-    this._resolved = null;
+    this._resolved = null; // 第一个根，供外部兼容读取
+    this._resolvedList = null; // 全部根
+    this._roots = null; // 多根模式时非 null
+    this._fragmentDom = null; // 多根模式已落实的 DOM 节点
   }
 
   _resolve() {
-    if (this._resolved) {
+    if (this._resolvedList) {
       return this._resolved;
     }
 
     const build = () =>
       typeof this._component === 'function' ? this._component() : this._component.render();
     const resolved = withAccess(this._accessContext || currentAccess(), build);
-    if (!(resolved instanceof ViewNode)) {
-      throw new TypeError('Component render must return a ViewNode');
-    }
+    const list = Array.isArray(resolved) ? resolved.slice() : [resolved];
+    list.forEach((item) => {
+      if (!(item instanceof ViewNode)) {
+        throw new TypeError('Component render must return a ViewNode or an array of ViewNodes');
+      }
+    });
 
-    this._resolved = resolved;
+    this._resolvedList = list;
+    this._resolved = list[0] || null;
+    this._roots = Array.isArray(resolved) ? list : null;
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -590,43 +599,98 @@ export class ComponentNode extends ViewNode {
     ) {
       this._component._attachHost(this);
     }
-    return resolved;
+    return this._resolved;
+  }
+
+  _resolveList() {
+    this._resolve();
+    return this._resolvedList || [];
   }
 
   /**
-   * 组件主动替换解析结果：已挂载时在父元素中原位换 DOM，再销毁旧视图。
+   * 组件主动替换解析结果：支持单个根或一组根；已挂载时原位换 DOM。
    */
   _replaceResolved(nextView) {
-    const previous = this._resolved;
-    if (previous === nextView) {
+    const previousList = this._resolvedList || [];
+    const nextList = Array.isArray(nextView) ? nextView.slice() : [nextView];
+    nextList.forEach((item) => {
+      if (!(item instanceof ViewNode)) {
+        throw new TypeError('Component render must return a ViewNode or an array of ViewNodes');
+      }
+    });
+
+    if (
+      previousList.length === nextList.length &&
+      previousList.every((root, index) => root === nextList[index])
+    ) {
       return;
     }
 
-    this._resolved = nextView;
-    if (!previous) {
-      return;
-    }
-
-    const previousElement = previous._el;
-    if (previousElement && previousElement.parentNode) {
-      const inherited = currentInheritedScope();
-      const element = withRenderScope(this._access ?? inherited, () => nextView.renderDom());
-      if (element) {
-        previousElement.parentNode.replaceChild(element, previousElement);
-        this._el = element;
+    const oldNodes = [];
+    if (this._fragmentDom && this._fragmentDom.length > 0) {
+      oldNodes.push(...this._fragmentDom);
+    } else if (previousList.length > 0) {
+      const previousElement = previousList[0]._el;
+      if (previousElement && previousElement.parentNode) {
+        oldNodes.push(previousElement);
       }
     }
 
-    previous.destroy();
+    this._resolvedList = nextList;
+    this._resolved = nextList[0] || null;
+    this._roots = Array.isArray(nextView) ? nextList : null;
+    this._fragmentDom = null;
+
+    if (oldNodes.length === 0) {
+      previousList.forEach((root) => root.destroy());
+      return;
+    }
+
+    const inherited = currentInheritedScope();
+    const parentNode = oldNodes[0].parentNode;
+    const nextNodes = [];
+
+    nextList.forEach((root) => {
+      const element = withRenderScope(this._access ?? inherited, () => root.renderDom());
+      if (element) {
+        nextNodes.push(element);
+      }
+    });
+
+    if (nextNodes.length > 0 && parentNode) {
+      nextNodes.forEach((element) => parentNode.insertBefore(element, oldNodes[0]));
+    }
+    oldNodes.forEach((element) => {
+      if (element.parentNode === parentNode) {
+        parentNode.removeChild(element);
+      }
+    });
+
+    if (this._roots) {
+      this._fragmentDom = nextNodes;
+    } else {
+      this._el = nextNodes[0] || null;
+    }
+
+    previousList.forEach((root) => root.destroy());
   }
 
   children() {
-    return this._resolved ? this._resolved.children() : [];
+    if (!this._resolvedList) {
+      return [];
+    }
+
+    if (!this._roots) {
+      return this._resolvedList[0] ? this._resolvedList[0].children() : [];
+    }
+
+    return this._resolvedList.flatMap((root) => root.children());
   }
 
   textContent() {
-    const component = this._resolve();
-    return typeof component.textContent === 'function' ? component.textContent() : '';
+    return this._resolveList()
+      .map((root) => (typeof root.textContent === 'function' ? root.textContent() : ''))
+      .join('');
   }
 
   renderDom() {
@@ -635,7 +699,27 @@ export class ComponentNode extends ViewNode {
     }
 
     const inherited = currentInheritedScope();
-    const resolved = this._resolve();
+    const list = this._resolveList();
+
+    if (this._roots) {
+      if (this._fragmentDom) {
+        return null;
+      }
+
+      const nodes = [];
+      list.forEach((root) => {
+        const element = withRenderScope(this._access ?? inherited, () => root.renderDom());
+        if (element) {
+          nodes.push(element);
+        }
+      });
+      this._fragmentDom = nodes;
+      const fragment = document.createDocumentFragment();
+      nodes.forEach((element) => fragment.appendChild(element));
+      return fragment;
+    }
+
+    const resolved = list[0];
     return withRenderScope(this._access ?? inherited, () => {
       const element = resolved.renderDom();
       this._el = element;
@@ -649,8 +733,10 @@ export class ComponentNode extends ViewNode {
     }
 
     const inherited = currentInheritedScope();
-    const resolved = this._resolve();
-    return withRenderScope(this._access ?? inherited, () => resolved.toHTML());
+    const list = this._resolveList();
+    return withRenderScope(this._access ?? inherited, () =>
+      list.map((root) => root.toHTML()).join('')
+    );
   }
 
   destroy() {
@@ -662,9 +748,8 @@ export class ComponentNode extends ViewNode {
       this._component.destroy();
     }
 
-    if (this._resolved) {
-      this._resolved.destroy();
-    }
+    (this._resolvedList || []).forEach((root) => root.destroy());
+    this._fragmentDom = null;
 
     return super.destroy();
   }
