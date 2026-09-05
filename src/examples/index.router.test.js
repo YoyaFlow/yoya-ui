@@ -132,17 +132,13 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(9);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(8);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
     expect(
       document.querySelector('[data-components-menu] [data-node-id="guides"]').textContent
     ).toContain('开发指南');
-    const superTableMenuItem = document.querySelector(
-      '[data-components-menu] [data-node-id="/components/guides/super-table"]'
-    );
-    expect(superTableMenuItem.textContent).toContain('增强表格（待开发）');
     expect(
       document.querySelector('[data-components-menu] [data-node-id="/components/guides/overview"]')
     ).not.toBeNull();

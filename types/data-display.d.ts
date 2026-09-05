@@ -520,7 +520,7 @@ export const vProgress: ElementFactory<VProgress>;
 export const vRingStat: ElementFactory<VRingStat>;
 export const vScroll: ElementFactory<VScroll>;
 export const vSparkline: ElementFactory<VSparkline>;
-export interface SuperTableColumn {
+export interface TreeTableColumn {
   key?: string;
   title?: ChildInput;
   dataIndex?: string;
@@ -533,48 +533,16 @@ export interface SuperTableColumn {
   width?: string | number;
   [key: string]: any;
 }
-
-export interface SuperTableSort {
-  key: string | null;
-  order: 'asc' | 'desc' | null;
-}
-
-export interface SuperTableChangePayload {
-  sort: SuperTableSort;
-  filters: Record<string, unknown>;
-  pagination?: { current: number; pageSize: number };
-  selectedKeys: Array<string | number>;
-}
-
-/** Column-driven enhanced table: sorting, filtering, selection, pagination. */
-export class VSuperTable extends HtmlElementNode {
-  columns(value?: Array<string | number | SuperTableColumn>): this;
-  rows(value?: Array<Record<string, unknown>>): this;
-  rowKey(handler?: (row: Record<string, unknown>, index: number) => string | number): this;
-  rowSelection(value?: boolean): boolean | VSuperTable;
-  pagination(value?: boolean | { pageSize?: number }): boolean | VSuperTable;
-  pageSize(value?: number): number | VSuperTable;
-  page(value?: number): number | VSuperTable;
-  selectedRowKeys(value?: Array<string | number>): Array<string | number> | VSuperTable;
-  sort(value?: SuperTableSort): SuperTableSort | VSuperTable;
-  expandable(handler?: (row: Record<string, unknown>, index: number) => ChildInput | null): VSuperTable;
-  expandedRowKeys(value?: Array<string>): Array<string> | VSuperTable;
-  virtualize(value?: boolean): boolean | VSuperTable;
-  itemHeight(value?: number): number | VSuperTable;
-  change(handler?: (payload: SuperTableChangePayload) => void): VSuperTable;
-  onChange(handler: (payload: SuperTableChangePayload) => void): VSuperTable;
-}
-
-export const vSuperTable: ElementFactory<VSuperTable>;
 /** Tree table: flat rows with indent, expand/collapse, selection linkage, lazy load. */
 export class VTreeTable extends HtmlElementNode {
-  columns(value?: Array<string | number | SuperTableColumn>): this;
+  columns(value?: Array<string | number | TreeTableColumn>): this;
   nodes(value?: Array<Record<string, any>>): this;
   rowKey(handler?: (node: Record<string, unknown>, index: number) => string | number): this;
   rowSelection(value?: boolean): boolean | VTreeTable;
   lazyLoad(
-    handler?: (node: Record<string, unknown>) =>
-      Array<Record<string, unknown>> | Promise<Array<Record<string, unknown>>>
+    handler?: (
+      node: Record<string, unknown>
+    ) => Array<Record<string, unknown>> | Promise<Array<Record<string, unknown>>>
   ): VTreeTable;
   expandedKeys(value?: Array<string>): Array<string> | VTreeTable;
   expandKeys(value?: Array<string>): VTreeTable;
@@ -671,8 +639,10 @@ export interface DataDisplayParentShortcuts {
     first?: SetupInput<VSparkline> | null,
     callback?: SetupCallback<VSparkline>
   ): VSparkline;
-  vSuperTable(first?: SetupInput<VSuperTable> | null, callback?: SetupCallback<VSuperTable>): VSuperTable;
-  vTreeTable(first?: SetupInput<VTreeTable> | null, callback?: SetupCallback<VTreeTable>): VTreeTable;
+  vTreeTable(
+    first?: SetupInput<VTreeTable> | null,
+    callback?: SetupCallback<VTreeTable>
+  ): VTreeTable;
   vTable(first?: SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
   vTimeline(first?: SetupInput<VTimeline> | null, callback?: SetupCallback<VTimeline>): VTimeline;
   vTimelineItem(
@@ -690,6 +660,3 @@ export interface DataDisplayParentShortcuts {
 }
 
 export type { ElementOptions, ViewNode };
-
-
-

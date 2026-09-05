@@ -32,12 +32,6 @@ const componentMenuSections = [
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
-      {
-        key: 'super-table',
-        label: '增强表格',
-        details: 'vSuperTable 排序 / 筛选 / 行选 / 编辑',
-        status: 'planned'
-      },
       { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
       { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
@@ -681,11 +675,6 @@ function createOverviewView() {
             label: '权限控制',
             path: '/components/guides/access-control',
             details: 'createAccess / withAccess / access'
-          },
-          {
-            label: '增强表格',
-            path: '/components/guides/super-table',
-            details: 'vSuperTable 排序 / 筛选 / 行选'
           },
           {
             label: '树形表格',
