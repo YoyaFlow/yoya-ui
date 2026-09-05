@@ -1,0 +1,45 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { disableDevtools } from '../../yoya.devtools.js';
+import { DevtoolsInspectorDemo } from './devtools-inspector.js';
+
+afterEach(() => {
+  disableDevtools();
+});
+
+describe('devtools inspector demo', () => {
+  it('enables, renders the tree and reports state/text events', () => {
+    const demo = DevtoolsInspectorDemo();
+    const element = demo.render().renderDom();
+
+    element.querySelector('[data-devtools-toggle]').click();
+    expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBeGreaterThan(1);
+
+    const plusButton = [...element.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('+1')
+    );
+    plusButton.click();
+
+    const eventText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
+      node.textContent
+    );
+    expect(eventText.some((text) => text.includes('state'))).toBe(true);
+    expect(
+      eventText.some((text) => text.includes('text') && text.includes('0') && text.includes('1'))
+    ).toBe(true);
+
+    const filter = element.querySelector('[data-devtools-filter]');
+    filter.value = 'text';
+    filter.dispatchEvent(new Event('change'));
+    const filteredText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
+      node.textContent
+    );
+    expect(filteredText.length).toBeGreaterThan(0);
+    expect(filteredText.every((text) => text.includes(' text '))).toBe(true);
+
+    element.querySelector('.devtools-tree-button').click();
+    expect(element.querySelector('[data-devtools-detail]')).toBeTruthy();
+
+    demo.destroy();
+  });
+});

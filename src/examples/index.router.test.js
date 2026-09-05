@@ -2475,4 +2475,14 @@ export function SampleCard() {
     expect(glowButton.classList.contains('yoya-vbutton')).toBe(true);
     expect(glowButton.dataset.glowPlay).toBe('auto');
   });
+
+  it('opens the devtools docs page with the reference inspector', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/devtools');
+
+    const page = document.querySelector('.components-devtools-docs');
+    expect(page).not.toBeNull();
+    expect(page.querySelector('[data-devtools-inspector]')).not.toBeNull();
+  });
 });

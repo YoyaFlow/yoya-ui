@@ -32,6 +32,7 @@ const componentMenuSections = [
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
+      { key: 'devtools', label: 'DevTools', details: 'enableDevtools / 快照 / 事件流' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
     ]
   },
@@ -224,6 +225,8 @@ const docsRouteLoaders = Object.freeze({
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'guides:access-control': () =>
     import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
+  'guides:devtools': () =>
+    import('./devtools-docs.js').then((m) => m.DevtoolsDocumentationPage()),
   'data-display:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
