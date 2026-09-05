@@ -10,25 +10,35 @@ import {
 } from '../../yoya.devtools.js';
 
 /**
- * 参考调试面板：只消费 devtools 公开入口，展示树、详情、事件与 DOM 高亮。
+ * 专用 DevTools 大弹窗：按标签页分类展示对象结构、操作日志与状态/作用域；
+ * 「隐藏」只收起弹窗，不销毁任何面板状态。
  */
 export function DevtoolsInspectorDemo() {
   const state = {
+    activeTab: 'tree',
     enabled: false,
     events: [],
+    eventFilter: 'all',
     selectedId: null,
-    tree: null,
-    eventFilter: 'all'
+    tree: null
   };
-  let stopSubscription = null;
-  let toggleButton = null;
-  let inspectRoot = null;
-  let statusText = null;
-  let treeHost = null;
+  const stateByNode = {};
   let detailHost = null;
   let eventHost = null;
   let highlighted = null;
-  const stateByNode = {};
+  let inspectRoot = null;
+  let overlay = null;
+  let statusText = null;
+  let stopSubscription = null;
+  let toggleButton = null;
+  let treeHost = null;
+  let treePanel = null;
+  let logPanel = null;
+  let statePanel = null;
+  let stateHost = null;
+  let treeTabButton = null;
+  let logTabButton = null;
+  let stateTabButton = null;
 
   const target = vStateNode({
     state: () => ({ count: 0, mode: 'normal' }),
@@ -76,9 +86,11 @@ export function DevtoolsInspectorDemo() {
       state.events = [];
       state.selectedId = null;
       state.tree = null;
+      Object.keys(stateByNode).forEach((key) => delete stateByNode[key]);
       updateStatus();
       renderEvents();
       renderDetail();
+      renderStateList();
       if (treeHost) {
         treeHost.clearChildren();
       }
@@ -98,6 +110,7 @@ export function DevtoolsInspectorDemo() {
       }
       if (event.type === 'state') {
         stateByNode[event.nodeId] = event.state;
+        renderStateList();
       }
       state.events.push(event);
       if (state.events.length > 100) {
@@ -108,6 +121,7 @@ export function DevtoolsInspectorDemo() {
     updateStatus();
     refreshTree();
     renderEvents();
+    renderStateList();
   }
 
   function isInsideInspectedTree(event) {
@@ -130,7 +144,7 @@ export function DevtoolsInspectorDemo() {
     if (!statusText) {
       return;
     }
-    statusText.text(state.enabled ? '状态：已启用，事件仅来自下方被检视卡片' : '状态：未启用');
+    statusText.text(state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用');
   }
 
   function refreshTree() {
@@ -261,77 +275,210 @@ export function DevtoolsInspectorDemo() {
     return '';
   }
 
+  function renderStateList() {
+    if (!stateHost) {
+      return;
+    }
+    stateHost.clearChildren();
+    Object.entries(stateByNode).forEach(([nodeId, componentState]) => {
+      const row = stateHost.pre();
+      row.className('devtools-state-row');
+      row.attr('data-devtools-state-row', 'true');
+      row.text(`${nodeId}: ${JSON.stringify(componentState)}`);
+    });
+  }
+
+  function switchTab(name) {
+    state.activeTab = name;
+    [treePanel, logPanel, statePanel].forEach((panel) => {
+      if (panel) {
+        panel.style('display', panel === panels[name] ? 'block' : 'none');
+      }
+    });
+    const tabs = {
+      tree: treeTabButton,
+      log: logTabButton,
+      state: stateTabButton
+    };
+    Object.entries(tabs).forEach(([key, button]) => {
+      if (button) {
+        button.attr('aria-selected', key === name ? 'true' : 'false');
+      }
+    });
+  }
+
+  const panels = {
+    tree: null,
+    log: null,
+    state: null
+  };
+
+  function openPanel() {
+    if (!overlay) {
+      return;
+    }
+    overlay.style('display', '');
+    if (!state.enabled) {
+      toggle();
+    }
+    switchTab(state.activeTab || 'tree');
+  }
+
+  function hidePanel() {
+    if (overlay) {
+      overlay.style('display', 'none');
+    }
+  }
+
   function render() {
-    return div((root) => {
-      root.className('yoya-devtools-inspector');
-      root.attr('data-devtools-inspector', 'true');
-      root.style('display', 'grid');
-      root.style('gap', '12px');
+    return div((shell) => {
+      shell.className('yoya-devtools-shell');
 
-      root.div((bar) => {
-        bar.className('devtools-controls');
-        bar.vButton(state.enabled ? '停用 DevTools' : '启用 DevTools', (button) => {
-          button.variant(state.enabled ? 'default' : 'primary');
-          button.attr('data-devtools-toggle', 'true');
-          button.on('click', toggle);
-          toggleButton = button;
+      shell.div((launcher) => {
+        launcher.className('yoya-devtools-launcher');
+        launcher.p('DevTools 信息集中在一个可隐藏的大弹窗里，切换标签不丢状态。');
+        launcher.vButton('打开 DevTools 面板', (button) => {
+          button.variant('primary');
+          button.attr('data-devtools-open', 'true');
+          button.on('click', openPanel);
         });
-        bar.vButton('刷新快照', (button) => {
-          button.on('click', () => {
-            state.selectedId = null;
-            clearHighlight();
-            refreshTree();
-            renderDetail();
+      });
+
+      overlay = div((overlayRoot) => {
+        overlayRoot.className('yoya-devtools-overlay');
+        overlayRoot.attr('data-devtools-overlay', 'true');
+        overlayRoot.attr('data-devtools-inspector', 'true');
+        overlayRoot.style('display', 'none');
+        overlayRoot.div((backdrop) => {
+          backdrop.className('yoya-devtools-backdrop');
+          backdrop.attr('data-devtools-backdrop', 'true');
+          backdrop.on('click', hidePanel);
+        });
+        overlayRoot.div((dialog) => {
+          dialog.className('yoya-devtools-dialog');
+
+          dialog.div((header) => {
+            header.className('devtools-dialog-header');
+            header.h2('yoya-ui DevTools');
+            header.p('状态：未启用', (node) => {
+              statusText = node;
+              node.attr('data-devtools-status', 'true');
+            });
+            header.vButton('启用 DevTools', (button) => {
+              button.variant('primary');
+              button.attr('data-devtools-toggle', 'true');
+              button.on('click', toggle);
+              toggleButton = button;
+            });
+            header.vButton('刷新快照', (button) => {
+              button.on('click', () => {
+                state.selectedId = null;
+                clearHighlight();
+                refreshTree();
+                renderDetail();
+              });
+            });
+            header.vButton('隐藏面板', (button) => {
+              button.attr('data-devtools-close', 'true');
+              button.on('click', hidePanel);
+            });
           });
-        });
-        bar.label('事件筛选');
-        bar.select((select) => {
-          select.attr('data-devtools-filter', 'true');
-          ['all', 'commit', 'destroy', 'attr', 'style', 'child', 'text', 'state'].forEach(
-            (kind) => {
-              select.option(kind);
-            }
-          );
-          select.on('change', (event) => {
-            state.eventFilter = event.target.value;
-            renderEvents();
+
+          dialog.div((tabs) => {
+            tabs.className('devtools-tabs');
+            tabs.button('对象结构', (button) => {
+              treeTabButton = button;
+              button.attr('data-devtools-tab', 'tree');
+              button.on('click', () => switchTab('tree'));
+            });
+            tabs.button('操作日志', (button) => {
+              logTabButton = button;
+              button.attr('data-devtools-tab', 'log');
+              button.on('click', () => switchTab('log'));
+            });
+            tabs.button('状态与作用域', (button) => {
+              stateTabButton = button;
+              button.attr('data-devtools-tab', 'state');
+              button.on('click', () => switchTab('state'));
+            });
           });
+
+          const contentBox = dialog.div();
+          contentBox.className('devtools-content');
+
+          treePanel = div((panel) => {
+            panels.tree = panel;
+            panel.className('devtools-panel');
+            panel.attr('data-devtools-panel', 'tree');
+            panel.div((stage) => {
+              stage.className('devtools-stage');
+              inspectRoot = div((wrapper) => {
+                wrapper.className('devtools-inspect-root');
+                wrapper.attr('data-devtools-inspect-root', 'true');
+                wrapper.child(target);
+              });
+              stage.child(inspectRoot);
+            });
+            panel.div((layout) => {
+              layout.className('devtools-tree-layout');
+              layout.div((treeColumn) => {
+                treeColumn.h4('视图树');
+                const treeBox = div();
+                treeColumn.child(treeBox);
+                treeHost = treeBox;
+              });
+              layout.div((detailColumn) => {
+                detailColumn.h4('选中详情');
+                const detailBox = div();
+                detailColumn.child(detailBox);
+                detailHost = detailBox;
+              });
+            });
+          });
+          contentBox.child(treePanel);
+
+          logPanel = div((panel) => {
+            panels.log = panel;
+            panel.className('devtools-panel');
+            panel.attr('data-devtools-panel', 'log');
+            panel.style('display', 'none');
+            panel.div((toolbar) => {
+              toolbar.className('devtools-controls');
+              toolbar.label('事件筛选');
+              toolbar.select((select) => {
+                select.attr('data-devtools-filter', 'true');
+                ['all', 'commit', 'destroy', 'attr', 'style', 'child', 'text', 'state'].forEach(
+                  (kind) => {
+                    select.option(kind);
+                  }
+                );
+                select.on('change', (event) => {
+                  state.eventFilter = event.target.value;
+                  renderEvents();
+                });
+              });
+            });
+            const eventBox = div();
+            panel.child(eventBox);
+            eventHost = eventBox;
+          });
+          contentBox.child(logPanel);
+
+          statePanel = div((panel) => {
+            panels.state = panel;
+            panel.className('devtools-panel');
+            panel.attr('data-devtools-panel', 'state');
+            panel.style('display', 'none');
+            panel.h3('组件状态');
+            const stateBox = div();
+            panel.child(stateBox);
+            stateHost = stateBox;
+            panel.p('在「对象结构」中选择节点可查看 access / Context / i18n 详情。');
+          });
+          contentBox.child(statePanel);
         });
       });
-
-      root.p('状态：未启用', (node) => {
-        statusText = node;
-        node.attr('data-devtools-status', 'true');
-      });
-
-      root.div((stage) => {
-        stage.className('devtools-stage');
-        inspectRoot = div((wrapper) => {
-          wrapper.className('devtools-inspect-root');
-          wrapper.attr('data-devtools-inspect-root', 'true');
-          wrapper.child(target);
-        });
-        stage.child(inspectRoot);
-      });
-
-      root.div((columns) => {
-        columns.className('devtools-columns');
-        columns.style('display', 'grid');
-        columns.style('gridTemplateColumns', 'repeat(3, 1fr)');
-        columns.style('gap', '12px');
-        columns.h4('视图树');
-        const treeBox = div();
-        columns.child(treeBox);
-        treeHost = treeBox;
-        columns.h4('选中详情');
-        const detailBox = div();
-        columns.child(detailBox);
-        detailHost = detailBox;
-        columns.h4('事件时间线');
-        const eventBox = div();
-        columns.child(eventBox);
-        eventHost = eventBox;
-      });
+      shell.child(overlay);
     });
   }
 

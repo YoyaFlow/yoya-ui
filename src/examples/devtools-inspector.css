@@ -4,6 +4,142 @@
   max-width: 100%;
 }
 
+.yoya-devtools-shell {
+  position: relative;
+}
+
+.yoya-devtools-launcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px dashed var(--yoya-color-border-muted, #dbe2ea);
+  border-radius: 8px;
+  background: var(--yoya-color-surface-muted, #f8fafc);
+  padding: 14px 16px;
+}
+
+.yoya-devtools-launcher p {
+  margin: 0;
+  color: var(--yoya-color-text-secondary, #475569);
+}
+
+.yoya-devtools-overlay {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.yoya-devtools-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.yoya-devtools-dialog {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  width: min(94vw, 1240px);
+  height: min(88vh, 780px);
+  overflow: hidden;
+  border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+  border-radius: 12px;
+  background: var(--yoya-color-bg, #fff);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+}
+
+.devtools-dialog-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+  padding: 12px 16px;
+}
+
+.devtools-dialog-header h2 {
+  margin: 0 16px 0 0;
+  font-size: 16px;
+}
+
+.devtools-dialog-header p {
+  margin: 0 16px 0 auto;
+  color: var(--yoya-color-text-muted, #64748b);
+  font-size: 13px;
+}
+
+.devtools-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+  padding: 0 16px;
+  background: var(--yoya-color-surface-muted, #f8fafc);
+}
+
+.devtools-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--yoya-color-text-secondary, #475569);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  padding: 10px 14px;
+}
+
+.devtools-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--yoya-color-primary, #2563eb);
+  color: var(--yoya-color-text-strong, #0f172a);
+}
+
+.devtools-panel {
+  height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+.devtools-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.devtools-panel h3 {
+  margin: 6px 0 10px;
+}
+
+.devtools-tree-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.devtools-tree-layout h4 {
+  margin: 0 0 8px;
+  color: var(--yoya-color-text-secondary, #475569);
+  font-size: 13px;
+}
+
+.devtools-state-row {
+  border: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+  border-radius: 6px;
+  background: var(--yoya-color-code-bg, #f8fafc);
+  margin: 6px 0;
+  padding: 8px 10px;
+  color: var(--yoya-color-text-secondary, #475569);
+  font-family: var(--yoya-font-mono, monospace);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .devtools-controls {
   display: flex;
   flex-wrap: wrap;

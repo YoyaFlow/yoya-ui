@@ -7,11 +7,15 @@ afterEach(() => {
 });
 
 describe('devtools inspector demo', () => {
-  it('enables, renders the tree and reports state/text events', () => {
+  it('opens a persistent overlay, reports events and preserves state on hide', () => {
     const demo = DevtoolsInspectorDemo();
     const element = demo.render().renderDom();
+    const overlay = element.querySelector('[data-devtools-overlay]');
 
-    element.querySelector('[data-devtools-toggle]').click();
+    expect(overlay.style.display).toBe('none');
+    element.querySelector('[data-devtools-open]').click();
+
+    expect(overlay.style.display).not.toBe('none');
     expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
     expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBeGreaterThan(1);
 
@@ -28,11 +32,22 @@ describe('devtools inspector demo', () => {
       eventText.some((text) => text.includes('text') && text.includes('0') && text.includes('1'))
     ).toBe(true);
 
-    const componentButton = [...element.querySelectorAll('.devtools-tree-button')].find(
-      (button) => button.textContent.includes('component')
+    const stateTab = element.querySelector('[data-devtools-tab="state"]');
+    stateTab.click();
+    const stateRows = [...element.querySelectorAll('[data-devtools-state-row]')].map((node) =>
+      node.textContent
+    );
+    expect(stateRows.some((text) => text.includes('"count":1'))).toBe(true);
+
+    const treeTab = element.querySelector('[data-devtools-tab="tree"]');
+    treeTab.click();
+    const componentButton = [...element.querySelectorAll('.devtools-tree-button')].find((button) =>
+      button.textContent.includes('component')
     );
     componentButton.click();
-    expect(JSON.parse(element.querySelector('[data-devtools-detail]').textContent).state).toEqual({
+    expect(
+      JSON.parse(element.querySelector('[data-devtools-detail]').textContent).state
+    ).toEqual({
       count: 1,
       mode: 'normal'
     });
@@ -45,12 +60,23 @@ describe('devtools inspector demo', () => {
     );
     expect(filteredText.length).toBeGreaterThan(0);
     expect(filteredText.every((text) => text.includes(' text '))).toBe(true);
+    filter.value = 'all';
+    filter.dispatchEvent(new Event('change'));
 
     const treeButton = element.querySelector('.devtools-tree-button');
     const treeDomId = Number(treeButton.dataset.devtoolsTreeId);
     treeButton.click();
     expect(element.querySelector('[data-devtools-detail]')).toBeTruthy();
     expect(getDevtoolsDom(treeDomId).style.outline).toContain('2px');
+
+    const eventsBeforeHide = element.querySelectorAll('[data-devtools-event]').length;
+    element.querySelector('[data-devtools-close]').click();
+    expect(overlay.style.display).toBe('none');
+
+    element.querySelector('[data-devtools-open]').click();
+    expect(overlay.style.display).not.toBe('none');
+    expect(element.querySelectorAll('[data-devtools-event]').length).toBe(eventsBeforeHide);
+    expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
 
     demo.destroy();
   });
