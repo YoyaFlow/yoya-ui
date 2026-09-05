@@ -14,11 +14,16 @@ export interface DevtoolsEventBase {
   type: string;
   /** The view node the event belongs to, when one exists. */
   node?: unknown;
+  /** Monotonically increasing event sequence across the stream. */
+  seq: number;
+  /** Stable id of the node the event belongs to. */
+  nodeId?: number;
 }
 
-/** Emitted when a node is first rendered (or re-committed). */
+/** Emitted when an element is first rendered into the DOM. */
 export interface DevtoolsCommitEvent extends DevtoolsEventBase {
   type: 'commit';
+  kind: 'mount' | 'update';
 }
 
 /** Emitted when a node is destroyed. */
@@ -26,8 +31,45 @@ export interface DevtoolsDestroyEvent extends DevtoolsEventBase {
   type: 'destroy';
 }
 
+/** Emitted when an attribute (including the mirrored class) changes. */
+export interface DevtoolsAttrEvent extends DevtoolsEventBase {
+  type: 'attr';
+  name: string;
+  previous?: DevtoolsAttrValue;
+  next?: DevtoolsAttrValue;
+}
+
+/** Emitted when an inline style property changes. */
+export interface DevtoolsStyleEvent extends DevtoolsEventBase {
+  type: 'style';
+  name: string;
+  previous?: string;
+  next?: string;
+}
+
+/** Emitted when a child is added, removed, or reordered. */
+export interface DevtoolsChildEvent extends DevtoolsEventBase {
+  type: 'child';
+  added?: number[];
+  removed?: number[];
+  reordered?: boolean;
+}
+
+/** Emitted when a mounted text node's content changes. */
+export interface DevtoolsTextEvent extends DevtoolsEventBase {
+  type: 'text';
+  from?: string;
+  to: string;
+}
+
 /** Lifecycle events currently emitted by the devtools hook. */
-export type DevtoolsEvent = DevtoolsCommitEvent | DevtoolsDestroyEvent;
+export type DevtoolsEvent =
+  | DevtoolsCommitEvent
+  | DevtoolsDestroyEvent
+  | DevtoolsAttrEvent
+  | DevtoolsStyleEvent
+  | DevtoolsChildEvent
+  | DevtoolsTextEvent;
 
 /** Listener callback for the devtools event stream. */
 export type DevtoolsListener = (event: DevtoolsEvent) => void;

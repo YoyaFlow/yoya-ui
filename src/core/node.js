@@ -1,6 +1,13 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
-import { emitDevtools, isDevtoolsEnabled, unregisterDevtoolsNode } from './devtools.js';
+import {
+  commitDevtoolsNode,
+  emitDevtools,
+  ensureDevtoolsNodeId,
+  isDevtoolsEnabled,
+  notifyDevtoolsMutation,
+  unregisterDevtoolsNode
+} from './devtools.js';
 
 const booleanAttributes = new Set(['checked', 'disabled', 'readonly', 'selected']);
 
@@ -283,12 +290,19 @@ export class ViewNode {
   }
 
   clearChildren() {
+    const removedIds =
+      this._el && isDevtoolsEnabled() && !this._devtoolsRendering
+        ? this._children.map((child) => ensureDevtoolsNodeId(child))
+        : [];
     this._dropChildKeys(this._children);
     this._children.forEach((child) => {
       this._pendingRemovals.add(child);
     });
     this._children = [];
     this._childrenDirty = true;
+    if (removedIds.length > 0 && !this._devtoolsRendering) {
+      notifyDevtoolsMutation(this, 'child', { removed: removedIds });
+    }
     return this;
   }
 
@@ -318,6 +332,9 @@ export class ViewNode {
       if (childElement && childElement.parentNode !== this._el) {
         this._el.appendChild(childElement);
       }
+      if (isDevtoolsEnabled() && !this._devtoolsRendering) {
+        notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
+      }
     }
 
     return this;
@@ -343,6 +360,9 @@ export class ViewNode {
     }
     this._childrenDirty = true;
     viewNode.destroy();
+    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering) {
+      notifyDevtoolsMutation(this, 'child', { removed: [ensureDevtoolsNodeId(viewNode)] });
+    }
     return this;
   }
 
@@ -601,9 +621,13 @@ export class VTextNode extends ViewNode {
       return this;
     }
 
+    const previous = this._content;
     this._content = String(value);
     if (this._textNode) {
       this._textNode.textContent = this._content;
+    }
+    if (this._textNode && isDevtoolsEnabled() && !Object.is(previous, this._content)) {
+      notifyDevtoolsMutation(this, 'text', { from: previous, to: this._content });
     }
     return this;
   }
@@ -973,6 +997,7 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
+    const previous = this._attrs[name];
     if (value === null || value === undefined || value === false) {
       delete this._attrs[name];
     } else {
@@ -981,6 +1006,9 @@ export class ElementNode extends ViewNode {
 
     if (this._el) {
       applyAttribute(this._el, name, value);
+    }
+    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, value)) {
+      notifyDevtoolsMutation(this, 'attr', { name, previous, next: value });
     }
 
     return this;
@@ -1054,6 +1082,7 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
+    const previous = this._styles[name];
     if (value === null || value === undefined || value === '') {
       delete this._styles[name];
     } else {
@@ -1062,6 +1091,9 @@ export class ElementNode extends ViewNode {
 
     if (this._el) {
       this._el.style[name] = value || '';
+    }
+    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, value)) {
+      notifyDevtoolsMutation(this, 'style', { name, previous, next: value });
     }
 
     return this;
@@ -1076,6 +1108,7 @@ export class ElementNode extends ViewNode {
    * 添加子节点。如果当前 DOM 已创建，立即追加对应 DOM。
    */
   child(...children) {
+    const addedIds = this._el && isDevtoolsEnabled() && !this._devtoolsRendering ? [] : null;
     children.flat(Infinity).forEach((child) => {
       if (child === null || child === undefined) {
         return;
@@ -1093,9 +1126,15 @@ export class ElementNode extends ViewNode {
         if (childElement && childElement.parentNode !== this._el) {
           this._el.appendChild(childElement);
         }
+        if (addedIds) {
+          addedIds.push(ensureDevtoolsNodeId(viewNode));
+        }
       }
     });
 
+    if (addedIds && addedIds.length > 0) {
+      notifyDevtoolsMutation(this, 'child', { added: addedIds });
+    }
     return this;
   }
 
@@ -1139,29 +1178,35 @@ export class ElementNode extends ViewNode {
     }
 
     const inherited = this._access ?? currentInheritedScope();
-
-    if (!this._el) {
-      this._el = document.createElement(this._tagName);
-      withRenderScope(inherited, () => this._applySnapshotToElement());
-    }
-
-    this._applyAccessState(state);
-    this._commitChildren();
-    this._children.forEach((child) => {
-      withRenderScope(inherited, () => {
-        const childElement = child.renderDom();
-        if (childElement && childElement.parentNode !== this._el) {
-          this._el.appendChild(childElement);
-        } else if (!childElement && child._el && child._el.parentNode === this._el) {
-          this._el.removeChild(child._el);
-        }
-      });
-    });
-
     if (isDevtoolsEnabled()) {
-      emitDevtools({ type: 'commit', node: this });
+      this._devtoolsRendering = true;
     }
-    return this._el;
+    try {
+      if (!this._el) {
+        this._el = document.createElement(this._tagName);
+        withRenderScope(inherited, () => this._applySnapshotToElement());
+      }
+
+      this._applyAccessState(state);
+      this._commitChildren();
+      this._children.forEach((child) => {
+        withRenderScope(inherited, () => {
+          const childElement = child.renderDom();
+          if (childElement && childElement.parentNode !== this._el) {
+            this._el.appendChild(childElement);
+          } else if (!childElement && child._el && child._el.parentNode === this._el) {
+            this._el.removeChild(child._el);
+          }
+        });
+      });
+
+      if (isDevtoolsEnabled()) {
+        commitDevtoolsNode(this);
+      }
+      return this._el;
+    } finally {
+      this._devtoolsRendering = false;
+    }
   }
 
   /**
@@ -1220,6 +1265,7 @@ export class ElementNode extends ViewNode {
    * 同步 class 集合到属性快照和真实 DOM。
    */
   _syncClassName() {
+    const previous = this._attrs.class;
     const className = [...this._classes].join(' ');
 
     if (className) {
@@ -1233,6 +1279,13 @@ export class ElementNode extends ViewNode {
         this._el.className = className;
       } else {
         this._el.removeAttribute('class');
+      }
+      if (isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, className)) {
+        notifyDevtoolsMutation(this, 'attr', {
+          name: 'class',
+          previous,
+          next: className || undefined
+        });
       }
     }
   }

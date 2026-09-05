@@ -8,6 +8,8 @@ const listeners = new Set();
 const nodeIds = new WeakMap();
 const liveNodes = new Map();
 let nextNodeId = 1;
+let nextEventSeq = 1;
+const appliedSignatures = new WeakMap();
 
 export function enableDevtools() {
   enabled = true;
@@ -28,9 +30,17 @@ export function emitDevtools(event) {
   if (!enabled) {
     return;
   }
+  const enriched = {
+    seq: nextEventSeq,
+    ...event
+  };
+  nextEventSeq += 1;
+  if (enriched.node && typeof enriched.node === 'object' && enriched.nodeId === undefined) {
+    enriched.nodeId = ensureDevtoolsNode(enriched.node);
+  }
   listeners.forEach((listener) => {
     try {
-      listener(event);
+      listener(enriched);
     } catch {
       // Devtool listeners must never break rendering.
     }
@@ -70,6 +80,11 @@ export function getDevtoolsDom(id) {
     return null;
   }
   return node._el;
+}
+
+/** Internal: register/return the stable id for a live node. */
+export function ensureDevtoolsNodeId(node) {
+  return ensureDevtoolsNode(node);
 }
 
 function devtoolsNodeKind(node) {
@@ -120,6 +135,138 @@ function serializeDevtoolsNode(node) {
     ...base,
     children: devtoolsNodeChildren(node, kind).map((child) => serializeDevtoolsNode(child))
   };
+}
+
+function devtoolsSignature(node) {
+  const kind = devtoolsNodeKind(node);
+  const baseId = ensureDevtoolsNode(node);
+  if (kind === 'element') {
+    return {
+      kind,
+      id: baseId,
+      attrs: { ...node._attrs },
+      styles: { ...node._styles },
+      childIds: (node._children || []).map((child) => ensureDevtoolsNode(child))
+    };
+  }
+  if (kind === 'text') {
+    return {
+      kind,
+      id: baseId,
+      text: node._content
+    };
+  }
+  if (kind === 'component') {
+    return {
+      kind,
+      id: baseId,
+      childIds: (node._resolvedList || []).map((child) => ensureDevtoolsNode(child))
+    };
+  }
+  return {
+    kind,
+    id: baseId,
+    childIds: (node._children || []).map((child) => ensureDevtoolsNode(child))
+  };
+}
+
+function diffObjectValues(previous, next) {
+  const changes = {};
+  const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
+  keys.forEach((key) => {
+    if (!Object.is(previous[key], next[key])) {
+      changes[key] = { previous: previous[key], next: next[key] };
+    }
+  });
+  return Object.keys(changes).length > 0 ? changes : null;
+}
+
+function diffSignatures(previous, next) {
+  const changes = {};
+
+  if (previous.kind === 'element' && next.kind === 'element') {
+    const attrs = diffObjectValues(previous.attrs, next.attrs);
+    if (attrs) {
+      changes.attrs = attrs;
+    }
+    const styles = diffObjectValues(previous.styles, next.styles);
+    if (styles) {
+      changes.styles = styles;
+    }
+  }
+
+  if (previous.kind === 'text' && next.kind === 'text' && !Object.is(previous.text, next.text)) {
+    changes.text = { from: previous.text, to: next.text };
+  }
+
+  const previousChildIds = previous.childIds || [];
+  const nextChildIds = next.childIds || [];
+  const previousSet = new Set(previousChildIds);
+  const nextSet = new Set(nextChildIds);
+  const added = nextChildIds.filter((id) => !previousSet.has(id));
+  const removed = previousChildIds.filter((id) => !nextSet.has(id));
+  const sameIds = removed.length === 0 && added.length === 0;
+  const reordered =
+    sameIds &&
+    nextChildIds.length > 1 &&
+    nextChildIds.some((id, index) => previousChildIds[index] !== id);
+  if (added.length > 0 || removed.length > 0 || reordered) {
+    changes.children = { added, removed, reordered };
+  }
+
+  return changes;
+}
+
+/**
+ * Internal: sync the applied-signature baseline after a live mutation so a
+ * later unchanged renderDom does not replay the same change.
+ */
+export function refreshDevtoolsSignature(node) {
+  if (node) {
+    appliedSignatures.set(node, devtoolsSignature(node));
+  }
+}
+
+/** Internal: notify a live mutation that already changed the DOM/view tree. */
+export function notifyDevtoolsMutation(node, type, details) {
+  if (!enabled || !node) {
+    return;
+  }
+  emitDevtools({ type, node, ...details });
+  refreshDevtoolsSignature(node);
+}
+
+/**
+ * Internal: called at the end of renderDom. First render emits a mount
+ * commit; later renders emit granular events only when the signature moved.
+ */
+export function commitDevtoolsNode(node) {
+  if (!enabled || !node || node._deleted) {
+    return;
+  }
+
+  const next = devtoolsSignature(node);
+  const previous = appliedSignatures.get(node);
+  if (!previous) {
+    emitDevtools({ type: 'commit', kind: 'mount', node });
+    appliedSignatures.set(node, next);
+    return;
+  }
+
+  const changes = diffSignatures(previous, next);
+  Object.entries(changes.attrs || {}).forEach(([name, change]) => {
+    emitDevtools({ type: 'attr', node, name, ...change });
+  });
+  Object.entries(changes.styles || {}).forEach(([name, change]) => {
+    emitDevtools({ type: 'style', node, name, ...change });
+  });
+  if (changes.children) {
+    emitDevtools({ type: 'child', node, ...changes.children });
+  }
+  if (changes.text) {
+    emitDevtools({ type: 'text', node, ...changes.text });
+  }
+  appliedSignatures.set(node, next);
 }
 
 /** Returns a plain-shape snapshot of a node subtree for inspection. */

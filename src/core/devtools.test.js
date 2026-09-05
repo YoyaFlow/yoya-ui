@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div } from '../index.js';
+import { div, vText } from '../index.js';
 import {
   disableDevtools,
   emitDevtools,
@@ -118,5 +118,96 @@ describe('devtools hook (core)', () => {
 
     root.destroy();
     expect(getDevtoolsDom(textNodeId)).toBeNull();
+  });
+
+  it('emits one mount commit and stays silent on repeated unchanged renders', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+
+    const node = div('x');
+    node.renderDom();
+    node.renderDom();
+    node.renderDom();
+
+    const commits = events.filter((event) => event.type === 'commit');
+    expect(commits).toHaveLength(1);
+    expect(commits[0].kind).toBe('mount');
+    unsubscribe();
+    node.destroy();
+  });
+
+  it('reports mounted attr/class/style mutations immediately', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const node = div('a');
+    node.renderDom();
+
+    node.attr('title', 'hi');
+    node.className('active');
+    node.style('color', 'red');
+
+    const attrs = events.filter((event) => event.type === 'attr');
+    const styles = events.filter((event) => event.type === 'style');
+    expect(attrs.map((event) => event.name)).toEqual(['title', 'class']);
+    expect(attrs[0]).toMatchObject({ name: 'title', previous: undefined, next: 'hi' });
+    expect(styles).toHaveLength(1);
+    expect(styles[0]).toMatchObject({ name: 'color', previous: undefined, next: 'red' });
+    unsubscribe();
+    node.destroy();
+  });
+
+  it('reports mounted text changes as text events', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const textNode = vText('before');
+    const root = div().child(textNode);
+    root.renderDom();
+
+    textNode.textContent('after');
+
+    const textEvents = events.filter((event) => event.type === 'text');
+    expect(textEvents).toHaveLength(1);
+    expect(textEvents[0]).toMatchObject({ from: 'before', to: 'after' });
+    unsubscribe();
+    root.destroy();
+  });
+
+  it('reports keyed child removal and carries child node ids', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const root = div().addChild('row', div('cell'));
+    root.renderDom();
+    const childId = getDevtoolsSnapshot(root).children[0].id;
+
+    root.removeChild('row');
+
+    const childEvents = events.filter((event) => event.type === 'child');
+    expect(childEvents).toHaveLength(1);
+    expect(childEvents[0].removed).toContain(childId);
+    unsubscribe();
+    root.destroy();
+  });
+
+  it('numbers every event with a monotonic seq and the node id', () => {
+    enableDevtools();
+    const events = [];
+    const unsubscribe = subscribeDevtools((event) => events.push(event));
+    const node = div('a');
+    node.renderDom();
+    node.attr('title', 'x');
+    node.destroy();
+
+    expect(events.length).toBeGreaterThan(2);
+    const seqs = events.map((event) => event.seq);
+    expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+    expect(new Set(seqs).size).toBe(seqs.length);
+    events.forEach((event) => {
+      expect(event.nodeId).toBeTypeOf('number');
+    });
+    unsubscribe();
   });
 });
