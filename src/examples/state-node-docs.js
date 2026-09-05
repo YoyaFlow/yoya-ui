@@ -15,26 +15,26 @@ import {
 const stateDemoDefinitions = Object.freeze([
   {
     id: 'counter',
-    title: '局部更新',
-    description: '提供 update 时，setState 只同步变化节点，不重建视图树。',
+    title: '函数值绑定',
+    description: 'render 里把文本声明为 (state) => value，setState 后只求值写回该绑定。',
     component: StateCounterExample1,
     sourceComponent: StateCounterExample1,
     imports: ['vCard', 'vStateNode', 'vText'],
-    sourceTitle: '局部更新核心源码'
+    sourceTitle: '函数值绑定核心源码'
   },
   {
     id: 'input',
-    title: '输入保持焦点',
-    description: 'update 只更新输出文本，输入框 DOM 保持复用，焦点不会丢失。',
+    title: '输入保持焦点（值绑定）',
+    description: 'input 的 value 与输出文本都声明为函数值绑定，输入框 DOM 不被替换。',
     component: StateInputExample1,
     sourceComponent: StateInputExample1,
     imports: ['vCard', 'vStateNode', 'vText'],
-    sourceTitle: '输入保持焦点核心源码'
+    sourceTitle: '输入值绑定核心源码'
   },
   {
     id: 'rebuild',
     title: '全量重建',
-    description: '不提供 update 时，setState 会销毁旧内容并重新 render。',
+    description: '没有函数值绑定且省略 update 时，setState 会销毁旧内容并重新 render。',
     component: StateRebuildExample1,
     sourceComponent: StateRebuildExample1,
     imports: ['vCard', 'vStateNode'],
@@ -62,7 +62,7 @@ const stateDemoDefinitions = Object.freeze([
   {
     id: 'methods',
     title: '自定义方法',
-    description: 'config 上定义的操作方法会挂到组件对象，外部可直接调用。',
+    description: 'config 上的操作方法修改 state，计数文本通过函数值绑定自动同步。',
     component: StateMethodsDemo,
     sourceComponent: StateMethodsExample,
     imports: ['div', 'vStateNode', 'vText'],
@@ -83,7 +83,9 @@ export function StateNodeDocumentationPage() {
         page.header((header) => {
           header.className('components-state-docs-header');
           header.h1('vStateNode 状态节点');
-          header.p('state() 保存状态，render() 构建视图，update() 负责状态变化后的同步。');
+          header.p(
+            'state() 保存状态，render() 构建视图；render 里的 vText/attr/style 支持 (state) => value 函数值绑定，setState 后统一求值写回，结构变化走 update/重建。'
+          );
         });
 
         page.section((usage) => {
@@ -93,8 +95,8 @@ export function StateNodeDocumentationPage() {
           usage.p('需要把组件内部状态和视图同步收敛到一个对象组件里时使用 vStateNode。');
           usage.ul((list) => {
             list.li('组件需要保存计数、开关、加载状态等内部状态。');
-            list.li('状态变化后希望只更新局部节点，不重建整个视图树。');
-            list.li('简单结构变化时可以省略 update，使用全量重建。');
+            list.li('文本、属性、样式跟随状态：直接声明函数值绑定，无需手写 update。');
+            list.li('结构变化（显示/隐藏、字段切换）用 update 返回 true 或全量重建。');
           });
         });
 
@@ -107,9 +109,8 @@ export function StateNodeDocumentationPage() {
             pre.code(`vStateNode({
   state: () => ({ count: 0 }),
   render(state, api) {
-    return div(vText(String(state.count)));
-  },
-  update(state, api, changed) {}
+    return div(vText((s) => String(s.count)));
+  }
 })`);
           });
           api.table((table) => {
@@ -124,13 +125,18 @@ export function StateNodeDocumentationPage() {
               [
                 [
                   'vStateNode({ state, render, update })',
-                  '创建带状态的对象组件。',
+                  '创建带状态的对象组件；render 中可声明函数值绑定。',
                   'vStateNode({ state: () => ({ count: 0 }), render() {} })'
                 ],
                 [
                   'component.setState(patch)',
-                  '合并状态并触发 update 或重建。',
+                  '合并状态并同步刷新函数值绑定；存在 update 时先执行 update。',
                   'component.setState({ count: 1 })'
+                ],
+                [
+                  'vText / attr / style 的函数值',
+                  '值为 (state) => value 时登记为绑定，setState 后自动求值写回；返回 null 移除属性/样式。',
+                  'vText((s) => String(s.count))'
                 ],
                 [
                   'config 自定义方法',
@@ -145,7 +151,7 @@ export function StateNodeDocumentationPage() {
                 ],
                 [
                   'update(state, api, changed)',
-                  'vStateNode 内部生命周期函数，不对外暴露；返回 true 可强制重建。',
+                  'vStateNode 内部生命周期函数，不对外暴露；返回 true 可强制重建（结构变化用）。',
                   'update(state, api, changed) { return true; }'
                 ],
                 ['component.destroy()', '清理订阅和内部视图。', 'component.destroy()']
@@ -164,7 +170,7 @@ export function StateNodeDocumentationPage() {
           examples.className('components-state-docs-examples');
           examples.h2('代码演示');
           examples.p(
-            '六个示例分别展示局部更新、输入保持焦点、全量重建、结构切换、动态表单和自定义方法。'
+            '六个示例分别展示函数值绑定、输入值绑定、全量重建、结构切换、动态表单和自定义方法。'
           );
           stateDemoDefinitions.forEach((demo) => {
             examples.child(StateExampleSection(demo));

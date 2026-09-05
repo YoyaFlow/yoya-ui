@@ -2,19 +2,18 @@ import { div, vCard, vForm, vStateNode, vText } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
-  let output = null;
-
   return vStateNode({
     state: () => ({ count: 0 }),
     render(state, api) {
-      output = vText(String(state.count));
-
       return vCard((card) => {
-        card.vCardHeader('局部更新');
+        card.vCardHeader('函数值绑定');
         card.vCardBody((body) => {
           body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('提供 update 时，setState 只做局部文本更新，不重建视图树。');
-            stack.output((out) => out.child(output));
+            stack.p('vText 接收 (state) => value，setState 后自动求值写回。');
+            stack.output((out) => {
+              out.attr('data-state-counter-output', 'true');
+              out.child(vText((s) => `当前计数：${s.count}`));
+            });
           });
         });
         card.vCardFooter((footer) => {
@@ -30,46 +29,43 @@ export function StateCounterExample1() {
           });
         });
       });
-    },
-    update(state) {
-      output.textContent(String(state.count));
     }
   });
 }
 
 export function StateInputExample1() {
-  let output = null;
-  const format = (state) => `当前输入：${state.name || '（空）'}，长度：${state.length}`;
-
   return vStateNode({
-    state: () => ({ name: '', length: 0 }),
+    state: () => ({ name: '' }),
     render(state, api) {
-      output = vText(format(state));
-
       return vCard((card) => {
         card.vCardHeader('输入保持焦点');
         card.vCardBody((body) => {
           body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('update 只同步输出文本，输入框 DOM 不被替换，焦点不会丢失。');
+            stack.p('value 与输出文本都是函数值绑定，节点不被替换，焦点不会丢失。');
             stack.input((field) => {
               field.attr({
                 'data-state-demo-input': 'true',
                 placeholder: '输入内容',
                 type: 'text',
-                value: state.name
+                value: (s) => s.name
               });
               field.on('input', (event) => {
-                const value = event.target.value;
-                api.setState({ length: value.length, name: value });
+                api.setState({ name: event.target.value });
               });
             });
-            stack.output((out) => out.attr('data-state-input-output', 'true').child(output));
+            stack.output((out) => {
+              out.attr('data-state-input-output', 'true');
+              out.child(vText((s) => `当前输入：${s.name || '（空）'}，长度：${s.name.length}`));
+            });
+            stack.vButton('保存', (button) => {
+              button
+                .variant('primary')
+                .attr('disabled', (s) => !s.name)
+                .style('opacity', (s) => (s.name ? null : '0.5'));
+            });
           });
         });
       });
-    },
-    update(state) {
-      output.textContent(format(state));
     }
   });
 }
@@ -224,22 +220,18 @@ export function StateDynamicFormDemo() {
 }
 
 export function StateMethodsExample() {
-  let countText = null;
-
   return vStateNode({
     state: () => ({ count: 0 }),
-    render(state) {
-      countText = vText(String(state.count));
-
+    render() {
       return div((body) => {
         body.div((row) => {
           row.span('当前计数：');
-          row.span((el) => el.attr('data-state-methods-count', 'true').child(countText));
+          row.span((el) => {
+            el.attr('data-state-methods-count', 'true');
+            el.child(vText((s) => String(s.count)));
+          });
         });
       });
-    },
-    update(state) {
-      countText.textContent(String(state.count));
     },
     increment() {
       this.setState({ count: this.state().count + 1 });
