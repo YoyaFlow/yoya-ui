@@ -31,4 +31,56 @@ describe('ViewNode event registry', () => {
     expect(click).toHaveBeenCalledTimes(1);
     expect(input).toHaveBeenCalledTimes(1);
   });
+
+  it('binds events registered after the node is mounted without duplicates', () => {
+    const node = div();
+    const element = node.renderDom();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    node.on('click', first);
+    node.on('click', second);
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebinds the adapter when listener options change', () => {
+    const node = div();
+    const element = node.renderDom();
+    const handler = vi.fn();
+
+    node.on('click', handler, { once: true });
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    node.on('click', handler, undefined);
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it('supports once semantics and removes the adapter after firing', () => {
+    const node = div();
+    const element = node.renderDom();
+    const handler = vi.fn();
+
+    node.on('click', handler, { once: true });
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes the DOM adapter on destroy', () => {
+    const node = div();
+    const element = node.renderDom();
+    const handler = vi.fn();
+    node.on('click', handler);
+
+    node.destroy();
+    element.dispatchEvent(new Event('click', { bubbles: true }));
+
+    expect(handler).not.toHaveBeenCalled();
+  });
 });
