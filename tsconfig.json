@@ -15,6 +15,7 @@
     "paths": {
       "yoya-ui": ["./types/index.d.ts"],
       "yoya-ui/core": ["./types/yoya.core.d.ts"],
+      "yoya-ui/devtools": ["./types/yoya.devtools.d.ts"],
       "yoya-ui/echart": ["./types/yoya.echart.d.ts"],
       "yoya-ui/ssr": ["./types/yoya.ssr.d.ts"]
     }

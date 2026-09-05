@@ -18,6 +18,10 @@
       "types": "./types/yoya.core.d.ts",
       "import": "./dist/yoya.core.js"
     },
+    "./devtools": {
+      "types": "./types/yoya.devtools.d.ts",
+      "import": "./dist/yoya.devtools.js"
+    },
     "./echart": {
       "types": "./types/yoya.echart.d.ts",
       "import": "./dist/yoya.echart.js"

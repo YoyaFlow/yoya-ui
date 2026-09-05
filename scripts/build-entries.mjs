@@ -4,6 +4,7 @@ import { cpSync } from 'node:fs';
 const entries = [
   ['ui', 'src/yoya.ui.js'],
   ['core', 'src/yoya.core.js'],
+  ['devtools', 'src/yoya.devtools.js'],
   ['echart', 'src/yoya.echart.js'],
   ['ssr', 'src/yoya.ssr.js']
 ];

@@ -29,6 +29,12 @@ import {
 import { ElementNode, vStateNode } from 'yoya-ui/core';
 import { vEchart } from 'yoya-ui/echart';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/ssr';
+import {
+  disableDevtools,
+  enableDevtools,
+  isDevtoolsEnabled,
+  subscribeDevtools
+} from 'yoya-ui/devtools';
 import 'yoya-ui/ui.css';
 
 // Element factories accept callback/text/object forms.
@@ -164,6 +170,17 @@ SearchOutlined().className('yoya-icon');
 // ElementNode generic helpers.
 const node: ElementNode = div('x');
 node.child(vText('y'));
+
+// Devtools opt-in runtime lives on its own subpath.
+enableDevtools();
+const devtoolsEnabled: boolean = isDevtoolsEnabled();
+const stopDevtools: () => void = subscribeDevtools((event) => {
+  const eventType: string = event.type;
+  void eventType;
+});
+disableDevtools();
+void devtoolsEnabled;
+void stopDevtools;
 
 // Keep variables referenced to avoid unused-import lint concerns.
 void page;
