@@ -492,6 +492,7 @@ docs/          SSR, theme, access control, component & roadmap specs
 - [Component Library Authoring Guide (third-party developers)](docs/component-library-authoring.md)
 - [Theme Styling Spec](docs/theme-styling.md)
 - [Access Control](docs/access-control.md)
+- [DevTools](docs/devtools.md)
 - [Roadmap](docs/roadmap.md)
 - [Component Catalog](docs/components.md)
 

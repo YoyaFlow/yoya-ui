@@ -1012,7 +1012,12 @@ export class ElementNode extends ViewNode {
     if (this._el) {
       applyAttribute(this._el, name, value);
     }
-    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, value)) {
+    if (
+      this._el &&
+      isDevtoolsEnabled() &&
+      !this._devtoolsRendering &&
+      !Object.is(previous, value)
+    ) {
       notifyDevtoolsMutation(this, 'attr', { name, previous, next: value });
     }
 
@@ -1097,7 +1102,12 @@ export class ElementNode extends ViewNode {
     if (this._el) {
       this._el.style[name] = value || '';
     }
-    if (this._el && isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, value)) {
+    if (
+      this._el &&
+      isDevtoolsEnabled() &&
+      !this._devtoolsRendering &&
+      !Object.is(previous, value)
+    ) {
       notifyDevtoolsMutation(this, 'style', { name, previous, next: value });
     }
 

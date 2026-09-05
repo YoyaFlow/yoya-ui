@@ -63,7 +63,10 @@ export function DevtoolsDocumentationPage() {
             table.tbody((body) => {
               [
                 ['enableDevtools()', '开启事件流，后续渲染与变更开始上报。'],
-                ['subscribeDevtools(listener)', '订阅 commit/destroy/attr/style/child/text/state 事件。'],
+                [
+                  'subscribeDevtools(listener)',
+                  '订阅 commit/destroy/attr/style/child/text/state 事件。'
+                ],
                 ['getDevtoolsSnapshot(root)', '取可画树的纯数据快照（含稳定 id）。'],
                 ['getDevtoolsDom(id)', '按 id 定位真实 DOM，用于高亮。'],
                 ['getDevtoolsScope(id)', '读节点 access/Context/i18n 详情。']

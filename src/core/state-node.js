@@ -2,13 +2,7 @@ import { ElementNode, ViewNode, registerChildFactories, withBindingScope } from 
 import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 
 const lifecycleKeys = new Set(['state', 'render', 'update']);
-const builtinKeys = new Set([
-  '_attachHost',
-  'destroy',
-  'getState',
-  'setState',
-  'subscribe'
-]);
+const builtinKeys = new Set(['_attachHost', 'destroy', 'getState', 'setState', 'subscribe']);
 
 /**
  * vStateNode 返回带状态的对象组件：不产生自己的 DOM 元素，

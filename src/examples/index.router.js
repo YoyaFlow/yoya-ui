@@ -225,8 +225,7 @@ const docsRouteLoaders = Object.freeze({
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'guides:access-control': () =>
     import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
-  'guides:devtools': () =>
-    import('./devtools-docs.js').then((m) => m.DevtoolsDocumentationPage()),
+  'guides:devtools': () => import('./devtools-docs.js').then((m) => m.DevtoolsDocumentationPage()),
   'data-display:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),

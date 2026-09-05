@@ -96,10 +96,7 @@ describe('devtools hook (core)', () => {
     const component = snapshot.children[0];
     expect(component.kind).toBe('component');
     expect(component.children.map((child) => child.tagName)).toEqual(['div', 'div']);
-    expect(component.children.map((child) => child.children[0].text)).toEqual([
-      'first',
-      'second'
-    ]);
+    expect(component.children.map((child) => child.children[0].text)).toEqual(['first', 'second']);
   });
 
   it('assigns stable ids and resolves rendered DOM by id until destroy', () => {
@@ -268,7 +265,7 @@ describe('devtools hook (core)', () => {
     const unsubscribe = subscribeDevtools((event) => events.push(event));
     const demo = vStateNode({
       state: { label: 'before' },
-      render: (state) => div().text((current) => current.label)
+      render: () => div().text((current) => current.label)
     });
     const root = div().child(demo);
     root.renderDom();
@@ -279,9 +276,7 @@ describe('devtools hook (core)', () => {
     const textEvents = events.filter((event) => event.type === 'text');
     expect(stateEvents).toHaveLength(1);
     expect(stateEvents[0].handling).toBe('bindings');
-    expect(textEvents.some((event) => event.from === 'before' && event.to === 'after')).toBe(
-      true
-    );
+    expect(textEvents.some((event) => event.from === 'before' && event.to === 'after')).toBe(true);
     unsubscribe();
     root.destroy();
   });

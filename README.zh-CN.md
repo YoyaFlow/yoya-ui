@@ -455,6 +455,7 @@ docs/          SSR、主题、权限、组件与路线图规格
 - [组件库开发规范（第三方开发者指南）](docs/component-library-authoring.md)
 - [主题样式规格](docs/theme-styling.md)
 - [权限控制](docs/access-control.md)
+- [DevTools 调试工具](docs/devtools.md)
 - [路线图](docs/roadmap.md)
 - [组件目录](docs/components.md)
 
