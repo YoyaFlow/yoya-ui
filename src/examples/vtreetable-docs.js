@@ -19,7 +19,7 @@ export function TreeTableDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-vtreetable-docs');
-        page.attr('data-component-route-item', 'guides:tree-table');
+        page.attr('data-component-route-item', 'data-display:tree-table');
         page.header((header) => {
           header.h1('树形表格 vTreeTable');
           header.p('在列中并排展示树形层级，支持展开/折叠、父子选择联动与懒加载。');

@@ -32,8 +32,6 @@ const componentMenuSections = [
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
-      { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
-      { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
     ]
   },
@@ -122,6 +120,7 @@ const componentMenuSections = [
       { key: 'detail', label: '详情', details: 'vDetail / vDetailItem' },
       { key: 'code', label: '代码', details: 'vCode / codeBlock' },
       { key: 'table', label: '表格', details: 'vTable' },
+      { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
       { key: 'tree', label: '树形控件', details: 'vTree' },
       { key: 'card', label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
       { key: 'progress', label: '进度条', details: 'vProgress' },
@@ -164,7 +163,8 @@ const componentMenuSections = [
     items: [
       { key: 'message', label: '消息', details: 'vMessage / vMessageContainer / toast' },
       { key: 'message-manager', label: '消息管理器', details: 'vMessageManager' },
-      { key: 'tooltip', label: '提示', details: 'vTooltip' }
+      { key: 'tooltip', label: '提示', details: 'vTooltip' },
+      { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' }
     ]
   },
   {
@@ -224,10 +224,10 @@ const docsRouteLoaders = Object.freeze({
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
   'guides:access-control': () =>
     import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
-  'guides:tree-table': () =>
+  'data-display:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
-  'guides:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'feedback:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
   'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:button-group': () =>
     import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
@@ -675,16 +675,6 @@ function createOverviewView() {
             label: '权限控制',
             path: '/components/guides/access-control',
             details: 'createAccess / withAccess / access'
-          },
-          {
-            label: '树形表格',
-            path: '/components/guides/tree-table',
-            details: 'vTreeTable 树形层级'
-          },
-          {
-            label: '确认弹窗',
-            path: '/components/guides/confirm',
-            details: 'vConfirm 命令式确认'
           },
           {
             label: '服务端渲染',

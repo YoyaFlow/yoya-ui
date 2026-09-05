@@ -19,7 +19,7 @@ export function ConfirmDocumentationPage() {
     render() {
       return section((page) => {
         page.className('components-route-page components-vconfirm-docs');
-        page.attr('data-component-route-item', 'guides:confirm');
+        page.attr('data-component-route-item', 'feedback:confirm');
         page.header((header) => {
           header.h1('确认弹窗 vConfirm');
           header.p('一行开启危险操作确认，返回 Promise，SSR 安全。');
