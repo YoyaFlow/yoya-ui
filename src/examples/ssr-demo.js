@@ -1,4 +1,4 @@
-import { SsrDemoPage } from './demos/ssr-demo.js';
+import { SsrDemoPage } from './ssr-demo-page.js';
 import '../yoya.ui.css';
 
 SsrDemoPage().render().bindTo('#app');

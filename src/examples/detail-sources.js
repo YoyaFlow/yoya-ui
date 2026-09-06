@@ -64,19 +64,10 @@ export function ButtonVariantsExample1() {
     render() {
       return hstack((row) => {
         row.style('gap', '10px');
-        row.vButton((button) => {
-          button.label('主要按钮');
-          button.variant('primary');
-        });
+        row.vButton('主要按钮', (button) => button.variant('primary'));
         row.vButton('默认按钮');
-        row.vButton((button) => {
-          button.label('危险按钮');
-          button.variant('danger');
-        });
-        row.vButton((button) => {
-          button.label('幽灵按钮');
-          button.variant('ghost');
-        });
+        row.vButton('危险按钮', (button) => button.variant('danger'));
+        row.vButton('幽灵按钮', (button) => button.variant('ghost'));
       });
     }
   };
@@ -88,10 +79,7 @@ export function ButtonSizesExample1() {
       return hstack((row) => {
         row.style({ alignItems: 'center', gap: '10px' });
         ['small', 'medium', 'large'].forEach((size) => {
-          row.vButton((button) => {
-            button.label(size);
-            button.size(size);
-          });
+          row.vButton(size, (button) => button.size(size));
         });
       });
     }
@@ -105,8 +93,7 @@ export function ButtonStatesExample1() {
     render() {
       return hstack((row) => {
         row.style('gap', '10px');
-        row.vButton((button) => {
-          button.label('执行任务');
+        row.vButton('执行任务', (button) => {
           button.variant('primary');
           button.on('click', () => {
             state.textContent('执行中');
@@ -117,10 +104,7 @@ export function ButtonStatesExample1() {
             }, 600);
           });
         });
-        row.vButton((button) => {
-          button.label('不可用');
-          button.disabled(true);
-        });
+        row.vButton('不可用', (button) => button.disabled(true));
         row.child(state);
       });
     }
@@ -136,15 +120,11 @@ export function ButtonFormExample1() {
         form.style('gap', '12px');
         form.hstack((row) => {
           row.style('gap', '10px');
-          row.vButton((button) => {
-            button.label('提交表单');
+          row.vButton('提交表单', (button) => {
             button.variant('primary');
             button.formType('submit');
           });
-          row.vButton((button) => {
-            button.label('重置');
-            button.formType('reset');
-          });
+          row.vButton('重置', (button) => button.formType('reset'));
         });
         form.output((output) => output.child(result));
         form.on('submit', (event) => {
@@ -368,8 +348,7 @@ export function FormExample1() {
     render() {
       return vForm((form) => {
         form.vInput({ name: 'serviceName', value: 'api-gateway' });
-        form.vButton((button) => {
-          button.label('提交');
+        form.vButton('提交', (button) => {
           button.formType('submit');
         });
         form.on('submit', (event) => {
@@ -588,8 +567,7 @@ export function MessageExample1() {
     render() {
       return stack((content) => {
         content.child(messages);
-        content.vButton((button) => {
-          button.label('显示成功消息');
+        content.vButton('显示成功消息', (button) => {
           button.on('click', () => messages.success('保存成功', { duration: 0 }));
         });
       });
@@ -604,7 +582,9 @@ export function MessageManagerExample1() {
     render() {
       return stack((content) => {
         content.child(manager);
-        content.vButton('显示消息').on('click', () => manager.success('保存成功', { duration: 0 }));
+        content.vButton('显示消息', (button) =>
+          button.on('click', () => manager.success('保存成功', { duration: 0 }))
+        );
       });
     }
   };
@@ -839,44 +819,3 @@ export function TreeRangerLazyExample() {
     }
   };
 }
-
-export const detailSourceRegistry = Object.freeze({
-  'general:button': { component: ButtonExample1, imports: ['vButton'] },
-  'layout:divider': { component: DividerExample1, imports: ['divider', 'stack'] },
-  'layout:flex': { component: FlexExample1, imports: ['flex'] },
-  'layout:grid': { component: GridExample1, imports: ['div', 'responsiveGrid'] },
-  'layout:body': { component: LayoutExample1, imports: ['vBody'] },
-  'layout:spacer': { component: SpacerExample1, imports: ['hstack', 'spacer'] },
-  'navigation:dropdown': { component: DropdownMenuExample1, imports: ['vDropdownMenu'] },
-  'navigation:menu': { component: MenuExample1, imports: ['vMenu'] },
-  'navigation:pagination': { component: PaginationExample1, imports: ['vPagination'] },
-  'navigation:tabs': { component: TabsExample1, imports: ['vTabs'] },
-  'navigation:router': { component: RouterExample1, imports: ['div', 'hstack', 'router'] },
-  'navigation:router-views': {
-    component: RouterViewsExample1,
-    imports: ['div', 'vRoute', 'vRouter', 'vRouterViews']
-  },
-  'form:form': { component: FormExample1, imports: ['vForm'] },
-  'form:input': { component: InputExample1, imports: ['vInput'] },
-  'form:select': { component: SelectExample1, imports: ['vSelect'] },
-  'form:checkbox': { component: CheckboxExample1, imports: ['vCheckbox'] },
-  'form:textarea': { component: TextareaExample1, imports: ['vTextarea'] },
-  'form:switch': { component: SwitchExample1, imports: ['vSwitch'] },
-  'form:field': { component: FieldExample1, imports: ['vField'] },
-  'form:timer': { component: TimerExample1, imports: ['vTimer'] },
-  'form:timer-range': { component: TimerRangeExample1, imports: ['vTimerRange'] },
-  'form:upload': { component: UploadExample1, imports: ['vUpload'] },
-  'form:rate': { component: RateExample1, imports: ['vRate'] },
-  'data-display:detail': { component: DetailExample1, imports: ['vDetail'] },
-  'data-display:code': { component: CodeExample1, imports: ['vCode'] },
-  'data-display:table': { component: TableExample1, imports: ['vTable'] },
-  'data-display:card': { component: CardExample1, imports: ['vCard'] },
-  'data-display:scroll': { component: ScrollExample1, imports: ['div', 'vScroll'] },
-  'data-display:tree-ranger': { component: TreeRangerExample, imports: ['div', 'vTreeRanger'] },
-  'async:dynamic-loader': { component: DynamicLoaderExample1, imports: ['div', 'vDynamicLoader'] },
-  'feedback:message': { component: MessageExample1, imports: ['stack', 'vMessageContainer'] },
-  'feedback:message-manager': {
-    component: MessageManagerExample1,
-    imports: ['stack', 'vMessageManager']
-  }
-});

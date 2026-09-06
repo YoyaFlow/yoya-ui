@@ -2218,7 +2218,8 @@ export class VField extends HtmlElementNode {
     this.styles({
       display: 'grid',
       gap: '8px',
-      minWidth: '0'
+      minWidth: '0',
+      position: 'relative'
     });
     this._headerBox.styles({
       alignItems: 'center',
@@ -2253,7 +2254,7 @@ export class VField extends HtmlElementNode {
       minHeight: 'var(--yoya-control-height-md, 34px)',
       minWidth: '0',
       padding: '0',
-      position: 'fixed',
+      position: 'absolute',
       top: '0',
       width: '100%',
       zIndex: 'var(--yoya-z-overlay, 1200)'
@@ -2328,11 +2329,12 @@ export class VField extends HtmlElementNode {
       return this;
     }
     const anchor = this._displayBox._el || this._el;
+    const fieldRect = this._el.getBoundingClientRect();
     const rect = anchor.getBoundingClientRect();
     this._editorBox.styles({
-      left: rect.left + 'px',
+      left: rect.left - fieldRect.left + 'px',
       minHeight: rect.height + 'px',
-      top: rect.top + 'px',
+      top: rect.top - fieldRect.top + 'px',
       width: rect.width + 'px'
     });
     return this;

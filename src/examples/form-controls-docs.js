@@ -6,7 +6,8 @@ import {
   vCascader,
   vSlider,
   vTagsInput,
-  vText
+  vText,
+  vstack
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
@@ -107,14 +108,9 @@ function SliderBasicDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础用法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vSlider 提供 min/max/step 约束，change 回调返回当前数值。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('vSlider 提供 min/max/step 约束，change 回调返回当前数值。');
+        stack.child(content);
       });
     }
   };
@@ -125,14 +121,9 @@ function SliderStateDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('状态控制');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('动态切换禁用状态和数值标签显示。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('动态切换禁用状态和数值标签显示。');
+        stack.child(content);
       });
     }
   };
@@ -143,14 +134,9 @@ function SliderVerticalDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('竖向滑动条');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('设置 vertical 后滑动条竖向排列，适合音量、温度等纵向取值场景。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('设置 vertical 后滑动条竖向排列，适合音量、温度等纵向取值场景。');
+        stack.child(content);
       });
     }
   };
@@ -234,14 +220,9 @@ function CascaderBasicDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础用法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vCascader 按层级逐级选择，选中路径以数组形式返回。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('vCascader 按层级逐级选择，选中路径以数组形式返回。');
+        stack.child(content);
       });
     }
   };
@@ -252,14 +233,9 @@ function CascaderStateDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('回填与禁用');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('通过 value 数组回填选中路径，并支持禁用整个控件。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('通过 value 数组回填选中路径，并支持禁用整个控件。');
+        stack.child(content);
       });
     }
   };
@@ -326,14 +302,9 @@ function TagsBasicDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础用法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('输入后回车或逗号添加标签，change 回调返回标签数组。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('输入后回车或逗号添加标签，change 回调返回标签数组。');
+        stack.child(content);
       });
     }
   };
@@ -344,9 +315,8 @@ function TagsPresetDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('预设值');
-        card.vCardBody((body) => body.child(content));
+      return vstack((body) => {
+        body.child(content);
       });
     }
   };
@@ -418,14 +388,9 @@ function AutocompleteBasicDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础用法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('输入时从 source 过滤建议，键盘上下选择、回车或鼠标点选确认。');
-            stack.child(content);
-          });
-        });
+      return vstack((stack) => {
+        stack.p('输入时从 source 过滤建议，键盘上下选择、回车或鼠标点选确认。');
+        stack.child(content);
       });
     }
   };
@@ -436,9 +401,8 @@ function AutocompleteFilterDemo() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('函数过滤');
-        card.vCardBody((body) => body.child(content));
+      return vstack((body) => {
+        body.child(content);
       });
     }
   };
@@ -482,7 +446,11 @@ function createDemoSection(demo) {
         example.h3(demo.title);
         example.div((live) => {
           live.className('components-form-demo-live');
-          live.child(liveDemo);
+          live.child(
+            vCard((card) => {
+              card.vCardBody((body) => body.child(liveDemo));
+            })
+          );
         });
         example.child(sourcePanel);
       });

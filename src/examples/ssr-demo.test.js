@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { SsrDemoPage } from './demos/ssr-demo.js';
+import { SsrDemoPage } from './ssr-demo-page.js';
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function showModal() {

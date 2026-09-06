@@ -15,7 +15,8 @@ import {
   vScroll,
   vTable,
   vText,
-  vTree
+  vTree,
+  vstack
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
@@ -142,7 +143,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: BadgeCountExample1,
         description: 'count 管理数字，overflowCount 压缩大数值，showZero 控制零值是否可见。',
         id: 'count',
-        imports: ['vBadge', 'vButton', 'vCard', 'vText'],
+        imports: ['vBadge', 'vButton', 'vText', 'vstack'],
         sourceTitle: '数字徽标核心源码',
         title: '数字徽标'
       },
@@ -235,7 +236,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailColumnsExample1,
         description: 'columns 决定每行条目数，切换后详情网格会立即重新排布。',
         id: 'columns',
-        imports: ['vButton', 'vCard', 'vDetail', 'vText'],
+        imports: ['vButton', 'vDetail', 'vText', 'vstack'],
         sourceTitle: '多列详情核心源码',
         title: '多列详情'
       },
@@ -251,7 +252,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailDynamicExample1,
         description: '持有 vText 引用后，切换服务或状态只需要更新值节点。',
         id: 'dynamic',
-        imports: ['vButton', 'vCard', 'vDetail', 'vText'],
+        imports: ['vButton', 'vDetail', 'vText', 'vstack'],
         sourceTitle: '动态更新核心源码',
         title: '动态更新'
       }
@@ -326,7 +327,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableEmptyExample1,
         description: '空数据时显示 emptyText，数据返回后直接 rows(nextRows) 替换内容。',
         id: 'empty',
-        imports: ['vButton', 'vCard', 'vTable', 'vText'],
+        imports: ['vButton', 'vTable', 'vText', 'vstack'],
         sourceTitle: '空状态核心源码',
         title: '空状态'
       },
@@ -421,7 +422,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeBasicExample1,
         description: '树形数据展示服务目录，点击节点后把当前选中项写回状态区。',
         id: 'basic',
-        imports: ['vButton', 'vCard', 'vText', 'vTree'],
+        imports: ['vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '树形选择核心源码',
         title: '树形选择'
       },
@@ -429,7 +430,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeCheckableExample1,
         description: '开启 checkable 后可以用复选框批量选择资源，父节点会同步显示部分勾选状态。',
         id: 'checkable',
-        imports: ['vButton', 'vCard', 'vText', 'vTree'],
+        imports: ['vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '复选框树核心源码',
         title: '复选框树'
       },
@@ -437,7 +438,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeFileManagerExample1,
         description: '目录树和文件详情并排展示，选择节点后显示类型、大小和更新时间。',
         id: 'file-manager',
-        imports: ['FolderOpenOutlined', 'FolderOutlined', 'vButton', 'vCard', 'vText', 'vTree'],
+        imports: ['FolderOpenOutlined', 'FolderOutlined', 'vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '文件管理器核心源码',
         title: '文件管理器'
       },
@@ -445,7 +446,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeBuilderExample1,
         description: '用 vTree 回调直接声明树节点，适合把结构和状态写在一起的场景。',
         id: 'builder',
-        imports: ['vButton', 'vCard', 'vText', 'vTree'],
+        imports: ['vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '声明式树核心源码',
         title: '声明式构建'
       }
@@ -620,7 +621,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ProgressDynamicExample1,
         description: '按钮驱动 value 更新，达到 max 后自动切换为 success。',
         id: 'dynamic',
-        imports: ['vButton', 'vCard', 'vProgress', 'vText'],
+        imports: ['vButton', 'vProgress', 'vText', 'vstack'],
         sourceTitle: '动态进度条核心源码',
         title: '动态进度条'
       }
@@ -719,7 +720,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ScrollLoopBlockExample1,
         description: 'loop 开启循环加载，block 阻止后续请求，按钮可以实时切换。',
         id: 'loop-block',
-        imports: ['div', 'vButton', 'vCard', 'vScroll', 'vText'],
+        imports: ['div', 'vButton', 'vScroll', 'vText', 'vstack'],
         sourceTitle: '循环与阻止核心源码',
         title: '循环与阻止'
       },
@@ -727,7 +728,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ScrollAsyncExample1,
         description: 'loadMore 支持返回 Promise，适合接入真实接口并展示加载状态。',
         id: 'async',
-        imports: ['div', 'vButton', 'vCard', 'vScroll'],
+        imports: ['div', 'vButton', 'vScroll', 'vstack'],
         sourceTitle: '异步加载核心源码',
         title: '异步加载'
       },
@@ -810,7 +811,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselAutoplayExample1,
         description: 'autoplay 和 interval 控制自动轮播，悬停或聚焦时自动暂停。',
         id: 'autoplay',
-        imports: ['vCarousel', 'vCard', 'vText'],
+        imports: ['vCarousel', 'vText', 'vstack'],
         sourceTitle: '自动播放核心源码',
         title: '自动播放'
       },
@@ -818,7 +819,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselLoopExample1,
         description: 'loop 开启时首尾循环，关闭后到达边界会禁用对应箭头。',
         id: 'loop',
-        imports: ['vButton', 'vCarousel', 'vCard', 'vText'],
+        imports: ['vButton', 'vCarousel', 'vText', 'vstack'],
         sourceTitle: '循环切换核心源码',
         title: '循环切换'
       },
@@ -994,7 +995,11 @@ function DataDisplayExampleSection(demo) {
         example.div((live) => {
           live.className('components-data-display-demo-live');
           live.attr('data-data-display-demo-live', 'true');
-          live.child(liveDemo);
+          live.child(
+            vCard((card) => {
+              card.vCardBody((body) => body.child(liveDemo));
+            })
+          );
         });
         example.child(sourcePanel);
       });
@@ -1012,55 +1017,45 @@ function BadgeCountExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('数字徽标');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(badge);
-              row.child(vBadge({ children: '通知', count: 8 }));
-              row.child(vBadge({ children: '告警', count: 128, overflowCount: 99 }));
-              row.child(vBadge({ children: '默认隐藏零', count: 0 }));
-            });
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前计数');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-badge-count-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.child(badge);
+          row.child(vBadge({ children: '通知', count: 8 }));
+          row.child(vBadge({ children: '告警', count: 128, overflowCount: 99 }));
+          row.child(vBadge({ children: '默认隐藏零', count: 0 }));
+        });
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前计数');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-badge-count-status', 'true');
+            output.child(status);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('加 1');
-              button.variant('primary');
-              button.on('click', () => {
-                badge.count(badge.count() + 1);
-                status.textContent(`当前 ${badge.count()}`);
-              });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('加 1', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              badge.count(badge.count() + 1);
+              status.textContent(`当前 ${badge.count()}`);
             });
-            actions.vButton((button) => {
-              button.label('清零');
-              button.variant('secondary');
-              button.on('click', () => {
-                badge.count(0);
-                status.textContent('当前 0');
-              });
+          });
+          actions.vButton('清零', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              badge.count(0);
+              status.textContent('当前 0');
             });
-            actions.vButton((button) => {
-              button.label('切换显示零');
-              button.variant('ghost');
-              button.on('click', () => {
-                badge.showZero(!badge.showZero());
-                status.textContent(badge.showZero() ? '显示零值' : '隐藏零值');
-              });
+          });
+          actions.vButton('切换显示零', (button) => {
+            button.variant('ghost');
+            button.on('click', () => {
+              badge.showZero(!badge.showZero());
+              status.textContent(badge.showZero() ? '显示零值' : '隐藏零值');
             });
           });
         });
@@ -1072,19 +1067,13 @@ function BadgeCountExample1() {
 function BadgeDotExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('圆点徽标');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('dot 模式只显示圆点，适合有新内容但不强调具体数量。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(vBadge({ children: '通知', dot: true }));
-              row.child(vBadge({ children: vButton('构建'), dot: true, color: '#0f766e' }));
-              row.child(vBadge({ children: vButton('部署'), dot: true, color: '#d97706' }));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.child(vBadge({ children: '通知', dot: true }));
+          row.child(vBadge({ children: vButton('构建'), dot: true, color: '#0f766e' }));
+          row.child(vBadge({ children: vButton('部署'), dot: true, color: '#d97706' }));
         });
       });
     }
@@ -1094,21 +1083,15 @@ function BadgeDotExample1() {
 function BadgeStatusExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('状态徽标');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('status 使用固定语义色，text 补充当前状态说明。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.child(vBadge({ status: 'success', text: '运行中' }));
-              row.child(vBadge({ status: 'processing', text: '同步中' }));
-              row.child(vBadge({ status: 'warning', text: '待确认' }));
-              row.child(vBadge({ status: 'error', text: '故障' }));
-              row.child(vBadge({ color: '#7c3aed', status: 'default', text: '自定义色' }));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.child(vBadge({ status: 'success', text: '运行中' }));
+          row.child(vBadge({ status: 'processing', text: '同步中' }));
+          row.child(vBadge({ status: 'warning', text: '待确认' }));
+          row.child(vBadge({ status: 'error', text: '故障' }));
+          row.child(vBadge({ color: '#7c3aed', status: 'default', text: '自定义色' }));
         });
       });
     }
@@ -1118,20 +1101,14 @@ function BadgeStatusExample1() {
 function AvatarBasicExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础头像');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('文字和图标头像通过 size、shape、color 快速形成不同标识。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.vAvatar('A');
-              row.vAvatar({ color: '#0f766e', text: 'UI' });
-              row.vAvatar({ icon: '★', shape: 'square' });
-              row.vAvatar({ color: '#7c3aed', size: 'large', text: 'API' });
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.vAvatar('A');
+          row.vAvatar({ color: '#0f766e', text: 'UI' });
+          row.vAvatar({ icon: '★', shape: 'square' });
+          row.vAvatar({ color: '#7c3aed', size: 'large', text: 'API' });
         });
       });
     }
@@ -1145,32 +1122,26 @@ function AvatarImageExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('图片头像');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('src 加载本地非文字插画图片，alt 同步作为替代文本和 aria-label。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.vAvatar({
-                alt: 'Alice',
-                size: 'xlarge',
-                src: aliceImage,
-                status: 'online'
-              });
-              row.vAvatar({
-                alt: 'Ops',
-                shape: 'square',
-                src: opsImage
-              });
-              row.vAvatar({
-                alt: 'Gateway',
-                size: 'large',
-                src: gatewayImage,
-                status: 'busy'
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.vAvatar({
+            alt: 'Alice',
+            size: 'xlarge',
+            src: aliceImage,
+            status: 'online'
+          });
+          row.vAvatar({
+            alt: 'Ops',
+            shape: 'square',
+            src: opsImage
+          });
+          row.vAvatar({
+            alt: 'Gateway',
+            size: 'large',
+            src: gatewayImage,
+            status: 'busy'
           });
         });
       });
@@ -1181,24 +1152,18 @@ function AvatarImageExample1() {
 function AvatarStatusExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('状态头像');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('status 在头像右下角显示语义状态点，适合成员、节点和服务标识。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-              row.vAvatar({ status: 'online', text: 'A' });
-              row.vAvatar({ color: '#0f766e', status: 'busy', text: 'B' });
-              row.vAvatar({ color: '#b45309', status: 'away', text: 'C' });
-              row.vAvatar({
-                color: '#64748b',
-                size: 'large',
-                status: 'offline',
-                text: 'D'
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+          row.vAvatar({ status: 'online', text: 'A' });
+          row.vAvatar({ color: '#0f766e', status: 'busy', text: 'B' });
+          row.vAvatar({ color: '#b45309', status: 'away', text: 'C' });
+          row.vAvatar({
+            color: '#64748b',
+            size: 'large',
+            status: 'offline',
+            text: 'D'
           });
         });
       });
@@ -1219,60 +1184,51 @@ function AvatarInteractiveExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义头像');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '18px' });
-              row.child(avatar);
-              row.vstack((info) => {
-                info.style('gap', '4px');
-                info.span('当前状态');
-                info.output((output) => {
-                  output.attr('data-avatar-demo-status', 'true');
-                  output.child(statusText);
-                });
-              });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '18px' });
+          row.child(avatar);
+          row.vstack((info) => {
+            info.style('gap', '4px');
+            info.span('当前状态');
+            info.output((output) => {
+              output.attr('data-avatar-demo-status', 'true');
+              output.child(statusText);
             });
-            content.hstack((actions) => {
-              actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-              actions.vButton((button) => {
-                button.label('切换状态').variant('primary');
-                button.on('click', () => {
-                  statusIndex = (statusIndex + 1) % statuses.length;
-                  avatar.status(statuses[statusIndex]);
-                  statusText.textContent(statuses[statusIndex]);
-                });
-              });
-              actions.vButton((button) => {
-                button.label('切换形状');
-                button.on('click', () => {
-                  avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
-                });
-              });
-              actions.vButton((button) => {
-                button.label('切换尺寸');
-                button.on('click', () => {
-                  sizeIndex = (sizeIndex + 1) % sizes.length;
-                  avatar.size(sizes[sizeIndex]);
-                });
-              });
-              actions.vButton((button) => {
-                button.label('切换颜色');
-                button.on('click', () => {
-                  colorIndex = (colorIndex + 1) % colors.length;
-                  avatar.color(colors[colorIndex]);
-                });
-              });
-              actions.vButton((button) => {
-                button.label('切换文字');
-                button.on('click', () => {
-                  label = label === 'A' ? 'B' : 'A';
-                  avatar.text(label);
-                });
-              });
+          });
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('切换状态', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              statusIndex = (statusIndex + 1) % statuses.length;
+              avatar.status(statuses[statusIndex]);
+              statusText.textContent(statuses[statusIndex]);
+            });
+          });
+          actions.vButton('切换形状', (button) => {
+            button.on('click', () => {
+              avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
+            });
+          });
+          actions.vButton('切换尺寸', (button) => {
+            button.on('click', () => {
+              sizeIndex = (sizeIndex + 1) % sizes.length;
+              avatar.size(sizes[sizeIndex]);
+            });
+          });
+          actions.vButton('切换颜色', (button) => {
+            button.on('click', () => {
+              colorIndex = (colorIndex + 1) % colors.length;
+              avatar.color(colors[colorIndex]);
+            });
+          });
+          actions.vButton('切换文字', (button) => {
+            button.on('click', () => {
+              label = label === 'A' ? 'B' : 'A';
+              avatar.text(label);
             });
           });
         });
@@ -1292,23 +1248,17 @@ function AvatarUploadExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('头像上传');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('点击头像区域选择图片，也可以拖拽图片到区域内预览。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '18px' });
-              row.child(avatar);
-              row.vstack((info) => {
-                info.style('gap', '4px');
-                info.span('当前状态');
-                info.output((output) => {
-                  output.attr('data-avatar-upload-status', 'true');
-                  output.child(status);
-                });
-              });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '18px' });
+          row.child(avatar);
+          row.vstack((info) => {
+            info.style('gap', '4px');
+            info.span('当前状态');
+            info.output((output) => {
+              output.attr('data-avatar-upload-status', 'true');
+              output.child(status);
             });
           });
         });
@@ -1320,24 +1270,18 @@ function AvatarUploadExample1() {
 function DetailBasicExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础详情');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('items 可以直接接收数组和对象，适合由接口数据生成只读详情。');
-            content.child(
-              vDetail({
-                items: [
-                  ['服务名称', 'api-gateway'],
-                  { label: '状态', value: '运行中' },
-                  { label: '负责人', value: 'SRE 团队' },
-                  ['最近发布', 'v1.4.2']
-                ]
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vDetail({
+            items: [
+              ['服务名称', 'api-gateway'],
+              { label: '状态', value: '运行中' },
+              { label: '负责人', value: 'SRE 团队' },
+              ['最近发布', 'v1.4.2']
+            ]
+          })
+        );
       });
     }
   };
@@ -1357,35 +1301,26 @@ function DetailColumnsExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('多列详情');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('columns 可以动态切换，条目会自动按每行 n 个重新排列。');
-            content.child(detail);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前列数');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-detail-columns-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(detail);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前列数');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-detail-columns-status', 'true');
+            output.child(status);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            [1, 2, 3].forEach((count) => {
-              actions.vButton((button) => {
-                button.label(`${count} 列`);
-                button.variant(count === 2 ? 'primary' : 'secondary');
-                button.on('click', () => {
-                  detail.columns(count);
-                  status.textContent(`当前 ${count} 列`);
-                });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          [1, 2, 3].forEach((count) => {
+            actions.vButton(`${count} 列`, (button) => {
+              button.variant(count === 2 ? 'primary' : 'secondary');
+              button.on('click', () => {
+                detail.columns(count);
+                status.textContent(`当前 ${count} 列`);
               });
             });
           });
@@ -1398,41 +1333,34 @@ function DetailColumnsExample1() {
 function DetailCustomExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义值');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('value 可以接收任意 ViewNode，状态徽标、按钮和链接都能直接放入。');
-            content.child(
-              vDetail((detail) => {
-                detail.vDetailItem((item) => {
-                  item.label('运行状态');
-                  item.value(
-                    vBadge((badge) => {
-                      badge.status('success');
-                      badge.text('运行中');
-                    })
-                  );
-                });
-                detail.vDetailItem((item) => {
-                  item.label('负责人');
-                  item.value(
-                    vButton((button) => {
-                      button.label('SRE 团队');
-                      button.variant('ghost');
-                      button.size('small');
-                    })
-                  );
-                });
-                detail.vDetailItem((item) => {
-                  item.label('访问地址');
-                  item.value('https://api.example.com');
-                });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vDetail((detail) => {
+            detail.vDetailItem((item) => {
+              item.label('运行状态');
+              item.value(
+                vBadge((badge) => {
+                  badge.status('success');
+                  badge.text('运行中');
+                })
+              );
+            });
+            detail.vDetailItem((item) => {
+              item.label('负责人');
+              item.value(
+                vButton('SRE 团队', (button) => {
+                  button.variant('ghost');
+                  button.size('small');
+                })
+              );
+            });
+            detail.vDetailItem((item) => {
+              item.label('访问地址');
+              item.value('https://api.example.com');
+            });
+          })
+        );
       });
     }
   };
@@ -1459,29 +1387,19 @@ function DetailDynamicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('动态更新');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('持有 vText 引用后，切换服务只需要更新值节点。');
-            content.child(detail);
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(detail);
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('切换服务', (button) => {
+            button.variant('primary');
+            button.on('click', switchService);
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('切换服务');
-              button.variant('primary');
-              button.on('click', switchService);
-            });
-            actions.vButton((button) => {
-              button.label('切换状态');
-              button.variant('secondary');
-              button.on('click', () => {
-                status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
-              });
+          actions.vButton('切换状态', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
             });
           });
         });
@@ -1506,44 +1424,38 @@ function TableBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础表格');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.vTable({
-              caption: '服务列表',
-              columns: [
-                { key: 'name', label: '服务名称', minWidth: 160 },
-                { key: 'status', label: '状态', width: 110 },
-                { key: 'owner', label: '负责人', width: 110 },
-                { key: 'updatedAt', label: '更新时间', width: 120 },
-                {
-                  key: 'actions',
-                  label: '操作',
-                  align: 'right',
-                  width: 110,
-                  render(row) {
-                    return vButton((button) => {
-                      button.label('选择');
-                      button.size('small');
-                      button.attr('data-table-row-action', row.id);
-                      button.on('click', () => status.textContent(`已选择 ${row.id}`));
-                    });
-                  }
-                }
-              ],
-              rows
-            });
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('最近操作');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-table-demo-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.vTable({
+          caption: '服务列表',
+          columns: [
+            { key: 'name', label: '服务名称', minWidth: 160 },
+            { key: 'status', label: '状态', width: 110 },
+            { key: 'owner', label: '负责人', width: 110 },
+            { key: 'updatedAt', label: '更新时间', width: 120 },
+            {
+              key: 'actions',
+              label: '操作',
+              align: 'right',
+              width: 110,
+              render(row) {
+                return vButton('选择', (button) => {
+                  button.size('small');
+                  button.attr('data-table-row-action', row.id);
+                  button.on('click', () => status.textContent(`已选择 ${row.id}`));
+                });
+              }
+            }
+          ],
+          rows
+        });
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('最近操作');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-table-demo-status', 'true');
+            output.child(status);
           });
         });
       });
@@ -1566,42 +1478,32 @@ function TableEmptyExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('空状态');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('接口返回空数组时，表格会保持表头并展示 emptyText。');
-            content.child(table);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('数据状态');
-              row.spacer();
-              row.output((output) => output.child(status));
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(table);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('数据状态');
+          row.spacer();
+          row.output((output) => output.child(status));
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('填充数据', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              table.rows([
+                { name: 'CPU 使用率', level: 'warning', time: '刚刚' },
+                { name: '队列堆积', level: 'info', time: '3 分钟前' }
+              ]);
+              status.textContent('已加载 2 条');
             });
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('填充数据');
-              button.variant('primary');
-              button.on('click', () => {
-                table.rows([
-                  { name: 'CPU 使用率', level: 'warning', time: '刚刚' },
-                  { name: '队列堆积', level: 'info', time: '3 分钟前' }
-                ]);
-                status.textContent('已加载 2 条');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('清空');
-              button.variant('secondary');
-              button.on('click', () => {
-                table.rows([]);
-                status.textContent('当前为空');
-              });
+          actions.vButton('清空', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              table.rows([]);
+              status.textContent('当前为空');
             });
           });
         });
@@ -1642,20 +1544,15 @@ function TablePaginationExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('分页联动');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.child(table);
-            content.child(pagination);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前页');
-              row.spacer();
-              row.output((output) => output.child(pageState));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(table);
+        content.child(pagination);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前页');
+          row.spacer();
+          row.output((output) => output.child(pageState));
         });
       });
     }
@@ -1667,54 +1564,48 @@ function TableDeclarativeExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('声明式内部结构');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.vTable((table) => {
-              table.vThead((head) => {
-                head.vTr((row) => {
-                  row.vTh('服务名称');
-                  row.vTh('状态');
-                  row.vTh('操作');
-                });
-              });
-              table.vTbody((tbody) => {
-                tbody.vTr((row) => {
-                  row.vTd('api-gateway');
-                  row.vTd('运行中');
-                  row.vTd(
-                    vButton((button) => {
-                      button.label('查看');
-                      button.size('small');
-                      button.variant('secondary');
-                      button.on('click', () => status.textContent('已查看 api-gateway'));
-                    })
-                  );
-                });
-                tbody.vTr((row) => {
-                  row.vTd('worker');
-                  row.vTd('维护中');
-                  row.vTd('处理');
-                });
-              });
-              table.vTfoot((foot) => {
-                foot.vTr((row) => {
-                  row.vTd((cell) => {
-                    cell.attr('colspan', 3);
-                    cell.text('表尾单元格可以跨列');
-                  });
-                });
-              });
-            });
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('操作反馈');
-              row.spacer();
-              row.output((output) => output.child(status));
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.vTable((table) => {
+          table.vThead((head) => {
+            head.vTr((row) => {
+              row.vTh('服务名称');
+              row.vTh('状态');
+              row.vTh('操作');
             });
           });
+          table.vTbody((tbody) => {
+            tbody.vTr((row) => {
+              row.vTd('api-gateway');
+              row.vTd('运行中');
+              row.vTd(
+                vButton('查看', (button) => {
+                  button.size('small');
+                  button.variant('secondary');
+                  button.on('click', () => status.textContent('已查看 api-gateway'));
+                })
+              );
+            });
+            tbody.vTr((row) => {
+              row.vTd('worker');
+              row.vTd('维护中');
+              row.vTd('处理');
+            });
+          });
+          table.vTfoot((foot) => {
+            foot.vTr((row) => {
+              row.vTd((cell) => {
+                cell.attr('colspan', 3);
+                cell.text('表尾单元格可以跨列');
+              });
+            });
+          });
+        });
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('操作反馈');
+          row.spacer();
+          row.output((output) => output.child(status));
         });
       });
     }
@@ -1765,50 +1656,34 @@ function TreeBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('树形选择');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.child(tree).hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前选择');
-              row.spacer();
-              row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(tree).hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前选择');
+          row.spacer();
+          row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) =>
-              button
-                .label('展开全部')
-                .variant('secondary')
-                .on('click', () => {
-                  tree.expandAll();
-                  status.textContent('已展开全部节点');
-                })
-            );
-            actions.vButton((button) =>
-              button
-                .label('收起全部')
-                .variant('secondary')
-                .on('click', () => {
-                  tree.collapseAll();
-                  status.textContent('已收起全部节点');
-                })
-            );
-            actions.vButton((button) =>
-              button
-                .label('清除选择')
-                .variant('ghost')
-                .on('click', () => {
-                  tree.selectedKeys([]);
-                  status.textContent('当前：未选择');
-                })
-            );
-          });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('展开全部', (button) =>
+            button.variant('secondary').on('click', () => {
+              tree.expandAll();
+              status.textContent('已展开全部节点');
+            })
+          );
+          actions.vButton('收起全部', (button) =>
+            button.variant('secondary').on('click', () => {
+              tree.collapseAll();
+              status.textContent('已收起全部节点');
+            })
+          );
+          actions.vButton('清除选择', (button) =>
+            button.variant('ghost').on('click', () => {
+              tree.selectedKeys([]);
+              status.textContent('当前：未选择');
+            })
+          );
         });
       });
     }
@@ -1864,35 +1739,22 @@ function TreeCheckableExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('复选框树');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.child(tree).hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('勾选状态');
-              row.spacer();
-              row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(tree).hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('勾选状态');
+          row.spacer();
+          row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) =>
-              button
-                .label('全选')
-                .variant('primary')
-                .on('click', () => tree.checkAll(true))
-            );
-            actions.vButton((button) =>
-              button
-                .label('清空')
-                .variant('secondary')
-                .on('click', () => tree.checkAll(false))
-            );
-          });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('全选', (button) =>
+            button.variant('primary').on('click', () => tree.checkAll(true))
+          );
+          actions.vButton('清空', (button) =>
+            button.variant('secondary').on('click', () => tree.checkAll(false))
+          );
         });
       });
     }
@@ -1974,83 +1836,72 @@ function TreeFileManagerExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('文件管理器');
-        card.vCardBody((body) => {
-          body.hstack((layout) => {
-            layout.style({ alignItems: 'stretch', flexWrap: 'wrap', gap: '16px' });
-            layout.div((column) => {
-              column.style({ flex: '1 1 280px', maxWidth: '100%', minWidth: '0' });
-              column.child(tree);
+      return vstack((body) => {
+        body.hstack((layout) => {
+          layout.style({ alignItems: 'stretch', flexWrap: 'wrap', gap: '16px' });
+          layout.div((column) => {
+            column.style({ flex: '1 1 280px', maxWidth: '100%', minWidth: '0' });
+            column.child(tree);
+          });
+          layout.div((panel) => {
+            panel.style({
+              background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+              border: '1px solid var(--yoya-color-border, #e2e8f0)',
+              borderRadius: '8px',
+              flex: '2 1 320px',
+              minWidth: '0',
+              padding: '16px'
             });
-            layout.div((panel) => {
-              panel.style({
-                background: 'var(--yoya-color-surface-muted, #fbfcfe)',
-                border: '1px solid var(--yoya-color-border, #e2e8f0)',
-                borderRadius: '8px',
-                flex: '2 1 320px',
-                minWidth: '0',
-                padding: '16px'
+            panel.h3((heading) => {
+              heading.attr('data-tree-file-name', 'true').child(fileName);
+            });
+            panel.p((description) => {
+              description.attr('data-tree-file-status', 'true').child(status);
+            });
+            panel.div((metaRow) => {
+              metaRow.style({
+                display: 'grid',
+                gap: '12px',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                marginTop: '14px'
               });
-              panel.h3((heading) => {
-                heading.attr('data-tree-file-name', 'true').child(fileName);
+              metaRow.div((item) => {
+                item.style({ display: 'grid', gap: '2px' });
+                item.span('类型');
+                item.strong((value) => {
+                  value.attr('data-tree-file-type', 'true').child(fileType);
+                });
               });
-              panel.p((description) => {
-                description.attr('data-tree-file-status', 'true').child(status);
+              metaRow.div((item) => {
+                item.style({ display: 'grid', gap: '2px' });
+                item.span('大小');
+                item.strong((value) => {
+                  value.attr('data-tree-file-size', 'true').child(fileSize);
+                });
               });
-              panel.div((metaRow) => {
-                metaRow.style({
-                  display: 'grid',
-                  gap: '12px',
-                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                  marginTop: '14px'
-                });
-                metaRow.div((item) => {
-                  item.style({ display: 'grid', gap: '2px' });
-                  item.span('类型');
-                  item.strong((value) => {
-                    value.attr('data-tree-file-type', 'true').child(fileType);
-                  });
-                });
-                metaRow.div((item) => {
-                  item.style({ display: 'grid', gap: '2px' });
-                  item.span('大小');
-                  item.strong((value) => {
-                    value.attr('data-tree-file-size', 'true').child(fileSize);
-                  });
-                });
-                metaRow.div((item) => {
-                  item.style({ display: 'grid', gap: '2px' });
-                  item.span('更新时间');
-                  item.strong((value) => {
-                    value.attr('data-tree-file-updated', 'true').child(fileUpdated);
-                  });
+              metaRow.div((item) => {
+                item.style({ display: 'grid', gap: '2px' });
+                item.span('更新时间');
+                item.strong((value) => {
+                  value.attr('data-tree-file-updated', 'true').child(fileUpdated);
                 });
               });
             });
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) =>
-              button
-                .label('新建文件夹')
-                .variant('secondary')
-                .on('click', () => status.textContent('已创建新文件夹'))
-            );
-            actions.vButton((button) =>
-              button
-                .label('上传文件')
-                .variant('primary')
-                .on('click', () => status.textContent('已开始上传文件'))
-            );
-            actions.vButton((button) =>
-              button
-                .label('刷新')
-                .variant('ghost')
-                .on('click', () => status.textContent('目录已刷新'))
-            );
+        body.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('新建文件夹', (button) => {
+            button.variant('secondary');
+            button.on('click', () => status.textContent('已创建新文件夹'));
+          });
+          actions.vButton('上传文件', (button) => {
+            button.variant('primary');
+            button.on('click', () => status.textContent('已开始上传文件'));
+          });
+          actions.vButton('刷新', (button) => {
+            button.variant('ghost');
+            button.on('click', () => status.textContent('目录已刷新'));
           });
         });
       });
@@ -2062,9 +1913,8 @@ function TreeBuilderExample1() {
   const status = vText('当前：未选择');
   const addRowAction = (node) =>
     node.actions((actions) =>
-      actions.vButton((button) =>
+      actions.vButton('⋯', (button) =>
         button
-          .label('⋯')
           .size('small')
           .variant('ghost')
           .attr({
@@ -2137,35 +1987,22 @@ function TreeBuilderExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('声明式构建');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.child(tree).hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前选择');
-              row.spacer();
-              row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(tree).hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前选择');
+          row.spacer();
+          row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) =>
-              button
-                .label('展开全部')
-                .variant('secondary')
-                .on('click', () => tree.expandAll())
-            );
-            actions.vButton((button) =>
-              button
-                .label('收起全部')
-                .variant('secondary')
-                .on('click', () => tree.collapseAll())
-            );
-          });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('展开全部', (button) =>
+            button.variant('secondary').on('click', () => tree.expandAll())
+          );
+          actions.vButton('收起全部', (button) =>
+            button.variant('secondary').on('click', () => tree.collapseAll())
+          );
         });
       });
     }
@@ -2175,27 +2012,21 @@ function TreeBuilderExample1() {
 function ProgressBasicExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础进度条');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('value 和 max 决定当前进度，右侧默认显示百分比。');
-            content.child(
-              vProgress((progress) => {
-                progress.label('部署进度');
-                progress.value(64);
-              })
-            );
-            content.child(
-              vProgress((progress) => {
-                progress.format((value, percent) => `${value} / 200（${Math.round(percent)}%）`);
-                progress.max(200);
-                progress.value(136);
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vProgress((progress) => {
+            progress.label('部署进度');
+            progress.value(64);
+          })
+        );
+        content.child(
+          vProgress((progress) => {
+            progress.format((value, percent) => `${value} / 200（${Math.round(percent)}%）`);
+            progress.max(200);
+            progress.value(136);
+          })
+        );
       });
     }
   };
@@ -2204,42 +2035,36 @@ function ProgressBasicExample1() {
 function ProgressStatusExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('状态进度条');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('status 切换语义色，适合构建、发布、告警和同步等任务状态。');
-            content.child(
-              vProgress((progress) => {
-                progress.label('构建');
-                progress.status('success');
-                progress.value(80);
-              })
-            );
-            content.child(
-              vProgress((progress) => {
-                progress.label('同步');
-                progress.status('processing');
-                progress.value(55);
-              })
-            );
-            content.child(
-              vProgress((progress) => {
-                progress.label('告警');
-                progress.status('warning');
-                progress.value(72);
-              })
-            );
-            content.child(
-              vProgress((progress) => {
-                progress.label('发布');
-                progress.status('error');
-                progress.value(34);
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vProgress((progress) => {
+            progress.label('构建');
+            progress.status('success');
+            progress.value(80);
+          })
+        );
+        content.child(
+          vProgress((progress) => {
+            progress.label('同步');
+            progress.status('processing');
+            progress.value(55);
+          })
+        );
+        content.child(
+          vProgress((progress) => {
+            progress.label('告警');
+            progress.status('warning');
+            progress.value(72);
+          })
+        );
+        content.child(
+          vProgress((progress) => {
+            progress.label('发布');
+            progress.status('error');
+            progress.value(34);
+          })
+        );
       });
     }
   };
@@ -2260,41 +2085,31 @@ function ProgressDynamicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('动态进度条');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.child(progress);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前进度');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-progress-dynamic-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(progress);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前进度');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-progress-dynamic-status', 'true');
+            output.child(status);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('减 10');
-              button.variant('secondary');
-              button.on('click', () => update(progress.value() - 10));
-            });
-            actions.vButton((button) => {
-              button.label('加 10');
-              button.variant('primary');
-              button.on('click', () => update(progress.value() + 10));
-            });
-            actions.vButton((button) => {
-              button.label('重置');
-              button.variant('ghost');
-              button.on('click', () => update(0));
-            });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('减 10', (button) => {
+            button.variant('secondary');
+            button.on('click', () => update(progress.value() - 10));
+          });
+          actions.vButton('加 10', (button) => {
+            button.variant('primary');
+            button.on('click', () => update(progress.value() + 10));
+          });
+          actions.vButton('重置', (button) => {
+            button.variant('ghost');
+            button.on('click', () => update(0));
           });
         });
       });
@@ -2307,29 +2122,23 @@ function ScrollBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础滚动');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('items 提供首批数据，滚动接近底部时自动调用 loadMore 追加下一页。');
-            content.child(
-              vScroll((scroll) => {
-                scroll.style('height', '280px');
-                scroll.items(source.slice(0, 6), (item) => div(item));
-                scroll.loadMore(({ append, block, page }) => {
-                  const start = page * 6;
-                  const next = source.slice(start, start + 6);
-                  append(next);
-                  if (start + next.length >= source.length) {
-                    block(true);
-                  }
-                });
-                scroll.threshold(48);
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vScroll((scroll) => {
+            scroll.style('height', '280px');
+            scroll.items(source.slice(0, 6), (item) => div(item));
+            scroll.loadMore(({ append, block, page }) => {
+              const start = page * 6;
+              const next = source.slice(start, start + 6);
+              append(next);
+              if (start + next.length >= source.length) {
+                block(true);
+              }
+            });
+            scroll.threshold(48);
+          })
+        );
       });
     }
   };
@@ -2360,51 +2169,40 @@ function ScrollLoopBlockExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('循环与阻止');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('loop 开启后数据会循环追加；block 会停止后续加载。');
-            content.child(scroll);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前模式');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-scroll-loop-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(scroll);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前模式');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-scroll-loop-status', 'true');
+            output.child(status);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('开启循环');
-              button.variant('primary');
-              button.on('click', () => {
-                scroll.loop(true);
-                status.textContent('loop：循环加载');
-                scroll.check();
-              });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('开启循环', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              scroll.loop(true);
+              status.textContent('loop：循环加载');
+              scroll.check();
             });
-            actions.vButton((button) => {
-              button.label('阻止加载');
-              button.variant('secondary');
-              button.on('click', () => {
-                scroll.block(true);
-                status.textContent('block：停止加载');
-              });
+          });
+          actions.vButton('阻止加载', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              scroll.block(true);
+              status.textContent('block：停止加载');
             });
-            actions.vButton((button) => {
-              button.label('重置');
-              button.variant('ghost');
-              button.on('click', () => {
-                scroll.reset().loop(false).check();
-                status.textContent('已重置');
-              });
+          });
+          actions.vButton('重置', (button) => {
+            button.variant('ghost');
+            button.on('click', () => {
+              scroll.reset().loop(false).check();
+              status.textContent('已重置');
             });
           });
         });
@@ -2439,22 +2237,13 @@ function ScrollAsyncExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('异步加载');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('loadMore 可以返回 Promise，组件会在返回前保持 loading 状态。');
-            content.child(scroll);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('重新加载');
-            button.on('click', () => {
-              scroll.reset();
-              scroll.check();
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(scroll);
+        content.vButton('重新加载', (button) => {
+          button.on('click', () => {
+            scroll.reset();
+            scroll.check();
           });
         });
       });
@@ -2471,37 +2260,31 @@ function ScrollVirtualExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('虚拟滚动');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('20000 条数据只渲染可视窗口，滚动时再按需切换。');
-            content.child(
-              vScroll((scroll) => {
-                scroll.style('height', '320px');
-                scroll.itemHeight(52);
-                scroll.overscan(4);
-                scroll.items(rows, (row) =>
-                  div((item) => {
-                    item.styles({
-                      alignItems: 'center',
-                      borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
-                      boxSizing: 'border-box',
-                      display: 'flex',
-                      gap: '10px',
-                      height: '100%',
-                      justifyContent: 'space-between',
-                      padding: '0 4px'
-                    });
-                    item.strong(row.name);
-                    item.span(row.status);
-                  })
-                );
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vScroll((scroll) => {
+            scroll.style('height', '320px');
+            scroll.itemHeight(52);
+            scroll.overscan(4);
+            scroll.items(rows, (row) =>
+              div((item) => {
+                item.styles({
+                  alignItems: 'center',
+                  borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  gap: '10px',
+                  height: '100%',
+                  justifyContent: 'space-between',
+                  padding: '0 4px'
+                });
+                item.strong(row.name);
+                item.span(row.status);
               })
             );
-          });
-        });
+          })
+        );
       });
     }
   };
@@ -2522,36 +2305,30 @@ function CarouselBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础走马灯');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('slides + renderItem 生成每一页，箭头和指示点负责切换。');
-            content.child(
-              vCarousel((carousel) => {
-                carousel.height('240px');
-                carousel.slides(slides, (item, index) =>
-                  div((block) => {
-                    block.className('carousel-demo-slide');
-                    block.styles({
-                      background: colors[index % colors.length],
-                      borderRadius: '8px',
-                      boxSizing: 'border-box',
-                      display: 'grid',
-                      alignContent: 'center',
-                      gap: '8px',
-                      height: '100%',
-                      padding: '24px'
-                    });
-                    block.h3(item.title);
-                    block.p(item.text);
-                  })
-                );
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vCarousel((carousel) => {
+            carousel.height('240px');
+            carousel.slides(slides, (item, index) =>
+              div((block) => {
+                block.className('carousel-demo-slide');
+                block.styles({
+                  background: colors[index % colors.length],
+                  borderRadius: '8px',
+                  boxSizing: 'border-box',
+                  display: 'grid',
+                  alignContent: 'center',
+                  gap: '8px',
+                  height: '100%',
+                  padding: '24px'
+                });
+                block.h3(item.title);
+                block.p(item.text);
               })
             );
-          });
-        });
+          })
+        );
       });
     }
   };
@@ -2592,35 +2369,25 @@ function CarouselAutoplayExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('自动播放');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('autoplay 和 interval 控制自动轮播，悬停或聚焦时会暂停。');
-            content.child(carousel);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前项');
-              row.spacer();
-              row.output((output) =>
-                output.attr('data-carousel-autoplay-status', 'true').child(status)
-              );
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(carousel);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前项');
+          row.spacer();
+          row.output((output) =>
+            output.attr('data-carousel-autoplay-status', 'true').child(status)
+          );
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('上一项');
-              button.on('click', () => carousel.prev());
-            });
-            actions.vButton((button) => {
-              button.label('下一项');
-              button.variant('primary');
-              button.on('click', () => carousel.next());
-            });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', gap: '10px' });
+          actions.vButton('上一项', (button) => {
+            button.on('click', () => carousel.prev());
+          });
+          actions.vButton('下一项', (button) => {
+            button.variant('primary');
+            button.on('click', () => carousel.next());
           });
         });
       });
@@ -2663,43 +2430,30 @@ function CarouselLoopExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('循环切换');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('loop 开启时首尾连续切换，关闭后到达边界会禁用箭头。');
-            content.child(carousel);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前状态');
-              row.spacer();
-              row.output((output) =>
-                output.attr('data-carousel-loop-status', 'true').child(status)
-              );
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(carousel);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前状态');
+          row.spacer();
+          row.output((output) => output.attr('data-carousel-loop-status', 'true').child(status));
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('切换循环', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              carousel.loop(!carousel.loop());
+              syncStatus();
             });
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('切换循环');
-              button.variant('secondary');
-              button.on('click', () => {
-                carousel.loop(!carousel.loop());
-                syncStatus();
-              });
-            });
-            actions.vButton((button) => {
-              button.label('上一项');
-              button.on('click', () => carousel.prev());
-            });
-            actions.vButton((button) => {
-              button.label('下一项');
-              button.variant('primary');
-              button.on('click', () => carousel.next());
-            });
+          actions.vButton('上一项', (button) => {
+            button.on('click', () => carousel.prev());
+          });
+          actions.vButton('下一项', (button) => {
+            button.variant('primary');
+            button.on('click', () => carousel.next());
           });
         });
       });
@@ -2734,15 +2488,9 @@ function CarouselSwipeExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('触摸滑动');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('在走马灯上按住并水平拖动即可切换，垂直滚动不受影响；滑动期间自动播放暂停。');
-            content.child(carousel);
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(carousel);
       });
     }
   };

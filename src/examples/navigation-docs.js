@@ -1,13 +1,15 @@
 import {
+  div,
   section,
   toast,
   vBreadcrumb,
   vBreadcrumbItem,
-  vCard,
+  vNavbar,
   vSteps,
   vTab,
   vTabs,
-  vText
+  vText,
+  vstack
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
@@ -139,7 +141,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: BreadcrumbBasicExample1,
         description: '用链接层级和当前页组成标准面包屑，适合详情页和管理后台。',
         id: 'basic',
-        imports: ['vBreadcrumb', 'vCard'],
+        imports: ['vBreadcrumb', 'vstack'],
         sourceComponent: BreadcrumbBasicExample1,
         sourceTitle: '基础面包屑核心源码',
         title: '基础面包屑'
@@ -148,7 +150,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: BreadcrumbDynamicExample1,
         description: 'active 可以动态切换，当前项会从链接变成 aria-current 文本。',
         id: 'dynamic',
-        imports: ['vBreadcrumb', 'vBreadcrumbItem', 'vButton', 'vCard', 'vText'],
+        imports: ['vBreadcrumb', 'vBreadcrumbItem', 'vButton', 'vText', 'vstack'],
         sourceComponent: BreadcrumbDynamicExample1,
         sourceTitle: '动态当前项核心源码',
         title: '动态当前项'
@@ -244,7 +246,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-links.html',
         id: 'links',
-        imports: ['div', 'router', 'vCard'],
+        imports: ['div', 'router', 'vstack'],
         sourceComponent: RouterNavigationCard,
         sourceTitle: '路由链接与视图核心源码',
         title: '路由链接与视图'
@@ -255,7 +257,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './declarative-router.html',
         id: 'declarative',
-        imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+        imports: ['div', 'vRoute', 'vRouter', 'vstack'],
         sourceComponent: DeclarativeRouterCard,
         sourceTitle: '声明式路由核心源码',
         title: '声明式路由'
@@ -266,7 +268,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-history.html',
         id: 'history',
-        imports: ['div', 'vCard', 'vRoute', 'vRouter', 'vText'],
+        imports: ['div', 'vRoute', 'vRouter', 'vText', 'vstack'],
         sourceComponent: RouterHistoryCard,
         sourceTitle: 'History 路由核心源码',
         title: 'History 路由'
@@ -278,7 +280,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-async.html',
         id: 'async',
-        imports: ['div', 'router', 'vCard', 'vRouterView'],
+        imports: ['div', 'router', 'vRouterView', 'vstack'],
         sourceComponent: RouterAsyncCard,
         sourceTitle: '异步加载路由核心源码',
         title: '异步加载路由'
@@ -290,7 +292,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-params.html',
         id: 'params',
-        imports: ['div', 'router', 'vCard', 'vRouterView', 'vText'],
+        imports: ['div', 'router', 'vRouterView', 'vText', 'vstack'],
         sourceComponent: RouterParamsCard,
         sourceTitle: '参数传递路由核心源码',
         title: '参数传递路由'
@@ -415,7 +417,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => CommandMenuCard({ toast }),
         description: '长命令列表用分组和分隔线组织，读起来更像一组动作，而不是一串按钮。',
         id: 'command',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: CommandMenuCard,
         sourceTitle: '命令菜单核心源码',
         title: '命令菜单'
@@ -424,7 +426,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => SubMenuCard({ toast }),
         description: '当菜单需要二级、三级入口时，vSubMenu 会把层级收起来，按需展开。',
         id: 'submenu',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: SubMenuCard,
         sourceTitle: '嵌套菜单核心源码',
         title: '嵌套菜单'
@@ -433,7 +435,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => OverlayMenuCard({ toast }),
         description: '按钮触发和右键触发可以共用同一套菜单内容，适合次级操作。',
         id: 'overlay',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: OverlayMenuCard,
         sourceTitle: '浮层菜单核心源码',
         title: '浮层菜单'
@@ -442,7 +444,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => SidebarCard({ toast }),
         description: '后台侧栏把菜单变成可折叠工作区导航，适合长列表和多级入口。',
         id: 'sidebar',
-        imports: ['vCard'],
+        imports: ['vSidebar'],
         sourceComponent: SidebarCard,
         sourceTitle: '侧栏菜单核心源码',
         title: '后台侧栏'
@@ -451,7 +453,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => AdminSidebarCard({ toast }),
         description: '常见管理系统左侧导航：工作台、组织、业务、系统设置和监控审计分组。',
         id: 'admin-sidebar',
-        imports: ['vCard'],
+        imports: ['hstack'],
         sourceComponent: AdminSidebarCard,
         sourceTitle: '管理系统左侧菜单核心源码',
         title: '管理系统左侧菜单'
@@ -504,7 +506,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarShellExample1,
         description: '品牌、横向菜单和动作按钮一起放在顶栏里，适合产品首页和工作台。',
         id: 'shell',
-        imports: ['vButton', 'vCard', 'vDropdownMenu', 'vNavbar', 'vText'],
+        imports: ['vButton', 'vDropdownMenu', 'vNavbar', 'vText', 'vstack'],
         sourceTitle: '产品顶栏核心源码',
         title: '产品顶栏'
       },
@@ -512,7 +514,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarBrandExample1,
         description: 'brand 槽可以放自定义品牌结构，适合带副标题的系统导航。',
         id: 'brand',
-        imports: ['vButton', 'vCard', 'vNavbar', 'vText'],
+        imports: ['vButton', 'vNavbar', 'vText'],
         sourceTitle: '自定义品牌核心源码',
         title: '自定义品牌'
       },
@@ -520,7 +522,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarWrapExample1,
         description: '在窄宽度里让菜单和动作自然换行，适合响应式顶栏。',
         id: 'wrap',
-        imports: ['vButton', 'vCard', 'vNavbar', 'vText'],
+        imports: ['div', 'vButton', 'vNavbar', 'vText'],
         sourceTitle: '响应式顶栏核心源码',
         title: '窄屏换行'
       }
@@ -581,7 +583,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: StepsBasicExample1,
         description: '通过 current 驱动完成、当前和等待状态，按钮可以前后移动步骤。',
         id: 'basic',
-        imports: ['vButton', 'vCard', 'vSteps', 'vText'],
+        imports: ['vButton', 'vSteps', 'vText', 'vstack'],
         sourceTitle: '基础步骤核心源码',
         title: '基础步骤'
       },
@@ -589,7 +591,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: StepsVerticalExample1,
         description: '纵向布局适合表单或审批详情，错误状态直接标记在当前步骤。',
         id: 'vertical',
-        imports: ['vCard', 'vSteps'],
+        imports: ['vSteps', 'vstack'],
         sourceTitle: '纵向步骤核心源码',
         title: '纵向步骤'
       },
@@ -597,7 +599,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: StepsCustomExample1,
         description: 'small 尺寸和自定义图标适合放在卡片摘要或紧凑工具栏中。',
         id: 'custom',
-        imports: ['vCard', 'vStep', 'vSteps'],
+        imports: ['vStep', 'vSteps', 'vstack'],
         sourceTitle: '紧凑步骤核心源码',
         title: '紧凑步骤'
       }
@@ -667,7 +669,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: TabsBasicExample1,
         description: 'key 驱动当前标签，点击或方向键切换后同步状态文案。',
         id: 'basic',
-        imports: ['vCard', 'vTabs', 'vText'],
+        imports: ['vTabs', 'vText', 'vstack'],
         sourceTitle: '基础标签页核心源码',
         title: '基础标签页'
       },
@@ -675,7 +677,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: TabsVerticalExample1,
         description: 'vertical 模式把标签放在左侧，适合详情页或设置页。',
         id: 'vertical',
-        imports: ['vCard', 'vTabs'],
+        imports: ['vTabs', 'vstack'],
         sourceTitle: '纵向标签页核心源码',
         title: '纵向标签页'
       },
@@ -683,7 +685,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: TabsCustomExample1,
         description: 'card 样式、small 尺寸和禁用标签适合紧凑的管理工具。',
         id: 'custom',
-        imports: ['vCard', 'vTab', 'vTabs'],
+        imports: ['vTab', 'vTabs', 'vstack'],
         sourceTitle: '紧凑标签页核心源码',
         title: '紧凑标签页'
       }
@@ -876,58 +878,52 @@ function NavbarShellExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('产品顶栏');
-        card.vCardBody((body) => {
-          body.vstack((shell) => {
-            shell.style('gap', '14px');
-            shell.vNavbar((navbar) => {
-              navbar.ariaLabel('产品主导航');
-              navbar.title('yoya-ui');
-              navbar.subtitle('设计系统');
-              navbar.menuContent((menu) => {
-                ['概览', '组件', '文档'].forEach((label, index) => {
-                  menu.vMenuItem((item) => {
-                    item.text(label);
-                    item.active(index === 0);
-                    item.on('click', () => setActive(label, index));
-                    menuItems[index] = item;
-                  });
-                });
+      return vstack((shell) => {
+        shell.style('gap', '14px');
+        shell.vNavbar((navbar) => {
+          navbar.ariaLabel('产品主导航');
+          navbar.title('yoya-ui');
+          navbar.subtitle('设计系统');
+          navbar.menuContent((menu) => {
+            ['概览', '组件', '文档'].forEach((label, index) => {
+              menu.vMenuItem((item) => {
+                item.text(label);
+                item.active(index === 0);
+                item.on('click', () => setActive(label, index));
+                menuItems[index] = item;
               });
-              navbar.actions((actions) => {
-                actions.output((output) => {
-                  output.className('components-route-note');
-                  output.attr('data-navbar-demo-status', 'true');
-                  output.child(status);
+            });
+          });
+          navbar.actions((actions) => {
+            actions.output((output) => {
+              output.className('components-route-note');
+              output.attr('data-navbar-demo-status', 'true');
+              output.child(status);
+            });
+            actions.span((badge) => {
+              badge.className('components-route-note');
+              badge.text('在线');
+            });
+            actions.vButton('登录', (button) => {
+              button.variant('primary');
+              button.on('click', () => showAction('登录'));
+            });
+            actions.vDropdownMenu((dropdown) => {
+              dropdown.trigger('更多');
+              dropdown.menuContent((commands) => {
+                commands.vMenuItem((item) => {
+                  item.text('设置');
+                  item.on('click', () => showAction('设置'));
                 });
-                actions.span((badge) => {
-                  badge.className('components-route-note');
-                  badge.text('在线');
-                });
-                actions.vButton((button) => {
-                  button.label('登录');
-                  button.variant('primary');
-                  button.on('click', () => showAction('登录'));
-                });
-                actions.vDropdownMenu((dropdown) => {
-                  dropdown.trigger('更多');
-                  dropdown.menuContent((commands) => {
-                    commands.vMenuItem((item) => {
-                      item.text('设置');
-                      item.on('click', () => showAction('设置'));
-                    });
-                    commands.vMenuItem((item) => {
-                      item.text('退出');
-                      item.on('click', () => showAction('退出'));
-                    });
-                  });
+                commands.vMenuItem((item) => {
+                  item.text('退出');
+                  item.on('click', () => showAction('退出'));
                 });
               });
             });
-            shell.p('品牌、主导航和动作按钮都在同一条顶栏里。');
           });
         });
+        shell.p('品牌、主导航和动作按钮都在同一条顶栏里。');
       });
     }
   };
@@ -943,41 +939,34 @@ function NavbarBrandExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义品牌');
-        card.vCardBody((body) => {
-          body.vNavbar((navbar) => {
-            navbar.ariaLabel('运维主导航');
-            navbar.brand((brand) => {
-              brand.strong('运维中心');
-              brand.span('Workspace');
+      return vNavbar((navbar) => {
+        navbar.ariaLabel('运维主导航');
+        navbar.brand((brand) => {
+          brand.strong('运维中心');
+          brand.span('Workspace');
+        });
+        navbar.menuContent((menu) => {
+          ['服务', '任务', '审计'].forEach((label, index) => {
+            menu.vMenuItem((item) => {
+              item.text(label);
+              item.active(index === 0);
+              item.on('click', () => setActive(label, index));
+              menuItems[index] = item;
             });
-            navbar.menuContent((menu) => {
-              ['服务', '任务', '审计'].forEach((label, index) => {
-                menu.vMenuItem((item) => {
-                  item.text(label);
-                  item.active(index === 0);
-                  item.on('click', () => setActive(label, index));
-                  menuItems[index] = item;
-                });
-              });
-            });
-            navbar.actions((actions) => {
-              actions.output((output) => {
-                output.className('components-route-note');
-                output.child(status);
-              });
-              actions.vButton((button) => {
-                button.label('同步');
-                button.variant('secondary');
-                button.on('click', () => status.textContent('同步完成'));
-              });
-              actions.vButton((button) => {
-                button.label('新建');
-                button.variant('primary');
-                button.on('click', () => status.textContent('已进入新建流程'));
-              });
-            });
+          });
+        });
+        navbar.actions((actions) => {
+          actions.output((output) => {
+            output.className('components-route-note');
+            output.child(status);
+          });
+          actions.vButton('同步', (button) => {
+            button.variant('secondary');
+            button.on('click', () => status.textContent('同步完成'));
+          });
+          actions.vButton('新建', (button) => {
+            button.variant('primary');
+            button.on('click', () => status.textContent('已进入新建流程'));
           });
         });
       });
@@ -995,49 +984,42 @@ function NavbarWrapExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('窄屏换行');
-        card.vCardBody((body) => {
-          body.div((frame) => {
-            frame.style('maxWidth', '720px');
-            frame.vstack((shell) => {
-              shell.style('gap', '14px');
-              shell.vNavbar((navbar) => {
-                navbar.title('yoya-ui');
-                navbar.menuContent((menu) => {
-                  ['概览', '配置', '日志', '审计'].forEach((label, index) => {
-                    if (index === 2) {
-                      menu.vMenuDivider();
-                    }
+      return div((frame) => {
+        frame.style('maxWidth', '720px');
+        frame.vstack((shell) => {
+          shell.style('gap', '14px');
+          shell.vNavbar((navbar) => {
+            navbar.title('yoya-ui');
+            navbar.menuContent((menu) => {
+              ['概览', '配置', '日志', '审计'].forEach((label, index) => {
+                if (index === 2) {
+                  menu.vMenuDivider();
+                }
 
-                    menu.vMenuItem((item) => {
-                      item.text(label);
-                      item.active(index === 0);
-                      item.on('click', () => setActive(label, index));
-                      menuItems[index] = item;
-                    });
-                  });
-                });
-                navbar.actions((actions) => {
-                  actions.output((output) => {
-                    output.className('components-route-note');
-                    output.child(status);
-                  });
-                  actions.vButton((button) => {
-                    button.label('同步');
-                    button.variant('secondary');
-                    button.on('click', () => status.textContent('同步完成'));
-                  });
-                  actions.vButton((button) => {
-                    button.label('发布');
-                    button.variant('primary');
-                    button.on('click', () => status.textContent('发布已提交'));
-                  });
+                menu.vMenuItem((item) => {
+                  item.text(label);
+                  item.active(index === 0);
+                  item.on('click', () => setActive(label, index));
+                  menuItems[index] = item;
                 });
               });
-              shell.p('空间变窄时，动作区会自然换行。');
+            });
+            navbar.actions((actions) => {
+              actions.output((output) => {
+                output.className('components-route-note');
+                output.child(status);
+              });
+              actions.vButton('同步', (button) => {
+                button.variant('secondary');
+                button.on('click', () => status.textContent('同步完成'));
+              });
+              actions.vButton('发布', (button) => {
+                button.variant('primary');
+                button.on('click', () => status.textContent('发布已提交'));
+              });
             });
           });
+          shell.p('空间变窄时，动作区会自然换行。');
         });
       });
     }
@@ -1068,42 +1050,32 @@ function StepsBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础步骤');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('current 决定完成、当前和等待状态，按钮可以驱动向导前进或后退。');
-            content.child(steps);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('当前步骤');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-steps-basic-status', 'true');
-                output.child(status);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(steps);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('当前步骤');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-steps-basic-status', 'true');
+            output.child(status);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('上一步');
-              button.variant('secondary');
-              button.on('click', () => {
-                steps.prev();
-                syncStatus();
-              });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('上一步', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              steps.prev();
+              syncStatus();
             });
-            actions.vButton((button) => {
-              button.label('下一步');
-              button.variant('primary');
-              button.on('click', () => {
-                steps.next();
-                syncStatus();
-              });
+          });
+          actions.vButton('下一步', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              steps.next();
+              syncStatus();
             });
           });
         });
@@ -1115,33 +1087,28 @@ function StepsBasicExample1() {
 function StepsVerticalExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('纵向步骤');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('纵向布局适合表单、审批详情等需要逐条阅读流程的场景。');
-            content.child(
-              vSteps((steps) => {
-                steps.direction('vertical');
-                steps.current(1);
-                steps.status('error');
-                steps.vStep((step) => {
-                  step.title('提交申请');
-                  step.description('填写申请单');
-                });
-                steps.vStep((step) => {
-                  step.title('审批');
-                  step.description('当前审批失败');
-                });
-                steps.vStep((step) => {
-                  step.title('完成');
-                  step.description('等待重新提交');
-                });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('纵向布局适合表单、审批详情等需要逐条阅读流程的场景。');
+        content.child(
+          vSteps((steps) => {
+            steps.direction('vertical');
+            steps.current(1);
+            steps.status('error');
+            steps.vStep((step) => {
+              step.title('提交申请');
+              step.description('填写申请单');
+            });
+            steps.vStep((step) => {
+              step.title('审批');
+              step.description('当前审批失败');
+            });
+            steps.vStep((step) => {
+              step.title('完成');
+              step.description('等待重新提交');
+            });
+          })
+        );
       });
     }
   };
@@ -1150,35 +1117,30 @@ function StepsVerticalExample1() {
 function StepsCustomExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('紧凑步骤');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('small 尺寸和自定义图标适合卡片摘要、状态面板等紧凑区域。');
-            content.child(
-              vSteps((steps) => {
-                steps.current(2);
-                steps.size('small');
-                steps.vStep((step) => {
-                  step.title('基础信息');
-                  step.description('已填写');
-                  step.icon('✓');
-                });
-                steps.vStep((step) => {
-                  step.title('资源检查');
-                  step.description('通过');
-                  step.icon('✓');
-                });
-                steps.vStep((step) => {
-                  step.title('发布');
-                  step.description('准备上线');
-                  step.icon('3');
-                });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('small 尺寸和自定义图标适合卡片摘要、状态面板等紧凑区域。');
+        content.child(
+          vSteps((steps) => {
+            steps.current(2);
+            steps.size('small');
+            steps.vStep((step) => {
+              step.title('基础信息');
+              step.description('已填写');
+              step.icon('✓');
+            });
+            steps.vStep((step) => {
+              step.title('资源检查');
+              step.description('通过');
+              step.icon('✓');
+            });
+            steps.vStep((step) => {
+              step.title('发布');
+              step.description('准备上线');
+              step.icon('3');
+            });
+          })
+        );
       });
     }
   };
@@ -1189,46 +1151,41 @@ function TabsBasicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础标签页');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('key 驱动当前标签，点击或方向键切换后同步状态文案。');
-            content.child(
-              vTabs((tabs) => {
-                tabs.ariaLabel('服务详情标签');
-                tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
-                tabs.vTab((tab) => {
-                  tab.key('overview');
-                  tab.label('概览');
-                  tab.content((panel) => {
-                    panel.p('服务概览');
-                    panel.p('展示核心指标和近期变更。');
-                  });
-                });
-                tabs.vTab((tab) => {
-                  tab.key('logs');
-                  tab.label('日志');
-                  tab.content((panel) => panel.p('最近运行日志会显示在这里。'));
-                });
-                tabs.vTab((tab) => {
-                  tab.key('audit');
-                  tab.label('审计');
-                  tab.content((panel) => panel.p('审计记录和操作历史。'));
-                });
-              })
-            );
-            content.div((row) => {
-              row.style('alignItems', 'center');
-              row.style('display', 'flex');
-              row.style('justifyContent', 'space-between');
-              row.span('当前标签');
-              row.output((output) => {
-                output.attr('data-tabs-basic-status', 'true');
-                output.child(status);
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('key 驱动当前标签，点击或方向键切换后同步状态文案。');
+        content.child(
+          vTabs((tabs) => {
+            tabs.ariaLabel('服务详情标签');
+            tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
+            tabs.vTab((tab) => {
+              tab.key('overview');
+              tab.label('概览');
+              tab.content((panel) => {
+                panel.p('服务概览');
+                panel.p('展示核心指标和近期变更。');
               });
             });
+            tabs.vTab((tab) => {
+              tab.key('logs');
+              tab.label('日志');
+              tab.content((panel) => panel.p('最近运行日志会显示在这里。'));
+            });
+            tabs.vTab((tab) => {
+              tab.key('audit');
+              tab.label('审计');
+              tab.content((panel) => panel.p('审计记录和操作历史。'));
+            });
+          })
+        );
+        content.div((row) => {
+          row.style('alignItems', 'center');
+          row.style('display', 'flex');
+          row.style('justifyContent', 'space-between');
+          row.span('当前标签');
+          row.output((output) => {
+            output.attr('data-tabs-basic-status', 'true');
+            output.child(status);
           });
         });
       });
@@ -1239,42 +1196,37 @@ function TabsBasicExample1() {
 function TabsVerticalExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('纵向标签页');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('vertical 模式把标签放在左侧，适合详情页或设置页。');
-            content.child(
-              vTabs((tabs) => {
-                tabs.ariaLabel('设置页导航');
-                tabs.orientation('vertical');
-                tabs.variant('pills');
-                tabs.vTab((tab) => {
-                  tab.key('profile');
-                  tab.label('基本信息');
-                  tab.content((panel) => {
-                    panel.p('服务名称、负责人和环境信息。');
-                  });
-                });
-                tabs.vTab((tab) => {
-                  tab.key('permissions');
-                  tab.label('权限');
-                  tab.content((panel) => {
-                    panel.p('成员和角色权限设置。');
-                  });
-                });
-                tabs.vTab((tab) => {
-                  tab.key('notifications');
-                  tab.label('通知');
-                  tab.content((panel) => {
-                    panel.p('消息通知偏好。');
-                  });
-                });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('vertical 模式把标签放在左侧，适合详情页或设置页。');
+        content.child(
+          vTabs((tabs) => {
+            tabs.ariaLabel('设置页导航');
+            tabs.orientation('vertical');
+            tabs.variant('pills');
+            tabs.vTab((tab) => {
+              tab.key('profile');
+              tab.label('基本信息');
+              tab.content((panel) => {
+                panel.p('服务名称、负责人和环境信息。');
+              });
+            });
+            tabs.vTab((tab) => {
+              tab.key('permissions');
+              tab.label('权限');
+              tab.content((panel) => {
+                panel.p('成员和角色权限设置。');
+              });
+            });
+            tabs.vTab((tab) => {
+              tab.key('notifications');
+              tab.label('通知');
+              tab.content((panel) => {
+                panel.p('消息通知偏好。');
+              });
+            });
+          })
+        );
       });
     }
   };
@@ -1289,32 +1241,27 @@ function TabsCustomExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('紧凑标签页');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('card 样式和 small 尺寸适合嵌入工具栏或详情卡片。');
-            content.child(
-              vTabs((tabs) => {
-                tabs.ariaLabel('服务标签');
-                tabs.size('small');
-                tabs.variant('card');
-                tabs.vTab((tab) => {
-                  tab.key('overview');
-                  tab.label('概览');
-                  tab.content((panel) => panel.p('服务状态与核心指标。'));
-                });
-                tabs.vTab((tab) => {
-                  tab.key('logs');
-                  tab.label('日志');
-                  tab.content((panel) => panel.p('查看最近日志。'));
-                });
-                tabs.child(auditTab);
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('card 样式和 small 尺寸适合嵌入工具栏或详情卡片。');
+        content.child(
+          vTabs((tabs) => {
+            tabs.ariaLabel('服务标签');
+            tabs.size('small');
+            tabs.variant('card');
+            tabs.vTab((tab) => {
+              tab.key('overview');
+              tab.label('概览');
+              tab.content((panel) => panel.p('服务状态与核心指标。'));
+            });
+            tabs.vTab((tab) => {
+              tab.key('logs');
+              tab.label('日志');
+              tab.content((panel) => panel.p('查看最近日志。'));
+            });
+            tabs.child(auditTab);
+          })
+        );
       });
     }
   };
@@ -1323,32 +1270,27 @@ function TabsCustomExample1() {
 function BreadcrumbBasicExample1() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础面包屑');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('链接层级可以返回上级，最后一个节点作为当前页面。');
-            content.child(
-              vBreadcrumb((breadcrumb) => {
-                breadcrumb.ariaLabel('服务导航');
-                breadcrumb.separator('/');
-                breadcrumb.vBreadcrumbItem((item) => {
-                  item.label('控制台');
-                  item.href('#/console');
-                });
-                breadcrumb.vBreadcrumbItem((item) => {
-                  item.label('服务列表');
-                  item.href('#/services');
-                });
-                breadcrumb.vBreadcrumbItem((item) => {
-                  item.label('api-gateway');
-                  item.active(true);
-                });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('链接层级可以返回上级，最后一个节点作为当前页面。');
+        content.child(
+          vBreadcrumb((breadcrumb) => {
+            breadcrumb.ariaLabel('服务导航');
+            breadcrumb.separator('/');
+            breadcrumb.vBreadcrumbItem((item) => {
+              item.label('控制台');
+              item.href('#/console');
+            });
+            breadcrumb.vBreadcrumbItem((item) => {
+              item.label('服务列表');
+              item.href('#/services');
+            });
+            breadcrumb.vBreadcrumbItem((item) => {
+              item.label('api-gateway');
+              item.active(true);
+            });
+          })
+        );
       });
     }
   };
@@ -1368,34 +1310,28 @@ function BreadcrumbDynamicExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('动态当前项');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('active 可以随时切换，当前项会从链接变成 aria-current 文本。');
-            content.child(
-              vBreadcrumb((breadcrumb) => {
-                breadcrumb.ariaLabel('动态服务导航');
-                breadcrumb.child(items);
-              })
-            );
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-              ['控制台', '服务', '服务详情'].forEach((label, index) => {
-                row.vButton((button) => {
-                  button.label(label);
-                  button.size('small');
-                  button.variant('secondary');
-                  button.on('click', () => select(index));
-                });
-              });
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-breadcrumb-demo-status', 'true');
-                output.child(status);
-              });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('active 可以随时切换，当前项会从链接变成 aria-current 文本。');
+        content.child(
+          vBreadcrumb((breadcrumb) => {
+            breadcrumb.ariaLabel('动态服务导航');
+            breadcrumb.child(items);
+          })
+        );
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          ['控制台', '服务', '服务详情'].forEach((label, index) => {
+            row.vButton(label, (button) => {
+              button.size('small');
+              button.variant('secondary');
+              button.on('click', () => select(index));
             });
+          });
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-breadcrumb-demo-status', 'true');
+            output.child(status);
           });
         });
       });

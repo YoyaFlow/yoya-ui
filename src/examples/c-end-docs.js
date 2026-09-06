@@ -277,13 +277,11 @@ function SkeletonToggleDemo() {
         });
         card.vCardFooter((footer) => {
           footer.hstack({ gap: '10px' }, (row) => {
-            row.vButton((button) => {
-              button.label('切换为真实内容');
+            row.vButton('切换为真实内容', (button) => {
               button.variant('primary');
               button.on('click', () => content.loaded());
             });
-            row.vButton((button) => {
-              button.label('回到骨架屏');
+            row.vButton('回到骨架屏', (button) => {
               button.on('click', () => content.loading());
             });
           });
@@ -343,8 +341,7 @@ function TransitionToggleDemo() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('切换显示');
+          footer.vButton('切换显示', (button) => {
             button.variant('primary');
             button.on('click', () => content.toggle());
           });
@@ -386,8 +383,7 @@ function TransitionForceDemo() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('切换显示');
+          footer.vButton('切换显示', (button) => {
             button.variant('primary');
             button.on('click', () => content.toggle());
           });

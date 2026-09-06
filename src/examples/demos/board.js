@@ -1,15 +1,11 @@
-import { vCard, vGauge, vRingStat, vSparkline, vTimeline, vTrendCard } from '../../index.js';
+import { vGauge, vRingStat, vSparkline, vTimeline, vTrendCard, vstack } from '../../index.js';
 
 export function DigitalBoardDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('数字看板');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((root) => {
+          root.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vDigitalBoard 用响应式卡片网格展示关键指标：数值、单位、趋势和主题色。');
-            stack.p('columns 可固定列数，趋势方向与主题色会自动着色。');
             stack.vDigitalBoard((board) => {
               board.columns(4);
               board.vDigitalBoardItem((item) => {
@@ -48,7 +44,6 @@ export function DigitalBoardDemo() {
                 item.icon('⏱️');
               });
             });
-          });
         });
       });
     }
@@ -58,12 +53,9 @@ export function DigitalBoardDemo() {
 export function TrendCardDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('趋势卡');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((root) => {
+          root.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vTrendCard 组合数值、涨跌和迷你走势，适合放在看板顶部。');
             stack.div((grid) => {
               grid.style('display', 'grid');
               grid.style('gap', '12px');
@@ -102,7 +94,6 @@ export function TrendCardDemo() {
                 })
               );
             });
-          });
         });
       });
     }
@@ -112,12 +103,9 @@ export function TrendCardDemo() {
 export function SparklineDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('迷你走势');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((root) => {
+          root.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vSparkline 是无坐标轴的轻量折线图，支持面积填充和主题色。');
             stack.div((grid) => {
               grid.style('display', 'grid');
               grid.style('gap', '12px');
@@ -127,7 +115,6 @@ export function SparklineDemo() {
               grid.child(vSparkline({ data: [3, 4, 6, 5, 8, 7], tone: 'success' }));
               grid.child(vSparkline({ data: [6, 6, 7, 5, 6, 8], fill: true, tone: 'warning' }));
             });
-          });
         });
       });
     }
@@ -137,12 +124,9 @@ export function SparklineDemo() {
 export function RingStatDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('环形统计');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((root) => {
+          root.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vRingStat 用圆环展示占比，中心默认显示百分比，也可自定义。');
             stack.hstack((row) => {
               row.style('gap', '24px');
               row.style('flexWrap', 'wrap');
@@ -153,7 +137,6 @@ export function RingStatDemo() {
               );
               row.child(vRingStat({ label: '失败率', percent: 18, tone: 'danger' }));
             });
-          });
         });
       });
     }
@@ -163,12 +146,9 @@ export function RingStatDemo() {
 export function GaugeDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('仪表盘');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((root) => {
+          root.vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vGauge 用半圆刻度与指针展示区间指标，支持最大值与单位。');
             stack.hstack((row) => {
               row.style('gap', '24px');
               row.style('flexWrap', 'wrap');
@@ -176,7 +156,6 @@ export function GaugeDemo() {
               row.child(vGauge({ unit: '%', value: 38, tone: 'primary' }));
               row.child(vGauge({ max: 120, unit: '°C', value: 86, tone: 'danger' }));
             });
-          });
         });
       });
     }
@@ -186,11 +165,9 @@ export function GaugeDemo() {
 export function TimelineDemo() {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('时间线');
-        card.vCardBody((body) => {
-          body.child(
-            vTimeline((timeline) => {
+      return vstack((root) => {
+        root.child(
+          vTimeline((timeline) => {
               timeline.vTimelineItem((item) => {
                 item.status('success');
                 item.title('服务发布成功');
@@ -215,23 +192,9 @@ export function TimelineDemo() {
                 item.time('08:15 · 2026-08-28');
                 item.content('数据库连接池告警自动恢复。');
               });
-            })
-          );
-        });
+          })
+        );
       });
     }
   };
 }
-
-export const boardCategory = {
-  description: '展示关键指标的响应式卡片看板。',
-  id: 'board',
-  title: '看板',
-  demos: [
-    {
-      component: DigitalBoardDemo,
-      imports: ['vCard', 'vDigitalBoard', 'vDigitalBoardItem'],
-      title: '数字看板核心源码'
-    }
-  ]
-};

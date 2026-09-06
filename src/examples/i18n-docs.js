@@ -14,7 +14,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: 'vLanguageSwitch 提供预制下拉切换，语言列表可扩展，选择会写入对应存储。',
     component: I18nReactiveExample1,
     sourceComponent: I18nReactiveExample1,
-    imports: ['createI18n', 'vCard', 'vLanguageSwitch', 'vText'],
+    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
     sourceTitle: '响应式翻译核心源码'
   },
   {
@@ -23,7 +23,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: '参数插值、增量注册和默认语言回退可以组合使用。',
     component: I18nParamsExample1,
     sourceComponent: I18nParamsExample1,
-    imports: ['createI18n', 'vCard'],
+    imports: ['createI18n', 'vstack'],
     sourceTitle: '参数与回退核心源码'
   },
   {
@@ -32,7 +32,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: '字符串默认文案配合 s(key) 获得响应式翻译节点。',
     component: I18nShortcutExample1,
     sourceComponent: I18nShortcutExample1,
-    imports: ['createI18n', 'installI18nStringShortcut', 'vCard'],
+    imports: ['createI18n', 'installI18nStringShortcut', 'vstack'],
     sourceTitle: '字符串快捷写法核心源码'
   },
   {
@@ -41,7 +41,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: '动态注册词典，再通过 languages() 把新语言加入 vLanguageSwitch。',
     component: I18nExtendExample1,
     sourceComponent: I18nExtendExample1,
-    imports: ['createI18n', 'vCard', 'vLanguageSwitch', 'vText'],
+    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
     sourceTitle: '扩展新语言核心源码'
   }
 ]);

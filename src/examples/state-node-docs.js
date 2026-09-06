@@ -1,11 +1,9 @@
-import { section } from '../index.js';
+import { section, vCard } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   dynamicFormFieldsSource,
   StateDynamicAttrsExample1,
-  StateMethodsDemo,
   StateMethodsExample,
-  StateDynamicFormDemo,
   StateDynamicFormExample,
   StateCounterExample1,
   StateEventOverwriteExample1,
@@ -16,6 +14,53 @@ import {
   StateToggleExample1
 } from './demos/state-node.js';
 
+function StateDynamicFormDemo() {
+  const form = StateDynamicFormExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('动态表单');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('切换类型重建字段；输入值只写入 state，不重建输入框。');
+            stack.child(form);
+          });
+        });
+      });
+    }
+  };
+}
+
+function StateMethodsDemo() {
+  const counter = StateMethodsExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('自定义方法');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('config 上定义的操作方法会挂到组件对象，外部按钮直接调用。');
+            stack.child(counter);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('+1', (button) => {
+            button.variant('primary').on('click', () => counter.increment());
+          });
+          footer.vButton('-1', (button) => {
+            button.on('click', () => counter.decrement());
+          });
+          footer.vButton('重置', (button) => {
+            button.on('click', () => counter.reset());
+          });
+        });
+      });
+    }
+  };
+}
+
 const stateDemoDefinitions = Object.freeze([
   {
     id: 'counter',
@@ -23,7 +68,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'render 里把文本声明为 (state) => value，setState 后只求值写回该绑定。',
     component: StateCounterExample1,
     sourceComponent: StateCounterExample1,
-    imports: ['vCard', 'vStateNode', 'vText'],
+    imports: ['vStateNode', 'vText', 'vstack'],
     sourceTitle: '函数值绑定核心源码'
   },
   {
@@ -32,7 +77,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'input 的 value 与输出文本都声明为函数值绑定，输入框 DOM 不被替换。',
     component: StateInputExample1,
     sourceComponent: StateInputExample1,
-    imports: ['vCard', 'vStateNode', 'vText'],
+    imports: ['vStateNode', 'vText', 'vstack'],
     sourceTitle: '输入值绑定核心源码'
   },
   {
@@ -41,7 +86,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '没有函数值绑定且省略 update 时，setState 会销毁旧内容并重新 render。',
     component: StateRebuildExample1,
     sourceComponent: StateRebuildExample1,
-    imports: ['vCard', 'vStateNode'],
+    imports: ['vStateNode', 'vstack'],
     sourceTitle: '全量重建核心源码'
   },
   {
@@ -50,7 +95,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'update 返回 true 时强制重建，适合显示/隐藏这类结构变化。',
     component: StateToggleExample1,
     sourceComponent: StateToggleExample1,
-    imports: ['vCard', 'vStateNode'],
+    imports: ['vStateNode', 'vstack'],
     sourceTitle: '结构切换核心源码'
   },
   {
@@ -78,7 +123,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'vStateNode 的 render 返回数组时，父容器直接落实多个并列子节点。',
     component: StateFragmentExample1,
     sourceComponent: StateFragmentExample1,
-    imports: ['vCard', 'vStateNode', 'vTr'],
+    imports: ['vStateNode', 'vTable', 'vTr'],
     sourceTitle: '多根 fragment 核心源码'
   },
   {
@@ -87,7 +132,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'addChild(key, node) 登记唯一 key，元素子节点自动带 data-row-key。',
     component: StateKeyedExample1,
     sourceComponent: StateKeyedExample1,
-    imports: ['div', 'vCard'],
+    imports: ['div', 'vstack'],
     sourceTitle: 'Keyed 子节点核心源码'
   },
   {
@@ -96,7 +141,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '同一节点重复 on() 覆盖上次 handler，不会叠加触发。',
     component: StateEventOverwriteExample1,
     sourceComponent: StateEventOverwriteExample1,
-    imports: ['div', 'vCard'],
+    imports: ['vstack', 'vText'],
     sourceTitle: '事件覆盖核心源码'
   },
   {
@@ -105,7 +150,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'attr/style 接收函数值后随状态更新，返回 null 时移除属性或样式。',
     component: StateDynamicAttrsExample1,
     sourceComponent: StateDynamicAttrsExample1,
-    imports: ['vCard', 'vStateNode', 'vText'],
+    imports: ['vStateNode', 'vstack', 'vText'],
     sourceTitle: '动态属性绑定核心源码'
   }
 ]);

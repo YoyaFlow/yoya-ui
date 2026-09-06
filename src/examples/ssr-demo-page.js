@@ -10,8 +10,8 @@ import {
   vStateNode,
   vText,
   vThemeModeSwitch
-} from '../../index.js';
-import { hydrate, mount, parseState, renderToString } from '../../yoya.ssr.js';
+} from '../index.js';
+import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 
 const messages = {
   'zh-CN': {
@@ -82,7 +82,9 @@ export function createDemoPage(initial = {}) {
   dialog.attr('data-ssr-dialog', 'true');
   dialog.content((content) => {
     content.h3('详情弹窗'.s('dialogTitle', locale));
-    content.p('弹窗内容由服务端输出到 HTML，hydration 后在客户端绑定打开/关闭事件。'.s('dialogBody', locale));
+    content.p(
+      '弹窗内容由服务端输出到 HTML，hydration 后在客户端绑定打开/关闭事件。'.s('dialogBody', locale)
+    );
     content.vButton('关闭'.s('closeDialog', locale), (button) => {
       button.on('click', () => dialog.close());
     });
@@ -95,9 +97,7 @@ export function createDemoPage(initial = {}) {
     name: 'name',
     required: true
   });
-  nameItem.control(
-    vInput({ name: 'name', placeholder: '姓名'.s('nameLabel', locale) })
-  );
+  nameItem.control(vInput({ name: 'name', placeholder: '姓名'.s('nameLabel', locale) }));
   const emailItem = vFormItem({
     label: '邮箱'.s('emailLabel', locale),
     name: 'email',
@@ -243,8 +243,7 @@ export function SsrDemoPage() {
           background: 'var(--yoya-color-bg, #f5f7fa)',
           boxSizing: 'border-box',
           color: 'var(--yoya-color-text, #172033)',
-          fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+          fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
           lineHeight: '1.5',
           minHeight: '100vh',
           padding: '24px'

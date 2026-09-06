@@ -35,6 +35,7 @@
 - `.on()` 回调逻辑较大或接近 100 字符时，`.on()` 前换行，回调内容独立成行。
 - 链式只合并简单、同层级的设置；不把嵌套 setup、条件分支或长参数塞进同一条链。
 - `src/examples/demos/` 已在 `.prettierignore`，换行不被 Prettier 自动合并；`demo-readability.test.js` + `npm test` 会拦截违规链。
+- 页面壳分层由 `demo-layering.test.js` 自动检查：演示源码禁止出现 `vCard(` / `vCardHeader(` / `vCardBody(` / `vCardFooter(`；存量文件以迁移基线放行，shell token 数只减不增，文件清零后必须删除对应白名单条目。
 
 ## 6. 确定性 / SSR 安全
 

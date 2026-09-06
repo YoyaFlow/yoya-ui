@@ -23,14 +23,15 @@ describe('vField floating edit', () => {
     expect(el.querySelector('.yoya-vfield-editor').style.display).toBe('none');
   });
 
-  it('double-click enters edit with a floating fixed editor', () => {
+  it('double-click enters edit with an editor anchored to the field', () => {
     const field = makeField();
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(field.mode()).toBe('edit');
     const editor = el.querySelector('.yoya-vfield-editor');
     expect(editor.style.display).not.toBe('none');
-    expect(editor.style.position).toBe('fixed');
+    expect(el.style.position).toBe('relative');
+    expect(editor.style.position).toBe('absolute');
   });
 
   it('confirm button saves and restores display to the new value', () => {

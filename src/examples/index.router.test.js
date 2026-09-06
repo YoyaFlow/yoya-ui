@@ -1480,9 +1480,9 @@ describe('renderExamplesIndex', () => {
     expect(inputDemo.querySelector('input')).toBe(inputElement);
 
     const rebuild = page.querySelector('[data-state-demo="rebuild"] .components-state-demo-live');
-    const rebuildCard = rebuild.querySelector('.yoya-vcard');
-    const rebuildWidth = rebuildCard.style.width;
-    const rebuildMaxWidth = rebuildCard.style.maxWidth;
+    const rebuildRoot = rebuild.querySelector('.yoya-vstack');
+    const rebuildWidth = rebuildRoot.style.width;
+    const rebuildMaxWidth = rebuildRoot.style.maxWidth;
     const executeButton = [...rebuild.querySelectorAll('button')].find((button) =>
       button.textContent.includes('执行')
     );
@@ -1490,14 +1490,14 @@ describe('renderExamplesIndex', () => {
 
     expect(rebuild.textContent).toContain('状态：running');
     expect(rebuild.textContent).toContain('次数：1');
-    expect(rebuild.querySelector('.yoya-vcard')).not.toBe(rebuildCard);
-    expect(rebuild.querySelector('.yoya-vcard').style.width).toBe(rebuildWidth);
-    expect(rebuild.querySelector('.yoya-vcard').style.maxWidth).toBe(rebuildMaxWidth);
+    expect(rebuild.querySelector('.yoya-vstack')).not.toBe(rebuildRoot);
+    expect(rebuild.querySelector('.yoya-vstack').style.width).toBe(rebuildWidth);
+    expect(rebuild.querySelector('.yoya-vstack').style.maxWidth).toBe(rebuildMaxWidth);
 
     const toggle = page.querySelector('[data-state-demo="toggle"] .components-state-demo-live');
-    const toggleCard = toggle.querySelector('.yoya-vcard');
-    const toggleWidth = toggleCard.style.width;
-    const toggleMaxWidth = toggleCard.style.maxWidth;
+    const toggleRoot = toggle.querySelector('.yoya-vstack');
+    const toggleWidth = toggleRoot.style.width;
+    const toggleMaxWidth = toggleRoot.style.maxWidth;
     const toggleButton = [...toggle.querySelectorAll('button')].find((button) =>
       button.textContent.includes('隐藏')
     );
@@ -1505,9 +1505,9 @@ describe('renderExamplesIndex', () => {
 
     expect(toggle.textContent).toContain('当前内容已隐藏');
     expect(toggle.querySelector('button').textContent).toBe('显示');
-    expect(toggle.querySelector('.yoya-vcard')).not.toBe(toggleCard);
-    expect(toggle.querySelector('.yoya-vcard').style.width).toBe(toggleWidth);
-    expect(toggle.querySelector('.yoya-vcard').style.maxWidth).toBe(toggleMaxWidth);
+    expect(toggle.querySelector('.yoya-vstack')).not.toBe(toggleRoot);
+    expect(toggle.querySelector('.yoya-vstack').style.width).toBe(toggleWidth);
+    expect(toggle.querySelector('.yoya-vstack').style.maxWidth).toBe(toggleMaxWidth);
   });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
