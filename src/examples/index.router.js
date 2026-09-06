@@ -332,7 +332,17 @@ const docsRouteLoaders = Object.freeze({
   'board:sparkline': () => import('./board-docs.js').then((m) => m.SparklineDocumentationPage()),
   'board:ring-stat': () => import('./board-docs.js').then((m) => m.RingStatDocumentationPage()),
   'board:gauge': () => import('./board-docs.js').then((m) => m.GaugeDocumentationPage()),
-  'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage())
+  'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage()),
+  'navigation:dropdown': () =>
+    import('./misc-legacy-docs.js').then((m) => m.DropdownDocumentationPage()),
+  'navigation:pagination': () =>
+    import('./misc-legacy-docs.js').then((m) => m.PaginationDocumentationPage()),
+  'data-display:code': () => import('./misc-legacy-docs.js').then((m) => m.CodeDocumentationPage()),
+  'data-display:card': () => import('./misc-legacy-docs.js').then((m) => m.CardDocumentationPage()),
+  'async:dynamic-loader': () =>
+    import('./misc-legacy-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
+  'feedback:message-manager': () =>
+    import('./misc-legacy-docs.js').then((m) => m.MessageManagerDocumentationPage())
 });
 
 const locale = createI18n({
