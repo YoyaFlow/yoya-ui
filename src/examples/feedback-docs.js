@@ -6,7 +6,8 @@ import {
   vMessage,
   vMessageContainer,
   vText,
-  vTooltip
+  vTooltip,
+  vstack
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
@@ -55,7 +56,7 @@ toast.use(host);`,
         component: MessageTypesExample1,
         description: '用 type 区分成功、错误、警告和普通提示，适合静态状态说明或局部反馈。',
         id: 'types',
-        imports: ['vCard', 'vMessage'],
+        imports: ['vMessage', 'vstack'],
         sourceTitle: '消息类型核心源码',
         title: '消息类型'
       },
@@ -63,7 +64,7 @@ toast.use(host);`,
         component: MessageContainerExample1,
         description: '局部容器把消息限制在当前区域内，可用 id 替换同一条业务状态。',
         id: 'container',
-        imports: ['vCard', 'vMessageContainer', 'vText'],
+        imports: ['vMessageContainer', 'vText', 'vstack'],
         sourceTitle: '局部消息容器核心源码',
         title: '局部容器'
       },
@@ -71,7 +72,7 @@ toast.use(host);`,
         component: ToastExample1,
         description: 'toast 适合页面级反馈，不需要把消息容器一层层传给业务组件。',
         id: 'toast',
-        imports: ['toast', 'vCard', 'vText'],
+        imports: ['toast', 'vText', 'vstack'],
         sourceTitle: '全局 toast 核心源码',
         title: '全局 toast'
       },
@@ -79,7 +80,7 @@ toast.use(host);`,
         component: CountdownMessageExample1,
         description: '默认显示倒计时和进度条，计时结束自动关闭；也可以只保留自动关闭。',
         id: 'countdown',
-        imports: ['vCard', 'vMessageContainer', 'vText'],
+        imports: ['vMessageContainer', 'vText', 'vstack'],
         sourceTitle: '计时消息核心源码',
         title: '计时消息'
       }
@@ -273,7 +274,11 @@ function FeedbackExampleSection(demo) {
         example.div((live) => {
           live.className('components-feedback-demo-live');
           live.attr('data-feedback-demo-live', 'true');
-          live.child(liveDemo);
+          live.child(
+            vCard((card) => {
+              card.vCardBody((body) => body.child(liveDemo));
+            })
+          );
         });
         example.child(sourcePanel);
       });
@@ -291,15 +296,10 @@ function MessageTypesExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('消息类型');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '10px');
-            messages.forEach((message) => {
-              content.child(message);
-            });
-          });
+      return vstack((content) => {
+        content.style('gap', '10px');
+        messages.forEach((message) => {
+          content.child(message);
         });
       });
     }
@@ -314,46 +314,38 @@ function MessageContainerExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('局部消息容器');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('容器可以放在局部区域里，消息只影响当前卡片。');
-            content.child(host);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('最近动作');
-              row.spacer();
-              row.output((output) => output.child(status));
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(host);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('最近动作');
+          row.spacer();
+          row.output((output) => output.child(status));
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton((button) => {
+            button.label('显示成功');
+            button.variant('primary');
+            button.on('click', () => {
+              host.success('保存成功', { id: 'local-status', duration: 0 });
+              status.textContent('显示成功消息');
             });
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('显示成功');
-              button.variant('primary');
-              button.on('click', () => {
-                host.success('保存成功', { id: 'local-status', duration: 0 });
-                status.textContent('显示成功消息');
-              });
+          actions.vButton((button) => {
+            button.label('替换同 ID');
+            button.on('click', () => {
+              host.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
+              status.textContent('替换为警告消息');
             });
-            actions.vButton((button) => {
-              button.label('替换同 ID');
-              button.on('click', () => {
-                host.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
-                status.textContent('替换为警告消息');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('清空');
-              button.variant('secondary');
-              button.on('click', () => {
-                host.clear();
-                status.textContent('已清空');
-              });
+          });
+          actions.vButton((button) => {
+            button.label('清空');
+            button.variant('secondary');
+            button.on('click', () => {
+              host.clear();
+              status.textContent('已清空');
             });
           });
         });
@@ -367,46 +359,38 @@ function ToastExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('全局 toast');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('toast 会使用当前全局容器，适合跨组件的即时反馈。');
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('最近 toast');
-              row.spacer();
-              row.output((output) => output.child(status));
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('最近 toast');
+          row.spacer();
+          row.output((output) => output.child(status));
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton((button) => {
+            button.label('成功 toast');
+            button.variant('primary');
+            button.on('click', () => {
+              toast.success('全局保存成功', { duration: 0 });
+              status.textContent('已发送成功 toast');
             });
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('成功 toast');
-              button.variant('primary');
-              button.on('click', () => {
-                toast.success('全局保存成功', { duration: 0 });
-                status.textContent('已发送成功 toast');
-              });
+          actions.vButton((button) => {
+            button.label('错误 toast');
+            button.variant('danger');
+            button.on('click', () => {
+              toast.error('接口返回异常', { duration: 0 });
+              status.textContent('已发送错误 toast');
             });
-            actions.vButton((button) => {
-              button.label('错误 toast');
-              button.variant('danger');
-              button.on('click', () => {
-                toast.error('接口返回异常', { duration: 0 });
-                status.textContent('已发送错误 toast');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('清空 toast');
-              button.variant('secondary');
-              button.on('click', () => {
-                toast.clear();
-                status.textContent('已清空全局 toast');
-              });
+          });
+          actions.vButton((button) => {
+            button.label('清空 toast');
+            button.variant('secondary');
+            button.on('click', () => {
+              toast.clear();
+              status.textContent('已清空全局 toast');
             });
           });
         });
@@ -423,62 +407,54 @@ function CountdownMessageExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('计时消息');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('设置 duration 后消息会显示剩余秒数和进度条，计时结束自动关闭。');
-            content.child(host);
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('最近动作');
-              row.spacer();
-              row.output((output) => output.child(status));
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(host);
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('最近动作');
+          row.spacer();
+          row.output((output) => output.child(status));
+        });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton((button) => {
+            button.label('3 秒成功');
+            button.variant('primary');
+            button.on('click', () => {
+              host.success('保存成功', { duration: 3000 });
+              status.textContent('已发送 3 秒成功消息');
             });
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('3 秒成功');
-              button.variant('primary');
-              button.on('click', () => {
-                host.success('保存成功', { duration: 3000 });
-                status.textContent('已发送 3 秒成功消息');
-              });
+          actions.vButton((button) => {
+            button.label('5 秒警告');
+            button.on('click', () => {
+              host.warning('配额即将用完', { duration: 5000 });
+              status.textContent('已发送 5 秒警告消息');
             });
-            actions.vButton((button) => {
-              button.label('5 秒警告');
-              button.on('click', () => {
-                host.warning('配额即将用完', { duration: 5000 });
-                status.textContent('已发送 5 秒警告消息');
-              });
+          });
+          actions.vButton((button) => {
+            button.label('仅自动关闭');
+            button.variant('secondary');
+            button.on('click', () => {
+              host.info('自动关闭但不显示倒计时', { countdown: false, duration: 3000 });
+              status.textContent('已发送隐藏倒计时的消息');
             });
-            actions.vButton((button) => {
-              button.label('仅自动关闭');
-              button.variant('secondary');
-              button.on('click', () => {
-                host.info('自动关闭但不显示倒计时', { countdown: false, duration: 3000 });
-                status.textContent('已发送隐藏倒计时的消息');
-              });
+          });
+          actions.vButton((button) => {
+            button.label('常驻消息');
+            button.variant('ghost');
+            button.on('click', () => {
+              host.show('常驻消息，点击关闭', { duration: 0 });
+              status.textContent('已发送常驻消息');
             });
-            actions.vButton((button) => {
-              button.label('常驻消息');
-              button.variant('ghost');
-              button.on('click', () => {
-                host.show('常驻消息，点击关闭', { duration: 0 });
-                status.textContent('已发送常驻消息');
-              });
-            });
-            actions.vButton((button) => {
-              button.label('清空');
-              button.variant('secondary');
-              button.on('click', () => {
-                host.clear();
-                status.textContent('已清空计时消息');
-              });
+          });
+          actions.vButton((button) => {
+            button.label('清空');
+            button.variant('secondary');
+            button.on('click', () => {
+              host.clear();
+              status.textContent('已清空计时消息');
             });
           });
         });
