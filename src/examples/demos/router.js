@@ -312,31 +312,3 @@ export function RouterViewsTopStandalone() {
     }
   };
 }
-
-export const routerCategory = {
-  description: '链接导航、活动状态、参数 query 与带标题的路由视图。',
-  id: 'router',
-  title: '路由组件',
-  demos: [
-    {
-      component: RouterNavigationCard,
-      imports: ['div', 'router', 'vCard'],
-      title: '路由链接与视图核心源码'
-    },
-    {
-      component: DeclarativeRouterCard,
-      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
-      title: '声明式路由核心源码'
-    },
-    {
-      component: RouterViewsEditorCard,
-      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
-      title: 'IDE 风格路由视图核心源码'
-    },
-    {
-      component: RouterViewsTopCard,
-      imports: ['div', 'vCard', 'vRoute', 'vRouter'],
-      title: '顶部标签路由视图核心源码'
-    }
-  ]
-};

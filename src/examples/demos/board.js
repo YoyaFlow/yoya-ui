@@ -198,16 +198,3 @@ export function TimelineDemo() {
     }
   };
 }
-
-export const boardCategory = {
-  description: '展示关键指标的响应式卡片看板。',
-  id: 'board',
-  title: '看板',
-  demos: [
-    {
-      component: DigitalBoardDemo,
-      imports: ['vCard', 'vDigitalBoard', 'vDigitalBoardItem'],
-      title: '数字看板核心源码'
-    }
-  ]
-};

@@ -12,19 +12,13 @@ const SHELL_TOKENS = ['vCard(', 'vCardHeader(', 'vCardBody(', 'vCardFooter('];
 
 // 迁移基线：值为当前 shell token 数；文件清零后删除条目。
 const ALLOWLIST = {
-  'actions.js': 12,
-  'async.js': 4,
-  'data-display.js': 24,
-  'feedback.js': 4,
-  'form.js': 12,
   'i18n.js': 16,
-  'layout.js': 3,
   'navigation.js': 15,
   'router-async.js': 3,
   'router-params.js': 3,
   'router.js': 15,
   'ssr-demo.js': 3,
-  'state-node.js': 37,
+  'state-node.js': 7,
   'svg.js': 4
 };
 

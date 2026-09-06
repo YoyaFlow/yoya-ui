@@ -1,5 +1,4 @@
 import {
-  createI18n,
   FolderOpenOutlined,
   FolderOutlined,
   initYoyaTheme,
@@ -17,7 +16,6 @@ import {
   vTree
 } from '../index.js';
 import '../yoya.ui.css';
-import { ComponentSource } from './component-source.js';
 import { applyDemoStyles } from './demo-styles.js';
 
 const componentMenuSections = [
@@ -345,28 +343,6 @@ const docsRouteLoaders = Object.freeze({
     import('./misc-legacy-docs.js').then((m) => m.MessageManagerDocumentationPage())
 });
 
-const locale = createI18n({
-  language: 'zh-CN',
-  messages: {
-    'zh-CN': {
-      actions: {
-        danger: '危险操作',
-        refresh: '刷新状态',
-        save: '保存配置',
-        start: '启动任务'
-      }
-    },
-    en: {
-      actions: {
-        danger: 'Danger',
-        refresh: 'Refresh',
-        save: 'Save',
-        start: 'Start job'
-      }
-    }
-  }
-});
-
 export function renderExamplesIndex(target = '#app') {
   initYoyaTheme({ persist: true });
   const previousToastContainer = toast._container ?? null;
@@ -390,7 +366,7 @@ export function renderExamplesIndex(target = '#app') {
       view: () => createOverviewView()
     });
 
-    registerComponentsWorkspaceRoutes(r, { locale, toast });
+    registerComponentsWorkspaceRoutes(r);
 
     r.notFound(({ path }) => createNotFoundView(path));
   });
@@ -417,12 +393,12 @@ export function renderExamplesIndex(target = '#app') {
   return root;
 }
 
-function registerComponentsWorkspaceRoutes(routerInstance, context) {
+function registerComponentsWorkspaceRoutes(routerInstance) {
   componentMenuSections.forEach((category) => {
     category.items.forEach((item) => {
       routerInstance.route(buildComponentItemPath(category.id, item.key), {
         title: item.label,
-        view: () => createComponentItemView(category, item, context)
+        view: () => createComponentItemView(category, item)
       });
     });
   });
@@ -725,138 +701,14 @@ function createOverviewView() {
   });
 }
 
-function createComponentItemView(category, item, context) {
+function createComponentItemView(category, item) {
   const loadDocsView = docsRouteLoaders[`${category.id}:${item.key}`];
 
   if (loadDocsView) {
     return loadDocsView();
   }
 
-  return import('./detail-demos.js').then((module) => {
-    const detail = module.getComponentDetail(category.id, item.key, item);
-    return createDetailItemView(category, item, context, detail);
-  });
-}
-
-function createDetailItemView(category, item, context, detail) {
-  const liveComponent = detail.component ? detail.component(context) : null;
-  const sourcePanel = detail.component
-    ? ComponentSource({
-        component: detail.component,
-        sourceComponent: detail.sourceComponent ?? detail.component,
-        imports: detail.imports,
-        title: detail.sourceTitle
-      })
-    : createPlannedSourcePanel(item, detail);
-
-  return section((view) => {
-    view.className('components-route-page components-route-page--item');
-    view.attr('data-component-route-item', `${category.id}:${item.key}`);
-
-    view.div((header) => {
-      header.className('components-route-header');
-      header.h2(item.label);
-      header.p(category.title);
-      header.p(item.details || detail.summary || ' ');
-    });
-
-    view.div((layout) => {
-      layout.className('components-route-layout');
-      layout.attr('data-demo-flow', 'content-source');
-
-      layout.section((live) => {
-        live.className('components-route-live');
-        live.h3('实时演示');
-        if (liveComponent) {
-          live.child(liveComponent);
-        } else {
-          live.child(createPlannedLiveCard(item, detail));
-        }
-      });
-
-      layout.child(sourcePanel);
-    });
-
-    view.div((metaGrid) => {
-      metaGrid.className('components-route-meta-grid');
-
-      metaGrid.article((meta) => {
-        meta.className('components-route-meta');
-        meta.h3('实现名');
-        meta.code(item.details || '待开发');
-      });
-
-      metaGrid.article((meta) => {
-        meta.className('components-route-meta');
-        meta.h3('状态');
-        meta.strong(detail.planned ? '待开发' : '可用');
-      });
-
-      metaGrid.article((meta) => {
-        meta.className('components-route-meta');
-        meta.h3('分类');
-        meta.strong(category.title);
-      });
-
-      metaGrid.article((meta) => {
-        meta.className('components-route-meta');
-        meta.h3('路径');
-        meta.code(buildComponentItemPath(category.id, item.key));
-      });
-    });
-
-    if (detail.behavior.length > 0) {
-      view.section((behavior) => {
-        behavior.className('components-route-behavior');
-        behavior.h3('行为');
-        behavior.ul((list) => {
-          detail.behavior.forEach((itemText) => {
-            list.li(itemText);
-          });
-        });
-      });
-    }
-
-    if (detail.notes.length > 0) {
-      view.section((notes) => {
-        notes.className('components-route-notes');
-        notes.h3('要点');
-        notes.div((tags) => {
-          tags.className('components-route-note-list');
-          detail.notes.forEach((note) => {
-            tags.span((tag) => {
-              tag.className('components-route-note');
-              tag.text(note);
-            });
-          });
-        });
-      });
-    }
-  });
-}
-
-function createPlannedLiveCard(item, detail) {
-  return section((card) => {
-    card.className('components-route-placeholder');
-    card.h3('待开发');
-    card.p(detail.summary || item.details || '该条目暂时只有菜单预留。');
-    card.p('后续补上真实实现后，这里会直接替换成 live demo。');
-  });
-}
-
-function createPlannedSourcePanel(item, detail) {
-  return section((panel) => {
-    panel.className('source-panel');
-    panel.h2(detail.sourceTitle || `${item.label} 源码`);
-    panel.p('当前条目暂未实现，先保留说明位。');
-    panel.pre((pre) => {
-      pre.className('source-code');
-      pre.code((code) => {
-        code.attr('data-source-example', detail.sourceTitle || `${item.label} 源码`);
-        code.text(`// ${item.label}\n// ${item.details || detail.summary || '待开发'}`);
-      });
-    });
-  });
+  return Promise.resolve(createNotFoundView(buildComponentItemPath(category.id, item.key)));
 }
 
 function buildComponentItemPath(categoryId, itemKey) {

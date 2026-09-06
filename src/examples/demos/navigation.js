@@ -294,15 +294,3 @@ export function AdminSidebarCard({ toast }) {
     }
   };
 }
-
-export const navigationCategory = {
-  description: '命令、下拉、上下文菜单与后台侧栏。',
-  id: 'navigation',
-  title: '导航菜单',
-  demos: [
-    { component: CommandMenuCard, imports: ['vCard'], title: '命令菜单核心源码' },
-    { component: SubMenuCard, imports: ['vCard'], title: '嵌套菜单核心源码' },
-    { component: OverlayMenuCard, imports: ['vCard'], title: '浮层菜单核心源码' },
-    { component: SidebarCard, imports: ['vCard'], title: '后台侧栏核心源码' }
-  ]
-};
