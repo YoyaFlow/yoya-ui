@@ -27,7 +27,7 @@ export function SvgDocumentationPage() {
           demo.child(
             ComponentSource({
               component: SvgProgressRingExample1,
-              imports: ['vCard', 'vText'],
+              imports: ['vText', 'vstack'],
               title: 'SvgProgressRingExample1 源码'
             })
           );

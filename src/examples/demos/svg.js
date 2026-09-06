@@ -1,4 +1,4 @@
-import { vCard, vText } from '../../index.js';
+import { vText, vstack } from '../../index.js';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 44;
 
@@ -44,54 +44,48 @@ export function SvgProgressRingExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('可中断的环形进度');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('点击目标值后从当前值平滑补间；动画中途可再次点击，不会跳变。');
-            stack.svg((root) => {
-              root.attr({ height: '120', viewBox: '0 0 120 120', width: '120' });
-              root.circle({
-                cx: '60',
-                cy: '60',
-                fill: 'none',
-                r: '44',
-                stroke: '#e2e8f0',
-                'stroke-width': '10'
-              });
-              root.circle((circle) => {
-                ring = circle.attr({
-                  cx: '60',
-                  cy: '60',
-                  fill: 'none',
-                  r: '44',
-                  stroke: '#0f766e',
-                  'stroke-dasharray': String(RING_CIRCUMFERENCE),
-                  'stroke-dashoffset': String(RING_CIRCUMFERENCE),
-                  'stroke-linecap': 'round',
-                  'stroke-width': '10',
-                  transform: 'rotate(-90 60 60)'
-                });
-              });
-              root.text((text) => {
-                text
-                  .attr({
-                    'dominant-baseline': 'central',
-                    fill: '#0f766e',
-                    'font-size': '18',
-                    'text-anchor': 'middle',
-                    x: '60',
-                    y: '60'
-                  })
-                  .child(valueText);
-              });
+      return vstack({ gap: '14px' }, (stack) => {
+        stack.svg((root) => {
+          root.attr({ height: '120', viewBox: '0 0 120 120', width: '120' });
+          root.circle({
+            cx: '60',
+            cy: '60',
+            fill: 'none',
+            r: '44',
+            stroke: '#e2e8f0',
+            'stroke-width': '10'
+          });
+          root.circle((circle) => {
+            ring = circle.attr({
+              cx: '60',
+              cy: '60',
+              fill: 'none',
+              r: '44',
+              stroke: '#0f766e',
+              'stroke-dasharray': String(RING_CIRCUMFERENCE),
+              'stroke-dashoffset': String(RING_CIRCUMFERENCE),
+              'stroke-linecap': 'round',
+              'stroke-width': '10',
+              transform: 'rotate(-90 60 60)'
             });
           });
+          root.text((text) => {
+            text
+              .attr({
+                'dominant-baseline': 'central',
+                fill: '#0f766e',
+                'font-size': '18',
+                'text-anchor': 'middle',
+                x: '60',
+                y: '60'
+              })
+              .child(valueText);
+          });
         });
-        card.vCardFooter((footer) => {
-          footer.vButton('25%', (button) => button.on('click', () => progressTo(0.25)));
-          footer.vButton('70%', (button) => button.on('click', () => progressTo(0.7)));
-          footer.vButton('40%', (button) => button.on('click', () => progressTo(0.4)));
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('25%', (button) => button.on('click', () => progressTo(0.25)));
+          row.vButton('70%', (button) => button.on('click', () => progressTo(0.7)));
+          row.vButton('40%', (button) => button.on('click', () => progressTo(0.4)));
         });
       });
     }

@@ -17,8 +17,7 @@ const ALLOWLIST = {
   'router-async.js': 3,
   'router-params.js': 3,
   'router.js': 15,
-  'ssr-demo.js': 3,
-  'svg.js': 4
+  'ssr-demo.js': 3
 };
 
 const demoDir = resolve(process.cwd(), 'src/examples/demos');
