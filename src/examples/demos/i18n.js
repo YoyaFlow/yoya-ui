@@ -1,9 +1,9 @@
 import {
   createI18n,
   installI18nStringShortcut,
-  vCard,
   vLanguageSwitch,
-  vText
+  vText,
+  vstack
 } from '../../index.js';
 
 export function I18nReactiveExample1() {
@@ -29,12 +29,10 @@ export function I18nReactiveExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('服务控制台'.s('title', locale));
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.h3('服务控制台'.s('title', locale));
+        stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
             stack.hstack((row) => {
               row.style('alignItems', 'center');
               row.span('当前语言'.s('currentLanguage', locale));
@@ -45,17 +43,13 @@ export function I18nReactiveExample1() {
               row.style('alignItems', 'center');
               row.span('运行中'.s('status', locale));
             });
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.child(
+          stack.child(
             vLanguageSwitch({
               locale,
               onChange: () => language.textContent(locale.getLanguage())
             })
           );
-        });
-      });
+          });
     }
   };
 }
@@ -93,10 +87,7 @@ export function I18nParamsExample1() {
       userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
       unknownStatus = '未知状态'.s('status.unknown', locale);
 
-      return vCard((card) => {
-        card.vCardHeader('参数与回退');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p('词典支持 dot path 和 {param} 插值，未注册语言内容会回退到默认语言内容。');
             stack.hstack((row) => {
@@ -111,23 +102,20 @@ export function I18nParamsExample1() {
               row.spacer();
               row.output((output) => output.child(unknownStatus));
             });
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('数量 +1', (button) => {
+          stack.vButton('数量 +1', (button) => {
             button.on('click', () => {
               count += 1;
               userCount.params({ count });
             });
           });
-          footer.vButton('中文', (button) => {
+          stack.vButton('中文', (button) => {
             button.variant('secondary');
             button.on('click', () => locale.setLanguage('zh-CN'));
           });
-          footer.vButton('English', (button) => {
+          stack.vButton('English', (button) => {
             button.on('click', () => locale.setLanguage('en'));
           });
-          footer.vButton('注册英文补丁', (button) => {
+          stack.vButton('注册英文补丁', (button) => {
             button.variant('primary');
             button.on('click', () => {
               locale.register('en', {
@@ -137,8 +125,7 @@ export function I18nParamsExample1() {
               });
             });
           });
-        });
-      });
+          });
     }
   };
 }
@@ -164,10 +151,7 @@ export function I18nShortcutExample1() {
       const saveMessage = '保存成功'.s('save.message');
       const greeting = '你好，{name}'.s('greeting.message', { name: 'Ada' });
 
-      return vCard((card) => {
-        card.vCardHeader('字符串快捷写法');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p(
               'installI18nStringShortcut 让字符串可以直接通过 s(key, params) 变成响应式文本。'
@@ -184,19 +168,15 @@ export function I18nShortcutExample1() {
               row.spacer();
               row.output((output) => output.child(greeting));
             });
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('中文', (button) => {
+          stack.vButton('中文', (button) => {
             button.variant('secondary');
             button.on('click', () => locale.setLanguage('zh-CN'));
           });
-          footer.vButton('English', (button) => {
+          stack.vButton('English', (button) => {
             button.variant('primary');
             button.on('click', () => locale.setLanguage('en'));
           });
-        });
-      });
+          });
     }
   };
 }
@@ -254,10 +234,7 @@ export function I18nExtendExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('扩展新语言'.s('title', locale));
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p('vLanguageSwitch 接受任意 languages，可以先 register 词典，再把它加入下拉项。');
             stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
@@ -271,17 +248,13 @@ export function I18nExtendExample1() {
               row.style('alignItems', 'center');
               row.span('运行中'.s('status', locale));
             });
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.child(languageSwitch);
-          footer.vButton('添加日语', (button) => {
+          stack.child(languageSwitch);
+          stack.vButton('添加日语', (button) => {
             addButton = button;
             button.variant('primary');
             button.on('click', addJapanese);
           });
-        });
-      });
+          });
     }
   };
 }
