@@ -1,13 +1,4 @@
-import {
-  div,
-  vCard,
-  vForm,
-  vStateNode,
-  vTable,
-  vText,
-  vTr,
-  vstack
-} from '../../index.js';
+import { div, vForm, vStateNode, vTable, vText, vTr, vstack } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
@@ -182,24 +173,6 @@ export function StateDynamicFormExample() {
   };
 }
 
-export function StateDynamicFormDemo() {
-  const form = StateDynamicFormExample();
-
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('动态表单');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('切换类型重建字段；输入值只写入 state，不重建输入框。');
-            stack.child(form);
-          });
-        });
-      });
-    }
-  };
-}
-
 export function StateMethodsExample() {
   return vStateNode({
     state: () => ({ count: 0 }),
@@ -227,35 +200,6 @@ export function StateMethodsExample() {
       return this;
     }
   });
-}
-
-export function StateMethodsDemo() {
-  const counter = StateMethodsExample();
-
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义方法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('config 上定义的操作方法会挂到组件对象，外部按钮直接调用。');
-            stack.child(counter);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('+1', (button) => {
-            button.variant('primary').on('click', () => counter.increment());
-          });
-          footer.vButton('-1', (button) => {
-            button.on('click', () => counter.decrement());
-          });
-          footer.vButton('重置', (button) => {
-            button.on('click', () => counter.reset());
-          });
-        });
-      });
-    }
-  };
 }
 
 export function StateFragmentExample1() {

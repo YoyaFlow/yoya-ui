@@ -1,11 +1,9 @@
-import { section } from '../index.js';
+import { section, vCard } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   dynamicFormFieldsSource,
   StateDynamicAttrsExample1,
-  StateMethodsDemo,
   StateMethodsExample,
-  StateDynamicFormDemo,
   StateDynamicFormExample,
   StateCounterExample1,
   StateEventOverwriteExample1,
@@ -15,6 +13,53 @@ import {
   StateRebuildExample1,
   StateToggleExample1
 } from './demos/state-node.js';
+
+function StateDynamicFormDemo() {
+  const form = StateDynamicFormExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('动态表单');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('切换类型重建字段；输入值只写入 state，不重建输入框。');
+            stack.child(form);
+          });
+        });
+      });
+    }
+  };
+}
+
+function StateMethodsDemo() {
+  const counter = StateMethodsExample();
+
+  return {
+    render() {
+      return vCard((card) => {
+        card.vCardHeader('自定义方法');
+        card.vCardBody((body) => {
+          body.vstack({ gap: '14px' }, (stack) => {
+            stack.p('config 上定义的操作方法会挂到组件对象，外部按钮直接调用。');
+            stack.child(counter);
+          });
+        });
+        card.vCardFooter((footer) => {
+          footer.vButton('+1', (button) => {
+            button.variant('primary').on('click', () => counter.increment());
+          });
+          footer.vButton('-1', (button) => {
+            button.on('click', () => counter.decrement());
+          });
+          footer.vButton('重置', (button) => {
+            button.on('click', () => counter.reset());
+          });
+        });
+      });
+    }
+  };
+}
 
 const stateDemoDefinitions = Object.freeze([
   {

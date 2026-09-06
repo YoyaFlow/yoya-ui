@@ -18,7 +18,6 @@ const ALLOWLIST = {
   'router-params.js': 3,
   'router.js': 15,
   'ssr-demo.js': 3,
-  'state-node.js': 7,
   'svg.js': 4
 };
 
