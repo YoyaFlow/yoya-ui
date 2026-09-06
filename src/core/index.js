@@ -56,5 +56,3 @@ export { announce, createFocusTrap, getFocusableElements, moveByKey } from './a1
 export * from './theme.js';
 export * from './request.js';
 export * from './result.js';
-
-

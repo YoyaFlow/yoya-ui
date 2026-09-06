@@ -82,11 +82,7 @@ export function interopPageFrame({
   return {
     render() {
       return section((page) => {
-        const fullClass = [
-          'components-route-page',
-          'components-third-party-docs',
-          pageClass
-        ]
+        const fullClass = ['components-route-page', 'components-third-party-docs', pageClass]
           .filter(Boolean)
           .join(' ');
         page.className(fullClass);

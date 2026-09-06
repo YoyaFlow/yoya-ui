@@ -58,4 +58,3 @@ describe('i18n depth (core)', () => {
     expect(locale.t('hello')).toBe('Bonjour');
   });
 });
-

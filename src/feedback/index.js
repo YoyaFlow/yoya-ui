@@ -19,4 +19,3 @@ export { VMessage, VMessageContainer, toast, vMessage, vMessageContainer };
 export { VTooltip, vTooltip };
 
 export { vConfirm } from './vconfirm.js';
-

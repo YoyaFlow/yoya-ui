@@ -69,4 +69,3 @@ describe('generic context (core)', () => {
     expect(html.html).toContain('ok');
   });
 });
-

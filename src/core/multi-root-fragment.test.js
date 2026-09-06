@@ -22,9 +22,7 @@ describe('multi-root fragments', () => {
     const component = vStateNode({
       state: () => ({ count: 0 }),
       render(state) {
-        return state.count === 0
-          ? [div('a'), div('b')]
-          : [div('c'), div('d'), div('e')];
+        return state.count === 0 ? [div('a'), div('b')] : [div('c'), div('d'), div('e')];
       }
     });
     const host = div().child(component);

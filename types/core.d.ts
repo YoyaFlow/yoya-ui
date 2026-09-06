@@ -149,7 +149,9 @@ export type ContextProviders = Record<string, unknown>;
 export function withContext<T>(providers: ContextProviders | null | undefined, build: () => T): T;
 
 /** Installs a global fallback context (single-user SPA). */
-export function installContext(providers: ContextProviders | null | undefined): ContextProviders | null;
+export function installContext(
+  providers: ContextProviders | null | undefined
+): ContextProviders | null;
 
 /** Removes the globally installed fallback context. */
 export function clearInstalledContext(): null;
@@ -473,7 +475,10 @@ export class I18n {
   register(language: string, messages?: Record<string, unknown>): this;
 
   /** Lazily registers a language; returns a promise resolved after merge and notify. */
-  registerLocale(name: string, loader: () => Record<string, unknown> | Promise<Record<string, unknown>>): Promise<this>;
+  registerLocale(
+    name: string,
+    loader: () => Record<string, unknown> | Promise<Record<string, unknown>>
+  ): Promise<this>;
 
   /** Registers one or more corpora: multi-language files or { language, messages }. */
   registerMessages(corpus?: Record<string, unknown> | Array<unknown>): this;
@@ -696,7 +701,3 @@ declare global {
     ): I18nTextNode;
   }
 }
-
-
-
-

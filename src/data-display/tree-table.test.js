@@ -38,7 +38,12 @@ describe('vTreeTable', () => {
   });
 
   it('links parent/descendant selection with tri-state', () => {
-    const table = vTreeTable({ columns, nodes: tree, expandedKeys: ['root', 'a'], rowSelection: true });
+    const table = vTreeTable({
+      columns,
+      nodes: tree,
+      expandedKeys: ['root', 'a'],
+      rowSelection: true
+    });
     const el = table.renderDom();
     const rows = Array.from(el.querySelectorAll('tbody tr'));
     const grandchildBefore = table.checkedKeys().length;
@@ -60,7 +65,9 @@ describe('vTreeTable', () => {
         ])
     });
     const el = table.renderDom();
-    el.querySelector('[data-role="expand"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    el.querySelector('[data-role="expand"]').dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
     await Promise.resolve();
     await Promise.resolve();
     expect(table.visibleRowCount()).toBe(3);
@@ -74,6 +81,3 @@ describe('vTreeTable', () => {
     expect(html).toContain('A1');
   });
 });
-
-
-

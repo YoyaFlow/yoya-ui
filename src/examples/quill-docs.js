@@ -39,8 +39,7 @@ export function QuillDocumentationPage() {
       '编辑器内容需要导出为 HTML 或纯文本交给业务逻辑。',
       '想展示「第三方 DOM 库 + vClientOnly」的标准互操作写法。'
     ],
-    note:
-      'Quill 只在客户端初始化并经 vClientOnly 挂载，无需 SSR 适配。暗色样式独立在 quill-dark.css（不引用 yoya-ui 配色），由宿主类跟随页面浅色 / 深色 / 系统切换。',
+    note: 'Quill 只在客户端初始化并经 vClientOnly 挂载，无需 SSR 适配。暗色样式独立在 quill-dark.css（不引用 yoya-ui 配色），由宿主类跟随页面浅色 / 深色 / 系统切换。',
     demos: [quillDemo]
   });
 }

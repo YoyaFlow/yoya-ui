@@ -164,7 +164,13 @@ function countNodes(node) {
  * maxNodes 超限时返回 exceeded，服务端可回退客户端渲染。
  */
 export function renderToString(component, options = {}) {
-  const { access = null, context = null, maxNodes = Infinity, state = null, i18n = null } = options || {};
+  const {
+    access = null,
+    context = null,
+    maxNodes = Infinity,
+    state = null,
+    i18n = null
+  } = options || {};
   const serialized = serializeState(state);
 
   return withIdAllocator(createIdAllocator(), () => {
@@ -310,10 +316,18 @@ export function hydrateOrMount(component, options = {}) {
   const parent = resolveTarget(target);
 
   if (parent && parent.firstElementChild) {
-    return hydrate(component, target, state, { access: options.access, context: options.context, i18n: i18nOption });
+    return hydrate(component, target, state, {
+      access: options.access,
+      context: options.context,
+      i18n: i18nOption
+    });
   }
 
-  return mount(component, target, state, { access: options.access, context: options.context, i18n: i18nOption });
+  return mount(component, target, state, {
+    access: options.access,
+    context: options.context,
+    i18n: i18nOption
+  });
 }
 
 /**
@@ -471,5 +485,3 @@ function replaceExisting(existing, created) {
     existing.parentNode.replaceChild(created, existing);
   }
 }
-
-

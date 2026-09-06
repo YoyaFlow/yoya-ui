@@ -1,10 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import {
-  announce,
-  createFocusTrap,
-  getFocusableElements,
-  moveByKey
-} from '../index.js';
+import { announce, createFocusTrap, getFocusableElements, moveByKey } from '../index.js';
 
 function container() {
   const root = document.createElement('div');

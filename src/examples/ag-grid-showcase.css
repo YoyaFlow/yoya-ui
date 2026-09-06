@@ -158,11 +158,7 @@
 
 .components-ag-grid-showcase .hr-avatar {
   align-items: center;
-  background: color-mix(
-    in srgb,
-    #3b82f6 18%,
-    var(--ag-background-color, #ffffff)
-  );
+  background: color-mix(in srgb, #3b82f6 18%, var(--ag-background-color, #ffffff));
   border-radius: 50%;
   color: var(--ag-foreground-color, #181d1f);
   display: inline-flex;
@@ -327,11 +323,7 @@
 }
 
 .components-ag-grid-showcase .inv-stock-bar {
-  background: color-mix(
-    in srgb,
-    transparent,
-    var(--ag-foreground-color, #181d1f) 8%
-  );
+  background: color-mix(in srgb, transparent, var(--ag-foreground-color, #181d1f) 8%);
   border-radius: 4px;
   display: block;
   height: 6px;
@@ -365,11 +357,7 @@
 
 .components-ag-grid-showcase .inv-action {
   background: var(--ag-background-color, #ffffff);
-  border: 1px solid color-mix(
-    in srgb,
-    transparent,
-    var(--ag-foreground-color, #181d1f) 16%
-  );
+  border: 1px solid color-mix(in srgb, transparent, var(--ag-foreground-color, #181d1f) 16%);
   border-radius: 6px;
   color: var(--ag-foreground-color, #181d1f);
   cursor: pointer;

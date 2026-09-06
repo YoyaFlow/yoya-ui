@@ -42,8 +42,7 @@ export function CodeMirrorDocumentationPage() {
       '需要 CodeMirror 生态的补全、lint 与键位扩展。',
       '想让编辑器内容与外部状态双向同步。'
     ],
-    note:
-      'CodeMirror 只在客户端创建 EditorView，经 vClientOnly 挂载；内容更新走 dispatch，销毁时调用 view.destroy。明暗配色由 CodeMirror 自己的主题扩展负责：浅色用默认主题，深色用官方 @codemirror/theme-one-dark，示例站不再改写编辑器内部配色。',
+    note: 'CodeMirror 只在客户端创建 EditorView，经 vClientOnly 挂载；内容更新走 dispatch，销毁时调用 view.destroy。明暗配色由 CodeMirror 自己的主题扩展负责：浅色用默认主题，深色用官方 @codemirror/theme-one-dark，示例站不再改写编辑器内部配色。',
     demos: [CODE_DEMO]
   });
 }

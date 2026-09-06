@@ -130,4 +130,3 @@ export interface FeedbackParentShortcuts {
 }
 
 export type { ElementOptions };
-

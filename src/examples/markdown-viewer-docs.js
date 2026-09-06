@@ -41,15 +41,13 @@ export function MarkdownViewerDocumentationPage() {
   return interopPageFrame({
     docsKey: 'markdown-viewer',
     heading: 'Toast UI Viewer Markdown 查看',
-    lead:
-      '同一份 Markdown 可在编辑与查看间切换：编辑模式左编辑右预览，查看模式只读渲染，排版交给 Toast UI。',
+    lead: '同一份 Markdown 可在编辑与查看间切换：编辑模式左编辑右预览，查看模式只读渲染，排版交给 Toast UI。',
     usage: [
       '需要把 Markdown 文案渲染为排版文档（标题、列表、代码块）。',
       '内容来自业务侧且会动态切换。',
       '希望查看器与编辑能力来自同一生态。'
     ],
-    note:
-      'Editor 与 Viewer 都在客户端创建并经 vClientOnly 挂载；编辑模式的 change 事件把 Markdown 实时同步给右侧 Viewer。明暗配色使用 Toast UI 自带的 theme 选项：深色导入 toastui-editor-dark.css，不再从 yoya-ui 侧改写配色。',
+    note: 'Editor 与 Viewer 都在客户端创建并经 vClientOnly 挂载；编辑模式的 change 事件把 Markdown 实时同步给右侧 Viewer。明暗配色使用 Toast UI 自带的 theme 选项：深色导入 toastui-editor-dark.css，不再从 yoya-ui 侧改写配色。',
     demos: [MARKDOWN_DEMO]
   });
 }

@@ -9,7 +9,7 @@ import { AgGridInventoryExample } from './demos/ag-grid-inventory-demo.js';
 
 const AG_GRID_IMPORTS = [
   [
-    "import { AllCommunityModule, colorSchemeDark, createGrid,",
+    'import { AllCommunityModule, colorSchemeDark, createGrid,',
     "  ModuleRegistry, themeQuartz } from 'ag-grid-community';"
   ].join('\n'),
   '',
@@ -31,27 +31,21 @@ function performanceDemo() {
         label: '1 万行',
         run: (live, output) => {
           live.setSize(10000, live.colCount());
-          output.textContent(
-            `已重载 1 万行 × ${live.colCount()} 列，滚动与排序保持即时。`
-          );
+          output.textContent(`已重载 1 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
         }
       },
       {
         label: '5 万行',
         run: (live, output) => {
           live.setSize(50000, live.colCount());
-          output.textContent(
-            `已重载 5 万行 × ${live.colCount()} 列，滚动与排序保持即时。`
-          );
+          output.textContent(`已重载 5 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
         }
       },
       {
         label: '10 万行',
         run: (live, output) => {
           live.setSize(100000, live.colCount());
-          output.textContent(
-            `已重载 10 万行 × ${live.colCount()} 列，滚动与排序保持即时。`
-          );
+          output.textContent(`已重载 10 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
         }
       },
       {
@@ -74,8 +68,7 @@ function performanceDemo() {
     glue: false,
     id: 'ag-grid-performance',
     kicker: 'PERFORMANCE',
-    outputText:
-      '当前 5 万行 × 10 列（共 50 万个数据点），全部列可排序、筛选、拖拽改宽。',
+    outputText: '当前 5 万行 × 10 列（共 50 万个数据点），全部列可排序、筛选、拖拽改宽。',
     title: '10 万级行 × 多列压力演示',
     usageComponent: AgGridPerformanceExample,
     usageImports: [
@@ -126,8 +119,7 @@ function financeDemo() {
     glue: false,
     id: 'ag-grid-finance',
     kicker: 'FINANCE',
-    outputText:
-      '进入页面即开始实时跳动：价格与盈亏自动闪烁，底部合计行同步更新。',
+    outputText: '进入页面即开始实时跳动：价格与盈亏自动闪烁，底部合计行同步更新。',
     title: '实时行情与走势面板',
     usageComponent: AgGridFinanceExample,
     usageImports: [
@@ -218,8 +210,7 @@ function inventoryDemo() {
     glue: false,
     id: 'ag-grid-inventory',
     kicker: 'INVENTORY',
-    outputText:
-      '共 12 个商品：在售 5、已暂停 3、缺货 4。点击任意主行查看下方规格明细。',
+    outputText: '共 12 个商品：在售 5、已暂停 3、缺货 4。点击任意主行查看下方规格明细。',
     title: '商品库存主从管理',
     usageComponent: AgGridInventoryExample,
     usageImports: [
@@ -239,10 +230,8 @@ export function AgGridDocumentationPage() {
     docsKey: 'ag-grid',
     gluePanel: GLUE_PANEL,
     heading: 'AG Grid Community 数据表格',
-    lead:
-      '参照 ag-grid.com/example 的四个大型场景重做演示：Performance 大数据量、Finance 实时行情、HR 组织树、Inventory 主从库存。四个场景共用同一个胶水入口，只各自提供列与数据配置。',
-    note:
-      '网格统一由 AgGridDemoNode 入口挂载（createGrid 一次、destroy 时释放）。明暗与主题直接使用 AG Grid 自带的 Quartz：light / dark / auto-dark 跟随示例站的浅色、深色与系统模式，不再用 yoya-ui 变量改写 AG Grid 内部配色。',
+    lead: '参照 ag-grid.com/example 的四个大型场景重做演示：Performance 大数据量、Finance 实时行情、HR 组织树、Inventory 主从库存。四个场景共用同一个胶水入口，只各自提供列与数据配置。',
+    note: '网格统一由 AgGridDemoNode 入口挂载（createGrid 一次、destroy 时释放）。明暗与主题直接使用 AG Grid 自带的 Quartz：light / dark / auto-dark 跟随示例站的浅色、深色与系统模式，不再用 yoya-ui 变量改写 AG Grid 内部配色。',
     pageClass: 'components-ag-grid-showcase',
     usage: [
       '需要 10 万级行/列的虚拟滚动，滚动、排序与过滤保持即时。',
