@@ -1,4 +1,4 @@
-import { section, vCard } from '../index.js';
+import { div, section, vCard, vDynamicLoader, vText, vstack } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   CardExample1,
@@ -8,6 +8,127 @@ import {
   MessageManagerExample1,
   PaginationExample1
 } from './detail-sources.js';
+
+function DynamicLoaderLiveDemo() {
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  let attempts = 0;
+  let statusLine = null;
+
+  const moduleLoader = vDynamicLoader({
+    auto: false,
+    cacheKey: 'audit-module-demo',
+    loader: async () => {
+      attempts += 1;
+      const current = attempts;
+      await wait(current === 1 ? 900 : 1400);
+      if (current === 1) {
+        throw new Error('模拟网络超时');
+      }
+      return { name: '审计模块', total: 128 };
+    },
+    onStateChange(state) {
+      if (!statusLine) {
+        return;
+      }
+      const labels = {
+        error: '加载失败',
+        loaded: '加载成功',
+        loading: '加载中',
+        pending: '等待'
+      };
+      statusLine.textContent(`${labels[state]}（第 ${attempts} 次请求）`);
+    },
+    views: {
+      error: (error) =>
+        div((box) => {
+          box.styles({
+            backgroundColor: '#fef2f2',
+            borderRadius: '8px',
+            color: '#dc2626',
+            fontWeight: '600',
+            padding: '12px 16px'
+          });
+          box.child(vText(`加载失败：${error.message}`));
+          box.div((hint) => {
+            hint.styles({ color: '#7f1d1d', fontWeight: '400', marginTop: '6px' });
+            hint.child(vText('点击「重试」再次发起请求'));
+          });
+        }),
+      loaded: (module) =>
+        div((box) => {
+          box.styles({
+            backgroundColor: '#f0fdf4',
+            borderRadius: '8px',
+            color: '#16a34a',
+            fontWeight: '600',
+            padding: '12px 16px'
+          });
+          box.child(vText(`${module.name} 已加载`));
+          box.div((meta) => {
+            meta.styles({ color: '#475569', fontWeight: '400', marginTop: '6px' });
+            meta.child(vText(`共处理 ${module.total} 条记录，数据来自异步模块`));
+          });
+        }),
+      loading: () =>
+        div((box) => {
+          box.styles({
+            backgroundColor: '#eff6ff',
+            borderRadius: '8px',
+            color: '#1d4ed8',
+            fontWeight: '600',
+            padding: '12px 16px'
+          });
+          box.child(vText('正在请求审计模块…'));
+        }),
+      pending: () =>
+        div((box) => {
+          box.styles({
+            backgroundColor: '#f1f5f9',
+            borderRadius: '8px',
+            color: '#475569',
+            fontWeight: '600',
+            padding: '12px 16px'
+          });
+          box.child(vText('等待加载审计模块'));
+        })
+    }
+  });
+
+  return {
+    render() {
+      return vstack({ gap: '14px' }, (stack) => {
+        stack.child(moduleLoader);
+        stack.output((out) => {
+          out.attr('data-loader-status-line', 'true');
+          statusLine = vText('尚未开始');
+          out.child(statusLine);
+        });
+        stack.hstack({ gap: '10px' }, (actions) => {
+          actions.vButton('开始加载', (button) => {
+            button.id('dynamic-load');
+            button.on('click', () => moduleLoader.load().catch(() => {}));
+          });
+          actions.vButton('重试', (button) => {
+            button.id('dynamic-retry');
+            button.variant('secondary');
+            button.on('click', () => moduleLoader.retry().catch(() => {}));
+          });
+          actions.vButton('再次加载', (button) => {
+            button.id('dynamic-cache');
+            button.variant('secondary');
+            button.on('click', () => {
+              if (moduleLoader.status() === 'loaded') {
+                statusLine.textContent('缓存命中：直接返回已加载模块，不发起网络请求');
+                return;
+              }
+              moduleLoader.load().catch(() => {});
+            });
+          });
+        });
+      });
+    }
+  };
+}
 
 const pageConfigs = Object.freeze([
   {
@@ -73,7 +194,8 @@ const pageConfigs = Object.freeze([
     wrapsInCard: false
   },
   {
-    component: DynamicLoaderExample1,
+    component: DynamicLoaderLiveDemo,
+    sourceComponent: DynamicLoaderExample1,
     heading: '动态加载 vDynamicLoader',
     imports: ['div', 'vDynamicLoader'],
     intro: '按需加载模块并自动管理 loading / loaded / error 视图。',
@@ -146,9 +268,10 @@ function createPage(config) {
         page.section((examples) => {
           examples.h2('代码演示');
           const liveDemo = config.component();
+          const sourceComponent = config.sourceComponent ?? config.component;
           const sourcePanel = ComponentSource({
             component: config.component,
-            sourceComponent: config.component,
+            sourceComponent,
             imports: config.imports,
             title: `${config.key} 核心源码`
           });
