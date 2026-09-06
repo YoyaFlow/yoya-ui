@@ -265,6 +265,7 @@ const docsRouteLoaders = Object.freeze({
   'feedback:message': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
   'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
+  'form:input': () => import('./input-docs.js').then((m) => m.InputDocumentationPage()),
   'form:checkbox': () => import('./checkbox-docs.js').then((m) => m.CheckboxDocumentationPage()),
   'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
