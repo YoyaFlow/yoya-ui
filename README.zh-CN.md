@@ -79,7 +79,7 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 | 类型声明   | 覆盖全部 4 个入口，并通过消费方类型测试验证               | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
 | 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                  | `npm run build` → `dist/`                                                |
-| 公开路线图 | 已随旧文档归档                                            | [`docs/_bak/roadmap.md`](docs/_bak/roadmap.md)                           |
+| 公开路线图 | 已随旧文档归档                                            | （已从对外文档移除）                                                     |
 | 组件契约   | 组件开发指南固化三种受支持的组件形态                      | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
 
 ### 验证

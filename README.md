@@ -94,7 +94,7 @@ Keep the static release / test badges in sync at each release.
 | Type declarations    | Shipped for all 4 entries, validated by consumer type tests     | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design | `src/*.ssr.test.js`, `docs/ssr.md`                           |
 | Distribution formats | ESM per-module entries, UMD, single CSS theme file              | `npm run build` → `dist/`                                    |
-| Public roadmap       | Archived with the legacy docs                                   | [`docs/_bak/roadmap.md`](docs/_bak/roadmap.md)               |
+| Public roadmap       | Archived with the legacy docs                                   | (removed from public docs)                                   |
 | Component contracts  | Authoring guide freezes the three supported component shapes    | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
 ### Verification
