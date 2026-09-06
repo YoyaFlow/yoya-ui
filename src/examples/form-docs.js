@@ -1,4 +1,4 @@
-import { div, section, vBadge, vCard, vDetail, vField, vForm, vText } from '../index.js';
+import { div, section, vBadge, vCard, vDetail, vField, vForm, vText, vstack } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 const formDocsDefinition = Object.freeze({
@@ -136,7 +136,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldDetailExample1,
       description: 'vField 作为 vDetail 的值节点，悬停后点击编辑即可切换输入控件。',
       id: 'detail',
-      imports: ['vCard', 'vDetail', 'vField', 'vInput', 'vSelect'],
+      imports: ['vDetail', 'vField', 'vInput', 'vSelect', 'vstack'],
       sourceTitle: '详情内编辑核心源码',
       title: '详情内编辑'
     },
@@ -144,7 +144,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldSaveExample1,
       description: '从 vDetail 中读取多个 vField 的值，保存后统一回到查看态。',
       id: 'save',
-      imports: ['vButton', 'vCard', 'vDetail', 'vField', 'vInput', 'vText'],
+      imports: ['vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
       sourceTitle: '保存回填核心源码',
       title: '保存回填'
     },
@@ -152,7 +152,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldValidationExample1,
       description: '结合 vDetail 展示 hint 和 error，校验不通过时直接显示在字段下方。',
       id: 'validation',
-      imports: ['vButton', 'vCard', 'vDetail', 'vField', 'vInput', 'vText'],
+      imports: ['vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
       sourceTitle: '校验提示核心源码',
       title: '校验提示'
     },
@@ -160,7 +160,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldTextareaExample1,
       description: '多行文本字段：查看态撑高到与 textarea 一致，双击进入多行编辑。',
       id: 'textarea',
-      imports: ['vCard', 'vField', 'vTextarea'],
+      imports: ['vField', 'vTextarea', 'vstack'],
       sourceTitle: '多行文本核心源码',
       title: '多行文本'
     },
@@ -168,7 +168,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldCustomExample1,
       description: '复杂显示 + 输入：查看态用 formatter 渲染多个徽标，编辑态用复选框多选。',
       id: 'custom',
-      imports: ['div', 'vBadge', 'vCard', 'vField'],
+      imports: ['div', 'vBadge', 'vField', 'vstack'],
       sourceTitle: '复杂显示输入核心源码',
       title: '复杂显示与输入'
     }
@@ -282,7 +282,11 @@ function FormExampleSection(demo) {
         example.div((live) => {
           live.className('components-feedback-demo-live');
           live.attr('data-form-demo-live', 'true');
-          live.child(liveDemo);
+          live.child(
+            vCard((card) => {
+              card.vCardBody((body) => body.child(liveDemo));
+            })
+          );
         });
         example.child(sourcePanel);
       });
@@ -295,9 +299,8 @@ function BasicFormCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('基础表单');
-        card.vCardBody((body) => body.child(form));
+      return vstack((body) => {
+        body.child(form);
       });
     }
   };
@@ -308,9 +311,8 @@ function ValidatedFormCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('表单校验');
-        card.vCardBody((body) => body.child(form));
+      return vstack((body) => {
+        body.child(form);
       });
     }
   };
@@ -321,9 +323,8 @@ function CustomCollectCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义取值');
-        card.vCardBody((body) => body.child(form));
+      return vstack((body) => {
+        body.child(form);
       });
     }
   };
@@ -563,22 +564,17 @@ function FieldDetailExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('详情内编辑');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('vField 作为 vDetail 的值节点，悬停字段后点击编辑即可切换输入控件。');
-            content.child(
-              vDetail((detail) => {
-                detail.columns(2);
-                detail.vDetailItem({ value: serviceName });
-                detail.vDetailItem({ value: owner });
-                detail.vDetailItem({ value: status });
-              })
-            );
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('vField 作为 vDetail 的值节点，悬停字段后点击编辑即可切换输入控件。');
+        content.child(
+          vDetail((detail) => {
+            detail.columns(2);
+            detail.vDetailItem({ value: serviceName });
+            detail.vDetailItem({ value: owner });
+            detail.vDetailItem({ value: status });
+          })
+        );
       });
     }
   };
@@ -614,47 +610,37 @@ function FieldSaveExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('保存回填');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('编辑字段后点击保存，读取到的值会回到查看态并写入状态区。');
-            content.child(
-              vDetail((detail) => {
-                detail.columns(2);
-                detail.vDetailItem({ value: serviceName });
-                detail.vDetailItem({ value: owner });
-              })
-            );
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('保存状态');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-field-save-status', 'true');
-                output.child(saveStatus);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vDetail((detail) => {
+            detail.columns(2);
+            detail.vDetailItem({ value: serviceName });
+            detail.vDetailItem({ value: owner });
+          })
+        );
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('保存状态');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-field-save-status', 'true');
+            output.child(saveStatus);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('编辑');
-              button.variant('secondary');
-              button.on('click', () => {
-                serviceName.mode('edit');
-                owner.mode('edit');
-                saveStatus.textContent('编辑中');
-              });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('编辑', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              serviceName.mode('edit');
+              owner.mode('edit');
+              saveStatus.textContent('编辑中');
             });
-            actions.vButton((button) => {
-              button.label('保存');
-              button.variant('primary');
-              button.on('click', save);
-            });
+          });
+          actions.vButton('保存', (button) => {
+            button.variant('primary');
+            button.on('click', save);
           });
         });
       });
@@ -690,46 +676,36 @@ function FieldValidationExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('校验提示');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p('清空字段后点击校验，error 会直接显示在 vDetail 的值区域内。');
-            content.child(
-              vDetail((detail) => {
-                detail.vDetailItem({ value: serviceName });
-              })
-            );
-            content.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.span('校验状态');
-              row.spacer();
-              row.output((output) => {
-                output.attr('data-field-validation-status', 'true');
-                output.child(validationStatus);
-              });
-            });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.child(
+          vDetail((detail) => {
+            detail.vDetailItem({ value: serviceName });
+          })
+        );
+        content.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.span('校验状态');
+          row.spacer();
+          row.output((output) => {
+            output.attr('data-field-validation-status', 'true');
+            output.child(validationStatus);
           });
         });
-        card.vCardFooter((footer) => {
-          footer.hstack((actions) => {
-            actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('清空');
-              button.variant('secondary');
-              button.on('click', () => {
-                serviceName.mode('edit');
-                serviceName.value('');
-                serviceName.error('');
-                validationStatus.textContent('等待校验');
-              });
+        content.hstack((actions) => {
+          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+          actions.vButton('清空', (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              serviceName.mode('edit');
+              serviceName.value('');
+              serviceName.error('');
+              validationStatus.textContent('等待校验');
             });
-            actions.vButton((button) => {
-              button.label('校验');
-              button.variant('primary');
-              button.on('click', validate);
-            });
+          });
+          actions.vButton('校验', (button) => {
+            button.variant('primary');
+            button.on('click', validate);
           });
         });
       });
@@ -757,17 +733,10 @@ function FieldTextareaExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('多行文本');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p(
-              '查看态用 displayStyle 撑高到与 textarea 一致，双击进入多行编辑，浮层不挤布局。'
-            );
-            content.child(notes);
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p('查看态用 displayStyle 撑高到与 textarea 一致，双击进入多行编辑，浮层不挤布局。');
+        content.child(notes);
       });
     }
   };
@@ -815,17 +784,12 @@ function FieldCustomExample1() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('复杂显示与输入');
-        card.vCardBody((body) => {
-          body.vstack((content) => {
-            content.style('gap', '14px');
-            content.p(
-              '查看态用 formatter 把多选值渲染成一排徽标；编辑态用复选框多选，悬浮编辑不挤布局。'
-            );
-            content.child(capabilities);
-          });
-        });
+      return vstack((content) => {
+        content.style('gap', '14px');
+        content.p(
+          '查看态用 formatter 把多选值渲染成一排徽标；编辑态用复选框多选，悬浮编辑不挤布局。'
+        );
+        content.child(capabilities);
       });
     }
   };
