@@ -86,16 +86,16 @@ long-term viability:
 Keep the static release / test badges in sync at each release.
 -->
 
-| Signal               | Current value                                                   | How to verify                                                              |
-| -------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Semantic release     | `0.3.2`                                                         | `package.json`                                                             |
-| Test suite           | 760 test cases across 95 files                                  | `npm test` (Vitest + jsdom)                                                |
-| Runtime dependencies | **0**                                                           | `package.json` — no `dependencies` block                                   |
-| Type declarations    | Shipped for all 4 entries, validated by consumer type tests     | `npm run typecheck`                                                        |
-| SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design | `src/*.ssr.test.js`, `docs/ssr.md`                                         |
-| Distribution formats | ESM per-module entries, UMD, single CSS theme file              | `npm run build` → `dist/`                                                  |
-| Public roadmap       | Published, sliced into testable deliverables                    | [`docs/roadmap.md`](docs/roadmap.md)                                       |
-| Component contracts  | Spec documents freeze the three supported component shapes      | [`docs/component-development-spec.md`](docs/component-development-spec.md) |
+| Signal               | Current value                                                   | How to verify                                                |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
+| Semantic release     | `0.3.2`                                                         | `package.json`                                               |
+| Test suite           | 760 test cases across 95 files                                  | `npm test` (Vitest + jsdom)                                  |
+| Runtime dependencies | **0**                                                           | `package.json` — no `dependencies` block                     |
+| Type declarations    | Shipped for all 4 entries, validated by consumer type tests     | `npm run typecheck`                                          |
+| SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design | `src/*.ssr.test.js`, `docs/ssr.md`                           |
+| Distribution formats | ESM per-module entries, UMD, single CSS theme file              | `npm run build` → `dist/`                                    |
+| Public roadmap       | Archived with the legacy docs                                   | [`docs/_bak/roadmap.md`](docs/_bak/roadmap.md)               |
+| Component contracts  | Authoring guide freezes the three supported component shapes    | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
 ### Verification
 
@@ -214,11 +214,8 @@ to drag forward.
 What early adopters get now:
 
 - **A stable conceptual core.** The component shapes, lifecycle and composition
-  model are frozen in spec documents (`docs/component-development-spec.md`,
-  `docs/component-library-authoring.md`) rather than drifting release to release.
-- **A public roadmap with delivered slices.** Every item ships with tests and
-  demos; non-goals are stated explicitly so scope stays honest.
-  See [`docs/roadmap.md`](docs/roadmap.md).
+  model are frozen in the component authoring guide
+  (`docs/component-authoring.md`) rather than drifting release to release.
 - **Zero-dep, zero-lock-in adoption.** Because there is no framework runtime or
   virtual DOM, migrating in — or out — is a code-style decision, not a
   data-migration project.
@@ -481,20 +478,18 @@ src/
   index.js     dev aggregate entry
 scripts/       entry build & asset copy
 types/         shipped TypeScript declarations for all entries
-docs/          SSR, theme, access control, component & roadmap specs
+docs/          public guides (SSR, theme, access control, devtools, authoring)
 ```
 
 ## Documentation
 
+- [Documentation Index](docs/index.md)
 - [Server-Side Rendering Guide](docs/ssr.md)
 - [Highlight Details](docs/highlights.md)
-- [Component Development Spec](docs/component-development-spec.md)
-- [Component Library Authoring Guide (third-party developers)](docs/component-library-authoring.md)
-- [Theme Styling Spec](docs/theme-styling.md)
+- [Component Authoring Guide (third-party developers)](docs/component-authoring.md)
+- [Theme Styling Spec](docs/theme.md)
 - [Access Control](docs/access-control.md)
 - [DevTools](docs/devtools.md)
-- [Roadmap](docs/roadmap.md)
-- [Component Catalog](docs/components.md)
 
 ## Codex skill
 

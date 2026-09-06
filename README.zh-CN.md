@@ -71,16 +71,16 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 每次发版时同步更新上面的静态 release / tests 徽章。
 -->
 
-| 信号       | 当前值                                                    | 如何验证                                                                   |
-| ---------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 语义化版本 | `0.3.2`                                                   | `package.json`                                                             |
-| 测试套件   | 95 个文件、760 个测试用例                                 | `npm test`（Vitest + jsdom）                                               |
-| 运行时依赖 | **0**                                                     | `package.json` —— 没有 `dependencies` 块                                   |
-| 类型声明   | 覆盖全部 4 个入口，并通过消费方类型测试验证               | `npm run typecheck`                                                        |
-| SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM | `src/*.ssr.test.js`、`docs/ssr.md`                                         |
-| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                  | `npm run build` → `dist/`                                                  |
-| 公开路线图 | 已发布，按可交付切片拆分                                  | [`docs/roadmap.md`](docs/roadmap.md)                                       |
-| 组件契约   | 规格文档固化三种受支持的组件形态                          | [`docs/component-development-spec.md`](docs/component-development-spec.md) |
+| 信号       | 当前值                                                    | 如何验证                                                                 |
+| ---------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 语义化版本 | `0.3.2`                                                   | `package.json`                                                           |
+| 测试套件   | 95 个文件、760 个测试用例                                 | `npm test`（Vitest + jsdom）                                             |
+| 运行时依赖 | **0**                                                     | `package.json` —— 没有 `dependencies` 块                                 |
+| 类型声明   | 覆盖全部 4 个入口，并通过消费方类型测试验证               | `npm run typecheck`                                                      |
+| SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
+| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                  | `npm run build` → `dist/`                                                |
+| 公开路线图 | 已随旧文档归档                                            | [`docs/_bak/roadmap.md`](docs/_bak/roadmap.md)                           |
+| 组件契约   | 组件开发指南固化三种受支持的组件形态                      | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
 
 ### 验证
 
@@ -190,11 +190,8 @@ yoya-ui 今天的 Star 少，是因为它**年轻**，而不是因为它小或�
 
 早期采用者现在能得到什么：
 
-- **稳定的概念核心。** 组件形态、生命周期与组合模型已由规格文档
-  （`docs/component-development-spec.md`、
-  `docs/component-library-authoring.md`）固化，而不是随版本漂移。
-- **带交付切片的公开路线图。** 每个条目都随测试与演示交付；非目标也被明确
-  写出，让范围保持诚实。见 [`docs/roadmap.md`](docs/roadmap.md)。
+- **稳定的概念核心。** 组件形态、生命周期与组合模型已由组件开发指南
+  （`docs/component-authoring.zh-CN.md`）固化，而不是随版本漂移。
 - **零依赖、零锁定的引入。** 由于没有框架运行时和虚拟 DOM，迁入或迁出都是
   "换一种代码风格"的决定，而不是一场数据迁移工程。
 - **直接影响方向。** 在 API 表面还足够小、仍可引导的阶段，早期采用者有机会
@@ -444,20 +441,18 @@ src/
   index.js     开发聚合入口
 scripts/       入口构建与静态资源拷贝
 types/         随包发布的全部入口 TypeScript 声明
-docs/          SSR、主题、权限、组件与路线图规格
+docs/          对外说明文档（SSR、主题、权限、DevTools、组件开发）
 ```
 
 ## 文档
 
-- [服务端渲染指南](docs/ssr.md)
-- [亮点细节](docs/highlights.md)
-- [组件开发规格](docs/component-development-spec.md)
-- [组件库开发规范（第三方开发者指南）](docs/component-library-authoring.md)
-- [主题样式规格](docs/theme-styling.md)
-- [权限控制](docs/access-control.md)
-- [DevTools 调试工具](docs/devtools.md)
-- [路线图](docs/roadmap.md)
-- [组件目录](docs/components.md)
+- [文档首页](docs/index.zh-CN.md)
+- [服务端渲染指南](docs/ssr.zh-CN.md)
+- [亮点细节](docs/highlights.zh-CN.md)
+- [组件开发指南（第三方开发者）](docs/component-authoring.zh-CN.md)
+- [主题样式规格](docs/theme.zh-CN.md)
+- [权限控制](docs/access-control.zh-CN.md)
+- [DevTools 调试工具](docs/devtools.zh-CN.md)
 
 ## Codex Skill
 
