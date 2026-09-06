@@ -325,7 +325,14 @@ const docsRouteLoaders = Object.freeze({
     import('./codemirror-docs.js').then((m) => m.CodeMirrorDocumentationPage()),
   'third-party:markdown-viewer': () =>
     import('./markdown-viewer-docs.js').then((m) => m.MarkdownViewerDocumentationPage()),
-  'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage())
+  'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage()),
+  'board:digital-board': () =>
+    import('./board-docs.js').then((m) => m.DigitalBoardDocumentationPage()),
+  'board:trend-card': () => import('./board-docs.js').then((m) => m.TrendCardDocumentationPage()),
+  'board:sparkline': () => import('./board-docs.js').then((m) => m.SparklineDocumentationPage()),
+  'board:ring-stat': () => import('./board-docs.js').then((m) => m.RingStatDocumentationPage()),
+  'board:gauge': () => import('./board-docs.js').then((m) => m.GaugeDocumentationPage()),
+  'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage())
 });
 
 const locale = createI18n({
