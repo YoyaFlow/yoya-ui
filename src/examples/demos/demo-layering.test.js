@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -29,6 +29,17 @@ const ALLOWLIST = {
 };
 
 const demoDir = resolve(process.cwd(), 'src/examples/demos');
+const examplesDir = resolve(process.cwd(), 'src/examples');
+
+function collectExampleFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return collectExampleFiles(full);
+    }
+    return entry.name.endsWith('.js') && !entry.name.endsWith('.test.js') ? [full] : [];
+  });
+}
 
 function shellTokenCount(source) {
   return SHELL_TOKENS.reduce((total, token) => total + source.split(token).length - 1, 0);
@@ -76,6 +87,19 @@ describe('demo layering', () => {
           );
         }
       });
+
+    expect(failures.join('\n')).toBe('');
+  });
+
+  it('keeps every example button label-first', () => {
+    const failures = [];
+
+    collectExampleFiles(examplesDir).forEach((file) => {
+      const source = readFileSync(file, 'utf8');
+      if (/vButton\(\s*\(/.test(source)) {
+        failures.push(`${file.replace(examplesDir + '\\', '')}: label-first vButton required`);
+      }
+    });
 
     expect(failures.join('\n')).toBe('');
   });

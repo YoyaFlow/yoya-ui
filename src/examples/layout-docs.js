@@ -880,12 +880,10 @@ function DividerToolbarExample1() {
         row.spacer();
         row.span('已同步');
         row.divider({ orientation: 'vertical' });
-        row.vButton((button) => {
-          button.label('刷新');
+        row.vButton('刷新', (button) => {
           button.variant('secondary');
         });
-        row.vButton((button) => {
-          button.label('新建');
+        row.vButton('新建', (button) => {
           button.variant('primary');
         });
       });
@@ -906,8 +904,7 @@ function FlexToolbarExample1() {
         });
         toolbar.spacer();
         toolbar.span('3 个筛选已启用');
-        toolbar.vButton((button) => {
-          button.label('清空');
+        toolbar.vButton('清空', (button) => {
           button.variant('secondary');
         });
       });
@@ -954,8 +951,7 @@ function FlexCenterExample1() {
           content.style('gap', '10px');
           content.h2('暂无内容');
           content.p('center 适合空状态、加载态和确认页。');
-          content.vButton((button) => {
-            button.label('返回');
+          content.vButton('返回', (button) => {
             button.variant('secondary');
           });
         });
@@ -1183,8 +1179,7 @@ function MobileFlexExample1() {
           card.vCardHeader('横向内容');
           card.vCardBody((body) => {
             body.p('宽屏时与另一张卡片并排，手机端自动纵向排列。');
-            body.vButton((button) => {
-              button.label('查看');
+            body.vButton('查看', (button) => {
               button.variant('secondary');
             });
           });
@@ -1247,9 +1242,8 @@ function BodyShellExample1() {
               });
               row.spacer();
               row.output((output) => output.child(statusText));
-              row.vButton((button) => {
+              row.vButton('切换列数', (button) => {
                 densityButton = button;
-                button.label('切换列数');
                 button.variant('secondary');
                 button.on('click', () => {
                   compact = !compact;
@@ -1286,8 +1280,7 @@ function BodyShellExample1() {
                 panel.flex((toolbar) => {
                   toolbar.styles({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
                   ['全部', '异常', '慢请求'].forEach((label, index) => {
-                    toolbar.vButton((button) => {
-                      button.label(label);
+                    toolbar.vButton(label, (button) => {
                       button.variant(index === 0 ? 'primary' : 'secondary');
                     });
                   });
@@ -1312,8 +1305,7 @@ function BodyShellExample1() {
                     content.style('gap', '10px');
                     content.h2('空状态');
                     content.p('适合加载中、无数据和局部占位。');
-                    content.vButton((button) => {
-                      button.label('刷新');
+                    content.vButton('刷新', (button) => {
                       button.variant('secondary');
                     });
                   });
@@ -1430,12 +1422,10 @@ function SpacerToolbarExample1() {
         row.strong('服务列表');
         row.spacer();
         row.span('已同步');
-        row.vButton((button) => {
-          button.label('刷新');
+        row.vButton('刷新', (button) => {
           button.variant('secondary');
         });
-        row.vButton((button) => {
-          button.label('新建');
+        row.vButton('新建', (button) => {
           button.variant('primary');
         });
       });
@@ -1492,16 +1482,14 @@ function PopupLaunchExample1() {
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', justifyContent: 'end', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('取消');
+            actions.vButton('取消', (button) => {
               button.variant('secondary');
               button.on('click', () => {
                 status.textContent('已取消');
                 dialog.close();
               });
             });
-            actions.vButton((button) => {
-              button.label('确认发布');
+            actions.vButton('确认发布', (button) => {
               button.variant('primary');
               button.on('click', () => {
                 status.textContent('已确认');
@@ -1526,8 +1514,7 @@ function PopupLaunchExample1() {
         content.p('点击按钮后打开原生 dialog，适合遮住当前页面并让用户完成一次确认。');
         content.hstack((row) => {
           row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton((button) => {
-            button.label('打开弹窗');
+          row.vButton('打开弹窗', (button) => {
             button.variant('primary');
             button.on('click', () => {
               status.textContent('弹窗已打开');
@@ -1566,8 +1553,7 @@ function PopupStateExample1() {
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', justifyContent: 'end', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('知道了');
+            actions.vButton('知道了', (button) => {
               button.variant('secondary');
               button.on('click', () => {
                 status.textContent('已确认');
@@ -1592,8 +1578,7 @@ function PopupStateExample1() {
         content.p('把弹窗保持为关闭状态，等用户主动触发时再打开。');
         content.hstack((row) => {
           row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton((button) => {
-            button.label('打开提醒');
+          row.vButton('打开提醒', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               status.textContent('提醒已打开');
@@ -1633,16 +1618,14 @@ function PopupFormExample1() {
     });
     formNode.hstack((actions) => {
       actions.style({ justifyContent: 'flex-end', gap: '10px' });
-      actions.vButton((button) => {
-        button.label('取消');
+      actions.vButton('取消', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           status.textContent('已取消');
           dialog.close();
         });
       });
-      actions.vButton((button) => {
-        button.label('创建');
+      actions.vButton('创建', (button) => {
         button.variant('primary');
         button.formType('submit');
       });
@@ -1675,8 +1658,7 @@ function PopupFormExample1() {
         content.p('把 vForm 放进 vDialog，适合新建、编辑等需要临时收集字段的流程。');
         content.hstack((row) => {
           row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton((button) => {
-            button.label('新建发布');
+          row.vButton('新建发布', (button) => {
             button.variant('primary');
             button.on('click', () => {
               status.textContent('弹窗已打开');

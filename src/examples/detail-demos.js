@@ -198,12 +198,10 @@ function SpacerDemo() {
               row.style({ alignItems: 'center', gap: '10px' });
               row.span('批量操作');
               row.spacer();
-              row.vButton((button) => {
-                button.label('同步');
+              row.vButton('同步', (button) => {
                 button.variant('secondary');
               });
-              row.vButton((button) => {
-                button.label('发布');
+              row.vButton('发布', (button) => {
                 button.variant('primary');
               });
             });
@@ -243,8 +241,7 @@ function InputDemo() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('写回示例值');
+          footer.vButton('写回示例值', (button) => {
             button.on('click', () => {
               input.value('service-gateway');
               valueState.textContent(input.value());
@@ -428,8 +425,7 @@ function CardSurfaceDemo() {
                 });
               });
               sample.vCardFooter((footer) => {
-                footer.vButton((button) => {
-                  button.label('刷新');
+                footer.vButton('刷新', (button) => {
                   button.variant('secondary');
                   button.on('click', () => {
                     statusState.textContent(
@@ -437,8 +433,7 @@ function CardSurfaceDemo() {
                     );
                   });
                 });
-                footer.vButton((button) => {
-                  button.label('查看详情');
+                footer.vButton('查看详情', (button) => {
                   button.variant('primary');
                 });
               });
@@ -511,17 +506,14 @@ function MessageDemo() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('成功');
+          footer.vButton('成功', (button) => {
             button.variant('primary');
             button.on('click', () => messageHost.success('保存成功', { duration: 0 }));
           });
-          footer.vButton((button) => {
-            button.label('提示');
+          footer.vButton('提示', (button) => {
             button.on('click', () => messageHost.info('当前是示例消息', { duration: 0 }));
           });
-          footer.vButton((button) => {
-            button.label('清空');
+          footer.vButton('清空', (button) => {
             button.variant('secondary');
             button.on('click', () => messageHost.clear());
           });
@@ -606,13 +598,11 @@ function UploadDemo() {
             content.child(upload);
             content.hstack((actions) => {
               actions.style({ flexWrap: 'wrap', gap: '10px' });
-              actions.vButton((button) => {
-                button.label('模拟上传');
+              actions.vButton('模拟上传', (button) => {
                 button.variant('primary');
                 button.on('click', simulate);
               });
-              actions.vButton((button) => {
-                button.label('清空');
+              actions.vButton('清空', (button) => {
                 button.variant('secondary');
                 button.on('click', () => upload.clear());
               });
@@ -662,16 +652,14 @@ function RateDemo() {
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ flexWrap: 'wrap', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('重置为 3.5');
+            actions.vButton('重置为 3.5', (button) => {
               button.variant('secondary');
               button.on('click', () => {
                 rate.value(3.5);
                 syncState();
               });
             });
-            actions.vButton((button) => {
-              button.label('清空');
+            actions.vButton('清空', (button) => {
               button.on('click', () => rate.clear());
             });
           });

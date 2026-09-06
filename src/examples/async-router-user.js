@@ -17,8 +17,7 @@ export default function AsyncUserPage({ params, query, router }) {
         page.h3(`用户 ${params.id}`);
         page.p(`query.tab = ${query.tab || 'summary'}`);
         page.child(UserCard({ userId: params.id, tab: query.tab || 'summary' }));
-        page.vButton((button) => {
-          button.label('读取最新参数');
+        page.vButton('读取最新参数', (button) => {
           button.on('click', () => {
             const current = router.currentParams();
             latest.textContent(`currentParams() = ${JSON.stringify(current)}`);

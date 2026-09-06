@@ -1037,24 +1037,21 @@ function BadgeCountExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('加 1');
+          actions.vButton('加 1', (button) => {
             button.variant('primary');
             button.on('click', () => {
               badge.count(badge.count() + 1);
               status.textContent(`当前 ${badge.count()}`);
             });
           });
-          actions.vButton((button) => {
-            button.label('清零');
+          actions.vButton('清零', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               badge.count(0);
               status.textContent('当前 0');
             });
           });
-          actions.vButton((button) => {
-            button.label('切换显示零');
+          actions.vButton('切换显示零', (button) => {
             button.variant('ghost');
             button.on('click', () => {
               badge.showZero(!badge.showZero());
@@ -1203,36 +1200,32 @@ function AvatarInteractiveExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('切换状态').variant('primary');
+          actions.vButton('切换状态', (button) => {
+            button.variant('primary');
             button.on('click', () => {
               statusIndex = (statusIndex + 1) % statuses.length;
               avatar.status(statuses[statusIndex]);
               statusText.textContent(statuses[statusIndex]);
             });
           });
-          actions.vButton((button) => {
-            button.label('切换形状');
+          actions.vButton('切换形状', (button) => {
             button.on('click', () => {
               avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
             });
           });
-          actions.vButton((button) => {
-            button.label('切换尺寸');
+          actions.vButton('切换尺寸', (button) => {
             button.on('click', () => {
               sizeIndex = (sizeIndex + 1) % sizes.length;
               avatar.size(sizes[sizeIndex]);
             });
           });
-          actions.vButton((button) => {
-            button.label('切换颜色');
+          actions.vButton('切换颜色', (button) => {
             button.on('click', () => {
               colorIndex = (colorIndex + 1) % colors.length;
               avatar.color(colors[colorIndex]);
             });
           });
-          actions.vButton((button) => {
-            button.label('切换文字');
+          actions.vButton('切换文字', (button) => {
             button.on('click', () => {
               label = label === 'A' ? 'B' : 'A';
               avatar.text(label);
@@ -1323,8 +1316,7 @@ function DetailColumnsExample1() {
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
           [1, 2, 3].forEach((count) => {
-            actions.vButton((button) => {
-              button.label(`${count} 列`);
+            actions.vButton(`${count} 列`, (button) => {
               button.variant(count === 2 ? 'primary' : 'secondary');
               button.on('click', () => {
                 detail.columns(count);
@@ -1357,8 +1349,7 @@ function DetailCustomExample1() {
             detail.vDetailItem((item) => {
               item.label('负责人');
               item.value(
-                vButton((button) => {
-                  button.label('SRE 团队');
+                vButton('SRE 团队', (button) => {
                   button.variant('ghost');
                   button.size('small');
                 })
@@ -1401,13 +1392,11 @@ function DetailDynamicExample1() {
         content.child(detail);
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('切换服务');
+          actions.vButton('切换服务', (button) => {
             button.variant('primary');
             button.on('click', switchService);
           });
-          actions.vButton((button) => {
-            button.label('切换状态');
+          actions.vButton('切换状态', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
@@ -1450,8 +1439,7 @@ function TableBasicExample1() {
               align: 'right',
               width: 110,
               render(row) {
-                return vButton((button) => {
-                  button.label('选择');
+                return vButton('选择', (button) => {
                   button.size('small');
                   button.attr('data-table-row-action', row.id);
                   button.on('click', () => status.textContent(`已选择 ${row.id}`));
@@ -1501,8 +1489,7 @@ function TableEmptyExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('填充数据');
+          actions.vButton('填充数据', (button) => {
             button.variant('primary');
             button.on('click', () => {
               table.rows([
@@ -1512,8 +1499,7 @@ function TableEmptyExample1() {
               status.textContent('已加载 2 条');
             });
           });
-          actions.vButton((button) => {
-            button.label('清空');
+          actions.vButton('清空', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               table.rows([]);
@@ -1593,8 +1579,7 @@ function TableDeclarativeExample1() {
               row.vTd('api-gateway');
               row.vTd('运行中');
               row.vTd(
-                vButton((button) => {
-                  button.label('查看');
+                vButton('查看', (button) => {
                   button.size('small');
                   button.variant('secondary');
                   button.on('click', () => status.textContent('已查看 api-gateway'));
@@ -1681,32 +1666,23 @@ function TreeBasicExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) =>
-            button
-              .label('展开全部')
-              .variant('secondary')
-              .on('click', () => {
-                tree.expandAll();
-                status.textContent('已展开全部节点');
-              })
+          actions.vButton('展开全部', (button) =>
+            button.variant('secondary').on('click', () => {
+              tree.expandAll();
+              status.textContent('已展开全部节点');
+            })
           );
-          actions.vButton((button) =>
-            button
-              .label('收起全部')
-              .variant('secondary')
-              .on('click', () => {
-                tree.collapseAll();
-                status.textContent('已收起全部节点');
-              })
+          actions.vButton('收起全部', (button) =>
+            button.variant('secondary').on('click', () => {
+              tree.collapseAll();
+              status.textContent('已收起全部节点');
+            })
           );
-          actions.vButton((button) =>
-            button
-              .label('清除选择')
-              .variant('ghost')
-              .on('click', () => {
-                tree.selectedKeys([]);
-                status.textContent('当前：未选择');
-              })
+          actions.vButton('清除选择', (button) =>
+            button.variant('ghost').on('click', () => {
+              tree.selectedKeys([]);
+              status.textContent('当前：未选择');
+            })
           );
         });
       });
@@ -1773,17 +1749,11 @@ function TreeCheckableExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) =>
-            button
-              .label('全选')
-              .variant('primary')
-              .on('click', () => tree.checkAll(true))
+          actions.vButton('全选', (button) =>
+            button.variant('primary').on('click', () => tree.checkAll(true))
           );
-          actions.vButton((button) =>
-            button
-              .label('清空')
-              .variant('secondary')
-              .on('click', () => tree.checkAll(false))
+          actions.vButton('清空', (button) =>
+            button.variant('secondary').on('click', () => tree.checkAll(false))
           );
         });
       });
@@ -1943,9 +1913,8 @@ function TreeBuilderExample1() {
   const status = vText('当前：未选择');
   const addRowAction = (node) =>
     node.actions((actions) =>
-      actions.vButton((button) =>
+      actions.vButton('⋯', (button) =>
         button
-          .label('⋯')
           .size('small')
           .variant('ghost')
           .attr({
@@ -2028,17 +1997,11 @@ function TreeBuilderExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) =>
-            button
-              .label('展开全部')
-              .variant('secondary')
-              .on('click', () => tree.expandAll())
+          actions.vButton('展开全部', (button) =>
+            button.variant('secondary').on('click', () => tree.expandAll())
           );
-          actions.vButton((button) =>
-            button
-              .label('收起全部')
-              .variant('secondary')
-              .on('click', () => tree.collapseAll())
+          actions.vButton('收起全部', (button) =>
+            button.variant('secondary').on('click', () => tree.collapseAll())
           );
         });
       });
@@ -2136,18 +2099,15 @@ function ProgressDynamicExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('减 10');
+          actions.vButton('减 10', (button) => {
             button.variant('secondary');
             button.on('click', () => update(progress.value() - 10));
           });
-          actions.vButton((button) => {
-            button.label('加 10');
+          actions.vButton('加 10', (button) => {
             button.variant('primary');
             button.on('click', () => update(progress.value() + 10));
           });
-          actions.vButton((button) => {
-            button.label('重置');
+          actions.vButton('重置', (button) => {
             button.variant('ghost');
             button.on('click', () => update(0));
           });
@@ -2223,8 +2183,7 @@ function ScrollLoopBlockExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('开启循环');
+          actions.vButton('开启循环', (button) => {
             button.variant('primary');
             button.on('click', () => {
               scroll.loop(true);
@@ -2232,16 +2191,14 @@ function ScrollLoopBlockExample1() {
               scroll.check();
             });
           });
-          actions.vButton((button) => {
-            button.label('阻止加载');
+          actions.vButton('阻止加载', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               scroll.block(true);
               status.textContent('block：停止加载');
             });
           });
-          actions.vButton((button) => {
-            button.label('重置');
+          actions.vButton('重置', (button) => {
             button.variant('ghost');
             button.on('click', () => {
               scroll.reset().loop(false).check();
@@ -2425,12 +2382,10 @@ function CarouselAutoplayExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('上一项');
+          actions.vButton('上一项', (button) => {
             button.on('click', () => carousel.prev());
           });
-          actions.vButton((button) => {
-            button.label('下一项');
+          actions.vButton('下一项', (button) => {
             button.variant('primary');
             button.on('click', () => carousel.next());
           });
@@ -2486,20 +2441,17 @@ function CarouselLoopExample1() {
         });
         content.hstack((actions) => {
           actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton((button) => {
-            button.label('切换循环');
+          actions.vButton('切换循环', (button) => {
             button.variant('secondary');
             button.on('click', () => {
               carousel.loop(!carousel.loop());
               syncStatus();
             });
           });
-          actions.vButton((button) => {
-            button.label('上一项');
+          actions.vButton('上一项', (button) => {
             button.on('click', () => carousel.prev());
           });
-          actions.vButton((button) => {
-            button.label('下一项');
+          actions.vButton('下一项', (button) => {
             button.variant('primary');
             button.on('click', () => carousel.next());
           });

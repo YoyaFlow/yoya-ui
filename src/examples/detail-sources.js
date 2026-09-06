@@ -348,8 +348,7 @@ export function FormExample1() {
     render() {
       return vForm((form) => {
         form.vInput({ name: 'serviceName', value: 'api-gateway' });
-        form.vButton((button) => {
-          button.label('提交');
+        form.vButton('提交', (button) => {
           button.formType('submit');
         });
         form.on('submit', (event) => {
@@ -568,8 +567,7 @@ export function MessageExample1() {
     render() {
       return stack((content) => {
         content.child(messages);
-        content.vButton((button) => {
-          button.label('显示成功消息');
+        content.vButton('显示成功消息', (button) => {
           button.on('click', () => messages.success('保存成功', { duration: 0 }));
         });
       });
@@ -584,7 +582,9 @@ export function MessageManagerExample1() {
     render() {
       return stack((content) => {
         content.child(manager);
-        content.vButton('显示消息').on('click', () => manager.success('保存成功', { duration: 0 }));
+        content.vButton('显示消息', (button) =>
+          button.on('click', () => manager.success('保存成功', { duration: 0 }))
+        );
       });
     }
   };

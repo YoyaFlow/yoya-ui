@@ -904,8 +904,7 @@ function NavbarShellExample1() {
               badge.className('components-route-note');
               badge.text('在线');
             });
-            actions.vButton((button) => {
-              button.label('登录');
+            actions.vButton('登录', (button) => {
               button.variant('primary');
               button.on('click', () => showAction('登录'));
             });
@@ -961,13 +960,11 @@ function NavbarBrandExample1() {
             output.className('components-route-note');
             output.child(status);
           });
-          actions.vButton((button) => {
-            button.label('同步');
+          actions.vButton('同步', (button) => {
             button.variant('secondary');
             button.on('click', () => status.textContent('同步完成'));
           });
-          actions.vButton((button) => {
-            button.label('新建');
+          actions.vButton('新建', (button) => {
             button.variant('primary');
             button.on('click', () => status.textContent('已进入新建流程'));
           });
@@ -1012,13 +1009,11 @@ function NavbarWrapExample1() {
                 output.className('components-route-note');
                 output.child(status);
               });
-              actions.vButton((button) => {
-                button.label('同步');
+              actions.vButton('同步', (button) => {
                 button.variant('secondary');
                 button.on('click', () => status.textContent('同步完成'));
               });
-              actions.vButton((button) => {
-                button.label('发布');
+              actions.vButton('发布', (button) => {
                 button.variant('primary');
                 button.on('click', () => status.textContent('发布已提交'));
               });
@@ -1327,8 +1322,7 @@ function BreadcrumbDynamicExample1() {
         content.hstack((row) => {
           row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
           ['控制台', '服务', '服务详情'].forEach((label, index) => {
-            row.vButton((button) => {
-              button.label(label);
+            row.vButton(label, (button) => {
               button.size('small');
               button.variant('secondary');
               button.on('click', () => select(index));

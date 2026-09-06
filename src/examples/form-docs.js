@@ -381,13 +381,11 @@ function FormExample1() {
         });
         form.hstack((actions) => {
           actions.style('justifyContent', 'flex-end');
-          actions.vButton((button) => {
-            button.label('提交表单');
+          actions.vButton('提交表单', (button) => {
             button.variant('primary');
             button.formType('submit');
           });
-          actions.vButton((button) => {
-            button.label('重置');
+          actions.vButton('重置', (button) => {
             button.on('click', () => {
               form.values(defaults());
               snapshot.textContent('表单已重置');
@@ -436,8 +434,7 @@ function FormExample2() {
         });
         form.hstack((actions) => {
           actions.style('justifyContent', 'flex-end');
-          actions.vButton((button) => {
-            button.label('提交');
+          actions.vButton('提交', (button) => {
             button.variant('primary');
             button.formType('submit');
           });
@@ -477,8 +474,7 @@ function FormExample3() {
             output.child(status);
           });
           ['SRE Team', 'Platform'].forEach((name) => {
-            node.vButton((button) => {
-              button.label(name);
+            node.vButton(name, (button) => {
               button.variant('secondary');
               button.on('click', () => {
                 value = name;
@@ -506,8 +502,7 @@ function FormExample3() {
         });
         form.hstack((actions) => {
           actions.style('justifyContent', 'flex-end');
-          actions.vButton((button) => {
-            button.label('读取值');
+          actions.vButton('读取值', (button) => {
             button.variant('primary');
             button.formType('submit');
           });

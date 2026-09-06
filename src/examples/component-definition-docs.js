@@ -23,8 +23,7 @@ function DefineComponentExample1() {
         card.vCardFooter((footer) => {
           footer.hstack((actions) => {
             actions.style({ alignItems: 'center', gap: '10px' });
-            actions.vButton((button) => {
-              button.label('发布');
+            actions.vButton('发布', (button) => {
               button.variant('primary');
               button.on('click', () => status.textContent('已发布'));
             });
