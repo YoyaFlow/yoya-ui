@@ -47,7 +47,7 @@ npm run dev
 
 ## 组件定义（可选，面向第三方组件库）
 
-三种形态：薄工厂（函数返回 ViewNode）、对象组件（`{ render() }`）、类节点组件（`class extends HtmlElementNode` + 成对工厂）。详见 `docs/component-library-authoring.md`。
+三种形态：薄工厂（函数返回 ViewNode）、对象组件（`{ render() }`）、类节点组件（`class extends HtmlElementNode` + 成对工厂）。详见 `docs/component-authoring.md`。
 
 ## 权限控制
 
