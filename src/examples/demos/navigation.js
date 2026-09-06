@@ -1,12 +1,9 @@
-import { vCard } from '../../index.js';
+import { hstack, vSidebar, vstack } from '../../index.js';
 
 export function CommandMenuCard({ toast }) {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('命令菜单');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p(
               'vMenuGroup 与 vMenuDivider 组织长命令列表，方向键会跳过标题、分隔线和禁用项。'
@@ -42,8 +39,6 @@ export function CommandMenuCard({ toast }) {
               });
             });
           });
-        });
-      });
     }
   };
 }
@@ -51,12 +46,8 @@ export function CommandMenuCard({ toast }) {
 export function SubMenuCard({ toast }) {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('嵌套菜单');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('点击或按 ArrowRight 进入子菜单，使用 ArrowLeft 或 Escape 返回上一级。');
             stack.vMenu((menu) => {
               menu.vMenuItem((item) => item.text('查看概览').active(true));
               menu.vSubMenu((submenu) => {
@@ -82,8 +73,6 @@ export function SubMenuCard({ toast }) {
               });
             });
           });
-        });
-      });
     }
   };
 }
@@ -91,12 +80,8 @@ export function SubMenuCard({ toast }) {
 export function OverlayMenuCard({ toast }) {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('浮层菜单');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '14px');
-            stack.p('vDropdownMenu 用于按钮触发的次级操作；vContextMenu 用于绑定右键目标区域。');
             stack.hstack((menu) => {
               menu.className('overlay-actions');
               menu.vDropdownMenu((dropdown) => {
@@ -146,8 +131,6 @@ export function OverlayMenuCard({ toast }) {
               });
             });
           });
-        });
-      });
     }
   };
 }
@@ -155,10 +138,7 @@ export function OverlayMenuCard({ toast }) {
 export function SidebarCard({ toast }) {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('后台侧栏');
-        card.vCardBody((body) => {
-          body.vSidebar((sidebar) => {
+      return vSidebar((sidebar) => {
             sidebar.ariaLabel('后台主导航');
             sidebar.title('运维中心');
             sidebar.responsive('(max-width: 720px)');
@@ -193,8 +173,6 @@ export function SidebarCard({ toast }) {
               });
             });
           });
-        });
-      });
     }
   };
 }
@@ -202,10 +180,7 @@ export function SidebarCard({ toast }) {
 export function AdminSidebarCard({ toast }) {
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('管理系统左侧菜单');
-        card.vCardBody((body) => {
-          body.hstack((layout) => {
+      return hstack((layout) => {
             layout.style({ alignItems: 'flex-start', gap: '16px' });
             layout.vSidebar((sidebar) => {
               sidebar.ariaLabel('管理系统导航');
@@ -289,8 +264,6 @@ export function AdminSidebarCard({ toast }) {
               });
             });
           });
-        });
-      });
     }
   };
 }

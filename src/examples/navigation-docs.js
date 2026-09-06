@@ -417,7 +417,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => CommandMenuCard({ toast }),
         description: '长命令列表用分组和分隔线组织，读起来更像一组动作，而不是一串按钮。',
         id: 'command',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: CommandMenuCard,
         sourceTitle: '命令菜单核心源码',
         title: '命令菜单'
@@ -426,7 +426,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => SubMenuCard({ toast }),
         description: '当菜单需要二级、三级入口时，vSubMenu 会把层级收起来，按需展开。',
         id: 'submenu',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: SubMenuCard,
         sourceTitle: '嵌套菜单核心源码',
         title: '嵌套菜单'
@@ -435,7 +435,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => OverlayMenuCard({ toast }),
         description: '按钮触发和右键触发可以共用同一套菜单内容，适合次级操作。',
         id: 'overlay',
-        imports: ['vCard'],
+        imports: ['vstack'],
         sourceComponent: OverlayMenuCard,
         sourceTitle: '浮层菜单核心源码',
         title: '浮层菜单'
@@ -444,7 +444,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => SidebarCard({ toast }),
         description: '后台侧栏把菜单变成可折叠工作区导航，适合长列表和多级入口。',
         id: 'sidebar',
-        imports: ['vCard'],
+        imports: ['vSidebar'],
         sourceComponent: SidebarCard,
         sourceTitle: '侧栏菜单核心源码',
         title: '后台侧栏'
@@ -453,7 +453,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: () => AdminSidebarCard({ toast }),
         description: '常见管理系统左侧导航：工作台、组织、业务、系统设置和监控审计分组。',
         id: 'admin-sidebar',
-        imports: ['vCard'],
+        imports: ['hstack'],
         sourceComponent: AdminSidebarCard,
         sourceTitle: '管理系统左侧菜单核心源码',
         title: '管理系统左侧菜单'
