@@ -150,3 +150,12 @@ form.vFormItem((itemOfLabel) => {
 - 模块级可变状态（注册表、id 计数器）不跨请求共享；id 使用 `allocateId` 渲染上下文分配器。
 - 服务端渲染使用每请求 i18n 实例（`createI18n`），`.s()` 快捷方式用 `withI18nStringShortcut` 作用域化。
 - 服务端保持无状态：渲染后销毁组件树、输出只依赖请求输入。
+
+## Git 分支管理
+
+- `main` 是唯一长期分支（受保护）：日常改动不直接提交到 main，先开分支、经 PR 审查后合回；发布（release）等经明确确认的直接提交除外。
+- 分支命名按 `<type>/<name>`；特性分支固定用 `feat/{feature}`，例如 `feat/demo-source-simplify`、`feat/docs-en`。修复、文档、杂务分别用 `fix/`、`docs/`、`chore/`。
+- 新分支一律从最新的 `main` 切出；一个分支只做一个目标，不把无关改动堆在同一分支（例如文档英文化与演示源码调整分开）。
+- 提交信息使用 Conventional Commits 风格：`feat` / `fix` / `docs` / `style` / `refactor` / `test` / `chore` / `release`，并带具体 scope 或主题。
+- 分支合回 main 前需在本地通过 `npm run lint`、`npm run format:check`、`npm run typecheck`、`npm test`、`npm run build`（与 CI 检查一致）。
+- 推送时使用同名远程分支并建立跟踪：`git push -u origin <branch>`；分支合回后删除本地与远程分支，切换前确保工作区干净。
