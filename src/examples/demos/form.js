@@ -60,16 +60,14 @@ export function ServiceFormCard({ toast }) {
               form.hstack((actions) => {
                 actions.className('form-actions');
                 actions.style('justifyContent', 'flex-end');
-                actions.vButton((button) => {
+                actions.vButton('提交表单', (button) => {
                   button.htmlType('submit');
-                  button.label('提交表单');
                   button.variant('primary');
                   button.on('click', () => {
                     formSnapshot.textContent(JSON.stringify(form.values()));
                   });
                 });
-                actions.vButton((button) => {
-                  button.label('重置');
+                actions.vButton('重置', (button) => {
                   button.on('click', () => {
                     form.values(defaultServiceValues());
                     formSnapshot.textContent('表单已重置');
@@ -120,8 +118,7 @@ export function OwnerFieldCard() {
             stack.hstack((row) => {
               row.className('field-actions');
               row.style('alignItems', 'center');
-              row.vButton((button) => {
-                button.label('切换模式');
+              row.vButton('切换模式', (button) => {
                 button.on('click', () => {
                   const nextMode = editableField.mode() === 'view' ? 'edit' : 'view';
                   editableField.mode(nextMode);

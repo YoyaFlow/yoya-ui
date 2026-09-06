@@ -24,10 +24,9 @@ export function DeploymentTaskCard({ locale, toast }) {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
+          footer.vButton(locale.text('actions.start'), (button) => {
             startButton = button;
             button.id('start-job');
-            button.label(locale.text('actions.start'));
             button.variant('primary');
             button.on('click', () => {
               startButton.loading(true);
@@ -40,8 +39,7 @@ export function DeploymentTaskCard({ locale, toast }) {
               }, 600);
             });
           });
-          footer.vButton((button) => {
-            button.label(locale.text('actions.refresh'));
+          footer.vButton(locale.text('actions.refresh'), (button) => {
             button.on('click', () => {
               jobState.textContent('状态已刷新');
               toast.info('状态已刷新', { duration: 0 });
@@ -85,17 +83,15 @@ export function AuditCard({ locale, toast }) {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
+          footer.vButton(locale.text('actions.save'), (button) => {
             button.id('save-config');
-            button.label(locale.text('actions.save'));
             button.variant('primary');
             button.on('click', () => {
               auditState.textContent('设置已保存');
               toast.success('设置已保存', { duration: 0 });
             });
           });
-          footer.vButton((button) => {
-            button.label(locale.text('actions.danger'));
+          footer.vButton(locale.text('actions.danger'), (button) => {
             button.variant('danger');
             button.on('click', () => toast.error('危险操作被拦截', { duration: 0 }));
           });
@@ -127,16 +123,14 @@ export function LocaleSwitchCard({ locale, toast }) {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('中文');
+          footer.vButton('中文', (button) => {
             button.id('switch-zh');
             button.on('click', () => {
               locale.setLanguage('zh-CN');
               toast.info('语言已切换为中文', { duration: 0 });
             });
           });
-          footer.vButton((button) => {
-            button.label('English');
+          footer.vButton('English', (button) => {
             button.id('switch-en');
             button.on('click', () => {
               locale.setLanguage('en');

@@ -101,20 +101,17 @@ export function DynamicModuleCard() {
         });
         card.vCardFooter((footer) => {
           footer.hstack({ gap: '10px' }, (actions) => {
-            actions.vButton((button) => {
+            actions.vButton('开始加载', (button) => {
               button.id('dynamic-load');
-              button.label('开始加载');
               button.on('click', () => moduleLoader.load().catch(() => {}));
             });
-            actions.vButton((button) => {
+            actions.vButton('重试', (button) => {
               button.id('dynamic-retry');
-              button.label('重试');
               button.variant('secondary');
               button.on('click', () => moduleLoader.retry().catch(() => {}));
             });
-            actions.vButton((button) => {
+            actions.vButton('再次加载', (button) => {
               button.id('dynamic-cache');
-              button.label('再次加载');
               button.variant('secondary');
               button.on('click', () => {
                 if (moduleLoader.status() === 'loaded') {

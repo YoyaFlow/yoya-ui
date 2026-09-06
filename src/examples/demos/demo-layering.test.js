@@ -61,4 +61,22 @@ describe('demo layering', () => {
     expect(staleEntries.join('\n')).toBe('');
     expect(failures.join('\n')).toBe('');
   });
+
+  it('keeps demo buttons label-first', () => {
+    const failures = [];
+
+    readdirSync(demoDir)
+      .filter((name) => name.endsWith('.js') && !name.endsWith('.test.js'))
+      .sort()
+      .forEach((fileName) => {
+        const source = readFileSync(resolve(demoDir, fileName), 'utf8');
+        if (/vButton\(\s*\(/.test(source)) {
+          failures.push(
+            `${fileName}: button is created without a label, use vButton('label', setup)`
+          );
+        }
+      });
+
+    expect(failures.join('\n')).toBe('');
+  });
 });

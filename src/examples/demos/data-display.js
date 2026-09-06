@@ -34,8 +34,7 @@ export function ServiceDetailCard({ toast }) {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('切换状态');
+          footer.vButton('切换状态', (button) => {
             button.on('click', () => {
               serviceState.textContent(
                 serviceState.textContent() === '运行中' ? '维护中' : '运行中'
@@ -90,9 +89,8 @@ export function CodeBlockCard() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
+          footer.vButton('更新日志', (button) => {
             button.id('code-block-update');
-            button.label('更新日志');
             button.on('click', () => {
               logBlock.content(
                 '2026-08-20T12:00:02Z level=info request_id=api-42 status=recovered'
@@ -130,8 +128,7 @@ export function ServiceTableCard({ toast }) {
                   label: '操作',
                   align: 'right',
                   render: (row) =>
-                    vButton((button) => {
-                      button.label(row.status === '运行中' ? '查看' : '处理');
+                    vButton(row.status === '运行中' ? '查看' : '处理', (button) => {
                       button.variant('secondary');
                       button.size('small');
                       button.on('click', () => {
@@ -325,17 +322,15 @@ export function ChartAdapterCard() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
+          footer.vButton('更新数据', (button) => {
             button.id('chart-adapter-update');
-            button.label('更新数据');
             button.on('click', () => {
               values = [64, 48, 72, 84];
               chart.data(values);
             });
           });
-          footer.vButton((button) => {
+          footer.vButton('调整高度', (button) => {
             button.id('chart-adapter-resize');
-            button.label('调整高度');
             button.on('click', () => chart.resize(undefined, 240));
           });
         });

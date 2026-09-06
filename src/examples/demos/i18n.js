@@ -114,24 +114,20 @@ export function I18nParamsExample1() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('数量 +1');
+          footer.vButton('数量 +1', (button) => {
             button.on('click', () => {
               count += 1;
               userCount.params({ count });
             });
           });
-          footer.vButton((button) => {
-            button.label('中文');
+          footer.vButton('中文', (button) => {
             button.variant('secondary');
             button.on('click', () => locale.setLanguage('zh-CN'));
           });
-          footer.vButton((button) => {
-            button.label('English');
+          footer.vButton('English', (button) => {
             button.on('click', () => locale.setLanguage('en'));
           });
-          footer.vButton((button) => {
-            button.label('注册英文补丁');
+          footer.vButton('注册英文补丁', (button) => {
             button.variant('primary');
             button.on('click', () => {
               locale.register('en', {
@@ -191,13 +187,11 @@ export function I18nShortcutExample1() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
-            button.label('中文');
+          footer.vButton('中文', (button) => {
             button.variant('secondary');
             button.on('click', () => locale.setLanguage('zh-CN'));
           });
-          footer.vButton((button) => {
-            button.label('English');
+          footer.vButton('English', (button) => {
             button.variant('primary');
             button.on('click', () => locale.setLanguage('en'));
           });
@@ -281,9 +275,8 @@ export function I18nExtendExample1() {
         });
         card.vCardFooter((footer) => {
           footer.child(languageSwitch);
-          footer.vButton((button) => {
+          footer.vButton('添加日语', (button) => {
             addButton = button;
-            button.label('添加日语');
             button.variant('primary');
             button.on('click', addJapanese);
           });

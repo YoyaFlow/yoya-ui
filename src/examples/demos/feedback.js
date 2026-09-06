@@ -16,24 +16,21 @@ export function LocalMessageManagerCard() {
           });
         });
         card.vCardFooter((footer) => {
-          footer.vButton((button) => {
+          footer.vButton('显示成功消息', (button) => {
             button.id('local-message-success');
-            button.label('显示成功消息');
             button.variant('primary');
             button.on('click', () => {
               manager.success('局部保存成功', { id: 'local-status', duration: 0 });
             });
           });
-          footer.vButton((button) => {
+          footer.vButton('替换同 ID 消息', (button) => {
             button.id('local-message-replace');
-            button.label('替换同 ID 消息');
             button.on('click', () => {
               manager.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
             });
           });
-          footer.vButton((button) => {
+          footer.vButton('清空局部消息', (button) => {
             button.id('local-message-clear');
-            button.label('清空局部消息');
             button.on('click', () => manager.clear());
           });
         });
