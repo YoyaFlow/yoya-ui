@@ -14,7 +14,6 @@ const SHELL_TOKENS = ['vCard(', 'vCardHeader(', 'vCardBody(', 'vCardFooter('];
 const ALLOWLIST = {
   'actions.js': 12,
   'async.js': 4,
-  'board.js': 18,
   'data-display.js': 24,
   'feedback.js': 4,
   'form.js': 12,
