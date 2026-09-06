@@ -64,19 +64,10 @@ export function ButtonVariantsExample1() {
     render() {
       return hstack((row) => {
         row.style('gap', '10px');
-        row.vButton((button) => {
-          button.label('主要按钮');
-          button.variant('primary');
-        });
+        row.vButton('主要按钮', (button) => button.variant('primary'));
         row.vButton('默认按钮');
-        row.vButton((button) => {
-          button.label('危险按钮');
-          button.variant('danger');
-        });
-        row.vButton((button) => {
-          button.label('幽灵按钮');
-          button.variant('ghost');
-        });
+        row.vButton('危险按钮', (button) => button.variant('danger'));
+        row.vButton('幽灵按钮', (button) => button.variant('ghost'));
       });
     }
   };
@@ -88,10 +79,7 @@ export function ButtonSizesExample1() {
       return hstack((row) => {
         row.style({ alignItems: 'center', gap: '10px' });
         ['small', 'medium', 'large'].forEach((size) => {
-          row.vButton((button) => {
-            button.label(size);
-            button.size(size);
-          });
+          row.vButton(size, (button) => button.size(size));
         });
       });
     }
@@ -105,8 +93,7 @@ export function ButtonStatesExample1() {
     render() {
       return hstack((row) => {
         row.style('gap', '10px');
-        row.vButton((button) => {
-          button.label('执行任务');
+        row.vButton('执行任务', (button) => {
           button.variant('primary');
           button.on('click', () => {
             state.textContent('执行中');
@@ -117,10 +104,7 @@ export function ButtonStatesExample1() {
             }, 600);
           });
         });
-        row.vButton((button) => {
-          button.label('不可用');
-          button.disabled(true);
-        });
+        row.vButton('不可用', (button) => button.disabled(true));
         row.child(state);
       });
     }
@@ -136,15 +120,11 @@ export function ButtonFormExample1() {
         form.style('gap', '12px');
         form.hstack((row) => {
           row.style('gap', '10px');
-          row.vButton((button) => {
-            button.label('提交表单');
+          row.vButton('提交表单', (button) => {
             button.variant('primary');
             button.formType('submit');
           });
-          row.vButton((button) => {
-            button.label('重置');
-            button.formType('reset');
-          });
+          row.vButton('重置', (button) => button.formType('reset'));
         });
         form.output((output) => output.child(result));
         form.on('submit', (event) => {

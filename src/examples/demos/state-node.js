@@ -1,30 +1,30 @@
-import { div, vCard, vForm, vStateNode, vText, vTr } from '../../index.js';
+import {
+  div,
+  vCard,
+  vForm,
+  vStateNode,
+  vTable,
+  vText,
+  vTr,
+  vstack
+} from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
   return vStateNode({
     state: () => ({ count: 0 }),
     render(state, api) {
-      return vCard((card) => {
-        card.vCardHeader('函数值绑定');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vText 接收 (state) => value，setState 后自动求值写回。');
-            stack.output((out) => {
-              out.attr('data-state-counter-output', 'true');
-              out.child(vText((s) => `当前计数：${s.count}`));
-            });
-          });
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.output((out) => {
+          out.attr('data-state-counter-output', 'true');
+          out.child(vText((s) => `当前计数：${s.count}`));
         });
-        card.vCardFooter((footer) => {
-          footer.vButton('+1', (button) => {
-            button
-              .variant('primary')
-              .on('click', () => {
-                api.setState({ count: state.count + 1 });
-              });
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('+1', (button) => {
+            button.variant('primary');
+            button.on('click', () => api.setState({ count: state.count + 1 }));
           });
-          footer.vButton('重置', (button) => {
+          row.vButton('重置', (button) => {
             button.on('click', () => api.setState({ count: 0 }));
           });
         });
@@ -37,33 +37,27 @@ export function StateInputExample1() {
   return vStateNode({
     state: () => ({ name: '' }),
     render(state, api) {
-      return vCard((card) => {
-        card.vCardHeader('输入保持焦点');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('value 与输出文本都是函数值绑定，节点不被替换，焦点不会丢失。');
-            stack.input((field) => {
-              field.attr({
-                'data-state-demo-input': 'true',
-                placeholder: '输入内容',
-                type: 'text',
-                value: (s) => s.name
-              });
-              field.on('input', (event) => {
-                api.setState({ name: event.target.value });
-              });
-            });
-            stack.output((out) => {
-              out.attr('data-state-input-output', 'true');
-              out.child(vText((s) => `当前输入：${s.name || '（空）'}，长度：${s.name.length}`));
-            });
-            stack.vButton('保存', (button) => {
-              button
-                .variant('primary')
-                .attr('disabled', (s) => !s.name)
-                .style('opacity', (s) => (s.name ? null : '0.5'));
-            });
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.input((field) => {
+          field.attr({
+            'data-state-demo-input': 'true',
+            placeholder: '输入内容',
+            type: 'text',
+            value: (s) => s.name
           });
+          field.on('input', (event) => {
+            api.setState({ name: event.target.value });
+          });
+        });
+        stack.output((out) => {
+          out.attr('data-state-input-output', 'true');
+          out.child(vText((s) => `当前输入：${s.name || '（空）'}，长度：${s.name.length}`));
+        });
+        stack.vButton('保存', (button) => {
+          button
+            .variant('primary')
+            .attr('disabled', (s) => !s.name)
+            .style('opacity', (s) => (s.name ? null : '0.5'));
         });
       });
     }
@@ -76,23 +70,16 @@ export function StateRebuildExample1() {
     render(state, api) {
       const nextState = { attempts: state.attempts + 1, status: 'running' };
 
-      return vCard((card) => {
-        card.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
-        card.vCardHeader('全量重建');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('不提供 update 时，setState 会销毁旧内容并重新调用 render。');
-            stack.p(`状态：${state.status}`);
-            stack.p(`次数：${state.attempts}`);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('执行', (button) => {
-            button
-              .variant('primary')
-              .on('click', () => {
-                api.setState(nextState);
-              });
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
+        stack.p(`状态：${state.status}`);
+        stack.p(`次数：${state.attempts}`);
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('执行', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              api.setState(nextState);
+            });
           });
         });
       });
@@ -104,21 +91,15 @@ export function StateToggleExample1() {
   return vStateNode({
     state: () => ({ visible: true }),
     render(state, api) {
-      return vCard((card) => {
-        card.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
-        card.vCardHeader('结构切换');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p(state.visible ? '当前显示内容。' : '当前内容已隐藏。');
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton(state.visible ? '隐藏' : '显示', (button) => {
-            button
-              .variant('primary')
-              .on('click', () => {
-                api.setState({ visible: !state.visible });
-              });
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
+        stack.p(state.visible ? '当前显示内容。' : '当前内容已隐藏。');
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton(state.visible ? '隐藏' : '显示', (button) => {
+            button.variant('primary');
+            button.on('click', () => {
+              api.setState({ visible: !state.visible });
+            });
           });
         });
       });
@@ -281,22 +262,16 @@ export function StateFragmentExample1() {
   return vStateNode({
     state: () => ({ names: ['Ada', 'Bob'] }),
     render(state) {
-      return vCard((card) => {
-        card.vCardHeader('多根 fragment');
-        card.vCardBody((body) => {
-          body.p('render 返回 ViewNode 数组时，父节点直接落实多个并列子节点。');
-          body.vTable((table) => {
-            table.vTbody((tbody) => {
-              tbody.child(
-                vStateNode({
-                  state: () => ({ names: state.names }),
-                  render(s) {
-                    return s.names.map((name) => vTr((tr) => tr.vTd(name)));
-                  }
-                })
-              );
-            });
-          });
+      return vTable((table) => {
+        table.vTbody((tbody) => {
+          tbody.child(
+            vStateNode({
+              state: () => ({ names: state.names }),
+              render(s) {
+                return s.names.map((name) => vTr((tr) => tr.vTd(name)));
+              }
+            })
+          );
         });
       });
     }
@@ -337,23 +312,19 @@ export function StateKeyedExample1() {
       return api;
     },
     render() {
-      return vCard((card) => {
-        card.vCardHeader('Keyed 子节点');
-        card.vCardBody((body) => {
-          body.p('addChild(key, node) 登记唯一 key，元素子节点自动带 data-row-key。');
-          body.div((list) => {
-            box = list;
-            keys.forEach((key, index) => {
-              list.addChild(key, itemNode(key, `条目 ${index + 1}`));
-            });
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.div((list) => {
+          box = list;
+          keys.forEach((key, index) => {
+            list.addChild(key, itemNode(key, `条目 ${index + 1}`));
           });
         });
-        card.vCardFooter((footer) => {
-          footer.vButton('追加', (button) => {
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('追加', (button) => {
             button.variant('primary');
             button.on('click', () => api.add());
           });
-          footer.vButton('移除第一条', (button) => {
+          row.vButton('移除第一条', (button) => {
             button.on('click', () => api.removeFirst());
           });
         });
@@ -385,41 +356,37 @@ export function StateEventOverwriteExample1() {
       return api;
     },
     render() {
-      return vCard((card) => {
-        card.vCardHeader('事件覆盖');
-        card.vCardBody((body) => {
-          body.p('同一节点重复 on() 覆盖上次 handler，不会产生重复 DOM 监听。');
-          body.div((area) => {
-            target = area;
-            area.attr('data-event-target', 'true');
-            area.className('yoya-event-target');
-            area.styles({
-              border: '1px dashed #cbd5e1',
-              borderRadius: '8px',
-              color: '#475569',
-              cursor: 'pointer',
-              padding: '16px',
-              textAlign: 'center'
-            });
-            area.text('点击区域');
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.div((area) => {
+          target = area;
+          area.attr('data-event-target', 'true');
+          area.className('yoya-event-target');
+          area.styles({
+            border: '1px dashed #cbd5e1',
+            borderRadius: '8px',
+            color: '#475569',
+            cursor: 'pointer',
+            padding: '16px',
+            textAlign: 'center'
           });
-          body.output((out) => {
-            outputElement = out;
-            out.attr('data-event-output', 'true');
-            out.styles({
-              fontWeight: '600',
-              minHeight: '1.4em'
-            });
-            textNode = vText('尚无处理器');
-            out.child(textNode);
-          });
+          area.text('点击区域');
         });
-        card.vCardFooter((footer) => {
-          footer.vButton('注册 A', (button) => {
+        stack.output((out) => {
+          outputElement = out;
+          out.attr('data-event-output', 'true');
+          out.styles({
+            fontWeight: '600',
+            minHeight: '1.4em'
+          });
+          textNode = vText('尚无处理器');
+          out.child(textNode);
+        });
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('注册 A', (button) => {
             button.variant('primary');
             button.on('click', () => api.registerA());
           });
-          footer.vButton('注册 B', (button) => {
+          row.vButton('注册 B', (button) => {
             button.on('click', () => api.registerB());
           });
         });
@@ -447,21 +414,20 @@ export function StateDynamicAttrsExample1() {
   return vStateNode({
     state: () => ({ status: 'idle' }),
     render(state, api) {
-      return vCard((card) => {
-        card.vCardHeader('动态属性');
-        card.vCardBody((body) => {
-          body.div((panel) => {
-            panel.attr('data-dynamic-status', (s) => s.status);
-            panel.styles({
-              backgroundColor: (s) => panelTone[s.status] || panelTone.idle,
-              borderRadius: '8px',
-              color: (s) => tone[s.status] || tone.idle,
-              fontWeight: '600',
-              padding: '8px 12px'
-            });
-            panel.child(vText((s) => (s.status === 'saving' ? '保存中…' : '已就绪')));
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.div((panel) => {
+          panel.attr('data-dynamic-status', (s) => s.status);
+          panel.styles({
+            backgroundColor: (s) => panelTone[s.status] || panelTone.idle,
+            borderRadius: '8px',
+            color: (s) => tone[s.status] || tone.idle,
+            fontWeight: '600',
+            padding: '8px 12px'
           });
-          body.vButton('保存', (button) => {
+          panel.child(vText((s) => (s.status === 'saving' ? '保存中…' : '已就绪')));
+        });
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('保存', (button) => {
             button
               .variant('primary')
               .attr('disabled', (s) => s.status === 'saving')
@@ -470,13 +436,11 @@ export function StateDynamicAttrsExample1() {
               .style('cursor', (s) => (s.status === 'saving' ? 'wait' : null))
               .on('click', () => api.startSave());
           });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('完成', (button) => {
+          row.vButton('完成', (button) => {
             button.variant('primary');
             button.on('click', () => api.finish());
           });
-          footer.vButton('失败', (button) => {
+          row.vButton('失败', (button) => {
             button.on('click', () => api.fail());
           });
         });
