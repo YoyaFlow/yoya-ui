@@ -1,4 +1,4 @@
-import { div, router, vCard, vRouterView, vText } from '../../index.js';
+import { div, router, vRouterView, vText, vstack } from '../../index.js';
 
 export function RouterParamsCard() {
   const appRouter = router((routes) => {
@@ -18,12 +18,8 @@ export function RouterParamsCard() {
       unsubscribe();
     },
     render() {
-      return vCard((card) => {
-        card.vCardHeader('参数传递');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
+      return vstack((stack) => {
             stack.style('gap', '12px');
-            stack.p('default 页面函数接收 context，参数通过 options 传给子组件，currentParams() 随时可读。');
             stack.hstack((nav) => {
               nav.styles({ flexWrap: 'wrap', gap: '10px' });
               nav.vLink(appRouter, { label: '首页', replace: true, to: '/home' });
@@ -43,8 +39,6 @@ export function RouterParamsCard() {
               output.child(status);
             });
           });
-        });
-      });
     }
   };
 }
