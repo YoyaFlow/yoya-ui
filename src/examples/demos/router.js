@@ -1,12 +1,12 @@
 import {
   div,
   router,
-  vCard,
   vContainer,
   vRoute,
   vRouter,
   vRouterViews,
-  vText
+  vText,
+  vstack
 } from '../../index.js';
 
 export function RouterNavigationCard() {
@@ -33,28 +33,22 @@ export function RouterNavigationCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('路由链接与视图');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('vLink 委托现有 Router 导航，vRouterView 负责展示匹配视图和 404。');
-            stack.hstack((nav) => {
-              nav.className('router-demo-navigation');
-              nav.styles({ flexWrap: 'wrap', gap: '10px' });
-              nav.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-              nav.vLink(appRouter, {
-                label: '用户详情',
-                params: { id: 42 },
-                query: { tab: 'profile' },
-                replace: true,
-                to: '/users/:id'
-              });
-              nav.vLink(appRouter, { label: '未匹配', replace: true, to: '/missing' });
-            });
-            stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.hstack((nav) => {
+          nav.className('router-demo-navigation');
+          nav.styles({ flexWrap: 'wrap', gap: '10px' });
+          nav.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+          nav.vLink(appRouter, {
+            label: '用户详情',
+            params: { id: 42 },
+            query: { tab: 'profile' },
+            replace: true,
+            to: '/users/:id'
           });
+          nav.vLink(appRouter, { label: '未匹配', replace: true, to: '/missing' });
         });
+        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
         appRouter.navigate('/overview', { replace: true });
       });
     }
@@ -75,22 +69,16 @@ export function DeclarativeRouterCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('声明式路由');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('vRouter 负责声明配置，vRoute 描述路径与视图，仍由同一个 Router 执行匹配。');
-            stack.vLink(appRouter, {
-              label: '项目 42',
-              params: { id: 42 },
-              query: { tab: 'tasks' },
-              to: '/projects/:id'
-            });
-            stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-          });
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.vLink(appRouter, {
+          label: '项目 42',
+          params: { id: 42 },
+          query: { tab: 'tasks' },
+          to: '/projects/:id'
         });
-        appRouter.navigate('/home', { replace: true });
+        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+        appRouter.navigate('/overview', { replace: true });
       });
     }
   };
@@ -120,32 +108,26 @@ export function RouterHistoryCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('History 路由');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('iframe 内部使用 history 模式，pushState 和 popstate 不会影响父级演示。');
-            stack.hstack((nav) => {
-              nav.className('router-demo-navigation');
-              nav.styles({ flexWrap: 'wrap', gap: '10px' });
-              nav.vLink(appRouter, { label: '概览', to: '/overview' });
-              nav.vLink(appRouter, {
-                label: '项目 42',
-                params: { id: 42 },
-                query: { tab: 'tasks' },
-                to: '/projects/:id'
-              });
-              nav.vLink(appRouter, { label: '未匹配', to: '/missing' });
-            });
-            stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-            stack.output((output) => {
-              output.className('history-url-output');
-              output.child(currentPath);
-            });
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.hstack((nav) => {
+          nav.className('router-demo-navigation');
+          nav.styles({ flexWrap: 'wrap', gap: '10px' });
+          nav.vLink(appRouter, { label: '概览', to: '/overview' });
+          nav.vLink(appRouter, {
+            label: '项目 42',
+            params: { id: 42 },
+            query: { tab: 'tasks' },
+            to: '/projects/:id'
           });
+          nav.vLink(appRouter, { label: '未匹配', to: '/missing' });
         });
-        appRouter.navigate('/overview', { replace: true });
+        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+        stack.output((output) => {
+          output.className('history-url-output');
+          output.child(currentPath);
+        });
+        appRouter.navigate('/home', { replace: true });
         appRouter.start();
       });
     }
@@ -163,20 +145,14 @@ export function RouterViewsEditorCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('IDE 风格路由视图');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('访问过的路由会保留为文件标签；点击 title 切换页面，点击 × 关闭标签。');
-            stack.hstack((tabs) => {
-              tabs.style('gap', '8px');
-              tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-              tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
-            });
-            stack.vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
-          });
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.hstack((tabs) => {
+          tabs.style('gap', '8px');
+          tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+          tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
         });
+        stack.vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
         appRouter.navigate('/overview', { replace: true });
       });
     }
@@ -194,23 +170,17 @@ export function RouterViewsTopCard() {
 
   return {
     render() {
-      return vCard((card) => {
-        card.vCardHeader('顶部标签路由视图');
-        card.vCardBody((body) => {
-          body.vstack((stack) => {
-            stack.style('gap', '14px');
-            stack.p('顶部标题栏适合放在页面主区，标签会保留访问记录。');
-            stack.hstack((tabs) => {
-              tabs.style('gap', '8px');
-              tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-              tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
-            });
-            stack.vRouterViews(appRouter, {
-              persist: false,
-              title: '未打开文件',
-              titlePosition: 'top'
-            });
-          });
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.hstack((tabs) => {
+          tabs.style('gap', '8px');
+          tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+          tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
+        });
+        stack.vRouterViews(appRouter, {
+          persist: false,
+          title: '未打开文件',
+          titlePosition: 'top'
         });
         appRouter.navigate('/overview', { replace: true });
       });

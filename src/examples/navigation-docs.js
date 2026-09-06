@@ -246,7 +246,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-links.html',
         id: 'links',
-        imports: ['div', 'router', 'vCard'],
+        imports: ['div', 'router', 'vstack'],
         sourceComponent: RouterNavigationCard,
         sourceTitle: '路由链接与视图核心源码',
         title: '路由链接与视图'
@@ -257,7 +257,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './declarative-router.html',
         id: 'declarative',
-        imports: ['div', 'vCard', 'vRoute', 'vRouter'],
+        imports: ['div', 'vRoute', 'vRouter', 'vstack'],
         sourceComponent: DeclarativeRouterCard,
         sourceTitle: '声明式路由核心源码',
         title: '声明式路由'
@@ -268,7 +268,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-history.html',
         id: 'history',
-        imports: ['div', 'vCard', 'vRoute', 'vRouter', 'vText'],
+        imports: ['div', 'vRoute', 'vRouter', 'vText', 'vstack'],
         sourceComponent: RouterHistoryCard,
         sourceTitle: 'History 路由核心源码',
         title: 'History 路由'
@@ -280,7 +280,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-async.html',
         id: 'async',
-        imports: ['div', 'router', 'vCard', 'vRouterView'],
+        imports: ['div', 'router', 'vRouterView', 'vstack'],
         sourceComponent: RouterAsyncCard,
         sourceTitle: '异步加载路由核心源码',
         title: '异步加载路由'
@@ -292,7 +292,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-params.html',
         id: 'params',
-        imports: ['div', 'router', 'vCard', 'vRouterView', 'vText'],
+        imports: ['div', 'router', 'vRouterView', 'vText', 'vstack'],
         sourceComponent: RouterParamsCard,
         sourceTitle: '参数传递路由核心源码',
         title: '参数传递路由'
