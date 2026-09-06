@@ -67,7 +67,7 @@ export function ComponentSource({
 }
 
 function dedentFunctionSource(source) {
-  const lines = source.split(/\r?\n/);
+  const lines = source.replace(/\t/g, '  ').split(/\r?\n/);
   const bodyIndents = lines
     .slice(1)
     .filter((line) => line.trim())
