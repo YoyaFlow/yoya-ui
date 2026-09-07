@@ -165,6 +165,10 @@ npm run examples:html   # 打开 http://localhost:5173/#/components
 `vEchart` 与 `vThree` 胶水入口在同类目下有各自的演示页：宿主只是一个普通
 DOM 容器，由底层库在客户端填充。
 
+独立的[工业自动化原型](src/examples/factory-game.html)用 `vThree` 作为 3D
+视口：基于网格的工厂模拟（矿机、传送带、组装机），工具栏与产量统计由
+yoya-ui 组件承担。
+
 ## 为什么是原生 Web：框架会过期，标准不会
 
 **浏览器本身就是足够好的运行时。** HTML 与 CSS 生而声明式，DOM API 清晰且

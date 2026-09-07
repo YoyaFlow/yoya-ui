@@ -21,6 +21,7 @@ export class VThree extends HtmlElementNode {
     this._frameCallbacks = [];
     this._frameId = null;
     this._height = '400px';
+    this._initScheduled = false;
     this._onReadyCallbacks = [];
     this._onResizeCallbacks = [];
     this._renderer = null;
@@ -231,7 +232,8 @@ export class VThree extends HtmlElementNode {
 
   renderDom() {
     const element = super.renderDom();
-    if (element && !this._renderer) {
+    if (element && !this._renderer && !this._initScheduled) {
+      this._initScheduled = true;
       requestAnimationFrame(() => this._init());
     }
     return element;
@@ -311,6 +313,7 @@ export class VThree extends HtmlElementNode {
   }
 
   _init() {
+    this._initScheduled = false;
     if (this._deleted) {
       return;
     }

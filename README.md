@@ -184,6 +184,10 @@ The `vEchart` and `vThree` glue entries ship their own demo pages in the same
 category; each host is a plain DOM container that the underlying library fills
 on the client.
 
+A standalone [industrial-automation prototype](src/examples/factory-game.html)
+uses `vThree` as its 3D viewport: a grid-based factory sim with miners, belts
+and assemblers, with yoya-ui widgets for the toolbar and production stats.
+
 ## Why native Web: frameworks expire, standards don't
 
 **The browser is already a good enough runtime.** HTML and CSS are declarative
