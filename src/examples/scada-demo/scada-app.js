@@ -27,6 +27,7 @@ const WALK_SPEED = 5;
 const RUN_SPEED = 9.5;
 const MIN_VIEW_Y = 0.8;
 const MAX_VIEW_Y = 80;
+// 标准 FPS：yaw -= movementX * sensitivity，pitch -= movementY * sensitivity
 const LOOK_SENSITIVITY = 0.0048;
 
 function createDeltaTimer(threeLib) {
@@ -66,7 +67,6 @@ export function ScadaTwinStandalone() {
     canvas: null,
     cleanups: [],
     keys: new Set(),
-    lastPointer: null,
     layerGroup: null,
     marker: null,
     pointerLocked: false,
@@ -203,20 +203,12 @@ export function ScadaTwinStandalone() {
   }
 
   function handleCanvasMove(event) {
-    if (runtime.statusOpen) {
+    if (runtime.statusOpen || !runtime.pointerLocked) {
       return;
     }
-    let dx;
-    let dy;
-    if (runtime.pointerLocked) {
-      dx = event.movementX;
-      dy = event.movementY;
-    } else {
-      dx = event.clientX - (runtime.lastPointer?.x ?? event.clientX);
-      dy = event.clientY - (runtime.lastPointer?.y ?? event.clientY);
-      runtime.lastPointer = { x: event.clientX, y: event.clientY };
-    }
-    if (dx === 0 && dy === 0) {
+    const dx = event.movementX;
+    const dy = event.movementY;
+    if (!dx && !dy) {
       return;
     }
     runtime.view.yaw -= dx * LOOK_SENSITIVITY;
@@ -229,7 +221,6 @@ export function ScadaTwinStandalone() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
-      runtime.lastPointer = null;
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
     syncReticleVisibility();
@@ -240,7 +231,6 @@ export function ScadaTwinStandalone() {
     runtime.pointerLocked = runtime.canvas && document.pointerLockElement === runtime.canvas;
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
-      runtime.lastPointer = null;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -254,7 +244,7 @@ export function ScadaTwinStandalone() {
     if (!ui.reticleWrap) {
       return;
     }
-    const visible = !runtime.statusOpen;
+    const visible = runtime.pointerLocked && !runtime.statusOpen;
     ui.reticleWrap.style('display', visible ? '' : 'none');
     ui.reticleWrap.attr('data-visible', visible ? 'true' : 'false');
   }
@@ -267,10 +257,14 @@ export function ScadaTwinStandalone() {
       ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
       return;
     }
+    if (runtime.pointerLocked) {
+      ui.lockHint.textContent('FPS 已锁定：鼠标相对位移 1:1 跟手 · Esc 退出');
+      return;
+    }
     ui.lockHint.textContent(
       canRequestLock()
-        ? '点击画面锁定光标（真 FPS）· 光标偏移持续转向 · WASD 飞行'
-        : '取景器居中即准星 · 光标偏移持续转向 · WASD 飞行 · Alt/Tab 状态窗口'
+        ? '点击画面进入 FPS：鼠标按相对位移跟手 · WASD 飞行 · Alt/Tab 状态窗口'
+        : '当前环境不支持 Pointer Lock，无法做到 1:1 FPS 跟手'
     );
   }
 
@@ -687,7 +681,7 @@ export function ScadaTwinStandalone() {
   threeNode.on('click', handleClick);
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', () => {
-    runtime.lastPointer = null;
+    // Pointer Lock 下不需要处理离开；非锁定态不参与视角。
   });
   threeNode.on('pointermove', handleCanvasMove);
 
@@ -704,7 +698,7 @@ export function ScadaTwinStandalone() {
       ui.statsPanel = createStatsPanel();
       ui.detailPanel = createDetailPanel();
       ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = vText('取景器居中即准星 · 移动鼠标转向 · Alt/Tab 状态窗口');
+      ui.lockHint = vText('点击画面进入 FPS：鼠标按相对位移跟手');
       ui.reticleText = vText('—');
       ui.statusWindow = createStatusWindow();
 
