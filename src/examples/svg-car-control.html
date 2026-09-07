@@ -111,6 +111,16 @@
         fill: #ef4444;
       }
 
+      .car--blue .car-body {
+        fill: #60a5fa;
+        stroke: #1e3a8a;
+      }
+
+      .car--blue .car-roof {
+        fill: #1e293b;
+        stroke: #0f172a;
+      }
+
       .beam {
         fill: url(#beamPaint);
       }
@@ -175,33 +185,46 @@
       }
 
       function KeyboardInput() {
-        const pressed = new Set();
-        const arrowToAction = {
-          ArrowUp: 'up',
-          ArrowDown: 'down',
-          ArrowLeft: 'left',
-          ArrowRight: 'right'
+        const groups = {
+          arrows: new Set(),
+          wasd: new Set()
+        };
+        const keyToAction = {
+          ArrowUp: ['arrows', 'up'],
+          ArrowDown: ['arrows', 'down'],
+          ArrowLeft: ['arrows', 'left'],
+          ArrowRight: ['arrows', 'right'],
+          w: ['wasd', 'up'],
+          a: ['wasd', 'left'],
+          s: ['wasd', 'down'],
+          d: ['wasd', 'right']
         };
 
         function handleKeyDown(event) {
-          const action = arrowToAction[event.key];
-          if (!action) {
+          const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+          const binding = keyToAction[key];
+          if (!binding) {
             return;
           }
 
           event.preventDefault();
-          pressed.add(action);
+          groups[binding[0]].add(binding[1]);
         }
 
         function handleKeyUp(event) {
-          const action = arrowToAction[event.key];
-          if (action) {
-            pressed.delete(action);
+          const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+          const binding = keyToAction[key];
+          if (binding) {
+            groups[binding[0]].delete(binding[1]);
           }
         }
 
         function handleBlur() {
-          pressed.clear();
+          clearAll();
+        }
+
+        function clearAll() {
+          Object.values(groups).forEach((pressed) => pressed.clear());
         }
 
         return {
@@ -217,7 +240,8 @@
             };
           },
 
-          movement() {
+          movement(group) {
+            const pressed = groups[group];
             const horizontal = (pressed.has('right') ? 1 : 0) - (pressed.has('left') ? 1 : 0);
             const vertical = (pressed.has('down') ? 1 : 0) - (pressed.has('up') ? 1 : 0);
 
@@ -225,12 +249,12 @@
           },
 
           clear() {
-            pressed.clear();
+            clearAll();
           }
         };
       }
 
-      function Car({ bounds, start }) {
+      function Car({ bounds, start, variant = '' }) {
         return vStateNode({
           state: () => ({
             x: start.x,
@@ -238,13 +262,18 @@
             vx: 0,
             vy: 0,
             angle: 0,
-            beamOpacity: 0
+            beamOpacity: 0,
+            selected: false,
+            braking: false
           }),
 
-          render(state) {
+          render(state, component) {
             return new SvgElementNode('g', (carGroup) => {
-              carGroup.className('car');
+              carGroup.className(['car', variant]);
               carGroup.attr('transform', (s) => `translate(${s.x} ${s.y}) rotate(${s.angle})`);
+              carGroup.on('click', () =>
+                component.setState({ selected: !component.state().selected })
+              );
 
               carGroup.path((beam) => {
                 beam.className('beam');
@@ -256,7 +285,10 @@
                 carGroup.circle({ class: 'car-wheel', cx: wheelX, cy: wheelY, r: 14 });
               });
 
-              carGroup.rect(CAR_BODY);
+              carGroup.rect(CAR_BODY, (body) => {
+                body.style('stroke', (s) => (s.selected ? '#facc15' : null));
+                body.style('stroke-width', (s) => (s.selected ? '4' : null));
+              });
               carGroup.rect(CAR_ROOF);
 
               CAR_WHEEL_POSITIONS.forEach(([rimX, rimY]) => {
@@ -274,13 +306,18 @@
               });
 
               CAR_TAILLIGHTS.forEach((light) => {
-                carGroup.rect({
-                  class: 'car-taillight',
-                  ...light,
-                  width: 8,
-                  height: 16,
-                  rx: 4
-                });
+                carGroup.rect(
+                  {
+                    class: 'car-taillight',
+                    ...light,
+                    width: 8,
+                    height: 16,
+                    rx: 4
+                  },
+                  (tail) => {
+                    tail.style('opacity', (s) => (s.braking ? '1' : '0.35'));
+                  }
+                );
               });
             });
           },
@@ -304,6 +341,11 @@
             state.vy = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
             state.x = clampNumber(state.x + state.vx, bounds.minX, bounds.maxX);
             state.y = clampNumber(state.y + state.vy, bounds.minY, bounds.maxY);
+            state.braking =
+              (state.vx > 0.15 && movement.horizontal < 0) ||
+              (state.vx < -0.15 && movement.horizontal > 0) ||
+              (state.vy > 0.15 && movement.vertical < 0) ||
+              (state.vy < -0.15 && movement.vertical > 0);
 
             const speed = Math.hypot(state.vx, state.vy);
             if (speed > 0.4) {
@@ -331,13 +373,15 @@
               vx: 0,
               vy: 0,
               angle: 0,
-              beamOpacity: 0
+              beamOpacity: 0,
+              selected: false,
+              braking: false
             });
           }
         });
       }
 
-      function Playfield({ car }) {
+      function Playfield({ cars }) {
         return {
           render() {
             return svg((field) => {
@@ -407,7 +451,7 @@
                 field.line({ class: 'lane', ...lane });
               });
 
-              field.child(car);
+              cars.forEach((car) => field.child(car));
             });
           }
         };
@@ -415,14 +459,18 @@
 
       function StatusBar() {
         return vStateNode({
-          state: () => ({ speed: 0, angle: 0 }),
+          state: () => ({ speedA: 0, angleA: 0, speedB: 0, angleB: 0 }),
 
           render() {
             return div((status) => {
               status.className('demo-status');
-              status.text((s) => `速度 ${Math.round(s.speed * 10) / 10}`);
+              status.text(
+                (s) => `A 速度 ${Math.round(s.speedA * 10) / 10} ${directionLabel(s.angleA)}`
+              );
               status.text(' · ');
-              status.text((s) => `方向 ${directionLabel(s.angle)}`);
+              status.text(
+                (s) => `B 速度 ${Math.round(s.speedB * 10) / 10} ${directionLabel(s.angleB)}`
+              );
             });
           }
         });
@@ -430,17 +478,23 @@
 
       function CarDemoPage() {
         const input = KeyboardInput();
-        const car = Car({
-          bounds: { minX: 75, maxX: 825, minY: 75, maxY: 525 },
-          start: { x: 430, y: 300 }
-        });
+        const bounds = { minX: 75, maxX: 825, minY: 75, maxY: 525 };
+        const carA = Car({ bounds, start: { x: 430, y: 300 } });
+        const carB = Car({ bounds, start: { x: 620, y: 430 }, variant: 'car--blue' });
         const statusBar = StatusBar();
 
         let frameId = null;
         let unbindInput = null;
 
         function tick() {
-          statusBar.setState(car.step(input.movement()));
+          const statusA = carA.step(input.movement('arrows'));
+          const statusB = carB.step(input.movement('wasd'));
+          statusBar.setState({
+            speedA: statusA.speed,
+            angleA: statusA.angle,
+            speedB: statusB.speed,
+            angleB: statusB.angle
+          });
           frameId = requestAnimationFrame(tick);
         }
 
@@ -449,9 +503,11 @@
             return div((page) => {
               page.div((card) => {
                 card.className('demo-card');
-                card.h1('SVG 小车：方向键控制');
-                card.p('按键盘 ↑ ↓ ← → 控制小车移动，车头会自动转向行驶方向。');
-                card.child(Playfield({ car }));
+                card.h1('SVG 小车：方向键 / WASD 控制');
+                card.p(
+                  '方向键控制银色小车 A，WASD 控制蓝色小车 B；点击小车选中高亮，反向按键点亮刹车灯。'
+                );
+                card.child(Playfield({ cars: [carA, carB] }));
                 card.child(statusBar);
               });
             });
