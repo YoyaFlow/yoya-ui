@@ -35,6 +35,24 @@ const TOOL_OPTIONS = Object.freeze([
   { key: 'remove', label: '拆除' }
 ]);
 
+function createDeltaTimer(threeLib) {
+  if (typeof threeLib.Timer === 'function') {
+    const timer = new threeLib.Timer();
+    return {
+      getDelta() {
+        timer.update();
+        return timer.getDelta();
+      }
+    };
+  }
+  const clock = new threeLib.Clock();
+  return {
+    getDelta() {
+      return clock.getDelta();
+    }
+  };
+}
+
 export function FactoryGameStandalone() {
   let state = createFactoryState({ chain: true });
   let statsLastTick = -1;
@@ -44,14 +62,14 @@ export function FactoryGameStandalone() {
     accumulator: 0,
     camera: null,
     cameraState: { ...INITIAL_CAMERA, target: { x: 0, y: 0, z: 0 } },
-    clock: null,
     drag: null,
     ghost: null,
     hoverCellKey: null,
     hoverValid: false,
     layerGroup: null,
     renderer: null,
-    scene: null
+    scene: null,
+    timer: null
   };
   const toolButtons = new Map();
   const ui = { directionText: null, selectionText: null, stats: null };
@@ -310,17 +328,17 @@ export function FactoryGameStandalone() {
     scene.add(createFactoryEnvironment(state));
     runtime.ghost = createGhostPreview();
     scene.add(runtime.ghost);
-    runtime.clock = new lib.Clock();
+    runtime.timer = createDeltaTimer(lib);
     syncFactoryLayer(runtime.layerGroup, state);
     refreshStats(true);
   }
 
   function frameTick() {
-    if (!runtime.clock || !runtime.layerGroup) {
+    if (!runtime.timer || !runtime.layerGroup) {
       return;
     }
 
-    const delta = Math.min(runtime.clock.getDelta(), 0.25);
+    const delta = Math.min(runtime.timer.getDelta(), 0.25);
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
     if (runtime.accumulator < step) {

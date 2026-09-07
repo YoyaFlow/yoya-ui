@@ -117,6 +117,14 @@ const { fakeThree } = vi.hoisted(() => {
     }
   }
 
+  class FakeTimer {
+    update() {}
+
+    getDelta() {
+      return 0.24;
+    }
+  }
+
   const fakeThree = {
     AmbientLight: FakeLight,
     BoxGeometry: FakeGeometry,
@@ -145,6 +153,7 @@ const { fakeThree } = vi.hoisted(() => {
     },
     Scene: FakeScene,
     SphereGeometry: FakeGeometry,
+    Timer: FakeTimer,
     TorusGeometry: FakeGeometry,
     Vector2: class {
       constructor(x = 0, y = 0) {

@@ -27,6 +27,30 @@ const EYE_HEIGHT = 2.2;
 const WALK_SPEED = 5;
 const RUN_SPEED = 9.5;
 
+function createDeltaTimer(threeLib) {
+  if (typeof threeLib.Timer === 'function') {
+    const timer = new threeLib.Timer();
+    return {
+      dispose() {
+        timer.dispose?.();
+      },
+      getDelta() {
+        timer.update();
+        return timer.getDelta();
+      }
+    };
+  }
+  const clock = new threeLib.Clock();
+  return {
+    dispose() {
+      clock.stop?.();
+    },
+    getDelta() {
+      return clock.getDelta();
+    }
+  };
+}
+
 export function ScadaTwinStandalone() {
   let rootNode = null;
   let state = createScadaState();
@@ -39,13 +63,13 @@ export function ScadaTwinStandalone() {
     camera: null,
     canvas: null,
     cleanups: [],
-    clock: null,
     drag: null,
     keys: new Set(),
     layerGroup: null,
     marker: null,
     pointerLocked: false,
     renderer: null,
+    timer: null,
     view: { ...START_VIEW }
   };
   const deviceButtons = new Map();
@@ -122,10 +146,11 @@ export function ScadaTwinStandalone() {
     try {
       const result = runtime.canvas.requestPointerLock();
       if (result && typeof result.catch === 'function') {
-        result.catch(() => {});
+        result.catch(() => updateLockHint());
       }
     } catch {
       // 某些浏览器需要用户手势或 iframe 权限，失败时继续用鼠标拖动视角。
+      updateLockHint();
     }
   }
 
@@ -180,12 +205,23 @@ export function ScadaTwinStandalone() {
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
     }
-    ui.lockHint?.textContent(
-      runtime.pointerLocked
-        ? '移动：WASD · 疾跑：Shift · 点击设备：鼠标左键 · Esc 退出'
-        : '点击画面进入第一人称视角；设备：1-4 选择，E 启停，R 自动，F 故障'
-    );
+    updateLockHint();
     updateMarker();
+  }
+
+  function updateLockHint() {
+    if (!ui.lockHint) {
+      return;
+    }
+    if (runtime.pointerLocked) {
+      ui.lockHint.textContent('移动：WASD · 疾跑：Shift · 左键选择设备 · Esc 退出');
+      return;
+    }
+    ui.lockHint.textContent(
+      canRequestLock()
+        ? '点击画面进入第一人称；未锁定时 WASD 也可移动 · 1-4 选择 · E 启停'
+        : '指针锁定不可用：WASD 移动 · 右键拖动视角 · 1-4 选择 · E 启停'
+    );
   }
 
   function handleMouseMove(event) {
@@ -476,9 +512,6 @@ export function ScadaTwinStandalone() {
   }
 
   function movePlayer(delta) {
-    if (!runtime.pointerLocked) {
-      return;
-    }
     const keys = runtime.keys;
     const speed = keys.has('ShiftLeft') || keys.has('ShiftRight') ? RUN_SPEED : WALK_SPEED;
     let forward = 0;
@@ -540,7 +573,7 @@ export function ScadaTwinStandalone() {
     scene.add(createScadaEnvironment(state));
     runtime.marker = createSelectMarker();
     scene.add(runtime.marker);
-    runtime.clock = new lib.Clock();
+    runtime.timer = createDeltaTimer(lib);
     bindWindowInputs();
     handlePointerLockChange();
     syncScadaLayer(runtime.layerGroup, state);
@@ -548,10 +581,10 @@ export function ScadaTwinStandalone() {
   }
 
   function frameTick() {
-    if (!runtime.clock || !runtime.layerGroup) {
+    if (!runtime.timer || !runtime.layerGroup) {
       return;
     }
-    const delta = Math.min(runtime.clock.getDelta(), 0.25);
+    const delta = Math.min(runtime.timer.getDelta(), 0.25);
     movePlayer(delta);
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
@@ -584,6 +617,7 @@ export function ScadaTwinStandalone() {
 
   return {
     destroy() {
+      runtime.timer?.dispose?.();
       runtime.cleanups.forEach((unbind) => unbind());
       runtime.cleanups = [];
       exitLock();
