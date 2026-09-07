@@ -750,6 +750,7 @@
             lives: 0,
             wave: 0,
             waveActive: false,
+            nextIn: 0,
             gameOver: false,
             selectedType: null,
             message: '选择炮塔类型后悬停空地预览攻击范围，点击放置'
@@ -812,6 +813,9 @@
                   if (s.waveActive) {
                     return '波次进行中…';
                   }
+                  if (s.nextIn > 0) {
+                    return `${s.nextIn} 秒后自动开始下一波`;
+                  }
                   return `开始第 ${s.wave + 1} 波`;
                 });
               });
@@ -831,6 +835,7 @@
           lives: 20,
           waveNumber: 0,
           waveActive: false,
+          countdownMs: 0,
           gameOver: false,
           message: '选择炮塔类型后悬停空地预览攻击范围，点击放置',
           selectedType: null,
@@ -881,6 +886,21 @@
           return enemy;
         }
 
+        // 开新一波：手动点击或自动倒计时结束都走这里，避免两处重复逻辑。
+        function beginWave() {
+          if (model.gameOver || model.waveActive) {
+            return false;
+          }
+
+          model.countdownMs = 0;
+          model.waveNumber += 1;
+          model.spawnQueue = buildWavePlan(model.waveNumber);
+          model.spawnClock = 0;
+          model.waveActive = true;
+          model.message = `第 ${model.waveNumber} 波来袭`;
+          return true;
+        }
+
         return {
           stats() {
             return {
@@ -888,6 +908,7 @@
               lives: model.lives,
               wave: model.waveNumber,
               waveActive: model.waveActive,
+              nextIn: Math.ceil(model.countdownMs / 1000),
               gameOver: model.gameOver,
               selectedType: model.selectedType,
               message: model.message
@@ -975,14 +996,7 @@
           },
 
           startWave() {
-            if (model.gameOver || model.waveActive) {
-              return;
-            }
-            model.waveNumber += 1;
-            model.spawnQueue = buildWavePlan(model.waveNumber);
-            model.spawnClock = 0;
-            model.waveActive = true;
-            model.message = `第 ${model.waveNumber} 波来袭`;
+            return beginWave();
           },
 
           update(dtMs, now) {
@@ -1089,7 +1103,14 @@
 
             if (model.waveActive && model.spawnQueue.length === 0 && model.enemies.length === 0) {
               model.waveActive = false;
-              model.message = `第 ${model.waveNumber} 波已清除，准备下一波`;
+              // 波次清空后进入 10 秒倒计时，倒计时结束自动开始下一波。
+              model.countdownMs = 10000;
+              model.message = `第 ${model.waveNumber} 波已清除，10 秒后自动开始下一波`;
+            } else if (!model.waveActive && !model.gameOver && model.countdownMs > 0) {
+              model.countdownMs = Math.max(0, model.countdownMs - dtMs);
+              if (model.countdownMs === 0) {
+                beginWave();
+              }
             }
           }
         };
