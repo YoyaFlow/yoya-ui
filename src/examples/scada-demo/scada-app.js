@@ -64,18 +64,26 @@ export function ScadaTwinStandalone() {
     camera: null,
     canvas: null,
     cleanups: [],
-    drag: null,
     keys: new Set(),
+    lastPointer: null,
     layerGroup: null,
     marker: null,
     pointerLocked: false,
     renderer: null,
-    suppressClick: false,
+    statusOpen: false,
+    targetDeviceId: null,
     timer: null,
     view: { ...START_VIEW }
   };
   const deviceButtons = new Map();
-  const ui = { alarmPanel: null, detailPanel: null, lockHint: null, statsPanel: null };
+  const ui = {
+    alarmPanel: null,
+    detailPanel: null,
+    lockHint: null,
+    reticleText: null,
+    statsPanel: null,
+    statusWindow: null
+  };
 
   function updateCamera() {
     const { camera, view } = runtime;
@@ -87,13 +95,6 @@ export function ScadaTwinStandalone() {
     camera.rotation.y = view.yaw;
     camera.rotation.x = view.pitch;
     camera.rotation.z = 0;
-  }
-
-  function selectDevice(deviceId) {
-    selectedDeviceId = deviceId;
-    updateDeviceButtons();
-    updateMarker();
-    refreshHud(true);
   }
 
   function updateDeviceButtons() {
@@ -111,122 +112,103 @@ export function ScadaTwinStandalone() {
     updateSelectMarker(runtime.marker, state, key, selected);
   }
 
-  function pointerWorld(event) {
-    const host = event.currentTarget;
-    const rect = host.getBoundingClientRect();
-    const pointer = new THREE.Vector2(
-      ((event.clientX - rect.left) / rect.width) * 2 - 1,
-      -((event.clientY - rect.top) / rect.height) * 2 + 1
-    );
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(pointer, runtime.camera);
-    const target = new THREE.Vector3();
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    return raycaster.ray.intersectPlane(plane, target) ? { x: target.x, z: target.z } : null;
-  }
-
-  function handleClick(event) {
-    if (runtime.suppressClick) {
-      runtime.suppressClick = false;
-      return;
-    }
-    if (!runtime.camera) {
-      return;
-    }
-    if (!runtime.pointerLocked && canRequestLock()) {
-      requestLock();
-      return;
-    }
-    const point = pointerWorld(event);
-    selectDevice(point ? pickDevice(state, point) : null);
-  }
-
-  function canRequestLock() {
-    return typeof runtime.canvas?.requestPointerLock === 'function';
-  }
-
-  function requestLock() {
-    if (!canRequestLock()) {
-      return;
-    }
-    try {
-      const result = runtime.canvas.requestPointerLock();
-      if (result && typeof result.catch === 'function') {
-        result.catch(() => updateLockHint());
-      }
-    } catch {
-      // 某些浏览器需要用户手势或 iframe 权限，失败时继续用鼠标拖动视角。
-      updateLockHint();
-    }
-  }
-
   function exitLock() {
     if (typeof document.exitPointerLock === 'function') {
       document.exitPointerLock();
     }
   }
 
-  function updateHover(event) {
-    if (runtime.pointerLocked || !runtime.marker || !runtime.camera) {
-      return;
-    }
-    const point = pointerWorld(event);
-    updateMarker(point ? pickDevice(state, point) : null);
-  }
-
   function handleContextMenu(event) {
     event.preventDefault();
   }
 
-  function startDrag(event) {
-    if (!runtime.pointerLocked && (event.button === 0 || event.button === 2)) {
-      runtime.drag = {
-        moved: false,
-        startX: event.clientX,
-        startY: event.clientY,
-        x: event.clientX,
-        y: event.clientY
-      };
-      event.preventDefault();
+  function centerPoint() {
+    if (!runtime.camera) {
+      return null;
     }
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), runtime.camera);
+    const target = new THREE.Vector3();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    return raycaster.ray.intersectPlane(plane, target) ? { x: target.x, z: target.z } : null;
   }
 
-  function moveDrag(event) {
-    if (runtime.pointerLocked) {
+  function updateCenterTarget() {
+    if (!runtime.camera || !runtime.marker) {
       return;
     }
-    if (!runtime.drag) {
-      updateHover(event);
+    const point = centerPoint();
+    const next = point ? pickDevice(state, point) : null;
+    runtime.targetDeviceId = next;
+    if (next && next !== selectedDeviceId) {
+      selectedDeviceId = next;
+      updateDeviceButtons();
+      refreshHud(true);
+    }
+    updateMarker();
+    const device = next ? DEVICE_DEFS.find((entry) => entry.id === next) : null;
+    ui.reticleText?.textContent(device ? `${device.id} ${device.name}` : '—');
+  }
+
+  function focusDevice(deviceId) {
+    const device = DEVICE_DEFS.find((entry) => entry.id === deviceId);
+    if (!device) {
       return;
     }
-    const distance = Math.hypot(
-      event.clientX - runtime.drag.startX,
-      event.clientY - runtime.drag.startY
-    );
-    if (distance > 3) {
-      runtime.drag.moved = true;
-    }
-    const dx = event.clientX - runtime.drag.x;
-    const dy = event.clientY - runtime.drag.y;
-    runtime.drag.x = event.clientX;
-    runtime.drag.y = event.clientY;
-    if (!runtime.drag.moved) {
+    selectedDeviceId = deviceId;
+    updateDeviceButtons();
+    updateMarker();
+    refreshHud(true);
+    const targetX = device.col - (state.cols - 1) / 2;
+    const targetZ = device.row - (state.rows - 1) / 2;
+    const dx = targetX - runtime.view.x;
+    const dz = targetZ - runtime.view.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance < 0.01) {
       return;
     }
-    runtime.view.yaw -= dx * 0.006;
-    runtime.view.pitch = clamp(runtime.view.pitch - dy * 0.005, -1.2, 1.2);
+    runtime.view.yaw = Math.atan2(-dx, -dz);
+    runtime.view.pitch = clamp(-Math.atan2(Math.max(runtime.view.y - 1, 0.2), distance), -1.2, 1.2);
     updateCamera();
+    updateCenterTarget();
   }
 
-  function finishDrag() {
-    if (runtime.drag?.moved && runtime.drag.button === 0) {
-      runtime.suppressClick = true;
+  function handleClick() {
+    if (runtime.camera) {
+      updateCenterTarget();
     }
-    endDrag();
   }
 
-  function endDrag() {
-    runtime.drag = null;
+  function handleCanvasMove(event) {
+    if (runtime.statusOpen) {
+      return;
+    }
+    let dx = 0;
+    let dy = 0;
+    if (runtime.pointerLocked) {
+      dx = event.movementX;
+      dy = event.movementY;
+    } else if (runtime.lastPointer) {
+      dx = event.clientX - runtime.lastPointer.x;
+      dy = event.clientY - runtime.lastPointer.y;
+    }
+    runtime.lastPointer = { x: event.clientX, y: event.clientY };
+    if (dx === 0 && dy === 0) {
+      return;
+    }
+    runtime.view.yaw -= dx * 0.0022;
+    runtime.view.pitch = clamp(runtime.view.pitch - dy * 0.0022, -1.2, 1.2);
+    updateCamera();
+    updateCenterTarget();
+  }
+
+  function toggleStatusWindow() {
+    runtime.statusOpen = !runtime.statusOpen;
+    if (runtime.statusOpen) {
+      exitLock();
+    }
+    ui.statusWindow?.setState({ open: runtime.statusOpen });
+    updateLockHint();
   }
 
   function handlePointerLockChange() {
@@ -242,30 +224,24 @@ export function ScadaTwinStandalone() {
     if (!ui.lockHint) {
       return;
     }
+    if (runtime.statusOpen) {
+      ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
+      return;
+    }
     if (runtime.pointerLocked) {
-      ui.lockHint.textContent(
-        '移动：WASD · 空格上升 · V 下降 · Shift 加速 · 左键选择设备 · Esc 退出'
-      );
+      ui.lockHint.textContent('移动：WASD · 空格上升 · V 下降 · Shift 加速 · Esc 退出锁定');
       return;
     }
-    ui.lockHint.textContent(
-      canRequestLock()
-        ? '点击进入鼠标视角；未锁定：按住左/右键拖动旋转 · WASD 飞行'
-        : '按住左键或右键拖动旋转视角 · WASD 移动 · 空格/V 升降'
-    );
-  }
-
-  function handleMouseMove(event) {
-    if (!runtime.pointerLocked) {
-      return;
-    }
-    runtime.view.yaw -= event.movementX * 0.0022;
-    runtime.view.pitch = clamp(runtime.view.pitch - event.movementY * 0.0022, -1.2, 1.2);
-    updateCamera();
+    ui.lockHint.textContent('鼠标移动即旋转视角 · WASD 飞行 · 空格/V 升降 · Alt/Tab 状态窗口');
   }
 
   function handleKeyDown(event) {
     if (event.repeat) {
+      return;
+    }
+    if (event.code === 'Tab' || event.code.startsWith('Alt')) {
+      event.preventDefault();
+      toggleStatusWindow();
       return;
     }
     if (event.code === 'Space' || event.code.startsWith('Arrow') || event.code === 'KeyV') {
@@ -275,7 +251,7 @@ export function ScadaTwinStandalone() {
     if (event.code.startsWith('Digit')) {
       const index = Number(event.code.slice(5)) - 1;
       if (DEVICE_DEFS[index]) {
-        selectDevice(DEVICE_DEFS[index].id);
+        focusDevice(DEVICE_DEFS[index].id);
       }
       return;
     }
@@ -318,6 +294,24 @@ export function ScadaTwinStandalone() {
   function selectedPumpId() {
     const device = DEVICE_DEFS.find((entry) => entry.id === selectedDeviceId);
     return device?.type === 'pump' ? device.id : null;
+  }
+
+  function createStatusWindow() {
+    return vStateNode({
+      state: () => ({ open: false }),
+      render(current) {
+        return div((panel) => {
+          panel.className('scada-status-window');
+          panel.attr('data-open', current.open ? 'true' : 'false');
+          if (!current.open) {
+            panel.style({ display: 'none' });
+            return;
+          }
+          panel.h3('状态窗口');
+          panel.p('内容暂空 · 按 Alt 或 Tab 关闭');
+        });
+      }
+    });
   }
 
   function createStatsPanel() {
@@ -546,6 +540,9 @@ export function ScadaTwinStandalone() {
   }
 
   function movePlayer(delta) {
+    if (runtime.statusOpen) {
+      return;
+    }
     const keys = runtime.keys;
     const speed = keys.has('ShiftLeft') || keys.has('ShiftRight') ? RUN_SPEED : WALK_SPEED;
     let forward = 0;
@@ -588,7 +585,6 @@ export function ScadaTwinStandalone() {
   function bindWindowInputs() {
     runtime.cleanups.push(bindWindowEvent('keydown', handleKeyDown));
     runtime.cleanups.push(bindWindowEvent('keyup', handleKeyUp));
-    runtime.cleanups.push(bindWindowEvent('mousemove', handleMouseMove));
     runtime.cleanups.push(bindWindowEvent('pointerlockchange', handlePointerLockChange));
   }
 
@@ -626,6 +622,7 @@ export function ScadaTwinStandalone() {
     }
     const delta = Math.min(runtime.timer.getDelta(), 0.25);
     movePlayer(delta);
+    updateCenterTarget();
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
     if (runtime.accumulator >= step) {
@@ -649,12 +646,11 @@ export function ScadaTwinStandalone() {
     three.onFrame(frameTick);
   });
   threeNode.on('click', handleClick);
-  threeNode.on('pointercancel', endDrag);
-  threeNode.on('pointerdown', startDrag);
   threeNode.on('contextmenu', handleContextMenu);
-  threeNode.on('pointerleave', endDrag);
-  threeNode.on('pointermove', moveDrag);
-  threeNode.on('pointerup', finishDrag);
+  threeNode.on('pointerleave', () => {
+    runtime.lastPointer = null;
+  });
+  threeNode.on('pointermove', handleCanvasMove);
 
   return {
     destroy() {
@@ -669,7 +665,9 @@ export function ScadaTwinStandalone() {
       ui.statsPanel = createStatsPanel();
       ui.detailPanel = createDetailPanel();
       ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = vText('点击画面进入第一人称视角');
+      ui.lockHint = vText('鼠标移动即旋转视角 · Alt/Tab 状态窗口');
+      ui.reticleText = vText('—');
+      ui.statusWindow = createStatusWindow();
 
       rootNode = div((root) => {
         root.className('scada-twin');
@@ -739,7 +737,7 @@ export function ScadaTwinStandalone() {
               list.style({ display: 'grid', gap: '6px' });
               DEVICE_DEFS.forEach((device, index) => {
                 const button = vButton(`${index + 1} ${device.id} ${device.name}`, (entry) => {
-                  entry.on('click', () => selectDevice(device.id));
+                  entry.on('click', () => focusDevice(device.id));
                 });
                 deviceButtons.set(device.id, button);
                 list.child(button);
@@ -785,6 +783,24 @@ export function ScadaTwinStandalone() {
             });
           });
 
+          hud.div((reticleWrap) => {
+            reticleWrap.className('scada-reticle-wrap');
+            reticleWrap.style({
+              left: '50%',
+              pointerEvents: 'none',
+              position: 'absolute',
+              top: '50%',
+              transform: 'translate(-50%, -50%)'
+            });
+            reticleWrap.div((reticle) => {
+              reticle.className('scada-reticle');
+            });
+            reticleWrap.div((label) => {
+              label.className('scada-reticle-label');
+              label.child(ui.reticleText);
+            });
+          });
+
           hud.div((bottomCenter) => {
             bottomCenter.className('hud-panel scada-bottom-center');
             bottomCenter.style({
@@ -797,6 +813,8 @@ export function ScadaTwinStandalone() {
             });
             bottomCenter.p('WASD 水平移动 · 空格上升 · V 下降 · Shift 加速 · 1-4 选择设备');
           });
+
+          hud.child(ui.statusWindow);
         });
       });
       return rootNode;
