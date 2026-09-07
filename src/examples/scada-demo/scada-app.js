@@ -540,12 +540,16 @@ export function ScadaTwinStandalone() {
     }
 
     const yaw = runtime.view.yaw;
-    const forwardX = -Math.sin(yaw);
-    const forwardZ = -Math.cos(yaw);
+    const pitch = runtime.view.pitch;
+    const cosPitch = Math.cos(pitch);
+    const forwardX = -Math.sin(yaw) * cosPitch;
+    const forwardY = Math.sin(pitch);
+    const forwardZ = -Math.cos(yaw) * cosPitch;
     const rightX = Math.cos(yaw);
     const rightZ = -Math.sin(yaw);
     const length = Math.hypot(forward, strafe) || 1;
     runtime.view.x += ((forwardX * forward + rightX * strafe) / length) * speed * delta;
+    runtime.view.y += ((forwardY * forward) / length) * speed * delta;
     runtime.view.z += ((forwardZ * forward + rightZ * strafe) / length) * speed * delta;
     runtime.view.y = clamp(runtime.view.y + vertical * speed * 1.5 * delta, MIN_VIEW_Y, MAX_VIEW_Y);
     runtime.view.x = clamp(runtime.view.x, -40, 40);
@@ -608,6 +612,7 @@ export function ScadaTwinStandalone() {
 
   const threeNode = vThree((three) => {
     three.threeLib(THREE);
+    three.height('100%');
     three.rendererOptions({
       antialias: true,
       powerPreference: 'high-performance'

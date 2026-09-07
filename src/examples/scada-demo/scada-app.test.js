@@ -194,6 +194,8 @@ describe('scada twin standalone', () => {
     expect(element.querySelectorAll('.scada-viewport')).toHaveLength(1);
     expect(element.textContent).toContain('设备详情');
     expect(element.textContent).toContain('T-101 储水罐');
+    const host = element.querySelector('.yoya-vthree');
+    expect(host.style.height).toBe('100%');
 
     frames.shift()();
     frames.shift()();
@@ -201,7 +203,6 @@ describe('scada twin standalone', () => {
     expect(element.textContent).toContain('报警记录');
     expect(element.textContent).toContain('运行泵');
 
-    const host = element.querySelector('.yoya-vthree');
     host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2 }));
     host.dispatchEvent(
       new MouseEvent('pointermove', { bubbles: true, button: 2, clientX: 120, clientY: 80 })
