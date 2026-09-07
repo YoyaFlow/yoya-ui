@@ -819,6 +819,30 @@ const thirdPartyExtraRules = [
   ['.components-echarts-demo .yoya-vechart', { minWidth: '0' }]
 ];
 
+const threeExtraRules = [
+  ['.components-three-page', { display: 'grid', gap: '20px' }],
+  ['.components-three-page h1', { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }],
+  ['.components-three-page > p', { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }],
+  [
+    '.components-three-grid',
+    {
+      display: 'grid',
+      gap: '16px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+      minWidth: '0',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-three-demo-live',
+    {
+      minWidth: '0',
+      padding: '16px'
+    }
+  ],
+  ['.components-three-demo-live .yoya-vthree', { minWidth: '0' }]
+];
+
 const signalsExtraRules = [
   ['.components-signals-page', { display: 'grid', gap: '20px' }],
   [
@@ -1005,6 +1029,7 @@ const demoRules = [
   ...iconExtraRules,
   ...svgExtraRules,
   ...thirdPartyExtraRules,
+  ...threeExtraRules,
   ...signalsExtraRules,
   ...definitionExtraRules,
   ...i18nExtraRules,

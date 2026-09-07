@@ -13,6 +13,7 @@ const libraryDirs = [
   'src/form',
   'src/data-display',
   'src/chart',
+  'src/three',
   'src/async',
   'src/i18n',
   'src/router',

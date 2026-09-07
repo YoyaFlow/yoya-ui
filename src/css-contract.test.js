@@ -111,7 +111,8 @@ const navigationSelectors = [
   ".yoya-vprogress[data-size='large'] .yoya-vprogress-track",
   ".yoya-vprogress[data-indeterminate='true'] .yoya-vprogress-bar",
   '@keyframes yoya-vprogress-indeterminate',
-  '.yoya-vechart'
+  '.yoya-vechart',
+  '.yoya-vthree'
 ];
 
 const avatarSelectors = [

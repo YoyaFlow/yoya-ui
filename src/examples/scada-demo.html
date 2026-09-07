@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>工业 SCADA · 第一人称数字孪生</title>
+    <style>
+      body {
+        background: #0b1220;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      #app {
+        height: 100vh;
+      }
+
+      .scada-viewport {
+        touch-action: none;
+      }
+
+      .scada-viewport canvas {
+        cursor: auto;
+      }
+
+      .hud-panel {
+        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.76);
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        border-radius: 12px;
+        box-sizing: border-box;
+        color: #e2e8f0;
+        padding: 10px 12px;
+        pointer-events: auto;
+      }
+
+      .hud-panel h3 {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+
+      .hud-panel p {
+        font-size: 13px;
+        margin: 4px 0;
+      }
+
+      .scada-top-left h1 {
+        font-size: 1.25rem;
+        margin: 0;
+      }
+
+      .scada-top-left p {
+        margin: 2px 0;
+      }
+
+      .scada-device-hud [data-selected='true'] {
+        outline: 2px solid #38bdf8;
+        outline-offset: 1px;
+      }
+
+      .scada-alarm-hud {
+        scrollbar-width: thin;
+      }
+
+      .scada-reticle-wrap {
+        z-index: 5;
+      }
+
+      .scada-reticle {
+        background: rgba(148, 163, 184, 0.06);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        border-radius: 12px;
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+          0 0 18px rgba(2, 6, 23, 0.7);
+        height: 84px;
+        position: relative;
+        width: 132px;
+      }
+
+      .scada-reticle::before,
+      .scada-reticle::after {
+        background: rgba(226, 232, 240, 0.92);
+        content: '';
+        left: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .scada-reticle::before {
+        height: 22px;
+        width: 2px;
+      }
+
+      .scada-reticle::after {
+        height: 2px;
+        width: 22px;
+      }
+
+      .scada-reticle-label {
+        background: rgba(15, 23, 42, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 6px;
+        color: #e2e8f0;
+        font-size: 13px;
+        left: 50%;
+        margin-top: 8px;
+        padding: 2px 10px;
+        position: absolute;
+        text-align: center;
+        top: 90px;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+
+      .scada-lock-banner {
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        border-radius: 10px;
+        box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+        color: #e2e8f0;
+        cursor: pointer;
+        font-size: 13px;
+        left: 50%;
+        line-height: 1.65;
+        max-width: min(620px, calc(100vw - 32px));
+        padding: 10px 14px;
+        pointer-events: auto;
+        position: absolute;
+        top: 96px;
+        transform: translateX(-50%);
+        z-index: 8;
+      }
+
+      .scada-status-window {
+        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 14px;
+        box-sizing: border-box;
+        color: #e2e8f0;
+        left: 50%;
+        min-height: 120px;
+        min-width: 300px;
+        padding: 16px 18px;
+        pointer-events: auto;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+      }
+
+      .scada-status-window h3 {
+        margin: 0 0 10px;
+      }
+
+      .scada-status-window p {
+        color: #94a3b8;
+        font-size: 13px;
+        margin: 0;
+      }
+
+      .scada-bottom-center p {
+        color: #cbd5e1;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import '../yoya.ui.css';
+      import { ScadaTwinStandalone } from './scada-demo/scada-app.js';
+
+      ScadaTwinStandalone().render().bindTo('#app');
+    </script>
+  </body>
+</html>

@@ -34,6 +34,8 @@ export default defineConfig({
         'grid-responsive': 'grid-responsive.html',
         index: 'Index.html',
         'ssr-demo': 'ssr-demo.html',
+        'scada-demo': 'scada-demo.html',
+        'factory-game': 'factory-game.html',
         'declarative-router': 'declarative-router.html',
         'router-async': 'router-async.html',
         'router-history': 'router-history.html',

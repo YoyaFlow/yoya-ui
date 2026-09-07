@@ -213,6 +213,7 @@ dist/
   yoya.ui.js        # 浏览器入口（ESM）
   yoya.core.js      # 核心入口
   yoya.echart.js    # ECharts 组件入口（不包含 echarts 本体）
+  yoya.three.js     # Three.js 组件入口（不包含 three 本体）
   yoya.ssr.js       # 服务端/客户端共用：renderToString / hydrate / mount
   echarts.min.js    # ECharts 本体（用 script 标签引入）
   yoya.ui.css       # 样式

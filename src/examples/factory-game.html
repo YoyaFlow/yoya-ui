@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>工业自动化原型</title>
+    <style>
+      body {
+        background: #f5f7fa;
+        color: #172033;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      #app {
+        min-height: 100vh;
+      }
+
+      .factory-game h1 {
+        font-size: 1.45rem;
+        margin: 0;
+      }
+
+      .factory-game > p {
+        color: #5a6575;
+        margin: 8px 0 0;
+      }
+
+      .factory-toolbar [data-tool-active='true'] {
+        outline: 2px solid var(--yoya-color-primary, #2563eb);
+        outline-offset: 1px;
+      }
+
+      .factory-viewport {
+        cursor: grab;
+        height: 460px;
+        touch-action: none;
+      }
+
+      .factory-viewport:active {
+        cursor: grabbing;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import '../yoya.ui.css';
+      import { FactoryGameStandalone } from './factory-game/factory-app.js';
+
+      FactoryGameStandalone().render().bindTo('#app');
+    </script>
+  </body>
+</html>

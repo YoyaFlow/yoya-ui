@@ -78,6 +78,10 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./chart/echart.test.js')).toBe(true);
     expect(existsInSrc('./chart/echarts.min.js')).toBe(true);
     expect(existsInSrc('./yoya.echart.js')).toBe(true);
+    expect(existsInSrc('./three/index.js')).toBe(true);
+    expect(existsInSrc('./three/three.js')).toBe(true);
+    expect(existsInSrc('./three/three.test.js')).toBe(true);
+    expect(existsInSrc('./yoya.three.js')).toBe(true);
     expect(existsInSrc('./yoya.ssr.js')).toBe(true);
     expect(existsInSrc('./feedback/message-manager.js')).toBe(true);
     expect(existsInSrc('./feedback/message-manager.test.js')).toBe(true);
@@ -88,6 +92,7 @@ describe('foundation module structure', () => {
 
     expect(existsInSrc('./chart.js')).toBe(false);
     expect(existsInSrc('./chart.test.js')).toBe(false);
+    expect(existsInSrc('./three.js')).toBe(false);
     expect(existsInSrc('./code-block.js')).toBe(false);
     expect(existsInSrc('./code-block.test.js')).toBe(false);
     expect(existsInSrc('./dynamic-loader.js')).toBe(false);
@@ -127,6 +132,7 @@ describe('foundation module structure', () => {
     const coreEntry = await importFromSrc('./yoya.core.js');
     const uiEntry = await importFromSrc('./yoya.ui.js');
     const echartEntry = await importFromSrc('./yoya.echart.js');
+    const threeEntry = await importFromSrc('./yoya.three.js');
 
     expect(api.div).toBe(html.div);
     expect(api.svg).toBe(svg.svg);
@@ -140,6 +146,7 @@ describe('foundation module structure', () => {
     expect(api.HtmlElementNode).toBeTypeOf('function');
     expect(api.SvgElementNode).toBeTypeOf('function');
     expect(api.vEchart).toBeUndefined();
+    expect(api.vThree).toBeUndefined();
     expect(api.SearchOutlined).toBeTypeOf('function');
     expect(api.circle).toBeUndefined();
     expect(api.vButton).toBe(actions.vButton);
@@ -261,6 +268,8 @@ describe('foundation module structure', () => {
     expect(uiEntry.vRate).toBe(form.vRate);
     expect(echartEntry.vEchart).toBeTypeOf('function');
     expect(echartEntry.VEchart).toBeTypeOf('function');
+    expect(threeEntry.vThree).toBeTypeOf('function');
+    expect(threeEntry.VThree).toBeTypeOf('function');
     expect(uiEntry.router).toBe(routerModule.router);
   });
 

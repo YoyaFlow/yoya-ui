@@ -6,6 +6,7 @@ const entries = [
   ['core', 'src/yoya.core.js'],
   ['devtools', 'src/yoya.devtools.js'],
   ['echart', 'src/yoya.echart.js'],
+  ['three', 'src/yoya.three.js'],
   ['ssr', 'src/yoya.ssr.js']
 ];
 

@@ -28,6 +28,7 @@ import {
 } from 'yoya-ui';
 import { ElementNode, vStateNode } from 'yoya-ui/core';
 import { vEchart } from 'yoya-ui/echart';
+import { vThree } from 'yoya-ui/three';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/ssr';
 import {
   disableDevtools,
@@ -163,6 +164,15 @@ void mounted;
 vEchart((chart) => {
   chart.option({ series: [] });
   chart.height('300px');
+});
+
+// Three.js component and lifecycle api.
+vThree((three) => {
+  three.autoRender(false);
+  three.height('320px');
+  three.onReady(({ renderer, scene }) => {
+    renderer.render(scene, three.getCamera());
+  });
 });
 
 SearchOutlined().className('yoya-icon');
