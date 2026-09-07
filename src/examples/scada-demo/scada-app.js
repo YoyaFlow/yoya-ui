@@ -29,6 +29,9 @@ const MIN_VIEW_Y = 0.8;
 const MAX_VIEW_Y = 80;
 // 标准 FPS：yaw -= movementX * sensitivity，pitch -= movementY * sensitivity
 const LOOK_SENSITIVITY = 0.005;
+const EDGE_YAW_SPEED = 4.5;
+const EDGE_PITCH_SPEED = 2.5;
+const EDGE_LIMIT = 0.93;
 
 function createDeltaTimer(threeLib) {
   if (typeof threeLib.Timer === 'function') {
@@ -70,6 +73,7 @@ export function ScadaTwinStandalone() {
     lastPointer: null,
     layerGroup: null,
     marker: null,
+    pointer: { has: false, x: 0, y: 0 },
     pointerLocked: false,
     renderer: null,
     statusOpen: false,
@@ -214,6 +218,17 @@ export function ScadaTwinStandalone() {
       dy = event.clientY - runtime.lastPointer.y;
     }
     runtime.lastPointer = { x: event.clientX, y: event.clientY };
+    if (!runtime.pointerLocked) {
+      const host = event.currentTarget;
+      const rect = host.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        runtime.pointer = {
+          has: true,
+          x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          y: -((event.clientY - rect.top) / rect.height) * 2 + 1
+        };
+      }
+    }
     if (!dx && !dy) {
       return;
     }
@@ -223,11 +238,34 @@ export function ScadaTwinStandalone() {
     updateCenterTarget();
   }
 
+  function applyEdgeSteering(delta) {
+    if (runtime.pointerLocked || runtime.statusOpen || !runtime.pointer.has) {
+      return;
+    }
+    const x = runtime.pointer.x;
+    const y = runtime.pointer.y;
+    if (Math.abs(x) < EDGE_LIMIT && Math.abs(y) < EDGE_LIMIT) {
+      return;
+    }
+    if (Math.abs(x) >= EDGE_LIMIT) {
+      runtime.view.yaw -= Math.sign(x) * EDGE_YAW_SPEED * delta;
+    }
+    if (Math.abs(y) >= EDGE_LIMIT) {
+      runtime.view.pitch = clamp(
+        runtime.view.pitch + Math.sign(y) * EDGE_PITCH_SPEED * delta,
+        -1.2,
+        1.2
+      );
+    }
+    updateCamera();
+  }
+
   function toggleStatusWindow() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
       runtime.lastPointer = null;
+      runtime.pointer.has = false;
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
     syncReticleVisibility();
@@ -239,6 +277,7 @@ export function ScadaTwinStandalone() {
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
       runtime.lastPointer = null;
+      runtime.pointer.has = false;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -271,8 +310,8 @@ export function ScadaTwinStandalone() {
     }
     ui.lockHint.textContent(
       canRequestLock()
-        ? '点击画面锁定 FPS（推荐）；未锁定：光标偏出中心持续转向，回中停止'
-        : '未锁定：光标偏出中心持续转向，回中停止 · WASD 飞行'
+        ? '点击画面锁定 FPS（推荐）；未锁定：光标贴住边缘会持续转向'
+        : '未锁定：光标贴住边缘会持续转向 · WASD 飞行'
     );
   }
 
@@ -663,6 +702,7 @@ export function ScadaTwinStandalone() {
     }
     const delta = Math.min(runtime.timer.getDelta(), 0.25);
     movePlayer(delta);
+    applyEdgeSteering(delta);
     updateCenterTarget();
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
@@ -690,6 +730,7 @@ export function ScadaTwinStandalone() {
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', () => {
     runtime.lastPointer = null;
+    runtime.pointer.has = false;
   });
   threeNode.on('pointermove', handleCanvasMove);
 
