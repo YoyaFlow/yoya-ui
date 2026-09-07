@@ -26,10 +26,12 @@ Seven reasons, in short:
 ## Positioning: a universal glue base, not a walled-garden framework
 
 yoya-ui does not try to replace the web. It treats the real DOM as the
-**interoperability boundary**: views are built with plain JavaScript functions
-that describe real DOM nodes, and any library that can mount into a DOM node is
-a first-class citizen. Built-in components exist for convenience, not as the
-limit of the platform.
+**interoperability boundary**: views are plain JavaScript functions that compose
+into a ViewNode tree, and each ViewNode is the **handle** for the underlying
+DOM — element creation, mounting (`bindTo`), update commits (`commit`) and
+disposal (`destroy`) all flow through its lifecycle. Any library that can mount
+into a DOM node is a first-class citizen. Built-in components exist for
+convenience, not as the limit of the platform.
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
