@@ -248,7 +248,7 @@ describe('scada twin standalone', () => {
     app.destroy();
   });
 
-  it('does not break clicks when pointer lock is unavailable', () => {
+  it('falls back to drag-look and center selection when pointer lock is unavailable', () => {
     const frames = [];
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       frames.push(callback);
@@ -264,7 +264,15 @@ describe('scada twin standalone', () => {
     frames.shift()();
 
     const host = element.querySelector('.yoya-vthree');
-    host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }));
+    host.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 120, clientY: 100 })
+    );
+    host.dispatchEvent(
+      new MouseEvent('pointermove', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
+    );
+    host.dispatchEvent(
+      new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
+    );
     host.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
 
     expect(element.querySelector('.scada-reticle-wrap').style.display).not.toBe('none');

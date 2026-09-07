@@ -73,6 +73,7 @@ export function ScadaTwinStandalone() {
     camera: null,
     canvas: null,
     cleanups: [],
+    drag: null,
     keys: new Set(),
     lockDenied: false,
     lockDeniedAt: 0,
@@ -86,6 +87,7 @@ export function ScadaTwinStandalone() {
     pointerLocked: false,
     renderer: null,
     statusOpen: false,
+    suppressClick: false,
     targetDeviceId: null,
     timer: null,
     view: { ...START_VIEW }
@@ -195,9 +197,43 @@ export function ScadaTwinStandalone() {
     if (runtime.statusOpen || event.button !== 0) {
       return;
     }
+    runtime.suppressClick = false;
+    if (runtime.pointerLocked) {
+      return;
+    }
+    // 无锁定回退（内嵌预览 / iframe）：按住左键拖拽转向。
+    // Pointer Capture 让光标移出预览区边缘后仍持续上报位移，实现无边界旋转。
+    runtime.drag = {
+      lastX: event.clientX,
+      lastY: event.clientY,
+      moved: false
+    };
+    try {
+      runtime.canvas?.setPointerCapture?.(event.pointerId);
+    } catch {
+      // 部分环境不支持 capture，退化为窗口内拖拽。
+    }
     // FPS 标准：用户手势内请求锁定，浏览器隐藏系统光标并持续提供相对位移。
-    if (!runtime.pointerLocked && canRequestLock() && !runtime.lockUnavailable) {
+    if (canRequestLock() && !runtime.lockUnavailable) {
       requestLock();
+    }
+  }
+
+  function handlePointerUp(event) {
+    const drag = runtime.drag;
+    if (!drag) {
+      return;
+    }
+    runtime.drag = null;
+    runtime.lastPointer = null;
+    runtime.pointer.has = false;
+    try {
+      runtime.canvas?.releasePointerCapture?.(event.pointerId);
+    } catch {
+      // ignore
+    }
+    if (drag.moved) {
+      runtime.suppressClick = true;
     }
   }
 
@@ -252,6 +288,10 @@ export function ScadaTwinStandalone() {
   }
 
   function handleClick() {
+    if (runtime.suppressClick) {
+      runtime.suppressClick = false;
+      return;
+    }
     if (!runtime.camera || runtime.statusOpen) {
       return;
     }
@@ -273,6 +313,15 @@ export function ScadaTwinStandalone() {
       // 锁定：浏览器持续给出无边界相对位移，视角 1:1 跟随，无平滑、无死角。
       dx = typeof event.movementX === 'number' ? event.movementX : 0;
       dy = typeof event.movementY === 'number' ? event.movementY : 0;
+    } else if (runtime.drag) {
+      // 拖拽转向：capture 后即使光标越出预览区边缘，事件仍持续到达。
+      dx = event.clientX - runtime.drag.lastX;
+      dy = event.clientY - runtime.drag.lastY;
+      runtime.drag.lastX = event.clientX;
+      runtime.drag.lastY = event.clientY;
+      if (Math.abs(dx) + Math.abs(dy) >= 3) {
+        runtime.drag.moved = true;
+      }
     } else {
       // 未锁定回退：直接用两次事件的 client 坐标差模拟相对位移。
       if (runtime.lastPointer) {
@@ -300,7 +349,7 @@ export function ScadaTwinStandalone() {
   }
 
   function applyEdgeSteering(delta) {
-    if (runtime.pointerLocked || runtime.statusOpen || !runtime.pointer.has) {
+    if (runtime.pointerLocked || runtime.statusOpen || runtime.drag || !runtime.pointer.has) {
       return;
     }
     const x = runtime.pointer.x;
@@ -325,6 +374,7 @@ export function ScadaTwinStandalone() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
+      runtime.drag = null;
       runtime.lastPointer = null;
       runtime.pointer.has = false;
     }
@@ -338,6 +388,7 @@ export function ScadaTwinStandalone() {
     runtime.pointerLocked = runtime.canvas && document.pointerLockElement === runtime.canvas;
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
+      runtime.drag = null;
       runtime.lastPointer = null;
       runtime.pointer.has = false;
     } else {
@@ -346,6 +397,8 @@ export function ScadaTwinStandalone() {
       runtime.lockDeniedAt = 0;
       runtime.lockDeniedCount = 0;
       runtime.lockUnavailable = false;
+      runtime.drag = null;
+      runtime.suppressClick = false;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -401,14 +454,14 @@ export function ScadaTwinStandalone() {
     }
     if (runtime.lockUnavailable && canRequestLock()) {
       ui.lockHint.textContent(
-        '当前预览环境无法指针锁定：光标已隐藏，鼠标移动直接转视角 · 建议在浏览器新标签页打开以获得标准 FPS'
+        '当前预览环境无法指针锁定：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向 · 建议在浏览器新标签页打开以获得标准 FPS'
       );
       return;
     }
     ui.lockHint.textContent(
       canRequestLock()
         ? `点击画面锁定指针：视角完全跟随鼠标 · 灵敏度 ${per100px}°/100px（[ ] 调节）`
-        : '指针锁定不可用（可能嵌在 iframe 中）：光标已隐藏，鼠标移动直接转视角 · 建议在浏览器新标签页打开'
+        : '指针锁定不可用（可能嵌在 iframe 中）：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向'
     );
   }
 
@@ -836,8 +889,13 @@ export function ScadaTwinStandalone() {
   });
   threeNode.on('click', handleClick);
   threeNode.on('pointerdown', handlePointerDown);
+  threeNode.on('pointerup', handlePointerUp);
+  threeNode.on('pointercancel', handlePointerUp);
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', () => {
+    if (runtime.drag) {
+      return;
+    }
     runtime.lastPointer = null;
     runtime.pointer.has = false;
   });
