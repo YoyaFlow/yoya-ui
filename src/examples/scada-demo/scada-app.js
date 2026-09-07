@@ -22,10 +22,11 @@ import {
   updateSelectMarker
 } from './scada-render.js';
 
-const START_VIEW = Object.freeze({ pitch: -0.08, x: -7.5, yaw: -0.62, z: 7 });
-const EYE_HEIGHT = 2.2;
+const START_VIEW = Object.freeze({ pitch: -0.08, x: -7.5, y: 2.2, yaw: -0.62, z: 7 });
 const WALK_SPEED = 5;
 const RUN_SPEED = 9.5;
+const MIN_VIEW_Y = 0.8;
+const MAX_VIEW_Y = 80;
 
 function createDeltaTimer(threeLib) {
   if (typeof threeLib.Timer === 'function') {
@@ -80,7 +81,7 @@ export function ScadaTwinStandalone() {
     if (!camera) {
       return;
     }
-    camera.position.set(view.x, EYE_HEIGHT, view.z);
+    camera.position.set(view.x, view.y, view.z);
     camera.rotation.order = 'YXZ';
     camera.rotation.y = view.yaw;
     camera.rotation.x = view.pitch;
@@ -214,13 +215,15 @@ export function ScadaTwinStandalone() {
       return;
     }
     if (runtime.pointerLocked) {
-      ui.lockHint.textContent('移动：WASD · 疾跑：Shift · 左键选择设备 · Esc 退出');
+      ui.lockHint.textContent(
+        '移动：WASD · 空格上升 · V 下降 · Shift 加速 · 左键选择设备 · Esc 退出'
+      );
       return;
     }
     ui.lockHint.textContent(
       canRequestLock()
-        ? '点击画面进入第一人称；未锁定时 WASD 也可移动 · 1-4 选择 · E 启停'
-        : '指针锁定不可用：WASD 移动 · 右键拖动视角 · 1-4 选择 · E 启停'
+        ? '点击进入；未锁定也可 WASD 飞行 · 空格/V 升降 · 1-4 选择'
+        : '自由飞行：WASD 移动 · 空格上升 · V 下降 · 右键拖动视角'
     );
   }
 
@@ -236,6 +239,9 @@ export function ScadaTwinStandalone() {
   function handleKeyDown(event) {
     if (event.repeat) {
       return;
+    }
+    if (event.code === 'Space' || event.code.startsWith('Arrow') || event.code === 'KeyV') {
+      event.preventDefault();
     }
     runtime.keys.add(event.code);
     if (event.code.startsWith('Digit')) {
@@ -528,7 +534,8 @@ export function ScadaTwinStandalone() {
     if (keys.has('KeyD') || keys.has('ArrowRight')) {
       strafe += 1;
     }
-    if (forward === 0 && strafe === 0) {
+    const vertical = (keys.has('Space') ? 1 : 0) - (keys.has('KeyV') ? 1 : 0);
+    if (forward === 0 && strafe === 0 && vertical === 0) {
       return;
     }
 
@@ -540,8 +547,9 @@ export function ScadaTwinStandalone() {
     const length = Math.hypot(forward, strafe) || 1;
     runtime.view.x += ((forwardX * forward + rightX * strafe) / length) * speed * delta;
     runtime.view.z += ((forwardZ * forward + rightZ * strafe) / length) * speed * delta;
-    runtime.view.x = clamp(runtime.view.x, -9.5, 9.5);
-    runtime.view.z = clamp(runtime.view.z, -9.5, 9.5);
+    runtime.view.y = clamp(runtime.view.y + vertical * speed * 1.5 * delta, MIN_VIEW_Y, MAX_VIEW_Y);
+    runtime.view.x = clamp(runtime.view.x, -40, 40);
+    runtime.view.z = clamp(runtime.view.z, -40, 40);
     updateCamera();
   }
 
@@ -754,7 +762,7 @@ export function ScadaTwinStandalone() {
               transform: 'translateX(-50%)',
               whiteSpace: 'nowrap'
             });
-            bottomCenter.p('WASD 移动 · Shift 疾跑 · 1-4 选择设备 · 左键点击进入/选中 · Esc 退出');
+            bottomCenter.p('WASD 水平移动 · 空格上升 · V 下降 · Shift 加速 · 1-4 选择设备');
           });
         });
       });
