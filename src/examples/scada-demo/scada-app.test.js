@@ -216,4 +216,61 @@ describe('scada twin standalone', () => {
     expect(element.textContent).toContain('故障跳闸');
     app.destroy();
   });
+
+  it('keeps the center reticle visible and releases the cursor while the status window is open', () => {
+    const frames = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    const app = ScadaTwinStandalone();
+    const node = app.render();
+    const element = node.renderDom();
+    document.body.appendChild(element);
+    frames.shift()();
+    frames.shift()();
+
+    const root = element;
+    const reticle = element.querySelector('.scada-reticle-wrap');
+    expect(root.classList.contains('scada-twin')).toBe(true);
+    expect(root.getAttribute('data-status')).toBe('closed');
+    expect(reticle.style.display).not.toBe('none');
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'AltLeft' }));
+    expect(root.getAttribute('data-status')).toBe('open');
+    expect(reticle.style.display).toBe('none');
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab' }));
+    expect(root.getAttribute('data-status')).toBe('closed');
+    expect(reticle.style.display).not.toBe('none');
+    app.destroy();
+  });
+
+  it('does not break clicks when pointer lock is unavailable', () => {
+    const frames = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    const app = ScadaTwinStandalone();
+    const node = app.render();
+    const element = node.renderDom();
+    document.body.appendChild(element);
+    frames.shift()();
+    frames.shift()();
+
+    const host = element.querySelector('.yoya-vthree');
+    host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }));
+    host.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+
+    expect(element.querySelector('.scada-reticle-wrap').style.display).not.toBe('none');
+    if (typeof host.querySelector('canvas')?.requestPointerLock !== 'function') {
+      expect(element.textContent).toContain('指针锁定不可用');
+    }
+    app.destroy();
+  });
 });
