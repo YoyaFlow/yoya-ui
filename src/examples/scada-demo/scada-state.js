@@ -11,38 +11,38 @@ export const SUPPLY_RATE = 6;
 export const DEVICE_DEFS = Object.freeze([
   {
     capacity: 100,
-    col: 2,
+    col: 3,
     id: 'T-101',
     name: '储水罐',
-    pickRadius: 1.3,
-    row: 2,
+    pickRadius: 2.6,
+    row: 7,
     type: 'tank'
   },
   {
-    col: 5,
+    col: 8,
     flow: 14,
     id: 'P-101',
     name: '一级给水泵',
-    pickRadius: 0.95,
-    row: 2,
+    pickRadius: 1.8,
+    row: 7,
     type: 'pump'
   },
   {
     capacity: 100,
-    col: 8,
+    col: 13,
     id: 'T-102',
     name: '工艺罐',
-    pickRadius: 1.3,
-    row: 2,
+    pickRadius: 2.6,
+    row: 7,
     type: 'tank'
   },
   {
-    col: 11,
+    col: 17,
     flow: 10,
     id: 'P-102',
     name: '外输泵',
-    pickRadius: 0.95,
-    row: 2,
+    pickRadius: 1.8,
+    row: 7,
     type: 'pump'
   }
 ]);
@@ -57,8 +57,8 @@ const LOW_T101 = Object.freeze({ active: 38, code: 'LOW-T101', recover: 44 });
 const HIGH_T102 = Object.freeze({ active: 90, code: 'HIGH-T102', recover: 84 });
 
 export function createScadaState(options = {}) {
-  const cols = options.cols ?? 14;
-  const rows = options.rows ?? 6;
+  const cols = options.cols ?? 20;
+  const rows = options.rows ?? 12;
   const initialLevels = options.initialLevels ?? { 'T-101': 82, 'T-102': 46 };
   const pumpOverrides = options.pumpOverrides ?? { 'P-101': null, 'P-102': null };
 

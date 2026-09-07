@@ -189,8 +189,9 @@ uses `vThree` as its 3D viewport: a grid-based factory sim with miners, belts
 and assemblers, with yoya-ui widgets for the toolbar and production stats.
 
 A [SCADA digital-twin demo](src/examples/scada-demo.html) presents the same
-stack from an operator perspective: fake-data tank levels, pump states, pipe
-flow and alarms, with click-to-inspect equipment panels built from yoya-ui.
+stack from an operator perspective in a fullscreen first-person walk: fake-data
+tank levels, pump states, pipe flow and alarms, with a game-style HUD and
+hotkeys built from yoya-ui.
 
 ## Why native Web: frameworks expire, standards don't
 

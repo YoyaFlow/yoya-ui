@@ -183,14 +183,14 @@ describe('scada twin standalone', () => {
     document.body.appendChild(element);
 
     expect(element.querySelectorAll('.scada-viewport')).toHaveLength(1);
-    expect(element.textContent).toContain('设备列表');
+    expect(element.textContent).toContain('设备详情');
     expect(element.textContent).toContain('T-101 储水罐');
 
     frames.shift()();
     frames.shift()();
 
     expect(element.textContent).toContain('报警记录');
-    expect(element.textContent).toContain('T-101 液位');
+    expect(element.textContent).toContain('运行泵');
 
     const host = element.querySelector('.yoya-vthree');
     host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2 }));
@@ -200,16 +200,10 @@ describe('scada twin standalone', () => {
     host.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
     host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: -120 }));
 
-    const pumpButton = [...element.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('P-101')
-    );
-    pumpButton.click();
-    const faultButton = [...element.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('触发故障')
-    );
-    faultButton.click();
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF' }));
 
     expect(element.textContent).toContain('故障跳闸');
-    node.destroy();
+    app.destroy();
   });
 });

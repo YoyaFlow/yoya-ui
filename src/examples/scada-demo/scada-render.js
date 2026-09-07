@@ -35,7 +35,7 @@ export function createScadaEnvironment(state) {
   DEVICE_DEFS.forEach((device) => {
     const { x, z } = deviceCenter(state, device.id);
     const pad = new THREE.Mesh(
-      new THREE.CircleGeometry(device.type === 'tank' ? 1.0 : 0.72, 24),
+      new THREE.CircleGeometry(device.type === 'tank' ? 2.25 : 1.4, 28),
       new THREE.MeshStandardMaterial({ color: COLORS.pad, roughness: 0.8 })
     );
     pad.rotation.x = -Math.PI / 2;
@@ -103,7 +103,7 @@ export function updateSelectMarker(marker, state, deviceId, selected) {
   const { x, z } = deviceCenter(state, deviceId);
   marker.position.x = x;
   marker.position.z = z;
-  marker.scale.setScalar(device?.type === 'tank' ? 1.55 : 1.15);
+  marker.scale.setScalar(device?.type === 'tank' ? 2.7 : 1.8);
   marker.material.color.setHex(selected ? 0x38bdf8 : 0xe2e8f0);
   marker.material.opacity = selected ? 0.5 : 0.22;
   marker.visible = true;
@@ -120,11 +120,11 @@ function pipeMesh(state, pipe) {
   const length = Math.abs(endX - startX);
 
   const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.07, length, 10),
+    new THREE.CylinderGeometry(0.16, 0.16, length, 12),
     new THREE.MeshStandardMaterial({ color: COLORS.pipe, roughness: 0.5 })
   );
   body.rotation.z = Math.PI / 2;
-  body.position.set((startX + endX) / 2, 0.16, from.z);
+  body.position.set((startX + endX) / 2, 0.55, from.z);
   mesh.add(body);
 
   const pump = state.pumps[pipe.flowDevice];
@@ -136,10 +136,10 @@ function pipeMesh(state, pipe) {
     const progress = (state.phase + i / 7) % 1;
     const x = startX + (endX - startX) * progress;
     const particle = new THREE.Mesh(
-      new THREE.SphereGeometry(0.075, 8, 6),
+      new THREE.SphereGeometry(0.18, 10, 8),
       new THREE.MeshBasicMaterial({ color: COLORS.activeFlow })
     );
-    particle.position.set(x, 0.26, from.z);
+    particle.position.set(x, 0.82, from.z);
     mesh.add(particle);
   }
   return mesh;
@@ -156,7 +156,7 @@ function deviceMesh(state, device) {
 function tankMesh(state, device, x, z) {
   const group = new THREE.Group();
   const glass = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.72, 0.88, 1.9, 24),
+    new THREE.CylinderGeometry(1.2, 1.5, 4.6, 28),
     new THREE.MeshStandardMaterial({
       color: COLORS.tankGlass,
       opacity: 0.22,
@@ -164,14 +164,14 @@ function tankMesh(state, device, x, z) {
       transparent: true
     })
   );
-  glass.position.y = 0.95;
+  glass.position.y = 2.3;
   group.add(glass);
 
   const ratio = Math.min(1, Math.max(0, state.levels[device.id] / device.capacity));
-  const waterHeight = Math.max(0.08, ratio * 1.62);
+  const waterHeight = Math.max(0.15, ratio * 3.9);
   const color = ratio <= 0.42 ? COLORS.waterLow : COLORS.water;
   const water = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.66, 0.76, waterHeight, 20),
+    new THREE.CylinderGeometry(1.02, 1.26, waterHeight, 24),
     new THREE.MeshStandardMaterial({
       color,
       emissive: color,
@@ -183,11 +183,11 @@ function tankMesh(state, device, x, z) {
   group.add(water);
 
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.8, 0.05, 8, 28),
+    new THREE.TorusGeometry(1.38, 0.1, 10, 32),
     new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4 })
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.y = 1.9;
+  rim.position.y = 4.6;
   group.add(rim);
   group.position.set(x, 0, z);
   return group;
@@ -203,7 +203,7 @@ function pumpMesh(state, device, x, z) {
         : COLORS.pumpStop;
   const group = new THREE.Group();
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.78, 0.66, 0.78),
+    new THREE.BoxGeometry(1.5, 1.35, 1.5),
     new THREE.MeshStandardMaterial({
       color,
       emissive: color,
@@ -211,14 +211,14 @@ function pumpMesh(state, device, x, z) {
       roughness: 0.5
     })
   );
-  body.position.y = 0.33;
+  body.position.y = 0.675;
   group.add(body);
 
   const motor = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.22, 0.4, 16),
+    new THREE.CylinderGeometry(0.4, 0.4, 0.85, 18),
     new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.55 })
   );
-  motor.position.set(0, 0.75, -0.5);
+  motor.position.set(0, 1.6, -0.95);
   group.add(motor);
   group.position.set(x, 0, z);
   return group;
@@ -226,7 +226,7 @@ function pumpMesh(state, device, x, z) {
 
 function edgeOffset(state, deviceId) {
   const device = DEVICE_DEFS.find((entry) => entry.id === deviceId);
-  return device?.type === 'tank' ? 1.05 : 0.55;
+  return device?.type === 'tank' ? 2.3 : 1.25;
 }
 
 function clearGroup(group) {
