@@ -29,7 +29,7 @@ Seven reasons, in short:
 
 Save the snippet below as `index.html` and open it in a browser — no build step
 is needed. The library and styles are loaded from the jsDelivr CDN (an internet
-connection is required). To pin a version, replace `0.3.2` in the URLs.
+connection is required). To pin a version, replace `0.3.3` in the URLs.
 
 ```html
 <!DOCTYPE html>
@@ -39,7 +39,7 @@ connection is required). To pin a version, replace `0.3.2` in the URLs.
     <title>yoya-ui quick start</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -49,7 +49,7 @@ connection is required). To pin a version, replace `0.3.2` in the URLs.
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.2/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
 
       div((page) => {
         page.vButton('Start task', (button) => {
@@ -343,7 +343,7 @@ Star counts measure attention, not correctness. Until this project earns that
 social signal, we publish the engineering signals that actually predict
 long-term viability:
 
-[![Release](https://img.shields.io/badge/release-0.3.2-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/badge/release-0.3.3-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#verification)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)

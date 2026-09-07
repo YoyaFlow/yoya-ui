@@ -27,7 +27,7 @@ yoya-ui 的价值可以浓缩为七点，它们决定了它适合什么样的项
 ### 单页 HTML：复制即用，无需构建
 
 将下面的内容保存为 `index.html`，双击用浏览器打开即可运行；库与样式来自
-jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.2` 换成目标版本即可。
+jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.3` 换成目标版本即可。
 
 ```html
 <!DOCTYPE html>
@@ -37,7 +37,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.2` 换
     <title>yoya-ui 快速体验</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -47,7 +47,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.2` 换
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.2/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
 
       div((page) => {
         page.vButton('开始任务', (button) => {
@@ -320,7 +320,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信号之前，我们先发布
 真正能预测长期生命力的工程信号：
 
-[![Release](https://img.shields.io/badge/release-0.3.2-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/badge/release-0.3.3-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#验证)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-支持)
