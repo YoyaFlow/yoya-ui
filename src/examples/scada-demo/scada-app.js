@@ -32,9 +32,6 @@ const MAX_VIEW_Y = 80;
 const DEFAULT_LOOK_SENSITIVITY = 0.006;
 const MIN_LOOK_SENSITIVITY = 0.001;
 const MAX_LOOK_SENSITIVITY = 0.02;
-const EDGE_YAW_SPEED = 4.5;
-const EDGE_PITCH_SPEED = 2.5;
-const EDGE_LIMIT = 0.93;
 
 function createDeltaTimer(threeLib) {
   if (typeof threeLib.Timer === 'function') {
@@ -73,7 +70,6 @@ export function ScadaTwinStandalone() {
     camera: null,
     canvas: null,
     cleanups: [],
-    drag: null,
     keys: new Set(),
     lockDenied: false,
     lockDeniedAt: 0,
@@ -81,14 +77,11 @@ export function ScadaTwinStandalone() {
     lockBannerDismissed: false,
     lockEverEngaged: false,
     lockUnavailable: false,
-    lastPointer: null,
     layerGroup: null,
     marker: null,
-    pointer: { has: false, x: 0, y: 0 },
     pointerLocked: false,
     renderer: null,
     statusOpen: false,
-    suppressClick: false,
     targetDeviceId: null,
     timer: null,
     view: { ...START_VIEW }
@@ -200,43 +193,12 @@ export function ScadaTwinStandalone() {
     if (runtime.statusOpen || event.button !== 0) {
       return;
     }
-    runtime.suppressClick = false;
     if (runtime.pointerLocked) {
       return;
-    }
-    // 无锁定回退（内嵌预览 / iframe）：按住左键拖拽转向。
-    // Pointer Capture 让光标移出预览区边缘后仍持续上报位移，实现无边界旋转。
-    runtime.drag = {
-      lastX: event.clientX,
-      lastY: event.clientY,
-      moved: false
-    };
-    try {
-      runtime.canvas?.setPointerCapture?.(event.pointerId);
-    } catch {
-      // 部分环境不支持 capture，退化为窗口内拖拽。
     }
     // FPS 标准：用户手势内请求锁定，浏览器隐藏系统光标并持续提供相对位移。
     if (canRequestLock() && !runtime.lockUnavailable) {
       requestLock();
-    }
-  }
-
-  function handlePointerUp(event) {
-    const drag = runtime.drag;
-    if (!drag) {
-      return;
-    }
-    runtime.drag = null;
-    runtime.lastPointer = null;
-    runtime.pointer.has = false;
-    try {
-      runtime.canvas?.releasePointerCapture?.(event.pointerId);
-    } catch {
-      // ignore
-    }
-    if (drag.moved) {
-      runtime.suppressClick = true;
     }
   }
 
@@ -291,64 +253,28 @@ export function ScadaTwinStandalone() {
   }
 
   function handleClick() {
-    if (runtime.suppressClick) {
-      runtime.suppressClick = false;
-      return;
-    }
     if (!runtime.camera || runtime.statusOpen) {
       return;
     }
-    // 未锁定时左键用于锁定；锁定后（或环境不支持锁定时）左键选择准星所指设备。
+    // 点击 = 进入 FPS（锁定后视角才跟随鼠标）；锁定中再点击 = 选择准星所指设备。
     if (!runtime.pointerLocked && canRequestLock() && !runtime.lockUnavailable) {
       requestLock();
       return;
     }
-    updateCenterTarget();
+    if (runtime.pointerLocked) {
+      updateCenterTarget();
+    }
   }
 
   function handleLookMove(event) {
-    if (runtime.statusOpen) {
+    // 只有进入 FPS（指针锁定）后，鼠标移动才转动视角。
+    // 未点击/未锁定时保持光标可见，移动鼠标不影响视角。
+    if (runtime.statusOpen || !runtime.pointerLocked) {
       return;
     }
-    let dx = 0;
-    let dy = 0;
-    if (runtime.pointerLocked) {
-      // 锁定：浏览器持续给出无边界相对位移，视角 1:1 跟随，无平滑、无死角。
-      dx = typeof event.movementX === 'number' ? event.movementX : 0;
-      dy = typeof event.movementY === 'number' ? event.movementY : 0;
-    } else if (runtime.drag) {
-      // 拖拽转向：capture 后即使光标越出预览区边缘，事件仍持续到达。
-      dx = event.clientX - runtime.drag.lastX;
-      dy = event.clientY - runtime.drag.lastY;
-      runtime.drag.lastX = event.clientX;
-      runtime.drag.lastY = event.clientY;
-      if (Math.abs(dx) + Math.abs(dy) >= 3) {
-        runtime.drag.moved = true;
-      }
-    } else {
-      // 鼠标在 HUD 面板上时不转动视角，避免悬停按钮时画面乱转。
-      const target = event.target;
-      if (target && typeof target.closest === 'function' && target.closest('.hud-panel')) {
-        runtime.lastPointer = null;
-        runtime.pointer.has = false;
-        return;
-      }
-      // 未锁定回退：直接用两次事件的 client 坐标差模拟相对位移。
-      if (runtime.lastPointer) {
-        dx = event.clientX - runtime.lastPointer.x;
-        dy = event.clientY - runtime.lastPointer.y;
-      }
-      runtime.lastPointer = { x: event.clientX, y: event.clientY };
-      const host = runtime.canvas || event.currentTarget;
-      const rect = host.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        runtime.pointer = {
-          has: true,
-          x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
-          y: -((event.clientY - rect.top) / rect.height) * 2 + 1
-        };
-      }
-    }
+    // 锁定：浏览器持续给出无边界相对位移，视角 1:1 跟随，无平滑、无死角。
+    const dx = typeof event.movementX === 'number' ? event.movementX : 0;
+    const dy = typeof event.movementY === 'number' ? event.movementY : 0;
     if (!dx && !dy) {
       return;
     }
@@ -358,39 +284,23 @@ export function ScadaTwinStandalone() {
     updateCenterTarget();
   }
 
-  function applyEdgeSteering(delta) {
-    if (runtime.pointerLocked || runtime.statusOpen || runtime.drag || !runtime.pointer.has) {
-      return;
-    }
-    const x = runtime.pointer.x;
-    const y = runtime.pointer.y;
-    if (Math.abs(x) < EDGE_LIMIT && Math.abs(y) < EDGE_LIMIT) {
-      return;
-    }
-    if (Math.abs(x) >= EDGE_LIMIT) {
-      runtime.view.yaw -= Math.sign(x) * EDGE_YAW_SPEED * delta;
-    }
-    if (Math.abs(y) >= EDGE_LIMIT) {
-      runtime.view.pitch = clamp(
-        runtime.view.pitch + Math.sign(y) * EDGE_PITCH_SPEED * delta,
-        -1.2,
-        1.2
-      );
-    }
-    updateCamera();
-  }
-
   function toggleStatusWindow() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
-      runtime.drag = null;
-      runtime.lastPointer = null;
-      runtime.pointer.has = false;
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
     rootNode?.attr('data-status', runtime.statusOpen ? 'open' : 'closed');
     syncReticleVisibility();
+    updateLockHint();
+  }
+
+  function cancelFpsView() {
+    // Alt：取消 FPS 视角并回到待机（不显示状态窗口）。
+    if (runtime.statusOpen) {
+      toggleStatusWindow();
+    }
+    exitLock();
     updateLockHint();
   }
 
@@ -399,17 +309,12 @@ export function ScadaTwinStandalone() {
     runtime.pointerLocked = Boolean(runtime.canvas && document.pointerLockElement);
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
-      runtime.drag = null;
-      runtime.lastPointer = null;
-      runtime.pointer.has = false;
     } else {
       runtime.lockEverEngaged = true;
       runtime.lockDenied = false;
       runtime.lockDeniedAt = 0;
       runtime.lockDeniedCount = 0;
       runtime.lockUnavailable = false;
-      runtime.drag = null;
-      runtime.suppressClick = false;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -460,9 +365,9 @@ export function ScadaTwinStandalone() {
     }
     const url = typeof window !== 'undefined' ? window.location.href : '';
     ui.lockBannerText.textContent(
-      `当前预览环境不支持 FPS 指针锁定：向同一方向转动视角，光标到预览边缘就会停止。` +
-        `请用 Edge / Chrome 新标签页打开：${url}，点击画面一次后即可无边界自由转动（光标自动隐藏）。` +
-        `本预览内移动鼠标可转向，按住左键拖拽更顺手。点击本提示关闭。`
+      `当前预览环境不支持 FPS 指针锁定：未点击时光标可见、移动鼠标不会转动视角。` +
+        `请用 Edge / Chrome 新标签页打开：${url}，点击画面一次后即可进入标准 FPS（光标隐藏、视角跟手）。` +
+        `点击本提示关闭。`
     );
   }
 
@@ -471,12 +376,12 @@ export function ScadaTwinStandalone() {
       return;
     }
     if (runtime.statusOpen) {
-      ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
+      ui.lockHint.textContent('状态窗口已打开（Tab 切换）· Alt 退出 FPS 并关闭');
       updateLockBanner();
       return;
     }
     if (runtime.pointerLocked) {
-      ui.lockHint.textContent('FPS 已锁定：移动鼠标即转视角 · 左键选择设备 · Esc 释放');
+      ui.lockHint.textContent('FPS 已锁定：移动鼠标即转视角 · 左键选择设备 · Alt / Esc 退出');
       updateLockBanner();
       return;
     }
@@ -492,15 +397,15 @@ export function ScadaTwinStandalone() {
     }
     if (runtime.lockUnavailable && canRequestLock()) {
       ui.lockHint.textContent(
-        '当前预览环境无法指针锁定：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向 · 建议在浏览器新标签页打开以获得标准 FPS'
+        '当前预览环境无法指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页'
       );
       updateLockBanner();
       return;
     }
     ui.lockHint.textContent(
       canRequestLock()
-        ? `点击画面锁定指针：视角完全跟随鼠标 · 灵敏度 ${per100px}°/100px（[ ] 调节）`
-        : '指针锁定不可用（可能嵌在 iframe 中）：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向'
+        ? `未锁定：光标可见 · 移动鼠标不转动视角 · 点击画面进入 FPS · 灵敏度 ${per100px}°/100px（[ ] 调节）`
+        : '当前环境不支持指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页'
     );
     updateLockBanner();
   }
@@ -509,7 +414,12 @@ export function ScadaTwinStandalone() {
     if (event.repeat) {
       return;
     }
-    if (event.code === 'Tab' || event.code.startsWith('Alt')) {
+    if (event.code.startsWith('Alt')) {
+      event.preventDefault();
+      cancelFpsView();
+      return;
+    }
+    if (event.code === 'Tab') {
       event.preventDefault();
       toggleStatusWindow();
       return;
@@ -588,7 +498,7 @@ export function ScadaTwinStandalone() {
             return;
           }
           panel.h3('状态窗口');
-          panel.p('内容暂空 · 按 Alt 或 Tab 关闭');
+          panel.p('内容暂空 · 按 Tab 或 Alt 关闭');
         });
       }
     });
@@ -908,7 +818,6 @@ export function ScadaTwinStandalone() {
     }
     const delta = Math.min(runtime.timer.getDelta(), 0.25);
     movePlayer(delta);
-    applyEdgeSteering(delta);
     updateCenterTarget();
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
@@ -934,16 +843,7 @@ export function ScadaTwinStandalone() {
   });
   threeNode.on('click', handleClick);
   threeNode.on('pointerdown', handlePointerDown);
-  threeNode.on('pointerup', handlePointerUp);
-  threeNode.on('pointercancel', handlePointerUp);
   threeNode.on('contextmenu', handleContextMenu);
-  threeNode.on('pointerleave', () => {
-    if (runtime.drag) {
-      return;
-    }
-    runtime.lastPointer = null;
-    runtime.pointer.has = false;
-  });
 
   return {
     destroy() {
@@ -958,7 +858,7 @@ export function ScadaTwinStandalone() {
       ui.statsPanel = createStatsPanel();
       ui.detailPanel = createDetailPanel();
       ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = vText('移动鼠标转动视角 · 点击画面尝试锁定指针（光标已隐藏）');
+      ui.lockHint = vText('未锁定：光标可见 · 点击画面进入 FPS · Tab 状态窗口');
       ui.reticleText = vText('—');
       ui.lockBannerText = vText('');
       ui.statusWindow = createStatusWindow();

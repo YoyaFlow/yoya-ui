@@ -217,7 +217,7 @@ describe('scada twin standalone', () => {
     app.destroy();
   });
 
-  it('keeps the center reticle visible and releases the cursor while the status window is open', () => {
+  it('opens the status window only via Tab; Alt only cancels the FPS view', () => {
     const frames = [];
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       frames.push(callback);
@@ -238,17 +238,31 @@ describe('scada twin standalone', () => {
     expect(root.getAttribute('data-status')).toBe('closed');
     expect(reticle.style.display).not.toBe('none');
 
+    // Alt 不显示状态窗口
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'AltLeft' }));
+    expect(root.getAttribute('data-status')).toBe('closed');
+    expect(reticle.style.display).not.toBe('none');
+
+    // Tab 打开状态窗口
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab' }));
     expect(root.getAttribute('data-status')).toBe('open');
     expect(reticle.style.display).toBe('none');
 
+    // Alt 关闭状态窗口并回到待机
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'AltLeft' }));
+    expect(root.getAttribute('data-status')).toBe('closed');
+    expect(reticle.style.display).not.toBe('none');
+
+    // Tab 再次切换
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab' }));
+    expect(root.getAttribute('data-status')).toBe('open');
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab' }));
     expect(root.getAttribute('data-status')).toBe('closed');
     expect(reticle.style.display).not.toBe('none');
     app.destroy();
   });
 
-  it('falls back to drag-look and center selection when pointer lock is unavailable', () => {
+  it('does not rotate or open the status window before pointer lock', () => {
     const frames = [];
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       frames.push(callback);
@@ -270,14 +284,12 @@ describe('scada twin standalone', () => {
     host.dispatchEvent(
       new MouseEvent('mousemove', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
     );
-    host.dispatchEvent(
-      new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
-    );
     host.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
 
+    expect(element.getAttribute('data-status')).toBe('closed');
     expect(element.querySelector('.scada-reticle-wrap').style.display).not.toBe('none');
     if (typeof host.querySelector('canvas')?.requestPointerLock !== 'function') {
-      expect(element.textContent).toContain('指针锁定不可用');
+      expect(element.textContent).toContain('当前环境不支持指针锁定');
     }
     app.destroy();
   });
@@ -307,6 +319,16 @@ describe('scada twin standalone', () => {
     const hint = element.querySelector('.scada-lock-hint');
     expect(hint.textContent).toContain('FPS 已锁定');
 
+    const exitSpy = vi.fn();
+    Object.defineProperty(document, 'exitPointerLock', {
+      configurable: true,
+      value: exitSpy
+    });
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'AltLeft' }));
+    expect(exitSpy).toHaveBeenCalled();
+    expect(element.getAttribute('data-status')).toBe('closed');
+
+    delete document.exitPointerLock;
     delete document.pointerLockElement;
     document.dispatchEvent(new Event('pointerlockchange'));
     expect(hint.textContent).not.toContain('FPS 已锁定');
