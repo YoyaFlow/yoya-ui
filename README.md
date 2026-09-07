@@ -180,6 +180,10 @@ libraries are **not required to be SSR-safe**: every demo mounts through
 the client. They exist as example-site devDependencies only — none of them
 enters the yoya-ui runtime.
 
+The `vEchart` and `vThree` glue entries ship their own demo pages in the same
+category; each host is a plain DOM container that the underlying library fills
+on the client.
+
 ## Why native Web: frameworks expire, standards don't
 
 **The browser is already a good enough runtime.** HTML and CSS are declarative
@@ -284,7 +288,7 @@ project at this stage. Prefer these checks:
 | SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                           |
 | Zero build-step mode                   | Use shipped ESM files directly in a plain page                                            |
 | Framework interop                      | Any DOM-mountable library composes natively                                               |
-| TypeScript                             | Shipped declarations for root / core / echart / ssr entries                               |
+| TypeScript                             | Shipped declarations for root / core / echart / three / ssr entries                       |
 
 ## Installation
 
@@ -392,6 +396,7 @@ node src/examples/ssr/server-http.mjs
 import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/state
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts glue (bring your own echarts)
+import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js glue (bring your own three)
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
 import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
@@ -400,8 +405,8 @@ import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 
 The source stays plain JavaScript — it runs directly with zero build. Full
 TypeScript experience comes from the type declarations shipped with the
-package; the `types/` directory covers all four entry points (root / `core` /
-`echart` / `ssr`) and includes node classes, factory signatures, component
+package; the `types/` directory covers all five entry points (root / `core` /
+`echart` / `three` / `ssr`) and includes node classes, factory signatures, component
 state APIs and parent shortcut methods.
 
 ```ts
@@ -435,6 +440,7 @@ npm run typecheck    # validates declaration files and consumer type tests
 | Forms        | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                          |
 | Data         | `vCard` / `vTable` / `vTree` / `vPagination` / `vProgress` / `vScroll` / `vCarousel` / `vTimeline` / `vDetail` / board series |
 | Charts       | `vEchart` (ECharts-based, import on demand)                                                                                   |
+| 3D           | `vThree` (Three.js-based, import on demand)                                                                                   |
 | Async        | `vDynamicLoader`                                                                                                              |
 | State        | `vStateNode` / optional `@preact/signals-core` interop                                                                        |
 | i18n / Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                   |
@@ -449,6 +455,7 @@ npm run build
 
 - `yoya.core.js` / `yoya.ui.js` — core and component library ESM entries
 - `yoya.echart.js` — ECharts glue entry (does not bundle ECharts)
+- `yoya.three.js` — Three.js glue entry (does not bundle Three.js)
 - `yoya.ssr.js` — `renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`
 - `yoya.ui.css` — default styles and theme variables
 - `yoya-ui.umd.js` — UMD build (`window.YoyaUI`)

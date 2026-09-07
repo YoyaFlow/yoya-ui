@@ -101,6 +101,60 @@ vi.mock('@toast-ui/editor', () => ({
   }
 }));
 
+vi.mock('three', () => {
+  class FakeMesh {
+    constructor() {
+      this.rotation = { x: 0, y: 0, z: 0 };
+    }
+  }
+
+  class FakePerspectiveCamera {
+    constructor() {
+      this.aspect = 1;
+      this.isPerspectiveCamera = true;
+      this.lookAt = () => {};
+      this.position = { set: () => {} };
+      this.updateProjectionMatrix = () => {};
+    }
+  }
+
+  class FakeWebGLRenderer {
+    constructor(options) {
+      this.domElement = document.createElement('canvas');
+      this.dispose = () => {};
+      this.options = options;
+      this.render = () => {};
+      this.setPixelRatio = () => {};
+      this.setSize = () => {};
+    }
+  }
+
+  return {
+    AmbientLight: class {},
+    BoxGeometry: class {},
+    DirectionalLight: class {
+      constructor() {
+        this.position = { set: () => {} };
+      }
+    },
+    GridHelper: class {},
+    Mesh: FakeMesh,
+    MeshStandardMaterial: class {},
+    PerspectiveCamera: FakePerspectiveCamera,
+    Scene: class {
+      constructor() {
+        this.children = [];
+      }
+
+      add(child) {
+        this.children.push(child);
+      }
+    },
+    SphereGeometry: class {},
+    WebGLRenderer: FakeWebGLRenderer
+  };
+});
+
 import { renderExamplesIndex } from './index.router.js';
 
 let root = null;
@@ -216,4 +270,19 @@ describe('third-party interop routes', () => {
       }
     }
   );
+
+  it('renders the third-party Three.js page with live cards and source panels', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/third-party/three');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('Three.js 场景');
+    });
+
+    const page = document.querySelector('[data-three-page]');
+    expect(page).not.toBeNull();
+    expect(page.querySelectorAll('[data-three-demo-live]')).toHaveLength(2);
+    expect(page.querySelectorAll('[data-source-example]')).toHaveLength(2);
+    expect(page.textContent).toContain('Three.js');
+  });
 });

@@ -176,6 +176,7 @@ const componentMenuSections = [
       { key: 'leaflet', label: 'Leaflet 地图', details: 'Leaflet' },
       { key: 'codemirror', label: 'CodeMirror 编辑', details: 'CodeMirror 6' },
       { key: 'markdown-viewer', label: 'Markdown 查看', details: 'Toast UI Viewer' },
+      { key: 'three', label: 'Three.js 场景', details: 'vThree / VThree' },
       { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
       { key: 'signals', label: 'Signals 状态管理', details: 'signal / computed / effect' }
     ]
@@ -323,6 +324,7 @@ const docsRouteLoaders = Object.freeze({
     import('./codemirror-docs.js').then((m) => m.CodeMirrorDocumentationPage()),
   'third-party:markdown-viewer': () =>
     import('./markdown-viewer-docs.js').then((m) => m.MarkdownViewerDocumentationPage()),
+  'third-party:three': () => import('./three-docs.js').then((m) => m.ThreeDocumentationPage()),
   'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage()),
   'board:digital-board': () =>
     import('./board-docs.js').then((m) => m.DigitalBoardDocumentationPage()),

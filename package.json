@@ -26,6 +26,10 @@
       "types": "./types/yoya.echart.d.ts",
       "import": "./dist/yoya.echart.js"
     },
+    "./three": {
+      "types": "./types/yoya.three.d.ts",
+      "import": "./dist/yoya.three.js"
+    },
     "./ssr": {
       "types": "./types/yoya.ssr.d.ts",
       "import": "./dist/yoya.ssr.js"
@@ -99,6 +103,7 @@
     "leaflet": "^1.9.4",
     "prettier": "^3.9.6",
     "quill": "^2.0.3",
+    "three": "^0.185.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"

@@ -157,7 +157,9 @@ npm run dev`
       },
       {
         title: '构建产物',
-        paragraphs: ['dist 目录提供 yoya.core.js、yoya.ui.js、yoya.echart.js 和 yoya.ui.css。']
+        paragraphs: [
+          'dist 目录提供 yoya.core.js、yoya.ui.js、yoya.echart.js、yoya.three.js 和 yoya.ui.css。'
+        ]
       },
       {
         title: '模块引入',
@@ -170,7 +172,8 @@ section((page) => {
       },
       {
         title: '按需扩展',
-        code: `import { vEchart } from 'basepath/yoya.echart.js';`
+        code: `import { vEchart } from 'basepath/yoya.echart.js';
+import { vThree } from 'basepath/yoya.three.js';`
       },
       {
         title: '样式',

@@ -162,6 +162,9 @@ npm run examples:html   # 打开 http://localhost:5173/#/components
 演示都经 `vClientOnly` 挂载，服务端只输出占位，库在客户端加载。它们只作为
 示例站 devDependency 存在，不会进入 yoya-ui 运行时依赖。
 
+`vEchart` 与 `vThree` 胶水入口在同类目下有各自的演示页：宿主只是一个普通
+DOM 容器，由底层库在客户端填充。
+
 ## 为什么是原生 Web：框架会过期，标准不会
 
 **浏览器本身就是足够好的运行时。** HTML 与 CSS 生而声明式，DOM API 清晰且
@@ -251,7 +254,7 @@ Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优�
 | SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                  |
 | 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                    |
 | 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                      |
-| TypeScript             | root / core / echart / ssr 四个入口均随包发布类型声明                |
+| TypeScript             | root / core / echart / three / ssr 五个入口均随包发布类型声明        |
 
 ## 安装
 
@@ -357,6 +360,7 @@ node src/examples/ssr/server-http.mjs
 import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SVG/state
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 胶水（自行引入 echarts）
+import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 胶水（自行引入 three）
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
 import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ```
@@ -364,7 +368,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ## TypeScript 支持
 
 源码保持纯 JavaScript——零构建直接运行。完整 TypeScript 体验来自随包发布的
-类型声明；`types/` 目录覆盖全部四个入口（root / `core` / `echart` / `ssr`），
+类型声明；`types/` 目录覆盖全部五个入口（root / `core` / `echart` / `three` / `ssr`），
 包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
 
 ```ts
@@ -398,6 +402,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 | 表单        | `vForm` / `vInput` / `vSelect` / `vCheckbox` / `vRadio` / `vSwitch` / `vRate` / `vTimer` / `vUpload`                        |
 | 数据        | `vCard` / `vTable` / `vTree` / `vPagination` / `vProgress` / `vScroll` / `vCarousel` / `vTimeline` / `vDetail` / board 系列 |
 | 图表        | `vEchart`（基于 ECharts，按需引入）                                                                                         |
+| 3D          | `vThree`（基于 Three.js，按需引入）                                                                                         |
 | 异步        | `vDynamicLoader`                                                                                                            |
 | 状态        | `vStateNode` / 可选 `@preact/signals-core` 互操作                                                                           |
 | i18n / 主题 | `createI18n` / `withI18nStringShortcut` / 主题令牌与明暗模式                                                                |
@@ -412,6 +417,7 @@ npm run build
 
 - `yoya.core.js` / `yoya.ui.js` —— 核心与组件库 ESM 入口
 - `yoya.echart.js` —— ECharts 胶水入口（不打包 ECharts）
+- `yoya.three.js` —— Three.js 胶水入口（不打包 Three.js）
 - `yoya.ssr.js` —— `renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`
 - `yoya.ui.css` —— 默认样式与主题变量
 - `yoya-ui.umd.js` —— UMD 构建（`window.YoyaUI`）

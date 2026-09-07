@@ -213,6 +213,7 @@ dist/
   yoya.ui.js        # browser entry (ESM)
   yoya.core.js      # core entry
   yoya.echart.js    # ECharts component entry (does not bundle echarts itself)
+  yoya.three.js     # Three.js component entry (does not bundle three itself)
   yoya.ssr.js       # shared server/client: renderToString / hydrate / mount
   echarts.min.js    # ECharts itself (loaded with a script tag)
   yoya.ui.css       # styles
