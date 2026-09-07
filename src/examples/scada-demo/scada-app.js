@@ -80,6 +80,7 @@ export function ScadaTwinStandalone() {
     alarmPanel: null,
     detailPanel: null,
     lockHint: null,
+    reticleWrap: null,
     reticleText: null,
     statsPanel: null,
     statusWindow: null
@@ -134,7 +135,7 @@ export function ScadaTwinStandalone() {
   }
 
   function updateCenterTarget() {
-    if (!runtime.camera || !runtime.marker) {
+    if (!runtime.camera || !runtime.marker || runtime.statusOpen) {
       return;
     }
     const point = centerPoint();
@@ -170,7 +171,6 @@ export function ScadaTwinStandalone() {
     runtime.view.yaw = Math.atan2(-dx, -dz);
     runtime.view.pitch = clamp(-Math.atan2(Math.max(runtime.view.y - 1, 0.2), distance), -1.2, 1.2);
     updateCamera();
-    updateCenterTarget();
   }
 
   function handleClick() {
@@ -208,6 +208,7 @@ export function ScadaTwinStandalone() {
       exitLock();
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
+    syncReticleVisibility();
     updateLockHint();
   }
 
@@ -216,8 +217,21 @@ export function ScadaTwinStandalone() {
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
     }
+    syncReticleVisibility();
     updateLockHint();
     updateMarker();
+    if (runtime.pointerLocked) {
+      updateCenterTarget();
+    }
+  }
+
+  function syncReticleVisibility() {
+    if (!ui.reticleWrap) {
+      return;
+    }
+    const visible = !runtime.statusOpen;
+    ui.reticleWrap.style('display', visible ? '' : 'none');
+    ui.reticleWrap.attr('data-visible', visible ? 'true' : 'false');
   }
 
   function updateLockHint() {
@@ -228,11 +242,7 @@ export function ScadaTwinStandalone() {
       ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
       return;
     }
-    if (runtime.pointerLocked) {
-      ui.lockHint.textContent('移动：WASD · 空格上升 · V 下降 · Shift 加速 · Esc 退出锁定');
-      return;
-    }
-    ui.lockHint.textContent('鼠标移动即旋转视角 · WASD 飞行 · 空格/V 升降 · Alt/Tab 状态窗口');
+    ui.lockHint.textContent('取景器居中即准星 · 移动鼠标转向 · WASD 飞行 · Alt/Tab 状态窗口');
   }
 
   function handleKeyDown(event) {
@@ -665,7 +675,7 @@ export function ScadaTwinStandalone() {
       ui.statsPanel = createStatsPanel();
       ui.detailPanel = createDetailPanel();
       ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = vText('鼠标移动即旋转视角 · Alt/Tab 状态窗口');
+      ui.lockHint = vText('取景器居中即准星 · 移动鼠标转向 · Alt/Tab 状态窗口');
       ui.reticleText = vText('—');
       ui.statusWindow = createStatusWindow();
 
@@ -792,6 +802,8 @@ export function ScadaTwinStandalone() {
               top: '50%',
               transform: 'translate(-50%, -50%)'
             });
+            ui.reticleWrap = reticleWrap;
+            syncReticleVisibility();
             reticleWrap.div((reticle) => {
               reticle.className('scada-reticle');
             });
