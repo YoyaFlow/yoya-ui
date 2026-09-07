@@ -65,9 +65,9 @@ export function ScadaTwinStandalone() {
     canvas: null,
     cleanups: [],
     keys: new Set(),
-    lastPointer: null,
     layerGroup: null,
     marker: null,
+    pointer: { has: false, x: 0, y: 0 },
     pointerLocked: false,
     renderer: null,
     statusOpen: false,
@@ -116,6 +116,24 @@ export function ScadaTwinStandalone() {
   function exitLock() {
     if (typeof document.exitPointerLock === 'function') {
       document.exitPointerLock();
+    }
+  }
+
+  function canRequestLock() {
+    return typeof runtime.canvas?.requestPointerLock === 'function';
+  }
+
+  function requestLock() {
+    if (!canRequestLock()) {
+      return;
+    }
+    try {
+      const result = runtime.canvas.requestPointerLock();
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => updateLockHint());
+      }
+    } catch {
+      updateLockHint();
     }
   }
 
@@ -175,6 +193,10 @@ export function ScadaTwinStandalone() {
 
   function handleClick() {
     if (runtime.camera) {
+      if (!runtime.pointerLocked && canRequestLock()) {
+        requestLock();
+        return;
+      }
       updateCenterTarget();
     }
   }
@@ -183,29 +205,47 @@ export function ScadaTwinStandalone() {
     if (runtime.statusOpen) {
       return;
     }
-    let dx = 0;
-    let dy = 0;
     if (runtime.pointerLocked) {
-      dx = event.movementX;
-      dy = event.movementY;
-    } else if (runtime.lastPointer) {
-      dx = event.clientX - runtime.lastPointer.x;
-      dy = event.clientY - runtime.lastPointer.y;
-    }
-    runtime.lastPointer = { x: event.clientX, y: event.clientY };
-    if (dx === 0 && dy === 0) {
+      runtime.view.yaw -= event.movementX * 0.0022;
+      runtime.view.pitch = clamp(runtime.view.pitch - event.movementY * 0.0022, -1.2, 1.2);
+      updateCamera();
+      updateCenterTarget();
       return;
     }
-    runtime.view.yaw -= dx * 0.0022;
-    runtime.view.pitch = clamp(runtime.view.pitch - dy * 0.0022, -1.2, 1.2);
+    const host = event.currentTarget;
+    const rect = host.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return;
+    }
+    runtime.pointer = {
+      has: true,
+      x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((event.clientY - rect.top) / rect.height) * 2 + 1
+    };
+  }
+
+  function applyPointerSteering(delta) {
+    if (runtime.pointerLocked || runtime.statusOpen || !runtime.pointer.has || !runtime.camera) {
+      return;
+    }
+    const deadZone = 0.08;
+    const x = runtime.pointer.x;
+    const y = runtime.pointer.y;
+    if (Math.abs(x) <= deadZone && Math.abs(y) <= deadZone) {
+      return;
+    }
+    const steerX = Math.abs(x) > deadZone ? (x - Math.sign(x) * deadZone) / (1 - deadZone) : 0;
+    const steerY = Math.abs(y) > deadZone ? (y - Math.sign(y) * deadZone) / (1 - deadZone) : 0;
+    runtime.view.yaw -= steerX * 3.2 * delta;
+    runtime.view.pitch = clamp(runtime.view.pitch + steerY * 2.2 * delta, -1.2, 1.2);
     updateCamera();
-    updateCenterTarget();
   }
 
   function toggleStatusWindow() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
+      runtime.pointer.has = false;
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
     syncReticleVisibility();
@@ -216,6 +256,7 @@ export function ScadaTwinStandalone() {
     runtime.pointerLocked = runtime.canvas && document.pointerLockElement === runtime.canvas;
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
+      runtime.pointer.has = false;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -242,7 +283,11 @@ export function ScadaTwinStandalone() {
       ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
       return;
     }
-    ui.lockHint.textContent('取景器居中即准星 · 移动鼠标转向 · WASD 飞行 · Alt/Tab 状态窗口');
+    ui.lockHint.textContent(
+      canRequestLock()
+        ? '点击画面锁定光标（真 FPS）· 光标偏移持续转向 · WASD 飞行'
+        : '取景器居中即准星 · 光标偏移持续转向 · WASD 飞行 · Alt/Tab 状态窗口'
+    );
   }
 
   function handleKeyDown(event) {
@@ -632,6 +677,7 @@ export function ScadaTwinStandalone() {
     }
     const delta = Math.min(runtime.timer.getDelta(), 0.25);
     movePlayer(delta);
+    applyPointerSteering(delta);
     updateCenterTarget();
     runtime.accumulator += delta;
     const step = 1 / TICK_RATE;
@@ -658,7 +704,7 @@ export function ScadaTwinStandalone() {
   threeNode.on('click', handleClick);
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', () => {
-    runtime.lastPointer = null;
+    runtime.pointer.has = false;
   });
   threeNode.on('pointermove', handleCanvasMove);
 
