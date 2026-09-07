@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { bindWindowEvent } from '../../core/document-events.js';
+import { bindDocumentEvent, bindWindowEvent } from '../../core/document-events.js';
 import { div, vButton, vStateNode, vText } from '../../index.js';
 import { vThree } from '../../yoya.three.js';
 import {
@@ -868,8 +868,10 @@ export function ScadaTwinStandalone() {
     // 与 three.js 官方 PointerLockControls 一致：锁定期间在 document/window 级
     // 监听鼠标移动，确保拿到 movementX/movementY（画布级监听在某些环境收不到）。
     runtime.cleanups.push(bindWindowEvent('mousemove', handleLookMove));
-    runtime.cleanups.push(bindWindowEvent('pointerlockchange', handlePointerLockChange));
-    runtime.cleanups.push(bindWindowEvent('pointerlockerror', handlePointerLockError));
+    // pointerlockchange/error 派发在 document 上且不会冒泡到 window，
+    // 必须用 document 级监听（官方 PointerLockControls 也绑在 ownerDocument）。
+    runtime.cleanups.push(bindDocumentEvent('pointerlockchange', handlePointerLockChange));
+    runtime.cleanups.push(bindDocumentEvent('pointerlockerror', handlePointerLockError));
   }
 
   function initRuntime(api) {

@@ -281,4 +281,35 @@ describe('scada twin standalone', () => {
     }
     app.destroy();
   });
+
+  it('tracks pointer lock via document-level pointerlockchange', () => {
+    const frames = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    const app = ScadaTwinStandalone();
+    const node = app.render();
+    const element = node.renderDom();
+    document.body.appendChild(element);
+    frames.shift()();
+    frames.shift()();
+
+    const canvas = element.querySelector('.yoya-vthree canvas');
+    Object.defineProperty(document, 'pointerLockElement', {
+      configurable: true,
+      value: canvas
+    });
+    document.dispatchEvent(new Event('pointerlockchange'));
+
+    const hint = element.querySelector('.scada-lock-hint');
+    expect(hint.textContent).toContain('FPS 已锁定');
+
+    delete document.pointerLockElement;
+    document.dispatchEvent(new Event('pointerlockchange'));
+    expect(hint.textContent).not.toContain('FPS 已锁定');
+    app.destroy();
+  });
 });
