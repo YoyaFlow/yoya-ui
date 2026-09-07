@@ -120,6 +120,7 @@ const { fakeThree } = vi.hoisted(() => {
     BoxGeometry: FakeGeometry,
     Clock: FakeClock,
     Color: FakeColor,
+    CylinderGeometry: FakeGeometry,
     DirectionalLight: FakeDirectionalLight,
     GridHelper: FakeMesh,
     Group: FakeObject,
@@ -185,6 +186,16 @@ describe('factory game standalone', () => {
 
     expect(element.textContent).toContain('tick 1');
     expect(element.textContent).toContain('矿石');
+
+    const host = element.querySelector('.yoya-vthree');
+    host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2 }));
+    host.dispatchEvent(
+      new MouseEvent('pointermove', { bubbles: true, button: 2, clientX: 130, clientY: 90 })
+    );
+    host.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: -120 }));
+
+    expect(element.textContent).toContain('组装机');
     node.destroy();
   });
 });

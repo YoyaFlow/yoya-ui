@@ -83,6 +83,48 @@ export function showHover(marker, state, key, valid) {
   marker.visible = true;
 }
 
+export function createGhostPreview() {
+  const group = new THREE.Group();
+  group.visible = false;
+  return group;
+}
+
+export function updateGhostPreview(group, state, key, type, direction, valid) {
+  clearGroup(group);
+  if (!key || !type) {
+    group.visible = false;
+    return;
+  }
+
+  const { x, z } = cellCenter(state, key);
+  const color = valid ? 0x22c55e : 0xef4444;
+  const material = new THREE.MeshBasicMaterial({
+    color,
+    opacity: 0.48,
+    transparent: true
+  });
+  let height = 0.5;
+  if (type === ASSEMBLER) {
+    height = 0.72;
+  } else if (type === BELT) {
+    height = 0.09;
+  }
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.74, height, 0.74), material);
+  base.position.y = height / 2;
+  group.add(base);
+
+  const vector = DIRECTIONS[direction] ?? DIRECTIONS[0];
+  const arrow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.22), material);
+  arrow.position.set(
+    vector.dx * 0.3,
+    type === BELT ? 0.12 : base.position.y + 0.12,
+    vector.dz * 0.3
+  );
+  group.add(arrow);
+  group.position.set(x, 0, z);
+  group.visible = true;
+}
+
 export function cellCenter(state, key) {
   const { col, row } = parseKey(key);
   return {
@@ -122,16 +164,28 @@ function buildingMesh(state, key, record) {
 
   if (record.type === MINER) {
     base = new THREE.Mesh(
-      new THREE.BoxGeometry(0.72, 0.5, 0.72),
+      new THREE.BoxGeometry(0.72, 0.4, 0.72),
       new THREE.MeshStandardMaterial({ color: COLORS.miner, roughness: 0.6 })
     );
     base.position.y = 0.25;
+    const drill = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.18, 0.42, 12),
+      new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 })
+    );
+    drill.position.y = 0.62;
+    mesh.add(drill);
   } else if (record.type === ASSEMBLER) {
     base = new THREE.Mesh(
       new THREE.BoxGeometry(0.86, 0.72, 0.86),
       new THREE.MeshStandardMaterial({ color: COLORS.assembler, roughness: 0.45 })
     );
     base.position.y = 0.36;
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.08, 0.46),
+      new THREE.MeshStandardMaterial({ color: 0xbfdbfe, roughness: 0.35 })
+    );
+    roof.position.y = 0.78;
+    mesh.add(roof);
   } else {
     base = new THREE.Mesh(
       new THREE.BoxGeometry(0.72, 0.09, 0.72),

@@ -16,11 +16,17 @@ import {
 } from './factory-state.js';
 import {
   createFactoryEnvironment,
-  createHoverMarker,
-  showHover,
+  createGhostPreview,
   syncFactoryLayer,
+  updateGhostPreview,
   worldToCell
 } from './factory-render.js';
+
+const INITIAL_CAMERA = Object.freeze({
+  azimuth: Math.PI / 4,
+  polar: Math.PI / 3.2,
+  radius: 17
+});
 
 const TOOL_OPTIONS = Object.freeze([
   { key: BELT, label: '传送带' },
@@ -37,9 +43,11 @@ export function FactoryGameStandalone() {
   const runtime = {
     accumulator: 0,
     camera: null,
+    cameraState: { ...INITIAL_CAMERA, target: { x: 0, y: 0, z: 0 } },
     clock: null,
+    drag: null,
+    ghost: null,
     hoverCellKey: null,
-    hoverMarker: null,
     hoverValid: false,
     layerGroup: null,
     renderer: null,
@@ -54,6 +62,7 @@ export function FactoryGameStandalone() {
       button.attr('data-tool-active', key === name ? 'true' : null);
     });
     ui.selectionText?.textContent(toolLabel(name));
+    refreshGhost();
   }
 
   function toolLabel(name) {
@@ -67,6 +76,12 @@ export function FactoryGameStandalone() {
   function rotateDirection() {
     tool.direction = (tool.direction + 1) % DIRECTIONS.length;
     ui.directionText?.textContent(`方向 ${DIRECTIONS[tool.direction].label}`);
+    refreshGhost();
+  }
+
+  function resetCamera() {
+    Object.assign(runtime.cameraState, INITIAL_CAMERA);
+    updateCamera();
   }
 
   function createStatsPanel() {
@@ -138,8 +153,8 @@ export function FactoryGameStandalone() {
     runtime.accumulator = 0;
     runtime.hoverCellKey = null;
     runtime.hoverValid = false;
-    if (runtime.hoverMarker) {
-      showHover(runtime.hoverMarker, state, null, false);
+    if (runtime.ghost) {
+      updateGhostPreview(runtime.ghost, state, null, null, tool.direction, false);
     }
     if (runtime.layerGroup) {
       syncFactoryLayer(runtime.layerGroup, state);
@@ -182,22 +197,26 @@ export function FactoryGameStandalone() {
     return tool.name === 'remove' ? state.grid.has(key) : canPlace(state, tool.name, key);
   }
 
-  function updateHover(event) {
-    if (!runtime.hoverMarker) {
+  function refreshGhost() {
+    if (!runtime.ghost) {
       return;
     }
+    const key = runtime.hoverCellKey;
+    const type = tool.name === 'remove' ? null : tool.name;
+    updateGhostPreview(runtime.ghost, state, key, type, tool.direction, validityFor(key));
+  }
+
+  function updateHover(event) {
     const key = keyAt(event);
     runtime.hoverCellKey = key;
     runtime.hoverValid = validityFor(key);
-    showHover(runtime.hoverMarker, state, key, runtime.hoverValid);
+    refreshGhost();
   }
 
   function clearHover() {
     runtime.hoverCellKey = null;
     runtime.hoverValid = false;
-    if (runtime.hoverMarker) {
-      showHover(runtime.hoverMarker, state, null, false);
-    }
+    refreshGhost();
   }
 
   function handleClick(event) {
@@ -215,16 +234,60 @@ export function FactoryGameStandalone() {
     if (changed && runtime.layerGroup) {
       syncFactoryLayer(runtime.layerGroup, state);
       refreshStats(true);
+      refreshGhost();
     }
   }
 
   function handleContextMenu(event) {
-    const key = keyAt(event);
     event.preventDefault();
-    if (key && removeBuilding(state, key) && runtime.layerGroup) {
-      syncFactoryLayer(runtime.layerGroup, state);
-      refreshStats(true);
+  }
+
+  function startOrbit(event) {
+    if (event.button === 1 || event.button === 2) {
+      runtime.drag = { button: event.button, x: event.clientX, y: event.clientY };
+      event.preventDefault();
     }
+  }
+
+  function moveOrbit(event) {
+    updateHover(event);
+    if (!runtime.drag) {
+      return;
+    }
+
+    const dx = event.clientX - runtime.drag.x;
+    const dy = event.clientY - runtime.drag.y;
+    runtime.drag.x = event.clientX;
+    runtime.drag.y = event.clientY;
+    runtime.cameraState.azimuth += dx * 0.008;
+    runtime.cameraState.polar = clamp(runtime.cameraState.polar - dy * 0.006, 0.35, 1.45);
+    updateCamera();
+  }
+
+  function endOrbit() {
+    runtime.drag = null;
+  }
+
+  function zoomCamera(event) {
+    event.preventDefault();
+    const factor = Math.exp(event.deltaY * 0.0012);
+    runtime.cameraState.radius = clamp(runtime.cameraState.radius * factor, 7, 34);
+    updateCamera();
+  }
+
+  function updateCamera() {
+    const { camera, cameraState } = runtime;
+    if (!camera) {
+      return;
+    }
+    const { azimuth, polar, radius, target } = cameraState;
+    const sinPolar = Math.sin(polar);
+    camera.position.set(
+      target.x + radius * sinPolar * Math.sin(azimuth),
+      target.y + radius * Math.cos(polar),
+      target.z + radius * sinPolar * Math.cos(azimuth)
+    );
+    camera.lookAt(target.x, target.y, target.z);
   }
 
   function initRuntime(api) {
@@ -234,9 +297,8 @@ export function FactoryGameStandalone() {
     runtime.scene = scene;
 
     camera.fov = 50;
-    camera.position.set(0, 13, 11);
-    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
+    updateCamera();
     scene.background = new lib.Color(0x0b1220);
     scene.add(new lib.AmbientLight(0xffffff, 1.1));
     const light = new lib.DirectionalLight(0xffffff, 2.6);
@@ -246,8 +308,8 @@ export function FactoryGameStandalone() {
     runtime.layerGroup = new lib.Group();
     scene.add(runtime.layerGroup);
     scene.add(createFactoryEnvironment(state));
-    runtime.hoverMarker = createHoverMarker();
-    scene.add(runtime.hoverMarker);
+    runtime.ghost = createGhostPreview();
+    scene.add(runtime.ghost);
     runtime.clock = new lib.Clock();
     syncFactoryLayer(runtime.layerGroup, state);
     refreshStats(true);
@@ -284,9 +346,16 @@ export function FactoryGameStandalone() {
     three.onFrame(frameTick);
   });
   threeNode.on('click', handleClick);
+  threeNode.on('pointercancel', endOrbit);
+  threeNode.on('pointerdown', startOrbit);
   threeNode.on('contextmenu', handleContextMenu);
-  threeNode.on('pointerleave', clearHover);
-  threeNode.on('pointermove', updateHover);
+  threeNode.on('pointerleave', () => {
+    clearHover();
+    endOrbit();
+  });
+  threeNode.on('pointermove', moveOrbit);
+  threeNode.on('pointerup', endOrbit);
+  threeNode.on('wheel', zoomCamera);
 
   return {
     render() {
@@ -323,6 +392,9 @@ export function FactoryGameStandalone() {
           toolbar.vButton('清空重建', (button) => {
             button.on('click', resetFactory);
           });
+          toolbar.vButton('重置视角', (button) => {
+            button.on('click', resetCamera);
+          });
           toolbar.div((meta) => {
             meta.style({ display: 'flex', gap: '16px', marginLeft: 'auto' });
             meta.span((text) => text.child(ui.selectionText));
@@ -344,10 +416,14 @@ export function FactoryGameStandalone() {
         });
 
         root.p(
-          '操作：左键按当前工具建造，右键拆除；矿机必须建在橙色矿点上，' +
-            '矿机/传送带用“旋转方向”调整输出侧。'
+          '操作：左键按当前工具建造；右键拖动旋转视角、滚轮缩放；' +
+            '矿机必须建在橙色矿点上；矿机/传送带用“旋转方向”调整输出侧。'
         );
       });
     }
   };
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }

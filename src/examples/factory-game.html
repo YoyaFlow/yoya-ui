@@ -41,9 +41,13 @@
       }
 
       .factory-viewport {
-        cursor: crosshair;
+        cursor: grab;
         height: 460px;
         touch-action: none;
+      }
+
+      .factory-viewport:active {
+        cursor: grabbing;
       }
     </style>
   </head>
