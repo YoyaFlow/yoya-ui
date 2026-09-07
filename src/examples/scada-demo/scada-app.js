@@ -78,6 +78,7 @@ export function ScadaTwinStandalone() {
     lockDenied: false,
     lockDeniedAt: 0,
     lockDeniedCount: 0,
+    lockBannerDismissed: false,
     lockEverEngaged: false,
     lockUnavailable: false,
     lastPointer: null,
@@ -96,6 +97,8 @@ export function ScadaTwinStandalone() {
   const ui = {
     alarmPanel: null,
     detailPanel: null,
+    lockBanner: null,
+    lockBannerText: null,
     lockHint: null,
     reticleWrap: null,
     reticleText: null,
@@ -429,6 +432,30 @@ export function ScadaTwinStandalone() {
     const visible = !runtime.statusOpen;
     ui.reticleWrap.style('display', visible ? '' : 'none');
     ui.reticleWrap.attr('data-visible', visible ? 'true' : 'false');
+    updateLockBanner();
+  }
+
+  function updateLockBanner() {
+    const banner = ui.lockBanner;
+    if (!banner) {
+      return;
+    }
+    const show =
+      runtime.lockUnavailable &&
+      canRequestLock() &&
+      !runtime.pointerLocked &&
+      !runtime.statusOpen &&
+      !runtime.lockBannerDismissed;
+    banner.style('display', show ? '' : 'none');
+    if (!show || !ui.lockBannerText) {
+      return;
+    }
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    ui.lockBannerText.textContent(
+      `当前预览环境不支持 FPS 指针锁定：向同一方向转动视角，光标到预览边缘就会停止。` +
+        `请用 Edge / Chrome 新标签页打开：${url}，点击画面一次后即可无边界自由转动（光标自动隐藏）。` +
+        `本预览内移动鼠标可转向，按住左键拖拽更顺手。点击本提示关闭。`
+    );
   }
 
   function updateLockHint() {
@@ -437,10 +464,12 @@ export function ScadaTwinStandalone() {
     }
     if (runtime.statusOpen) {
       ui.lockHint.textContent('状态窗口已打开：光标已释放 · Alt / Tab 关闭');
+      updateLockBanner();
       return;
     }
     if (runtime.pointerLocked) {
       ui.lockHint.textContent('FPS 已锁定：移动鼠标即转视角 · 左键选择设备 · Esc 释放');
+      updateLockBanner();
       return;
     }
     const per100px = Math.round((lookSensitivity * 100 * 180) / Math.PI);
@@ -450,12 +479,14 @@ export function ScadaTwinStandalone() {
       } else {
         ui.lockHint.textContent('指针锁定请求被拒绝 · 请再次点击画面重试');
       }
+      updateLockBanner();
       return;
     }
     if (runtime.lockUnavailable && canRequestLock()) {
       ui.lockHint.textContent(
         '当前预览环境无法指针锁定：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向 · 建议在浏览器新标签页打开以获得标准 FPS'
       );
+      updateLockBanner();
       return;
     }
     ui.lockHint.textContent(
@@ -463,6 +494,7 @@ export function ScadaTwinStandalone() {
         ? `点击画面锁定指针：视角完全跟随鼠标 · 灵敏度 ${per100px}°/100px（[ ] 调节）`
         : '指针锁定不可用（可能嵌在 iframe 中）：光标已隐藏，移动鼠标转视角；按住左键拖拽可无边界转向'
     );
+    updateLockBanner();
   }
 
   function handleKeyDown(event) {
@@ -916,6 +948,7 @@ export function ScadaTwinStandalone() {
       ui.alarmPanel = createAlarmPanel(ackAlarm);
       ui.lockHint = vText('移动鼠标转动视角 · 点击画面尝试锁定指针（光标已隐藏）');
       ui.reticleText = vText('—');
+      ui.lockBannerText = vText('');
       ui.statusWindow = createStatusWindow();
 
       rootNode = div((root) => {
@@ -1051,6 +1084,18 @@ export function ScadaTwinStandalone() {
               label.className('scada-reticle-label');
               label.child(ui.reticleText);
             });
+          });
+
+          hud.div((banner) => {
+            banner.className('scada-lock-banner');
+            banner.style({ display: 'none' });
+            banner.on('click', () => {
+              runtime.lockBannerDismissed = true;
+              banner.style('display', 'none');
+            });
+            banner.child(ui.lockBannerText);
+            ui.lockBanner = banner;
+            updateLockBanner();
           });
 
           hud.div((bottomCenter) => {
