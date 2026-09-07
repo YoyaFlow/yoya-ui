@@ -1059,7 +1059,15 @@
             model.projectiles.forEach((projectile) => {
               const target = projectile.target;
               const targetState = target?.state();
-              if (!projectile.state().alive || !targetState?.alive) {
+
+              // 目标已消失（被击杀或抵达终点）时，弹道必须一并清理，否则会停在场上。
+              if (
+                !projectile.state().alive ||
+                !target ||
+                !targetState?.alive ||
+                !model.enemies.includes(target)
+              ) {
+                finishedProjectiles.push(projectile);
                 return;
               }
 
