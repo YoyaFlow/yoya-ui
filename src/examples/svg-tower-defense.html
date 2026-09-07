@@ -181,6 +181,21 @@
         fill: #243957;
       }
 
+      .placement-preview {
+        pointer-events: none;
+      }
+
+      .placement-preview .preview-range {
+        fill: rgb(56 189 248 / 8%);
+        stroke-dasharray: 4 6;
+        stroke-width: 1.5;
+      }
+
+      .placement-preview .preview-tower {
+        stroke: #0f172a;
+        stroke-width: 1.5;
+      }
+
       .tower-range {
         fill: none;
         stroke: #38bdf8;
@@ -315,7 +330,8 @@
           damage: 10,
           interval: 480,
           projectileSpeed: 420,
-          bullet: 'arrow'
+          bullet: 'arrow',
+          color: '#eab308'
         },
         cannon: {
           name: '炮塔',
@@ -324,7 +340,8 @@
           damage: 28,
           interval: 1150,
           projectileSpeed: 330,
-          bullet: 'cannon'
+          bullet: 'cannon',
+          color: '#94a3b8'
         },
         frost: {
           name: '冰塔',
@@ -335,7 +352,8 @@
           projectileSpeed: 360,
           bullet: 'frost',
           slowFactor: 0.45,
-          slowMs: 1500
+          slowMs: 1500,
+          color: '#38bdf8'
         }
       };
 
@@ -547,6 +565,7 @@
               group.attr('transform', `translate(${center.x} ${center.y})`);
               group.on('click', () => onPick(api));
 
+              // 已放置炮塔的射程圈：点击选中时显示，再次点击取消时隐藏。
               group.circle((range) => {
                 range.className('tower-range');
                 range.attr('r', def.range);
@@ -573,6 +592,56 @@
 
           fire(angle) {
             this.setState({ angle, cd: def.interval });
+          }
+        });
+      }
+
+      /*
+       * 放置预览：选中炮塔类型后，鼠标悬停到场地格子时显示
+       * 半透明的射程圈与炮塔占位，提示这块地放下去能覆盖多大范围。
+       * 不可放置（道路/已有炮塔/金币不足）时射程圈显示为红色。
+       */
+      function TowerPlacementPreview() {
+        return vStateNode({
+          state: () => ({
+            visible: false,
+            x: 0,
+            y: 0,
+            range: 0,
+            kind: null,
+            color: '#38bdf8',
+            valid: true
+          }),
+
+          render(state) {
+            return new SvgElementNode('g', (group) => {
+              group.className('placement-preview');
+              group.attr('transform', (s) => `translate(${s.x} ${s.y})`);
+              group.attr('opacity', (s) => (s.visible ? '1' : '0'));
+
+              group.circle((range) => {
+                range.className('preview-range');
+                range.attr('r', (s) => String(s.range));
+                range.style('fill', (s) =>
+                  s.valid ? 'rgb(56 189 248 / 8%)' : 'rgb(239 68 68 / 8%)'
+                );
+                range.style('stroke', (s) => (s.valid ? s.color : '#ef4444'));
+              });
+
+              group.circle((tower) => {
+                tower.className('preview-tower');
+                tower.attr('r', '15');
+                tower.style('fill', (s) => s.color);
+              });
+            });
+          },
+
+          show(info) {
+            this.setState({ visible: true, ...info });
+          },
+
+          hide() {
+            this.setState({ visible: false });
           }
         });
       }
@@ -610,8 +679,9 @@
         });
       }
 
-      function Playfield({ onCellClick }) {
+      function Playfield({ onCellClick, resolvePreview }) {
         let fieldNode = null;
+        const preview = TowerPlacementPreview();
 
         function addEntity(component) {
           fieldNode?.child(component);
@@ -641,11 +711,29 @@
                       'data-cell': `${col},${row}`
                     },
                     (cell) => {
-                      cell.on('click', () => onCellClick({ col, row }));
+                      const cellInfo = { col, row };
+
+                      // 点击落地；mouseenter 时用 resolvePreview 获取“这个格子能否放、范围多大”。
+                      cell.on('click', () => {
+                        onCellClick(cellInfo);
+                        preview.hide();
+                      });
+                      cell.on('mouseenter', () => {
+                        const info = resolvePreview?.(cellInfo);
+                        if (info) {
+                          preview.show(info);
+                        } else {
+                          preview.hide();
+                        }
+                      });
+                      cell.on('mouseleave', () => preview.hide());
                     }
                   );
                 }
               }
+
+              // 预览图层最后追加，绘制在所有格子之上。
+              field.child(preview);
             });
           },
 
@@ -664,7 +752,7 @@
             waveActive: false,
             gameOver: false,
             selectedType: null,
-            message: '选择炮塔类型后点击空地放置'
+            message: '选择炮塔类型后悬停空地预览攻击范围，点击放置'
           }),
 
           render(state, api) {
@@ -744,7 +832,7 @@
           waveNumber: 0,
           waveActive: false,
           gameOver: false,
-          message: '选择炮塔类型后点击空地放置',
+          message: '选择炮塔类型后悬停空地预览攻击范围，点击放置',
           selectedType: null,
           selectedTower: null,
           spawnQueue: [],
@@ -819,6 +907,28 @@
             model.message = `已选择${TOWER_DEFS[kind].name}，点击空地放置`;
           },
 
+          // 悬停预览：返回当前选中炮塔在指定格子的射程与可否放置。
+          placementInfo({ col, row }) {
+            if (!model.selectedType || model.gameOver) {
+              return null;
+            }
+
+            const def = TOWER_DEFS[model.selectedType];
+            const key = `${col},${row}`;
+            const center = cellCenter(col, row);
+            const blocked =
+              PATH.pathCells.has(key) || model.occupied.has(key) || model.gold < def.cost;
+
+            return {
+              x: center.x,
+              y: center.y,
+              range: def.range,
+              color: def.color,
+              kind: model.selectedType,
+              valid: !blocked
+            };
+          },
+
           pickTower(tower) {
             const alreadySelected = model.selectedTower === tower;
             if (model.selectedTower) {
@@ -860,6 +970,8 @@
             model.towers.push(tower);
             model.view?.addEntity(tower);
             model.message = `${def.name}已放置（花费 ${def.cost}）`;
+            // 放置成功后自动选中新炮塔，立即显示它的攻击范围。
+            this.pickTower(tower);
           },
 
           startWave() {
@@ -1001,7 +1113,8 @@
           onCellClick: (cell) => {
             model.tryPlaceTower(cell);
             syncHud();
-          }
+          },
+          resolvePreview: (cell) => model.placementInfo(cell)
         });
 
         model.setView({
