@@ -205,7 +205,7 @@ describe('scada twin standalone', () => {
 
     host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2 }));
     host.dispatchEvent(
-      new MouseEvent('pointermove', { bubbles: true, button: 2, clientX: 120, clientY: 80 })
+      new MouseEvent('mousemove', { bubbles: true, button: 2, clientX: 120, clientY: 80 })
     );
     host.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
     host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: -120 }));
@@ -268,7 +268,7 @@ describe('scada twin standalone', () => {
       new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 120, clientY: 100 })
     );
     host.dispatchEvent(
-      new MouseEvent('pointermove', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
+      new MouseEvent('mousemove', { bubbles: true, button: 0, clientX: 260, clientY: 120 })
     );
     host.dispatchEvent(
       new MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 260, clientY: 120 })

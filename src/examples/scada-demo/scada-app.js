@@ -306,7 +306,7 @@ export function ScadaTwinStandalone() {
     updateCenterTarget();
   }
 
-  function handleCanvasMove(event) {
+  function handleLookMove(event) {
     if (runtime.statusOpen) {
       return;
     }
@@ -326,13 +326,20 @@ export function ScadaTwinStandalone() {
         runtime.drag.moved = true;
       }
     } else {
+      // 鼠标在 HUD 面板上时不转动视角，避免悬停按钮时画面乱转。
+      const target = event.target;
+      if (target && typeof target.closest === 'function' && target.closest('.hud-panel')) {
+        runtime.lastPointer = null;
+        runtime.pointer.has = false;
+        return;
+      }
       // 未锁定回退：直接用两次事件的 client 坐标差模拟相对位移。
       if (runtime.lastPointer) {
         dx = event.clientX - runtime.lastPointer.x;
         dy = event.clientY - runtime.lastPointer.y;
       }
       runtime.lastPointer = { x: event.clientX, y: event.clientY };
-      const host = event.currentTarget;
+      const host = runtime.canvas || event.currentTarget;
       const rect = host.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         runtime.pointer = {
@@ -388,7 +395,8 @@ export function ScadaTwinStandalone() {
   }
 
   function handlePointerLockChange() {
-    runtime.pointerLocked = runtime.canvas && document.pointerLockElement === runtime.canvas;
+    // 只要本 document 存在指针锁定元素即视为锁定（部分环境锁定在容器而非 canvas 上）。
+    runtime.pointerLocked = Boolean(runtime.canvas && document.pointerLockElement);
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
       runtime.drag = null;
@@ -857,6 +865,9 @@ export function ScadaTwinStandalone() {
   function bindWindowInputs() {
     runtime.cleanups.push(bindWindowEvent('keydown', handleKeyDown));
     runtime.cleanups.push(bindWindowEvent('keyup', handleKeyUp));
+    // 与 three.js 官方 PointerLockControls 一致：锁定期间在 document/window 级
+    // 监听鼠标移动，确保拿到 movementX/movementY（画布级监听在某些环境收不到）。
+    runtime.cleanups.push(bindWindowEvent('mousemove', handleLookMove));
     runtime.cleanups.push(bindWindowEvent('pointerlockchange', handlePointerLockChange));
     runtime.cleanups.push(bindWindowEvent('pointerlockerror', handlePointerLockError));
   }
@@ -931,7 +942,6 @@ export function ScadaTwinStandalone() {
     runtime.lastPointer = null;
     runtime.pointer.has = false;
   });
-  threeNode.on('pointermove', handleCanvasMove);
 
   return {
     destroy() {
