@@ -81,7 +81,6 @@ Keep the static release / test badges in sync at each release.
 
 | Signal               | Current value                                                   | How to verify                                                |
 | -------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
-| Semantic release     | `0.3.2`                                                         | `package.json`                                               |
 | Test suite           | 760 test cases across 95 files                                  | `npm test` (Vitest + jsdom)                                  |
 | Runtime dependencies | **0**                                                           | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for all 4 entries, validated by consumer type tests     | `npm run typecheck`                                          |
