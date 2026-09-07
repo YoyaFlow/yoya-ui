@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>工业 SCADA · 数字孪生演示</title>
+    <style>
+      body {
+        background: #f5f7fa;
+        color: #172033;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.5;
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      #app {
+        min-height: 100vh;
+      }
+
+      .scada-twin h1 {
+        font-size: 1.45rem;
+        margin: 0;
+      }
+
+      .scada-twin > p {
+        color: #5a6575;
+        margin: 8px 0 0;
+      }
+
+      .scada-viewport {
+        cursor: grab;
+        height: 520px;
+        touch-action: none;
+      }
+
+      .scada-viewport:active {
+        cursor: grabbing;
+      }
+
+      .scada-device-list [data-selected='true'] {
+        outline: 2px solid var(--yoya-color-primary, #2563eb);
+        outline-offset: 1px;
+      }
+
+      .scada-alarm-box .yoya-vcard-body,
+      .scada-alarm-box {
+        max-height: 320px;
+      }
+
+      .scada-alarm-box {
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import '../yoya.ui.css';
+      import { ScadaTwinStandalone } from './scada-demo/scada-app.js';
+
+      ScadaTwinStandalone().render().bindTo('#app');
+    </script>
+  </body>
+</html>
