@@ -22,6 +22,11 @@ import {
   updateSelectMarker
 } from './scada-render.js';
 
+/**
+ * 初始相机姿态模板。Object.freeze 会让 TS 把数值推断成字面量类型，
+ * 这里显式标注 number，保证运行时拷贝 runtime.view 后仍可赋值。
+ * @type {{ pitch: number, x: number, y: number, yaw: number, z: number }}
+ */
 const START_VIEW = Object.freeze({ pitch: -0.08, x: -7.5, y: 2.2, yaw: -0.62, z: 7 });
 const WALK_SPEED = 5;
 const RUN_SPEED = 9.5;
