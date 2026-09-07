@@ -70,6 +70,7 @@ export function ScadaTwinStandalone() {
     marker: null,
     pointerLocked: false,
     renderer: null,
+    suppressClick: false,
     timer: null,
     view: { ...START_VIEW }
   };
@@ -125,6 +126,10 @@ export function ScadaTwinStandalone() {
   }
 
   function handleClick(event) {
+    if (runtime.suppressClick) {
+      runtime.suppressClick = false;
+      return;
+    }
     if (!runtime.camera) {
       return;
     }
@@ -174,8 +179,14 @@ export function ScadaTwinStandalone() {
   }
 
   function startDrag(event) {
-    if (event.button === 2 && !runtime.pointerLocked) {
-      runtime.drag = { x: event.clientX, y: event.clientY };
+    if (!runtime.pointerLocked && (event.button === 0 || event.button === 2)) {
+      runtime.drag = {
+        moved: false,
+        startX: event.clientX,
+        startY: event.clientY,
+        x: event.clientX,
+        y: event.clientY
+      };
       event.preventDefault();
     }
   }
@@ -184,17 +195,34 @@ export function ScadaTwinStandalone() {
     if (runtime.pointerLocked) {
       return;
     }
-    updateHover(event);
     if (!runtime.drag) {
+      updateHover(event);
       return;
+    }
+    const distance = Math.hypot(
+      event.clientX - runtime.drag.startX,
+      event.clientY - runtime.drag.startY
+    );
+    if (distance > 3) {
+      runtime.drag.moved = true;
     }
     const dx = event.clientX - runtime.drag.x;
     const dy = event.clientY - runtime.drag.y;
     runtime.drag.x = event.clientX;
     runtime.drag.y = event.clientY;
+    if (!runtime.drag.moved) {
+      return;
+    }
     runtime.view.yaw -= dx * 0.006;
     runtime.view.pitch = clamp(runtime.view.pitch - dy * 0.005, -1.2, 1.2);
     updateCamera();
+  }
+
+  function finishDrag() {
+    if (runtime.drag?.moved && runtime.drag.button === 0) {
+      runtime.suppressClick = true;
+    }
+    endDrag();
   }
 
   function endDrag() {
@@ -222,8 +250,8 @@ export function ScadaTwinStandalone() {
     }
     ui.lockHint.textContent(
       canRequestLock()
-        ? '点击进入；未锁定也可 WASD 飞行 · 空格/V 升降 · 1-4 选择'
-        : '自由飞行：WASD 移动 · 空格上升 · V 下降 · 右键拖动视角'
+        ? '点击进入鼠标视角；未锁定：按住左/右键拖动旋转 · WASD 飞行'
+        : '按住左键或右键拖动旋转视角 · WASD 移动 · 空格/V 升降'
     );
   }
 
@@ -626,7 +654,7 @@ export function ScadaTwinStandalone() {
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', endDrag);
   threeNode.on('pointermove', moveDrag);
-  threeNode.on('pointerup', endDrag);
+  threeNode.on('pointerup', finishDrag);
 
   return {
     destroy() {
