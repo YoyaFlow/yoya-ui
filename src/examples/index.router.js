@@ -547,50 +547,53 @@ function createOverviewView() {
     view.attr('data-overview-page', 'true');
     view.h2('概述');
     view.p(
-      'yoya-ui 是面向所有 Web 开发者的轻量原生 JS UI 基础库，用 ViewNode DSL 构建可嵌入、可组合、低依赖的 Web UI；相比 React/Vue，后端与全栈开发者也能更方便地直接上手。'
+      'yoya-ui 是基于浏览器原生 Web 技术的声明式 UI 基础库：普通 JS DSL 构建真实 DOM，无需构建即可运行；可独立搭建整站，也可嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有项目做局部增强。'
     );
     view.p('左侧菜单查看组件分类，右侧页面包含实时演示、源码面板和开发指南。');
 
-    view.section((principles) => {
-      principles.className('components-overview-principles');
-      principles.h3('定位与设计');
-      principles.div((grid) => {
+    view.section((highlights) => {
+      highlights.className('components-overview-principles');
+      highlights.h3('为什么选择 yoya-ui');
+      highlights.div((grid) => {
         grid.className('components-overview-grid components-overview-principles-grid');
         [
           {
-            title: '定位',
+            title: '长期维护',
             points: [
-              '这是一套新的业务界面构建形式：Web 基础库，自带 UI 组件仅为开箱即用，不代表库的能力边界。',
-              '面向所有 Web 开发者的轻量原生 JS 基础库，同时提供常用 UI 组件库；相比 React/Vue，后端与全栈开发者也能更低门槛地上手。',
-              '回归本质，直接基于浏览器原生环境构建，相比 React/Vue 更轻、上手更直接。',
-              'AI生成组件直接可使用，避免环境问题，返工率极低。',
-              '适合厌倦前端层出不穷的新概念、新框架与破坏性版本更新的开发者。'
+              'API 构建于稳定的原生 Web 标准之上，一套代码长期可用，无需维护多框架版本并存的项目。'
             ]
           },
           {
-            title: '优势',
-            points: [
-              '核心库保持稳定，直接构建真实 DOM。适合长期运维项目，如客户内部环境部署。',
-              '支持局部挂载、单页应用。',
-              '组件、布局、路由、i18n、图表按模块扩展。',
-              '视图语法基于原生 HTML 与声明式结构，消除 UI 库语法版本变更带来的迁移负担。'
-            ]
+            title: '接入方式自由',
+            points: ['script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
           },
           {
-            title: '设计理念',
-            points: [
-              '浏览器原生优先，采用声明式结构化 JS 元素组织视图，消除 HTML 标签化语言与复杂操作逻辑不兼容的问题。',
-              '小核加扩展，组件边界清晰，能力按需引入。',
-              '可嵌入、可组合：支持局部挂载与服务端模板嵌入，也可独立构建整站 SPA。'
-            ]
+            title: '声明式直观灵活',
+            points: ['普通 JS 声明式 DSL、setup 回调与父节点快捷方法，结构清晰、组合自由。']
+          },
+          {
+            title: '多场景、全栈统一',
+            points: ['同一套界面逻辑覆盖整站 SPA、服务端模板与 SSR，Web 界面开发一套写法。']
+          },
+          {
+            title: '原生 JS 适应性高',
+            points: ['无虚拟 DOM 与框架运行时，产出原生 HTML/DOM/JS，长期运行不过时。']
+          },
+          {
+            title: '可嵌入局部增强',
+            points: ['bindTo() 可挂载进 HTML、Vue、React、htmx、PHP、JSP 等既有项目，渐进增强。']
+          },
+          {
+            title: 'AI 编程亲和',
+            points: ['声明式纯 JS、无框架上下文，AI 生成组件可直接运行，返工率低。']
           }
-        ].forEach((principle) => {
+        ].forEach((highlight) => {
           grid.article((card) => {
             card.className('components-overview-card components-overview-principle-card');
-            card.attr('data-overview-principle', principle.title);
-            card.h3(principle.title);
+            card.attr('data-overview-principle', highlight.title);
+            card.h3(highlight.title);
             card.ul((list) => {
-              principle.points.forEach((point) => list.li(point));
+              highlight.points.forEach((point) => list.li(point));
             });
           });
         });

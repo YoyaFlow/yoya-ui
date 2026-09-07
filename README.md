@@ -9,6 +9,20 @@
 > declarative, state-managed, SSR-capable application. No virtual DOM, no JSX,
 > no mandatory build step.
 
+## Why choose yoya-ui
+
+Seven reasons, in short:
+
+| Reason                                  | What it means                                                                                                                                                                           |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Built for long-term maintenance**     | A stable API on native Web standards: you maintain one codebase, not projects built against several framework major versions, and you never rewrite for a framework's breaking upgrade. |
+| **Free choice of integration**          | Script tag, npm ESM/UMD, Vite/webpack, SSR or a scaffolded template all work; capabilities are imported per module, on demand.                                                          |
+| **Declarative, intuitive and flexible** | Plain-JS declarative DSL, setup callbacks and parent shortcuts — no JSX/SFC template layer; the view structure is the code structure.                                                   |
+| **One stack across scenarios**          | The same page factory and state logic covers a full SPA, server-side templates and SSR/hydration — one Web-UI development logic across the whole stack.                                 |
+| **Plain JS, assets that do not expire** | Highly adaptable plain JS with no virtual DOM or framework runtime: output is real HTML/DOM/JS, so standards-based Web software keeps running as browsers evolve.                       |
+| **Drop into existing projects**         | `bindTo()` mounts any local interaction into an existing HTML, Vue, React, htmx, PHP or JSP page for progressive enhancement — no migration required.                                   |
+| **AI-friendly by design**               | No framework context or build magic: AI-generated declarative components run directly, so prototyping and batch page generation rarely need rework.                                     |
+
 ## Positioning: a universal glue base, not a walled-garden framework
 
 yoya-ui does not try to replace the web. It treats the real DOM as the
@@ -30,40 +44,17 @@ limit of the platform.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-This design philosophy has four direct consequences:
-
-| Principle                     | Meaning                                                                                                                                                          |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Native-first**              | Real DOM nodes, native events, standard HTML/CSS/JS. No renderer to fight, no framework runtime to version-pin.                                                  |
-| **Composition, not wrapping** | Third-party libraries keep their own public API. yoya-ui supplies the lifecycle glue (`mount` / `destroy` / resize / SSR placeholders), not a re-implementation. |
-| **SPA kernel included**       | Router, i18n, theming and state are built in, so the glue layer is useful on its own — no "bring your own everything" treadmill.                                 |
-| **Delivery-agnostic**         | Same code runs as a plain page without a bundler, inside a Vite/webpack app, as an embedded widget, or as SSR + hydration.                                       |
-
-In short: **yoya-ui is the base layer you build on when you want the web's full
-ecosystem — without being locked into one framework's universe.**
-
-### What yoya-ui is not (clearing up common misconceptions)
-
-"UI library" often reads as "a giant framework that provides everything."
-yoya-ui deliberately draws a different line:
-
-- **Not an ecosystem-monopoly framework.** yoya-ui does not ask you to use only
-  what it ships, and it does not try to "cover" specialist domains for you.
-  Rich-text editing, spreadsheets, maps and complex visualization have more
-  professional ecosystems (Quill, Handsontable, MapLibre, ECharts…), and those
-  libraries embed directly with their native APIs — no Wrapper, no Adapter.
-- **Not a zero-component base either.** High-frequency capabilities such as
-  forms, tables, navigation, feedback and dashboard boards are available out of
-  the box; for charts, the thin `vEchart` adapter is ready to use, and you can
-  equally hand over your own ECharts instance or any other chart library.
-  Built-ins are convenience and reference implementations, not the boundary of
-  the platform.
-- **Not anti-engineering.** npm, Vite/webpack, TypeScript, CI/CD and SSR are all
-  first-class. What yoya-ui removes is the framework runtime, not modern
-  frontend engineering infrastructure.
+It is neither an ecosystem-monopoly framework nor a zero-component base:
+specialist domains such as rich-text editing, spreadsheets, maps and complex
+visualization belong to the Web's own professional ecosystems (Quill,
+Handsontable, MapLibre, ECharts…), which embed through their native APIs — no
+Wrapper, no Adapter — while high-frequency capabilities like forms, tables,
+navigation, feedback and dashboard boards are available out of the box. npm,
+Vite/webpack, TypeScript, CI/CD and SSR remain first-class: yoya-ui removes the
+framework runtime, not modern frontend engineering infrastructure.
 
 In one sentence: **glue, not wheels — built-ins solve high-frequency problems,
-specialist domains belong to the Web's own ecosystem, and the real DOM lets both compose
+specialist domains belong to the Web ecosystem, and the real DOM composes both
 freely in one view tree.**
 
 ## Engineering signals (read these before the star count)
@@ -183,26 +174,14 @@ enters the yoya-ui runtime.
 ## Why native Web: frameworks expire, standards don't
 
 **The browser is already a good enough runtime.** HTML and CSS are declarative
-by nature, the DOM API is clear and imperative, and the Web Components
-specification has standardized custom elements, style isolation and slots.
-yoya-ui does not stack another virtual DOM, template compiler or framework
-scheduler on top of that native chain.
+by nature, and the DOM API is clear and direct; yoya-ui does not stack another
+virtual DOM, template compiler or framework scheduler on that native chain.
 
-**Standards are backward-compatible; framework versions fragment.** The long-term
-promise of Web standards is compatibility: `document.createElement` written
-years ago still runs today, and the HTML specification does not break existing
-pages with breaking changes. yoya-ui builds its stable API on Web standards and
-locks the behavior down with spec documents and 760+ tests, which means:
-
-- long-lived projects do not rewrite their code style with every framework major
-  version — the team maintains one API mental model;
-- in project-based delivery with multiple customer sites, different versions do
-  not split into React 15/16/17-style dialect islands;
-- every browser step forward (new CSS, new Web APIs) benefits a yoya-ui project
-  directly, with no waiting for a framework to adapt.
-
-If "still cheap to maintain in three years" matters to you, this difference is
-not a nice-to-have — it is a core selection factor.
+**Standards are backward-compatible; framework versions fragment.**
+`document.createElement` written years ago still runs today, and every browser
+step forward (new CSS, new Web APIs) benefits a yoya-ui project directly. That
+is the root of reasons 1 and 5 above: the stable API sits on Web standards and
+is locked down by spec documents and 760+ tests.
 
 ## Honest about the cold start — and why that is early-adopter value
 
@@ -216,9 +195,6 @@ What early adopters get now:
 - **A stable conceptual core.** The component shapes, lifecycle and composition
   model are frozen in the component authoring guide
   (`docs/component-authoring.md`) rather than drifting release to release.
-- **Zero-dep, zero-lock-in adoption.** Because there is no framework runtime or
-  virtual DOM, migrating in — or out — is a code-style decision, not a
-  data-migration project.
 - **Direct influence.** Early adopters shape priorities while the surface is
   still small enough to steer.
 
