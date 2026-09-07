@@ -133,17 +133,46 @@
         div,
         svg,
         SvgElementNode,
-        vText
+        vStateNode
       } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
 
       /*
        * 页面由以下独立组件组合而成：
        * - KeyboardInput：只负责按键状态，不碰任何 UI；
-       * - Car：小车自己的 SVG 视图 + 运动状态，只暴露 render()/step()/reset()；
-       * - Playfield：SVG 场地（背景、网格、车道），只负责展示与组合 Car；
-       * - StatusBar：状态栏视图，只负责把状态渲染成文本；
+       * - Car：vStateNode 小车（状态 + SVG 视图），动态属性随状态自动写回；
+       * - Playfield：SVG 场地，只负责展示与组合 Car；
+       * - StatusBar：vStateNode 状态栏，文本用状态绑定自动更新；
        * - CarDemoPage：页面壳，组合以上组件并驱动动画循环。
        */
+
+      const CAR_BODY = { class: 'car-body', x: -85, y: -48, width: 170, height: 96, rx: 30 };
+      const CAR_ROOF = { class: 'car-roof', x: -50, y: -30, width: 82, height: 60, rx: 18 };
+      const CAR_WHEEL_POSITIONS = [
+        [-58, -55],
+        [58, -55],
+        [-58, 55],
+        [58, 55]
+      ];
+      const CAR_HEADLIGHTS = [
+        { x: 75, y: -40 },
+        { x: 75, y: 24 }
+      ];
+      const CAR_TAILLIGHTS = [
+        { x: -83, y: -40 },
+        { x: -83, y: 24 }
+      ];
+      const CAR_PHYSICS = { accel: 0.7, friction: 0.92, maxSpeed: 8 };
+      const CAR_BEAM_PATH = 'M 52 -28 L 210 -18 L 210 18 L 52 28 Z';
+      const DIRECTION_ARROWS = ['→', '↓', '←', '↑'];
+
+      function clampNumber(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function directionLabel(angle) {
+        const normalized = ((angle % 360) + 360) % 360;
+        return DIRECTION_ARROWS[Math.round(normalized / 90) % 4];
+      }
 
       function KeyboardInput() {
         const pressed = new Set();
@@ -202,163 +231,110 @@
       }
 
       function Car({ bounds, start }) {
-        const state = {
-          position: { x: start.x, y: start.y },
-          velocity: { x: 0, y: 0 },
-          angle: 0,
-          beamOpacity: 0
-        };
+        return vStateNode({
+          state: () => ({
+            x: start.x,
+            y: start.y,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            beamOpacity: 0
+          }),
 
-        const physics = {
-          accel: 0.7,
-          friction: 0.92,
-          maxSpeed: 8
-        };
-
-        let groupNode = null;
-        let beamNode = null;
-
-        function clampValue(value, min, max) {
-          return Math.max(min, Math.min(max, value));
-        }
-
-        function shortestAngleDiff(current, target) {
-          let diff = (target - current) % 360;
-          if (diff > 180) {
-            diff -= 360;
-          }
-          if (diff < -180) {
-            diff += 360;
-          }
-          return diff;
-        }
-
-        function addWheel(carGroup, slot) {
-          carGroup.circle({ class: 'car-wheel', cx: slot[0], cy: slot[1], r: 14 });
-        }
-
-        function renderCarBody(carGroup) {
-          carGroup.rect({
-            class: 'car-body',
-            x: -85,
-            y: -48,
-            width: 170,
-            height: 96,
-            rx: 30
-          });
-
-          carGroup.rect({
-            class: 'car-roof',
-            x: -50,
-            y: -30,
-            width: 82,
-            height: 60,
-            rx: 18
-          });
-        }
-
-        function renderLights(carGroup) {
-          carGroup.rect({ class: 'car-headlight', x: 75, y: -40, width: 8, height: 16, rx: 4 });
-          carGroup.rect({ class: 'car-headlight', x: 75, y: 24, width: 8, height: 16, rx: 4 });
-          carGroup.rect({ class: 'car-taillight', x: -83, y: -40, width: 8, height: 16, rx: 4 });
-          carGroup.rect({ class: 'car-taillight', x: -83, y: 24, width: 8, height: 16, rx: 4 });
-        }
-
-        return {
-          render() {
+          render(state) {
             return new SvgElementNode('g', (carGroup) => {
-              groupNode = carGroup;
               carGroup.className('car');
-              carGroup.attr(
-                'transform',
-                `translate(${state.position.x} ${state.position.y}) rotate(${state.angle})`
-              );
+              carGroup.attr('transform', (s) => `translate(${s.x} ${s.y}) rotate(${s.angle})`);
 
               carGroup.path((beam) => {
-                beamNode = beam;
-                beam.attr({
-                  class: 'beam',
-                  d: 'M 52 -28 L 210 -18 L 210 18 L 52 28 Z'
-                });
-                beam.style('opacity', '0');
+                beam.className('beam');
+                beam.attr('d', CAR_BEAM_PATH);
+                beam.style('opacity', (s) => s.beamOpacity.toFixed(3));
               });
 
-              [
-                [-58, -55],
-                [58, -55],
-                [-58, 55],
-                [58, 55]
-              ].forEach((slot) => addWheel(carGroup, slot));
-              renderCarBody(carGroup);
-              [
-                [-58, -55],
-                [58, -55],
-                [-58, 55],
-                [58, 55]
-              ].forEach(([rimX, rimY]) => {
+              CAR_WHEEL_POSITIONS.forEach(([wheelX, wheelY]) => {
+                carGroup.circle({ class: 'car-wheel', cx: wheelX, cy: wheelY, r: 14 });
+              });
+
+              carGroup.rect(CAR_BODY);
+              carGroup.rect(CAR_ROOF);
+
+              CAR_WHEEL_POSITIONS.forEach(([rimX, rimY]) => {
                 carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 4.5 });
               });
-              renderLights(carGroup);
+
+              CAR_HEADLIGHTS.forEach((light) => {
+                carGroup.rect({
+                  class: 'car-headlight',
+                  ...light,
+                  width: 8,
+                  height: 16,
+                  rx: 4
+                });
+              });
+
+              CAR_TAILLIGHTS.forEach((light) => {
+                carGroup.rect({
+                  class: 'car-taillight',
+                  ...light,
+                  width: 8,
+                  height: 16,
+                  rx: 4
+                });
+              });
             });
           },
 
           step(movement) {
+            const state = this.state();
             const nextVelocityX =
-              clampValue(
-                state.velocity.x + movement.horizontal * physics.accel,
-                -physics.maxSpeed,
-                physics.maxSpeed
-              ) * physics.friction;
+              clampNumber(
+                state.vx + movement.horizontal * CAR_PHYSICS.accel,
+                -CAR_PHYSICS.maxSpeed,
+                CAR_PHYSICS.maxSpeed
+              ) * CAR_PHYSICS.friction;
             const nextVelocityY =
-              clampValue(
-                state.velocity.y + movement.vertical * physics.accel,
-                -physics.maxSpeed,
-                physics.maxSpeed
-              ) * physics.friction;
+              clampNumber(
+                state.vy + movement.vertical * CAR_PHYSICS.accel,
+                -CAR_PHYSICS.maxSpeed,
+                CAR_PHYSICS.maxSpeed
+              ) * CAR_PHYSICS.friction;
 
-            state.velocity.x = Math.abs(nextVelocityX) < 0.05 ? 0 : nextVelocityX;
-            state.velocity.y = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
-            state.position.x = clampValue(
-              state.position.x + state.velocity.x,
-              bounds.minX,
-              bounds.maxX
-            );
-            state.position.y = clampValue(
-              state.position.y + state.velocity.y,
-              bounds.minY,
-              bounds.maxY
-            );
+            state.vx = Math.abs(nextVelocityX) < 0.05 ? 0 : nextVelocityX;
+            state.vy = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
+            state.x = clampNumber(state.x + state.vx, bounds.minX, bounds.maxX);
+            state.y = clampNumber(state.y + state.vy, bounds.minY, bounds.maxY);
 
-            const speed = Math.hypot(state.velocity.x, state.velocity.y);
+            const speed = Math.hypot(state.vx, state.vy);
             if (speed > 0.4) {
-              const targetAngle = (Math.atan2(state.velocity.y, state.velocity.x) * 180) / Math.PI;
-              state.angle += shortestAngleDiff(state.angle, targetAngle) * 0.22;
+              const targetAngle = (Math.atan2(state.vy, state.vx) * 180) / Math.PI;
+              let angleDiff = (targetAngle - state.angle) % 360;
+              if (angleDiff > 180) {
+                angleDiff -= 360;
+              }
+              if (angleDiff < -180) {
+                angleDiff += 360;
+              }
+              state.angle += angleDiff * 0.22;
             }
 
-            groupNode.attr(
-              'transform',
-              `translate(${state.position.x} ${state.position.y}) rotate(${state.angle})`
-            );
-
-            const beamTarget = speed > 0.8 ? 0.24 : 0;
-            state.beamOpacity += (beamTarget - state.beamOpacity) * 0.12;
-            beamNode.style('opacity', state.beamOpacity.toFixed(3));
+            state.beamOpacity += ((speed > 0.8 ? 0.24 : 0) - state.beamOpacity) * 0.12;
+            this.setState(state);
 
             return { speed, angle: state.angle };
           },
 
           reset() {
-            state.position = { x: start.x, y: start.y };
-            state.velocity = { x: 0, y: 0 };
-            state.angle = 0;
-            state.beamOpacity = 0;
-            groupNode.attr(
-              'transform',
-              `translate(${state.position.x} ${state.position.y}) rotate(${state.angle})`
-            );
-            beamNode.style('opacity', '0');
+            return this.setState({
+              x: start.x,
+              y: start.y,
+              vx: 0,
+              vy: 0,
+              angle: 0,
+              beamOpacity: 0
+            });
           }
-        };
+        });
       }
 
       function Playfield({ car }) {
@@ -438,31 +414,18 @@
       }
 
       function StatusBar() {
-        const directionLabels = ['→', '↓', '←', '↑'];
-        const speedValue = vText('速度 0');
-        const directionValue = vText('方向 →');
+        return vStateNode({
+          state: () => ({ speed: 0, angle: 0 }),
 
-        function directionLabel(angle) {
-          const normalized = ((angle % 360) + 360) % 360;
-          const index = Math.round(normalized / 90) % 4;
-          return directionLabels[index];
-        }
-
-        return {
           render() {
             return div((status) => {
               status.className('demo-status');
-              status.child(speedValue);
+              status.text((s) => `速度 ${Math.round(s.speed * 10) / 10}`);
               status.text(' · ');
-              status.child(directionValue);
+              status.text((s) => `方向 ${directionLabel(s.angle)}`);
             });
-          },
-
-          update(status) {
-            speedValue.textContent(`速度 ${Math.round(status.speed * 10) / 10}`);
-            directionValue.textContent(`方向 ${directionLabel(status.angle)}`);
           }
-        };
+        });
       }
 
       function CarDemoPage() {
@@ -477,8 +440,7 @@
         let unbindInput = null;
 
         function tick() {
-          const status = car.step(input.movement());
-          statusBar.update(status);
+          statusBar.setState(car.step(input.movement()));
           frameId = requestAnimationFrame(tick);
         }
 
