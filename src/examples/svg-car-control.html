@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui SVG 小车方向控制</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        align-items: center;
+        background: #0b1220;
+        color: #e2e8f0;
+        display: flex;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        justify-content: center;
+        margin: 0;
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .demo-card {
+        background: #111a2c;
+        border: 1px solid #24324d;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgb(0 0 0 / 45%);
+        max-width: 960px;
+        padding: 20px 20px 24px;
+        width: 100%;
+      }
+
+      #app {
+        max-width: 960px;
+        width: 100%;
+      }
+
+      .demo-card h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+
+      .demo-card > p {
+        color: #8fa3bf;
+        font-size: 14px;
+        margin: 0 0 16px;
+      }
+
+      .playfield {
+        background: #16213a;
+        border: 1px solid #2b3d5f;
+        border-radius: 12px;
+        display: block;
+        height: auto;
+        touch-action: none;
+        width: 100%;
+      }
+
+      .lane {
+        stroke: #2c3f63;
+        stroke-width: 2;
+        stroke-dasharray: 10 14;
+        opacity: 0.55;
+      }
+
+      .grid {
+        fill: none;
+        stroke: #223252;
+        stroke-width: 1;
+      }
+
+      .car-wheel {
+        fill: #0b1424;
+        stroke: #33415c;
+        stroke-width: 1;
+      }
+
+      .car-body {
+        fill: url(#bodyPaint);
+        stroke: #223047;
+        stroke-width: 2;
+      }
+
+      .car-roof {
+        fill: url(#roofPaint);
+        stroke: #0f172a;
+        stroke-width: 1.5;
+      }
+
+      .car-rim {
+        fill: #cbd5e1;
+      }
+
+      .car-headlight {
+        fill: #fff7cc;
+      }
+
+      .car-taillight {
+        fill: #ef4444;
+      }
+
+      .car--blue .car-body {
+        fill: #60a5fa;
+        stroke: #1e3a8a;
+      }
+
+      .car--blue .car-roof {
+        fill: #1e293b;
+        stroke: #0f172a;
+      }
+
+      .beam {
+        fill: url(#beamPaint);
+      }
+
+      .demo-status {
+        color: #8fa3bf;
+        display: flex;
+        font-size: 13px;
+        gap: 18px;
+        justify-content: center;
+        margin-top: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import {
+        bindWindowEvent,
+        div,
+        svg,
+        SvgElementNode,
+        vStateNode
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
+
+      /*
+       * 页面由以下独立组件组合而成：
+       * - KeyboardInput：只负责按键状态，不碰任何 UI；
+       * - Car：vStateNode 小车（状态 + SVG 视图），动态属性随状态自动写回；
+       * - Playfield：SVG 场地，只负责展示与组合 Car；
+       * - StatusBar：vStateNode 状态栏，文本用状态绑定自动更新；
+       * - CarDemoPage：页面壳，组合以上组件并驱动动画循环。
+       */
+
+      const CAR_BODY = { class: 'car-body', x: -85, y: -48, width: 170, height: 96, rx: 30 };
+      const CAR_ROOF = { class: 'car-roof', x: -50, y: -30, width: 82, height: 60, rx: 18 };
+      const CAR_WHEEL_POSITIONS = [
+        [-58, -55],
+        [58, -55],
+        [-58, 55],
+        [58, 55]
+      ];
+      const CAR_HEADLIGHTS = [
+        { x: 75, y: -40 },
+        { x: 75, y: 24 }
+      ];
+      const CAR_TAILLIGHTS = [
+        { x: -83, y: -40 },
+        { x: -83, y: 24 }
+      ];
+      const CAR_PHYSICS = { accel: 0.7, friction: 0.92, maxSpeed: 8 };
+      const CAR_BEAM_PATH = 'M 52 -28 L 210 -18 L 210 18 L 52 28 Z';
+      const DIRECTION_ARROWS = ['→', '↓', '←', '↑'];
+
+      function clampNumber(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function directionLabel(angle) {
+        const normalized = ((angle % 360) + 360) % 360;
+        return DIRECTION_ARROWS[Math.round(normalized / 90) % 4];
+      }
+
+      function KeyboardInput() {
+        const groups = {
+          arrows: new Set(),
+          wasd: new Set()
+        };
+        const keyToAction = {
+          ArrowUp: ['arrows', 'up'],
+          ArrowDown: ['arrows', 'down'],
+          ArrowLeft: ['arrows', 'left'],
+          ArrowRight: ['arrows', 'right'],
+          w: ['wasd', 'up'],
+          a: ['wasd', 'left'],
+          s: ['wasd', 'down'],
+          d: ['wasd', 'right']
+        };
+
+        function handleKeyDown(event) {
+          const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+          const binding = keyToAction[key];
+          if (!binding) {
+            return;
+          }
+
+          event.preventDefault();
+          groups[binding[0]].add(binding[1]);
+        }
+
+        function handleKeyUp(event) {
+          const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+          const binding = keyToAction[key];
+          if (binding) {
+            groups[binding[0]].delete(binding[1]);
+          }
+        }
+
+        function handleBlur() {
+          clearAll();
+        }
+
+        function clearAll() {
+          Object.values(groups).forEach((pressed) => pressed.clear());
+        }
+
+        return {
+          bind() {
+            const unbindKeyDown = bindWindowEvent('keydown', handleKeyDown);
+            const unbindKeyUp = bindWindowEvent('keyup', handleKeyUp);
+            const unbindBlur = bindWindowEvent('blur', handleBlur);
+
+            return () => {
+              unbindKeyDown();
+              unbindKeyUp();
+              unbindBlur();
+            };
+          },
+
+          movement(group) {
+            const pressed = groups[group];
+            const horizontal = (pressed.has('right') ? 1 : 0) - (pressed.has('left') ? 1 : 0);
+            const vertical = (pressed.has('down') ? 1 : 0) - (pressed.has('up') ? 1 : 0);
+
+            return { horizontal, vertical };
+          },
+
+          clear() {
+            clearAll();
+          }
+        };
+      }
+
+      function Car({ bounds, start, variant = '' }) {
+        return vStateNode({
+          state: () => ({
+            x: start.x,
+            y: start.y,
+            vx: 0,
+            vy: 0,
+            angle: 0,
+            beamOpacity: 0,
+            selected: false,
+            braking: false
+          }),
+
+          render(state, component) {
+            return new SvgElementNode('g', (carGroup) => {
+              carGroup.className(['car', variant]);
+              carGroup.attr('transform', (s) => `translate(${s.x} ${s.y}) rotate(${s.angle})`);
+              carGroup.on('click', () =>
+                component.setState({ selected: !component.state().selected })
+              );
+
+              carGroup.path((beam) => {
+                beam.className('beam');
+                beam.attr('d', CAR_BEAM_PATH);
+                beam.style('opacity', (s) => s.beamOpacity.toFixed(3));
+              });
+
+              CAR_WHEEL_POSITIONS.forEach(([wheelX, wheelY]) => {
+                carGroup.circle({ class: 'car-wheel', cx: wheelX, cy: wheelY, r: 14 });
+              });
+
+              carGroup.rect(CAR_BODY, (body) => {
+                body.style('stroke', (s) => (s.selected ? '#facc15' : null));
+                body.style('stroke-width', (s) => (s.selected ? '4' : null));
+              });
+              carGroup.rect(CAR_ROOF);
+
+              CAR_WHEEL_POSITIONS.forEach(([rimX, rimY]) => {
+                carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 4.5 });
+              });
+
+              CAR_HEADLIGHTS.forEach((light) => {
+                carGroup.rect({
+                  class: 'car-headlight',
+                  ...light,
+                  width: 8,
+                  height: 16,
+                  rx: 4
+                });
+              });
+
+              CAR_TAILLIGHTS.forEach((light) => {
+                carGroup.rect(
+                  {
+                    class: 'car-taillight',
+                    ...light,
+                    width: 8,
+                    height: 16,
+                    rx: 4
+                  },
+                  (tail) => {
+                    tail.style('opacity', (s) => (s.braking ? '1' : '0.35'));
+                  }
+                );
+              });
+            });
+          },
+
+          step(movement) {
+            const state = this.state();
+            const nextVelocityX =
+              clampNumber(
+                state.vx + movement.horizontal * CAR_PHYSICS.accel,
+                -CAR_PHYSICS.maxSpeed,
+                CAR_PHYSICS.maxSpeed
+              ) * CAR_PHYSICS.friction;
+            const nextVelocityY =
+              clampNumber(
+                state.vy + movement.vertical * CAR_PHYSICS.accel,
+                -CAR_PHYSICS.maxSpeed,
+                CAR_PHYSICS.maxSpeed
+              ) * CAR_PHYSICS.friction;
+
+            state.vx = Math.abs(nextVelocityX) < 0.05 ? 0 : nextVelocityX;
+            state.vy = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
+            state.x = clampNumber(state.x + state.vx, bounds.minX, bounds.maxX);
+            state.y = clampNumber(state.y + state.vy, bounds.minY, bounds.maxY);
+            state.braking =
+              (state.vx > 0.15 && movement.horizontal < 0) ||
+              (state.vx < -0.15 && movement.horizontal > 0) ||
+              (state.vy > 0.15 && movement.vertical < 0) ||
+              (state.vy < -0.15 && movement.vertical > 0);
+
+            const speed = Math.hypot(state.vx, state.vy);
+            if (speed > 0.4) {
+              const targetAngle = (Math.atan2(state.vy, state.vx) * 180) / Math.PI;
+              let angleDiff = (targetAngle - state.angle) % 360;
+              if (angleDiff > 180) {
+                angleDiff -= 360;
+              }
+              if (angleDiff < -180) {
+                angleDiff += 360;
+              }
+              state.angle += angleDiff * 0.22;
+            }
+
+            state.beamOpacity += ((speed > 0.8 ? 0.24 : 0) - state.beamOpacity) * 0.12;
+            this.setState(state);
+
+            return { speed, angle: state.angle };
+          },
+
+          reset() {
+            return this.setState({
+              x: start.x,
+              y: start.y,
+              vx: 0,
+              vy: 0,
+              angle: 0,
+              beamOpacity: 0,
+              selected: false,
+              braking: false
+            });
+          }
+        });
+      }
+
+      function Playfield({ cars }) {
+        return {
+          render() {
+            return svg((field) => {
+              field.className('playfield');
+              field.attr({
+                viewBox: '0 0 900 600',
+                role: 'img',
+                'aria-label': '用方向键控制小车在场地中移动'
+              });
+
+              field.defs((defs) => {
+                defs.linearGradient((gradient) => {
+                  gradient.attr({ id: 'bodyPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+                  gradient.stop({ offset: '0%', 'stop-color': '#c7d4e4' });
+                  gradient.stop({ offset: '55%', 'stop-color': '#eef4fb' });
+                  gradient.stop({ offset: '100%', 'stop-color': '#9fb2c9' });
+                });
+
+                defs.linearGradient((gradient) => {
+                  gradient.attr({ id: 'roofPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+                  gradient.stop({ offset: '0%', 'stop-color': '#334155' });
+                  gradient.stop({ offset: '100%', 'stop-color': '#0f172a' });
+                });
+
+                defs.linearGradient((gradient) => {
+                  gradient.attr({ id: 'beamPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+                  gradient.stop({ offset: '0%', 'stop-color': '#fff7cc', 'stop-opacity': '0.6' });
+                  gradient.stop({ offset: '100%', 'stop-color': '#fff7cc', 'stop-opacity': '0' });
+                });
+              });
+
+              field.rect({
+                x: 0,
+                y: 0,
+                width: 900,
+                height: 600,
+                rx: 12,
+                fill: '#16213a'
+              });
+
+              [100, 200, 300, 400, 500].forEach((lineY) => {
+                field.line({ class: 'grid', x1: 0, y1: lineY, x2: 900, y2: lineY });
+              });
+
+              [100, 200, 300, 400, 500, 600, 700, 800].forEach((lineX) => {
+                field.line({ class: 'grid', x1: lineX, y1: 0, x2: lineX, y2: 600 });
+              });
+
+              field.rect({
+                x: 30,
+                y: 30,
+                width: 840,
+                height: 540,
+                rx: 10,
+                fill: 'none',
+                stroke: '#2b3d5f',
+                'stroke-width': 2
+              });
+
+              [
+                { x1: 30, y1: 150, x2: 870, y2: 150 },
+                { x1: 30, y1: 450, x2: 870, y2: 450 },
+                { x1: 150, y1: 30, x2: 150, y2: 570 },
+                { x1: 450, y1: 30, x2: 450, y2: 570 },
+                { x1: 750, y1: 30, x2: 750, y2: 570 }
+              ].forEach((lane) => {
+                field.line({ class: 'lane', ...lane });
+              });
+
+              cars.forEach((car) => field.child(car));
+            });
+          }
+        };
+      }
+
+      function StatusBar() {
+        return vStateNode({
+          state: () => ({ speedA: 0, angleA: 0, speedB: 0, angleB: 0 }),
+
+          render() {
+            return div((status) => {
+              status.className('demo-status');
+              status.text(
+                (s) => `A 速度 ${Math.round(s.speedA * 10) / 10} ${directionLabel(s.angleA)}`
+              );
+              status.text(' · ');
+              status.text(
+                (s) => `B 速度 ${Math.round(s.speedB * 10) / 10} ${directionLabel(s.angleB)}`
+              );
+            });
+          }
+        });
+      }
+
+      function CarDemoPage() {
+        const input = KeyboardInput();
+        const bounds = { minX: 75, maxX: 825, minY: 75, maxY: 525 };
+        const carA = Car({ bounds, start: { x: 430, y: 300 } });
+        const carB = Car({ bounds, start: { x: 620, y: 430 }, variant: 'car--blue' });
+        const statusBar = StatusBar();
+
+        let frameId = null;
+        let unbindInput = null;
+
+        function tick() {
+          const statusA = carA.step(input.movement('arrows'));
+          const statusB = carB.step(input.movement('wasd'));
+          statusBar.setState({
+            speedA: statusA.speed,
+            angleA: statusA.angle,
+            speedB: statusB.speed,
+            angleB: statusB.angle
+          });
+          frameId = requestAnimationFrame(tick);
+        }
+
+        return {
+          render() {
+            return div((page) => {
+              page.div((card) => {
+                card.className('demo-card');
+                card.h1('SVG 小车：方向键 / WASD 控制');
+                card.p(
+                  '方向键控制银色小车 A，WASD 控制蓝色小车 B；点击小车选中高亮，反向按键点亮刹车灯。'
+                );
+                card.child(Playfield({ cars: [carA, carB] }));
+                card.child(statusBar);
+              });
+            });
+          },
+
+          start() {
+            unbindInput = input.bind();
+            frameId = requestAnimationFrame(tick);
+          },
+
+          destroy() {
+            cancelAnimationFrame(frameId);
+            unbindInput?.();
+            input.clear();
+          }
+        };
+      }
+
+      const demo = CarDemoPage();
+      const root = demo.render();
+      root.bindTo('#app');
+      demo.start();
+    </script>
+  </body>
+</html>
