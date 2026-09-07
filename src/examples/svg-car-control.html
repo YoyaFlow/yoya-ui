@@ -215,20 +215,6 @@
           maxSpeed: 8
         };
 
-        const wheelSlots = [
-          { x: -68, y: -74 },
-          { x: 50, y: -74 },
-          { x: -68, y: 32 },
-          { x: 50, y: 32 }
-        ];
-
-        const rimSlots = [
-          [-59, -53],
-          [59, -53],
-          [-59, 53],
-          [59, 53]
-        ];
-
         let groupNode = null;
         let beamNode = null;
 
@@ -248,52 +234,34 @@
         }
 
         function addWheel(carGroup, slot) {
-          carGroup.rect({
-            class: 'car-wheel',
-            x: slot.x,
-            y: slot.y,
-            width: 18,
-            height: 42,
-            rx: 9
-          });
+          carGroup.circle({ class: 'car-wheel', cx: slot[0], cy: slot[1], r: 14 });
         }
 
         function renderCarBody(carGroup) {
           carGroup.rect({
             class: 'car-body',
-            x: -50,
-            y: -84,
-            width: 100,
-            height: 168,
+            x: -85,
+            y: -48,
+            width: 170,
+            height: 96,
             rx: 30
           });
 
           carGroup.rect({
             class: 'car-roof',
-            x: -22,
-            y: -58,
-            width: 62,
-            height: 116,
-            rx: 24
-          });
-
-          carGroup.rect({
-            x: -10,
-            y: -46,
-            width: 34,
-            height: 92,
-            rx: 12,
-            fill: '#1b2942',
-            stroke: '#0f172a',
-            'stroke-width': 1
+            x: -50,
+            y: -30,
+            width: 82,
+            height: 60,
+            rx: 18
           });
         }
 
         function renderLights(carGroup) {
-          carGroup.rect({ class: 'car-headlight', x: 44, y: -40, width: 8, height: 16, rx: 3 });
-          carGroup.rect({ class: 'car-headlight', x: 44, y: 24, width: 8, height: 16, rx: 3 });
-          carGroup.rect({ class: 'car-taillight', x: -52, y: -40, width: 8, height: 16, rx: 3 });
-          carGroup.rect({ class: 'car-taillight', x: -52, y: 24, width: 8, height: 16, rx: 3 });
+          carGroup.rect({ class: 'car-headlight', x: 75, y: -40, width: 8, height: 16, rx: 4 });
+          carGroup.rect({ class: 'car-headlight', x: 75, y: 24, width: 8, height: 16, rx: 4 });
+          carGroup.rect({ class: 'car-taillight', x: -83, y: -40, width: 8, height: 16, rx: 4 });
+          carGroup.rect({ class: 'car-taillight', x: -83, y: 24, width: 8, height: 16, rx: 4 });
         }
 
         return {
@@ -315,11 +283,21 @@
                 beam.style('opacity', '0');
               });
 
-              wheelSlots.forEach((slot) => addWheel(carGroup, slot));
-              rimSlots.forEach(([rimX, rimY]) => {
-                carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 3.5 });
-              });
+              [
+                [-58, -55],
+                [58, -55],
+                [-58, 55],
+                [58, 55]
+              ].forEach((slot) => addWheel(carGroup, slot));
               renderCarBody(carGroup);
+              [
+                [-58, -55],
+                [58, -55],
+                [-58, 55],
+                [58, 55]
+              ].forEach(([rimX, rimY]) => {
+                carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 4.5 });
+              });
               renderLights(carGroup);
             });
           },
