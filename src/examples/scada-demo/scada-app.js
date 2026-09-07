@@ -67,6 +67,7 @@ export function ScadaTwinStandalone() {
     canvas: null,
     cleanups: [],
     keys: new Set(),
+    lastPointer: null,
     layerGroup: null,
     marker: null,
     pointerLocked: false,
@@ -203,11 +204,16 @@ export function ScadaTwinStandalone() {
   }
 
   function handleCanvasMove(event) {
-    if (runtime.statusOpen || !runtime.pointerLocked) {
+    if (runtime.statusOpen) {
       return;
     }
-    const dx = event.movementX;
-    const dy = event.movementY;
+    let dx = typeof event.movementX === 'number' ? event.movementX : 0;
+    let dy = typeof event.movementY === 'number' ? event.movementY : 0;
+    if (!runtime.pointerLocked && (dx === 0 || dy === 0) && runtime.lastPointer) {
+      dx = event.clientX - runtime.lastPointer.x;
+      dy = event.clientY - runtime.lastPointer.y;
+    }
+    runtime.lastPointer = { x: event.clientX, y: event.clientY };
     if (!dx && !dy) {
       return;
     }
@@ -221,6 +227,7 @@ export function ScadaTwinStandalone() {
     runtime.statusOpen = !runtime.statusOpen;
     if (runtime.statusOpen) {
       exitLock();
+      runtime.lastPointer = null;
     }
     ui.statusWindow?.setState({ open: runtime.statusOpen });
     syncReticleVisibility();
@@ -231,6 +238,7 @@ export function ScadaTwinStandalone() {
     runtime.pointerLocked = runtime.canvas && document.pointerLockElement === runtime.canvas;
     if (!runtime.pointerLocked) {
       runtime.keys.clear();
+      runtime.lastPointer = null;
     }
     syncReticleVisibility();
     updateLockHint();
@@ -263,8 +271,8 @@ export function ScadaTwinStandalone() {
     }
     ui.lockHint.textContent(
       canRequestLock()
-        ? '点击画面进入 FPS：鼠标按相对位移跟手 · WASD 飞行 · Alt/Tab 状态窗口'
-        : '当前环境不支持 Pointer Lock，无法做到 1:1 FPS 跟手'
+        ? '点击画面锁定 FPS；未锁定也按相对位移直接转向 · WASD 飞行'
+        : '未锁定模式：移动鼠标直接转向（受屏幕边缘限制）· WASD 飞行'
     );
   }
 
@@ -681,7 +689,7 @@ export function ScadaTwinStandalone() {
   threeNode.on('click', handleClick);
   threeNode.on('contextmenu', handleContextMenu);
   threeNode.on('pointerleave', () => {
-    // Pointer Lock 下不需要处理离开；非锁定态不参与视角。
+    runtime.lastPointer = null;
   });
   threeNode.on('pointermove', handleCanvasMove);
 
