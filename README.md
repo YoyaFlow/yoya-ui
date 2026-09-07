@@ -99,19 +99,6 @@ npm run lint          # ESLint
 npm run format:check  # Prettier
 ```
 
-### Production use
-
-The project is young, so this list is still growing. If yoya-ui powers your
-product, we would love to feature it here — open an issue or discussion.
-
-<!-- Production showcase: add entries in the same shape, with a link when public.
-
-| Project | Domain | How yoya-ui is used |
-| --- | --- | --- |
-| Example Admin (link) | Internal operations platform | Full SPA shell (router + i18n + theme) with embedded ECharts dashboards and SSR pages |
-
--->
-
 ## Interop, demonstrated: ECharts in a declarative page
 
 The official `vEchart` component is the reference implementation of the glue

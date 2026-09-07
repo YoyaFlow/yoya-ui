@@ -86,19 +86,6 @@ npm run lint          # ESLint
 npm run format:check  # Prettier
 ```
 
-### 生产环境案例
-
-项目还年轻，这份名单正在增长。如果你的产品正在使用 yoya-ui，欢迎通过 issue
-或 discussion 告诉我们，我们很乐意把案例展示在这里。
-
-<!-- 生产案例展示：按同样格式补充条目，公开项目请附上链接。
-
-| 项目 | 领域 | yoya-ui 的使用方式 |
-| --- | --- | --- |
-| 示例 Admin（链接） | 内部运营平台 | 完整 SPA 外壳（router + i18n + theme），内嵌 ECharts 看板与 SSR 页面 |
-
--->
-
 ## 互操作示例：声明式页面中的 ECharts
 
 官方 `vEchart` 组件就是胶水范式的参照实现：yoya-ui 创建一个真实 `<div>`，
