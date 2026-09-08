@@ -388,6 +388,7 @@ Keep the static release / types badges in sync at each release.
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
 | Distribution formats | ESM per-module entries, UMD, single CSS theme file                                                  | `npm run build` → `dist/`                                    |
+| Dist verification    | Category isolation, SSR single-core smoke and size budgets are gated in CI                          | `npm run verify:dist` (after `npm run build`)                |
 | Public roadmap       | Archived with the legacy docs                                                                       | (removed from public docs)                                   |
 | Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
@@ -399,6 +400,7 @@ npm test              # 900+ tests: DOM, state, i18n, router, access, SSR/hydrat
 npm run typecheck     # type declarations + consumer type tests
 npm run lint          # ESLint
 npm run format:check  # Prettier
+npm run build && npm run verify:dist  # dist: category isolation, SSR smoke, budgets
 ```
 
 ## Honest about the cold start — and why that is early-adopter value
@@ -514,6 +516,7 @@ npm install
 npm test              # Vitest full suite
 npm run lint          # ESLint
 npm run build         # full build
+npm run verify:dist   # tree-shaking isolation, SSR single-core smoke, size budgets
 npm run examples:html # example site (localhost:5173)
 npm run format        # Prettier
 ```

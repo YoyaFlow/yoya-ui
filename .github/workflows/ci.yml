@@ -50,6 +50,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify dist artifacts
+        run: npm run verify:dist
+
   coverage:
     name: Coverage (Node 22.13)
     runs-on: ubuntu-latest
