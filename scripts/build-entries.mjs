@@ -13,9 +13,7 @@ const SHARED_INPUTS = {
 const FULL_INPUTS = [
   ['ui.full', 'src/yoya.ui.full.js'],
   ['router.full', 'src/yoya.router.full.js'],
-  ['ui-router.full', 'src/yoya.ui-router.js'],
-  ['echart.full', 'src/yoya.echart.full.js'],
-  ['three.full', 'src/yoya.three.full.js']
+  ['ui-router.full', 'src/yoya.ui-router.js']
 ];
 
 function isCoreModule(id) {
