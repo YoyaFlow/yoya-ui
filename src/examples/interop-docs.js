@@ -26,10 +26,7 @@ export function InteropOverviewPage() {
         page.attr('data-interop-overview', 'true');
         page.header((header) => {
           header.h1('第三方扩展：真实 DOM 互操作');
-          header.p(
-            '做胶水，不做轮子：下面是五类独立 JS 库与 yoya-ui 同树共存的演示，' +
-              '每个演示都走同一条互操作路径。'
-          );
+          header.p('下面是五类独立 JS 库与 yoya-ui 同树共存的演示，每个演示都走同一条互操作路径。');
         });
 
         page.section((demoSection) => {
