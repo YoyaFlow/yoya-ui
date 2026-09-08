@@ -159,7 +159,7 @@ ECharts……），以原生 API 直接嵌入，不需要 Wrapper 或 Adapter；
 **标准向后兼容，框架版本却会碎片化。** 多年前写的 `document.createElement`
 今天依然能运行，浏览器每前进一步（新 CSS、新 Web API），yoya-ui 项目都直接
 受益。这正是上方第 1、5 点"长期维护不过时"的底层原因：稳定 API 建立在 Web
-标准之上，再由规格文档与 760+ 测试锁定行为。
+标准之上，再由规格文档与 900+ 测试锁定行为。
 
 ## 互操作示例：声明式页面中的 ECharts
 
@@ -341,20 +341,21 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 
 [![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#验证)
+[![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-支持)
 
-<!-- 工程状态徽章：配置好 CI/CD 后启用，并把上面的测试徽章从静态改为实时。
+CI 徽章由 GitHub Actions 工作流实时驱动。覆盖率由 coverage 任务度量
+（Vitest v8、LCOV）并上传到 Codecov；上传获得授权后启用徽章：
 
-[![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
+<!--
 [![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
-
-每次发版时同步更新上面的静态 release / tests 徽章。
 -->
+
+静态 release / types 徽章请在每次发版时同步。
 
 | 信号       | 当前值                                                                               | 如何验证                                                                 |
 | ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| 测试套件   | 95 个文件、760 个测试用例                                                            | `npm test`（Vitest + jsdom）                                             |
+| 测试套件   | 115 个文件、902 个测试用例                                                           | `npm test`（Vitest + jsdom）                                             |
 | 运行时依赖 | **0**                                                                                | `package.json` —— 没有 `dependencies` 块                                 |
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
@@ -366,7 +367,7 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 
 ```bash
 npm install
-npm test              # 760+ 用例：DOM、state、i18n、router、权限、SSR/hydration
+npm test              # 900+ 用例：DOM、state、i18n、router、权限、SSR/hydration
 npm run typecheck     # 类型声明 + 消费方类型测试
 npm run lint          # ESLint
 npm run format:check  # Prettier
@@ -410,7 +411,7 @@ Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优�
 | 不要这样                 | 请这样                                                                       |
 | ------------------------ | ---------------------------------------------------------------------------- |
 | "Star 有多少？"          | 查看 `package.json`：零运行时依赖、每个入口都有显式 exports                  |
-| "有没有 CI？"            | 运行仓库内套件：760+ 用例覆盖 DOM、state、router、i18n、权限与 SSR/hydration |
+| "有没有 CI？"            | 运行仓库内套件：900+ 用例覆盖 DOM、state、router、i18n、权限与 SSR/hydration |
 | "能和构建工具一起用吗？" | 同时验证 `npm install` + Vite/webpack 用法与免构建的 script 标签用法         |
 | "有多符合标准？"         | 看 API 是否贴合 HTML/DOM/CSS 语义、SSR 是否确定、`docs/` 是否有规格文档      |
 | "ECharts 内置了吗？"     | 没有——这是设计。`vEchart` 适配器正是文档化第三方扩展接入范式的演示           |

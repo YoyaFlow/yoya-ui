@@ -174,7 +174,7 @@ virtual DOM, template compiler or framework scheduler on that native chain.
 `document.createElement` written years ago still runs today, and every browser
 step forward (new CSS, new Web APIs) benefits a yoya-ui project directly. That
 is the root of reasons 1 and 5 above: the stable API sits on Web standards and
-is locked down by spec documents and 760+ tests.
+is locked down by spec documents and 900+ tests.
 
 ## Interop, demonstrated: ECharts in a declarative page
 
@@ -367,21 +367,22 @@ long-term viability:
 
 [![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#verification)
+[![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)
 
-<!-- Engineering-status badges: activate once CI/CD is configured, then make
-     the test badge above live instead of static.
+The CI badge is live from the GitHub Actions workflow. Coverage is measured by
+the coverage job (Vitest v8, LCOV) and uploaded to Codecov; enable the badge
+once the upload is authorized:
 
-[![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
+<!--
 [![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
-
-Keep the static release / test badges in sync at each release.
 -->
+
+Keep the static release / types badges in sync at each release.
 
 | Signal               | Current value                                                                                       | How to verify                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Test suite           | 760 test cases across 95 files                                                                      | `npm test` (Vitest + jsdom)                                  |
+| Test suite           | 902 test cases across 115 files                                                                     | `npm test` (Vitest + jsdom)                                  |
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
@@ -393,7 +394,7 @@ Keep the static release / test badges in sync at each release.
 
 ```bash
 npm install
-npm test              # 760+ tests: DOM, state, i18n, router, access, SSR/hydration
+npm test              # 900+ tests: DOM, state, i18n, router, access, SSR/hydration
 npm run typecheck     # type declarations + consumer type tests
 npm run lint          # ESLint
 npm run format:check  # Prettier
@@ -445,7 +446,7 @@ project at this stage. Prefer these checks:
 | Instead of                       | Check                                                                                                  |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | "How many stars?"                | `package.json`: zero runtime dependencies, explicit exports for each entry                             |
-| "Is there CI?"                   | The in-repo suite: 760+ tests covering DOM, state, router, i18n, access control and SSR/hydration      |
+| "Is there CI?"                   | The in-repo suite: 900+ tests covering DOM, state, router, i18n, access control and SSR/hydration      |
 | "Does it work with build tools?" | `npm install` + Vite/webpack usage and the no-build script-tag usage path                              |
 | "How standard is it?"            | API alignment with HTML/DOM/CSS semantics, deterministic SSR, spec documents in `docs/`                |
 | "Is ECharts built in?"           | It is not — by design. The `vEchart` adapter demonstrates the documented third-party extension pattern |
