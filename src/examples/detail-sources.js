@@ -277,15 +277,19 @@ export function MenuExample1() {
 }
 
 export function PaginationExample1() {
+  const pagination = vPagination({
+    page: 1,
+    pageSize: 10,
+    total: 42,
+    onChange({ page }) {
+      console.log('当前页', page);
+    }
+  });
+
   return {
     render() {
-      return vPagination({
-        page: 1,
-        pageSize: 10,
-        total: 42,
-        onChange({ page }) {
-          console.log('当前页', page);
-        }
+      return hstack((content) => {
+        content.child(pagination);
       });
     }
   };
