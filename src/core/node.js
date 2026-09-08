@@ -365,7 +365,7 @@ export class ViewNode {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
-    const viewNode = normalizeChild(child);
+    const viewNode = normalizeChildWithContext(this, child);
     this._childKeys.set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
@@ -437,7 +437,7 @@ export class ViewNode {
         return;
       }
 
-      const viewNode = normalizeChild(child);
+      const viewNode = normalizeChildWithContext(this, child);
       this._pendingRemovals.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
@@ -727,9 +727,19 @@ export class ComponentNode extends ViewNode {
       typeof this._component === 'function' ? this._component() : this._component.render();
     const resolved = withAccess(this._accessContext || currentAccess(), build);
     const list = Array.isArray(resolved) ? resolved.slice() : [resolved];
+    const componentInfo = describeComponent(this._component);
+    const ownerInfo = this._owner
+      ? ` It was added as a child of ${describeValue(this._owner)}.`
+      : '';
     list.forEach((item) => {
       if (!(item instanceof ViewNode)) {
-        throw new TypeError('Component render must return a ViewNode or an array of ViewNodes');
+        throw new TypeError(
+          'Component render must return a ViewNode or an array of ViewNodes. ' +
+            `render() of ${componentInfo} returned ${describeValue(item)}.` +
+            `${ownerInfo} If render() returns a component object (for example ` +
+            'vPagination({ ... })), attach it with parent.child(...) instead of ' +
+            'returning it directly.'
+        );
       }
     });
 
@@ -904,6 +914,75 @@ export class ComponentNode extends ViewNode {
  */
 export function vText(content = '') {
   return new VTextNode(content);
+}
+
+function describeValue(value) {
+  if (value === null || value === undefined || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return `${typeof value} ${JSON.stringify(value)}`;
+  }
+
+  if (typeof value === 'function') {
+    return `function ${value.name || '(anonymous)'}`;
+  }
+
+  if (value instanceof ViewNode) {
+    const tag = typeof value._tagName === 'string' ? ` <${value._tagName}>` : '';
+    return `${value.constructor.name}${tag}`;
+  }
+
+  if (value && typeof value.render === 'function') {
+    const ctor =
+      value.constructor && value.constructor !== Object ? ` ${value.constructor.name}` : '';
+    return `component object${ctor} with render()`;
+  }
+
+  const ctor =
+    value && value.constructor && value.constructor !== Object ? value.constructor.name : 'Object';
+  return `${ctor} instance`;
+}
+
+function describeComponent(component) {
+  if (typeof component === 'function') {
+    return `function ${component.name || '(anonymous)'}`;
+  }
+
+  if (component && typeof component === 'object') {
+    const renderName =
+      typeof component.render === 'function' && component.render.name
+        ? ` (render ${component.render.name})`
+        : '';
+    return `component object${renderName}`;
+  }
+
+  return String(component);
+}
+
+/**
+ * 与父节点上下文一起规范化子节点：输入不合法时立即抛出可定位的错误。
+ */
+function normalizeChildWithContext(parent, child) {
+  try {
+    const viewNode = normalizeChild(child);
+    if (viewNode._owner === undefined) {
+      viewNode._owner = parent;
+    }
+    return viewNode;
+  } catch (error) {
+    if (error instanceof TypeError && String(error.message).startsWith('ViewNode child must')) {
+      throw new TypeError(
+        `Invalid child for ${describeValue(parent)}: ${error.message} ` +
+          `(received ${describeValue(child)}). child() accepts a ViewNode, a component ` +
+          'object with render(), a function, a string, or a number.',
+        { cause: error }
+      );
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -1177,7 +1256,7 @@ export class ElementNode extends ViewNode {
         return;
       }
 
-      const viewNode = normalizeChild(child);
+      const viewNode = normalizeChildWithContext(this, child);
       this._pendingRemovals.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
