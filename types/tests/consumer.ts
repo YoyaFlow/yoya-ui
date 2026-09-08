@@ -29,7 +29,7 @@ import {
 import { ElementNode, vStateNode } from 'yoya-ui/core';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
-import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/ssr';
+import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
   disableDevtools,
   enableDevtools,

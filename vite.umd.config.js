@@ -4,10 +4,10 @@ export default defineConfig({
   build: {
     emptyOutDir: false,
     lib: {
-      entry: 'src/yoya.ui.js',
+      entry: 'src/yoya.ui-router.js',
       name: 'YoyaUI',
       formats: ['umd'],
-      fileName: () => 'yoya-ui.umd.js'
+      fileName: () => 'yoya.ui-router.umd.js'
     }
   }
 });

@@ -4,23 +4,26 @@
   "description": "A browser-native JS UI library with declarative HTML authoring: component library, router, i18n, theming and layout, works with or without a build tool, SSR-ready.",
   "type": "module",
   "private": false,
-  "main": "./dist/yoya-ui.umd.js",
-  "module": "./dist/yoya.ui.js",
+  "main": "./dist/yoya.ui-router.umd.js",
+  "module": "./dist/yoya.ui-router.full.js",
   "style": "./dist/yoya.ui.css",
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "import": "./dist/yoya.ui.js",
-      "require": "./dist/yoya-ui.umd.js"
+      "import": "./dist/yoya.ui-router.full.js"
     },
     "./core": {
       "types": "./types/yoya.core.d.ts",
       "import": "./dist/yoya.core.js"
     },
-    "./devtools": {
-      "types": "./types/yoya.devtools.d.ts",
-      "import": "./dist/yoya.devtools.js"
+    "./ui": {
+      "types": "./types/yoya.ui.d.ts",
+      "import": "./dist/yoya.ui.js"
+    },
+    "./router": {
+      "types": "./types/yoya.router.d.ts",
+      "import": "./dist/yoya.router.js"
     },
     "./echart": {
       "types": "./types/yoya.echart.d.ts",
@@ -30,13 +33,9 @@
       "types": "./types/yoya.three.d.ts",
       "import": "./dist/yoya.three.js"
     },
-    "./ssr": {
-      "types": "./types/yoya.ssr.d.ts",
-      "import": "./dist/yoya.ssr.js"
-    },
-    "./ui": {
-      "types": "./types/index.d.ts",
-      "import": "./dist/yoya.ui.js"
+    "./devtools": {
+      "types": "./types/yoya.devtools.d.ts",
+      "import": "./dist/yoya.devtools.js"
     },
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"

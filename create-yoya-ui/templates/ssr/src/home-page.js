@@ -1,4 +1,5 @@
-import { createRouter, div } from '@yoyaflow/yoya-ui/ssr';
+import { div } from '@yoyaflow/yoya-ui/core';
+import { createRouter } from '@yoyaflow/yoya-ui/router';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },

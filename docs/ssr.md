@@ -22,7 +22,7 @@ Browser:
 
 Key convention: **the server and client share the same page factory `createPage(requestState) => ViewNode`**. The factory receives request state (path, locale, etc.); both sides build the same tree from the same input so hydration can align nodes.
 
-> **Entry convention**: import page factories and render primitives from `yoya-ui/ssr` (this entry already contains core / html / layout / router / i18n) to avoid duplicate module copies causing `instanceof` mismatches. Bundlers dedupe the client side into one module instance.
+> **Entry convention**: import page factories (core / html DSL, layout / theme / components) from the `yoya-ui` root or from `yoya-ui/core` + `yoya-ui/ui` as needed, and render / router primitives from `yoya-ui/router`. All entries share one core module, which avoids duplicate module copies causing `instanceof` mismatches; bundlers dedupe the client side into one module instance.
 
 ## 2. Page factory convention
 
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/ssr';
+import { renderPage } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,7 +117,7 @@ res.end(html);
 
 ```js
 // client.js - built by the bundler, one line
-import { hydrateOrMount } from 'yoya-ui/ssr';
+import { hydrateOrMount } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -135,7 +135,7 @@ The library does not depend on any framework; `node:http`, Express, Hono, or Koa
 See `src/examples/ssr/server-http.mjs` for a runnable example (`node src/examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -210,14 +210,16 @@ The language marker travels via cookie: when switching languages, write `documen
 
 ```text
 dist/
-  yoya.ui.js        # browser entry (ESM)
-  yoya.core.js      # core entry
-  yoya.echart.js    # ECharts component entry (does not bundle echarts itself)
-  yoya.three.js     # Three.js component entry (does not bundle three itself)
-  yoya.ssr.js       # shared server/client: renderToString / hydrate / mount
-  echarts.min.js    # ECharts itself (loaded with a script tag)
-  yoya.ui.css       # styles
-  yoya-ui.umd.js    # UMD build (window.YoyaUI)
+  yoya.core.js          # core entry (engine + html + svg + state/i18n/access)
+  yoya.core.chunk.js    # internal shared core chunk (auto-loaded by core/ui/router)
+  yoya.ui.js            # incremental components + layout + theme entry
+  yoya.router.js        # router + SSR: renderToString / hydrate / mount / renderPage
+  yoya.echart.js        # ECharts component entry (does not bundle echarts itself)
+  yoya.three.js         # Three.js component entry (does not bundle three itself)
+  yoya.ui-router.full.js  # self-contained full (core + ui + router/SSR), CDN no-build
+  echarts.min.js        # ECharts itself (loaded with a script tag)
+  yoya.ui.css           # styles
+  yoya.ui-router.umd.js # UMD build (window.YoyaUI)
 ```
 
 Mount `dist/` as a static directory on the server (`/assets/*` or `/vendor/*`) and return correct MIME types (`.js` / `.css` / `.html` / `.svg`, etc.). Load ECharts with a classic `<script>` so bundler CommonJS wrapping does not hide `window.echarts`.
@@ -225,7 +227,7 @@ Mount `dist/` as a static directory on the server (`/assets/*` or `/vendor/*`) a
 ### 4.3 Client boot script (client.js)
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/ssr';
+import { hydrate, mount, parseState } from 'yoya-ui/router';
 import { createSsrPage } from './page.js'; // bundler shares the same factory
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
@@ -240,7 +242,7 @@ if (app.firstElementChild) {
 }
 ```
 
-`client.js` is built by the bundler (Vite etc.) so `page.js` and `yoya-ui/ssr` resolve to the same module instance (avoiding duplicate-copy `instanceof` mismatches).
+`client.js` is built by the bundler (Vite etc.) so `page.js` and `yoya-ui/router` / `yoya-ui/core` resolve to the same shared module instance (avoiding duplicate-copy `instanceof` mismatches).
 
 ## 5. Oversized page fallback (maxNodes)
 
@@ -278,10 +280,10 @@ div((root) => {
 
 **Common mistakes**
 
-| Symptom                                       | Cause                                                                                                                                                          |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `renderToString/mount requires a ViewNode...` | The page factory returned a non-ViewNode, or the library exists twice (client bundle + `yoya-ui/ssr`) causing an `instanceof` mismatch—dedupe with the bundler |
-| Form values reset after hydration             | The binding phase replayed server snapshot attributes into the DOM—the library already reads snapshots before binding; make sure you use the latest version    |
-| `ECharts library not provided`                | `echarts.min.js` was not loaded with `<script>`, or echarts was wrapped as CommonJS by the bundler (use the script-tag approach)                               |
-| Server ids differ every time                  | A module-level counter is shared across requests—the library uses a per-render id allocator; make sure components use `allocateId`                             |
-| Slow page load (dev mode)                     | Dev mode does not bundle; hundreds of ESM requests per page are normal. Production builds produce a few static chunks                                          |
+| Symptom                                       | Cause                                                                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderToString/mount requires a ViewNode...` | The page factory returned a non-ViewNode, or the library exists twice (client bundle + `yoya-ui/router`) causing an `instanceof` mismatch—dedupe with the bundler |
+| Form values reset after hydration             | The binding phase replayed server snapshot attributes into the DOM—the library already reads snapshots before binding; make sure you use the latest version       |
+| `ECharts library not provided`                | `echarts.min.js` was not loaded with `<script>`, or echarts was wrapped as CommonJS by the bundler (use the script-tag approach)                                  |
+| Server ids differ every time                  | A module-level counter is shared across requests—the library uses a per-render id allocator; make sure components use `allocateId`                                |
+| Slow page load (dev mode)                     | Dev mode does not bundle; hundreds of ESM requests per page are normal. Production builds produce a few static chunks                                             |

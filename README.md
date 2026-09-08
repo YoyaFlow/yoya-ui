@@ -88,9 +88,10 @@ div((page) => {
 <script type="module" src="/src/main.js"></script>
 ```
 
-Without a bundler, you can also load `dist/yoya.core.js` / `dist/yoya.ui.js` as
-ES modules or use `dist/yoya-ui.umd.js` (`window.YoyaUI`) with a classic script
-tag.
+Without a bundler, you can also load the incremental entries
+`dist/yoya.core.js` / `dist/yoya.ui.js` (shared core loads automatically) as ES
+modules, load the self-contained `dist/yoya.ui-router.full.js`, or use
+`dist/yoya.ui-router.umd.js` (`window.YoyaUI`) with a classic script tag.
 
 ### Scaffold a full project
 
@@ -123,7 +124,7 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 | SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                           |
 | Zero build-step mode                   | Use shipped ESM files directly in a plain page                                            |
 | Framework interop                      | Any DOM-mountable library composes natively                                               |
-| TypeScript                             | Shipped declarations for root / core / echart / three / ssr entries                       |
+| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries    |
 
 ## Positioning: a declarative extension of native Web, not a walled-garden framework
 
@@ -256,7 +257,7 @@ entries build a complete HTML document and bootstrap the client in one call:
 
 ```js
 // Server — render a complete HTML document per request
-import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -268,7 +269,7 @@ const html = renderPage(
         head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
       });
       page.body((body) => {
-        body.vBody((shell) => {
+        body.div((shell) => {
           shell.child(HomePage(state)); // state = { lang, path, mode }
         });
       });
@@ -280,7 +281,7 @@ const html = renderPage(
 
 // Client — hydrates when server HTML exists, otherwise mounts
 import '@yoyaflow/yoya-ui/ui.css';
-import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -310,7 +311,7 @@ import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring your own echarts)
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring your own three)
-import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
 import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
 
@@ -318,9 +319,9 @@ import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 
 The source stays plain JavaScript — it runs directly with zero build. Full
 TypeScript experience comes from the type declarations shipped with the
-package; the `types/` directory covers all five entry points (root / `core` /
-`echart` / `three` / `ssr`) and includes node classes, factory signatures, component
-state APIs and parent shortcut methods.
+package; the `types/` directory covers all entry points (root / `core` / `ui` /
+`router` / `echart` / `three` / `devtools`) and includes node classes, factory
+signatures, component state APIs and parent shortcut methods.
 
 ```ts
 import { div, vButton, vCard, toast } from '@yoyaflow/yoya-ui';
@@ -378,15 +379,15 @@ long-term viability:
 Keep the static release / test badges in sync at each release.
 -->
 
-| Signal               | Current value                                                   | How to verify                                                |
-| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
-| Test suite           | 760 test cases across 95 files                                  | `npm test` (Vitest + jsdom)                                  |
-| Runtime dependencies | **0**                                                           | `package.json` — no `dependencies` block                     |
-| Type declarations    | Shipped for all 4 entries, validated by consumer type tests     | `npm run typecheck`                                          |
-| SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design | `src/*.ssr.test.js`, `docs/ssr.md`                           |
-| Distribution formats | ESM per-module entries, UMD, single CSS theme file              | `npm run build` → `dist/`                                    |
-| Public roadmap       | Archived with the legacy docs                                   | (removed from public docs)                                   |
-| Component contracts  | Authoring guide freezes the three supported component shapes    | [`docs/component-authoring.md`](docs/component-authoring.md) |
+| Signal               | Current value                                                                                       | How to verify                                                |
+| -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Test suite           | 760 test cases across 95 files                                                                      | `npm test` (Vitest + jsdom)                                  |
+| Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
+| Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
+| SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
+| Distribution formats | ESM per-module entries, UMD, single CSS theme file                                                  | `npm run build` → `dist/`                                    |
+| Public roadmap       | Archived with the legacy docs                                                                       | (removed from public docs)                                   |
+| Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
 ### Verification
 
@@ -468,12 +469,14 @@ npm run build
 
 `dist/` contains:
 
-- `yoya.core.js` / `yoya.ui.js` — core and component library ESM entries
-- `yoya.echart.js` — ECharts extension entry (does not bundle ECharts)
-- `yoya.three.js` — Three.js extension entry (does not bundle Three.js)
-- `yoya.ssr.js` — `renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`
+- `yoya.core.js` — shared core entry (engine + html + svg + state/i18n/access)
+- `yoya.ui.js` — incremental components + layout + theme entry (depends on `yoya.core.js`)
+- `yoya.router.js` — incremental router + SSR entry (depends on `yoya.core.js`)
+- `yoya.echart.js` / `yoya.three.js` / `yoya.devtools.js` — extension entries
+- `yoya.ui.full.js` / `yoya.ui-router.full.js` — self-contained ESM for CDN/no-build
+- `yoya.router.full.js` — self-contained core + router/SSR
+- `yoya.ui-router.umd.js` — UMD build (`window.YoyaUI`)
 - `yoya.ui.css` — default styles and theme variables
-- `yoya-ui.umd.js` — UMD build (`window.YoyaUI`)
 
 ## Development
 

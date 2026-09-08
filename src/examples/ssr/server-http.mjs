@@ -16,7 +16,7 @@ const MIME = {
   '.svg': 'image/svg+xml'
 };
 
-const clientBoot = `import { hydrate, mount, parseState } from '/vendor/yoya.ssr.js';
+const clientBoot = `import { hydrate, mount, parseState } from '/vendor/yoya.router.js';
 import { vEchart } from '/vendor/yoya.echart.js';
 
 const {

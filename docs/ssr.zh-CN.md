@@ -22,7 +22,7 @@ yoya-ui 的声明式视图树支持服务端渲染：服务端把页面渲染成
 
 关键约定：**服务端与客户端使用同一份页面工厂 `createPage(requestState) => ViewNode`**。工厂接收请求状态（路径、locale 等），两边用相同输入构建出相同的树，hydration 才能按节点对齐。
 
-> **入口约定**：页面工厂与渲染原语统一从 `yoya-ui/ssr` 导入（该入口已包含 core / html / layout / router / i18n），避免与主入口形成双副本导致 `instanceof` 失配；客户端由打包器去重为同一份模块。
+> **入口约定**：页面工厂（core / html DSL、layout / theme / 组件）按需从 `yoya-ui` 主入口或 `yoya-ui/core` + `yoya-ui/ui` 导入，渲染与路由原语从 `yoya-ui/router` 导入。多个入口共享同一份 core 模块，避免双副本导致 `instanceof` 失配；客户端由打包器去重为同一份模块。
 
 ## 2. 页面工厂约定
 
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/ssr';
+import { renderPage } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,7 +117,7 @@ res.end(html);
 
 ```js
 // client.js —— 打包器构建，一行接入
-import { hydrateOrMount } from 'yoya-ui/ssr';
+import { hydrateOrMount } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -135,7 +135,7 @@ hydrateOrMount(HomePage, { messages });
 完整可运行示例见 `src/examples/ssr/server-http.mjs`（`node src/examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -210,14 +210,16 @@ res.end(renderPage(initial));
 
 ```text
 dist/
-  yoya.ui.js        # 浏览器入口（ESM）
-  yoya.core.js      # 核心入口
-  yoya.echart.js    # ECharts 组件入口（不包含 echarts 本体）
-  yoya.three.js     # Three.js 组件入口（不包含 three 本体）
-  yoya.ssr.js       # 服务端/客户端共用：renderToString / hydrate / mount
-  echarts.min.js    # ECharts 本体（用 script 标签引入）
-  yoya.ui.css       # 样式
-  yoya-ui.umd.js    # UMD 版（window.YoyaUI）
+  yoya.core.js          # 核心入口（引擎 + html + svg + state/i18n/access）
+  yoya.core.chunk.js    # core 共享内部块（由 core/ui/router 自动加载）
+  yoya.ui.js            # 组件 + layout + theme 增量入口
+  yoya.router.js        # router + SSR：renderToString / hydrate / mount / renderPage
+  yoya.echart.js        # ECharts 组件入口（不包含 echarts 本体）
+  yoya.three.js         # Three.js 组件入口（不包含 three 本体）
+  yoya.ui-router.full.js  # 自包含全量（core + ui + router/SSR），CDN 免构建
+  echarts.min.js        # ECharts 本体（用 script 标签引入）
+  yoya.ui.css           # 样式
+  yoya.ui-router.umd.js # UMD 版（window.YoyaUI）
 ```
 
 服务端把 `dist/` 作为静态目录挂载（`/assets/*` 或 `/vendor/*`），并按 MIME 返回（`.js`/`.css`/`.html`/`.svg` 等）。ECharts 用经典 `<script>` 全局引入，避免被打包器按 CommonJS 包裹后 `window.echarts` 丢失。
@@ -225,7 +227,7 @@ dist/
 ### 4.3 客户端启动脚本（client.js）
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/ssr';
+import { hydrate, mount, parseState } from 'yoya-ui/router';
 import { createSsrPage } from './page.js'; // 打包器共享同一份工厂
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
@@ -240,7 +242,7 @@ if (app.firstElementChild) {
 }
 ```
 
-`client.js` 由打包器（Vite 等）构建，保证 `page.js` 与 `yoya-ui/ssr` 解析到同一份模块实例（避免双副本 `instanceof` 失配）。
+`client.js` 由打包器（Vite 等）构建，保证 `page.js` 与 `yoya-ui/router`、`yoya-ui/core` 解析到同一份共享模块实例（避免双副本 `instanceof` 失配）。
 
 ## 5. 大页面回退（maxNodes）
 
@@ -278,10 +280,10 @@ div((root) => {
 
 **常见错误**
 
-| 现象                                          | 原因                                                                                                                       |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `renderToString/mount requires a ViewNode...` | 页面工厂返回了非 ViewNode，或库被打了双份（客户端 bundle 与 `yoya-ui/ssr` 各一份）导致 `instanceof` 失配——用打包器统一解析 |
-| hydration 后表单值被重置                      | 绑定阶段把服务端快照属性重放回 DOM——库已改为先回读快照再绑定，确认使用的是最新版本                                         |
-| `ECharts library not provided`                | 没有用 `<script>` 引入 `echarts.min.js`，或 echarts 被打包器按 CommonJS 包裹（用 script 标签方案）                         |
-| 服务端输出 id 每次不同                        | 模块级计数器被跨请求共享——库已用渲染上下文 id 分配器，确认组件使用 `allocateId`                                            |
-| 页面加载慢（dev 模式）                        | dev 不打包，单页数百个 ESM 请求是正常现象；生产构建是少量静态分块                                                          |
+| 现象                                          | 原因                                                                                                                          |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `renderToString/mount requires a ViewNode...` | 页面工厂返回了非 ViewNode，或库被打了双份（客户端 bundle 与 `yoya-ui/router` 各一份）导致 `instanceof` 失配——用打包器统一解析 |
+| hydration 后表单值被重置                      | 绑定阶段把服务端快照属性重放回 DOM——库已改为先回读快照再绑定，确认使用的是最新版本                                            |
+| `ECharts library not provided`                | 没有用 `<script>` 引入 `echarts.min.js`，或 echarts 被打包器按 CommonJS 包裹（用 script 标签方案）                            |
+| 服务端输出 id 每次不同                        | 模块级计数器被跨请求共享——库已用渲染上下文 id 分配器，确认组件使用 `allocateId`                                               |
+| 页面加载慢（dev 模式）                        | dev 不打包，单页数百个 ESM 请求是正常现象；生产构建是少量静态分块                                                             |

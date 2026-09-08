@@ -86,8 +86,10 @@ div((page) => {
 <script type="module" src="/src/main.js"></script>
 ```
 
-不需要打包器时，也可以把 `dist/yoya.core.js` / `dist/yoya.ui.js` 作为 ES module
-加载，或用经典 script 标签加载 `dist/yoya-ui.umd.js`（`window.YoyaUI`）。
+不需要打包器时，也可以把 `dist/yoya.core.js` / `dist/yoya.ui.js`（增量入口，
+自动加载共享 core）作为 ES module 加载；需要单文件直用时可加载
+`dist/yoya.ui-router.full.js`，或用经典 script 标签加载
+`dist/yoya.ui-router.umd.js`（`window.YoyaUI`）。
 
 ### 脚手架：创建完整项目
 
@@ -107,20 +109,20 @@ npm run dev
 
 ## 能力一览
 
-| 能力                   | 状态                                                                 |
-| ---------------------- | -------------------------------------------------------------------- |
-| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法            |
-| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                               |
-| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                     |
-| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                     |
-| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离 |
-| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                |
-| 状态管理               | `vStateNode`，可选 `@preact/signals-core` 互操作                     |
-| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                  |
-| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                  |
-| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                    |
-| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                      |
-| TypeScript             | root / core / echart / three / ssr 五个入口均随包发布类型声明        |
+| 能力                   | 状态                                                                     |
+| ---------------------- | ------------------------------------------------------------------------ |
+| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法                |
+| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                   |
+| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                         |
+| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                         |
+| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离     |
+| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                    |
+| 状态管理               | `vStateNode`，可选 `@preact/signals-core` 互操作                         |
+| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                      |
+| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                      |
+| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                        |
+| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                          |
+| TypeScript             | root / core / ui / router / echart / three / devtools 均随包发布类型声明 |
 
 ## 定位：面向浏览器原生 Web 的声明式扩展，而不是封闭生态的框架
 
@@ -234,7 +236,7 @@ yoya-ui 组件承担。
 
 ```js
 // 服务端 —— 每个请求渲染完整 HTML 文档
-import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -246,7 +248,7 @@ const html = renderPage(
         head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
       });
       page.body((body) => {
-        body.vBody((shell) => {
+        body.div((shell) => {
           shell.child(HomePage(state)); // state = { lang, path, mode }
         });
       });
@@ -258,7 +260,7 @@ const html = renderPage(
 
 // 客户端 —— 有服务端 HTML 时 hydrate，否则 mount
 import '@yoyaflow/yoya-ui/ui.css';
-import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -286,15 +288,15 @@ import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SV
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自行引入 echarts）
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自行引入 three）
-import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
 import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ```
 
 ## TypeScript 支持
 
 源码保持纯 JavaScript——零构建直接运行。完整 TypeScript 体验来自随包发布的
-类型声明；`types/` 目录覆盖全部五个入口（root / `core` / `echart` / `three` / `ssr`），
-包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
+类型声明；`types/` 目录覆盖全部入口（root / `core` / `ui` / `router` /
+`echart` / `three` / `devtools`），包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
 
 ```ts
 import { div, vButton, vCard, toast } from '@yoyaflow/yoya-ui';
@@ -350,15 +352,15 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 每次发版时同步更新上面的静态 release / tests 徽章。
 -->
 
-| 信号       | 当前值                                                    | 如何验证                                                                 |
-| ---------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 测试套件   | 95 个文件、760 个测试用例                                 | `npm test`（Vitest + jsdom）                                             |
-| 运行时依赖 | **0**                                                     | `package.json` —— 没有 `dependencies` 块                                 |
-| 类型声明   | 覆盖全部 4 个入口，并通过消费方类型测试验证               | `npm run typecheck`                                                      |
-| SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
-| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                  | `npm run build` → `dist/`                                                |
-| 公开路线图 | 已随旧文档归档                                            | （已从对外文档移除）                                                     |
-| 组件契约   | 组件开发指南固化三种受支持的组件形态                      | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
+| 信号       | 当前值                                                                               | 如何验证                                                                 |
+| ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| 测试套件   | 95 个文件、760 个测试用例                                                            | `npm test`（Vitest + jsdom）                                             |
+| 运行时依赖 | **0**                                                                                | `package.json` —— 没有 `dependencies` 块                                 |
+| 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
+| SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
+| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                                             | `npm run build` → `dist/`                                                |
+| 公开路线图 | 已随旧文档归档                                                                       | （已从对外文档移除）                                                     |
+| 组件契约   | 组件开发指南固化三种受支持的组件形态                                                 | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
 
 ### 验证
 
@@ -430,12 +432,14 @@ npm run build
 
 `dist/` 包含：
 
-- `yoya.core.js` / `yoya.ui.js` —— 核心与组件库 ESM 入口
-- `yoya.echart.js` —— ECharts 扩展入口（不打包 ECharts）
-- `yoya.three.js` —— Three.js 扩展入口（不打包 Three.js）
-- `yoya.ssr.js` —— `renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`
+- `yoya.core.js` —— 核心共享入口（引擎 + html + svg + state/i18n/access）
+- `yoya.ui.js` —— 组件 + layout + theme 增量入口（依赖 `yoya.core.js`）
+- `yoya.router.js` —— router + SSR 原语增量入口（依赖 `yoya.core.js`）
+- `yoya.echart.js` / `yoya.three.js` / `yoya.devtools.js` —— 扩展增量入口
+- `yoya.ui.full.js` / `yoya.ui-router.full.js` —— 自包含 ESM（CDN/免构建单文件）
+- `yoya.router.full.js` —— 自包含 core + router/SSR
+- `yoya.ui-router.umd.js` —— UMD 构建（`window.YoyaUI`）
 - `yoya.ui.css` —— 默认样式与主题变量
-- `yoya-ui.umd.js` —— UMD 构建（`window.YoyaUI`）
 
 ## 开发
 

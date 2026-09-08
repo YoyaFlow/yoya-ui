@@ -57,11 +57,11 @@ export function HomePage(state) {
 }
 
 // server：渲染完整 HTML 文档
-import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 const html = renderPage({ page, head, body }, state, { messages });
 
 // client：一行接入（有 SSR HTML 走 hydrate，为空走 mount）
-import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 hydrateOrMount(HomePage, { messages });
 ```
 

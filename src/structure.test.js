@@ -131,6 +131,7 @@ describe('foundation module structure', () => {
     const components = await importFromSrc('./components/index.js');
     const coreEntry = await importFromSrc('./yoya.core.js');
     const uiEntry = await importFromSrc('./yoya.ui.js');
+    const routerEntry = await importFromSrc('./yoya.router.js');
     const echartEntry = await importFromSrc('./yoya.echart.js');
     const threeEntry = await importFromSrc('./yoya.three.js');
 
@@ -242,8 +243,8 @@ describe('foundation module structure', () => {
     expect(coreEntry.vRadio).toBeUndefined();
     expect(coreEntry.vRadios).toBeUndefined();
     expect(coreEntry.flex).toBeUndefined();
-    expect(uiEntry.div).toBe(html.div);
-    expect(uiEntry.SearchOutlined).toBeTypeOf('function');
+    expect(uiEntry.div).toBeUndefined();
+    expect(uiEntry.SearchOutlined).toBeUndefined();
     expect(uiEntry.vButton).toBe(actions.vButton);
     expect(uiEntry.vButtons).toBe(actions.vButtons);
     expect(uiEntry.vFloatButton).toBe(actions.vFloatButton);
@@ -270,7 +271,13 @@ describe('foundation module structure', () => {
     expect(echartEntry.VEchart).toBeTypeOf('function');
     expect(threeEntry.vThree).toBeTypeOf('function');
     expect(threeEntry.VThree).toBeTypeOf('function');
-    expect(uiEntry.router).toBe(routerModule.router);
+    expect(uiEntry.router).toBeUndefined();
+    expect(routerEntry.createRouter).toBe(routerModule.createRouter);
+    expect(routerEntry.Router).toBe(routerModule.Router);
+    expect(routerEntry.renderToString).toBeTypeOf('function');
+    expect(routerEntry.hydrate).toBeTypeOf('function');
+    expect(routerEntry.vButton).toBeUndefined();
+    expect(routerEntry.div).toBeUndefined();
   });
 
   it('keeps core helpers available through the core entry', async () => {

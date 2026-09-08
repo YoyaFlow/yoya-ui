@@ -124,7 +124,7 @@ npm run dev`
       {
         title: '构建产物',
         paragraphs: [
-          'dist 目录提供 yoya.core.js、yoya.ui.js、yoya.echart.js、yoya.three.js 和 yoya.ui.css。'
+          'dist 目录提供 yoya.core.js / yoya.ui.js / yoya.router.js 增量入口，自包含的 yoya.ui-router.full.js 与 UMD 版 yoya.ui-router.umd.js，以及 yoya.echart.js / yoya.three.js 扩展和 yoya.ui.css。'
         ]
       },
       {
