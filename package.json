@@ -72,6 +72,7 @@
   ],
   "scripts": {
     "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
+    "verify:dist": "node scripts/verify-dist.mjs",
     "build:entries": "node scripts/build-entries.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "build:umd": "vite build --config vite.umd.config.js",

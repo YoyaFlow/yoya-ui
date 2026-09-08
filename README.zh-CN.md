@@ -361,6 +361,7 @@ CI 徽章由 GitHub Actions 工作流实时驱动。覆盖率由 coverage 任务
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
 | 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                                             | `npm run build` → `dist/`                                                |
+| 产物校验   | 分类隔离、SSR 单 core 冒烟与体积预算在 CI 中门禁                                     | `npm run verify:dist`（在 `npm run build` 之后）                         |
 | 公开路线图 | 已随旧文档归档                                                                       | （已从对外文档移除）                                                     |
 | 组件契约   | 组件开发指南固化三种受支持的组件形态                                                 | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
 
@@ -372,6 +373,7 @@ npm test              # 900+ 用例：DOM、state、i18n、router、权限、SSR
 npm run typecheck     # 类型声明 + 消费方类型测试
 npm run lint          # ESLint
 npm run format:check  # Prettier
+npm run build && npm run verify:dist  # 产物：分类隔离、SSR 冒烟、体积预算
 ```
 
 ## 坦诚说明冷启动——而这正是早期采用者的红利
@@ -476,6 +478,7 @@ npm install
 npm test              # Vitest 全量测试
 npm run lint          # ESLint
 npm run build         # 完整构建
+npm run verify:dist   # tree-shaking 隔离、SSR 单 core 冒烟、体积预算
 npm run examples:html # 示例站点（localhost:5173）
 npm run format        # Prettier
 ```
