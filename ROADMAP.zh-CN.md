@@ -22,9 +22,9 @@ npm 与 CDN，消除双 core 与 `./ssr` 子路径残留。
 
 ## M2 · 工程化与按需体积（0.5.0）
 
-- 分类子入口：form / data-display / actions / navigation / feedback / async…
+- [x] 分类子入口：form / data-display / actions / navigation / feedback / async…
 - 打包器 tree-shaking 验证与体积预算门禁
-- 子入口类型测试纳入 CI
+- [x] 子入口类型测试纳入 CI
 - SSR + 官方组件的单 core 冒烟测试固化
 
 ## M3 · 开发者体验与错误定位
