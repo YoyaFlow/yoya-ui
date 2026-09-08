@@ -15,9 +15,9 @@ npm 与 CDN，消除双 core 与 `./ssr` 子路径残留。
 - [x] types、SSR 模板、README/docs/技能引用同步
 - [x] 第三方扩展只提供增量入口，不产出自包含 full
 - [ ] PR 合入 main 并通过 CI
-- [ ] `npm pack` 产物与清单核对
-- [ ] 发布 @yoyaflow/yoya-ui@0.4.0，随后发布 create-yoya-ui@0.4.0
-- [ ] CDN 冒烟：增量入口（core chunk 自动加载）、full、UMD、SSR 模板
+- [x] `npm pack` 产物与清单核对
+- [x] 发布 @yoyaflow/yoya-ui@0.4.0，随后发布 create-yoya-ui@0.4.1
+- [x] CDN 冒烟：增量入口（core chunk 自动加载）、full、UMD、SSR 模板
 - [ ] 启用 CI / 覆盖率徽章
 
 ## M2 · 工程化与按需体积（0.5.0）
