@@ -1,26 +1,29 @@
 # yoya-ui
 
-**做胶水，不做轮子——基于原生 Web 技术的声明式 UI 编写范式**
+**面向浏览器原生开发的声明式扩展：大量常用组件开箱即用，第三方扩展按需接入**
 
 > [English](./README.md) | **简体中文**
 
-> **DOM 即接口。** yoya-ui 是一个基于浏览器原生 Web 技术的 UI 基础库：用声明式、
-> 可管理状态、支持 SSR 的单一代码形态，把你的自有组件和任意独立 JS 库无缝
-> 粘合进同一个应用。没有虚拟 DOM、没有 JSX、也没有强制的构建步骤。
+> **原生之上，声明式扩展。** yoya-ui 面向浏览器原生 Web 技术：没有虚拟 DOM、
+> 没有 JSX、也没有强制的构建步骤，用声明式、可管理状态、支持 SSR 的单一
+> 代码形态直接描述真实 DOM；在此之上提供大量常用组件，第三方组件与工具库
+> 则按需接入。
 
 ## 为什么选择 yoya-ui
 
-yoya-ui 的价值可以浓缩为七点，它们决定了它适合什么样的项目：
+yoya-ui 的价值可以浓缩为九点，它们决定了它适合什么样的项目：
 
-| 亮点                       | 说明                                                                                                                    |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **面向长期维护**           | 构建于原生 Web 标准之上，API 稳定：只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。 |
-| **接入方式自由**           | script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                  |
-| **声明式直观且灵活**       | 普通 JS 声明式 DSL + setup 回调 + 父节点快捷方法，没有 JSX/SFC 模板层；视图结构直观，组合灵活。                         |
-| **多场景适用、全栈统一**   | 同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板与 SSR/hydration，Web 界面开发逻辑全栈一致。                            |
-| **原生 JS 适应性高**       | 没有虚拟 DOM 与框架运行时，产出真实 HTML/DOM/JS，原生 JS 适应性高；Web 标准向后兼容，开发出的 Web 软件资产不过时。      |
-| **可嵌入既有项目局部增强** | 通过 `bindTo()` 把任意局部交互嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有系统，渐进增强，无需整体迁移。                |
-| **AI 编程亲和性好**        | 无框架上下文与构建魔法，AI 生成的声明式组件可直接运行；原型迭代与批量生成页面时返工率低。                               |
+| 亮点                       | 说明                                                                                                                                               |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **面向长期维护**           | 构建于原生 Web 标准之上，API 稳定：只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。                            |
+| **接入方式自由**           | script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                                             |
+| **声明式直观且灵活**       | 普通 JS 声明式 DSL + setup 回调 + 父节点快捷方法，没有 JSX/SFC 模板层；视图结构直观，组合灵活。                                                    |
+| **多场景适用、全栈统一**   | 同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板与 SSR/hydration，Web 界面开发逻辑全栈一致。                                                       |
+| **原生 JS 适应性高**       | 没有虚拟 DOM 与框架运行时，产出真实 HTML/DOM/JS，原生 JS 适应性高；Web 标准向后兼容，开发出的 Web 软件资产不过时。                                 |
+| **生命周期控制**           | 以 ViewNode 作为真实 DOM 的操作句柄，提供不输虚拟 DOM 的生命周期与状态管理能力；超大规模列表（vScroll 自动虚拟滚动、只渲染可视窗口）也能流畅渲染。 |
+| **原生生态继承**           | 操作基于浏览器原生标准的真实 DOM：所有支持原生 Web 的组件与工具库都能经扩展点直接继承接入；绝大多数 JS 库都以 DOM 为接口，无需担心生态缺失。       |
+| **可嵌入既有项目局部增强** | 通过 `bindTo()` 把任意局部交互嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有系统，渐进增强，无需整体迁移。                                           |
+| **AI 编程亲和性好**        | 无框架上下文与构建魔法，AI 生成的声明式组件可直接运行；原型迭代与批量生成页面时返工率低。                                                          |
 
 ## 快速开始
 
@@ -119,13 +122,14 @@ npm run dev
 | 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                      |
 | TypeScript             | root / core / echart / three / ssr 五个入口均随包发布类型声明        |
 
-## 定位：通用胶水底座，而不是封闭生态的框架
+## 定位：面向浏览器原生 Web 的声明式扩展，而不是封闭生态的框架
 
-yoya-ui 的目标不是替代 Web，而是把真实 DOM 当作**互操作边界**：视图由普通
-JavaScript 函数描述并组合成 ViewNode 树，ViewNode 是操控真实 DOM 的**句柄**——
-DOM 元素的创建、挂载（`bindTo`）、更新提交（`commit`）与销毁（`destroy`）等
-生命周期都通过它统一管理。任何能挂载到 DOM 节点上的库，在这里都是一等公民。
-内置组件是为了开箱即用，而不是库的能力边界。
+yoya-ui 是面向浏览器原生 Web 技术的声明式扩展，同时把真实 DOM 当作与整个
+Web 生态的**互操作边界**：视图由普通 JavaScript 函数描述并组合成 ViewNode
+树，ViewNode 是操控真实 DOM 的**句柄**——DOM 元素的创建、挂载（`bindTo`）、
+更新提交（`commit`）与销毁（`destroy`）等生命周期都通过它统一管理。在此基础
+之上，yoya-ui 提供大量常用组件开箱即用；任何能挂载到 DOM 节点上的第三方库
+也都能按需接入——内置组件是起点，不是库的能力边界。
 
 ```text
 你的应用：页面工厂与业务组件
@@ -142,8 +146,8 @@ ECharts……），以原生 API 直接嵌入，不需要 Wrapper 或 Adapter；
 导航、反馈、看板等高频能力则开箱即用。npm、Vite/webpack、TypeScript、CI/CD
 与 SSR 等现代工程能力全部一等支持——去掉的只是框架运行时，不是工程基础设施。
 
-一句话：**当你既想要 Web 全生态、又不想被锁进某一个框架宇宙时，yoya-ui 就是
-你依赖的基础层——做胶水，不做轮子。**
+一句话：**yoya-ui 站在浏览器原生 Web 之上做声明式扩展，常用组件开箱即用、
+第三方生态按需接入——不必被锁进某一个框架宇宙，也能拥有 Web 全生态。**
 
 ## 为什么是原生 Web：框架会过期，标准不会
 
@@ -157,7 +161,7 @@ ECharts……），以原生 API 直接嵌入，不需要 Wrapper 或 Adapter；
 
 ## 互操作示例：声明式页面中的 ECharts
 
-官方 `vEchart` 组件就是胶水范式的参照实现：yoya-ui 创建一个真实 `<div>`，
+官方 `vEchart` 组件就是第三方扩展接入的参照实现：yoya-ui 创建一个真实 `<div>`，
 把它交给 ECharts，转发 option 更新，随容器自适应尺寸，并在销毁时 dispose——
 **ECharts 本身从不被打包或重新包装**。
 
@@ -190,7 +194,7 @@ option 的响应式外壳、也不需要维护任何适配层。
 - `vEchart` 是一个生命周期清晰记录的薄节点类
   （`renderDom` → 初始化，`option()` → 更新，`destroy()` → `dispose()`）；
 - 同一契约适用于**任何**能挂载到 DOM 节点的库：富文本编辑器、表格、地图、
-  树、代码编辑器……生命周期胶水只需写一次，之后就能像内置组件一样通过
+  树、代码编辑器……生命周期桥接只需写一次，之后就能像内置组件一样通过
   `child()` 组合；
 - 组件还可以通过 `registerChildFactories` 注册进 DSL 本身
   （上面的 `page.vEchart(...)` 之所以能作为父节点快捷方法使用，就是这个机制）；
@@ -212,7 +216,7 @@ npm run examples:html   # 打开 http://localhost:5173/#/components
 演示都经 `vClientOnly` 挂载，服务端只输出占位，库在客户端加载。它们只作为
 示例站 devDependency 存在，不会进入 yoya-ui 运行时依赖。
 
-`vEchart` 与 `vThree` 胶水入口在同类目下有各自的演示页：宿主只是一个普通
+`vEchart` 与 `vThree` 扩展入口在同类目下有各自的演示页：宿主只是一个普通
 DOM 容器，由底层库在客户端填充。
 
 独立的[工业自动化原型](src/examples/factory-game.html)用 `vThree` 作为 3D
@@ -280,8 +284,8 @@ node src/examples/ssr/server-http.mjs
 ```js
 import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SVG/state
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
-import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 胶水（自行引入 echarts）
-import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 胶水（自行引入 three）
+import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自行引入 echarts）
+import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自行引入 three）
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
 import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ```
@@ -407,7 +411,7 @@ Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优�
 | "有没有 CI？"            | 运行仓库内套件：760+ 用例覆盖 DOM、state、router、i18n、权限与 SSR/hydration |
 | "能和构建工具一起用吗？" | 同时验证 `npm install` + Vite/webpack 用法与免构建的 script 标签用法         |
 | "有多符合标准？"         | 看 API 是否贴合 HTML/DOM/CSS 语义、SSR 是否确定、`docs/` 是否有规格文档      |
-| "ECharts 内置了吗？"     | 没有——这是设计。`vEchart` 适配器正是文档化生命周期胶水范式的演示             |
+| "ECharts 内置了吗？"     | 没有——这是设计。`vEchart` 适配器正是文档化第三方扩展接入范式的演示           |
 
 ### 为本项目生成代码时
 
@@ -427,8 +431,8 @@ npm run build
 `dist/` 包含：
 
 - `yoya.core.js` / `yoya.ui.js` —— 核心与组件库 ESM 入口
-- `yoya.echart.js` —— ECharts 胶水入口（不打包 ECharts）
-- `yoya.three.js` —— Three.js 胶水入口（不打包 Three.js）
+- `yoya.echart.js` —— ECharts 扩展入口（不打包 ECharts）
+- `yoya.three.js` —— Three.js 扩展入口（不打包 Three.js）
 - `yoya.ssr.js` —— `renderPage` / `hydrateOrMount` / `renderToString` / `hydrate` / `mount`
 - `yoya.ui.css` —— 默认样式与主题变量
 - `yoya-ui.umd.js` —— UMD 构建（`window.YoyaUI`）
