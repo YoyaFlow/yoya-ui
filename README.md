@@ -368,12 +368,17 @@ long-term viability:
 [![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)
 
-The CI badge is live from the GitHub Actions workflow; the coverage badge is
-fed by the coverage job uploading to Codecov. Keep the static release / types
-badges in sync at each release.
+The CI badge is live from the GitHub Actions workflow. Coverage is measured by
+the coverage job (Vitest v8, LCOV) and uploaded to Codecov; enable the badge
+once the upload is authorized:
+
+<!--
+[![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
+-->
+
+Keep the static release / types badges in sync at each release.
 
 | Signal               | Current value                                                                                       | How to verify                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |

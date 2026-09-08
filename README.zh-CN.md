@@ -342,11 +342,16 @@ Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信
 [![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-支持)
 
-CI 徽章由 GitHub Actions 工作流实时驱动；覆盖率徽章由 coverage 任务上传到
-Codecov 后驱动。静态 release / types 徽章请在每次发版时同步。
+CI 徽章由 GitHub Actions 工作流实时驱动。覆盖率由 coverage 任务度量
+（Vitest v8、LCOV）并上传到 Codecov；上传获得授权后启用徽章：
+
+<!--
+[![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
+-->
+
+静态 release / types 徽章请在每次发版时同步。
 
 | 信号       | 当前值                                                                               | 如何验证                                                                 |
 | ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
