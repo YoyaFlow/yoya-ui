@@ -15,6 +15,12 @@
     "paths": {
       "yoya-ui": ["./types/index.d.ts"],
       "yoya-ui/core": ["./types/yoya.core.d.ts"],
+      "yoya-ui/actions": ["./types/yoya.actions.d.ts"],
+      "yoya-ui/navigation": ["./types/yoya.navigation.d.ts"],
+      "yoya-ui/feedback": ["./types/yoya.feedback.d.ts"],
+      "yoya-ui/form": ["./types/yoya.form.d.ts"],
+      "yoya-ui/data-display": ["./types/yoya.data-display.d.ts"],
+      "yoya-ui/async": ["./types/yoya.async.d.ts"],
       "yoya-ui/devtools": ["./types/yoya.devtools.d.ts"],
       "yoya-ui/echart": ["./types/yoya.echart.d.ts"],
       "yoya-ui/three": ["./types/yoya.three.d.ts"],
