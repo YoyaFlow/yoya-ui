@@ -32,7 +32,7 @@ Nine reasons, in short:
 
 Save the snippet below as `index.html` and open it in a browser — no build step
 is needed. The library and styles are loaded from the jsDelivr CDN (an internet
-connection is required). To pin a version, replace `0.3.3` in the URLs.
+connection is required). To pin a version, replace `0.4.0` in the URLs.
 
 ```html
 <!DOCTYPE html>
@@ -42,7 +42,7 @@ connection is required). To pin a version, replace `0.3.3` in the URLs.
     <title>yoya-ui quick start</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -52,7 +52,7 @@ connection is required). To pin a version, replace `0.3.3` in the URLs.
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
 
       div((page) => {
         page.vButton('Start task', (button) => {
@@ -365,7 +365,7 @@ Star counts measure attention, not correctness. Until this project earns that
 social signal, we publish the engineering signals that actually predict
 long-term viability:
 
-[![Release](https://img.shields.io/badge/release-0.3.3-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#verification)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)
@@ -467,16 +467,35 @@ project at this stage. Prefer these checks:
 npm run build
 ```
 
-`dist/` contains:
+`dist/` artifact inventory:
 
-- `yoya.core.js` — shared core entry (engine + html + svg + state/i18n/access)
-- `yoya.ui.js` — incremental components + layout + theme entry (depends on `yoya.core.js`)
-- `yoya.router.js` — incremental router + SSR entry (depends on `yoya.core.js`)
-- `yoya.echart.js` / `yoya.three.js` / `yoya.devtools.js` — extension entries
-- `yoya.ui.full.js` / `yoya.ui-router.full.js` — self-contained ESM for CDN/no-build
-- `yoya.router.full.js` — self-contained core + router/SSR
-- `yoya.ui-router.umd.js` — UMD build (`window.YoyaUI`)
-- `yoya.ui.css` — default styles and theme variables
+```text
+# Incremental ESM entries (load the shared core chunk automatically; bundlers / multi-file CDN)
+yoya.core.js / yoya.core.min.js             core: engine + html + svg + state/i18n/access
+yoya.core.chunk.js / yoya.core.chunk.min.js internal shared chunk (auto-loaded by core/ui/router)
+yoya.ui.js / yoya.ui.min.js                 components + layout + theme
+yoya.router.js / yoya.router.min.js         router + SSR primitives
+yoya.echart.js / yoya.three.js / yoya.devtools.js (+ .min)
+                                            extension increments (bring your own echarts / three)
+
+# Self-contained ESM (core inlined; CDN / no-build single file)
+yoya.ui.full.js / yoya.ui.full.min.js       core + ui
+yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
+yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
+
+# UMD (self-contained, classic script tag)
+yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
+
+# Styles and types
+yoya.ui.css
+types/... (root / core / ui / router / echart / three / devtools)
+```
+
+Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
+shared chunk loads automatically); `.full` is self-contained (core inlined); `.umd`
+exposes the `window.YoyaUI` global. npm subpaths map to
+`@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui` and `@yoyaflow/yoya-ui/router`;
+SSR primitives come from `./router` — there is no separate `./ssr` subpath.
 
 ## Development
 

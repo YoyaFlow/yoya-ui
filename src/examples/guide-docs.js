@@ -84,6 +84,31 @@ export function GuideOverviewPage() {
           '原生元素、自带组件与任意可挂载 DOM 的第三方库以同一方式组合（child() 与父节点快捷方法）。',
           '同一代码既可无构建运行，也支持 SSR/hydration 与 TypeScript 类型声明；扩展能力按需引入。'
         ]
+      },
+      {
+        title: '产物清单',
+        paragraphs: [
+          '无后缀与 .min 是 ESM 增量入口（不含 core，自动加载共享块）；.full 是自包含文件（core 已内联），适合 CDN 与免构建单文件直用；.umd 提供 window.YoyaUI 全局。SSR 原语从 router 入口导入，不单独提供 ssr 子路径。'
+        ],
+        code: `# 共享增量入口（ESM，自动加载共享 core 块）
+yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + state/i18n/access
+yoya.core.chunk.js / yoya.core.chunk.min.js 内部共享块（core/ui/router 自动加载）
+yoya.ui.js / yoya.ui.min.js                 组件 + layout + theme
+yoya.router.js / yoya.router.min.js         router + SSR 原语
+yoya.echart.js / yoya.three.js / yoya.devtools.js（+ .min）
+                                            扩展增量（自行引入 echarts / three）
+
+# 自包含 ESM（core 已内联）
+yoya.ui.full.js / yoya.ui.full.min.js       core + ui
+yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
+yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
+
+# UMD（经典 script 标签）
+yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
+
+# 样式与类型
+yoya.ui.css
+types/...（root / core / ui / router / echart / three / devtools）`
       }
     ]
   });
