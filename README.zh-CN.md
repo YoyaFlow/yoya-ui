@@ -30,7 +30,7 @@ yoya-ui 的价值可以浓缩为九点，它们决定了它适合什么样的项
 ### 单页 HTML：复制即用，无需构建
 
 将下面的内容保存为 `index.html`，双击用浏览器打开即可运行；库与样式来自
-jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.3` 换成目标版本即可。
+jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.4.0` 换成目标版本即可。
 
 ```html
 <!DOCTYPE html>
@@ -40,7 +40,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.3` 换
     <title>yoya-ui 快速体验</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -50,7 +50,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.3.3` 换
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.3.3/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
 
       div((page) => {
         page.vButton('开始任务', (button) => {
@@ -339,7 +339,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信号之前，我们先发布
 真正能预测长期生命力的工程信号：
 
-[![Release](https://img.shields.io/badge/release-0.3.3-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-760%20in%2Drepo-2ea44f?style=flat-square)](#验证)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-支持)
@@ -430,16 +430,35 @@ Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优�
 npm run build
 ```
 
-`dist/` 包含：
+`dist/` 产物清单：
 
-- `yoya.core.js` —— 核心共享入口（引擎 + html + svg + state/i18n/access）
-- `yoya.ui.js` —— 组件 + layout + theme 增量入口（依赖 `yoya.core.js`）
-- `yoya.router.js` —— router + SSR 原语增量入口（依赖 `yoya.core.js`）
-- `yoya.echart.js` / `yoya.three.js` / `yoya.devtools.js` —— 扩展增量入口
-- `yoya.ui.full.js` / `yoya.ui-router.full.js` —— 自包含 ESM（CDN/免构建单文件）
-- `yoya.router.full.js` —— 自包含 core + router/SSR
-- `yoya.ui-router.umd.js` —— UMD 构建（`window.YoyaUI`）
-- `yoya.ui.css` —— 默认样式与主题变量
+```text
+# 共享增量入口（ESM，自动加载共享 core 块；供打包器 / 多文件 CDN）
+yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + state/i18n/access
+yoya.core.chunk.js / yoya.core.chunk.min.js 内部共享块（core/ui/router 自动加载）
+yoya.ui.js / yoya.ui.min.js                 组件 + layout + theme
+yoya.router.js / yoya.router.min.js         router + SSR 原语
+yoya.echart.js / yoya.three.js / yoya.devtools.js（+ .min）
+                                            扩展增量（自行引入 echarts / three）
+
+# 自包含 ESM（core 已内联，CDN / 免构建单文件直用）
+yoya.ui.full.js / yoya.ui.full.min.js       core + ui
+yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
+yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
+
+# UMD（自包含，经典 script 标签）
+yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
+
+# 样式与类型
+yoya.ui.css
+types/...（root / core / ui / router / echart / three / devtools）
+```
+
+命名规则：无后缀与 `.min` 是 ESM 增量入口（不含 core，运行时会自动加载共享
+块）；`.full` 是自包含文件（core 已内联）；`.umd` 提供 `window.YoyaUI` 全局。
+npm 子路径对应 `@yoyaflow/yoya-ui/core`、`@yoyaflow/yoya-ui/ui`、
+`@yoyaflow/yoya-ui/router`；SSR 渲染原语从 `./router` 导入，不再单独提供
+`./ssr` 子路径。
 
 ## 开发
 
