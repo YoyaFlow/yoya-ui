@@ -19,6 +19,20 @@ describe('vSplitPanel', () => {
     expect(divider.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
+  it('keeps the divider transparent when idle and highlights it on hover', () => {
+    const panel = vSplitPanel();
+    const element = panel.renderDom();
+    const divider = element.querySelector('[data-vsplit-divider]');
+
+    expect(divider.style.background).toBe('transparent');
+
+    divider.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    expect(divider.style.background).toContain('var(--yoya-color-primary-subtle');
+
+    divider.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    expect(divider.style.background).toBe('transparent');
+  });
+
   it('sets direction, size, minSize and panel contents', () => {
     const panel = vSplitPanel((panel) => {
       panel.direction('vertical');
