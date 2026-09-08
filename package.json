@@ -21,6 +21,30 @@
       "types": "./types/yoya.ui.d.ts",
       "import": "./dist/yoya.ui.js"
     },
+    "./actions": {
+      "types": "./types/yoya.actions.d.ts",
+      "import": "./dist/yoya.actions.js"
+    },
+    "./navigation": {
+      "types": "./types/yoya.navigation.d.ts",
+      "import": "./dist/yoya.navigation.js"
+    },
+    "./feedback": {
+      "types": "./types/yoya.feedback.d.ts",
+      "import": "./dist/yoya.feedback.js"
+    },
+    "./form": {
+      "types": "./types/yoya.form.d.ts",
+      "import": "./dist/yoya.form.js"
+    },
+    "./data-display": {
+      "types": "./types/yoya.data-display.d.ts",
+      "import": "./dist/yoya.data-display.js"
+    },
+    "./async": {
+      "types": "./types/yoya.async.d.ts",
+      "import": "./dist/yoya.async.js"
+    },
     "./router": {
       "types": "./types/yoya.router.d.ts",
       "import": "./dist/yoya.router.js"

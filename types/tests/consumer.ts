@@ -27,6 +27,52 @@ import {
   SearchOutlined
 } from 'yoya-ui';
 import { ElementNode, vStateNode } from 'yoya-ui/core';
+import {
+  VButton as ActionsVButton,
+  vButton as actionsVButton,
+  vFloatButton as actionsVFloatButton
+} from 'yoya-ui/actions';
+import {
+  VBreadcrumb as NavigationVBreadcrumb,
+  VMenu as NavigationVMenu,
+  VTabs as NavigationVTabs,
+  vBreadcrumb as navigationVBreadcrumb,
+  vMenu as navigationVMenu,
+  vTabs as navigationVTabs
+} from 'yoya-ui/navigation';
+import {
+  VDialog as FeedbackVDialog,
+  VMessage as FeedbackVMessage,
+  VTooltip as FeedbackVTooltip,
+  toast as feedbackToast,
+  vDialog as feedbackVDialog,
+  vMessage as feedbackVMessage,
+  vTooltip as feedbackVTooltip
+} from 'yoya-ui/feedback';
+import {
+  VForm as FormVForm,
+  VInput as FormVInput,
+  VSelect as FormVSelect,
+  vCheckbox as formVCheckbox,
+  vForm as formVForm,
+  vInput as formVInput,
+  vRate as formVRate,
+  vSelect as formVSelect,
+  vUpload as formVUpload
+} from 'yoya-ui/form';
+import {
+  VBadge as DisplayVBadge,
+  VTable as DisplayVTable,
+  vBadge as displayVBadge,
+  vPagination as displayVPagination,
+  vTable as displayVTable,
+  vTree as displayVTree
+} from 'yoya-ui/data-display';
+import {
+  vDynamicLoader as asyncVDynamicLoader,
+  vLazyImage as asyncVLazyImage,
+  vSkeleton as asyncVSkeleton
+} from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
@@ -201,3 +247,39 @@ void layout;
 void counter;
 void ssrRender;
 void i18n;
+
+// Category subpath entries resolve to the same component contracts.
+void ActionsVButton;
+void actionsVButton;
+void actionsVFloatButton;
+void NavigationVBreadcrumb;
+void NavigationVMenu;
+void NavigationVTabs;
+void navigationVBreadcrumb;
+void navigationVMenu;
+void navigationVTabs;
+void FeedbackVDialog;
+void FeedbackVMessage;
+void FeedbackVTooltip;
+void feedbackToast;
+void feedbackVDialog;
+void feedbackVMessage;
+void feedbackVTooltip;
+void FormVForm;
+void FormVInput;
+void FormVSelect;
+void formVCheckbox;
+void formVForm;
+void formVInput;
+void formVRate;
+void formVSelect;
+void formVUpload;
+void DisplayVBadge;
+void DisplayVTable;
+void displayVBadge;
+void displayVPagination;
+void displayVTable;
+void displayVTree;
+void asyncVDynamicLoader;
+void asyncVLazyImage;
+void asyncVSkeleton;

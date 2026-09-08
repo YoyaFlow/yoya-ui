@@ -320,6 +320,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 The source stays plain JavaScript — it runs directly with zero build. Full
 TypeScript experience comes from the type declarations shipped with the
 package; the `types/` directory covers all entry points (root / `core` / `ui` /
+`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` /
 `router` / `echart` / `three` / `devtools`) and includes node classes, factory
 signatures, component state APIs and parent shortcut methods.
 
@@ -475,6 +476,10 @@ npm run build
 yoya.core.js / yoya.core.min.js             core: engine + html + svg + state/i18n/access
 yoya.core.chunk.js / yoya.core.chunk.min.js internal shared chunk (auto-loaded by core/ui/router)
 yoya.ui.js / yoya.ui.min.js                 components + layout + theme
+yoya.actions.js / yoya.navigation.js / yoya.feedback.js (+ .min)
+                                            category increments for bundlers / on-demand pages
+yoya.form.js / yoya.data-display.js / yoya.async.js (+ .min)
+                                            category increments for bundlers / on-demand pages
 yoya.router.js / yoya.router.min.js         router + SSR primitives
 yoya.echart.js / yoya.three.js / yoya.devtools.js (+ .min)
                                             extension increments (bring your own echarts / three)
@@ -489,14 +494,18 @@ yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
 
 # Styles and types
 yoya.ui.css
-types/... (root / core / ui / router / echart / three / devtools)
+types/... (root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
 ```
 
 Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
 shared chunk loads automatically); `.full` is self-contained (core inlined); `.umd`
 exposes the `window.YoyaUI` global. npm subpaths map to
-`@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui` and `@yoyaflow/yoya-ui/router`;
-SSR primitives come from `./router` — there is no separate `./ssr` subpath.
+`@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui`,
+`@yoyaflow/yoya-ui/actions`, `@yoyaflow/yoya-ui/navigation`,
+`@yoyaflow/yoya-ui/feedback`, `@yoyaflow/yoya-ui/form`,
+`@yoyaflow/yoya-ui/data-display`, `@yoyaflow/yoya-ui/async` and
+`@yoyaflow/yoya-ui/router`; SSR primitives come from `./router` — there is no
+separate `./ssr` subpath.
 
 ## Development
 

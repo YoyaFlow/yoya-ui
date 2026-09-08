@@ -89,6 +89,12 @@ describe('foundation module structure', () => {
     expect(existsInSrc('./yoya.core.js')).toBe(true);
     expect(existsInSrc('./yoya.ui.js')).toBe(true);
     expect(existsInSrc('./yoya.ui.css')).toBe(true);
+    expect(existsInSrc('./yoya.actions.js')).toBe(true);
+    expect(existsInSrc('./yoya.navigation.js')).toBe(true);
+    expect(existsInSrc('./yoya.feedback.js')).toBe(true);
+    expect(existsInSrc('./yoya.form.js')).toBe(true);
+    expect(existsInSrc('./yoya.data-display.js')).toBe(true);
+    expect(existsInSrc('./yoya.async.js')).toBe(true);
 
     expect(existsInSrc('./chart.js')).toBe(false);
     expect(existsInSrc('./chart.test.js')).toBe(false);
@@ -131,6 +137,12 @@ describe('foundation module structure', () => {
     const components = await importFromSrc('./components/index.js');
     const coreEntry = await importFromSrc('./yoya.core.js');
     const uiEntry = await importFromSrc('./yoya.ui.js');
+    const actionsEntry = await importFromSrc('./yoya.actions.js');
+    const navigationEntry = await importFromSrc('./yoya.navigation.js');
+    const feedbackEntry = await importFromSrc('./yoya.feedback.js');
+    const formEntry = await importFromSrc('./yoya.form.js');
+    const dataDisplayEntry = await importFromSrc('./yoya.data-display.js');
+    const asyncEntry = await importFromSrc('./yoya.async.js');
     const routerEntry = await importFromSrc('./yoya.router.js');
     const echartEntry = await importFromSrc('./yoya.echart.js');
     const threeEntry = await importFromSrc('./yoya.three.js');
@@ -267,6 +279,19 @@ describe('foundation module structure', () => {
     expect(uiEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
     expect(uiEntry.vUpload).toBe(form.vUpload);
     expect(uiEntry.vRate).toBe(form.vRate);
+    expect(actionsEntry.vButton).toBe(actions.vButton);
+    expect(actionsEntry.vForm).toBeUndefined();
+    expect(actionsEntry.flex).toBeUndefined();
+    expect(navigationEntry.vMenu).toBe(navigation.vMenu);
+    expect(navigationEntry.vButton).toBeUndefined();
+    expect(feedbackEntry.toast).toBe(feedback.toast);
+    expect(feedbackEntry.vForm).toBeUndefined();
+    expect(formEntry.vForm).toBe(form.vForm);
+    expect(formEntry.vButton).toBeUndefined();
+    expect(dataDisplayEntry.vTable).toBe(dataDisplay.vTable);
+    expect(dataDisplayEntry.vForm).toBeUndefined();
+    expect(asyncEntry.vDynamicLoader).toBe(asyncViews.vDynamicLoader);
+    expect(asyncEntry.vTable).toBeUndefined();
     expect(echartEntry.vEchart).toBeTypeOf('function');
     expect(echartEntry.VEchart).toBeTypeOf('function');
     expect(threeEntry.vThree).toBeTypeOf('function');

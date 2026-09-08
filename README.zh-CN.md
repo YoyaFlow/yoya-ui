@@ -296,7 +296,8 @@ import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 
 源码保持纯 JavaScript——零构建直接运行。完整 TypeScript 体验来自随包发布的
 类型声明；`types/` 目录覆盖全部入口（root / `core` / `ui` / `router` /
-`echart` / `three` / `devtools`），包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
+`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` /
+`router` / `echart` / `three` / `devtools`），包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
 
 ```ts
 import { div, vButton, vCard, toast } from '@yoyaflow/yoya-ui';
@@ -438,6 +439,10 @@ npm run build
 yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + state/i18n/access
 yoya.core.chunk.js / yoya.core.chunk.min.js 内部共享块（core/ui/router 自动加载）
 yoya.ui.js / yoya.ui.min.js                 组件 + layout + theme
+yoya.actions.js / yoya.navigation.js / yoya.feedback.js（+ .min）
+                                            分类增量（供打包器 / 按需页面）
+yoya.form.js / yoya.data-display.js / yoya.async.js（+ .min）
+                                            分类增量（供打包器 / 按需页面）
 yoya.router.js / yoya.router.min.js         router + SSR 原语
 yoya.echart.js / yoya.three.js / yoya.devtools.js（+ .min）
                                             扩展增量（自行引入 echarts / three）
@@ -452,12 +457,15 @@ yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
 
 # 样式与类型
 yoya.ui.css
-types/...（root / core / ui / router / echart / three / devtools）
+types/...（root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools）
 ```
 
 命名规则：无后缀与 `.min` 是 ESM 增量入口（不含 core，运行时会自动加载共享
 块）；`.full` 是自包含文件（core 已内联）；`.umd` 提供 `window.YoyaUI` 全局。
 npm 子路径对应 `@yoyaflow/yoya-ui/core`、`@yoyaflow/yoya-ui/ui`、
+`@yoyaflow/yoya-ui/actions`、`@yoyaflow/yoya-ui/navigation`、
+`@yoyaflow/yoya-ui/feedback`、`@yoyaflow/yoya-ui/form`、
+`@yoyaflow/yoya-ui/data-display`、`@yoyaflow/yoya-ui/async` 与
 `@yoyaflow/yoya-ui/router`；SSR 渲染原语从 `./router` 导入，不再单独提供
 `./ssr` 子路径。
 
