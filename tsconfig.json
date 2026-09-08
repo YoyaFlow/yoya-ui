@@ -18,7 +18,7 @@
       "yoya-ui/devtools": ["./types/yoya.devtools.d.ts"],
       "yoya-ui/echart": ["./types/yoya.echart.d.ts"],
       "yoya-ui/three": ["./types/yoya.three.d.ts"],
-      "yoya-ui/ssr": ["./types/yoya.ssr.d.ts"]
+      "yoya-ui/router": ["./types/yoya.router.d.ts"]
     }
   },
   "include": ["types/**/*.d.ts", "types/**/*.ts"]

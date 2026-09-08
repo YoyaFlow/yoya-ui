@@ -71,7 +71,7 @@ vForm({ access: 'system:member' }, (form) => {
 **SSR（每请求）**：把 `access` 传给入口，入口内部自动按请求作用域渲染（与 i18n 一致，不跨请求共享）。
 
 ```js
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString } from '@yoyaflow/yoya-ui/router';
 
 renderToString(page, { state, access: createAccess({ permissions, roles }) });
 ```

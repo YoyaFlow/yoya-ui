@@ -167,9 +167,7 @@ export class VSplitPanel extends HtmlElementNode {
   _hoverDivider(hovered) {
     this._divider.style(
       'background',
-      hovered
-        ? themeValue('color-primary-subtle', '#eff6ff')
-        : 'var(--yoya-color-border-faint, #efefef)'
+      hovered ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent'
     );
   }
 

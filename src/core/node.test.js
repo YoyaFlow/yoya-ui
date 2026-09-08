@@ -180,6 +180,22 @@ describe('ViewNode core', () => {
     expect(() => root.renderDom()).toThrow('Component render must return a ViewNode');
   });
 
+  it('reports the parent and value when an invalid child is added', () => {
+    const root = div();
+
+    expect(() => root.child({ label: 'not a node' })).toThrow(
+      /Invalid child for HtmlElementNode <div>.*Object instance/
+    );
+  });
+
+  it('reports which component and parent produced an invalid render result', () => {
+    const root = div().child({ render: () => ({}) });
+
+    expect(() => root.renderDom()).toThrow(
+      /render\(\) of component object.*returned Object instance.*added as a child of HtmlElementNode <div>.*attach it with parent\.child/
+    );
+  });
+
   it('clears logical children and removes their DOM on the next render', () => {
     const root = div().child(p('old'));
     const element = root.renderDom();

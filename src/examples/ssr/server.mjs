@@ -18,7 +18,7 @@ const document = `<!doctype html>
     <div id="app">${html}</div>
     <script type="application/json" id="__YOYA_DATA__">${state}</script>
     <script type="module">
-      import { hydrate } from '/yoya.ssr.js';
+      import { hydrate } from '/yoya.router.js';
       import { createSsrPage } from '/examples/ssr/page.js';
       const data = JSON.parse(document.getElementById('__YOYA_DATA__').textContent);
       hydrate(createSsrPage, '#app', data);

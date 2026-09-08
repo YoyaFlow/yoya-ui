@@ -15,7 +15,7 @@ npm run dev
 
 - `yoya-ui`：组件与全部能力（core、html、svg、layout、actions、navigation、feedback、form、data-display、async、i18n、theme、router、effects）
 - `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、`vStateNode` 等，零第三方依赖）
-- `yoya-ui/ssr`：`renderToString`、`hydrate`、`mount`、`resolveLocale`、`serializeState`
+- `yoya-ui/router`：router + SSR：`createRouter`/`Router`、`renderToString`、`hydrate`、`mount`、`renderPage`、`resolveLocale`、`serializeState`
 
 ## 挂载方式
 

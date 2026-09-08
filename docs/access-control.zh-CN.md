@@ -87,7 +87,7 @@ manualBtns.child(button('删除').access('system:member:remove'));
 **SSR（每请求）**：把 `access` 传给入口，入口内部自动按作用域渲染，不必手写 `withAccess`。
 
 ```js
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString } from '@yoyaflow/yoya-ui/router';
 
 renderToString(page, {
   state,

@@ -4,7 +4,8 @@
  */
 
 export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
-import { createRouter, div } from 'yoya-ui/ssr';
+import { div } from 'yoya-ui/core';
+import { createRouter } from 'yoya-ui/router';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -28,7 +29,7 @@ export const serverSnippet = `// server.mjs —— 服务端（node:http，无�
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { renderPage } from 'yoya-ui/ssr';
+import { renderPage } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const DIST = join(import.meta.dirname, 'dist'); // npm run build 的产物
@@ -59,7 +60,7 @@ createServer((req, res) => {
           head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
         });
         page.body((body) => {
-          body.vBody((shell) => {
+          body.div((shell) => {
             shell.child(HomePage(state)); // state = { lang, path, mode }
           });
         });
@@ -73,18 +74,18 @@ createServer((req, res) => {
   res.end(html);
 }).listen(3000);`;
 
-export const clientSnippet = `// client.js —— 浏览器端（由打包器构建，与 yoya-ui/ssr 同一份模块实例）
-import { hydrateOrMount } from 'yoya-ui/ssr';
+export const clientSnippet = `// client.js —— 浏览器端（由打包器构建，与 yoya-ui/core、yoya-ui/router 同一份共享模块）
+import { hydrateOrMount } from 'yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
 // 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate（收养 DOM、绑事件），否则 mount`;
 
 export const setupNotes = [
-  'npm run build 生成 dist（yoya.ui.js / yoya.ssr.js / echarts.min.js 等），把 dist 挂载为静态目录',
+  'npm run build 生成 dist（yoya.core.js / yoya.ui.js / yoya.router.js / echarts.min.js 等），把 dist 挂载为静态目录',
   'echarts.min.js 用 script 标签全局引入，不要打进模块（避免 window.echarts 丢失）',
   'history 模式：服务端对未匹配路径返回首页；hash 模式：只输出首页即可',
-  'client.js 用打包器构建，确保与 yoya-ui/ssr 解析到同一份模块，避免双副本失配',
+  'client.js 用打包器构建，确保与 yoya-ui/core、yoya-ui/router 解析到同一份共享模块，避免双副本失配',
   'render() 保持确定性、不读 document/window；超大页面用 maxNodes 回退',
   '低层原语 renderToString / hydrate / mount 仍可用，renderPage / hydrateOrMount 只是推荐封装'
 ];

@@ -14,7 +14,7 @@
 
 **服务端与客户端必须使用同一份工厂** `createPage(requestState) => ViewNode`，两端用相同输入构建同一棵树，hydration 才能按节点对齐。
 
-页面工厂与渲染原语统一从 `@yoyaflow/yoya-ui/ssr` 导入（已包含 core / html / layout / router / i18n），避免与主入口双副本导致 `instanceof` 失配。
+页面工厂按需从 `@yoyaflow/yoya-ui/core`（html 基础）与 `@yoyaflow/yoya-ui/ui`（layout/theme/组件）导入，渲染与路由原语从 `@yoyaflow/yoya-ui/router` 导入；多个入口共享同一份 core，避免双副本导致 `instanceof` 失配。
 
 ```js
 // page.js —— 两端共用
@@ -34,7 +34,7 @@ export function createPage(initial = {}) {
 **推荐：`renderPage` 一行渲染整页文档**（head/body 用 DSL 定义，状态只传一次）：
 
 ```js
-import { renderPage } from '@yoyaflow/yoya-ui/ssr';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -56,7 +56,7 @@ const html = renderPage(
 底层原语等价写法（需要定制时使用）：
 
 ```js
-import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 
 const initial = {
   locale: resolveLocale(
@@ -80,7 +80,7 @@ const { exceeded, html, state } = renderToString(createPage, {
 **推荐：`hydrateOrMount` 一行接入**（自动读状态、判断服务端 HTML、hydrate/mount 二选一）：
 
 ```js
-import { hydrateOrMount } from '@yoyaflow/yoya-ui/ssr';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -90,7 +90,7 @@ hydrateOrMount(HomePage, { messages });
 底层原语等价写法：
 
 ```js
-import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/ssr';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { createPage } from './page.js';
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
@@ -103,7 +103,7 @@ if (app.firstElementChild) {
 }
 ```
 
-`client.js` 由打包器构建，保证 `page.js` 与 `yoya-ui/ssr` 解析到同一份模块实例（双副本会导致 `instanceof` 失配）。
+`client.js` 由打包器构建，保证 `page.js` 与 `yoya-ui/core`、`yoya-ui/router` 解析到同一份共享模块实例（双副本会导致 `instanceof` 失配）。
 
 ## 大页面回退与 Islands
 

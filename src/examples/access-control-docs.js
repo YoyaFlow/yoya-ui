@@ -104,7 +104,7 @@ export function AccessControlDocumentationPage() {
           setup.pre((pre) => {
             pre.className('access-api-signature');
             pre.code(
-              "// SSR：每请求把 access 传给入口\nimport { createAccess } from '@yoyaflow/yoya-ui';\nimport { renderToString } from '@yoyaflow/yoya-ui/ssr';\n\nrenderToString(page, {\n  state,\n  access: createAccess({ permissions: ['system:member'], roles: ['admin'] })\n});"
+              "// SSR：每请求把 access 传给入口\nimport { createAccess } from '@yoyaflow/yoya-ui';\nimport { renderToString } from '@yoyaflow/yoya-ui/router';\n\nrenderToString(page, {\n  state,\n  access: createAccess({ permissions: ['system:member'], roles: ['admin'] })\n});"
             );
           });
         });

@@ -87,7 +87,7 @@ manualBtns.child(button('Delete').access('system:member:remove'));
 **SSR (per request):** pass `access` to the entry; the entry applies it as the render scope internally, so you do not write `withAccess` by hand.
 
 ```js
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString } from '@yoyaflow/yoya-ui/router';
 
 renderToString(page, {
   state,
