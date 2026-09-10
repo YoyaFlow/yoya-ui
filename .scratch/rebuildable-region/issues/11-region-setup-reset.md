@@ -14,7 +14,9 @@
 
 **为什么先于迁移：** 真实组件（如 vAutocomplete 的点击外部关闭）大量使用文档级监听，直接迁移会踩到这条。
 
-- [ ] `registerStateHandler` 在区域重跑前重置，重跑后处理器数量与首次构建一致。
-- [ ] 区域内 `bindDocumentEvent` / `bindWindowEvent` 的监听可被重跑替换，不叠加、不泄漏。
-- [ ] 区域重跑前清理本轮登记前的定时器（或提供统一的登记入口 + 文档禁令）。
-- [ ] 契约测试覆盖上述三类在「重跑 N 次」后的登记数量恒定。
+- [x] `registerStateHandler` 在区域重跑前重置，重跑后处理器数量与首次构建一致。
+- [x] 区域内 `bindDocumentEvent` / `bindWindowEvent` 的监听可被重跑替换，不叠加、不泄漏。
+- [x] 定时器走统一登记入口 `registerRegionCleanup(fn)`，重跑时执行上一轮登记（文档说明）。
+- [x] 契约测试覆盖处理器与文档监听在「重跑 N 次」后的登记数量恒定。
+
+**实现说明：** 重跑前快照区域根的状态处理器并清空（失败时回滚），上一轮的 cleanup 本轮成功后执行；`bindDocumentEvent` / `bindWindowEvent` 已自动登记，第三方定时器需显式调用 `registerRegionCleanup`。

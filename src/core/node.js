@@ -217,6 +217,42 @@ function flushBindingsIn(node) {
   node._children.forEach((child) => flushBindingsIn(child));
 }
 
+/** 快照节点及其子树的状态处理器，供重跑失败时回滚。 */
+function collectHandlerSnapshot(node, out) {
+  out.push([
+    node,
+    new Map([...node._stateHandlers].map(([name, handlers]) => [name, handlers.slice()]))
+  ]);
+  node._children.forEach((child) => collectHandlerSnapshot(child, out));
+}
+
+function restoreHandlerSnapshot(snapshot) {
+  snapshot.forEach(([node, handlers]) => {
+    node._stateHandlers = new Map(handlers);
+  });
+}
+
+/**
+ * 登记「本轮区域构建」的清理函数（文档/窗口监听、定时器等）。
+ * 区域重跑时上一轮的清理函数会被执行，避免累加。
+ */
+export function registerRegionCleanup(cleanup) {
+  if (typeof cleanup !== 'function') {
+    return;
+  }
+
+  const region = activeRegion();
+  if (!region) {
+    return;
+  }
+
+  if (!Array.isArray(region._regionRunCleanups)) {
+    region._regionRunCleanups = [];
+  }
+
+  region._regionRunCleanups.push(cleanup);
+}
+
 /** 上报区域重建事件，便于 devtools 回答「这块为什么重建 / 为什么只是刷值」。 */
 function emitRegionEvent(node, action, trigger) {
   if (!isDevtoolsEnabled()) {
@@ -495,6 +531,13 @@ export class ViewNode {
     const previousChildren = this._children;
     const previousKeys = this._childKeys;
     const previousBindings = new Set(collectRegionBindings(this));
+    const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
+    const previousHandlers = [];
+
+    collectHandlerSnapshot(this, previousHandlers);
+    previousChildren.forEach((child) => collectHandlerSnapshot(child, previousHandlers));
+    this._stateHandlers.clear();
+    this._regionRunCleanups = [];
 
     this._children = [];
     this._childKeys = new Map();
@@ -509,6 +552,9 @@ export class ViewNode {
         collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
       );
       this._children.forEach((child) => child.destroy());
+      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups = previousCleanups;
+      restoreHandlerSnapshot(previousHandlers);
       previousChildren.forEach((child) => this._pendingRemovals.delete(child));
       this._children = previousChildren;
       this._childKeys = previousKeys;
@@ -519,6 +565,7 @@ export class ViewNode {
     }
 
     releaseBindings([...previousBindings]);
+    previousCleanups.forEach((cleanup) => cleanup());
     flushBindingsIn(this);
     this._regionPending = false;
     this._regionLastRun = 'rebuild';
@@ -895,6 +942,11 @@ export class ViewNode {
       unregisterDevtoolsNode(this);
     }
     this._deleted = true;
+    releaseBindings(collectRegionBindings(this));
+    if (Array.isArray(this._regionRunCleanups)) {
+      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups = [];
+    }
     this._cleanup.forEach((cleanup) => cleanup());
     this._cleanup = [];
     this._children.forEach((child) => child.destroy());

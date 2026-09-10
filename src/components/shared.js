@@ -120,7 +120,7 @@ export function setupButtonSlot(button, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(button);
+    runBuilder(button, setup);
     return button;
   }
 
@@ -141,7 +141,7 @@ export function setupContentSlot(node, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(node);
+    runBuilder(node, setup);
     return node;
   }
 

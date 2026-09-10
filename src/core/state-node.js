@@ -253,18 +253,44 @@ export function vStateNode(config = {}) {
   /** 刷新被标记的区域：谓词为假只刷值，为真则重建该子树。返回是否发生结构重建。 */
   function flushRegions() {
     let rebuilt = false;
+    const rebuiltNodes = [];
 
     regions.forEach((region) => {
+      // 父区域已经重建时，子区域随新子树一起产出，本轮不再单独触发。
+      if (hasRebuiltAncestor(region, rebuiltNodes)) {
+        return;
+      }
+
       region.rerun({ trigger: 'state' });
       if (region._regionLastRun === 'rebuild') {
         rebuilt = true;
+        rebuiltNodes.push(region);
       }
     });
+
+    // 重跑可能产出新的子区域，重新收集以保持列表与视图树一致。
+    regions = collectRegions(roots);
 
     return rebuilt;
   }
 
-  /** 收集渲染树中未被其它区域包含的区域（嵌套区域随父区域重建）。 */
+  function hasRebuiltAncestor(node, rebuiltNodes) {
+    if (rebuiltNodes.length === 0) {
+      return false;
+    }
+
+    let current = node._owner;
+    while (current) {
+      if (rebuiltNodes.includes(current)) {
+        return true;
+      }
+      current = current._owner;
+    }
+
+    return false;
+  }
+
+  /** 收集渲染树中的全部区域，父区域排在子区域之前。 */
   function collectRegions(nodes) {
     const found = [];
 
@@ -275,11 +301,14 @@ export function vStateNode(config = {}) {
 
       if (node._rebuildable) {
         found.push(node);
-        return;
       }
 
       node.children().forEach(visit);
     };
+
+    if (!nodes) {
+      return found;
+    }
 
     nodes.forEach(visit);
     return found;
