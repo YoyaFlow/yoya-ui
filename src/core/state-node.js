@@ -1,4 +1,10 @@
-import { ElementNode, ViewNode, registerChildFactories, withBindingScope } from './node.js';
+import {
+  ElementNode,
+  ViewNode,
+  childTraversalRoots,
+  registerChildFactories,
+  withBindingScope
+} from './node.js';
 import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 
 const lifecycleKeys = new Set(['state', 'render', 'update']);
@@ -303,7 +309,7 @@ export function vStateNode(config = {}) {
         found.push(node);
       }
 
-      node.children().forEach(visit);
+      childTraversalRoots(node).forEach(visit);
     };
 
     if (!nodes) {

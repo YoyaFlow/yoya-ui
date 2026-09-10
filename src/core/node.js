@@ -180,8 +180,25 @@ function withRegionBuild(region, run) {
 /** 收集节点及其子树名下的绑定。 */
 function collectRegionBindings(node, out = []) {
   node._bindings.forEach((binding) => out.push(binding));
-  node._children.forEach((child) => collectRegionBindings(child, out));
+  childTraversalRoots(node).forEach((child) => collectRegionBindings(child, out));
   return out;
+}
+
+/**
+ * 子树遍历口径：组件节点给出它的解析结果；嵌套状态组件自成边界，
+ * 其区域与绑定由它自己管理，不再向父级透出。
+ */
+export function childTraversalRoots(node) {
+  if (!(node instanceof ComponentNode)) {
+    return node._children;
+  }
+
+  const component = node._component;
+  if (component && typeof component.setState === 'function') {
+    return [];
+  }
+
+  return node._resolveList();
 }
 
 /** 解除给定绑定：从所属列表与 owner 名下同时移除。 */
@@ -214,7 +231,7 @@ function flushBindingsIn(node) {
       binding.commit(next);
     }
   });
-  node._children.forEach((child) => flushBindingsIn(child));
+  childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
 }
 
 /** 快照节点及其子树的状态处理器，供重跑失败时回滚。 */
