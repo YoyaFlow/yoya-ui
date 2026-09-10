@@ -35,11 +35,11 @@ export const componentLifecyclePhases = [
   {
     key: 'update',
     title: '3 更新（状态变化）',
-    summary: '按代价从低到高：绑定写回 → update 局部 patch → 区域 rerun → 组件 rebuild',
+    summary: '按代价从低到高：绑定写回 → update 局部 patch → 区域 rebuild → 组件 rebuild',
     items: [
       '函数值绑定：只写回，不重建 DOM',
       'update()：局部 patch',
-      '区域 rerun()：清空 + 重跑 setup',
+      '区域 rebuild()：清空 + 重跑 setup',
       '组件 rebuild()：销毁旧根重建'
     ]
   },

@@ -124,7 +124,7 @@ export class VProgress extends HtmlElementNode {
     }
 
     this._label = content;
-    this._labelBox.rerun();
+    this._labelBox.rebuild();
     this._syncProgress();
     return this;
   }
@@ -350,7 +350,7 @@ export class VProgress extends HtmlElementNode {
 
     if (this._showText) {
       this._textBox.style('display', 'inline-flex');
-      this._textBox.rerun();
+      this._textBox.rebuild();
     } else {
       this._textBox.style('display', 'none');
     }

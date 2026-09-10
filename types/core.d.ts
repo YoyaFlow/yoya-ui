@@ -225,10 +225,13 @@ export class ViewNode {
   dataSource<T = unknown>(getter: () => T): this;
 
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
-  regionPending(): boolean;
+  rebuildPending(): boolean;
+
+  /** Flushes bound values in this subtree without rebuilding structure. */
+  flush(): this;
 
   /** Re-runs the region builders: build first, then replace the previous children. */
-  rerun(options?: { force?: boolean }): this;
+  rebuild(options?: { force?: boolean }): this;
 
   /** Declares access control: bare default read, "w.xxx" write, "r.xxx" read. */
   access(spec: AccessSpec): this;
@@ -571,6 +574,7 @@ export interface StateNodeComponent<S extends Record<string, unknown> = Record<s
     patch: Partial<S> | ((state: S) => Partial<S> | null | undefined)
   ): StateNodeComponent<S>;
   state(): S;
+  flush(): StateNodeComponent<S>;
   subscribe(listener: (state: S, component: StateNodeComponent<S>) => void): () => void;
   [key: string]: any;
 }

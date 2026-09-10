@@ -15,16 +15,16 @@ describe('rebuildable region bindings', () => {
     expect(element.getAttribute('data-count')).toBe('1');
 
     data.count = 2;
-    box.rerun();
+    box.rebuild();
 
     expect(element.getAttribute('data-count')).toBe('2');
     expect(element.textContent).toBe('stable');
-    expect(box.regionPending()).toBe(true);
+    expect(box.rebuildPending()).toBe(true);
 
     allow = true;
-    box.rerun();
+    box.rebuild();
 
-    expect(box.regionPending()).toBe(false);
+    expect(box.rebuildPending()).toBe(false);
     expect(element.getAttribute('data-count')).toBe('2');
   });
 
@@ -45,13 +45,13 @@ describe('rebuildable region bindings', () => {
     expect(document.activeElement).toBe(fieldElement);
 
     data.label = 'second';
-    box.rerun();
+    box.rebuild();
 
     expect(document.activeElement).toBe(fieldElement);
     expect(fieldElement.getAttribute('data-label')).toBe('second');
 
     allow = true;
-    box.rerun();
+    box.rebuild();
 
     expect(document.activeElement).not.toBe(fieldElement);
     element.remove();
@@ -70,7 +70,7 @@ describe('rebuildable region bindings', () => {
     const initialBindings = box._regionScope.bindings.length;
 
     data.count = 2;
-    box.rerun();
+    box.rebuild();
 
     expect(box._regionScope.bindings.length).toBe(initialBindings);
     expect(previousChild._deleted).toBe(true);
@@ -91,7 +91,7 @@ describe('rebuildable region bindings', () => {
     expect(initialBindings).toBeGreaterThan(0);
     fail = true;
 
-    expect(() => box.rerun()).toThrow('builder failed');
+    expect(() => box.rebuild()).toThrow('builder failed');
     expect(box._regionScope.bindings.length).toBe(initialBindings);
   });
 });

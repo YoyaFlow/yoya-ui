@@ -70,7 +70,7 @@ disableDevtools();
 
 `region` 事件说明被标记区域的这次处理：`action` 为 `rebuild`（重建了子树）
 或 `flush`（只写回绑定值、结构保持不变）；`trigger` 为 `manual`（手动
-`rerun()`）或 `state`（状态变化自动触发）。
+`rebuild()`）或 `state`（状态变化自动触发）。
 
 ## 作用域详情
 

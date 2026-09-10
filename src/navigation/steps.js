@@ -195,7 +195,7 @@ export class VStep extends HtmlElementNode {
     this._stepsDirection = 'horizontal';
     this._stepsSize = 'default';
 
-    // 三块内容都是区域：内容由各自的 setup 产出，setter 只改字段再 rerun。
+    // 三块内容都是区域：内容由各自的 setup 产出，setter 只改字段再 rebuild。
     this._indicatorBox = new HtmlElementNode('span')
       .className('yoya-vsteps-indicator')
       .setup((box) => {
@@ -239,7 +239,7 @@ export class VStep extends HtmlElementNode {
 
     this._title = value ?? '';
     this._titleSet = true;
-    this._titleBox.rerun();
+    this._titleBox.rebuild();
     return this;
   }
 
@@ -254,7 +254,7 @@ export class VStep extends HtmlElementNode {
 
     this._description = value ?? '';
     this._descriptionSet = true;
-    this._descriptionBox.rerun();
+    this._descriptionBox.rebuild();
     return this;
   }
 
@@ -363,7 +363,7 @@ export class VStep extends HtmlElementNode {
       this._descriptionBox.children().length > 0 ? null : 'none'
     );
 
-    this._indicatorBox.rerun();
+    this._indicatorBox.rebuild();
 
     this._connector.style('display', this._index < this._total - 1 ? 'block' : 'none');
 

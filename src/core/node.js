@@ -190,7 +190,7 @@ function isBuildingRegion(region) {
 function assertRegionChildAllowed(node) {
   if (node._rebuildable && !isBuildingRegion(node)) {
     throw new TypeError(
-      'region children must come from the region builder; call rerun() to rebuild the region'
+      'region children must come from the region builder; call rebuild() to rebuild the region'
     );
   }
 }
@@ -434,7 +434,7 @@ export class ViewNode {
     this._regionScope = null; // 区域自持的绑定作用域
     this._regionDataSource = null; // 区域显式声明的数据来源
     this._regionGuard = null;
-    this._regionPending = false;
+    this._rebuildPending = false;
     this._regionRunning = false;
     this._regionEnv = null; // 构建期环境快照：access / context / i18n
     this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
@@ -535,16 +535,29 @@ export class ViewNode {
   }
 
   /** 区域是否有被谓词跳过、等待补齐的重建。 */
-  regionPending() {
-    return this._regionPending;
+  rebuildPending() {
+    return this._rebuildPending;
+  }
+
+  /**
+   * 值级刷新：只把本节点子树里已登记的绑定求值写回，不重建结构、不触发谓词。
+   * 幂等——值未变化时不会写 DOM；节点已销毁时安全返回。
+   */
+  flush() {
+    if (this._deleted) {
+      return this;
+    }
+
+    flushBindingsIn(this);
+    return this;
   }
 
   /**
    * 重新执行区域 builder：先构建成功，再替换旧子节点；构建失败则保留原内容。
    */
-  rerun(options = {}) {
+  rebuild(options = {}) {
     if (!this._rebuildable) {
-      throw new TypeError('rerun() requires rebuildable() on this node');
+      throw new TypeError('rebuild() requires rebuildable() on this node');
     }
 
     const trigger = (options && options.trigger) || 'manual';
@@ -556,7 +569,7 @@ export class ViewNode {
 
     if (this._regionGuard && !(options && options.force) && !this._regionGuard()) {
       // 谓词拒绝结构重建：只刷新值绑定，DOM 与焦点保持原样，重建留待补齐。
-      this._regionPending = true;
+      this._rebuildPending = true;
       flushBindingsIn(this);
       this._regionLastRun = 'flush';
       emitRegionEvent(this, 'flush', trigger);
@@ -602,7 +615,7 @@ export class ViewNode {
     releaseBindings([...previousBindings]);
     previousCleanups.forEach((cleanup) => cleanup());
     flushBindingsIn(this);
-    this._regionPending = false;
+    this._rebuildPending = false;
     this._regionLastRun = 'rebuild';
     emitRegionEvent(this, 'rebuild', trigger);
     if (this._el) {

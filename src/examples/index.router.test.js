@@ -1071,18 +1071,18 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('h1').textContent).toBe('组件生命周期');
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
-    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(4);
 
-    const rerunDemo = page.querySelector('[data-region-demo="rerun"]');
-    const outsideField = rerunDemo.querySelector('[data-region-outside]');
-    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
+    const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
+    const outsideField = rebuildDemo.querySelector('[data-region-outside]');
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
 
-    rerunDemo.querySelector('[data-region-add]').click();
-    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
-    expect(rerunDemo.querySelector('[data-region-outside]')).toBe(outsideField);
+    rebuildDemo.querySelector('[data-region-add]').click();
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(rebuildDemo.querySelector('[data-region-outside]')).toBe(outsideField);
 
-    rerunDemo.querySelector('[data-region-clear]').click();
-    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
+    rebuildDemo.querySelector('[data-region-clear]').click();
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
 
     const gateDemo = page.querySelector('[data-region-demo="gate"]');
     expect(gateDemo.querySelector('[data-region-label]').textContent).toBe('A');
@@ -1109,6 +1109,19 @@ describe('renderExamplesIndex', () => {
     sourceDemo.querySelector('[data-region-source-add]').click();
     expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('1');
     expect(sourceDemo.textContent).toContain('共 1 条');
+
+    const flushDemo = page.querySelector('[data-region-demo="flush"]');
+    const flushLabel = flushDemo.querySelector('[data-region-flush-label]');
+    expect(flushLabel.textContent).toBe('A');
+
+    flushDemo.querySelector('[data-region-flush-next]').click();
+    // flush：只刷值，元素引用不变
+    expect(flushDemo.querySelector('[data-region-flush-label]')).toBe(flushLabel);
+    expect(flushLabel.textContent).toBe('B');
+
+    flushDemo.querySelector('[data-region-flush-rebuild]').click();
+    // rebuild：结构重建，元素被替换
+    expect(flushDemo.querySelector('[data-region-flush-label]')).not.toBe(flushLabel);
   });
 
   it('documents the SSR operations to avoid on the server rendering guide', async () => {

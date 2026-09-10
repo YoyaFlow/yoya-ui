@@ -35,7 +35,7 @@ export class VBadge extends HtmlElementNode {
       display: 'inline-flex',
       minWidth: '0'
     });
-    // 角标与文本都是区域：内容由各自的 setup 产出，同步时只 rerun。
+    // 角标与文本都是区域：内容由各自的 setup 产出，同步时只 rebuild。
     this._badgeBox = new HtmlElementNode('span')
       .className('yoya-vbadge-count')
       .styles({
@@ -181,7 +181,7 @@ export class VBadge extends HtmlElementNode {
     }
 
     this._textContent = value === null || value === undefined ? null : value;
-    this._textBox.rerun();
+    this._textBox.rebuild();
     this._syncBadge();
     return this;
   }
@@ -349,7 +349,7 @@ export class VBadge extends HtmlElementNode {
     }
 
     this._badgeDotMode = dotMode;
-    this._badgeBox.rerun();
+    this._badgeBox.rebuild();
     this.attr('data-standalone', hasContent ? null : 'true');
     return this;
   }

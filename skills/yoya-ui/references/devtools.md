@@ -50,7 +50,7 @@ disableDevtools();
 `pending`（组件未挂载）。
 
 `region` 事件说明被标记区域的这次处理：`action` 为 `rebuild`（重建了子树）或
-`flush`（只写回绑定值、结构不变）；`trigger` 为 `manual`（手动 `rerun()`）或
+`flush`（只写回绑定值、结构不变）；`trigger` 为 `manual`（手动 `rebuild()`）或
 `state`（状态变化自动触发）。用它回答「这块为什么重建 / 为什么只是刷值」。
 
 ## 快照与作用域

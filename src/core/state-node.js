@@ -135,6 +135,19 @@ export function vStateNode(config = {}) {
     state() {
       return { ...state };
     },
+    flush() {
+      if (destroyed) {
+        return component;
+      }
+
+      flushBindings();
+
+      if (roots) {
+        roots.forEach((root) => root.flush());
+      }
+
+      return component;
+    },
     subscribe(listener) {
       if (typeof listener !== 'function') {
         throw new TypeError('vStateNode subscriber must be a function');
@@ -267,7 +280,7 @@ export function vStateNode(config = {}) {
         return;
       }
 
-      region.rerun({ trigger: 'state' });
+      region.rebuild({ trigger: 'state' });
       if (region._regionLastRun === 'rebuild') {
         rebuilt = true;
         rebuiltNodes.push(region);

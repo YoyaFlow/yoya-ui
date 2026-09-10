@@ -76,14 +76,14 @@ export class VFloatButton extends HtmlElementNode {
 
   icon(content) {
     this._icon = content;
-    this._iconBox.rerun();
+    this._iconBox.rebuild();
     this._syncIconVisibility();
     return this;
   }
 
   label(content) {
     this._label = content;
-    this._labelBox.rerun();
+    this._labelBox.rebuild();
     this._syncLabelVisibility();
     return this;
   }

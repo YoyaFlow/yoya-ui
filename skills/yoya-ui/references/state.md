@@ -53,7 +53,7 @@ render(state, api) {
 
 同一节点对同一事件重复 `.on()` 只保留最新 handler（单槽），不会叠加触发。需要多订阅者时由业务自行组合分发，不要把多个 handler 绑到同一事件名。
 
-## 可重建区域（rebuildable / rerun）
+## 可重建区域（rebuildable / rebuild）
 
 一块内容需要「结构随数据变化」、又不值得单独包一个状态组件时，把它声明成区域：内容由该节点自己的 setup 产出，重跑就是清空子节点再重跑这份 setup。
 
@@ -67,16 +67,18 @@ const body = div((ele) => {
   data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
 });
 
-body.rerun(); // 重建：清空子节点 → 重跑 setup → 落地 DOM
-body.rerun({ force: true }); // 越过谓词强制重建
-body.regionPending(); // 是否有被谓词推迟的重建
+body.rebuild(); // 重建：清空子节点 → 重跑 setup → 落地 DOM
+body.rebuild({ force: true }); // 越过谓词强制重建
+body.flush(); // 只求值写回绑定：不重建、不过谓词、值没变不写 DOM
+body.rebuildPending(); // 是否有被谓词推迟的重建
 ```
 
+- **值用 `flush()`，结构用 `rebuild()`**：`flush()`（节点级；组件级是 `component.flush()`）只把已登记的绑定求值写回，不动结构、不触发谓词、幂等；`rebuild()` 清空子节点并重跑 setup，且会连带刷新本轮新登记的绑定。一次变化里既有增删又有值变化时，只调 `rebuild()`——别叠加 `flush()`。
 - 区域内不保留 DOM 身份（焦点、选区、内部滚动、第三方实例都会重建），区域外的兄弟节点不受影响；要保住焦点就把那块留在区域外，或用函数值绑定。
-- 谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记 `regionPending()`，结构不动；数据条件要写进 setup，不要用谓词当内容开关。
+- 谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记 `rebuildPending()`，结构不动；数据条件要写进 setup，不要用谓词当内容开关。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
 - 区域节点的子节点只能由 builder 产出：在 builder 之外对它 `child()` / `addChild()` 会直接报错。
 - 不要在区域 setup 里放一次性副作用（第三方实例、请求、埋点）；状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 会在重跑时由引擎重置，定时器用 `registerRegionCleanup(fn)` 登记。
 - 数据来源显式：零参闭包从外部取值；带参 `(data) => value` 需要 `dataSource()`，在 `vStateNode` 内默认继承宿主状态（按形参个数判断，`(s = {}) => …` 视为零参）。
-- 触发：区域归属于最近的状态组件，`setState` 时自动按谓词处理；没有状态容器时由调用方 `rerun()` 驱动，谓词为假之后可用 `regionPending()` 决定是否补一次重建。
+- 触发：区域归属于最近的状态组件，`setState` 时自动按谓词处理；没有状态容器时由调用方 `rebuild()` 驱动，谓词为假之后可用 `rebuildPending()` 决定是否补一次重建。
 - 嵌套：区域里可以再声明区域（父区域只刷值时，子区域仍会评估自己的谓词）；嵌套的状态组件自成边界，其内部区域由它自己管理。

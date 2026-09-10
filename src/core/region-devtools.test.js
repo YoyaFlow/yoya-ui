@@ -34,9 +34,9 @@ describe('rebuildable region devtools events', () => {
     box.renderDom();
     events = [];
 
-    box.rerun();
+    box.rebuild();
     allow = true;
-    box.rerun();
+    box.rebuild();
 
     expect(events.map((event) => [event.action, event.trigger])).toEqual([
       ['flush', 'manual'],

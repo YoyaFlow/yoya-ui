@@ -64,7 +64,7 @@ disableDevtools();
 
 `region` events describe how a marked region was handled: `action` is `rebuild`
 (the subtree was rebuilt) or `flush` (only bound values were written back and the
-structure stayed as-is); `trigger` is `manual` (an explicit `rerun()`) or `state`
+structure stayed as-is); `trigger` is `manual` (an explicit `rebuild()`) or `state`
 (driven by a state change).
 
 ## Scope details

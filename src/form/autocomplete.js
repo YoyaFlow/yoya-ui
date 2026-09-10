@@ -78,7 +78,7 @@ export class VAutocomplete extends HtmlElementNode {
       })
       .on('mouseleave', () => {
         this._pointerOverList = false;
-        if (this._list.regionPending()) {
+        if (this._list.rebuildPending()) {
           // 悬停期间被推迟的重建，在指针离开后补上。
           this._renderList();
         }
@@ -271,7 +271,7 @@ export class VAutocomplete extends HtmlElementNode {
   }
 
   _renderList() {
-    this._list.rerun();
+    this._list.rebuild();
     this._setHighlight(this._highlight);
     return this;
   }

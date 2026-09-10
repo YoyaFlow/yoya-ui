@@ -11,7 +11,7 @@ import {
 } from '../index.js';
 
 describe('rebuildable region environment', () => {
-  it('keeps inherited access state after rerun', () => {
+  it('keeps inherited access state after rebuild', () => {
     const access = createAccess({ permissions: ['r.area'] });
     let region = null;
     const host = div();
@@ -34,12 +34,12 @@ describe('rebuildable region environment', () => {
 
     expect(regionElement.getAttribute('aria-disabled')).toBe('true');
 
-    region.rerun();
+    region.rebuild();
 
     expect(regionElement.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('keeps context providers after rerun', () => {
+  it('keeps context providers after rebuild', () => {
     let region = null;
     const host = div();
 
@@ -57,12 +57,12 @@ describe('rebuildable region environment', () => {
 
     expect(regionElement.getAttribute('data-tenant')).toBe('acme');
 
-    region.rerun();
+    region.rebuild();
 
     expect(regionElement.getAttribute('data-tenant')).toBe('acme');
   });
 
-  it('keeps the shortcut i18n instance after rerun', () => {
+  it('keeps the shortcut i18n instance after rebuild', () => {
     const zh = createI18n({ language: 'zh-CN', messages: { 'zh-CN': { hello: '你好' } } });
     const en = createI18n({ language: 'en', messages: { en: { hello: 'Hello' } } });
 
@@ -85,7 +85,7 @@ describe('rebuildable region environment', () => {
 
     expect(hostElement.textContent).toBe('Hello');
 
-    region.rerun();
+    region.rebuild();
 
     expect(hostElement.textContent).toBe('Hello');
   });

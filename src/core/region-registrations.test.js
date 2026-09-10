@@ -4,7 +4,7 @@ import { bindDocumentEvent } from './document-events.js';
 import { setupContentSlot } from '../components/shared.js';
 
 describe('rebuildable region registration reset', () => {
-  it('does not accumulate state handlers across reruns', () => {
+  it('does not accumulate state handlers across rebuilds', () => {
     let calls = 0;
     const box = div((ele) => {
       ele.rebuildable();
@@ -16,8 +16,8 @@ describe('rebuildable region registration reset', () => {
     });
     box.renderDom();
 
-    box.rerun();
-    box.rerun();
+    box.rebuild();
+    box.rebuild();
 
     box.setState('busy', true);
 
@@ -51,8 +51,8 @@ describe('rebuildable region registration reset', () => {
       });
       box.renderDom();
 
-      box.rerun();
-      box.rerun();
+      box.rebuild();
+      box.rebuild();
 
       expect(adds).toBe(3);
       expect(removes).toBe(2);
@@ -99,7 +99,7 @@ describe('rebuildable region registration reset', () => {
       slot.text('slot');
     });
 
-    expect(() => node.rerun()).not.toThrow();
+    expect(() => node.rebuild()).not.toThrow();
     expect(node.renderDom().textContent).toBe('slot');
   });
 });

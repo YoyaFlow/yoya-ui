@@ -112,7 +112,7 @@ yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地
 
 - 节点级：`registerStateAttrs` + `registerStateHandler` + `setState` / `getState`。
 - 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
-- 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rerun()` 重新执行它自己的 setup。
+- 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rebuild()` 重新执行它自己的 setup。
 - 组件可暴露状态 API（如 `value(next)`、`disabled(next)`），保持链式调用。
 
 ### 6.1 可重建区域
@@ -128,13 +128,15 @@ const body = div((ele) => {
   data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
 });
 
-body.rerun(); // 清空子节点 → 重跑 setup → 落地 DOM
+body.rebuild(); // 清空子节点 → 重跑 setup → 落地 DOM
+body.flush(); // 只求值写回绑定，不重建结构（幂等）
 ```
 
 契约与边界：
 
+- **值用 `flush()`，结构用 `rebuild()`**：`rebuild()` 清空子节点并重跑 setup（会连带刷新本轮新登记的绑定）；`flush()` 只把已登记的绑定求值写回，不重建、不触发谓词、值没变就不写 DOM。一次变化里既有增删又有值变化时，只调 `rebuild()` 即可，不要叠加 `flush()`。
 - 区域内容由它自己的 setup 产出；重跑会**清空子节点并重新执行 setup**，因此区域内不保留 DOM 身份——焦点、选区、内部滚动位置、挂在元素上的第三方实例都会重建。区域外的兄弟节点与其 DOM 不受影响。
-- 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`regionPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
+- 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
 - 区域内可以正常使用函数值绑定：重跑时旧绑定作废、新绑定立即生效，不会重复写回。带参形式 `(data) => value` 需要先声明数据来源 `dataSource(() => data)`；在 `vStateNode` 内部的区域默认继承宿主状态，无需声明。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
 - 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
@@ -152,7 +154,7 @@ body.rerun(); // 清空子节点 → 重跑 setup → 落地 DOM
 
 1. **声明（构建期）**：工厂调用建节点，`setup` 里的 `attr` / `style` / `on` / `child` 只写快照，不创建 DOM；组件对象被包成 `ComponentNode`，首次渲染才解析并缓存 `render()` 结果；`access` / `context` / `i18n` 三类构建期作用域在此捕获。
 2. **挂载**：`renderDom()` 创建或复用真实 DOM、绑定事件适配器、递归子节点并应用属性快照；`bindTo(target)` 等于 `renderDom` + append；`commit()` 落地权限态与待移除子节点。
-3. **更新（状态变化）**：按代价从低到高——函数值绑定只写回（DOM 不重建）→ `update()` 局部 patch → 区域 `rerun()`（清空子节点 + 重跑 setup）→ 组件 `rebuild()`（销毁旧根重新 render）。
+3. **更新（状态变化）**：按代价从低到高——函数值绑定只写回（DOM 不重建）→ `update()` 局部 patch → 区域 `rebuild()`（清空子节点 + 重跑 setup）→ 组件 `rebuild()`（销毁旧根重新 render）。
 4. **销毁**：解除事件适配器与 cleanup、递归销毁子节点、清空 keyed 子节点注册表、从 DOM 摘除；重复 `destroy()` 幂等。
 
 SSR 额外走一条线：`toHTML()` 输出 HTML（DOM-free）→ `hydrate()` 收养既有 DOM（`adoptElement` + `bindElement`，不重建元素）→ `hydrateSnapshot()` 回读表单等真实值；前提是 `render()` / `toHTML()` 保持确定性，两端产出同一棵树。

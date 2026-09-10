@@ -493,6 +493,11 @@ hydrate 后拿不到 → 服务端 HTML 与客户端首帧不一致。
    `child()` / `addChild()` 直接报错）；§6 测试清单缺口已补齐（谓词每轮只评估一次、
    重复 `rebuildable()` 为替换语义、区域外绑定不受重跑影响、`destroy()` 解除绑定）；
    `types/tests/consumer.ts` 已覆盖 `rebuildable` / `dataSource` / `rerun` / `regionPending`。
+7. **最终命名（2026-09-10 定稿）**：`rerun()` → **`rebuild()`**（与 `rebuildable()` 同词根，
+   形容词声明 + 动词命令），`regionPending()` → **`rebuildPending()`**；并新增值级入口
+   **`flush()`**（节点级与组件级：只求值写回绑定，不重建、不过谓词、幂等）。
+   分工固定为「值变化用 `flush()`，结构变化用 `rebuild()`；两者都有时只调 `rebuild()`」，
+   devtools 区域事件的 `action: 'flush' | 'rebuild'` 与此保持一致。
 
 **会变成致命的（若不定）**
 

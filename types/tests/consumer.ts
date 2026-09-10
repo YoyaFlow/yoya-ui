@@ -180,10 +180,11 @@ const region = div((ele) => {
 });
 region.dataSource(() => ({ rows: [] as string[] }));
 region.rebuildable(null);
-region.rerun();
-region.rerun({ force: true });
-const regionPending: boolean = region.regionPending();
-void regionPending;
+region.rebuild();
+region.rebuild({ force: true });
+const rebuildPending: boolean = region.rebuildPending();
+void rebuildPending;
+region.flush();
 
 // i18n.
 const i18n = createI18n({

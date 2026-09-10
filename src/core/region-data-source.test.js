@@ -14,7 +14,7 @@ describe('rebuildable region data source', () => {
     expect(element.getAttribute('data-label')).toBe('a');
 
     data.label = 'b';
-    box.rerun();
+    box.rebuild();
 
     expect(element.getAttribute('data-label')).toBe('b');
   });

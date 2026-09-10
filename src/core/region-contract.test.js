@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { div, vStateNode } from '../index.js';
 
 describe('rebuildable region contracts', () => {
-  it('evaluates the predicate once per rerun', () => {
+  it('evaluates the predicate once per rebuild', () => {
     let calls = 0;
     const box = div((ele) => {
       ele.rebuildable(() => {
@@ -13,8 +13,8 @@ describe('rebuildable region contracts', () => {
     });
     box.renderDom();
 
-    box.rerun();
-    box.rerun();
+    box.rebuild();
+    box.rebuild();
 
     expect(calls).toBe(2);
   });
@@ -28,12 +28,12 @@ describe('rebuildable region contracts', () => {
     box.renderDom();
 
     box.rebuildable(() => true);
-    box.rerun();
+    box.rebuild();
 
-    expect(box.regionPending()).toBe(false);
+    expect(box.rebuildPending()).toBe(false);
   });
 
-  it('leaves bindings outside the region untouched by a rerun', () => {
+  it('leaves bindings outside the region untouched by a rebuild', () => {
     const data = { n: 1 };
     let region = null;
     const component = vStateNode({
@@ -58,7 +58,7 @@ describe('rebuildable region contracts', () => {
     expect(outsideElement.getAttribute('data-n')).toBe('1');
 
     data.n = 2;
-    region.rerun();
+    region.rebuild();
     component.setState({ tick: 1 });
 
     expect(outsideElement.getAttribute('data-n')).toBe('2');

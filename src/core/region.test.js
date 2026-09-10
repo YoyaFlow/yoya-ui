@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { div } from '../index.js';
 
 describe('rebuildable region', () => {
-  it('rebuilds children from its setup on rerun without duplicating them', () => {
+  it('rebuilds children from its setup on rebuild without duplicating them', () => {
     const rows = ['a'];
     const box = div((ele) => {
       ele.rebuildable();
@@ -15,7 +15,7 @@ describe('rebuildable region', () => {
     expect(element.children.length).toBe(1);
 
     rows.push('b');
-    box.rerun();
+    box.rebuild();
 
     expect(element.textContent).toBe('ab');
     expect(element.children.length).toBe(2);
@@ -36,7 +36,7 @@ describe('rebuildable region', () => {
     const hostElement = host.renderDom();
     const siblingElement = sibling.renderDom();
 
-    box.rerun();
+    box.rebuild();
 
     expect(hostElement.firstElementChild).toBe(siblingElement);
     expect(siblingElement.textContent).toBe('sibling');
@@ -56,14 +56,14 @@ describe('rebuildable region', () => {
 
     fail = true;
 
-    expect(() => box.rerun()).toThrow('builder failed');
+    expect(() => box.rebuild()).toThrow('builder failed');
     expect(element.textContent).toBe('ok');
     expect(box.children().length).toBe(1);
   });
 
-  it('rejects rebuildable() without a setup builder and rerun() without marking', () => {
+  it('rejects rebuildable() without a setup builder and rebuild() without marking', () => {
     expect(() => div().rebuildable()).toThrow(/setup builder/);
-    expect(() => div().rerun()).toThrow(/rebuildable\(\)/);
+    expect(() => div().rebuild()).toThrow(/rebuildable\(\)/);
   });
 
   it('skips rebuild while the predicate is false and records the pending rebuild', () => {
@@ -76,16 +76,16 @@ describe('rebuildable region', () => {
     const element = box.renderDom();
 
     sequence = 2;
-    box.rerun();
+    box.rebuild();
 
     expect(element.textContent).toBe('v1');
-    expect(box.regionPending()).toBe(true);
+    expect(box.rebuildPending()).toBe(true);
 
     allow = true;
-    box.rerun();
+    box.rebuild();
 
     expect(element.textContent).toBe('v2');
-    expect(box.regionPending()).toBe(false);
+    expect(box.rebuildPending()).toBe(false);
   });
 
   it('lets force bypass the predicate', () => {
@@ -97,10 +97,10 @@ describe('rebuildable region', () => {
     const element = box.renderDom();
 
     sequence = 2;
-    box.rerun({ force: true });
+    box.rebuild({ force: true });
 
     expect(element.textContent).toBe('v2');
-    expect(box.regionPending()).toBe(false);
+    expect(box.rebuildPending()).toBe(false);
   });
 
   it('re-runs keyed children without duplicate key errors', () => {
@@ -111,7 +111,7 @@ describe('rebuildable region', () => {
     });
     const element = box.renderDom();
 
-    expect(() => box.rerun()).not.toThrow();
+    expect(() => box.rebuild()).not.toThrow();
     expect(element.textContent).toBe('k1');
     expect(element.children.length).toBe(1);
   });

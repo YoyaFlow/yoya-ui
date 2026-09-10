@@ -1,19 +1,19 @@
 import { vText, vstack } from '../../index.js';
 
-/** 区域演示 1：声明区域 + 手动 rerun，区域外的节点不受影响。 */
-export function RegionRerunExample() {
+/** 区域演示 1：声明区域 + 手动 rebuild，区域外的节点不受影响。 */
+export function RegionRebuildExample() {
   const data = { rows: ['接口联调'] };
   let region = null;
 
   const api = {
     add() {
       data.rows.push(`任务 ${data.rows.length + 1}`);
-      region.rerun();
+      region.rebuild();
       return api;
     },
     clear() {
       data.rows.length = 0;
-      region.rerun();
+      region.rebuild();
       return api;
     },
     render() {
@@ -60,14 +60,14 @@ export function RegionGateExample() {
   const api = {
     toggleLabel() {
       data.label = data.label === 'A' ? 'B' : 'A';
-      region.rerun();
+      region.rebuild();
       syncStatus();
       return api;
     },
     toggleLock() {
       locked = !locked;
-      if (!locked && region.regionPending()) {
-        region.rerun();
+      if (!locked && region.rebuildPending()) {
+        region.rebuild();
       }
       syncStatus();
       return api;
@@ -110,7 +110,7 @@ export function RegionGateExample() {
 
   function syncStatus() {
     if (status) {
-      status.text(region && region.regionPending() ? '状态：已跳过（待重建）' : '状态：已同步');
+      status.text(region && region.rebuildPending() ? '状态：已跳过（待重建）' : '状态：已同步');
     }
   }
 
@@ -125,7 +125,7 @@ export function RegionDataSourceExample() {
   const api = {
     add() {
       data.count += 1;
-      region.rerun();
+      region.rebuild();
       return api;
     },
     render() {
@@ -146,6 +146,50 @@ export function RegionDataSourceExample() {
             button.variant('primary');
             button.attr('data-region-source-add', 'true');
             button.on('click', () => api.add());
+          });
+        });
+      });
+    }
+  };
+
+  return api;
+}
+/** 区域演示 4：flush 只刷值（元素不变），rebuild 才换结构——对照看差别。 */
+export function RegionFlushExample() {
+  const data = { label: 'A' };
+  let region = null;
+
+  const api = {
+    toggle() {
+      data.label = data.label === 'A' ? 'B' : 'A';
+      region.flush();
+      return api;
+    },
+    rebuild() {
+      region.rebuild();
+      return api;
+    },
+    render() {
+      return vstack({ gap: '12px' }, (stack) => {
+        stack.div((box) => {
+          box.className('demo-region-flush');
+          box.attr('data-region-flush', 'true');
+          box.rebuildable();
+          box.span((line) => {
+            line.attr('data-region-flush-label', 'true');
+            line.child(vText(() => data.label));
+          });
+          region = box;
+        });
+        stack.hstack({ gap: '8px' }, (row) => {
+          row.vButton('flush：只刷值', (button) => {
+            button.variant('primary');
+            button.attr('data-region-flush-next', 'true');
+            button.on('click', () => api.toggle());
+          });
+          row.vButton('rebuild：重建结构', (button) => {
+            button.attr('data-region-flush-rebuild', 'true');
+            button.on('click', () => api.rebuild());
           });
         });
       });
