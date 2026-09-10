@@ -123,6 +123,13 @@ function registerNodeBinding(owner, kind, key, read, commit) {
     );
   }
 
+  if (region && !scope.hasData && read.length > 0) {
+    throw new TypeError(
+      `region data source required for parameterized function value (${kind}${key ? ` "${key}"` : ''}); ` +
+        'declare dataSource(fn) or use a zero-argument closure'
+    );
+  }
+
   const binding = {
     commit,
     committed: false,
@@ -345,6 +352,7 @@ export class ViewNode {
     this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
     this._rebuildable = false;
     this._regionScope = null; // 区域自持的绑定作用域
+    this._regionDataSource = null; // 区域显式声明的数据来源
     this._regionGuard = null;
     this._regionPending = false;
     this._regionRunning = false;
@@ -407,18 +415,40 @@ export class ViewNode {
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
       const enclosingScope = activeBindingScope;
+      const inheritState = Boolean(enclosingScope && typeof enclosingScope.getState === 'function');
       this._regionScope = {
         bindings: [],
+        hasData: Boolean(this._regionDataSource) || inheritState,
         getState:
-          enclosingScope && typeof enclosingScope.getState === 'function'
-            ? enclosingScope.getState
-            : () => undefined
+          this._regionDataSource || (inheritState ? enclosingScope.getState : () => undefined)
       };
       this._regionEnv = {
         access: this._accessContext || currentAccess(),
         context: snapshotContext(),
         i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
       };
+    } else if (this._regionDataSource) {
+      this._regionScope.getState = this._regionDataSource;
+      this._regionScope.hasData = true;
+    }
+
+    return this;
+  }
+
+  /**
+   * 声明区域的数据来源：带参值函数 `(data) => value` 每次求值都会拿到它的返回值。
+   * 组件树内的区域默认继承宿主状态，无需声明。
+   */
+  dataSource(getter) {
+    if (typeof getter !== 'function') {
+      throw new TypeError('dataSource() requires a function');
+    }
+
+    this._regionDataSource = getter;
+
+    if (this._regionScope) {
+      this._regionScope.getState = getter;
+      this._regionScope.hasData = true;
     }
 
     return this;
