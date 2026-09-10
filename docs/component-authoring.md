@@ -113,6 +113,7 @@ yoya-ui has no automatic reactivity system. After state changes, the component d
 - Node level: `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`.
 - Component level: `vStateNode({ state, render, update })`; `update` performs local patches and returns `true` to rebuild fully.
 - Region level: `rebuildable(predicate?)` marks a node as a rebuildable region; `rebuild()` re-runs its own setup.
+- In-place text: keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
 - Components can expose state APIs (e.g. `value(next)`, `disabled(next)`) and stay chainable.
 
 ### 6.1 Rebuildable regions

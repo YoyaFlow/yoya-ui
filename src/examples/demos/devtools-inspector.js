@@ -145,7 +145,9 @@ export function DevtoolsInspectorDemo() {
     if (!statusText) {
       return;
     }
-    statusText.text(state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用');
+    statusText.textContent(
+      state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用'
+    );
   }
 
   function flushHost(host) {
@@ -426,9 +428,11 @@ export function DevtoolsInspectorDemo() {
           dialog.div((header) => {
             header.className('devtools-dialog-header');
             header.h2('yoya-ui DevTools');
-            header.p('状态：未启用', (node) => {
-              statusText = node;
+            const statusLine = vText('状态：未启用');
+            statusText = statusLine;
+            header.p((node) => {
               node.attr('data-devtools-status', 'true');
+              node.child(statusLine);
             });
             header.vButton('启用 DevTools', (button) => {
               button.variant('primary');

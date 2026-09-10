@@ -54,7 +54,8 @@ export function RegionRebuildExample() {
 
 /**
  * 区域演示 2：谓词门禁——为假时只刷值并记 pending，恢复后补一次重建。
- * 区域节点与状态行都在 render 之外建好，方法里直接改它们。
+ * 区域节点与状态行都在 render 之外建好，方法里直接改它们；
+ * 状态行持有文本节点句柄，重复同步才是替换内容（元素 .text() 是追加子节点）。
  */
 export function RegionGateExample() {
   const data = { label: 'A' };
@@ -72,9 +73,10 @@ export function RegionGateExample() {
       line.child(vText(() => data.label));
     });
   });
+  const statusText = vText('状态：已同步');
   const status = div((line) => {
     line.attr('data-region-pending', 'true');
-    line.text('状态：已同步');
+    line.child(statusText);
   });
 
   const api = {
@@ -111,7 +113,7 @@ export function RegionGateExample() {
   };
 
   function syncStatus() {
-    status.text(box.rebuildPending() ? '状态：已跳过（待重建）' : '状态：已同步');
+    statusText.textContent(box.rebuildPending() ? '状态：已跳过（待重建）' : '状态：已同步');
   }
 
   return api;

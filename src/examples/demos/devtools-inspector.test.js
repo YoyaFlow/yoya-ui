@@ -26,6 +26,10 @@ describe('devtools inspector demo', () => {
     element.querySelector('[data-devtools-toggle]').click();
     element.querySelector('[data-devtools-toggle]').click();
     expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
+    // 状态行只有一个文本节点：反复切换是替换文案，不是追加文案
+    const statusLine = element.querySelector('[data-devtools-status]');
+    expect(statusLine.childNodes).toHaveLength(1);
+    expect(statusLine.textContent).toBe('状态：已启用，事件仅来自被检视卡片');
 
     const plusButton = [...element.querySelectorAll('button')].find((button) =>
       button.textContent.includes('+1')

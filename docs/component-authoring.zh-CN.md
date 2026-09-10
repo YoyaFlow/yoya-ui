@@ -113,6 +113,7 @@ yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地
 - 节点级：`registerStateAttrs` + `registerStateHandler` + `setState` / `getState`。
 - 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
 - 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rebuild()` 重新执行它自己的 setup。
+- 文案原地更新：持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
 - 组件可暴露状态 API（如 `value(next)`、`disabled(next)`），保持链式调用。
 
 ### 6.1 可重建区域

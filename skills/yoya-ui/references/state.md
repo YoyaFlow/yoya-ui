@@ -44,6 +44,8 @@ render(state, api) {
 }
 ```
 
+手动同步同一处文案要「替换」：持有 `vText()` 句柄用 `textContent(next)`；元素 `.text(content)` 等价 `child()`，**每次调用追加一个文本节点**，反复同步会不断堆叠。
+
 ## 多根与 keyed 子节点
 
 - render 返回 `[ViewNode, ...]` 时作为多根 fragment 直接落实，不产生包装元素；
