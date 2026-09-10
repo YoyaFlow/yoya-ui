@@ -6,7 +6,6 @@ import {
   componentClass,
   createComponentFactory,
   isPlainObject,
-  replaceChildren,
   themeValue
 } from '../components/shared.js';
 
@@ -27,6 +26,7 @@ export class VAutocomplete extends HtmlElementNode {
     this._changeHandlers = [];
     this._open = false;
     this._highlight = -1;
+    this._pointerOverList = false;
     this._suggestions = [];
     this._optionNodes = [];
     this._outsideListener = null;
@@ -72,6 +72,21 @@ export class VAutocomplete extends HtmlElementNode {
         padding: '4px',
         position: 'fixed',
         zIndex: '110'
+      })
+      .on('mouseenter', () => {
+        this._pointerOverList = true;
+      })
+      .on('mouseleave', () => {
+        this._pointerOverList = false;
+        if (this._list.regionPending()) {
+          // 悬停期间被推迟的重建，在指针离开后补上。
+          this._renderList();
+        }
+      })
+      .setup((list) => {
+        // 列表是区域：内容由这次 setup 产出；指针悬停时只刷值、不重建节点。
+        list.rebuildable(() => !this._pointerOverList);
+        this._buildOptions(list);
       });
 
     this.child(this._input, this._list);
@@ -166,6 +181,7 @@ export class VAutocomplete extends HtmlElementNode {
 
   close() {
     this._open = false;
+    this._pointerOverList = false;
     this._list.style('display', 'none');
     this._bindOutsideClose(false);
     this._bindReposition(false);
@@ -255,34 +271,36 @@ export class VAutocomplete extends HtmlElementNode {
   }
 
   _renderList() {
-    this._optionNodes = [];
-    replaceChildren(
-      this._list,
-      this._suggestions.map((item, index) => {
-        const option = new HtmlElementNode('div')
-          .className('yoya-vautocomplete-option')
-          .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
-          .styles({
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-            cursor: 'pointer',
-            overflow: 'hidden',
-            padding: '5px 8px',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          })
-          .on('mousedown', (event) => {
-            event.preventDefault();
-            this._select(item);
-          })
-          .on('mouseenter', () => this._setHighlight(index))
-          .text(item.label);
-        this._optionNodes.push(option);
-        return option;
-      })
-    );
+    this._list.rerun();
     this._setHighlight(this._highlight);
     return this;
+  }
+
+  /** 区域 builder：按当前建议产出选项节点。 */
+  _buildOptions(list) {
+    this._optionNodes = [];
+    this._suggestions.forEach((item, index) => {
+      const option = new HtmlElementNode('div')
+        .className('yoya-vautocomplete-option')
+        .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
+        .styles({
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          padding: '5px 8px',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        })
+        .on('mousedown', (event) => {
+          event.preventDefault();
+          this._select(item);
+        })
+        .on('mouseenter', () => this._setHighlight(index))
+        .text(item.label);
+      this._optionNodes.push(option);
+      list.child(option);
+    });
   }
 
   /** 只更新高亮样式，不重建下拉列表（避免悬停时销毁正在点击的节点）。 */

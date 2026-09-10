@@ -6,5 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] 目标组件改用区域机制表达内容重建，删除对应手写重建调用。
-- [ ] 组件既有测试全部通过，交互行为（展开/高亮/选中）无回归。
+- [x] 目标组件改用区域机制表达内容重建，删除对应手写重建调用。
+- [x] 组件既有测试全部通过，交互行为（展开/高亮/选中）无回归。
+
+**实现说明（vAutocomplete）：** 列表面板声明为区域（`list.rebuildable(() => !this._pointerOverList)`），
+builder 由原 `_renderList` 的选项产出逻辑抽出为 `_buildOptions`；`_renderList()` 改为
+`this._list.rerun()`，手写的 `replaceChildren(this._list, ...)` 已删除。
+新增行为：指针悬停在列表上时推迟结构重建（只刷值并记 pending），`mouseleave` 时补一次重建——
+把原先「靠 `_setHighlight` 不重建来躲避悬停打断点击」的保护扩展到建议集变化。
