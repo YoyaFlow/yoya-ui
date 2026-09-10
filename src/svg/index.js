@@ -1,9 +1,4 @@
-import {
-  ElementNode,
-  enterBindingRender,
-  exitBindingRender,
-  registerChildFactories
-} from '../core/node.js';
+import { ElementNode, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 
 export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -69,21 +64,16 @@ export class SvgElementNode extends ElementNode {
   }
 
   renderDom() {
-    enterBindingRender(this);
-    try {
-      if (this._deleted) {
-        return null;
-      }
-
-      if (!this._el) {
-        this._el = document.createElementNS(SVG_NAMESPACE, this._tagName);
-        this._applySnapshotToElement();
-      }
-
-      return this._el;
-    } finally {
-      exitBindingRender();
+    if (this._deleted) {
+      return null;
     }
+
+    if (!this._el) {
+      this._el = document.createElementNS(SVG_NAMESPACE, this._tagName);
+      this._applySnapshotToElement();
+    }
+
+    return this._el;
   }
 
   /**

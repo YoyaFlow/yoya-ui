@@ -150,11 +150,16 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   };
 
   bindingSerial += 1;
-  uncommittedBindings += 1;
   scope.bindings.push(binding);
 
   if (owner && Array.isArray(owner._bindings)) {
     owner._bindings.push(binding);
+  }
+
+  // 构建之外的登记（链式写法、挂载后追加）：立刻求值一次，让首屏与紧随其后的读取都有值；
+  // 构建期登记的绑定由构建结束时统一刷（见 setup()）。
+  if (setupStack.length === 0 && regionBuildStack.length === 0) {
+    flushBindingsIn(owner);
   }
 }
 
@@ -296,34 +301,11 @@ function releaseBindings(bindings) {
   });
 }
 
-// 尚未求值的绑定数量：用于在渲染入口惰性求值，避免逐层遍历整棵子树。
-let uncommittedBindings = 0;
-let renderDepth = 0;
-
-/**
- * 渲染入口：最外层渲染开始前，把还没求值过的绑定写回一次（内部使用）。
- * 只有存在待求值绑定时才遍历，且只在外层渲染进入时做一次。
- */
-export function enterBindingRender(node) {
-  if (renderDepth === 0 && uncommittedBindings > 0) {
-    flushBindingsIn(node);
-  }
-
-  renderDepth += 1;
-}
-
-export function exitBindingRender() {
-  renderDepth -= 1;
-}
-
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
 function flushBindingsIn(node) {
   node._bindings.forEach((binding) => {
     const next = binding.evaluate();
     if (!binding.committed || !Object.is(next, binding.last)) {
-      if (!binding.committed) {
-        uncommittedBindings -= 1;
-      }
       binding.committed = true;
       binding.last = next;
       binding.commit(next);
@@ -1168,30 +1150,20 @@ export class VTextNode extends ViewNode {
   }
 
   renderDom() {
-    enterBindingRender(this);
-    try {
-      if (this._deleted || this._permissionState() === 'hidden') {
-        return null;
-      }
-
-      if (!this._textNode) {
-        this._textNode = document.createTextNode(this._content);
-        this._el = this._textNode;
-      }
-
-      return this._textNode;
-    } finally {
-      exitBindingRender();
+    if (this._deleted || this._permissionState() === 'hidden') {
+      return null;
     }
+
+    if (!this._textNode) {
+      this._textNode = document.createTextNode(this._content);
+      this._el = this._textNode;
+    }
+
+    return this._textNode;
   }
 
   toHTML() {
-    enterBindingRender(this);
-    try {
-      return this._deleted || this._permissionState() === 'hidden' ? '' : escapeHtml(this._content);
-    } finally {
-      exitBindingRender();
-    }
+    return this._deleted || this._permissionState() === 'hidden' ? '' : escapeHtml(this._content);
   }
 }
 
@@ -1804,15 +1776,6 @@ export class ElementNode extends ViewNode {
    * 创建或复用真实 DOM 元素。
    */
   renderDom() {
-    enterBindingRender(this);
-    try {
-      return this._renderElementDom();
-    } finally {
-      exitBindingRender();
-    }
-  }
-
-  _renderElementDom() {
     if (this._deleted) {
       return null;
     }
@@ -1859,15 +1822,6 @@ export class ElementNode extends ViewNode {
    * 将视图树序列化为 HTML 字符串，主要用于服务端模板或测试断言。
    */
   toHTML() {
-    enterBindingRender(this);
-    try {
-      return this._serializeElementHtml();
-    } finally {
-      exitBindingRender();
-    }
-  }
-
-  _serializeElementHtml() {
     if (this._deleted) {
       return '';
     }

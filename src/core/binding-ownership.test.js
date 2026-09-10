@@ -66,4 +66,31 @@ describe('binding ownership without a declared scope', () => {
     unsubscribe();
     disableDevtools();
   });
+
+  it('evaluates a build-time binding once, not on every render', () => {
+    let attempt = 0;
+    const region = div((ele) => {
+      ele.rebuildable();
+      attempt += 1;
+      if (attempt > 1) {
+        throw new Error('boom');
+      }
+    });
+
+    // 先制造一次「重跑失败」——失败回滚会释放本轮登记、尚未求值的绑定。
+    expect(() => region.rebuild()).toThrow('boom');
+
+    let probeEvaluations = 0;
+    const probe = div((ele) =>
+      ele.attr('data-probe', () => {
+        probeEvaluations += 1;
+        return 'p';
+      })
+    );
+    probe.renderDom();
+    probe.renderDom();
+
+    // 首屏构建期求值一次；后续渲染不重复求值。
+    expect(probeEvaluations).toBe(1);
+  });
 });
