@@ -1,4 +1,4 @@
-import { VTextNode } from './node.js';
+import { VTextNode, registerI18nScopeBridge } from './node.js';
 
 /** 多 key locale 共享存储的默认记录键。 */
 const DEFAULT_LOCALES_STORAGE_KEY = 'yoya-ui:i18n';
@@ -332,6 +332,12 @@ export function withI18nStringShortcut(locale, build) {
     stringShortcutI18n = previous;
   }
 }
+
+// 区域重建需要读取与恢复构建期的快捷写法实例。
+registerI18nScopeBridge({
+  current: () => stringShortcutI18n,
+  runWith: (instance, build) => withI18nStringShortcut(instance, build)
+});
 
 function isLocaleLike(value) {
   return Boolean(value && typeof value.text === 'function');

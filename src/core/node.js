@@ -1,5 +1,15 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
+import { snapshotContext, withContext } from './context.js';
+
+// 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
+// 因此用注册方式桥接，避免循环引用。
+let i18nScopeBridge = null;
+
+/** 由 i18n.js 注册：区域重建时读取与恢复字符串快捷写法实例。 */
+export function registerI18nScopeBridge(bridge) {
+  i18nScopeBridge = bridge;
+}
 
 // Devtools 运行时通过 globalThis 上的共享 bridge 接入，保证主入口与独立
 // devtools 子路径各自打包时仍共享同一开关/事件流；未导入 devtools 时全部 no-op。
@@ -257,6 +267,8 @@ export class ViewNode {
     this._regionGuard = null;
     this._regionPending = false;
     this._regionRunning = false;
+    this._regionEnv = null; // 构建期环境快照：access / context / i18n
+    this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -300,6 +312,11 @@ export class ViewNode {
 
     this._rebuildable = true;
     this._regionGuard = predicate || null;
+    this._regionEnv = {
+      access: this._accessContext || currentAccess(),
+      context: snapshotContext(),
+      i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
+    };
     return this;
   }
 
@@ -335,7 +352,7 @@ export class ViewNode {
 
     this._regionRunning = true;
     try {
-      this._builders.forEach((builder) => builder(this));
+      this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
     } catch (error) {
       this._children.forEach((child) => child.destroy());
       previousChildren.forEach((child) => this._pendingRemovals.delete(child));
@@ -349,10 +366,30 @@ export class ViewNode {
 
     this._regionPending = false;
     if (this._el) {
-      this.renderDom();
+      this._runInRegionEnvironment(() => this.renderDom());
     }
 
     return this;
+  }
+
+  /**
+   * 在区域构建期捕获的环境（权限 / context / i18n 快捷写法 + 继承的权限声明）中执行，
+   * 使重跑产出的节点与首次构建处于同一环境。
+   */
+  _runInRegionEnvironment(run) {
+    const env = this._regionEnv;
+    if (!env) {
+      return run();
+    }
+
+    const withI18n = () => (i18nScopeBridge ? i18nScopeBridge.runWith(env.i18n, run) : run());
+    const withEnvironment = () => withAccess(env.access, () => withContext(env.context, withI18n));
+
+    if (this._inheritedScope) {
+      return withRenderScope(this._inheritedScope, withEnvironment);
+    }
+
+    return withEnvironment();
   }
 
   /**
@@ -1396,6 +1433,7 @@ export class ElementNode extends ViewNode {
     }
 
     const inherited = this._access ?? currentInheritedScope();
+    this._inheritedScope = inherited;
     if (isDevtoolsEnabled()) {
       this._devtoolsRendering = true;
     }
@@ -1442,6 +1480,7 @@ export class ElementNode extends ViewNode {
 
     this._applyAccessState(state);
     const inherited = this._access ?? currentInheritedScope();
+    this._inheritedScope = inherited;
 
     return withRenderScope(inherited, () => {
       const attrs = this._serializeAttributes();
