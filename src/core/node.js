@@ -113,22 +113,101 @@ export function withBindingScope(scope, build) {
   }
 }
 
-function registerNodeBinding(kind, key, read, commit) {
-  if (!activeBindingScope) {
+function registerNodeBinding(owner, kind, key, read, commit) {
+  const region = activeRegion();
+  const scope = region ? region._regionScope : activeBindingScope;
+
+  if (!scope) {
     throw new TypeError(
       `vStateNode binding scope required for function value (${kind}${key ? ` "${key}"` : ''})`
     );
   }
 
-  const scope = activeBindingScope;
-  scope.bindings.push({
+  const binding = {
     commit,
     committed: false,
     evaluate: () => read(scope.getState()),
     key,
     kind,
-    last: undefined
+    last: undefined,
+    list: scope.bindings,
+    owner
+  };
+
+  scope.bindings.push(binding);
+
+  if (owner && Array.isArray(owner._bindings)) {
+    owner._bindings.push(binding);
+  }
+}
+
+// 区域构建上下文：区域构建/重跑期间登记的绑定归该区域所有。
+const regionBuildStack = [];
+const setupStack = [];
+
+function activeRegion() {
+  if (regionBuildStack.length > 0) {
+    return regionBuildStack[regionBuildStack.length - 1];
+  }
+
+  // 首次构建时，区域声明发生在 setup 执行过程中：向外找最近的已声明区域。
+  for (let index = setupStack.length - 1; index >= 0; index -= 1) {
+    const node = setupStack[index];
+    if (node._rebuildable && node._regionScope) {
+      return node;
+    }
+  }
+
+  return null;
+}
+
+function withRegionBuild(region, run) {
+  regionBuildStack.push(region);
+  try {
+    return run();
+  } finally {
+    regionBuildStack.pop();
+  }
+}
+
+/** 收集节点及其子树名下的绑定。 */
+function collectRegionBindings(node, out = []) {
+  node._bindings.forEach((binding) => out.push(binding));
+  node._children.forEach((child) => collectRegionBindings(child, out));
+  return out;
+}
+
+/** 解除给定绑定：从所属列表与 owner 名下同时移除。 */
+function releaseBindings(bindings) {
+  bindings.forEach((binding) => {
+    if (binding.list) {
+      const index = binding.list.indexOf(binding);
+      if (index !== -1) {
+        binding.list.splice(index, 1);
+      }
+    }
+
+    const owner = binding.owner;
+    if (owner && Array.isArray(owner._bindings)) {
+      const ownerIndex = owner._bindings.indexOf(binding);
+      if (ownerIndex !== -1) {
+        owner._bindings.splice(ownerIndex, 1);
+      }
+    }
   });
+}
+
+/** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
+function flushBindingsIn(node) {
+  node._bindings.forEach((binding) => {
+    const next = binding.evaluate();
+    if (!binding.committed || !Object.is(next, binding.last)) {
+      binding.committed = true;
+      binding.last = next;
+      binding.commit(next);
+    }
+  });
+  node._children.forEach((child) => flushBindingsIn(child));
 }
 
 // 无闭合标签的 HTML 元素，toHTML 时不能追加结束标签。
@@ -263,7 +342,9 @@ export class ViewNode {
     this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
     this._builders = []; // 区域重建时按顺序重跑的构建函数
+    this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
     this._rebuildable = false;
+    this._regionScope = null; // 区域自持的绑定作用域
     this._regionGuard = null;
     this._regionPending = false;
     this._regionRunning = false;
@@ -285,7 +366,17 @@ export class ViewNode {
   setup(setup) {
     if (typeof setup === 'function') {
       this._builders.push(setup);
-      setup(this);
+      setupStack.push(this);
+      try {
+        setup(this);
+      } finally {
+        setupStack.pop();
+      }
+
+      if (this._rebuildable) {
+        // 区域自持绑定：首次构建完成后立刻求值写回一次。
+        flushBindingsIn(this);
+      }
     } else if (setup instanceof ViewNode) {
       this.child(setup);
     } else if (typeof setup === 'string' || typeof setup === 'number') {
@@ -312,11 +403,24 @@ export class ViewNode {
 
     this._rebuildable = true;
     this._regionGuard = predicate || null;
-    this._regionEnv = {
-      access: this._accessContext || currentAccess(),
-      context: snapshotContext(),
-      i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
-    };
+
+    if (!this._regionScope) {
+      // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
+      const enclosingScope = activeBindingScope;
+      this._regionScope = {
+        bindings: [],
+        getState:
+          enclosingScope && typeof enclosingScope.getState === 'function'
+            ? enclosingScope.getState
+            : () => undefined
+      };
+      this._regionEnv = {
+        access: this._accessContext || currentAccess(),
+        context: snapshotContext(),
+        i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
+      };
+    }
+
     return this;
   }
 
@@ -338,12 +442,15 @@ export class ViewNode {
     }
 
     if (this._regionGuard && !(options && options.force) && !this._regionGuard()) {
+      // 谓词拒绝结构重建：只刷新值绑定，DOM 与焦点保持原样，重建留待补齐。
       this._regionPending = true;
+      flushBindingsIn(this);
       return this;
     }
 
     const previousChildren = this._children;
     const previousKeys = this._childKeys;
+    const previousBindings = new Set(collectRegionBindings(this));
 
     this._children = [];
     this._childKeys = new Map();
@@ -354,6 +461,9 @@ export class ViewNode {
     try {
       this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
     } catch (error) {
+      releaseBindings(
+        collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
+      );
       this._children.forEach((child) => child.destroy());
       previousChildren.forEach((child) => this._pendingRemovals.delete(child));
       this._children = previousChildren;
@@ -364,6 +474,8 @@ export class ViewNode {
       this._regionRunning = false;
     }
 
+    releaseBindings([...previousBindings]);
+    flushBindingsIn(this);
     this._regionPending = false;
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
@@ -378,11 +490,16 @@ export class ViewNode {
    */
   _runInRegionEnvironment(run) {
     const env = this._regionEnv;
+    const build = () =>
+      withRegionBuild(this, () =>
+        this._regionScope ? withBindingScope(this._regionScope, run) : run()
+      );
+
     if (!env) {
-      return run();
+      return build();
     }
 
-    const withI18n = () => (i18nScopeBridge ? i18nScopeBridge.runWith(env.i18n, run) : run());
+    const withI18n = () => (i18nScopeBridge ? i18nScopeBridge.runWith(env.i18n, build) : build());
     const withEnvironment = () => withAccess(env.access, () => withContext(env.context, withI18n));
 
     if (this._inheritedScope) {
@@ -770,7 +887,7 @@ export class VTextNode extends ViewNode {
     this._textNode = null;
 
     if (typeof content === 'function') {
-      registerNodeBinding('text', null, content, (next) => this.textContent(next));
+      registerNodeBinding(this, 'text', null, content, (next) => this.textContent(next));
       return;
     }
 
@@ -783,7 +900,7 @@ export class VTextNode extends ViewNode {
     }
 
     if (typeof value === 'function') {
-      registerNodeBinding('text', null, value, (next) => this.textContent(next));
+      registerNodeBinding(this, 'text', null, value, (next) => this.textContent(next));
       return this;
     }
 
@@ -1238,7 +1355,7 @@ export class ElementNode extends ViewNode {
     }
 
     if (typeof value === 'function') {
-      registerNodeBinding('attr', name, value, (next) => this.attr(name, next));
+      registerNodeBinding(this, 'attr', name, value, (next) => this.attr(name, next));
       return this;
     }
 
@@ -1328,7 +1445,7 @@ export class ElementNode extends ViewNode {
     }
 
     if (typeof value === 'function') {
-      registerNodeBinding('style', name, value, (next) => this.style(name, next));
+      registerNodeBinding(this, 'style', name, value, (next) => this.style(name, next));
       return this;
     }
 
