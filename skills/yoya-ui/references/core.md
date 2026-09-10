@@ -67,6 +67,49 @@ export function vStatusDot(first = null, second = null, third = null) {
 }
 ```
 
+## 文件内分块：结构块也用函数组件
+
+复杂组件的结构不要在一个 render 里用条件分支和匿名片段堆出来：把每一块抽成**同一文件内的函数组件**，在 render 里组合。整棵树看上去应当是一层层组件拼起来的，而不是一段过程式布局代码。
+
+```js
+// 块组件：PascalCase 命名并描述 UI 单元；输入显式，产出 ViewNode
+function FilterBar({ keyword, onInput }) {
+  return div((bar) => {
+    bar.className('acme-member-filter');
+    bar.vInput((input) => {
+      input.value(keyword);
+      input.on('input', (event) => onInput(event.target.value));
+    });
+  });
+}
+
+function MemberRow({ row }) {
+  return vTr((tr) => {
+    tr.td(row.name);
+    tr.td(row.role);
+  });
+}
+
+export function MemberTable({ state, onFilter }) {
+  return vTable((table) => {
+    table.child(FilterBar({ keyword: state.keyword, onInput: onFilter }));
+    table.vTbody((body) => {
+      if (state.rows.length === 0) {
+        body.vTr((tr) => tr.td('暂无数据'));
+        return;
+      }
+
+      state.rows.forEach((row) => body.addChild(row.id, MemberRow({ row })));
+    });
+  });
+}
+```
+
+- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名。
+- 输入走参数（`MemberRow({ row })`），需要回写时把回调一起传进去；不要在块组件里隐式读取外层状态——这样它才能独立阅读、单独替换，必要时直接提升为可复用组件。
+- 一个块只负责自己那块的 DOM；跨块共享的状态、格式化与样式 token 放在模块级 helper 或组件入口，别让子块去访问父块内部。
+- 深度以读得懂为界：2–3 层通常足够；更深时先问「这一层该不该独立成组件（或拆文件）」。
+
 ## 命名与样式约定
 
 - 基础 HTML 元素保持原生标签名；复合组件工厂统一 `v` 前缀（PascalCase）

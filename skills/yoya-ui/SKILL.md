@@ -35,6 +35,7 @@ document.querySelector('#app').appendChild(page.renderDom());
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
 - **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
+- **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/core.md
 
 ## 文本与状态
 
