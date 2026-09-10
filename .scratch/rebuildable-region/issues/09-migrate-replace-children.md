@@ -21,6 +21,16 @@
 
 统计：全库 `replaceChildren(` 出现次数从 129 降到 **120**（40 个文件，含 `shared.js` 的定义）。
 
+## 批次 2（已完成）
+
+| 文件 | 迁移前 | 迁移后 |
+| --- | --- | --- |
+| `src/data-display/progress.js` | 2 处（标签盒、文本盒） | 两个盒子声明为区域；文本内容抽成 `_progressText()` 供 builder 读取 |
+| `src/actions/float-button.js` | 2 处（图标盒、标签盒） | 两个盒子声明为区域，setter 改为记录字段 + `rerun()` |
+
+验证：`progress.test.js` 与组件公共测试共 99 条用例通过；全量 938 条用例通过。
+累计统计：`replaceChildren(` 从 129 降到 **116**（38 个文件）。
+
 ## 保留理由清单（未迁移）
 
 **A. 工具与基础设施（不应迁移）**

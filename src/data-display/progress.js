@@ -4,7 +4,6 @@ import {
   createComponentFactory,
   isPlainObject,
   normalizeChildren,
-  replaceChildren,
   themeValue
 } from '../components/shared.js';
 
@@ -30,14 +29,22 @@ export class VProgress extends HtmlElementNode {
     this._format = null;
     this._textContent = null;
     this._ariaLabel = null;
+    this._label = null;
 
     this._labelBox = new HtmlElementNode('span')
       .className('yoya-vprogress-label')
       .attr('aria-hidden', 'true')
-      .style('display', 'none');
+      .style('display', 'none')
+      .setup((box) => {
+        box.rebuildable();
+        box.child(normalizeChildren(this._label));
+      });
     this._track = new HtmlElementNode('div').className('yoya-vprogress-track');
     this._bar = new HtmlElementNode('span').className('yoya-vprogress-bar');
-    this._textBox = new HtmlElementNode('span').className('yoya-vprogress-text');
+    this._textBox = new HtmlElementNode('span').className('yoya-vprogress-text').setup((box) => {
+      box.rebuildable();
+      box.child(normalizeChildren(this._progressText()));
+    });
     this._track.child(this._bar);
 
     this.className(componentClass, 'yoya-vprogress');
@@ -116,9 +123,27 @@ export class VProgress extends HtmlElementNode {
       return this._labelBox.textContent();
     }
 
-    replaceChildren(this._labelBox, normalizeChildren(content));
+    this._label = content;
+    this._labelBox.rerun();
     this._syncProgress();
     return this;
+  }
+
+  /** 文本区内容：显式文本优先，其次 indeterminate 文案、format 结果与百分比。 */
+  _progressText() {
+    if (this._textContent !== null && this._textContent !== undefined) {
+      return this._textContent;
+    }
+
+    if (this._indeterminate) {
+      return '处理中';
+    }
+
+    if (this._format) {
+      return this._format(this._value, this._percent);
+    }
+
+    return `${Math.round(this._percent)}%`;
   }
 
   text(content) {
@@ -324,19 +349,8 @@ export class VProgress extends HtmlElementNode {
     }
 
     if (this._showText) {
-      let content = this._textContent;
-      if (content === null || content === undefined) {
-        if (this._indeterminate) {
-          content = '处理中';
-        } else if (this._format) {
-          content = this._format(this._value, this._percent);
-        } else {
-          content = `${Math.round(this._percent)}%`;
-        }
-      }
-
       this._textBox.style('display', 'inline-flex');
-      replaceChildren(this._textBox, normalizeChildren(content));
+      this._textBox.rerun();
     } else {
       this._textBox.style('display', 'none');
     }

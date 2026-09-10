@@ -6,7 +6,6 @@ import {
   isPlainObject,
   normalizeComponentArguments,
   normalizeChildren,
-  replaceChildren,
   themeBorder,
   themeValue
 } from '../components/shared.js';
@@ -34,8 +33,20 @@ export class VFloatButton extends HtmlElementNode {
     this._size = 'medium';
     this._fixed = false;
     this._position = null;
-    this._iconBox = new HtmlElementNode('span').className('yoya-vfloat-button-icon');
-    this._labelBox = new HtmlElementNode('span').className('yoya-vfloat-button-label');
+    this._icon = null;
+    this._label = null;
+    this._iconBox = new HtmlElementNode('span')
+      .className('yoya-vfloat-button-icon')
+      .setup((box) => {
+        box.rebuildable();
+        box.child(normalizeChildren(this._icon));
+      });
+    this._labelBox = new HtmlElementNode('span')
+      .className('yoya-vfloat-button-label')
+      .setup((box) => {
+        box.rebuildable();
+        box.child(normalizeChildren(this._label));
+      });
 
     this.className(componentClass, 'yoya-vfloat-button');
     this.attr('type', 'button');
@@ -64,13 +75,15 @@ export class VFloatButton extends HtmlElementNode {
   }
 
   icon(content) {
-    replaceChildren(this._iconBox, normalizeChildren(content));
+    this._icon = content;
+    this._iconBox.rerun();
     this._syncIconVisibility();
     return this;
   }
 
   label(content) {
-    replaceChildren(this._labelBox, normalizeChildren(content));
+    this._label = content;
+    this._labelBox.rerun();
     this._syncLabelVisibility();
     return this;
   }
