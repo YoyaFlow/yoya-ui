@@ -38,6 +38,203 @@ const htmlNativeNotes = [
   '子工厂快捷方法返回父节点；绑定事件请用回调参数：box.button("文字", (btn) => btn.on("click", ...))。'
 ];
 
+// API 清单按职责分组；每组一张 API / 用途 / 示例 表，方法链一律返回节点本身。
+const htmlNativeApiGroups = [
+  {
+    title: '创建与结构',
+    rows: [
+      [
+        'div(setup?)',
+        '原生工厂创建元素，支持 div(setup)、div("文本")、div({ ...config }) 三种写法。',
+        "div('内容')"
+      ],
+      [
+        'div({ ...config })',
+        '配置对象写法：class / attrs / style / children / onXxx，其余键按同名方法或属性处理。',
+        "div({ attrs: { role: 'note' } })"
+      ],
+      [
+        'node.child(...children)',
+        '追加子节点：ViewNode、组件对象、字符串或数字；返回父节点，方便继续追加。',
+        "box.span('状态')"
+      ],
+      [
+        'node.addChild(key, child)',
+        '带 key 追加子节点，元素子节点会把 key 镜像成 data-row-key。',
+        "list.addChild('row-1', row)"
+      ],
+      [
+        'node.getChild(key) / removeChild(key)',
+        '按 key 取用或移除；removeChild 会销毁该子树。',
+        "list.removeChild('row-1')"
+      ],
+      ['node.children()', '返回子节点数组快照，改快照不影响内部结构。', 'node.children().length'],
+      ['node.clearChildren()', '清空子节点，旧节点在下一次提交时销毁。', 'box.clearChildren()']
+    ]
+  },
+  {
+    title: '文本：text 与 textContent',
+    rows: [
+      [
+        'node.text(content)',
+        '追加一个文本节点，等价 child(vText(content))；它不是「设置文案」，反复调用会越堆越多。',
+        "p.text('共 ')"
+      ],
+      [
+        'node.textContent()',
+        '只读：返回本元素子树的聚合文本；元素上不能用它写入文案。',
+        'p.textContent()'
+      ],
+      [
+        'vText(content)',
+        '创建文本节点句柄，渲染为真实 Text 节点，SSR 输出自动转义。',
+        "const label = vText('A')"
+      ],
+      [
+        'textNode.textContent(value)',
+        '读写并原地替换文本：同一处文案反复同步，用它的替换语义。',
+        "label.textContent('B')"
+      ],
+      [
+        'node.child(vText(fn))',
+        '文本跟随状态：函数值绑定原地更新，不替换元素、不丢焦点。',
+        'line.child(vText(() => data.label))'
+      ]
+    ],
+    sample: `// 追加：元素 text() 每次都加一个文本节点，反复同步会堆叠
+p.text('状态：已同步');
+p.text('状态：已跳过'); // 结果是两段文案拼在一起
+
+// 替换：持有文本节点句柄，textContent(value) 原地更新
+const statusText = vText('状态：已同步');
+p.child(statusText);
+statusText.textContent('状态：已跳过');`
+  },
+  {
+    title: '属性、类名与样式',
+    rows: [
+      [
+        'node.attr(name) / attr(name, value)',
+        '读写属性；值为 null / undefined / false 时移除，函数值登记为绑定。',
+        "input.attr('placeholder', '搜索')"
+      ],
+      ['node.attr({ ... })', '批量写属性。', "link.attr({ href: '/docs' })"],
+      ['node.id(value) / name(value)', 'id / name 属性快捷读写。', "input.id('user-name')"],
+      [
+        'node.className(...names) / class(...)',
+        '追加类名，支持空格分隔与数组；无参调用返回当前类名字符串。',
+        "box.className('card', 'is-open')"
+      ],
+      [
+        'node.replaceClassName(old, next, tolerate?)',
+        '替换预设类名：old 不存在时默认不动，tolerate 为 true 则只加 next。',
+        "box.replaceClassName('yoya-vtable', 'my-table')"
+      ],
+      [
+        'node.style(name, value)',
+        '读写行内样式；值为 null / 空串时移除，函数值登记为绑定。',
+        "box.style('gap', '8px')"
+      ],
+      ['node.styles({ ... })', '批量写行内样式。', "box.styles({ display: 'flex' })"]
+    ]
+  },
+  {
+    title: '事件、状态与生命周期',
+    rows: [
+      [
+        'node.on(event, handler, options?)',
+        '绑定事件；同节点同事件只保留最新 handler，options 支持 once 等原生选项。',
+        "btn.on('click', save)"
+      ],
+      ['node.off(event)', '解绑事件并移除转发适配器。', "btn.off('click')"],
+      [
+        'node.registerStateAttrs(...names)',
+        '声明节点可识别的状态字段，默认 boolean；也可传 { 名称: 类型 }。',
+        "box.registerStateAttrs('open')"
+      ],
+      [
+        'node.registerStateHandler(name, handler)',
+        '注册状态处理器，回调 (value, node, oldValue) 负责同步样式、属性或内部结构。',
+        "box.registerStateHandler('open', syncOpen)"
+      ],
+      [
+        'node.setState(name, value) / getState(name)',
+        '改状态并触发处理器；getBoolean / getString / getNumberState 做类型转换读取。',
+        "box.setState('open', true)"
+      ],
+      [
+        'node.rebuildable(predicate?)',
+        '把节点声明为可重建区域，内容由它自己的 setup 产出。',
+        'box.rebuildable(() => !locked)'
+      ],
+      [
+        'node.rebuild(options?) / flush()',
+        '结构变化用 rebuild()（清空子节点重跑 setup），值变化用 flush()；谓词为假只刷值并记 rebuildPending()。',
+        'box.rebuild({ force: true })'
+      ],
+      [
+        'node.renderDom() / commit()',
+        '创建或复用真实 DOM 节点并提交子树，commit() 与 renderDom() 等价。',
+        'node.renderDom()'
+      ],
+      ['node.toHTML()', '序列化为 HTML 字符串，SSR 路径不依赖 DOM。', 'node.toHTML()'],
+      [
+        'node.bindTo(target) / destroy()',
+        '挂载到选择器或元素；destroy 解绑事件、递归销毁子节点并从 DOM 移除。',
+        "node.bindTo('#app')"
+      ],
+      [
+        'node.access(spec)',
+        '声明权限码，读/写级别由当前用户权限决定。',
+        "card.access('system:member')"
+      ]
+    ]
+  }
+];
+
+function HtmlNativeApiSection() {
+  return {
+    render() {
+      return section((api) => {
+        api.className('components-html-native-api');
+        api.attr('data-html-native-api', 'true');
+        api.h2('常用 API');
+        api.p(
+          '原生元素节点在通用节点能力之上提供以下方法，全部返回节点本身、可继续链式调用；' +
+            '文本有两套语义，text() 是追加、textContent() 才是替换。'
+        );
+        htmlNativeApiGroups.forEach((group) => {
+          api.h3(group.title);
+          api.table((table) => {
+            table.thead((head) => {
+              head.tr((row) => {
+                row.th('API');
+                row.th('用途');
+                row.th('示例');
+              });
+            });
+            table.tbody((body) => {
+              group.rows.forEach(([name, purpose, example]) => {
+                body.tr((row) => {
+                  row.td((cell) => cell.code(name));
+                  row.td(purpose);
+                  row.td((cell) => cell.code(example));
+                });
+              });
+            });
+          });
+          if (group.sample) {
+            api.pre((pre) => {
+              pre.className('guide-code');
+              pre.code(group.sample);
+            });
+          }
+        });
+      });
+    }
+  };
+}
+
 function HtmlNativeUsageNote() {
   return {
     render() {
@@ -97,6 +294,7 @@ export function HtmlNativeDocumentationPage() {
         page.ul((list) => {
           htmlNativeNotes.forEach((note) => list.li(note));
         });
+        page.child(HtmlNativeApiSection());
         page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
       });
