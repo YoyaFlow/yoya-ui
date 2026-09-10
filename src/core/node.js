@@ -438,6 +438,7 @@ export class ViewNode {
     }
 
     if (this._deleted || this._regionRunning) {
+      this._regionLastRun = 'skip';
       return this;
     }
 
@@ -445,6 +446,7 @@ export class ViewNode {
       // 谓词拒绝结构重建：只刷新值绑定，DOM 与焦点保持原样，重建留待补齐。
       this._regionPending = true;
       flushBindingsIn(this);
+      this._regionLastRun = 'flush';
       return this;
     }
 
@@ -477,6 +479,7 @@ export class ViewNode {
     releaseBindings([...previousBindings]);
     flushBindingsIn(this);
     this._regionPending = false;
+    this._regionLastRun = 'rebuild';
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
     }

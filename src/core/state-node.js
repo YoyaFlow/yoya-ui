@@ -23,6 +23,9 @@ export function vStateNode(config = {}) {
   let roots = null;
   let host = null;
   let bindings = [];
+  let regions = [];
+  let flushing = false;
+  let deferredPatch = null;
 
   const component = {
     _attachHost(hostNode) {
@@ -72,6 +75,12 @@ export function vStateNode(config = {}) {
         return component;
       }
 
+      if (flushing) {
+        // 重跑期间产生的状态变化入队，本轮结束后统一处理，避免递归。
+        deferredPatch = { ...(deferredPatch || {}), ...nextPatch };
+        return component;
+      }
+
       const changed = new Set();
       const changedDetails = isDevtoolsEnabled() ? {} : null;
 
@@ -86,22 +95,33 @@ export function vStateNode(config = {}) {
       });
 
       let handling = 'none';
-      if (changed.size > 0) {
-        if (roots) {
-          handling = applyStateChange(changed);
-        }
+      flushing = true;
+      try {
+        if (changed.size > 0) {
+          if (roots) {
+            handling = applyStateChange(changed);
+          }
 
-        listeners.forEach((listener) => listener(state, component));
+          listeners.forEach((listener) => listener(state, component));
 
-        if (isDevtoolsEnabled() && changedDetails) {
-          emitDevtools({
-            type: 'state',
-            node: host || undefined,
-            changed: changedDetails,
-            state: { ...state },
-            handling
-          });
+          if (isDevtoolsEnabled() && changedDetails) {
+            emitDevtools({
+              type: 'state',
+              node: host || undefined,
+              changed: changedDetails,
+              state: { ...state },
+              handling
+            });
+          }
         }
+      } finally {
+        flushing = false;
+      }
+
+      if (deferredPatch) {
+        const queued = deferredPatch;
+        deferredPatch = null;
+        component.setState(queued);
       }
 
       return component;
@@ -151,6 +171,7 @@ export function vStateNode(config = {}) {
     });
 
     roots = nextRoots;
+    regions = collectRegions(nextRoots);
     flushBindings();
 
     if (host) {
@@ -199,20 +220,69 @@ export function vStateNode(config = {}) {
       if (config.update.call(component, state, component, changed) === true) {
         rebuild();
         return 'rebuild';
-      } else if (bindings.length > 0) {
-        flushBindings();
-        return 'bindings';
       }
-      return 'update';
+
+      const rebuilt = flushRegions();
+
+      if (bindings.length > 0) {
+        flushBindings();
+      }
+
+      return rebuilt
+        ? 'rebuild'
+        : bindings.length > 0 || regions.length > 0
+          ? 'bindings'
+          : 'update';
     }
+
+    // 默认只刷新值绑定；结构重建由区域谓词决定，避免每次状态变化都重建 DOM。
+    const rebuilt = flushRegions();
 
     if (bindings.length > 0) {
       flushBindings();
-      return 'bindings';
+    }
+
+    if (regions.length > 0 || bindings.length > 0) {
+      return rebuilt ? 'rebuild' : 'bindings';
     }
 
     rebuild();
     return 'rebuild';
+  }
+
+  /** 刷新被标记的区域：谓词为假只刷值，为真则重建该子树。返回是否发生结构重建。 */
+  function flushRegions() {
+    let rebuilt = false;
+
+    regions.forEach((region) => {
+      region.rerun();
+      if (region._regionLastRun === 'rebuild') {
+        rebuilt = true;
+      }
+    });
+
+    return rebuilt;
+  }
+
+  /** 收集渲染树中未被其它区域包含的区域（嵌套区域随父区域重建）。 */
+  function collectRegions(nodes) {
+    const found = [];
+
+    const visit = (node) => {
+      if (!(node instanceof ViewNode)) {
+        return;
+      }
+
+      if (node._rebuildable) {
+        found.push(node);
+        return;
+      }
+
+      node.children().forEach(visit);
+    };
+
+    nodes.forEach(visit);
+    return found;
   }
 }
 
