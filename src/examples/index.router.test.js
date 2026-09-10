@@ -1182,9 +1182,12 @@ describe('renderExamplesIndex', () => {
     const htmlDemo = page.querySelector('.components-html-native-demo');
     const inputElement = htmlDemo.querySelector('input');
     inputElement.value = 'yoya';
+    // 真实输入会触发 input 事件；演示从事件对象取值，不查 document。
+    inputElement.dispatchEvent(new Event('input'));
     htmlDemo.querySelector('button').click();
     expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
     expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
+    expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
 
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();

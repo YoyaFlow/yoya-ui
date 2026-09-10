@@ -97,7 +97,8 @@ export class VImagePreview extends HtmlElementNode {
     return this;
   }
 
-  state() {
+  /** 当前预览状态：open / closed。 */
+  previewState() {
     return this._open ? 'open' : 'closed';
   }
 

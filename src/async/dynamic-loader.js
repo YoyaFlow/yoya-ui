@@ -27,7 +27,7 @@ export function vDynamicLoader(first = {}, second = null, third = null) {
   node.className('yoya-vdynamic-loader');
   node.attr({ 'aria-live': 'polite', 'data-loader-state': status });
   node.status = () => status;
-  node.state = () => status;
+  node.loadState = () => status;
   node.module = () => moduleValue;
   node.value = () => moduleValue;
   node.loadError = () => loadError;

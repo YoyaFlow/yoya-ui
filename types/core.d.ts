@@ -224,11 +224,17 @@ export class ViewNode {
   /** Declares the data source for parameterized value functions in this subtree. */
   scope<T = unknown>(getter: () => T): this;
 
+  /** Declares this node's own state; the object seeds missing keys only (idempotent across rebuilds). */
+  state(initial: Record<string, unknown>): this;
+
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
   rebuildPending(): boolean;
 
   /** Flushes bound values in this subtree without rebuilding structure. */
   flush(): this;
+
+  /** Value-level update entry: regions rebuild (predicate-gated), plain nodes only flush. */
+  flushAll(): this;
 
   /** Re-runs the region builders: build first, then replace the previous children. */
   rebuild(options?: { force?: boolean }): this;
@@ -247,6 +253,7 @@ export class ViewNode {
 
   /** Sets a state value and triggers its handlers. */
   setState(stateName: string, value?: unknown): this;
+  setState(patch: Record<string, unknown>): this;
 
   getState(stateName: string): unknown;
   getBooleanState(stateName: string): boolean;

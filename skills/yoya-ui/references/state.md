@@ -30,21 +30,28 @@ const counter = vStateNode({
 2. 没有 `update` 但 render 里登记了函数值绑定（`vText((s) => ...)`、`attr('value', (s) => ...)`、`style(..., (s) => ...)`）→ 只求值写回，DOM 节点不变；
 3. 都没有 → 全量 rebuild（销毁旧根并重新 render）。
 
-## 节点级状态（registerStateHandler / setState）
+## 节点级状态（state / setState / flushAll）
 
 任意节点（原生元素、SVG、组件节点、自定义节点）都有 `registerStateAttrs` / `registerStateHandler` / `setState` / `getState`，库内组件的 `disabled()` / `open()` / `active()` 就是用它实现的：
 
 ```js
+// 自带状态：对象是幂等种子（重跑只补缺省字段），(s) => value 读它
 const box = div((ele) => {
-  ele.registerStateHandler('open', (value, node) => {
-    node.attr('data-open', value ? 'true' : null);
-  });
+  ele.state({ count: 0, open: false });
+  ele.attr('data-count', (s) => String(s.count));
 });
 
-box.setState('open', true); // 只驱动本节点注册的处理器
+box.setState('open', true); // 单值
+box.setState({ count: 2 }); // patch —— 同义，写完自动 flushAll()
+
+// 需要 oldValue 或命令式副作用时，才注册处理器
+box.registerStateAttrs('open');
+box.registerStateHandler('open', (value, node) => {
+  node.attr('data-open', value ? 'true' : null);
+});
 ```
 
-- 它只做两件事：写状态值、按注册顺序同步调用处理器 `(value, node, oldValue)`；**不重渲染、不做 diff、不重新求值函数值绑定**——值要跟着变就写 `flush()` / `rebuild()`，或用宿主组件的 `setState` / `flush()`。
+- 写入状态后**会自动 `flushAll()`**：区域按谓词重建、普通节点只刷绑定（结构仍然只有 `rebuild()` / 谓词能改）。`setState('key', value)` 与 `setState(patch)` 同义；**构建期（setup / 区域重跑）里的 setState 只写状态**，不触发刷新与重建。
 - 与组件级 `component.setState(patch)` 同名不同物：后者合并对象 patch（或 `(state) => patch`），按 `update` / 函数值绑定决定刷值还是重建，并通知 `subscribe` 的监听者。
 - 没有注册处理器的状态名会静默写入，不报错也不动 DOM，适合放节点内部标记。
 
@@ -109,7 +116,7 @@ body.rebuildPending(); // 是否有被谓词推迟的重建
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
 - 区域节点的子节点只能由 builder 产出：在 builder 之外对它 `child()` / `addChild()` 会直接报错。
 - 不要在区域 setup 里放一次性副作用（第三方实例、请求、埋点）；状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 会在重跑时由引擎重置，定时器用 `registerRegionCleanup(fn)` 登记。
-- 数据来源三选一：**组件状态**（`vStateNode` 内自动继承，`setState` 自动驱动）、**`scope(getter)`**（数据在组件外，pull：改完要自己 `flush()` / `rebuild()`；声明一次覆盖整棵子树）、**零参闭包**（不需要声明，任意节点可用）。带参 `(d) => value` 必须来自前两者之一（按形参个数判断，`(s = {}) => …` 视为零参）；节点级 `setState` 不参与绑定求值。
+- 数据来源三选一：**节点自带状态**（`state({...})`，`setState` 写完自动 `flushAll()`）、**`scope(getter)`**（数据在组件外，pull：改完要自己 `flush()` / `rebuild()`）、**零参闭包**（不需要声明，任意节点可用）；在 `vStateNode` 内还可以直接继承宿主状态。带参 `(d) => value` 必须来自前三者之一（按形参个数判断，`(s = {}) => …` 视为零参）。
 - 触发：区域归属于最近的状态组件，`setState` 时自动按谓词处理；没有状态容器时由调用方 `rebuild()` 驱动，谓词为假之后可用 `rebuildPending()` 决定是否补一次重建。
 - 嵌套：区域里可以再声明区域（父区域只刷值时，子区域仍会评估自己的谓词）；嵌套的状态组件自成边界，其内部区域由它自己管理。
 

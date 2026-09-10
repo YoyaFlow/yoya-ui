@@ -584,7 +584,7 @@ export class VImagePreview extends HtmlElementNode {
   zoom(): number;
   zoom(value: number): VImagePreview;
   resetZoom(): VImagePreview;
-  state(): 'open' | 'closed';
+  previewState(): 'open' | 'closed';
   open(): VImagePreview;
   close(): VImagePreview;
   toggle(): VImagePreview;

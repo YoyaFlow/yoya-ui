@@ -86,7 +86,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 状态与更新
 
-yoya-ui 没有自动响应式系统，状态变化后由组件决定就地更新：节点级用 `registerStateAttrs` + `registerStateHandler` + `setState`/`getState`（任意节点都有，只写状态并跑本节点处理器，不重渲染也不刷函数值绑定）；组件级用 `vStateNode({ state, render, update })`；需要「结构随数据变化」时用可重建区域（`rebuildable()` + `rebuild()`，只刷值用 `flush()`）。组件可继续暴露链式状态 API（`value(next)`、`disabled(next)`）。
+yoya-ui 没有自动响应式系统，状态变化后由组件决定就地更新：节点级用 `state({...})` + `registerStateAttrs` / `registerStateHandler` + `setState`/`getState`（任意节点都有；`state()` 是幂等种子，`setState` 单值与 patch 同义、写完自动 `flushAll()`，构建期只写状态）；组件级用 `vStateNode({ state, render, update })`；需要「结构随数据变化」时用可重建区域（`rebuildable()` + `rebuild()`，只刷值用 `flush()` 或 `flushAll()`）。组件可继续暴露链式状态 API（`value(next)`、`disabled(next)`）。
 
 三种更新路径、函数值绑定（归属隐式 + `scope()` 来源）、可重建区域（含谓词门禁、登记重置）、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 

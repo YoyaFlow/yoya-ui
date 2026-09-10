@@ -110,7 +110,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地更新哪些 DOM：
 
-- 节点级：任意节点都有 `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`。它是「手动状态 + 处理器」的钩子：`setState(name, value)` 只写状态并同步跑本节点注册的处理器，不重渲染、也不刷函数值绑定（值变化要 `flush()` / `rebuild()`）；区域重跑会重建处理器登记但保留状态值，重建后的初始态要在 setup 里自己读回。
+- 节点级：任意节点都有 `state(初值)` + `registerStateAttrs` / `registerStateHandler` + `setState` / `getState`。`state({...})` 是**幂等种子**（只补缺省字段，重跑不重置）并让本子树里的 `(s) => value` 读这份状态；`setState('key', value)` 与 `setState(patch)` 同义，写完触发 `flushAll()`（区域按谓词重建、普通节点只刷绑定）。**构建期**（setup / 区域重跑）里的 `setState` 只写状态，不触发刷新与重建。区域重跑会重建处理器登记但保留状态值，重建后的初始态要在 setup 里自己读回。
 - 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
 - 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rebuild()` 重新执行它自己的 setup。
 - 文案原地更新：持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。

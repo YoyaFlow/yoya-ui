@@ -185,6 +185,15 @@ region.rebuild({ force: true });
 const rebuildPending: boolean = region.rebuildPending();
 void rebuildPending;
 region.flush();
+region.flushAll();
+
+// Node-level state: seeded object + single-key or patch writes.
+const stateful = div((ele) => {
+  ele.state({ count: 0, open: false });
+  ele.attr('data-count', '0');
+});
+stateful.setState('open', true);
+stateful.setState({ count: 1 });
 
 // i18n.
 const i18n = createI18n({

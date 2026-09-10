@@ -74,7 +74,8 @@ export class VLazyImage extends HtmlElementNode {
     return this;
   }
 
-  state() {
+  /** 当前加载状态：loading / loaded / error。 */
+  loadState() {
     return this._state;
   }
 

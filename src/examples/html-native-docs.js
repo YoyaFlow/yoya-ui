@@ -1,8 +1,17 @@
-import { section, vText } from '../index.js';
+import { input, section, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 function HtmlNativeExample1() {
+  const data = { name: '' };
   const result = vText('原生输入：等待');
+  // 先建一次、直接持有节点引用；取值走事件对象，不查 document。
+  const nameField = input((field) => {
+    field.id('html-native-name');
+    field.attr({ placeholder: '输入名称', type: 'text' });
+    field.on('input', (event) => {
+      data.name = event.target.value;
+    });
+  });
 
   return {
     render() {
@@ -12,16 +21,12 @@ function HtmlNativeExample1() {
         page.p('button、input、output 等原生元素可以直接组合，适合底层自由拼装。');
         page.div((box) => {
           box.className('html-native-box');
-          box.input((input) => {
-            input.id('html-native-name');
-            input.attr({ placeholder: '输入名称', type: 'text' });
-          });
+          box.child(nameField);
           box.button((button) => {
             button.className('html-native-button');
             button.text('更新');
             button.on('click', () => {
-              const value = document.getElementById('html-native-name')?.value || '';
-              result.textContent(`原生输入：${value || '空'}`);
+              result.textContent(`原生输入：${data.name || '空'}`);
             });
           });
           box.output((output) => output.child(result));
@@ -153,14 +158,24 @@ statusText.textContent('状态：已跳过');`
         "box.registerStateAttrs('open')"
       ],
       [
+        'node.state(initial)',
+        '声明节点自带状态：对象是幂等种子（只补缺省字段，重跑不重置），本子树的 (s) => value 读它。',
+        'box.state({ count: 0, open: false })'
+      ],
+      [
         'node.registerStateHandler(name, handler)',
         '注册状态处理器，回调 (value, node, oldValue) 负责同步样式、属性或内部结构。',
         "box.registerStateHandler('open', syncOpen)"
       ],
       [
         'node.setState(name, value)',
-        '任意节点都能用：写入状态并同步调用本节点注册的处理器；不重渲染、不刷函数值绑定。',
+        '写入状态：单值 setState(name, value) 与多值 setState(patch) 同义，写完触发 flushAll()。',
         "box.setState('open', true)"
+      ],
+      [
+        'node.flushAll()',
+        '值级更新入口：区域按谓词重建，普通节点只刷绑定（结构不变）。',
+        'box.flushAll()'
       ],
       [
         'node.getState(name)',
@@ -201,23 +216,23 @@ statusText.textContent('状态：已跳过');`
     ],
     sample: `// 以下都在 div((ele) => { ... }) 的 setup 里
 
-// ① 节点状态：声明字段 → 注册处理器 → setState 触发
-ele.registerStateAttrs('open'); // 默认 boolean，也可传 { 名称: 类型 }
+// ① 节点自带状态：state({...}) 是幂等种子（重跑只补缺省字段），(s) => value 读它
+ele.state({ count: 0, open: false });
+ele.attr('data-count', (s) => String(s.count));
+
+// ② 写入状态：单值与 patch 同义，写完自动 flushAll()（普通节点只刷绑定）
+ele.setState('open', true);
+ele.setState({ count: 2 });
+
+// ③ 手动接线仍然可用：需要 oldValue 或命令式副作用时注册处理器
+ele.registerStateAttrs('open');
 ele.registerStateHandler('open', (value, node) => {
   node.attr('data-open', value ? 'true' : null); // 处理器负责把状态落到 DOM
 });
-ele.setState('open', true); // 只跑本节点处理器：不重渲染，也不重新求值绑定
 ele.getBooleanState('open'); // 读取；getStringState / getNumberState 同理
 
-// ② 值跟随数据：函数值绑定 + scope()，用的还是这个节点自己的能力
-const store = { count: 0 };
-ele.scope(() => store);
-ele.attr('data-count', (d) => String(d.count));
-store.count += 1;
-ele.flush(); // 值级刷新：结构不变、元素引用不变
-
-// ③ 边界：重跑会重置处理器登记，但保留状态值——
-// 重建后的初始态要在 setup 里读回，不要指望处理器自动补跑
+// ④ 边界：构建期（setup / 区域重跑）里的 setState 只写状态，不刷也不重建；
+// 重跑会重置处理器登记但保留状态值，初始态要在 setup 里读回
 ele.attr('data-open', ele.getBooleanState('open') ? 'true' : null);`
   }
 ];
@@ -293,7 +308,7 @@ function HtmlNativeDemoSection() {
   const liveDemo = HtmlNativeExample1();
   const sourcePanel = ComponentSource({
     component: HtmlNativeExample1,
-    imports: ['section', 'vText'],
+    imports: ['input', 'section', 'vText'],
     sourceComponent: HtmlNativeExample1,
     title: 'HTML 原生源码'
   });

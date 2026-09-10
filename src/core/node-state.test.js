@@ -29,7 +29,7 @@ describe('node level state', () => {
     expect(element.dataset.unknown).toBeUndefined();
   });
 
-  it('does not re-evaluate function value bindings', () => {
+  it('drives updates through flushAll instead of leaving bindings stale', () => {
     const data = { label: 'A' };
     const box = div((ele) => {
       ele.rebuildable();
@@ -39,11 +39,8 @@ describe('node level state', () => {
     box.renderDom();
 
     data.label = 'B';
+    // 区域节点：setState 触发 flushAll → 按谓词重建，值立刻跟上
     box.setState('anything', true);
-
-    expect(box.children()[0].textContent()).toBe('A');
-
-    box.flush();
 
     expect(box.children()[0].textContent()).toBe('B');
   });

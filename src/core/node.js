@@ -498,6 +498,8 @@ export class ViewNode {
     this._regionGuard = null;
     this._rebuildPending = false;
     this._regionRunning = false;
+    this._flushingAll = false; // setState 触发的刷新是否正在进行
+    this._flushAllQueued = false; // 刷新期间又写状态：本轮结束后补一次
     this._regionEnv = null; // 构建期环境快照：access / context / i18n
     this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
 
@@ -600,12 +602,17 @@ export class ViewNode {
       throw new TypeError('scope() requires a function');
     }
 
+    if (this._ownBindingScope && this._ownBindingScope.source === 'state') {
+      throw new TypeError('scope() conflicts with state() on this node');
+    }
+
     const scope = this._ownBindingScope || {
       bindings: [],
       getState: () => undefined,
       hasData: false
     };
     this._ownBindingScope = scope;
+    scope.source = 'scope';
     scope.getState = getter;
     scope.hasData = true;
 
@@ -613,6 +620,38 @@ export class ViewNode {
     if (setupStack[setupStack.length - 1] === this) {
       activeBindingScope = scope;
     }
+
+    return this;
+  }
+
+  /**
+   * 声明本节点自带状态：对象是「幂等种子」——只补缺省字段，重跑不重置。
+   * 声明后本节点子树里的带参值函数 `(s) => value` 读它，`setState` 会顺带刷新。
+   */
+  state(initial) {
+    if (!initial || typeof initial !== 'object') {
+      throw new TypeError('state() requires an object');
+    }
+
+    if (this._ownBindingScope && this._ownBindingScope.source === 'scope') {
+      throw new TypeError('state() conflicts with scope() on this node');
+    }
+
+    const scope = this._ownBindingScope || {
+      bindings: [],
+      getState: () => this._states,
+      hasData: true
+    };
+    this._ownBindingScope = scope;
+    scope.source = 'state';
+    scope.getState = () => this._states;
+    scope.hasData = true;
+
+    Object.keys(initial).forEach((key) => {
+      if (!Object.prototype.hasOwnProperty.call(this._states, key)) {
+        this._states[key] = initial[key];
+      }
+    });
 
     return this;
   }
@@ -1011,16 +1050,58 @@ export class ViewNode {
   }
 
   /**
-   * 设置状态并触发对应处理器。
+   * 写入状态并触发对应处理器：`setState('open', true)` 与 `setState({ open: true })` 同义。
+   * 构建期（setup / 区域重跑）只写状态；其余时机写完后触发 `flushAll()`。
    */
   setState(stateName, value = true) {
+    if (stateName && typeof stateName === 'object') {
+      Object.entries(stateName).forEach(([key, next]) => this._applyStateValue(key, next));
+    } else {
+      this._applyStateValue(stateName, value);
+    }
+
+    this._requestFlushAll();
+    return this;
+  }
+
+  _applyStateValue(stateName, value) {
     const oldValue = this._states[stateName];
     this._states[stateName] = value;
 
     const handlers = this._stateHandlers.get(stateName) || [];
     handlers.forEach((handler) => handler(value, this, oldValue));
+  }
 
-    return this;
+  /** 值级更新的统一入口：区域按谓词重建，普通节点只刷绑定。 */
+  flushAll() {
+    if (this._deleted) {
+      return this;
+    }
+
+    return this._rebuildable ? this.rebuild() : this.flush();
+  }
+
+  /** setState 之后的自动刷新：构建期不触发；刷新期间再写状态则排队到本轮之后。 */
+  _requestFlushAll() {
+    if (this._deleted || setupStack.length > 0 || regionBuildStack.length > 0) {
+      return;
+    }
+
+    if (this._flushingAll) {
+      this._flushAllQueued = true;
+      return;
+    }
+
+    this._flushingAll = true;
+    try {
+      do {
+        this._flushAllQueued = false;
+        this.flushAll();
+      } while (this._flushAllQueued);
+    } finally {
+      this._flushingAll = false;
+      this._flushAllQueued = false;
+    }
   }
 
   getState(stateName) {

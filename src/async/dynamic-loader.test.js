@@ -36,7 +36,7 @@ describe('vDynamicLoader', () => {
     request.resolve({ name: '报表模块' });
     await loading;
     expect(loader.status()).toBe('loaded');
-    expect(loader.state()).toBe('loaded');
+    expect(loader.loadState()).toBe('loaded');
     expect(loader.module()).toEqual({ name: '报表模块' });
     expect(loader.value()).toEqual({ name: '报表模块' });
     expect(loader.error()).toBe(null);
@@ -84,7 +84,7 @@ describe('vDynamicLoader', () => {
     });
 
     await expect(loader.load()).rejects.toThrow('通知失败');
-    expect(loader.state()).toBe('loaded');
+    expect(loader.loadState()).toBe('loaded');
     expect(loader.value()).toEqual({ name: '稳定模块' });
     expect(loader.error()).toBe(null);
     expect(loader.renderDom().textContent).toBe('完成：稳定模块');

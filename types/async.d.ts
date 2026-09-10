@@ -28,7 +28,7 @@ export interface DynamicLoaderOptions {
 /** Lazy module loader node with status views. */
 export interface DynamicLoaderNode extends ElementNode {
   status(): DynamicLoaderStatus;
-  state(): DynamicLoaderStatus;
+  loadState(): DynamicLoaderStatus;
   module(): unknown;
   value(): unknown;
   loadError(): unknown;
@@ -89,7 +89,7 @@ export class VLazyImage extends HtmlElementNode {
   alt(value: string): VLazyImage;
   defer(): boolean;
   defer(value: boolean): VLazyImage;
-  state(): 'loading' | 'loaded' | 'error';
+  loadState(): 'loading' | 'loaded' | 'error';
   retry(): VLazyImage;
 }
 
