@@ -199,18 +199,24 @@ statusText.textContent('状态：已跳过');`
         "card.access('system:member')"
       ]
     ],
-    sample: `// 节点级：改自己 + 跑自己注册的处理器（最轻，适合 disabled / open 这类交互态）
-box.registerStateHandler('open', (value, node) => node.attr('data-open', value ? 'true' : null));
-box.setState('open', true); // 只驱动处理器：不重渲染，也不重新求值函数值绑定
+    sample: `// 以下都在 div((ele) => { ... }) 的 setup 里
 
-// 组件级：合并 patch，按 update / 函数值绑定决定刷值还是重建
-const panel = vStateNode({
-  state: () => ({ count: 0 }),
-  render: (state) => div((ele) => ele.child(vText((s) => String(s.count))))
+// ① 节点状态：声明字段 → 注册处理器 → setState 触发
+ele.registerStateAttrs('open'); // 默认 boolean，也可传 { 名称: 类型 }
+ele.registerStateHandler('open', (value, node) => {
+  node.attr('data-open', value ? 'true' : null); // 处理器负责把状态落到 DOM
 });
-panel.setState({ count: 1 }); // 函数值绑定自动写回
+ele.setState('open', true); // 只跑本节点处理器：不重渲染，也不重新求值绑定
+ele.getBooleanState('open'); // 读取；getStringState / getNumberState 同理
 
-// 边界：区域重跑会重建处理器登记，但保留状态值——
+// ② 值跟随数据：函数值绑定 + scope()，用的还是这个节点自己的能力
+const store = { count: 0 };
+ele.scope(() => store);
+ele.attr('data-count', (d) => String(d.count));
+store.count += 1;
+ele.flush(); // 值级刷新：结构不变、元素引用不变
+
+// ③ 边界：重跑会重置处理器登记，但保留状态值——
 // 重建后的初始态要在 setup 里读回，不要指望处理器自动补跑
 ele.attr('data-open', ele.getBooleanState('open') ? 'true' : null);`
   }

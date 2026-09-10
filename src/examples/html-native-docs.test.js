@@ -24,9 +24,11 @@ describe('html native documentation page', () => {
 
     const samples = [...api.querySelectorAll('pre')].map((pre) => pre.textContent);
     expect(samples[0]).toContain("p.text('状态：已同步')");
-    expect(samples[1]).toContain("box.setState('open', true)");
-    expect(samples[1]).toContain('panel.setState({ count: 1 })');
+    expect(samples[1]).toContain("ele.setState('open', true)");
+    expect(samples[1]).toContain("ele.registerStateHandler('open'");
+    expect(samples[1]).toContain('ele.flush()');
     expect(samples[1]).toContain('保留状态值');
+    expect(samples[1]).not.toContain('vStateNode');
 
     view.destroy();
   });
