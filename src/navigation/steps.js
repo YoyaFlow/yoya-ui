@@ -7,6 +7,11 @@ import {
   replaceChildren
 } from '../components/shared.js';
 
+/** 区域 builder 的内容口径：空值不产出子节点（区域重跑前已清空）。 */
+function stepSlotContent(value) {
+  return value === null || value === undefined || value === '' ? [] : normalizeChildren(value);
+}
+
 export class VSteps extends HtmlElementNode {
   constructor(setup = null) {
     super('ol', null);
@@ -192,9 +197,28 @@ export class VStep extends HtmlElementNode {
     this._stepsDirection = 'horizontal';
     this._stepsSize = 'default';
 
-    this._indicatorBox = new HtmlElementNode('span').className('yoya-vsteps-indicator');
-    this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title');
-    this._descriptionBox = new HtmlElementNode('div').className('yoya-vsteps-description');
+    // 三块内容都是区域：内容由各自的 setup 产出，setter 只改字段再 rerun。
+    this._indicatorBox = new HtmlElementNode('span')
+      .className('yoya-vsteps-indicator')
+      .setup((box) => {
+        box.rebuildable();
+        const icon = this._icon;
+        const content =
+          icon === null || icon === undefined
+            ? stepIndicatorText(this._effectiveStatus(), this._index)
+            : icon;
+        box.child(stepSlotContent(content));
+      });
+    this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title').setup((box) => {
+      box.rebuildable();
+      box.child(stepSlotContent(this._title));
+    });
+    this._descriptionBox = new HtmlElementNode('div')
+      .className('yoya-vsteps-description')
+      .setup((box) => {
+        box.rebuildable();
+        box.child(stepSlotContent(this._description));
+      });
     this._contentBox = new HtmlElementNode('div').className('yoya-vsteps-content');
     this._connector = new HtmlElementNode('span').className('yoya-vsteps-connector');
 
@@ -216,7 +240,7 @@ export class VStep extends HtmlElementNode {
     }
 
     this._title = value;
-    replaceChildren(this._titleBox, normalizeChildren(value ?? ''));
+    this._titleBox.rerun();
     return this;
   }
 
@@ -230,7 +254,7 @@ export class VStep extends HtmlElementNode {
     }
 
     this._description = value;
-    replaceChildren(this._descriptionBox, normalizeChildren(value ?? ''));
+    this._descriptionBox.rerun();
     return this;
   }
 
@@ -339,14 +363,7 @@ export class VStep extends HtmlElementNode {
       this._descriptionBox.children().length > 0 ? null : 'none'
     );
 
-    if (this._icon !== null && this._icon !== undefined) {
-      replaceChildren(this._indicatorBox, normalizeChildren(this._icon));
-    } else {
-      replaceChildren(
-        this._indicatorBox,
-        normalizeChildren(stepIndicatorText(status, this._index))
-      );
-    }
+    this._indicatorBox.rerun();
 
     this._connector.style('display', this._index < this._total - 1 ? 'block' : 'none');
 
