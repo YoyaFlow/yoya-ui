@@ -84,6 +84,9 @@ yoya-ui 没有自动响应式系统，状态变化后由组件决定就地更新
 
 - 节点级：`registerStateAttrs` + `registerStateHandler` + `setState`/`getState`
 - 组件级：`vStateNode({ state, render, update })`，`update` 局部 patch，返回 `true` 时全量重建
+- 区域级：`rebuildable(谓词?)` 声明可重建区域，`rerun()` 清空子节点并重跑它自己的 setup；
+  区域内不保留 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词为假时只刷绑定值并记为待重建；
+  带参值函数需 `dataSource(() => data)`（组件内的区域默认继承宿主状态）
 - 组件可暴露链式状态 API（`value(next)`、`disabled(next)`）
 
 ## 组合、事件与生命周期

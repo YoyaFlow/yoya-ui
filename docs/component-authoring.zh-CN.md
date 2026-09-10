@@ -112,7 +112,35 @@ yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地
 
 - 节点级：`registerStateAttrs` + `registerStateHandler` + `setState` / `getState`。
 - 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
+- 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rerun()` 重新执行它自己的 setup。
 - 组件可暴露状态 API（如 `value(next)`、`disabled(next)`），保持链式调用。
+
+### 6.1 可重建区域
+
+当一块内容需要「结构随数据变化」，而组件级状态容器又太重时，把它标记成区域：
+
+```js
+const data = { rows: [] };
+
+const body = div((ele) => {
+  ele.rebuildable(() => !isComposing); // 可选：时机谓词，为假时只刷值不重建
+  ele.attr('data-count', () => String(data.rows.length)); // 零参闭包：从外部取值
+  data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
+});
+
+body.rerun(); // 清空子节点 → 重跑 setup → 落地 DOM
+```
+
+契约与边界：
+
+- 区域内容由它自己的 setup 产出；重跑会**清空子节点并重新执行 setup**，因此区域内不保留 DOM 身份——焦点、选区、内部滚动位置、挂在元素上的第三方实例都会重建。区域外的兄弟节点与其 DOM 不受影响。
+- 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`regionPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
+- 区域内可以正常使用函数值绑定：重跑时旧绑定作废、新绑定立即生效，不会重复写回。带参形式 `(data) => value` 需要先声明数据来源 `dataSource(() => data)`；在 `vStateNode` 内部的区域默认继承宿主状态，无需声明。
+- 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域归属于最近的状态组件：`vStateNode` 内部的区域由该组件的状态变化自动触发；嵌套的状态组件自成边界，其内部区域由它自己管理。
+- 绑定的数据来源是显式的：零参闭包从外部取值；带参值函数的数据来自 `dataSource()` 或宿主状态（系统按形参个数判断，`(s = {}) => …` 这类默认参数/剩余参数会被当作零参）。
+- 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用函数值绑定——它们是原地更新，不重建 DOM。
 
 ## 7. 组合、事件与生命周期
 

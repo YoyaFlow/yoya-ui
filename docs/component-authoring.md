@@ -112,7 +112,35 @@ yoya-ui has no automatic reactivity system. After state changes, the component d
 
 - Node level: `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`.
 - Component level: `vStateNode({ state, render, update })`; `update` performs local patches and returns `true` to rebuild fully.
+- Region level: `rebuildable(predicate?)` marks a node as a rebuildable region; `rerun()` re-runs its own setup.
 - Components can expose state APIs (e.g. `value(next)`, `disabled(next)`) and stay chainable.
+
+### 6.1 Rebuildable regions
+
+When a block needs "structure follows data" and a stateful component is too heavy, mark it as a region:
+
+```js
+const data = { rows: [] };
+
+const body = div((ele) => {
+  ele.rebuildable(() => !isComposing); // optional gate: when false, values flush without rebuilding
+  ele.attr('data-count', () => String(data.rows.length)); // zero-argument closure reads outside data
+  data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
+});
+
+body.rerun(); // clears children → re-runs the setup → materializes DOM
+```
+
+Contract and boundaries:
+
+- Region content is produced by its own setup. A rerun **clears the children and re-runs that setup**, so DOM identity inside the region is not preserved: focus, selection, inner scroll position and third-party instances attached to elements are rebuilt. Siblings outside the region keep their DOM.
+- The predicate only answers "should this rebuild be paid for this time". When it returns false, bound values are written back and the rebuild is recorded as pending (`regionPending()`); structure stays untouched. Put data conditions inside the setup, not in the predicate.
+- Function-value bindings work inside regions: a rerun releases the previous ones and the new ones take effect immediately. The parameterized form `(data) => value` needs a declared `dataSource(() => data)`; regions inside a `vStateNode` inherit the host state automatically.
+- Declaration order: call `rebuildable()` first, then write value functions and other registrations.
+- Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. State handlers and `bindDocumentEvent` / `bindWindowEvent` are reset across reruns by the engine; timers must be registered through `registerRegionCleanup(fn)`.
+- A region belongs to the nearest state component: regions inside a `vStateNode` are triggered by that component's state changes; nested state components are islands and manage their own regions.
+- Data sources are explicit: zero-argument closures read outside values, while parameterized value functions read from `dataSource()` or the host state (detected by declared arity, so `(s = {}) => …` counts as zero-argument).
+- To keep focus or third-party instances, leave that part outside the region or use function-value bindings, which update in place without rebuilding DOM.
 
 ## 7. Composition, events, and lifecycle
 
