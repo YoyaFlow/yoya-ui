@@ -248,7 +248,8 @@ table.vTbody((body) => {
    `ResponsiveGrid.refresh()`、`MobileLayout.refresh()`（`types/layout.d.ts`）、
    `TreeRanger.refresh()`（`types/data-display.d.ts:340`）、`Router.refresh()`
    （`types/router.d.ts:56`）。统一入口若沿用 `refresh()` 会造成语义撞车，
-   需在 `flush()` / `rerun()` / `rebuild()` 之间选，或加限定词。
+   最终定名为 `rebuild()` + 值级 `flush()`（见 §15 第 7 条）：既避开 `refresh()` 的语义撞车，
+   也让「声明 `rebuildable()` / 动作 `rebuild()`」同词根。
 2. **区域如何被发现**：宿主 `setState` 时怎么知道要刷新哪些区域——
    是「组件 render 输出即一个区域，嵌套区域随父重建」，还是构建期把被标记的节点
    登记到当前区域？倾向前者（少一套注册表）。
@@ -378,7 +379,7 @@ hydrate 后拿不到 → 服务端 HTML 与客户端首帧不一致。
 
 ### 11.5 待定与注意事项
 
-- `rerun()` 在无 DOM 环境（`document === undefined`）的行为：建议仍重跑视图树
+- `rebuild()` 在无 DOM 环境（`document === undefined`）的行为：建议仍重跑视图树
   并求值绑定（可能再次 `toHTML()`），但不触碰 DOM；需明确。
 - 确定性纪律重申：区域 setup 不得用 `Date.now()` / `Math.random()` 生成结构或 key，
   否则服务端首屏与客户端重建对不上。
@@ -418,15 +419,15 @@ hydrate 后拿不到 → 服务端 HTML 与客户端首帧不一致。
 | 风险 6 遍历中改数组 | 由上一行顺带解决：flush 发生在替换之后，不再与释放交叠 | — |
 | 风险 4 区域根节点属性残留 | 释放时按登记表还原：`attr(key, null)` / `style(key, null)` / `text('')`；`kind/key` 登记时已有（`src/core/node.js:106`） | 小 |
 | 风险 7 传送门 / 游离节点 | 规则改为「区域只负责自己 `_children` 子树内的节点与绑定；游离节点由创建它的组件自行 destroy / 重建」，与 tooltip / dialog 现有自管生命周期的写法一致 | 小 |
-| 9.2-1 入口命名 | 用 `rerun()`：`refresh()` 已被 6 处占用且语义各异；`rebuild()` 与标记 `rebuildable()` 词根相同；`flush()` 易与值写回混淆 | 小 |
-| 9.2-3 guard 与手动入口 | 默认不绕过 guard；强刷用 `rerun({ force: true })` | 小 |
+| 9.2-1 入口命名 | 最终用 `rebuild()`：`refresh()` 已被 6 处占用且语义各异，而 `rebuild()` 与标记 `rebuildable()` 同词根；值级入口不并入同族，另立 `flush()` | 小 |
+| 9.2-3 guard 与手动入口 | 默认不绕过 guard；强刷用 `rebuild({ force: true })` | 小 |
 | 9.2-9 重复触发 | 以区域节点为 key 的 Set 去重，一轮内每区域最多一次，父优先 | 小 |
-| 9.3-2 未挂载时 rerun | 只重建视图树并 flush 绑定，DOM 对齐留给下次 `renderDom()` | 小 |
+| 9.3-2 未挂载时 rebuild | 只重建视图树并 flush 绑定，DOM 对齐留给下次 `renderDom()` | 小 |
 | 11.4 build → flush 归属 | 把 flush 放在「区域构建完成」钩子里，客户端与服务端同路径，不挂 DOM 路径 | 小 |
 | 11.2 每请求隔离 | 结构性保证有限，但给正面指引：数据放 `requestState` / 组件 state / **每请求 context**（`renderPage` 的 `options.context` 已支持，`currentContext()` 可在零参闭包内读），避免模块级可变对象 | 文档 |
 | 11.5 确定性与 id | 区域 setup 禁用 `Date.now()` / `Math.random()` 生成结构或 key；需要稳定 id 时用显式 id，不用 `allocateId` | 文档 |
 | 9.2-4 `update` 回调 | 保留为手工 patch 逃生口；「返回 true 强制重建」标注 deprecated，由区域 guard 取代，v1 保持兼容 | 小 |
-| 9.2-5 节点级旧状态机 | 保留不动，标注 legacy；`node.setState(name, value)` 不触发区域 rerun，rerun 也不重置节点级 states | 文档 |
+| 9.2-5 节点级旧状态机 | 保留不动，标注 legacy；`node.setState(name, value)` 不触发区域 rebuild，rebuild 也不重置节点级 states | 文档 |
 
 ## 13. 提议：值函数恢复「有参」，环境恢复随之简化
 
@@ -492,7 +493,7 @@ hydrate 后拿不到 → 服务端 HTML 与客户端首帧不一致。
 6. **评审遗留项已收口**：契约 2 的子节点归属断言已实现（区域节点在 builder 之外
    `child()` / `addChild()` 直接报错）；§6 测试清单缺口已补齐（谓词每轮只评估一次、
    重复 `rebuildable()` 为替换语义、区域外绑定不受重跑影响、`destroy()` 解除绑定）；
-   `types/tests/consumer.ts` 已覆盖 `rebuildable` / `dataSource` / `rerun` / `regionPending`。
+   `types/tests/consumer.ts` 已覆盖 `rebuildable` / `dataSource` / `rebuild` / `rebuildPending`。
 7. **最终命名（2026-09-10 定稿）**：`rerun()` → **`rebuild()`**（与 `rebuildable()` 同词根，
    形容词声明 + 动词命令），`regionPending()` → **`rebuildPending()`**；并新增值级入口
    **`flush()`**（节点级与组件级：只求值写回绑定，不重建、不过谓词、幂等）。
