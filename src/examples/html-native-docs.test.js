@@ -16,8 +16,17 @@ describe('html native documentation page', () => {
     expect(findRow('node.textContent()')).toContain('只读');
     expect(findRow('textNode.textContent(value)')).toContain('原地替换');
     expect(findRow('node.attr(name) / attr(name, value)')).toContain('移除');
+    expect(findRow('node.setState(name, value)')).toContain('任意节点都能用');
+    expect(findRow('node.setState(name, value)')).toContain('不刷函数值绑定');
+    expect(findRow('node.getState(name)')).toContain('类型转换');
     expect(findRow('node.rebuildable(predicate?)')).toBeTruthy();
     expect(findRow('node.bindTo(target) / destroy()')).toBeTruthy();
+
+    const samples = [...api.querySelectorAll('pre')].map((pre) => pre.textContent);
+    expect(samples[0]).toContain("p.text('状态：已同步')");
+    expect(samples[1]).toContain("box.setState('open', true)");
+    expect(samples[1]).toContain('panel.setState({ count: 1 })');
+    expect(samples[1]).toContain('保留状态值');
 
     view.destroy();
   });

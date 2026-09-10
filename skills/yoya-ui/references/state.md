@@ -30,6 +30,33 @@ const counter = vStateNode({
 2. 没有 `update` 但 render 里登记了函数值绑定（`vText((s) => ...)`、`attr('value', (s) => ...)`、`style(..., (s) => ...)`）→ 只求值写回，DOM 节点不变；
 3. 都没有 → 全量 rebuild（销毁旧根并重新 render）。
 
+## 节点级状态（registerStateHandler / setState）
+
+任意节点（原生元素、SVG、组件节点、自定义节点）都有 `registerStateAttrs` / `registerStateHandler` / `setState` / `getState`，库内组件的 `disabled()` / `open()` / `active()` 就是用它实现的：
+
+```js
+const box = div((ele) => {
+  ele.registerStateHandler('open', (value, node) => {
+    node.attr('data-open', value ? 'true' : null);
+  });
+});
+
+box.setState('open', true); // 只驱动本节点注册的处理器
+```
+
+- 它只做两件事：写状态值、按注册顺序同步调用处理器 `(value, node, oldValue)`；**不重渲染、不做 diff、不重新求值函数值绑定**——值要跟着变就写 `flush()` / `rebuild()`，或用宿主组件的 `setState` / `flush()`。
+- 与组件级 `component.setState(patch)` 同名不同物：后者合并对象 patch（或 `(state) => patch`），按 `update` / 函数值绑定决定刷值还是重建，并通知 `subscribe` 的监听者。
+- 没有注册处理器的状态名会静默写入，不报错也不动 DOM，适合放节点内部标记。
+
+## 节点级状态与区域重跑
+
+区域 `rebuild()` 会重置该轮登记的 `registerStateHandler`（避免叠加），但**保留状态值**；重跑产出的新 DOM 不会自动补跑处理器，所以初始态要在 setup 里自己读回：
+
+```js
+ele.registerStateHandler('open', (value, node) => node.attr('data-open', value ? 'true' : null));
+ele.attr('data-open', ele.getBooleanState('open') ? 'true' : null); // 重建后新 DOM 的初始态
+```
+
 ## 保持交互状态
 
 输入框的 `value`、按钮 `disabled`、文本内容都优先写成函数值绑定；这样状态变化只更新属性/文本，不会替换元素，输入焦点与滚动位置不丢。

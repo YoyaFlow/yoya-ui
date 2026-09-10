@@ -158,9 +158,14 @@ statusText.textContent('状态：已跳过');`
         "box.registerStateHandler('open', syncOpen)"
       ],
       [
-        'node.setState(name, value) / getState(name)',
-        '改状态并触发处理器；getBoolean / getString / getNumberState 做类型转换读取。',
+        'node.setState(name, value)',
+        '任意节点都能用：写入状态并同步调用本节点注册的处理器；不重渲染、不刷函数值绑定。',
         "box.setState('open', true)"
+      ],
+      [
+        'node.getState(name)',
+        '读取节点状态；getBoolean / getString / getNumberState 做类型转换读取。',
+        "box.getBooleanState('open')"
       ],
       [
         'node.rebuildable(predicate?)',
@@ -188,7 +193,21 @@ statusText.textContent('状态：已跳过');`
         '声明权限码，读/写级别由当前用户权限决定。',
         "card.access('system:member')"
       ]
-    ]
+    ],
+    sample: `// 节点级：改自己 + 跑自己注册的处理器（最轻，适合 disabled / open 这类交互态）
+box.registerStateHandler('open', (value, node) => node.attr('data-open', value ? 'true' : null));
+box.setState('open', true); // 只驱动处理器：不重渲染，也不重新求值函数值绑定
+
+// 组件级：合并 patch，按 update / 函数值绑定决定刷值还是重建
+const panel = vStateNode({
+  state: () => ({ count: 0 }),
+  render: (state) => div((ele) => ele.child(vText((s) => String(s.count))))
+});
+panel.setState({ count: 1 }); // 函数值绑定自动写回
+
+// 边界：区域重跑会重建处理器登记，但保留状态值——
+// 重建后的初始态要在 setup 里读回，不要指望处理器自动补跑
+ele.attr('data-open', ele.getBooleanState('open') ? 'true' : null);`
   }
 ];
 

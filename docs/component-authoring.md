@@ -110,7 +110,7 @@ Component text input should uniformly accept the following four forms (`vText` /
 
 yoya-ui has no automatic reactivity system. After state changes, the component decides which DOM to update in place:
 
-- Node level: `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`.
+- Node level: every node has `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`. It is a manual state + handler hook: `setState(name, value)` only stores the value and runs the handlers registered on that node — it does not re-render and does not re-evaluate function value bindings (use `flush()` / `rebuild()` for values). A region rebuild resets the handler registrations but keeps the state values, so re-apply the initial state in setup.
 - Component level: `vStateNode({ state, render, update })`; `update` performs local patches and returns `true` to rebuild fully.
 - Region level: `rebuildable(predicate?)` marks a node as a rebuildable region; `rebuild()` re-runs its own setup.
 - In-place text: keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
