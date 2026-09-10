@@ -1020,7 +1020,7 @@ describe('renderExamplesIndex', () => {
     expect(lifecycle.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(lifecycle.querySelectorAll('svg text').length).toBeGreaterThan(12);
     expect(lifecycle.querySelectorAll('li')).toHaveLength(4);
-    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(4);
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
       'define'
     );
@@ -1039,6 +1039,29 @@ describe('renderExamplesIndex', () => {
     expect(interactiveDemo.querySelector('[data-parent-log]').textContent).toContain(
       '父组件收到：第 3 步完成'
     );
+
+    const complexDemo = page.querySelector('[data-definition-demo="complex-blocks"]');
+    const taskFilter = complexDemo.querySelector('[data-task-filter]');
+    expect(complexDemo.querySelectorAll('[data-task-list] li')).toHaveLength(3);
+    expect(complexDemo.textContent).toContain('已完成 1 项');
+
+    taskFilter.focus();
+    taskFilter.value = '文';
+    taskFilter.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(complexDemo.querySelectorAll('[data-task-list] li')).toHaveLength(1);
+    expect(document.activeElement).toBe(taskFilter);
+
+    const taskToggle = complexDemo.querySelector('[data-task-toggle="doc"]');
+    taskToggle.checked = true;
+    taskToggle.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(complexDemo.textContent).toContain('已完成 2 项');
+
+    const complexSource = complexDemo.querySelector('[data-source-example]').textContent;
+    expect(complexSource).toContain('function TaskRow(');
+    expect(complexSource).toContain('function TaskList(');
+    expect(complexSource).toContain('export function ComplexWorkbenchExample(');
   });
 
   it('renders the HTML native elements guide page with a live input demo', async () => {

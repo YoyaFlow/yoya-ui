@@ -1,6 +1,7 @@
 import { section, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
+import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 
 function DefineComponentExample1() {
   const status = vText('待发布');
@@ -233,6 +234,14 @@ const componentDefinitionDemos = [
     imports: ['section', 'vCard', 'vText'],
     sourceTitle: '组合组件交互源码',
     title: '组合组件交互'
+  },
+  {
+    component: ComplexWorkbenchExample,
+    extraSource: complexBlocksSource,
+    id: 'complex-blocks',
+    imports: ['hstack', 'input', 'li', 'ul', 'vStateNode', 'vText', 'vstack'],
+    sourceTitle: '复杂组件分块源码',
+    title: '复杂组件：结构块也是组件'
   }
 ];
 
@@ -240,6 +249,7 @@ function ComponentDefinitionDemoSection(demo) {
   const liveDemo = demo.component();
   const sourcePanel = ComponentSource({
     component: demo.component,
+    extraSource: demo.extraSource,
     imports: demo.imports,
     sourceComponent: demo.component,
     title: demo.sourceTitle
