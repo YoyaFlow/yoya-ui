@@ -7,11 +7,6 @@ import {
   replaceChildren
 } from '../components/shared.js';
 
-/** 区域 builder 的内容口径：空值不产出子节点（区域重跑前已清空）。 */
-function stepSlotContent(value) {
-  return value === null || value === undefined || value === '' ? [] : normalizeChildren(value);
-}
-
 export class VSteps extends HtmlElementNode {
   constructor(setup = null) {
     super('ol', null);
@@ -188,6 +183,9 @@ export class VStep extends HtmlElementNode {
     super('li', null);
     this._title = '';
     this._description = '';
+    // 未设置与显式设为空串要区分：前者不产出子节点，后者保留空内容盒（与原实现一致）。
+    this._titleSet = false;
+    this._descriptionSet = false;
     this._icon = null;
     this._status = null;
     this._index = 0;
@@ -207,17 +205,17 @@ export class VStep extends HtmlElementNode {
           icon === null || icon === undefined
             ? stepIndicatorText(this._effectiveStatus(), this._index)
             : icon;
-        box.child(stepSlotContent(content));
+        box.child(normalizeChildren(content));
       });
     this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title').setup((box) => {
       box.rebuildable();
-      box.child(stepSlotContent(this._title));
+      box.child(this._titleSet ? normalizeChildren(this._title) : []);
     });
     this._descriptionBox = new HtmlElementNode('div')
       .className('yoya-vsteps-description')
       .setup((box) => {
         box.rebuildable();
-        box.child(stepSlotContent(this._description));
+        box.child(this._descriptionSet ? normalizeChildren(this._description) : []);
       });
     this._contentBox = new HtmlElementNode('div').className('yoya-vsteps-content');
     this._connector = new HtmlElementNode('span').className('yoya-vsteps-connector');
@@ -239,7 +237,8 @@ export class VStep extends HtmlElementNode {
       return this._title;
     }
 
-    this._title = value;
+    this._title = value ?? '';
+    this._titleSet = true;
     this._titleBox.rerun();
     return this;
   }
@@ -253,7 +252,8 @@ export class VStep extends HtmlElementNode {
       return this._description;
     }
 
-    this._description = value;
+    this._description = value ?? '';
+    this._descriptionSet = true;
     this._descriptionBox.rerun();
     return this;
   }
