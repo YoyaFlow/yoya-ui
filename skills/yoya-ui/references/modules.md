@@ -42,21 +42,67 @@ src/
 - **页面也是组件**：PascalCase 组件名（`MemberListPage`、`OrderListPage`），文件 `<名字>-page.js`；SSR 场景用 `createPage(requestState)` 作为服务端与客户端复用的入口
 - 页面只做编排：组合业务组件、绑定事件、调用状态动作；不写请求逻辑、不堆散落结构
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
+- **要驱动的先建后放，纯结构直接内联**：需要 `refresh()` / `update()` / `open()` 的组件必须先建再 `child()` 挂载——`child()` 与 `page.vXxx()` 都返回父节点，内联创建拿不到子组件句柄；纯展示块直接写在 render 里即可
 
 ```js
-// features/system/members/pages/member-list-page.js
-export function MemberListPage() {
-  const state = new MembersPageState(); // api/member.state.js
-  const dialog = MemberFormDialog({ onSubmit: saveMember }); // components/
-  const toolbar = MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) });
-  const table = MemberTable({ rows: () => state.items(), onEdit: (row) => dialog.open(row) });
+import { toast, vPagination, vstack } from '@yoyaflow/yoya-ui';
+import MembersPageState from '../api/member.state.js';
+import { MemberToolbar } from '../components/member-toolbar.js';
+import { MemberTable } from '../components/member-table.js';
+import { MemberFormDialog } from '../components/member-form-dialog.js';
 
-  return vstack((page) => {
-    page.child(toolbar);
-    page.child(table);
-    page.child(dialog);
-    page.vPagination((pager) => pager.total(() => state.total()));
+export function MemberListPage() {
+  const state = new MembersPageState();
+
+  // 需要驱动的组件先建再挂：child() / page.vXxx() 都返回父节点，内联拿不到句柄
+  const dialog = MemberFormDialog({ onSubmit: saveMember });
+  const table = MemberTable({ rows: () => state.items(), onEdit: (row) => dialog.open(row) });
+  const pagination = vPagination({ pageSize: 5, onChange: ({ page }) => applyPage(page) });
+
+  // 关键接线：状态变化后由页面显式驱动视图——yoya-ui 没有自动响应式
+  state.subscribe(() => {
+    table.refresh();
+    pagination.update({ page: state.page(), pageSize: state.pageSize(), total: state.total() });
   });
+  state.load();
+
+  function applyPage(page) {
+    state.setPage(page);
+    state.load();
+  }
+
+  function applyFilters(values) {
+    state.setKeyword(values.keyword ?? '');
+    state.setStatus(values.status ?? '');
+    state.setPage(1);
+    state.load();
+  }
+
+  async function saveMember(id, payload) {
+    await (id === null ? state.add(payload) : state.edit(id, payload));
+    toast.success('已保存');
+  }
+
+  return {
+    render() {
+      // 纯结构直接内联，上面建好的三个句柄只负责挂载
+      return vstack({ gap: '16px' }, (page) => {
+        page.h2('成员管理');
+        page.vCard((card) => {
+          card.vCardHeader('成员列表');
+          card.vCardBody((body) => {
+            body.child(MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) }));
+            body.child(table).child(pagination);
+          });
+        });
+        page.child(dialog);
+      });
+    },
+    // 页面也是组件：父级 / 路由可以调用实例方法刷新
+    refresh() {
+      return state.load();
+    }
+  };
 }
 ```
 
