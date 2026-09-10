@@ -1064,6 +1064,22 @@ describe('renderExamplesIndex', () => {
     expect(complexSource).toContain('export function ComplexWorkbenchExample(');
   });
 
+  it('documents the SSR operations to avoid on the server rendering guide', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/ssr');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('服务端渲染');
+    });
+
+    const rules = document.querySelector('[data-ssr-rules]');
+    expect(rules).not.toBeNull();
+    expect(rules.querySelectorAll('tbody tr')).toHaveLength(8);
+    expect(rules.textContent).toContain('Date.now()');
+    expect(rules.textContent).toContain('bindDocumentEvent');
+    expect(rules.textContent).toContain('hydrate()');
+  });
+
   it('renders the HTML native elements guide page with a live input demo', async () => {
     root = renderExamplesIndex('#app');
 
