@@ -3,10 +3,10 @@ import { ComponentSource } from './component-source.js';
 import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
 import {
   regionCompareBlocksSource,
-  RegionDataSourceExample,
   RegionFlushExample,
   RegionGateExample,
   RegionRebuildExample,
+  RegionScopeExample,
   RegionStateVsSourceExample
 } from './demos/region.js';
 
@@ -30,13 +30,13 @@ const regionDemos = [
     title: '时机门禁：rebuildable(() => !locked)'
   },
   {
-    component: RegionDataSourceExample,
+    component: RegionScopeExample,
     description:
-      '普通区域用 dataSource() 声明数据来源，带参值函数 (source) => value 每次求值都能拿到它；不声明就直接报错。',
+      'scope() 给独立子树声明数据来源，带参值函数 (d) => value 每次求值都能拿到它；只刷值不需要 rebuildable()。',
     id: 'source',
     imports: ['div', 'hstack', 'vButton', 'vText', 'vstack'],
-    sourceTitle: '区域数据来源源码',
-    title: '数据来源：dataSource()'
+    sourceTitle: '数据来源源码',
+    title: '数据来源：scope()'
   },
   {
     component: RegionFlushExample,
@@ -50,12 +50,12 @@ const regionDemos = [
   {
     component: RegionStateVsSourceExample,
     description:
-      '三份一样的计数：组件状态由 setState 自动驱动；外部数据用 dataSource 声明读来源、由 flush() 手动拉取；节点状态只推本节点处理器，得自己接线。',
+      '三份一样的计数：组件状态由 setState 自动驱动；外部数据用 scope() 声明读来源、由 flush() 手动拉取；节点状态只推本节点处理器，得自己接线。',
     extraSource: regionCompareBlocksSource,
     id: 'compare',
     imports: ['div', 'vButton', 'vStateNode', 'vText', 'vstack'],
-    sourceTitle: 'state 与 dataSource 对照源码',
-    title: '数据来源对照：state / dataSource / 节点状态'
+    sourceTitle: 'state 与 scope 对照源码',
+    title: '数据来源对照：state / scope / 节点状态'
   }
 ];
 
@@ -98,9 +98,9 @@ export function ComponentLifecycleDocumentationPage() {
             list.li(
               '谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记为 rebuildPending()，结构不动。'
             );
-            list.li('带参值函数需要 dataSource()；vStateNode 内部的区域默认继承宿主状态。');
+            list.li('带参值函数需要 scope()；vStateNode 内部的子树默认继承宿主状态。');
             list.li(
-              '数据来源三选一：组件状态（vStateNode 内自动继承）、dataSource（外部数据，pull）、零参闭包；节点级 setState 只驱动自己的处理器，不参与绑定求值。'
+              '数据来源三选一：组件状态（vStateNode 内自动继承）、scope()（外部数据，pull）、零参闭包；零参闭包在任意节点可用，节点级 setState 只驱动自己的处理器。'
             );
           });
           regionDemos.forEach((demo) => region.child(RegionDemoSection(demo)));

@@ -124,8 +124,14 @@ describe('vStateNode function-value bindings', () => {
     expect(html).toContain('42 条');
   });
 
-  it('rejects function values outside a vStateNode binding scope', () => {
-    expect(() => div().attr('data-x', (s) => String(s))).toThrow(/vStateNode/);
-    expect(() => vText((s) => String(s))).toThrow(/vStateNode/);
+  it('requires a data source for parameterized values outside any scope', () => {
+    expect(() => div().attr('data-x', (s) => String(s))).toThrow(/data source/);
+    expect(() => vText((s) => String(s))).toThrow(/data source/);
+  });
+
+  it('accepts zero-argument closures outside any scope', () => {
+    const box = div().attr('data-x', () => 'v');
+
+    expect(box.renderDom().getAttribute('data-x')).toBe('v');
   });
 });

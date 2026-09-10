@@ -178,7 +178,7 @@ const region = div((ele) => {
   ele.rebuildable(() => true);
   ele.text('region');
 });
-region.dataSource(() => ({ rows: [] as string[] }));
+region.scope(() => ({ rows: [] as string[] }));
 region.rebuildable(null);
 region.rebuild();
 region.rebuild({ force: true });

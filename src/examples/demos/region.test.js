@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  RegionDataSourceExample,
   RegionFlushExample,
   RegionGateExample,
   RegionRebuildExample,
+  RegionScopeExample,
   RegionStateVsSourceExample
 } from './region.js';
 
@@ -53,8 +53,8 @@ describe('region demos', () => {
     expect(element.querySelector('[data-region-locked]')).toBeNull();
   });
 
-  it('reads region data through dataSource', () => {
-    const demo = RegionDataSourceExample();
+  it('reads subtree data through scope()', () => {
+    const demo = RegionScopeExample();
     const element = demo.render().renderDom();
     const box = element.querySelector('[data-region-source]');
 
@@ -80,7 +80,7 @@ describe('region demos', () => {
     expect(element.querySelector('[data-region-flush-label]').textContent).toBe('B');
   });
 
-  it('contrasts component state, external dataSource and node state', () => {
+  it('contrasts component state, external scope and node state', () => {
     const element = RegionStateVsSourceExample().renderDom();
     const statePanel = element.querySelector('[data-region-state]');
     const externalPanel = element.querySelector('[data-region-source]');

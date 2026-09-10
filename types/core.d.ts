@@ -221,8 +221,8 @@ export class ViewNode {
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
 
-  /** Declares the data source for parameterized value functions inside this region. */
-  dataSource<T = unknown>(getter: () => T): this;
+  /** Declares the data source for parameterized value functions in this subtree. */
+  scope<T = unknown>(getter: () => T): this;
 
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
   rebuildPending(): boolean;

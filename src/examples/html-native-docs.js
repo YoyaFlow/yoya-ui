@@ -173,6 +173,11 @@ statusText.textContent('状态：已跳过');`
         'box.rebuildable(() => !locked)'
       ],
       [
+        'node.scope(getter)',
+        '为这棵子树声明数据来源：带参值函数 (d) => value 的 d 即 getter 的返回值；零参闭包不需要它。',
+        'box.scope(() => store)'
+      ],
+      [
         'node.rebuild(options?) / flush()',
         '结构变化用 rebuild()（清空子节点重跑 setup），值变化用 flush()；谓词为假只刷值并记 rebuildPending()。',
         'box.rebuild({ force: true })'

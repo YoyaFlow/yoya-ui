@@ -113,21 +113,29 @@ export function withBindingScope(scope, build) {
   }
 }
 
+/**
+ * 绑定归属解析：区域自持作用域 > 宿主/节点声明的作用域。
+ * 没有任何作用域时，零参绑定挂到节点自己的隐式作用域（归属不需要声明）。
+ */
 function registerNodeBinding(owner, kind, key, read, commit) {
-  const region = activeRegion();
-  const scope = region ? region._regionScope : activeBindingScope;
+  const parameterized = read.length > 0;
+  let scope = resolveBindingScope(owner);
 
   if (!scope) {
-    throw new TypeError(
-      `vStateNode binding scope required for function value (${kind}${key ? ` "${key}"` : ''})`
-    );
+    if (parameterized) {
+      throw new TypeError(parameterizedValueError(kind, key));
+    }
+
+    // 零参闭包自带数据，只需要一个归属挂载点。
+    scope = owner._ownBindingScope;
+    if (!scope) {
+      scope = { bindings: [], hasData: false, getState: () => undefined };
+      owner._ownBindingScope = scope;
+    }
   }
 
-  if (region && !scope.hasData && read.length > 0) {
-    throw new TypeError(
-      `region data source required for parameterized function value (${kind}${key ? ` "${key}"` : ''}); ` +
-        'declare dataSource(fn) or use a zero-argument closure'
-    );
+  if (parameterized && scope.hasData === false) {
+    throw new TypeError(parameterizedValueError(kind, key));
   }
 
   const binding = {
@@ -141,6 +149,8 @@ function registerNodeBinding(owner, kind, key, read, commit) {
     owner
   };
 
+  bindingSerial += 1;
+  uncommittedBindings += 1;
   scope.bindings.push(binding);
 
   if (owner && Array.isArray(owner._bindings)) {
@@ -148,9 +158,56 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   }
 }
 
+function parameterizedValueError(kind, key) {
+  return (
+    `parameterized value requires a data source (${kind}${key ? ` "${key}"` : ''}); ` +
+    'declare scope(fn) or use a zero-argument closure'
+  );
+}
+
+/**
+ * 来源解析顺序：节点自己声明的 scope > 构建栈上最近声明的 scope >
+ * 区域自持作用域（可能是继承宿主的那份）> 宿主作用域。
+ */
+function resolveBindingScope(owner) {
+  if (owner._ownBindingScope && owner._ownBindingScope.hasData) {
+    return owner._ownBindingScope;
+  }
+
+  const declared = activeDeclaredScope();
+  if (declared) {
+    return declared;
+  }
+
+  const region = activeRegion();
+  if (region && region._regionScope) {
+    return region._regionScope;
+  }
+
+  return activeBindingScope;
+}
+
+/** 构建栈上最近一次 `scope()` 声明的来源（含区域自身）。 */
+function activeDeclaredScope() {
+  for (let index = setupStack.length - 1; index >= 0; index -= 1) {
+    const scope = setupStack[index]._ownBindingScope;
+    if (scope && scope.hasData) {
+      return scope;
+    }
+  }
+
+  const region = activeRegion();
+  if (region && region._ownBindingScope && region._ownBindingScope.hasData) {
+    return region._ownBindingScope;
+  }
+
+  return null;
+}
+
 // 区域构建上下文：区域构建/重跑期间登记的绑定归该区域所有。
 const regionBuildStack = [];
 const setupStack = [];
+let bindingSerial = 0; // 构建期绑定登记序号：用于判断一次构建是否产出了待求值的绑定
 
 function activeRegion() {
   if (regionBuildStack.length > 0) {
@@ -239,11 +296,34 @@ function releaseBindings(bindings) {
   });
 }
 
+// 尚未求值的绑定数量：用于在渲染入口惰性求值，避免逐层遍历整棵子树。
+let uncommittedBindings = 0;
+let renderDepth = 0;
+
+/**
+ * 渲染入口：最外层渲染开始前，把还没求值过的绑定写回一次（内部使用）。
+ * 只有存在待求值绑定时才遍历，且只在外层渲染进入时做一次。
+ */
+export function enterBindingRender(node) {
+  if (renderDepth === 0 && uncommittedBindings > 0) {
+    flushBindingsIn(node);
+  }
+
+  renderDepth += 1;
+}
+
+export function exitBindingRender() {
+  renderDepth -= 1;
+}
+
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
 function flushBindingsIn(node) {
   node._bindings.forEach((binding) => {
     const next = binding.evaluate();
     if (!binding.committed || !Object.is(next, binding.last)) {
+      if (!binding.committed) {
+        uncommittedBindings -= 1;
+      }
       binding.committed = true;
       binding.last = next;
       binding.commit(next);
@@ -432,7 +512,7 @@ export class ViewNode {
     this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
     this._rebuildable = false;
     this._regionScope = null; // 区域自持的绑定作用域
-    this._regionDataSource = null; // 区域显式声明的数据来源
+    this._ownBindingScope = null; // 节点自己的来源：scope() 声明或零参绑定的隐式归属
     this._regionGuard = null;
     this._rebuildPending = false;
     this._regionRunning = false;
@@ -454,15 +534,20 @@ export class ViewNode {
   setup(setup) {
     if (typeof setup === 'function') {
       this._builders.push(setup);
+      const serialBefore = bindingSerial;
+      const previousScope = activeBindingScope;
       setupStack.push(this);
       try {
         setup(this);
       } finally {
         setupStack.pop();
+        // scope() 可能在 setup 中途替换过作用域，这里恢复到外层。
+        activeBindingScope = previousScope;
       }
 
-      if (this._rebuildable) {
-        // 区域自持绑定：首次构建完成后立刻求值写回一次。
+      // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
+      // 避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
+      if (setupStack.length === 0 && bindingSerial !== serialBefore) {
         flushBindingsIn(this);
       }
     } else if (setup instanceof ViewNode) {
@@ -494,41 +579,57 @@ export class ViewNode {
 
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
+      const node = this;
       const enclosingScope = activeBindingScope;
-      const inheritState = Boolean(enclosingScope && typeof enclosingScope.getState === 'function');
+      const inheritedGetState =
+        enclosingScope && typeof enclosingScope.getState === 'function'
+          ? enclosingScope.getState
+          : null;
       this._regionScope = {
         bindings: [],
-        hasData: Boolean(this._regionDataSource) || inheritState,
-        getState:
-          this._regionDataSource || (inheritState ? enclosingScope.getState : () => undefined)
+        // 来源动态解析：scope() 可能在 rebuildable() 之后调用；没有声明时继承捕获的宿主。
+        get hasData() {
+          return Boolean(node._ownBindingScope?.hasData) || Boolean(inheritedGetState);
+        },
+        getState: () => {
+          if (node._ownBindingScope?.hasData) {
+            return node._ownBindingScope.getState();
+          }
+
+          return inheritedGetState ? inheritedGetState() : undefined;
+        }
       };
       this._regionEnv = {
         access: this._accessContext || currentAccess(),
         context: snapshotContext(),
         i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
       };
-    } else if (this._regionDataSource) {
-      this._regionScope.getState = this._regionDataSource;
-      this._regionScope.hasData = true;
     }
 
     return this;
   }
 
   /**
-   * 声明区域的数据来源：带参值函数 `(data) => value` 每次求值都会拿到它的返回值。
-   * 组件树内的区域默认继承宿主状态，无需声明。
+   * 声明本节点子树的数据来源：带参值函数 `(s) => value` 的 `s` 即 getter 的返回值。
+   * 声明后覆盖宿主继承；区域内也可以声明，就近覆盖。
    */
-  dataSource(getter) {
+  scope(getter) {
     if (typeof getter !== 'function') {
-      throw new TypeError('dataSource() requires a function');
+      throw new TypeError('scope() requires a function');
     }
 
-    this._regionDataSource = getter;
+    const scope = this._ownBindingScope || {
+      bindings: [],
+      getState: () => undefined,
+      hasData: false
+    };
+    this._ownBindingScope = scope;
+    scope.getState = getter;
+    scope.hasData = true;
 
-    if (this._regionScope) {
-      this._regionScope.getState = getter;
-      this._regionScope.hasData = true;
+    // 在自己 setup 内声明时，本次构建的剩余部分（含后代）都可见。
+    if (setupStack[setupStack.length - 1] === this) {
+      activeBindingScope = scope;
     }
 
     return this;
@@ -1067,20 +1168,30 @@ export class VTextNode extends ViewNode {
   }
 
   renderDom() {
-    if (this._deleted || this._permissionState() === 'hidden') {
-      return null;
-    }
+    enterBindingRender(this);
+    try {
+      if (this._deleted || this._permissionState() === 'hidden') {
+        return null;
+      }
 
-    if (!this._textNode) {
-      this._textNode = document.createTextNode(this._content);
-      this._el = this._textNode;
-    }
+      if (!this._textNode) {
+        this._textNode = document.createTextNode(this._content);
+        this._el = this._textNode;
+      }
 
-    return this._textNode;
+      return this._textNode;
+    } finally {
+      exitBindingRender();
+    }
   }
 
   toHTML() {
-    return this._deleted || this._permissionState() === 'hidden' ? '' : escapeHtml(this._content);
+    enterBindingRender(this);
+    try {
+      return this._deleted || this._permissionState() === 'hidden' ? '' : escapeHtml(this._content);
+    } finally {
+      exitBindingRender();
+    }
   }
 }
 
@@ -1693,6 +1804,15 @@ export class ElementNode extends ViewNode {
    * 创建或复用真实 DOM 元素。
    */
   renderDom() {
+    enterBindingRender(this);
+    try {
+      return this._renderElementDom();
+    } finally {
+      exitBindingRender();
+    }
+  }
+
+  _renderElementDom() {
     if (this._deleted) {
       return null;
     }
@@ -1739,6 +1859,15 @@ export class ElementNode extends ViewNode {
    * 将视图树序列化为 HTML 字符串，主要用于服务端模板或测试断言。
    */
   toHTML() {
+    enterBindingRender(this);
+    try {
+      return this._serializeElementHtml();
+    } finally {
+      exitBindingRender();
+    }
+  }
+
+  _serializeElementHtml() {
     if (this._deleted) {
       return '';
     }

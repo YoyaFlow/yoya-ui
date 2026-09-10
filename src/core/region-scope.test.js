@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { div, vStateNode } from '../index.js';
 
-describe('rebuildable region data source', () => {
-  it('feeds parameterized value functions from the declared data source', () => {
+describe('region binding scope', () => {
+  it('feeds parameterized value functions from scope()', () => {
     const data = { label: 'a' };
     const box = div((ele) => {
-      ele.dataSource(() => data);
       ele.rebuildable();
+      ele.scope(() => data);
       ele.attr('data-label', (s) => s.label);
     });
     const element = box.renderDom();
@@ -19,7 +19,7 @@ describe('rebuildable region data source', () => {
     expect(element.getAttribute('data-label')).toBe('b');
   });
 
-  it('rejects parameterized value functions without a data source', () => {
+  it('rejects parameterized value functions without a source', () => {
     expect(() =>
       div((ele) => {
         ele.rebuildable();
@@ -28,7 +28,7 @@ describe('rebuildable region data source', () => {
     ).toThrow(/data source/);
   });
 
-  it('still allows zero-argument closures without a data source', () => {
+  it('still allows zero-argument closures without a source', () => {
     const data = { label: 'a' };
     const box = div((ele) => {
       ele.rebuildable();

@@ -33,7 +33,7 @@ describe('node level state', () => {
     const data = { label: 'A' };
     const box = div((ele) => {
       ele.rebuildable();
-      ele.dataSource(() => data);
+      ele.scope(() => data);
       ele.child(vText((source) => source.label));
     });
     box.renderDom();
