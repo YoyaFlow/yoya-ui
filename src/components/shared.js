@@ -30,11 +30,24 @@ export function applyElementOptions(node, options) {
   return node;
 }
 
+/**
+ * 执行构建回调：节点会记录 builder 以支持区域重建；
+ * render-backed 组件 API（回调收到的是组件对象）直接调用。
+ */
+function runBuilder(node, builder) {
+  if (typeof node.setup === 'function') {
+    node.setup(builder);
+    return;
+  }
+
+  builder(node);
+}
+
 export function applyComponentArguments(node, options = null, callback = null) {
   applyElementOptions(node, options);
 
   if (typeof callback === 'function') {
-    callback(node);
+    runBuilder(node, callback);
   }
 
   return node;
@@ -52,7 +65,7 @@ export function applyComponentSetup(node, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(node);
+    runBuilder(node, setup);
     return node;
   }
 

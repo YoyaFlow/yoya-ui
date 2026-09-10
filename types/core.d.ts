@@ -218,6 +218,15 @@ export class ViewNode {
   /** Adds a text child. */
   text(content: string | number): this;
 
+  /** Marks this node as a region whose content can be rebuilt from its own setup. */
+  rebuildable(predicate?: (() => boolean) | null): this;
+
+  /** Whether a rebuild was skipped by the region predicate and is still pending. */
+  regionPending(): boolean;
+
+  /** Re-runs the region builders: build first, then replace the previous children. */
+  rerun(options?: { force?: boolean }): this;
+
   /** Declares access control: bare default read, "w.xxx" write, "r.xxx" read. */
   access(spec: AccessSpec): this;
 

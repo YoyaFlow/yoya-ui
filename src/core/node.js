@@ -252,6 +252,11 @@ export class ViewNode {
     this._deleted = false;
     this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
+    this._builders = []; // 区域重建时按顺序重跑的构建函数
+    this._rebuildable = false;
+    this._regionGuard = null;
+    this._regionPending = false;
+    this._regionRunning = false;
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -267,6 +272,7 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
+      this._builders.push(setup);
       setup(this);
     } else if (setup instanceof ViewNode) {
       this.child(setup);
@@ -274,6 +280,76 @@ export class ViewNode {
       this.text(setup);
     } else if (setup && typeof setup === 'object') {
       this._setupObject(setup);
+    }
+
+    return this;
+  }
+
+  /**
+   * 声明当前节点为「区域」：内容由它自己的 setup 产出，可在需要时重新执行。
+   * 可选参数是时机谓词，返回 false 时跳过本次重建并记录待重建。
+   */
+  rebuildable(predicate = null) {
+    if (predicate !== null && predicate !== undefined && typeof predicate !== 'function') {
+      throw new TypeError('rebuildable() predicate must be a function');
+    }
+
+    if (this._builders.length === 0) {
+      throw new TypeError('rebuildable() requires a setup builder on this node');
+    }
+
+    this._rebuildable = true;
+    this._regionGuard = predicate || null;
+    return this;
+  }
+
+  /** 区域是否有被谓词跳过、等待补齐的重建。 */
+  regionPending() {
+    return this._regionPending;
+  }
+
+  /**
+   * 重新执行区域 builder：先构建成功，再替换旧子节点；构建失败则保留原内容。
+   */
+  rerun(options = {}) {
+    if (!this._rebuildable) {
+      throw new TypeError('rerun() requires rebuildable() on this node');
+    }
+
+    if (this._deleted || this._regionRunning) {
+      return this;
+    }
+
+    if (this._regionGuard && !(options && options.force) && !this._regionGuard()) {
+      this._regionPending = true;
+      return this;
+    }
+
+    const previousChildren = this._children;
+    const previousKeys = this._childKeys;
+
+    this._children = [];
+    this._childKeys = new Map();
+    this._childrenDirty = true;
+    previousChildren.forEach((child) => this._pendingRemovals.add(child));
+
+    this._regionRunning = true;
+    try {
+      this._builders.forEach((builder) => builder(this));
+    } catch (error) {
+      this._children.forEach((child) => child.destroy());
+      previousChildren.forEach((child) => this._pendingRemovals.delete(child));
+      this._children = previousChildren;
+      this._childKeys = previousKeys;
+      this._childrenDirty = false;
+      throw error;
+    } finally {
+      this._regionRunning = false;
+    }
+
+    this._regionPending = false;
+    if (this._el) {
+      this.renderDom();
     }
 
     return this;
@@ -1472,7 +1548,7 @@ export function createElementFactory(tagName, NodeClass = ElementNode) {
     const node = new NodeClass(tagName, args.first);
     applyElementOptions(node, args.options);
     if (typeof args.callback === 'function') {
-      args.callback(node);
+      node.setup(args.callback);
     }
     return node;
   };
