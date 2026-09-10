@@ -269,14 +269,24 @@ div((root) => {
 - `dist/examples/ssr-demo.html` (after building examples): standalone SSR demo page that runs renderToString -> hydrate in the browser, exercising buttons, dialogs, forms, and zh/en switching.
 - Examples site (`npm run build:examples` + `npx vite preview`): Guides -> Server-Side Rendering page with SSR / non-SSR mode-switching demos.
 
-## 8. Development discipline and common mistakes
+## 8. Operations to avoid and common mistakes
 
-**Discipline**
+SSR discipline reduces to one sentence: **the render path must be DOM-free and deterministic, and request data is injected per request.**
 
-- `render()` and `toHTML()` paths stay DOM-free and deterministic: do not read `document`/`window`; do not let `Date.now()`/`Math.random()` affect output.
-- Guard browser APIs with `typeof xxx === 'undefined'` and only use them in event paths or `renderDom()`.
-- Module-level mutable state (registries, id counters) is never shared across requests.
-- The server stays stateless: per-request render context + destroy after render + output depends only on request input.
+**Operations to avoid**
+
+| Avoid                                                                             | Do instead                                                                                                    | Why                                                                   |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Reading `document` / `window` inside `render()` / `toHTML()`                      | Access the DOM only in event callbacks or `renderDom()`; guard browser APIs with `typeof xxx === 'undefined'` | There is no DOM on the server, so the render path must stay DOM-free  |
+| Letting `Date.now()` / `Math.random()` affect output (including keys and ids)     | Derive structure from request input only; allocate ids with `allocateId` from the render context              | Two different trees make hydration misalign                           |
+| Calling `document.addEventListener` / `window.addEventListener` inside components | Use `bindDocumentEvent` / `bindWindowEvent` and run the returned unbind in `destroy()`                        | No DOM on the server; the client must unbind when nodes are destroyed |
+| Keeping request state in module-level variables (current user, locale, counters)  | Create `createAccess` / `createI18n` / `withContext` per request and inject through entry `options`           | Module-level state leaks between concurrent requests                  |
+| Requests, analytics, or timers during render                                      | Move side effects into event callbacks or after client mount                                                  | SSR only produces output, and the result may be cached or replayed    |
+| Deciding structure with `getBoundingClientRect` / `offsetWidth`                   | Decide structure from state; use measurement only for post-render positioning                                 | There is no layout on the server, so the two sides diverge            |
+| Passing functions inside the request state to `renderPage`                        | Pass serializable data only (path, filters, locale)                                                           | The state is serialized into `__YOYA_DATA__` and parsed on the client |
+| Assuming the client rebuilds the server DOM                                       | `hydrate()` adopts the existing DOM and only attaches event adapters                                          | Rebuilding flashes the first paint and drops server-rendered state    |
+
+The server stays stateless: per-request render context + destroy the component tree after rendering + output depends only on request input.
 
 **Common mistakes**
 

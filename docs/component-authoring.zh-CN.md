@@ -148,6 +148,44 @@ body.rerun(); // 清空子节点 → 重跑 setup → 落地 DOM
 - `on(eventName, handler, options)` 绑定真实 DOM 事件，`destroy()` 时自动清理。
 - 组件对象只要提供 `render()`（返回 `ViewNode`）即可被 `child()` 使用；类组件遵循 `renderDom` / `bindTo` / `destroy` 生命周期。
 
+### 7.1 生命周期
+
+1. **声明（构建期）**：工厂调用建节点，`setup` 里的 `attr` / `style` / `on` / `child` 只写快照，不创建 DOM；组件对象被包成 `ComponentNode`，首次渲染才解析并缓存 `render()` 结果；`access` / `context` / `i18n` 三类构建期作用域在此捕获。
+2. **挂载**：`renderDom()` 创建或复用真实 DOM、绑定事件适配器、递归子节点并应用属性快照；`bindTo(target)` 等于 `renderDom` + append；`commit()` 落地权限态与待移除子节点。
+3. **更新（状态变化）**：按代价从低到高——函数值绑定只写回（DOM 不重建）→ `update()` 局部 patch → 区域 `rerun()`（清空子节点 + 重跑 setup）→ 组件 `rebuild()`（销毁旧根重新 render）。
+4. **销毁**：解除事件适配器与 cleanup、递归销毁子节点、清空 keyed 子节点注册表、从 DOM 摘除；重复 `destroy()` 幂等。
+
+SSR 额外走一条线：`toHTML()` 输出 HTML（DOM-free）→ `hydrate()` 收养既有 DOM（`adoptElement` + `bindElement`，不重建元素）→ `hydrateSnapshot()` 回读表单等真实值；前提是 `render()` / `toHTML()` 保持确定性，两端产出同一棵树。
+
+### 7.2 复杂组件分块
+
+复杂组件需要分块定义结构时，文件内部的每一块也按**函数组件**组织：同一文件内声明、PascalCase 命名并描述 UI 单元、输入显式、产出 ViewNode。整棵树看上去应当是一层层组件拼起来的，而不是一段过程式布局代码。
+
+```js
+function MemberSummary({ stats }) {
+  return p((line) => line.child(vText(() => `共 ${stats().total} 人`))); // 值变化走绑定
+}
+
+function MemberRows({ rows, onSelect }) {
+  return ul((list) => {
+    list.rebuildable(); // 结构随筛选变化：区域负责重建
+    rows().forEach((row) => list.addChild(row.id, MemberRow({ row, onSelect })));
+  });
+}
+
+export function MemberPanel({ state, onFilter, onSelect }) {
+  return div((panel) => {
+    panel.child(MemberSummary({ stats: () => ({ total: state.members.length }) }));
+    panel.child(MemberFilter({ onInput: onFilter }));
+    panel.child(MemberRows({ rows: () => state.members, onSelect }));
+  });
+}
+```
+
+- **活数据用 getter 传**（`rows: () => state.members`）：数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的仍是旧值；回写一律走回调。
+- **块内的更新分工**：值变化用函数值绑定，结构变化用区域（块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter）。
+- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
+
 ## 8. 注册父节点快捷方法
 
 通过 `registerChildFactories` 将工厂注册到目标节点类，页面内即可使用 `page.vButton(...)` 写法；默认不覆盖既有方法：

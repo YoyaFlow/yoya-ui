@@ -148,6 +148,44 @@ Contract and boundaries:
 - `on(eventName, handler, options)` binds real DOM events and cleans them up automatically in `destroy()`.
 - A component object only needs a `render()` returning a `ViewNode` to be used by `child()`; class components follow the `renderDom` / `bindTo` / `destroy` lifecycle.
 
+### 7.1 Lifecycle
+
+1. **Declare (build time)**: a factory call creates the node; `attr` / `style` / `on` / `child` inside `setup` only write snapshots and never touch the DOM. Component objects are wrapped in a `ComponentNode` that resolves and caches `render()` on first render. Build-time scopes (`access`, `context`, `i18n`) are captured here.
+2. **Mount**: `renderDom()` creates or reuses real DOM, binds event adapters, recurses into children and applies attribute snapshots; `bindTo(target)` is `renderDom` plus append; `commit()` applies permission state and settles pending child removals.
+3. **Update (state change)**: by increasing cost — function-value bindings write values back (no DOM rebuild) → `update()` patches locally → a region `rerun()` (clear children and re-run its setup) → a component `rebuild()` (destroy the old roots and render again).
+4. **Destroy**: remove event adapters and run cleanups, destroy children recursively, clear the keyed-child registry, detach from the DOM; repeated `destroy()` calls are idempotent.
+
+SSR adds one path: `toHTML()` produces HTML (DOM-free) → `hydrate()` adopts the existing DOM (`adoptElement` + `bindElement`, without rebuilding elements) → `hydrateSnapshot()` reads back real values such as form fields. This requires `render()` / `toHTML()` to stay deterministic so both sides produce the same tree.
+
+### 7.2 Splitting complex components into blocks
+
+When a complex component needs to be defined in blocks, each block inside the file is organized as a **function component** too: declared in the same file, PascalCase named after the UI unit, with explicit inputs, returning a ViewNode. The tree should read as components composed of components rather than one procedural layout routine.
+
+```js
+function MemberSummary({ stats }) {
+  return p((line) => line.child(vText(() => `共 ${stats().total} 人`))); // values: bindings
+}
+
+function MemberRows({ rows, onSelect }) {
+  return ul((list) => {
+    list.rebuildable(); // structure follows filters: a region rebuilds it
+    rows().forEach((row) => list.addChild(row.id, MemberRow({ row, onSelect })));
+  });
+}
+
+export function MemberPanel({ state, onFilter, onSelect }) {
+  return div((panel) => {
+    panel.child(MemberSummary({ stats: () => ({ total: state.members.length }) }));
+    panel.child(MemberFilter({ onInput: onFilter }));
+    panel.child(MemberRows({ rows: () => state.members, onSelect }));
+  });
+}
+```
+
+- **Pass live data as getters** (`rows: () => state.members`): array/object references go stale after a state update, and a region rebuild would otherwise re-read old values. Write-backs always go through callbacks.
+- **Split updates inside a block**: value changes use function-value bindings; structural changes use a region (the block declares `rebuildable()` on its own layer and calls the getter again).
+- Blocks use the same shapes as exported components (shape A returning a ViewNode, or shape B returning `{ render() }`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
+
 ## 8. Registering parent shortcuts
 
 Use `registerChildFactories` to register factories on a target node class, enabling `page.vButton(...)` syntax in pages. Existing methods are not overridden by default:
