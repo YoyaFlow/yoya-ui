@@ -1,4 +1,4 @@
-import { div, ul, vText, vstack } from '../../index.js';
+import { div, ul, vStateNode, vText, vstack } from '../../index.js';
 
 /**
  * 区域演示 1：声明区域 + 手动 rebuild，区域外的节点不受影响。
@@ -196,4 +196,90 @@ export function RegionFlushExample() {
   };
 
   return api;
+}
+
+const comparePanelStyle = {
+  alignItems: 'center',
+  border: '1px solid var(--yoya-color-border, #d8dee8)',
+  borderRadius: '6px',
+  display: 'flex',
+  gap: '8px',
+  padding: '8px 10px'
+};
+
+/**
+ * 数据来源对照：三块面板长得一样，区别只在「数据住在哪、谁来驱动」。
+ * ① 组件状态：数据住在 vStateNode 里，setState 后引擎自动把函数值绑定写回；
+ * ② 外部数据 + dataSource：数据住在组件外，dataSource 只声明读来源，
+ *    改完要自己 flush()（结构变了才 rebuild()）；
+ * ③ 节点状态：节点自己的 setState 只推给本节点注册的处理器，
+ *    绑定读不到它，必须像下面这样手写接线。
+ */
+export function RegionStateVsSourceExample() {
+  return vstack({ gap: '10px' }, (list) => {
+    list.className('demo-region-compare');
+    list.attr('data-region-compare', 'true');
+    list.child(ComponentStatePanel());
+    list.child(ExternalDataSourcePanel());
+    list.child(NodeStatePanel());
+  });
+}
+
+/** ① 组件状态：数据与驱动都在组件里，绑定参数 s 就是组件状态。 */
+function ComponentStatePanel() {
+  return vStateNode({
+    state: () => ({ count: 0 }),
+    render(state, api) {
+      return div((panel) => {
+        panel.className('demo-region-compare-panel');
+        panel.attr('data-region-state', 'true');
+        panel.styles(comparePanelStyle);
+        panel.span((line) => line.child(vText((s) => `组件状态：${s.count}`)));
+        panel.vButton('+1（组件状态）', (button) => {
+          button.attr('data-region-state-add', 'true');
+          button.on('click', () => api.setState({ count: state.count + 1 }));
+        });
+      });
+    }
+  });
+}
+
+/** ② 外部数据源：数据在组件外，dataSource 提供读来源，改动后手动 flush（pull）。 */
+function ExternalDataSourcePanel() {
+  const data = { count: 0 };
+
+  return div((panel) => {
+    panel.className('demo-region-compare-panel');
+    panel.attr('data-region-source', 'true');
+    panel.styles(comparePanelStyle);
+    panel.rebuildable();
+    panel.dataSource(() => data); // (d) => value 里的 d 就是它的返回值
+    panel.span((line) => line.child(vText((d) => `外部数据源：${d.count}`)));
+    panel.vButton('+1（外部数据）', (button) => {
+      button.attr('data-region-source-add', 'true');
+      button.on('click', () => {
+        data.count += 1;
+        panel.flush(); // 拉一次绑定；只改值不调它，DOM 一动不动
+      });
+    });
+  });
+}
+
+/** ③ 节点状态：setState 只跑本节点注册的处理器，引擎不会替它更新任何绑定。 */
+function NodeStatePanel() {
+  const label = vText('节点状态：0');
+
+  return div((panel) => {
+    panel.className('demo-region-compare-panel');
+    panel.attr('data-region-local', 'true');
+    panel.styles(comparePanelStyle);
+    panel.registerStateHandler('count', (value) => {
+      label.textContent(`节点状态：${value}`); // 手写接线：不接这里，文案不会变
+    });
+    panel.span((line) => line.child(label));
+    panel.vButton('+1（节点状态）', (button) => {
+      button.attr('data-region-local-add', 'true');
+      button.on('click', () => panel.setState('count', panel.getNumberState('count') + 1));
+    });
+  });
 }

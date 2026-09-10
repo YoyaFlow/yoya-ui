@@ -109,6 +109,6 @@ body.rebuildPending(); // 是否有被谓词推迟的重建
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
 - 区域节点的子节点只能由 builder 产出：在 builder 之外对它 `child()` / `addChild()` 会直接报错。
 - 不要在区域 setup 里放一次性副作用（第三方实例、请求、埋点）；状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 会在重跑时由引擎重置，定时器用 `registerRegionCleanup(fn)` 登记。
-- 数据来源显式：零参闭包从外部取值；带参 `(data) => value` 需要 `dataSource()`，在 `vStateNode` 内默认继承宿主状态（按形参个数判断，`(s = {}) => …` 视为零参）。
+- 数据来源三选一：**组件状态**（`vStateNode` 内自动继承，`setState` 自动驱动）、**`dataSource(getter)`**（数据在组件外，pull：改完要自己 `flush()` / `rebuild()`）、**零参闭包**（不需要声明）。带参 `(data) => value` 必须来自前两者之一（按形参个数判断，`(s = {}) => …` 视为零参）；节点级 `setState` 不参与绑定求值。
 - 触发：区域归属于最近的状态组件，`setState` 时自动按谓词处理；没有状态容器时由调用方 `rebuild()` 驱动，谓词为假之后可用 `rebuildPending()` 决定是否补一次重建。
 - 嵌套：区域里可以再声明区域（父区域只刷值时，子区域仍会评估自己的谓词）；嵌套的状态组件自成边界，其内部区域由它自己管理。

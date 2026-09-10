@@ -5,7 +5,8 @@ import {
   RegionDataSourceExample,
   RegionFlushExample,
   RegionGateExample,
-  RegionRebuildExample
+  RegionRebuildExample,
+  RegionStateVsSourceExample
 } from './demos/region.js';
 
 const regionDemos = [
@@ -44,6 +45,15 @@ const regionDemos = [
     imports: ['hstack', 'vButton', 'vText', 'vstack'],
     sourceTitle: '值级刷新源码',
     title: '值级刷新：flush()'
+  },
+  {
+    component: RegionStateVsSourceExample,
+    description:
+      '三份一样的计数：组件状态由 setState 自动驱动；外部数据用 dataSource 声明读来源、由 flush() 手动拉取；节点状态只推本节点处理器，得自己接线。',
+    id: 'compare',
+    imports: ['div', 'vButton', 'vStateNode', 'vText', 'vstack'],
+    sourceTitle: 'state 与 dataSource 对照源码',
+    title: '数据来源对照：state / dataSource / 节点状态'
   }
 ];
 
@@ -87,6 +97,9 @@ export function ComponentLifecycleDocumentationPage() {
               '谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记为 rebuildPending()，结构不动。'
             );
             list.li('带参值函数需要 dataSource()；vStateNode 内部的区域默认继承宿主状态。');
+            list.li(
+              '数据来源三选一：组件状态（vStateNode 内自动继承）、dataSource（外部数据，pull）、零参闭包；节点级 setState 只驱动自己的处理器，不参与绑定求值。'
+            );
           });
           regionDemos.forEach((demo) => region.child(RegionDemoSection(demo)));
         });

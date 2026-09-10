@@ -1071,7 +1071,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('h1').textContent).toBe('组件生命周期');
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
-    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(4);
+    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
 
     const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
     const outsideField = rebuildDemo.querySelector('[data-region-outside]');
@@ -1122,6 +1122,28 @@ describe('renderExamplesIndex', () => {
     flushDemo.querySelector('[data-region-flush-rebuild]').click();
     // rebuild：结构重建，元素被替换
     expect(flushDemo.querySelector('[data-region-flush-label]')).not.toBe(flushLabel);
+
+    const compareDemo = page.querySelector('[data-region-demo="compare"]');
+    const statePanel = compareDemo.querySelector('[data-region-state]');
+    const externalPanel = compareDemo.querySelector('[data-region-source]');
+    const localPanel = compareDemo.querySelector('[data-region-local]');
+    expect(statePanel.textContent).toContain('组件状态：0');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+    expect(localPanel.textContent).toContain('节点状态：0');
+
+    compareDemo.querySelector('[data-region-state-add]').click();
+    // 组件状态：setState 后引擎自动写回绑定
+    expect(statePanel.textContent).toContain('组件状态：1');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+
+    compareDemo.querySelector('[data-region-source-add]').click();
+    // 外部数据源：改数据后由 flush() 拉取
+    expect(externalPanel.textContent).toContain('外部数据源：1');
+    expect(localPanel.textContent).toContain('节点状态：0');
+
+    compareDemo.querySelector('[data-region-local-add]').click();
+    // 节点状态：只跑本节点注册的处理器
+    expect(localPanel.textContent).toContain('节点状态：1');
   });
 
   it('documents the SSR operations to avoid on the server rendering guide', async () => {

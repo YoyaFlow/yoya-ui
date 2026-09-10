@@ -143,7 +143,7 @@ Contract and boundaries:
 - Declaration order: call `rebuildable()` first, then write value functions and other registrations.
 - Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. State handlers and `bindDocumentEvent` / `bindWindowEvent` are reset across rebuilds by the engine; timers must be registered through `registerRegionCleanup(fn)`.
 - A region belongs to the nearest state component: regions inside a `vStateNode` are triggered by that component's state changes; nested state components are islands and manage their own regions.
-- Data sources are explicit: zero-argument closures read outside values, while parameterized value functions read from `dataSource()` or the host state (detected by declared arity, so `(s = {}) => …` counts as zero-argument).
+- Data sources are explicit, pick one of three: **component state** (inherited inside a `vStateNode`, driven by `setState`), **`dataSource(getter)`** (data lives outside the component — pull, so you call `flush()` / `rebuild()` yourself), or a **zero-argument closure** (no declaration needed). Parameterized value functions must come from one of the first two (detected by declared arity, so `(s = {}) => …` counts as zero-argument); node-level `setState` only drives its own handlers and never feeds bindings.
 - To keep focus or third-party instances, leave that part outside the region or use function-value bindings, which update in place without rebuilding DOM.
 
 ## 7. Composition, events, and lifecycle

@@ -3,7 +3,8 @@ import {
   RegionDataSourceExample,
   RegionFlushExample,
   RegionGateExample,
-  RegionRebuildExample
+  RegionRebuildExample,
+  RegionStateVsSourceExample
 } from './region.js';
 
 describe('region demos', () => {
@@ -77,5 +78,32 @@ describe('region demos', () => {
     element.querySelector('[data-region-flush-rebuild]').click();
     expect(element.querySelector('[data-region-flush-label]')).not.toBe(label);
     expect(element.querySelector('[data-region-flush-label]').textContent).toBe('B');
+  });
+
+  it('contrasts component state, external dataSource and node state', () => {
+    const element = RegionStateVsSourceExample().renderDom();
+    const statePanel = element.querySelector('[data-region-state]');
+    const externalPanel = element.querySelector('[data-region-source]');
+    const localPanel = element.querySelector('[data-region-local]');
+
+    expect(statePanel.textContent).toContain('组件状态：0');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+    expect(localPanel.textContent).toContain('节点状态：0');
+
+    element.querySelector('[data-region-state-add]').click();
+    // 组件状态：setState 自动驱动绑定，另外两块不受影响
+    expect(statePanel.textContent).toContain('组件状态：1');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+
+    element.querySelector('[data-region-source-add]').click();
+    // 外部数据源：数据在组件外，flush() 拉取一次
+    expect(externalPanel.textContent).toContain('外部数据源：1');
+    expect(localPanel.textContent).toContain('节点状态：0');
+
+    element.querySelector('[data-region-local-add]').click();
+    // 节点状态：只有手写接线的处理器会更新
+    expect(localPanel.textContent).toContain('节点状态：1');
+    expect(statePanel.textContent).toContain('组件状态：1');
+    expect(externalPanel.textContent).toContain('外部数据源：1');
   });
 });
