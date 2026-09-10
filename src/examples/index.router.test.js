@@ -1134,7 +1134,7 @@ describe('renderExamplesIndex', () => {
 
     const rules = document.querySelector('[data-ssr-rules]');
     expect(rules).not.toBeNull();
-    expect(rules.querySelectorAll('tbody tr')).toHaveLength(8);
+    expect(rules.querySelectorAll('tbody tr')).toHaveLength(9);
     expect(rules.textContent).toContain('Date.now()');
     expect(rules.textContent).toContain('bindDocumentEvent');
     expect(rules.textContent).toContain('hydrate()');
