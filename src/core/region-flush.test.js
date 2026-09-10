@@ -71,6 +71,29 @@ describe('region flush', () => {
     expect(element.getAttribute('data-label')).toBe('B');
   });
 
+  it('flushes safely before the component is mounted', () => {
+    const data = { label: 'A' };
+    const component = vStateNode({
+      state: () => ({ tick: 0 }),
+      render() {
+        return div((host) => {
+          host.rebuildable();
+          host.attr('data-label', () => data.label);
+        });
+      }
+    });
+
+    component.render();
+
+    data.label = 'B';
+
+    expect(() => component.flush()).not.toThrow();
+
+    const element = component.render().renderDom();
+
+    expect(element.getAttribute('data-label')).toBe('B');
+  });
+
   it('flushes every binding of a component, regions included', () => {
     const data = { label: 'x', total: 1 };
     let region = null;
