@@ -1,4 +1,5 @@
 import { div, ul, vStateNode, vText, vstack } from '../../index.js';
+import { componentSource } from '../component-source.js';
 
 /**
  * 区域演示 1：声明区域 + 手动 rebuild，区域外的节点不受影响。
@@ -198,15 +199,6 @@ export function RegionFlushExample() {
   return api;
 }
 
-const comparePanelStyle = {
-  alignItems: 'center',
-  border: '1px solid var(--yoya-color-border, #d8dee8)',
-  borderRadius: '6px',
-  display: 'flex',
-  gap: '8px',
-  padding: '8px 10px'
-};
-
 /**
  * 数据来源对照：三块面板长得一样，区别只在「数据住在哪、谁来驱动」。
  * ① 组件状态：数据住在 vStateNode 里，setState 后引擎自动把函数值绑定写回；
@@ -233,7 +225,6 @@ function ComponentStatePanel() {
       return div((panel) => {
         panel.className('demo-region-compare-panel');
         panel.attr('data-region-state', 'true');
-        panel.styles(comparePanelStyle);
         panel.span((line) => line.child(vText((s) => `组件状态：${s.count}`)));
         panel.vButton('+1（组件状态）', (button) => {
           button.attr('data-region-state-add', 'true');
@@ -251,7 +242,6 @@ function ExternalDataSourcePanel() {
   return div((panel) => {
     panel.className('demo-region-compare-panel');
     panel.attr('data-region-source', 'true');
-    panel.styles(comparePanelStyle);
     panel.rebuildable();
     panel.dataSource(() => data); // (d) => value 里的 d 就是它的返回值
     panel.span((line) => line.child(vText((d) => `外部数据源：${d.count}`)));
@@ -272,7 +262,6 @@ function NodeStatePanel() {
   return div((panel) => {
     panel.className('demo-region-compare-panel');
     panel.attr('data-region-local', 'true');
-    panel.styles(comparePanelStyle);
     panel.registerStateHandler('count', (value) => {
       label.textContent(`节点状态：${value}`); // 手写接线：不接这里，文案不会变
     });
@@ -283,3 +272,12 @@ function NodeStatePanel() {
     });
   });
 }
+
+/** 源码面板用：三块面板的函数按文件顺序展示，再展示入口组件。 */
+export const regionCompareBlocksSource = [
+  ComponentStatePanel,
+  ExternalDataSourcePanel,
+  NodeStatePanel
+]
+  .map((block) => componentSource(block, []).replace(/^export /, ''))
+  .join('\n\n');

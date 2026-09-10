@@ -1144,6 +1144,13 @@ describe('renderExamplesIndex', () => {
     compareDemo.querySelector('[data-region-local-add]').click();
     // 节点状态：只跑本节点注册的处理器
     expect(localPanel.textContent).toContain('节点状态：1');
+
+    // 源码面板要能看到三种写法的分块函数，而不只是入口组件
+    const compareSource = compareDemo.querySelector('[data-source-example]').textContent;
+    expect(compareSource).toContain('function ComponentStatePanel(');
+    expect(compareSource).toContain('function ExternalDataSourcePanel(');
+    expect(compareSource).toContain('function NodeStatePanel(');
+    expect(compareSource).toContain('export function RegionStateVsSourceExample(');
   });
 
   it('documents the SSR operations to avoid on the server rendering guide', async () => {

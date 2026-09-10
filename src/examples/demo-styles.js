@@ -976,7 +976,19 @@ const definitionExtraRules = [
     }
   ],
   ['.wizard-child-panel strong, .wizard-child-panel p', { margin: '0' }],
-  ['.wizard-child-panel p', { color: 'var(--yoya-color-text-muted, #5a6575)' }]
+  ['.wizard-child-panel p', { color: 'var(--yoya-color-text-muted, #5a6575)' }],
+  ['.demo-region-compare', { display: 'grid', gap: '10px' }],
+  [
+    '.demo-region-compare-panel',
+    {
+      alignItems: 'center',
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: '6px',
+      display: 'flex',
+      gap: '8px',
+      padding: '8px 10px'
+    }
+  ]
 ];
 
 const i18nExtraRules = [

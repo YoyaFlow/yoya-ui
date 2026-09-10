@@ -2,6 +2,7 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
 import {
+  regionCompareBlocksSource,
   RegionDataSourceExample,
   RegionFlushExample,
   RegionGateExample,
@@ -50,6 +51,7 @@ const regionDemos = [
     component: RegionStateVsSourceExample,
     description:
       '三份一样的计数：组件状态由 setState 自动驱动；外部数据用 dataSource 声明读来源、由 flush() 手动拉取；节点状态只推本节点处理器，得自己接线。',
+    extraSource: regionCompareBlocksSource,
     id: 'compare',
     imports: ['div', 'vButton', 'vStateNode', 'vText', 'vstack'],
     sourceTitle: 'state 与 dataSource 对照源码',
@@ -112,6 +114,7 @@ function RegionDemoSection(demo) {
   const liveDemo = demo.component();
   const sourcePanel = ComponentSource({
     component: demo.component,
+    extraSource: demo.extraSource,
     imports: demo.imports,
     sourceComponent: demo.component,
     title: demo.sourceTitle
