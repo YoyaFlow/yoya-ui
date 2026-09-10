@@ -35,7 +35,7 @@ document.querySelector('#app').appendChild(page.renderDom());
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
 - **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
-- **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/core.md
+- **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
 
 ## 文本与状态
 
@@ -87,7 +87,7 @@ div((root) => {
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
 - [references/access-control.md](references/access-control.md)：权限控制（read/write、scope、SPA/SSR 注入、admin 接线）
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
-- [references/modules.md](references/modules.md)：业务模块组织规则（feature 目录、api 分层、命令范式、共享组件、导航状态）
+- [references/modules.md](references/modules.md)：业务模块组织规则（目录结构、api 分层与命令范式、状态模块、业务/共享组件、应用外壳与导航、命名与结构分块、启动流程与新增菜单）
 
 ## 交付物说明
 
