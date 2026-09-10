@@ -55,6 +55,8 @@ div((root) => {
 
 字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
 
+需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：`rebuildable(谓词?)` 声明，`rerun()` 清空并按当前数据重跑它自己的 setup。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷函数值绑定。详见 references/core.md。
+
 ## 表单
 
 `vForm` + `vFormItem` 收集与校验；控件设 `name()` 后自动进 `form.values()`；`form.validate()` 校验必填与自定义规则。详见 references/forms.md。
