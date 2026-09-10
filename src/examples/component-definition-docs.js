@@ -1,6 +1,5 @@
 import { section, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
-import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
 import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 
 function DefineComponentExample1() {
@@ -278,7 +277,7 @@ export function ComponentDefinitionDocumentationPage() {
         page.className('components-route-page components-definition-page');
         page.attr('data-definition-page', 'true');
         page.h1('定义组件');
-        page.child(ComponentLifecycleSection());
+        page.p('组件的四个阶段（声明 / 挂载 / 更新 / 销毁）见「开发指南 → 组件生命周期」。');
         page.p('yoya-ui 支持两种组件定义形态，按场景选用：A 薄工厂、B 对象组件。');
         page.p(
           'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
@@ -311,20 +310,4 @@ export function ComponentDefinitionDocumentationPage() {
       });
     }
   };
-}
-
-/** 组件生命周期：先看图与四阶段摘要，再看定义形态与演示。 */
-function ComponentLifecycleSection() {
-  return section((block) => {
-    block.className('components-guide-section components-lifecycle-section');
-    block.attr('data-lifecycle-section', 'true');
-    block.h2('组件生命周期');
-    block.p(
-      '一个组件从声明到销毁经过四个阶段；每个阶段只做该阶段该做的事，SSR 与手动更新之间才能保持一致。'
-    );
-    block.child(ComponentLifecycleDiagram());
-    block.ul((list) => {
-      componentLifecyclePhases.forEach((phase) => list.li(`${phase.title}：${phase.summary}`));
-    });
-  });
 }

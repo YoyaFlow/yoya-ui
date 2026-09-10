@@ -139,7 +139,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(7);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(7);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
@@ -1015,11 +1015,6 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-definition-page]');
     expect(page.querySelector('h1').textContent).toBe('定义组件');
-    const lifecycle = page.querySelector('[data-lifecycle-section]');
-    expect(lifecycle).not.toBeNull();
-    expect(lifecycle.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
-    expect(lifecycle.querySelectorAll('svg text').length).toBeGreaterThan(12);
-    expect(lifecycle.querySelectorAll('li')).toHaveLength(4);
     expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(4);
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
       'define'
@@ -1062,6 +1057,58 @@ describe('renderExamplesIndex', () => {
     expect(complexSource).toContain('function TaskRow(');
     expect(complexSource).toContain('function TaskList(');
     expect(complexSource).toContain('export function ComplexWorkbenchExample(');
+  });
+
+  it('renders the component lifecycle page with the rebuildable region demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/lifecycle');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('组件生命周期');
+    });
+
+    const page = document.querySelector('[data-lifecycle-page]');
+    expect(page.querySelector('h1').textContent).toBe('组件生命周期');
+    expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
+    expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
+    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(3);
+
+    const rerunDemo = page.querySelector('[data-region-demo="rerun"]');
+    const outsideField = rerunDemo.querySelector('[data-region-outside]');
+    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
+
+    rerunDemo.querySelector('[data-region-add]').click();
+    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(rerunDemo.querySelector('[data-region-outside]')).toBe(outsideField);
+
+    rerunDemo.querySelector('[data-region-clear]').click();
+    expect(rerunDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
+
+    const gateDemo = page.querySelector('[data-region-demo="gate"]');
+    expect(gateDemo.querySelector('[data-region-label]').textContent).toBe('A');
+
+    gateDemo.querySelector('[data-region-next]').click();
+    // 谓词为真：区域重跑，区域内节点被替换
+    const rebuiltLabel = gateDemo.querySelector('[data-region-label]');
+    expect(rebuiltLabel.textContent).toBe('B');
+
+    gateDemo.querySelector('[data-region-lock]').click();
+    gateDemo.querySelector('[data-region-next]').click();
+    // 谓词为假：结构不动（元素引用不变），只写回函数值绑定，并记为待重建
+    expect(gateDemo.querySelector('[data-region-label]')).toBe(rebuiltLabel);
+    expect(rebuiltLabel.textContent).toBe('A');
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('待重建');
+
+    gateDemo.querySelector('[data-region-lock]').click();
+    // 谓词恢复：补一次重建
+    expect(gateDemo.querySelector('[data-region-label]')).not.toBe(rebuiltLabel);
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('已同步');
+
+    const sourceDemo = page.querySelector('[data-region-demo="source"]');
+    expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('0');
+    sourceDemo.querySelector('[data-region-source-add]').click();
+    expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('1');
+    expect(sourceDemo.textContent).toContain('共 1 条');
   });
 
   it('documents the SSR operations to avoid on the server rendering guide', async () => {

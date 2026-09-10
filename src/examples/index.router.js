@@ -27,6 +27,11 @@ const componentMenuSections = [
       { key: 'installation', label: '安装方式', details: 'Installation' },
       { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
       { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
+      {
+        key: 'lifecycle',
+        label: '组件生命周期',
+        details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
+      },
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'vStateNode' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
@@ -219,6 +224,8 @@ const docsRouteLoaders = Object.freeze({
     import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
   'guides:component': () =>
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
+  'guides:lifecycle': () =>
+    import('./component-lifecycle-docs.js').then((m) => m.ComponentLifecycleDocumentationPage()),
   'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:state-node': () =>
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
@@ -676,6 +683,11 @@ function createOverviewView() {
             label: '组件',
             path: '/components/guides/component',
             details: 'A 薄工厂 / B 对象组件'
+          },
+          {
+            label: '组件生命周期',
+            path: '/components/guides/lifecycle',
+            details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
           },
           { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
           { label: '状态节点', path: '/components/guides/state-node', details: 'vStateNode' },
