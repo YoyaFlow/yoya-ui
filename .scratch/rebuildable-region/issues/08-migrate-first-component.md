@@ -2,7 +2,7 @@
 
 **What to build:** 用一个真实组件（vAutocomplete 或 vTree）替换手写的整体重建逻辑，行为不变、测试全绿，作为机制可用性的验证。
 
-**Blocked by:** 04 — vStateNode 接入自动触发, 05 — 普通区域的数据源声明与带参值函数
+**Blocked by:** 04 — vStateNode 接入自动触发, 05 — 普通区域的数据源声明与带参值函数, 11 — 区域重跑前重置累加型登记
 
 **Status:** ready-for-agent
 
