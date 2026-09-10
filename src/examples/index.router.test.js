@@ -1015,6 +1015,11 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-definition-page]');
     expect(page.querySelector('h1').textContent).toBe('定义组件');
+    const lifecycle = page.querySelector('[data-lifecycle-section]');
+    expect(lifecycle).not.toBeNull();
+    expect(lifecycle.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
+    expect(lifecycle.querySelectorAll('svg text').length).toBeGreaterThan(12);
+    expect(lifecycle.querySelectorAll('li')).toHaveLength(4);
     expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(3);
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
       'define'
