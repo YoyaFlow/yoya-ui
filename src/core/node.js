@@ -177,6 +177,24 @@ function withRegionBuild(region, run) {
   }
 }
 
+/** 当前是否正在该区域自己的 builder 内构建。 */
+function isBuildingRegion(region) {
+  if (regionBuildStack.includes(region)) {
+    return true;
+  }
+
+  return region._rebuildable === true && setupStack.includes(region);
+}
+
+/** 区域节点的子节点只能由它自己的 builder 产出。 */
+function assertRegionChildAllowed(node) {
+  if (node._rebuildable && !isBuildingRegion(node)) {
+    throw new TypeError(
+      'region children must come from the region builder; call rerun() to rebuild the region'
+    );
+  }
+}
+
 /** 收集节点及其子树名下的绑定。 */
 function collectRegionBindings(node, out = []) {
   node._bindings.forEach((binding) => out.push(binding));
@@ -700,6 +718,8 @@ export class ViewNode {
    * 元素子节点会把 key 镜像为 data-row-key，便于 SSR 与调试。
    */
   addChild(key, child) {
+    assertRegionChildAllowed(this);
+
     const rawKey = String(key);
     if (this._childKeys.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
@@ -770,8 +790,11 @@ export class ViewNode {
 
   /**
    * 添加子节点；字符串和数字会自动转成 VTextNode。
+   * 区域节点的子节点只能由它自己的 builder 产出，外部追加即违规。
    */
   child(...children) {
+    assertRegionChildAllowed(this);
+
     children.flat(Infinity).forEach((child) => {
       if (child === null || child === undefined) {
         return;
@@ -1595,6 +1618,8 @@ export class ElementNode extends ViewNode {
    * 添加子节点。如果当前 DOM 已创建，立即追加对应 DOM。
    */
   child(...children) {
+    assertRegionChildAllowed(this);
+
     const addedIds = this._el && isDevtoolsEnabled() && !this._devtoolsRendering ? [] : null;
     children.flat(Infinity).forEach((child) => {
       if (child === null || child === undefined) {

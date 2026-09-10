@@ -489,6 +489,10 @@ hydrate 后拿不到 → 服务端 HTML 与客户端首帧不一致。
    见工单 12。迁移真实组件前需先确认目标组件的区域声明位置。
 5. **有参值函数的启发式**：以 `fn.length > 0` 判定「需要数据源」，因此 `(s = {}) => …`、
    `(...args) => …` 会被判为零参并静默拿到 `undefined`；文档需提示这一边界。
+6. **评审遗留项已收口**：契约 2 的子节点归属断言已实现（区域节点在 builder 之外
+   `child()` / `addChild()` 直接报错）；§6 测试清单缺口已补齐（谓词每轮只评估一次、
+   重复 `rebuildable()` 为替换语义、区域外绑定不受重跑影响、`destroy()` 解除绑定）；
+   `types/tests/consumer.ts` 已覆盖 `rebuildable` / `dataSource` / `rerun` / `regionPending`。
 
 **会变成致命的（若不定）**
 

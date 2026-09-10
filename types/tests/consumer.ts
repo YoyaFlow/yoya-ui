@@ -173,6 +173,18 @@ const counter = vStateNode<{ count: number }>({
 });
 counter.setState({ count: 5 });
 
+// Rebuildable region API.
+const region = div((ele) => {
+  ele.rebuildable(() => true);
+  ele.text('region');
+});
+region.dataSource(() => ({ rows: [] as string[] }));
+region.rebuildable(null);
+region.rerun();
+region.rerun({ force: true });
+const regionPending: boolean = region.regionPending();
+void regionPending;
+
 // i18n.
 const i18n = createI18n({
   language: 'zh-CN',
