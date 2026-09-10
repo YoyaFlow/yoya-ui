@@ -111,20 +111,20 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 
 ## Features at a glance
 
-| Capability                             | Status                                                                                    |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                             |
-| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                |
-| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                |
-| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                               |
-| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation |
-| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                      |
-| State management                       | `vStateNode`, optional `@preact/signals-core` interop                                     |
-| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                    |
-| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                           |
-| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                            |
-| Framework interop                      | Any DOM-mountable library composes natively                                               |
-| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries    |
+| Capability                             | Status                                                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                         |
+| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                            |
+| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                            |
+| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                           |
+| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation             |
+| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                  |
+| State management                       | `vStateNode` / rebuildable regions (`rebuildable` + `rerun`), optional `@preact/signals-core` interop |
+| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                |
+| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                       |
+| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                        |
+| Framework interop                      | Any DOM-mountable library composes natively                                                           |
+| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                |
 
 ## Positioning: a declarative extension of native Web, not a walled-garden framework
 
