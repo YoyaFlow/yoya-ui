@@ -6,5 +6,5 @@
 
 **Status:** ready-for-agent
 
-- [ ] 区域重建与跳过各自产生可识别事件，带触发源（manual / state / parent）。
-- [ ] handling 取值与中英文 devtools 文档同步。
+- [x] 区域重建与仅刷值各自产生可识别事件，带触发源（manual / state）。
+- [x] 事件字段与中英文 devtools 文档、检视面板标签同步。

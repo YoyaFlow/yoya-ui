@@ -63,9 +63,14 @@ disableDevtools();
 | `child`   | 子项增删/重排         | `added`、`removed`、`reordered` |
 | `text`    | 文本变更              | `from`、`to`                    |
 | `state`   | `vStateNode` 状态变更 | `changed`、`state`、`handling`  |
+| `region`  | 可重建区域处理        | `action`、`trigger`             |
 
 `state` 事件说明变更经过的路径：`update`（update 回调处理）、`bindings`
 （函数值绑定写回）、`rebuild`（重建视图根）或 `pending`（组件未挂载）。
+
+`region` 事件说明被标记区域的这次处理：`action` 为 `rebuild`（重建了子树）
+或 `flush`（只写回绑定值、结构保持不变）；`trigger` 为 `manual`（手动
+`rerun()`）或 `state`（状态变化自动触发）。
 
 ## 作用域详情
 

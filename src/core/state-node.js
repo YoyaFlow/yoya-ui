@@ -255,7 +255,7 @@ export function vStateNode(config = {}) {
     let rebuilt = false;
 
     regions.forEach((region) => {
-      region.rerun();
+      region.rerun({ trigger: 'state' });
       if (region._regionLastRun === 'rebuild') {
         rebuilt = true;
       }

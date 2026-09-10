@@ -217,6 +217,15 @@ function flushBindingsIn(node) {
   node._children.forEach((child) => flushBindingsIn(child));
 }
 
+/** 上报区域重建事件，便于 devtools 回答「这块为什么重建 / 为什么只是刷值」。 */
+function emitRegionEvent(node, action, trigger) {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  emitDevtools({ type: 'region', node, action, trigger });
+}
+
 // 无闭合标签的 HTML 元素，toHTML 时不能追加结束标签。
 const voidElements = new Set([
   'area',
@@ -467,6 +476,8 @@ export class ViewNode {
       throw new TypeError('rerun() requires rebuildable() on this node');
     }
 
+    const trigger = (options && options.trigger) || 'manual';
+
     if (this._deleted || this._regionRunning) {
       this._regionLastRun = 'skip';
       return this;
@@ -477,6 +488,7 @@ export class ViewNode {
       this._regionPending = true;
       flushBindingsIn(this);
       this._regionLastRun = 'flush';
+      emitRegionEvent(this, 'flush', trigger);
       return this;
     }
 
@@ -510,6 +522,7 @@ export class ViewNode {
     flushBindingsIn(this);
     this._regionPending = false;
     this._regionLastRun = 'rebuild';
+    emitRegionEvent(this, 'rebuild', trigger);
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
     }

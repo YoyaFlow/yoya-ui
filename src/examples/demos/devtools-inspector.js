@@ -331,6 +331,11 @@ export function DevtoolsInspectorDemo() {
         }[event.handling] || event.handling;
       return `${where} 状态更新：${summary}（${path}）`;
     }
+    if (event.type === 'region') {
+      const action = event.action === 'rebuild' ? '重建子树' : '仅刷新绑定值';
+      const trigger = event.trigger === 'state' ? '状态触发' : '手动触发';
+      return `${where} 区域${action}（${trigger}）`;
+    }
     return `${where} ${event.type}`;
   }
 

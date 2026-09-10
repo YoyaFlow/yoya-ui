@@ -58,8 +58,14 @@ disableDevtools();
 | `child`   | child added/removed/reordered | `added`, `removed`, `reordered` |
 | `text`    | text changed                  | `from`, `to`                    |
 | `state`   | `vStateNode` state changed    | `changed`, `state`, `handling`  |
+| `region`  | rebuildable region handled    | `action`, `trigger`             |
 
 `state` events describe the path the change took: `update` (handled by the update callback), `bindings` (function-value bindings written back), `rebuild` (view root rebuilt), or `pending` (component not mounted).
+
+`region` events describe how a marked region was handled: `action` is `rebuild`
+(the subtree was rebuilt) or `flush` (only bound values were written back and the
+structure stayed as-is); `trigger` is `manual` (an explicit `rerun()`) or `state`
+(driven by a state change).
 
 ## Scope details
 
