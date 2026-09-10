@@ -74,6 +74,7 @@ body.rebuildPending(); // 是否有被谓词推迟的重建
 ```
 
 - **值用 `flush()`，结构用 `rebuild()`**：`flush()`（节点级；组件级是 `component.flush()`）只把已登记的绑定求值写回，不动结构、不触发谓词、幂等；`rebuild()` 清空子节点并重跑 setup，且会连带刷新本轮新登记的绑定。一次变化里既有增删又有值变化时，只调 `rebuild()`——别叠加 `flush()`。
+- **区域节点先建一次**：内容由区域自己的 builder 产出，所以可以在 `render()` 之外创建并直接持有引用（`const list = ul((box) => { box.rebuildable(); … })` → `list.rebuild()`），不必在 render 里 `let region = null` 回填；区域外的状态行、工具节点同理。
 - 区域内不保留 DOM 身份（焦点、选区、内部滚动、第三方实例都会重建），区域外的兄弟节点不受影响；要保住焦点就把那块留在区域外，或用函数值绑定。
 - 谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记 `rebuildPending()`，结构不动；数据条件要写进 setup，不要用谓词当内容开关。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
