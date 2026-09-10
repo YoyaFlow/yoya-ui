@@ -1,6 +1,6 @@
 ---
 name: yoya-ui
-description: 在项目中正确使用 yoya-ui UI 库时使用：声明式组件 DSL、页面组合、表单收集与校验、主题 token、SSR/hydrate、i18n；也适用于基于 yoya-ui/core 开发第三方组件。
+description: 在项目中正确使用 yoya-ui UI 库时使用：声明式组件 DSL、页面组合、状态与可重建区域、表单收集与校验、权限与 Context、主题 token、SSR/hydrate、i18n；也适用于基于 yoya-ui/core 开发第三方组件。
 ---
 
 # Yoya UI
@@ -56,7 +56,9 @@ div((root) => {
 
 字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
 
-需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：`rebuildable(谓词?)` 声明，`rerun()` 清空并按当前数据重跑它自己的 setup。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷函数值绑定。详见 references/core.md。
+需要内部状态（计数、开关、加载态）用 `vStateNode({ state, render, update })`：render 里把文本/属性/样式声明成函数值绑定，`setState()` 后只求值写回、DOM 不重建。
+
+需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：`rebuildable(谓词?)` 声明，`rerun()` 清空并按当前数据重跑它自己的 setup。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷函数值绑定。详见 references/state.md。
 
 ## 表单
 
@@ -76,7 +78,11 @@ div((root) => {
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。详见 references/access-control.md。
+组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。通用数据注入用 `withContext(providers, build)` + `currentContext(key)`（构建期作用域，SSR 每请求隔离）。详见 references/access-context.md。
+
+## DevTools（Beta）
+
+开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `state` / `region`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
 
 ## 参考文件（按需读取）
 
@@ -85,7 +91,9 @@ div((root) => {
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
-- [references/access-control.md](references/access-control.md)：权限控制（read/write、scope、SPA/SSR 注入、admin 接线）
+- [references/state.md](references/state.md)：vStateNode 三种更新路径、函数值绑定、可重建区域、fragment 与 keyed 子节点、事件单槽
+- [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与通用 Context 注入、无障碍原语
+- [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
 - [references/modules.md](references/modules.md)：业务模块组织规则（目录结构、api 分层与命令范式、状态模块、业务/共享组件、应用外壳与导航、命名与结构分块、启动流程与新增菜单）
 

@@ -51,4 +51,4 @@ npm run dev
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`；用户持有 裸码 = 读+写、`r.` = 只读、`w.` = 读+写。SPA：`installAccess(createAccess({ permissions, roles }))` 一次；SSR：入口 `options.access` 注入。详见 access-control.md。
+组件只声明裸资源码 `node.access('system:member')`；用户持有 裸码 = 读+写、`r.` = 只读、`w.` = 读+写。SPA：`installAccess(createAccess({ permissions, roles }))` 一次；SSR：入口 `options.access` 注入。详见 access-context.md。

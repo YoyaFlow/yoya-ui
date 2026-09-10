@@ -1,4 +1,4 @@
-# 权限控制（Access Control）
+# 权限（access）与 Context
 
 yoya-ui 在基础节点层内置 read / write 两级权限：**组件只声明裸资源码**，读/写级别由用户持有的权限决定；渲染管线自动显隐与禁用，SSR（`toHTML`）与真实 DOM（`renderDom`）行为一致。
 
@@ -90,3 +90,23 @@ renderToString(page, { state, access: createAccess({ permissions, roles }) });
 - 菜单 / 路由：菜单条目标注 `permCode`，`ShellState` 用 `access.canRead(permCode)` 过滤；无读路由不注册，直达 URL 落到未找到页。
 - 按钮 / 操作：直接 `.access('system:member:create')` 等裸码，无写自动禁用、无读自动隐藏。
 - 演示数据：`shell/api/auth.mock.js` 提供 `/auth/me`；想观察效果增减权限码即可。
+
+## Context：通用作用域注入
+
+```js
+import { withContext, currentContext, div } from '@yoyaflow/yoya-ui';
+
+withContext({ user: { name: 'Ada' } }, () => {
+  const page = div((root) => {
+    root.p(currentContext('user').name); // 'Ada'
+  });
+});
+```
+
+- `withContext(providers, build)`：构建期内可见，结束后还原；`currentContext(key)` 就近读取（内层覆盖外层），缺省回退到 `installContext` 的全局层
+- SSR：入口传 `context` 选项（对象或 `(state) => providers`），每请求隔离
+- 与 `access` 的关系：access 管显隐/只读，Context 管数据注入；两者都是构建期作用域，SSR 下都按请求隔离
+
+## 无障碍原语（core）
+
+`core` 同时提供 `announce`（aria-live 播报）、`createFocusTrap`（焦点循环）、`getFocusableElements`、`moveByKey`（方向键导航）。弹层 / 键盘组件优先复用它们，而不是自己操作 `tabindex` 或 document 焦点。

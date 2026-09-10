@@ -434,4 +434,4 @@ router.start();
 - 注入：`installAccess(createAccess({ permissions, roles }))`（SPA 一次）；`renderToString(page, { access })` / `mount(..., { access })`（SSR / 入口）
 - 权限码语义：裸码 = 读+写、`r.` = 只读、`w.` = 读+写；`superAdmins` 全放行
 
-详见 access-control.md。
+详见 access-context.md。
