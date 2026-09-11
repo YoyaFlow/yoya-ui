@@ -660,6 +660,10 @@ export class VTextarea extends HtmlElementNode {
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
 
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+
     this._setupTextarea(setup);
     this._syncClearPadding();
     this._syncClear();
@@ -795,18 +799,6 @@ export class VTextarea extends HtmlElementNode {
     this.setState('readonly', enabled);
     this._input.attr('readonly', enabled ? true : null);
     this._syncClear();
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
