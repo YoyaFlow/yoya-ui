@@ -12,6 +12,11 @@ const builtinKeys = new Set(['_attachHost', 'destroy', 'getState', 'setState', '
 
 /**
  * vStateNode 返回带状态的对象组件：不产生自己的 DOM 元素，
+ *
+ * @deprecated 已弃用（保留兼容路径，不再扩展）。动态值改用 `ref` / `computed`：
+ * 值位置直接传句柄（`attr(key, a)`、`vText(a)`），结构变化改用 `rebuildable()`
+ * 区域读取信号；`setState({ count: n })` 对应 `count.value = n`。
+ *
  * render 返回的视图根直接成为父节点落实的子节点；state 保存状态，
  * update 在状态变化后做局部更新；未提供 update 时，render 中登记的函数值
  * 绑定（vText/attr/style）会在 setState 后统一求值写回，没有绑定时回退为全量重建。

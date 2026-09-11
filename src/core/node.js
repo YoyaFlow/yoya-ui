@@ -717,6 +717,9 @@ export class ViewNode {
   /**
    * 声明本节点子树的数据来源：带参值函数 `(s) => value` 的 `s` 即 getter 的返回值。
    * 声明后覆盖宿主继承；区域内也可以声明，就近覆盖。
+   *
+   * @deprecated 待删除（见 `.scratch/signals/design.md` §9）：改用 `ref` / `computed`，
+   * 闭包直接引用句柄即可，不再需要为子树声明来源。
    */
   scope(getter) {
     if (typeof getter !== 'function') {

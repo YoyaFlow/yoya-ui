@@ -565,6 +565,10 @@ export function withI18nStringShortcut<T>(locale: I18n, build: () => T): T;
 // State node (vStateNode)
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated `vStateNode` 已弃用；动态值改用 `ref` / `computed` + 值位置直接传句柄，
+ * 结构变化改用 `rebuildable()` 区域读取信号。保留兼容路径，不再扩展。
+ */
 export interface StateNodeConfig<S extends Record<string, unknown> = Record<string, unknown>> {
   state?: S | (() => S);
   render(state: S, component: StateNodeComponent<S>): ChildInput;
@@ -572,7 +576,7 @@ export interface StateNodeConfig<S extends Record<string, unknown> = Record<stri
   [key: string]: any;
 }
 
-/** Object component returned by vStateNode(). */
+/** Object component returned by vStateNode(). @deprecated 配合 vStateNode 一起弃用。 */
 export interface StateNodeComponent<S extends Record<string, unknown> = Record<string, unknown>> {
   destroy(): StateNodeComponent<S>;
   getState(): S;
@@ -586,7 +590,11 @@ export interface StateNodeComponent<S extends Record<string, unknown> = Record<s
   [key: string]: any;
 }
 
-/** Creates a stateful object component with render/update lifecycle. */
+/**
+ * Creates a stateful object component with render/update lifecycle.
+ * @deprecated 用 `ref` / `computed` 替代：`setState({ count: 1 })` → `count.value = 1`，
+ * `update()` 触发的重建 → `rebuildable()` 区域读取信号。
+ */
 export function vStateNode<S extends Record<string, unknown> = Record<string, unknown>>(
   config: StateNodeConfig<S>
 ): StateNodeComponent<S>;
