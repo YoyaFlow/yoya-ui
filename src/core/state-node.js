@@ -10,6 +10,22 @@ import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 const lifecycleKeys = new Set(['state', 'render', 'update']);
 const builtinKeys = new Set(['_attachHost', 'destroy', 'getState', 'setState', 'subscribe']);
 
+let deprecationNotified = false;
+
+/** 弃用可观测性：devtools 开启时上报一次，不污染默认输出与生产路径。 */
+function notifyDeprecatedStateNode() {
+  if (deprecationNotified || !isDevtoolsEnabled()) {
+    return;
+  }
+
+  deprecationNotified = true;
+  emitDevtools({
+    type: 'deprecated',
+    api: 'vStateNode',
+    alternative: 'ref / computed + rebuildable() 区域读取信号'
+  });
+}
+
 /**
  * vStateNode 返回带状态的对象组件：不产生自己的 DOM 元素，
  *
@@ -27,6 +43,8 @@ export function vStateNode(config = {}) {
   if (typeof config.render !== 'function') {
     throw new TypeError('vStateNode requires a render function');
   }
+
+  notifyDeprecatedStateNode();
 
   const state = typeof config.state === 'function' ? config.state() : { ...(config.state || {}) };
   const listeners = new Set();
