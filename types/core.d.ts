@@ -20,11 +20,11 @@ import type { VThemeModeSwitch } from './theme.js';
 /** Class name input accepted by className()/class(): strings, arrays, falsy values. */
 export type ClassNameInput = string | number | null | undefined | false | ClassNameInput[];
 
-/** Attribute values supported by attr(). */
-export type AttrValue = string | number | boolean | null | undefined;
+/** Attribute values supported by attr(); a signal handle makes it a live binding. */
+export type AttrValue = string | number | boolean | null | undefined | SignalHandle<unknown>;
 
-/** Inline style values supported by style()/styles(). */
-export type StyleValue = string | number | null | undefined;
+/** Inline style values supported by style()/styles(); a signal handle makes it a live binding. */
+export type StyleValue = string | number | null | undefined | SignalHandle<unknown>;
 
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
@@ -446,7 +446,7 @@ export function registerChildFactories(
 export function resolveTarget(target: string | ParentNode): ParentNode | null;
 
 /** Creates a text node. */
-export function vText(content?: string | number): VTextNode;
+export function vText(content?: string | number | SignalHandle<unknown>): VTextNode;
 /** Alias of vText(). */
 export const text: typeof vText;
 
