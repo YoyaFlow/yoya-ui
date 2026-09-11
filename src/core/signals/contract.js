@@ -1,8 +1,8 @@
 import { defaultAdapter } from './engine.js';
 
-// 引擎契约：只要求「值单元 + 通知 + 依赖收集」，派生（computed）、调度与生命周期
-// 全部由 core 负责。契约越窄，换引擎的影响面越小（见 design.md §2.6、§5）。
-const REQUIRED_METHODS = ['collect', 'createSignal', 'peek', 'read', 'subscribe', 'write'];
+// 引擎契约：只要求「值单元 + 通知」四个方法，依赖收集、派生（computed）、调度与
+// 生命周期全部由 core 负责。契约越窄，换引擎的影响面越小（见 design.md §2.6、§5）。
+const REQUIRED_METHODS = ['createSignal', 'read', 'subscribe', 'write'];
 
 let installedAdapter = null;
 

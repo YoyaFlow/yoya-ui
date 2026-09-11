@@ -51,27 +51,12 @@ describe('default signals adapter', () => {
     expect(calls).toBe(1);
   });
 
-  it('collects exactly the sources read during the run', () => {
+  it('reads values back for several sources', () => {
     const a = adapter.createSignal(1);
     const unread = adapter.createSignal(2);
 
-    const result = adapter.collect(() => adapter.read(a) + 1);
-
-    expect(result.value).toBe(2);
-    expect(result.sources).toEqual([a]);
-    expect(result.sources).not.toContain(unread);
-  });
-
-  it('keeps nested collect results separate', () => {
-    const a = adapter.createSignal(1);
-    const b = adapter.createSignal(2);
-
-    const outer = adapter.collect(
-      () => adapter.read(a) + adapter.collect(() => adapter.read(b)).value
-    );
-
-    expect(outer.value).toBe(3);
-    expect(outer.sources).toEqual([a]);
+    expect(adapter.read(a)).toBe(1);
+    expect(adapter.read(unread)).toBe(2);
   });
 
   it('does not register dependencies for reads outside collect', () => {
@@ -85,16 +70,6 @@ describe('default signals adapter', () => {
     adapter.write(count, 1);
 
     expect(calls).toBe(1);
-  });
-
-  it('peek reads without registering a dependency', () => {
-    const a = adapter.createSignal(1);
-    const b = adapter.createSignal(2);
-
-    const result = adapter.collect(() => adapter.read(a) + adapter.peek(b));
-
-    expect(result.value).toBe(3);
-    expect(result.sources).toEqual([a]);
   });
 
   it('keeps shallow semantics for object values', () => {

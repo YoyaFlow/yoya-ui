@@ -1,4 +1,5 @@
 import { currentSignals } from './contract.js';
+import { withCollect } from './deps.js';
 
 /**
  * 响应式目标：把「求值」与「依赖订阅」分开。
@@ -32,7 +33,7 @@ export function createReactiveTarget({ run, onChange }) {
   };
 
   const evaluate = () => {
-    const result = adapter.collect(run);
+    const result = withCollect(run);
     sources = result.sources;
     value = result.value;
     evaluated = true;

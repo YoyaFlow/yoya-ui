@@ -2,6 +2,8 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext } from './context.js';
 import { isSignal } from './signals/handle.js';
+import { currentSignals } from './signals/contract.js';
+import { beginCollect, endCollect } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
 
 // 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
@@ -357,6 +359,53 @@ function activateBindings(node) {
       binding.activate();
     }
   });
+
+  activateRegion(node);
+}
+
+/** 收口区域内联捕获：builder 结束后记录本次依赖。 */
+function closeRegionCapture(node) {
+  const token = node._regionCaptureToken;
+  if (!token) {
+    return;
+  }
+
+  node._regionCaptureToken = null;
+  node._regionSources = endCollect(token);
+  node._regionAdapter = node._regionAdapter || currentSignals();
+}
+
+/** 区域进入 DOM 后订阅自己读到的 signal；服务端不订阅。 */
+function activateRegion(node) {
+  if (!node._rebuildable || node._regionActive) {
+    return;
+  }
+
+  node._regionActive = true;
+  subscribeRegion(node);
+}
+
+function releaseRegionSubscriptions(node) {
+  (node._regionSubs || []).forEach((dispose) => dispose());
+  node._regionSubs = [];
+}
+
+/** 按当前依赖重订区域订阅；每次重建后依赖集会变化，必须重订。 */
+function subscribeRegion(node) {
+  if (!node._regionActive || !node._regionAdapter) {
+    return;
+  }
+
+  releaseRegionSubscriptions(node);
+  node._regionSubs = (node._regionSources || []).map((source) =>
+    node._regionAdapter.subscribe(source, () => node.rebuild({ trigger: 'signal' }))
+  );
+}
+
+/** 区域销毁 / 离开 DOM 时退订。 */
+function releaseRegion(node) {
+  node._regionActive = false;
+  releaseRegionSubscriptions(node);
 }
 
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
@@ -553,6 +602,11 @@ export class ViewNode {
     this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
     this._rebuildable = false;
     this._regionScope = null; // 区域自持的绑定作用域
+    this._regionCaptureToken = null; // 区域内联捕获：rebuildable() 声明后开始收集依赖
+    this._regionSources = []; // 区域读到的 signal 依赖
+    this._regionAdapter = null; // 区域依赖所属引擎
+    this._regionActive = false; // 区域是否已进入 DOM 并订阅
+    this._regionSubs = [];
     this._ownBindingScope = null; // 节点自己的来源：scope() 声明或零参绑定的隐式归属
     this._regionGuard = null;
     this._rebuildPending = false;
@@ -586,6 +640,7 @@ export class ViewNode {
         setupStack.pop();
         // scope() 可能在 setup 中途替换过作用域，这里恢复到外层。
         activeBindingScope = previousScope;
+        closeRegionCapture(this);
       }
 
       // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
@@ -619,6 +674,13 @@ export class ViewNode {
 
     this._rebuildable = true;
     this._regionGuard = predicate || null;
+
+    // 区域在自己 builder 中途声明：从此刻起捕获后续读取的 signal，
+    // builder 返回时由 setup() 收口（约定：先 rebuildable()，再读数据）。
+    if (setupStack[setupStack.length - 1] === this && !this._regionCaptureToken) {
+      this._regionAdapter = currentSignals();
+      this._regionCaptureToken = beginCollect();
+    }
 
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
@@ -774,9 +836,13 @@ export class ViewNode {
     previousChildren.forEach((child) => this._pendingRemovals.add(child));
 
     this._regionRunning = true;
+    const regionToken = beginCollect();
+    const previousSources = this._regionSources;
     try {
       this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
     } catch (error) {
+      endCollect(regionToken);
+      this._regionSources = previousSources;
       releaseBindings(
         collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
       );
@@ -792,6 +858,7 @@ export class ViewNode {
     } finally {
       this._regionRunning = false;
     }
+    this._regionSources = endCollect(regionToken);
 
     releaseBindings([...previousBindings]);
     previousCleanups.forEach((cleanup) => cleanup());
@@ -799,6 +866,7 @@ export class ViewNode {
     this._rebuildPending = false;
     this._regionLastRun = 'rebuild';
     emitRegionEvent(this, 'rebuild', trigger);
+    subscribeRegion(this);
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
     }
@@ -1219,6 +1287,7 @@ export class ViewNode {
     }
     this._deleted = true;
     releaseBindings(collectRegionBindings(this));
+    releaseRegion(this);
     if (Array.isArray(this._regionRunCleanups)) {
       this._regionRunCleanups.forEach((cleanup) => cleanup());
       this._regionRunCleanups = [];

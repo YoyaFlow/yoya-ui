@@ -6,24 +6,10 @@ import {
   untracked as engineUntracked
 } from './vendor/signals-core.js';
 
-// 当前求值期间的收集器栈。读值走 read()，所以依赖收集由我们自己做，
-// 不依赖具体引擎的追踪实现——换引擎时依赖语义不变（见 design.md §2.6）。
-const collectors = [];
-
-function recordRead(source) {
-  const current = collectors.length > 0 ? collectors[collectors.length - 1] : null;
-  if (current) {
-    current.push(source);
-  }
-}
-
-function uniqueSources(sources) {
-  return sources.filter((source, index) => sources.indexOf(source) === index);
-}
-
 /**
- * 内化默认引擎适配器：只提供「值单元 + 变更通知 + 依赖收集」，
- * computed 由 core 自己实现，保证换引擎后派生语义一致。
+ * 内化默认引擎适配器：只提供「值单元 + 变更通知」。
+ * 依赖收集、派生（computed）、调度与生命周期全部在 core，
+ * 因此换引擎不会改变依赖语义与派生语义（见 design.md §2.6、§14）。
  */
 export const defaultAdapter = {
   name: 'yoya-signals-core',
@@ -32,15 +18,9 @@ export const defaultAdapter = {
     return engineSignal(initial);
   },
 
-  /** 追踪感知读取：在 collect 内读取会被记入依赖。 */
+  /** 读取当前值；是否登记依赖由 core 的收集器决定（core 在读到值前后自行记录）。 */
   read(source) {
-    recordRead(source);
     return source.value;
-  },
-
-  /** 不建立依赖地读取。 */
-  peek(source) {
-    return source.peek();
   },
 
   write(source, value) {
@@ -63,17 +43,6 @@ export const defaultAdapter = {
     });
     seenInitial = true;
     return dispose;
-  },
-
-  /** 在追踪上下文内求值，并返回本次读到的依赖（去重、保序）。 */
-  collect(fn) {
-    const list = [];
-    collectors.push(list);
-    try {
-      return { value: fn(), sources: uniqueSources(list) };
-    } finally {
-      collectors.pop();
-    }
   },
 
   batch(fn) {

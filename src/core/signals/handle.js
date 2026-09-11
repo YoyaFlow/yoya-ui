@@ -1,4 +1,5 @@
 import { currentSignals } from './contract.js';
+import { recordRead, withCollect, withoutCollect } from './deps.js';
 
 // 句柄品牌：用 Symbol.for 让同一页面里的多份 yoya-ui 副本也能互相识别，
 // 与 instanceof 相比不受模块重复打包影响。
@@ -21,6 +22,7 @@ export class SignalHandle {
       this._beforeRead();
     }
 
+    recordRead(this._source);
     return this._adapter.read(this._source);
   }
 
@@ -38,7 +40,7 @@ export class SignalHandle {
       this._beforeRead();
     }
 
-    return this._adapter.peek(this._source);
+    return withoutCollect(() => this._adapter.read(this._source));
   }
 
   /** 底层订阅：返回退订函数，不自动跑首次。 */
@@ -94,7 +96,7 @@ export function computed(fn) {
     disposers.forEach((dispose) => dispose());
     disposers = [];
 
-    const { value, sources } = adapter.collect(fn);
+    const { value, sources } = withCollect(fn);
     sources.forEach((dependency) => {
       disposers.push(adapter.subscribe(dependency, recompute));
     });
