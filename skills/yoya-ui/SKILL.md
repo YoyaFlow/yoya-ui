@@ -56,7 +56,7 @@ div((root) => {
 
 字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
 
-需要状态（计数、开关、加载态）用内置信号：`const count = ref(0)`，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。`vStateNode` 已弃用（保留兼容 + devtools 弃用提示），新代码不要再用。
+需要状态（计数、开关、加载态）用内置信号：`const count = ref(0)`，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。
 
 需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：声明 `rebuildable(谓词?)` 后，区域内读到的信号就成为它的依赖，信号变化时自动按谓词重建（也可手动 `rebuild()`）。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷值并记 `rebuildPending()`。详见 references/state.md。
 

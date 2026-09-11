@@ -86,7 +86,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 状态与更新
 
-yoya-ui 的状态分三层：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）；**组件内部命令式状态**仍用节点级 `state({...})` + `registerStateAttrs` / `registerStateHandler` + `setState`/`getState`（`state()` 是幂等种子，`setState` 单值与 patch 同义、写完自动 `flushAll()`，构建期只写状态）。组件可继续暴露链式状态 API（`value(next)`、`disabled(next)`）。`vStateNode` 已弃用；`scope()` 已删除。
+yoya-ui 的状态分三层：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）；**组件内部命令式状态**仍用节点级 `state({...})` + `registerStateAttrs` / `registerStateHandler` + `setState`/`getState`（`state()` 是幂等种子，`setState` 单值与 patch 同义、写完自动 `flushAll()`，构建期只写状态）。组件可继续暴露链式状态 API（`value(next)`、`disabled(next)`）。
 
 Signals 的句柄与绑定、区域依赖捕获与谓词门禁、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 

@@ -167,7 +167,7 @@ export default {
 
 - **局部状态**：对象组件闭包或返回对象上的属性
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法，`subscribe(listener)` 通知视图更新
-- **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`；`vStateNode` 已弃用
+- **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态、再通知订阅者；需要"结构随数据变化"时可在组件内用可重建区域（见 core.md）
 
 ```js
@@ -276,7 +276,7 @@ page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 ```js
 // 同一个文件内：块组件 PascalCase 命名并描述 UI 单元；输入显式、产出 ViewNode
 function MemberSummary({ stats }) {
-  // 值变化走函数值绑定：只写回文本，不重建节点
+  // 值变化走值绑定：只写回文本，不重建节点
   return p((line) => line.child(vText(() => `共 ${stats().total} 人`)));
 }
 
@@ -312,7 +312,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 
 - 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名
 - **活数据用 getter 传**：`MemberRows({ rows: () => state.members })` 而不是 `rows: state.members`——数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的还是旧值；回写一律走回调（`onSelect(id)`）。不要在块组件里隐式读取外层状态，这样它才能独立阅读、单独替换，必要时直接提升为可复用组件
-- **块内的更新分工**：值变化用函数值绑定（`vText(() => …)`、`attr(name, () => …)`），结构变化用区域——块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter 取当前数据；区域外的输入框等节点不会因此被重建
+- **块内的更新分工**：值变化用值绑定（信号优先：`vText(signal)`、`attr(name, signal)`），结构变化用区域——块在自己那层声明 `rebuildable()`，并在 builder 里读当前数据；区域外的输入框等节点不会因此被重建
 - 一个块只负责自己那块的 DOM；跨块共享的状态、格式化与样式 token 放在模块级 helper 或组件入口
 - 深度以读得懂为界：2–3 层通常足够；更深时先问「这一层该不该独立成组件（或拆文件）」
 
