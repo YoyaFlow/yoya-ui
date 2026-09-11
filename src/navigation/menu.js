@@ -731,6 +731,8 @@ export class VSidebar extends HtmlElementNode {
     const menuId = allocateId('yoya-vsidebar-menu');
     this._responsiveCleanup = null;
     this._collapsible = true;
+    // 内部状态用 ref 持有（票 01 约定）；collapsed 是「默认真」写方法，无参不是读
+    this._collapsed = ref(false);
     this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
     this._toggle = new VButton('‹')
       .className('yoya-vsidebar-toggle')
@@ -748,7 +750,7 @@ export class VSidebar extends HtmlElementNode {
       .className('yoya-vsidebar-menu')
       .attr('aria-label', '侧边导航菜单');
     this._menu._sidebarContentChangeCallback = () =>
-      setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+      setSidebarContentCollapsed(this._menu, this._collapsed.value, this);
     this._menu.on('yoya:menuitem-statechange', this._menu._sidebarContentChangeCallback);
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
@@ -764,7 +766,7 @@ export class VSidebar extends HtmlElementNode {
         !this._collapsible ||
         event.key !== 'Escape' ||
         event.defaultPrevented ||
-        this.getBooleanState('collapsed')
+        this._collapsed.value
       ) {
         return;
       }
@@ -810,7 +812,7 @@ export class VSidebar extends HtmlElementNode {
     }
 
     setupContentSlot(this._menu, setup);
-    setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+    setSidebarContentCollapsed(this._menu, this._collapsed.value, this);
     return this;
   }
 
@@ -820,7 +822,7 @@ export class VSidebar extends HtmlElementNode {
     }
 
     const collapsed = Boolean(value);
-    this.setState('collapsed', collapsed);
+    this._collapsed.value = collapsed;
     this.attr('data-collapsed', collapsed ? 'true' : null);
     this._toggle
       .label(collapsed ? '›' : '‹')
@@ -838,7 +840,7 @@ export class VSidebar extends HtmlElementNode {
   }
 
   toggle() {
-    return this.collapsed(!this.getBooleanState('collapsed'));
+    return this.collapsed(!this._collapsed.value);
   }
 
   responsive(query = '(max-width: 768px)') {
@@ -966,22 +968,22 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   const originalOpen = submenu.open.bind(submenu);
   submenu.open = (value) => {
     const result = originalOpen(value);
-    if (value && !submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
+    if (value && !submenu._disabled.value && sidebar._collapsed.value) {
       sidebar.collapsed(false);
     }
     sidebar.style(
       'overflow',
-      submenu.getBooleanState('open') && !submenu._inline ? 'visible' : 'hidden'
+      submenu._open.value && !submenu._inline ? 'visible' : 'hidden'
     );
     return result;
   };
-  if (submenu.getBooleanState('open')) {
+  if (submenu._open.value) {
     sidebar.style('overflow', submenu._inline ? 'hidden' : 'visible');
   }
   submenu._trigger.on('keydown', (event) => {
     if (
-      !submenu.getBooleanState('disabled') &&
-      sidebar.getBooleanState('collapsed') &&
+      !submenu._disabled.value &&
+      sidebar._collapsed.value &&
       ['ArrowRight', 'Enter', ' ', 'Spacebar'].includes(event.key)
     ) {
       sidebar.collapsed(false);
