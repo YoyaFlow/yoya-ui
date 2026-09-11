@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VMenu } from '../navigation/menu.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { ref } from '../core/signals/handle.js';
 import {
   createComponentFactory,
   componentClass,
@@ -14,6 +15,8 @@ export class VContextMenu extends HtmlElementNode {
     super('div', null);
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
+    // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
+    this._open = ref(false);
     this._target = new HtmlElementNode('div')
       .className('yoya-vcontext-target')
       .on('contextmenu', (event) => {
@@ -75,7 +78,7 @@ export class VContextMenu extends HtmlElementNode {
   open(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('open', enabled);
+    this._open.value = enabled;
     this.attr('data-open', enabled ? 'true' : null);
 
     if (enabled) {
