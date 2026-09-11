@@ -485,10 +485,16 @@ export function applyAttribute(element, name, value) {
     return;
   }
 
-  element.setAttribute(name, String(value));
+  const text = String(value);
+  element.setAttribute(name, text);
 
   if (name in element) {
     try {
+      // 已经是目标值就不再写 property：输入类元素上重复写 value 会把光标/选区顶到末尾。
+      if (element[name] === value || element[name] === text) {
+        return;
+      }
+
       element[name] = value;
     } catch {
       // 某些 DOM property 是只读的，忽略即可。

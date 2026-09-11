@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ViewNode, computed, div, installSignals, ref, vText } from '../index.js';
+import { ViewNode, computed, div, input, installSignals, ref, vText } from '../index.js';
 
 afterEach(() => {
   installSignals(null);
@@ -123,5 +123,31 @@ describe('signal value bindings', () => {
 
     active.value = false;
     expect(element.className).not.toContain('is-active');
+  });
+
+  it('skips the value property write when the dom already matches', () => {
+    const name = ref('');
+    const field = input((el) => el.attr('value', name));
+    const element = field.renderDom();
+    let writes = 0;
+    let current = 'Ada';
+
+    Object.defineProperty(element, 'value', {
+      configurable: true,
+      get: () => current,
+      set: (next) => {
+        writes += 1;
+        current = next;
+      }
+    });
+
+    name.value = 'Ada';
+
+    expect(writes).toBe(0);
+
+    name.value = 'Grace';
+
+    expect(writes).toBe(1);
+    expect(current).toBe('Grace');
   });
 });
