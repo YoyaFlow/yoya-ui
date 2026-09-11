@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { ref } from '../core/signals/handle.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -183,6 +184,10 @@ export class VMenu extends HtmlElementNode {
 export class VMenuItem extends HtmlElementNode {
   constructor(setup = null) {
     super('button', null);
+    // 内部状态用 ref 持有（票 01 约定）；active/danger/disabled 是「默认真」写方法，无参不是读
+    this._active = ref(false);
+    this._danger = ref(false);
+    this._disabled = ref(false);
     this._iconBox = new HtmlElementNode('span')
       .className('yoya-vmenu-item-icon')
       .attr('aria-hidden', 'true')
@@ -235,7 +240,7 @@ export class VMenuItem extends HtmlElementNode {
   active(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('active', enabled);
+    this._active.value = enabled;
     this.attr('data-active', enabled ? 'true' : null);
     this.attr('aria-current', enabled ? 'page' : null);
     return this;
@@ -244,7 +249,7 @@ export class VMenuItem extends HtmlElementNode {
   danger(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('danger', enabled);
+    this._danger.value = enabled;
     this.attr('data-danger', enabled ? 'true' : null);
     return this;
   }
@@ -257,7 +262,7 @@ export class VMenuItem extends HtmlElementNode {
   disabled(value) {
     const enabled = Boolean(value);
 
-    this.setState('disabled', enabled);
+    this._disabled.value = enabled;
     this.attr('disabled', enabled ? true : null);
     this.attr('aria-disabled', enabled ? 'true' : null);
     if (this._el) {
