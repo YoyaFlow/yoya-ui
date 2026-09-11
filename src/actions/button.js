@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { applyPropValue } from '../core/node.js';
+import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
   applyComponentArguments,
@@ -21,6 +22,8 @@ export class VButton extends HtmlElementNode {
     this._focused = false;
     this._hovered = false;
     this._pressed = false;
+    this._disabled = ref(false); // 内部状态：不暴露信号，对外仍走 disabled() 方法
+    this._loading = ref(false);
     this._labelBox = new HtmlElementNode('span').className('yoya-vbutton-label');
     this._loadingBox = new HtmlElementNode('span')
       .className('yoya-vbutton-spinner')
@@ -95,9 +98,10 @@ export class VButton extends HtmlElementNode {
   }
 
   disabled(value) {
-    this.setState('disabled', Boolean(value));
-    this.attr('disabled', value ? true : null);
-    if (value) {
+    const enabled = Boolean(value);
+    this._disabled.value = enabled;
+    this.attr('disabled', enabled ? true : null);
+    if (enabled) {
       this._hovered = false;
       this._pressed = false;
     }
@@ -107,7 +111,7 @@ export class VButton extends HtmlElementNode {
 
   loading(value) {
     const enabled = Boolean(value);
-    this.setState('loading', enabled);
+    this._loading.value = enabled;
     this.attr('aria-busy', enabled ? 'true' : null);
     this.attr('data-loading', enabled ? 'true' : null);
     this._loadingBox.textContent(enabled ? '...' : '');
@@ -117,7 +121,7 @@ export class VButton extends HtmlElementNode {
 
   _bindInteractionEffects() {
     this.on('mouseenter', () => {
-      if (!this.getBooleanState('disabled')) {
+      if (!this._disabled.value) {
         this._hovered = true;
         this._syncInteractionStyles();
       }
@@ -128,7 +132,7 @@ export class VButton extends HtmlElementNode {
       this._syncInteractionStyles();
     });
     this.on('mousedown', (event) => {
-      if (!this.getBooleanState('disabled') && event.button === 0) {
+      if (!this._disabled.value && event.button === 0) {
         this._pressed = true;
         this._syncInteractionStyles();
       }
@@ -138,7 +142,7 @@ export class VButton extends HtmlElementNode {
       this._syncInteractionStyles();
     });
     this.on('focus', () => {
-      if (!this.getBooleanState('disabled')) {
+      if (!this._disabled.value) {
         this._focused = true;
         this._syncInteractionStyles();
       }
@@ -149,7 +153,7 @@ export class VButton extends HtmlElementNode {
       this._syncInteractionStyles();
     });
     this.on('keydown', (event) => {
-      if (!this.getBooleanState('disabled') && ['Enter', ' ', 'Spacebar'].includes(event.key)) {
+      if (!this._disabled.value && ['Enter', ' ', 'Spacebar'].includes(event.key)) {
         this._pressed = true;
         this._syncInteractionStyles();
       }
@@ -163,7 +167,7 @@ export class VButton extends HtmlElementNode {
   }
 
   _interactionState() {
-    if (this.getBooleanState('disabled')) {
+    if (this._disabled.value) {
       return 'disabled';
     }
 
