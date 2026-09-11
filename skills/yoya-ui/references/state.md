@@ -22,6 +22,18 @@ const counter = vStateNode({
 });
 ```
 
+> **更新（0.5 开发线）：本文描述的 `scope()` 与参数化绑定 `(s) => …` 已删除。**
+> 当前模型以本节为准，其余段落仅作历史参考：
+>
+> - **动态值**：`const a = ref(0)`，值位置直接传句柄 —— `attr(key, a)`、`style(key, a)`、
+>   `vText(a)`、`toggleClass(name, flag)`、组件 props（`vInput({ value: a, disabled: b })`）。
+>   `computed` 由 core 实现（惰性 + 缓存 + 只读）。
+> - **结构变化**：`rebuildable()` 区域；区域内读到的 signal 成为依赖，变化时按谓词门禁重建。区域不必再声明数据来源。
+> - **写回**：不做 `model` 双向绑定；用显式事件处理器 `oninput: (e) => { a.value = e.target.value; }`。表单收集仍是 `vForm` + `name()`。
+> - **两端同码**：构建期求值一次（服务端到此为止，只输出快照），订阅在 `renderDom()` 激活、`destroy()` / 区域重跑释放。
+> - **`vStateNode` 已弃用**（保留兼容，devtools 开启时上报一次 `deprecated` 事件）；节点级 `state()` / `setState()` 仍是组件内部状态手段。
+> - **引擎可替换**：契约只有 `createSignal` / `read` / `write` / `subscribe`；依赖收集与 `computed` 都在 core，换引擎不改变语义。
+
 ## 三种更新路径
 
 `setState(patch)` 之后按以下顺序决定如何更新：
@@ -144,9 +156,9 @@ const card = div((root) => {
 card.flush(); // 一次刷整棵子树
 ```
 
-- 来源解析顺序：**节点自己声明的 `scope()` > 构建栈上最近声明的 `scope()` > 宿主继承 > 无**；不合并、不按 key 向上找。
+- 来源解析顺序（`scope()` 已删除后）：**宿主 state > 区域继承 > 无**；不合并、不按 key 向上找。
 - 带参绑定没有来源时在**构建期**报错（`parameterized value requires a data source`），避免求值期才炸 `Cannot read properties of undefined`；零参闭包不报。
-- `scope()` 只影响**值**：结构变化仍然只由 `rebuildable()` 决定（节点级重建必须声明 `rebuildable()`，否则 `rebuild()` 抛错）。
+- 结构变化仍然只由 `rebuildable()` 决定（节点级重建必须声明 `rebuildable()`，否则 `rebuild()` 抛错）。
 - **在作用域内建，不要先建后挂**：绑定在登记那一刻捕获作用域，先建好的子树不会获得后来声明的来源。
 - 自持绑定的节点被挂进组件树后，宿主 `setState` 不会驱动它（它的绑定不在宿主作用域里），要自己 `flush()`。
-- 绑定函数必须是**纯函数**：只依赖来源数据（`scope()` / 宿主 state / 每请求数据），不读 `document` / `window` / `Date.now()` / `Math.random()`——它在服务端构建期会求值一次。
+- 绑定函数与 signal 初值必须是**确定性且 DOM-free**：只依赖宿主 state / 每请求数据，不读 `document` / `window` / `Date.now()` / `Math.random()`——服务端构建期会求值一次。
