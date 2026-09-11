@@ -1577,6 +1577,13 @@ export class VCheckboxes extends HtmlElementNode {
       minWidth: '0'
     });
 
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+      this._items.forEach((item) => item.disabled(enabled));
+    });
+
     this._setupCheckboxes(setup);
   }
 
@@ -1617,18 +1624,9 @@ export class VCheckboxes extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    this._items.forEach((item) => item.disabled(enabled));
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   options(value) {
@@ -1900,6 +1898,13 @@ export class VRadios extends HtmlElementNode {
       minWidth: '0'
     });
 
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+      this._items.forEach((item) => item.disabled(enabled));
+    });
+
     this._setupRadios(setup);
   }
 
@@ -1924,18 +1929,9 @@ export class VRadios extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    this._items.forEach((item) => item.disabled(enabled));
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   change(handler) {
