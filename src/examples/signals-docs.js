@@ -1,29 +1,21 @@
-import { signal, computed, effect } from '@preact/signals-core';
-import { div, section, vCard, vText } from '../index.js';
+import { computed, div, ref, section, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含 vCardBody 内容与操作方法，不包含 Card 和按钮。
 function SignalCounter() {
-  const count = signal(0);
+  const count = ref(0);
   const double = computed(() => count.value * 2);
-  const countText = vText('0');
-  const doubleText = vText('0');
-
-  effect(() => {
-    countText.textContent(String(count.value));
-    doubleText.textContent(String(double.value));
-  });
 
   return {
     render() {
       return div((body) => {
         body.div((row) => {
           row.span('当前计数：');
-          row.span((el) => el.attr('data-signals-count', 'true').child(countText));
+          row.span((el) => el.attr('data-signals-count', 'true').child(vText(count)));
         });
         body.div((row) => {
           row.span('派生值 ×2：');
-          row.span((el) => el.attr('data-signals-double', 'true').child(doubleText));
+          row.span((el) => el.attr('data-signals-double', 'true').child(vText(double)));
         });
       });
     },
@@ -37,14 +29,9 @@ function SignalCounter() {
 }
 
 function SignalInput() {
-  const name = signal('');
+  const name = ref('');
   const length = computed(() => name.value.length);
   const format = () => `当前输入：${name.value}，长度：${length.value}`;
-  const output = vText(format());
-
-  effect(() => {
-    output.textContent(format());
-  });
 
   return {
     render() {
@@ -61,7 +48,7 @@ function SignalInput() {
         });
         body.div((row) => {
           row.span('输出：');
-          row.span((el) => el.attr('data-signals-output', 'true').child(output));
+          row.span((el) => el.attr('data-signals-output', 'true').child(vText(computed(format))));
         });
       });
     },
@@ -75,19 +62,14 @@ function SignalInput() {
 }
 
 function SignalSharedCounter() {
-  const count = signal(0);
-  const countText = vText('0');
-
-  effect(() => {
-    countText.textContent(String(count.value));
-  });
+  const count = ref(0);
 
   return {
     render() {
       return div((body) => {
         body.div((row) => {
           row.span('共享计数：');
-          row.span((el) => el.attr('data-signals-shared-count', 'true').child(countText));
+          row.span((el) => el.attr('data-signals-shared-count', 'true').child(vText(count)));
         });
       });
     },
@@ -188,10 +170,7 @@ const signalsDemos = [
     id: 'counter',
     live: SignalCounterDemo,
     component: SignalCounter,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'computed', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
+    imports: [{ from: 'yoya-ui', names: ['computed', 'div', 'ref', 'vText'] }],
     sourceTitle: '计数器核心源码',
     title: '计数器与派生值'
   },
@@ -199,10 +178,7 @@ const signalsDemos = [
     id: 'input',
     live: SignalInputDemo,
     component: SignalInput,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'computed', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
+    imports: [{ from: 'yoya-ui', names: ['computed', 'div', 'ref', 'vText'] }],
     sourceTitle: '输入核心源码',
     title: '输入保持焦点'
   },
@@ -210,10 +186,7 @@ const signalsDemos = [
     id: 'shared',
     live: SignalSharedDemo,
     component: SignalSharedCounter,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
+    imports: [{ from: 'yoya-ui', names: ['div', 'ref', 'vText'] }],
     sourceTitle: '共享状态核心源码',
     title: '跨组件共享状态'
   }

@@ -800,7 +800,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-signals-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
-    ).toContain("from '@preact/signals-core'");
+    ).toContain("from 'yoya-ui'");
     expect(
       page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
     ).not.toContain('vCard');
