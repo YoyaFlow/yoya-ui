@@ -9,6 +9,7 @@ import { VTagsInput } from './tags-input.js';
 import { VAutocomplete } from './autocomplete.js';
 import {
   applyComponentSetup,
+  booleanMethod,
   componentClass,
   createComponentFactory,
   isPlainObject,
@@ -105,6 +106,11 @@ export class VInput extends HtmlElementNode {
     this._input.on('input', () => this._syncClear());
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
 
     this._setupInput(setup);
     this._syncClearPadding();
@@ -245,18 +251,6 @@ export class VInput extends HtmlElementNode {
     this.setState('readonly', enabled);
     this._input.attr('readonly', enabled ? true : null);
     this._syncClear();
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
