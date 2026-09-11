@@ -968,6 +968,10 @@ export class VSelect extends HtmlElementNode {
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
 
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+
     this._setupSelect(setup);
     this._syncClearPadding();
     this._syncClear();
@@ -1094,18 +1098,6 @@ export class VSelect extends HtmlElementNode {
     this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
     this._input.style('opacity', enabled ? '0.64' : '1');
     this._syncClear();
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
     return this;
   }
 
