@@ -95,17 +95,9 @@ div((list) => {
 - 每次重建会重捕依赖，所以条件分支切换后依赖集正确。
 - 服务端只建一次（没有写入），重建只发生在客户端。
 
-## 与组件内部状态的分工
+## 组件作者注意
 
-节点级 `state()` / `setState()` / `registerStateHandler()` 是**组件内部命令式状态**，与信号是两套机制，都保留：
-
-| 场景                             | 用什么                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| 页面 / 业务数据驱动视图          | 信号（`ref` / `computed`）                                                |
-| 结构随数据变化                   | `rebuildable()` 区域读信号                                                |
-| 组件内部标记（展开、悬停、禁用） | 节点级 `state({ open: false })` + `setState()` + `registerStateHandler()` |
-
-组件作者注意：自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`。
+自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`。组件可暴露链式 API（`value(next)`、`disabled(next)`），但对外只暴露方法，不要让使用者直接持有内部信号。
 
 ## 引擎与替换
 
