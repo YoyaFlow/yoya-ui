@@ -121,6 +121,19 @@ export class VInput extends HtmlElementNode {
     this.required = booleanMethod(this, 'required', false, (enabled) => {
       this._input.attr('required', enabled ? true : null);
     });
+    this.error = booleanMethod(this, 'error', false, (enabled) => {
+      this._input.attr('data-error', enabled ? 'true' : null);
+      this._input.style(
+        'borderColor',
+        enabled
+          ? themeValue('color-danger', '#dc2626')
+          : themeValue('color-border-strong', '#cbd5e1')
+      );
+      this._input.style(
+        'boxShadow',
+        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+      );
+    });
 
     this._setupInput(setup);
     this._syncClearPadding();
@@ -245,24 +258,8 @@ export class VInput extends HtmlElementNode {
     return this._readonly.value;
   }
 
-  error(value) {
-    if (value === undefined) {
-      return this.getBooleanState('error');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('error', enabled);
-    this._input.attr('data-error', enabled ? 'true' : null);
-    this._input.style(
-      'borderColor',
-      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
-    );
-    this._input.style(
-      'boxShadow',
-      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
-    );
-    return this;
+  isError() {
+    return this._error.value;
   }
 
   clearable(value) {
