@@ -2,6 +2,7 @@ import { HtmlElementNode } from '../html/index.js';
 import { registerChildFactories, vText } from '../core/node.js';
 import {
   applyComponentArguments,
+  booleanMethod,
   componentClass,
   createComponentFactory,
   isPlainObject,
@@ -60,6 +61,17 @@ export class VSlider extends HtmlElementNode {
 
     this.child(this._input, this._valueLabel);
     this._sync();
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('data-disabled', enabled ? 'true' : null);
+      this._input.attr('disabled', enabled ? true : null);
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this.attr('data-required', enabled ? 'true' : null);
+      this._input.attr('required', enabled ? true : null);
+    });
+
     this._setupSlider(setup);
     applyComponentArguments(this, options, callback);
   }
@@ -141,16 +153,9 @@ export class VSlider extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const disabled = Boolean(value);
-    this.setState('disabled', disabled);
-    this.attr('data-disabled', disabled ? 'true' : null);
-    this._input.attr('disabled', disabled ? true : null);
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   name(value) {
@@ -159,16 +164,6 @@ export class VSlider extends HtmlElementNode {
     }
     this.attr('data-name', value ? String(value) : null);
     this._input.attr('name', value ? String(value) : null);
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-    this.setState('required', Boolean(value));
-    this.attr('data-required', value ? 'true' : null);
-    this._input.attr('required', value ? true : null);
     return this;
   }
 
