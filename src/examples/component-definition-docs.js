@@ -238,7 +238,7 @@ const componentDefinitionDemos = [
     component: ComplexWorkbenchExample,
     extraSource: complexBlocksSource,
     id: 'complex-blocks',
-    imports: ['hstack', 'input', 'li', 'ul', 'vStateNode', 'vText', 'vstack'],
+    imports: ['computed', 'hstack', 'input', 'li', 'ref', 'ul', 'vText', 'vstack'],
     sourceTitle: '复杂组件分块源码',
     title: '复杂组件：结构块也是组件'
   }
