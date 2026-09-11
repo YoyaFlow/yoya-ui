@@ -1,6 +1,8 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext } from './context.js';
+import { isSignal } from './signals/handle.js';
+import { createReactiveTarget } from './signals/runtime.js';
 
 // 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
 // 因此用注册方式桥接，避免循环引用。
@@ -138,15 +140,23 @@ function registerNodeBinding(owner, kind, key, read, commit) {
     throw new TypeError(parameterizedValueError(kind, key));
   }
 
-  const binding = {
+  let binding = null;
+  const target = createReactiveTarget({
+    run: () => read(scope.getState()),
+    onChange: (value) => commitBindingValue(binding, value)
+  });
+
+  binding = {
     commit,
     committed: false,
-    evaluate: () => read(scope.getState()),
+    evaluate: () => target.evaluate(),
     key,
     kind,
     last: undefined,
     list: scope.bindings,
-    owner
+    owner,
+    activate: () => target.activate(),
+    release: () => target.release()
   };
 
   bindingSerial += 1;
@@ -168,6 +178,18 @@ function parameterizedValueError(kind, key) {
     `parameterized value requires a data source (${kind}${key ? ` "${key}"` : ''}); ` +
     'declare scope(fn) or use a zero-argument closure'
   );
+}
+
+/**
+ * 值位置既接受读函数，也接受 signal 句柄；统一归一成读函数。
+ * 句柄自带数据来源，因此按零参绑定处理，不需要 scope()。
+ */
+function toBindingRead(value) {
+  if (isSignal(value)) {
+    return () => value.value;
+  }
+
+  return value;
 }
 
 /**
@@ -284,6 +306,10 @@ export function childTraversalRoots(node) {
 /** 解除给定绑定：从所属列表与 owner 名下同时移除。 */
 function releaseBindings(bindings) {
   bindings.forEach((binding) => {
+    if (typeof binding.release === 'function') {
+      binding.release();
+    }
+
     if (binding.list) {
       const index = binding.list.indexOf(binding);
       if (index !== -1) {
@@ -301,15 +327,28 @@ function releaseBindings(bindings) {
   });
 }
 
+/** 写回一次绑定值；值未变化时不触碰 DOM。 */
+function commitBindingValue(binding, next) {
+  if (!binding.committed || !Object.is(next, binding.last)) {
+    binding.committed = true;
+    binding.last = next;
+    binding.commit(next);
+  }
+}
+
+/** 节点及其子树的绑定进入 DOM 后开始订阅依赖（服务端只求值不订阅）。 */
+function activateBindings(node) {
+  node._bindings.forEach((binding) => {
+    if (typeof binding.activate === 'function') {
+      binding.activate();
+    }
+  });
+}
+
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
 function flushBindingsIn(node) {
   node._bindings.forEach((binding) => {
-    const next = binding.evaluate();
-    if (!binding.committed || !Object.is(next, binding.last)) {
-      binding.committed = true;
-      binding.last = next;
-      binding.commit(next);
-    }
+    commitBindingValue(binding, binding.evaluate());
   });
   childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
 }
@@ -1201,8 +1240,10 @@ export class VTextNode extends ViewNode {
     this._content = '';
     this._textNode = null;
 
-    if (typeof content === 'function') {
-      registerNodeBinding(this, 'text', null, content, (next) => this.textContent(next));
+    if (typeof content === 'function' || isSignal(content)) {
+      registerNodeBinding(this, 'text', null, toBindingRead(content), (next) =>
+        this.textContent(next)
+      );
       return;
     }
 
@@ -1214,8 +1255,10 @@ export class VTextNode extends ViewNode {
       return this._content;
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding(this, 'text', null, value, (next) => this.textContent(next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'text', null, toBindingRead(value), (next) =>
+        this.textContent(next)
+      );
       return this;
     }
 
@@ -1239,6 +1282,8 @@ export class VTextNode extends ViewNode {
       this._textNode = document.createTextNode(this._content);
       this._el = this._textNode;
     }
+
+    activateBindings(this);
 
     return this._textNode;
   }
@@ -1669,8 +1714,10 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding(this, 'attr', name, value, (next) => this.attr(name, next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'attr', name, toBindingRead(value), (next) =>
+        this.attr(name, next)
+      );
       return this;
     }
 
@@ -1748,6 +1795,27 @@ export class ElementNode extends ViewNode {
   }
 
   /**
+   * 把布尔值（或信号）绑定到类名的有无。
+   * 动态类名不能走 attr('class', …)：className() 是累加集合，_syncClassName() 会回写 class。
+   */
+  toggleClass(name, value) {
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'class', name, toBindingRead(value), (next) =>
+        this.toggleClass(name, Boolean(next))
+      );
+      return this;
+    }
+
+    if (value) {
+      return this.className(name);
+    }
+
+    this._classes.delete(name);
+    this._syncClassName();
+    return this;
+  }
+
+  /**
    * 读写单个样式；传入对象时转给 styles() 批量处理。
    */
   style(name, value) {
@@ -1759,8 +1827,10 @@ export class ElementNode extends ViewNode {
       return this.styles(name);
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding(this, 'style', name, value, (next) => this.style(name, next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'style', name, toBindingRead(value), (next) =>
+        this.style(name, next)
+      );
       return this;
     }
 
@@ -1878,6 +1948,7 @@ export class ElementNode extends ViewNode {
       }
 
       this._applyAccessState(state);
+      activateBindings(this);
       this._commitChildren();
       this._children.forEach((child) => {
         withRenderScope(inherited, () => {
