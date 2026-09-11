@@ -61,6 +61,10 @@
       "types": "./types/yoya.devtools.d.ts",
       "import": "./dist/yoya.devtools.js"
     },
+    "./signals-preact": {
+      "types": "./types/yoya.signals-preact.d.ts",
+      "import": "./dist/yoya.signals-preact.js"
+    },
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"
   },
