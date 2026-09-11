@@ -1,4 +1,4 @@
-import { ViewNode, VTextNode, registerChildFactories } from '../core/node.js';
+import { ViewNode, VTextNode, applyPropValue, registerChildFactories } from '../core/node.js';
 import { allocateId } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
@@ -357,41 +357,41 @@ export class VInput extends HtmlElementNode {
       }
 
       if (type !== undefined) {
-        this.type(type);
+        applyPropValue(this, type, (next) => this.type(next));
       }
 
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        applyPropValue(this, placeholder, (next) => this.placeholder(next));
       }
 
       if (value !== undefined) {
-        this.value(value);
+        applyPropValue(this, value, (next) => this.value(next));
       } else if (text !== undefined) {
-        this.value(text);
+        applyPropValue(this, text, (next) => this.value(next));
       } else if (content !== undefined) {
-        this.value(content);
+        applyPropValue(this, content, (next) => this.value(next));
       } else if (children !== undefined) {
-        this.value(children);
+        applyPropValue(this, children, (next) => this.value(next));
       }
 
       if (required !== undefined) {
-        this.required(required);
+        applyPropValue(this, required, (next) => this.required(next));
       }
 
       if (readonly !== undefined) {
-        this.readonly(readonly);
+        applyPropValue(this, readonly, (next) => this.readonly(next));
       }
 
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        applyPropValue(this, disabled, (next) => this.disabled(next));
       }
 
       if (error !== undefined) {
-        this.error(error);
+        applyPropValue(this, error, (next) => this.error(next));
       }
 
       if (clearable !== undefined) {
-        this.clearable(clearable);
+        applyPropValue(this, clearable, (next) => this.clearable(next));
       }
 
       return;

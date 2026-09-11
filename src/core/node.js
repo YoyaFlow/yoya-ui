@@ -193,6 +193,20 @@ function toBindingRead(value) {
 }
 
 /**
+ * 组件 props 分发：值是 signal 句柄时登记只读绑定，否则按普通值落地。
+ * 只拦截句柄——函数值仍是既有语义（回调型 prop 不受影响）；写回由显式事件处理器负责。
+ */
+export function applyPropValue(owner, value, setter) {
+  if (isSignal(value)) {
+    registerNodeBinding(owner, 'prop', null, () => value.value, setter);
+    return owner;
+  }
+
+  setter(value);
+  return owner;
+}
+
+/**
  * 来源解析顺序：节点自己声明的 scope > 构建栈上最近声明的 scope >
  * 区域自持作用域（可能是继承宿主的那份）> 宿主作用域。
  */
@@ -1678,6 +1692,17 @@ export class ElementNode extends ViewNode {
       }
 
       if (typeof this[key] === 'function') {
+        if (isSignal(value)) {
+          registerNodeBinding(
+            this,
+            'prop',
+            key,
+            () => value.value,
+            (next) => this[key](next)
+          );
+          return;
+        }
+
         this[key](value);
         return;
       }

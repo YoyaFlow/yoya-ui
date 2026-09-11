@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { applyPropValue } from '../core/node.js';
 import {
   componentClass,
   applyComponentArguments,
@@ -222,25 +223,25 @@ export class VButton extends HtmlElementNode {
       }
 
       if (variant !== undefined) {
-        this.variant(variant);
+        applyPropValue(this, variant, (next) => this.variant(next));
       } else if (type !== undefined) {
-        this.type(type);
+        applyPropValue(this, type, (next) => this.type(next));
       }
 
       if (size !== undefined) {
-        this.size(size);
+        applyPropValue(this, size, (next) => this.size(next));
       }
 
       if (formType !== undefined) {
-        this.formType(formType);
+        applyPropValue(this, formType, (next) => this.formType(next));
       }
 
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        applyPropValue(this, disabled, (next) => this.disabled(next));
       }
 
       if (loading !== undefined) {
-        this.loading(loading);
+        applyPropValue(this, loading, (next) => this.loading(next));
       }
     } else if (setup !== null && setup !== undefined) {
       this.label(setup);
