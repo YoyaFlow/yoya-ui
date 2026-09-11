@@ -3,6 +3,7 @@ import { createIdAllocator, withIdAllocator } from './id.js';
 import { createI18n, withI18nStringShortcut } from './i18n.js';
 import { withContext } from './context.js';
 import { withAccess } from './access.js';
+import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 import { HtmlElementNode } from '../html/index.js';
 
 /**
@@ -423,7 +424,7 @@ function adoptElement(node, existing) {
         existing.textContent = node._content;
       }
     } else {
-      replaceExisting(existing, node.renderDom());
+      replaceExisting(existing, node.renderDom(), node);
     }
     return;
   }
@@ -443,7 +444,7 @@ function adoptElement(node, existing) {
     return;
   }
 
-  replaceExisting(existing, node.renderDom());
+  replaceExisting(existing, node.renderDom(), node);
 }
 
 function bindElement(node) {
@@ -480,7 +481,49 @@ function syncSnapshots(node) {
   }
 }
 
-function replaceExisting(existing, created) {
+/** 用可读名字描述参与对齐的两端，供结构错位告警定位。 */
+function describeHydrationNode(value) {
+  if (!value) {
+    return 'none';
+  }
+
+  if (value.nodeType === 3) {
+    return '#text';
+  }
+
+  if (value.nodeType === 1) {
+    return String(value.tagName).toLowerCase();
+  }
+
+  if (typeof value._tagName === 'string') {
+    return value._tagName;
+  }
+
+  return 'unknown';
+}
+
+/**
+ * 结构错位告警：两端结构不一致时对齐方式只能替换节点，会静默丢掉节点身份。
+ * 只在 devtools 开启（开发期）上报，生产路径零开销。
+ */
+function reportHydrationMismatch(node, existing, created) {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  emitDevtools({
+    type: 'hydrate-mismatch',
+    node,
+    expected: describeHydrationNode(created),
+    existing: describeHydrationNode(existing)
+  });
+}
+
+function replaceExisting(existing, created, node = null) {
+  if (node) {
+    reportHydrationMismatch(node, existing, created);
+  }
+
   if (existing && existing.parentNode) {
     existing.parentNode.replaceChild(created, existing);
   }
