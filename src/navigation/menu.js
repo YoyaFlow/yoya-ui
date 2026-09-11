@@ -432,6 +432,9 @@ export class VSubMenu extends HtmlElementNode {
     super('div', null);
     const panelId = allocateId('yoya-vsubmenu-panel');
     this._globalCloseCleanup = null;
+    // 内部状态用 ref 持有（票 01 约定）；open/disabled 是「默认真」写方法，无参不是读
+    this._open = ref(false);
+    this._disabled = ref(false);
     this._trigger = new VMenuItem()
       .className('yoya-vsubmenu-trigger')
       .attr({
@@ -442,7 +445,7 @@ export class VSubMenu extends HtmlElementNode {
       .shortcut('›')
       .on('click', (event) => {
         event.preventDefault();
-        if (!this.getBooleanState('disabled')) {
+        if (!this._disabled.value) {
           this.toggle();
         }
       });
@@ -502,14 +505,14 @@ export class VSubMenu extends HtmlElementNode {
   inline(value = true) {
     this._inline = Boolean(value);
     this.attr('data-inline', this._inline ? 'true' : null);
-    this._trigger.shortcut(this._inline ? (this.getBooleanState('open') ? '▾' : '▸') : '›');
+    this._trigger.shortcut(this._inline ? (this._open.value ? '▾' : '▸') : '›');
 
     return this;
   }
 
   disabled(value = true) {
     const disabled = Boolean(value);
-    this.setState('disabled', disabled);
+    this._disabled.value = disabled;
     this.attr('data-disabled', disabled ? 'true' : null);
     this._trigger.disabled(disabled);
     if (disabled) {
@@ -519,8 +522,8 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   open(value = true) {
-    const open = Boolean(value) && !this.getBooleanState('disabled');
-    this.setState('open', open);
+    const open = Boolean(value) && !this._disabled.value;
+    this._open.value = open;
     this.attr('data-open', open ? 'true' : null);
     this._trigger.attr('aria-expanded', open ? 'true' : 'false');
     if (this._inline) {
@@ -540,7 +543,7 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   toggle() {
-    return this.open(!this.getBooleanState('open'));
+    return this.open(!this._open.value);
   }
 
   _selectInlineItem(element) {
@@ -579,7 +582,7 @@ export class VSubMenu extends HtmlElementNode {
       trigger === this._trigger._el &&
       enterKeys.includes(event.key)
     ) {
-      if (this.getBooleanState('disabled')) {
+      if (this._disabled.value) {
         return;
       }
       event.preventDefault();
@@ -597,7 +600,7 @@ export class VSubMenu extends HtmlElementNode {
       owningSubMenu === this._el &&
       trigger === this._trigger._el &&
       exitKey &&
-      this.getBooleanState('open')
+      this._open.value
     ) {
       event.preventDefault();
       event.stopPropagation();
