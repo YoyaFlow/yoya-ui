@@ -1297,8 +1297,29 @@ class VBooleanControl extends HtmlElementNode {
     });
     this._contentBox.child(this._labelBox, this._descriptionBox);
     this.child(this._visualBox, this._input, this._contentBox);
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.checked = booleanMethod(this, 'checked', false, (enabled) => {
+      this.attr('data-checked', enabled ? 'true' : null);
+      this._input.attr('checked', enabled ? true : null);
+      this._syncVisual(enabled);
+    });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+    this.indeterminate = booleanMethod(this, 'indeterminate', false, (enabled) => {
+      if (this._input._el) {
+        this._input._el.indeterminate = enabled;
+      }
+    });
+
     this._input.on('change', (event) => {
-      if (this.getBooleanState('disabled')) {
+      if (this.disabled()) {
         return;
       }
 
@@ -1334,18 +1355,9 @@ class VBooleanControl extends HtmlElementNode {
     return this;
   }
 
-  checked(value) {
-    if (value === undefined) {
-      return this.getBooleanState('checked');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('checked', enabled);
-    this.attr('data-checked', enabled ? 'true' : null);
-    this._input.attr('checked', enabled ? true : null);
-    this._syncVisual(enabled);
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   value(value) {
@@ -1373,46 +1385,6 @@ class VBooleanControl extends HtmlElementNode {
 
     this._input.name(value);
     this.attr('data-name', value ?? null);
-    return this;
-  }
-
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
-    return this;
-  }
-
-  indeterminate(value) {
-    if (value === undefined) {
-      return this.getBooleanState('indeterminate');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('indeterminate', enabled);
-    if (this._input._el) {
-      this._input._el.indeterminate = enabled;
-    }
     return this;
   }
 
@@ -1830,6 +1802,20 @@ export class VRadio extends VBooleanControl {
       width: '16px'
     });
     this._syncVisual(false);
+    // checked 在基类是实例属性（booleanMethod），互斥逻辑包一层而不是原型重写
+    const baseChecked = this.checked;
+    this.checked = (value) => {
+      if (value !== undefined && value && this.name()) {
+        const group = radioGroups.get(this.name());
+        group?.forEach((other) => {
+          if (other !== this && other.checked()) {
+            other.checked(false);
+          }
+        });
+      }
+
+      return baseChecked(value);
+    };
     this._setupBoolean(setup);
     registerRadio(this);
   }
@@ -1843,19 +1829,6 @@ export class VRadio extends VBooleanControl {
     const result = super.name(value);
     registerRadio(this);
     return result;
-  }
-
-  checked(value) {
-    if (value !== undefined && value && this.name()) {
-      const group = radioGroups.get(this.name());
-      group?.forEach((other) => {
-        if (other !== this && other.checked()) {
-          other.checked(false);
-        }
-      });
-    }
-
-    return super.checked(value);
   }
 
   destroy() {
