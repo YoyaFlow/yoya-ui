@@ -59,7 +59,7 @@ export function MemberListPage() {
   const table = MemberTable({ rows: () => state.items(), onEdit: (row) => dialog.open(row) });
   const pagination = vPagination({ pageSize: 5, onChange: ({ page }) => applyPage(page) });
 
-  // 关键接线：状态变化后由页面显式驱动视图——yoya-ui 没有自动响应式
+  // 关键接线：状态变化后由页面显式驱动视图（若状态是信号，绑定与区域会自动更新，无需这段接线）
   state.subscribe(() => {
     table.refresh();
     pagination.update({ page: state.page(), pageSize: state.pageSize(), total: state.total() });
@@ -167,7 +167,7 @@ export default {
 
 - **局部状态**：对象组件闭包或返回对象上的属性
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法，`subscribe(listener)` 通知视图更新
-- **跨组件共享**：`vStateNode({ state, render, update })`，或自建状态工厂返回 `{ 数据读取, 动作 }`
+- **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`；`vStateNode` 已弃用
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态、再通知订阅者；需要"结构随数据变化"时可在组件内用可重建区域（见 core.md）
 
 ```js

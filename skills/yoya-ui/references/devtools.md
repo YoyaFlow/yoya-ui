@@ -36,15 +36,16 @@ disableDevtools();
 
 每个事件带 `seq`（单调）、`nodeId`（稳定）、`nodeLabel`（可读节点描述）：
 
-| type             | 含义                     | 补充                              |
-| ---------------- | ------------------------ | --------------------------------- |
-| `commit`         | 元素首次渲染             | `kind: 'mount'`                   |
-| `destroy`        | 节点销毁                 | —                                 |
-| `attr` / `style` | 属性/class、行内样式变更 | `name`、`previous`、`next`        |
-| `child`          | 子项增删/重排            | `added` / `removed` / `reordered` |
-| `text`           | 文本变更                 | `from`、`to`                      |
-| `state`          | vStateNode 状态变更      | `changed`、`state`、`handling`    |
-| `region`         | 可重建区域的处理         | `action`、`trigger`               |
+| type             | 含义                                                | 补充                              |
+| ---------------- | --------------------------------------------------- | --------------------------------- |
+| `commit`         | 元素首次渲染                                        | `kind: 'mount'`                   |
+| `destroy`        | 节点销毁                                            | —                                 |
+| `attr` / `style` | 属性/class、行内样式变更                            | `name`、`previous`、`next`        |
+| `child`          | 子项增删/重排                                       | `added` / `removed` / `reordered` |
+| `text`           | 文本变更                                            | `from`、`to`                      |
+| `state`          | vStateNode 状态变更（已弃用；信号写入暂不单独上报） | `changed`、`state`、`handling`    |
+| `deprecated`     | 首次创建已弃用 API（如 vStateNode）                 | `api`、`alternative`              |
+| `region`         | 可重建区域的处理                                    | `action`、`trigger`               |
 
 `handling`：`update`（update 回调）、`bindings`（函数值绑定写回）、`rebuild`、
 `pending`（组件未挂载）。

@@ -14,7 +14,7 @@ npm run dev
 ## 导入入口
 
 - `yoya-ui`：组件与全部能力（core、html、svg、layout、actions、navigation、feedback、form、data-display、async、i18n、theme、router、effects）
-- `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、`vStateNode` 等，零第三方依赖）
+- `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、内置 Signals 的 `ref` / `computed` / `installSignals` 等，零第三方依赖；`vStateNode` 已弃用）
 - `yoya-ui/router`：router + SSR：`createRouter`/`Router`、`renderToString`、`hydrate`、`mount`、`renderPage`、`resolveLocale`、`serializeState`
 
 ## 挂载方式

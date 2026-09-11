@@ -129,8 +129,9 @@ if (app.firstElementChild) {
 | 用 `getBoundingClientRect` / `offsetWidth` 决定结构                                  | 结构由状态决定，测量只用于渲染后的定位逻辑                                                                          | 服务端没有布局，两端会不一致                           |
 | 把函数放进请求状态传给 `renderPage`                                                  | 只传可序列化数据（路径、筛选条件、locale）                                                                          | 状态要序列化进 `__YOYA_DATA__` 并在客户端解析          |
 | 假设客户端会重建服务端 DOM                                                           | `hydrate()` 收养既有 DOM、只补事件适配器                                                                            | 重建会闪烁首屏并丢掉服务端已渲染的状态                 |
-| 函数值绑定里读 `document` / `window`（`() => window.innerWidth`）                    | 绑定函数保持纯函数：只依赖来源数据（`scope()` / 宿主 state / 每请求数据）                                           | 绑定在构建期会在服务端求值一次，DOM 依赖会直接抛错     |
-| 函数值绑定读模块级可变数据（模块顶层的 `store`）                                     | 每请求创建数据并用 `scope(() => store)` / 宿主 state 注入                                                           | 零参闭包不声明来源，模块级数据同样会在并发请求间串数据 |
+| 绑定函数里读 `document` / `window`（`() => window.innerWidth`）                      | 绑定保持确定性且 DOM-free：只依赖信号 / 每请求数据                                                                  | 绑定在构建期会在服务端求值一次，DOM 依赖会直接抛错     |
+| 信号建在模块级（模块顶层的 `const count = ref(0)`）                                  | 每请求 / 每组件实例创建信号（页面工厂或组件内部）                                                                   | 模块级信号会在并发请求间串数据，且不随请求销毁         |
+| 用 `effect` 在服务端同步视图                                                         | 视图更新只用 `attr(key, signal)` / `vText(signal)`；`effect` 服务 DOM 之外的副作用，且服务端不执行                  | 服务端只求值一次、不订阅，`effect` 可能碰 DOM          |
 
 渲染后销毁组件树，输出只依赖请求输入（服务端保持无状态）。
 

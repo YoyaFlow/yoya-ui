@@ -56,9 +56,9 @@ div((root) => {
 
 字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
 
-需要内部状态（计数、开关、加载态）用 `vStateNode({ state, render, update })`：render 里把文本/属性/样式声明成函数值绑定，`setState()` 后只求值写回、DOM 不重建。
+需要状态（计数、开关、加载态）用内置信号：`const count = ref(0)`，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。`vStateNode` 已弃用（保留兼容 + devtools 弃用提示），新代码不要再用。
 
-需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：`rebuildable(谓词?)` 声明，`rebuild()` 清空并按当前数据重跑它自己的 setup。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷函数值绑定。详见 references/state.md。
+需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：声明 `rebuildable(谓词?)` 后，区域内读到的信号就成为它的依赖，信号变化时自动按谓词重建（也可手动 `rebuild()`）。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷值并记 `rebuildPending()`。详见 references/state.md。
 
 ## 表单
 
@@ -91,7 +91,7 @@ div((root) => {
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
-- [references/state.md](references/state.md)：vStateNode 三种更新路径、函数值绑定、可重建区域、fragment 与 keyed 子节点、事件单槽
+- [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、引擎替换、fragment 与 keyed 子节点、事件单槽
 - [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与通用 Context 注入、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
