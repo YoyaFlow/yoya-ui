@@ -226,8 +226,29 @@ export function SignalsDocumentationPage() {
         page.attr('data-signals-page', 'true');
         page.h1('Signals 状态管理');
         page.p(
-          '基于 @preact/signals-core 的第三方状态管理扩展：signal 保存状态，computed 派生，effect 同步视图，不依赖 vStateNode。'
+          '内置状态管理：ref 保存状态，computed 派生，值位置直接传句柄即自动同步视图。默认引擎开箱可用，也可换成第三方实现。'
         );
+        page.section((engines) => {
+          engines.className('components-signals-engines');
+          engines.attr('data-signals-engines', 'true');
+          engines.h2('更换底层引擎（可选）');
+          engines.p(
+            '默认引擎随包提供、无需安装依赖。想跟随第三方实现时，装一个适配器即可——业务代码一行不改。'
+          );
+          engines.ul((list) => {
+            list.li('引擎契约只有四个方法：createSignal / read / write / subscribe。');
+            list.li('依赖收集与 computed 都由 core 负责，所以换引擎不会改变依赖语义与派生语义。');
+            list.li(
+              '同一时刻只激活一个引擎：安装即替换，不并存（两个引擎版本同页面会让依赖追踪各说各话）。'
+            );
+            list.li(
+              "import { installSignals } from 'yoya-ui'; — installSignals(adapter) 全局替换，installSignals(null) 回到内置引擎。"
+            );
+            list.li(
+              "import { createPreactAdapter } from 'yoya-ui/signals-preact'; — 适配器接收第三方信号库模块，装不装由你决定，主包 0 运行时依赖不变。"
+            );
+          });
+        });
         page.section((usage) => {
           usage.className('components-signals-usage');
           usage.attr('data-signals-usage', 'true');
