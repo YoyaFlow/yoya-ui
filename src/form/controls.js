@@ -971,6 +971,12 @@ export class VSelect extends HtmlElementNode {
     this.required = booleanMethod(this, 'required', false, (enabled) => {
       this._input.attr('required', enabled ? true : null);
     });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
+      this._input.style('opacity', enabled ? '0.64' : '1');
+      this._syncClear();
+    });
 
     this._setupSelect(setup);
     this._syncClearPadding();
@@ -1086,19 +1092,9 @@ export class VSelect extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
-    this._input.style('opacity', enabled ? '0.64' : '1');
-    this._syncClear();
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   error(value) {
