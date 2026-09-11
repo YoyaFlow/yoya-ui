@@ -120,7 +120,8 @@ export class VGlowButton extends VButton {
 
   _bindRipple() {
     this.on('click', (event) => {
-      if (this.attr('data-glow-ripple') === 'off' || this.getBooleanState('disabled')) {
+      // 禁用态以 DOM 属性为准：disabled() 与权限落位都会写它，不依赖具体组件内部怎么存状态。
+      if (this.attr('data-glow-ripple') === 'off' || this.attr('disabled')) {
         return;
       }
 
