@@ -56,11 +56,7 @@ function syncClearButton(control, inputNode, clearButton) {
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== '' && value !== null && value !== undefined;
-  const visible =
-    control._clearable &&
-    hasValue &&
-    !(control.isDisabled ? control.isDisabled() : control.getBooleanState('disabled')) &&
-    !(control.isReadonly ? control.isReadonly() : control.getBooleanState('readonly'));
+  const visible = control._clearable && hasValue && !control.isDisabled() && !control.isReadonly();
 
   clearButton.style('display', visible ? null : 'none');
 }
@@ -1106,6 +1102,11 @@ export class VSelect extends HtmlElementNode {
   // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
   isDisabled() {
     return this._disabled.value;
+  }
+
+  // 下拉选择没有只读态，恒为 false，供清空按钮判别直接调用
+  isReadonly() {
+    return false;
   }
 
   isError() {
