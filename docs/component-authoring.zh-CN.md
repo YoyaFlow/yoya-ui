@@ -108,7 +108,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 6. 状态与更新
 
-yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地更新哪些 DOM：
+yoya-ui 的状态更新默认是显式的：组件自己决定就地更新哪些 DOM；需要自动同步时用内置 Signals（`ref` / `computed`，值位置直接传句柄），结构变化由 `rebuildable()` 区域读取信号驱动：
 
 - 节点级：任意节点都有 `state(初值)` + `registerStateAttrs` / `registerStateHandler` + `setState` / `getState`。`state({...})` 是**幂等种子**（只补缺省字段，重跑不重置）并让本子树里的 `(s) => value` 读这份状态；`setState('key', value)` 与 `setState(patch)` 同义，写完触发 `flushAll()`（区域按谓词重建、普通节点只刷绑定）。**构建期**（setup / 区域重跑）里的 `setState` 只写状态，不触发刷新与重建。区域重跑会重建处理器登记但保留状态值，重建后的初始态要在 setup 里自己读回。
 - 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。

@@ -111,20 +111,20 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 
 ## Features at a glance
 
-| Capability                             | Status                                                                                                            |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                                     |
-| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                        |
-| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                        |
-| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                       |
-| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation                         |
-| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                              |
-| State management                       | `vStateNode` / rebuildable regions (`rebuildable` + `rebuild` / `flush`), optional `@preact/signals-core` interop |
-| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                            |
-| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                                   |
-| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                                    |
-| Framework interop                      | Any DOM-mountable library composes natively                                                                       |
-| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                            |
+| Capability                             | Status                                                                                                                                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                                                                                                                                            |
+| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                                                                                                                               |
+| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                                                                                                                               |
+| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                                                                                                                              |
+| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation                                                                                                                                |
+| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                                                                                                                                     |
+| State management                       | Built-in Signals (`ref` / `computed` — dynamic values are passed straight into the DSL), rebuildable regions driven by signals, `vStateNode` kept for compatibility, swappable signals engine (`yoya-ui/signals-preact`) |
+| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                                                                                                                                   |
+| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                                                                                                                                          |
+| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                                                                                                                                           |
+| Framework interop                      | Any DOM-mountable library composes natively                                                                                                                                                                              |
+| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                                                                                                                                   |
 
 ## Positioning: a declarative extension of native Web, not a walled-garden framework
 
@@ -383,7 +383,7 @@ Keep the static release / types badges in sync at each release.
 
 | Signal               | Current value                                                                                       | How to verify                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Test suite           | 902 test cases across 115 files                                                                     | `npm test` (Vitest + jsdom)                                  |
+| Test suite           | 1044 test cases across 140 files                                                                    | `npm test` (Vitest + jsdom)                                  |
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
