@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
   createComponentFactory,
@@ -24,6 +25,7 @@ export class VCode extends HtmlElementNode {
     this._toolbar = new HtmlElementNode('div').className('yoya-vcode-toolbar');
     this._codeBox = new HtmlElementNode('code').className('yoya-vcode-content');
     this._preBox = new HtmlElementNode('pre').className('yoya-vcode-pre').child(this._codeBox);
+    this._copyable = ref(true); // 内部状态：对外仍走 copyable() 方法
 
     this.className(componentClass, 'yoya-vcode');
     this.styles({
@@ -94,11 +96,11 @@ export class VCode extends HtmlElementNode {
 
   copyable(value = undefined) {
     if (value === undefined) {
-      return this.getBooleanState('copyable');
+      return this._copyable.value;
     }
 
     const enabled = Boolean(value);
-    this.setState('copyable', enabled);
+    this._copyable.value = enabled;
     this.attr('data-copyable', enabled ? 'true' : null);
     this._copyButton.style('display', enabled ? null : 'none');
     return this;
