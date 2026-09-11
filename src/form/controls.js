@@ -59,8 +59,8 @@ function syncClearButton(control, inputNode, clearButton) {
   const visible =
     control._clearable &&
     hasValue &&
-    !control.getBooleanState('disabled') &&
-    !control.getBooleanState('readonly');
+    !(control.isDisabled ? control.isDisabled() : control.getBooleanState('disabled')) &&
+    !(control.isReadonly ? control.isReadonly() : control.getBooleanState('readonly'));
 
   clearButton.style('display', visible ? null : 'none');
 }
