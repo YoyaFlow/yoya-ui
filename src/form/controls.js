@@ -977,6 +977,17 @@ export class VSelect extends HtmlElementNode {
       this._input.style('opacity', enabled ? '0.64' : '1');
       this._syncClear();
     });
+    this.error = booleanMethod(this, 'error', false, (enabled) => {
+      this._input.attr('data-error', enabled ? 'true' : null);
+      this._input.style(
+        'borderColor',
+        enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
+      );
+      this._input.style(
+        'boxShadow',
+        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+      );
+    });
 
     this._setupSelect(setup);
     this._syncClearPadding();
@@ -1097,24 +1108,8 @@ export class VSelect extends HtmlElementNode {
     return this._disabled.value;
   }
 
-  error(value) {
-    if (value === undefined) {
-      return this.getBooleanState('error');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('error', enabled);
-    this._input.attr('data-error', enabled ? 'true' : null);
-    this._input.style(
-      'borderColor',
-      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
-    );
-    this._input.style(
-      'boxShadow',
-      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
-    );
-    return this;
+  isError() {
+    return this._error.value;
   }
 
   clearable(value) {
