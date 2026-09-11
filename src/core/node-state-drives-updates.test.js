@@ -92,22 +92,6 @@ describe('node state drives updates', () => {
     expect(builds).toBe(2);
   });
 
-  it('rejects declaring both state() and scope()', () => {
-    expect(() =>
-      div((ele) => {
-        ele.state({ n: 1 });
-        ele.scope(() => ({ n: 2 }));
-      })
-    ).toThrow(/conflicts/);
-
-    expect(() =>
-      div((ele) => {
-        ele.scope(() => ({ n: 2 }));
-        ele.state({ n: 1 });
-      })
-    ).toThrow(/conflicts/);
-  });
-
   it('defers a setState raised while flushing', () => {
     let node = null;
     const box = div((ele) => {

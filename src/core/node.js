@@ -715,50 +715,12 @@ export class ViewNode {
   }
 
   /**
-   * 声明本节点子树的数据来源：带参值函数 `(s) => value` 的 `s` 即 getter 的返回值。
-   * 声明后覆盖宿主继承；区域内也可以声明，就近覆盖。
-   *
-   * @deprecated 待删除（见 `.scratch/signals/design.md` §9）：改用 `ref` / `computed`，
-   * 闭包直接引用句柄即可，不再需要为子树声明来源。
-   */
-  scope(getter) {
-    if (typeof getter !== 'function') {
-      throw new TypeError('scope() requires a function');
-    }
-
-    if (this._ownBindingScope && this._ownBindingScope.source === 'state') {
-      throw new TypeError('scope() conflicts with state() on this node');
-    }
-
-    const scope = this._ownBindingScope || {
-      bindings: [],
-      getState: () => undefined,
-      hasData: false
-    };
-    this._ownBindingScope = scope;
-    scope.source = 'scope';
-    scope.getState = getter;
-    scope.hasData = true;
-
-    // 在自己 setup 内声明时，本次构建的剩余部分（含后代）都可见。
-    if (setupStack[setupStack.length - 1] === this) {
-      activeBindingScope = scope;
-    }
-
-    return this;
-  }
-
-  /**
    * 声明本节点自带状态：对象是「幂等种子」——只补缺省字段，重跑不重置。
    * 声明后本节点子树里的带参值函数 `(s) => value` 读它，`setState` 会顺带刷新。
    */
   state(initial) {
     if (!initial || typeof initial !== 'object') {
       throw new TypeError('state() requires an object');
-    }
-
-    if (this._ownBindingScope && this._ownBindingScope.source === 'scope') {
-      throw new TypeError('state() conflicts with scope() on this node');
     }
 
     const scope = this._ownBindingScope || {

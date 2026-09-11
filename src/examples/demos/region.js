@@ -121,7 +121,7 @@ export function RegionGateExample() {
 }
 
 /**
- * 区域演示 3：scope() 给独立子树声明数据来源。
+ * 区域演示 3：独立子树的零参闭包直接读外部数据，改动后手动 flush。
  * 只刷值时不需要 rebuildable()——它只用来声明「结构可变」。
  */
 export function RegionScopeExample() {
@@ -129,9 +129,8 @@ export function RegionScopeExample() {
   const box = div((ele) => {
     ele.className('demo-region-source');
     ele.attr('data-region-source', 'true');
-    ele.scope(() => data); // 带参值函数 (d) => value 的来源
-    ele.attr('data-count', (d) => String(d.count));
-    ele.span((line) => line.child(vText((d) => `共 ${d.count} 条`)));
+    ele.attr('data-count', () => String(data.count));
+    ele.span((line) => line.child(vText(() => `共 ${data.count} 条`)));
   });
 
   const api = {
@@ -204,7 +203,7 @@ export function RegionFlushExample() {
 /**
  * 数据来源对照：三块面板长得一样，区别只在「数据住在哪、谁来驱动」。
  * ① 组件状态：数据住在 vStateNode 里，setState 后引擎自动把函数值绑定写回；
- * ② 外部数据 + scope()：数据住在组件外，scope() 只声明读来源，
+ * ② 外部数据：数据住在组件外，零参闭包直接读它，
  *    改完要自己 flush()（结构变了才 rebuild()）；
  * ③ 节点状态：节点自己的 setState 只推给本节点注册的处理器，
  *    绑定读不到它，必须像下面这样手写接线。
@@ -237,7 +236,7 @@ function ComponentStatePanel() {
   });
 }
 
-/** ② 外部数据源：数据在组件外，scope() 提供读来源，改动后手动 flush（pull）。 */
+/** ② 外部数据源：数据在组件外，零参闭包直接读它，改动后手动 flush（pull）。 */
 function ExternalDataSourcePanel() {
   const data = { count: 0 };
 
@@ -245,8 +244,7 @@ function ExternalDataSourcePanel() {
     panel.className('demo-region-compare-panel');
     panel.attr('data-region-source', 'true');
     panel.rebuildable();
-    panel.scope(() => data); // (d) => value 里的 d 就是它的返回值
-    panel.span((line) => line.child(vText((d) => `外部数据源：${d.count}`)));
+    panel.span((line) => line.child(vText(() => `外部数据源：${data.count}`)));
     panel.vButton('+1（外部数据）', (button) => {
       button.attr('data-region-source-add', 'true');
       button.on('click', () => {

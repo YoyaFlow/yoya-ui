@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { div, vStateNode } from '../index.js';
 
 describe('region binding scope', () => {
-  it('feeds parameterized value functions from scope()', () => {
+  it('feeds zero-argument closures from the surrounding scope', () => {
     const data = { label: 'a' };
     const box = div((ele) => {
       ele.rebuildable();
-      ele.scope(() => data);
-      ele.attr('data-label', (s) => s.label);
+      ele.attr('data-label', () => data.label);
     });
     const element = box.renderDom();
 

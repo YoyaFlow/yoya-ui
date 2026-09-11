@@ -30,17 +30,15 @@ describe('node level state', () => {
   });
 
   it('drives updates through flushAll instead of leaving bindings stale', () => {
-    const data = { label: 'A' };
     const box = div((ele) => {
       ele.rebuildable();
-      ele.scope(() => data);
+      ele.state({ label: 'A' });
       ele.child(vText((source) => source.label));
     });
     box.renderDom();
 
-    data.label = 'B';
     // 区域节点：setState 触发 flushAll → 按谓词重建，值立刻跟上
-    box.setState('anything', true);
+    box.setState({ label: 'B' });
 
     expect(box.children()[0].textContent()).toBe('B');
   });

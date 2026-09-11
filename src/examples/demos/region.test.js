@@ -53,7 +53,7 @@ describe('region demos', () => {
     expect(element.querySelector('[data-region-locked]')).toBeNull();
   });
 
-  it('reads subtree data through scope()', () => {
+  it('reads subtree data through a zero-argument closure', () => {
     const demo = RegionScopeExample();
     const element = demo.render().renderDom();
     const box = element.querySelector('[data-region-source]');
@@ -80,7 +80,7 @@ describe('region demos', () => {
     expect(element.querySelector('[data-region-flush-label]').textContent).toBe('B');
   });
 
-  it('contrasts component state, external scope and node state', () => {
+  it('contrasts component state, external data and node state', () => {
     const element = RegionStateVsSourceExample().renderDom();
     const statePanel = element.querySelector('[data-region-state]');
     const externalPanel = element.querySelector('[data-region-source]');
