@@ -3,6 +3,34 @@ import {
   applyElementOptions as applyCoreElementOptions,
   normalizeSetupArguments
 } from '../core/node.js';
+import { ref } from '../core/signals/handle.js';
+
+/**
+ * 组件内部布尔状态的访问器工厂（票 01 约定）。
+ *
+ * 状态用内部 ref 持有、字段名为 `_<key>`，对外只暴露方法：
+ * `method()` 读，`method(true)` 写并调用 `apply(next)` 做该组件自己的 DOM/样式落位。
+ * 使用者拿不到信号对象，不能绕过方法改状态。
+ */
+export function booleanMethod(target, key, initial, apply) {
+  const state = ref(Boolean(initial));
+  target[`_${key}`] = state;
+
+  return (value) => {
+    if (value === undefined) {
+      return state.value;
+    }
+
+    const next = Boolean(value);
+    state.value = next;
+
+    if (typeof apply === 'function') {
+      apply(next);
+    }
+
+    return target;
+  };
+}
 
 export const componentClass = 'yoya-component';
 
