@@ -1,12 +1,12 @@
-import { div, section, vCard, vColorPicker, vText } from '../index.js';
+import { div, ref, section, vCard, vColorPicker, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心演示：只包含取色器内容，不包含 Card。
 function ColorPickerBasicExample() {
-  const output = vText('#2563eb');
+  const output = ref('#2563eb');
   const picker = vColorPicker({
     onChange(color) {
-      output.textContent(color);
+      output.value = color;
     },
     value: '#2563eb'
   });
@@ -18,7 +18,7 @@ function ColorPickerBasicExample() {
         body.div((row) => {
           row.span('当前颜色');
           row.spacer();
-          row.code((el) => el.attr('data-color-picker-output', 'true').child(output));
+          row.code((el) => el.attr('data-color-picker-output', 'true').child(vText(output)));
         });
       });
     }
@@ -26,10 +26,12 @@ function ColorPickerBasicExample() {
 }
 
 function ColorPickerAlphaExample() {
-  const output = vText('rgba(37, 99, 235, 1)');
+  const output = ref('rgba(37, 99, 235, 1)');
   const picker = vColorPicker((picker) => {
     picker.value('#2563eb');
-    picker.onChange(() => output.textContent(picker.rgba() || '未选择'));
+    picker.onChange(() => {
+      output.value = picker.rgba() || '未选择';
+    });
   });
 
   return {
@@ -40,7 +42,7 @@ function ColorPickerAlphaExample() {
         body.div((row) => {
           row.span('当前 rgba');
           row.spacer();
-          row.code((el) => el.attr('data-color-picker-alpha-output', 'true').child(output));
+          row.code((el) => el.attr('data-color-picker-alpha-output', 'true').child(vText(output)));
         });
       });
     }
@@ -88,7 +90,7 @@ const colorPickerDemos = [
   {
     component: ColorPickerBasicDemo,
     id: 'basic',
-    imports: ['div', 'vColorPicker', 'vText'],
+    imports: ['div', 'ref', 'vColorPicker', 'vText'],
     sourceComponent: ColorPickerBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'
@@ -96,7 +98,7 @@ const colorPickerDemos = [
   {
     component: ColorPickerAlphaDemo,
     id: 'alpha',
-    imports: ['div', 'vColorPicker', 'vText'],
+    imports: ['div', 'ref', 'vColorPicker', 'vText'],
     sourceComponent: ColorPickerAlphaExample,
     sourceTitle: '透明度与效果源码',
     title: '透明度与效果'
