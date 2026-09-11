@@ -592,6 +592,60 @@ export function vStateNode<S extends Record<string, unknown> = Record<string, un
 ): StateNodeComponent<S>;
 
 // ---------------------------------------------------------------------------
+// Signals
+// ---------------------------------------------------------------------------
+
+/**
+ * Core signal handle: the only signal object business code sees.
+ * Engine-native signal objects never leak into the DSL.
+ */
+export interface SignalHandle<T = unknown> {
+  value: T;
+  peek(): T;
+  subscribe(listener: (value: T) => void): () => void;
+  update(updater: (value: T) => T): SignalHandle<T>;
+}
+
+/** Creates a writable signal. */
+export function ref<T>(initial: T): SignalHandle<T>;
+
+/** Creates a read-only derived signal; lazy, cached, recomputed on dependency change. */
+export function computed<T>(compute: () => T): Readonly<SignalHandle<T>>;
+
+/** True for yoya signal handles (plain `{ value }` objects are not signals). */
+export function isSignal(value: unknown): value is SignalHandle<unknown>;
+
+/** Runs `run` with coalesced notification when the engine supports batching. */
+export function batch<T>(run: () => T): T;
+
+/**
+ * Signals engine adapter contract: value cells, change notification and
+ * dependency collection only. Derivation, scheduling and lifetimes stay in core.
+ */
+export interface SignalsAdapter {
+  name?: string;
+  createSignal<T>(initial: T): unknown;
+  read(source: unknown): any;
+  peek(source: unknown): any;
+  write(source: unknown, value: unknown): void;
+  subscribe(source: unknown, listener: (value: unknown) => void): () => void;
+  collect<T>(run: () => T): { value: T; sources: unknown[] };
+  batch?<T>(run: () => T): T;
+  untracked?<T>(run: () => T): T;
+  effect?(run: () => void): () => void;
+  isSource?(value: unknown): boolean;
+}
+
+/** Installs a signals engine adapter (replacement, one engine at a time); null restores the built-in engine. */
+export function installSignals(adapter?: SignalsAdapter | null): SignalsAdapter;
+
+/** Returns the active signals engine adapter. */
+export function currentSignals(): SignalsAdapter;
+
+/** Validates an adapter, throwing when required methods are missing. */
+export function assertSignalsAdapter(adapter: unknown): SignalsAdapter;
+
+// ---------------------------------------------------------------------------
 // Request
 // ---------------------------------------------------------------------------
 

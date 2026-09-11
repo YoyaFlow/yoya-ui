@@ -68,7 +68,9 @@
     "dist",
     "types",
     "!types/tests",
-    "!dist/examples"
+    "!dist/examples",
+    "LICENSES",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
     "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",

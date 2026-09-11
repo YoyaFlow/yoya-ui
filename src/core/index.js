@@ -45,6 +45,8 @@ export {
   withAccess
 } from './access.js';
 export { vStateNode } from './state-node.js';
+export { computed, isSignal, ref, batch, SignalHandle } from './signals/handle.js';
+export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {
   clearInstalledContext,
   currentContext,

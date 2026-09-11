@@ -19,7 +19,12 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['src/**/*.js'],
-      exclude: ['src/examples/**', 'src/**/*.test.js', 'src/**/*.min.js']
+      exclude: [
+        'src/examples/**',
+        'src/**/*.test.js',
+        'src/**/*.min.js',
+        'src/core/signals/vendor/**'
+      ]
     }
   }
 });
