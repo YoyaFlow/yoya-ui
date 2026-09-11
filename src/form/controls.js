@@ -663,6 +663,16 @@ export class VTextarea extends HtmlElementNode {
     this.required = booleanMethod(this, 'required', false, (enabled) => {
       this._input.attr('required', enabled ? true : null);
     });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this._input.style('cursor', enabled ? 'not-allowed' : 'text');
+      this._input.style('opacity', enabled ? '0.64' : '1');
+      this._syncClear();
+    });
+    this.readonly = booleanMethod(this, 'readonly', false, (enabled) => {
+      this._input.attr('readonly', enabled ? true : null);
+      this._syncClear();
+    });
 
     this._setupTextarea(setup);
     this._syncClearPadding();
@@ -774,32 +784,13 @@ export class VTextarea extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this._input.style('cursor', enabled ? 'not-allowed' : 'text');
-    this._input.style('opacity', enabled ? '0.64' : '1');
-    this._syncClear();
-    return this;
+  // 读写分离：跨组件只读判断走这两个方法（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
-  readonly(value) {
-    if (value === undefined) {
-      return this.getBooleanState('readonly');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('readonly', enabled);
-    this._input.attr('readonly', enabled ? true : null);
-    this._syncClear();
-    return this;
+  isReadonly() {
+    return this._readonly.value;
   }
 
   error(value) {
