@@ -32,7 +32,7 @@ Nine reasons, in short:
 
 Save the snippet below as `index.html` and open it in a browser — no build step
 is needed. The library and styles are loaded from the jsDelivr CDN (an internet
-connection is required). To pin a version, replace `0.5.0` in the URLs.
+connection is required). To pin a version, replace the version number in the URLs.
 
 ```html
 <!DOCTYPE html>
@@ -42,7 +42,7 @@ connection is required). To pin a version, replace `0.5.0` in the URLs.
     <title>yoya-ui quick start</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -52,7 +52,7 @@ connection is required). To pin a version, replace `0.5.0` in the URLs.
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
 
       div((page) => {
         page.vButton('Start task', (button) => {
@@ -366,7 +366,7 @@ Star counts measure attention, not correctness. Until this project earns that
 social signal, we publish the engineering signals that actually predict
 long-term viability:
 
-[![Release](https://img.shields.io/badge/release-0.5.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/npm/v/@yoyaflow/yoya-ui?label=release&style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)
@@ -379,11 +379,12 @@ once the upload is authorized:
 [![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
 -->
 
-Keep the static release / types badges in sync at each release.
+The release badge reads the published npm version, so it never goes stale; the
+types badge is static and only changes if its wording does.
 
 | Signal               | Current value                                                                                       | How to verify                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Test suite           | 1044 test cases across 140 files                                                                    | `npm test` (Vitest + jsdom)                                  |
+| Test suite           | 1000+ test cases across 140 files                                                                   | `npm test` (Vitest + jsdom)                                  |
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
@@ -440,6 +441,26 @@ will reason about or generate code against this repository.
   DOM element — not by wrapping them into framework components.
 - **Do not "fix" generated code by adding framework imports.** The correct
   move is usually to remove them.
+
+### There is no new syntax to learn
+
+Do not treat yoya-ui as a language or DSL that has to be memorized before
+writing anything:
+
+- **Base statements are the HTML primitives.** `div()` / `button()` / `input()` /
+  `span()` build the elements they name — the same tag names, the same
+  attribute names (passed through `.attr()` or an options object) and the same
+  platform event names (`.on('click', …)`).
+- **Components add configuration, not grammar.** `vButton` / `vCard` / `vTable`
+  … expose ordinary properties and methods whose names line up with common UI
+  libraries (`variant`, `disabled`, `size`, `items`). If a name is unclear,
+  the component's example answers it.
+- **Examples are meant to be copied.** Every component page ships a runnable
+  snippet; copying one and editing the data is the intended workflow, with no
+  compiler or hidden step in between.
+- **Only two conventions are worth knowing up front**: setup callbacks
+  (`vCard((card) => { … })`) and value positions accepting signal handles
+  (`vText(count)`). The rest is plain JavaScript over the real DOM.
 
 ### Evaluating engineering fitness
 

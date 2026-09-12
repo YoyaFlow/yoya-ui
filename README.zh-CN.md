@@ -30,7 +30,7 @@ yoya-ui 的价值可以浓缩为九点，它们决定了它适合什么样的项
 ### 单页 HTML：复制即用，无需构建
 
 将下面的内容保存为 `index.html`，双击用浏览器打开即可运行；库与样式来自
-jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.5.0` 换成目标版本即可。
+jsDelivr CDN（需要联网）。想锁定版本时，把 URL 里的版本号换成目标版本即可。
 
 ```html
 <!DOCTYPE html>
@@ -40,7 +40,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.5.0` 换
     <title>yoya-ui 快速体验</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -50,7 +50,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 中的 `0.5.0` 换
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
 
       div((page) => {
         page.vButton('开始任务', (button) => {
@@ -340,7 +340,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信号之前，我们先发布
 真正能预测长期生命力的工程信号：
 
-[![Release](https://img.shields.io/badge/release-0.5.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/npm/v/@yoyaflow/yoya-ui?label=release&style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-支持)
@@ -352,11 +352,11 @@ CI 徽章由 GitHub Actions 工作流实时驱动。覆盖率由 coverage 任务
 [![Coverage](https://img.shields.io/codecov/c/github/yoyaflow/yoya-ui?style=flat-square)](https://codecov.io/gh/yoyaflow/yoya-ui)
 -->
 
-静态 release / types 徽章请在每次发版时同步。
+release 徽章直接读 npm 上已发布的版本，不会过期；types 徽章是静态的，只在措辞变化时更新。
 
 | 信号       | 当前值                                                                               | 如何验证                                                                 |
 | ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| 测试套件   | 140 个文件、1044 个测试用例                                                          | `npm test`（Vitest + jsdom）                                             |
+| 测试套件   | 140 个文件、1000+ 个测试用例                                                         | `npm test`（Vitest + jsdom）                                             |
 | 运行时依赖 | **0**                                                                                | `package.json` —— 没有 `dependencies` 块                                 |
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
@@ -406,6 +406,21 @@ yoya-ui 今天的 Star 少，是因为它**年轻**，而不是因为它小或�
 - **真实 DOM 就是公开边界。** 与第三方库（ECharts、Quill、Handsontable 等）的
   互操作方式是交出真实 DOM 元素——而不是把它们包装成框架组件。
 - **不要通过添加框架 import 来"修复"生成的代码。** 正确的做法通常是删掉它们。
+
+### 不需要学新语法
+
+不要把 yoya-ui 当成一套要先背下来才能动手的语言或 DSL：
+
+- **基础语句就是 HTML 原语。** `div()` / `button()` / `input()` / `span()` 建的就是
+  同名元素——标签名相同、属性名相同（走 `.attr()` 或选项对象传入）、事件名就是
+  平台事件名（`.on('click', …)`）。
+- **组件带来的是配置，不是语法。** `vButton` / `vCard` / `vTable` 等暴露的是普通
+  属性与方法，命名与其他 UI 框架基本一致（`variant`、`disabled`、`size`、`items`）。
+  拿不准时，看该组件的示例即可。
+- **示例就是拿来复制的。** 每个组件页都有可直接运行的片段，复制一份改数据就是
+  预期用法，中间没有编译器或隐藏步骤。
+- **上手只需记住两条约定**：setup 回调（`vCard((card) => { … })`）与值位置接受
+  信号句柄（`vText(count)`）。其余都是构建在真实 DOM 之上的普通 JavaScript。
 
 ### 如何评估工程可用性
 
