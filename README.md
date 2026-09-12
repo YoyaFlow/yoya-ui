@@ -368,9 +368,15 @@ plus the roadmap are the record.
 
 Stability here comes from the platform, not from a release train — yoya-ui is an
 extension of browser-native HTML/DOM/CSS. As long as those standards keep their
-shape, the API is meant to stay put after 1.0, which is also why a 1.0 → 2.0
-migration is not part of the plan. If a major break ever becomes unavoidable,
-that is the point at which a migration guide gets written.
+shape, the API stays put, so **after 1.0 there is no further major version**:
+releases are numbered `1.<year>.<patch>`, for example `1.2026.0`, `1.2026.1`,
+`1.2027.0`. The year segment marks the release year and the last segment counts
+bug-fix releases within it.
+
+From 1.0 on, the **core API is frozen**: it does not change again. Work lands as
+bug fixes, documentation, internal implementation and additions that do not
+alter existing contracts. A migration guide would only ever be written if a
+break in those contracts became unavoidable.
 
 ## Engineering signals (read these before the star count)
 
@@ -402,7 +408,7 @@ types badge is static and only changes if its wording does.
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
 | Distribution formats | ESM per-module entries, UMD, single CSS theme file                                                  | `npm run build` → `dist/`                                    |
 | Dist verification    | Category isolation, SSR single-core smoke and size budgets are gated in CI                          | `npm run verify:dist` (after `npm run build`)                |
-| Public roadmap       | Archived with the legacy docs                                                                       | (removed from public docs)                                   |
+| Public roadmap       | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md): current focus, 1.0 contract freeze, GenUI direction (Chinese) | (open the file)                                              |
 | Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
 ### Verification
