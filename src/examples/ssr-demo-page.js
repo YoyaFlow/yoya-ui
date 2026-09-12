@@ -1,13 +1,14 @@
 import {
+  computed,
   createI18n,
   div,
   initYoyaTheme,
+  ref,
   vDialog,
   vForm,
   vFormItem,
   vInput,
   vMessageContainer,
-  vStateNode,
   vText,
   vThemeModeSwitch
 } from '../index.js';
@@ -64,19 +65,26 @@ export const createLocale = (initial = {}) =>
  */
 export function createDemoPage(initial = {}) {
   const locale = createLocale(initial);
-  const counter = vStateNode({
-    state: { count: 0 },
-    render(state, component) {
+  const count = ref(0);
+  // ".s()" 返回的是 i18n 文本节点，插值后要作为值绑定交给 vText 必须先是字符串，
+  // 因此用 locale.t 包一层 computed：服务端据此把当前计数烘焙进 HTML。
+  const counterText = computed(() =>
+    locale.t('counter', { count: count.value }, '点击次数：{count}')
+  );
+  const counter = {
+    render() {
       return div((root) => {
         root.className('ssr-demo-counter');
         root.attr('data-ssr-counter', 'true');
-        root.p('点击次数：{count}'.s('counter', { count: state.count }, locale));
+        root.p((line) => line.child(vText(counterText)));
         root.vButton('点击 +1'.s('increment', locale), (button) => {
-          button.on('click', () => component.setState({ count: state.count + 1 }));
+          button.on('click', () => {
+            count.value += 1;
+          });
         });
       });
     }
-  });
+  };
 
   const dialog = vDialog();
   dialog.attr('data-ssr-dialog', 'true');
