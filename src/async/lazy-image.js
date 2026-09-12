@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { ref } from '../core/signals/handle.js';
 import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
 
 export class VLazyImage extends HtmlElementNode {
@@ -7,7 +8,8 @@ export class VLazyImage extends HtmlElementNode {
     this._src = null;
     this._alt = '';
     this._defer = false;
-    this._state = 'loading';
+    // 内部状态用 ref 持有（票 01 约定）；loadState() 是对外只读入口
+    this._state = ref('loading');
     this._observer = null;
 
     this._img = new HtmlElementNode('img').attr({ loading: 'lazy' });
@@ -74,8 +76,9 @@ export class VLazyImage extends HtmlElementNode {
     return this;
   }
 
-  state() {
-    return this._state;
+  /** 当前加载状态：loading / loaded / error。 */
+  loadState() {
+    return this._state.value;
   }
 
   retry() {
@@ -135,17 +138,18 @@ export class VLazyImage extends HtmlElementNode {
   }
 
   _setState(state) {
-    this._state = state;
+    this._state.value = state;
     this._syncState();
   }
 
   _syncState() {
-    const loaded = this._state === 'loaded';
+    const state = this._state.value;
+    const loaded = state === 'loaded';
 
-    this.attr('data-state', this._state);
+    this.attr('data-state', state);
     this._img.style('opacity', loaded ? '1' : '0');
-    this._placeholder.style('display', this._state === 'loading' ? null : 'none');
-    this._retryButton.style('display', this._state === 'error' ? 'inline-flex' : 'none');
+    this._placeholder.style('display', state === 'loading' ? null : 'none');
+    this._retryButton.style('display', state === 'error' ? 'inline-flex' : 'none');
   }
 
   _setupLazyImage(setup) {

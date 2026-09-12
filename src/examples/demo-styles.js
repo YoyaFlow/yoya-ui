@@ -850,54 +850,18 @@ const signalsExtraRules = [
     { color: 'var(--yoya-color-text, #172033)', fontSize: '1.45rem' }
   ],
   ['.components-signals-page > p', { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }],
+  ['.components-signals-engines, .components-signals-adapter', { display: 'grid', gap: '10px' }],
   [
-    '.components-signals-grid',
-    {
-      display: 'grid',
-      gap: '16px',
-      gridTemplateColumns: 'minmax(0, 1fr)',
-      minWidth: '0',
-      width: '100%'
-    }
-  ],
-  [
-    '.components-signals-demo',
-    {
-      display: 'grid',
-      gap: '12px',
-      minWidth: '0',
-      padding: '20px 0 0'
-    }
-  ],
-  [
-    '.components-signals-demo h3',
-    { color: 'var(--yoya-color-text, #172033)', fontSize: '1rem', margin: '0' }
-  ],
-  [
-    '.components-signals-demo-live',
-    {
-      minWidth: '0',
-      padding: '16px'
-    }
-  ],
-  [
-    '.components-signals-shared-grid',
-    {
-      display: 'grid',
-      gap: '12px',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-      minWidth: '0',
-      width: '100%'
-    }
-  ],
-  ['.components-signals-usage, .components-signals-advantages', { display: 'grid', gap: '10px' }],
-  [
-    '.components-signals-usage ul, .components-signals-advantages ul',
+    '.components-signals-engines ul, .components-signals-adapter ul',
     { display: 'grid', gap: '6px', margin: '0', paddingLeft: '20px' }
   ],
   [
-    '.components-signals-usage li, .components-signals-advantages li',
+    '.components-signals-engines li, .components-signals-adapter li',
     { color: 'var(--yoya-color-text-muted, #5a6575)', lineHeight: '1.6' }
+  ],
+  [
+    '.components-signals-adapter-sources',
+    { display: 'grid', gap: '16px', minWidth: '0', width: '100%' }
   ]
 ];
 
@@ -976,7 +940,19 @@ const definitionExtraRules = [
     }
   ],
   ['.wizard-child-panel strong, .wizard-child-panel p', { margin: '0' }],
-  ['.wizard-child-panel p', { color: 'var(--yoya-color-text-muted, #5a6575)' }]
+  ['.wizard-child-panel p', { color: 'var(--yoya-color-text-muted, #5a6575)' }],
+  ['.demo-region-compare', { display: 'grid', gap: '10px' }],
+  [
+    '.demo-region-compare-panel',
+    {
+      alignItems: 'center',
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: '6px',
+      display: 'flex',
+      gap: '8px',
+      padding: '8px 10px'
+    }
+  ]
 ];
 
 const i18nExtraRules = [

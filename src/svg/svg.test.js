@@ -40,6 +40,31 @@ const svgElementFactories = [
 ];
 
 describe('SVG element factories', () => {
+  it('activates value bindings so signal writes update SVG attributes in place', () => {
+    const position = yoya.ref(10);
+    const group = yoya.svg((field) => {
+      field.g((ring) => {
+        ring.attr(
+          'transform',
+          yoya.computed(() => `translate(${position.value} 0)`)
+        );
+        ring.on('click', () => {
+          position.value += 5;
+        });
+      });
+    });
+    const element = group.renderDom();
+    document.body.appendChild(element);
+    const ring = element.querySelector('g');
+
+    expect(ring.getAttribute('transform')).toBe('translate(10 0)');
+
+    ring.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(ring.getAttribute('transform')).toBe('translate(15 0)');
+    element.remove();
+  });
+
   it('exports svg as the only public SVG tag entry', () => {
     const icon = yoya.svg();
     const element = icon.renderDom();

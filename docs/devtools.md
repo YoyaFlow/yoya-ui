@@ -49,17 +49,28 @@ disableDevtools();
 
 `subscribeDevtools(listener)` returns an unsubscribe function; listener errors do not interrupt rendering. Every event carries `seq` (monotonic) and `nodeId`:
 
-| type      | meaning                       | extra fields                    |
-| --------- | ----------------------------- | ------------------------------- |
-| `commit`  | element first render          | `kind: 'mount'`                 |
-| `destroy` | node destroyed                | —                               |
-| `attr`    | attribute/class changed       | `name`, `previous`, `next`      |
-| `style`   | inline style changed          | `name`, `previous`, `next`      |
-| `child`   | child added/removed/reordered | `added`, `removed`, `reordered` |
-| `text`    | text changed                  | `from`, `to`                    |
-| `state`   | `vStateNode` state changed    | `changed`, `state`, `handling`  |
+| type           | meaning                       | extra fields                                 |
+| -------------- | ----------------------------- | -------------------------------------------- |
+| `commit`       | element first render          | `kind: 'mount'`                              |
+| `destroy`      | node destroyed                | —                                            |
+| `attr`         | attribute/class changed       | `name`, `previous`, `next`                   |
+| `style`        | inline style changed          | `name`, `previous`, `next`                   |
+| `child`        | child added/removed/reordered | `added`, `removed`, `reordered`              |
+| `text`         | text changed                  | `from`, `to`                                 |
+| `signal-write` | signal written                | `signalId`, `previous`, `next`, `dependents` |
+| `region`       | rebuildable region handled    | `action`, `trigger`                          |
 
-`state` events describe the path the change took: `update` (handled by the update callback), `bindings` (function-value bindings written back), `rebuild` (view root rebuilt), or `pending` (component not mounted).
+`signal-write` events are emitted when a `ref` is written with a changed value:
+`signalId` is stable within the session, `previous` / `next` are the values around
+the write, and `dependents` counts the bindings that depend on the signal (value
+bindings plus region dependencies). Writing the same value and writing to a
+read-only `computed` handle produce no event, and the write path stays zero-cost
+while devtools is off.
+
+`region` events describe how a marked region was handled: `action` is `rebuild`
+(the subtree was rebuilt) or `flush` (only bound values were written back and the
+structure stayed as-is); `trigger` is `manual` (an explicit `rebuild()`) or `signal`
+(driven by a signal write).
 
 ## Scope details
 

@@ -68,7 +68,7 @@ Collapse "language instance + render + shell assembly + serialization" into one 
 
 ```js
 // home-page.js - a page is a Shape-A component shared by both sides
-import { createRouter, div } from 'yoya-ui';
+import { createRouter, div } from '@yoyaflow/yoya-ui';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,14 +117,49 @@ res.end(html);
 
 ```js
 // client.js - built by the bundler, one line
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
 // reads __YOYA_DATA__ automatically -> hydrates when #app has server HTML, otherwise mounts
 ```
 
-`renderPage` output structure: `<!doctype html>` + `<head>` (head DSL) + `<body>` (body DSL wrapped in `<div id="app">`) + state script + client entry. `stateId` (default `__YOYA_DATA__`) and the client container are configurable; multi-island scenarios give each island its own name (islands use the low-level `renderToString`, see §6).
+`renderPage` output structure: `<!doctype html>` + `<head>` (head DSL) + `<body>` (body DSL wrapped in `<div id="app">`) + state script. `stateId` (default `__YOYA_DATA__`) and the client container are configurable; multi-island scenarios give each island its own name (islands use the low-level `renderToString`, see §6).
+
+**`renderPage` never emits the client entry**: the script path, whether it belongs in head or body, and what runs before it are decisions of your project. Add it yourself from the head DSL:
+
+```js
+page.head((head) => {
+  head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+  head.script({ type: 'module', src: '/assets/client.js' });
+});
+```
+
+`type="module"` implies defer: parsing never blocks and the tag runs only after parsing finishes, so this is safe in head. Never use a plain `<script src>` without `defer` — it blocks parsing and runs before `#app` exists.
+
+Together with that head DSL, the page looks roughly like this (page DOM elided):
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>SSR Demo</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/assets/yoya.ui.css" />
+    <!-- ③ Client entry: added by you (renderPage does not emit it) -->
+    <link rel="modulepreload" href="/assets/client.js" />
+    <script type="module" src="/assets/client.js"></script>
+  </head>
+  <body>
+    <!-- ① Hydration target; id comes from containerId (default "app") -->
+    <div id="app"><!-- server-rendered page DOM --></div>
+    <!-- ② Request state; id comes from stateId (default "__YOYA_DATA__") -->
+    <script type="application/json" id="__YOYA_DATA__">
+      { "lang": "en-US", "path": "/home", "mode": "history" }
+    </script>
+  </body>
+</html>
+```
 
 ## 3. Server initialization (with your server code)
 
@@ -135,7 +170,7 @@ The library does not depend on any framework; `node:http`, Express, Hono, or Koa
 See `src/examples/ssr/server-http.mjs` for a runnable example (`node src/examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -227,7 +262,7 @@ Mount `dist/` as a static directory on the server (`/assets/*` or `/vendor/*`) a
 ### 4.3 Client boot script (client.js)
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/router';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js'; // bundler shares the same factory
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
@@ -269,14 +304,27 @@ div((root) => {
 - `dist/examples/ssr-demo.html` (after building examples): standalone SSR demo page that runs renderToString -> hydrate in the browser, exercising buttons, dialogs, forms, and zh/en switching.
 - Examples site (`npm run build:examples` + `npx vite preview`): Guides -> Server-Side Rendering page with SSR / non-SSR mode-switching demos.
 
-## 8. Development discipline and common mistakes
+## 8. Operations to avoid and common mistakes
 
-**Discipline**
+SSR discipline reduces to one sentence: **the render path must be DOM-free and deterministic, and request data is injected per request.**
 
-- `render()` and `toHTML()` paths stay DOM-free and deterministic: do not read `document`/`window`; do not let `Date.now()`/`Math.random()` affect output.
-- Guard browser APIs with `typeof xxx === 'undefined'` and only use them in event paths or `renderDom()`.
-- Module-level mutable state (registries, id counters) is never shared across requests.
-- The server stays stateless: per-request render context + destroy after render + output depends only on request input.
+**Operations to avoid**
+
+| Avoid                                                                                                                                         | Do instead                                                                                                                                                                   | Why                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Reading `document` / `window` inside `render()` / `toHTML()`                                                                                  | Access the DOM only in event callbacks or `renderDom()`; guard browser APIs with `typeof xxx === 'undefined'`                                                                | There is no DOM on the server, so the render path must stay DOM-free                    |
+| Letting `Date.now()` / `Math.random()` affect output (including keys and ids)                                                                 | Derive structure from request input only; allocate ids with `allocateId` from the render context                                                                             | Two different trees make hydration misalign                                             |
+| Calling `document.addEventListener` / `window.addEventListener` inside components                                                             | Use `bindDocumentEvent` / `bindWindowEvent` and run the returned unbind in `destroy()`                                                                                       | No DOM on the server; the client must unbind when nodes are destroyed                   |
+| Keeping request state, view trees, or component instances at module level (current user, locale, counters, region nodes, component instances) | Create them per request: `createAccess` / `createI18n` / `withContext` through entry `options`; build region nodes and component instances inside the page factory           | Module-level state and view trees leak between concurrent requests and share one tree   |
+| Calling `rebuild()` / `flush()` during server rendering                                                                                       | The first paint only builds (bindings are written back during the build); leave rebuilds and flushes to client-side interaction (`setState`, region `rebuild()` / `flush()`) | Materializing DOM needs a browser environment, so the call is meaningless on the server |
+| Requests, analytics, or timers during render                                                                                                  | Move side effects into event callbacks or after client mount                                                                                                                 | SSR only produces output, and the result may be cached or replayed                      |
+| Deciding structure with `getBoundingClientRect` / `offsetWidth`                                                                               | Decide structure from state; use measurement only for post-render positioning                                                                                                | There is no layout on the server, so the two sides diverge                              |
+| Passing functions inside the request state to `renderPage`                                                                                    | Pass serializable data only (path, filters, locale)                                                                                                                          | The state is serialized into `__YOYA_DATA__` and parsed on the client                   |
+| Assuming the client rebuilds the server DOM                                                                                                   | `hydrate()` adopts the existing DOM and only attaches event adapters                                                                                                         | Rebuilding flashes the first paint and drops server-rendered state                      |
+| Reading `document` / `window` inside a function-value binding (`attr('x', () => window.innerWidth)`)                                          | Keep bindings pure: depend only on `ref` / `computed` or data created per request                                                                                            | Bindings are evaluated once during the server build, so DOM access throws               |
+| Reading module-level mutable data from a binding (`() => store.count`, `store` at module scope)                                               | Create a `ref` inside the page factory (one per request), or carry the data in the request state                                                                             | Module-level data leaks between concurrent requests                                     |
+
+The server stays stateless: per-request render context + destroy the component tree after rendering + output depends only on request input.
 
 **Common mistakes**
 

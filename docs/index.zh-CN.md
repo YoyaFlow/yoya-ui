@@ -19,6 +19,7 @@
 | [`theme.zh-CN.md`](theme.zh-CN.md)                             | 主题样式规范                                  | 重建并改名  |
 | [`devtools.zh-CN.md`](devtools.zh-CN.md)                       | DevTools 使用指南                             | 重建        |
 | [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md) | 组件库开发指南（第三方 / 生态作者）           | 重建并改名  |
+| [`migration-0.5.zh-CN.md`](migration-0.5.zh-CN.md)             | 0.4 → 0.5 破坏性变更与迁移对照                | 新建        |
 
 ## 阅读路径建议
 
@@ -26,3 +27,4 @@
 2. 特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不再维护独立清单文档；
 3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；
 4. 要扩展组件生态时读 `component-authoring.zh-CN.md`。
+5. 从 0.4 升级时先读 `migration-0.5.zh-CN.md`。

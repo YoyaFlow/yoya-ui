@@ -8,7 +8,7 @@
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                   |
 | 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态       | `vStateNode`                                                                                                                                   |
+| 状态       | `ref` / `computed`（Signals）                                                                                                                  |
 | 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
 
 ## vText 文本节点
@@ -37,16 +37,23 @@ export function ServiceTag(options) {
 **形态 B：对象组件**（常规默认形态，返回 `{ render() }`）
 
 ```js
-import { vRate } from '@yoyaflow/yoya-ui/ui';
+import { computed, div, ref, vInput, vText } from '@yoyaflow/yoya-ui';
 
-export function RateCard() {
-  const state = { value: 0 };
+export function NameField() {
+  // 状态用 ref 持有：值位置直接传句柄，写入即写回，不需要手动刷新
+  const name = ref('');
+  const hint = computed(() => `你好，${name.value || '匿名'}`);
+
   return {
     render() {
-      return vRate((rate) => rate.value(state.value));
+      return div((box) => {
+        box.vInput({ name: 'user', placeholder: '姓名', value: name });
+        box.p((line) => line.child(vText(hint)));
+      });
     },
-    value(next) {
-      state.value = next;
+    // 对外只暴露方法，不把内部信号交给使用者
+    setValue(next) {
+      name.value = next;
       return this;
     }
   };
@@ -67,6 +74,12 @@ export function vStatusDot(first = null, second = null, third = null) {
 }
 ```
 
+## 文件内分块：结构块也用函数组件
+
+复杂组件需要分块定义结构时，文件内部的每一块也按函数组件组织：同一文件内声明、PascalCase 命名、输入走参数、产出 ViewNode。
+
+规则、命名与示例见 [references/modules.md](modules.md) 的「组件函数命名与页面组合 → 结构块也用函数组件」。
+
 ## 命名与样式约定
 
 - 基础 HTML 元素保持原生标签名；复合组件工厂统一 `v` 前缀（PascalCase）
@@ -80,11 +93,9 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 状态与更新
 
-yoya-ui 没有自动响应式系统，状态变化后由组件决定就地更新：
+yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）。组件可继续暴露链式 API（`value(next)`、`disabled(next)`）。
 
-- 节点级：`registerStateAttrs` + `registerStateHandler` + `setState`/`getState`
-- 组件级：`vStateNode({ state, render, update })`，`update` 局部 patch，返回 `true` 时全量重建
-- 组件可暴露链式状态 API（`value(next)`、`disabled(next)`）
+Signals 的句柄与绑定、区域依赖捕获与谓词门禁、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 
 ## 组合、事件与生命周期
 

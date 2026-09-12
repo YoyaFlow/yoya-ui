@@ -1,3 +1,5 @@
+import { registerRegionCleanup } from './node.js';
+
 /**
  * 文档级事件绑定——组件代码中唯一允许接触 document 的位置。
  *
@@ -12,9 +14,12 @@ export function bindDocumentEvent(type, handler, options = undefined) {
   }
 
   document.addEventListener(type, handler, options);
-  return () => {
+  const unbind = () => {
     document.removeEventListener(type, handler, options);
   };
+
+  registerRegionCleanup(unbind);
+  return unbind;
 }
 
 export function unbindDocumentEvent(type, handler, options = undefined) {
@@ -32,9 +37,12 @@ export function bindWindowEvent(type, handler, options = undefined) {
   }
 
   window.addEventListener(type, handler, options);
-  return () => {
+  const unbind = () => {
     window.removeEventListener(type, handler, options);
   };
+
+  registerRegionCleanup(unbind);
+  return unbind;
 }
 
 /** 注入 <style> 到 <head> 的收敛入口；dataAttribute 用于去重与标识。 */

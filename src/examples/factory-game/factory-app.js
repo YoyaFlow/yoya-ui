@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { div, vButton, vStateNode, vText } from '../../index.js';
+import { div, ref, vButton, vText } from '../../index.js';
 import { vThree } from '../../yoya.three.js';
 import {
   ASSEMBLER,
@@ -103,19 +103,13 @@ export function FactoryGameStandalone() {
   }
 
   function createStatsPanel() {
-    let lostText = null;
-    let oreText = null;
-    let plateText = null;
-    let tickText = null;
+    const lostItems = ref(0);
+    const minedOre = ref(0);
+    const plates = ref(0);
+    const tick = ref(0);
 
-    return vStateNode({
-      state: () => ({ lostItems: 0, minedOre: 0, plates: 0, tick: 0 }),
-      render(current) {
-        oreText = vText(String(current.minedOre));
-        plateText = vText(String(current.plates));
-        lostText = vText(String(current.lostItems));
-        tickText = vText(String(current.tick));
-
+    return {
+      render() {
         return div((row) => {
           row.className('factory-stats');
           row.style({
@@ -125,11 +119,11 @@ export function FactoryGameStandalone() {
             padding: '10px 0'
           });
           [
-            ['矿石', oreText],
-            ['组装件', plateText],
-            ['流失', lostText],
-            ['tick', tickText]
-          ].forEach(([label, text]) => {
+            ['矿石', minedOre],
+            ['组装件', plates],
+            ['流失', lostItems],
+            ['tick', tick]
+          ].forEach(([label, stat]) => {
             row.div((item) => {
               item.style({
                 background: 'var(--yoya-color-surface, #ffffff)',
@@ -138,18 +132,18 @@ export function FactoryGameStandalone() {
                 padding: '4px 12px'
               });
               item.strong(`${label} `);
-              item.child(text);
+              item.child(vText(stat));
             });
           });
         });
       },
-      update(current) {
-        oreText.textContent(String(current.minedOre));
-        plateText.textContent(String(current.plates));
-        lostText.textContent(String(current.lostItems));
-        tickText.textContent(String(current.tick));
+      update(next) {
+        lostItems.value = next.lostItems;
+        minedOre.value = next.minedOre;
+        plates.value = next.plates;
+        tick.value = next.tick;
       }
-    });
+    };
   }
 
   function refreshStats(force = false) {
@@ -157,7 +151,7 @@ export function FactoryGameStandalone() {
       return;
     }
     statsLastTick = state.tick;
-    ui.stats?.setState({
+    ui.stats?.update({
       lostItems: state.stats.lostItems,
       minedOre: state.stats.minedOre,
       plates: state.stats.plates,

@@ -1,4 +1,4 @@
-import { ViewNode, VTextNode, registerChildFactories } from '../core/node.js';
+import { ViewNode, VTextNode, applyPropValue, registerChildFactories } from '../core/node.js';
 import { allocateId } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
@@ -9,6 +9,7 @@ import { VTagsInput } from './tags-input.js';
 import { VAutocomplete } from './autocomplete.js';
 import {
   applyComponentSetup,
+  booleanMethod,
   componentClass,
   createComponentFactory,
   isPlainObject,
@@ -55,11 +56,7 @@ function syncClearButton(control, inputNode, clearButton) {
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== '' && value !== null && value !== undefined;
-  const visible =
-    control._clearable &&
-    hasValue &&
-    !control.getBooleanState('disabled') &&
-    !control.getBooleanState('readonly');
+  const visible = control._clearable && hasValue && !control.isDisabled() && !control.isReadonly();
 
   clearButton.style('display', visible ? null : 'none');
 }
@@ -105,6 +102,34 @@ export class VInput extends HtmlElementNode {
     this._input.on('input', () => this._syncClear());
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this._input.style('cursor', enabled ? 'not-allowed' : 'text');
+      this._input.style('opacity', enabled ? '0.64' : '1');
+      this._syncClear();
+    });
+    this.readonly = booleanMethod(this, 'readonly', false, (enabled) => {
+      this._input.attr('readonly', enabled ? true : null);
+      this._syncClear();
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+    this.error = booleanMethod(this, 'error', false, (enabled) => {
+      this._input.attr('data-error', enabled ? 'true' : null);
+      this._input.style(
+        'borderColor',
+        enabled
+          ? themeValue('color-danger', '#dc2626')
+          : themeValue('color-border-strong', '#cbd5e1')
+      );
+      this._input.style(
+        'boxShadow',
+        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+      );
+    });
 
     this._setupInput(setup);
     this._syncClearPadding();
@@ -220,64 +245,17 @@ export class VInput extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this._input.style('cursor', enabled ? 'not-allowed' : 'text');
-    this._input.style('opacity', enabled ? '0.64' : '1');
-    this._syncClear();
-    return this;
+  // 读写分离：跨组件只读判断走这两个方法（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
-  readonly(value) {
-    if (value === undefined) {
-      return this.getBooleanState('readonly');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('readonly', enabled);
-    this._input.attr('readonly', enabled ? true : null);
-    this._syncClear();
-    return this;
+  isReadonly() {
+    return this._readonly.value;
   }
 
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
-    return this;
-  }
-
-  error(value) {
-    if (value === undefined) {
-      return this.getBooleanState('error');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('error', enabled);
-    this._input.attr('data-error', enabled ? 'true' : null);
-    this._input.style(
-      'borderColor',
-      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
-    );
-    this._input.style(
-      'boxShadow',
-      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
-    );
-    return this;
+  isError() {
+    return this._error.value;
   }
 
   clearable(value) {
@@ -357,41 +335,41 @@ export class VInput extends HtmlElementNode {
       }
 
       if (type !== undefined) {
-        this.type(type);
+        applyPropValue(this, type, (next) => this.type(next));
       }
 
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        applyPropValue(this, placeholder, (next) => this.placeholder(next));
       }
 
       if (value !== undefined) {
-        this.value(value);
+        applyPropValue(this, value, (next) => this.value(next));
       } else if (text !== undefined) {
-        this.value(text);
+        applyPropValue(this, text, (next) => this.value(next));
       } else if (content !== undefined) {
-        this.value(content);
+        applyPropValue(this, content, (next) => this.value(next));
       } else if (children !== undefined) {
-        this.value(children);
+        applyPropValue(this, children, (next) => this.value(next));
       }
 
       if (required !== undefined) {
-        this.required(required);
+        applyPropValue(this, required, (next) => this.required(next));
       }
 
       if (readonly !== undefined) {
-        this.readonly(readonly);
+        applyPropValue(this, readonly, (next) => this.readonly(next));
       }
 
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        applyPropValue(this, disabled, (next) => this.disabled(next));
       }
 
       if (error !== undefined) {
-        this.error(error);
+        applyPropValue(this, error, (next) => this.error(next));
       }
 
       if (clearable !== undefined) {
-        this.clearable(clearable);
+        applyPropValue(this, clearable, (next) => this.clearable(next));
       }
 
       return;
@@ -678,6 +656,33 @@ export class VTextarea extends HtmlElementNode {
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
 
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this._input.style('cursor', enabled ? 'not-allowed' : 'text');
+      this._input.style('opacity', enabled ? '0.64' : '1');
+      this._syncClear();
+    });
+    this.readonly = booleanMethod(this, 'readonly', false, (enabled) => {
+      this._input.attr('readonly', enabled ? true : null);
+      this._syncClear();
+    });
+    this.error = booleanMethod(this, 'error', false, (enabled) => {
+      this._input.attr('data-error', enabled ? 'true' : null);
+      this._input.style(
+        'borderColor',
+        enabled
+          ? themeValue('color-danger', '#dc2626')
+          : themeValue('color-border-strong', '#cbd5e1')
+      );
+      this._input.style(
+        'boxShadow',
+        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+      );
+    });
+
     this._setupTextarea(setup);
     this._syncClearPadding();
     this._syncClear();
@@ -788,64 +793,17 @@ export class VTextarea extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this._input.style('cursor', enabled ? 'not-allowed' : 'text');
-    this._input.style('opacity', enabled ? '0.64' : '1');
-    this._syncClear();
-    return this;
+  // 读写分离：跨组件只读判断走这两个方法（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
-  readonly(value) {
-    if (value === undefined) {
-      return this.getBooleanState('readonly');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('readonly', enabled);
-    this._input.attr('readonly', enabled ? true : null);
-    this._syncClear();
-    return this;
+  isReadonly() {
+    return this._readonly.value;
   }
 
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
-    return this;
-  }
-
-  error(value) {
-    if (value === undefined) {
-      return this.getBooleanState('error');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('error', enabled);
-    this._input.attr('data-error', enabled ? 'true' : null);
-    this._input.style(
-      'borderColor',
-      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
-    );
-    this._input.style(
-      'boxShadow',
-      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
-    );
-    return this;
+  isError() {
+    return this._error.value;
   }
 
   rows(value) {
@@ -1006,6 +964,29 @@ export class VSelect extends HtmlElementNode {
     this._input.on('change', () => this._syncClear());
     this.child(this._input, this._clearButton);
 
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
+      this._input.style('opacity', enabled ? '0.64' : '1');
+      this._syncClear();
+    });
+    this.error = booleanMethod(this, 'error', false, (enabled) => {
+      this._input.attr('data-error', enabled ? 'true' : null);
+      this._input.style(
+        'borderColor',
+        enabled
+          ? themeValue('color-danger', '#dc2626')
+          : themeValue('color-border-strong', '#cbd5e1')
+      );
+      this._input.style(
+        'boxShadow',
+        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+      );
+    });
+
     this._setupSelect(setup);
     this._syncClearPadding();
     this._syncClear();
@@ -1120,51 +1101,18 @@ export class VSelect extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
-    this._input.style('opacity', enabled ? '0.64' : '1');
-    this._syncClear();
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
-    return this;
+  // 下拉选择没有只读态，恒为 false，供清空按钮判别直接调用
+  isReadonly() {
+    return false;
   }
 
-  error(value) {
-    if (value === undefined) {
-      return this.getBooleanState('error');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('error', enabled);
-    this._input.attr('data-error', enabled ? 'true' : null);
-    this._input.style(
-      'borderColor',
-      enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
-    );
-    this._input.style(
-      'boxShadow',
-      enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
-    );
-    return this;
+  isError() {
+    return this._error.value;
   }
 
   clearable(value) {
@@ -1352,8 +1300,29 @@ class VBooleanControl extends HtmlElementNode {
     });
     this._contentBox.child(this._labelBox, this._descriptionBox);
     this.child(this._visualBox, this._input, this._contentBox);
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.checked = booleanMethod(this, 'checked', false, (enabled) => {
+      this.attr('data-checked', enabled ? 'true' : null);
+      this._input.attr('checked', enabled ? true : null);
+      this._syncVisual(enabled);
+    });
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this._input.attr('disabled', enabled ? true : null);
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this._input.attr('required', enabled ? true : null);
+    });
+    this.indeterminate = booleanMethod(this, 'indeterminate', false, (enabled) => {
+      if (this._input._el) {
+        this._input._el.indeterminate = enabled;
+      }
+    });
+
     this._input.on('change', (event) => {
-      if (this.getBooleanState('disabled')) {
+      if (this.disabled()) {
         return;
       }
 
@@ -1389,18 +1358,9 @@ class VBooleanControl extends HtmlElementNode {
     return this;
   }
 
-  checked(value) {
-    if (value === undefined) {
-      return this.getBooleanState('checked');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('checked', enabled);
-    this.attr('data-checked', enabled ? 'true' : null);
-    this._input.attr('checked', enabled ? true : null);
-    this._syncVisual(enabled);
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   value(value) {
@@ -1428,46 +1388,6 @@ class VBooleanControl extends HtmlElementNode {
 
     this._input.name(value);
     this.attr('data-name', value ?? null);
-    return this;
-  }
-
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this._input.attr('disabled', enabled ? true : null);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('required', enabled);
-    this._input.attr('required', enabled ? true : null);
-    return this;
-  }
-
-  indeterminate(value) {
-    if (value === undefined) {
-      return this.getBooleanState('indeterminate');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('indeterminate', enabled);
-    if (this._input._el) {
-      this._input._el.indeterminate = enabled;
-    }
     return this;
   }
 
@@ -1660,6 +1580,13 @@ export class VCheckboxes extends HtmlElementNode {
       minWidth: '0'
     });
 
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+      this._items.forEach((item) => item.disabled(enabled));
+    });
+
     this._setupCheckboxes(setup);
   }
 
@@ -1700,18 +1627,9 @@ export class VCheckboxes extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    this._items.forEach((item) => item.disabled(enabled));
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   options(value) {
@@ -1885,6 +1803,20 @@ export class VRadio extends VBooleanControl {
       width: '16px'
     });
     this._syncVisual(false);
+    // checked 在基类是实例属性（booleanMethod），互斥逻辑包一层而不是原型重写
+    const baseChecked = this.checked;
+    this.checked = (value) => {
+      if (value !== undefined && value && this.name()) {
+        const group = radioGroups.get(this.name());
+        group?.forEach((other) => {
+          if (other !== this && other.checked()) {
+            other.checked(false);
+          }
+        });
+      }
+
+      return baseChecked(value);
+    };
     this._setupBoolean(setup);
     registerRadio(this);
   }
@@ -1898,19 +1830,6 @@ export class VRadio extends VBooleanControl {
     const result = super.name(value);
     registerRadio(this);
     return result;
-  }
-
-  checked(value) {
-    if (value !== undefined && value && this.name()) {
-      const group = radioGroups.get(this.name());
-      group?.forEach((other) => {
-        if (other !== this && other.checked()) {
-          other.checked(false);
-        }
-      });
-    }
-
-    return super.checked(value);
   }
 
   destroy() {
@@ -1982,6 +1901,13 @@ export class VRadios extends HtmlElementNode {
       minWidth: '0'
     });
 
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('aria-disabled', enabled ? 'true' : null);
+      this.style('opacity', enabled ? '0.64' : '1');
+      this._items.forEach((item) => item.disabled(enabled));
+    });
+
     this._setupRadios(setup);
   }
 
@@ -2006,18 +1932,9 @@ export class VRadios extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const enabled = Boolean(value);
-
-    this.setState('disabled', enabled);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    this.style('opacity', enabled ? '0.64' : '1');
-    this._items.forEach((item) => item.disabled(enabled));
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   change(handler) {

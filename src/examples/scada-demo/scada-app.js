@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { bindDocumentEvent, bindWindowEvent } from '../../core/document-events.js';
-import { div, vButton, vStateNode, vText } from '../../index.js';
+import { computed, div, ref, vButton, vText } from '../../index.js';
 import { vThree } from '../../yoya.three.js';
 import {
   DEVICE_DEFS,
@@ -294,7 +294,7 @@ export function ScadaTwinStandalone() {
     if (runtime.statusOpen) {
       exitLock();
     }
-    ui.statusWindow?.setState({ open: runtime.statusOpen });
+    ui.statusWindow?.update({ open: runtime.statusOpen });
     rootNode?.attr('data-status', runtime.statusOpen ? 'open' : 'closed');
     syncReticleVisibility();
     updateLockHint();
@@ -492,45 +492,47 @@ export function ScadaTwinStandalone() {
   }
 
   function createStatusWindow() {
-    return vStateNode({
-      state: () => ({ open: false }),
-      render(current) {
+    const open = ref(false);
+
+    return {
+      render() {
         return div((panel) => {
           panel.className('scada-status-window');
-          panel.attr('data-open', current.open ? 'true' : 'false');
-          if (!current.open) {
+          panel.rebuildable(() => true);
+          panel.attr('data-open', open.value ? 'true' : 'false');
+          if (!open.value) {
             panel.style({ display: 'none' });
             return;
           }
           panel.h3('状态窗口');
           panel.p('内容暂空 · 按 Tab 或 Alt 关闭');
         });
+      },
+      update(patch) {
+        if (patch && patch.open !== undefined) {
+          open.value = patch.open;
+        }
       }
-    });
+    };
   }
 
   function createStatsPanel() {
-    let alarmText = null;
-    let flowText = null;
-    let tank1Text = null;
-    let tank2Text = null;
+    const alarms = ref(0);
+    const running = ref(0);
+    const tank1 = ref(0);
+    const tank2 = ref(0);
 
-    return vStateNode({
-      state: () => ({ alarms: 0, running: 0, tank1: 0, tank2: 0 }),
-      render(current) {
-        tank1Text = vText(`${current.tank1.toFixed(1)}%`);
-        tank2Text = vText(`${current.tank2.toFixed(1)}%`);
-        flowText = vText(String(current.running));
-        alarmText = vText(String(current.alarms));
+    return {
+      render() {
         return div((row) => {
           row.className('scada-stats');
           row.style({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
           [
-            ['T-101', tank1Text],
-            ['T-102', tank2Text],
-            ['运行泵', flowText],
-            ['报警', alarmText]
-          ].forEach(([label, text]) => {
+            ['T-101', computed(() => `${tank1.value.toFixed(1)}%`)],
+            ['T-102', computed(() => `${tank2.value.toFixed(1)}%`)],
+            ['运行泵', running],
+            ['报警', alarms]
+          ].forEach(([label, stat]) => {
             row.div((item) => {
               item.className('scada-stat');
               item.style({
@@ -542,98 +544,85 @@ export function ScadaTwinStandalone() {
                 padding: '4px 10px'
               });
               item.strong(`${label} `);
-              item.child(text);
+              item.child(vText(stat));
             });
           });
         });
       },
-      update(current) {
-        tank1Text.textContent(`${current.tank1.toFixed(1)}%`);
-        tank2Text.textContent(`${current.tank2.toFixed(1)}%`);
-        flowText.textContent(String(current.running));
-        alarmText.textContent(String(current.alarms));
+      update(next) {
+        tank1.value = next.tank1;
+        tank2.value = next.tank2;
+        running.value = next.running;
+        alarms.value = next.alarms;
       }
-    });
+    };
   }
 
   function createDetailPanel() {
-    let hintText = null;
-    let idText = null;
-    let modeText = null;
-    let nameText = null;
-    let statusText = null;
-    let valueText = null;
+    const hint = ref('选择设备后显示实时数据。');
+    const id = ref('—');
+    const mode = ref('—');
+    const name = ref('未选择设备');
+    const status = ref('—');
+    const value = ref('—');
 
-    return vStateNode({
-      state: () => ({
-        hint: '选择设备后显示实时数据。',
-        id: '—',
-        mode: '—',
-        name: '未选择设备',
-        status: '—',
-        value: '—'
-      }),
-      render(current) {
-        idText = vText(current.id);
-        nameText = vText(current.name);
-        statusText = vText(current.status);
-        valueText = vText(current.value);
-        modeText = vText(current.mode);
-        hintText = vText(current.hint);
+    return {
+      render() {
         return div((panel) => {
           panel.className('scada-detail');
           panel.h3('设备详情');
           panel.p((line) => {
             line.strong('编号 ');
-            line.child(idText);
+            line.child(vText(id));
           });
           panel.p((line) => {
             line.strong('名称 ');
-            line.child(nameText);
+            line.child(vText(name));
           });
           panel.p((line) => {
             line.strong('状态 ');
-            line.child(statusText);
+            line.child(vText(status));
           });
           panel.p((line) => {
             line.strong('实时值 ');
-            line.child(valueText);
+            line.child(vText(value));
           });
           panel.p((line) => {
             line.strong('控制模式 ');
-            line.child(modeText);
+            line.child(vText(mode));
           });
           panel.p((line) => {
             line.className('scada-detail-hint');
             line.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
-            line.child(hintText);
+            line.child(vText(hint));
           });
         });
       },
-      update(current) {
-        idText.textContent(current.id);
-        nameText.textContent(current.name);
-        statusText.textContent(current.status);
-        valueText.textContent(current.value);
-        modeText.textContent(current.mode);
-        hintText.textContent(current.hint);
+      update(next) {
+        id.value = next.id;
+        name.value = next.name;
+        status.value = next.status;
+        value.value = next.value;
+        mode.value = next.mode;
+        hint.value = next.hint;
       }
-    });
+    };
   }
 
   function createAlarmPanel(onAck) {
-    return vStateNode({
-      state: () => ({ alarms: [] }),
-      render(current) {
-        if (current.alarms.length === 0) {
-          return div((panel) => {
-            panel.className('scada-alarms');
-            panel.p('暂无报警记录');
-          });
-        }
+    const alarms = ref([]);
+
+    return {
+      render() {
         return div((panel) => {
           panel.className('scada-alarms');
-          current.alarms.forEach((alarm) => {
+          // 区域直读报警列表：列表变化（增删/确认态）即重建
+          panel.rebuildable(() => true);
+          if (alarms.value.length === 0) {
+            panel.p('暂无报警记录');
+            return;
+          }
+          alarms.value.forEach((alarm) => {
             panel.div((row) => {
               row.className(`scada-alarm scada-alarm--${alarm.severity}`);
               row.style({
@@ -672,8 +661,11 @@ export function ScadaTwinStandalone() {
             });
           });
         });
+      },
+      update(next) {
+        alarms.value = next.alarms;
       }
-    });
+    };
   }
 
   function refreshHud(force = false) {
@@ -682,7 +674,7 @@ export function ScadaTwinStandalone() {
     }
     statsLastTick = state.tick;
     const running = Object.values(state.pumps).filter((pump) => pump.status === 'run').length;
-    ui.statsPanel?.setState({
+    ui.statsPanel?.update({
       alarms: activeAlarmCount(state),
       running,
       tank1: state.levels['T-101'],
@@ -693,7 +685,7 @@ export function ScadaTwinStandalone() {
     const key = alarms.map((alarm) => `${alarm.id}:${alarm.active}:${alarm.acked}`).join(',');
     if (force || key !== lastAlarmKey) {
       lastAlarmKey = key;
-      ui.alarmPanel?.setState({ alarms });
+      ui.alarmPanel?.update({ alarms });
     }
     refreshDetail();
   }
@@ -726,7 +718,7 @@ export function ScadaTwinStandalone() {
     } else {
       panelState.hint = '按 1-4 选择设备，或走进后左键点击。';
     }
-    ui.detailPanel?.setState(panelState);
+    ui.detailPanel?.update(panelState);
   }
 
   function ackAlarm(alarmId) {

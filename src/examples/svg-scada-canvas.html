@@ -6,7 +6,7 @@
     <title>yoya-ui SCADA 画布演示</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -226,18 +226,19 @@
     <script type="module">
       import {
         bindWindowEvent,
+        computed,
         div,
+        ref,
         svg,
-        SvgElementNode,
-        vStateNode
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
+        SvgElementNode
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
 
       /*
        * SCADA 画布演示（编辑器闭环，不含采集/报警等工业服务）：
-       * - ScadaDevice：单个设备（SVG 图形 + 坐标/值/角度/选中状态）
+       * - ScadaDevice：单个设备（ref 持有坐标/值/角度/选中态，SVG 视图直接绑定句柄）
        * - ScadaConnection：设备间连线，设备移动后由画布控制器 sync 重算
        * - ScadaCanvasView：SVG 画布（栅格、缩放、设备层/连线层）
-       * - ScadaHud：符号库/操作按钮/JSON 文本区
+       * - ScadaHud：符号库/操作按钮/JSON 文本区（状态用 ref，对外只暴露方法与只读属性）
        * - ScadaDemoApp：页面壳 + 交互规则（放置/拖动/连线/删除/运行模拟）
        */
 
@@ -257,12 +258,30 @@
       }
 
       function ScadaDevice({ id, kind, x, y, label, value = 0.5, angle = 0, onPointerDown }) {
-        function renderBody(group, state) {
+        const positionX = ref(x);
+        const positionY = ref(y);
+        const deviceValue = ref(value);
+        const deviceAngle = ref(angle);
+        const selected = ref(false);
+        const connectSource = ref(false);
+        const dragging = ref(false);
+
+        const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
+        const rotorTransform = computed(() => `rotate(${deviceAngle.value})`);
+        const liquidY = computed(() => String(26 - deviceValue.value * 48));
+        const liquidHeight = computed(() => String(deviceValue.value * 48));
+        const lampFill = computed(() => (deviceValue.value > 0.5 ? '#22c55e' : '#ef4444'));
+        const selectionOpacity = computed(() => (selected.value ? '1' : '0'));
+        const connectOpacity = computed(() => (connectSource.value ? '1' : '0'));
+
+        let node = null;
+
+        function renderBody(group) {
           if (kind === 'motor') {
             group.circle({ class: 'dev-ring', r: 20 });
             group.g((rotor) => {
               rotor.className('dev-motor-rotor');
-              rotor.attr('transform', (s) => `rotate(${s.angle})`);
+              rotor.attr('transform', rotorTransform);
               rotor.line({ x1: 0, y1: -12, x2: 0, y2: 12 });
             });
             return;
@@ -285,8 +304,8 @@
             group.rect((liquid) => {
               liquid.className('tank-liquid');
               liquid.attr({ x: -16, width: 32 });
-              liquid.attr('y', (s) => String(26 - s.value * 48));
-              liquid.attr('height', (s) => String(s.value * 48));
+              liquid.attr('y', liquidY);
+              liquid.attr('height', liquidHeight);
             });
             return;
           }
@@ -301,115 +320,165 @@
             group.circle((lamp) => {
               lamp.className('dev-lamp');
               lamp.attr('r', '16');
-              lamp.style('fill', (s) => (s.value > 0.5 ? '#22c55e' : '#ef4444'));
+              lamp.style('fill', lampFill);
             });
           }
         }
 
-        return vStateNode({
-          state: () => ({
-            id,
-            kind,
-            x,
-            y,
-            label,
-            value,
-            angle,
-            selected: false,
-            connectSource: false,
-            dragging: false
-          }),
-
-          render(state, api) {
-            return new SvgElementNode('g', (group) => {
+        const device = {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.className(['scada-device', `device--${kind}`]);
+              group.toggleClass('dragging', dragging);
               group.attr({
-                transform: (s) => `translate(${s.x} ${s.y})`,
+                transform,
                 'data-device-id': id
               });
 
               group.on('pointerdown', (event) => {
                 event.stopPropagation();
-                onPointerDown?.(api, event);
+                onPointerDown?.(device, event);
               });
               group.on('click', (event) => event.stopPropagation());
 
-              // 选中框 / 连线起点提示，均由状态驱动显隐。
+              // 选中框 / 连线起点提示，均由信号驱动显隐。
               group.circle((ring) => {
                 ring.className('scada-selection');
                 ring.attr('r', '28');
-                ring.style('opacity', (s) => (s.selected ? '1' : '0'));
+                ring.style('opacity', selectionOpacity);
               });
               group.circle((ring) => {
                 ring.className('scada-connect-ring');
                 ring.attr('r', '30');
-                ring.style('opacity', (s) => (s.connectSource ? '1' : '0'));
+                ring.style('opacity', connectOpacity);
               });
 
-              renderBody(group, state);
+              renderBody(group);
 
               group.text((labelNode) => {
                 labelNode.className('scada-label');
                 labelNode.attr({ x: 0, y: 40 });
-                labelNode.text(state.label);
+                labelNode.text(label);
               });
             });
+            return node;
+          },
+
+          get id() {
+            return id;
+          },
+
+          get kind() {
+            return kind;
+          },
+
+          get label() {
+            return label;
+          },
+
+          get x() {
+            return positionX.value;
+          },
+
+          get y() {
+            return positionY.value;
+          },
+
+          get value() {
+            return deviceValue.value;
+          },
+
+          get angle() {
+            return deviceAngle.value;
           },
 
           setPosition(nextX, nextY) {
-            this.setState({ x: nextX, y: nextY });
+            positionX.value = nextX;
+            positionY.value = nextY;
+            return this;
           },
 
-          select(selected) {
-            this.setState({ selected });
+          select(next) {
+            selected.value = next;
+            return this;
           },
 
           markConnectSource(active) {
-            this.setState({ connectSource: active });
+            connectSource.value = active;
+            return this;
           },
 
-          setDragging(dragging) {
-            this.setState({ dragging });
+          setDragging(next) {
+            dragging.value = next;
+            return this;
           },
 
-          updateRuntime(value, angle) {
-            this.setState({ value, angle });
+          updateRuntime(nextValue, nextAngle) {
+            deviceValue.value = nextValue;
+            deviceAngle.value = nextAngle;
+            return this;
+          },
+
+          destroy() {
+            node?.destroy();
           }
-        });
+        };
+
+        return device;
       }
 
       function ScadaConnection({ fromId, toId }) {
-        return vStateNode({
-          state: () => ({
-            fromId,
-            toId,
-            x1: 0,
-            y1: 0,
-            x2: 0,
-            y2: 0
-          }),
+        const startX = ref(0);
+        const startY = ref(0);
+        const endX = ref(0);
+        const endY = ref(0);
 
-          render(state) {
-            return new SvgElementNode('g', (group) => {
+        const lineStartX = computed(() => String(startX.value));
+        const lineStartY = computed(() => String(startY.value));
+        const lineEndX = computed(() => String(endX.value));
+        const lineEndY = computed(() => String(endY.value));
+
+        let node = null;
+
+        return {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.attr('data-connection-id', `${fromId}->${toId}`);
               group.line((line) => {
                 line.className('scada-line');
                 line.attr({
-                  x1: (s) => String(s.x1),
-                  y1: (s) => String(s.y1),
-                  x2: (s) => String(s.x2),
-                  y2: (s) => String(s.y2)
+                  x1: lineStartX,
+                  y1: lineStartY,
+                  x2: lineEndX,
+                  y2: lineEndY
                 });
               });
-              group.circle({ class: 'scada-endpoint', cx: (s) => s.x1, cy: (s) => s.y1, r: 4 });
-              group.circle({ class: 'scada-endpoint', cx: (s) => s.x2, cy: (s) => s.y2, r: 4 });
+              group.circle({ class: 'scada-endpoint', cx: startX, cy: startY, r: 4 });
+              group.circle({ class: 'scada-endpoint', cx: endX, cy: endY, r: 4 });
             });
+            return node;
+          },
+
+          get fromId() {
+            return fromId;
+          },
+
+          get toId() {
+            return toId;
           },
 
           sync(x1, y1, x2, y2) {
-            this.setState({ x1, y1, x2, y2 });
+            startX.value = x1;
+            startY.value = y1;
+            endX.value = x2;
+            endY.value = y2;
+            return this;
+          },
+
+          destroy() {
+            node?.destroy();
           }
-        });
+        };
       }
 
       function ScadaCanvasView({ onWheel, onCanvasClick }) {
@@ -505,16 +574,18 @@
       }
 
       function ScadaHud({ callbacks }) {
-        return vStateNode({
-          state: () => ({
-            tool: null,
-            connectMode: false,
-            running: false,
-            status: '选择符号后点击画布放置；拖拽设备移动，连线模式连接两台设备。',
-            json: ''
-          }),
+        const tool = ref(null);
+        const connectMode = ref(false);
+        const running = ref(false);
+        const statusText = ref('选择符号后点击画布放置；拖拽设备移动，连线模式连接两台设备。');
+        const jsonText = ref('');
 
-          render(state, api) {
+        const connectShadow = computed(() => (connectMode.value ? '0 0 0 2px #22c55e' : null));
+        const connectLabel = computed(() => (connectMode.value ? '取消连线' : '连线模式'));
+        const runLabel = computed(() => (running.value ? '停止运行' : '运行模拟'));
+
+        return {
+          render() {
             return div((sidebar) => {
               sidebar.className('scada-sidebar');
 
@@ -526,12 +597,14 @@
                   SYMBOL_DEFS.forEach((def) => {
                     grid.button((button) => {
                       button.attr({ class: 'scada-button', 'data-scada-kind': def.kind });
-                      button.style('box-shadow', (s) =>
-                        s.tool === def.kind ? '0 0 0 2px #facc15' : null
+                      button.style(
+                        'box-shadow',
+                        computed(() => (tool.value === def.kind ? '0 0 0 2px #facc15' : null))
                       );
                       button.text(def.name);
                       button.on('click', () => {
-                        api.setState({ tool: def.kind, connectMode: false });
+                        tool.value = def.kind;
+                        connectMode.value = false;
                         callbacks.onPickSymbol(def.kind);
                       });
                     });
@@ -547,11 +620,12 @@
 
                   grid.button((button) => {
                     button.attr({ class: 'scada-button', 'data-action': 'connect' });
-                    button.style('box-shadow', (s) => (s.connectMode ? '0 0 0 2px #22c55e' : null));
-                    button.text((s) => (s.connectMode ? '取消连线' : '连线模式'));
+                    button.style('box-shadow', connectShadow);
+                    button.text(connectLabel);
                     button.on('click', () => {
-                      const nextConnect = !api.state().connectMode;
-                      api.setState({ connectMode: nextConnect, tool: null });
+                      const nextConnect = !connectMode.value;
+                      connectMode.value = nextConnect;
+                      tool.value = null;
                       callbacks.onToggleConnect(nextConnect);
                     });
                   });
@@ -570,10 +644,10 @@
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text((s) => (s.running ? '停止运行' : '运行模拟'));
+                    button.text(runLabel);
                     button.on('click', () => {
-                      const nextRunning = !api.state().running;
-                      api.setState({ running: nextRunning });
+                      const nextRunning = !running.value;
+                      running.value = nextRunning;
                       callbacks.onToggleRun(nextRunning);
                     });
                   });
@@ -599,9 +673,9 @@
                 section.textarea((area) => {
                   area.className('scada-json');
                   area.attr('placeholder', '点击“导出 JSON”或粘贴工程数据');
-                  area.text((s) => s.json);
+                  area.text(computed(() => jsonText.value));
                   area.on('input', (event) => {
-                    api.setState({ json: event.target.value });
+                    jsonText.value = event.target.value;
                   });
                 });
 
@@ -627,11 +701,47 @@
 
               sidebar.p((status) => {
                 status.className('scada-status');
-                status.text((s) => s.status);
+                status.text(computed(() => statusText.value));
               });
             });
+          },
+
+          // 壳层只读当前状态；写入统一走 update(patch)
+          get tool() {
+            return tool.value;
+          },
+
+          get connectMode() {
+            return connectMode.value;
+          },
+
+          get running() {
+            return running.value;
+          },
+
+          get json() {
+            return jsonText.value;
+          },
+
+          update(patch) {
+            if (patch && 'tool' in patch) {
+              tool.value = patch.tool;
+            }
+            if (patch && 'connectMode' in patch) {
+              connectMode.value = patch.connectMode;
+            }
+            if (patch && 'running' in patch) {
+              running.value = patch.running;
+            }
+            if (patch && 'status' in patch) {
+              statusText.value = patch.status;
+            }
+            if (patch && 'json' in patch) {
+              jsonText.value = patch.json;
+            }
+            return this;
           }
-        });
+        };
       }
 
       function ScadaDemoApp() {
@@ -645,14 +755,14 @@
         let lastRun = 0;
 
         function handleCanvasClick(event) {
-          if (hud.state().connectMode) {
+          if (hud.connectMode) {
             connectFrom = null;
             devices.forEach((device) => device.markConnectSource(false));
-            hud.setState({ status: '已取消连线起点' });
+            hud.update({ status: '已取消连线起点' });
             return;
           }
 
-          const tool = hud.state().tool;
+          const tool = hud.tool;
           if (!tool) {
             devices.forEach((device) => device.select(false));
             selectedDevice = null;
@@ -661,7 +771,7 @@
 
           const point = canvas.toWorld(event.clientX, event.clientY);
           addDevice(tool, snapToGrid(point.x), snapToGrid(point.y));
-          hud.setState({ status: `已放置${SYMBOL_DEFS.find((def) => def.kind === tool).name}` });
+          hud.update({ status: `已放置${SYMBOL_DEFS.find((def) => def.kind === tool).name}` });
         }
 
         const canvas = ScadaCanvasView({
@@ -672,14 +782,14 @@
         const hud = ScadaHud({
           callbacks: {
             onPickSymbol: (kind) => {
-              hud.setState({
+              hud.update({
                 status: `已选择「${SYMBOL_DEFS.find((d) => d.kind === kind).name}」，点击画布放置`
               });
             },
             onToggleConnect: (enabled) => {
               connectFrom = null;
               devices.forEach((device) => device.markConnectSource(false));
-              hud.setState({
+              hud.update({
                 connectMode: enabled,
                 status: enabled ? '连线模式：依次点击两台设备' : '已退出连线模式'
               });
@@ -689,7 +799,7 @@
             onToggleRun: (enabled) => {
               running = enabled;
               lastRun = 0;
-              hud.setState({
+              hud.update({
                 running: enabled,
                 status: enabled ? '运行模拟中…' : '运行模拟已停止'
               });
@@ -697,28 +807,28 @@
             onZoomIn: () => canvas.zoomIn(),
             onZoomOut: () => canvas.zoomOut(),
             onExport: () => {
-              hud.setState({
+              hud.update({
                 json: JSON.stringify(serialize(), null, 2),
                 status: '已导出 JSON 到文本框'
               });
             },
             onImport: () => {
               try {
-                rebuild(JSON.parse(hud.state().json || 'null'));
-                hud.setState({ status: 'JSON 导入成功' });
+                rebuild(JSON.parse(hud.json || 'null'));
+                hud.update({ status: 'JSON 导入成功' });
               } catch (error) {
-                hud.setState({ status: `JSON 导入失败：${error.message}` });
+                hud.update({ status: `JSON 导入失败：${error.message}` });
               }
             },
             onLoadSample: () => {
-              hud.setState({ json: JSON.stringify(sampleData(), null, 2) });
-              hud.setState({ status: '示例工程已写入文本框，点击“导入 JSON”使用' });
+              hud.update({ json: JSON.stringify(sampleData(), null, 2) });
+              hud.update({ status: '示例工程已写入文本框，点击“导入 JSON”使用' });
             }
           }
         });
 
         function deviceById(id) {
-          return devices.find((device) => device.state().id === id);
+          return devices.find((device) => device.id === id);
         }
 
         function addDevice(kind, x, y) {
@@ -738,26 +848,23 @@
         }
 
         function connect(from, to) {
-          const connection = ScadaConnection({ fromId: from.state().id, toId: to.state().id });
+          const connection = ScadaConnection({ fromId: from.id, toId: to.id });
           connections.push(connection);
           canvas.addConnection(connection);
           syncConnection(connection);
         }
 
         function syncConnection(connection) {
-          const from = deviceById(connection.state().fromId);
-          const to = deviceById(connection.state().toId);
+          const from = deviceById(connection.fromId);
+          const to = deviceById(connection.toId);
           if (from && to) {
-            const a = from.state();
-            const b = to.state();
-            connection.sync(a.x, a.y, b.x, b.y);
+            connection.sync(from.x, from.y, to.x, to.y);
           }
         }
 
         function syncConnectionsFor(deviceId) {
           connections.forEach((connection) => {
-            const state = connection.state();
-            if (state.fromId === deviceId || state.toId === deviceId) {
+            if (connection.fromId === deviceId || connection.toId === deviceId) {
               syncConnection(connection);
             }
           });
@@ -776,11 +883,10 @@
 
           selectOnly(device);
           const pointer = canvas.toWorld(event.clientX, event.clientY);
-          const state = device.state();
           activeDrag = {
             device,
-            offsetX: state.x - pointer.x,
-            offsetY: state.y - pointer.y
+            offsetX: device.x - pointer.x,
+            offsetY: device.y - pointer.y
           };
           device.setDragging(true);
 
@@ -792,7 +898,7 @@
             const targetX = Math.round(next.x + activeDrag.offsetX);
             const targetY = Math.round(next.y + activeDrag.offsetY);
             activeDrag.device.setPosition(targetX, targetY);
-            syncConnectionsFor(activeDrag.device.state().id);
+            syncConnectionsFor(activeDrag.device.id);
           };
 
           const upHandler = () => {
@@ -808,14 +914,14 @@
         }
 
         function connectModeActive() {
-          return hud.state().connectMode;
+          return hud.connectMode;
         }
 
         function handleConnectClick(device) {
           if (!connectFrom) {
             connectFrom = device;
             devices.forEach((candidate) => candidate.markConnectSource(candidate === device));
-            hud.setState({ status: '已选起点，再点另一台设备完成连线' });
+            hud.update({ status: '已选起点，再点另一台设备完成连线' });
             return;
           }
 
@@ -825,32 +931,32 @@
           connect(connectFrom, device);
           devices.forEach((candidate) => candidate.markConnectSource(false));
           connectFrom = null;
-          hud.setState({ status: '连线已创建' });
+          hud.update({ status: '连线已创建' });
         }
 
         function deleteSelected() {
           if (!selectedDevice) {
-            hud.setState({ status: '没有选中可删除的设备' });
+            hud.update({ status: '没有选中可删除的设备' });
             return;
           }
 
-          const id = selectedDevice.state().id;
+          const id = selectedDevice.id;
           connections = connections.filter((connection) => {
-            const keep = connection.state().fromId !== id && connection.state().toId !== id;
+            const keep = connection.fromId !== id && connection.toId !== id;
             if (!keep) {
               connection.destroy();
             }
             return keep;
           });
           devices = devices.filter((device) => {
-            if (device.state().id === id) {
+            if (device.id === id) {
               device.destroy();
               return false;
             }
             return true;
           });
           selectedDevice = null;
-          hud.setState({ status: '已删除选中设备及其连线' });
+          hud.update({ status: '已删除选中设备及其连线' });
         }
 
         function clearAll() {
@@ -861,27 +967,24 @@
           selectedDevice = null;
           connectFrom = null;
           nextId = 1;
-          hud.setState({ connectMode: false, status: '画布已清空' });
+          hud.update({ connectMode: false, status: '画布已清空' });
         }
 
         function serialize() {
           return {
-            devices: devices.map((device) => {
-              const state = device.state();
-              return {
-                id: state.id,
-                kind: state.kind,
-                x: state.x,
-                y: state.y,
-                label: state.label,
-                value: state.value,
-                angle: state.angle
-              };
-            }),
-            connections: connections.map((connection) => {
-              const state = connection.state();
-              return { fromId: state.fromId, toId: state.toId };
-            })
+            devices: devices.map((device) => ({
+              id: device.id,
+              kind: device.kind,
+              x: device.x,
+              y: device.y,
+              label: device.label,
+              value: device.value,
+              angle: device.angle
+            })),
+            connections: connections.map((connection) => ({
+              fromId: connection.fromId,
+              toId: connection.toId
+            }))
           };
         }
 
@@ -912,11 +1015,11 @@
             }
           });
           const maxId = devices.reduce((max, device) => {
-            const numeric = Number.parseInt(device.state().id.replace(/\D/g, ''), 10);
+            const numeric = Number.parseInt(device.id.replace(/\D/g, ''), 10);
             return Number.isFinite(numeric) ? Math.max(max, numeric) : max;
           }, 0);
           nextId = maxId + 1;
-          hud.setState({ status: '工程已重建' });
+          hud.update({ status: '工程已重建' });
         }
 
         function sampleData() {
@@ -951,9 +1054,8 @@
             const dt = lastRun === 0 ? 16 : now - lastRun;
             lastRun = now;
             devices.forEach((device, index) => {
-              const state = device.state();
               const nextValue = (Math.sin(now / 900 + index) + 1) / 2;
-              const nextAngle = state.angle + (state.kind === 'motor' ? dt / 18 : 0);
+              const nextAngle = device.angle + (device.kind === 'motor' ? dt / 18 : 0);
               device.updateRuntime(nextValue, nextAngle);
             });
           }

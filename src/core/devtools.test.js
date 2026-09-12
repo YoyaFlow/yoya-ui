@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createAccess,
-  div,
-  i18nText,
-  vStateNode,
-  vText,
-  withAccess,
-  withContext
-} from '../index.js';
+import { createAccess, div, i18nText, ref, vText, withAccess, withContext } from '../index.js';
 import {
   disableDevtools,
   emitDevtools,
@@ -232,81 +224,68 @@ describe('devtools hook (core)', () => {
     unsubscribe();
   });
 
-  it('reports vStateNode setState changes with before/after values', () => {
+  it('reports signal writes with before/after values and dependent count', () => {
     enableDevtools();
     const events = [];
     const unsubscribe = subscribeDevtools((event) => events.push(event));
-    const demo = vStateNode({
-      state: { count: 0 },
-      render: (state) => div(String(state.count))
-    });
-    const root = div().child(demo);
+    const count = ref(0);
+    const root = div((ele) => ele.attr('data-count', count));
     root.renderDom();
 
-    demo.setState({ count: 1 });
+    count.value = 1;
 
-    const stateEvents = events.filter((event) => event.type === 'state');
-    expect(stateEvents).toHaveLength(1);
-    expect(stateEvents[0].changed).toEqual({ count: { from: 0, to: 1 } });
-    expect(stateEvents[0].state).toEqual({ count: 1 });
-    expect(stateEvents[0].handling).toBe('rebuild');
-    expect(stateEvents[0].nodeId).toBeTypeOf('number');
+    const writeEvents = events.filter((event) => event.type === 'signal-write');
+    expect(writeEvents).toHaveLength(1);
+    expect(writeEvents[0]).toMatchObject({ previous: 0, next: 1, dependents: 1 });
+    expect(writeEvents[0].signalId).toBeTypeOf('number');
     unsubscribe();
     root.destroy();
   });
 
-  it('reports function patches through their resolved state change', () => {
+  it('reports handle.update() through the same signal-write event', () => {
     enableDevtools();
     const events = [];
     const unsubscribe = subscribeDevtools((event) => events.push(event));
-    const demo = vStateNode({
-      state: { count: 0 },
-      render: (state) => div(String(state.count))
-    });
-    const root = div().child(demo);
+    const count = ref(0);
+    const root = div((ele) => ele.attr('data-count', count));
     root.renderDom();
 
-    demo.setState((state) => ({ count: state.count + 2 }));
+    count.update((value) => value + 2);
 
-    const stateEvents = events.filter((event) => event.type === 'state');
-    expect(stateEvents[0].changed).toEqual({ count: { from: 0, to: 2 } });
+    const writeEvents = events.filter((event) => event.type === 'signal-write');
+    expect(writeEvents[0]).toMatchObject({ previous: 0, next: 2 });
     unsubscribe();
     root.destroy();
   });
 
-  it('labels binding flush handling and pairs it with text events', () => {
+  it('pairs signal writes with the text events they cause', () => {
     enableDevtools();
     const events = [];
     const unsubscribe = subscribeDevtools((event) => events.push(event));
-    const demo = vStateNode({
-      state: { label: 'before' },
-      render: () => div().text((current) => current.label)
-    });
-    const root = div().child(demo);
+    const label = ref('before');
+    const root = div((ele) => ele.child(vText(label)));
     root.renderDom();
 
-    demo.setState({ label: 'after' });
+    label.value = 'after';
 
-    const stateEvents = events.filter((event) => event.type === 'state');
+    const writeEvents = events.filter((event) => event.type === 'signal-write');
     const textEvents = events.filter((event) => event.type === 'text');
-    expect(stateEvents).toHaveLength(1);
-    expect(stateEvents[0].handling).toBe('bindings');
+    expect(writeEvents).toHaveLength(1);
     expect(textEvents.some((event) => event.from === 'before' && event.to === 'after')).toBe(true);
     unsubscribe();
     root.destroy();
   });
 
-  it('keeps standalone vStateNode instances safe when devtools emits', () => {
+  it('keeps unmounted signal writes safe when devtools emits', () => {
     enableDevtools();
     const events = [];
     const unsubscribe = subscribeDevtools((event) => events.push(event));
-    const demo = vStateNode({
-      state: { value: 0 },
-      render: (state) => div(String(state.value))
-    });
+    const count = ref(0);
 
-    expect(() => demo.setState({ value: 5 })).not.toThrow();
-    expect(events.some((event) => event.type === 'state')).toBe(true);
+    expect(() => {
+      count.value = 5;
+    }).not.toThrow();
+    expect(events.some((event) => event.type === 'signal-write')).toBe(true);
     unsubscribe();
   });
 

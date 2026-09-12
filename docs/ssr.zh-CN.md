@@ -68,7 +68,7 @@ export function createSsrPage(initial = {}, deps = {}) {
 
 ```js
 // home-page.js —— 页面即形态 A 组件，两端共用
-import { createRouter, div } from 'yoya-ui';
+import { createRouter, div } from '@yoyaflow/yoya-ui';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,14 +117,49 @@ res.end(html);
 
 ```js
 // client.js —— 打包器构建，一行接入
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
 // 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate，否则 mount
 ```
 
-`renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本 + 客户端入口。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
+`renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
+
+**客户端入口不由 `renderPage` 输出**：脚本路径、放 head 还是 body、前面是否还要执行别的脚本，都是使用方工程的决策。自己在 head DSL 里写：
+
+```js
+page.head((head) => {
+  head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+  head.script({ type: 'module', src: '/assets/client.js' });
+});
+```
+
+`type="module"` 自带 defer：下载不阻塞解析、执行在解析完成之后，所以 head 里这样写是安全的。不要用没有 `defer` 的普通 `<script src>`——那会阻塞解析，并且在 `#app` 解析出来之前执行。
+
+`renderPage` 配合上面那段 head DSL，页面大致长这样（页面 DOM 内容省略）：
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>SSR 示例</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/assets/yoya.ui.css" />
+    <!-- ③ 客户端入口：由你引入（renderPage 不输出） -->
+    <link rel="modulepreload" href="/assets/client.js" />
+    <script type="module" src="/assets/client.js"></script>
+  </head>
+  <body>
+    <!-- ① 容器：hydration 目标，id 由 containerId 决定（默认 app） -->
+    <div id="app"><!-- 服务端渲染的页面 DOM --></div>
+    <!-- ② 请求状态：id 由 stateId 决定（默认 __YOYA_DATA__） -->
+    <script type="application/json" id="__YOYA_DATA__">
+      { "lang": "zh-CN", "path": "/home", "mode": "history" }
+    </script>
+  </body>
+</html>
+```
 
 ## 3. 服务端初始化（配合你的服务端代码）
 
@@ -135,7 +170,7 @@ hydrateOrMount(HomePage, { messages });
 完整可运行示例见 `src/examples/ssr/server-http.mjs`（`node src/examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -227,7 +262,7 @@ dist/
 ### 4.3 客户端启动脚本（client.js）
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/router';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js'; // 打包器共享同一份工厂
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);
@@ -269,14 +304,27 @@ div((root) => {
 - `dist/examples/ssr-demo.html`（构建 examples 后）：独立 SSR 演示页，浏览器内 renderToString → hydrate，演示按钮、弹窗、表单与中英文切换。
 - 示例站（`npm run build:examples` + `npx vite preview`）：开发指南 → 服务端渲染页，含 SSR/非 SSR 模式切换交互演示。
 
-## 8. 开发纪律与常见错误
+## 8. 要避免的操作与常见错误
 
-**纪律**
+SSR 的纪律可以归纳成一句：**渲染路径必须 DOM-free 且确定性，请求数据一律按请求注入。**
 
-- `render()` 与 `toHTML()` 路径保持 DOM-free 且确定性：不读 `document`/`window`，不用 `Date.now()`/`Math.random()` 影响输出；
-- 浏览器 API 一律加 `typeof xxx === 'undefined'` 守卫，且只放在事件路径或 `renderDom()` 中；
-- 模块级可变状态（注册表、id 计数器）不跨请求共享；
-- 服务端保持无状态：每请求渲染上下文 + 渲染后销毁 + 输出只依赖请求输入。
+**要避免的操作**
+
+| 避免                                                                                 | 应该                                                                                                                | 原因                                                   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `render()` / `toHTML()` 里读 `document` / `window`                                   | 只在事件回调或 `renderDom()` 里访问；浏览器 API 加 `typeof xxx === 'undefined'` 守卫                                | 服务端没有 DOM，渲染路径必须 DOM-free                  |
+| 用 `Date.now()` / `Math.random()` 影响输出（含 key、id）                             | 结构只依赖请求输入；id 用 `allocateId` 由渲染上下文分配                                                             | 两端产出的树不一致会导致 hydrate 错位                  |
+| 组件里直接 `document.addEventListener` / `window.addEventListener`                   | `bindDocumentEvent` / `bindWindowEvent`，`destroy()` 时执行返回的 unbind                                            | 服务端无 DOM；客户端要能随节点销毁解绑                 |
+| 请求相关状态、视图树或组件实例放模块级（当前用户、语言、计数器、区域节点、组件实例） | 每请求创建：`createAccess` / `createI18n` / `withContext` 经入口 `options` 注入，区域节点与组件实例在页面工厂内创建 | 模块级状态与视图树会在并发请求之间串数据、复用同一棵树 |
+| 在服务端渲染期间调用 `rebuild()` / `flush()`                                         | 首屏只做构建（绑定在构建期写回），重建与刷新留给客户端交互（`setState`、区域 `rebuild()` / `flush()`）              | 物化 DOM 需要浏览器环境，服务端调用没有意义            |
+| 渲染期间发请求、埋点或设定时器                                                       | 副作用移到事件回调或客户端挂载之后                                                                                  | SSR 只负责输出，渲染结果可能被缓存或重放               |
+| 用 `getBoundingClientRect` / `offsetWidth` 决定结构                                  | 结构由状态决定，测量只用于渲染后的定位逻辑                                                                          | 服务端没有布局，两端会不一致                           |
+| 把函数放进请求状态传给 `renderPage`                                                  | 只传可序列化数据（路径、筛选条件、locale）                                                                          | 状态要序列化进 `__YOYA_DATA__` 并在客户端解析          |
+| 假设客户端会重建服务端 DOM                                                           | `hydrate()` 收养既有 DOM、只补事件适配器                                                                            | 重建会闪烁首屏并丢掉服务端已渲染的状态                 |
+| 函数值绑定里读 `document` / `window`（`attr('x', () => window.innerWidth)`）         | 绑定保持纯函数：只依赖 `ref` / `computed` 或每请求创建的数据                                                        | 绑定在构建期会在服务端求值一次，DOM 依赖会直接抛错     |
+| 函数值绑定读模块级可变数据（`() => store.count`，`store` 在模块顶层）                | 在页面工厂里创建 `ref` 并注入（每请求一份），或把数据放进请求状态                                                   | 模块级数据会在并发请求间串数据                         |
+
+服务端保持无状态：每请求渲染上下文 + 渲染后销毁组件树 + 输出只依赖请求输入。
 
 **常见错误**
 

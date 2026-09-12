@@ -2,10 +2,65 @@ import { section, vButton, vCard, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
-import { clientSnippet, pageSnippet, serverSnippet, setupNotes } from './ssr/guide-snippets.js';
+import {
+  clientSnippet,
+  pageSnippet,
+  serverSnippet,
+  setupNotes,
+  shellSnippet
+} from './ssr/guide-snippets.js';
 import { createLocale, createSsrPage } from './ssr/page.js';
 
 const createDemoPage = (state) => createSsrPage(state, { echartsLib: echarts });
+
+/** SSR 要避免的操作：避免项 / 应该怎么做 / 原因。 */
+const ssrPitfalls = [
+  [
+    '在 render() / toHTML() 里读 document / window',
+    '只在事件回调或 renderDom() 里访问 DOM，浏览器 API 加 typeof 守卫',
+    '服务端没有 DOM，渲染路径必须 DOM-free'
+  ],
+  [
+    '用 Date.now() / Math.random() 影响输出（含 key、id）',
+    '结构只依赖请求输入；id 用 allocateId 由渲染上下文分配',
+    '两端产出的树不一致会导致 hydrate 错位'
+  ],
+  [
+    '组件里直接 document.addEventListener / window.addEventListener',
+    'bindDocumentEvent / bindWindowEvent，destroy 时执行返回的 unbind',
+    '服务端无 DOM；客户端要能随节点销毁解绑'
+  ],
+  [
+    '把请求相关状态、视图树或组件实例放模块级（当前用户、语言、计数器、区域节点、组件实例）',
+    '每请求创建 createAccess / createI18n / withContext，区域节点与组件实例在页面工厂内创建',
+    '模块级状态与视图树会在并发请求之间串数据、复用同一棵树'
+  ],
+  [
+    '在服务端渲染期间调用 rebuild() / flush()',
+    '首屏只做构建（绑定在构建期写回），重建与刷新留给客户端交互',
+    '物化 DOM 需要浏览器环境，服务端调用没有意义'
+  ],
+  [
+    '在渲染期间发请求、埋点或设定时器',
+    '副作用移到事件回调或客户端挂载之后',
+    'SSR 只负责输出，渲染结果可能被缓存或重放'
+  ],
+  [
+    '用 getBoundingClientRect / offsetWidth 决定结构',
+    '结构由状态决定，测量只用于渲染后的定位逻辑',
+    '服务端没有布局，测量结果会让两端不一致'
+  ],
+  [
+    '把函数放进请求状态传给 renderPage',
+    '只传可序列化数据（路径、筛选条件、locale）',
+    '状态要序列化进 __YOYA_DATA__ 并在客户端解析'
+  ],
+  [
+    '假设客户端会重建服务端 DOM',
+    'hydrate() 收养既有 DOM、只补事件适配器',
+    '重建会闪烁首屏并丢掉服务端已渲染的状态'
+  ]
+];
 
 const outputStyles = {
   background: 'var(--yoya-color-surface-hover, #f6f8fa)',
@@ -227,10 +282,10 @@ export function SsrDocumentationPage() {
     component: createSsrPage,
     imports: [
       {
-        from: 'yoya-ui',
-        names: ['createI18n', 'createRouter', 'div', 'vForm', 'vFormItem', 'vInput', 'vLink']
+        from: '@yoyaflow/yoya-ui',
+        names: ['createRouter', 'div', 'vForm', 'vFormItem', 'vInput', 'vLink', 'vClientOnly']
       },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],
     sourceComponent: createSsrPage,
     title: 'createSsrPage 页面工厂源码'
@@ -270,7 +325,7 @@ export function SsrDocumentationPage() {
       usage.h2('核心 API');
       usage.ul((list) => {
         list.li(
-          'renderPage({ page }, state, { messages }) 输出完整 HTML 文档；head/body 用 DSL 定义，状态只传一次。'
+          'renderPage({ page }, state, { messages }) 输出文档骨架：head/body 用 DSL 定义、状态只传一次；客户端入口由你在 head 里自己引入（renderPage 不输出脚本）。'
         );
         list.li(
           'hydrateOrMount(component, { messages }) 客户端一行接入：自动读状态并选择 hydrate 或 mount。'
@@ -293,6 +348,32 @@ export function SsrDocumentationPage() {
       });
     });
 
+    page.section((rules) => {
+      rules.className('components-ssr-rules');
+      rules.attr('data-ssr-rules', 'true');
+      rules.h2('要避免的操作');
+      rules.p('SSR 纪律可以归纳成一句：渲染路径必须 DOM-free 且确定性，请求数据一律按请求注入。');
+      rules.table((table) => {
+        table.className('components-ssr-rules-table');
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('避免');
+            row.th('应该');
+            row.th('原因');
+          });
+        });
+        table.tbody((body) => {
+          ssrPitfalls.forEach(([avoid, instead, reason]) => {
+            body.tr((row) => {
+              row.td(avoid);
+              row.td(instead);
+              row.td(reason);
+            });
+          });
+        });
+      });
+    });
+
     page.section((guide) => {
       guide.className('components-ssr-copy');
       guide.attr('data-ssr-copy-guide', 'true');
@@ -303,6 +384,7 @@ export function SsrDocumentationPage() {
 
       renderCopySnippet(guide, 'home-page.js（页面组件，两端共用）', pageSnippet);
       renderCopySnippet(guide, 'server.mjs（服务端入口）', serverSnippet);
+      renderCopySnippet(guide, '服务端渲染出来的 HTML（客户端入口在第 ③ 行引入）', shellSnippet);
       renderCopySnippet(guide, 'client.js（浏览器启动）', clientSnippet);
 
       guide.h3('运行与关键信息');

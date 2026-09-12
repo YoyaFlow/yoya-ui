@@ -32,7 +32,7 @@ Nine reasons, in short:
 
 Save the snippet below as `index.html` and open it in a browser — no build step
 is needed. The library and styles are loaded from the jsDelivr CDN (an internet
-connection is required). To pin a version, replace `0.4.0` in the URLs.
+connection is required). To pin a version, replace `0.5.0` in the URLs.
 
 ```html
 <!DOCTYPE html>
@@ -42,7 +42,7 @@ connection is required). To pin a version, replace `0.4.0` in the URLs.
     <title>yoya-ui quick start</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -52,7 +52,7 @@ connection is required). To pin a version, replace `0.4.0` in the URLs.
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
 
       div((page) => {
         page.vButton('Start task', (button) => {
@@ -111,20 +111,20 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 
 ## Features at a glance
 
-| Capability                             | Status                                                                                    |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                             |
-| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                |
-| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                |
-| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                               |
-| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation |
-| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                      |
-| State management                       | `vStateNode`, optional `@preact/signals-core` interop                                     |
-| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                    |
-| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                           |
-| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                            |
-| Framework interop                      | Any DOM-mountable library composes natively                                               |
-| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries    |
+| Capability                             | Status                                                                                                                                                                                                                      |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                                                                                                                                               |
+| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                                                                                                                                  |
+| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                                                                                                                                  |
+| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                                                                                                                                 |
+| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation                                                                                                                                   |
+| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                                                                                                                                        |
+| State management                       | Built-in Signals (`ref` / `computed` — dynamic values are passed straight into the DSL), rebuildable regions driven by signals, pluggable state engines (write your own adapter; the examples site ships a plugin template) |
+| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                                                                                                                                      |
+| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                                                                                                                                             |
+| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                                                                                                                                              |
+| Framework interop                      | Any DOM-mountable library composes natively                                                                                                                                                                                 |
+| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                                                                                                                                      |
 
 ## Positioning: a declarative extension of native Web, not a walled-garden framework
 
@@ -307,7 +307,7 @@ node src/examples/ssr/server-http.mjs
 ## Import per module
 
 ```js
-import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/state
+import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // core HTML/SVG/signals
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring your own echarts)
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring your own three)
@@ -357,7 +357,7 @@ npm run typecheck    # validates declaration files and consumer type tests
 | Charts       | `vEchart` (ECharts-based, import on demand)                                                                                   |
 | 3D           | `vThree` (Three.js-based, import on demand)                                                                                   |
 | Async        | `vDynamicLoader`                                                                                                              |
-| State        | `vStateNode` / optional `@preact/signals-core` interop                                                                        |
+| State        | `ref` / `computed` / signal-driven regions; pluggable state engines (write your own adapter, template in the examples site)   |
 | i18n / Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                   |
 
 ## Engineering signals (read these before the star count)
@@ -366,7 +366,7 @@ Star counts measure attention, not correctness. Until this project earns that
 social signal, we publish the engineering signals that actually predict
 long-term viability:
 
-[![Release](https://img.shields.io/badge/release-0.4.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
+[![Release](https://img.shields.io/badge/release-0.5.0-2ea44f?style=flat-square)](https://www.npmjs.com/package/@yoyaflow/yoya-ui)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/yoyaflow/yoya-ui/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/yoyaflow/yoya-ui/actions)
 [![Types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)](#typescript-support)
@@ -383,7 +383,7 @@ Keep the static release / types badges in sync at each release.
 
 | Signal               | Current value                                                                                       | How to verify                                                |
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Test suite           | 902 test cases across 115 files                                                                     | `npm test` (Vitest + jsdom)                                  |
+| Test suite           | 1044 test cases across 140 files                                                                    | `npm test` (Vitest + jsdom)                                  |
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
@@ -475,7 +475,7 @@ npm run build
 
 ```text
 # Incremental ESM entries (load the shared core chunk automatically; bundlers / multi-file CDN)
-yoya.core.js / yoya.core.min.js             core: engine + html + svg + state/i18n/access
+yoya.core.js / yoya.core.min.js             core: engine + html + svg + signals/i18n/access
 yoya.core.chunk.js / yoya.core.chunk.min.js internal shared chunk (auto-loaded by core/ui/router)
 yoya.ui.js / yoya.ui.min.js                 components + layout + theme
 yoya.actions.js / yoya.navigation.js / yoya.feedback.js (+ .min)
@@ -525,7 +525,7 @@ npm run format        # Prettier
 
 ```text
 src/
-  core/        ViewNode/ElementNode core, state, i18n, theme, id allocator, SSR helpers
+  core/        ViewNode/ElementNode core, signals, i18n, theme, id allocator, SSR helpers
   html/ svg/   HTML/SVG element factories
   layout/      layout factories
   actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
@@ -547,6 +547,7 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 - [Theme Styling Spec](docs/theme.md)
 - [Access Control](docs/access-control.md)
 - [DevTools](docs/devtools.md)
+- [0.4 → 0.5 migration guide](docs/migration-0.5.md)
 
 ## Codex skill
 

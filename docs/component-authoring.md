@@ -19,7 +19,7 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                      |
 | Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget` |
-| State                     | `vStateNode`                                                                                                                                   |
+| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                            |
 | i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                          |
 
 ## 3. The three component shapes
@@ -29,7 +29,7 @@ Choose one of these shapes for a new component; do not introduce a structure out
 ### Shape A: thin factory (no internal state, purely configured composition)
 
 ```js
-import { vBadge } from 'yoya-ui/ui';
+import { vBadge } from '@yoyaflow/yoya-ui/ui';
 
 export function ServiceTag(options) {
   return vBadge(options);
@@ -39,7 +39,7 @@ export function ServiceTag(options) {
 ### Shape B: object component (regular standalone component, the default)
 
 ```js
-import { vRate } from 'yoya-ui/ui';
+import { vRate } from '@yoyaflow/yoya-ui/ui';
 
 export function RateCard() {
   const state = { value: 0 };
@@ -63,7 +63,7 @@ export function RateCard() {
 Class node components must export a paired `vXxx` factory and use `createElementFactory`:
 
 ```js
-import { HtmlElementNode, createElementFactory } from 'yoya-ui/core';
+import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
 
 export class VStatusDot extends HtmlElementNode {
   // nested relationships and fine-grained operations
@@ -108,11 +108,46 @@ Component text input should uniformly accept the following four forms (`vText` /
 
 ## 6. State and updates
 
-yoya-ui has no automatic reactivity system. After state changes, the component decides which DOM to update in place:
+yoya-ui state is driven by the built-in Signals: a component holds state in `ref` and passes the handle straight into value positions, so writes update bindings in place; structural changes are driven by `rebuildable()` regions that read signals. Node-level `state()` / `setState()` / `getXState()` and `vStateNode` were removed in 0.5; see [`migration-0.5.md`](migration-0.5.md) for the mapping.
 
-- Node level: `registerStateAttrs` + `registerStateHandler` + `setState` / `getState`.
-- Component level: `vStateNode({ state, render, update })`; `update` performs local patches and returns `true` to rebuild fully.
-- Components can expose state APIs (e.g. `value(next)`, `disabled(next)`) and stay chainable.
+- Values: `const count = ref(0)`; the handle can be passed to `attr` / `style` / `vText` / component props. Writing `.value` (or `handle.update(fn)`) updates the binding in place without rebuilding DOM or losing focus. Derived values use `computed(fn)` (read-only, lazy, cached).
+- Structure: `rebuildable(predicate?)` marks a node as a rebuildable region; signals read inside become its dependencies and drive predicate-gated rebuilds. Call `rebuild()` to force one.
+- Text: pass a handle for state-driven text (`vText(count)` / `vText(computed(fn))`); when you need imperative in-place replacement, keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
+- Expose methods, not handles: keep internal state in `ref`, and expose chainable methods such as `value(next)` / `disabled(next)` instead of handing the signal object to callers.
+
+### 6.1 Rebuildable regions
+
+When a block needs "structure follows data" and a stateful component is too heavy, mark it as a region:
+
+```js
+const rows = ref([]);
+const editing = ref(false);
+
+const body = div((ele) => {
+  ele.rebuildable(() => !editing.value); // optional gate: when false, values flush without rebuilding
+  ele.attr(
+    'data-count',
+    computed(() => String(rows.value.length))
+  );
+  rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
+});
+
+rows.value = [...rows.value, { id: 'r1', name: 'First row' }]; // a write rebuilds the region
+body.rebuild(); // force a structural rebuild when you need one
+body.flush(); // writes bound values back only, without rebuilding structure (idempotent)
+```
+
+Contract and boundaries:
+
+- **Use `flush()` for values and `rebuild()` for structure**: `rebuild()` clears children and re-runs the setup (it also flushes the bindings registered in that run); `flush()` only evaluates registered bindings and writes them back — no rebuild, no predicate, and no DOM write when a value did not change. When one change involves both, call `rebuild()` alone instead of stacking `flush()`.
+- **Create the region node once**: its content is produced by its own builder, so it can be built outside `render()` and held directly (`const list = ul((box) => { box.rebuildable(); … })` then `list.rebuild()`). There is no need to back-fill a `let region = null` from inside render; the same goes for status lines and helper nodes around it. **Build it inside the component or page factory** (one per instance, one per request) rather than at module level — the server reusing one tree leaks state across concurrent requests. Call `rebuild()` / `flush()` only during client-side interaction; the SSR first paint only builds (bindings are written back during the build).
+- Region content is produced by its own setup. A rebuild **clears the children and re-runs that setup**, so DOM identity inside the region is not preserved: focus, selection, inner scroll position and third-party instances attached to elements are rebuilt. Siblings outside the region keep their DOM.
+- The predicate only answers "should this rebuild be paid for this time". When it returns false, bound values are written back and the rebuild is recorded as pending (`rebuildPending()`); structure stays untouched. Put data conditions inside the setup, not in the predicate.
+- Value bindings accept exactly two sources: a **signal handle** (recommended) or a **zero-argument closure** `() => value` (evaluated once at build time; call `flush()` yourself when it needs re-evaluation). The parameterized form `(s) => value` was removed together with node-level state and now throws when registered. A region rebuild releases the previous bindings and the new ones take effect immediately.
+- Declaration order: call `rebuildable()` first, then write value functions and other registrations.
+- Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. `bindDocumentEvent` / `bindWindowEvent` are reset across rebuilds by the engine; timers must be registered through `registerRegionCleanup(fn)`.
+- Every region subscribes to its own dependencies: a signal read inside it triggers a rebuild (reported by devtools as `trigger: 'signal'`); nested regions subscribe independently.
+- To keep focus or third-party instances, leave that part outside the region or use value bindings, which update in place without rebuilding DOM.
 
 ## 7. Composition, events, and lifecycle
 
@@ -120,12 +155,51 @@ yoya-ui has no automatic reactivity system. After state changes, the component d
 - `on(eventName, handler, options)` binds real DOM events and cleans them up automatically in `destroy()`.
 - A component object only needs a `render()` returning a `ViewNode` to be used by `child()`; class components follow the `renderDom` / `bindTo` / `destroy` lifecycle.
 
+### 7.1 Lifecycle
+
+1. **Declare (build time)**: a factory call creates the node; `attr` / `style` / `on` / `child` inside `setup` only write snapshots and never touch the DOM. Component objects are wrapped in a `ComponentNode` that resolves and caches `render()` on first render. Build-time scopes (`access`, `context`, `i18n`) are captured here.
+2. **Mount**: `renderDom()` creates or reuses real DOM, binds event adapters, recurses into children and applies attribute snapshots; `bindTo(target)` is `renderDom` plus append; `commit()` applies permission state and settles pending child removals.
+3. **Update (state change)**: by increasing cost — function-value bindings write values back (no DOM rebuild) → `update()` patches locally → a region `rebuild()` (clear children and re-run its setup) → a component `rebuild()` (destroy the old roots and render again).
+4. **Destroy**: remove event adapters and run cleanups, destroy children recursively, clear the keyed-child registry, detach from the DOM; repeated `destroy()` calls are idempotent.
+
+SSR adds one path: `toHTML()` produces HTML (DOM-free) → `hydrate()` adopts the existing DOM (`adoptElement` + `bindElement`, without rebuilding elements) → `hydrateSnapshot()` reads back real values such as form fields. This requires `render()` / `toHTML()` to stay deterministic so both sides produce the same tree.
+
+### 7.2 Splitting complex components into blocks
+
+When a complex component needs to be defined in blocks, each block inside the file is organized as a **function component** too: declared in the same file, PascalCase named after the UI unit, with explicit inputs, returning a ViewNode. The tree should read as components composed of components rather than one procedural layout routine.
+
+```js
+function MemberSummary({ stats }) {
+  return p((line) => line.child(vText(() => `共 ${stats().total} 人`))); // values: bindings
+}
+
+function MemberRows({ rows, onSelect }) {
+  return ul((list) => {
+    list.rebuildable(); // structure follows filters: a region rebuilds it
+    rows().forEach((row) => list.addChild(row.id, MemberRow({ row, onSelect })));
+  });
+}
+
+export function MemberPanel({ state, onFilter, onSelect }) {
+  return div((panel) => {
+    panel.child(MemberSummary({ stats: () => ({ total: state.members.length }) }));
+    panel.child(MemberFilter({ onInput: onFilter }));
+    panel.child(MemberRows({ rows: () => state.members, onSelect }));
+  });
+}
+```
+
+- **Pass live data as getters** (`rows: () => state.members`): array/object references go stale after a state update, and a region rebuild would otherwise re-read old values. Write-backs always go through callbacks.
+- **Pass the handle when the source is a `ref`** (`rows: itemsRef`): blocks read it through value bindings or regions, so no getter is needed; keep getters for non-signal sources (request results, external objects).
+- **Split updates inside a block**: value changes use function-value bindings; structural changes use a region (the block declares `rebuildable()` on its own layer and calls the getter again).
+- Blocks use the same shapes as exported components (shape A returning a ViewNode, or shape B returning `{ render() }`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
+
 ## 8. Registering parent shortcuts
 
 Use `registerChildFactories` to register factories on a target node class, enabling `page.vButton(...)` syntax in pages. Existing methods are not overridden by default:
 
 ```js
-import { ViewNode, registerChildFactories } from 'yoya-ui/core';
+import { ViewNode, registerChildFactories } from '@yoyaflow/yoya-ui/core';
 import { vStatusBadge } from './status-badge.js';
 
 registerChildFactories(ViewNode, { vStatusBadge });

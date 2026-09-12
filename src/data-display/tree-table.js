@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { VTextNode } from '../core/node.js';
 import {
   componentClass,
   createComponentFactory,
@@ -24,6 +25,9 @@ function defaultRowKey(node, index) {
 
 /**
  * 树形数据表格：行缩进、展开/折叠、父子选择联动、懒加载子树。
+ *
+ * 行常驻：所有节点都会渲染成 `<tr>`，展开/折叠只切换行的可见性（`hidden` 属性），
+ * 不重建表格——因此 DOM 身份、焦点、表内滚动位置都不会丢。
  */
 export class VTreeTable extends HtmlElementNode {
   constructor(setup = null) {
@@ -38,6 +42,8 @@ export class VTreeTable extends HtmlElementNode {
     this._checked = new Set();
     this._lazyLoad = null;
     this._flat = [];
+    this._rows = new Map(); // key → { item, row, expander, symbol, checkbox }
+    this._body = null;
 
     this._applySetup(setup);
     this._rebuild();
@@ -91,7 +97,7 @@ export class VTreeTable extends HtmlElementNode {
       return Array.from(this._expanded);
     }
     this._expanded = new Set(Array.isArray(value) ? value : []);
-    this._rebuild();
+    this._applyExpansion();
     return this;
   }
 
@@ -104,7 +110,7 @@ export class VTreeTable extends HtmlElementNode {
       return Array.from(this._checked);
     }
     this._checked = new Set(Array.isArray(value) ? value : []);
-    this._rebuild();
+    this._syncCheckboxes();
     return this;
   }
 
@@ -119,18 +125,18 @@ export class VTreeTable extends HtmlElementNode {
       });
     };
     walk(this._nodes);
-    this._rebuild();
+    this._applyExpansion();
     return this;
   }
 
   collapseAll() {
     this._expanded.clear();
-    this._rebuild();
+    this._applyExpansion();
     return this;
   }
 
   visibleRowCount() {
-    return this._flat.length;
+    return this._flat.filter((item) => this._isVisible(item)).length;
   }
 
   _nodeKey(node, index = 0) {
@@ -175,19 +181,23 @@ export class VTreeTable extends HtmlElementNode {
   _flatten() {
     const out = [];
     let index = 0;
-    const walk = (list, depth) => {
+    const walk = (list, depth, ancestors) => {
       list.forEach((node) => {
         const key = String(this._nodeKey(node, index));
         index += 1;
         const hasChildren = this._hasChildren(node);
-        out.push({ node, key, depth, hasChildren });
-        if (hasChildren && this._expanded.has(key)) {
-          walk(this._childNodes(node), depth + 1);
-        }
+        out.push({ node, key, depth, hasChildren, ancestors });
+        // 全部节点都进 _flat（行常驻），可见性由祖先的展开状态决定
+        walk(this._childNodes(node), depth + 1, [...ancestors, key]);
       });
     };
-    walk(this._nodes, 0);
+    walk(this._nodes, 0, []);
     this._flat = out;
+  }
+
+  /** 祖先全部展开才可见；自身折叠不影响自己那一行。 */
+  _isVisible(item) {
+    return item.ancestors.every((key) => this._expanded.has(key));
   }
 
   _descendantKeys(node) {
@@ -226,19 +236,21 @@ export class VTreeTable extends HtmlElementNode {
     }
     if (this._expanded.has(key)) {
       this._expanded.delete(key);
-      this._rebuild();
+      this._applyExpansion();
       return;
     }
     if (this._childNodes(node).length === 0 && typeof this._lazyLoad === 'function') {
       Promise.resolve(this._lazyLoad(node)).then((loaded) => {
         node.children = Array.isArray(loaded) ? loaded : [];
         this._expanded.add(key);
-        this._rebuild();
+        // 只补新子树的行走，既有行的 DOM 与焦点保持不变
+        this._syncRows();
+        this._applyExpansion();
       });
       return;
     }
     this._expanded.add(key);
-    this._rebuild();
+    this._applyExpansion();
   }
 
   _toggleSelect(item) {
@@ -261,11 +273,12 @@ export class VTreeTable extends HtmlElementNode {
         }
       });
     }
-    this._rebuild();
+    this._syncCheckboxes();
   }
 
   _rebuild() {
     this._flatten();
+    this._rows = new Map();
     const headRow = new HtmlElementNode('tr');
     const treeTh = new HtmlElementNode('th').attr('data-role', 'structure');
     if (this._selection) {
@@ -281,34 +294,137 @@ export class VTreeTable extends HtmlElementNode {
     );
 
     const body = this._flat.map((item, index) => this._renderRow(item, index));
+    this._body = new HtmlElementNode('tbody').child(...body);
     const table = new HtmlElementNode('table')
       .className('yoya-vtreetable-table')
-      .child(
-        new HtmlElementNode('thead').child(headRow),
-        new HtmlElementNode('tbody').child(...body)
-      );
+      .child(new HtmlElementNode('thead').child(headRow), this._body);
     replaceChildren(this, [table]);
+    this._applyExpansion();
+    return this;
+  }
+
+  /** 展开态 → 行可见性 / 展开按钮状态；不重建任何行。 */
+  _applyExpansion() {
+    this._flat.forEach((item) => {
+      const entry = this._rows.get(item.key);
+      if (!entry) {
+        return;
+      }
+      const visible = this._isVisible(item);
+      if (visible) {
+        entry.row.attr('hidden', null);
+      } else {
+        entry.row.attr('hidden', true);
+      }
+      if (entry.expander) {
+        const open = this._expanded.has(item.key);
+        entry.expander.attr('aria-expanded', open ? 'true' : 'false');
+        // 展开符号是常驻文本节点：`element.text()` 是追加子节点，重复同步会越点越多
+        entry.symbol.textContent(open ? '▾' : '▸');
+      }
+      // 懒加载出子节点后，祖先的勾选态可能从「全选」变成「半选」
+      if (entry.checkbox) {
+        this._syncCheckbox(item, entry.checkbox);
+      }
+    });
+    return this;
+  }
+
+  /**
+   * 数据形状变化（懒加载补子节点）时同步行集合：既有 key 复用原行节点，
+   * 只为新 key 建行，并把 node 子节点顺序与真实 DOM 顺序都对齐到展平结果。
+   * 与 `_rebuild()` 的区别是不销毁既有行——挂载中的焦点与 DOM 身份都保住。
+   */
+  _syncRows() {
+    const previous = this._rows;
+    this._flatten();
+    this._rows = new Map();
+
+    const entries = this._flat.map((item, index) => {
+      const existing = previous.get(item.key);
+      if (existing) {
+        existing.item = item;
+        this._rows.set(item.key, existing);
+        return existing;
+      }
+      this._renderRow(item, index);
+      return this._rows.get(item.key);
+    });
+
+    if (!this._body) {
+      return this;
+    }
+
+    this._body._children = entries.map((entry) => entry.row);
+    const host = this._body._el;
+    if (host) {
+      // 倒序处理：处理到第 i 行时，第 i+1 行已经就位，插到它前面即可保序
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        const entry = entries[index];
+        const element = entry.row._el || entry.row.renderDom();
+        if (!element) {
+          continue;
+        }
+        const next = index + 1 < entries.length ? entries[index + 1].row._el : null;
+        if (element.parentNode !== host || element.nextSibling !== next) {
+          host.insertBefore(element, next);
+        }
+      }
+    }
+
+    // 数据被替换后不再存在的行：销毁并从 map 之外收尾
+    previous.forEach((entry, key) => {
+      if (!this._rows.has(key)) {
+        entry.row.destroy();
+      }
+    });
+
+    return this;
+  }
+
+  _syncCheckboxes() {
+    this._flat.forEach((item) => {
+      const entry = this._rows.get(item.key);
+      if (entry?.checkbox) {
+        this._syncCheckbox(item, entry.checkbox);
+      }
+    });
+    return this;
+  }
+
+  _syncCheckbox(item, checkbox) {
+    const state = this._stateForNode(item.node);
+    checkbox.attr('checked', state.checked ? true : null);
+    checkbox.attr('data-indeterminate', state.indeterminate ? 'true' : null);
     return this;
   }
 
   _renderRow(item, index) {
     const { node, key, depth, hasChildren } = item;
-    const tr = new HtmlElementNode('tr').attr('data-row-key', key);
+    const tr = new HtmlElementNode('tr').attr({
+      'data-row-key': key,
+      hidden: this._isVisible(item) ? null : true
+    });
+    // 先登记，勾选框 / 展开按钮的同步才有归属
+    const entry = { item, row: tr, expander: null, symbol: null, checkbox: null };
+    this._rows.set(key, entry);
 
-    const structureCell = new HtmlElementNode('td')
-      .attr('data-depth', String(depth))
-      .child(this._selection ? this._renderCheckbox(item) : null);
+    const structureCell = new HtmlElementNode('td').attr('data-depth', String(depth));
+    if (this._selection) {
+      entry.checkbox = this._renderCheckbox(item);
+      structureCell.child(entry.checkbox);
+    }
 
     if (hasChildren) {
       const open = this._expanded.has(key);
-      structureCell.child(
-        new HtmlElementNode('button')
-          .className('yoya-vtreetable-expand')
-          .attr({ type: 'button', 'data-role': 'expand', 'aria-expanded': open ? 'true' : 'false' })
-          .style('marginLeft', `${depth * 16}px`)
-          .text(open ? '▾' : '▸')
-          .on('click', () => this._toggleExpand(item))
-      );
+      entry.symbol = new VTextNode(open ? '▾' : '▸');
+      entry.expander = new HtmlElementNode('button')
+        .className('yoya-vtreetable-expand')
+        .attr({ type: 'button', 'data-role': 'expand', 'aria-expanded': open ? 'true' : 'false' })
+        .style('marginLeft', `${depth * 16}px`)
+        .child(entry.symbol)
+        .on('click', () => this._toggleExpand(item));
+      structureCell.child(entry.expander);
     } else {
       structureCell.child(
         new HtmlElementNode('span')

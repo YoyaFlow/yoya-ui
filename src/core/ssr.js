@@ -3,6 +3,7 @@ import { createIdAllocator, withIdAllocator } from './id.js';
 import { createI18n, withI18nStringShortcut } from './i18n.js';
 import { withContext } from './context.js';
 import { withAccess } from './access.js';
+import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 import { HtmlElementNode } from '../html/index.js';
 
 /**
@@ -225,6 +226,26 @@ export class PageDocumentNode extends HtmlElementNode {
   }
 }
 
+/**
+ * body DSL 宿主节点：只序列化子节点，不输出 <body> 标签本身。
+ * 外层模板已经有真正的 <body>，再嵌一层会让 #app 里出现非法的嵌套 body。
+ */
+class PageBodyNode extends HtmlElementNode {
+  constructor() {
+    super('body', null);
+  }
+
+  toHTML() {
+    if (this._deleted || this._permissionState() === 'hidden') {
+      return '';
+    }
+
+    return this.children()
+      .map((child) => child.toHTML())
+      .join('');
+  }
+}
+
 function escapeHtmlAttribute(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -232,14 +253,16 @@ function escapeHtmlAttribute(value) {
 }
 
 /**
- * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，
- * 状态序列化进可自定义 id 的 script（默认 __YOYA_DATA__），末尾挂客户端入口。
+ * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，状态序列化进
+ * 可自定义 id 的 script（默认 __YOYA_DATA__）。
+ *
+ * 客户端入口不由这里输出：脚本路径、放在 head 还是 body、前面还要不要执行别的，
+ * 都是使用方工程的决策，由使用者在 head DSL 里自己加（如 head.script({ type: 'module', src: '/client.js' })）。
  * state 是唯一请求状态来源，回调签名 (node, state)；options.messages 或 i18n
  * 二选一用于按 state.lang 建每请求实例。
  */
 export function renderPage(pageConfig, state = {}, options = {}) {
   const {
-    client = '/client.js',
     containerId = 'app',
     access = null,
     context = null,
@@ -268,7 +291,7 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         page._headCallback(headNode, pageState);
       }
 
-      const bodyNode = new HtmlElementNode('body');
+      const bodyNode = new PageBodyNode();
       if (page._bodyCallback) {
         page._bodyCallback(bodyNode, pageState);
       }
@@ -280,7 +303,6 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         ? `${appContainer}</div>`
         : `${appContainer}${bodyNode.toHTML()}</div>`;
       const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
-      const clientScript = `<script type="module" src="${escapeHtmlAttribute(client)}"></script>`;
 
       headNode.destroy();
       bodyNode.destroy();
@@ -291,7 +313,6 @@ ${headHtml}
 <body>
 ${bodyHtml}
 ${stateScript}
-${clientScript}
 </body>
 </html>`;
     })
@@ -423,7 +444,7 @@ function adoptElement(node, existing) {
         existing.textContent = node._content;
       }
     } else {
-      replaceExisting(existing, node.renderDom());
+      replaceExisting(existing, node.renderDom(), node);
     }
     return;
   }
@@ -443,7 +464,7 @@ function adoptElement(node, existing) {
     return;
   }
 
-  replaceExisting(existing, node.renderDom());
+  replaceExisting(existing, node.renderDom(), node);
 }
 
 function bindElement(node) {
@@ -480,7 +501,49 @@ function syncSnapshots(node) {
   }
 }
 
-function replaceExisting(existing, created) {
+/** 用可读名字描述参与对齐的两端，供结构错位告警定位。 */
+function describeHydrationNode(value) {
+  if (!value) {
+    return 'none';
+  }
+
+  if (value.nodeType === 3) {
+    return '#text';
+  }
+
+  if (value.nodeType === 1) {
+    return String(value.tagName).toLowerCase();
+  }
+
+  if (typeof value._tagName === 'string') {
+    return value._tagName;
+  }
+
+  return 'unknown';
+}
+
+/**
+ * 结构错位告警：两端结构不一致时对齐方式只能替换节点，会静默丢掉节点身份。
+ * 只在 devtools 开启（开发期）上报，生产路径零开销。
+ */
+function reportHydrationMismatch(node, existing, created) {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  emitDevtools({
+    type: 'hydrate-mismatch',
+    node,
+    expected: describeHydrationNode(created),
+    existing: describeHydrationNode(existing)
+  });
+}
+
+function replaceExisting(existing, created, node = null) {
+  if (node) {
+    reportHydrationMismatch(node, existing, created);
+  }
+
   if (existing && existing.parentNode) {
     existing.parentNode.replaceChild(created, existing);
   }

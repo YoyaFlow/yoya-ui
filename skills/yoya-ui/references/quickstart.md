@@ -14,13 +14,13 @@ npm run dev
 ## 导入入口
 
 - `yoya-ui`：组件与全部能力（core、html、svg、layout、actions、navigation、feedback、form、data-display、async、i18n、theme、router、effects）
-- `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、`vStateNode` 等，零第三方依赖）
+- `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、内置 Signals 的 `ref` / `computed` / `installSignals` 等，零第三方依赖）
 - `yoya-ui/router`：router + SSR：`createRouter`/`Router`、`renderToString`、`hydrate`、`mount`、`renderPage`、`resolveLocale`、`serializeState`
 
 ## 挂载方式
 
-- `node.renderDom()`：创建/复用真实 DOM 元素，`appendChild` 到目标
-- `node.bindTo('#app')`：挂载到选择器或元素
+- `node.renderDom()`：创建（或复用）真实 DOM 元素并返回，不负责挂载
+- `node.bindTo('#app')`：渲染并挂到选择器或元素；页面入口用这个，不要自己 `querySelector` + `appendChild`
 - `mount(component, target, state)`：客户端全量渲染（SSR 入口之一，也用于无 SSR 场景）
 - `node.destroy()`：清理事件并移除 DOM，页面卸载时调用
 
@@ -30,7 +30,7 @@ npm run dev
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 按钮      | `vButton(label, cb)`，variant：primary/secondary/danger，`disabled()`/`loading()`                                                                                                          |
 | 卡片      | `vCard` + `vCardHeader`/`vCardBody`/`vCardFooter`                                                                                                                                          |
-| 文本/状态 | `vText('文案')`：动态文本节点，`textContent()` 读写并原地更新，可放进任何子节点位置                                                                                                        |
+| 文本/状态 | `vText('文案')` 是文本节点；状态用 `ref`/`computed` 持有，值位置直接传句柄（`vText(count)`、`attr('data-x', count)`），写入即原地更新                                                      |
 | 布局      | `div`/`section`、`hstack`/`vstack`/`grid`/`container`/`spacer`、`vSplitPanel`                                                                                                              |
 | 表单      | `vForm`、`vFormItem`、`vInput`、`vSelect`、`vCheckbox(es)`、`vRadio(s)`、`vTextarea`、`vSwitch`、`vRate`、`vSlider`、`vCascader`、`vTagsInput`、`vAutocomplete`、`vColorPicker`、`vUpload` |
 | 数据展示  | `vTable`、`vTree`、`vBadge`、`vDetail`、`vAvatar`、`vProgress`、`vCarousel`                                                                                                                |
@@ -51,4 +51,4 @@ npm run dev
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`；用户持有 裸码 = 读+写、`r.` = 只读、`w.` = 读+写。SPA：`installAccess(createAccess({ permissions, roles }))` 一次；SSR：入口 `options.access` 注入。详见 access-control.md。
+组件只声明裸资源码 `node.access('system:member')`；用户持有 裸码 = 读+写、`r.` = 只读、`w.` = 读+写。SPA：`installAccess(createAccess({ permissions, roles }))` 一次；SSR：入口 `options.access` 注入。详见 access-context.md。

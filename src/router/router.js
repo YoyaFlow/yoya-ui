@@ -122,15 +122,6 @@ export class Router extends ElementNode {
     }
   }
 
-  setup(setup) {
-    if (typeof setup === 'function') {
-      setup(this);
-      return this;
-    }
-
-    return super.setup(setup);
-  }
-
   /**
    * 设置无 hash 时进入的默认路径。
    */
@@ -554,7 +545,7 @@ export function vRouterView(routerInstance, setup = null, callback = null) {
   const node = new ElementNode('div');
   node.className('yoya-vrouter-view');
   node.attr('data-router-view', 'true');
-  if (typeof setup === 'function') setup(node);
+  if (typeof setup === 'function') node.setup(setup);
   else if (setup) node.setup(setup);
   routerInstance.outlet(node);
 

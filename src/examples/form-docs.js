@@ -64,7 +64,7 @@ const formDocsDefinition = Object.freeze({
       component: CustomCollectCard,
       description: '非标准组件通过 collectValue 注册取值函数，vForm 可以像标准控件一样读取。',
       id: 'collect-value',
-      imports: ['vForm', 'vFormItem', 'vText'],
+      imports: ['div', 'vForm', 'vFormItem', 'vText'],
       sourceComponent: FormExample3,
       sourceTitle: '自定义取值核心源码',
       title: '自定义取值'

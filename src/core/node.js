@@ -1,5 +1,20 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
+import { snapshotContext, withContext } from './context.js';
+import { isSignal } from './signals/handle.js';
+import { currentSignals } from './signals/contract.js';
+import { beginCollect, endCollect } from './signals/deps.js';
+import { createReactiveTarget } from './signals/runtime.js';
+import { trackedSubscribe } from './signals/observe.js';
+
+// 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
+// 因此用注册方式桥接，避免循环引用。
+let i18nScopeBridge = null;
+
+/** 由 i18n.js 注册：区域重建时读取与恢复字符串快捷写法实例。 */
+export function registerI18nScopeBridge(bridge) {
+  i18nScopeBridge = bridge;
+}
 
 // Devtools 运行时通过 globalThis 上的共享 bridge 接入，保证主入口与独立
 // devtools 子路径各自打包时仍共享同一开关/事件流；未导入 devtools 时全部 no-op。
@@ -85,40 +100,306 @@ function withRenderScope(spec, build) {
   }
 }
 
-// 函数值绑定作用域：vStateNode render 期间把 (state) => value 登记为绑定，
-// 由状态组件统一求值写回；非状态作用域下的函数值会被拒绝。
-let activeBindingScope = null;
+// 值绑定的数据来源只有两种：signal 句柄（推荐）与零参闭包。闭包自己闭住外部数据，
+// 需要重新求值时用 flush() / flushAll()。带参函数只服务过节点级状态，已一并移除。
+function registerNodeBinding(owner, kind, key, read, commit) {
+  if (read.length > 0) {
+    throw new TypeError(parameterizedValueError(kind, key));
+  }
 
-/**
- * 在指定绑定作用域内执行 build。scope 形如 { bindings: [], getState(): state }，
- * 其中的 setter 收到函数值时会登记绑定。
- */
-export function withBindingScope(scope, build) {
-  const previous = activeBindingScope;
-  activeBindingScope = scope;
-  try {
-    return build();
-  } finally {
-    activeBindingScope = previous;
+  const scope = bindingScopeFor(owner);
+  let binding = null;
+  const target = createReactiveTarget({
+    run: () => read(),
+    onChange: (value) => commitBindingValue(binding, value)
+  });
+
+  binding = {
+    commit,
+    committed: false,
+    evaluate: () => target.evaluate(),
+    key,
+    kind,
+    last: undefined,
+    list: scope.bindings,
+    owner,
+    activate: () => target.activate(),
+    release: () => target.release()
+  };
+
+  bindingSerial += 1;
+  scope.bindings.push(binding);
+
+  if (owner && Array.isArray(owner._bindings)) {
+    owner._bindings.push(binding);
+  }
+
+  // 构建之外的登记（链式写法、挂载后追加）：立刻求值一次，让首屏与紧随其后的读取都有值；
+  // 构建期登记的绑定由构建结束时统一刷（见 setup()）。
+  if (setupStack.length === 0 && regionBuildStack.length === 0) {
+    flushBindingsIn(owner);
   }
 }
 
-function registerNodeBinding(kind, key, read, commit) {
-  if (!activeBindingScope) {
-    throw new TypeError(
-      `vStateNode binding scope required for function value (${kind}${key ? ` "${key}"` : ''})`
-    );
+/**
+ * 绑定归属：区域构建期登记的绑定归区域所有（重跑时统一释放），
+ * 其余挂到节点自己名下。零参闭包自带数据，只需要一个归属挂载点。
+ */
+function bindingScopeFor(owner) {
+  const region = activeRegion();
+  if (region && region._regionScope) {
+    return region._regionScope;
   }
 
-  const scope = activeBindingScope;
-  scope.bindings.push({
-    commit,
-    committed: false,
-    evaluate: () => read(scope.getState()),
-    key,
-    kind,
-    last: undefined
+  if (!owner._ownBindingScope) {
+    owner._ownBindingScope = { bindings: [] };
+  }
+
+  return owner._ownBindingScope;
+}
+
+function parameterizedValueError(kind, key) {
+  return (
+    `parameterized value is no longer supported (${kind}${key ? ` "${key}"` : ''}); ` +
+    'pass a ref/computed handle or use a zero-argument closure'
+  );
+}
+
+/**
+ * 值位置既接受读函数，也接受 signal 句柄；统一归一成读函数。
+ * 句柄自带数据来源，因此按零参绑定处理，不需要 scope()。
+ */
+function toBindingRead(value) {
+  if (isSignal(value)) {
+    return () => value.value;
+  }
+
+  return value;
+}
+
+/**
+ * 组件 props 分发：值是 signal 句柄时登记只读绑定，否则按普通值落地。
+ * 只拦截句柄——函数值仍是既有语义（回调型 prop 不受影响）；写回由显式事件处理器负责。
+ */
+export function applyPropValue(owner, value, setter) {
+  if (isSignal(value)) {
+    registerNodeBinding(owner, 'prop', null, () => value.value, setter);
+    return owner;
+  }
+
+  setter(value);
+  return owner;
+}
+
+// 区域构建上下文：区域构建/重跑期间登记的绑定归该区域所有。
+const regionBuildStack = [];
+const setupStack = [];
+let bindingSerial = 0; // 构建期绑定登记序号：用于判断一次构建是否产出了待求值的绑定
+
+function activeRegion() {
+  if (regionBuildStack.length > 0) {
+    return regionBuildStack[regionBuildStack.length - 1];
+  }
+
+  // 首次构建时，区域声明发生在 setup 执行过程中：向外找最近的已声明区域。
+  for (let index = setupStack.length - 1; index >= 0; index -= 1) {
+    const node = setupStack[index];
+    if (node._rebuildable && node._regionScope) {
+      return node;
+    }
+  }
+
+  return null;
+}
+
+function withRegionBuild(region, run) {
+  regionBuildStack.push(region);
+  try {
+    return run();
+  } finally {
+    regionBuildStack.pop();
+  }
+}
+
+/** 当前是否正在该区域自己的 builder 内构建。 */
+function isBuildingRegion(region) {
+  if (regionBuildStack.includes(region)) {
+    return true;
+  }
+
+  return region._rebuildable === true && setupStack.includes(region);
+}
+
+/** 区域节点的子节点只能由它自己的 builder 产出。 */
+function assertRegionChildAllowed(node) {
+  if (node._rebuildable && !isBuildingRegion(node)) {
+    throw new TypeError(
+      'region children must come from the region builder; call rebuild() to rebuild the region'
+    );
+  }
+}
+
+/** 收集节点及其子树名下的绑定。 */
+function collectRegionBindings(node, out = []) {
+  node._bindings.forEach((binding) => out.push(binding));
+  childTraversalRoots(node).forEach((child) => collectRegionBindings(child, out));
+  return out;
+}
+
+/** 子树遍历口径：组件节点给出它的解析结果，父级据此发现子树里的区域与绑定。 */
+export function childTraversalRoots(node) {
+  if (!(node instanceof ComponentNode)) {
+    return node._children;
+  }
+
+  return node._resolveList();
+}
+
+/** 解除给定绑定：从所属列表与 owner 名下同时移除。 */
+function releaseBindings(bindings) {
+  bindings.forEach((binding) => {
+    if (typeof binding.release === 'function') {
+      binding.release();
+    }
+
+    if (binding.list) {
+      const index = binding.list.indexOf(binding);
+      if (index !== -1) {
+        binding.list.splice(index, 1);
+      }
+    }
+
+    const owner = binding.owner;
+    if (owner && Array.isArray(owner._bindings)) {
+      const ownerIndex = owner._bindings.indexOf(binding);
+      if (ownerIndex !== -1) {
+        owner._bindings.splice(ownerIndex, 1);
+      }
+    }
   });
+}
+
+/** 写回一次绑定值；值未变化时不触碰 DOM。 */
+function commitBindingValue(binding, next) {
+  if (!binding.committed || !Object.is(next, binding.last)) {
+    binding.committed = true;
+    binding.last = next;
+    binding.commit(next);
+  }
+}
+
+/** 节点及其子树的绑定进入 DOM 后开始订阅依赖（服务端只求值不订阅）。 */
+function activateBindings(node) {
+  node._bindings.forEach((binding) => {
+    if (typeof binding.activate === 'function') {
+      binding.activate();
+    }
+  });
+
+  activateRegion(node);
+}
+
+/** 收口区域内联捕获：builder 结束后记录本次依赖。 */
+function closeRegionCapture(node) {
+  const token = node._regionCaptureToken;
+  if (!token) {
+    return;
+  }
+
+  node._regionCaptureToken = null;
+  node._regionSources = endCollect(token);
+  node._regionAdapter = node._regionAdapter || currentSignals();
+}
+
+/** 区域进入 DOM 后订阅自己读到的 signal；服务端不订阅。 */
+function activateRegion(node) {
+  if (!node._rebuildable || node._regionActive) {
+    return;
+  }
+
+  node._regionActive = true;
+  subscribeRegion(node);
+}
+
+function releaseRegionSubscriptions(node) {
+  (node._regionSubs || []).forEach((entry) => entry.dispose());
+  node._regionSubs = [];
+}
+
+/**
+ * 按当前依赖重订区域订阅：只动变化的部分。
+ * 在通知回调里整体退订再重订，会让 store 形态引擎（zustand 那种
+ * `listeners.forEach`）在遍历中反复访问新监听器，直至自激。
+ */
+function subscribeRegion(node) {
+  if (!node._regionActive || !node._regionAdapter) {
+    return;
+  }
+
+  const adapter = node._regionAdapter;
+  const pending = new Map((node._regionSubs || []).map((entry) => [entry.source, entry]));
+  const next = [];
+
+  (node._regionSources || []).forEach((source) => {
+    const existing = pending.get(source);
+    if (existing) {
+      pending.delete(source);
+      next.push(existing);
+      return;
+    }
+
+    next.push({
+      source,
+      dispose: trackedSubscribe(adapter, source, () => node.rebuild({ trigger: 'signal' }))
+    });
+  });
+
+  pending.forEach((entry) => entry.dispose());
+  node._regionSubs = next;
+}
+
+/** 区域销毁 / 离开 DOM 时退订。 */
+function releaseRegion(node) {
+  node._regionActive = false;
+  releaseRegionSubscriptions(node);
+}
+
+/** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
+function flushBindingsIn(node) {
+  node._bindings.forEach((binding) => {
+    commitBindingValue(binding, binding.evaluate());
+  });
+  childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
+}
+
+/**
+ * 登记「本轮区域构建」的清理函数（文档/窗口监听、定时器等）。
+ * 区域重跑时上一轮的清理函数会被执行，避免累加。
+ */
+export function registerRegionCleanup(cleanup) {
+  if (typeof cleanup !== 'function') {
+    return;
+  }
+
+  const region = activeRegion();
+  if (!region) {
+    return;
+  }
+
+  if (!Array.isArray(region._regionRunCleanups)) {
+    region._regionRunCleanups = [];
+  }
+
+  region._regionRunCleanups.push(cleanup);
+}
+
+/** 上报区域重建事件，便于 devtools 回答「这块为什么重建 / 为什么只是刷值」。 */
+function emitRegionEvent(node, action, trigger) {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  emitDevtools({ type: 'region', node, action, trigger });
 }
 
 // 无闭合标签的 HTML 元素，toHTML 时不能追加结束标签。
@@ -194,10 +475,16 @@ export function applyAttribute(element, name, value) {
     return;
   }
 
-  element.setAttribute(name, String(value));
+  const text = String(value);
+  element.setAttribute(name, text);
 
   if (name in element) {
     try {
+      // 已经是目标值就不再写 property：输入类元素上重复写 value 会把光标/选区顶到末尾。
+      if (element[name] === value || element[name] === text) {
+        return;
+      }
+
       element[name] = value;
     } catch {
       // 某些 DOM property 是只读的，忽略即可。
@@ -244,14 +531,26 @@ export class ViewNode {
     this._events = new Map();
     this._domAdapters = new Map();
     this._cleanup = [];
-    this._states = {};
-    this._stateTypes = {};
-    this._stateHandlers = new Map();
     this._pendingRemovals = new Set();
     this._childrenDirty = false;
     this._deleted = false;
     this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
+    this._builders = []; // 区域重建时按顺序重跑的构建函数
+    this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
+    this._rebuildable = false;
+    this._regionScope = null; // 区域自持的绑定作用域
+    this._regionCaptureToken = null; // 区域内联捕获：rebuildable() 声明后开始收集依赖
+    this._regionSources = []; // 区域读到的 signal 依赖
+    this._regionAdapter = null; // 区域依赖所属引擎
+    this._regionActive = false; // 区域是否已进入 DOM 并订阅
+    this._regionSubs = [];
+    this._ownBindingScope = null; // 节点自己的绑定归属：零参闭包登记在这里
+    this._regionGuard = null;
+    this._rebuildPending = false;
+    this._regionRunning = false;
+    this._regionEnv = null; // 构建期环境快照：access / context / i18n
+    this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -267,7 +566,21 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
-      setup(this);
+      this._builders.push(setup);
+      const serialBefore = bindingSerial;
+      setupStack.push(this);
+      try {
+        setup(this);
+      } finally {
+        setupStack.pop();
+        closeRegionCapture(this);
+      }
+
+      // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
+      // 避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
+      if (setupStack.length === 0 && bindingSerial !== serialBefore) {
+        flushBindingsIn(this);
+      }
     } else if (setup instanceof ViewNode) {
       this.child(setup);
     } else if (typeof setup === 'string' || typeof setup === 'number') {
@@ -277,6 +590,155 @@ export class ViewNode {
     }
 
     return this;
+  }
+
+  /**
+   * 声明当前节点为「区域」：内容由它自己的 setup 产出，可在需要时重新执行。
+   * 可选参数是时机谓词，返回 false 时跳过本次重建并记录待重建。
+   */
+  rebuildable(predicate = null) {
+    if (predicate !== null && predicate !== undefined && typeof predicate !== 'function') {
+      throw new TypeError('rebuildable() predicate must be a function');
+    }
+
+    if (this._builders.length === 0) {
+      throw new TypeError('rebuildable() requires a setup builder on this node');
+    }
+
+    this._rebuildable = true;
+    this._regionGuard = predicate || null;
+
+    // 区域在自己 builder 中途声明：从此刻起捕获后续读取的 signal，
+    // builder 返回时由 setup() 收口（约定：先 rebuildable()，再读数据）。
+    if (setupStack[setupStack.length - 1] === this && !this._regionCaptureToken) {
+      this._regionAdapter = currentSignals();
+      this._regionCaptureToken = beginCollect();
+    }
+
+    if (!this._regionScope) {
+      // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
+      this._regionScope = { bindings: [] };
+      this._regionEnv = {
+        access: this._accessContext || currentAccess(),
+        context: snapshotContext(),
+        i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
+      };
+    }
+
+    return this;
+  }
+
+  /** 区域是否有被谓词跳过、等待补齐的重建。 */
+  rebuildPending() {
+    return this._rebuildPending;
+  }
+
+  /**
+   * 值级刷新：只把本节点子树里已登记的绑定求值写回，不重建结构、不触发谓词。
+   * 幂等——值未变化时不会写 DOM；节点已销毁时安全返回。
+   */
+  flush() {
+    if (this._deleted) {
+      return this;
+    }
+
+    flushBindingsIn(this);
+    return this;
+  }
+
+  /**
+   * 重新执行区域 builder：先构建成功，再替换旧子节点；构建失败则保留原内容。
+   */
+  rebuild(options = {}) {
+    if (!this._rebuildable) {
+      throw new TypeError('rebuild() requires rebuildable() on this node');
+    }
+
+    const trigger = (options && options.trigger) || 'manual';
+
+    if (this._deleted || this._regionRunning) {
+      this._regionLastRun = 'skip';
+      return this;
+    }
+
+    if (this._regionGuard && !(options && options.force) && !this._regionGuard()) {
+      // 谓词拒绝结构重建：只刷新值绑定，DOM 与焦点保持原样，重建留待补齐。
+      this._rebuildPending = true;
+      flushBindingsIn(this);
+      this._regionLastRun = 'flush';
+      emitRegionEvent(this, 'flush', trigger);
+      return this;
+    }
+
+    const previousChildren = this._children;
+    const previousKeys = this._childKeys;
+    const previousBindings = new Set(collectRegionBindings(this));
+    const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
+    this._regionRunCleanups = [];
+
+    this._children = [];
+    this._childKeys = new Map();
+    this._childrenDirty = true;
+    previousChildren.forEach((child) => this._pendingRemovals.add(child));
+
+    this._regionRunning = true;
+    const regionToken = beginCollect();
+    const previousSources = this._regionSources;
+    try {
+      this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
+    } catch (error) {
+      endCollect(regionToken);
+      this._regionSources = previousSources;
+      releaseBindings(
+        collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
+      );
+      this._children.forEach((child) => child.destroy());
+      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups = previousCleanups;
+      previousChildren.forEach((child) => this._pendingRemovals.delete(child));
+      this._children = previousChildren;
+      this._childKeys = previousKeys;
+      this._childrenDirty = false;
+      throw error;
+    } finally {
+      this._regionRunning = false;
+    }
+    this._regionSources = endCollect(regionToken);
+
+    releaseBindings([...previousBindings]);
+    previousCleanups.forEach((cleanup) => cleanup());
+    flushBindingsIn(this);
+    this._rebuildPending = false;
+    this._regionLastRun = 'rebuild';
+    emitRegionEvent(this, 'rebuild', trigger);
+    subscribeRegion(this);
+    if (this._el) {
+      this._runInRegionEnvironment(() => this.renderDom());
+    }
+
+    return this;
+  }
+
+  /**
+   * 在区域构建期捕获的环境（权限 / context / i18n 快捷写法 + 继承的权限声明）中执行，
+   * 使重跑产出的节点与首次构建处于同一环境。
+   */
+  _runInRegionEnvironment(run) {
+    const env = this._regionEnv;
+    const build = () => withRegionBuild(this, run);
+
+    if (!env) {
+      return build();
+    }
+
+    const withI18n = () => (i18nScopeBridge ? i18nScopeBridge.runWith(env.i18n, build) : build());
+    const withEnvironment = () => withAccess(env.access, () => withContext(env.context, withI18n));
+
+    if (this._inheritedScope) {
+      return withRenderScope(this._inheritedScope, withEnvironment);
+    }
+
+    return withEnvironment();
   }
 
   /**
@@ -360,6 +822,8 @@ export class ViewNode {
    * 元素子节点会把 key 镜像为 data-row-key，便于 SSR 与调试。
    */
   addChild(key, child) {
+    assertRegionChildAllowed(this);
+
     const rawKey = String(key);
     if (this._childKeys.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
@@ -430,8 +894,11 @@ export class ViewNode {
 
   /**
    * 添加子节点；字符串和数字会自动转成 VTextNode。
+   * 区域节点的子节点只能由它自己的 builder 产出，外部追加即违规。
    */
   child(...children) {
+    assertRegionChildAllowed(this);
+
     children.flat(Infinity).forEach((child) => {
       if (child === null || child === undefined) {
         return;
@@ -519,66 +986,13 @@ export class ViewNode {
     }
   }
 
-  /**
-   * 声明节点可识别的状态字段，默认状态类型是 boolean。
-   */
-  registerStateAttrs(...attrs) {
-    attrs.forEach((attr) => {
-      if (typeof attr === 'string') {
-        this._stateTypes[attr] = 'boolean';
-        return;
-      }
-
-      if (attr && typeof attr === 'object') {
-        Object.entries(attr).forEach(([name, type]) => {
-          this._stateTypes[name] = type || 'boolean';
-        });
-      }
-    });
-
-    return this;
-  }
-
-  /**
-   * 注册状态处理器。状态改变时处理器负责同步样式、属性或内部结构。
-   */
-  registerStateHandler(stateName, handler) {
-    if (!this._stateHandlers.has(stateName)) {
-      this._stateHandlers.set(stateName, []);
+  /** 值级更新的统一入口：区域按谓词重建，普通节点只刷绑定。 */
+  flushAll() {
+    if (this._deleted) {
+      return this;
     }
 
-    this._stateHandlers.get(stateName).push(handler);
-    return this;
-  }
-
-  /**
-   * 设置状态并触发对应处理器。
-   */
-  setState(stateName, value = true) {
-    const oldValue = this._states[stateName];
-    this._states[stateName] = value;
-
-    const handlers = this._stateHandlers.get(stateName) || [];
-    handlers.forEach((handler) => handler(value, this, oldValue));
-
-    return this;
-  }
-
-  getState(stateName) {
-    return this._states[stateName];
-  }
-
-  getBooleanState(stateName) {
-    return Boolean(this.getState(stateName));
-  }
-
-  getStringState(stateName) {
-    const value = this.getState(stateName);
-    return value === undefined || value === null ? '' : String(value);
-  }
-
-  getNumberState(stateName) {
-    return Number(this.getState(stateName) || 0);
+    return this._rebuildable ? this.rebuild() : this.flush();
   }
 
   renderDom() {
@@ -619,6 +1033,12 @@ export class ViewNode {
       unregisterDevtoolsNode(this);
     }
     this._deleted = true;
+    releaseBindings(collectRegionBindings(this));
+    releaseRegion(this);
+    if (Array.isArray(this._regionRunCleanups)) {
+      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups = [];
+    }
     this._cleanup.forEach((cleanup) => cleanup());
     this._cleanup = [];
     this._children.forEach((child) => child.destroy());
@@ -656,8 +1076,10 @@ export class VTextNode extends ViewNode {
     this._content = '';
     this._textNode = null;
 
-    if (typeof content === 'function') {
-      registerNodeBinding('text', null, content, (next) => this.textContent(next));
+    if (typeof content === 'function' || isSignal(content)) {
+      registerNodeBinding(this, 'text', null, toBindingRead(content), (next) =>
+        this.textContent(next)
+      );
       return;
     }
 
@@ -669,8 +1091,10 @@ export class VTextNode extends ViewNode {
       return this._content;
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding('text', null, value, (next) => this.textContent(next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'text', null, toBindingRead(value), (next) =>
+        this.textContent(next)
+      );
       return this;
     }
 
@@ -694,6 +1118,8 @@ export class VTextNode extends ViewNode {
       this._textNode = document.createTextNode(this._content);
       this._el = this._textNode;
     }
+
+    activateBindings(this);
 
     return this._textNode;
   }
@@ -1088,6 +1514,17 @@ export class ElementNode extends ViewNode {
       }
 
       if (typeof this[key] === 'function') {
+        if (isSignal(value)) {
+          registerNodeBinding(
+            this,
+            'prop',
+            key,
+            () => value.value,
+            (next) => this[key](next)
+          );
+          return;
+        }
+
         this[key](value);
         return;
       }
@@ -1124,8 +1561,10 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding('attr', name, value, (next) => this.attr(name, next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'attr', name, toBindingRead(value), (next) =>
+        this.attr(name, next)
+      );
       return this;
     }
 
@@ -1203,6 +1642,27 @@ export class ElementNode extends ViewNode {
   }
 
   /**
+   * 把布尔值（或信号）绑定到类名的有无。
+   * 动态类名不能走 attr('class', …)：className() 是累加集合，_syncClassName() 会回写 class。
+   */
+  toggleClass(name, value) {
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'class', name, toBindingRead(value), (next) =>
+        this.toggleClass(name, Boolean(next))
+      );
+      return this;
+    }
+
+    if (value) {
+      return this.className(name);
+    }
+
+    this._classes.delete(name);
+    this._syncClassName();
+    return this;
+  }
+
+  /**
    * 读写单个样式；传入对象时转给 styles() 批量处理。
    */
   style(name, value) {
@@ -1214,8 +1674,10 @@ export class ElementNode extends ViewNode {
       return this.styles(name);
     }
 
-    if (typeof value === 'function') {
-      registerNodeBinding('style', name, value, (next) => this.style(name, next));
+    if (typeof value === 'function' || isSignal(value)) {
+      registerNodeBinding(this, 'style', name, toBindingRead(value), (next) =>
+        this.style(name, next)
+      );
       return this;
     }
 
@@ -1250,6 +1712,8 @@ export class ElementNode extends ViewNode {
    * 添加子节点。如果当前 DOM 已创建，立即追加对应 DOM。
    */
   child(...children) {
+    assertRegionChildAllowed(this);
+
     const addedIds = this._el && isDevtoolsEnabled() && !this._devtoolsRendering ? [] : null;
     children.flat(Infinity).forEach((child) => {
       if (child === null || child === undefined) {
@@ -1320,16 +1784,18 @@ export class ElementNode extends ViewNode {
     }
 
     const inherited = this._access ?? currentInheritedScope();
+    this._inheritedScope = inherited;
     if (isDevtoolsEnabled()) {
       this._devtoolsRendering = true;
     }
     try {
       if (!this._el) {
-        this._el = document.createElement(this._tagName);
+        this._el = this._createElement();
         withRenderScope(inherited, () => this._applySnapshotToElement());
       }
 
       this._applyAccessState(state);
+      activateBindings(this);
       this._commitChildren();
       this._children.forEach((child) => {
         withRenderScope(inherited, () => {
@@ -1351,6 +1817,11 @@ export class ElementNode extends ViewNode {
     }
   }
 
+  /** 真实元素创建钩子：HTML 走 createElement，SVG 子类覆写为 createElementNS。 */
+  _createElement() {
+    return document.createElement(this._tagName);
+  }
+
   /**
    * 将视图树序列化为 HTML 字符串，主要用于服务端模板或测试断言。
    */
@@ -1366,6 +1837,7 @@ export class ElementNode extends ViewNode {
 
     this._applyAccessState(state);
     const inherited = this._access ?? currentInheritedScope();
+    this._inheritedScope = inherited;
 
     return withRenderScope(inherited, () => {
       const attrs = this._serializeAttributes();
@@ -1472,7 +1944,7 @@ export function createElementFactory(tagName, NodeClass = ElementNode) {
     const node = new NodeClass(tagName, args.first);
     applyElementOptions(node, args.options);
     if (typeof args.callback === 'function') {
-      args.callback(node);
+      node.setup(args.callback);
     }
     return node;
   };

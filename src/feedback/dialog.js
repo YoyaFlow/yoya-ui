@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
   createComponentFactory,
@@ -11,6 +12,8 @@ import {
 export class VDialog extends HtmlElementNode {
   constructor(setup = null) {
     super('dialog', null);
+    // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
+    this._open = ref(false);
     this.className(componentClass, 'yoya-vdialog');
     this.styles({
       background: themeValue('color-surface', '#ffffff'),
@@ -64,7 +67,7 @@ export class VDialog extends HtmlElementNode {
       this.close();
     });
     this.on('close', () => {
-      this.setState('open', false);
+      this._open.value = false;
       this.attr('data-open', null);
       this.attr('open', null);
     });
@@ -85,9 +88,9 @@ export class VDialog extends HtmlElementNode {
 
   open(value = true) {
     const enabled = Boolean(value);
-    const wasOpen = this.getBooleanState('open');
+    const wasOpen = this._open.value;
 
-    this.setState('open', enabled);
+    this._open.value = enabled;
     this.attr('data-open', enabled ? 'true' : null);
 
     if (enabled) {
@@ -104,6 +107,11 @@ export class VDialog extends HtmlElementNode {
 
   close() {
     return this.open(false);
+  }
+
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isOpen() {
+    return this._open.value;
   }
 
   onClose(handler) {
@@ -124,7 +132,7 @@ export class VDialog extends HtmlElementNode {
   renderDom() {
     const element = super.renderDom();
 
-    if (this.getBooleanState('open')) {
+    if (this._open.value) {
       this._scheduleOpenSync();
     }
 
@@ -237,7 +245,7 @@ export class VDialog extends HtmlElementNode {
     queueMicrotask(() => {
       this._pendingOpenSync = false;
 
-      if (this.getBooleanState('open')) {
+      if (this._open.value) {
         this._openElement({ defer: false });
       }
     });

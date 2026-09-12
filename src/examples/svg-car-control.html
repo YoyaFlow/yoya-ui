@@ -6,7 +6,7 @@
     <title>yoya-ui SVG 小车方向控制</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -140,18 +140,20 @@
     <script type="module">
       import {
         bindWindowEvent,
+        computed,
         div,
+        ref,
         svg,
         SvgElementNode,
-        vStateNode
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
+        vText
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
 
       /*
        * 页面由以下独立组件组合而成：
        * - KeyboardInput：只负责按键状态，不碰任何 UI；
-       * - Car：vStateNode 小车（状态 + SVG 视图），动态属性随状态自动写回；
+       * - Car：小车（ref 持有运动状态 + SVG 视图），写入信号即写回属性；
        * - Playfield：SVG 场地，只负责展示与组合 Car；
-       * - StatusBar：vStateNode 状态栏，文本用状态绑定自动更新；
+       * - StatusBar：状态栏，文本由 computed 派生，写入信号即更新；
        * - CarDemoPage：页面壳，组合以上组件并驱动动画循环。
        */
 
@@ -255,30 +257,35 @@
       }
 
       function Car({ bounds, start, variant = '' }) {
-        return vStateNode({
-          state: () => ({
-            x: start.x,
-            y: start.y,
-            vx: 0,
-            vy: 0,
-            angle: 0,
-            beamOpacity: 0,
-            selected: false,
-            braking: false
-          }),
+        const x = ref(start.x);
+        const y = ref(start.y);
+        const vx = ref(0);
+        const vy = ref(0);
+        const angle = ref(0);
+        const beamOpacity = ref(0);
+        const selected = ref(false);
+        const braking = ref(false);
 
-          render(state, component) {
+        // 值位置直接接句柄：写入后原地写回 SVG 属性 / 样式，不重建元素
+        const transform = computed(() => `translate(${x.value} ${y.value}) rotate(${angle.value})`);
+        const beamStyle = computed(() => beamOpacity.value.toFixed(3));
+        const bodyStroke = computed(() => (selected.value ? '#facc15' : null));
+        const bodyStrokeWidth = computed(() => (selected.value ? '4' : null));
+        const tailOpacity = computed(() => (braking.value ? '1' : '0.35'));
+
+        return {
+          render() {
             return new SvgElementNode('g', (carGroup) => {
               carGroup.className(['car', variant]);
-              carGroup.attr('transform', (s) => `translate(${s.x} ${s.y}) rotate(${s.angle})`);
-              carGroup.on('click', () =>
-                component.setState({ selected: !component.state().selected })
-              );
+              carGroup.attr('transform', transform);
+              carGroup.on('click', () => {
+                selected.value = !selected.value;
+              });
 
               carGroup.path((beam) => {
                 beam.className('beam');
                 beam.attr('d', CAR_BEAM_PATH);
-                beam.style('opacity', (s) => s.beamOpacity.toFixed(3));
+                beam.style('opacity', beamStyle);
               });
 
               CAR_WHEEL_POSITIONS.forEach(([wheelX, wheelY]) => {
@@ -286,8 +293,8 @@
               });
 
               carGroup.rect(CAR_BODY, (body) => {
-                body.style('stroke', (s) => (s.selected ? '#facc15' : null));
-                body.style('stroke-width', (s) => (s.selected ? '4' : null));
+                body.style('stroke', bodyStroke);
+                body.style('stroke-width', bodyStrokeWidth);
               });
               carGroup.rect(CAR_ROOF);
 
@@ -315,7 +322,7 @@
                     rx: 4
                   },
                   (tail) => {
-                    tail.style('opacity', (s) => (s.braking ? '1' : '0.35'));
+                    tail.style('opacity', tailOpacity);
                   }
                 );
               });
@@ -323,62 +330,59 @@
           },
 
           step(movement) {
-            const state = this.state();
             const nextVelocityX =
               clampNumber(
-                state.vx + movement.horizontal * CAR_PHYSICS.accel,
+                vx.value + movement.horizontal * CAR_PHYSICS.accel,
                 -CAR_PHYSICS.maxSpeed,
                 CAR_PHYSICS.maxSpeed
               ) * CAR_PHYSICS.friction;
             const nextVelocityY =
               clampNumber(
-                state.vy + movement.vertical * CAR_PHYSICS.accel,
+                vy.value + movement.vertical * CAR_PHYSICS.accel,
                 -CAR_PHYSICS.maxSpeed,
                 CAR_PHYSICS.maxSpeed
               ) * CAR_PHYSICS.friction;
 
-            state.vx = Math.abs(nextVelocityX) < 0.05 ? 0 : nextVelocityX;
-            state.vy = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
-            state.x = clampNumber(state.x + state.vx, bounds.minX, bounds.maxX);
-            state.y = clampNumber(state.y + state.vy, bounds.minY, bounds.maxY);
-            state.braking =
-              (state.vx > 0.15 && movement.horizontal < 0) ||
-              (state.vx < -0.15 && movement.horizontal > 0) ||
-              (state.vy > 0.15 && movement.vertical < 0) ||
-              (state.vy < -0.15 && movement.vertical > 0);
+            vx.value = Math.abs(nextVelocityX) < 0.05 ? 0 : nextVelocityX;
+            vy.value = Math.abs(nextVelocityY) < 0.05 ? 0 : nextVelocityY;
+            x.value = clampNumber(x.value + vx.value, bounds.minX, bounds.maxX);
+            y.value = clampNumber(y.value + vy.value, bounds.minY, bounds.maxY);
+            braking.value =
+              (vx.value > 0.15 && movement.horizontal < 0) ||
+              (vx.value < -0.15 && movement.horizontal > 0) ||
+              (vy.value > 0.15 && movement.vertical < 0) ||
+              (vy.value < -0.15 && movement.vertical > 0);
 
-            const speed = Math.hypot(state.vx, state.vy);
+            const speed = Math.hypot(vx.value, vy.value);
             if (speed > 0.4) {
-              const targetAngle = (Math.atan2(state.vy, state.vx) * 180) / Math.PI;
-              let angleDiff = (targetAngle - state.angle) % 360;
+              const targetAngle = (Math.atan2(vy.value, vx.value) * 180) / Math.PI;
+              let angleDiff = (targetAngle - angle.value) % 360;
               if (angleDiff > 180) {
                 angleDiff -= 360;
               }
               if (angleDiff < -180) {
                 angleDiff += 360;
               }
-              state.angle += angleDiff * 0.22;
+              angle.value += angleDiff * 0.22;
             }
 
-            state.beamOpacity += ((speed > 0.8 ? 0.24 : 0) - state.beamOpacity) * 0.12;
-            this.setState(state);
+            beamOpacity.value += ((speed > 0.8 ? 0.24 : 0) - beamOpacity.value) * 0.12;
 
-            return { speed, angle: state.angle };
+            return { speed, angle: angle.value };
           },
 
           reset() {
-            return this.setState({
-              x: start.x,
-              y: start.y,
-              vx: 0,
-              vy: 0,
-              angle: 0,
-              beamOpacity: 0,
-              selected: false,
-              braking: false
-            });
+            x.value = start.x;
+            y.value = start.y;
+            vx.value = 0;
+            vy.value = 0;
+            angle.value = 0;
+            beamOpacity.value = 0;
+            selected.value = false;
+            braking.value = false;
+            return this;
           }
-        });
+        };
       }
 
       function Playfield({ cars }) {
@@ -458,22 +462,35 @@
       }
 
       function StatusBar() {
-        return vStateNode({
-          state: () => ({ speedA: 0, angleA: 0, speedB: 0, angleB: 0 }),
+        const speedA = ref(0);
+        const angleA = ref(0);
+        const speedB = ref(0);
+        const angleB = ref(0);
+        const textA = computed(
+          () => `A 速度 ${Math.round(speedA.value * 10) / 10} ${directionLabel(angleA.value)}`
+        );
+        const textB = computed(
+          () => `B 速度 ${Math.round(speedB.value * 10) / 10} ${directionLabel(angleB.value)}`
+        );
 
+        return {
           render() {
             return div((status) => {
               status.className('demo-status');
-              status.text(
-                (s) => `A 速度 ${Math.round(s.speedA * 10) / 10} ${directionLabel(s.angleA)}`
-              );
+              status.child(vText(textA));
               status.text(' · ');
-              status.text(
-                (s) => `B 速度 ${Math.round(s.speedB * 10) / 10} ${directionLabel(s.angleB)}`
-              );
+              status.child(vText(textB));
             });
+          },
+
+          update(next) {
+            speedA.value = next.speedA;
+            angleA.value = next.angleA;
+            speedB.value = next.speedB;
+            angleB.value = next.angleB;
+            return this;
           }
-        });
+        };
       }
 
       function CarDemoPage() {
@@ -489,7 +506,7 @@
         function tick() {
           const statusA = carA.step(input.movement('arrows'));
           const statusB = carB.step(input.movement('wasd'));
-          statusBar.setState({
+          statusBar.update({
             speedA: statusA.speed,
             angleA: statusA.angle,
             speedB: statusB.speed,

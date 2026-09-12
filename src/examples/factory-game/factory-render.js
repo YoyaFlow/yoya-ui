@@ -55,34 +55,6 @@ export function createFactoryEnvironment(state) {
   return group;
 }
 
-export function createHoverMarker() {
-  const marker = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.94, 0.94),
-    new THREE.MeshBasicMaterial({
-      color: COLORS.hoverValid,
-      opacity: 0.35,
-      transparent: true
-    })
-  );
-  marker.rotation.x = -Math.PI / 2;
-  marker.position.y = 0.012;
-  marker.visible = false;
-  return marker;
-}
-
-export function showHover(marker, state, key, valid) {
-  if (!key) {
-    marker.visible = false;
-    return;
-  }
-
-  const { x, z } = cellCenter(state, key);
-  marker.position.x = x;
-  marker.position.z = z;
-  marker.material.color.setHex(valid ? COLORS.hoverValid : COLORS.hoverInvalid);
-  marker.visible = true;
-}
-
 export function createGhostPreview() {
   const group = new THREE.Group();
   group.visible = false;

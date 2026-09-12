@@ -2,6 +2,7 @@ import { HtmlElementNode } from '../html/index.js';
 import { registerChildFactories, vText } from '../core/node.js';
 import {
   applyComponentArguments,
+  booleanMethod,
   componentClass,
   createComponentFactory,
   isPlainObject,
@@ -46,6 +47,16 @@ export class VSvgIconPicker extends HtmlElementNode {
     this._triggerText = null;
 
     this._buildStructure();
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('data-disabled', enabled ? 'true' : null);
+      this._trigger.attr('disabled', enabled ? true : null);
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this.attr('data-required', enabled ? 'true' : null);
+    });
+
     this._setupSvgIconPicker(setup);
     applyComponentArguments(this, options, callback);
   }
@@ -222,7 +233,7 @@ export class VSvgIconPicker extends HtmlElementNode {
     this._fillPending = true;
     setTimeout(() => {
       this._fillPending = false;
-      if (this._dialog.getBooleanState('open')) {
+      if (this._dialog.isOpen()) {
         this._fillViewport();
       }
     }, 0);
@@ -279,16 +290,9 @@ export class VSvgIconPicker extends HtmlElementNode {
     return this._value;
   }
 
-  /** 读写禁用状态。 */
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-    const enabled = Boolean(value);
-    this.setState('disabled', enabled);
-    this.attr('data-disabled', enabled ? 'true' : null);
-    this._trigger.attr('disabled', enabled ? true : null);
-    return this;
+  /** 读写分离：跨组件只读判断走这个入口（票 02 方案 c） */
+  isDisabled() {
+    return this._disabled.value;
   }
 
   /** 读写字段名（vFormItem 之外的标识）。 */
@@ -297,17 +301,6 @@ export class VSvgIconPicker extends HtmlElementNode {
       return this.attr('data-name') || '';
     }
     this.attr('data-name', value ? String(value) : null);
-    return this;
-  }
-
-  /** 读写必填标记。 */
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-    const enabled = Boolean(value);
-    this.setState('required', enabled);
-    this.attr('data-required', enabled ? 'true' : null);
     return this;
   }
 
@@ -350,7 +343,7 @@ export class VSvgIconPicker extends HtmlElementNode {
   }
 
   toggle() {
-    if (this._dialog.getBooleanState('open')) {
+    if (this._dialog.isOpen()) {
       return this.close();
     }
     return this.open();

@@ -6,7 +6,7 @@ import {
   ButtonSizesExample1,
   ButtonStatesExample1,
   ButtonVariantsExample1
-} from './detail-sources.js';
+} from './demos/button.js';
 
 export const buttonDemoDefinitions = Object.freeze([
   {

@@ -1,250 +1,39 @@
-import { signal, computed, effect } from '@preact/signals-core';
-import { div, section, vCard, vText } from '../index.js';
+import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
+// 插件由使用者自己写：这里只给模板，源码直接取文件原文，避免两份拷贝。
+import adapterTemplateSource from './adapter-template.js?raw';
+import signalsAdapterSource from './adapter-signals-example.js?raw';
+import zustandAdapterSource from './adapter-zustand-example.js?raw';
+import signalsUsageSource from './adapter-signals-usage.js?raw';
+import zustandUsageSource from './adapter-zustand-usage.js?raw';
 
-// 核心组件：只包含 vCardBody 内容与操作方法，不包含 Card 和按钮。
-function SignalCounter() {
-  const count = signal(0);
-  const double = computed(() => count.value * 2);
-  const countText = vText('0');
-  const doubleText = vText('0');
-
-  effect(() => {
-    countText.textContent(String(count.value));
-    doubleText.textContent(String(double.value));
-  });
-
-  return {
-    render() {
-      return div((body) => {
-        body.div((row) => {
-          row.span('当前计数：');
-          row.span((el) => el.attr('data-signals-count', 'true').child(countText));
-        });
-        body.div((row) => {
-          row.span('派生值 ×2：');
-          row.span((el) => el.attr('data-signals-double', 'true').child(doubleText));
-        });
-      });
-    },
-    increment() {
-      count.value += 1;
-    },
-    reset() {
-      count.value = 0;
-    }
-  };
-}
-
-function SignalInput() {
-  const name = signal('');
-  const length = computed(() => name.value.length);
-  const format = () => `当前输入：${name.value}，长度：${length.value}`;
-  const output = vText(format());
-
-  effect(() => {
-    output.textContent(format());
-  });
-
-  return {
-    render() {
-      return div((body) => {
-        body.input((field) => {
-          field.attr({
-            'data-signals-input': 'true',
-            placeholder: '输入内容',
-            type: 'text'
-          });
-          field.on('input', (event) => {
-            name.value = event.target.value;
-          });
-        });
-        body.div((row) => {
-          row.span('输出：');
-          row.span((el) => el.attr('data-signals-output', 'true').child(output));
-        });
-      });
-    },
-    setValue(text) {
-      name.value = text;
-    },
-    clear() {
-      name.value = '';
-    }
-  };
-}
-
-function SignalSharedCounter() {
-  const count = signal(0);
-  const countText = vText('0');
-
-  effect(() => {
-    countText.textContent(String(count.value));
-  });
-
-  return {
-    render() {
-      return div((body) => {
-        body.div((row) => {
-          row.span('共享计数：');
-          row.span((el) => el.attr('data-signals-shared-count', 'true').child(countText));
-        });
-      });
-    },
-    increment() {
-      count.value += 1;
-    },
-    reset() {
-      count.value = 0;
-    }
-  };
-}
-
-// 页面壳：负责 Card、按钮和说明文字，不进入演示源码面板。
-function SignalCounterDemo() {
-  const counter = SignalCounter();
-
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('计数器与派生值');
-        card.vCardBody((body) => {
-          body.p('signal 直接赋值，computed 派生，effect 自动同步视图。');
-          body.child(counter);
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('+1', (button) => {
-            button.variant('primary').on('click', () => counter.increment());
-          });
-          footer.vButton('重置', (button) => {
-            button.on('click', () => counter.reset());
-          });
-        });
-      });
-    }
-  };
-}
-
-function SignalInputDemo() {
-  const input = SignalInput();
-
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('输入保持焦点');
-        card.vCardBody((body) => {
-          body.p('输入框只改 signal，输出文本自动更新，输入框 DOM 不被替换。');
-          body.child(input);
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('填入示例', (button) => {
-            button.variant('primary').on('click', () => input.setValue('Hello yoya'));
-          });
-          footer.vButton('清空', (button) => {
-            button.on('click', () => input.clear());
-          });
-        });
-      });
-    }
-  };
-}
-
-function SignalSharedDemo() {
-  const shared = SignalSharedCounter();
-
-  return {
-    render() {
-      return div((grid) => {
-        grid.className('components-signals-shared-grid');
-        grid.child(
-          vCard((card) => {
-            card.vCardHeader('发送端');
-            card.vCardBody((body) => {
-              body.p('同一个组件实例挂载在两处，按钮通过操作方法修改共享状态。');
-            });
-            card.vCardFooter((footer) => {
-              footer.vButton('+1', (button) => {
-                button.variant('primary').on('click', () => shared.increment());
-              });
-              footer.vButton('重置', (button) => {
-                button.on('click', () => shared.reset());
-              });
-            });
-          }),
-          vCard((card) => {
-            card.vCardHeader('接收端');
-            card.vCardBody((body) => {
-              body.child(shared);
-            });
-          })
-        );
-      });
-    }
-  };
-}
-
-const signalsDemos = [
-  {
-    id: 'counter',
-    live: SignalCounterDemo,
-    component: SignalCounter,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'computed', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
-    sourceTitle: '计数器核心源码',
-    title: '计数器与派生值'
-  },
-  {
-    id: 'input',
-    live: SignalInputDemo,
-    component: SignalInput,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'computed', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
-    sourceTitle: '输入核心源码',
-    title: '输入保持焦点'
-  },
-  {
-    id: 'shared',
-    live: SignalSharedDemo,
-    component: SignalSharedCounter,
-    imports: [
-      { from: '@preact/signals-core', names: ['signal', 'effect'] },
-      { from: 'yoya-ui', names: ['div', 'vText'] }
-    ],
-    sourceTitle: '共享状态核心源码',
-    title: '跨组件共享状态'
-  }
+const adapterSourcePanels = [
+  ComponentSource({
+    source: adapterTemplateSource,
+    title: '插件模板（复制到你的项目里改）'
+  }),
+  ComponentSource({
+    source: signalsAdapterSource,
+    title: '演示代码：Signals 类库（@preact/signals-core）'
+  }),
+  ComponentSource({
+    source: signalsUsageSource,
+    title: '演示代码：Signals 用法（接入 + 业务代码）'
+  }),
+  ComponentSource({
+    source: zustandAdapterSource,
+    title: '演示代码：Store 类库（zustand/vanilla）'
+  }),
+  ComponentSource({
+    source: zustandUsageSource,
+    title: '演示代码：Store 用法（接入 + 业务代码）'
+  })
 ];
 
-function SignalsDemoSection(demo) {
-  const liveDemo = demo.live();
-  const sourcePanel = ComponentSource({
-    component: demo.component,
-    imports: demo.imports,
-    sourceComponent: demo.component,
-    title: demo.sourceTitle
-  });
-
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-signals-demo');
-        example.attr('data-signals-demo', demo.id);
-        example.h3(demo.title);
-        example.div((live) => {
-          live.className('components-signals-demo-live');
-          live.attr('data-signals-demo-live', 'true');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
-}
-
+/**
+ * Signals 文档页：只回答「怎么换引擎、怎么写自己的适配器」。
+ * 信号本身的用法（ref / computed / 区域）见状态节点与区域指南，这里不重复。
+ */
 export function SignalsDocumentationPage() {
   return {
     render() {
@@ -253,36 +42,55 @@ export function SignalsDocumentationPage() {
         page.attr('data-signals-page', 'true');
         page.h1('Signals 状态管理');
         page.p(
-          '基于 @preact/signals-core 的第三方状态管理扩展：signal 保存状态，computed 派生，effect 同步视图，不依赖 vStateNode。'
+          '内置 Signals 开箱可用，业务代码只依赖 ref / computed。想换成别的状态库，自己写一个适配器插件装进来即可——signals 类库、store 类库都一样，业务代码一行不改。'
         );
-        page.section((usage) => {
-          usage.className('components-signals-usage');
-          usage.attr('data-signals-usage', 'true');
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            list.li('需要数据状态与派生视图自动同步（摘要、联动提示、输出文本）。');
-            list.li('需要跨组件共享同一份状态，避免回调层层传递。');
-            list.li('不想手写 update 或手动同步 DOM，希望一次赋值自动更新。');
-            list.li('输入类交互要保持焦点：只更新派生节点，不重建输入框。');
+        page.section((engines) => {
+          engines.className('components-signals-engines');
+          engines.attr('data-signals-engines', 'true');
+          engines.h2('更换底层引擎（可选）');
+          engines.p(
+            '默认引擎随包提供、无需安装依赖；换成第三方实现时，插件是唯一的接入点，写插件的人是你而不是库。'
+          );
+          engines.ul((list) => {
+            list.li(
+              "import { installSignals } from '@yoyaflow/yoya-ui'; — installSignals(adapter) 全局替换，installSignals(null) 回到内置引擎。"
+            );
+            list.li(
+              '同一时刻只激活一个引擎：安装即替换，不并存（两个引擎版本同页面会让依赖追踪各说各话）。'
+            );
+            list.li('适配器只依赖你自己装的库：主包 0 运行时依赖不变，装不装、装哪家都由你决定。');
           });
         });
-        page.section((advantages) => {
-          advantages.className('components-signals-advantages');
-          advantages.attr('data-signals-advantages', 'true');
-          advantages.h2('用法优点');
-          advantages.ul((list) => {
-            list.li('一次赋值，数据与视图同步完成，避免操作两次。');
-            list.li('computed 声明式派生，自动随源状态更新。');
-            list.li('依赖追踪自动圈定更新范围，细粒度更新避免整树重绘、不丢焦点。');
-            list.li('signal 可在组件外定义，天然支持跨组件共享，无需 store。');
-            list.li('与 vStateNode 互补：结构切换用 vStateNode，派生展示与共享状态用 Signals。');
+        page.section((adapter) => {
+          adapter.className('components-signals-adapter');
+          adapter.attr('data-signals-adapter', 'true');
+          adapter.h2('插件模板（自己写适配器）');
+          adapter.p(
+            '适配器只做「值单元 + 变更通知」两件事：依赖收集、computed、调度与生命周期全部由 core 负责，所以换成别的状态库不会改变依赖语义与派生语义——store 类库也一样能当引擎。把下面这份模板复制到你的项目，按 TODO 填上你的库的调用即可；想看能跑的最小实现，可对照仓库里的 core/signals/engine.js。'
+          );
+          adapter.ul((list) => {
+            list.li(
+              '必需四个方法：createSignal(initial) / read(source) / write(source, value) / subscribe(source, listener)。'
+            );
+            list.li(
+              '订阅不跑首次：多数引擎的 subscribe 会立即回调一次，契约要求吞掉这一次（绑定在构建期已经求值过）。'
+            );
+            list.li(
+              '监听器内部读值不能登记成依赖：用引擎的 untracked 包一层，否则重建期间的读取会把订阅自我放大。'
+            );
+            list.li(
+              '可选方法 batch / untracked / effect / isSource 有就转发，没有 core 会退回自己的默认实现。'
+            );
+            list.li(
+              'store 形态（getState / setState / subscribe）不需要 untracked——通知来自 store 而不是 effect；通知期间的重订已由 core 按「只动变化的依赖」处理，插件不必自己兜。'
+            );
           });
-        });
-        page.div((grid) => {
-          grid.className('components-signals-grid');
-          grid.attr('data-signals-grid', 'true');
-          signalsDemos.forEach((demo) => {
-            grid.child(SignalsDemoSection(demo));
+          adapter.p(
+            '再往下是四种演示代码，每类库一对：适配器 + 用法（启动装一次引擎，业务代码照旧）。signals 与 store 各一对，按契约把各自的坑都处理掉了，全部在仓库里跑一致性用例与端到端用例，可以直接抄。'
+          );
+          adapter.div((panels) => {
+            panels.className('components-signals-adapter-sources');
+            adapterSourcePanels.forEach((panel) => panels.child(panel));
           });
         });
       });

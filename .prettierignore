@@ -5,3 +5,4 @@ node_modules
 package-lock.json
 src/chart/echarts.min.js
 src/examples/demos/
+src/core/signals/vendor/

@@ -20,11 +20,11 @@ import type { VThemeModeSwitch } from './theme.js';
 /** Class name input accepted by className()/class(): strings, arrays, falsy values. */
 export type ClassNameInput = string | number | null | undefined | false | ClassNameInput[];
 
-/** Attribute values supported by attr(). */
-export type AttrValue = string | number | boolean | null | undefined;
+/** Attribute values supported by attr(); a signal handle makes it a live binding. */
+export type AttrValue = string | number | boolean | null | undefined | SignalHandle<unknown>;
 
-/** Inline style values supported by style()/styles(). */
-export type StyleValue = string | number | null | undefined;
+/** Inline style values supported by style()/styles(); a signal handle makes it a live binding. */
+export type StyleValue = string | number | null | undefined | SignalHandle<unknown>;
 
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
@@ -77,12 +77,6 @@ export interface ElementFactory<N = ViewNode> {
   (first: SetupInput<N>, callback: SetupCallback<N>): N;
   (first: SetupInput<N> | null, options: ElementOptions, callback?: SetupCallback<N>): N;
 }
-
-/** State types accepted by registerStateAttrs(). */
-export type StateType = 'boolean' | 'string' | 'number' | null | undefined;
-
-/** State handler invoked when a registered state changes. */
-export type StateHandler<N = ViewNode> = (value: unknown, node: N, oldValue: unknown) => void;
 
 // ---------------------------------------------------------------------------
 // Access control
@@ -218,25 +212,26 @@ export class ViewNode {
   /** Adds a text child. */
   text(content: string | number): this;
 
+  /** Marks this node as a region whose content can be rebuilt from its own setup. */
+  rebuildable(predicate?: (() => boolean) | null): this;
+
+  /** Whether a rebuild was skipped by the region predicate and is still pending. */
+  rebuildPending(): boolean;
+
+  /** Flushes bound values in this subtree without rebuilding structure. */
+  flush(): this;
+
+  /** Value-level update entry for non-signal sources: regions rebuild (predicate-gated), plain nodes only flush. */
+  flushAll(): this;
+
+  /** Re-runs the region builders: build first, then replace the previous children. */
+  rebuild(options?: { force?: boolean }): this;
+
   /** Declares access control: bare default read, "w.xxx" write, "r.xxx" read. */
   access(spec: AccessSpec): this;
 
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
-
-  /** Declares state fields (default boolean) recognized by this node. */
-  registerStateAttrs(...attrs: Array<string | Record<string, StateType>>): this;
-
-  /** Registers a handler invoked when the given state changes. */
-  registerStateHandler(stateName: string, handler: StateHandler<this>): this;
-
-  /** Sets a state value and triggers its handlers. */
-  setState(stateName: string, value?: unknown): this;
-
-  getState(stateName: string): unknown;
-  getBooleanState(stateName: string): boolean;
-  getStringState(stateName: string): string;
-  getNumberState(stateName: string): number;
 
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
@@ -332,8 +327,6 @@ export class ElementNode extends ViewNode {
   toHTML(): string;
 
   // Shortcuts registered on ElementNode (inherited by HtmlElementNode).
-  /** vStateNode shortcut: creates a stateful object component. */
-  vStateNode(config: StateNodeConfig): StateNodeComponent;
   /** vDynamicLoader shortcut: lazily loads a module with status views. */
   vDynamicLoader(
     first?: DynamicLoaderOptions | (() => unknown) | SetupCallback<DynamicLoaderNode>,
@@ -424,7 +417,7 @@ export function registerChildFactories(
 export function resolveTarget(target: string | ParentNode): ParentNode | null;
 
 /** Creates a text node. */
-export function vText(content?: string | number): VTextNode;
+export function vText(content?: string | number | SignalHandle<unknown>): VTextNode;
 /** Alias of vText(). */
 export const text: typeof vText;
 
@@ -540,33 +533,57 @@ export function installI18nStringShortcut(locale?: I18n): I18n;
 export function withI18nStringShortcut<T>(locale: I18n, build: () => T): T;
 
 // ---------------------------------------------------------------------------
-// State node (vStateNode)
+// Signals
 // ---------------------------------------------------------------------------
 
-export interface StateNodeConfig<S extends Record<string, unknown> = Record<string, unknown>> {
-  state?: S | (() => S);
-  render(state: S, component: StateNodeComponent<S>): ChildInput;
-  update?(state: S, component: StateNodeComponent<S>, changed: Set<string>): boolean | void;
-  [key: string]: any;
+/**
+ * Core signal handle: the only signal object business code sees.
+ * Engine-native signal objects never leak into the DSL.
+ */
+export interface SignalHandle<T = unknown> {
+  value: T;
+  peek(): T;
+  subscribe(listener: (value: T) => void): () => void;
+  update(updater: (value: T) => T): SignalHandle<T>;
 }
 
-/** Object component returned by vStateNode(). */
-export interface StateNodeComponent<S extends Record<string, unknown> = Record<string, unknown>> {
-  destroy(): StateNodeComponent<S>;
-  getState(): S;
-  render(): ElementNode;
-  setState(
-    patch: Partial<S> | ((state: S) => Partial<S> | null | undefined)
-  ): StateNodeComponent<S>;
-  state(): S;
-  subscribe(listener: (state: S, component: StateNodeComponent<S>) => void): () => void;
-  [key: string]: any;
+/** Creates a writable signal. */
+export function ref<T>(initial: T): SignalHandle<T>;
+
+/** Creates a read-only derived signal; lazy, cached, recomputed on dependency change. */
+export function computed<T>(compute: () => T): Readonly<SignalHandle<T>>;
+
+/** True for yoya signal handles (plain `{ value }` objects are not signals). */
+export function isSignal(value: unknown): value is SignalHandle<unknown>;
+
+/** Runs `run` with coalesced notification when the engine supports batching. */
+export function batch<T>(run: () => T): T;
+
+/**
+ * State engine adapter contract: value cells and change notification only.
+ * Dependency collection, derivation, scheduling and lifetimes stay in core,
+ * so signals libraries and store-shaped libraries (e.g. zustand) both qualify.
+ */
+export interface SignalsAdapter {
+  name?: string;
+  createSignal<T>(initial: T): unknown;
+  read(source: unknown): any;
+  write(source: unknown, value: unknown): void;
+  subscribe(source: unknown, listener: (value: unknown) => void): () => void;
+  batch?<T>(run: () => T): T;
+  untracked?<T>(run: () => T): T;
+  effect?(run: () => void): () => void;
+  isSource?(value: unknown): boolean;
 }
 
-/** Creates a stateful object component with render/update lifecycle. */
-export function vStateNode<S extends Record<string, unknown> = Record<string, unknown>>(
-  config: StateNodeConfig<S>
-): StateNodeComponent<S>;
+/** Installs a signals engine adapter (replacement, one engine at a time); null restores the built-in engine. */
+export function installSignals(adapter?: SignalsAdapter | null): SignalsAdapter;
+
+/** Returns the active signals engine adapter. */
+export function currentSignals(): SignalsAdapter;
+
+/** Validates an adapter, throwing when required methods are missing. */
+export function assertSignalsAdapter(adapter: unknown): SignalsAdapter;
 
 // ---------------------------------------------------------------------------
 // Request

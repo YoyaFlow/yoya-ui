@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { div, span, vStateNode } from '../index.js';
+import { div, ref, span } from '../index.js';
 import { vTbody, vTr } from '../data-display/table.js';
 
 describe('multi-root fragments', () => {
-  it('mounts multiple vStateNode roots as direct children without a wrapper', () => {
-    const group = vStateNode({
-      state: () => ({ names: ['Ada', 'Bob'] }),
-      render(state) {
-        return state.names.map((name) => vTr((tr) => tr.vTd(name)));
-      }
-    });
-    const element = vTbody().child(group).renderDom();
+  it('mounts multiple component roots as direct children without a wrapper', () => {
+    const Group = {
+      render: () => ['Ada', 'Bob'].map((name) => vTr((tr) => tr.vTd(name)))
+    };
+    const element = vTbody().child(Group).renderDom();
 
     expect(element.children.length).toBe(2);
     expect(element.children[0].tagName).toBe('TR');
@@ -19,20 +16,23 @@ describe('multi-root fragments', () => {
   });
 
   it('swaps a mounted multi-root fragment after a full rebuild', () => {
-    const component = vStateNode({
-      state: () => ({ count: 0 }),
-      render(state) {
-        return state.count === 0 ? [div('a'), div('b')] : [div('c'), div('d'), div('e')];
-      }
+    const count = ref(0);
+    const host = div((ele) => {
+      ele.rebuildable();
+      // 构建期直读信号：写入才会重建这块区域
+      ele.attr('data-size', String(count.value));
+      // 每次重建都新建组件对象：ComponentNode 缓存自己那份 render() 结果
+      ele.child({
+        render: () => (count.value === 0 ? [div('a'), div('b')] : [div('c'), div('d'), div('e')])
+      });
     });
-    const host = div().child(component);
     const container = host.renderDom();
     const first = container.children[0];
 
     expect(container.children.length).toBe(2);
     expect(container.textContent).toBe('ab');
 
-    component.setState({ count: 1 });
+    count.value = 1;
 
     expect(container.children.length).toBe(3);
     expect(container.children[0]).not.toBe(first);
@@ -49,13 +49,10 @@ describe('multi-root fragments', () => {
   });
 
   it('serializes multi-root fragments inline for SSR', () => {
-    const component = vStateNode({
-      state: () => ({ label: 'x' }),
-      render(state) {
-        return [span(state.label), span('y')];
-      }
-    });
-    const html = div().child(component).toHTML();
+    const Group = {
+      render: () => [span('x'), span('y')]
+    };
+    const html = div().child(Group).toHTML();
 
     expect(html).toContain('<span>x</span><span>y</span>');
   });

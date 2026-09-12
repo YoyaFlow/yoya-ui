@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { ref } from '../core/signals/handle.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -183,6 +184,10 @@ export class VMenu extends HtmlElementNode {
 export class VMenuItem extends HtmlElementNode {
   constructor(setup = null) {
     super('button', null);
+    // 内部状态用 ref 持有（票 01 约定）；active/danger/disabled 是「默认真」写方法，无参不是读
+    this._active = ref(false);
+    this._danger = ref(false);
+    this._disabled = ref(false);
     this._iconBox = new HtmlElementNode('span')
       .className('yoya-vmenu-item-icon')
       .attr('aria-hidden', 'true')
@@ -235,7 +240,7 @@ export class VMenuItem extends HtmlElementNode {
   active(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('active', enabled);
+    this._active.value = enabled;
     this.attr('data-active', enabled ? 'true' : null);
     this.attr('aria-current', enabled ? 'page' : null);
     return this;
@@ -244,7 +249,7 @@ export class VMenuItem extends HtmlElementNode {
   danger(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('danger', enabled);
+    this._danger.value = enabled;
     this.attr('data-danger', enabled ? 'true' : null);
     return this;
   }
@@ -257,7 +262,7 @@ export class VMenuItem extends HtmlElementNode {
   disabled(value) {
     const enabled = Boolean(value);
 
-    this.setState('disabled', enabled);
+    this._disabled.value = enabled;
     this.attr('disabled', enabled ? true : null);
     this.attr('aria-disabled', enabled ? 'true' : null);
     if (this._el) {
@@ -427,6 +432,9 @@ export class VSubMenu extends HtmlElementNode {
     super('div', null);
     const panelId = allocateId('yoya-vsubmenu-panel');
     this._globalCloseCleanup = null;
+    // 内部状态用 ref 持有（票 01 约定）；open/disabled 是「默认真」写方法，无参不是读
+    this._open = ref(false);
+    this._disabled = ref(false);
     this._trigger = new VMenuItem()
       .className('yoya-vsubmenu-trigger')
       .attr({
@@ -437,7 +445,7 @@ export class VSubMenu extends HtmlElementNode {
       .shortcut('›')
       .on('click', (event) => {
         event.preventDefault();
-        if (!this.getBooleanState('disabled')) {
+        if (!this._disabled.value) {
           this.toggle();
         }
       });
@@ -497,14 +505,14 @@ export class VSubMenu extends HtmlElementNode {
   inline(value = true) {
     this._inline = Boolean(value);
     this.attr('data-inline', this._inline ? 'true' : null);
-    this._trigger.shortcut(this._inline ? (this.getBooleanState('open') ? '▾' : '▸') : '›');
+    this._trigger.shortcut(this._inline ? (this._open.value ? '▾' : '▸') : '›');
 
     return this;
   }
 
   disabled(value = true) {
     const disabled = Boolean(value);
-    this.setState('disabled', disabled);
+    this._disabled.value = disabled;
     this.attr('data-disabled', disabled ? 'true' : null);
     this._trigger.disabled(disabled);
     if (disabled) {
@@ -514,8 +522,8 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   open(value = true) {
-    const open = Boolean(value) && !this.getBooleanState('disabled');
-    this.setState('open', open);
+    const open = Boolean(value) && !this._disabled.value;
+    this._open.value = open;
     this.attr('data-open', open ? 'true' : null);
     this._trigger.attr('aria-expanded', open ? 'true' : 'false');
     if (this._inline) {
@@ -535,7 +543,7 @@ export class VSubMenu extends HtmlElementNode {
   }
 
   toggle() {
-    return this.open(!this.getBooleanState('open'));
+    return this.open(!this._open.value);
   }
 
   _selectInlineItem(element) {
@@ -574,7 +582,7 @@ export class VSubMenu extends HtmlElementNode {
       trigger === this._trigger._el &&
       enterKeys.includes(event.key)
     ) {
-      if (this.getBooleanState('disabled')) {
+      if (this._disabled.value) {
         return;
       }
       event.preventDefault();
@@ -592,7 +600,7 @@ export class VSubMenu extends HtmlElementNode {
       owningSubMenu === this._el &&
       trigger === this._trigger._el &&
       exitKey &&
-      this.getBooleanState('open')
+      this._open.value
     ) {
       event.preventDefault();
       event.stopPropagation();
@@ -723,6 +731,8 @@ export class VSidebar extends HtmlElementNode {
     const menuId = allocateId('yoya-vsidebar-menu');
     this._responsiveCleanup = null;
     this._collapsible = true;
+    // 内部状态用 ref 持有（票 01 约定）；collapsed 是「默认真」写方法，无参不是读
+    this._collapsed = ref(false);
     this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
     this._toggle = new VButton('‹')
       .className('yoya-vsidebar-toggle')
@@ -740,7 +750,7 @@ export class VSidebar extends HtmlElementNode {
       .className('yoya-vsidebar-menu')
       .attr('aria-label', '侧边导航菜单');
     this._menu._sidebarContentChangeCallback = () =>
-      setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+      setSidebarContentCollapsed(this._menu, this._collapsed.value, this);
     this._menu.on('yoya:menuitem-statechange', this._menu._sidebarContentChangeCallback);
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
@@ -756,7 +766,7 @@ export class VSidebar extends HtmlElementNode {
         !this._collapsible ||
         event.key !== 'Escape' ||
         event.defaultPrevented ||
-        this.getBooleanState('collapsed')
+        this._collapsed.value
       ) {
         return;
       }
@@ -802,7 +812,7 @@ export class VSidebar extends HtmlElementNode {
     }
 
     setupContentSlot(this._menu, setup);
-    setSidebarContentCollapsed(this._menu, this.getBooleanState('collapsed'), this);
+    setSidebarContentCollapsed(this._menu, this._collapsed.value, this);
     return this;
   }
 
@@ -812,7 +822,7 @@ export class VSidebar extends HtmlElementNode {
     }
 
     const collapsed = Boolean(value);
-    this.setState('collapsed', collapsed);
+    this._collapsed.value = collapsed;
     this.attr('data-collapsed', collapsed ? 'true' : null);
     this._toggle
       .label(collapsed ? '›' : '‹')
@@ -830,7 +840,7 @@ export class VSidebar extends HtmlElementNode {
   }
 
   toggle() {
-    return this.collapsed(!this.getBooleanState('collapsed'));
+    return this.collapsed(!this._collapsed.value);
   }
 
   responsive(query = '(max-width: 768px)') {
@@ -958,22 +968,19 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   const originalOpen = submenu.open.bind(submenu);
   submenu.open = (value) => {
     const result = originalOpen(value);
-    if (value && !submenu.getBooleanState('disabled') && sidebar.getBooleanState('collapsed')) {
+    if (value && !submenu._disabled.value && sidebar._collapsed.value) {
       sidebar.collapsed(false);
     }
-    sidebar.style(
-      'overflow',
-      submenu.getBooleanState('open') && !submenu._inline ? 'visible' : 'hidden'
-    );
+    sidebar.style('overflow', submenu._open.value && !submenu._inline ? 'visible' : 'hidden');
     return result;
   };
-  if (submenu.getBooleanState('open')) {
+  if (submenu._open.value) {
     sidebar.style('overflow', submenu._inline ? 'hidden' : 'visible');
   }
   submenu._trigger.on('keydown', (event) => {
     if (
-      !submenu.getBooleanState('disabled') &&
-      sidebar.getBooleanState('collapsed') &&
+      !submenu._disabled.value &&
+      sidebar._collapsed.value &&
       ['ArrowRight', 'Enter', ' ', 'Spacebar'].includes(event.key)
     ) {
       sidebar.collapsed(false);

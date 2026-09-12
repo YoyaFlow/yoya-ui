@@ -994,6 +994,11 @@ body {
     background: var(--yoya-color-surface-hover, light-dark(#f3f3f3, #262626));
   }
 
+  /* 折叠的行走 [hidden]：行常驻、只切可见性 */
+  .yoya-vtreetable tbody tr[hidden] {
+    display: none;
+  }
+
   .yoya-vtreetable .yoya-vtreetable-expand {
     background: transparent;
     border: 0;

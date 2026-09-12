@@ -139,7 +139,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(7);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(7);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
@@ -669,6 +669,31 @@ describe('renderExamplesIndex', () => {
 
     blockButton.click();
     expect(loopDemo.querySelector('.yoya-vscroll').dataset.blocked).toBe('true');
+
+    // 异步演示「重新加载」：reset + check 之后回到第 1 页，且列表项仍是渲染出来的元素
+    const asyncDemo = page.querySelector('[data-data-display-demo="async"]');
+    const reloadButton = [...asyncDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('重新加载')
+    );
+    const asyncRows = () => [...asyncDemo.querySelectorAll('.yoya-vscroll-list > *')];
+
+    await vi.waitFor(
+      () => {
+        expect(asyncRows().length).toBeGreaterThan(0);
+      },
+      { timeout: 3000 }
+    );
+
+    reloadButton.click();
+
+    await vi.waitFor(
+      () => {
+        expect(asyncRows()[0].textContent).toBe('消息 1');
+      },
+      { timeout: 3000 }
+    );
+    // 重新加载后追加进来的仍是渲染函数产出的元素（不是裸字符串）
+    expect(asyncRows()[0].tagName).toBe('DIV');
   });
 
   it('renders the carousel docs with API and demos', async () => {
@@ -782,10 +807,10 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-echarts-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-echarts-demo="bar"] [data-source-example]').textContent
-    ).toContain("import { vEchart } from 'yoya-ui/echart';");
+    ).toContain("import { vEchart } from '@yoyaflow/yoya-ui/echart';");
   });
 
-  it('renders the third-party Signals demo page', async () => {
+  it('renders the third-party Signals engine page with adapter sources', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/third-party/signals');
@@ -795,62 +820,42 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-signals-page]');
     expect(page.querySelector('h1').textContent).toBe('Signals 状态管理');
-    expect(page.querySelectorAll('.components-signals-grid .yoya-vcard')).toHaveLength(4);
-    expect(page.querySelectorAll('[data-signals-demo]')).toHaveLength(3);
-    expect(page.querySelectorAll('[data-signals-demo] [data-source-example]')).toHaveLength(3);
-    expect(
-      page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
-    ).toContain("from '@preact/signals-core'");
-    expect(
-      page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
-    ).not.toContain('vCard');
-    expect(page.querySelector('[data-signals-usage]')).not.toBeNull();
-    expect(page.querySelectorAll('[data-signals-usage] li')).toHaveLength(4);
-    expect(page.querySelector('[data-signals-advantages]')).not.toBeNull();
-    expect(page.querySelectorAll('[data-signals-advantages] li')).toHaveLength(5);
+    // 页面只讲换引擎与适配器：不再有基础用法演示与「何时使用 / 用法优点」文案
+    expect(page.querySelector('[data-signals-engines]')).not.toBeNull();
+    expect(page.querySelectorAll('[data-signals-engines] li')).toHaveLength(3);
+    expect(page.querySelector('[data-signals-usage]')).toBeNull();
+    expect(page.querySelector('[data-signals-advantages]')).toBeNull();
+    expect(page.querySelector('[data-signals-demo]')).toBeNull();
+
+    // 插件模板区：模板 + signals / store 各一对「适配器 + 用法」演示代码
+    const adapter = page.querySelector('[data-signals-adapter]');
+    expect(adapter).not.toBeNull();
+    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(5);
+    const adapterSources = [...adapter.querySelectorAll('[data-source-example]')].map(
+      (node) => node.textContent
+    );
+    expect(adapterSources[0]).toContain('createMyAdapter(myStateLibrary)');
+    expect(adapterSources[0]).toContain('createSignal(initial)');
+    expect(adapterSources[0]).toContain('write(source, value)');
+    expect(adapterSources[0]).toContain('subscribe(source, listener)');
+    expect(adapterSources[0]).toContain('吞掉首次');
+    expect(adapterSources[1]).toContain('createSignalsAdapter(signals = preactSignals)');
+    expect(adapterSources[1]).toContain('signals.signal(initial)');
+    expect(adapterSources[1]).toContain('untracked(() => listener(value))');
+    expect(adapterSources[2]).toContain('installSignalsEngine()');
+    expect(adapterSources[2]).toContain('installSignals(createSignalsAdapter())');
+    expect(adapterSources[2]).toContain('const count = ref(0)');
+    expect(adapterSources[3]).toContain('createZustandAdapter()');
+    expect(adapterSources[3]).toContain('zustand/vanilla');
+    expect(adapterSources[3]).toContain('source.getState().value');
+    expect(adapterSources[3]).toContain('source.setState({ value })');
+    expect(adapterSources[4]).toContain('installZustandEngine()');
+    expect(adapterSources[4]).toContain('installSignals(createZustandAdapter())');
+    expect(adapterSources[4]).toContain('const count = ref(0)');
+    expect(adapter.textContent).toContain('core/signals/engine.js');
   });
 
-  it('syncs Signals state to the view without vStateNode', async () => {
-    root = renderExamplesIndex('#app');
-
-    await openRoute('/components/third-party/signals');
-    await vi.waitFor(() => {
-      expect(selectedRouteTitle()).toBe('Signals 状态管理');
-    });
-
-    const page = document.querySelector('[data-signals-page]');
-    const counterDemo = page.querySelector('[data-signals-demo="counter"]');
-    const plusButton = [...counterDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('+1')
-    );
-
-    plusButton.click();
-
-    expect(counterDemo.querySelector('[data-signals-count]').textContent).toBe('1');
-    expect(counterDemo.querySelector('[data-signals-double]').textContent).toBe('2');
-
-    const inputDemo = page.querySelector('[data-signals-demo="input"]');
-    const fillButton = [...inputDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('填入示例')
-    );
-
-    fillButton.click();
-
-    expect(inputDemo.querySelector('[data-signals-output]').textContent).toBe(
-      '当前输入：Hello yoya，长度：10'
-    );
-
-    const sharedDemo = page.querySelector('[data-signals-demo="shared"]');
-    const sharedPlusButton = [...sharedDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('+1')
-    );
-
-    sharedPlusButton.click();
-
-    expect(sharedDemo.querySelector('[data-signals-shared-count]').textContent).toBe('1');
-  });
-
-  it('switches the vStateNode dynamic form by type', async () => {
+  it('switches the ref-driven dynamic form by type', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/guides/state-node');
@@ -883,7 +888,7 @@ describe('renderExamplesIndex', () => {
     expect(demo.querySelector('input[type="date"]')).not.toBeNull();
   });
 
-  it('calls custom methods defined on a vStateNode config', async () => {
+  it('calls custom methods defined on a ref-based component', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/guides/state-node');
@@ -1015,7 +1020,7 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-definition-page]');
     expect(page.querySelector('h1').textContent).toBe('定义组件');
-    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(3);
+    expect(page.querySelectorAll('[data-definition-demo]')).toHaveLength(4);
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
       'define'
     );
@@ -1034,6 +1039,139 @@ describe('renderExamplesIndex', () => {
     expect(interactiveDemo.querySelector('[data-parent-log]').textContent).toContain(
       '父组件收到：第 3 步完成'
     );
+
+    const complexDemo = page.querySelector('[data-definition-demo="complex-blocks"]');
+    const taskFilter = complexDemo.querySelector('[data-task-filter]');
+    expect(complexDemo.querySelectorAll('[data-task-list] li')).toHaveLength(3);
+    expect(complexDemo.textContent).toContain('已完成 1 项');
+
+    taskFilter.focus();
+    taskFilter.value = '文';
+    taskFilter.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(complexDemo.querySelectorAll('[data-task-list] li')).toHaveLength(1);
+    expect(document.activeElement).toBe(taskFilter);
+
+    const taskToggle = complexDemo.querySelector('[data-task-toggle="doc"]');
+    taskToggle.checked = true;
+    taskToggle.dispatchEvent(new Event('change', { bubbles: true }));
+
+    expect(complexDemo.textContent).toContain('已完成 2 项');
+
+    const complexSource = complexDemo.querySelector('[data-source-example]').textContent;
+    expect(complexSource).toContain('function TaskRow(');
+    expect(complexSource).toContain('function TaskList(');
+    expect(complexSource).toContain('export function ComplexWorkbenchExample(');
+  });
+
+  it('renders the component lifecycle page with the rebuildable region demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/lifecycle');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('组件生命周期');
+    });
+
+    const page = document.querySelector('[data-lifecycle-page]');
+    expect(page.querySelector('h1').textContent).toBe('组件生命周期');
+    expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
+    expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
+    expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
+
+    const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
+    const outsideField = rebuildDemo.querySelector('[data-region-outside]');
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
+
+    rebuildDemo.querySelector('[data-region-add]').click();
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(rebuildDemo.querySelector('[data-region-outside]')).toBe(outsideField);
+
+    rebuildDemo.querySelector('[data-region-clear]').click();
+    expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
+
+    const gateDemo = page.querySelector('[data-region-demo="gate"]');
+    expect(gateDemo.querySelector('[data-region-label]').textContent).toBe('A');
+
+    gateDemo.querySelector('[data-region-next]').click();
+    // 谓词为真：区域重跑，区域内节点被替换
+    const rebuiltLabel = gateDemo.querySelector('[data-region-label]');
+    expect(rebuiltLabel.textContent).toBe('B');
+
+    gateDemo.querySelector('[data-region-lock]').click();
+    gateDemo.querySelector('[data-region-next]').click();
+    // 谓词为假：结构不动（元素引用不变），只写回函数值绑定，并记为待重建
+    expect(gateDemo.querySelector('[data-region-label]')).toBe(rebuiltLabel);
+    expect(rebuiltLabel.textContent).toBe('A');
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('待重建');
+
+    gateDemo.querySelector('[data-region-lock]').click();
+    // 谓词恢复：补一次重建
+    expect(gateDemo.querySelector('[data-region-label]')).not.toBe(rebuiltLabel);
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('已同步');
+
+    const sourceDemo = page.querySelector('[data-region-demo="source"]');
+    expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('0');
+    sourceDemo.querySelector('[data-region-source-add]').click();
+    expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('1');
+    expect(sourceDemo.textContent).toContain('共 1 条');
+
+    const flushDemo = page.querySelector('[data-region-demo="flush"]');
+    const flushLabel = flushDemo.querySelector('[data-region-flush-label]');
+    expect(flushLabel.textContent).toBe('A');
+
+    flushDemo.querySelector('[data-region-flush-next]').click();
+    // flush：只刷值，元素引用不变
+    expect(flushDemo.querySelector('[data-region-flush-label]')).toBe(flushLabel);
+    expect(flushLabel.textContent).toBe('B');
+
+    flushDemo.querySelector('[data-region-flush-rebuild]').click();
+    // rebuild：结构重建，元素被替换
+    expect(flushDemo.querySelector('[data-region-flush-label]')).not.toBe(flushLabel);
+
+    const compareDemo = page.querySelector('[data-region-demo="compare"]');
+    const statePanel = compareDemo.querySelector('[data-region-state]');
+    const externalPanel = compareDemo.querySelector('[data-region-source]');
+    const localPanel = compareDemo.querySelector('[data-region-local]');
+    expect(statePanel.textContent).toContain('组件状态：0');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+    expect(localPanel.textContent).toContain('区域信号：0');
+
+    compareDemo.querySelector('[data-region-state-add]').click();
+    // 组件内 ref：写入后值绑定自动写回
+    expect(statePanel.textContent).toContain('组件状态：1');
+    expect(externalPanel.textContent).toContain('外部数据源：0');
+
+    compareDemo.querySelector('[data-region-source-add]').click();
+    // 组件外 ref：写入即写回，无需 flush
+    expect(externalPanel.textContent).toContain('外部数据源：1');
+    expect(localPanel.textContent).toContain('区域信号：0');
+
+    compareDemo.querySelector('[data-region-local-add]').click();
+    // 区域依赖：构建期直读 ref，写入触发重建
+    expect(localPanel.textContent).toContain('区域信号：1');
+
+    // 源码面板要能看到三种写法的分块函数，而不只是入口组件
+    const compareSource = compareDemo.querySelector('[data-source-example]').textContent;
+    expect(compareSource).toContain('function ComponentStatePanel(');
+    expect(compareSource).toContain('function ExternalDataSourcePanel(');
+    expect(compareSource).toContain('function RegionSignalPanel(');
+    expect(compareSource).toContain('export function RegionStateVsSourceExample(');
+  });
+
+  it('documents the SSR operations to avoid on the server rendering guide', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/ssr');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('服务端渲染');
+    });
+
+    const rules = document.querySelector('[data-ssr-rules]');
+    expect(rules).not.toBeNull();
+    expect(rules.querySelectorAll('tbody tr')).toHaveLength(9);
+    expect(rules.textContent).toContain('Date.now()');
+    expect(rules.textContent).toContain('bindDocumentEvent');
+    expect(rules.textContent).toContain('hydrate()');
   });
 
   it('renders the HTML native elements guide page with a live input demo', async () => {
@@ -1049,9 +1187,12 @@ describe('renderExamplesIndex', () => {
     const htmlDemo = page.querySelector('.components-html-native-demo');
     const inputElement = htmlDemo.querySelector('input');
     inputElement.value = 'yoya';
+    // 真实输入会触发 input 事件；演示从事件对象取值，不查 document。
+    inputElement.dispatchEvent(new Event('input'));
     htmlDemo.querySelector('button').click();
     expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
     expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
+    expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
 
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();
@@ -1090,10 +1231,10 @@ describe('renderExamplesIndex', () => {
       '/components/guides/state-node',
       '状态节点',
       'state',
-      'vStateNode 状态节点',
+      '状态管理：ref 与值绑定',
       'counter',
       'StateCounterExample1',
-      'vStateNode(',
+      'ref(0)',
       10
     ],
     [
@@ -1335,6 +1476,127 @@ describe('renderExamplesIndex', () => {
       'ProgressBasicExample1',
       'vProgress((progress)',
       3
+    ],
+    [
+      '/components/form/select',
+      '选择框',
+      'select',
+      '选择框 vSelect',
+      'basic',
+      'SelectExample1',
+      'vSelect({',
+      1
+    ],
+    [
+      '/components/form/textarea',
+      '文本域',
+      'textarea',
+      '文本域 vTextarea',
+      'basic',
+      'TextareaExample1',
+      'vTextarea({',
+      1
+    ],
+    [
+      '/components/form/switch',
+      '开关',
+      'switch',
+      '开关 vSwitch',
+      'basic',
+      'SwitchExample1',
+      'vSwitch({',
+      1
+    ],
+    [
+      '/components/form/timer',
+      '日期时间',
+      'timer',
+      '日期时间 vTimer',
+      'basic',
+      'TimerExample1',
+      'vTimer({',
+      1
+    ],
+    [
+      '/components/form/timer-range',
+      '日期范围',
+      'timer-range',
+      '日期范围 vTimerRange',
+      'basic',
+      'TimerRangeExample1',
+      'vTimerRange({',
+      1
+    ],
+    [
+      '/components/form/upload',
+      '文件上传',
+      'upload',
+      '文件上传 vUpload',
+      'basic',
+      'UploadExample1',
+      'vUpload({',
+      1
+    ],
+    ['/components/form/rate', '评分', 'rate', '评分 vRate', 'basic', 'RateExample1', 'vRate({', 1],
+    [
+      '/components/navigation/dropdown',
+      '下拉菜单',
+      'dropdown',
+      '下拉菜单 vDropdownMenu',
+      'basic',
+      'DropdownMenuExample1',
+      'vDropdownMenu((menu)',
+      1
+    ],
+    [
+      '/components/navigation/pagination',
+      '分页',
+      'pagination',
+      '分页 vPagination',
+      'basic',
+      'PaginationExample1',
+      'vPagination({',
+      1
+    ],
+    [
+      '/components/data-display/code',
+      '代码',
+      'code',
+      '代码展示 vCode',
+      'basic',
+      'CodeExample1',
+      'vCode({',
+      1
+    ],
+    [
+      '/components/data-display/card',
+      '卡片',
+      'card',
+      '卡片 vCard',
+      'basic',
+      'CardExample1',
+      "vCardHeader('服务总览')",
+      1
+    ],
+    [
+      '/components/async/dynamic-loader',
+      '动态加载',
+      'dynamic-loader',
+      '动态加载 vDynamicLoader',
+      'basic',
+      'DynamicLoaderExample1',
+      'vDynamicLoader({',
+      1
+    ],
+    [
+      '/components/feedback/message-manager',
+      '消息管理器',
+      'message-manager',
+      '消息管理器 vMessageManager',
+      'basic',
+      'MessageManagerExample1',
+      'vMessageManager()',
+      1
     ]
   ])(
     'renders detailed docs for %s',
@@ -1356,17 +1618,17 @@ describe('renderExamplesIndex', () => {
       });
 
       const page = document.querySelector(
-        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"]`
+        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"], [data-async-docs="${docsKey}"]`
       );
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
       const demoNodes = page.querySelectorAll(
-        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo], [data-state-demo]'
+        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo], [data-state-demo], [data-async-demo]'
       );
       expect(demoNodes).toHaveLength(demoCount);
 
       const source = page.querySelector(
-        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example], [data-state-demo="${firstDemoId}"] [data-source-example]`
+        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example], [data-state-demo="${firstDemoId}"] [data-source-example], [data-async-demo="${firstDemoId}"] [data-source-example]`
       );
       expect(source).not.toBeNull();
       expect(source.textContent).toContain(`export function ${sourceName}`);
@@ -1481,8 +1743,7 @@ describe('renderExamplesIndex', () => {
 
     const rebuild = page.querySelector('[data-state-demo="rebuild"] .components-state-demo-live');
     const rebuildRoot = rebuild.querySelector('.yoya-vstack');
-    const rebuildWidth = rebuildRoot.style.width;
-    const rebuildMaxWidth = rebuildRoot.style.maxWidth;
+    const rebuildLine = rebuildRoot.querySelector('p');
     const executeButton = [...rebuild.querySelectorAll('button')].find((button) =>
       button.textContent.includes('执行')
     );
@@ -1490,14 +1751,13 @@ describe('renderExamplesIndex', () => {
 
     expect(rebuild.textContent).toContain('状态：running');
     expect(rebuild.textContent).toContain('次数：1');
-    expect(rebuild.querySelector('.yoya-vstack')).not.toBe(rebuildRoot);
-    expect(rebuild.querySelector('.yoya-vstack').style.width).toBe(rebuildWidth);
-    expect(rebuild.querySelector('.yoya-vstack').style.maxWidth).toBe(rebuildMaxWidth);
+    // 区域重建：区域根元素稳定，子节点整体替换
+    expect(rebuild.querySelector('.yoya-vstack')).toBe(rebuildRoot);
+    expect(rebuild.querySelector('.yoya-vstack p')).not.toBe(rebuildLine);
 
     const toggle = page.querySelector('[data-state-demo="toggle"] .components-state-demo-live');
     const toggleRoot = toggle.querySelector('.yoya-vstack');
-    const toggleWidth = toggleRoot.style.width;
-    const toggleMaxWidth = toggleRoot.style.maxWidth;
+    const toggleLine = toggleRoot.querySelector('p');
     const toggleButton = [...toggle.querySelectorAll('button')].find((button) =>
       button.textContent.includes('隐藏')
     );
@@ -1505,9 +1765,8 @@ describe('renderExamplesIndex', () => {
 
     expect(toggle.textContent).toContain('当前内容已隐藏');
     expect(toggle.querySelector('button').textContent).toBe('显示');
-    expect(toggle.querySelector('.yoya-vstack')).not.toBe(toggleRoot);
-    expect(toggle.querySelector('.yoya-vstack').style.width).toBe(toggleWidth);
-    expect(toggle.querySelector('.yoya-vstack').style.maxWidth).toBe(toggleMaxWidth);
+    expect(toggle.querySelector('.yoya-vstack')).toBe(toggleRoot);
+    expect(toggle.querySelector('.yoya-vstack p')).not.toBe(toggleLine);
   });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
@@ -2384,11 +2643,11 @@ export function SampleCard() {
   };
 }`);
     const customImportSource = componentSource(SampleCard, [
-      { from: 'yoya-ui', names: ['vCard'] },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui', names: ['vCard'] },
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ]);
-    expect(customImportSource).toContain("import { vCard } from 'yoya-ui';");
-    expect(customImportSource).toContain("import { vEchart } from 'yoya-ui/echart';");
+    expect(customImportSource).toContain("import { vCard } from '@yoyaflow/yoya-ui';");
+    expect(customImportSource).toContain("import { vEchart } from '@yoyaflow/yoya-ui/echart';");
     expect(element.classList.contains('source-panel')).toBe(true);
     expect(element.querySelector('h2').textContent).toBe('示例源码');
   });

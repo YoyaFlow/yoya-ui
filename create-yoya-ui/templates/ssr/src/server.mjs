@@ -31,6 +31,9 @@ createServer((req, res) => {
           head.title('SSR 示例'.s('title'));
           head.meta({ charset: 'utf-8' });
           head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
+          // 客户端入口由你自己引入：路径、位置与顺序都是工程决策
+          head.link({ rel: 'modulepreload', href: '/client.js' });
+          head.script({ type: 'module', src: '/client.js' });
         });
         page.body((body) => {
           body.vBody((shell) => {

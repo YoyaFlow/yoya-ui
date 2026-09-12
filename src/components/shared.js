@@ -3,6 +3,34 @@ import {
   applyElementOptions as applyCoreElementOptions,
   normalizeSetupArguments
 } from '../core/node.js';
+import { ref } from '../core/signals/handle.js';
+
+/**
+ * 组件内部布尔状态的访问器工厂（票 01 约定）。
+ *
+ * 状态用内部 ref 持有、字段名为 `_<key>`，对外只暴露方法：
+ * `method()` 读，`method(true)` 写并调用 `apply(next)` 做该组件自己的 DOM/样式落位。
+ * 使用者拿不到信号对象，不能绕过方法改状态。
+ */
+export function booleanMethod(target, key, initial, apply) {
+  const state = ref(Boolean(initial));
+  target[`_${key}`] = state;
+
+  return (value) => {
+    if (value === undefined) {
+      return state.value;
+    }
+
+    const next = Boolean(value);
+    state.value = next;
+
+    if (typeof apply === 'function') {
+      apply(next);
+    }
+
+    return target;
+  };
+}
 
 export const componentClass = 'yoya-component';
 
@@ -30,11 +58,24 @@ export function applyElementOptions(node, options) {
   return node;
 }
 
+/**
+ * 执行构建回调：节点会记录 builder 以支持区域重建；
+ * render-backed 组件 API（回调收到的是组件对象）直接调用。
+ */
+function runBuilder(node, builder) {
+  if (typeof node.setup === 'function') {
+    node.setup(builder);
+    return;
+  }
+
+  builder(node);
+}
+
 export function applyComponentArguments(node, options = null, callback = null) {
   applyElementOptions(node, options);
 
   if (typeof callback === 'function') {
-    callback(node);
+    runBuilder(node, callback);
   }
 
   return node;
@@ -52,7 +93,7 @@ export function applyComponentSetup(node, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(node);
+    runBuilder(node, setup);
     return node;
   }
 
@@ -107,7 +148,7 @@ export function setupButtonSlot(button, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(button);
+    runBuilder(button, setup);
     return button;
   }
 
@@ -128,7 +169,7 @@ export function setupContentSlot(node, setup) {
   }
 
   if (typeof setup === 'function') {
-    setup(node);
+    runBuilder(node, setup);
     return node;
   }
 

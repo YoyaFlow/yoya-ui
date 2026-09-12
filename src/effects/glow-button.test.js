@@ -104,6 +104,21 @@ describe('vGlowButton', () => {
     expect(element.querySelector('.yoya-vglow-button-ripple')).toBeNull();
   });
 
+  it('skips the click ripple when the inherited disabled state is on', () => {
+    const button = vGlowButton('部署');
+    const element = button.renderDom();
+
+    button.disabled(true);
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(element.querySelector('.yoya-vglow-button-ripple')).toBeNull();
+
+    button.disabled(false);
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(element.querySelector('.yoya-vglow-button-ripple')).not.toBeNull();
+  });
+
   it('registers vGlowButton as a child shortcut on containers', () => {
     const root = div((body) => {
       body.vGlowButton('快捷创建');

@@ -27,8 +27,13 @@ const componentMenuSections = [
       { key: 'installation', label: '安装方式', details: 'Installation' },
       { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
       { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
+      {
+        key: 'lifecycle',
+        label: '组件生命周期',
+        details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
+      },
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
-      { key: 'state-node', label: '状态节点', details: 'vStateNode' },
+      { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
       { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
@@ -178,7 +183,7 @@ const componentMenuSections = [
       { key: 'markdown-viewer', label: 'Markdown 查看', details: 'Toast UI Viewer' },
       { key: 'three', label: 'Three.js 场景', details: 'vThree / VThree' },
       { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
-      { key: 'signals', label: 'Signals 状态管理', details: 'signal / computed / effect' }
+      { key: 'signals', label: 'Signals 状态管理', details: '适配器 / 更换引擎' }
     ]
   },
   {
@@ -212,13 +217,16 @@ function getTopNavigationItems() {
   ];
 }
 
-const docsRouteLoaders = Object.freeze({
+/** 文档页路由注册表：路由键为 `category:key`，测试用它枚举并校验全部源码面板。 */
+export const docsRouteLoaders = Object.freeze({
   'guides:overview': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
   'guides:installation': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
   'guides:html-native': () =>
     import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
   'guides:component': () =>
     import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
+  'guides:lifecycle': () =>
+    import('./component-lifecycle-docs.js').then((m) => m.ComponentLifecycleDocumentationPage()),
   'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:state-node': () =>
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
@@ -265,14 +273,14 @@ const docsRouteLoaders = Object.freeze({
   'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
   'form:input': () => import('./input-docs.js').then((m) => m.InputDocumentationPage()),
-  'form:select': () => import('./form-legacy-docs.js').then((m) => m.SelectDocumentationPage()),
-  'form:textarea': () => import('./form-legacy-docs.js').then((m) => m.TextareaDocumentationPage()),
-  'form:switch': () => import('./form-legacy-docs.js').then((m) => m.SwitchDocumentationPage()),
-  'form:timer': () => import('./form-legacy-docs.js').then((m) => m.TimerDocumentationPage()),
+  'form:select': () => import('./form-misc-docs.js').then((m) => m.SelectDocumentationPage()),
+  'form:textarea': () => import('./form-misc-docs.js').then((m) => m.TextareaDocumentationPage()),
+  'form:switch': () => import('./form-misc-docs.js').then((m) => m.SwitchDocumentationPage()),
+  'form:timer': () => import('./form-misc-docs.js').then((m) => m.TimerDocumentationPage()),
   'form:timer-range': () =>
-    import('./form-legacy-docs.js').then((m) => m.TimerRangeDocumentationPage()),
-  'form:upload': () => import('./form-legacy-docs.js').then((m) => m.UploadDocumentationPage()),
-  'form:rate': () => import('./form-legacy-docs.js').then((m) => m.RateDocumentationPage()),
+    import('./form-misc-docs.js').then((m) => m.TimerRangeDocumentationPage()),
+  'form:upload': () => import('./form-misc-docs.js').then((m) => m.UploadDocumentationPage()),
+  'form:rate': () => import('./form-misc-docs.js').then((m) => m.RateDocumentationPage()),
   'form:checkbox': () => import('./checkbox-docs.js').then((m) => m.CheckboxDocumentationPage()),
   'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
@@ -333,16 +341,15 @@ const docsRouteLoaders = Object.freeze({
   'board:ring-stat': () => import('./board-docs.js').then((m) => m.RingStatDocumentationPage()),
   'board:gauge': () => import('./board-docs.js').then((m) => m.GaugeDocumentationPage()),
   'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage()),
-  'navigation:dropdown': () =>
-    import('./misc-legacy-docs.js').then((m) => m.DropdownDocumentationPage()),
+  'navigation:dropdown': () => import('./misc-docs.js').then((m) => m.DropdownDocumentationPage()),
   'navigation:pagination': () =>
-    import('./misc-legacy-docs.js').then((m) => m.PaginationDocumentationPage()),
-  'data-display:code': () => import('./misc-legacy-docs.js').then((m) => m.CodeDocumentationPage()),
-  'data-display:card': () => import('./misc-legacy-docs.js').then((m) => m.CardDocumentationPage()),
+    import('./misc-docs.js').then((m) => m.PaginationDocumentationPage()),
+  'data-display:code': () => import('./misc-docs.js').then((m) => m.CodeDocumentationPage()),
+  'data-display:card': () => import('./misc-docs.js').then((m) => m.CardDocumentationPage()),
   'async:dynamic-loader': () =>
-    import('./misc-legacy-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
+    import('./misc-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
   'feedback:message-manager': () =>
-    import('./misc-legacy-docs.js').then((m) => m.MessageManagerDocumentationPage())
+    import('./misc-docs.js').then((m) => m.MessageManagerDocumentationPage())
 });
 
 export function renderExamplesIndex(target = '#app') {
@@ -677,8 +684,17 @@ function createOverviewView() {
             path: '/components/guides/component',
             details: 'A 薄工厂 / B 对象组件'
           },
+          {
+            label: '组件生命周期',
+            path: '/components/guides/lifecycle',
+            details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
+          },
           { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/state-node', details: 'vStateNode' },
+          {
+            label: '状态节点',
+            path: '/components/guides/state-node',
+            details: 'ref / computed / 区域'
+          },
           {
             label: '权限控制',
             path: '/components/guides/access-control',

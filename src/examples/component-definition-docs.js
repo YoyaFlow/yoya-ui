@@ -1,5 +1,6 @@
 import { section, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
+import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 
 function DefineComponentExample1() {
   const status = vText('待发布');
@@ -122,7 +123,9 @@ function InteractiveComposeExample1() {
           panel.p(status);
           panel.hstack((actions) => {
             actions.style({ alignItems: 'center', gap: '10px' });
-            actions.vButton('上一步', (btn) => btn.size('small').on('click', () => this.prev()));
+            actions.vButton('上一步', (btn) => {
+              btn.size('small').on('click', () => this.prev());
+            });
             actions.vButton('下一步', (btn) =>
               btn
                 .size('small')
@@ -232,6 +235,14 @@ const componentDefinitionDemos = [
     imports: ['section', 'vCard', 'vText'],
     sourceTitle: '组合组件交互源码',
     title: '组合组件交互'
+  },
+  {
+    component: ComplexWorkbenchExample,
+    extraSource: complexBlocksSource,
+    id: 'complex-blocks',
+    imports: ['computed', 'hstack', 'input', 'li', 'ref', 'ul', 'vText', 'vstack'],
+    sourceTitle: '复杂组件分块源码',
+    title: '复杂组件：结构块也是组件'
   }
 ];
 
@@ -239,6 +250,7 @@ function ComponentDefinitionDemoSection(demo) {
   const liveDemo = demo.component();
   const sourcePanel = ComponentSource({
     component: demo.component,
+    extraSource: demo.extraSource,
     imports: demo.imports,
     sourceComponent: demo.component,
     title: demo.sourceTitle
@@ -267,6 +279,7 @@ export function ComponentDefinitionDocumentationPage() {
         page.className('components-route-page components-definition-page');
         page.attr('data-definition-page', 'true');
         page.h1('定义组件');
+        page.p('组件的四个阶段（声明 / 挂载 / 更新 / 销毁）见「开发指南 → 组件生命周期」。');
         page.p('yoya-ui 支持两种组件定义形态，按场景选用：A 薄工厂、B 对象组件。');
         page.p(
           'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +

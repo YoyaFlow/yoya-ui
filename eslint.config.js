@@ -8,7 +8,8 @@ export default [
       '.scratch/**',
       'dist/**',
       'node_modules/**',
-      'src/chart/echarts.min.js'
+      'src/chart/echarts.min.js',
+      'src/core/signals/vendor/**'
     ]
   },
   js.configs.recommended,

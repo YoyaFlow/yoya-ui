@@ -183,6 +183,9 @@ export class VStep extends HtmlElementNode {
     super('li', null);
     this._title = '';
     this._description = '';
+    // 未设置与显式设为空串要区分：前者不产出子节点，后者保留空内容盒（与原实现一致）。
+    this._titleSet = false;
+    this._descriptionSet = false;
     this._icon = null;
     this._status = null;
     this._index = 0;
@@ -192,9 +195,28 @@ export class VStep extends HtmlElementNode {
     this._stepsDirection = 'horizontal';
     this._stepsSize = 'default';
 
-    this._indicatorBox = new HtmlElementNode('span').className('yoya-vsteps-indicator');
-    this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title');
-    this._descriptionBox = new HtmlElementNode('div').className('yoya-vsteps-description');
+    // 三块内容都是区域：内容由各自的 setup 产出，setter 只改字段再 rebuild。
+    this._indicatorBox = new HtmlElementNode('span')
+      .className('yoya-vsteps-indicator')
+      .setup((box) => {
+        box.rebuildable();
+        const icon = this._icon;
+        const content =
+          icon === null || icon === undefined
+            ? stepIndicatorText(this._effectiveStatus(), this._index)
+            : icon;
+        box.child(normalizeChildren(content));
+      });
+    this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title').setup((box) => {
+      box.rebuildable();
+      box.child(this._titleSet ? normalizeChildren(this._title) : []);
+    });
+    this._descriptionBox = new HtmlElementNode('div')
+      .className('yoya-vsteps-description')
+      .setup((box) => {
+        box.rebuildable();
+        box.child(this._descriptionSet ? normalizeChildren(this._description) : []);
+      });
     this._contentBox = new HtmlElementNode('div').className('yoya-vsteps-content');
     this._connector = new HtmlElementNode('span').className('yoya-vsteps-connector');
 
@@ -215,8 +237,9 @@ export class VStep extends HtmlElementNode {
       return this._title;
     }
 
-    this._title = value;
-    replaceChildren(this._titleBox, normalizeChildren(value ?? ''));
+    this._title = value ?? '';
+    this._titleSet = true;
+    this._titleBox.rebuild();
     return this;
   }
 
@@ -229,8 +252,9 @@ export class VStep extends HtmlElementNode {
       return this._description;
     }
 
-    this._description = value;
-    replaceChildren(this._descriptionBox, normalizeChildren(value ?? ''));
+    this._description = value ?? '';
+    this._descriptionSet = true;
+    this._descriptionBox.rebuild();
     return this;
   }
 
@@ -339,14 +363,7 @@ export class VStep extends HtmlElementNode {
       this._descriptionBox.children().length > 0 ? null : 'none'
     );
 
-    if (this._icon !== null && this._icon !== undefined) {
-      replaceChildren(this._indicatorBox, normalizeChildren(this._icon));
-    } else {
-      replaceChildren(
-        this._indicatorBox,
-        normalizeChildren(stepIndicatorText(status, this._index))
-      );
-    }
+    this._indicatorBox.rebuild();
 
     this._connector.style('display', this._index < this._total - 1 ? 'block' : 'none');
 

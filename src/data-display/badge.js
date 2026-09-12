@@ -28,40 +28,54 @@ export class VBadge extends HtmlElementNode {
     this._offsetX = 0;
     this._offsetY = 0;
     this._textContent = null;
+    this._badgeDotMode = false;
 
     this._contentBox = new HtmlElementNode('span').className('yoya-vbadge-content').styles({
       alignItems: 'center',
       display: 'inline-flex',
       minWidth: '0'
     });
-    this._badgeBox = new HtmlElementNode('span').className('yoya-vbadge-count').styles({
-      alignItems: 'center',
-      background: themeValue('color-danger', '#ff4d4f'),
-      borderRadius: '10px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text-inverse', '#ffffff'),
-      display: 'none',
-      fontSize: '12px',
-      fontWeight: '700',
-      height: '18px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      minWidth: '18px',
-      padding: '0 6px',
-      position: 'absolute',
-      right: '0',
-      textAlign: 'center',
-      top: '0',
-      transform: 'translate(50%, -50%)',
-      whiteSpace: 'nowrap',
-      zIndex: '1'
-    });
-    this._textBox = new HtmlElementNode('span').className('yoya-vbadge-text').styles({
-      color: themeValue('color-text-secondary', '#475569'),
-      display: 'none',
-      fontSize: '12px',
-      lineHeight: '1'
-    });
+    // 角标与文本都是区域：内容由各自的 setup 产出，同步时只 rebuild。
+    this._badgeBox = new HtmlElementNode('span')
+      .className('yoya-vbadge-count')
+      .styles({
+        alignItems: 'center',
+        background: themeValue('color-danger', '#ff4d4f'),
+        borderRadius: '10px',
+        boxSizing: 'border-box',
+        color: themeValue('color-text-inverse', '#ffffff'),
+        display: 'none',
+        fontSize: '12px',
+        fontWeight: '700',
+        height: '18px',
+        justifyContent: 'center',
+        lineHeight: '1',
+        minWidth: '18px',
+        padding: '0 6px',
+        position: 'absolute',
+        right: '0',
+        textAlign: 'center',
+        top: '0',
+        transform: 'translate(50%, -50%)',
+        whiteSpace: 'nowrap',
+        zIndex: '1'
+      })
+      .setup((box) => {
+        box.rebuildable();
+        box.child(this._badgeDotMode ? [] : normalizeChildren(this._badgeText()));
+      });
+    this._textBox = new HtmlElementNode('span')
+      .className('yoya-vbadge-text')
+      .styles({
+        color: themeValue('color-text-secondary', '#475569'),
+        display: 'none',
+        fontSize: '12px',
+        lineHeight: '1'
+      })
+      .setup((box) => {
+        box.rebuildable();
+        box.child(this._textContent === null ? [] : normalizeChildren(this._textContent));
+      });
 
     this.className(componentClass, 'yoya-vbadge');
     this.styles({
@@ -167,11 +181,7 @@ export class VBadge extends HtmlElementNode {
     }
 
     this._textContent = value === null || value === undefined ? null : value;
-    if (this._textContent === null) {
-      replaceChildren(this._textBox, []);
-    } else {
-      replaceChildren(this._textBox, normalizeChildren(this._textContent));
-    }
+    this._textBox.rebuild();
     this._syncBadge();
     return this;
   }
@@ -327,7 +337,6 @@ export class VBadge extends HtmlElementNode {
         padding: '0',
         width: '8px'
       });
-      replaceChildren(this._badgeBox, []);
     } else {
       this._badgeBox.styles({
         borderRadius: '10px',
@@ -337,9 +346,10 @@ export class VBadge extends HtmlElementNode {
         padding: '0 6px',
         width: null
       });
-      replaceChildren(this._badgeBox, normalizeChildren(this._badgeText()));
     }
 
+    this._badgeDotMode = dotMode;
+    this._badgeBox.rebuild();
     this.attr('data-standalone', hasContent ? null : 'true');
     return this;
   }

@@ -26,6 +26,10 @@ describe('devtools inspector demo', () => {
     element.querySelector('[data-devtools-toggle]').click();
     element.querySelector('[data-devtools-toggle]').click();
     expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
+    // 状态行只有一个文本节点：反复切换是替换文案，不是追加文案
+    const statusLine = element.querySelector('[data-devtools-status]');
+    expect(statusLine.childNodes).toHaveLength(1);
+    expect(statusLine.textContent).toBe('状态：已启用，事件仅来自被检视卡片');
 
     const plusButton = [...element.querySelectorAll('button')].find((button) =>
       button.textContent.includes('+1')
@@ -35,7 +39,8 @@ describe('devtools inspector demo', () => {
     const eventText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
       node.textContent
     );
-    expect(eventText.some((text) => text.includes('状态更新'))).toBe(true);
+    // 状态迁移到信号后，写入以 signal-write 事件呈现在日志里
+    expect(eventText.some((text) => text.includes('信号') && text.includes('写入'))).toBe(true);
     expect(
       eventText.some((text) => text.includes('文本') && text.includes('0 → 1'))
     ).toBe(true);
@@ -45,7 +50,8 @@ describe('devtools inspector demo', () => {
     const stateRows = [...element.querySelectorAll('[data-devtools-state-row]')].map((node) =>
       node.textContent
     );
-    expect(stateRows.some((text) => text.includes('"count":1'))).toBe(true);
+    // 信号与作用域标签页按信号 id 展示最新写入值
+    expect(stateRows.some((text) => /#\d+: 1/.test(text))).toBe(true);
 
     const treeTab = element.querySelector('[data-devtools-tab="tree"]');
     treeTab.click();
@@ -54,7 +60,7 @@ describe('devtools inspector demo', () => {
     );
     componentButton.click();
     expect(
-      JSON.parse(element.querySelector('[data-devtools-detail]').textContent).state
+      JSON.parse(element.querySelector('[data-devtools-detail]').textContent).signals
     ).toEqual({
       count: 1,
       mode: 'normal'

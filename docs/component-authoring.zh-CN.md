@@ -19,7 +19,7 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                     |
 | 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态       | `vStateNode`                                                                                                                                   |
+| 信号       | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                   |
 | 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
 
 ## 3. 三种组件形态
@@ -29,7 +29,7 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 ### 形态 A：薄工厂（无内部状态、纯配置化组合）
 
 ```js
-import { vBadge } from 'yoya-ui/ui';
+import { vBadge } from '@yoyaflow/yoya-ui/ui';
 
 export function ServiceTag(options) {
   return vBadge(options);
@@ -39,7 +39,7 @@ export function ServiceTag(options) {
 ### 形态 B：对象组件（常规独立组件，默认形态）
 
 ```js
-import { vRate } from 'yoya-ui/ui';
+import { vRate } from '@yoyaflow/yoya-ui/ui';
 
 export function RateCard() {
   const state = { value: 0 };
@@ -63,7 +63,7 @@ export function RateCard() {
 类节点组件必须同时导出成对 `vXxx` 工厂，并使用 `createElementFactory`：
 
 ```js
-import { HtmlElementNode, createElementFactory } from 'yoya-ui/core';
+import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
 
 export class VStatusDot extends HtmlElementNode {
   // 嵌套关系与细粒度操作
@@ -108,11 +108,46 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 6. 状态与更新
 
-yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地更新哪些 DOM：
+yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除，迁移对照见 [`migration-0.5.zh-CN.md`](migration-0.5.zh-CN.md)。
 
-- 节点级：`registerStateAttrs` + `registerStateHandler` + `setState` / `getState`。
-- 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
-- 组件可暴露状态 API（如 `value(next)`、`disabled(next)`），保持链式调用。
+- 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
+- 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
+- 文案：状态驱动的文案传句柄（`vText(count)` / `vText(computed(fn))`）；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
+- 对外只暴露方法：组件内部用 `ref` 持有状态，对外给 `value(next)` / `disabled(next)` 这类链式方法，不把内部信号对象交给使用者。
+
+### 6.1 可重建区域
+
+当一块内容需要「结构随数据变化」，而组件级状态容器又太重时，把它标记成区域：
+
+```js
+const rows = ref([]);
+const editing = ref(false);
+
+const body = div((ele) => {
+  ele.rebuildable(() => !editing.value); // 可选：时机谓词，为假时只刷值不重建
+  ele.attr(
+    'data-count',
+    computed(() => String(rows.value.length))
+  );
+  rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
+});
+
+rows.value = [...rows.value, { id: 'r1', name: '第一行' }]; // 写入即重建
+body.rebuild(); // 需要强制重建结构时手动调
+body.flush(); // 只求值写回绑定，不重建结构（幂等）
+```
+
+契约与边界：
+
+- **值用 `flush()`，结构用 `rebuild()`**：`rebuild()` 清空子节点并重跑 setup（会连带刷新本轮新登记的绑定）；`flush()` 只把已登记的绑定求值写回，不重建、不触发谓词、值没变就不写 DOM。一次变化里既有增删又有值变化时，只调 `rebuild()` 即可，不要叠加 `flush()`。
+- **区域节点先建一次**：内容由区域自己的 builder 产出，所以它可以在 `render()` 之外创建并直接持有引用（`const list = ul((box) => { box.rebuildable(); … })` → `list.rebuild()`），不需要在 render 里用 `let region = null` 回填；区域外的状态行、工具节点同理。**但要在组件 / 页面工厂内部创建**（每实例、每请求一份），不要提到模块级——服务端复用同一棵树会在并发请求间串数据。`rebuild()` / `flush()` 只在客户端交互期调用，SSR 首屏只做构建（绑定在构建期写回）。
+- 区域内容由它自己的 setup 产出；重跑会**清空子节点并重新执行 setup**，因此区域内不保留 DOM 身份——焦点、选区、内部滚动位置、挂在元素上的第三方实例都会重建。区域外的兄弟节点与其 DOM 不受影响。
+- 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
+- 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（首屏构建期求值一次，需要重新求值时自己调 `flush()`）。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
+- 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域自己订阅依赖：区域内读到的信号变化即触发重建（devtools 里记为 `trigger: 'signal'`）；嵌套区域各订阅各的，不会互相代管。
+- 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用值绑定——它们是原地更新，不重建 DOM。
 
 ## 7. 组合、事件与生命周期
 
@@ -120,12 +155,51 @@ yoya-ui 没有自动响应式系统，状态变化后由组件自己决定就地
 - `on(eventName, handler, options)` 绑定真实 DOM 事件，`destroy()` 时自动清理。
 - 组件对象只要提供 `render()`（返回 `ViewNode`）即可被 `child()` 使用；类组件遵循 `renderDom` / `bindTo` / `destroy` 生命周期。
 
+### 7.1 生命周期
+
+1. **声明（构建期）**：工厂调用建节点，`setup` 里的 `attr` / `style` / `on` / `child` 只写快照，不创建 DOM；组件对象被包成 `ComponentNode`，首次渲染才解析并缓存 `render()` 结果；`access` / `context` / `i18n` 三类构建期作用域在此捕获。
+2. **挂载**：`renderDom()` 创建或复用真实 DOM、绑定事件适配器、递归子节点并应用属性快照；`bindTo(target)` 等于 `renderDom` + append；`commit()` 落地权限态与待移除子节点。
+3. **更新（状态变化）**：按代价从低到高——函数值绑定只写回（DOM 不重建）→ `update()` 局部 patch → 区域 `rebuild()`（清空子节点 + 重跑 setup）→ 组件 `rebuild()`（销毁旧根重新 render）。
+4. **销毁**：解除事件适配器与 cleanup、递归销毁子节点、清空 keyed 子节点注册表、从 DOM 摘除；重复 `destroy()` 幂等。
+
+SSR 额外走一条线：`toHTML()` 输出 HTML（DOM-free）→ `hydrate()` 收养既有 DOM（`adoptElement` + `bindElement`，不重建元素）→ `hydrateSnapshot()` 回读表单等真实值；前提是 `render()` / `toHTML()` 保持确定性，两端产出同一棵树。
+
+### 7.2 复杂组件分块
+
+复杂组件需要分块定义结构时，文件内部的每一块也按**函数组件**组织：同一文件内声明、PascalCase 命名并描述 UI 单元、输入显式、产出 ViewNode。整棵树看上去应当是一层层组件拼起来的，而不是一段过程式布局代码。
+
+```js
+function MemberSummary({ stats }) {
+  return p((line) => line.child(vText(() => `共 ${stats().total} 人`))); // 值变化走绑定
+}
+
+function MemberRows({ rows, onSelect }) {
+  return ul((list) => {
+    list.rebuildable(); // 结构随筛选变化：区域负责重建
+    rows().forEach((row) => list.addChild(row.id, MemberRow({ row, onSelect })));
+  });
+}
+
+export function MemberPanel({ state, onFilter, onSelect }) {
+  return div((panel) => {
+    panel.child(MemberSummary({ stats: () => ({ total: state.members.length }) }));
+    panel.child(MemberFilter({ onInput: onFilter }));
+    panel.child(MemberRows({ rows: () => state.members, onSelect }));
+  });
+}
+```
+
+- **活数据用 getter 传**（`rows: () => state.members`）：数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的仍是旧值；回写一律走回调。
+- **上游用 `ref` 时直接传句柄**（`rows: itemsRef`）：块内用值绑定或区域读句柄即可，不需要 getter；getter 留给非信号来源（请求结果、外部对象）。
+- **块内的更新分工**：值变化用函数值绑定，结构变化用区域（块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter）。
+- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
+
 ## 8. 注册父节点快捷方法
 
 通过 `registerChildFactories` 将工厂注册到目标节点类，页面内即可使用 `page.vButton(...)` 写法；默认不覆盖既有方法：
 
 ```js
-import { ViewNode, registerChildFactories } from 'yoya-ui/core';
+import { ViewNode, registerChildFactories } from '@yoyaflow/yoya-ui/core';
 import { vStatusBadge } from './status-badge.js';
 
 registerChildFactories(ViewNode, { vStatusBadge });

@@ -20,13 +20,16 @@ import {
   vTabs,
   vTree,
   vText,
+  computed,
   createI18n,
+  installSignals,
+  ref,
   renderToString,
   router,
   toast,
   SearchOutlined
 } from 'yoya-ui';
-import { ElementNode, vStateNode } from 'yoya-ui/core';
+import { ElementNode } from 'yoya-ui/core';
 import {
   VButton as ActionsVButton,
   vButton as actionsVButton,
@@ -75,6 +78,7 @@ import {
 } from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
+import type { SignalsAdapter } from 'yoya-ui/core';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
   disableDevtools,
@@ -164,14 +168,26 @@ const tree = vTree({
 });
 tree.expandAll().checkedKeys(['a']);
 
-// State node with typed state.
-const counter = vStateNode<{ count: number }>({
-  state: { count: 0 },
-  render(state) {
-    return div(String(state.count));
-  }
+// Rebuildable region API.
+const region = div((ele) => {
+  ele.rebuildable(() => true);
+  ele.text('region');
 });
-counter.setState({ count: 5 });
+region.rebuildable(null);
+region.rebuild();
+region.rebuild({ force: true });
+const rebuildPending: boolean = region.rebuildPending();
+void rebuildPending;
+region.flush();
+region.flushAll();
+
+// Signals drive values: handles go straight into value positions.
+const count = ref(0);
+const counter = div((ele) => {
+  ele.attr('data-count', count);
+  ele.child(vText(computed(() => `count=${count.value}`)));
+});
+counter.flush();
 
 // i18n.
 const i18n = createI18n({
@@ -200,6 +216,25 @@ const result = renderToString(() => div('hello'), { state: { path: '/home' } });
 const serialized = result.state;
 const parsed = parseState(serialized);
 void parsed;
+
+// Pluggable state engine: the adapter contract is public and plugins are user-written
+// (the examples site ships a copy-paste template).
+const myEngine: SignalsAdapter = {
+  name: 'my-engine',
+  createSignal: (initial: unknown) => ({ value: initial, listeners: new Set<() => void>() }),
+  read: (source: any) => source.value,
+  write: (source: any, value: unknown) => {
+    source.value = value;
+    source.listeners.forEach((listener: () => void) => listener());
+  },
+  subscribe: (source: any, listener: (value: unknown) => void) => {
+    const notify = () => listener(source.value);
+    source.listeners.add(notify);
+    return () => source.listeners.delete(notify);
+  }
+};
+installSignals(myEngine);
+installSignals(null);
 
 const hydrated = hydrate(() => div('hello'), '#app', {});
 const mounted = mount(() => div('hello'), document.body);

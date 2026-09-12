@@ -4,8 +4,8 @@
  */
 
 export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
-import { div } from 'yoya-ui/core';
-import { createRouter } from 'yoya-ui/router';
+import { div } from '@yoyaflow/yoya-ui/core';
+import { createRouter } from '@yoyaflow/yoya-ui/router';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -29,7 +29,7 @@ export const serverSnippet = `// server.mjs —— 服务端（node:http，无�
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const DIST = join(import.meta.dirname, 'dist'); // npm run build 的产物
@@ -58,6 +58,9 @@ createServer((req, res) => {
           head.title('SSR 示例'.s('title'));
           head.meta({ charset: 'utf-8' });
           head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
+          // 客户端入口自己引入：renderPage 不输出客户端脚本
+          head.link({ rel: 'modulepreload', href: '/client.js' });
+          head.script({ type: 'module', src: '/client.js' });
         });
         page.body((body) => {
           body.div((shell) => {
@@ -75,13 +78,35 @@ createServer((req, res) => {
 }).listen(3000);`;
 
 export const clientSnippet = `// client.js —— 浏览器端（由打包器构建，与 yoya-ui/core、yoya-ui/router 同一份共享模块）
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
 // 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate（收养 DOM、绑事件），否则 mount`;
 
+export const shellSnippet = `<!-- renderPage(...) 实际渲染出来的 HTML（页面 DOM 内容省略） -->
+<!doctype html>
+<html lang="zh-CN">
+      <head>
+        <title>SSR 示例</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/assets/yoya.ui.css" />
+        <!-- ③ 客户端入口：由你引入（renderPage 不输出） -->
+        <link rel="modulepreload" href="/client.js" />
+        <script type="module" src="/client.js"></script>
+      </head>
+      <body>
+        <!-- ① 容器：hydration 目标，id 由 containerId 决定（默认 app） -->
+        <div id="app"><!-- 服务端渲染的页面 DOM --></div>
+        <!-- ② 请求状态：id 由 stateId 决定（默认 __YOYA_DATA__） -->
+        <script type="application/json" id="__YOYA_DATA__">
+          {"lang":"zh-CN","path":"/home","mode":"history"}
+        </script>
+      </body>
+    </html>`;
+
 export const setupNotes = [
+  'renderPage 只生成 ① <div id="app"> 容器与 ② __YOYA_DATA__ 状态（id 用 { containerId } / { stateId } 改）；③ 客户端入口由你自己在 head DSL 里加，路径与顺序由你决定',
   'npm run build 生成 dist（yoya.core.js / yoya.ui.js / yoya.router.js / echarts.min.js 等），把 dist 挂载为静态目录',
   'echarts.min.js 用 script 标签全局引入，不要打进模块（避免 window.echarts 丢失）',
   'history 模式：服务端对未匹配路径返回首页；hash 模式：只输出首页即可',

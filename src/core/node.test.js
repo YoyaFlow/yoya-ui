@@ -6,7 +6,6 @@ import {
   button,
   div,
   h1,
-  input,
   p,
   span,
   vCard,
@@ -103,24 +102,6 @@ describe('ViewNode core', () => {
     expect(root.toHTML()).toBe(
       '<div id="profile" class="card"><h1>Profile</h1><input name="email" value="ada@example.com"></div>'
     );
-  });
-
-  it('runs state handlers and exposes typed state reads', () => {
-    const field = input()
-      .registerStateAttrs('disabled', { size: 'string' })
-      .registerStateHandler('disabled', (enabled, node) => {
-        node.attr('disabled', enabled ? true : null);
-      })
-      .registerStateHandler('size', (size, node) => {
-        node.attr('data-size', size);
-      });
-
-    field.setState('disabled', true).setState('size', 'large');
-
-    expect(field.getBooleanState('disabled')).toBe(true);
-    expect(field.getStringState('size')).toBe('large');
-    expect(field.renderDom().hasAttribute('disabled')).toBe(true);
-    expect(field.renderDom().getAttribute('data-size')).toBe('large');
   });
 
   it('resolves function components lazily when they are rendered', () => {

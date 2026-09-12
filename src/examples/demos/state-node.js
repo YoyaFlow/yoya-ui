@@ -1,104 +1,115 @@
-import { div, vForm, vStateNode, vTable, vText, vTr, vstack } from '../../index.js';
+import { batch, computed, div, ref, vForm, vTable, vText, vTr, vstack } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {
-  return vStateNode({
-    state: () => ({ count: 0 }),
-    render(state, api) {
+  const count = ref(0);
+
+  return {
+    render() {
       return vstack({ gap: '12px' }, (stack) => {
         stack.output((out) => {
           out.attr('data-state-counter-output', 'true');
-          out.child(vText((s) => `当前计数：${s.count}`));
+          out.child(vText(computed(() => `当前计数：${count.value}`)));
         });
         stack.hstack({ gap: '8px' }, (row) => {
           row.vButton('+1', (button) => {
             button.variant('primary');
-            button.on('click', () => api.setState({ count: state.count + 1 }));
+            button.on('click', () => {
+              count.value += 1;
+            });
           });
           row.vButton('重置', (button) => {
-            button.on('click', () => api.setState({ count: 0 }));
+            button.on('click', () => {
+              count.value = 0;
+            });
           });
         });
       });
     }
-  });
+  };
 }
 
 export function StateInputExample1() {
-  return vStateNode({
-    state: () => ({ name: '' }),
-    render(state, api) {
+  const name = ref('');
+  const summary = computed(() => `当前输入：${name.value || '（空）'}，长度：${name.value.length}`);
+
+  return {
+    render() {
       return vstack({ gap: '12px' }, (stack) => {
         stack.input((field) => {
           field.attr({
             'data-state-demo-input': 'true',
             placeholder: '输入内容',
-            type: 'text',
-            value: (s) => s.name
+            type: 'text'
           });
           field.on('input', (event) => {
-            api.setState({ name: event.target.value });
+            name.value = event.target.value;
           });
         });
         stack.output((out) => {
           out.attr('data-state-input-output', 'true');
-          out.child(vText((s) => `当前输入：${s.name || '（空）'}，长度：${s.name.length}`));
+          out.child(vText(summary));
         });
         stack.vButton('保存', (button) => {
           button
             .variant('primary')
-            .attr('disabled', (s) => !s.name)
-            .style('opacity', (s) => (s.name ? null : '0.5'));
+            .attr('disabled', computed(() => !name.value))
+            .style('opacity', computed(() => (name.value ? null : '0.5')));
         });
       });
     }
-  });
+  };
 }
 
 export function StateRebuildExample1() {
-  return vStateNode({
-    state: () => ({ attempts: 0, status: 'idle' }),
-    render(state, api) {
-      const nextState = { attempts: state.attempts + 1, status: 'running' };
+  const attempts = ref(0);
+  const status = ref('idle');
 
+  return {
+    render() {
       return vstack({ gap: '12px' }, (stack) => {
         stack.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
-        stack.p(`状态：${state.status}`);
-        stack.p(`次数：${state.attempts}`);
+        // 区域直读信号：写入后子树整体重建
+        stack.rebuildable(() => true);
+        stack.p(`状态：${status.value}`);
+        stack.p(`次数：${attempts.value}`);
         stack.hstack({ gap: '8px' }, (row) => {
           row.vButton('执行', (button) => {
             button.variant('primary');
             button.on('click', () => {
-              api.setState(nextState);
+              batch(() => {
+                attempts.value += 1;
+                status.value = 'running';
+              });
             });
           });
         });
       });
     }
-  });
+  };
 }
 
 export function StateToggleExample1() {
-  return vStateNode({
-    state: () => ({ visible: true }),
-    render(state, api) {
+  const visible = ref(true);
+
+  return {
+    render() {
       return vstack({ gap: '12px' }, (stack) => {
         stack.styles({ boxSizing: 'border-box', maxWidth: '640px', width: '100%' });
-        stack.p(state.visible ? '当前显示内容。' : '当前内容已隐藏。');
+        // 区域直读信号：写入即重建，显示/隐藏这类结构变化走这里
+        stack.rebuildable(() => true);
+        stack.p(visible.value ? '当前显示内容。' : '当前内容已隐藏。');
         stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton(state.visible ? '隐藏' : '显示', (button) => {
+          row.vButton(visible.value ? '隐藏' : '显示', (button) => {
             button.variant('primary');
             button.on('click', () => {
-              api.setState({ visible: !state.visible });
+              visible.value = !visible.value;
             });
           });
         });
       });
-    },
-    update(state, api, changed) {
-      return changed.has('visible');
     }
-  });
+  };
 }
 
 // 动态字段部分：不导出的独立组件函数，只被 StateDynamicFormExample 组合使用。
@@ -111,12 +122,15 @@ function DynamicFormFields() {
     ],
     date: [{ name: 'date', label: '日期', type: 'date' }]
   };
+  const type = ref('text');
+  const values = ref({});
 
-  return vStateNode({
-    state: () => ({ type: 'text', values: {} }),
-    render(state, api) {
+  return {
+    render() {
       return div((body) => {
-        (schemas[state.type] || []).forEach((field) => {
+        // 区域只依赖 type：切换类型重建字段，输入值只收集不重建输入框
+        body.rebuildable(() => true);
+        (schemas[type.value] || []).forEach((field) => {
           body.vFormItem((item) => {
             item.label(field.label);
             item.control((editor) => {
@@ -127,9 +141,7 @@ function DynamicFormFields() {
                   type: field.type || 'text'
                 });
                 input.on('input', (event) => {
-                  api.setState({
-                    values: { ...state.values, [field.name]: event.target.value }
-                  });
+                  values.value = { ...values.value, [field.name]: event.target.value };
                 });
               });
             });
@@ -137,14 +149,14 @@ function DynamicFormFields() {
         });
       });
     },
-    update(state, api, changed) {
-      return changed.has('type');
-    },
     setType(next) {
-      this.setState({ type: next });
+      type.value = next;
       return this;
+    },
+    getValues() {
+      return { ...values.value };
     }
-  });
+  };
 }
 
 export const dynamicFormFieldsSource = componentSource(DynamicFormFields, []);
@@ -174,52 +186,48 @@ export function StateDynamicFormExample() {
 }
 
 export function StateMethodsExample() {
-  return vStateNode({
-    state: () => ({ count: 0 }),
+  const count = ref(0);
+
+  return {
     render() {
       return div((body) => {
         body.div((row) => {
           row.span('当前计数：');
           row.span((el) => {
             el.attr('data-state-methods-count', 'true');
-            el.child(vText((s) => String(s.count)));
+            el.child(vText(count));
           });
         });
       });
     },
     increment() {
-      this.setState({ count: this.state().count + 1 });
+      count.value += 1;
       return this;
     },
     decrement() {
-      this.setState({ count: this.state().count - 1 });
+      count.value -= 1;
       return this;
     },
     reset() {
-      this.setState({ count: 0 });
+      count.value = 0;
       return this;
     }
-  });
+  };
 }
 
 export function StateFragmentExample1() {
-  return vStateNode({
-    state: () => ({ names: ['Ada', 'Bob'] }),
-    render(state) {
+  const names = ['Ada', 'Bob'];
+
+  return {
+    render() {
+      // render 返回数组时，父容器直接落实多个并列子节点
       return vTable((table) => {
         table.vTbody((tbody) => {
-          tbody.child(
-            vStateNode({
-              state: () => ({ names: state.names }),
-              render(s) {
-                return s.names.map((name) => vTr((tr) => tr.vTd(name)));
-              }
-            })
-          );
+          tbody.child(names.map((name) => vTr((tr) => tr.vTd(name))));
         });
       });
     }
-  });
+  };
 }
 
 export function StateKeyedExample1() {
@@ -342,6 +350,7 @@ export function StateEventOverwriteExample1() {
 }
 
 export function StateDynamicAttrsExample1() {
+  const status = ref('idle');
   const tone = {
     error: '#dc2626',
     idle: '#64748b',
@@ -355,29 +364,27 @@ export function StateDynamicAttrsExample1() {
     success: 'rgba(22, 163, 74, 0.12)'
   };
 
-  return vStateNode({
-    state: () => ({ status: 'idle' }),
-    render(state, api) {
+  const api = {
+    render() {
       return vstack({ gap: '12px' }, (stack) => {
         stack.div((panel) => {
-          panel.attr('data-dynamic-status', (s) => s.status);
-          panel.styles({
-            backgroundColor: (s) => panelTone[s.status] || panelTone.idle,
-            borderRadius: '8px',
-            color: (s) => tone[s.status] || tone.idle,
-            fontWeight: '600',
-            padding: '8px 12px'
-          });
-          panel.child(vText((s) => (s.status === 'saving' ? '保存中…' : '已就绪')));
+          panel.attr('data-dynamic-status', status);
+          panel.style(
+            'backgroundColor',
+            computed(() => panelTone[status.value] || panelTone.idle)
+          );
+          panel.style('color', computed(() => tone[status.value] || tone.idle));
+          panel.styles({ borderRadius: '8px', fontWeight: '600', padding: '8px 12px' });
+          panel.child(vText(computed(() => (status.value === 'saving' ? '保存中…' : '已就绪'))));
         });
         stack.hstack({ gap: '8px' }, (row) => {
           row.vButton('保存', (button) => {
             button
               .variant('primary')
-              .attr('disabled', (s) => s.status === 'saving')
-              .attr('aria-busy', (s) => (s.status === 'saving' ? 'true' : null))
-              .style('opacity', (s) => (s.status === 'saving' ? '0.6' : null))
-              .style('cursor', (s) => (s.status === 'saving' ? 'wait' : null))
+              .attr('disabled', computed(() => status.value === 'saving'))
+              .attr('aria-busy', computed(() => (status.value === 'saving' ? 'true' : null)))
+              .style('opacity', computed(() => (status.value === 'saving' ? '0.6' : null)))
+              .style('cursor', computed(() => (status.value === 'saving' ? 'wait' : null)))
               .on('click', () => api.startSave());
           });
           row.vButton('完成', (button) => {
@@ -391,16 +398,18 @@ export function StateDynamicAttrsExample1() {
       });
     },
     startSave() {
-      this.setState({ status: 'saving' });
+      status.value = 'saving';
       return this;
     },
     finish() {
-      this.setState({ status: 'success' });
+      status.value = 'success';
       return this;
     },
     fail() {
-      this.setState({ status: 'error' });
+      status.value = 'error';
       return this;
     }
-  });
+  };
+
+  return api;
 }

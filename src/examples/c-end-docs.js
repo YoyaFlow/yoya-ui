@@ -549,7 +549,7 @@ const cEndDocsDefinitions = Object.freeze({
       ['image.src(value)', '设置图片地址。', 'image.src("/a.png")'],
       ['image.alt(value)', '设置替代文本。', 'image.alt("示例")'],
       ['image.defer(value)', '开启 IntersectionObserver 延迟加载。', 'image.defer(true)'],
-      ['image.state()', '读取 loading / loaded / error 状态。', 'image.state()'],
+      ['image.loadState()', '读取 loading / loaded / error 状态。', 'image.loadState()'],
       ['image.retry()', '失败后重新加载。', 'image.retry()']
     ],
     apiSignature: `vLazyImage({
@@ -718,7 +718,7 @@ const cEndDocsDefinitions = Object.freeze({
       ['preview.open() / close() / toggle()', '打开、关闭或切换灯箱。', 'preview.open()'],
       ['preview.zoom(value)', '设置缩放倍数（1–5）。', 'preview.zoom(2)'],
       ['preview.resetZoom()', '重置缩放与平移。', 'preview.resetZoom()'],
-      ['preview.state()', '读取 open / closed 状态。', 'preview.state()']
+      ['preview.previewState()', '读取 open / closed 状态。', 'preview.previewState()']
     ],
     apiSignature: `vImagePreview({
   src: '/big.png',

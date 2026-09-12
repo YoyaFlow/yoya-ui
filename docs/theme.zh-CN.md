@@ -102,7 +102,7 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 `vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。 区域级容器使用 `vThemeShell`：默认提供主题化背景（`--yoya-color-surface`）、边框（`--yoya-color-border`）、圆角（`--yoya-radius-md`）与文字色（`--yoya-color-text`），并可通过 `.background()` / `.backgroundOpacity(alpha)` / `.radius()` / `.border()` / `.borderColor()` / `.scrollable()` 单独调整单个实例。
 
 ```js
-import { vBody } from 'yoya-ui/ui';
+import { vBody } from '@yoyaflow/yoya-ui/ui';
 vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 ```
 
@@ -154,7 +154,7 @@ import {
   setYoyaTheme,
   getYoyaTheme,
   initYoyaTheme
-} from 'yoya-ui/core';
+} from '@yoyaflow/yoya-ui/core';
 
 setYoyaMode('dark'); // data-yoya-mode="dark"
 setYoyaMode('system', { persist: true }); // 持久化，下次 initYoyaTheme() 自动恢复

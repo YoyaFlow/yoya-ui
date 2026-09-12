@@ -7,7 +7,7 @@ const quillDemo = Object.freeze({
     '全宽编辑区提供字号、字体、颜色、对齐、缩进、代码块、图片与公式等常用操作；「导出 HTML / 导出纯文本」读取内容。',
   component: QuillEditorExample,
   sourceComponent: QuillEditorNode,
-  imports: ['HtmlElementNode'],
+  imports: ['HtmlElementNode', 'div'],
   extraSource: [
     "import Quill from 'quill';",
     "import 'quill/dist/quill.snow.css';",

@@ -3,10 +3,10 @@ import { registerChildFactories } from '../core/node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
 import {
   applyComponentArguments,
+  booleanMethod,
   componentClass,
   createComponentFactory,
   isPlainObject,
-  replaceChildren,
   themeValue
 } from '../components/shared.js';
 
@@ -27,6 +27,7 @@ export class VAutocomplete extends HtmlElementNode {
     this._changeHandlers = [];
     this._open = false;
     this._highlight = -1;
+    this._pointerOverList = false;
     this._suggestions = [];
     this._optionNodes = [];
     this._outsideListener = null;
@@ -72,9 +73,35 @@ export class VAutocomplete extends HtmlElementNode {
         padding: '4px',
         position: 'fixed',
         zIndex: '110'
+      })
+      .on('mouseenter', () => {
+        this._pointerOverList = true;
+      })
+      .on('mouseleave', () => {
+        this._pointerOverList = false;
+        if (this._list.rebuildPending()) {
+          // 悬停期间被推迟的重建，在指针离开后补上。
+          this._renderList();
+        }
+      })
+      .setup((list) => {
+        // 列表是区域：内容由这次 setup 产出；指针悬停时只刷值、不重建节点。
+        list.rebuildable(() => !this._pointerOverList);
+        this._buildOptions(list);
       });
 
     this.child(this._input, this._list);
+
+    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
+    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
+      this.attr('data-disabled', enabled ? 'true' : null);
+      this._input.attr('disabled', enabled ? true : null);
+    });
+    this.required = booleanMethod(this, 'required', false, (enabled) => {
+      this.attr('data-required', enabled ? 'true' : null);
+      this._input.attr('required', enabled ? true : null);
+    });
+
     this._setupAutocomplete(setup);
     applyComponentArguments(this, options, callback);
   }
@@ -112,16 +139,9 @@ export class VAutocomplete extends HtmlElementNode {
     return this;
   }
 
-  disabled(value) {
-    if (value === undefined) {
-      return this.getBooleanState('disabled');
-    }
-
-    const disabled = Boolean(value);
-    this.setState('disabled', disabled);
-    this.attr('data-disabled', disabled ? 'true' : null);
-    this._input.attr('disabled', disabled ? true : null);
-    return this;
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  isDisabled() {
+    return this._disabled.value;
   }
 
   name(value) {
@@ -130,16 +150,6 @@ export class VAutocomplete extends HtmlElementNode {
     }
     this.attr('data-name', value ? String(value) : null);
     this._input.attr('name', value ? String(value) : null);
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this.getBooleanState('required');
-    }
-    this.setState('required', Boolean(value));
-    this.attr('data-required', value ? 'true' : null);
-    this._input.attr('required', value ? true : null);
     return this;
   }
 
@@ -166,6 +176,7 @@ export class VAutocomplete extends HtmlElementNode {
 
   close() {
     this._open = false;
+    this._pointerOverList = false;
     this._list.style('display', 'none');
     this._bindOutsideClose(false);
     this._bindReposition(false);
@@ -207,7 +218,7 @@ export class VAutocomplete extends HtmlElementNode {
   }
 
   _openSuggestions() {
-    if (this.getBooleanState('disabled')) {
+    if (this.disabled()) {
       return;
     }
 
@@ -255,34 +266,36 @@ export class VAutocomplete extends HtmlElementNode {
   }
 
   _renderList() {
-    this._optionNodes = [];
-    replaceChildren(
-      this._list,
-      this._suggestions.map((item, index) => {
-        const option = new HtmlElementNode('div')
-          .className('yoya-vautocomplete-option')
-          .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
-          .styles({
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-            cursor: 'pointer',
-            overflow: 'hidden',
-            padding: '5px 8px',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          })
-          .on('mousedown', (event) => {
-            event.preventDefault();
-            this._select(item);
-          })
-          .on('mouseenter', () => this._setHighlight(index))
-          .text(item.label);
-        this._optionNodes.push(option);
-        return option;
-      })
-    );
+    this._list.rebuild();
     this._setHighlight(this._highlight);
     return this;
+  }
+
+  /** 区域 builder：按当前建议产出选项节点。 */
+  _buildOptions(list) {
+    this._optionNodes = [];
+    this._suggestions.forEach((item, index) => {
+      const option = new HtmlElementNode('div')
+        .className('yoya-vautocomplete-option')
+        .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
+        .styles({
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          padding: '5px 8px',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        })
+        .on('mousedown', (event) => {
+          event.preventDefault();
+          this._select(item);
+        })
+        .on('mouseenter', () => this._setHighlight(index))
+        .text(item.label);
+      this._optionNodes.push(option);
+      list.child(option);
+    });
   }
 
   /** 只更新高亮样式，不重建下拉列表（避免悬停时销毁正在点击的节点）。 */

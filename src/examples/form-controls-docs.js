@@ -58,7 +58,10 @@ function SliderBasicExample() {
 }
 
 function SliderStateExample() {
-  const slider = vSlider((el) => el.max(100).min(0).step(10).value(60));
+  const slider = vSlider((el) => {
+    el.max(100).min(0);
+    el.step(10).value(60);
+  });
 
   return {
     render() {
@@ -368,9 +371,10 @@ function AutocompleteBasicExample() {
 
 function AutocompleteFilterExample() {
   const autocomplete = vAutocomplete((el) => {
-    el.source((query) =>
-      frameworkSource.filter((item) => item.toLowerCase().includes(String(query).toLowerCase()))
-    );
+    el.source((query) => {
+      const needle = String(query).toLowerCase();
+      return frameworkSource.filter((item) => item.toLowerCase().includes(needle));
+    });
   });
 
   return {

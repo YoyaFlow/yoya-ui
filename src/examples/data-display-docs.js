@@ -24,7 +24,7 @@ import {
   TreeRangerExample,
   TreeRangerFileExample,
   TreeRangerLazyExample
-} from './detail-sources.js';
+} from './demos/tree-ranger.js';
 
 const dataDisplayDocsDefinitions = Object.freeze({
   avatar: createDataDisplayDocsDefinition({
@@ -56,7 +56,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarImageExample1,
         description: 'src 切换为非文字插画图片头像，alt 同步作为替代文本和 aria-label。',
         id: 'image',
-        imports: ['vAvatar', 'vCard'],
+        imports: ['vAvatar', 'vstack'],
         sourceTitle: '图片头像源码',
         title: '图片头像'
       },
@@ -64,7 +64,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarBasicExample1,
         description: '文字和图标头像通过 size、shape、color 快速形成不同标识。',
         id: 'basic',
-        imports: ['vAvatar', 'vCard'],
+        imports: ['vAvatar', 'vstack'],
         sourceTitle: '基础头像源码',
         title: '基础头像'
       },
@@ -72,7 +72,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarStatusExample1,
         description: 'status 在头像右下角显示语义状态点，适合成员、节点和服务标识。',
         id: 'status',
-        imports: ['vAvatar', 'vCard'],
+        imports: ['vAvatar', 'vstack'],
         sourceTitle: '状态头像源码',
         title: '状态头像'
       },
@@ -80,7 +80,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarInteractiveExample1,
         description: '通过公开方法实时切换文字、尺寸、形状、颜色和在线状态。',
         id: 'interactive',
-        imports: ['vAvatar', 'vButton', 'vCard', 'vText'],
+        imports: ['vAvatar', 'vButton', 'vText', 'vstack'],
         sourceTitle: '自定义头像源码',
         title: '自定义头像'
       },
@@ -88,7 +88,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarUploadExample1,
         description: '头像上传组件支持点击、拖拽、预览和移除，适合个人资料编辑。',
         id: 'upload',
-        imports: ['vAvatarUpload', 'vCard', 'vText'],
+        imports: ['vAvatarUpload', 'vText', 'vstack'],
         sourceTitle: '头像上传源码',
         title: '头像上传'
       }
@@ -151,7 +151,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: BadgeDotExample1,
         description: 'dot 模式只保留小圆点，适合强调“有新变化”但不需要具体数量。',
         id: 'dot',
-        imports: ['vBadge', 'vButton', 'vCard'],
+        imports: ['vBadge', 'vButton', 'vstack'],
         sourceTitle: '圆点徽标核心源码',
         title: '圆点徽标'
       },
@@ -159,7 +159,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: BadgeStatusExample1,
         description: 'status 搭配 text 表达运行状态，语义比单独一个数字更直观。',
         id: 'status',
-        imports: ['vBadge', 'vCard'],
+        imports: ['vBadge', 'vstack'],
         sourceTitle: '状态徽标核心源码',
         title: '状态徽标'
       }
@@ -228,7 +228,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailBasicExample1,
         description: 'items 接受数组和对象，适合直接由接口数据生成只读详情。',
         id: 'basic',
-        imports: ['vCard', 'vDetail'],
+        imports: ['vDetail', 'vstack'],
         sourceTitle: '基础详情核心源码',
         title: '基础详情'
       },
@@ -244,7 +244,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailCustomExample1,
         description: 'value 可以接收 vBadge、vButton 等任意 ViewNode，形成更丰富的字段展示。',
         id: 'custom',
-        imports: ['vBadge', 'vButton', 'vCard', 'vDetail'],
+        imports: ['vBadge', 'vButton', 'vDetail', 'vstack'],
         sourceTitle: '自定义值核心源码',
         title: '自定义值'
       },
@@ -319,7 +319,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableBasicExample1,
         description: '用 column.render 放入行操作按钮，点击后把当前行写回状态区。',
         id: 'basic',
-        imports: ['vButton', 'vCard', 'vTable', 'vText'],
+        imports: ['vButton', 'vTable', 'vText', 'vstack'],
         sourceTitle: '基础表格核心源码',
         title: '基础表格'
       },
@@ -335,7 +335,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TablePaginationExample1,
         description: '分页器只负责页码状态，表格根据 page 和 pageSize 切换当前页数据。',
         id: 'pagination',
-        imports: ['vCard', 'vPagination', 'vTable', 'vText'],
+        imports: ['vPagination', 'vTable', 'vText', 'vstack'],
         sourceTitle: '分页表格核心源码',
         title: '分页联动'
       },
@@ -344,7 +344,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         description:
           'vThead / vTbody / vTr / vTh / vTd 支持逐层声明式控制，适合合并单元格和自定义表格结构。',
         id: 'declarative',
-        imports: ['vButton', 'vCard', 'vTable', 'vText'],
+        imports: ['vButton', 'vTable', 'vText', 'vstack'],
         sourceTitle: '声明式表格源码',
         title: '声明式内部结构'
       }
@@ -605,7 +605,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ProgressBasicExample1,
         description: 'value/max 驱动百分比，label 和 format 让进度条更贴合业务字段。',
         id: 'basic',
-        imports: ['vCard', 'vProgress'],
+        imports: ['vProgress', 'vstack'],
         sourceTitle: '基础进度条核心源码',
         title: '基础进度条'
       },
@@ -613,7 +613,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ProgressStatusExample1,
         description: 'status 切换语义色，适合构建、发布、告警和同步等任务状态。',
         id: 'status',
-        imports: ['vCard', 'vProgress'],
+        imports: ['vProgress', 'vstack'],
         sourceTitle: '状态进度条核心源码',
         title: '状态进度条'
       },
@@ -712,7 +712,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ScrollBasicExample1,
         description: '首批数据由 items 提供，滚动到底部后自动追加后续页。',
         id: 'basic',
-        imports: ['div', 'vCard', 'vScroll'],
+        imports: ['div', 'vScroll', 'vstack'],
         sourceTitle: '基础滚动核心源码',
         title: '基础滚动'
       },
@@ -736,7 +736,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ScrollVirtualExample1,
         description: '20000 条数据只渲染可视窗口和少量 overscan，滚动高度仍保持完整。',
         id: 'virtual',
-        imports: ['div', 'vCard', 'vScroll'],
+        imports: ['div', 'vScroll', 'vstack'],
         sourceTitle: '虚拟滚动核心源码',
         title: '虚拟滚动'
       }
@@ -803,7 +803,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselBasicExample1,
         description: 'slides 和 renderItem 驱动内容，箭头与指示点可以直接切换。',
         id: 'basic',
-        imports: ['div', 'vCarousel', 'vCard'],
+        imports: ['div', 'vCarousel', 'vstack'],
         sourceTitle: '基础走马灯核心源码',
         title: '基础走马灯'
       },
@@ -811,7 +811,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselAutoplayExample1,
         description: 'autoplay 和 interval 控制自动轮播，悬停或聚焦时自动暂停。',
         id: 'autoplay',
-        imports: ['vCarousel', 'vText', 'vstack'],
+        imports: ['vCarousel', 'vText', 'vstack', 'div'],
         sourceTitle: '自动播放核心源码',
         title: '自动播放'
       },
@@ -819,7 +819,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselLoopExample1,
         description: 'loop 开启时首尾循环，关闭后到达边界会禁用对应箭头。',
         id: 'loop',
-        imports: ['vButton', 'vCarousel', 'vText', 'vstack'],
+        imports: ['vButton', 'vCarousel', 'vText', 'vstack', 'div'],
         sourceTitle: '循环切换核心源码',
         title: '循环切换'
       },
@@ -827,7 +827,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselSwipeExample1,
         description: '按住水平拖动即可切换，垂直滚动不受影响，滑动期间自动播放暂停。',
         id: 'swipe',
-        imports: ['div', 'vCarousel', 'vCard'],
+        imports: ['div', 'vCarousel', 'vstack'],
         sourceTitle: '触摸滑动核心源码',
         title: '触摸滑动'
       }
@@ -2152,10 +2152,11 @@ function ScrollLoopBlockExample1() {
     scroll.items(source.slice(0, 4), (item) => div(item));
     scroll.loadMore(({ append, block, page, scroll: api }) => {
       if (api.loop()) {
-        const start = ((page - 1) % 3) * 4;
+        // 首屏已放了第 1 页，加载从第 2 页接着走
+        const start = (page % 3) * 4;
         append(source.slice(start, start + 4));
       } else {
-        const start = (page - 1) * 4;
+        const start = page * 4;
         const next = source.slice(start, start + 4);
         append(next);
         if (start + next.length >= source.length) {
@@ -2215,12 +2216,13 @@ function ScrollAsyncExample1() {
   const source = Array.from({ length: 20 }, (_, index) => `消息 ${index + 1}`);
   const scroll = vScroll((scroll) => {
     scroll.style('height', '260px');
-    scroll.items(source.slice(0, 5), (item) => div(item));
+    // 首屏也走 loadMore：page 由组件递增，第一次加载就是第 1 页
+    scroll.renderItem((item) => div(item));
     scroll.loadMore(
       ({ append, block, page }) =>
         new Promise((resolve) => {
           setTimeout(() => {
-            const start = page * 5;
+            const start = (page - 1) * 5;
             const next = source.slice(start, start + 5);
             append(next);
             if (start + next.length >= source.length) {
@@ -2242,8 +2244,8 @@ function ScrollAsyncExample1() {
         content.child(scroll);
         content.vButton('重新加载', (button) => {
           button.on('click', () => {
-            scroll.reset();
-            scroll.check();
+            // 重置回第 1 页，check() 触发一次异步加载
+            scroll.reset().check();
           });
         });
       });

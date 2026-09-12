@@ -21,6 +21,48 @@ function HomePage(state) {
 }
 
 describe('renderPage', () => {
+  it('wraps the body DSL inside #app without nesting another <body>', () => {
+    const html = renderPage({
+      page: (page) => page.body((body) => body.p('内容'))
+    });
+
+    expect(html).toContain('<div id="app"><p>内容</p></div>');
+    expect([...html.matchAll(/<body/g)]).toHaveLength(1);
+  });
+
+  it('never injects a client entry script: the page decides it', () => {
+    const html = renderPage(
+      { page: (page) => page.body((body) => body.p('内容')) },
+      {},
+      { containerId: 'root', stateId: 'yoya-data-page' }
+    );
+
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('id="yoya-data-page"');
+    // 客户端入口的路径、位置与顺序都是使用方的决定，renderPage 不猜
+    expect(html).not.toContain('<script type="module"');
+  });
+
+  it('lets the page add the client entry itself, e.g. in head', () => {
+    const html = renderPage(
+      {
+        page: (page) => {
+          page.head((head) => {
+            head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+            head.script({ type: 'module', src: '/assets/client.js' });
+          });
+          page.body((body) => body.p('内容'));
+        }
+      },
+      {}
+    );
+
+    const headHtml = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
+    expect(headHtml).toContain('<script type="module" src="/assets/client.js"></script>');
+    expect(headHtml).toContain('rel="modulepreload"');
+    expect([...html.matchAll(/<script type="module"/g)]).toHaveLength(1);
+  });
+
   it('renders a complete HTML document with DSL head and body', () => {
     const html = renderPage(
       {
@@ -48,7 +90,7 @@ describe('renderPage', () => {
     expect(html).toContain('Hello, Ada!');
     expect(html).toContain('id="__YOYA_DATA__"');
     expect(html).toContain('"lang":"en-US"');
-    expect(html).toContain('<script type="module" src="/client.js"></script>');
+    expect(html).not.toContain('<script type="module"');
   });
 
   it('passes the normalized state into head/body callbacks', () => {

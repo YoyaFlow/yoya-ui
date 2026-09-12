@@ -2,6 +2,7 @@ import { HtmlElementNode } from '../html/index.js';
 import { VMenu } from '../navigation/menu.js';
 import { VButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { ref } from '../core/signals/handle.js';
 import { allocateId } from '../core/id.js';
 import {
   createComponentFactory,
@@ -18,6 +19,8 @@ export class VDropdownMenu extends HtmlElementNode {
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vdropdown-panel');
+    // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
+    this._open = ref(false);
     this._trigger = new VButton('操作')
       .className('yoya-vdropdown-trigger')
       .attr({
@@ -27,7 +30,8 @@ export class VDropdownMenu extends HtmlElementNode {
       })
       .on('click', (event) => {
         event.preventDefault();
-        if (!this._trigger.getBooleanState('disabled')) {
+        // 触发钮禁用态以 DOM 属性为准（票 01 后 VButton 状态走内部 ref）
+        if (!this._trigger.attr('disabled')) {
           this.toggle();
         }
       });
@@ -94,7 +98,7 @@ export class VDropdownMenu extends HtmlElementNode {
   open(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('open', enabled);
+    this._open.value = enabled;
     this.attr('data-open', enabled ? 'true' : null);
     this._trigger.attr('aria-expanded', enabled ? 'true' : 'false');
     this._panel.attr('aria-hidden', enabled ? 'false' : 'true');
@@ -114,7 +118,7 @@ export class VDropdownMenu extends HtmlElementNode {
   }
 
   toggle() {
-    return this.open(!this.getBooleanState('open'));
+    return this.open(!this._open.value);
   }
 
   destroy() {
@@ -158,7 +162,8 @@ export class VDropdownMenu extends HtmlElementNode {
   }
 
   _handleTriggerKeydown(event) {
-    if (this._trigger.getBooleanState('disabled')) {
+    // 触发钮禁用态以 DOM 属性为准（票 01 后 VButton 状态走内部 ref）
+    if (this._trigger.attr('disabled')) {
       return;
     }
 

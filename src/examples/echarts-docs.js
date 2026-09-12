@@ -116,8 +116,8 @@ const echartsDemos = [
     component: EchartsBarExample1,
     id: 'bar',
     imports: [
-      { from: 'yoya-ui', names: ['vCard'] },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui', names: ['vCard'] },
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],
     sourceTitle: '柱状图源码',
     title: '柱状图'
@@ -126,8 +126,8 @@ const echartsDemos = [
     component: EchartsLineExample1,
     id: 'line',
     imports: [
-      { from: 'yoya-ui', names: ['vCard'] },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui', names: ['vCard'] },
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],
     sourceTitle: '折线图源码',
     title: '折线图'
@@ -136,8 +136,8 @@ const echartsDemos = [
     component: EchartsPieExample1,
     id: 'pie',
     imports: [
-      { from: 'yoya-ui', names: ['vCard'] },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui', names: ['vCard'] },
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],
     sourceTitle: '饼图源码',
     title: '饼图'

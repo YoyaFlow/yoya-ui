@@ -5,7 +5,8 @@ const existsInSrc = (path) => existsSync(new URL(path, import.meta.url));
 const importFromSrc = (path) => import(new URL(path, import.meta.url).href);
 const readFromSrc = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-describe('foundation module structure', () => {
+// 本套用例会动态导入整库并逐个断言文件结构，并行满载时贴近 vitest 默认 5s 超时，故显式放宽。
+describe('foundation module structure', { timeout: 30000 }, () => {
   it('keeps large modules compact with concise file names and domain entrypoints', async () => {
     expect(existsInSrc('./core/index.js')).toBe(true);
     expect(existsInSrc('./core/node.js')).toBe(true);

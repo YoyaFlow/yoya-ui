@@ -119,11 +119,13 @@ export interface RenderPageOptions<S = unknown>
   stateId?: string;
   /** Hydration container id. Defaults to "app". */
   containerId?: string;
-  /** Client entry script src. Defaults to "/client.js". */
-  client?: string;
 }
 
-/** Renders a complete HTML document from DSL-defined head/body. */
+/**
+ * Renders a complete HTML document from DSL-defined head/body plus the state script.
+ * The client entry is NOT injected: add it yourself where it belongs
+ * (e.g. `page.head((head) => head.script({ type: 'module', src: '/client.js' }))`).
+ */
 export function renderPage<S = unknown>(
   config: RenderPageConfig<S>,
   state?: S | null,
