@@ -1,4 +1,4 @@
-import { div, vStateNode, vText } from '../../index.js';
+import { div, ref, vText } from '../../index.js';
 import '../devtools-inspector.css';
 import {
   disableDevtools,
@@ -8,6 +8,18 @@ import {
   getDevtoolsSnapshot,
   subscribeDevtools
 } from '../../yoya.devtools.js';
+
+/** 日志面板的事件筛选选项：与 devtools 事件契约保持同序。 */
+const EVENT_FILTERS = [
+  'all',
+  'commit',
+  'destroy',
+  'attr',
+  'style',
+  'child',
+  'text',
+  'signal-write'
+];
 
 /**
  * 专用 DevTools 大弹窗：按标签页分类展示对象结构、操作日志与状态/作用域；
@@ -22,7 +34,7 @@ export function DevtoolsInspectorDemo() {
     selectedId: null,
     tree: null
   };
-  const stateByNode = {};
+  const signalValues = new Map();
   let detailHost = null;
   let eventHost = null;
   let highlighted = null;
@@ -40,36 +52,34 @@ export function DevtoolsInspectorDemo() {
   let logTabButton = null;
   let stateTabButton = null;
 
-  const target = vStateNode({
-    state: () => ({ count: 0, mode: 'normal' }),
-    render(stateValue, api) {
+  // 被检视的目标卡片：计数走值绑定，模式驱动区域重建（写入都会上报 signal-write）
+  const targetCount = ref(0);
+  const targetMode = ref('normal');
+  const target = {
+    render() {
       return div((box) => {
         box.className('devtools-target-card');
+        box.rebuildable(() => true);
         box.p('计数：', (p) => {
-          p.child(vText((current) => String(current.count)));
+          p.child(vText(targetCount));
         });
-        box.p(`模式：${stateValue.mode}`);
+        box.p(`模式：${targetMode.value}`);
         box.div((actions) => {
           actions.vButton('+1', (button) => {
             button.variant('primary');
             button.on('click', () => {
-              api.setState({ count: stateValue.count + 1 });
+              targetCount.value += 1;
             });
           });
-          actions.vButton(stateValue.mode === 'normal' ? '切换高亮' : '恢复正常', (button) => {
+          actions.vButton(targetMode.value === 'normal' ? '切换高亮' : '恢复正常', (button) => {
             button.on('click', () => {
-              api.setState({
-                mode: stateValue.mode === 'normal' ? 'highlight' : 'normal'
-              });
+              targetMode.value = targetMode.value === 'normal' ? 'highlight' : 'normal';
             });
           });
         });
       });
-    },
-    update(stateValue, api, changed) {
-      return changed.has('mode');
     }
-  });
+  };
 
   function toggle() {
     if (state.enabled) {
@@ -86,7 +96,7 @@ export function DevtoolsInspectorDemo() {
       state.events = [];
       state.selectedId = null;
       state.tree = null;
-      Object.keys(stateByNode).forEach((key) => delete stateByNode[key]);
+      signalValues.clear();
       updateStatus();
       renderEvents();
       renderDetail();
@@ -109,8 +119,8 @@ export function DevtoolsInspectorDemo() {
       if (!isInsideInspectedTree(event)) {
         return;
       }
-      if (event.type === 'state') {
-        stateByNode[event.nodeId] = event.state;
+      if (event.type === 'signal-write') {
+        signalValues.set(event.signalId, event.next);
         renderStateList();
       }
       state.events.push(event);
@@ -126,6 +136,10 @@ export function DevtoolsInspectorDemo() {
   }
 
   function isInsideInspectedTree(event) {
+    // 信号写入不挂节点，直接放行进日志
+    if (event.type === 'signal-write') {
+      return true;
+    }
     const rootElement = state.tree ? getDevtoolsDom(state.tree.id) : null;
     const domNode = getDevtoolsDom(event.nodeId);
     if (!rootElement || !domNode) {
@@ -232,7 +246,7 @@ export function DevtoolsInspectorDemo() {
             {
               node: snapshot,
               scope: getDevtoolsScope(state.selectedId),
-              state: stateByNode[state.selectedId] || null
+              signals: readCardSignals(state.selectedId)
             },
             null,
             2
@@ -241,6 +255,16 @@ export function DevtoolsInspectorDemo() {
       });
     });
     flushHost(detailHost);
+  }
+
+  /** 被检视卡片上的信号没有挂在节点上：选中卡片子树时按值展示最新状态。 */
+  function readCardSignals(nodeId) {
+    const rootElement = state.tree ? getDevtoolsDom(state.tree.id) : null;
+    const domNode = getDevtoolsDom(nodeId);
+    if (!rootElement || !domNode || !rootElement.contains(domNode)) {
+      return null;
+    }
+    return { count: targetCount.value, mode: targetMode.value };
   }
 
   function findSnapshotNode(root, id) {
@@ -316,26 +340,14 @@ export function DevtoolsInspectorDemo() {
     if (event.type === 'text') {
       return `${where} 文本：${formatLogValue(event.from)} → ${formatLogValue(event.to)}`;
     }
-    if (event.type === 'state') {
-      const summary = Object.entries(event.changed || {})
-        .map(
-          ([key, change]) =>
-            `${key}: ${formatLogValue(change.from)} → ${formatLogValue(change.to)}`
-        )
-        .join('，');
-      const path =
-        {
-          bindings: '绑定写回',
-          none: '',
-          pending: '未挂载',
-          rebuild: '重建视图',
-          update: 'update 回调'
-        }[event.handling] || event.handling;
-      return `${where} 状态更新：${summary}（${path}）`;
+    if (event.type === 'signal-write') {
+      const before = formatLogValue(event.previous);
+      const after = formatLogValue(event.next);
+      return `信号 #${event.signalId} 写入：${before} → ${after}（依赖绑定 ${event.dependents} 个）`;
     }
     if (event.type === 'region') {
       const action = event.action === 'rebuild' ? '重建子树' : '仅刷新绑定值';
-      const trigger = event.trigger === 'state' ? '状态触发' : '手动触发';
+      const trigger = event.trigger === 'signal' ? '信号触发' : '手动触发';
       return `${where} 区域${action}（${trigger}）`;
     }
     return `${where} ${event.type}`;
@@ -347,11 +359,11 @@ export function DevtoolsInspectorDemo() {
     }
     stateHost.clearChildren();
     flushHost(stateHost);
-    Object.entries(stateByNode).forEach(([nodeId, componentState]) => {
+    signalValues.forEach((latest, signalId) => {
       const row = stateHost.pre();
       row.className('devtools-state-row');
       row.attr('data-devtools-state-row', 'true');
-      row.text(`${nodeId}: ${JSON.stringify(componentState)}`);
+      row.text(`#${signalId}: ${JSON.stringify(latest)}`);
     });
     flushHost(stateHost);
   }
@@ -467,7 +479,7 @@ export function DevtoolsInspectorDemo() {
               button.attr('data-devtools-tab', 'log');
               button.on('click', () => switchTab('log'));
             });
-            tabs.button('状态与作用域', (button) => {
+            tabs.button('信号与作用域', (button) => {
               stateTabButton = button;
               button.attr('data-devtools-tab', 'state');
               button.on('click', () => switchTab('state'));
@@ -518,11 +530,9 @@ export function DevtoolsInspectorDemo() {
               toolbar.label('事件筛选');
               toolbar.select((select) => {
                 select.attr('data-devtools-filter', 'true');
-                ['all', 'commit', 'destroy', 'attr', 'style', 'child', 'text', 'state'].forEach(
-                  (kind) => {
-                    select.option(kind);
-                  }
-                );
+                EVENT_FILTERS.forEach((kind) => {
+                  select.option(kind);
+                });
                 select.on('change', (event) => {
                   state.eventFilter = event.target.value;
                   renderEvents();
@@ -540,7 +550,7 @@ export function DevtoolsInspectorDemo() {
             panel.className('devtools-panel');
             panel.attr('data-devtools-panel', 'state');
             panel.style('display', 'none');
-            panel.h3('组件状态');
+            panel.h3('信号值');
             const stateBox = div();
             panel.child(stateBox);
             stateHost = stateBox;

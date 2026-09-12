@@ -9,7 +9,7 @@ const devtoolsDemoDefinitions = Object.freeze([
     description: '视图树、选中详情、事件时间线与 DOM 高亮，只消费 devtools 公开入口。',
     component: DevtoolsInspectorDemo,
     sourceComponent: DevtoolsInspectorDemo,
-    imports: ['div', 'vStateNode', 'vText'],
+    imports: ['div', 'ref', 'vText'],
     extraImports: {
       names: [
         'disableDevtools',
@@ -46,7 +46,7 @@ export function DevtoolsDocumentationPage() {
           usage.h2('何时使用');
           usage.ul((list) => {
             list.li('定位「页面为什么长这样」：查看当前视图树快照。');
-            list.li('追踪一次交互改了什么：属性/样式/子项/文本/状态事件。');
+            list.li('追踪一次交互改了什么：属性/样式/子项/文本/信号写入事件。');
             list.li('排查作用域问题：节点声明与生效的 access、Context 与 i18n。');
           });
         });
@@ -66,7 +66,7 @@ export function DevtoolsDocumentationPage() {
                 ['enableDevtools()', '开启事件流，后续渲染与变更开始上报。'],
                 [
                   'subscribeDevtools(listener)',
-                  '订阅 commit/destroy/attr/style/child/text/state 事件。'
+                  '订阅 commit/destroy/attr/style/child/text/signal-write 事件。'
                 ],
                 ['getDevtoolsSnapshot(root)', '取可画树的纯数据快照（含稳定 id）。'],
                 ['getDevtoolsDom(id)', '按 id 定位真实 DOM，用于高亮。'],
