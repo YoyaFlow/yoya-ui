@@ -1,5 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { ref } from '../core/signals/handle.js';
 import { allocateId } from '../core/id.js';
 import {
   componentClass,
@@ -58,6 +59,8 @@ export class VTooltip extends HtmlElementNode {
     this._triggerMode = 'hover';
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vtooltip-panel');
+    // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
+    this._open = ref(false);
 
     this._target = new HtmlElementNode('span')
       .className('yoya-vtooltip-target')
@@ -124,7 +127,7 @@ export class VTooltip extends HtmlElementNode {
   open(value = true) {
     const enabled = Boolean(value);
 
-    this.setState('open', enabled);
+    this._open.value = enabled;
     this.attr('data-open', enabled ? 'true' : null);
     this._panel.attr('aria-hidden', enabled ? 'false' : 'true');
 
@@ -142,7 +145,7 @@ export class VTooltip extends HtmlElementNode {
   }
 
   toggle() {
-    return this.open(!this.getBooleanState('open'));
+    return this.open(!this._open.value);
   }
 
   destroy() {

@@ -233,7 +233,7 @@ export class VSvgIconPicker extends HtmlElementNode {
     this._fillPending = true;
     setTimeout(() => {
       this._fillPending = false;
-      if (this._dialog.getBooleanState('open')) {
+      if (this._dialog.isOpen()) {
         this._fillViewport();
       }
     }, 0);
@@ -343,7 +343,7 @@ export class VSvgIconPicker extends HtmlElementNode {
   }
 
   toggle() {
-    if (this._dialog.getBooleanState('open')) {
+    if (this._dialog.isOpen()) {
       return this.close();
     }
     return this.open();
