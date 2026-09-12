@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div, ref } from '../index.js';
 import { disableDevtools, enableDevtools, subscribeDevtools } from './devtools.js';
 
 describe('binding ownership without a declared scope', () => {
@@ -18,24 +18,22 @@ describe('binding ownership without a declared scope', () => {
 
   it('still rejects a parameterized binding without a source', () => {
     expect(() => div((ele) => ele.attr('data-x', (source) => String(source.x)))).toThrow(
-      /data source/
+      /no longer supported/
     );
   });
 
-  it('is not driven by a host component', () => {
+  it('is not re-evaluated by an unrelated rebuild', () => {
     const data = { label: 'A' };
     const box = div((ele) => ele.attr('data-label', () => data.label));
-    const component = vStateNode({
-      state: () => ({ tick: 0 }),
-      render: () =>
-        div((host) => {
-          host.attr('data-tick', (s) => String(s.tick));
-          host.child(box);
-        })
+    const tick = ref(0);
+    const panel = div((host) => {
+      host.rebuildable();
+      host.text(`tick=${tick.value}`);
     });
-    component.setState({ tick: 1 });
+    div().child(panel).child(box).renderDom();
 
     data.label = 'B';
+    tick.value = 1;
 
     expect(box.attr('data-label')).toBe('A');
 

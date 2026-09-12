@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { div, vStateNode, vText } from '../index.js';
+import { div, vText } from '../index.js';
 import { disableDevtools, enableDevtools, subscribeDevtools } from './devtools.js';
 
 describe('region flush', () => {
@@ -71,34 +71,26 @@ describe('region flush', () => {
     expect(element.getAttribute('data-label')).toBe('B');
   });
 
-  it('flushes safely before the component is mounted', () => {
+  it('flushes safely before the region is mounted', () => {
     const data = { label: 'A' };
-    const component = vStateNode({
-      state: () => ({ tick: 0 }),
-      render() {
-        return div((host) => {
-          host.rebuildable();
-          host.attr('data-label', () => data.label);
-        });
-      }
+    const region = div((host) => {
+      host.rebuildable();
+      host.attr('data-label', () => data.label);
     });
-
-    component.render();
 
     data.label = 'B';
 
-    expect(() => component.flush()).not.toThrow();
+    expect(() => region.flush()).not.toThrow();
 
-    const element = component.render().renderDom();
+    const element = region.renderDom();
 
     expect(element.getAttribute('data-label')).toBe('B');
   });
 
-  it('flushes every binding of a component, regions included', () => {
+  it('flushes every binding of the tree, regions included', () => {
     const data = { label: 'x', total: 1 };
     let region = null;
-    const component = vStateNode({
-      state: () => ({ tick: 0 }),
+    const Widget = {
       render() {
         return div((host) => {
           host.attr('data-outside', () => String(data.total));
@@ -109,16 +101,16 @@ describe('region flush', () => {
           });
         });
       }
-    });
-    const host = div().child(component);
-    const element = host.renderDom();
+    };
+    const page = div().child(Widget);
+    const element = page.renderDom();
 
     const panel = element.firstElementChild;
     expect(panel.getAttribute('data-outside')).toBe('1');
 
     data.total = 2;
     data.label = 'y';
-    component.flush();
+    page.flush();
 
     expect(panel.getAttribute('data-outside')).toBe('2');
     expect(element.querySelector('[data-inside]').getAttribute('data-inside')).toBe('y');

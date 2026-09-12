@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div, ref } from '../index.js';
 import { disableDevtools, enableDevtools, subscribeDevtools } from './devtools.js';
 
 describe('rebuildable region devtools events', () => {
@@ -44,23 +44,18 @@ describe('rebuildable region devtools events', () => {
     ]);
   });
 
-  it('marks automatic rebuilds with the state trigger', () => {
-    const component = vStateNode({
-      state: () => ({ n: 0 }),
-      render() {
-        return div((ele) => {
-          ele.rebuildable();
-          ele.text((s) => String(s.n));
-        });
-      }
+  it('marks automatic rebuilds with the signal trigger', () => {
+    const n = ref(0);
+    const region = div((ele) => {
+      ele.rebuildable();
+      ele.text(`n=${n.value}`);
     });
-    const host = div().child(component);
-    host.renderDom();
+    region.renderDom();
     events = [];
 
-    component.setState({ n: 1 });
+    n.value = 1;
 
-    expect(events.map((event) => [event.action, event.trigger])).toEqual([['rebuild', 'state']]);
+    expect(events.map((event) => [event.action, event.trigger])).toEqual([['rebuild', 'signal']]);
     expect(events[0].nodeId).toBeTypeOf('number');
   });
 });

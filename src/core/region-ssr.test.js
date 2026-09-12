@@ -1,20 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { computed, div, ref, vText } from '../index.js';
 import { hydrate, parseState, renderToString } from './ssr.js';
 
 function createRegionPage(initial = {}) {
   const total = initial?.total ?? 0;
   const scope = initial?.scope ?? 'none';
+  const totalRef = ref(total);
+  const scopeRef = ref(scope);
 
-  return vStateNode({
-    state: { total, scope },
-    render() {
-      return div((ele) => {
-        ele.rebuildable(() => false);
-        ele.attr('data-scope', (s) => s.scope);
-        ele.text((s) => `${s.total} 项`);
-      });
-    }
+  return div((ele) => {
+    ele.rebuildable(() => false);
+    ele.attr('data-scope', scopeRef);
+    ele.child(vText(computed(() => `${totalRef.value} 项`)));
   });
 }
 

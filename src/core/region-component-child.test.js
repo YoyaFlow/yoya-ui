@@ -1,42 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div, ref } from '../index.js';
 
 describe('rebuildable region across component children', () => {
-  it('discovers regions declared inside plain component children', () => {
-    const data = { n: 0 };
+  it('activates regions declared inside plain component children', () => {
+    const n = ref(0);
     const Panel = {
       render() {
         return div((ele) => {
           ele.rebuildable();
-          ele.text(`n=${data.n}`);
+          ele.text(`n=${n.value}`);
         });
       }
     };
-    const component = vStateNode({
-      state: () => ({ tick: 0 }),
-      render(_state) {
+    const Ticker = {
+      render() {
         return div((host) => {
-          // 外层自带绑定：setState 只刷值、不重建，内层区域必须被真正发现才会更新。
-          host.attr('data-tick', (s) => String(s.tick));
+          // 外层只是普通组件：内层区域必须在挂载时被激活，写入信号才会重建它。
+          host.attr('data-tick', n);
           host.child(Panel);
         });
       }
-    });
-    const host = div().child(component);
-    const element = host.renderDom();
+    };
+    const page = div().child(Ticker);
+    const element = page.renderDom();
 
     expect(element.textContent).toBe('n=0');
 
-    data.n = 1;
-    component.setState({ tick: 1 });
+    n.value = 1;
 
     expect(element.textContent).toBe('n=1');
   });
 
-  it('keeps nested state components as islands', () => {
+  it('does not rebuild nested regions when only values are flushed', () => {
     let innerBuilds = 0;
-    const inner = vStateNode({
-      state: () => ({ n: 0 }),
+    const widget = {
       render() {
         innerBuilds += 1;
         return div((ele) => {
@@ -44,21 +41,15 @@ describe('rebuildable region across component children', () => {
           ele.text('inner');
         });
       }
+    };
+    const page = div((host) => {
+      host.child(widget);
     });
-    const outer = vStateNode({
-      state: () => ({ n: 0 }),
-      render() {
-        return div((host) => {
-          host.child(inner);
-        });
-      }
-    });
-    const host = div().child(outer);
-    host.renderDom();
+    page.renderDom();
 
     expect(innerBuilds).toBe(1);
 
-    outer.setState({ n: 1 });
+    page.flush();
 
     expect(innerBuilds).toBe(1);
   });

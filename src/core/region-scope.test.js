@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div, ref } from '../index.js';
 
-describe('region binding scope', () => {
-  it('feeds zero-argument closures from the surrounding scope', () => {
+describe('region value sources', () => {
+  it('evaluates zero-argument closures from their own closure', () => {
     const data = { label: 'a' };
     const box = div((ele) => {
       ele.rebuildable();
@@ -18,13 +18,13 @@ describe('region binding scope', () => {
     expect(element.getAttribute('data-label')).toBe('b');
   });
 
-  it('rejects parameterized value functions without a source', () => {
+  it('rejects parameterized value functions', () => {
     expect(() =>
       div((ele) => {
         ele.rebuildable();
-        ele.attr('data-x', (s) => s.x);
+        ele.attr('data-x', (source) => source.x);
       })
-    ).toThrow(/data source/);
+    ).toThrow(/no longer supported/);
   });
 
   it('still allows zero-argument closures without a source', () => {
@@ -38,22 +38,17 @@ describe('region binding scope', () => {
     expect(element.getAttribute('data-label')).toBe('a');
   });
 
-  it('inherits the host state for regions inside a state component', () => {
-    const component = vStateNode({
-      state: () => ({ label: 'host' }),
-      render() {
-        return div((ele) => {
-          ele.rebuildable(() => false);
-          ele.attr('data-label', (s) => s.label);
-        });
-      }
+  it('rebuilds when a ref read during the build changes', () => {
+    const label = ref('host');
+    const region = div((ele) => {
+      ele.rebuildable();
+      ele.attr('data-label', label);
     });
-    const host = div().child(component);
-    const regionElement = host.renderDom().firstElementChild;
+    const regionElement = region.renderDom();
 
     expect(regionElement.getAttribute('data-label')).toBe('host');
 
-    component.setState({ label: 'next' });
+    label.value = 'next';
 
     expect(regionElement.getAttribute('data-label')).toBe('next');
   });

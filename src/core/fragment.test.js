@@ -1,71 +1,72 @@
-import { describe, expect, it, vi } from 'vitest';
-import { div, vStateNode, vText } from '../index.js';
+import { describe, expect, it } from 'vitest';
+import { div, ref, vText } from '../index.js';
 import { vTbody, vTr } from '../data-display/table.js';
 
-describe('vStateNode fragment', () => {
-  it('renders the configured view root without an extra wrapper element', () => {
-    const component = vStateNode({
-      state: () => ({ count: 0 }),
-      render() {
-        return div().attr('data-root', 'true').child(vText('0'));
-      }
-    });
-    const element = component.render().renderDom();
+describe('component fragment', () => {
+  it('renders the component view root without an extra wrapper element', () => {
+    const Card = {
+      render: () => div().attr('data-root', 'true').child(vText('0'))
+    };
+    const element = div().child(Card).renderDom();
 
-    expect(element.getAttribute('data-root')).toBe('true');
-    expect(element.tagName).toBe('DIV');
+    expect(element.firstElementChild.getAttribute('data-root')).toBe('true');
+    expect(element.firstElementChild.tagName).toBe('DIV');
   });
 
   it('works as a table row without wrapper nodes', () => {
-    const row = vStateNode({
-      state: () => ({ name: 'Ada' }),
-      render(state) {
-        return vTr((tr) => tr.vTd(state.name));
-      }
-    });
-    const element = vTbody().child(row).renderDom();
+    const Row = {
+      render: () => vTr((tr) => tr.vTd('Ada'))
+    };
+    const element = vTbody().child(Row).renderDom();
 
     expect(element.children.length).toBe(1);
     expect(element.firstElementChild.tagName).toBe('TR');
     expect(element.firstElementChild.textContent).toBe('Ada');
   });
 
-  it('swaps the view root in place after a full rebuild', () => {
-    const component = vStateNode({
-      state: () => ({ count: 0 }),
-      render(state) {
-        return div(vText(String(state.count)));
+  it('swaps the region content in place after a rebuild', () => {
+    const count = ref(0);
+    const Counter = {
+      render() {
+        return div((box) => {
+          box.rebuildable();
+          box.child(vText(String(count.value)));
+        });
       }
-    });
-    const host = div().child(component);
+    };
+    const host = div().child(Counter);
     const container = host.renderDom();
-    const first = container.firstElementChild;
+    const first = container.firstElementChild.firstChild;
 
     expect(container.textContent).toBe('0');
 
-    component.setState({ count: 1 });
+    count.value = 1;
 
     expect(container.children.length).toBe(1);
-    expect(container.firstElementChild).not.toBe(first);
+    expect(container.firstElementChild.firstChild).not.toBe(first);
     expect(container.textContent).toBe('1');
   });
 
-  it('clears subscriptions when destroyed through the view tree', () => {
-    const listener = vi.fn();
-    const component = vStateNode({
-      state: () => ({ count: 0 }),
+  it('releases region subscriptions when destroyed through the view tree', () => {
+    const count = ref(0);
+    let builds = 0;
+    const Counter = {
       render() {
-        return div(vText('0'));
+        return div((box) => {
+          box.rebuildable();
+          builds += 1;
+          box.child(vText(String(count.value)));
+        });
       }
-    });
-    component.subscribe(listener);
-    const host = div().child(component);
+    };
+    const host = div().child(Counter);
 
     host.renderDom();
+    expect(builds).toBe(1);
+
     host.destroy();
+    count.value = 1;
 
-    component.setState({ count: 1 });
-
-    expect(listener).not.toHaveBeenCalled();
+    expect(builds).toBe(1);
   });
 });

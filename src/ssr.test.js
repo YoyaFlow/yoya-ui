@@ -1,21 +1,21 @@
 // @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
-import { div, vRadios, vStateNode } from './index.js';
+import { computed, div, ref, vRadios, vText } from './index.js';
 import { parseState, renderToString, serializeState } from './yoya.ssr.js';
 import { radioGroups } from './form/controls.js';
 
 function createCounterPage(initialState = { count: 0 }) {
-  return vStateNode({
-    state: { count: initialState.count ?? 0 },
-    render(state, component) {
-      return div((page) => {
-        page.span(`计数：${state.count}`);
-        page.button(`+${state.count}`).on('click', () => {
-          component.setState({ count: state.count + 1 });
-        });
+  const count = ref(initialState.count ?? 0);
+
+  return div((page) => {
+    page.span((line) => line.child(vText(computed(() => `计数：${count.value}`))));
+    page.button((button) => {
+      button.child(vText(computed(() => `+${count.value}`)));
+      button.on('click', () => {
+        count.value += 1;
       });
-    }
+    });
   });
 }
 
@@ -53,7 +53,7 @@ describe('renderToString', () => {
     expect(html).toBe('<div><span>object</span></div>');
   });
 
-  it('supports reusing a stateful component object across renders', () => {
+  it('supports reusing a page node across renders', () => {
     const page = createCounterPage({ count: 1 });
 
     const first = renderToString(page);

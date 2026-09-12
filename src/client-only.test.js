@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { div, vButton, vClientOnly, vStateNode } from './index.js';
+import { computed, div, ref, vButton, vClientOnly, vText } from './index.js';
 import { hydrate, renderToString } from './yoya.ssr.js';
+
+/** 客户端专属计数岛：数据与视图都在组件对象里，写入信号即更新。 */
+function createCounterIsland(initial = 1) {
+  const count = ref(initial);
+
+  return {
+    render() {
+      return div((root) => {
+        root.span((line) => line.child(vText(computed(() => `n=${count.value}`))));
+        root.button('+', (button) => {
+          button.on('click', () => {
+            count.value += 1;
+          });
+        });
+      });
+    }
+  };
+}
 
 describe('vClientOnly', () => {
   it('serializes only a placeholder for server-side rendering', () => {
@@ -48,17 +66,7 @@ describe('vClientOnly', () => {
   });
 
   it('supports component object loaders in plain client rendering', () => {
-    const counter = vClientOnly(() =>
-      vStateNode({
-        state: { count: 1 },
-        render(state, component) {
-          return div((root) => {
-            root.span(`n=${state.count}`);
-            root.button('+').on('click', () => component.setState({ count: state.count + 1 }));
-          });
-        }
-      })
-    );
+    const counter = vClientOnly(() => createCounterIsland(1));
     const element = counter.renderDom();
     document.body.appendChild(element);
 
@@ -70,21 +78,7 @@ describe('vClientOnly', () => {
   it('hydrates a component object island and keeps it interactive', () => {
     const page = () =>
       div((root) => {
-        root.child(
-          vClientOnly(() =>
-            vStateNode({
-              state: { count: 2 },
-              render(state, component) {
-                return div((inner) => {
-                  inner.span(`n=${state.count}`);
-                  inner
-                    .button('+')
-                    .on('click', () => component.setState({ count: state.count + 1 }));
-                });
-              }
-            })
-          )
-        );
+        root.child(vClientOnly(() => createCounterIsland(2)));
       });
     const { html } = renderToString(page);
     document.body.innerHTML = `<div id="app">${html}</div>`;

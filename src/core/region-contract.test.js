@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div } from '../index.js';
 
 describe('rebuildable region contracts', () => {
   it('evaluates the predicate once per rebuild', () => {
@@ -36,33 +36,27 @@ describe('rebuildable region contracts', () => {
   it('leaves bindings outside the region untouched by a rebuild', () => {
     const data = { n: 1 };
     let region = null;
-    const component = vStateNode({
-      state: () => ({ tick: 0 }),
-      render() {
-        return div((host) => {
-          host.div((outside) => {
-            outside.attr('data-n', () => String(data.n));
-          });
-          host.div((ele) => {
-            region = ele;
-            ele.rebuildable();
-            ele.text('region');
-          });
-        });
-      }
+    const page = div((host) => {
+      host.div((outside) => {
+        outside.attr('data-n', () => String(data.n));
+      });
+      host.div((ele) => {
+        region = ele;
+        ele.rebuildable();
+        ele.text('region');
+      });
     });
-    const root = div().child(component);
-    const element = root.renderDom();
+    const element = page.renderDom();
 
-    const outsideElement = element.firstElementChild.firstElementChild;
+    const outsideElement = element.firstElementChild;
     expect(outsideElement.getAttribute('data-n')).toBe('1');
 
     data.n = 2;
     region.rebuild();
-    component.setState({ tick: 1 });
+    page.flush();
 
     expect(outsideElement.getAttribute('data-n')).toBe('2');
-    expect(outsideElement).toBe(element.firstElementChild.firstElementChild);
+    expect(outsideElement).toBe(element.firstElementChild);
   });
 
   it('releases bindings when the region is destroyed', () => {

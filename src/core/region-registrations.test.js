@@ -1,27 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { div, vStateNode } from '../index.js';
+import { div, ref } from '../index.js';
 import { bindDocumentEvent } from './document-events.js';
 import { setupContentSlot } from '../components/shared.js';
 
 describe('rebuildable region registration reset', () => {
-  it('does not accumulate state handlers across rebuilds', () => {
-    let calls = 0;
+  it('replaces previous registrations on every rebuild', () => {
+    let builds = 0;
     const box = div((ele) => {
       ele.rebuildable();
-      ele.registerStateAttrs('busy');
-      ele.registerStateHandler('busy', () => {
-        calls += 1;
-      });
-      ele.text('x');
+      builds += 1;
+      ele.text(`x${builds}`);
     });
     box.renderDom();
 
     box.rebuild();
     box.rebuild();
 
-    box.setState('busy', true);
-
-    expect(calls).toBe(1);
+    expect(box.children()).toHaveLength(1);
+    expect(box.renderDom().textContent).toBe('x3');
   });
 
   it('removes document listeners registered by previous runs', () => {
@@ -64,27 +60,22 @@ describe('rebuildable region registration reset', () => {
 
   it('lets a nested region rebuild while its parent only flushes values', () => {
     let childBuilds = 0;
-    const component = vStateNode({
-      state: () => ({ n: 0 }),
-      render(state) {
-        return div((parent) => {
-          parent.rebuildable(() => false);
-          parent.div((child) => {
-            child.rebuildable(() => true);
-            childBuilds += 1;
-            child.text(`n=${state.n}`);
-          });
-        });
-      }
+    const n = ref(0);
+    const parent = div((host) => {
+      host.rebuildable(() => false);
+      host.div((child) => {
+        child.rebuildable(() => true);
+        childBuilds += 1;
+        child.text(`n=${n.value}`);
+      });
     });
-    const host = div().child(component);
-    const element = host.renderDom();
-    const childElement = element.firstElementChild.firstElementChild;
+    const element = parent.renderDom();
+    const childElement = element.firstElementChild;
     const textNode = childElement.firstChild;
 
     expect(childElement.textContent).toBe('n=0');
 
-    component.setState({ n: 1 });
+    n.value = 1;
 
     expect(childBuilds).toBe(2);
     expect(textNode.parentNode).toBeNull();
