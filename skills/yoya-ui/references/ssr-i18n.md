@@ -26,7 +26,7 @@ your-app/
 浏览器 GET /            → 服务端 renderPage(...) 返回 HTML：
                             <div id="app">服务端渲染的 HTML</div>
                             <script type="application/json" id="__YOYA_DATA__">…</script>
-                            <script type="module" src="/client.js"></script>   ← renderPage 默认插入这一行
+                            <script type="module" src="/client.js"></script>   ← 由你在 head DSL 里加（renderPage 不输出客户端脚本）
 浏览器 GET /client.js   → 服务端从 dist/ 静态返回（vite 构建 src/client.js 的产物）
 client.js 执行          → hydrateOrMount(HomePage, { messages })
                             ├─ 读 __YOYA_DATA__ 拿请求状态
@@ -34,7 +34,7 @@ client.js 执行          → hydrateOrMount(HomePage, { messages })
                             └─ #app 是空壳（maxNodes 回退 / 纯客户端）→ mount（全量渲染）
 ```
 
-**`hydrateOrMount(...)` 写在 `src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；服务端只在 HTML 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。自定义路径用 `renderPage(..., { client: '/assets/client.js' })`，服务端要能把该路径静态发出去。
+**`hydrateOrMount(...)` 写在 `src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；你在服务端页面的 head DSL 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。路径、位置、前面还要不要执行别的脚本都是你的工程决策，`renderPage` 只输出 head/body DSL 与状态脚本，不猜客户端入口。
 
 下面四份文件复制到自己的工程即可跑通。
 
@@ -109,6 +109,9 @@ createServer((req, res) => {
           head.title('SSR 示例'.s('title'));
           head.meta({ charset: 'utf-8' });
           head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
+          // 客户端入口自己引入：路径、位置、顺序都是工程决策
+          head.link({ rel: 'modulepreload', href: '/client.js' });
+          head.script({ type: 'module', src: '/client.js' });
         });
         page.body((body) => {
           body.vBody((shell) => {
@@ -129,10 +132,38 @@ createServer((req, res) => {
 要点：
 
 - `renderPage(pageConfig, state, { messages })` 一次收敛「语言实例 + 渲染 + 外壳组装 + 状态序列化」
-- 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 在 `<div id="app">` 内）+ `__YOYA_DATA__` 状态脚本 + `<script type="module" src="/client.js">`；路径用 `{ client }` 改，容器与状态脚本用 `{ containerId }` / `{ stateId }` 改
-- **客户端入口默认放在 `</body>` 前**：`type="module"` 自带 defer（下载不阻塞解析、执行在解析完成之后），所以那一行执行时 `#app` 与状态脚本一定已就绪，不需要放 head。想更早开始下载就自己放 head：`head.script({ type: 'module', src: '/client.js' })` + `{ client: false }` 关掉默认那行，需要时再加 `<link rel="modulepreload" href="/client.js">`。不要写成没有 `defer` 的普通 `<script src>`——它会阻塞解析，而且在 `#app` 解析出来之前执行
+- 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 在 `<div id="app">` 内）+ `__YOYA_DATA__` 状态脚本；容器与状态脚本的 id 用 `{ containerId }` / `{ stateId }` 改
+- **客户端入口不由 `renderPage` 输出**：脚本路径、放 head 还是 body、前面是否还要执行别的，都是使用方工程的决策。自己写：`head.link({ rel: 'modulepreload', href: '/client.js' })` + `head.script({ type: 'module', src: '/client.js' })`——`type="module"` 自带 defer，下载不阻塞解析、执行在解析完成之后，因此 head 里这样写是安全的。别用没有 `defer` 的普通 `<script src>`：那会阻塞解析，而且在 `#app` 解析出来之前执行
 - 静态分支必须能提供 `/client.js` 与 `/assets/yoya.ui.css`（就是 `dist/` 下这两个文件）
 - `state` 是唯一来源：`{ lang, path, mode }` 由你的服务端解析后传入，同一份交给工厂与客户端
+
+这段 `renderPage(...)` 实际渲染出来的 HTML（页面 DOM 内容省略）：
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>SSR 示例</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/assets/yoya.ui.css" />
+    <!-- ③ 客户端入口：你自己加（renderPage 不输出）。module 自带 defer，head 里安全 -->
+    <link rel="modulepreload" href="/client.js" />
+    <script type="module" src="/client.js"></script>
+  </head>
+  <body>
+    <!-- ① 容器：客户端 hydration 的目标（containerId，默认 app） -->
+    <div id="app"><!-- 服务端渲染的页面 DOM：hydrate 直接收养，不重建 --></div>
+    <!-- ② 请求状态：客户端 hydrateOrMount 从这里读（stateId，默认 __YOYA_DATA__） -->
+    <script type="application/json" id="__YOYA_DATA__">
+      { "lang": "zh-CN", "path": "/home", "mode": "history" }
+    </script>
+  </body>
+</html>
+```
+
+其中 ①② 由 `renderPage` 生成（id 用 `{ containerId }` / `{ stateId }` 改），③ 由你在 head DSL 里加。浏览器解析到 ③ 会去请求 `/client.js`——你的服务器把 `dist/client.js` 静态发出去即可；`client.js` 执行 `hydrateOrMount` 时读的正是 ①②。
+
+如果不走 `renderPage`、自己拼外壳，①②③ 都要自己写全，可对照 `docs/ssr.md` 的「HTML 外壳模板」或本文件末尾的「低层原语」。
 
 ## ③ src/client.js —— 浏览器入口（`hydrateOrMount` 写在这里）
 
@@ -148,7 +179,7 @@ hydrateOrMount(HomePage, { messages });
 
 要点：
 
-- 这个文件的代码在**浏览器**里执行；触发它的是服务端 HTML 里那行 `<script type="module" src="/client.js"></script>`
+- 这个文件的代码在**浏览器**里执行；触发它的是你在服务端 head DSL 里写的那行 `<script type="module" src="/client.js"></script>`
 - `hydrateOrMount` 从页面里读两样东西：`__YOYA_DATA__`（请求状态）与 `#app`（服务端 DOM）；有 DOM 就收养、不重建，只绑事件
 - 多局部：`hydrateOrMount(createStats, { messages, stateId: 'yoya-data-stats', target: '#stats' })`，每块各自命名状态脚本与容器
 - `renderPage` 的 `maxNodes` 超限回退也走这里：服务端输出空壳 `#app`，客户端自动 `mount()` 全量渲染

@@ -84,6 +84,13 @@ const list = div((box) => {
 - **带参值函数移除**：`(s) => value` 只服务节点级状态，登记时直接抛错
   （`parameterized value is no longer supported ...`）；请改传句柄或零参闭包。
 - **`scope()` 移除**：它的唯一用途是给带参值函数声明数据来源。
+- **`renderPage` 不再输出客户端入口**：以前它会自动在 `</body>` 前插
+  `<script type="module" src="/client.js">`（可用 `{ client }` 改路径）；现在
+  不再注入任何客户端脚本——路径、放 head 还是 body、前面还要执行什么，都由你的工程决定。
+  迁移：在 `page.head(...)` 里自己加 `head.link({ rel: 'modulepreload', href: '/assets/client.js' })`
+  与 `head.script({ type: 'module', src: '/assets/client.js' })`（`type="module"` 自带
+  defer，head 里这样写是安全的；不要用没有 `defer` 的普通 `<script src>`）。
+  详见 [`ssr.zh-CN.md`](ssr.zh-CN.md) 第 2.1 节。
 - **devtools 事件**：`state` 事件随 `vStateNode` 一起移除，改为 `signal-write`
   （`signalId` / `previous` / `next` / `dependents`）；`region` 事件的
   `trigger` 由 `state` 改为 `signal`；`deprecated` 事件位保留，但当前没有会触发

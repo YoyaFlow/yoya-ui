@@ -124,18 +124,42 @@ hydrateOrMount(HomePage, { messages });
 // 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate，否则 mount
 ```
 
-`renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本 + 客户端入口。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
+`renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
 
-客户端入口默认放在 `</body>` 前：`type="module"` 自带 defer，下载不阻塞解析、执行在解析完成之后，所以那一行执行时 `#app` 与状态脚本一定已就绪。想更早开始下载，可 `renderPage(..., { client: false })` 关掉默认那行，自己在 head DSL 里放置：
+**客户端入口不由 `renderPage` 输出**：脚本路径、放 head 还是 body、前面是否还要执行别的脚本，都是使用方工程的决策。自己在 head DSL 里写：
 
 ```js
 page.head((head) => {
-  head.link({ rel: 'modulepreload', href: '/client.js' });
-  head.script({ type: 'module', src: '/client.js' });
+  head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+  head.script({ type: 'module', src: '/assets/client.js' });
 });
 ```
 
-不要改成没有 `defer` 的普通 `<script src>`：那会阻塞解析，并且在 `#app` 解析出来之前执行。
+`type="module"` 自带 defer：下载不阻塞解析、执行在解析完成之后，所以 head 里这样写是安全的。不要用没有 `defer` 的普通 `<script src>`——那会阻塞解析，并且在 `#app` 解析出来之前执行。
+
+`renderPage` 配合上面那段 head DSL，页面大致长这样（页面 DOM 内容省略）：
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>SSR 示例</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/assets/yoya.ui.css" />
+    <!-- ③ 客户端入口：由你引入（renderPage 不输出） -->
+    <link rel="modulepreload" href="/assets/client.js" />
+    <script type="module" src="/assets/client.js"></script>
+  </head>
+  <body>
+    <!-- ① 容器：hydration 目标，id 由 containerId 决定（默认 app） -->
+    <div id="app"><!-- 服务端渲染的页面 DOM --></div>
+    <!-- ② 请求状态：id 由 stateId 决定（默认 __YOYA_DATA__） -->
+    <script type="application/json" id="__YOYA_DATA__">
+      { "lang": "zh-CN", "path": "/home", "mode": "history" }
+    </script>
+  </body>
+</html>
+```
 
 ## 3. 服务端初始化（配合你的服务端代码）
 

@@ -2,7 +2,13 @@ import { section, vButton, vCard, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
-import { clientSnippet, pageSnippet, serverSnippet, setupNotes } from './ssr/guide-snippets.js';
+import {
+  clientSnippet,
+  pageSnippet,
+  serverSnippet,
+  setupNotes,
+  shellSnippet
+} from './ssr/guide-snippets.js';
 import { createLocale, createSsrPage } from './ssr/page.js';
 
 const createDemoPage = (state) => createSsrPage(state, { echartsLib: echarts });
@@ -319,7 +325,7 @@ export function SsrDocumentationPage() {
       usage.h2('核心 API');
       usage.ul((list) => {
         list.li(
-          'renderPage({ page }, state, { messages }) 输出完整 HTML 文档；head/body 用 DSL 定义，状态只传一次。'
+          'renderPage({ page }, state, { messages }) 输出文档骨架：head/body 用 DSL 定义、状态只传一次；客户端入口由你在 head 里自己引入（renderPage 不输出脚本）。'
         );
         list.li(
           'hydrateOrMount(component, { messages }) 客户端一行接入：自动读状态并选择 hydrate 或 mount。'
@@ -378,6 +384,7 @@ export function SsrDocumentationPage() {
 
       renderCopySnippet(guide, 'home-page.js（页面组件，两端共用）', pageSnippet);
       renderCopySnippet(guide, 'server.mjs（服务端入口）', serverSnippet);
+      renderCopySnippet(guide, '服务端渲染出来的 HTML（客户端入口在第 ③ 行引入）', shellSnippet);
       renderCopySnippet(guide, 'client.js（浏览器启动）', clientSnippet);
 
       guide.h3('运行与关键信息');

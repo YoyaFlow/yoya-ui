@@ -253,15 +253,16 @@ function escapeHtmlAttribute(value) {
 }
 
 /**
- * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，
- * 状态序列化进可自定义 id 的 script（默认 __YOYA_DATA__），末尾默认挂客户端入口
- * （client 传 false 可关掉，自行用 head DSL 放置，例如提前下载或 modulepreload 配合）。
+ * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，状态序列化进
+ * 可自定义 id 的 script（默认 __YOYA_DATA__）。
+ *
+ * 客户端入口不由这里输出：脚本路径、放在 head 还是 body、前面还要不要执行别的，
+ * 都是使用方工程的决策，由使用者在 head DSL 里自己加（如 head.script({ type: 'module', src: '/client.js' })）。
  * state 是唯一请求状态来源，回调签名 (node, state)；options.messages 或 i18n
  * 二选一用于按 state.lang 建每请求实例。
  */
 export function renderPage(pageConfig, state = {}, options = {}) {
   const {
-    client = '/client.js',
     containerId = 'app',
     access = null,
     context = null,
@@ -302,10 +303,6 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         ? `${appContainer}</div>`
         : `${appContainer}${bodyNode.toHTML()}</div>`;
       const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
-      // type="module" 自带 defer：执行时 #app 与状态脚本一定已解析完，放 body 末尾最稳。
-      const clientScript = client
-        ? `<script type="module" src="${escapeHtmlAttribute(client)}"></script>`
-        : '';
 
       headNode.destroy();
       bodyNode.destroy();
@@ -316,7 +313,6 @@ ${headHtml}
 <body>
 ${bodyHtml}
 ${stateScript}
-${clientScript}
 </body>
 </html>`;
     })

@@ -81,8 +81,8 @@ div((root) => {
 三份文件跑通 SSR，顺序是 **HomePage → 服务端 → 客户端**：
 
 1. `home-page.js`：`HomePage(state)` 页面工厂，两端共用（只依赖可序列化状态）
-2. `server.mjs`：`renderPage({ page: (page, state) => … }, state, { messages })` 一次产出完整文档（`<head>` / `<body>` DSL + `#app` + `__YOYA_DATA__` + `client.js`）
-3. `client.js`：浏览器入口（vite 构建成 `dist/client.js`，服务端 HTML 里那行 `<script type="module" src="/client.js">` 加载它；这行由 `renderPage` 默认放在 `</body>` 前，module 自带 defer，执行时 DOM 与状态已就绪），文件里执行 `hydrateOrMount(HomePage, { messages })`——读状态脚本，有服务端 HTML 就 hydrate（收养 DOM、绑事件），否则 mount
+2. `server.mjs`：`renderPage({ page: (page, state) => … }, state, { messages })` 一次产出文档骨架（`<head>` / `<body>` DSL + `#app` + `__YOYA_DATA__`）；**客户端入口不由它输出**，自己在 head DSL 里加 `head.script({ type: 'module', src: '/client.js' })`（路径与顺序由你决定）
+3. `client.js`：浏览器入口（vite 构建成 `dist/client.js`，由你在 HTML 里写的那行 `<script type="module" src="/client.js">` 加载），文件里执行 `hydrateOrMount(HomePage, { messages })`——读状态脚本，有服务端 HTML 就 hydrate（收养 DOM、绑事件），否则 mount
 
 渲染路径必须 DOM-free 且确定性（不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出、请求状态按请求注入）；i18n 每请求实例，`'文案'.s('key')` 自动按请求语言翻译。可直接复制的三份完整文件、低层原语（`renderToString` / `hydrate` / `mount`）与要避免的操作清单见 references/ssr-i18n.md。
 

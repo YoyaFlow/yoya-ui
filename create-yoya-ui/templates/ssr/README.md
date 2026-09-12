@@ -3,7 +3,7 @@
 基于 [yoya-ui](https://github.com/yoyaflow/yoya-ui) 的服务端渲染模板：
 
 - 页面即组件：`HomePage(state)` 服务端与客户端共用
-- 整页渲染：`renderPage({ page }, state, { messages })` 一行输出完整 HTML
+- 整页渲染：`renderPage({ page }, state, { messages })` 输出文档骨架（`#app` + `__YOYA_DATA__`）；客户端入口由你在 `head` 里自己引入（见 `src/server.mjs`）
 - 客户端一行接入：`hydrateOrMount(HomePage, { messages })`
 - 每请求 i18n：`messages` 按 `state.lang` 建实例，`.s()` 自动作用域
 

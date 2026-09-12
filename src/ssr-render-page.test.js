@@ -30,37 +30,36 @@ describe('renderPage', () => {
     expect([...html.matchAll(/<body/g)]).toHaveLength(1);
   });
 
-  it('lets server code point the page at a custom client bundle path', () => {
+  it('never injects a client entry script: the page decides it', () => {
     const html = renderPage(
       { page: (page) => page.body((body) => body.p('内容')) },
       {},
-      { client: '/assets/client.js', containerId: 'root', stateId: 'yoya-data-page' }
+      { containerId: 'root', stateId: 'yoya-data-page' }
     );
 
     expect(html).toContain('<div id="root">');
     expect(html).toContain('id="yoya-data-page"');
-    expect(html).toContain('<script type="module" src="/assets/client.js"></script>');
+    // 客户端入口的路径、位置与顺序都是使用方的决定，renderPage 不猜
+    expect(html).not.toContain('<script type="module"');
   });
 
-  it('can omit the default client tag so the tag can live in head', () => {
+  it('lets the page add the client entry itself, e.g. in head', () => {
     const html = renderPage(
       {
         page: (page) => {
           page.head((head) => {
-            head.script({ type: 'module', src: '/client.js' });
-            head.link({ rel: 'modulepreload', href: '/client.js' });
+            head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+            head.script({ type: 'module', src: '/assets/client.js' });
           });
           page.body((body) => body.p('内容'));
         }
       },
-      {},
-      { client: false }
+      {}
     );
 
     const headHtml = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
-    expect(headHtml).toContain('<script type="module" src="/client.js"></script>');
+    expect(headHtml).toContain('<script type="module" src="/assets/client.js"></script>');
     expect(headHtml).toContain('rel="modulepreload"');
-    // 默认那行不再出现在 body 末尾
     expect([...html.matchAll(/<script type="module"/g)]).toHaveLength(1);
   });
 
@@ -91,7 +90,7 @@ describe('renderPage', () => {
     expect(html).toContain('Hello, Ada!');
     expect(html).toContain('id="__YOYA_DATA__"');
     expect(html).toContain('"lang":"en-US"');
-    expect(html).toContain('<script type="module" src="/client.js"></script>');
+    expect(html).not.toContain('<script type="module"');
   });
 
   it('passes the normalized state into head/body callbacks', () => {

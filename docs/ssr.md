@@ -124,18 +124,42 @@ hydrateOrMount(HomePage, { messages });
 // reads __YOYA_DATA__ automatically -> hydrates when #app has server HTML, otherwise mounts
 ```
 
-`renderPage` output structure: `<!doctype html>` + `<head>` (head DSL) + `<body>` (body DSL wrapped in `<div id="app">`) + state script + client entry. `stateId` (default `__YOYA_DATA__`) and the client container are configurable; multi-island scenarios give each island its own name (islands use the low-level `renderToString`, see §6).
+`renderPage` output structure: `<!doctype html>` + `<head>` (head DSL) + `<body>` (body DSL wrapped in `<div id="app">`) + state script. `stateId` (default `__YOYA_DATA__`) and the client container are configurable; multi-island scenarios give each island its own name (islands use the low-level `renderToString`, see §6).
 
-The client entry is emitted right before `</body>`: `type="module"` scripts are deferred, so parsing never blocks and the tag runs only after `#app` and the state script exist. To start the download earlier, pass `renderPage(..., { client: false })` and place the tag yourself from the head DSL:
+**`renderPage` never emits the client entry**: the script path, whether it belongs in head or body, and what runs before it are decisions of your project. Add it yourself from the head DSL:
 
 ```js
 page.head((head) => {
-  head.link({ rel: 'modulepreload', href: '/client.js' });
-  head.script({ type: 'module', src: '/client.js' });
+  head.link({ rel: 'modulepreload', href: '/assets/client.js' });
+  head.script({ type: 'module', src: '/assets/client.js' });
 });
 ```
 
-Never switch it to a plain `<script src>` without `defer`: that blocks parsing and runs before `#app` exists.
+`type="module"` implies defer: parsing never blocks and the tag runs only after parsing finishes, so this is safe in head. Never use a plain `<script src>` without `defer` — it blocks parsing and runs before `#app` exists.
+
+Together with that head DSL, the page looks roughly like this (page DOM elided):
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>SSR Demo</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/assets/yoya.ui.css" />
+    <!-- ③ Client entry: added by you (renderPage does not emit it) -->
+    <link rel="modulepreload" href="/assets/client.js" />
+    <script type="module" src="/assets/client.js"></script>
+  </head>
+  <body>
+    <!-- ① Hydration target; id comes from containerId (default "app") -->
+    <div id="app"><!-- server-rendered page DOM --></div>
+    <!-- ② Request state; id comes from stateId (default "__YOYA_DATA__") -->
+    <script type="application/json" id="__YOYA_DATA__">
+      { "lang": "en-US", "path": "/home", "mode": "history" }
+    </script>
+  </body>
+</html>
+```
 
 ## 3. Server initialization (with your server code)
 

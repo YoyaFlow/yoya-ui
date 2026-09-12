@@ -92,6 +92,14 @@ const list = div((box) => {
   Pass a handle or a zero-argument closure instead.
 - **`scope()` is gone**: its only purpose was declaring a source for parameterized
   value functions.
+- **`renderPage` no longer emits the client entry**: it used to inject
+  `<script type="module" src="/client.js">` before `</body>` (path configurable via
+  `{ client }`). It now injects no client script at all — the path, head vs body, and what
+  runs before it are your project's decisions. Migration: add it yourself in `page.head(...)`
+  with `head.link({ rel: 'modulepreload', href: '/assets/client.js' })` and
+  `head.script({ type: 'module', src: '/assets/client.js' })` (`type="module"` implies defer,
+  so this is safe in head; never use a plain `<script src>` without `defer`).
+  See [`ssr.md`](ssr.md) §2.1.
 - **DevTools events**: the `state` event went away with `vStateNode`; use
   `signal-write` (`signalId` / `previous` / `next` / `dependents`). The `region`
   event's `trigger` changed from `state` to `signal`. The `deprecated` event slot
