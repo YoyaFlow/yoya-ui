@@ -11,15 +11,16 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 
 ## Document set
 
-| File                                               | Content                                                 | Source / status                                  |
-| -------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------ |
-| [`index.md`](index.md)                             | Documentation navigation and planning (this page)       | New                                              |
-| [`highlights.md`](highlights.md)                   | Feature highlights: DSL, i18n, access, SSR, forms       | Rebuilt from `index.zh-CN.md` highlights section |
-| [`access-control.md`](access-control.md)           | Access control guide                                    | Rebuilt                                          |
-| [`ssr.md`](ssr.md)                                 | Server-side rendering integration guide                 | Rebuilt                                          |
-| [`theme.md`](theme.md)                             | Theme and styling spec                                  | Rebuilt                                          |
-| [`devtools.md`](devtools.md)                       | DevTools guide                                          | Rebuilt                                          |
-| [`component-authoring.md`](component-authoring.md) | Component library authoring guide (third-party authors) | Rebuilt                                          |
+| File                                                         | Content                                                 | Source / status                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------ |
+| [`index.md`](index.md)                                       | Documentation navigation and planning (this page)       | New                                              |
+| [`highlights.md`](highlights.md)                             | Feature highlights: DSL, i18n, access, SSR, forms       | Rebuilt from `index.zh-CN.md` highlights section |
+| [`access-control.md`](access-control.md)                     | Access control guide                                    | Rebuilt                                          |
+| [`ssr.md`](ssr.md)                                           | Server-side rendering integration guide                 | Rebuilt                                          |
+| [`theme.md`](theme.md)                                       | Theme and styling spec                                  | Rebuilt                                          |
+| [`devtools.md`](devtools.md)                                 | DevTools guide                                          | Rebuilt                                          |
+| [`component-authoring.md`](component-authoring.md)           | Component library authoring guide (third-party authors) | Rebuilt                                          |
+| [`security-review-feedback.md`](security-review-feedback.md) | Answers to a security review: what holds, what does not | New                                              |
 
 ## Suggested reading path
 
@@ -27,3 +28,4 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 2. Read `highlights.md` for a feature overview. The component catalog is maintained in the examples site rather than a separate document.
 3. Pick the guide that matches your task: `access-control.md`, `ssr.md`, `theme.md`, or `devtools.md`.
 4. Read `component-authoring.md` when you want to build components for the ecosystem.
+5. Read `security-review-feedback.md` before acting on a security review of this library.

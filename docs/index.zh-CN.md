@@ -10,15 +10,16 @@
 
 ## 文档集合
 
-| 文件                                                           | 内容                                          | 来源 / 状态 |
-| -------------------------------------------------------------- | --------------------------------------------- | ----------- |
-| [`index.zh-CN.md`](index.zh-CN.md)                             | 文档导航与内容规划（本页）                    | 新建        |
-| [`highlights.zh-CN.md`](highlights.zh-CN.md)                   | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等 | 重建        |
-| [`access-control.zh-CN.md`](access-control.zh-CN.md)           | 权限控制使用指南                              | 重建        |
-| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                 | 服务端渲染集成指南                            | 重建        |
-| [`theme.zh-CN.md`](theme.zh-CN.md)                             | 主题样式规范                                  | 重建并改名  |
-| [`devtools.zh-CN.md`](devtools.zh-CN.md)                       | DevTools 使用指南                             | 重建        |
-| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md) | 组件库开发指南（第三方 / 生态作者）           | 重建并改名  |
+| 文件                                                                     | 内容                                          | 来源 / 状态 |
+| ------------------------------------------------------------------------ | --------------------------------------------- | ----------- |
+| [`index.zh-CN.md`](index.zh-CN.md)                                       | 文档导航与内容规划（本页）                    | 新建        |
+| [`highlights.zh-CN.md`](highlights.zh-CN.md)                             | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等 | 重建        |
+| [`access-control.zh-CN.md`](access-control.zh-CN.md)                     | 权限控制使用指南                              | 重建        |
+| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                           | 服务端渲染集成指南                            | 重建        |
+| [`theme.zh-CN.md`](theme.zh-CN.md)                                       | 主题样式规范                                  | 重建并改名  |
+| [`devtools.zh-CN.md`](devtools.zh-CN.md)                                 | DevTools 使用指南                             | 重建        |
+| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)           | 组件库开发指南（第三方 / 生态作者）           | 重建并改名  |
+| [`security-review-feedback.zh-CN.md`](security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立            | 新建        |
 
 ## 阅读路径建议
 
@@ -26,3 +27,4 @@
 2. 特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不再维护独立清单文档；
 3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；
 4. 要扩展组件生态时读 `component-authoring.zh-CN.md`。
+5. 收到针对本库的安全评审时，先读 `security-review-feedback.zh-CN.md`。
