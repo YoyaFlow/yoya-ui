@@ -1,19 +1,12 @@
 import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 // 适配器源码直接取真实文件原文，避免在文档里维护第二份拷贝。
-import defaultAdapterSource from '../core/signals/engine.js?raw';
 import preactAdapterSource from '../signals/preact/index.js?raw';
 
-const adapterSourcePanels = [
-  ComponentSource({
-    source: defaultAdapterSource,
-    title: '内置默认引擎适配器（core/signals/engine.js）'
-  }),
-  ComponentSource({
-    source: preactAdapterSource,
-    title: 'Preact Signals 适配器（signals/preact/index.js）'
-  })
-];
+const adapterSourcePanel = ComponentSource({
+  source: preactAdapterSource,
+  title: 'Preact Signals 适配器（signals/preact/index.js）'
+});
 
 /**
  * Signals 文档页：只回答「怎么换引擎、怎么写自己的适配器」。
@@ -51,7 +44,7 @@ export function SignalsDocumentationPage() {
           adapter.attr('data-signals-adapter', 'true');
           adapter.h2('适配器源码（照着写你自己的引擎）');
           adapter.p(
-            '适配器只做「值单元 + 变更通知」两件事：依赖收集、computed、调度与生命周期全部由 core 负责，所以换成别的信号库不会改变依赖语义与派生语义。下面两份源码取自仓库真实文件。'
+            '适配器只做「值单元 + 变更通知」两件事：依赖收集、computed、调度与生命周期全部由 core 负责，所以换成别的信号库不会改变依赖语义与派生语义。下面这份源码取自仓库真实文件，内置引擎的适配器在 core/signals/engine.js，可当最小骨架对照。'
           );
           adapter.ul((list) => {
             list.li(
@@ -69,7 +62,7 @@ export function SignalsDocumentationPage() {
           });
           adapter.div((panels) => {
             panels.className('components-signals-adapter-sources');
-            adapterSourcePanels.forEach((panel) => panels.child(panel));
+            panels.child(adapterSourcePanel);
           });
         });
       });

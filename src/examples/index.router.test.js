@@ -802,17 +802,18 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-signals-advantages]')).toBeNull();
     expect(page.querySelector('[data-signals-demo]')).toBeNull();
 
-    // 适配器源码区：直接展示仓库里的真实适配器文件
+    // 适配器源码区：直接展示仓库里的真实适配器文件（一份完整范例足够，内置引擎只给路径）
     const adapter = page.querySelector('[data-signals-adapter]');
     expect(adapter).not.toBeNull();
-    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(2);
+    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(1);
     const adapterSources = [...adapter.querySelectorAll('[data-source-example]')].map(
       (node) => node.textContent
     );
+    expect(adapterSources[0]).toContain('createPreactAdapter(signalsCore)');
     expect(adapterSources[0]).toContain('createSignal(initial)');
     expect(adapterSources[0]).toContain('subscribe(source, listener)');
-    expect(adapterSources[1]).toContain('createPreactAdapter(signalsCore)');
-    expect(adapterSources[1]).toContain('untracked(() => listener(value))');
+    expect(adapterSources[0]).toContain('untracked(() => listener(value))');
+    expect(adapter.textContent).toContain('core/signals/engine.js');
   });
 
   it('switches the ref-driven dynamic form by type', async () => {
