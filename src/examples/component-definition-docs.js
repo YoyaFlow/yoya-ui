@@ -185,7 +185,10 @@ function InteractiveComposeExample1() {
 const componentPatterns = [
   {
     title: '形态 A：薄工厂 —— 函数直接返回 ViewNode',
-    intro: '适用于无内部状态、纯配置化组合；函数直接返回 ViewNode，代码量最小。',
+    intro:
+      '确定这个组件没有额外行为要定义（没有内部状态、没有对外命令方法、没有生命周期诉求）时就用它：' +
+      '函数直接返回 ViewNode，代码量最小。不要为了「以后可能要用」先包成对象组件，' +
+      '真有状态或命令方法时再升级到形态 B。',
     code: `function ServiceTag(options) {
   return vBadge(options);
 }`,
@@ -194,7 +197,7 @@ const componentPatterns = [
   {
     title: '形态 B：对象组件 —— 返回 { render(), ... }',
     intro:
-      '适用于常规独立组件（默认形态）。render() 返回 ViewNode，状态保存在闭包或返回对象上，' +
+      '适用于确有内部状态或需要对外命令方法的组件。render() 返回 ViewNode，状态保存在闭包或返回对象上，' +
       '可暴露命令/状态方法。',
     code: `function RateCard() {
   const state = { value: 0 };
@@ -280,7 +283,10 @@ export function ComponentDefinitionDocumentationPage() {
         page.attr('data-definition-page', 'true');
         page.h1('定义组件');
         page.p('组件的四个阶段（声明 / 挂载 / 更新 / 销毁）见「开发指南 → 组件生命周期」。');
-        page.p('yoya-ui 支持两种组件定义形态，按场景选用：A 薄工厂、B 对象组件。');
+        page.p(
+          'yoya-ui 支持两种组件定义形态，按场景选用：没有额外行为要定义就用 A 薄工厂，' +
+            '有内部状态或对外命令方法才用 B 对象组件。'
+        );
         page.p(
           'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
             '字符串/数字，两种形态均可作为子节点传入页面组合。'
