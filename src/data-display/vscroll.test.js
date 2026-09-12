@@ -201,6 +201,24 @@ describe('vScroll', () => {
     expect(element.querySelectorAll('.yoya-vscroll-list > *')).toHaveLength(0);
   });
 
+  it('keeps the item renderer after reset so later appends stay structured', () => {
+    const scroll = vScroll({
+      items: ['A', 'B'],
+      renderItem: (item) => div((row) => row.className('demo-item').text(item))
+    });
+    const element = scroll.renderDom();
+
+    // 演示里「重新加载」= reset() + check()，之后 loadMore 用 append(next) 续数据；
+    // 渲染函数属于列表配置，reset 不该把它一起丢掉，否则追加进来的是裸字符串。
+    scroll.reset();
+    scroll.append(['C', 'D']);
+
+    const rows = [...element.querySelectorAll('.yoya-vscroll-list > *')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].className).toBe('demo-item');
+    expect(rows[0].textContent).toBe('C');
+  });
+
   it('registers vScroll as a parent shortcut', () => {
     const page = div((root) => {
       root.vScroll({

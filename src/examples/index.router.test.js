@@ -669,6 +669,31 @@ describe('renderExamplesIndex', () => {
 
     blockButton.click();
     expect(loopDemo.querySelector('.yoya-vscroll').dataset.blocked).toBe('true');
+
+    // 异步演示「重新加载」：reset + check 之后回到第 1 页，且列表项仍是渲染出来的元素
+    const asyncDemo = page.querySelector('[data-data-display-demo="async"]');
+    const reloadButton = [...asyncDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('重新加载')
+    );
+    const asyncRows = () => [...asyncDemo.querySelectorAll('.yoya-vscroll-list > *')];
+
+    await vi.waitFor(
+      () => {
+        expect(asyncRows().length).toBeGreaterThan(0);
+      },
+      { timeout: 3000 }
+    );
+
+    reloadButton.click();
+
+    await vi.waitFor(
+      () => {
+        expect(asyncRows()[0].textContent).toBe('消息 1');
+      },
+      { timeout: 3000 }
+    );
+    // 重新加载后追加进来的仍是渲染函数产出的元素（不是裸字符串）
+    expect(asyncRows()[0].tagName).toBe('DIV');
   });
 
   it('renders the carousel docs with API and demos', async () => {

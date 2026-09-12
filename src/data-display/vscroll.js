@@ -267,7 +267,6 @@ export class VScroll extends HtmlElementNode {
 
   reset() {
     this._itemsData = [];
-    this._renderItem = null;
     this._page = 0;
     this._blocked = false;
     this._loading = false;

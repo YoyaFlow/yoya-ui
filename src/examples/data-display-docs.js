@@ -2152,10 +2152,11 @@ function ScrollLoopBlockExample1() {
     scroll.items(source.slice(0, 4), (item) => div(item));
     scroll.loadMore(({ append, block, page, scroll: api }) => {
       if (api.loop()) {
-        const start = ((page - 1) % 3) * 4;
+        // 首屏已放了第 1 页，加载从第 2 页接着走
+        const start = (page % 3) * 4;
         append(source.slice(start, start + 4));
       } else {
-        const start = (page - 1) * 4;
+        const start = page * 4;
         const next = source.slice(start, start + 4);
         append(next);
         if (start + next.length >= source.length) {
@@ -2215,12 +2216,13 @@ function ScrollAsyncExample1() {
   const source = Array.from({ length: 20 }, (_, index) => `消息 ${index + 1}`);
   const scroll = vScroll((scroll) => {
     scroll.style('height', '260px');
-    scroll.items(source.slice(0, 5), (item) => div(item));
+    // 首屏也走 loadMore：page 由组件递增，第一次加载就是第 1 页
+    scroll.renderItem((item) => div(item));
     scroll.loadMore(
       ({ append, block, page }) =>
         new Promise((resolve) => {
           setTimeout(() => {
-            const start = page * 5;
+            const start = (page - 1) * 5;
             const next = source.slice(start, start + 5);
             append(next);
             if (start + next.length >= source.length) {
@@ -2242,8 +2244,8 @@ function ScrollAsyncExample1() {
         content.child(scroll);
         content.vButton('重新加载', (button) => {
           button.on('click', () => {
-            scroll.reset();
-            scroll.check();
+            // 重置回第 1 页，check() 触发一次异步加载
+            scroll.reset().check();
           });
         });
       });
