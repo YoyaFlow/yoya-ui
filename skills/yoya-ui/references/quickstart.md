@@ -19,8 +19,8 @@ npm run dev
 
 ## 挂载方式
 
-- `node.renderDom()`：创建/复用真实 DOM 元素，`appendChild` 到目标
-- `node.bindTo('#app')`：挂载到选择器或元素
+- `node.renderDom()`：创建（或复用）真实 DOM 元素并返回，不负责挂载
+- `node.bindTo('#app')`：渲染并挂到选择器或元素；页面入口用这个，不要自己 `querySelector` + `appendChild`
 - `mount(component, target, state)`：客户端全量渲染（SSR 入口之一，也用于无 SSR 场景）
 - `node.destroy()`：清理事件并移除 DOM，页面卸载时调用
 
