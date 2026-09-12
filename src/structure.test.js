@@ -150,6 +150,7 @@ describe('foundation module structure', { timeout: 30000 }, () => {
 
     expect(api.div).toBe(html.div);
     expect(api.svg).toBe(svg.svg);
+    expect(api.svgs).toBe(svg.svgs);
     expect(api.flex).toBeTypeOf('function');
     expect(api.mobileLayout).toBeTypeOf('function');
     expect(api.vMobileLayout).toBeTypeOf('function');
@@ -248,6 +249,7 @@ describe('foundation module structure', { timeout: 30000 }, () => {
     expect(api.vTd).toBe(components.vTd);
     expect(coreEntry.div).toBe(html.div);
     expect(coreEntry.svg).toBe(svg.svg);
+    expect(coreEntry.svgs).toBe(svg.svgs);
     expect(coreEntry.HtmlElementNode).toBeTypeOf('function');
     expect(coreEntry.SearchOutlined).toBeTypeOf('function');
     expect(coreEntry.vButton).toBeUndefined();
@@ -258,6 +260,7 @@ describe('foundation module structure', { timeout: 30000 }, () => {
     expect(coreEntry.flex).toBeUndefined();
     expect(uiEntry.div).toBeUndefined();
     expect(uiEntry.SearchOutlined).toBeUndefined();
+    expect(uiEntry.svgs).toBeUndefined();
     expect(uiEntry.vButton).toBe(actions.vButton);
     expect(uiEntry.vButtons).toBe(actions.vButtons);
     expect(uiEntry.vFloatButton).toBe(actions.vFloatButton);

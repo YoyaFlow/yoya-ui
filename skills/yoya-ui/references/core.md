@@ -22,6 +22,32 @@ const title = vText('默认标题');
 title.textContent('新标题'); // 原地更新，无需重建视图
 ```
 
+## SVG 节点与 svgs 工厂
+
+SVG 子标签方法只注册在 `SvgElementNode` 上，HTML 父节点只认识 `svg`，顶层入口也只有 `svg` 一个标签工厂。需要**游离**的内部节点（还没有父节点、先建好再挂或复用）时用 `svgs` 命名空间，不必 `new SvgElementNode(...)`：
+
+```js
+import { svg, svgs, vText } from '@yoyaflow/yoya-ui/core';
+
+const marker = svgs.circle((dot) => {
+  dot.className('metric-point');
+  dot.attr({ cx: 0, cy: 0, r: 4 });
+});
+
+const chart = svg((root) => {
+  root.attr({ viewBox: '0 0 24 24' });
+  root.child(marker); // 游离节点直接挂进树
+  root.text((line) => {
+    line.attr({ x: 12, y: 22 });
+    line.child(vText('OK')); // <text> 里挂动态文本用 vText
+  });
+});
+```
+
+- `svgs` 覆盖 `svg` 与全部 SVG 子标签（`rect` / `circle` / `g` / `path` / `text` / `defs` / `linearGradient` …），键名就是标签名；`yoya-ui` 与 `yoya-ui/core` 都导出。
+- 游离节点与父节点内部创建的节点能力完全一致：属性、样式、事件、`rebuildable()`、`child()` 都可用；已有父节点时继续用 `root.g(...)` 这类快捷方法更顺手。
+- `text()` 在 SVG 容器上是「创建 `<text>` 子元素」，在 `<text>` 内部才表示文本内容：字符串可以直接写，**信号句柄要用 `child(vText(handle))`**，写成 `line.text(handle)` 会因句柄不是子节点而报错。
+
 ## 三种组件形态
 
 **形态 A：薄工厂**（无内部状态、纯配置组合）

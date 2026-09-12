@@ -89,6 +89,40 @@ describe('SVG element factories', () => {
     expect(yoya.text('plain').textContent()).toBe('plain');
   });
 
+  it('exposes detached inner-node factories through the svgs namespace', () => {
+    const { svgs } = yoya;
+
+    expect(svgs.svg).toBe(yoya.svg);
+    expect(svgs.rect).toBeTypeOf('function');
+    expect(svgs.circle).toBeTypeOf('function');
+
+    const detached = svgs.rect((rect) => {
+      rect.className('brick');
+      rect.attr({ x: 1, y: 2, width: 3, height: 4 });
+    });
+
+    expect(detached).toBeInstanceOf(yoya.SvgElementNode);
+    expect(detached.tagName()).toBe('rect');
+
+    const element = detached.renderDom();
+    expect(element.namespaceURI).toBe(SVG_NS);
+    expect(element.getAttribute('class')).toBe('brick');
+    expect(element.getAttribute('width')).toBe('3');
+
+    // 游离节点直接挂到 svg 节点上，和父节点快捷方法创建的结果等价
+    const icon = yoya.svg((root) => {
+      root.child(detached);
+      root.g((group) => group.circle({ cx: 0, cy: 0, r: 4 }));
+    });
+    const iconElement = icon.renderDom();
+
+    expect(iconElement.querySelector('rect.brick')).toBe(element);
+    expect(iconElement.querySelector('g > circle').namespaceURI).toBe(SVG_NS);
+
+    // 顶层导出仍然只有 svg 一个标签工厂
+    expect(yoya.circle).toBeUndefined();
+  });
+
   it('builds nested SVG trees through svg-local child methods', () => {
     const icon = yoya.svg((root) => {
       root.className('status-icon');

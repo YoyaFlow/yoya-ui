@@ -113,6 +113,12 @@ export interface SvgParentShortcuts {
 /** Creates an <svg> element; the only SVG entry visible from HTML DSL. */
 export const svg: SvgElementFactory;
 
+/**
+ * Namespace of every SVG tag factory: build detached inner nodes without
+ * `new SvgElementNode(...)`, then `child()` them into any svg node.
+ */
+export const svgs: SvgChildShortcuts;
+
 // Built-in icon factories (each returns an SVG node).
 export function ArrowDownOutlined(): SvgElementNode;
 export function ArrowLeftOutlined(): SvgElementNode;
