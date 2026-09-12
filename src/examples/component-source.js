@@ -36,14 +36,16 @@ export function componentSource(Component, imports = []) {
 export function ComponentSource({
   component,
   sourceComponent = component,
+  source = null,
   imports = [],
-  title = `${sourceComponent.name} 源码`,
+  title = sourceComponent ? `${sourceComponent.name} 源码` : '源码',
   extraSource = ''
 }) {
   const importBlock = buildImportBlock(imports);
-  const functionSource = buildFunctionSource(sourceComponent);
+  const functionSource = source ? '' : buildFunctionSource(sourceComponent);
   const extraBlock = extraSource ? `${extraSource}\n\n` : '';
-  const fullSource = `${importBlock}${extraBlock}export ${functionSource}`;
+  // source 用于展示真实文件的原文（如 "?raw" 导入的适配器源码）：不补 import、不补 export。
+  const fullSource = source ?? `${importBlock}${extraBlock}export ${functionSource}`;
 
   return {
     source() {

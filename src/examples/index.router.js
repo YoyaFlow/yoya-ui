@@ -26,7 +26,6 @@ const componentMenuSections = [
       { key: 'overview', label: '概述', details: 'Overview' },
       { key: 'installation', label: '安装方式', details: 'Installation' },
       { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
-      { key: 'signals', label: '状态管理', details: 'ref / computed / 区域读信号' },
       { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
       {
         key: 'lifecycle',
@@ -184,7 +183,7 @@ const componentMenuSections = [
       { key: 'markdown-viewer', label: 'Markdown 查看', details: 'Toast UI Viewer' },
       { key: 'three', label: 'Three.js 场景', details: 'vThree / VThree' },
       { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
-      { key: 'signals', label: 'Signals 状态管理', details: 'signal / computed / effect' }
+      { key: 'signals', label: 'Signals 状态管理', details: '适配器 / 更换引擎' }
     ]
   },
   {
@@ -323,7 +322,6 @@ const docsRouteLoaders = Object.freeze({
     import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
   'third-party:signals': () =>
     import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
-  'guides:signals': () => import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
   'third-party:overview': () => import('./interop-docs.js').then((m) => m.InteropOverviewPage()),
   'third-party:quill': () => import('./quill-docs.js').then((m) => m.QuillDocumentationPage()),
   'third-party:ag-grid': () => import('./ag-grid-docs.js').then((m) => m.AgGridDocumentationPage()),

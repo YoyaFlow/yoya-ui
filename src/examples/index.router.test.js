@@ -785,7 +785,7 @@ describe('renderExamplesIndex', () => {
     ).toContain("import { vEchart } from 'yoya-ui/echart';");
   });
 
-  it('renders the third-party Signals demo page', async () => {
+  it('renders the third-party Signals engine page with adapter sources', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/third-party/signals');
@@ -795,59 +795,24 @@ describe('renderExamplesIndex', () => {
 
     const page = document.querySelector('[data-signals-page]');
     expect(page.querySelector('h1').textContent).toBe('Signals 状态管理');
-    expect(page.querySelectorAll('.components-signals-grid .yoya-vcard')).toHaveLength(4);
-    expect(page.querySelectorAll('[data-signals-demo]')).toHaveLength(3);
-    expect(page.querySelectorAll('[data-signals-demo] [data-source-example]')).toHaveLength(3);
-    expect(
-      page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
-    ).toContain("from 'yoya-ui'");
-    expect(
-      page.querySelector('[data-signals-demo="counter"] [data-source-example]').textContent
-    ).not.toContain('vCard');
-    expect(page.querySelector('[data-signals-usage]')).not.toBeNull();
-    expect(page.querySelectorAll('[data-signals-usage] li')).toHaveLength(4);
-    expect(page.querySelector('[data-signals-advantages]')).not.toBeNull();
-    expect(page.querySelectorAll('[data-signals-advantages] li')).toHaveLength(5);
-  });
+    // 页面只讲换引擎与适配器：不再有基础用法演示与「何时使用 / 用法优点」文案
+    expect(page.querySelector('[data-signals-engines]')).not.toBeNull();
+    expect(page.querySelectorAll('[data-signals-engines] li')).toHaveLength(3);
+    expect(page.querySelector('[data-signals-usage]')).toBeNull();
+    expect(page.querySelector('[data-signals-advantages]')).toBeNull();
+    expect(page.querySelector('[data-signals-demo]')).toBeNull();
 
-  it('syncs ref and computed state to the view', async () => {
-    root = renderExamplesIndex('#app');
-
-    await openRoute('/components/third-party/signals');
-    await vi.waitFor(() => {
-      expect(selectedRouteTitle()).toBe('Signals 状态管理');
-    });
-
-    const page = document.querySelector('[data-signals-page]');
-    const counterDemo = page.querySelector('[data-signals-demo="counter"]');
-    const plusButton = [...counterDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('+1')
+    // 适配器源码区：直接展示仓库里的真实适配器文件
+    const adapter = page.querySelector('[data-signals-adapter]');
+    expect(adapter).not.toBeNull();
+    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(2);
+    const adapterSources = [...adapter.querySelectorAll('[data-source-example]')].map(
+      (node) => node.textContent
     );
-
-    plusButton.click();
-
-    expect(counterDemo.querySelector('[data-signals-count]').textContent).toBe('1');
-    expect(counterDemo.querySelector('[data-signals-double]').textContent).toBe('2');
-
-    const inputDemo = page.querySelector('[data-signals-demo="input"]');
-    const fillButton = [...inputDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('填入示例')
-    );
-
-    fillButton.click();
-
-    expect(inputDemo.querySelector('[data-signals-output]').textContent).toBe(
-      '当前输入：Hello yoya，长度：10'
-    );
-
-    const sharedDemo = page.querySelector('[data-signals-demo="shared"]');
-    const sharedPlusButton = [...sharedDemo.querySelectorAll('button')].find((button) =>
-      button.textContent.includes('+1')
-    );
-
-    sharedPlusButton.click();
-
-    expect(sharedDemo.querySelector('[data-signals-shared-count]').textContent).toBe('1');
+    expect(adapterSources[0]).toContain('createSignal(initial)');
+    expect(adapterSources[0]).toContain('subscribe(source, listener)');
+    expect(adapterSources[1]).toContain('createPreactAdapter(signalsCore)');
+    expect(adapterSources[1]).toContain('untracked(() => listener(value))');
   });
 
   it('switches the ref-driven dynamic form by type', async () => {
