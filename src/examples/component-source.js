@@ -23,6 +23,8 @@ function buildFunctionSource(Component) {
     Component.toString()
       .replace(/\(0,\s*__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)\)/g, '$1')
       .replace(/__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)/g, '$1')
+      .replace(/__vite_ssr_dynamic_import__\(/g, 'import(')
+      .replace(/"\/src\/examples\/([^"]+)"/g, "'./$1'")
   );
 }
 

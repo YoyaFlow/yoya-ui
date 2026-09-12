@@ -123,7 +123,9 @@ function InteractiveComposeExample1() {
           panel.p(status);
           panel.hstack((actions) => {
             actions.style({ alignItems: 'center', gap: '10px' });
-            actions.vButton('上一步', (btn) => btn.size('small').on('click', () => this.prev()));
+            actions.vButton('上一步', (btn) => {
+              btn.size('small').on('click', () => this.prev());
+            });
             actions.vButton('下一步', (btn) =>
               btn
                 .size('small')

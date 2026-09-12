@@ -55,7 +55,9 @@ function GlowButtonVariantsExample() {
 function GlowButtonStatesExample() {
   return hstack({ gap: '12px' }, (row) => {
     row.style('alignItems', 'center');
-    row.child(vGlowButton('执行中').variant('primary').loading(true).glow({ motion: 'always' }));
+    const running = vGlowButton('执行中').variant('primary');
+    running.loading(true).glow({ motion: 'always' });
+    row.child(running);
     row.child(vGlowButton('不可用').disabled(true));
   });
 }

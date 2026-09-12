@@ -9,25 +9,6 @@ import {
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-function modeIsDark() {
-  if (typeof document !== 'undefined') {
-    const mode = document.documentElement?.dataset.yoyaMode;
-    if (mode === 'dark') {
-      return true;
-    }
-    if (mode === 'system' && typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-  }
-  return false;
-}
-
-function currentTheme() {
-  return modeIsDark()
-    ? themeQuartz.withPart(colorSchemeDark)
-    : themeQuartz;
-}
-
 /**
  * AG Grid 统一胶水入口：场景只传 { columnDefs, rowData, gridOptions }。
  * 明暗主题走 AG Grid 官方 JS 主题 API（themeQuartz + colorSchemeDark），
@@ -40,7 +21,7 @@ export class AgGridDemoNode extends HtmlElementNode {
     this._columnDefs = options.columnDefs ?? [];
     this._gridOptions = options.gridOptions ?? {};
     this._rowData = options.rowData ?? [];
-    this._theme = currentTheme();
+    this._theme = this._resolveTheme();
     this._themeObserver = null;
     this._onMediaChange = null;
     this._mediaQuery = null;
@@ -49,6 +30,17 @@ export class AgGridDemoNode extends HtmlElementNode {
     if (options.hidden) {
       this.style('display', 'none');
     }
+  }
+
+  _resolveTheme() {
+    const mode =
+      typeof document === 'undefined' ? null : document.documentElement?.dataset.yoyaMode;
+    const prefersDark =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        : false;
+    const isDark = mode === 'dark' || (mode === 'system' && prefersDark);
+    return isDark ? themeQuartz.withPart(colorSchemeDark) : themeQuartz;
   }
 
   renderDom() {
@@ -67,7 +59,7 @@ export class AgGridDemoNode extends HtmlElementNode {
   }
 
   _applyTheme() {
-    this._theme = currentTheme();
+    this._theme = this._resolveTheme();
     this._api?.setGridOption?.('theme', this._theme);
   }
 

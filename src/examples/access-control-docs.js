@@ -10,7 +10,7 @@ const accessDemoDefinitions = Object.freeze([
       '同一控件在不同持有权限下渲染：有写可编辑、只读禁用、无权限隐藏；并展示操作按钮的三种状态。',
     component: AccessControlMembers,
     sourceComponent: AccessControlMembers,
-    imports: ['createAccess', 'div', 'installAccess', 'vInput'],
+    imports: ['div', 'vInput'],
     sourceTitle: '权限控制使用源码'
   }
 ]);

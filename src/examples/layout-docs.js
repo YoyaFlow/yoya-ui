@@ -70,7 +70,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: BodyContainerExample1,
         description: 'container 适合把局部内容收窄到更易读的宽度。',
         id: 'container',
-        imports: ['container', 'responsiveGrid', 'vCard', 'vstack'],
+        imports: ['container', 'responsiveGrid', 'vstack'],
         sourceTitle: '内容容器核心源码',
         title: '内容容器'
       },
@@ -214,7 +214,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: FlexStackExample1,
         description: '用 stack / vstack / hstack 组织纵向步骤和状态行。',
         id: 'stack',
-        imports: ['hstack', 'stack', 'vCard', 'vstack'],
+        imports: ['hstack', 'stack', 'vstack'],
         sourceTitle: '纵向堆叠核心源码',
         title: '纵向堆叠'
       },
@@ -222,7 +222,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: FlexCenterExample1,
         description: 'center 适合空状态、加载态和确认页。',
         id: 'center',
-        imports: ['center', 'vButton', 'vCard'],
+        imports: ['center', 'vButton'],
         sourceTitle: '居中占位核心源码',
         title: '居中占位'
       }
@@ -275,7 +275,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: GridFixedExample1,
         description: '固定列数的指标面板，适合摘要和仪表盘。',
         id: 'fixed',
-        imports: ['grid', 'vCard', 'vstack'],
+        imports: ['grid', 'vstack'],
         sourceTitle: '固定栅格核心源码',
         title: '固定栅格'
       },
@@ -283,7 +283,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: GridResponsiveExample1,
         description: '根据最小列宽和断点自动切换列数。',
         id: 'responsive',
-        imports: ['responsiveGrid', 'vCard', 'vstack'],
+        imports: ['vstack', 'vText'],
         sourceTitle: '响应式栅格核心源码',
         title: '响应式栅格'
       },
@@ -291,7 +291,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: GridRowColExample1,
         description: '用 vRow / vCol 按 24 栅格精确控制列宽、偏移和位移。',
         id: 'row-col',
-        imports: ['vRow', 'vCol', 'vCard', 'vstack'],
+        imports: ['vRow', 'vCol', 'vstack'],
         sourceTitle: '24 栅格核心源码',
         title: '24 栅格'
       }
@@ -327,7 +327,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: SpacerToolbarExample1,
         description: '用 spacer 把标题和动作推到两侧。',
         id: 'toolbar',
-        imports: ['hstack', 'spacer', 'vButton', 'vCard'],
+        imports: ['hstack', 'spacer', 'vButton'],
         sourceTitle: '工具条留白核心源码',
         title: '工具条留白'
       },
@@ -335,7 +335,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: SpacerSummaryExample1,
         description: '在摘要行里让值项稳定贴在右侧。',
         id: 'summary',
-        imports: ['hstack', 'spacer', 'vCard', 'vstack'],
+        imports: ['hstack', 'spacer', 'vstack'],
         sourceTitle: '摘要对齐核心源码',
         title: '摘要对齐'
       }
@@ -393,7 +393,6 @@ const layoutDocsDefinitions = Object.freeze({
         id: 'form',
         imports: [
           'vButton',
-          'vCard',
           'vDialog',
           'vForm',
           'vFormItem',

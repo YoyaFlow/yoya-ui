@@ -16,7 +16,7 @@ const regionDemos = [
     description:
       '节点用 rebuildable() 声明为区域；rebuild() 清空子节点并按当前数据重跑它自己的 setup。区域外的输入框完全不受影响。',
     id: 'rebuild',
-    imports: ['hstack', 'input', 'vButton', 'vstack'],
+    imports: ['hstack', 'input', 'vButton', 'vstack', 'ul'],
     sourceTitle: '区域重建源码',
     title: '手动重建：rebuildable() + rebuild()'
   },
@@ -43,7 +43,7 @@ const regionDemos = [
     description:
       'flush() 只把绑定求值写回，元素引用不变；换成 rebuild() 才会重建结构。值变化用 flush，结构变化用 rebuild。',
     id: 'flush',
-    imports: ['hstack', 'vButton', 'vText', 'vstack'],
+    imports: ['hstack', 'vButton', 'vText', 'vstack', 'div'],
     sourceTitle: '值级刷新源码',
     title: '值级刷新：flush()'
   },

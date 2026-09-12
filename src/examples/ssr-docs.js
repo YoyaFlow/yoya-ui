@@ -283,7 +283,7 @@ export function SsrDocumentationPage() {
     imports: [
       {
         from: '@yoyaflow/yoya-ui',
-        names: ['createI18n', 'createRouter', 'div', 'vForm', 'vFormItem', 'vInput', 'vLink']
+        names: ['createRouter', 'div', 'vForm', 'vFormItem', 'vInput', 'vLink', 'vClientOnly']
       },
       { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],

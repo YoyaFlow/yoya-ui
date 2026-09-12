@@ -217,7 +217,8 @@ function getTopNavigationItems() {
   ];
 }
 
-const docsRouteLoaders = Object.freeze({
+/** 文档页路由注册表：路由键为 `category:key`，测试用它枚举并校验全部源码面板。 */
+export const docsRouteLoaders = Object.freeze({
   'guides:overview': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
   'guides:installation': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
   'guides:html-native': () =>
