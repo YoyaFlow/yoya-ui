@@ -166,13 +166,18 @@ describe('svg breakout demo', () => {
     field.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 950 }));
     expect(paddle.getAttribute('transform')).toBe('translate(810 546)');
 
-    // 手机手柄：按住 ◀ 持续左移，松手即停并清掉按下态
+    // 手机手柄：快速点按也要走一步（按下与抬起常在同一帧内）
     const padLeft = app.querySelector('.pad-key--left');
+    padLeft.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    padLeft.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    expect(paddle.getAttribute('transform')).toBe('translate(788 546)');
+
+    // 按住不放：持续移动，松手即停并清掉按下态
     padLeft.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     await nextFrame();
     await nextFrame();
     const heldAt = paddle.getAttribute('transform');
-    expect(heldAt).not.toBe('translate(810 546)');
+    expect(heldAt).not.toBe('translate(788 546)');
     expect(padLeft.getAttribute('data-held')).toBe('true');
 
     padLeft.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));

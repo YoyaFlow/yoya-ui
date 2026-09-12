@@ -57,7 +57,7 @@
       .demo-card > p {
         color: #8fa3bf;
         font-size: 14px;
-        margin: 0 0 16px;
+        margin: 12px 0 0;
       }
 
       .hud {
@@ -116,7 +116,8 @@
       .pad {
         display: none;
         gap: 12px;
-        margin-top: 12px;
+        justify-content: space-between;
+        margin-top: 10px;
       }
 
       .pad-key {
@@ -129,11 +130,16 @@
         display: flex;
         flex: 1;
         font-family: inherit;
-        font-size: 22px;
+        font-size: 26px;
         justify-content: center;
-        min-height: 56px;
+        min-height: 64px;
         touch-action: none;
         user-select: none;
+      }
+
+      .pad-cell {
+        display: flex;
+        flex: 0 0 44%;
       }
 
       .pad-key[data-held='true'] {
@@ -141,10 +147,23 @@
         color: #facc15;
       }
 
-      /* 手机 / 平板（无悬停的粗指针）以及窄窗口：显示底部左右手柄 */
+      /* 手机 / 平板（无悬停的粗指针）与窄窗口：显示两手手柄，并让卡片撑满视口高度 */
       @media (hover: none), (pointer: coarse), (max-width: 640px) {
+        body {
+          align-items: stretch;
+          padding: 12px;
+        }
+
+        .demo-card {
+          display: flex;
+          flex-direction: column;
+          margin: 0 auto;
+          min-height: calc(100dvh - 24px);
+        }
+
         .pad {
           display: flex;
+          margin-top: auto;
         }
       }
 
@@ -161,11 +180,6 @@
       }
 
       @media (max-width: 640px) {
-        body {
-          align-items: flex-start;
-          padding: 12px;
-        }
-
         .demo-card {
           border-radius: 12px;
           padding: 16px 14px 18px;
@@ -283,6 +297,7 @@
       const VIEW = { width: 900, height: 600 };
       const PLAY = { left: 24, right: 876, top: 24 };
       const PADDLE = { width: 132, height: 16, y: 546, speed: 12 };
+      const PADDLE_TAP_STEP = 22; // 手柄单次点按的位移
       const BALL = { radius: 9, baseSpeed: 3.1, maxSpeed: 8, startY: 496 };
       const WALL = {
         cols: 10,
@@ -420,6 +435,13 @@
         movePaddle(x) {
           const half = PADDLE.width / 2;
           this.paddleX.value = clamp(x, PLAY.left + half, PLAY.right - half);
+        }
+
+        /** 手柄点一下也走一步：手指按下与抬起常落在同一帧内，只靠主循环会一步不走。 */
+        nudgePaddle(direction) {
+          this.movePaddle(
+            this.paddleX.value + (direction === 'left' ? -PADDLE_TAP_STEP : PADDLE_TAP_STEP)
+          );
         }
 
         togglePause() {
@@ -589,13 +611,15 @@
       }
 
       /** 底部手柄：按住 ◀ / ▶ 持续移动球拍，松手或移出按键即停。 */
-      function PaddlePad(input) {
+      function PaddlePad({ input, state }) {
         function key(direction, glyph, label) {
           return div((cell) => {
+            cell.className('pad-cell');
             cell.button((button) => {
               function start(event) {
                 event.preventDefault();
                 button.attr('data-held', 'true');
+                state.nudgePaddle(direction);
                 input.hold(direction);
               }
 
@@ -882,16 +906,16 @@
               page.div((card) => {
                 card.className('demo-card');
                 card.h1('SVG 打砖块：← → 控制球拍');
-                card.p(
-                  '键盘用方向键 / WASD，手机用底部 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
-                );
                 card.div((bar) => {
                   bar.className('hud-bar');
                   bar.child(Hud(state));
                   bar.child(Controls(state));
                 });
                 card.child(field);
-                card.child(PaddlePad(input));
+                card.p(
+                  '键盘用方向键 / WASD，手机两手分持 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
+                );
+                card.child(PaddlePad({ input, state }));
               });
             });
           },
