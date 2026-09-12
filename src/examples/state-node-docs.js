@@ -218,7 +218,11 @@ div((node) => {
                   '创建只读派生信号，惰性求值并缓存，依赖变化自动重算。',
                   'computed(() => count.value * 2)'
                 ],
-                ['batch(fn)', '合并 fn 内的多次写入，提交一次通知。', 'batch(() => { a.value = 1; })'],
+                [
+                  'batch(fn)',
+                  '合并 fn 内的多次写入，提交一次通知。',
+                  'batch(() => { a.value = 1; })'
+                ],
                 [
                   'vText / attr / style / toggleClass 的值位置',
                   '接受句柄，写入后自动提交到该位置；attr 值为 null 时移除属性。',
@@ -231,7 +235,11 @@ div((node) => {
                 ],
                 ['handle.peek()', '读取当前值且不建立依赖。', 'count.peek()'],
                 ['isSignal(value)', '判断是否为库句柄。', 'isSignal(count)'],
-                ['batch / update 链式', 'handle.update(fn) 以当前值计算并写回。', 'count.update((n) => n + 1)']
+                [
+                  'batch / update 链式',
+                  'handle.update(fn) 以当前值计算并写回。',
+                  'count.update((n) => n + 1)'
+                ]
               ].forEach(([name, purpose, example]) => {
                 body.tr((row) => {
                   row.td((cell) => cell.code(name));

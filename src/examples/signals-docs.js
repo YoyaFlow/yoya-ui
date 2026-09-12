@@ -269,7 +269,7 @@ export function SignalsDocumentationPage() {
             list.li('computed 声明式派生，自动随源状态更新。');
             list.li('依赖追踪自动圈定更新范围，细粒度更新避免整树重绘、不丢焦点。');
             list.li('signal 可在组件外定义，天然支持跨组件共享，无需 store。');
-            list.li('与 vStateNode 互补：结构切换用 vStateNode，派生展示与共享状态用 Signals。');
+            list.li('结构变化配合区域：rebuildable() 区域构建期读信号，写入自动重建子树。');
           });
         });
         page.div((grid) => {

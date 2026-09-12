@@ -34,7 +34,7 @@ const componentMenuSections = [
         details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
       },
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
-      { key: 'state-node', label: '状态节点', details: 'vStateNode' },
+      { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
       { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
@@ -692,7 +692,11 @@ function createOverviewView() {
             details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
           },
           { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
-          { label: '状态节点', path: '/components/guides/state-node', details: 'vStateNode' },
+          {
+            label: '状态节点',
+            path: '/components/guides/state-node',
+            details: 'ref / computed / 区域'
+          },
           {
             label: '权限控制',
             path: '/components/guides/access-control',
