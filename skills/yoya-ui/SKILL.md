@@ -78,7 +78,13 @@ div((root) => {
 
 ## SSR 与 i18n
 
-`renderToString` 输出完整 HTML，`hydrate` 收养并绑定事件；页面用 `createPage(requestState)` 工厂，服务端与客户端复用同一份定义；i18n 每请求实例，`'文案'.s('key')` 自动按请求语言翻译。渲染路径必须 DOM-free 且确定性（不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出、请求状态按请求注入）。要避免的操作清单详见 references/ssr-i18n.md。
+三份文件跑通 SSR，顺序是 **HomePage → 服务端 → 客户端**：
+
+1. `home-page.js`：`HomePage(state)` 页面工厂，两端共用（只依赖可序列化状态）
+2. `server.mjs`：`renderPage({ page: (page, state) => … }, state, { messages })` 一次产出完整文档（`<head>` / `<body>` DSL + `#app` + `__YOYA_DATA__` + `client.js`）
+3. `client.js`：`hydrateOrMount(HomePage, { messages })` 读状态脚本，有服务端 HTML 就 hydrate（收养 DOM、绑事件），否则 mount
+
+渲染路径必须 DOM-free 且确定性（不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出、请求状态按请求注入）；i18n 每请求实例，`'文案'.s('key')` 自动按请求语言翻译。可直接复制的三份完整文件、低层原语（`renderToString` / `hydrate` / `mount`）与要避免的操作清单见 references/ssr-i18n.md。
 
 ## 权限控制
 
