@@ -1,4 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
+import { VTextNode } from '../core/node.js';
 import {
   componentClass,
   createComponentFactory,
@@ -41,7 +42,7 @@ export class VTreeTable extends HtmlElementNode {
     this._checked = new Set();
     this._lazyLoad = null;
     this._flat = [];
-    this._rows = new Map(); // key → { item, row, structureCell, expander }
+    this._rows = new Map(); // key → { item, row, expander, symbol, checkbox }
     this._body = null;
 
     this._applySetup(setup);
@@ -318,7 +319,8 @@ export class VTreeTable extends HtmlElementNode {
       if (entry.expander) {
         const open = this._expanded.has(item.key);
         entry.expander.attr('aria-expanded', open ? 'true' : 'false');
-        entry.expander.text(open ? '▾' : '▸');
+        // 展开符号是常驻文本节点：`element.text()` 是追加子节点，重复同步会越点越多
+        entry.symbol.textContent(open ? '▾' : '▸');
       }
       // 懒加载出子节点后，祖先的勾选态可能从「全选」变成「半选」
       if (entry.checkbox) {
@@ -404,7 +406,7 @@ export class VTreeTable extends HtmlElementNode {
       hidden: this._isVisible(item) ? null : true
     });
     // 先登记，勾选框 / 展开按钮的同步才有归属
-    const entry = { item, row: tr, expander: null, checkbox: null };
+    const entry = { item, row: tr, expander: null, symbol: null, checkbox: null };
     this._rows.set(key, entry);
 
     const structureCell = new HtmlElementNode('td').attr('data-depth', String(depth));
@@ -415,11 +417,12 @@ export class VTreeTable extends HtmlElementNode {
 
     if (hasChildren) {
       const open = this._expanded.has(key);
+      entry.symbol = new VTextNode(open ? '▾' : '▸');
       entry.expander = new HtmlElementNode('button')
         .className('yoya-vtreetable-expand')
         .attr({ type: 'button', 'data-role': 'expand', 'aria-expanded': open ? 'true' : 'false' })
         .style('marginLeft', `${depth * 16}px`)
-        .text(open ? '▾' : '▸')
+        .child(entry.symbol)
         .on('click', () => this._toggleExpand(item));
       structureCell.child(entry.expander);
     } else {

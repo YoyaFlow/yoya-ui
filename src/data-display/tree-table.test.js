@@ -65,6 +65,26 @@ describe('vTreeTable', () => {
     el.remove();
   });
 
+  it('keeps exactly one expand symbol per row across repeated expansion syncs', () => {
+    const table = vTreeTable({ columns, nodes: tree, expandedKeys: ['root'] });
+    const el = table.renderDom();
+    const symbols = () =>
+      [...el.querySelectorAll('[data-role="expand"]')].map((button) => button.textContent);
+
+    // root 展开、a 折叠；初次渲染不能把符号追加两遍
+    expect(symbols()).toEqual(['▾', '▸']);
+
+    const rootTrigger = el.querySelector('[data-row-key="root"] [data-role="expand"]');
+    rootTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true })); // 折叠
+    rootTrigger.dispatchEvent(new MouseEvent('click', { bubbles: true })); // 展开
+
+    expect(symbols()).toEqual(['▾', '▸']);
+
+    table.expandKeys(['root', 'a']);
+
+    expect(symbols()).toEqual(['▾', '▾']);
+  });
+
   it('links parent/descendant selection with tri-state', () => {
     const table = vTreeTable({
       columns,
