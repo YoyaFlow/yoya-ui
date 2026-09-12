@@ -5,6 +5,7 @@ import { isSignal } from './signals/handle.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
+import { trackedSubscribe } from './signals/observe.js';
 
 // 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
 // 因此用注册方式桥接，避免循环引用。
@@ -398,7 +399,7 @@ function subscribeRegion(node) {
 
   releaseRegionSubscriptions(node);
   node._regionSubs = (node._regionSources || []).map((source) =>
-    node._regionAdapter.subscribe(source, () => node.rebuild({ trigger: 'signal' }))
+    trackedSubscribe(node._regionAdapter, source, () => node.rebuild({ trigger: 'signal' }))
   );
 }
 

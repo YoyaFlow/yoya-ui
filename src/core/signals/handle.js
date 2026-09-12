@@ -1,9 +1,32 @@
 import { currentSignals } from './contract.js';
 import { recordRead, withCollect, withoutCollect } from './deps.js';
+import { dependentCount } from './observe.js';
 
 // 句柄品牌：用 Symbol.for 让同一页面里的多份 yoya-ui 副本也能互相识别，
 // 与 instanceof 相比不受模块重复打包影响。
 const SIGNAL_BRAND = Symbol.for('yoya.signal');
+
+// devtools 写入事件走 globalThis 共享 bridge（与 node.js 同模式）：
+// 主入口与 devtools 子路径各自打包时仍共享同一开关/事件流；未导入 devtools 时 no-op。
+const devtoolsBridgeKey = Symbol.for('yoya.devtools.bridge');
+
+function currentDevtoolsBridge() {
+  return typeof globalThis === 'undefined' ? null : globalThis[devtoolsBridgeKey] || null;
+}
+
+// 信号调试 id：仅在 devtools 开启且发生写入时才分配，WeakMap 不影响 GC。
+const signalDebugIds = new WeakMap();
+let nextSignalDebugId = 1;
+
+function signalDebugId(handle) {
+  let id = signalDebugIds.get(handle);
+  if (id === undefined) {
+    id = nextSignalDebugId;
+    nextSignalDebugId += 1;
+    signalDebugIds.set(handle, id);
+  }
+  return id;
+}
 
 /**
  * core 句柄：业务代码唯一可见的信号对象。
@@ -31,7 +54,23 @@ export class SignalHandle {
       throw new TypeError('computed signal is read-only');
     }
 
+    const bridge = currentDevtoolsBridge();
+    if (!bridge || !bridge.enabled()) {
+      this._adapter.write(this._source, next);
+      return;
+    }
+
+    const previous = withoutCollect(() => this._adapter.read(this._source));
     this._adapter.write(this._source, next);
+    if (!Object.is(previous, next)) {
+      bridge.emit({
+        type: 'signal-write',
+        signalId: signalDebugId(this),
+        previous,
+        next,
+        dependents: dependentCount(this._source)
+      });
+    }
   }
 
   /** 不建立依赖地读取。 */

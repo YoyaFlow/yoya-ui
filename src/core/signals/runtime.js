@@ -1,4 +1,5 @@
 import { currentSignals } from './contract.js';
+import { trackedSubscribe } from './observe.js';
 import { withCollect } from './deps.js';
 
 /**
@@ -29,7 +30,7 @@ export function createReactiveTarget({ run, onChange }) {
       return;
     }
 
-    disposers = sources.map((source) => adapter.subscribe(source, onDependencyChange));
+    disposers = sources.map((source) => trackedSubscribe(adapter, source, onDependencyChange));
   };
 
   const evaluate = () => {
