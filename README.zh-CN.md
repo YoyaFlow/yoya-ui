@@ -561,6 +561,7 @@ docs/          对外说明文档（SSR、主题、权限、DevTools、组件开
 - [服务端渲染指南](docs/ssr.zh-CN.md)
 - [亮点细节](docs/highlights.zh-CN.md)
 - [组件开发指南（第三方开发者）](docs/component-authoring.zh-CN.md)
+- [组件生态对比](docs/component-comparison.zh-CN.md)
 - [主题样式规格](docs/theme.zh-CN.md)
 - [权限控制](docs/access-control.zh-CN.md)
 - [DevTools 调试工具](docs/devtools.zh-CN.md)
