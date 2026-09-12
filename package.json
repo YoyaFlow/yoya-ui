@@ -65,10 +65,6 @@
       "types": "./types/yoya.signals-preact.d.ts",
       "import": "./dist/yoya.signals-preact.js"
     },
-    "./signals-zustand": {
-      "types": "./types/yoya.signals-zustand.d.ts",
-      "import": "./dist/yoya.signals-zustand.js"
-    },
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"
   },
@@ -142,7 +138,6 @@
     "three": "^0.185.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.0",
-    "vitest": "^4.1.10",
-    "zustand": "^5.0.15"
+    "vitest": "^4.1.10"
   }
 }

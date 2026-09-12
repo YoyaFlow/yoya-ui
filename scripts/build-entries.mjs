@@ -14,8 +14,7 @@ const SHARED_INPUTS = {
   echart: 'src/yoya.echart.js',
   three: 'src/yoya.three.js',
   devtools: 'src/yoya.devtools.js',
-  'signals-preact': 'src/yoya.signals-preact.js',
-  'signals-zustand': 'src/yoya.signals-zustand.js'
+  'signals-preact': 'src/yoya.signals-preact.js'
 };
 
 const FULL_INPUTS = [

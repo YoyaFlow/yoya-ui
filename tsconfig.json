@@ -25,8 +25,7 @@
       "yoya-ui/echart": ["./types/yoya.echart.d.ts"],
       "yoya-ui/three": ["./types/yoya.three.d.ts"],
       "yoya-ui/router": ["./types/yoya.router.d.ts"],
-      "yoya-ui/signals-preact": ["./types/yoya.signals-preact.d.ts"],
-      "yoya-ui/signals-zustand": ["./types/yoya.signals-zustand.d.ts"]
+      "yoya-ui/signals-preact": ["./types/yoya.signals-preact.d.ts"]
     }
   },
   "include": ["types/**/*.d.ts", "types/**/*.ts"]
