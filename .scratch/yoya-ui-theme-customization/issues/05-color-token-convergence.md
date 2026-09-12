@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — @layer 与 :where 层叠保障
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 原始色板以可派生方式注册，语义变体色由派生计算得出。
 - [ ] 覆盖单个原始色板后，主色与其 hover/active/subtle/ring 等变体全部联动。

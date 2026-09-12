@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 提供 renderToString 服务端入口：输入组件与请求上下文，输出 HTML 与序列化状态；入口为纯函数，不读写模块级可变状态。
 - [ ] 状态序列化最小化：只包含客户端恢复所需数据，`</script>` 等边界做安全转义。

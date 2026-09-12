@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 新增 `@yoyaflow/yoya-ui/devtools` 独立子路径（ES 构建产物 + `.d.ts`），主入口不导出 devtools 符号
 - [ ] 默认关闭零开销：未开启时渲染路径不产生事件、无额外副作用

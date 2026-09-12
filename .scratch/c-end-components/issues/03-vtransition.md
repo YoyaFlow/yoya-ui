@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] `show(true)` / `enter()` 应用进入态类，`show(false)` / `leave()` 应用离开态类并触发结束回调
 - [ ] reduced-motion 下跳过动画直接切换状态

@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持 pending、loading、loaded、error 状态及对应内容。
 - [ ] 支持重试、状态回调、模块缓存、预加载和缓存清理。

@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持主题注册、当前主题、亮色/暗色/自动模式和运行时切换。
 - [ ] 定义稳定的基础 token 契约，并完成至少一个组件的端到端接入。

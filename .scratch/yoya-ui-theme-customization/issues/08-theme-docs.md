@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — replaceClassName 类替换 API 与测试；02 — className 命名契约与自动校验
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 主题规范文档覆盖换肤维度、token 体系与明暗模式。
 - [ ] 组件开发规范增补类名契约、样式定制契约与主题变量体系章节。

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — 迁移共享动作批次：Button / Dropdown / Context Menu；03 — 迁移导航批次：Menu / SubMenu / Sidebar / Navbar / Steps；04 — 迁移表单批次：Input / Textarea / Select / Checkbox / Switch / Field / Form / Timer；05 — 迁移数据展示批次：Card / Detail / Table / Tree / Badge / Pagination / Code；06 — 迁移反馈批次：Message / Dialog / Message Manager；07 — 迁移布局、异步与路由批次：Layout / DynamicLoader / Router Views
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 所有静态样式辅助和静态内联声明已移除。
 - [ ] 新增回归检查，阻止组件源码重新引入静态视觉内联样式。

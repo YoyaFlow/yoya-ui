@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — vStateNode 接入自动触发
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 **背景（评审发现）：** `ComponentNode.children()` 在未解析时返回空数组，而区域收集与绑定遍历走的是 `_children`，因此：
 

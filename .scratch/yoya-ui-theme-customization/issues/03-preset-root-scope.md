@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — replaceClassName 类替换 API 与测试；02 — className 命名契约与自动校验
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 每个组件的预设规则都从根类作用域书写，不存在脱离根类的孤儿部件规则。
 - [ ] 用 replaceClassName 替换根类后，关键预设样式（背景、边框、状态色）不再命中。

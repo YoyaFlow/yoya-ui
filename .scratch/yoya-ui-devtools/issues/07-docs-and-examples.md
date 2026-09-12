@@ -4,7 +4,7 @@
 
 **Blocked by:** 06 — 参考调试面板
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 新增 devtools 使用文档：导入方式、启用示例、事件/快照契约、SSR 与生产注意事项
 - [ ] README/roadmap 收口：devtools 从待实现项移入已发布能力

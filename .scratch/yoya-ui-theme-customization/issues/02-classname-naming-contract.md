@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 制定并写入规范：根类、子部件类、状态 data 钩子的命名规则。
 - [ ] 自动化契约检查覆盖全部预定义组件，类名不合法即失败。

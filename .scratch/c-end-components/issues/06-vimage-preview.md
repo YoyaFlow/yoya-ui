@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — vLazyImage 图片懒加载
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 点击缩略图打开灯箱，大图懒加载与失败态复用 vLazyImage
 - [ ] 支持缩放 / 平移，ESC 或关闭按钮退出

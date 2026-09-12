@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] vLink 支持目标地址、活动状态、参数和 query 导航。
 - [ ] vRouterView 正确呈现匹配视图、404 和浏览器前进后退结果。

@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 相关组件 id 改为局部递增或基于稳定输入的确定性派生，不使用随机或全局顺序计数。
 - [ ] 同输入并发渲染产出相同 HTML（可缓存）。

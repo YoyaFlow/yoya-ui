@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — vStateNode 接入自动触发
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 按 key 复用 / 移动 / 销毁子节点，复用时不销毁 DOM 与事件 adapter。
 - [ ] 无 key 时退回按位置对齐。

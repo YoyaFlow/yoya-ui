@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — 区域声明与手动重跑
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [x] 重跑后权限态与首次构建一致：`withAccess` 作用域内构建的区域重跑后仍按权限隐藏 / 只读。
 - [x] 重跑后 `currentContext(key)` 仍能读到构建期的 provider 值。

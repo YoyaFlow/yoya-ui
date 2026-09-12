@@ -4,7 +4,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 输入/文本域/下拉/勾选/单选等控件 hydration 时以 DOM 现值初始化快照。
 - [ ] 服务端校验结果（错误文案、错误态）烘焙进首屏 HTML。

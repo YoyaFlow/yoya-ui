@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 库样式统一放入低优先级层，用户未分层规则天然优先。
 - [ ] 库选择器采用低特异度写法，特异性战争消失。

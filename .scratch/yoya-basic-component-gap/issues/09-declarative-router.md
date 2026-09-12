@@ -4,7 +4,7 @@
 
 **Blocked by:** 08 — 开发 Router 链接与视图组件
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持声明路由、默认路由、动态参数和 404 视图。
 - [ ] 复用现有全局守卫、路由守卫和 query 解析。

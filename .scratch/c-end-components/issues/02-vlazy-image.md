@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 未进入视口不触发加载，进入视口后设置 src 并触发加载
 - [ ] 加载失败显示失败态并可重试；加载中显示占位

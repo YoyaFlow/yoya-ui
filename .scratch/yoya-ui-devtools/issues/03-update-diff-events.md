@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — 视图树快照与节点身份
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 首次渲染产生 commit（mount）事件，后续实际变更产生对应 attr / child / text 粒度事件
 - [ ] 已挂载节点的 attr/className/style/text 直接变更会立即上报，不依赖下次 renderDom

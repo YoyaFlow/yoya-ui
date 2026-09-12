@@ -5,7 +5,7 @@
 
 **现状：** 只有设计结论，无代码。全仓库、全分支、全历史都没有 `rebuildable` 实现。
 
-**Status:** draft（核心语义与 API 形态已定；入口命名与区域发现机制待定，见第 9 节）
+**Status:** 已实现（2026-09-12 补记：入口定为 `rebuildable(predicate)` + `rebuild({ trigger })`，区域发现机制即「构建期捕获 + 重跑 builder」，见本目录 STATUS.md）
 
 ---
 

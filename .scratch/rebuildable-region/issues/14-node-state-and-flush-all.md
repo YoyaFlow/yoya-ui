@@ -4,7 +4,7 @@
 
 **Blocked by:** 13 — 统一绑定归属与数据来源（scope / state）
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 **背景：** 票 13 之后，绑定的来源可以显式声明（`scope()`）或继承宿主，但普通节点仍然只有单字段的 `setState(name, value)`（且写完什么都不发生）。用户诉求：`ele.state({ count: 1, open: false })` + `setState('open', true)` / `setState({ count: 2 })`，写完自动刷新。
 

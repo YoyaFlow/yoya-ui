@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — 细粒度更新事件
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] `setState` 产生 state 事件：含变更 keys、变更前后值、触发后的处理路径（update / bindings / rebuild）
 - [ ] 绑定写回经已有 attr/text 事件可关联到同一事件序列与组件

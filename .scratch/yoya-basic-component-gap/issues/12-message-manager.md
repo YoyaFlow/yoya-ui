@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持 show、close、clear、重复 ID 替换和消息类型快捷方法。
 - [ ] 可绑定独立容器，销毁时清理定时器、事件和消息节点。

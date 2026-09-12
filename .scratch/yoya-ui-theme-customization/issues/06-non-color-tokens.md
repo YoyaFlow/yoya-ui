@@ -4,7 +4,7 @@
 
 **Blocked by:** 05 — 颜色 token 收敛：raw + color-mix + light-dark 单文件双模式
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 新增空间/字体/控件尺寸/层级/动效/边框 token 并给出默认值。
 - [ ] 组件与布局中的同类硬编码值迁移为由 token 消费。

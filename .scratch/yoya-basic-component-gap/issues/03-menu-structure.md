@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [x] 提供 vMenuDivider 和 vMenuGroup 公共组件及父节点快捷调用。
 - [x] 分组标题、禁用项和分隔元素具备正确可访问语义。

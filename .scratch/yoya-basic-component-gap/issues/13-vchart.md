@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 定义初始化、数据更新、resize 和 destroy 的适配协议。
 - [ ] 核心组件不直接打包 ECharts，ECharts 通过可选适配入口接入。

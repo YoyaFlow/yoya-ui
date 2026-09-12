@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 服务端渲染流程提供统一的销毁入口并实际调用组件树清理。
 - [ ] 表单单选框等模块级注册表在销毁后无残留引用。

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — 视图树快照与节点身份
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 快照或查询能给出节点声明的 access 资源码与当前生效状态（active / readonly / hidden）
 - [ ] devtools 开启期间构建的节点捕获 Context 层与 i18n 实例引用，详情可读

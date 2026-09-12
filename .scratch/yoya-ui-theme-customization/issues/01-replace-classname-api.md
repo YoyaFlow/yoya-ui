@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 提供 replaceClassName(old, next, tolerate) 链式方法，替换后 DOM 类名即时同步。
 - [ ] tolerate 默认 false：旧类不存在时不改动；传 true 时允许旧类缺失并直接添加新类。

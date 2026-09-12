@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — 建立 CSS 样式契约与覆盖检查；02 — 迁移共享动作批次：Button / Dropdown / Context Menu
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 输入、选择、文本域、勾选和开关的默认与状态样式进入 CSS。
 - [ ] Field 的查看/编辑/错误提示和 Form 的字段状态由 data 钩子驱动视觉。

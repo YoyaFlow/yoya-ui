@@ -4,7 +4,7 @@
 
 **Blocked by:** 05 — 颜色 token 收敛：raw + color-mix + light-dark 单文件双模式
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 提供设置明暗模式（light/dark/system）的主题 API。
 - [ ] 支持设置命名品牌主题，并可选持久化用户选择。

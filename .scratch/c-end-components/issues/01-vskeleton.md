@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] `vSkeleton` 可创建段落 / 头像 / 区块占位，数量与尺寸可配置
 - [ ] 组件样式内聚（不依赖演示环境额外样式），动画尊重 reduced-motion

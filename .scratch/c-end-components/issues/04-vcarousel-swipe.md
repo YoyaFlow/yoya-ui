@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 水平滑动超过阈值切换上一项 / 下一项；未达阈值回弹不切换
 - [ ] 垂直滚动不触发切换（`touch-action: pan-y`）

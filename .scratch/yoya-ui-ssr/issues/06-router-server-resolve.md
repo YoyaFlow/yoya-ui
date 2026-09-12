@@ -4,7 +4,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 服务端可按路径解析并渲染匹配的路由视图（含参数、守卫、404）。
 - [ ] 客户端 hydration 后路由启动并接管导航。

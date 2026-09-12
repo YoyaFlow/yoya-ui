@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — 开发 vTimer 日期时间输入组件
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [x] 支持开始值、结束值和整体范围 value 的读写。
 - [x] 阻止或反馈结束值早于开始值等无效范围。

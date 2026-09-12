@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 提供 hydrate 入口：目标容器 + 组件 + 初始状态。
 - [ ] 已有元素被收养而非重建；事件在收养时绑定。

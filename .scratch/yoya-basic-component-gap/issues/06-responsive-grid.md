@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持最小列宽、间距和断点配置。
 - [ ] 保持 Layout DSL、父节点快捷调用和服务端 HTML 输出一致。

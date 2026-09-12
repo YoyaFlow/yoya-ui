@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — devtools 公开运行时契约
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 快照区分 element / text / component 三种节点，包含 tag、class、attr、text、children
 - [ ] 组件对象与多根 fragment 在快照中呈现完整边界与全部根节点

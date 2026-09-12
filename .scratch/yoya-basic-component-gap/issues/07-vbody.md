@@ -4,7 +4,7 @@
 
 **Blocked by:** 06 — 开发 responsiveGrid 响应式布局
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 支持背景、最大宽度、页面间距和稳定 class hook。
 - [ ] 支持局部目标挂载和可选的整页创建入口。

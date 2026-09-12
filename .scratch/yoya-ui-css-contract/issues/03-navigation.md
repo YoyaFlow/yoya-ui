@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — 建立 CSS 样式契约与覆盖检查；02 — 迁移共享动作批次：Button / Dropdown / Context Menu
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [ ] 菜单项 active、danger、hover、disabled 状态样式可由 CSS 覆盖。
 - [ ] 子菜单和侧栏的展开、折叠、内联模式视觉进入 CSS。

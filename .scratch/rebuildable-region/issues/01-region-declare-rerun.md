@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-12 补记：实现与测试早已落地，票面状态此前未更新；证据见本目录 STATUS.md）
 
 - [x] `rebuildable(predicate?)` 记录 builder 与可选谓词；无可重跑 builder 时在调用点报错。
 - [x] 两条入口都能记录 builder：元素构造器的 setup 与组件工厂 callback。
