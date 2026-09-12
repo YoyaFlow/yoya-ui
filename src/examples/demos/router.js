@@ -134,60 +134,6 @@ export function RouterHistoryCard() {
   };
 }
 
-export function RouterViewsEditorCard() {
-  const appRouter = vRouter({
-    default: '/overview',
-    routes: [
-      vRoute('/overview', { title: 'overview.js', view: () => div('项目概览内容') }),
-      vRoute('/settings', { title: 'settings.js', view: () => div('项目设置内容') })
-    ]
-  });
-
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.hstack((tabs) => {
-          tabs.style('gap', '8px');
-          tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-          tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
-        });
-        stack.vRouterViews(appRouter, { title: '未打开文件', titlePosition: 'left' });
-        appRouter.navigate('/overview', { replace: true });
-      });
-    }
-  };
-}
-
-export function RouterViewsTopCard() {
-  const appRouter = vRouter({
-    default: '/overview',
-    routes: [
-      vRoute('/overview', { title: '概览', view: () => div('项目概览内容') }),
-      vRoute('/settings', { title: '设置', view: () => div('项目设置内容') })
-    ]
-  });
-
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.hstack((tabs) => {
-          tabs.style('gap', '8px');
-          tabs.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-          tabs.vLink(appRouter, { label: '设置', replace: true, to: '/settings' });
-        });
-        stack.vRouterViews(appRouter, {
-          persist: false,
-          title: '未打开文件',
-          titlePosition: 'top'
-        });
-        appRouter.navigate('/overview', { replace: true });
-      });
-    }
-  };
-}
-
 export function RouterViewsEditorStandalone() {
   const appRouter = vRouter({
     default: '/overview',

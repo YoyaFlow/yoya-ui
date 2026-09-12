@@ -24,7 +24,7 @@ import {
   TreeRangerExample,
   TreeRangerFileExample,
   TreeRangerLazyExample
-} from './detail-sources.js';
+} from './demos/tree-ranger.js';
 
 const dataDisplayDocsDefinitions = Object.freeze({
   avatar: createDataDisplayDocsDefinition({

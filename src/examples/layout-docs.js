@@ -623,10 +623,6 @@ export function MobileDocumentationPage() {
   return createLayoutDocumentationPage(layoutDocsDefinitions.mobile);
 }
 
-export function LayoutDocumentationPage() {
-  return BodyDocumentationPage();
-}
-
 function createLayoutDocsDefinition(config) {
   return Object.freeze({
     apiIntro: config.apiIntro ?? '',

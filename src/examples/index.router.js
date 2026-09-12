@@ -272,14 +272,14 @@ const docsRouteLoaders = Object.freeze({
   'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
   'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
   'form:input': () => import('./input-docs.js').then((m) => m.InputDocumentationPage()),
-  'form:select': () => import('./form-legacy-docs.js').then((m) => m.SelectDocumentationPage()),
-  'form:textarea': () => import('./form-legacy-docs.js').then((m) => m.TextareaDocumentationPage()),
-  'form:switch': () => import('./form-legacy-docs.js').then((m) => m.SwitchDocumentationPage()),
-  'form:timer': () => import('./form-legacy-docs.js').then((m) => m.TimerDocumentationPage()),
+  'form:select': () => import('./form-misc-docs.js').then((m) => m.SelectDocumentationPage()),
+  'form:textarea': () => import('./form-misc-docs.js').then((m) => m.TextareaDocumentationPage()),
+  'form:switch': () => import('./form-misc-docs.js').then((m) => m.SwitchDocumentationPage()),
+  'form:timer': () => import('./form-misc-docs.js').then((m) => m.TimerDocumentationPage()),
   'form:timer-range': () =>
-    import('./form-legacy-docs.js').then((m) => m.TimerRangeDocumentationPage()),
-  'form:upload': () => import('./form-legacy-docs.js').then((m) => m.UploadDocumentationPage()),
-  'form:rate': () => import('./form-legacy-docs.js').then((m) => m.RateDocumentationPage()),
+    import('./form-misc-docs.js').then((m) => m.TimerRangeDocumentationPage()),
+  'form:upload': () => import('./form-misc-docs.js').then((m) => m.UploadDocumentationPage()),
+  'form:rate': () => import('./form-misc-docs.js').then((m) => m.RateDocumentationPage()),
   'form:checkbox': () => import('./checkbox-docs.js').then((m) => m.CheckboxDocumentationPage()),
   'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
   'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
@@ -340,16 +340,15 @@ const docsRouteLoaders = Object.freeze({
   'board:ring-stat': () => import('./board-docs.js').then((m) => m.RingStatDocumentationPage()),
   'board:gauge': () => import('./board-docs.js').then((m) => m.GaugeDocumentationPage()),
   'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage()),
-  'navigation:dropdown': () =>
-    import('./misc-legacy-docs.js').then((m) => m.DropdownDocumentationPage()),
+  'navigation:dropdown': () => import('./misc-docs.js').then((m) => m.DropdownDocumentationPage()),
   'navigation:pagination': () =>
-    import('./misc-legacy-docs.js').then((m) => m.PaginationDocumentationPage()),
-  'data-display:code': () => import('./misc-legacy-docs.js').then((m) => m.CodeDocumentationPage()),
-  'data-display:card': () => import('./misc-legacy-docs.js').then((m) => m.CardDocumentationPage()),
+    import('./misc-docs.js').then((m) => m.PaginationDocumentationPage()),
+  'data-display:code': () => import('./misc-docs.js').then((m) => m.CodeDocumentationPage()),
+  'data-display:card': () => import('./misc-docs.js').then((m) => m.CardDocumentationPage()),
   'async:dynamic-loader': () =>
-    import('./misc-legacy-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
+    import('./misc-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
   'feedback:message-manager': () =>
-    import('./misc-legacy-docs.js').then((m) => m.MessageManagerDocumentationPage())
+    import('./misc-docs.js').then((m) => m.MessageManagerDocumentationPage())
 });
 
 export function renderExamplesIndex(target = '#app') {

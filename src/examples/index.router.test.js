@@ -1476,6 +1476,127 @@ describe('renderExamplesIndex', () => {
       'ProgressBasicExample1',
       'vProgress((progress)',
       3
+    ],
+    [
+      '/components/form/select',
+      '选择框',
+      'select',
+      '选择框 vSelect',
+      'basic',
+      'SelectExample1',
+      'vSelect({',
+      1
+    ],
+    [
+      '/components/form/textarea',
+      '文本域',
+      'textarea',
+      '文本域 vTextarea',
+      'basic',
+      'TextareaExample1',
+      'vTextarea({',
+      1
+    ],
+    [
+      '/components/form/switch',
+      '开关',
+      'switch',
+      '开关 vSwitch',
+      'basic',
+      'SwitchExample1',
+      'vSwitch({',
+      1
+    ],
+    [
+      '/components/form/timer',
+      '日期时间',
+      'timer',
+      '日期时间 vTimer',
+      'basic',
+      'TimerExample1',
+      'vTimer({',
+      1
+    ],
+    [
+      '/components/form/timer-range',
+      '日期范围',
+      'timer-range',
+      '日期范围 vTimerRange',
+      'basic',
+      'TimerRangeExample1',
+      'vTimerRange({',
+      1
+    ],
+    [
+      '/components/form/upload',
+      '文件上传',
+      'upload',
+      '文件上传 vUpload',
+      'basic',
+      'UploadExample1',
+      'vUpload({',
+      1
+    ],
+    ['/components/form/rate', '评分', 'rate', '评分 vRate', 'basic', 'RateExample1', 'vRate({', 1],
+    [
+      '/components/navigation/dropdown',
+      '下拉菜单',
+      'dropdown',
+      '下拉菜单 vDropdownMenu',
+      'basic',
+      'DropdownMenuExample1',
+      'vDropdownMenu((menu)',
+      1
+    ],
+    [
+      '/components/navigation/pagination',
+      '分页',
+      'pagination',
+      '分页 vPagination',
+      'basic',
+      'PaginationExample1',
+      'vPagination({',
+      1
+    ],
+    [
+      '/components/data-display/code',
+      '代码',
+      'code',
+      '代码展示 vCode',
+      'basic',
+      'CodeExample1',
+      'vCode({',
+      1
+    ],
+    [
+      '/components/data-display/card',
+      '卡片',
+      'card',
+      '卡片 vCard',
+      'basic',
+      'CardExample1',
+      "vCardHeader('服务总览')",
+      1
+    ],
+    [
+      '/components/async/dynamic-loader',
+      '动态加载',
+      'dynamic-loader',
+      '动态加载 vDynamicLoader',
+      'basic',
+      'DynamicLoaderExample1',
+      'vDynamicLoader({',
+      1
+    ],
+    [
+      '/components/feedback/message-manager',
+      '消息管理器',
+      'message-manager',
+      '消息管理器 vMessageManager',
+      'basic',
+      'MessageManagerExample1',
+      'vMessageManager()',
+      1
     ]
   ])(
     'renders detailed docs for %s',
@@ -1497,17 +1618,17 @@ describe('renderExamplesIndex', () => {
       });
 
       const page = document.querySelector(
-        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"]`
+        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"], [data-async-docs="${docsKey}"]`
       );
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
       const demoNodes = page.querySelectorAll(
-        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo], [data-state-demo]'
+        '[data-layout-demo], [data-navigation-demo], [data-feedback-demo], [data-form-demo], [data-data-display-demo], [data-i18n-demo], [data-state-demo], [data-async-demo]'
       );
       expect(demoNodes).toHaveLength(demoCount);
 
       const source = page.querySelector(
-        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example], [data-state-demo="${firstDemoId}"] [data-source-example]`
+        `[data-layout-demo="${firstDemoId}"] [data-source-example], [data-navigation-demo="${firstDemoId}"] [data-source-example], [data-feedback-demo="${firstDemoId}"] [data-source-example], [data-form-demo="${firstDemoId}"] [data-source-example], [data-data-display-demo="${firstDemoId}"] [data-source-example], [data-i18n-demo="${firstDemoId}"] [data-source-example], [data-state-demo="${firstDemoId}"] [data-source-example], [data-async-demo="${firstDemoId}"] [data-source-example]`
       );
       expect(source).not.toBeNull();
       expect(source.textContent).toContain(`export function ${sourceName}`);
