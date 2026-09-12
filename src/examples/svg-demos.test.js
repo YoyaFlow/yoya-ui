@@ -160,6 +160,12 @@ describe('svg breakout demo', () => {
     expect(paddle.getAttribute('transform')).not.toBe(paddleStart);
     window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
 
+    // 触屏 / 鼠标按下即就位：与键盘等价，坐标按 viewBox 换算后夹在场地内
+    const field = app.querySelector('.playfield');
+    field.getBoundingClientRect = () => ({ left: 0, width: 900 });
+    field.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 950 }));
+    expect(paddle.getAttribute('transform')).toBe('translate(810 546)');
+
     // 空格暂停：写入 phase 信号，遮罩与文案跟着切换，球停住
     window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
     const pausedAt = ball.getAttribute('transform');
@@ -168,6 +174,14 @@ describe('svg breakout demo', () => {
     expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
     expect(ball.getAttribute('transform')).toBe(pausedAt);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+    // 手机上的按钮与键盘等价：暂停/继续的文案也由 phase 信号驱动
+    const pauseButton = app.querySelector('.control--pause');
+    pauseButton.click();
+    expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
+    expect(pauseButton.textContent).toBe('继续');
+    pauseButton.click();
+    expect(pauseButton.textContent).toBe('暂停');
 
     // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
     const broken = await waitFor(() => app.querySelectorAll('.brick').length < bricksBefore, 8000);
@@ -178,5 +192,10 @@ describe('svg breakout demo', () => {
     expect(Number(app.querySelector('.hud-item--speed .hud-value').textContent)).toBeGreaterThan(
       speedBefore
     );
+
+    // 重新开始：分数清零、砖块恢复满场
+    app.querySelector('.control--restart').click();
+    expect(Number(app.querySelector('.hud-item--score .hud-value').textContent)).toBe(0);
+    expect(app.querySelectorAll('.brick')).toHaveLength(bricksBefore);
   }, 20000);
 });

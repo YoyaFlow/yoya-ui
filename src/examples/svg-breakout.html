@@ -29,6 +29,8 @@
         justify-content: center;
         margin: 0;
         min-height: 100vh;
+        min-height: 100dvh;
+        overscroll-behavior: none;
         padding: 24px;
       }
 
@@ -63,6 +65,14 @@
         flex-wrap: wrap;
         font-size: 13px;
         gap: 20px;
+      }
+
+      .hud-bar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: space-between;
         margin-bottom: 12px;
       }
 
@@ -77,14 +87,76 @@
         font-weight: 600;
       }
 
+      .controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .control {
+        background: #1c2942;
+        border: 1px solid #2f4368;
+        border-radius: 8px;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 13px;
+        padding: 6px 14px;
+        touch-action: manipulation;
+      }
+
+      .control:hover {
+        background: #243456;
+        color: #f8fafc;
+      }
+
+      .control:active {
+        transform: translateY(1px);
+      }
+
       .playfield {
         background: #16213a;
         border: 1px solid #2b3d5f;
         border-radius: 12px;
         display: block;
         height: auto;
+        -webkit-tap-highlight-color: transparent;
         touch-action: none;
+        user-select: none;
         width: 100%;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          align-items: flex-start;
+          padding: 12px;
+        }
+
+        .demo-card {
+          border-radius: 12px;
+          padding: 16px 14px 18px;
+        }
+
+        .demo-card h1 {
+          font-size: 17px;
+        }
+
+        .demo-card > p {
+          font-size: 13px;
+        }
+
+        .hud {
+          font-size: 12px;
+          gap: 14px;
+        }
+
+        .controls {
+          width: 100%;
+        }
+
+        .control {
+          flex: 1;
+          padding: 9px 10px;
+        }
       }
 
       .wall-guide {
@@ -552,6 +624,31 @@
         };
       }
 
+      function Controls(state) {
+        const pauseLabel = computed(() => (state.phase.value === 'paused' ? '继续' : '暂停'));
+
+        function control(key, label, onClick) {
+          return div((cell) => {
+            cell.button((button) => {
+              button.className(`control control--${key}`);
+              button.attr('type', 'button');
+              button.on('click', onClick);
+              button.text(label);
+            });
+          });
+        }
+
+        return {
+          render() {
+            return div((bar) => {
+              bar.className('controls');
+              bar.child(control('pause', pauseLabel, () => state.togglePause()));
+              bar.child(control('restart', '重新开始', () => state.restart()));
+            });
+          }
+        };
+      }
+
       function Overlay(state) {
         const visible = computed(() => state.phase.value !== 'running');
         const opacity = computed(() => (visible.value ? '1' : '0'));
@@ -611,7 +708,7 @@
         };
       }
 
-      function Playfield({ wall, paddle, ball, overlay, onPointerMove }) {
+      function Playfield({ wall, paddle, ball, overlay, onPointer }) {
         return {
           render() {
             return svg((field) => {
@@ -619,9 +716,11 @@
               field.attr({
                 viewBox: `0 0 ${VIEW.width} ${VIEW.height}`,
                 role: 'img',
-                'aria-label': '用左右方向键或鼠标控制球拍打砖块'
+                'aria-label': '用左右方向键或拖动球拍打砖块'
               });
-              field.on('pointermove', onPointerMove);
+              // 触屏与鼠标共用一套：按下即就位，拖动跟手（.playfield 关掉了 touch-action）
+              field.on('pointerdown', onPointer);
+              field.on('pointermove', onPointer);
 
               field.rect({
                 class: 'wall-guide',
@@ -658,7 +757,7 @@
           paddle: Paddle(state.paddleX),
           ball: Ball(state),
           overlay: Overlay(state),
-          onPointerMove: (event) => {
+          onPointer: (event) => {
             const box = event.currentTarget.getBoundingClientRect();
             if (!box.width) {
               return;
@@ -689,9 +788,13 @@
                 card.className('demo-card');
                 card.h1('SVG 打砖块：← → 控制球拍');
                 card.p(
-                  '球拍和球是信号驱动的值绑定，每帧原地写回 SVG 属性；砖块被打掉后整片区域按新数据重建。空格暂停，回车重开。'
+                  '方向键、WASD 或直接拖动球拍；空格暂停，回车重开。砖块被打掉后整片区域按新数据重建，球速随分数越来越快。'
                 );
-                card.child(Hud(state));
+                card.div((bar) => {
+                  bar.className('hud-bar');
+                  bar.child(Hud(state));
+                  bar.child(Controls(state));
+                });
                 card.child(field);
               });
             });
