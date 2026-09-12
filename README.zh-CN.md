@@ -111,7 +111,7 @@ npm run dev
 
 | 能力                   | 状态                                                                                                                               |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法                                                                          |
+| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法；`htmls` 命名空间挂全部标签工厂                                          |
 | SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                                                                             |
 | 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                                                                                   |
 | 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                                                                                   |
@@ -437,6 +437,31 @@ yoya-ui 今天的 Star 少，是因为它**年轻**，而不是因为它小或�
 - **上手只需记住两条约定**：setup 回调（`vCard((card) => { … })`）与值位置接受
   信号句柄（`vText(count)`）。其余都是构建在真实 DOM 之上的普通 JavaScript。
 
+同一份结构，两种写法，逐行对得上：
+
+```html
+<div class="toolbar">
+  <button type="button" class="primary" onclick="save()">保存</button>
+  <span class="hint">未保存</span>
+</div>
+```
+
+```js
+div((toolbar) => {
+  toolbar.attr({ class: 'toolbar' });
+  toolbar.child(
+    button('保存', (btn) => {
+      btn.attr({ type: 'button', class: 'primary' }).on('click', save);
+    })
+  );
+  toolbar.child(span('未保存', (hint) => hint.attr({ class: 'hint' })));
+});
+```
+
+标签名、属性名、事件名与 HTML 相同；标签嵌套换成「setup 回调 + `child()` 显式
+添加子节点」，文本内容变成参数。写出来的每个节点，渲染后就是 DOM 里对应的那个
+元素。
+
 ### 如何评估工程可用性
 
 Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优先做这些检查：
@@ -536,6 +561,7 @@ docs/          对外说明文档（SSR、主题、权限、DevTools、组件开
 - [服务端渲染指南](docs/ssr.zh-CN.md)
 - [亮点细节](docs/highlights.zh-CN.md)
 - [组件开发指南（第三方开发者）](docs/component-authoring.zh-CN.md)
+- [组件生态对比](docs/component-comparison.zh-CN.md)
 - [主题样式规格](docs/theme.zh-CN.md)
 - [权限控制](docs/access-control.zh-CN.md)
 - [DevTools 调试工具](docs/devtools.zh-CN.md)

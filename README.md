@@ -113,7 +113,7 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 
 | Capability                             | Status                                                                                                                                                                                                                      |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                                                                                                                                               |
+| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts; the `htmls` namespace groups every tag factory                                                                                                               |
 | SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                                                                                                                                  |
 | Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                                                                                                                                  |
 | Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                                                                                                                                 |
@@ -483,6 +483,32 @@ writing anything:
   (`vCard((card) => { … })`) and value positions accepting signal handles
   (`vText(count)`). The rest is plain JavaScript over the real DOM.
 
+The same structure in both notations, line for line:
+
+```html
+<div class="toolbar">
+  <button type="button" class="primary" onclick="save()">Save</button>
+  <span class="hint">Unsaved</span>
+</div>
+```
+
+```js
+div((toolbar) => {
+  toolbar.attr({ class: 'toolbar' });
+  toolbar.child(
+    button('Save', (btn) => {
+      btn.attr({ type: 'button', class: 'primary' }).on('click', save);
+    })
+  );
+  toolbar.child(span('Unsaved', (hint) => hint.attr({ class: 'hint' })));
+});
+```
+
+Tag names, attribute names and event names match HTML; tag nesting becomes a
+setup callback that adds children explicitly via `child()`, and text content
+becomes an argument. Every node you write renders as the corresponding element
+in the DOM.
+
 ### Evaluating engineering fitness
 
 Star count is a **social** signal and is explicitly unreliable for this
@@ -586,6 +612,7 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 - [Server-Side Rendering Guide](docs/ssr.md)
 - [Highlight Details](docs/highlights.md)
 - [Component Authoring Guide (third-party developers)](docs/component-authoring.md)
+- [Component Ecosystem Comparison](docs/component-comparison.md)
 - [Theme Styling Spec](docs/theme.md)
 - [Access Control](docs/access-control.md)
 - [DevTools](docs/devtools.md)

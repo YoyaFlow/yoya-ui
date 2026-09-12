@@ -285,4 +285,17 @@ export const varTag: ElementFactory<HtmlElementNode>;
 export const video: ElementFactory<HtmlElementNode>;
 export const wbr: ElementFactory<HtmlElementNode>;
 
+/**
+ * Namespace of every WHATWG HTML tag factory: `htmls.div(...)`, `htmls.span(...)`.
+ * Keys mirror HtmlElementShortcuts; `style` is included here (on nodes that
+ * name is the CSS style API), and the `<html>` factory is `htmls.html`.
+ */
+export type HtmlElementFactories = {
+  [K in keyof HtmlElementShortcuts]: ElementFactory<HtmlElementNode>;
+} & {
+  style: ElementFactory<HtmlElementNode>;
+};
+
+export const htmls: HtmlElementFactories;
+
 export type { ElementOptions, SetupCallback, SetupInput };

@@ -6,6 +6,7 @@ import {
   VButton,
   div,
   flex,
+  htmls,
   vBadge,
   vButton,
   vCard,
@@ -198,6 +199,14 @@ const labelText = svgs.text((line) => line.text(label));
 void labelLine;
 void labelChild;
 void labelText;
+
+// htmls namespace: every WHATWG tag factory on one object, style alias included.
+const byNamespace = htmls.div((root) => root.span('via htmls'));
+const styleFactory = htmls.style;
+const htmlFactory = htmls.html;
+void byNamespace;
+void styleFactory;
+void htmlFactory;
 
 // i18n.
 const i18n = createI18n({
