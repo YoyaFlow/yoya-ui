@@ -483,6 +483,32 @@ writing anything:
   (`vCard((card) => { … })`) and value positions accepting signal handles
   (`vText(count)`). The rest is plain JavaScript over the real DOM.
 
+The same structure in both notations, line for line:
+
+```html
+<div class="toolbar">
+  <button type="button" class="primary" onclick="save()">Save</button>
+  <span class="hint">Unsaved</span>
+</div>
+```
+
+```js
+div((toolbar) => {
+  toolbar.attr({ class: 'toolbar' });
+  toolbar.child(
+    button('Save', (btn) => {
+      btn.attr({ type: 'button', class: 'primary' }).on('click', save);
+    })
+  );
+  toolbar.child(span('Unsaved', (hint) => hint.attr({ class: 'hint' })));
+});
+```
+
+Tag names, attribute names and event names match HTML; tag nesting becomes a
+setup callback that adds children explicitly via `child()`, and text content
+becomes an argument. Every node you write renders as the corresponding element
+in the DOM.
+
 ### Evaluating engineering fitness
 
 Star count is a **social** signal and is explicitly unreliable for this

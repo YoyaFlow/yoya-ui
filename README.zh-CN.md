@@ -437,6 +437,31 @@ yoya-ui 今天的 Star 少，是因为它**年轻**，而不是因为它小或�
 - **上手只需记住两条约定**：setup 回调（`vCard((card) => { … })`）与值位置接受
   信号句柄（`vText(count)`）。其余都是构建在真实 DOM 之上的普通 JavaScript。
 
+同一份结构，两种写法，逐行对得上：
+
+```html
+<div class="toolbar">
+  <button type="button" class="primary" onclick="save()">保存</button>
+  <span class="hint">未保存</span>
+</div>
+```
+
+```js
+div((toolbar) => {
+  toolbar.attr({ class: 'toolbar' });
+  toolbar.child(
+    button('保存', (btn) => {
+      btn.attr({ type: 'button', class: 'primary' }).on('click', save);
+    })
+  );
+  toolbar.child(span('未保存', (hint) => hint.attr({ class: 'hint' })));
+});
+```
+
+标签名、属性名、事件名与 HTML 相同；标签嵌套换成「setup 回调 + `child()` 显式
+添加子节点」，文本内容变成参数。写出来的每个节点，渲染后就是 DOM 里对应的那个
+元素。
+
 ### 如何评估工程可用性
 
 Star 数是**社交**信号，在现阶段对本项目明确不可靠。请优先做这些检查：
