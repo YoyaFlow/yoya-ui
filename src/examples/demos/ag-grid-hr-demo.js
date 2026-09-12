@@ -1,5 +1,14 @@
 import { AgGridDemoNode } from './ag-grid-glue.js';
 
+/** 行内富文本：元素 + textContent 组装，避免用 innerHTML 拼数据。 */
+function fillRichText(parent, name, sub) {
+  const bold = document.createElement('b');
+  bold.textContent = name;
+  const small = document.createElement('small');
+  small.textContent = sub;
+  parent.append(bold, small);
+}
+
 export function AgGridHrExample() {
   const person = (id, name, title, empType, location, joinDate, salary, status) => ({
     empType,
@@ -138,7 +147,7 @@ export function AgGridHrExample() {
 
       const label = document.createElement('span');
       label.className = 'hr-group';
-      label.innerHTML = `<b>${row.name}</b><small>${row.count} 名成员</small>`;
+      fillRichText(label, row.name, `${row.count} 名成员`);
       wrap.append(caret, label);
       return wrap;
     }
@@ -148,7 +157,7 @@ export function AgGridHrExample() {
     avatar.textContent = row.name.slice(0, 1);
     const copy = document.createElement('span');
     copy.className = 'hr-copy';
-    copy.innerHTML = `<b>${row.name}</b><small>${row.title}</small>`;
+    fillRichText(copy, row.name, row.title);
     wrap.append(avatar, copy);
     return wrap;
   };
