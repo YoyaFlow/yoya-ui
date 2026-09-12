@@ -4,6 +4,8 @@ import { ComponentSource } from './component-source.js';
 import adapterTemplateSource from './adapter-template.js?raw';
 import signalsAdapterSource from './adapter-signals-example.js?raw';
 import zustandAdapterSource from './adapter-zustand-example.js?raw';
+import signalsUsageSource from './adapter-signals-usage.js?raw';
+import zustandUsageSource from './adapter-zustand-usage.js?raw';
 
 const adapterSourcePanels = [
   ComponentSource({
@@ -15,8 +17,16 @@ const adapterSourcePanels = [
     title: '演示代码：Signals 类库（@preact/signals-core）'
   }),
   ComponentSource({
+    source: signalsUsageSource,
+    title: '演示代码：Signals 用法（接入 + 业务代码）'
+  }),
+  ComponentSource({
     source: zustandAdapterSource,
     title: '演示代码：Store 类库（zustand/vanilla）'
+  }),
+  ComponentSource({
+    source: zustandUsageSource,
+    title: '演示代码：Store 用法（接入 + 业务代码）'
   })
 ];
 
@@ -76,7 +86,7 @@ export function SignalsDocumentationPage() {
             );
           });
           adapter.p(
-            '再往下是两份完整的演示代码：signals 类库与 store 类库各一份，按契约把各自的坑都处理掉了。两份都在仓库里跑一致性用例与端到端用例，可以直接抄。'
+            '再往下是四种演示代码，每类库一对：适配器 + 用法（启动装一次引擎，业务代码照旧）。signals 与 store 各一对，按契约把各自的坑都处理掉了，全部在仓库里跑一致性用例与端到端用例，可以直接抄。'
           );
           adapter.div((panels) => {
             panels.className('components-signals-adapter-sources');

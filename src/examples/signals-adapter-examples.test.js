@@ -3,6 +3,8 @@ import { computed, div, installSignals, ref } from '../index.js';
 import { describeSignalsAdapter } from '../core/signals/conformance.js';
 import { createSignalsAdapter } from './adapter-signals-example.js';
 import { createZustandAdapter } from './adapter-zustand-example.js';
+import { SignalsCounter, installSignalsEngine } from './adapter-signals-usage.js';
+import { ZustandCounter, installZustandEngine } from './adapter-zustand-usage.js';
 
 afterEach(() => {
   installSignals(null);
@@ -40,6 +42,27 @@ describe('documentation example adapters', () => {
       expect(element.getAttribute('data-count')).toBe('1');
       expect(element.getAttribute('data-double')).toBe('2');
       expect(element.textContent).toBe('n=1');
+    });
+  });
+
+  // 用法示例也要能跑：装一次引擎，之后业务代码与内置引擎完全一样
+  [
+    ['signals usage (preact)', installSignalsEngine, SignalsCounter],
+    ['store usage (zustand)', installZustandEngine, ZustandCounter]
+  ].forEach(([label, installEngine, Counter]) => {
+    it(`${label} installs the engine and drives business code`, () => {
+      installEngine();
+
+      const counter = Counter();
+      const element = counter.render().renderDom();
+
+      expect(element.textContent).toBe('0 × 2 = 0');
+
+      counter.increment();
+      counter.increment();
+
+      expect(element.getAttribute('data-count')).toBe('2');
+      expect(element.textContent).toBe('2 × 2 = 4');
     });
   });
 });

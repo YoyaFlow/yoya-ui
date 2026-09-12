@@ -802,10 +802,10 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-signals-advantages]')).toBeNull();
     expect(page.querySelector('[data-signals-demo]')).toBeNull();
 
-    // 插件模板区：先给模板，再给 signals 类库与 store 类库两份演示代码
+    // 插件模板区：模板 + signals / store 各一对「适配器 + 用法」演示代码
     const adapter = page.querySelector('[data-signals-adapter]');
     expect(adapter).not.toBeNull();
-    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(3);
+    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(5);
     const adapterSources = [...adapter.querySelectorAll('[data-source-example]')].map(
       (node) => node.textContent
     );
@@ -817,10 +817,16 @@ describe('renderExamplesIndex', () => {
     expect(adapterSources[1]).toContain('createSignalsAdapter(signals = preactSignals)');
     expect(adapterSources[1]).toContain('signals.signal(initial)');
     expect(adapterSources[1]).toContain('untracked(() => listener(value))');
-    expect(adapterSources[2]).toContain('createZustandAdapter()');
-    expect(adapterSources[2]).toContain('zustand/vanilla');
-    expect(adapterSources[2]).toContain('source.getState().value');
-    expect(adapterSources[2]).toContain('source.setState({ value })');
+    expect(adapterSources[2]).toContain('installSignalsEngine()');
+    expect(adapterSources[2]).toContain('installSignals(createSignalsAdapter())');
+    expect(adapterSources[2]).toContain('const count = ref(0)');
+    expect(adapterSources[3]).toContain('createZustandAdapter()');
+    expect(adapterSources[3]).toContain('zustand/vanilla');
+    expect(adapterSources[3]).toContain('source.getState().value');
+    expect(adapterSources[3]).toContain('source.setState({ value })');
+    expect(adapterSources[4]).toContain('installZustandEngine()');
+    expect(adapterSources[4]).toContain('installSignals(createZustandAdapter())');
+    expect(adapterSources[4]).toContain('const count = ref(0)');
     expect(adapter.textContent).toContain('core/signals/engine.js');
   });
 
