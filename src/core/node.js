@@ -1770,7 +1770,7 @@ export class ElementNode extends ViewNode {
     }
     try {
       if (!this._el) {
-        this._el = document.createElement(this._tagName);
+        this._el = this._createElement();
         withRenderScope(inherited, () => this._applySnapshotToElement());
       }
 
@@ -1795,6 +1795,11 @@ export class ElementNode extends ViewNode {
     } finally {
       this._devtoolsRendering = false;
     }
+  }
+
+  /** 真实元素创建钩子：HTML 走 createElement，SVG 子类覆写为 createElementNS。 */
+  _createElement() {
+    return document.createElement(this._tagName);
   }
 
   /**

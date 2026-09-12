@@ -63,17 +63,9 @@ export class SvgElementNode extends ElementNode {
     return super.style(name, value);
   }
 
-  renderDom() {
-    if (this._deleted) {
-      return null;
-    }
-
-    if (!this._el) {
-      this._el = document.createElementNS(SVG_NAMESPACE, this._tagName);
-      this._applySnapshotToElement();
-    }
-
-    return this._el;
+  /** SVG 元素走命名空间创建；其余生命周期与 HTML 元素一致（激活绑定、提交子节点）。 */
+  _createElement() {
+    return document.createElementNS(SVG_NAMESPACE, this._tagName);
   }
 
   /**
