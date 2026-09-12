@@ -6,7 +6,7 @@
     <title>yoya-ui SVG 塔防小游戏</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -299,16 +299,17 @@
     <main id="app"></main>
     <script type="module">
       import {
+        computed,
         div,
+        ref,
         svg,
-        SvgElementNode,
-        vStateNode
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.4.0/dist/yoya.ui.js';
+        SvgElementNode
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
 
       /*
        * 组件划分：
        * - GameModel：纯游戏状态与规则（波次/金钱/生命/索敌/弹道结算），不碰 DOM；
-       * - Enemy / Tower / Projectile：各自 vStateNode，视图绑定自己的状态；
+       * - Enemy / Tower / Projectile：各自用 ref 持有会驱动视图的值，视图直接绑定句柄；
        * - Playfield：SVG 场景与可点击网格，负责把实体组件组合进同一棵树；
        * - Hud：侧边栏（资源/波次/炮塔选择/开始按钮）；
        * - TowerDefenseApp：页面壳，连接模型、视图与动画循环。
@@ -457,26 +458,26 @@
         const def = ENEMY_DEFS[kind];
         const hpScale = 1 + (waveNumber - 1) * 0.18;
         const maxHp = Math.round(def.hp * hpScale);
+        const barWidth = def.radius * 2 + 4;
 
-        return vStateNode({
-          state: () => ({
-            kind,
-            x: startX,
-            y: startY,
-            pathIndex: startPathIndex,
-            hp: maxHp,
-            maxHp,
-            alive: true,
-            slowUntil: 0,
-            slowFactor: 1
-          }),
+        const positionX = ref(startX);
+        const positionY = ref(startY);
+        const hp = ref(maxHp);
+        const barWidthValue = computed(() => String((hp.value / maxHp) * barWidth));
+        const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
 
-          render(state) {
-            const barWidth = def.radius * 2 + 4;
+        // 只服务规则、不驱动视图的值留在普通变量里
+        let pathIndex = startPathIndex;
+        let alive = true;
+        let slowUntil = 0;
+        let slowFactor = 1;
+        let node = null;
 
-            return new SvgElementNode('g', (group) => {
+        return {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.className(['enemy', `enemy--${kind}`]);
-              group.attr('transform', (s) => `translate(${s.x} ${s.y})`);
+              group.attr('transform', transform);
 
               group.rect({
                 class: 'enemy-hp-bg',
@@ -495,37 +496,56 @@
                   height: 4,
                   rx: 2
                 });
-                bar.attr('width', (s) => String((s.hp / s.maxHp) * barWidth));
+                bar.attr('width', barWidthValue);
               });
 
               group.circle({ class: 'enemy-body', r: def.radius });
             });
+            return node;
           },
 
-          hit(damage, now, slowMs, slowFactor) {
-            const state = this.state();
-            const hp = Math.max(0, state.hp - damage);
-            const slowUntil =
-              slowMs > 0 && slowFactor < 1
-                ? Math.max(state.slowUntil, now + slowMs)
-                : state.slowUntil;
+          get kind() {
+            return kind;
+          },
 
-            this.setState({ hp, alive: hp > 0, slowUntil, slowFactor });
-            return hp <= 0;
+          get x() {
+            return positionX.value;
+          },
+
+          get y() {
+            return positionY.value;
+          },
+
+          get hp() {
+            return hp.value;
+          },
+
+          get alive() {
+            return alive;
+          },
+
+          hit(damage, now, slowMs, nextSlowFactor) {
+            const nextHp = Math.max(0, hp.value - damage);
+            if (slowMs > 0 && nextSlowFactor < 1) {
+              slowUntil = Math.max(slowUntil, now + slowMs);
+              slowFactor = nextSlowFactor;
+            }
+
+            hp.value = nextHp;
+            alive = nextHp > 0;
+            return nextHp <= 0;
           },
 
           step(dtSeconds, now) {
-            const state = this.state();
-            if (!state.alive) {
+            if (!alive) {
               return { arrived: false };
             }
 
-            const slowed = now < state.slowUntil ? state.slowFactor : 1;
+            const slowed = now < slowUntil ? slowFactor : 1;
             const speed = def.speed * slowed;
             let remaining = speed * dtSeconds;
-            let pathIndex = state.pathIndex;
-            let x = state.x;
-            let y = state.y;
+            let x = positionX.value;
+            let y = positionY.value;
 
             while (remaining > 0 && pathIndex < PATH.points.length) {
               const target = PATH.points[pathIndex];
@@ -546,54 +566,89 @@
             }
 
             const arrived = pathIndex >= PATH.points.length;
-            this.setState({ x, y, pathIndex });
+            positionX.value = x;
+            positionY.value = y;
             return { arrived };
+          },
+
+          destroy() {
+            node?.destroy();
           }
-        });
+        };
       }
 
       function Tower({ col, row, kind, onPick }) {
         const def = TOWER_DEFS[kind];
         const center = cellCenter(col, row);
+        const angle = ref(-90);
+        const selected = ref(false);
+        const barrelX = computed(() => String(Math.cos((angle.value * Math.PI) / 180) * 16));
+        const barrelY = computed(() => String(Math.sin((angle.value * Math.PI) / 180) * 16));
+        const rangeOpacity = computed(() => (selected.value ? '1' : '0'));
 
-        return vStateNode({
-          state: () => ({ kind, col, row, angle: -90, cd: 0, selected: false }),
+        let cd = 0;
+        let node = null;
 
-          render(state, api) {
-            return new SvgElementNode('g', (group) => {
+        const tower = {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.className(['tower', `tower--${kind}`]);
               group.attr('transform', `translate(${center.x} ${center.y})`);
-              group.on('click', () => onPick(api));
+              group.on('click', () => onPick(tower));
 
               // 已放置炮塔的射程圈：点击选中时显示，再次点击取消时隐藏。
               group.circle((range) => {
                 range.className('tower-range');
                 range.attr('r', def.range);
-                range.style('opacity', (s) => (s.selected ? '1' : '0'));
+                range.style('opacity', rangeOpacity);
               });
 
               group.circle({ class: 'tower-body', r: 15 });
               group.line((barrel) => {
                 barrel.className('tower-barrel');
                 barrel.attr({ x1: 0, y1: 0 });
-                barrel.attr('x2', (s) => String(Math.cos((s.angle * Math.PI) / 180) * 16));
-                barrel.attr('y2', (s) => String(Math.sin((s.angle * Math.PI) / 180) * 16));
+                barrel.attr('x2', barrelX);
+                barrel.attr('y2', barrelY);
               });
               group.circle({ r: 6, fill: '#0f172a' });
             });
+            return node;
+          },
+
+          get kind() {
+            return kind;
+          },
+
+          get col() {
+            return col;
+          },
+
+          get row() {
+            return row;
           },
 
           tick(dtMs) {
-            const state = this.state();
-            const ready = state.cd <= 0;
-            this.setState({ cd: Math.max(0, state.cd - dtMs) });
+            const ready = cd <= 0;
+            cd = Math.max(0, cd - dtMs);
             return ready;
           },
 
-          fire(angle) {
-            this.setState({ angle, cd: def.interval });
+          fire(nextAngle) {
+            angle.value = nextAngle;
+            cd = def.interval;
+          },
+
+          select(next) {
+            selected.value = next;
+            return this;
+          },
+
+          destroy() {
+            node?.destroy();
           }
-        });
+        };
+
+        return tower;
       }
 
       /*
@@ -602,66 +657,95 @@
        * 不可放置（道路/已有炮塔/金币不足）时射程圈显示为红色。
        */
       function TowerPlacementPreview() {
-        return vStateNode({
-          state: () => ({
-            visible: false,
-            x: 0,
-            y: 0,
-            range: 0,
-            kind: null,
-            color: '#38bdf8',
-            valid: true
-          }),
+        const visible = ref(false);
+        const positionX = ref(0);
+        const positionY = ref(0);
+        const range = ref(0);
+        const color = ref('#38bdf8');
+        const valid = ref(true);
 
-          render(state) {
-            return new SvgElementNode('g', (group) => {
+        const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
+        const opacity = computed(() => (visible.value ? '1' : '0'));
+        const rangeRadius = computed(() => String(range.value));
+        const rangeFill = computed(() =>
+          valid.value ? 'rgb(56 189 248 / 8%)' : 'rgb(239 68 68 / 8%)'
+        );
+        const rangeStroke = computed(() => (valid.value ? color.value : '#ef4444'));
+
+        let node = null;
+
+        return {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.className('placement-preview');
-              group.attr('transform', (s) => `translate(${s.x} ${s.y})`);
-              group.attr('opacity', (s) => (s.visible ? '1' : '0'));
+              group.attr('transform', transform);
+              group.attr('opacity', opacity);
 
-              group.circle((range) => {
-                range.className('preview-range');
-                range.attr('r', (s) => String(s.range));
-                range.style('fill', (s) =>
-                  s.valid ? 'rgb(56 189 248 / 8%)' : 'rgb(239 68 68 / 8%)'
-                );
-                range.style('stroke', (s) => (s.valid ? s.color : '#ef4444'));
+              group.circle((ring) => {
+                ring.className('preview-range');
+                ring.attr('r', rangeRadius);
+                ring.style('fill', rangeFill);
+                ring.style('stroke', rangeStroke);
               });
 
-              group.circle((tower) => {
-                tower.className('preview-tower');
-                tower.attr('r', '15');
-                tower.style('fill', (s) => s.color);
+              group.circle((mark) => {
+                mark.className('preview-tower');
+                mark.attr('r', '15');
+                mark.style('fill', color);
               });
             });
+            return node;
           },
 
           show(info) {
-            this.setState({ visible: true, ...info });
+            positionX.value = info.x;
+            positionY.value = info.y;
+            range.value = info.range;
+            color.value = info.color;
+            valid.value = info.valid;
+            visible.value = true;
+            return this;
           },
 
           hide() {
-            this.setState({ visible: false });
+            visible.value = false;
+            return this;
           }
-        });
+        };
       }
 
       function Projectile({ startX, startY, target, kind, speed, damage, onHit }) {
-        return vStateNode({
-          state: () => ({ x: startX, y: startY, alive: true }),
+        const positionX = ref(startX);
+        const positionY = ref(startY);
+        const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
 
-          render(state) {
-            return new SvgElementNode('g', (group) => {
+        let node = null;
+
+        return {
+          render() {
+            node = new SvgElementNode('g', (group) => {
               group.className(['projectile', `projectile--${kind}`]);
-              group.attr('transform', (s) => `translate(${s.x} ${s.y})`);
+              group.attr('transform', transform);
               group.circle({ class: 'projectile-circle', r: kind === 'cannon' ? 6 : 4 });
             });
+            return node;
+          },
+
+          get alive() {
+            return true;
+          },
+
+          get x() {
+            return positionX.value;
+          },
+
+          get y() {
+            return positionY.value;
           },
 
           step(dtSeconds, targetX, targetY, targetRadius) {
-            const state = this.state();
-            const dx = targetX - state.x;
-            const dy = targetY - state.y;
+            const dx = targetX - positionX.value;
+            const dy = targetY - positionY.value;
             const distance = Math.hypot(dx, dy);
             const stepDistance = speed * dtSeconds;
 
@@ -670,13 +754,15 @@
               return { done: true };
             }
 
-            this.setState({
-              x: state.x + (dx / distance) * stepDistance,
-              y: state.y + (dy / distance) * stepDistance
-            });
+            positionX.value += (dx / distance) * stepDistance;
+            positionY.value += (dy / distance) * stepDistance;
             return { done: false };
+          },
+
+          destroy() {
+            node?.destroy();
           }
-        });
+        };
       }
 
       function Playfield({ onCellClick, resolvePreview }) {
@@ -743,20 +829,34 @@
 
       function Hud({ onChooseTower, onStartWave }) {
         const towerOrder = ['arrow', 'cannon', 'frost'];
+        const gold = ref(0);
+        const lives = ref(0);
+        const wave = ref(0);
+        const waveActive = ref(false);
+        const nextIn = ref(0);
+        const gameOver = ref(false);
+        const selectedType = ref(null);
+        const messageText = ref('选择炮塔类型后悬停空地预览攻击范围，点击放置');
 
-        return vStateNode({
-          state: () => ({
-            gold: 0,
-            lives: 0,
-            wave: 0,
-            waveActive: false,
-            nextIn: 0,
-            gameOver: false,
-            selectedType: null,
-            message: '选择炮塔类型后悬停空地预览攻击范围，点击放置'
-          }),
+        const goldText = computed(() => String(gold.value));
+        const livesText = computed(() => String(lives.value));
+        const waveText = computed(() => String(wave.value));
+        const message = computed(() => messageText.value);
+        const waveLabel = computed(() => {
+          if (gameOver.value) {
+            return '游戏结束';
+          }
+          if (waveActive.value) {
+            return '波次进行中…';
+          }
+          if (nextIn.value > 0) {
+            return `${nextIn.value} 秒后自动开始下一波`;
+          }
+          return `开始第 ${wave.value + 1} 波`;
+        });
 
-          render(state, api) {
+        return {
+          render() {
             return div((sidebar) => {
               sidebar.className('sidebar');
 
@@ -766,19 +866,19 @@
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('金币');
-                  box.strong((value) => value.text((s) => String(s.gold)));
+                  box.strong((value) => value.text(goldText));
                 });
 
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('生命');
-                  box.strong((value) => value.text((s) => String(s.lives)));
+                  box.strong((value) => value.text(livesText));
                 });
 
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('波次');
-                  box.strong((value) => value.text((s) => String(s.wave)));
+                  box.strong((value) => value.text(waveText));
                 });
               });
 
@@ -790,13 +890,14 @@
                   const def = TOWER_DEFS[kind];
                   palette.button((button) => {
                     button.attr({ class: 'palette-button', 'data-tower-kind': kind });
-                    button.style('box-shadow', (s) =>
-                      s.selectedType === kind ? '0 0 0 2px #facc15' : null
+                    button.style(
+                      'box-shadow',
+                      computed(() => (selectedType.value === kind ? '0 0 0 2px #facc15' : null))
                     );
                     button.text(def.name);
                     button.small(`花费 ${def.cost} · 伤害 ${def.damage}`);
                     button.on('click', () => {
-                      api.setState({ selectedType: kind });
+                      selectedType.value = kind;
                       onChooseTower(kind);
                     });
                   });
@@ -806,27 +907,28 @@
               sidebar.button((button) => {
                 button.className('wave-button');
                 button.on('click', onStartWave);
-                button.text((s) => {
-                  if (s.gameOver) {
-                    return '游戏结束';
-                  }
-                  if (s.waveActive) {
-                    return '波次进行中…';
-                  }
-                  if (s.nextIn > 0) {
-                    return `${s.nextIn} 秒后自动开始下一波`;
-                  }
-                  return `开始第 ${s.wave + 1} 波`;
-                });
+                button.text(waveLabel);
               });
 
-              sidebar.p((message) => {
-                message.className('game-message');
-                message.text((s) => s.message);
+              sidebar.p((line) => {
+                line.className('game-message');
+                line.text(message);
               });
             });
+          },
+
+          update(stats) {
+            gold.value = stats.gold;
+            lives.value = stats.lives;
+            wave.value = stats.wave;
+            waveActive.value = stats.waveActive;
+            nextIn.value = stats.nextIn;
+            gameOver.value = stats.gameOver;
+            selectedType.value = stats.selectedType;
+            messageText.value = stats.message;
+            return this;
           }
-        });
+        };
       }
 
       function GameModel() {
@@ -854,11 +956,10 @@
           let nearestDistance = range;
 
           model.enemies.forEach((enemy) => {
-            if (!enemy.state().alive) {
+            if (!enemy.alive) {
               return;
             }
-            const enemyState = enemy.state();
-            const distance = Math.hypot(enemyState.x - centerX, enemyState.y - centerY);
+            const distance = Math.hypot(enemy.x - centerX, enemy.y - centerY);
             if (distance <= nearestDistance) {
               nearestDistance = distance;
               nearest = enemy;
@@ -922,7 +1023,7 @@
           selectTowerType(kind) {
             model.selectedType = kind;
             if (model.selectedTower) {
-              model.selectedTower.setState({ selected: false });
+              model.selectedTower.select(false);
               model.selectedTower = null;
             }
             model.message = `已选择${TOWER_DEFS[kind].name}，点击空地放置`;
@@ -953,10 +1054,10 @@
           pickTower(tower) {
             const alreadySelected = model.selectedTower === tower;
             if (model.selectedTower) {
-              model.selectedTower.setState({ selected: false });
+              model.selectedTower.select(false);
             }
             model.selectedTower = alreadySelected ? null : tower;
-            tower.setState({ selected: !alreadySelected });
+            tower.select(!alreadySelected);
           },
 
           tryPlaceTower({ col, row }) {
@@ -1029,9 +1130,8 @@
             });
 
             model.towers.forEach((tower) => {
-              const towerState = tower.state();
-              const def = TOWER_DEFS[towerState.kind];
-              const center = cellCenter(towerState.col, towerState.row);
+              const def = TOWER_DEFS[tower.kind];
+              const center = cellCenter(tower.col, tower.row);
               const ready = tower.tick(dtMs);
               if (!ready || model.gameOver) {
                 return;
@@ -1042,9 +1142,7 @@
                 return;
               }
 
-              const targetState = target.state();
-              const angle =
-                (Math.atan2(targetState.y - center.y, targetState.x - center.x) * 180) / Math.PI;
+              const angle = (Math.atan2(target.y - center.y, target.x - center.x) * 180) / Math.PI;
               tower.fire(angle);
 
               const projectile = Projectile({
@@ -1055,7 +1153,7 @@
                 speed: def.projectileSpeed,
                 damage: def.damage,
                 onHit: () => {
-                  const targetKind = target.state().kind;
+                  const targetKind = target.kind;
                   const dead = target.hit(def.damage, now, def.slowMs ?? 0, def.slowFactor ?? 1);
                   if (dead) {
                     model.gold += ENEMY_DEFS[targetKind].reward;
@@ -1072,13 +1170,12 @@
             const finishedProjectiles = [];
             model.projectiles.forEach((projectile) => {
               const target = projectile.target;
-              const targetState = target?.state();
 
               // 目标已消失（被击杀或抵达终点）时，弹道必须一并清理，否则会停在场上。
               if (
-                !projectile.state().alive ||
+                !projectile.alive ||
                 !target ||
-                !targetState?.alive ||
+                !target.alive ||
                 !model.enemies.includes(target)
               ) {
                 finishedProjectiles.push(projectile);
@@ -1087,11 +1184,11 @@
 
               const result = projectile.step(
                 dtMs / 1000,
-                targetState.x,
-                targetState.y,
-                ENEMY_DEFS[targetState.kind].radius
+                target.x,
+                target.y,
+                ENEMY_DEFS[target.kind].radius
               );
-              if (result.done || !target.state().alive) {
+              if (result.done || !target.alive) {
                 finishedProjectiles.push(projectile);
               }
             });
@@ -1124,7 +1221,7 @@
         let lastTime = 0;
 
         function syncHud() {
-          hud.setState(model.stats());
+          hud.update(model.stats());
         }
 
         hud = Hud({
