@@ -26,6 +26,7 @@ import {
   ref,
   renderToString,
   router,
+  svgs,
   toast,
   SearchOutlined
 } from 'yoya-ui';
@@ -188,6 +189,15 @@ const counter = div((ele) => {
   ele.child(vText(computed(() => `count=${count.value}`)));
 });
 counter.flush();
+
+// Text positions take handles directly: HTML text() and SVG text hosts.
+const label = ref('待处理');
+const labelLine = div((ele) => ele.text(label));
+const labelChild = div((ele) => ele.child(label));
+const labelText = svgs.text((line) => line.text(label));
+void labelLine;
+void labelChild;
+void labelText;
 
 // i18n.
 const i18n = createI18n({

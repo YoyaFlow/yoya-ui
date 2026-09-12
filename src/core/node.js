@@ -1419,6 +1419,11 @@ export function normalizeChild(child) {
     return child;
   }
 
+  // 句柄作为子节点时按文本绑定处理，等价于 child(vText(handle))
+  if (isSignal(child)) {
+    return new VTextNode(child);
+  }
+
   if (
     typeof child === 'function' ||
     (child && typeof child === 'object' && typeof child.render === 'function')
@@ -1430,7 +1435,9 @@ export function normalizeChild(child) {
     return new VTextNode(child);
   }
 
-  throw new TypeError('ViewNode child must be a ViewNode, component, string, or number');
+  throw new TypeError(
+    'ViewNode child must be a ViewNode, component, string, number, or signal handle'
+  );
 }
 
 export function normalizeSetupArguments(first = null, second = null, third = null) {

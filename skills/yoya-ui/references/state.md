@@ -47,17 +47,21 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 
 ## 值位置：直接把句柄传进 DSL
 
-| 位置       | 写法                                                                    |
-| ---------- | ----------------------------------------------------------------------- |
-| 属性       | `ele.attr('data-count', count)`、`ele.attr({ 'aria-busy': busy })`      |
-| 样式       | `ele.style('width', width)`、`ele.styles({ width })`                    |
-| 文本       | `ele.child(vText(count))`、`card.vCardHeader(vText(computed(() => …)))` |
-| 布尔类名   | `ele.toggleClass('is-active', active)`                                  |
-| 组件 props | `vInput({ value: name, disabled: locked, placeholder: hint })`          |
+| 位置       | 写法                                                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| 属性       | `ele.attr('data-count', count)`、`ele.attr({ 'aria-busy': busy })`                                         |
+| 样式       | `ele.style('width', width)`、`ele.styles({ width })`                                                       |
+| 文本       | `ele.child(vText(count))`、`card.vCardHeader(vText(label))`（仅当 `label` 是 `computed` 派生值时才这样写） |
+| 布尔类名   | `ele.toggleClass('is-active', active)`                                                                     |
+| 组件 props | `vInput({ value: name, disabled: locked, placeholder: hint })`                                             |
 
 - 传句柄即建立绑定：写入后只改属性 / 文本，元素与焦点不重建。
 - 绑定在**构建期求值一次**（服务端据此输出 HTML），订阅在客户端 `renderDom()` 时激活、`destroy()` 与区域重跑时释放。
 - 纯函数式动态值（零参闭包 `() => …`）仍可用，属过渡写法；新代码用信号。
+- **别白包**：`attr('data-count', computed(() => count.value))`、`vText(computed(() => String(count.value)))` 都多了一层；值位置自己会读句柄，数字也会自己转成字符串。`computed` 只留给真派生（拼接 / 运算 / 分支 / 多信号组合）。
+- **别漏句柄**：`vText(count.value)`、`attr('x', count.value)` 传的是**快照**，写完就不再更新；只有确实要一次性写入时才这么写。
+- **文本位置三种等价写法**：`child(vText(handle))`、`child(handle)`、`ele.text(handle)` 都建立同一个绑定（HTML 元素与 SVG 文本宿主都支持）。区别只在语义：`.text()` 每次调用**追加**一个文本节点，适合构建期设置一次；要反复替换同一处文本，就留一个 `vText()` 句柄用 `textContent(next)`。
+- **机械替换后要自查**：把旧写法（`state()` / `sync()` 之类）换成信号时，每个新加的 `computed` / `String` 都问一句「去掉它行为是否一样」——迁移最容易把旧代码的包装原样搬过来。
 
 ## 写回：不做双向绑定
 
@@ -130,10 +134,12 @@ installSignals(null); // 回到内置引擎
 
 ## 常见错误
 
-| 现象               | 原因                                                                                   |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| 写入后视图不动     | 信号建在模块级 / 写入发生在渲染之前未激活订阅；或区域里在 `rebuildable()` 之前读的数据 |
-| 输入框光标跳到末尾 | 写回时值被转换过，绑定写入了不同的值                                                   |
-| 列表重建后焦点丢失 | 该块在区域内；把输入框移出区域，或用值绑定                                             |
-| 结构没随筛选变化   | 区域没声明 `rebuildable()`，或读的不是信号（`rows.value` 没读）                        |
-| 并发请求串数据     | 信号放在了模块级                                                                       |
+| 现象               | 原因                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 写入后视图不动     | 信号建在模块级 / 写入发生在渲染之前未激活订阅；或区域里在 `rebuildable()` 之前读的数据                           |
+| 输入框光标跳到末尾 | 写回时值被转换过，绑定写入了不同的值                                                                             |
+| 列表重建后焦点丢失 | 该块在区域内；把输入框移出区域，或用值绑定                                                                       |
+| 结构没随筛选变化   | 区域没声明 `rebuildable()`，或读的不是信号（`rows.value` 没读）                                                  |
+| 并发请求串数据     | 信号放在了模块级                                                                                                 |
+| 值不更新（快照）   | 值位置传了 `x.value` / `String(x.value)` 而不是句柄本身                                                          |
+| 多一层无用的包装   | 纯占位写成 `computed(() => x.value)` / `computed(() => String(x.value))`：值位置直接接句柄，数字位置不用转字符串 |

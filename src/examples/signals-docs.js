@@ -3,9 +3,10 @@ import { ComponentSource } from './component-source.js';
 // 插件由使用者自己写：这里只给模板，源码直接取文件原文，避免两份拷贝。
 import adapterTemplateSource from './adapter-template.js?raw';
 import signalsAdapterSource from './adapter-signals-example.js?raw';
-import zustandAdapterSource from './adapter-zustand-example.js?raw';
+// store 类库那份是纯代码演示（.txt）：只展示代码，不引入 zustand 依赖，也不进模块图
+import zustandAdapterSource from './adapter-zustand-example.txt?raw';
 import signalsUsageSource from './adapter-signals-usage.js?raw';
-import zustandUsageSource from './adapter-zustand-usage.js?raw';
+import zustandUsageSource from './adapter-zustand-usage.txt?raw';
 
 const adapterSourcePanels = [
   ComponentSource({
@@ -86,7 +87,7 @@ export function SignalsDocumentationPage() {
             );
           });
           adapter.p(
-            '再往下是四种演示代码，每类库一对：适配器 + 用法（启动装一次引擎，业务代码照旧）。signals 与 store 各一对，按契约把各自的坑都处理掉了，全部在仓库里跑一致性用例与端到端用例，可以直接抄。'
+            '再往下是四种演示代码，每类库一对：适配器 + 用法（启动装一次引擎，业务代码照旧）。signals 那对在仓库里跑一致性用例与端到端用例；store 那对是纯代码演示，不引入 zustand 依赖——store 形态（getState / setState / subscribe）由仓库里不依赖第三方库的适配器用例覆盖，照着抄即可。'
           );
           adapter.div((panels) => {
             panels.className('components-signals-adapter-sources');

@@ -6,7 +6,7 @@
     <title>yoya-ui SCADA 画布演示</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -231,7 +231,7 @@
         ref,
         svg,
         SvgElementNode
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.0/dist/yoya.ui.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.js';
 
       /*
        * SCADA 画布演示（编辑器闭环，不含采集/报警等工业服务）：
@@ -268,8 +268,8 @@
 
         const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
         const rotorTransform = computed(() => `rotate(${deviceAngle.value})`);
-        const liquidY = computed(() => String(26 - deviceValue.value * 48));
-        const liquidHeight = computed(() => String(deviceValue.value * 48));
+        const liquidY = computed(() => 26 - deviceValue.value * 48);
+        const liquidHeight = computed(() => deviceValue.value * 48);
         const lampFill = computed(() => (deviceValue.value > 0.5 ? '#22c55e' : '#ef4444'));
         const selectionOpacity = computed(() => (selected.value ? '1' : '0'));
         const connectOpacity = computed(() => (connectSource.value ? '1' : '0'));
@@ -433,11 +433,6 @@
         const endX = ref(0);
         const endY = ref(0);
 
-        const lineStartX = computed(() => String(startX.value));
-        const lineStartY = computed(() => String(startY.value));
-        const lineEndX = computed(() => String(endX.value));
-        const lineEndY = computed(() => String(endY.value));
-
         let node = null;
 
         return {
@@ -447,10 +442,10 @@
               group.line((line) => {
                 line.className('scada-line');
                 line.attr({
-                  x1: lineStartX,
-                  y1: lineStartY,
-                  x2: lineEndX,
-                  y2: lineEndY
+                  x1: startX,
+                  y1: startY,
+                  x2: endX,
+                  y2: endY
                 });
               });
               group.circle({ class: 'scada-endpoint', cx: startX, cy: startY, r: 4 });
@@ -673,7 +668,7 @@
                 section.textarea((area) => {
                   area.className('scada-json');
                   area.attr('placeholder', '点击“导出 JSON”或粘贴工程数据');
-                  area.text(computed(() => jsonText.value));
+                  area.text(jsonText);
                   area.on('input', (event) => {
                     jsonText.value = event.target.value;
                   });
@@ -701,7 +696,7 @@
 
               sidebar.p((status) => {
                 status.className('scada-status');
-                status.text(computed(() => statusText.value));
+                status.text(statusText);
               });
             });
           },

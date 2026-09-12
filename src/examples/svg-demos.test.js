@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bindWindowEvent, computed, div, ref, svg, SvgElementNode, vText } from '../index.js';
+import { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText } from '../index.js';
 
 /**
  * 三个单文件 SVG 演示是自包含 HTML：内联模块从 CDN 引库，因此测试抽出台本，
  * 注入本仓库的库符号后执行，验证「能启动 + 关键交互生效」。
  */
-const demoLibrary = { bindWindowEvent, computed, div, ref, svg, SvgElementNode, vText };
+const demoLibrary = { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText };
 const demoLibraryNames = Object.keys(demoLibrary);
 
 function bootDemo(file) {
@@ -130,4 +130,98 @@ describe('svg tower defense demo', () => {
     expect(enemy).not.toBeNull();
     expect(enemy.querySelector('.enemy-hp-fill')).not.toBeNull();
   }, 10000);
+});
+
+describe('svg breakout demo', () => {
+  it('bounces the ball, moves the paddle with the keyboard and rebuilds broken bricks', async () => {
+    const app = bootDemo('svg-breakout.html');
+    const paddle = app.querySelector('.paddle');
+    const ball = app.querySelector('.ball');
+    const bricksBefore = app.querySelectorAll('.brick').length;
+    const scoreBefore = Number(app.querySelector('.hud-item--score .hud-value').textContent);
+    const speedBefore = Number(app.querySelector('.hud-item--speed .hud-value').textContent);
+
+    expect(bricksBefore).toBe(50);
+    expect(app.querySelector('.hud').textContent).toContain('最高分');
+    // 初始球速要慢，之后随打掉的砖块逐块加快
+    expect(speedBefore).toBe(3.1);
+
+    // 每帧写回信号：球的位置原地更新，节点不重建
+    const ballStart = ball.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(ball.getAttribute('transform')).not.toBe(ballStart);
+
+    // 键盘驱动球拍：按住左方向键，transform 原地变化
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    const paddleStart = paddle.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(paddle.getAttribute('transform')).not.toBe(paddleStart);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+
+    // 触屏 / 鼠标按下即就位：与键盘等价，坐标按 viewBox 换算后夹在场地内
+    const field = app.querySelector('.playfield');
+    field.getBoundingClientRect = () => ({ left: 0, width: 900 });
+    field.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 950 }));
+    expect(paddle.getAttribute('transform')).toBe('translate(810 546)');
+
+    // 手机手柄：快速点按也要走一步（按下与抬起常在同一帧内）
+    const padLeft = app.querySelector('.pad-key--left');
+    padLeft.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    padLeft.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    expect(paddle.getAttribute('transform')).toBe('translate(788 546)');
+
+    // 按住不放：持续移动，松手即停并清掉按下态
+    padLeft.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    await nextFrame();
+    await nextFrame();
+    const heldAt = paddle.getAttribute('transform');
+    expect(heldAt).not.toBe('translate(788 546)');
+    expect(padLeft.getAttribute('data-held')).toBe('true');
+
+    padLeft.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    const releasedAt = paddle.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(paddle.getAttribute('transform')).toBe(releasedAt);
+    expect(padLeft.getAttribute('data-held')).toBeNull();
+
+    // 空格暂停：写入 phase 信号，遮罩与文案跟着切换，球停住
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    const pausedAt = ball.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
+    expect(ball.getAttribute('transform')).toBe(pausedAt);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+    // 手机上的按钮与键盘等价：暂停/继续的文案也由 phase 信号驱动
+    const pauseButton = app.querySelector('.control--pause');
+    pauseButton.click();
+    expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
+    expect(pauseButton.textContent).toBe('继续');
+    pauseButton.click();
+    expect(pauseButton.textContent).toBe('暂停');
+
+    // 焦点在按钮上时，空格交给原生点击，全局监听不再重复切换一次
+    pauseButton.focus();
+    pauseButton.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    expect(pauseButton.textContent).toBe('暂停');
+
+    // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
+    const broken = await waitFor(() => app.querySelectorAll('.brick').length < bricksBefore, 8000);
+    expect(broken).toBe(true);
+    expect(Number(app.querySelector('.hud-item--score .hud-value').textContent)).toBeGreaterThan(
+      scoreBefore
+    );
+    expect(Number(app.querySelector('.hud-item--speed .hud-value').textContent)).toBeGreaterThan(
+      speedBefore
+    );
+
+    // 重新开始：分数清零、砖块恢复满场
+    app.querySelector('.control--restart').click();
+    expect(Number(app.querySelector('.hud-item--score .hud-value').textContent)).toBe(0);
+    expect(app.querySelectorAll('.brick')).toHaveLength(bricksBefore);
+  }, 20000);
 });

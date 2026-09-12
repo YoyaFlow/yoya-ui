@@ -1,4 +1,5 @@
-import { ElementNode, registerChildFactories } from '../core/node.js';
+import { ElementNode, registerChildFactories, VTextNode } from '../core/node.js';
+import { isSignal } from '../core/signals/handle.js';
 import { HtmlElementNode } from '../html/index.js';
 
 export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -29,7 +30,9 @@ export class SvgElementNode extends ElementNode {
       const [content, setup] = args;
 
       if (args.length > 0) {
-        this.child(content);
+        // 与 HTML 节点的 text() 对齐：句柄 / 动态读函数包成 VTextNode，写入即更新文本
+        const isBinding = typeof content === 'function' || isSignal(content);
+        this.child(isBinding ? new VTextNode(content) : content);
       }
 
       if (setup !== null && setup !== undefined) {
@@ -222,8 +225,18 @@ function createSvgFactories() {
 export const svg = createSvgElementFactory('svg');
 const svgChildFactories = createSvgFactories();
 
+/**
+ * 全部 SVG 标签工厂的命名空间：用来创建游离的内部节点，不必 `new SvgElementNode(...)`。
+ *
+ *     svgs.rect({ class: 'brick', width: 76, height: 22 });
+ *     svgs.g((group) => group.circle({ cx: 0, cy: 0, r: 9 }));
+ *
+ * 游离节点可以直接 child() 到任意 svg 节点上，也可以先建好复用。
+ */
+export const svgs = { svg, ...svgChildFactories };
+
 registerChildFactories(HtmlElementNode, { svg });
-registerChildFactories(SvgElementNode, { svg, ...svgChildFactories });
+registerChildFactories(SvgElementNode, svgs);
 
 export * from './icons.js';
 

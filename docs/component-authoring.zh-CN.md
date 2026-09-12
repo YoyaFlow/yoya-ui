@@ -112,7 +112,7 @@ yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值�
 
 - 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
 - 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
-- 文案：状态驱动的文案传句柄（`vText(count)` / `vText(computed(fn))`）；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
+- 文案：状态驱动的文案传句柄——`vText(count)`、`child(count)`、`ele.text(count)` 三种写法等价，只有值本身是派生结果时才套 `computed(fn)`；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
 - 对外只暴露方法：组件内部用 `ref` 持有状态，对外给 `value(next)` / `disabled(next)` 这类链式方法，不把内部信号对象交给使用者。
 
 ### 6.1 可重建区域
@@ -127,7 +127,7 @@ const body = div((ele) => {
   ele.rebuildable(() => !editing.value); // 可选：时机谓词，为假时只刷值不重建
   ele.attr(
     'data-count',
-    computed(() => String(rows.value.length))
+    computed(() => rows.value.length)
   );
   rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
 });

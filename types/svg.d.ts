@@ -4,7 +4,8 @@ import type {
   SetupCallback,
   SetupInput,
   StyleInput,
-  StyleValue
+  StyleValue,
+  TextContent
 } from './core.js';
 
 export const SVG_NAMESPACE: string;
@@ -14,7 +15,13 @@ export const SVG_NAMESPACE: string;
  * only registered here, keeping the HTML and SVG DSLs separate.
  */
 export class SvgElementNode extends ElementNode {
-  /** SVG text hosts accept raw text; other elements create <text> children. */
+  /**
+   * On text hosts (`<text>` / `<tspan>` / `<title>` …) this sets the content;
+   * a signal handle stays bound. On other elements it creates a `<text>` child.
+   */
+  text(content: TextContent, setup?: SetupCallback<SvgElementNode>): this;
+
+  /** Creates a `<text>` child on any SVG element. */
   text(
     ...args: Array<
       string | number | SetupCallback<SvgElementNode> | ElementOptions | null | undefined
@@ -32,6 +39,13 @@ export interface SvgElementFactory {
 /** SVG child shortcuts registered on SvgElementNode. */
 export interface SvgChildShortcuts {
   svg(...setups: Array<SetupInput<SvgElementNode> | null | undefined>): SvgElementNode;
+  /** Creates a `<text>` child; on text hosts it binds the content instead. */
+  text(content: TextContent, setup?: SetupCallback<SvgElementNode>): SvgElementNode;
+  text(
+    ...setups: Array<
+      string | number | SetupCallback<SvgElementNode> | ElementOptions | null | undefined
+    >
+  ): SvgElementNode;
   animate(...setups: Array<SetupInput<SvgElementNode> | null | undefined>): SvgElementNode;
   animateMotion(...setups: Array<SetupInput<SvgElementNode> | null | undefined>): SvgElementNode;
   animateTransform(...setups: Array<SetupInput<SvgElementNode> | null | undefined>): SvgElementNode;
@@ -112,6 +126,12 @@ export interface SvgParentShortcuts {
 
 /** Creates an <svg> element; the only SVG entry visible from HTML DSL. */
 export const svg: SvgElementFactory;
+
+/**
+ * Namespace of every SVG tag factory: build detached inner nodes without
+ * `new SvgElementNode(...)`, then `child()` them into any svg node.
+ */
+export const svgs: SvgChildShortcuts;
 
 // Built-in icon factories (each returns an SVG node).
 export function ArrowDownOutlined(): SvgElementNode;

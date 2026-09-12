@@ -35,12 +35,19 @@ div((root) => {
 - **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
 - **挂载走 `bindTo`**：`node.bindTo('#app')` 渲染并挂到容器；SSR 用 `hydrate` / `mount`。不要在业务代码里 `document.querySelector('#app').appendChild(node.renderDom())`——绕开挂载约定，容器不存在时还会直接抛错
 - **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
+- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回节点，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法才写形态 B（`{ render(), ... }`），父子嵌套与生命周期重写才用形态 C。详见 references/core.md
 
 ## 文本与状态
 
 动态文本用 `vText()` 创建：渲染为真实 Text 节点，可放进任何接受子节点的位置；SSR 输出自动转义。
 
-状态用内置信号 `ref` 持有，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。
+状态用内置信号 `ref` 持有，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建。
+
+值位置三条铁律：
+
+- **纯占位就传句柄本身，不要包一层**：`vText(count)` / `attr('data-count', count)` / `child(count)`（= `child(vText(count))`）/ `ele.text(count)`。写成 `computed(() => count.value)` 是白包；写成 `count.value` 或 `String(count.value)` 是**死快照**（写完不再更新）。
+- **`computed` 只用于派生**：模板串、`toFixed` / `Math.round`、多信号组合、三元分支。看到 `computed(() => x.value)` 直接删掉它。
+- **`String()` 只在需要字符串语义时用**（拼接、`'auto' | 'none'`）。`attr` / `style` / `styles` / `vText` / `text()` 都吃 number，不用手工转字符串。
 
 ```js
 import { computed, div, ref, vButton, vText } from '@yoyaflow/yoya-ui';

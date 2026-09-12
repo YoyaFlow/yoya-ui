@@ -26,18 +26,18 @@ npm run dev
 
 ## 常用组件速查
 
-| 场景      | 组件                                                                                                                                                                                       |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 按钮      | `vButton(label, cb)`，variant：primary/secondary/danger，`disabled()`/`loading()`                                                                                                          |
-| 卡片      | `vCard` + `vCardHeader`/`vCardBody`/`vCardFooter`                                                                                                                                          |
-| 文本/状态 | `vText('文案')` 是文本节点；状态用 `ref`/`computed` 持有，值位置直接传句柄（`vText(count)`、`attr('data-x', count)`），写入即原地更新                                                      |
-| 布局      | `div`/`section`、`hstack`/`vstack`/`grid`/`container`/`spacer`、`vSplitPanel`                                                                                                              |
-| 表单      | `vForm`、`vFormItem`、`vInput`、`vSelect`、`vCheckbox(es)`、`vRadio(s)`、`vTextarea`、`vSwitch`、`vRate`、`vSlider`、`vCascader`、`vTagsInput`、`vAutocomplete`、`vColorPicker`、`vUpload` |
-| 数据展示  | `vTable`、`vTree`、`vBadge`、`vDetail`、`vAvatar`、`vProgress`、`vCarousel`                                                                                                                |
-| C 端体验  | `vSkeleton`（骨架屏）、`vLazyImage`（懒加载）、`vTransition`（进出场）、`vMasonry`（瀑布流）、`vImagePreview`（灯箱）                                                                      |
-| 反馈      | `vMessage`/`toast`、`vDialog`、`vTooltip`                                                                                                                                                  |
-| 导航      | `vMenu`、`vTabs`、`vSteps`、`vNavbar`、`vBreadcrumb`、`vAnchor`                                                                                                                            |
-| 权限控制  | `node.access('system:member')`：无读隐藏、无写禁用；`installAccess` / SSR 入口 `options.access` 注入                                                                                       |
+| 场景      | 组件                                                                                                                                                                                                                  |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 按钮      | `vButton(label, cb)`，variant：primary/secondary/danger，`disabled()`/`loading()`                                                                                                                                     |
+| 卡片      | `vCard` + `vCardHeader`/`vCardBody`/`vCardFooter`                                                                                                                                                                     |
+| 文本/状态 | `vText('文案')` 是文本节点；状态用 `ref` 持有、值位置直接传句柄（`vText(count)`、`attr('data-x', count)`），写入即原地更新；不要包 `computed(() => count.value)`（白包）或 `count.value`（快照），派生才用 `computed` |
+| 布局      | `div`/`section`、`hstack`/`vstack`/`grid`/`container`/`spacer`、`vSplitPanel`                                                                                                                                         |
+| 表单      | `vForm`、`vFormItem`、`vInput`、`vSelect`、`vCheckbox(es)`、`vRadio(s)`、`vTextarea`、`vSwitch`、`vRate`、`vSlider`、`vCascader`、`vTagsInput`、`vAutocomplete`、`vColorPicker`、`vUpload`                            |
+| 数据展示  | `vTable`、`vTree`、`vBadge`、`vDetail`、`vAvatar`、`vProgress`、`vCarousel`                                                                                                                                           |
+| C 端体验  | `vSkeleton`（骨架屏）、`vLazyImage`（懒加载）、`vTransition`（进出场）、`vMasonry`（瀑布流）、`vImagePreview`（灯箱）                                                                                                 |
+| 反馈      | `vMessage`/`toast`、`vDialog`、`vTooltip`                                                                                                                                                                             |
+| 导航      | `vMenu`、`vTabs`、`vSteps`、`vNavbar`、`vBreadcrumb`、`vAnchor`                                                                                                                                                       |
+| 权限控制  | `node.access('system:member')`：无读隐藏、无写禁用；`installAccess` / SSR 入口 `options.access` 注入                                                                                                                  |
 
 每种组件的用途、最小示例与关键 API 详见 [components.md](components.md)。
 
@@ -47,7 +47,7 @@ npm run dev
 
 ## 组件定义（可选，面向第三方组件库）
 
-三种形态：薄工厂（函数返回 ViewNode）、对象组件（`{ render() }`）、类节点组件（`class extends HtmlElementNode` + 成对工厂）。详见 `docs/component-authoring.md`。
+三种形态：薄工厂（函数返回 ViewNode）、对象组件（`{ render() }`）、类节点组件（`class extends HtmlElementNode` + 成对工厂）。**没有额外行为要定义就用薄工厂**，有内部状态或对外命令方法才升级到对象组件。详见 [core.md](core.md)。
 
 ## 权限控制
 
