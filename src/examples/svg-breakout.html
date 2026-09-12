@@ -712,8 +712,6 @@
       }
 
       function Hud(state) {
-        const scoreText = computed(() => String(state.score.value));
-        const bestText = computed(() => String(state.best.value));
         const livesText = computed(() => '❤'.repeat(Math.max(state.lives.value, 0)) || '—');
         const levelText = computed(() => `第 ${state.level.value} 关`);
         const speedText = computed(() => state.ballSpeed.toFixed(1));
@@ -733,8 +731,9 @@
           render() {
             return div((hud) => {
               hud.className('hud');
-              hud.child(item('score', '分数', scoreText));
-              hud.child(item('best', '最高分', bestText));
+              // 纯数字直接用句柄，值位置会自己转成文本
+              hud.child(item('score', '分数', state.score));
+              hud.child(item('best', '最高分', state.best));
               hud.child(item('lives', '生命', livesText));
               hud.child(item('level', '进度', levelText));
               hud.child(item('speed', '球速', speedText));
