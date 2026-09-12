@@ -977,7 +977,9 @@ export class VSelect extends HtmlElementNode {
       this._input.attr('data-error', enabled ? 'true' : null);
       this._input.style(
         'borderColor',
-        enabled ? themeValue('color-danger', '#dc2626') : themeValue('color-border-strong', '#cbd5e1')
+        enabled
+          ? themeValue('color-danger', '#dc2626')
+          : themeValue('color-border-strong', '#cbd5e1')
       );
       this._input.style(
         'boxShadow',

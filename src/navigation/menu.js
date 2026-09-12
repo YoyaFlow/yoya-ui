@@ -971,10 +971,7 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
     if (value && !submenu._disabled.value && sidebar._collapsed.value) {
       sidebar.collapsed(false);
     }
-    sidebar.style(
-      'overflow',
-      submenu._open.value && !submenu._inline ? 'visible' : 'hidden'
-    );
+    sidebar.style('overflow', submenu._open.value && !submenu._inline ? 'visible' : 'hidden');
     return result;
   };
   if (submenu._open.value) {
