@@ -205,8 +205,8 @@ export default class MembersPageState {
 
 ## 业务组件
 
-- **形态 A 薄工厂**：纯展示 / 配置化组合，直接返回 ViewNode
-- **形态 B 对象组件**：带状态与交互的业务组件（默认形态），返回 `{ render(), ... }`
+- **形态 A 薄工厂**：纯展示 / 配置化组合，直接返回 ViewNode；**确定没有额外行为要定义时就用它**，不要为预留能力先包成对象组件
+- **形态 B 对象组件**：确有内部状态或对外命令方法的业务组件才用它，返回 `{ render(), ... }`
 - **一个业务块一个文件**：`member-table.js`（表格与行操作）、`member-toolbar.js`（筛选栏）、`member-form-dialog.js`（新增/编辑弹窗）
 - 输入用 props 式参数与回调（`{ rows, onEdit, onRemove }`），**组件自己不请求数据**：数据由页面从状态取来传入
 - 命名用业务前缀（`MemberTable`），与库内 `v` 前缀区分；需要时可 `registerChildFactories` 注册为页面快捷方法

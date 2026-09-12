@@ -35,6 +35,7 @@ div((root) => {
 - **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
 - **挂载走 `bindTo`**：`node.bindTo('#app')` 渲染并挂到容器；SSR 用 `hydrate` / `mount`。不要在业务代码里 `document.querySelector('#app').appendChild(node.renderDom())`——绕开挂载约定，容器不存在时还会直接抛错
 - **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
+- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回节点，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法才写形态 B（`{ render(), ... }`），父子嵌套与生命周期重写才用形态 C。详见 references/core.md
 
 ## 文本与状态
 
