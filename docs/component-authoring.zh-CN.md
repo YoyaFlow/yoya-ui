@@ -29,7 +29,7 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 ### 形态 A：薄工厂（无内部状态、纯配置化组合）
 
 ```js
-import { vBadge } from 'yoya-ui/ui';
+import { vBadge } from '@yoyaflow/yoya-ui/ui';
 
 export function ServiceTag(options) {
   return vBadge(options);
@@ -39,7 +39,7 @@ export function ServiceTag(options) {
 ### 形态 B：对象组件（常规独立组件，默认形态）
 
 ```js
-import { vRate } from 'yoya-ui/ui';
+import { vRate } from '@yoyaflow/yoya-ui/ui';
 
 export function RateCard() {
   const state = { value: 0 };
@@ -63,7 +63,7 @@ export function RateCard() {
 类节点组件必须同时导出成对 `vXxx` 工厂，并使用 `createElementFactory`：
 
 ```js
-import { HtmlElementNode, createElementFactory } from 'yoya-ui/core';
+import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
 
 export class VStatusDot extends HtmlElementNode {
   // 嵌套关系与细粒度操作
@@ -198,7 +198,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 通过 `registerChildFactories` 将工厂注册到目标节点类，页面内即可使用 `page.vButton(...)` 写法；默认不覆盖既有方法：
 
 ```js
-import { ViewNode, registerChildFactories } from 'yoya-ui/core';
+import { ViewNode, registerChildFactories } from '@yoyaflow/yoya-ui/core';
 import { vStatusBadge } from './status-badge.js';
 
 registerChildFactories(ViewNode, { vStatusBadge });

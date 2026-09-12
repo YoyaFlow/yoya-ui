@@ -4,8 +4,8 @@
  */
 
 export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
-import { div } from 'yoya-ui/core';
-import { createRouter } from 'yoya-ui/router';
+import { div } from '@yoyaflow/yoya-ui/core';
+import { createRouter } from '@yoyaflow/yoya-ui/router';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -29,7 +29,7 @@ export const serverSnippet = `// server.mjs —— 服务端（node:http，无�
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const DIST = join(import.meta.dirname, 'dist'); // npm run build 的产物
@@ -75,7 +75,7 @@ createServer((req, res) => {
 }).listen(3000);`;
 
 export const clientSnippet = `// client.js —— 浏览器端（由打包器构建，与 yoya-ui/core、yoya-ui/router 同一份共享模块）
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });

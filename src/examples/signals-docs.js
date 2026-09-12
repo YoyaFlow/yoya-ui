@@ -53,7 +53,7 @@ export function SignalsDocumentationPage() {
           );
           engines.ul((list) => {
             list.li(
-              "import { installSignals } from 'yoya-ui'; — installSignals(adapter) 全局替换，installSignals(null) 回到内置引擎。"
+              "import { installSignals } from '@yoyaflow/yoya-ui'; — installSignals(adapter) 全局替换，installSignals(null) 回到内置引擎。"
             );
             list.li(
               '同一时刻只激活一个引擎：安装即替换，不并存（两个引擎版本同页面会让依赖追踪各说各话）。'

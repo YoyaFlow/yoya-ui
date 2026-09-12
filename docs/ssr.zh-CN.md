@@ -68,7 +68,7 @@ export function createSsrPage(initial = {}, deps = {}) {
 
 ```js
 // home-page.js —— 页面即形态 A 组件，两端共用
-import { createRouter, div } from 'yoya-ui';
+import { createRouter, div } from '@yoyaflow/yoya-ui';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,7 +117,7 @@ res.end(html);
 
 ```js
 // client.js —— 打包器构建，一行接入
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -135,7 +135,7 @@ hydrateOrMount(HomePage, { messages });
 完整可运行示例见 `src/examples/ssr/server-http.mjs`（`node src/examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -227,7 +227,7 @@ dist/
 ### 4.3 客户端启动脚本（client.js）
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/router';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js'; // 打包器共享同一份工厂
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);

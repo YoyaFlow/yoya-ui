@@ -102,7 +102,7 @@ Components only respond to density when they consume space/control tokens rather
 `vBody` is the page-level theming entry: it consumes theme tokens out of the box (background `--yoya-color-bg`, text `--yoya-color-text`, `--yoya-font-family`, `--yoya-font-size`, `--yoya-line-height`) and follows light/dark, brand, and density switches automatically. Region-level containers use `vThemeShell`, which provides a themed background (`--yoya-color-surface`), border (`--yoya-color-border`), radius (`--yoya-radius-md`), and text color (`--yoya-color-text`), tunable per instance via `.background()` / `.backgroundOpacity(alpha)` / `.radius()` / `.border()` / `.borderColor()` / `.scrollable()`.
 
 ```js
-import { vBody } from 'yoya-ui/ui';
+import { vBody } from '@yoyaflow/yoya-ui/ui';
 vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 ```
 
@@ -154,7 +154,7 @@ import {
   setYoyaTheme,
   getYoyaTheme,
   initYoyaTheme
-} from 'yoya-ui/core';
+} from '@yoyaflow/yoya-ui/core';
 
 setYoyaMode('dark'); // data-yoya-mode="dark"
 setYoyaMode('system', { persist: true }); // persisted; restored by initYoyaTheme() next time

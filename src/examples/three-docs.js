@@ -79,7 +79,7 @@ const threeDemos = [
     component: ThreeCubeDemo,
     extraSource: THREE_EXTRA_SOURCE,
     id: 'cube',
-    imports: [{ from: 'yoya-ui/three', names: ['vThree'] }],
+    imports: [{ from: '@yoyaflow/yoya-ui/three', names: ['vThree'] }],
     sourceTitle: '旋转立方体源码',
     title: '旋转立方体'
   },
@@ -87,7 +87,7 @@ const threeDemos = [
     component: ThreeSphereDemo,
     extraSource: THREE_EXTRA_SOURCE,
     id: 'sphere',
-    imports: [{ from: 'yoya-ui/three', names: ['vThree'] }],
+    imports: [{ from: '@yoyaflow/yoya-ui/three', names: ['vThree'] }],
     sourceTitle: '自转球体源码',
     title: '自转球体'
   }

@@ -68,7 +68,7 @@ Collapse "language instance + render + shell assembly + serialization" into one 
 
 ```js
 // home-page.js - a page is a Shape-A component shared by both sides
-import { createRouter, div } from 'yoya-ui';
+import { createRouter, div } from '@yoyaflow/yoya-ui';
 
 export const messages = {
   'zh-CN': { title: 'SSR 示例', home: '首页' },
@@ -90,7 +90,7 @@ export function HomePage(state) {
 
 ```js
 // server.mjs
-import { renderPage } from 'yoya-ui/router';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 const html = renderPage(
@@ -117,7 +117,7 @@ res.end(html);
 
 ```js
 // client.js - built by the bundler, one line
-import { hydrateOrMount } from 'yoya-ui/router';
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
 hydrateOrMount(HomePage, { messages });
@@ -135,7 +135,7 @@ The library does not depend on any framework; `node:http`, Express, Hono, or Koa
 See `src/examples/ssr/server-http.mjs` for a runnable example (`node src/examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
 
 ```js
-import { renderToString, resolveLocale, serializeState } from 'yoya-ui/router';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js';
 
 function renderPage(initial) {
@@ -227,7 +227,7 @@ Mount `dist/` as a static directory on the server (`/assets/*` or `/vendor/*`) a
 ### 4.3 Client boot script (client.js)
 
 ```js
-import { hydrate, mount, parseState } from 'yoya-ui/router';
+import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { createSsrPage } from './page.js'; // bundler shares the same factory
 
 const data = parseState(document.getElementById('__YOYA_DATA__').textContent);

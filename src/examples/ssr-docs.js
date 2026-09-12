@@ -276,10 +276,10 @@ export function SsrDocumentationPage() {
     component: createSsrPage,
     imports: [
       {
-        from: 'yoya-ui',
+        from: '@yoyaflow/yoya-ui',
         names: ['createI18n', 'createRouter', 'div', 'vForm', 'vFormItem', 'vInput', 'vLink']
       },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ],
     sourceComponent: createSsrPage,
     title: 'createSsrPage 页面工厂源码'

@@ -4,6 +4,14 @@ import { fileURLToPath } from 'node:url';
 
 const echartsSource = fileURLToPath(new URL('./src/chart/echarts.min.js', import.meta.url));
 
+// 示例代码按使用者的写法 import '@yoyaflow/yoya-ui'；仓库内解析到源码入口。
+const packageAlias = [
+  {
+    find: /^@yoyaflow\/yoya-ui$/,
+    replacement: fileURLToPath(new URL('./src/index.js', import.meta.url))
+  }
+];
+
 const injectEchartsScript = {
   name: 'yoya-examples-inject-echarts',
   transformIndexHtml(html, ctx) {
@@ -24,6 +32,9 @@ const injectEchartsScript = {
 export default defineConfig({
   root: 'src/examples',
   base: './',
+  resolve: {
+    alias: packageAlias
+  },
   build: {
     emptyOutDir: true,
     minify: false,

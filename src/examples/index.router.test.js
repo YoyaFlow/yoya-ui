@@ -782,7 +782,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-echarts-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-echarts-demo="bar"] [data-source-example]').textContent
-    ).toContain("import { vEchart } from 'yoya-ui/echart';");
+    ).toContain("import { vEchart } from '@yoyaflow/yoya-ui/echart';");
   });
 
   it('renders the third-party Signals engine page with adapter sources', async () => {
@@ -2497,11 +2497,11 @@ export function SampleCard() {
   };
 }`);
     const customImportSource = componentSource(SampleCard, [
-      { from: 'yoya-ui', names: ['vCard'] },
-      { from: 'yoya-ui/echart', names: ['vEchart'] }
+      { from: '@yoyaflow/yoya-ui', names: ['vCard'] },
+      { from: '@yoyaflow/yoya-ui/echart', names: ['vEchart'] }
     ]);
-    expect(customImportSource).toContain("import { vCard } from 'yoya-ui';");
-    expect(customImportSource).toContain("import { vEchart } from 'yoya-ui/echart';");
+    expect(customImportSource).toContain("import { vCard } from '@yoyaflow/yoya-ui';");
+    expect(customImportSource).toContain("import { vEchart } from '@yoyaflow/yoya-ui/echart';");
     expect(element.classList.contains('source-panel')).toBe(true);
     expect(element.querySelector('h2').textContent).toBe('示例源码');
   });

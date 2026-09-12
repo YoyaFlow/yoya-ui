@@ -102,7 +102,7 @@ div((list) => {
 ## 引擎与替换
 
 ```js
-import { installSignals } from 'yoya-ui';
+import { installSignals } from '@yoyaflow/yoya-ui';
 
 installSignals(adapter); // 换成第三方实现（替换语义，不并存）
 installSignals(null); // 回到内置引擎

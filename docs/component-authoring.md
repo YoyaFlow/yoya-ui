@@ -29,7 +29,7 @@ Choose one of these shapes for a new component; do not introduce a structure out
 ### Shape A: thin factory (no internal state, purely configured composition)
 
 ```js
-import { vBadge } from 'yoya-ui/ui';
+import { vBadge } from '@yoyaflow/yoya-ui/ui';
 
 export function ServiceTag(options) {
   return vBadge(options);
@@ -39,7 +39,7 @@ export function ServiceTag(options) {
 ### Shape B: object component (regular standalone component, the default)
 
 ```js
-import { vRate } from 'yoya-ui/ui';
+import { vRate } from '@yoyaflow/yoya-ui/ui';
 
 export function RateCard() {
   const state = { value: 0 };
@@ -63,7 +63,7 @@ export function RateCard() {
 Class node components must export a paired `vXxx` factory and use `createElementFactory`:
 
 ```js
-import { HtmlElementNode, createElementFactory } from 'yoya-ui/core';
+import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
 
 export class VStatusDot extends HtmlElementNode {
   // nested relationships and fine-grained operations
@@ -198,7 +198,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 Use `registerChildFactories` to register factories on a target node class, enabling `page.vButton(...)` syntax in pages. Existing methods are not overridden by default:
 
 ```js
-import { ViewNode, registerChildFactories } from 'yoya-ui/core';
+import { ViewNode, registerChildFactories } from '@yoyaflow/yoya-ui/core';
 import { vStatusBadge } from './status-badge.js';
 
 registerChildFactories(ViewNode, { vStatusBadge });

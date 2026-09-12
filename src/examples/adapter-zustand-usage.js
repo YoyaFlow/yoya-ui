@@ -2,7 +2,7 @@
  * 用法：把 store 类库引擎接进应用（适配器就是上面那份 zustand 示例）。
  * 接入方式与 Signals 版本逐字相同，业务代码一行不改。
  */
-import { computed, div, installSignals, ref, vText } from '../index.js';
+import { computed, div, installSignals, ref, vText } from '@yoyaflow/yoya-ui';
 import { createZustandAdapter } from './adapter-zustand-example.js';
 
 /** 第一步：应用启动时装一次（全局只有一个引擎，别在组件里装）。 */
