@@ -1,4 +1,4 @@
-import { div, ul, vStateNode, vText, vstack } from '../../index.js';
+import { computed, div, ul, ref, vText, vstack } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 /**
@@ -201,12 +201,10 @@ export function RegionFlushExample() {
 }
 
 /**
- * 数据来源对照：三块面板长得一样，区别只在「数据住在哪、谁来驱动」。
- * ① 组件状态：数据住在 vStateNode 里，setState 后引擎自动把函数值绑定写回；
- * ② 外部数据：数据住在组件外，零参闭包直接读它，
- *    改完要自己 flush()（结构变了才 rebuild()）；
- * ③ 节点状态：节点自己的 setState 只推给本节点注册的处理器，
- *    绑定读不到它，必须像下面这样手写接线。
+ * 数据来源对照：三块面板长得一样，区别只在「数据住在哪、怎么驱动」。
+ * ① 组件内 ref：数据住在组件闭包里，值绑定自动写回；
+ * ② 组件外 ref：数据住在组件外（跨组件共享），绑定同样自动写回；
+ * ③ 区域依赖：区域构建期直读 ref，写入触发子树重建（结构随状态变化走这里）。
  */
 export function RegionStateVsSourceExample() {
   return vstack({ gap: '10px' }, (list) => {
@@ -218,59 +216,68 @@ export function RegionStateVsSourceExample() {
   });
 }
 
-/** ① 组件状态：数据与驱动都在组件里，绑定参数 s 就是组件状态。 */
+/** ① 组件内 ref：数据与驱动都在组件里，值位置直接接句柄。 */
 function ComponentStatePanel() {
-  return vStateNode({
-    state: () => ({ count: 0 }),
-    render(state, api) {
+  const count = ref(0);
+
+  return {
+    render() {
       return div((panel) => {
         panel.className('demo-region-compare-panel');
         panel.attr('data-region-state', 'true');
-        panel.span((line) => line.child(vText((s) => `组件状态：${s.count}`)));
+        panel.span((line) => line.child(vText(computed(() => `组件状态：${count.value}`))));
         panel.vButton('+1（组件状态）', (button) => {
           button.attr('data-region-state-add', 'true');
-          button.on('click', () => api.setState({ count: state.count + 1 }));
+          button.on('click', () => {
+            count.value += 1;
+          });
         });
       });
     }
-  });
+  };
 }
 
-/** ② 外部数据源：数据在组件外，零参闭包直接读它，改动后手动 flush（pull）。 */
+/** ② 组件外 ref：数据在组件外创建（可跨组件共享），绑定自动写回，无需手动 flush。 */
 function ExternalDataSourcePanel() {
-  const data = { count: 0 };
+  const data = { count: ref(0) };
 
-  return div((panel) => {
-    panel.className('demo-region-compare-panel');
-    panel.attr('data-region-source', 'true');
-    panel.rebuildable();
-    panel.span((line) => line.child(vText(() => `外部数据源：${data.count}`)));
-    panel.vButton('+1（外部数据）', (button) => {
-      button.attr('data-region-source-add', 'true');
-      button.on('click', () => {
-        data.count += 1;
-        panel.flush(); // 拉一次绑定；只改值不调它，DOM 一动不动
+  return {
+    render() {
+      return div((panel) => {
+        panel.className('demo-region-compare-panel');
+        panel.attr('data-region-source', 'true');
+        panel.span((line) => line.child(vText(computed(() => `外部数据源：${data.count.value}`))));
+        panel.vButton('+1（外部数据）', (button) => {
+          button.attr('data-region-source-add', 'true');
+          button.on('click', () => {
+            data.count.value += 1; // 写入即写回，不需要 flush()
+          });
+        });
       });
-    });
-  });
+    }
+  };
 }
 
-/** ③ 节点状态：setState 只跑本节点注册的处理器，引擎不会替它更新任何绑定。 */
+/** ③ 区域依赖：区域构建期直读 ref，写入触发重建；值绑定覆盖不到的结构变化走这里。 */
 function NodeStatePanel() {
-  const label = vText('节点状态：0');
+  const count = ref(0);
 
-  return div((panel) => {
-    panel.className('demo-region-compare-panel');
-    panel.attr('data-region-local', 'true');
-    panel.registerStateHandler('count', (value) => {
-      label.textContent(`节点状态：${value}`); // 手写接线：不接这里，文案不会变
-    });
-    panel.span((line) => line.child(label));
-    panel.vButton('+1（节点状态）', (button) => {
-      button.attr('data-region-local-add', 'true');
-      button.on('click', () => panel.setState('count', panel.getNumberState('count') + 1));
-    });
-  });
+  return {
+    render() {
+      return div((panel) => {
+        panel.className('demo-region-compare-panel');
+        panel.attr('data-region-local', 'true');
+        panel.rebuildable(() => true);
+        panel.span((line) => line.child(vText(`区域信号：${count.value}`)));
+        panel.vButton('+1（区域信号）', (button) => {
+          button.attr('data-region-local-add', 'true');
+          button.on('click', () => {
+            count.value += 1; // 区域读到过 count，写入即重建子树
+          });
+        });
+      });
+    }
+  };
 }
 
 /** 源码面板用：三块面板的函数按文件顺序展示，再展示入口组件。 */

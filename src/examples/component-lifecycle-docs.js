@@ -50,12 +50,12 @@ const regionDemos = [
   {
     component: RegionStateVsSourceExample,
     description:
-      '三份一样的计数：组件状态由 setState 自动驱动；外部数据用 scope() 声明读来源、由 flush() 手动拉取；节点状态只推本节点处理器，得自己接线。',
+      '三份一样的计数：组件内 ref 由值绑定自动写回；组件外 ref 同样自动驱动（可跨组件共享）；区域构建期直读 ref，写入触发子树重建。',
     extraSource: regionCompareBlocksSource,
     id: 'compare',
-    imports: ['div', 'vButton', 'vStateNode', 'vText', 'vstack'],
-    sourceTitle: 'state 与 scope 对照源码',
-    title: '数据来源对照：state / scope / 节点状态'
+    imports: ['computed', 'div', 'ref', 'vButton', 'vText', 'vstack'],
+    sourceTitle: 'ref 与区域对照源码',
+    title: '数据来源对照：ref / 区域'
   }
 ];
 
@@ -85,10 +85,13 @@ export function ComponentLifecycleDocumentationPage() {
           region.attr('data-lifecycle-region', 'true');
           region.h2('可重建区域');
           region.p(
-            '更新阶段里「结构随数据变化」由区域负责：组件级用 vStateNode，节点级用 rebuildable() 声明区域。'
+            '更新阶段里「结构随数据变化」由区域负责：值位置直接传 ref 句柄，结构变化用 rebuildable() 声明区域。'
           );
           region.ul((list) => {
             list.li('rebuildable(谓词?) 声明区域，rebuild() 清空子节点并重跑它自己的 setup。');
+            list.li(
+              '区域构建期读到的 ref 成为区域依赖，写入自动触发重建；值绑定（vText/attr/style）则只更新对应位置。'
+            );
             list.li(
               'flush() 只求值写回绑定：不重建、不过谓词、值没变不写 DOM；值变化用它，结构变化才用 rebuild()。'
             );
@@ -96,11 +99,7 @@ export function ComponentLifecycleDocumentationPage() {
               '区域内不保留 DOM 身份（焦点、滚动、第三方实例会重建），区域外的兄弟节点不受影响。'
             );
             list.li(
-              '谓词只回答「这次要不要花重建」：为假时只写回函数值绑定并记为 rebuildPending()，结构不动。'
-            );
-            list.li('带参值函数需要 scope()；vStateNode 内部的子树默认继承宿主状态。');
-            list.li(
-              '数据来源三选一：组件状态（vStateNode 内自动继承）、scope()（外部数据，pull）、零参闭包；零参闭包在任意节点可用，节点级 setState 只驱动自己的处理器。'
+              '谓词只回答「这次要不要花重建」：为假时只写回绑定值并记为 rebuildPending()，结构不动。'
             );
           });
           regionDemos.forEach((demo) => region.child(RegionDemoSection(demo)));

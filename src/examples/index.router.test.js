@@ -1129,21 +1129,21 @@ describe('renderExamplesIndex', () => {
     const localPanel = compareDemo.querySelector('[data-region-local]');
     expect(statePanel.textContent).toContain('组件状态：0');
     expect(externalPanel.textContent).toContain('外部数据源：0');
-    expect(localPanel.textContent).toContain('节点状态：0');
+    expect(localPanel.textContent).toContain('区域信号：0');
 
     compareDemo.querySelector('[data-region-state-add]').click();
-    // 组件状态：setState 后引擎自动写回绑定
+    // 组件内 ref：写入后值绑定自动写回
     expect(statePanel.textContent).toContain('组件状态：1');
     expect(externalPanel.textContent).toContain('外部数据源：0');
 
     compareDemo.querySelector('[data-region-source-add]').click();
-    // 外部数据源：改数据后由 flush() 拉取
+    // 组件外 ref：写入即写回，无需 flush
     expect(externalPanel.textContent).toContain('外部数据源：1');
-    expect(localPanel.textContent).toContain('节点状态：0');
+    expect(localPanel.textContent).toContain('区域信号：0');
 
     compareDemo.querySelector('[data-region-local-add]').click();
-    // 节点状态：只跑本节点注册的处理器
-    expect(localPanel.textContent).toContain('节点状态：1');
+    // 区域依赖：构建期直读 ref，写入触发重建
+    expect(localPanel.textContent).toContain('区域信号：1');
 
     // 源码面板要能看到三种写法的分块函数，而不只是入口组件
     const compareSource = compareDemo.querySelector('[data-source-example]').textContent;
