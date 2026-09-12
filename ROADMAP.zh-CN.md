@@ -26,6 +26,8 @@ npm 与 CDN，消除双 core 与 `./ssr` 子路径残留。
 - [x] 打包器 tree-shaking 验证与体积预算门禁
 - [x] 子入口类型测试纳入 CI
 - [x] SSR + 官方组件的单 core 冒烟测试固化
+- [x] 状态模型统一到 Signals：移除节点级 `state` / `setState` 与 `vStateNode`
+      （破坏性变更，迁移对照见 `docs/migration-0.5.zh-CN.md`）
 
 ## M3 · 开发者体验与错误定位
 
