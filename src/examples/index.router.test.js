@@ -802,10 +802,10 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-signals-advantages]')).toBeNull();
     expect(page.querySelector('[data-signals-demo]')).toBeNull();
 
-    // 插件模板区：插件由使用者自己写，这里只提供模板（内置引擎只给路径）
+    // 插件模板区：先给模板，再给 signals 类库与 store 类库两份演示代码
     const adapter = page.querySelector('[data-signals-adapter]');
     expect(adapter).not.toBeNull();
-    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(1);
+    expect(adapter.querySelectorAll('[data-source-example]')).toHaveLength(3);
     const adapterSources = [...adapter.querySelectorAll('[data-source-example]')].map(
       (node) => node.textContent
     );
@@ -814,6 +814,13 @@ describe('renderExamplesIndex', () => {
     expect(adapterSources[0]).toContain('write(source, value)');
     expect(adapterSources[0]).toContain('subscribe(source, listener)');
     expect(adapterSources[0]).toContain('吞掉首次');
+    expect(adapterSources[1]).toContain('createSignalsAdapter(signals = preactSignals)');
+    expect(adapterSources[1]).toContain('signals.signal(initial)');
+    expect(adapterSources[1]).toContain('untracked(() => listener(value))');
+    expect(adapterSources[2]).toContain('createZustandAdapter()');
+    expect(adapterSources[2]).toContain('zustand/vanilla');
+    expect(adapterSources[2]).toContain('source.getState().value');
+    expect(adapterSources[2]).toContain('source.setState({ value })');
     expect(adapter.textContent).toContain('core/signals/engine.js');
   });
 

@@ -2,11 +2,23 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 // 插件由使用者自己写：这里只给模板，源码直接取文件原文，避免两份拷贝。
 import adapterTemplateSource from './adapter-template.js?raw';
+import signalsAdapterSource from './adapter-signals-example.js?raw';
+import zustandAdapterSource from './adapter-zustand-example.js?raw';
 
-const adapterTemplatePanel = ComponentSource({
-  source: adapterTemplateSource,
-  title: '插件模板（复制到你的项目里改）'
-});
+const adapterSourcePanels = [
+  ComponentSource({
+    source: adapterTemplateSource,
+    title: '插件模板（复制到你的项目里改）'
+  }),
+  ComponentSource({
+    source: signalsAdapterSource,
+    title: '演示代码：Signals 类库（@preact/signals-core）'
+  }),
+  ComponentSource({
+    source: zustandAdapterSource,
+    title: '演示代码：Store 类库（zustand/vanilla）'
+  })
+];
 
 /**
  * Signals 文档页：只回答「怎么换引擎、怎么写自己的适配器」。
@@ -63,9 +75,12 @@ export function SignalsDocumentationPage() {
               'store 形态（getState / setState / subscribe）不需要 untracked——通知来自 store 而不是 effect；通知期间的重订已由 core 按「只动变化的依赖」处理，插件不必自己兜。'
             );
           });
+          adapter.p(
+            '再往下是两份完整的演示代码：signals 类库与 store 类库各一份，按契约把各自的坑都处理掉了。两份都在仓库里跑一致性用例与端到端用例，可以直接抄。'
+          );
           adapter.div((panels) => {
             panels.className('components-signals-adapter-sources');
-            panels.child(adapterTemplatePanel);
+            adapterSourcePanels.forEach((panel) => panels.child(panel));
           });
         });
       });
