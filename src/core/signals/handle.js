@@ -129,17 +129,28 @@ export function computed(fn) {
   const adapter = currentSignals();
   const source = adapter.createSignal(undefined);
   let live = false;
-  let disposers = [];
+  let subscriptions = []; // [{ source, dispose }]：依赖未变时复用订阅
 
   const recompute = () => {
-    disposers.forEach((dispose) => dispose());
-    disposers = [];
-
     const { value, sources } = withCollect(fn);
+    const pending = new Map(subscriptions.map((entry) => [entry.source, entry]));
+    const next = [];
+
+    // 依赖未变的订阅原样保留：store 形态引擎在通知遍历中新增监听器会被重复访问
+    // （详见 runtime.js syncSubscriptions 的说明）。
     sources.forEach((dependency) => {
-      disposers.push(adapter.subscribe(dependency, recompute));
+      const existing = pending.get(dependency);
+      if (existing) {
+        pending.delete(dependency);
+        next.push(existing);
+        return;
+      }
+
+      next.push({ source: dependency, dispose: adapter.subscribe(dependency, recompute) });
     });
 
+    pending.forEach((entry) => entry.dispose());
+    subscriptions = next;
     adapter.write(source, value);
   };
 

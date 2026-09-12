@@ -322,20 +322,40 @@ function activateRegion(node) {
 }
 
 function releaseRegionSubscriptions(node) {
-  (node._regionSubs || []).forEach((dispose) => dispose());
+  (node._regionSubs || []).forEach((entry) => entry.dispose());
   node._regionSubs = [];
 }
 
-/** 按当前依赖重订区域订阅；每次重建后依赖集会变化，必须重订。 */
+/**
+ * 按当前依赖重订区域订阅：只动变化的部分。
+ * 在通知回调里整体退订再重订，会让 store 形态引擎（zustand 那种
+ * `listeners.forEach`）在遍历中反复访问新监听器，直至自激。
+ */
 function subscribeRegion(node) {
   if (!node._regionActive || !node._regionAdapter) {
     return;
   }
 
-  releaseRegionSubscriptions(node);
-  node._regionSubs = (node._regionSources || []).map((source) =>
-    trackedSubscribe(node._regionAdapter, source, () => node.rebuild({ trigger: 'signal' }))
-  );
+  const adapter = node._regionAdapter;
+  const pending = new Map((node._regionSubs || []).map((entry) => [entry.source, entry]));
+  const next = [];
+
+  (node._regionSources || []).forEach((source) => {
+    const existing = pending.get(source);
+    if (existing) {
+      pending.delete(source);
+      next.push(existing);
+      return;
+    }
+
+    next.push({
+      source,
+      dispose: trackedSubscribe(adapter, source, () => node.rebuild({ trigger: 'signal' }))
+    });
+  });
+
+  pending.forEach((entry) => entry.dispose());
+  node._regionSubs = next;
 }
 
 /** 区域销毁 / 离开 DOM 时退订。 */

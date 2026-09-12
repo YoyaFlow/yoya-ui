@@ -13,24 +13,46 @@ import { withCollect } from './deps.js';
 export function createReactiveTarget({ run, onChange }) {
   const adapter = currentSignals();
   let sources = [];
-  let disposers = [];
+  let subscriptions = []; // [{ source, dispose }]：依赖未变时复用订阅
   let active = false;
   let evaluated = false;
   let running = false;
   let queued = false;
   let value;
 
-  const unsubscribeSources = () => {
-    disposers.forEach((dispose) => dispose());
-    disposers = [];
+  const releaseSubscriptions = () => {
+    subscriptions.forEach((entry) => entry.dispose());
+    subscriptions = [];
   };
 
-  const subscribeSources = () => {
+  /**
+   * 按当前依赖重订：**只动变化的部分**。
+   *
+   * 换成 store 形态的引擎（zustand 那种 `listeners.forEach` 通知）时，
+   * 在回调里整体退订再重订会让遍历中的集合被改写，监听器被反复访问直至自激；
+   * 依赖没变就复用订阅，既避免这个问题，也少一轮引擎开销。
+   */
+  const syncSubscriptions = () => {
     if (!active) {
       return;
     }
 
-    disposers = sources.map((source) => trackedSubscribe(adapter, source, onDependencyChange));
+    const pending = new Map(subscriptions.map((entry) => [entry.source, entry]));
+    const next = [];
+
+    sources.forEach((source) => {
+      const existing = pending.get(source);
+      if (existing) {
+        pending.delete(source);
+        next.push(existing);
+        return;
+      }
+
+      next.push({ source, dispose: trackedSubscribe(adapter, source, onDependencyChange) });
+    });
+
+    pending.forEach((entry) => entry.dispose());
+    subscriptions = next;
   };
 
   const evaluate = () => {
@@ -54,9 +76,8 @@ export function createReactiveTarget({ run, onChange }) {
   function refresh() {
     running = true;
     try {
-      unsubscribeSources();
       evaluate();
-      subscribeSources();
+      syncSubscriptions();
     } finally {
       running = false;
     }
@@ -81,11 +102,11 @@ export function createReactiveTarget({ run, onChange }) {
       if (!evaluated) {
         evaluate();
       }
-      subscribeSources();
+      syncSubscriptions();
     },
     release() {
       active = false;
-      unsubscribeSources();
+      releaseSubscriptions();
     },
     get active() {
       return active;
