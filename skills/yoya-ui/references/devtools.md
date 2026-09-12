@@ -36,23 +36,23 @@ disableDevtools();
 
 每个事件带 `seq`（单调）、`nodeId`（稳定）、`nodeLabel`（可读节点描述）：
 
-| type             | 含义                                 | 补充                              |
-| ---------------- | ------------------------------------ | --------------------------------- |
-| `commit`         | 元素首次渲染                         | `kind: 'mount'`                   |
-| `destroy`        | 节点销毁                             | —                                 |
-| `attr` / `style` | 属性/class、行内样式变更             | `name`、`previous`、`next`        |
-| `child`          | 子项增删/重排                        | `added` / `removed` / `reordered` |
-| `text`           | 文本变更                             | `from`、`to`                      |
-| `state`          | 状态容器变更（信号写入暂不单独上报） | `changed`、`state`、`handling`    |
-| `deprecated`     | 首次创建已弃用 API                   | `api`、`alternative`              |
-| `region`         | 可重建区域的处理                     | `action`、`trigger`               |
+| type             | 含义                     | 补充                                         |
+| ---------------- | ------------------------ | -------------------------------------------- |
+| `commit`         | 元素首次渲染             | `kind: 'mount'`                              |
+| `destroy`        | 节点销毁                 | —                                            |
+| `attr` / `style` | 属性/class、行内样式变更 | `name`、`previous`、`next`                   |
+| `child`          | 子项增删/重排            | `added` / `removed` / `reordered`            |
+| `text`           | 文本变更                 | `from`、`to`                                 |
+| `signal-write`   | 信号写入                 | `signalId`、`previous`、`next`、`dependents` |
+| `region`         | 可重建区域的处理         | `action`、`trigger`                          |
 
-`handling`：`update`（update 回调）、`bindings`（值绑定写回）、`rebuild`、
-`pending`（组件未挂载）。
+`signal-write` 在写入 `ref` 且值发生变化时上报：`signalId` 会话内稳定，
+`previous` / `next` 为写入前后值，`dependents` 为依赖该信号的绑定数
+（值绑定 + 区域依赖）；相同值写入与只读 `computed` 写入不上报。
 
 `region` 事件说明被标记区域的这次处理：`action` 为 `rebuild`（重建了子树）或
 `flush`（只写回绑定值、结构不变）；`trigger` 为 `manual`（手动 `rebuild()`）或
-`state`（状态变化自动触发）。用它回答「这块为什么重建 / 为什么只是刷值」。
+`signal`（信号写入自动触发）。用它回答「这块为什么重建 / 为什么只是刷值」。
 
 ## 快照与作用域
 

@@ -109,20 +109,20 @@ npm run dev
 
 ## 能力一览
 
-| 能力                   | 状态                                                                                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法                                                                                             |
-| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                                                                                                |
-| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                                                                                                      |
-| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                                                                                                      |
-| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离                                                                                  |
-| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                                                                                                 |
-| 状态管理               | 内置 Signals（`ref` / `computed`，动态值直接传进 DSL）、由信号驱动的可重建区域、保留兼容的 `vStateNode`、可替换的引擎插件（`yoya-ui/signals-preact`） |
-| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                                                                                                   |
-| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                                                                                                   |
-| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                                                                                                     |
-| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                                                                                                       |
-| TypeScript             | root / core / ui / router / echart / three / devtools 均随包发布类型声明                                                                              |
+| 能力                   | 状态                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法                                                                    |
+| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                                                                       |
+| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                                                                             |
+| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                                                                             |
+| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离                                                         |
+| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                                                                        |
+| 状态管理               | 内置 Signals（`ref` / `computed`，动态值直接传进 DSL）、由信号驱动的可重建区域、可替换的引擎插件（`yoya-ui/signals-preact`） |
+| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                                                                          |
+| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                                                                          |
+| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                                                                            |
+| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                                                                              |
+| TypeScript             | root / core / ui / router / echart / three / devtools 均随包发布类型声明                                                     |
 
 ## 定位：面向浏览器原生 Web 的声明式扩展，而不是封闭生态的框架
 
@@ -284,7 +284,7 @@ node src/examples/ssr/server-http.mjs
 ## 按模块引入
 
 ```js
-import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SVG/state
+import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 核心 HTML/SVG/signals
 import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自行引入 echarts）
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自行引入 three）
@@ -332,7 +332,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 | 图表        | `vEchart`（基于 ECharts，按需引入）                                                                                         |
 | 3D          | `vThree`（基于 Three.js，按需引入）                                                                                         |
 | 异步        | `vDynamicLoader`                                                                                                            |
-| 状态        | `vStateNode` / 可选 `@preact/signals-core` 互操作                                                                           |
+| 状态        | `ref` / `computed` / 由信号驱动的区域；可选 `@preact/signals-core` 互操作                                                   |
 | i18n / 主题 | `createI18n` / `withI18nStringShortcut` / 主题令牌与明暗模式                                                                |
 
 ## 工程信号（在查看 Star 数之前，先读这里）
@@ -438,7 +438,7 @@ npm run build
 
 ```text
 # 共享增量入口（ESM，自动加载共享 core 块；供打包器 / 多文件 CDN）
-yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + state/i18n/access
+yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + signals/i18n/access
 yoya.core.chunk.js / yoya.core.chunk.min.js 内部共享块（core/ui/router 自动加载）
 yoya.ui.js / yoya.ui.min.js                 组件 + layout + theme
 yoya.actions.js / yoya.navigation.js / yoya.feedback.js（+ .min）
@@ -487,7 +487,7 @@ npm run format        # Prettier
 
 ```text
 src/
-  core/        ViewNode/ElementNode 核心、state、i18n、theme、id 分配器、SSR 辅助
+  core/        ViewNode/ElementNode 核心、signals、i18n、theme、id 分配器、SSR 辅助
   html/ svg/   HTML/SVG 元素工厂
   layout/      布局工厂
   actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
@@ -509,6 +509,7 @@ docs/          对外说明文档（SSR、主题、权限、DevTools、组件开
 - [主题样式规格](docs/theme.zh-CN.md)
 - [权限控制](docs/access-control.zh-CN.md)
 - [DevTools 调试工具](docs/devtools.zh-CN.md)
+- [0.4 → 0.5 迁移指南](docs/migration-0.5.zh-CN.md)
 
 ## Codex Skill
 

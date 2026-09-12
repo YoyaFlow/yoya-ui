@@ -54,30 +54,22 @@ disableDevtools();
 `subscribeDevtools(listener)` 返回取消订阅函数；监听器抛错不会打断渲染。
 每个事件都带 `seq`（单调递增）与 `nodeId`：
 
-| type           | 含义                  | 补充字段                                     |
-| -------------- | --------------------- | -------------------------------------------- |
-| `commit`       | 元素首次渲染          | `kind: 'mount'`                              |
-| `destroy`      | 节点销毁              | —                                            |
-| `attr`         | 属性/class 变更       | `name`、`previous`、`next`                   |
-| `style`        | 行内样式变更          | `name`、`previous`、`next`                   |
-| `child`        | 子项增删/重排         | `added`、`removed`、`reordered`              |
-| `text`         | 文本变更              | `from`、`to`                                 |
-| `state`        | `vStateNode` 状态变更 | `changed`、`state`、`handling`               |
-| `region`       | 可重建区域处理        | `action`、`trigger`                          |
-| `signal-write` | 信号写入              | `signalId`、`previous`、`next`、`dependents` |
-| `deprecated`   | 弃用 API 被使用       | `api`、`alternative`                         |
+| type           | 含义            | 补充字段                                     |
+| -------------- | --------------- | -------------------------------------------- |
+| `commit`       | 元素首次渲染    | `kind: 'mount'`                              |
+| `destroy`      | 节点销毁        | —                                            |
+| `attr`         | 属性/class 变更 | `name`、`previous`、`next`                   |
+| `style`        | 行内样式变更    | `name`、`previous`、`next`                   |
+| `child`        | 子项增删/重排   | `added`、`removed`、`reordered`              |
+| `text`         | 文本变更        | `from`、`to`                                 |
+| `signal-write` | 信号写入        | `signalId`、`previous`、`next`、`dependents` |
+| `region`       | 可重建区域处理  | `action`、`trigger`                          |
 
 `signal-write` 在写入 `ref` 且值发生变化时上报：`signalId` 在会话内稳定
 （同一信号多次写入可关联），`previous` / `next` 为写入前后值，
 `dependents` 为依赖该信号的绑定数（值绑定 + 区域依赖）。相同值写入、
 `computed` 只读句柄的写入不会产生该事件。信号写入路径在 devtools
 未开启时零开销（不读旧值、不查依赖数、不分配 id）。
-
-`deprecated` 在弃用 API 首次被使用时上报一次，`api` 为 API 名，
-`alternative` 为推荐替代写法（当前只有 `vStateNode`）。
-
-`state` 事件说明变更经过的路径：`update`（update 回调处理）、`bindings`
-（函数值绑定写回）、`rebuild`（重建视图根）或 `pending`（组件未挂载）。
 
 `region` 事件说明被标记区域的这次处理：`action` 为 `rebuild`（重建了子树）
 或 `flush`（只写回绑定值、结构保持不变）；`trigger` 为 `manual`（手动

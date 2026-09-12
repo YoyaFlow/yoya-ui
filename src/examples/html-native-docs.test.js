@@ -16,21 +16,18 @@ describe('html native documentation page', () => {
     expect(findRow('node.textContent()')).toContain('只读');
     expect(findRow('textNode.textContent(value)')).toContain('原地替换');
     expect(findRow('node.attr(name) / attr(name, value)')).toContain('移除');
-    expect(findRow('node.setState(name, value)')).toContain('同义');
-    expect(findRow('node.state(initial)')).toContain('幂等种子');
+    expect(findRow('handle.value / handle.update(fn)')).toContain('原地更新');
+    expect(findRow('ref(initial) / computed(fn)')).toContain('直接传句柄');
     expect(findRow('node.flushAll()')).toContain('只刷绑定');
-    expect(findRow('node.getState(name)')).toContain('类型转换');
     expect(findRow('node.rebuildable(predicate?)')).toBeTruthy();
     expect(findRow('node.bindTo(target) / destroy()')).toBeTruthy();
 
     const samples = [...api.querySelectorAll('pre')].map((pre) => pre.textContent);
     expect(samples[0]).toContain("p.text('状态：已同步')");
-    expect(samples[1]).toContain('ele.state({ count: 0, open: false })');
-    expect(samples[1]).toContain("ele.setState('open', true)");
-    expect(samples[1]).toContain('ele.setState({ count: 2 })');
-    expect(samples[1]).toContain("ele.registerStateHandler('open'");
-    expect(samples[1]).toContain('保留状态值');
-    expect(samples[1]).not.toContain('vStateNode');
+    expect(samples[1]).toContain('const count = ref(0)');
+    expect(samples[1]).toContain("ele.attr('data-count', count)");
+    expect(samples[1]).toContain('count.value += 1');
+    expect(samples[1]).toContain('ele.rebuildable(() => count.value < 10)');
 
     view.destroy();
   });

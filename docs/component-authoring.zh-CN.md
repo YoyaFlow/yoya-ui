@@ -19,7 +19,7 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                     |
 | 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态       | `vStateNode`                                                                                                                                   |
+| 信号       | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                   |
 | 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
 
 ## 3. 三种组件形态
@@ -108,28 +108,32 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 6. 状态与更新
 
-yoya-ui 的状态更新默认是显式的：组件自己决定就地更新哪些 DOM；需要自动同步时用内置 Signals（`ref` / `computed`，值位置直接传句柄），结构变化由 `rebuildable()` 区域读取信号驱动：
+yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除，迁移对照见 [`migration-0.5.zh-CN.md`](migration-0.5.zh-CN.md)。
 
-- 节点级：任意节点都有 `state(初值)` + `registerStateAttrs` / `registerStateHandler` + `setState` / `getState`。`state({...})` 是**幂等种子**（只补缺省字段，重跑不重置）并让本子树里的 `(s) => value` 读这份状态；`setState('key', value)` 与 `setState(patch)` 同义，写完触发 `flushAll()`（区域按谓词重建、普通节点只刷绑定）。**构建期**（setup / 区域重跑）里的 `setState` 只写状态，不触发刷新与重建。区域重跑会重建处理器登记但保留状态值，重建后的初始态要在 setup 里自己读回。
-- 组件级：`vStateNode({ state, render, update })`；`update` 做局部 patch，返回 `true` 时全量重建。
-- 区域级：`rebuildable(谓词?)` 把节点声明为「可重建区域」，`rebuild()` 重新执行它自己的 setup。
+- 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
+- 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
 - 文案原地更新：持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
-- 组件可暴露状态 API（如 `value(next)`、`disabled(next)`），保持链式调用。
+- 对外只暴露方法：组件内部用 `ref` 持有状态，对外给 `value(next)` / `disabled(next)` 这类链式方法，不把内部信号对象交给使用者。
 
 ### 6.1 可重建区域
 
 当一块内容需要「结构随数据变化」，而组件级状态容器又太重时，把它标记成区域：
 
 ```js
-const data = { rows: [] };
+const rows = ref([]);
+const editing = ref(false);
 
 const body = div((ele) => {
-  ele.rebuildable(() => !isComposing); // 可选：时机谓词，为假时只刷值不重建
-  ele.attr('data-count', () => String(data.rows.length)); // 零参闭包：从外部取值
-  data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
+  ele.rebuildable(() => !editing.value); // 可选：时机谓词，为假时只刷值不重建
+  ele.attr(
+    'data-count',
+    computed(() => String(rows.value.length))
+  );
+  rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
 });
 
-body.rebuild(); // 清空子节点 → 重跑 setup → 落地 DOM
+rows.value = [...rows.value, { id: 'r1', name: '第一行' }]; // 写入即重建
+body.rebuild(); // 需要强制重建结构时手动调
 body.flush(); // 只求值写回绑定，不重建结构（幂等）
 ```
 
@@ -139,12 +143,11 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - **区域节点先建一次**：内容由区域自己的 builder 产出，所以它可以在 `render()` 之外创建并直接持有引用（`const list = ul((box) => { box.rebuildable(); … })` → `list.rebuild()`），不需要在 render 里用 `let region = null` 回填；区域外的状态行、工具节点同理。**但要在组件 / 页面工厂内部创建**（每实例、每请求一份），不要提到模块级——服务端复用同一棵树会在并发请求间串数据。`rebuild()` / `flush()` 只在客户端交互期调用，SSR 首屏只做构建（绑定在构建期写回）。
 - 区域内容由它自己的 setup 产出；重跑会**清空子节点并重新执行 setup**，因此区域内不保留 DOM 身份——焦点、选区、内部滚动位置、挂在元素上的第三方实例都会重建。区域外的兄弟节点与其 DOM 不受影响。
 - 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
-- 函数值绑定在任意节点都可用：零参闭包 `() => value` 不需要声明来源（首屏构建期求值一次，之后自己 `flush()`）；带参形式 `(s) => value` 需要先声明来源 `scope(() => data)`，在 `vStateNode` 内部则默认继承宿主状态。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
+- 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（首屏构建期求值一次，需要重新求值时自己调 `flush()`）。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
-- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。状态处理器与 `bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
-- 区域归属于最近的状态组件：`vStateNode` 内部的区域由该组件的状态变化自动触发；嵌套的状态组件自成边界，其内部区域由它自己管理。
-- 绑定的数据来源是显式的，三选一：**组件状态**（`vStateNode` 内自动继承，`setState` 自动驱动）、**`scope(getter)`**（数据在组件外，pull——改完要自己 `flush()` / `rebuild()`；声明一次覆盖整棵子树）、**零参闭包**（不需要声明，任意节点可用）。带参值函数必须来自前两者之一（系统按形参个数判断，`(s = {}) => …` 这类默认参数/剩余参数会被当作零参）；节点级 `setState` 只驱动自己的处理器，不参与绑定求值。来源解析顺序是「节点自己声明 > 构建栈上最近的声明 > 宿主继承」；`scope()` 只影响**值**，结构变化仍然只由 `rebuildable()` 决定。
-- 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用函数值绑定——它们是原地更新，不重建 DOM。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域自己订阅依赖：区域内读到的信号变化即触发重建（devtools 里记为 `trigger: 'signal'`）；嵌套区域各订阅各的，不会互相代管。
+- 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用值绑定——它们是原地更新，不重建 DOM。
 
 ## 7. 组合、事件与生命周期
 

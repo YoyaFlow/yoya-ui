@@ -82,7 +82,7 @@ div((root) => {
 
 ## DevTools（Beta）
 
-开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `state` / `region`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
+开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `signal-write` / `region`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
 
 ## 参考文件（按需读取）
 

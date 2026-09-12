@@ -144,7 +144,7 @@ statusText.textContent('状态：已跳过');`
     ]
   },
   {
-    title: '事件、状态与生命周期',
+    title: '事件、状态（信号）与生命周期',
     rows: [
       [
         'node.on(event, handler, options?)',
@@ -153,34 +153,19 @@ statusText.textContent('状态：已跳过');`
       ],
       ['node.off(event)', '解绑事件并移除转发适配器。', "btn.off('click')"],
       [
-        'node.registerStateAttrs(...names)',
-        '声明节点可识别的状态字段，默认 boolean；也可传 { 名称: 类型 }。',
-        "box.registerStateAttrs('open')"
+        'ref(initial) / computed(fn)',
+        '组件内状态用句柄持有：值位置直接传句柄，写入即写回；派生值用 computed。',
+        "box.attr('data-count', count)"
       ],
       [
-        'node.state(initial)',
-        '声明节点自带状态：对象是幂等种子（只补缺省字段，重跑不重置），本子树的 (s) => value 读它。',
-        'box.state({ count: 0, open: false })'
-      ],
-      [
-        'node.registerStateHandler(name, handler)',
-        '注册状态处理器，回调 (value, node, oldValue) 负责同步样式、属性或内部结构。',
-        "box.registerStateHandler('open', syncOpen)"
-      ],
-      [
-        'node.setState(name, value)',
-        '写入状态：单值 setState(name, value) 与多值 setState(patch) 同义，写完触发 flushAll()。',
-        "box.setState('open', true)"
+        'handle.value / handle.update(fn)',
+        '写信号：值变化时绑定原地更新，区域读到过的信号按谓词重建；同值写入不通知。',
+        'count.value += 1'
       ],
       [
         'node.flushAll()',
-        '值级更新入口：区域按谓词重建，普通节点只刷绑定（结构不变）。',
+        '非信号数据源的值级更新入口：区域按谓词重建，普通节点只刷绑定（结构不变）。',
         'box.flushAll()'
-      ],
-      [
-        'node.getState(name)',
-        '读取节点状态；getBoolean / getString / getNumberState 做类型转换读取。',
-        "box.getBooleanState('open')"
       ],
       [
         'node.rebuildable(predicate?)',
@@ -211,24 +196,22 @@ statusText.textContent('状态：已跳过');`
     ],
     sample: `// 以下都在 div((ele) => { ... }) 的 setup 里
 
-// ① 节点自带状态：state({...}) 是幂等种子（重跑只补缺省字段），(s) => value 读它
-ele.state({ count: 0, open: false });
-ele.attr('data-count', (s) => String(s.count));
+// ① 值来源是信号：ref 持有状态，值位置直接传句柄（属性 / 文本 / 组件 props 都行）
+const count = ref(0);
+ele.attr('data-count', count);
+ele.child(vText(computed(() => \`count=\${count.value}\`)));
 
-// ② 写入状态：单值与 patch 同义，写完自动 flushAll()（普通节点只刷绑定）
-ele.setState('open', true);
-ele.setState({ count: 2 });
-
-// ③ 手动接线仍然可用：需要 oldValue 或命令式副作用时注册处理器
-ele.registerStateAttrs('open');
-ele.registerStateHandler('open', (value, node) => {
-  node.attr('data-open', value ? 'true' : null); // 处理器负责把状态落到 DOM
+// ② 写入即写回：绑定原地更新，不需要手动 flush
+ele.on('click', () => {
+  count.value += 1;
 });
-ele.getBooleanState('open'); // 读取；getStringState / getNumberState 同理
 
-// ④ 边界：构建期（setup / 区域重跑）里的 setState 只写状态，不刷也不重建；
-// 重跑会重置处理器登记但保留状态值，初始态要在 setup 里读回
-ele.attr('data-open', ele.getBooleanState('open') ? 'true' : null);`
+// ③ 结构随数据变化：声明区域后，构建期读到的信号会按谓词重建子树
+ele.rebuildable(() => count.value < 10);
+ele.span(\`\${count.value} 项\`);
+
+// ④ 非信号数据源（外部对象）才需要手动刷新：flush() 只刷值，flushAll() 区域重建
+ele.flush();`
   }
 ];
 

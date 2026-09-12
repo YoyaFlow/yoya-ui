@@ -19,7 +19,7 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                      |
 | Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget` |
-| State                     | `vStateNode`                                                                                                                                   |
+| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                            |
 | i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                          |
 
 ## 3. The three component shapes
@@ -108,28 +108,32 @@ Component text input should uniformly accept the following four forms (`vText` /
 
 ## 6. State and updates
 
-yoya-ui has no automatic reactivity system. After state changes, the component decides which DOM to update in place:
+yoya-ui state is driven by the built-in Signals: a component holds state in `ref` and passes the handle straight into value positions, so writes update bindings in place; structural changes are driven by `rebuildable()` regions that read signals. Node-level `state()` / `setState()` / `getXState()` and `vStateNode` were removed in 0.5; see [`migration-0.5.md`](migration-0.5.md) for the mapping.
 
-- Node level: every node has `state(initial)` + `registerStateAttrs` / `registerStateHandler` + `setState` / `getState`. `state({...})` is an **idempotent seed** (fills missing keys only, never resets across rebuilds) and makes `(s) => value` bindings in this subtree read it; `setState('key', value)` and `setState(patch)` are equivalent and both trigger `flushAll()` afterwards (regions rebuild through their predicate, plain nodes only flush). Inside a **build** (setup / region rebuild) `setState` only stores the value and triggers neither flush nor rebuild. A region rebuild resets handler registrations but keeps state values, so re-apply the initial state in setup.
-- Component level: `vStateNode({ state, render, update })`; `update` performs local patches and returns `true` to rebuild fully.
-- Region level: `rebuildable(predicate?)` marks a node as a rebuildable region; `rebuild()` re-runs its own setup.
+- Values: `const count = ref(0)`; the handle can be passed to `attr` / `style` / `vText` / component props. Writing `.value` (or `handle.update(fn)`) updates the binding in place without rebuilding DOM or losing focus. Derived values use `computed(fn)` (read-only, lazy, cached).
+- Structure: `rebuildable(predicate?)` marks a node as a rebuildable region; signals read inside become its dependencies and drive predicate-gated rebuilds. Call `rebuild()` to force one.
 - In-place text: keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
-- Components can expose state APIs (e.g. `value(next)`, `disabled(next)`) and stay chainable.
+- Expose methods, not handles: keep internal state in `ref`, and expose chainable methods such as `value(next)` / `disabled(next)` instead of handing the signal object to callers.
 
 ### 6.1 Rebuildable regions
 
 When a block needs "structure follows data" and a stateful component is too heavy, mark it as a region:
 
 ```js
-const data = { rows: [] };
+const rows = ref([]);
+const editing = ref(false);
 
 const body = div((ele) => {
-  ele.rebuildable(() => !isComposing); // optional gate: when false, values flush without rebuilding
-  ele.attr('data-count', () => String(data.rows.length)); // zero-argument closure reads outside data
-  data.rows.forEach((row) => ele.addChild(row.id, div(row.name)));
+  ele.rebuildable(() => !editing.value); // optional gate: when false, values flush without rebuilding
+  ele.attr(
+    'data-count',
+    computed(() => String(rows.value.length))
+  );
+  rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
 });
 
-body.rebuild(); // clears children → re-runs the setup → materializes DOM
+rows.value = [...rows.value, { id: 'r1', name: 'First row' }]; // a write rebuilds the region
+body.rebuild(); // force a structural rebuild when you need one
 body.flush(); // writes bound values back only, without rebuilding structure (idempotent)
 ```
 
@@ -139,12 +143,11 @@ Contract and boundaries:
 - **Create the region node once**: its content is produced by its own builder, so it can be built outside `render()` and held directly (`const list = ul((box) => { box.rebuildable(); … })` then `list.rebuild()`). There is no need to back-fill a `let region = null` from inside render; the same goes for status lines and helper nodes around it. **Build it inside the component or page factory** (one per instance, one per request) rather than at module level — the server reusing one tree leaks state across concurrent requests. Call `rebuild()` / `flush()` only during client-side interaction; the SSR first paint only builds (bindings are written back during the build).
 - Region content is produced by its own setup. A rebuild **clears the children and re-runs that setup**, so DOM identity inside the region is not preserved: focus, selection, inner scroll position and third-party instances attached to elements are rebuilt. Siblings outside the region keep their DOM.
 - The predicate only answers "should this rebuild be paid for this time". When it returns false, bound values are written back and the rebuild is recorded as pending (`rebuildPending()`); structure stays untouched. Put data conditions inside the setup, not in the predicate.
-- Function-value bindings work on any node: a zero-argument closure `() => value` needs no declared source (it is evaluated once at build time, then you call `flush()` yourself); the parameterized form `(s) => value` needs a declared `scope(() => data)`, or inherits the host state inside a `vStateNode`. A region rebuild releases the previous bindings and the new ones take effect immediately.
+- Value bindings accept exactly two sources: a **signal handle** (recommended) or a **zero-argument closure** `() => value` (evaluated once at build time; call `flush()` yourself when it needs re-evaluation). The parameterized form `(s) => value` was removed together with node-level state and now throws when registered. A region rebuild releases the previous bindings and the new ones take effect immediately.
 - Declaration order: call `rebuildable()` first, then write value functions and other registrations.
-- Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. State handlers and `bindDocumentEvent` / `bindWindowEvent` are reset across rebuilds by the engine; timers must be registered through `registerRegionCleanup(fn)`.
-- A region belongs to the nearest state component: regions inside a `vStateNode` are triggered by that component's state changes; nested state components are islands and manage their own regions.
-- Data sources are explicit, pick one of three: **component state** (inherited inside a `vStateNode`, driven by `setState`), **`scope(getter)`** (data lives outside the component — pull, so you call `flush()` / `rebuild()` yourself; one declaration covers the whole subtree), or a **zero-argument closure** (no declaration needed, usable on any node). Parameterized value functions must come from one of the first two (detected by declared arity, so `(s = {}) => …` counts as zero-argument); node-level `setState` only drives its own handlers and never feeds bindings. Sources resolve as "node's own scope > nearest declared scope on the build stack > host inheritance"; `scope()` only affects **values** — structure changes are still decided solely by `rebuildable()`.
-- To keep focus or third-party instances, leave that part outside the region or use function-value bindings, which update in place without rebuilding DOM.
+- Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. `bindDocumentEvent` / `bindWindowEvent` are reset across rebuilds by the engine; timers must be registered through `registerRegionCleanup(fn)`.
+- Every region subscribes to its own dependencies: a signal read inside it triggers a rebuild (reported by devtools as `trigger: 'signal'`); nested regions subscribe independently.
+- To keep focus or third-party instances, leave that part outside the region or use value bindings, which update in place without rebuilding DOM.
 
 ## 7. Composition, events, and lifecycle
 
