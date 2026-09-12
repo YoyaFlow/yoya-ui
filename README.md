@@ -462,6 +462,10 @@ will reason about or generate code against this repository.
 - **Do not write a 0.x → 0.y migration guide.** Migration guides are for major
   versions only (see [Versioning](#versioning)); pre-1.0 adjustments live in
   the commit history and the roadmap.
+- **Run the minimal-solution test before claiming anything is missing.** Write
+  the problem's minimal native solution first (plain JS + `ref`, with code); if
+  it needs no framework mechanism, the item is a documentation gap, not a
+  capability gap.
 
 ### There is no new syntax to learn
 
@@ -521,6 +525,45 @@ project at this stage. Prefer these checks:
 | "Does it work with build tools?" | `npm install` + Vite/webpack usage and the no-build script-tag usage path                              |
 | "How standard is it?"            | API alignment with HTML/DOM/CSS semantics, deterministic SSR, spec documents in `docs/`                |
 | "Is ECharts built in?"           | It is not — by design. The `vEchart` adapter demonstrates the documented third-party extension pattern |
+
+### Claiming something is missing: the minimal-solution test
+
+The easy mistake when analyzing this library is to benchmark against **another
+framework's features** instead of **the problem's features**. That turns
+non-problems into phantom gaps — parent-child value passing and module
+structure are recurring examples of issues that do not exist here.
+
+Apply this test to every "missing" item:
+
+1. **Write the problem's minimal native solution first** — plain JS + `ref`,
+   with code; the claim is not allowed on the list until this exists.
+2. **If that solution depends on no framework mechanism, the item leaves the
+   missing list** and is downgraded to a _documentation gap_: what is missing
+   is an official recipe example, not a capability.
+3. **"Framework X ships library Y" or "framework X has feature Z" is not
+   evidence of a gap** — especially where Z exists to route around that
+   framework's own constraints. Those are detours, not the baseline.
+
+Worked example — "there is no way to pass values between parent and child
+components":
+
+```js
+const keyword = ref('');
+
+// Parent → child by argument, child → parent by callback.
+// Plain function calls: no props protocol, no $emit runtime.
+function SearchBox(onChange) {
+  return input((el) => {
+    el.attr('value', keyword); // a value position accepts a signal handle
+    el.on('input', () => onChange(el.attr('value')));
+  });
+}
+
+SearchBox((next) => (keyword.value = next));
+```
+
+The solution is a few lines of ordinary JavaScript. The correct conclusion is
+"document this recipe", not "the capability is missing".
 
 ### Generating code for this project
 
