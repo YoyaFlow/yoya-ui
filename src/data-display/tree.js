@@ -13,27 +13,6 @@ import {
   themeValue
 } from '../components/shared.js';
 
-class TemplateIconNode extends ViewNode {
-  constructor(html) {
-    super();
-    this._html = html;
-  }
-
-  renderDom() {
-    if (!this._el) {
-      const template = document.createElement('template');
-      template.innerHTML = this._html;
-      this._el = template.content.firstElementChild;
-    }
-
-    return this._el;
-  }
-
-  toHTML() {
-    return this._html;
-  }
-}
-
 /**
  * 树形勾选框输入节点。indeterminate 是 DOM property，无法序列化成 HTML 属性，
  * 因此在 renderDom 阶段补设；toHTML 阶段用 aria-checked="mixed" 表达半选态。
@@ -613,16 +592,16 @@ export function VTree(first = null, second = null, third = null) {
 
       if (expandedValue !== undefined) {
         state.toggleIcon = {
-          collapsed: normalizeToggleIconValue(value),
-          expanded: normalizeToggleIconValue(expandedValue)
+          collapsed: value,
+          expanded: expandedValue
         };
       } else if (isPlainObject(value) && 'collapsed' in value) {
         state.toggleIcon = {
-          collapsed: normalizeToggleIconValue(value.collapsed),
-          expanded: normalizeToggleIconValue(value.expanded)
+          collapsed: value.collapsed,
+          expanded: value.expanded
         };
       } else {
-        state.toggleIcon = normalizeToggleIconValue(value);
+        state.toggleIcon = value;
       }
       state.treeDirty = true;
       requestSync();
@@ -869,7 +848,10 @@ export function VTree(first = null, second = null, third = null) {
           iconBox.child(result);
         }
       } else if (typeof toggleIcon === 'string') {
-        iconBox.child(new TemplateIconNode(toggleIcon));
+        // 字符串按文本渲染（与 ChildInput 语义一致）；要自定义图标请传节点
+        iconBox.child(toggleIcon);
+      } else if (toggleIcon && typeof toggleIcon.toHTML === 'function') {
+        iconBox.child(new SerializedIconNode(toggleIcon.toHTML()));
       } else {
         replaceChildren(iconBox, normalizeChildren(toggleIcon));
       }
@@ -1079,7 +1061,10 @@ export function VTree(first = null, second = null, third = null) {
           iconBox.child(result);
         }
       } else if (typeof toggleIcon === 'string') {
-        iconBox.child(new TemplateIconNode(toggleIcon));
+        // 字符串按文本渲染（与 ChildInput 语义一致）；要自定义图标请传节点
+        iconBox.child(toggleIcon);
+      } else if (toggleIcon && typeof toggleIcon.toHTML === 'function') {
+        iconBox.child(new SerializedIconNode(toggleIcon.toHTML()));
       } else {
         replaceChildren(iconBox, normalizeChildren(toggleIcon));
       }
@@ -1350,14 +1335,6 @@ export function vTreeNode(setup = null) {
   return setup instanceof VTreeNode ? setup : new VTreeNode(setup);
 }
 
-function normalizeToggleIconValue(value) {
-  if (value && typeof value.toHTML === 'function') {
-    return value.toHTML();
-  }
-
-  return value;
-}
-
 function normalizeTreeNode(value, index, parentId = null) {
   const fallbackId = parentId ? `${parentId}-${index}` : `tree-node-${index}`;
 
@@ -1516,4 +1493,32 @@ function collectNodesById(nodes, ids) {
 
   visit(nodes);
   return selected;
+}
+/**
+ * 把「已经序列化好的图标」放进 DOM：`_html` 只接受视图树自己的 toHTML() 输出
+ * （文本与属性都已转义），因此可以安全地用 <template> 解析；用户传入的字符串
+ * 走文本路径，不会被当作 HTML。
+ *
+ * 图标节点实例可能在多行之间共享，直接复用同一个节点会互相搬走 DOM，
+ * 所以这里每次渲染都按序列化结果重建一份。
+ */
+class SerializedIconNode extends ViewNode {
+  constructor(html) {
+    super();
+    this._html = html;
+  }
+
+  renderDom() {
+    if (!this._el) {
+      const template = document.createElement('template');
+      template.innerHTML = this._html;
+      this._el = template.content.firstElementChild;
+    }
+
+    return this._el;
+  }
+
+  toHTML() {
+    return this._html;
+  }
 }

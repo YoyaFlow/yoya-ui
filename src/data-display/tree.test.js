@@ -119,6 +119,25 @@ describe('vTree', () => {
     expect(expandedToggle.textContent).toBe('开');
   });
 
+  it('renders string toggle icons as text, never as HTML', () => {
+    const tree = vTree({
+      nodes: [
+        {
+          children: [{ id: 'leaf', label: '子节点' }],
+          id: 'root',
+          label: '根节点'
+        }
+      ],
+      toggleIcon: '<b>▸</b>'
+    });
+    const element = tree.render().renderDom();
+    const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+
+    // 字符串按 ChildInput 语义当文本：标签会被转义显示，不会解析成元素
+    expect(rootToggle.querySelector('b')).toBeNull();
+    expect(rootToggle.textContent).toBe('<b>▸</b>');
+  });
+
   it('toggles expandable nodes that have no children', () => {
     const tree = vTree({
       nodes: [{ expandable: true, id: 'empty', label: '空文件夹' }]
