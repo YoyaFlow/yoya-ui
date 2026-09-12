@@ -29,6 +29,9 @@ export type StyleValue = string | number | null | undefined | SignalHandle<unkno
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
 
+/** Text content accepted by vText() and text(): a signal handle makes it a live binding. */
+export type TextContent = string | number | SignalHandle<unknown>;
+
 /** Options accepted by on(). */
 export type EventOptions = boolean | AddEventListenerOptions;
 
@@ -41,9 +44,19 @@ export interface ComponentLike {
   [key: string]: any;
 }
 
-/** Anything accepted as a child: nodes, components, text, arrays, empty values. */
+/**
+ * Anything accepted as a child: nodes, components, text, arrays, empty values.
+ * A signal handle becomes a bound text node (equivalent to `vText(handle)`).
+ */
 export type ChildInput =
-  ViewNode | string | number | ComponentLike | null | undefined | ChildInput[];
+  | ViewNode
+  | string
+  | number
+  | ComponentLike
+  | SignalHandle<unknown>
+  | null
+  | undefined
+  | ChildInput[];
 
 /** Declarative setup callback receiving the node. */
 export type SetupCallback<N> = (node: N) => void;
@@ -209,8 +222,12 @@ export class ViewNode {
   /** Adds children; strings/numbers are wrapped into text nodes. */
   child(...children: ChildInput[]): this;
 
-  /** Adds a text child. */
-  text(content: string | number): this;
+  /**
+   * Adds a text child. Passing a signal handle keeps the text bound to it;
+   * each call appends one text node, so use a kept VTextNode handle when you
+   * need to replace the text repeatedly.
+   */
+  text(content: TextContent): this;
 
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
@@ -417,7 +434,7 @@ export function registerChildFactories(
 export function resolveTarget(target: string | ParentNode): ParentNode | null;
 
 /** Creates a text node. */
-export function vText(content?: string | number | SignalHandle<unknown>): VTextNode;
+export function vText(content?: TextContent): VTextNode;
 /** Alias of vText(). */
 export const text: typeof vText;
 

@@ -1,4 +1,5 @@
-import { ElementNode, registerChildFactories } from '../core/node.js';
+import { ElementNode, registerChildFactories, VTextNode } from '../core/node.js';
+import { isSignal } from '../core/signals/handle.js';
 import { HtmlElementNode } from '../html/index.js';
 
 export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -29,7 +30,9 @@ export class SvgElementNode extends ElementNode {
       const [content, setup] = args;
 
       if (args.length > 0) {
-        this.child(content);
+        // 与 HTML 节点的 text() 对齐：句柄 / 动态读函数包成 VTextNode，写入即更新文本
+        const isBinding = typeof content === 'function' || isSignal(content);
+        this.child(isBinding ? new VTextNode(content) : content);
       }
 
       if (setup !== null && setup !== undefined) {

@@ -224,6 +224,28 @@ describe('SVG element factories', () => {
     );
   });
 
+  it('binds text content on SVG text hosts to signal handles', () => {
+    const label = yoya.ref('待处理');
+    const icon = yoya.svg((root) => {
+      root.text((line) => {
+        line.className('label');
+        line.attr({ x: 12, y: 22 });
+        line.text(label);
+      });
+    });
+    const element = icon.renderDom();
+    document.body.appendChild(element);
+
+    const line = element.querySelector('text');
+    expect(line.textContent).toBe('待处理');
+    expect(line.getAttribute('x')).toBe('12');
+
+    label.value = '已完成';
+
+    expect(line.textContent).toBe('已完成');
+    element.remove();
+  });
+
   it('adds only the svg tag shortcut to HTML parent nodes', () => {
     const root = yoya.div((page) => {
       page.style('display', 'grid');

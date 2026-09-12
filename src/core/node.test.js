@@ -7,6 +7,7 @@ import {
   div,
   h1,
   p,
+  ref,
   span,
   vCard,
   vText
@@ -197,6 +198,34 @@ describe('ViewNode core', () => {
 
     expect(root.commit()).toBe(root.renderDom());
     expect(root.commit().textContent).toBe('Committed');
+  });
+
+  it('keeps a text() child bound to a signal handle', () => {
+    const label = ref('待处理');
+    const root = div((page) => page.text(label));
+    const element = root.renderDom();
+    document.body.appendChild(element);
+
+    expect(element.textContent).toBe('待处理');
+
+    label.value = '已完成';
+
+    expect(element.textContent).toBe('已完成');
+    element.remove();
+  });
+
+  it('treats a signal handle passed to child() as bound text', () => {
+    const label = ref('待处理');
+    const root = div((page) => page.child(label));
+    const element = root.renderDom();
+    document.body.appendChild(element);
+
+    expect(element.textContent).toBe('待处理');
+
+    label.value = '已完成';
+
+    expect(element.textContent).toBe('已完成');
+    element.remove();
   });
 
   it('cancels pending removal when a child is added again before render', () => {
