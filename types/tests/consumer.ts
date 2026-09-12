@@ -20,13 +20,15 @@ import {
   vTabs,
   vTree,
   vText,
+  computed,
   createI18n,
+  ref,
   renderToString,
   router,
   toast,
   SearchOutlined
 } from 'yoya-ui';
-import { ElementNode, vStateNode } from 'yoya-ui/core';
+import { ElementNode } from 'yoya-ui/core';
 import {
   VButton as ActionsVButton,
   vButton as actionsVButton,
@@ -164,21 +166,11 @@ const tree = vTree({
 });
 tree.expandAll().checkedKeys(['a']);
 
-// State node with typed state.
-const counter = vStateNode<{ count: number }>({
-  state: { count: 0 },
-  render(state) {
-    return div(String(state.count));
-  }
-});
-counter.setState({ count: 5 });
-
 // Rebuildable region API.
 const region = div((ele) => {
   ele.rebuildable(() => true);
   ele.text('region');
 });
-region.scope(() => ({ rows: [] as string[] }));
 region.rebuildable(null);
 region.rebuild();
 region.rebuild({ force: true });
@@ -187,13 +179,13 @@ void rebuildPending;
 region.flush();
 region.flushAll();
 
-// Node-level state: seeded object + single-key or patch writes.
-const stateful = div((ele) => {
-  ele.state({ count: 0, open: false });
-  ele.attr('data-count', '0');
+// Signals drive values: handles go straight into value positions.
+const count = ref(0);
+const counter = div((ele) => {
+  ele.attr('data-count', count);
+  ele.child(vText(computed(() => `count=${count.value}`)));
 });
-stateful.setState('open', true);
-stateful.setState({ count: 1 });
+counter.flush();
 
 // i18n.
 const i18n = createI18n({

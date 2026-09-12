@@ -10,7 +10,7 @@ import type { ViewNode } from './core.js';
 
 /** Base shape shared by every devtools lifecycle event. */
 export interface DevtoolsEventBase {
-  /** Event kind: 'commit' | 'destroy' (extended by update/state kinds). */
+  /** Event kind: 'commit' | 'destroy' (extended by the mutation kinds below). */
   type: string;
   /** The view node the event belongs to, when one exists. */
   node?: unknown;
@@ -64,15 +64,22 @@ export interface DevtoolsTextEvent extends DevtoolsEventBase {
   to: string;
 }
 
-/** Emitted when a vStateNode state change is applied. */
-export interface DevtoolsStateEvent extends DevtoolsEventBase {
-  type: 'state';
-  /** Per-key before/after values for the changed state entries. */
-  changed: Record<string, { from: unknown; to: unknown }>;
-  /** Full state snapshot after the change was applied. */
-  state: Record<string, unknown>;
-  /** How the change was applied: update | bindings | rebuild | pending. */
-  handling: 'update' | 'bindings' | 'rebuild' | 'pending' | 'none';
+/** Emitted when a signal is written with a changed value. */
+export interface DevtoolsSignalWriteEvent extends DevtoolsEventBase {
+  type: 'signal-write';
+  /** Session-stable id of the written signal. */
+  signalId: number;
+  previous: unknown;
+  next: unknown;
+  /** Bindings depending on this signal (value bindings + region dependencies). */
+  dependents: number;
+}
+
+/** Emitted when a rebuildable region rebuilds or only flushes its bindings. */
+export interface DevtoolsRegionEvent extends DevtoolsEventBase {
+  type: 'region';
+  action: 'rebuild' | 'flush';
+  trigger: 'manual' | 'signal';
 }
 
 /** Lifecycle events currently emitted by the devtools hook. */
@@ -83,7 +90,8 @@ export type DevtoolsEvent =
   | DevtoolsStyleEvent
   | DevtoolsChildEvent
   | DevtoolsTextEvent
-  | DevtoolsStateEvent;
+  | DevtoolsSignalWriteEvent
+  | DevtoolsRegionEvent;
 
 /** Listener callback for the devtools event stream. */
 export type DevtoolsListener = (event: DevtoolsEvent) => void;

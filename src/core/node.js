@@ -100,52 +100,17 @@ function withRenderScope(spec, build) {
   }
 }
 
-// 函数值绑定作用域：vStateNode render 期间把 (state) => value 登记为绑定，
-// 由状态组件统一求值写回；非状态作用域下的函数值会被拒绝。
-let activeBindingScope = null;
-
-/**
- * 在指定绑定作用域内执行 build。scope 形如 { bindings: [], getState(): state }，
- * 其中的 setter 收到函数值时会登记绑定。
- */
-export function withBindingScope(scope, build) {
-  const previous = activeBindingScope;
-  activeBindingScope = scope;
-  try {
-    return build();
-  } finally {
-    activeBindingScope = previous;
-  }
-}
-
-/**
- * 绑定归属解析：区域自持作用域 > 宿主/节点声明的作用域。
- * 没有任何作用域时，零参绑定挂到节点自己的隐式作用域（归属不需要声明）。
- */
+// 值绑定的数据来源只有两种：signal 句柄（推荐）与零参闭包。闭包自己闭住外部数据，
+// 需要重新求值时用 flush() / flushAll()。带参函数只服务过节点级状态，已一并移除。
 function registerNodeBinding(owner, kind, key, read, commit) {
-  const parameterized = read.length > 0;
-  let scope = resolveBindingScope(owner);
-
-  if (!scope) {
-    if (parameterized) {
-      throw new TypeError(parameterizedValueError(kind, key));
-    }
-
-    // 零参闭包自带数据，只需要一个归属挂载点。
-    scope = owner._ownBindingScope;
-    if (!scope) {
-      scope = { bindings: [], hasData: false, getState: () => undefined };
-      owner._ownBindingScope = scope;
-    }
-  }
-
-  if (parameterized && scope.hasData === false) {
+  if (read.length > 0) {
     throw new TypeError(parameterizedValueError(kind, key));
   }
 
+  const scope = bindingScopeFor(owner);
   let binding = null;
   const target = createReactiveTarget({
-    run: () => read(scope.getState()),
+    run: () => read(),
     onChange: (value) => commitBindingValue(binding, value)
   });
 
@@ -176,10 +141,27 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   }
 }
 
+/**
+ * 绑定归属：区域构建期登记的绑定归区域所有（重跑时统一释放），
+ * 其余挂到节点自己名下。零参闭包自带数据，只需要一个归属挂载点。
+ */
+function bindingScopeFor(owner) {
+  const region = activeRegion();
+  if (region && region._regionScope) {
+    return region._regionScope;
+  }
+
+  if (!owner._ownBindingScope) {
+    owner._ownBindingScope = { bindings: [] };
+  }
+
+  return owner._ownBindingScope;
+}
+
 function parameterizedValueError(kind, key) {
   return (
-    `parameterized value requires a data source (${kind}${key ? ` "${key}"` : ''}); ` +
-    'declare scope(fn) or use a zero-argument closure'
+    `parameterized value is no longer supported (${kind}${key ? ` "${key}"` : ''}); ` +
+    'pass a ref/computed handle or use a zero-argument closure'
   );
 }
 
@@ -207,45 +189,6 @@ export function applyPropValue(owner, value, setter) {
 
   setter(value);
   return owner;
-}
-
-/**
- * 来源解析顺序：节点自己声明的 scope > 构建栈上最近声明的 scope >
- * 区域自持作用域（可能是继承宿主的那份）> 宿主作用域。
- */
-function resolveBindingScope(owner) {
-  if (owner._ownBindingScope && owner._ownBindingScope.hasData) {
-    return owner._ownBindingScope;
-  }
-
-  const declared = activeDeclaredScope();
-  if (declared) {
-    return declared;
-  }
-
-  const region = activeRegion();
-  if (region && region._regionScope) {
-    return region._regionScope;
-  }
-
-  return activeBindingScope;
-}
-
-/** 构建栈上最近一次 `scope()` 声明的来源（含区域自身）。 */
-function activeDeclaredScope() {
-  for (let index = setupStack.length - 1; index >= 0; index -= 1) {
-    const scope = setupStack[index]._ownBindingScope;
-    if (scope && scope.hasData) {
-      return scope;
-    }
-  }
-
-  const region = activeRegion();
-  if (region && region._ownBindingScope && region._ownBindingScope.hasData) {
-    return region._ownBindingScope;
-  }
-
-  return null;
 }
 
 // 区域构建上下文：区域构建/重跑期间登记的绑定归该区域所有。
@@ -303,18 +246,10 @@ function collectRegionBindings(node, out = []) {
   return out;
 }
 
-/**
- * 子树遍历口径：组件节点给出它的解析结果；嵌套状态组件自成边界，
- * 其区域与绑定由它自己管理，不再向父级透出。
- */
+/** 子树遍历口径：组件节点给出它的解析结果，父级据此发现子树里的区域与绑定。 */
 export function childTraversalRoots(node) {
   if (!(node instanceof ComponentNode)) {
     return node._children;
-  }
-
-  const component = node._component;
-  if (component && typeof component.setState === 'function') {
-    return [];
   }
 
   return node._resolveList();
@@ -415,21 +350,6 @@ function flushBindingsIn(node) {
     commitBindingValue(binding, binding.evaluate());
   });
   childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
-}
-
-/** 快照节点及其子树的状态处理器，供重跑失败时回滚。 */
-function collectHandlerSnapshot(node, out) {
-  out.push([
-    node,
-    new Map([...node._stateHandlers].map(([name, handlers]) => [name, handlers.slice()]))
-  ]);
-  node._children.forEach((child) => collectHandlerSnapshot(child, out));
-}
-
-function restoreHandlerSnapshot(snapshot) {
-  snapshot.forEach(([node, handlers]) => {
-    node._stateHandlers = new Map(handlers);
-  });
 }
 
 /**
@@ -591,9 +511,6 @@ export class ViewNode {
     this._events = new Map();
     this._domAdapters = new Map();
     this._cleanup = [];
-    this._states = {};
-    this._stateTypes = {};
-    this._stateHandlers = new Map();
     this._pendingRemovals = new Set();
     this._childrenDirty = false;
     this._deleted = false;
@@ -608,12 +525,10 @@ export class ViewNode {
     this._regionAdapter = null; // 区域依赖所属引擎
     this._regionActive = false; // 区域是否已进入 DOM 并订阅
     this._regionSubs = [];
-    this._ownBindingScope = null; // 节点自己的来源：scope() 声明或零参绑定的隐式归属
+    this._ownBindingScope = null; // 节点自己的绑定归属：零参闭包登记在这里
     this._regionGuard = null;
     this._rebuildPending = false;
     this._regionRunning = false;
-    this._flushingAll = false; // setState 触发的刷新是否正在进行
-    this._flushAllQueued = false; // 刷新期间又写状态：本轮结束后补一次
     this._regionEnv = null; // 构建期环境快照：access / context / i18n
     this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
 
@@ -633,14 +548,11 @@ export class ViewNode {
     if (typeof setup === 'function') {
       this._builders.push(setup);
       const serialBefore = bindingSerial;
-      const previousScope = activeBindingScope;
       setupStack.push(this);
       try {
         setup(this);
       } finally {
         setupStack.pop();
-        // scope() 可能在 setup 中途替换过作用域，这里恢复到外层。
-        activeBindingScope = previousScope;
         closeRegionCapture(this);
       }
 
@@ -685,60 +597,13 @@ export class ViewNode {
 
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
-      const node = this;
-      const enclosingScope = activeBindingScope;
-      const inheritedGetState =
-        enclosingScope && typeof enclosingScope.getState === 'function'
-          ? enclosingScope.getState
-          : null;
-      this._regionScope = {
-        bindings: [],
-        // 来源动态解析：scope() 可能在 rebuildable() 之后调用；没有声明时继承捕获的宿主。
-        get hasData() {
-          return Boolean(node._ownBindingScope?.hasData) || Boolean(inheritedGetState);
-        },
-        getState: () => {
-          if (node._ownBindingScope?.hasData) {
-            return node._ownBindingScope.getState();
-          }
-
-          return inheritedGetState ? inheritedGetState() : undefined;
-        }
-      };
+      this._regionScope = { bindings: [] };
       this._regionEnv = {
         access: this._accessContext || currentAccess(),
         context: snapshotContext(),
         i18n: i18nScopeBridge ? i18nScopeBridge.current() : null
       };
     }
-
-    return this;
-  }
-
-  /**
-   * 声明本节点自带状态：对象是「幂等种子」——只补缺省字段，重跑不重置。
-   * 声明后本节点子树里的带参值函数 `(s) => value` 读它，`setState` 会顺带刷新。
-   */
-  state(initial) {
-    if (!initial || typeof initial !== 'object') {
-      throw new TypeError('state() requires an object');
-    }
-
-    const scope = this._ownBindingScope || {
-      bindings: [],
-      getState: () => this._states,
-      hasData: true
-    };
-    this._ownBindingScope = scope;
-    scope.source = 'state';
-    scope.getState = () => this._states;
-    scope.hasData = true;
-
-    Object.keys(initial).forEach((key) => {
-      if (!Object.prototype.hasOwnProperty.call(this._states, key)) {
-        this._states[key] = initial[key];
-      }
-    });
 
     return this;
   }
@@ -789,11 +654,6 @@ export class ViewNode {
     const previousKeys = this._childKeys;
     const previousBindings = new Set(collectRegionBindings(this));
     const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
-    const previousHandlers = [];
-
-    collectHandlerSnapshot(this, previousHandlers);
-    previousChildren.forEach((child) => collectHandlerSnapshot(child, previousHandlers));
-    this._stateHandlers.clear();
     this._regionRunCleanups = [];
 
     this._children = [];
@@ -815,7 +675,6 @@ export class ViewNode {
       this._children.forEach((child) => child.destroy());
       this._regionRunCleanups.forEach((cleanup) => cleanup());
       this._regionRunCleanups = previousCleanups;
-      restoreHandlerSnapshot(previousHandlers);
       previousChildren.forEach((child) => this._pendingRemovals.delete(child));
       this._children = previousChildren;
       this._childKeys = previousKeys;
@@ -846,10 +705,7 @@ export class ViewNode {
    */
   _runInRegionEnvironment(run) {
     const env = this._regionEnv;
-    const build = () =>
-      withRegionBuild(this, () =>
-        this._regionScope ? withBindingScope(this._regionScope, run) : run()
-      );
+    const build = () => withRegionBuild(this, run);
 
     if (!env) {
       return build();
@@ -1110,61 +966,6 @@ export class ViewNode {
     }
   }
 
-  /**
-   * 声明节点可识别的状态字段，默认状态类型是 boolean。
-   */
-  registerStateAttrs(...attrs) {
-    attrs.forEach((attr) => {
-      if (typeof attr === 'string') {
-        this._stateTypes[attr] = 'boolean';
-        return;
-      }
-
-      if (attr && typeof attr === 'object') {
-        Object.entries(attr).forEach(([name, type]) => {
-          this._stateTypes[name] = type || 'boolean';
-        });
-      }
-    });
-
-    return this;
-  }
-
-  /**
-   * 注册状态处理器。状态改变时处理器负责同步样式、属性或内部结构。
-   */
-  registerStateHandler(stateName, handler) {
-    if (!this._stateHandlers.has(stateName)) {
-      this._stateHandlers.set(stateName, []);
-    }
-
-    this._stateHandlers.get(stateName).push(handler);
-    return this;
-  }
-
-  /**
-   * 写入状态并触发对应处理器：`setState('open', true)` 与 `setState({ open: true })` 同义。
-   * 构建期（setup / 区域重跑）只写状态；其余时机写完后触发 `flushAll()`。
-   */
-  setState(stateName, value = true) {
-    if (stateName && typeof stateName === 'object') {
-      Object.entries(stateName).forEach(([key, next]) => this._applyStateValue(key, next));
-    } else {
-      this._applyStateValue(stateName, value);
-    }
-
-    this._requestFlushAll();
-    return this;
-  }
-
-  _applyStateValue(stateName, value) {
-    const oldValue = this._states[stateName];
-    this._states[stateName] = value;
-
-    const handlers = this._stateHandlers.get(stateName) || [];
-    handlers.forEach((handler) => handler(value, this, oldValue));
-  }
-
   /** 值级更新的统一入口：区域按谓词重建，普通节点只刷绑定。 */
   flushAll() {
     if (this._deleted) {
@@ -1172,46 +973,6 @@ export class ViewNode {
     }
 
     return this._rebuildable ? this.rebuild() : this.flush();
-  }
-
-  /** setState 之后的自动刷新：构建期不触发；刷新期间再写状态则排队到本轮之后。 */
-  _requestFlushAll() {
-    if (this._deleted || setupStack.length > 0 || regionBuildStack.length > 0) {
-      return;
-    }
-
-    if (this._flushingAll) {
-      this._flushAllQueued = true;
-      return;
-    }
-
-    this._flushingAll = true;
-    try {
-      do {
-        this._flushAllQueued = false;
-        this.flushAll();
-      } while (this._flushAllQueued);
-    } finally {
-      this._flushingAll = false;
-      this._flushAllQueued = false;
-    }
-  }
-
-  getState(stateName) {
-    return this._states[stateName];
-  }
-
-  getBooleanState(stateName) {
-    return Boolean(this.getState(stateName));
-  }
-
-  getStringState(stateName) {
-    const value = this.getState(stateName);
-    return value === undefined || value === null ? '' : String(value);
-  }
-
-  getNumberState(stateName) {
-    return Number(this.getState(stateName) || 0);
   }
 
   renderDom() {

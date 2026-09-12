@@ -78,12 +78,6 @@ export interface ElementFactory<N = ViewNode> {
   (first: SetupInput<N> | null, options: ElementOptions, callback?: SetupCallback<N>): N;
 }
 
-/** State types accepted by registerStateAttrs(). */
-export type StateType = 'boolean' | 'string' | 'number' | null | undefined;
-
-/** State handler invoked when a registered state changes. */
-export type StateHandler<N = ViewNode> = (value: unknown, node: N, oldValue: unknown) => void;
-
 // ---------------------------------------------------------------------------
 // Access control
 // ---------------------------------------------------------------------------
@@ -221,19 +215,13 @@ export class ViewNode {
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
 
-  /** Declares the data source for parameterized value functions in this subtree. */
-  scope<T = unknown>(getter: () => T): this;
-
-  /** Declares this node's own state; the object seeds missing keys only (idempotent across rebuilds). */
-  state(initial: Record<string, unknown>): this;
-
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
   rebuildPending(): boolean;
 
   /** Flushes bound values in this subtree without rebuilding structure. */
   flush(): this;
 
-  /** Value-level update entry: regions rebuild (predicate-gated), plain nodes only flush. */
+  /** Value-level update entry for non-signal sources: regions rebuild (predicate-gated), plain nodes only flush. */
   flushAll(): this;
 
   /** Re-runs the region builders: build first, then replace the previous children. */
@@ -244,21 +232,6 @@ export class ViewNode {
 
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
-
-  /** Declares state fields (default boolean) recognized by this node. */
-  registerStateAttrs(...attrs: Array<string | Record<string, StateType>>): this;
-
-  /** Registers a handler invoked when the given state changes. */
-  registerStateHandler(stateName: string, handler: StateHandler<this>): this;
-
-  /** Sets a state value and triggers its handlers. */
-  setState(stateName: string, value?: unknown): this;
-  setState(patch: Record<string, unknown>): this;
-
-  getState(stateName: string): unknown;
-  getBooleanState(stateName: string): boolean;
-  getStringState(stateName: string): string;
-  getNumberState(stateName: string): number;
 
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
@@ -354,8 +327,6 @@ export class ElementNode extends ViewNode {
   toHTML(): string;
 
   // Shortcuts registered on ElementNode (inherited by HtmlElementNode).
-  /** vStateNode shortcut: creates a stateful object component. */
-  vStateNode(config: StateNodeConfig): StateNodeComponent;
   /** vDynamicLoader shortcut: lazily loads a module with status views. */
   vDynamicLoader(
     first?: DynamicLoaderOptions | (() => unknown) | SetupCallback<DynamicLoaderNode>,
@@ -560,44 +531,6 @@ export function installI18nStringShortcut(locale?: I18n): I18n;
 
 /** Runs build() with the string shortcut scoped to the given I18n instance. */
 export function withI18nStringShortcut<T>(locale: I18n, build: () => T): T;
-
-// ---------------------------------------------------------------------------
-// State node (vStateNode)
-// ---------------------------------------------------------------------------
-
-/**
- * @deprecated `vStateNode` 已弃用；动态值改用 `ref` / `computed` + 值位置直接传句柄，
- * 结构变化改用 `rebuildable()` 区域读取信号。保留兼容路径，不再扩展。
- */
-export interface StateNodeConfig<S extends Record<string, unknown> = Record<string, unknown>> {
-  state?: S | (() => S);
-  render(state: S, component: StateNodeComponent<S>): ChildInput;
-  update?(state: S, component: StateNodeComponent<S>, changed: Set<string>): boolean | void;
-  [key: string]: any;
-}
-
-/** Object component returned by vStateNode(). @deprecated 配合 vStateNode 一起弃用。 */
-export interface StateNodeComponent<S extends Record<string, unknown> = Record<string, unknown>> {
-  destroy(): StateNodeComponent<S>;
-  getState(): S;
-  render(): ElementNode;
-  setState(
-    patch: Partial<S> | ((state: S) => Partial<S> | null | undefined)
-  ): StateNodeComponent<S>;
-  state(): S;
-  flush(): StateNodeComponent<S>;
-  subscribe(listener: (state: S, component: StateNodeComponent<S>) => void): () => void;
-  [key: string]: any;
-}
-
-/**
- * Creates a stateful object component with render/update lifecycle.
- * @deprecated 用 `ref` / `computed` 替代：`setState({ count: 1 })` → `count.value = 1`，
- * `update()` 触发的重建 → `rebuildable()` 区域读取信号。
- */
-export function vStateNode<S extends Record<string, unknown> = Record<string, unknown>>(
-  config: StateNodeConfig<S>
-): StateNodeComponent<S>;
 
 // ---------------------------------------------------------------------------
 // Signals
