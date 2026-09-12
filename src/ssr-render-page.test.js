@@ -21,6 +21,15 @@ function HomePage(state) {
 }
 
 describe('renderPage', () => {
+  it('wraps the body DSL inside #app without nesting another <body>', () => {
+    const html = renderPage({
+      page: (page) => page.body((body) => body.p('内容'))
+    });
+
+    expect(html).toContain('<div id="app"><p>内容</p></div>');
+    expect([...html.matchAll(/<body/g)]).toHaveLength(1);
+  });
+
   it('renders a complete HTML document with DSL head and body', () => {
     const html = renderPage(
       {

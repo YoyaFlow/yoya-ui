@@ -226,6 +226,26 @@ export class PageDocumentNode extends HtmlElementNode {
   }
 }
 
+/**
+ * body DSL 宿主节点：只序列化子节点，不输出 <body> 标签本身。
+ * 外层模板已经有真正的 <body>，再嵌一层会让 #app 里出现非法的嵌套 body。
+ */
+class PageBodyNode extends HtmlElementNode {
+  constructor() {
+    super('body', null);
+  }
+
+  toHTML() {
+    if (this._deleted || this._permissionState() === 'hidden') {
+      return '';
+    }
+
+    return this.children()
+      .map((child) => child.toHTML())
+      .join('');
+  }
+}
+
 function escapeHtmlAttribute(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -269,7 +289,7 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         page._headCallback(headNode, pageState);
       }
 
-      const bodyNode = new HtmlElementNode('body');
+      const bodyNode = new PageBodyNode();
       if (page._bodyCallback) {
         page._bodyCallback(bodyNode, pageState);
       }
