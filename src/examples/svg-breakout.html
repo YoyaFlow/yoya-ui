@@ -290,8 +290,9 @@
       /*
        * 分层与项目 features 模块同构，单文件演示把三层放在一起：
        * - BreakoutPageState：状态与动作（真实项目放 features/breakout/api/breakout.state.js，默认导出）
-       * - KeyboardInput / Paddle / Ball / BrickWall / Hud / Overlay：视图组件
-       * - Playfield / BreakoutPage：页面组合与主循环
+       * - PaddleInput / PaddlePad / Paddle / Ball / BrickWall / Hud / Controls / Overlay / Playfield：
+       *   视图组件，都是形态 A 薄工厂（没有额外行为，直接返回 ViewNode），句柄直接传进值位置
+       * - BreakoutPage：页面组合与主循环，有 start() / destroy() 所以是形态 B 对象组件
        */
 
       const VIEW = { width: 900, height: 600 };
@@ -639,76 +640,59 @@
           });
         }
 
-        return {
-          render() {
-            return div((pad) => {
-              pad.className('pad');
-              pad.child(key('left', '◀', '球拍向左'));
-              pad.child(key('right', '▶', '球拍向右'));
-            });
-          }
-        };
+        return div((pad) => {
+          pad.className('pad');
+          pad.child(key('left', '◀', '球拍向左'));
+          pad.child(key('right', '▶', '球拍向右'));
+        });
       }
 
       function Paddle(paddleX) {
         const transform = computed(() => `translate(${paddleX.value} ${PADDLE.y})`);
 
-        return {
-          render() {
-            // 组件返回的是游离节点：用 svgs.rect 建，不必 new SvgElementNode
-            return svgs.rect((bar) => {
-              bar.className('paddle');
-              bar.attr({
-                x: -PADDLE.width / 2,
-                y: 0,
-                width: PADDLE.width,
-                height: PADDLE.height,
-                rx: 8,
-                transform
-              });
-            });
-          }
-        };
+        // 形态 A 薄工厂：没有额外行为，直接返回游离节点
+        return svgs.rect((bar) => {
+          bar.className('paddle');
+          bar.attr({
+            x: -PADDLE.width / 2,
+            y: 0,
+            width: PADDLE.width,
+            height: PADDLE.height,
+            rx: 8,
+            transform
+          });
+        });
       }
 
       function Ball(state) {
         const transform = computed(() => `translate(${state.ballX.value} ${state.ballY.value})`);
-
-        return {
-          render() {
-            return svgs.circle((ball) => {
-              ball.className('ball');
-              ball.attr({ cx: 0, cy: 0, r: BALL.radius, transform });
-            });
-          }
-        };
+        return svgs.circle((ball) => {
+          ball.className('ball');
+          ball.attr({ cx: 0, cy: 0, r: BALL.radius, transform });
+        });
       }
 
       function BrickWall(bricks) {
-        return {
-          render() {
-            return svgs.g((wall) => {
-              wall.className('brick-wall');
-              // 约定：先 rebuildable()，再读数据，区域内读到的信号才计入依赖
-              wall.rebuildable();
+        return svgs.g((wall) => {
+          wall.className('brick-wall');
+          // 约定：先 rebuildable()，再读数据，区域内读到的信号才计入依赖
+          wall.rebuildable();
 
-              bricks.value.forEach((brick) => {
-                // 游离节点先建好，再挂进区域；区域重跑时整片按新数据重建
-                wall.child(
-                  svgs.rect({
-                    class: `brick brick--row-${brick.row}`,
-                    x: brick.x,
-                    y: brick.y,
-                    width: WALL.width,
-                    height: WALL.height,
-                    rx: 5,
-                    'data-brick': `${brick.row}-${brick.col}`
-                  })
-                );
-              });
-            });
-          }
-        };
+          bricks.value.forEach((brick) => {
+            // 游离节点先建好，再挂进区域；区域重跑时整片按新数据重建
+            wall.child(
+              svgs.rect({
+                class: `brick brick--row-${brick.row}`,
+                x: brick.x,
+                y: brick.y,
+                width: WALL.width,
+                height: WALL.height,
+                rx: 5,
+                'data-brick': `${brick.row}-${brick.col}`
+              })
+            );
+          });
+        });
       }
 
       function Hud(state) {
@@ -727,19 +711,15 @@
           });
         }
 
-        return {
-          render() {
-            return div((hud) => {
-              hud.className('hud');
-              // 纯数字直接用句柄，值位置会自己转成文本
-              hud.child(item('score', '分数', state.score));
-              hud.child(item('best', '最高分', state.best));
-              hud.child(item('lives', '生命', livesText));
-              hud.child(item('level', '进度', levelText));
-              hud.child(item('speed', '球速', speedText));
-            });
-          }
-        };
+        return div((hud) => {
+          hud.className('hud');
+          // 纯数字直接用句柄，值位置会自己转成文本
+          hud.child(item('score', '分数', state.score));
+          hud.child(item('best', '最高分', state.best));
+          hud.child(item('lives', '生命', livesText));
+          hud.child(item('level', '进度', levelText));
+          hud.child(item('speed', '球速', speedText));
+        });
       }
 
       function Controls(state) {
@@ -756,15 +736,11 @@
           });
         }
 
-        return {
-          render() {
-            return div((bar) => {
-              bar.className('controls');
-              bar.child(control('pause', pauseLabel, () => state.togglePause()));
-              bar.child(control('restart', '重新开始', () => state.restart()));
-            });
-          }
-        };
+        return div((bar) => {
+          bar.className('controls');
+          bar.child(control('pause', pauseLabel, () => state.togglePause()));
+          bar.child(control('restart', '重新开始', () => state.restart()));
+        });
       }
 
       function Overlay(state) {
@@ -796,66 +772,58 @@
           return '';
         });
 
-        return {
-          render() {
-            return svgs.g((layer) => {
-              layer.className('overlay');
-              layer.style({ opacity, 'pointer-events': pointerEvents });
-              layer.on('click', () => state.primaryAction());
+        return svgs.g((layer) => {
+          layer.className('overlay');
+          layer.style({ opacity, 'pointer-events': pointerEvents });
+          layer.on('click', () => state.primaryAction());
 
-              layer.rect({
-                class: 'overlay-panel',
-                x: PLAY.left,
-                y: 180,
-                width: PLAY.right - PLAY.left,
-                height: 240,
-                rx: 16
-              });
-              layer.text((line) => {
-                line.className('overlay-title');
-                line.attr({ x: VIEW.width / 2, y: 292 });
-                line.text(title);
-              });
-              layer.text((line) => {
-                line.className('overlay-hint');
-                line.attr({ x: VIEW.width / 2, y: 336 });
-                line.text(hint);
-              });
-            });
-          }
-        };
+          layer.rect({
+            class: 'overlay-panel',
+            x: PLAY.left,
+            y: 180,
+            width: PLAY.right - PLAY.left,
+            height: 240,
+            rx: 16
+          });
+          layer.text((line) => {
+            line.className('overlay-title');
+            line.attr({ x: VIEW.width / 2, y: 292 });
+            line.text(title);
+          });
+          layer.text((line) => {
+            line.className('overlay-hint');
+            line.attr({ x: VIEW.width / 2, y: 336 });
+            line.text(hint);
+          });
+        });
       }
 
       function Playfield({ wall, paddle, ball, overlay, onPointer }) {
-        return {
-          render() {
-            return svg((field) => {
-              field.className('playfield');
-              field.attr({
-                viewBox: `0 0 ${VIEW.width} ${VIEW.height}`,
-                role: 'img',
-                'aria-label': '用左右方向键或拖动球拍打砖块'
-              });
-              // 触屏与鼠标共用一套：按下即就位，拖动跟手（.playfield 关掉了 touch-action）
-              field.on('pointerdown', onPointer);
-              field.on('pointermove', onPointer);
+        return svg((field) => {
+          field.className('playfield');
+          field.attr({
+            viewBox: `0 0 ${VIEW.width} ${VIEW.height}`,
+            role: 'img',
+            'aria-label': '用左右方向键或拖动球拍打砖块'
+          });
+          // 触屏与鼠标共用一套：按下即就位，拖动跟手（.playfield 关掉了 touch-action）
+          field.on('pointerdown', onPointer);
+          field.on('pointermove', onPointer);
 
-              field.rect({
-                class: 'wall-guide',
-                x: PLAY.left,
-                y: PLAY.top,
-                width: PLAY.right - PLAY.left,
-                height: VIEW.height - PLAY.top - 12,
-                rx: 10
-              });
+          field.rect({
+            class: 'wall-guide',
+            x: PLAY.left,
+            y: PLAY.top,
+            width: PLAY.right - PLAY.left,
+            height: VIEW.height - PLAY.top - 12,
+            rx: 10
+          });
 
-              field.child(wall);
-              field.child(paddle);
-              field.child(ball);
-              field.child(overlay);
-            });
-          }
-        };
+          field.child(wall);
+          field.child(paddle);
+          field.child(ball);
+          field.child(overlay);
+        });
       }
 
       function BreakoutPage() {
