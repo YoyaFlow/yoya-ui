@@ -6,7 +6,7 @@
     <title>yoya-ui SVG 打砖块</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.1/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -285,7 +285,7 @@
         svg,
         svgs,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.1/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
 
       /*
        * 分层与项目 features 模块同构，单文件演示把三层放在一起：
@@ -814,12 +814,12 @@
               layer.text((line) => {
                 line.className('overlay-title');
                 line.attr({ x: VIEW.width / 2, y: 292 });
-                line.child(vText(title));
+                line.text(title);
               });
               layer.text((line) => {
                 line.className('overlay-hint');
                 line.attr({ x: VIEW.width / 2, y: 336 });
-                line.child(vText(hint));
+                line.text(hint);
               });
             });
           }
