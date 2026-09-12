@@ -94,9 +94,9 @@ div((page) => {
 No hand-written state, no reading each input value one by one. Put controls inside `vForm` and call `form.values()` once; `vField` provides view and edit modes.
 
 ```js
-import { vButton, vCard, vForm, vInput, vText } from '@yoyaflow/yoya-ui';
+import { ref, vButton, vCard, vForm, vInput, vText } from '@yoyaflow/yoya-ui';
 
-const summary = vText('Not submitted');
+const summary = ref('Not submitted');
 const form = vForm((f) => {
   f.vField((field) => {
     field.label('Service');
@@ -109,10 +109,15 @@ const form = vForm((f) => {
 });
 
 vCard((card) => {
-  card.vCardBody((body) => body.child(form));
+  card.vCardBody((body) => {
+    body.child(form);
+    body.p((line) => line.child(vText(summary)));
+  });
   card.vCardFooter((footer) => {
     footer.vButton('Submit', (b) =>
-      b.on('click', () => summary.textContent(JSON.stringify(form.values())))
+      b.on('click', () => {
+        summary.value = JSON.stringify(form.values());
+      })
     );
   });
 }).bindTo('#app');

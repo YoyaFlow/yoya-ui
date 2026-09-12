@@ -37,16 +37,23 @@ export function ServiceTag(options) {
 **形态 B：对象组件**（常规默认形态，返回 `{ render() }`）
 
 ```js
-import { vRate } from '@yoyaflow/yoya-ui/ui';
+import { computed, div, ref, vInput, vText } from '@yoyaflow/yoya-ui';
 
-export function RateCard() {
-  const state = { value: 0 };
+export function NameField() {
+  // 状态用 ref 持有：值位置直接传句柄，写入即写回，不需要手动刷新
+  const name = ref('');
+  const hint = computed(() => `你好，${name.value || '匿名'}`);
+
   return {
     render() {
-      return vRate((rate) => rate.value(state.value));
+      return div((box) => {
+        box.vInput({ name: 'user', placeholder: '姓名', value: name });
+        box.p((line) => line.child(vText(hint)));
+      });
     },
-    value(next) {
-      state.value = next;
+    // 对外只暴露方法，不把内部信号交给使用者
+    setValue(next) {
+      name.value = next;
       return this;
     }
   };

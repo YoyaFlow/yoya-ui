@@ -39,24 +39,29 @@ document.querySelector('#app').appendChild(page.renderDom());
 
 ## 文本与状态
 
-动态文本用 `vText()` 创建：渲染为真实 Text 节点，`textContent()` 读写并原地更新，可放进任何接受子节点的位置；SSR 输出自动转义。
+动态文本用 `vText()` 创建：渲染为真实 Text 节点，可放进任何接受子节点的位置；SSR 输出自动转义。
+
+状态用内置信号 `ref` 持有，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。
 
 ```js
-import { div, vButton, vText } from '@yoyaflow/yoya-ui';
+import { computed, div, ref, vButton, vText } from '@yoyaflow/yoya-ui';
 
-const message = vText('加载中…');
+const count = ref(0);
+const label = computed(() => (count.value > 0 ? `已完成 ${count.value} 次` : '待处理'));
 
 div((root) => {
-  root.p(message);
+  root.p((line) => line.child(vText(label)));
   root.vButton('完成', (button) => {
-    button.on('click', () => message.textContent('已完成'));
+    button.on('click', () => {
+      count.value += 1;
+    });
   });
 }).bindTo('#app');
 ```
 
 字符串、`vText()`、i18n 文本节点与 `'文案'.s('key')` 四种写法自动归一，混用不受影响；需要响应式语言切换时用 `.s()` 或 `locale.text()`。
 
-需要状态（计数、开关、加载态）用内置信号：`const count = ref(0)`，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。
+也可以持有文本节点句柄用 `textContent(value)` 原地替换（命令式写法），但状态驱动优先用信号。
 
 需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：声明 `rebuildable(谓词?)` 后，区域内读到的信号就成为它的依赖，信号变化时自动按谓词重建（也可手动 `rebuild()`）。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷值并记 `rebuildPending()`。详见 references/state.md。
 

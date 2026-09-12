@@ -94,9 +94,9 @@ div((page) => {
 不手写 state、逐个读 input value。`vForm` 里放控件，`form.values()` 一次取全部字段；`vField` 自带 view / edit 两种模式。
 
 ```js
-import { vButton, vCard, vForm, vInput, vText } from '@yoyaflow/yoya-ui';
+import { ref, vButton, vCard, vForm, vInput, vText } from '@yoyaflow/yoya-ui';
 
-const summary = vText('尚未提交');
+const summary = ref('尚未提交');
 const form = vForm((f) => {
   f.vField((field) => {
     field.label('服务名');
@@ -109,10 +109,15 @@ const form = vForm((f) => {
 });
 
 vCard((card) => {
-  card.vCardBody((body) => body.child(form));
+  card.vCardBody((body) => {
+    body.child(form);
+    body.p((line) => line.child(vText(summary)));
+  });
   card.vCardFooter((footer) => {
     footer.vButton('提交', (b) =>
-      b.on('click', () => summary.textContent(JSON.stringify(form.values())))
+      b.on('click', () => {
+        summary.value = JSON.stringify(form.values());
+      })
     );
   });
 }).bindTo('#app');

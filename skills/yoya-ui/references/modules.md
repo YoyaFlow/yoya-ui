@@ -165,24 +165,23 @@ export default {
 
 ## 状态模块
 
-- **局部状态**：对象组件闭包或返回对象上的属性
-- **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法，`subscribe(listener)` 通知视图更新
+- **局部状态**：对象组件闭包或返回对象上的 `ref`；值位置直接传句柄，写入即写回
+- **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法；**要驱动视图的字段用 `ref` 持有**（同模块的视图 / 组件直接绑句柄），`subscribe(listener)` 只留给非视图副作用
 - **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
-- 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态、再通知订阅者；需要"结构随数据变化"时可在组件内用可重建区域（见 core.md）
+- 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态——写入 `ref` 就完成通知；需要"结构随数据变化"时用可重建区域读信号（见 core.md）
 
 ```js
 // features/system/members/api/member.state.js
+import { ref } from '@yoyaflow/yoya-ui';
 import MemberMgr from './member.mgr.js';
 
 export default class MembersPageState {
   constructor(initial = {}) {
     this._filters = initial;
-    this._items = [];
-    this._listeners = new Set();
-  }
-
-  items() {
-    return this._items;
+    // 要驱动视图的数据用 ref 持有：视图绑句柄，写入即更新，不需要手动通知
+    this.items = ref([]);
+    this.total = ref(0);
+    this._listeners = new Set(); // 仅非视图副作用（埋点、持久化等）才需要
   }
 
   subscribe(listener) {
@@ -192,7 +191,8 @@ export default class MembersPageState {
 
   async load() {
     const result = await MemberMgr.Query(this._filters).submit();
-    this._items = result.data;
+    this.items.value = result.data;
+    this.total.value = result.total ?? result.data.length;
     this._emit();
     return result;
   }
