@@ -46,7 +46,7 @@ const chart = svg((root) => {
 
 - `svgs` 覆盖 `svg` 与全部 SVG 子标签（`rect` / `circle` / `g` / `path` / `text` / `defs` / `linearGradient` …），键名就是标签名；`yoya-ui` 与 `yoya-ui/core` 都导出。
 - 游离节点与父节点内部创建的节点能力完全一致：属性、样式、事件、`rebuildable()`、`child()` 都可用；已有父节点时继续用 `root.g(...)` 这类快捷方法更顺手。
-- `text()` 在 SVG 容器上是「创建 `<text>` 子元素」，在 `<text>` 内部才表示文本内容：字符串可以直接写，**信号句柄要用 `child(vText(handle))`**，写成 `line.text(handle)` 会因句柄不是子节点而报错。
+- `text()` 在 SVG 容器上是「创建 `<text>` 子元素」，在 `<text>` / `<tspan>` / `<title>` 等文本宿主内部才表示文本内容：字符串、数字、信号句柄都可以直接写，`line.text(handle)` 与 `child(vText(handle))` 等价（都建立绑定，写入即更新文本）。
 
 ## 三种组件形态
 
@@ -121,7 +121,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）。组件可继续暴露链式 API（`value(next)`、`disabled(next)`）。
 
-值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。文本位置优先 `child(vText(a))`——`text(handle)` 运行时可用但类型未声明。
+值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)` / `child(a)` / `ele.text(a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。
 
 Signals 的句柄与绑定、区域依赖捕获与谓词门禁、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 

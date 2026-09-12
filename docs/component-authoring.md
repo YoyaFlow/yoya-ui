@@ -112,7 +112,7 @@ yoya-ui state is driven by the built-in Signals: a component holds state in `ref
 
 - Values: `const count = ref(0)`; the handle can be passed to `attr` / `style` / `vText` / component props. Writing `.value` (or `handle.update(fn)`) updates the binding in place without rebuilding DOM or losing focus. Derived values use `computed(fn)` (read-only, lazy, cached).
 - Structure: `rebuildable(predicate?)` marks a node as a rebuildable region; signals read inside become its dependencies and drive predicate-gated rebuilds. Call `rebuild()` to force one.
-- Text: pass a handle for state-driven text (`vText(count)` / `vText(computed(fn))`); when you need imperative in-place replacement, keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
+- Text: pass a handle for state-driven text — `vText(count)`, `child(count)` or `ele.text(count)` are equivalent; only wrap in `computed(fn)` when the value is derived. When you need imperative in-place replacement, keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). An element's `.text(content)` is equivalent to `child()`, so **every call appends a text node**; never use it as "set the label", or repeated syncs keep stacking.
 - Expose methods, not handles: keep internal state in `ref`, and expose chainable methods such as `value(next)` / `disabled(next)` instead of handing the signal object to callers.
 
 ### 6.1 Rebuildable regions
@@ -127,7 +127,7 @@ const body = div((ele) => {
   ele.rebuildable(() => !editing.value); // optional gate: when false, values flush without rebuilding
   ele.attr(
     'data-count',
-    computed(() => String(rows.value.length))
+    computed(() => rows.value.length)
   );
   rows.value.forEach((row) => ele.addChild(row.id, div(row.name)));
 });

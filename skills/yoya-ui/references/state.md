@@ -60,7 +60,7 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 - 纯函数式动态值（零参闭包 `() => …`）仍可用，属过渡写法；新代码用信号。
 - **别白包**：`attr('data-count', computed(() => count.value))`、`vText(computed(() => String(count.value)))` 都多了一层；值位置自己会读句柄，数字也会自己转成字符串。`computed` 只留给真派生（拼接 / 运算 / 分支 / 多信号组合）。
 - **别漏句柄**：`vText(count.value)`、`attr('x', count.value)` 传的是**快照**，写完就不再更新；只有确实要一次性写入时才这么写。
-- **文本位置优先 `child(vText(handle))`**：`ele.text(handle)` 运行时同样可用，但类型声明目前比运行时窄（未声明句柄），TS 项目里用 `child(vText(handle))` 既类型安全又不多包一层。
+- **文本位置三种等价写法**：`child(vText(handle))`、`child(handle)`、`ele.text(handle)` 都建立同一个绑定（HTML 元素与 SVG 文本宿主都支持）。区别只在语义：`.text()` 每次调用**追加**一个文本节点，适合构建期设置一次；要反复替换同一处文本，就留一个 `vText()` 句柄用 `textContent(next)`。
 - **机械替换后要自查**：把旧写法（`state()` / `sync()` 之类）换成信号时，每个新加的 `computed` / `String` 都问一句「去掉它行为是否一样」——迁移最容易把旧代码的包装原样搬过来。
 
 ## 写回：不做双向绑定

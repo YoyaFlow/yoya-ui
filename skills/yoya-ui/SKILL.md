@@ -44,7 +44,7 @@ div((root) => {
 
 值位置三条铁律：
 
-- **纯占位就传句柄本身，不要包一层**：`vText(count)` / `attr('data-count', count)` / `child(vText(count))`。写成 `computed(() => count.value)` 是白包；写成 `count.value` 或 `String(count.value)` 是**死快照**（写完不再更新）。
+- **纯占位就传句柄本身，不要包一层**：`vText(count)` / `attr('data-count', count)` / `child(count)`（= `child(vText(count))`）/ `ele.text(count)`。写成 `computed(() => count.value)` 是白包；写成 `count.value` 或 `String(count.value)` 是**死快照**（写完不再更新）。
 - **`computed` 只用于派生**：模板串、`toFixed` / `Math.round`、多信号组合、三元分支。看到 `computed(() => x.value)` 直接删掉它。
 - **`String()` 只在需要字符串语义时用**（拼接、`'auto' | 'none'`）。`attr` / `style` / `styles` / `vText` / `text()` 都吃 number，不用手工转字符串。
 
