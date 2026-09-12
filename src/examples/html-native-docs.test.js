@@ -42,6 +42,34 @@ describe('html native documentation page', () => {
     expect(sources.length).toBeGreaterThan(0);
     expect(sources.join('\n')).not.toContain('document.');
     expect(sources.join('\n')).toContain('event.target.value');
+    // 原生元素同样示范信号写法：ref 持有、computed 派生、值位置传句柄
+    expect(sources.join('\n')).toContain('const draft = ref');
+    expect(sources.join('\n')).toContain('vText(outputText)');
+    expect(sources.join('\n')).toContain('button.attr(');
+    expect(sources.join('\n')).toContain('computed(() => !draft.value.trim())');
+
+    view.destroy();
+  });
+
+  it('drives the native live demo from refs', () => {
+    const view = HtmlNativeDocumentationPage().render();
+    const element = view.renderDom();
+    const field = element.querySelector('#html-native-name');
+    const button = element.querySelector('.html-native-button');
+    const output = element.querySelector('output');
+
+    // 输入为空时按钮禁用（属性绑定 computed）
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(output.textContent).toBe('原生输入：等待');
+
+    field.value = 'Ada';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    button.click();
+
+    expect(output.textContent).toBe('原生输入：Ada');
 
     view.destroy();
   });

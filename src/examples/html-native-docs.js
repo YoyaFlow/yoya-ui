@@ -1,35 +1,43 @@
-import { input, section, vText } from '../index.js';
+import { computed, ref, section, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 function HtmlNativeExample1() {
-  const data = { name: '' };
-  const result = vText('原生输入：等待');
-  // 先建一次、直接持有节点引用；取值走事件对象，不查 document。
-  const nameField = input((field) => {
-    field.id('html-native-name');
-    field.attr({ placeholder: '输入名称', type: 'text' });
-    field.on('input', (event) => {
-      data.name = event.target.value;
-    });
-  });
+  const draft = ref('');
+  const saved = ref('等待');
+  const outputText = computed(() => `原生输入：${saved.value || '空'}`);
 
   return {
     render() {
       return section((page) => {
         page.className('html-native-demo');
         page.h3('HTML 原生元素');
-        page.p('button、input、output 等原生元素可以直接组合，适合底层自由拼装。');
+        page.p(
+          'button、input、output 等原生元素可以直接组合，状态用 ref 持有、值位置直接传句柄，适合底层自由拼装。'
+        );
         page.div((box) => {
           box.className('html-native-box');
-          box.child(nameField);
+          box.input((field) => {
+            field.id('html-native-name');
+            field.attr({ placeholder: '输入名称', type: 'text' });
+            // 视图 → 信号：事件回调里写回，不查 document
+            field.on('input', (event) => {
+              draft.value = event.target.value;
+            });
+          });
           box.button((button) => {
             button.className('html-native-button');
             button.text('更新');
+            // 属性也接句柄：输入为空时按钮禁用
+            button.attr(
+              'disabled',
+              computed(() => !draft.value.trim())
+            );
             button.on('click', () => {
-              result.textContent(`原生输入：${data.name || '空'}`);
+              saved.value = draft.value.trim();
             });
           });
-          box.output((output) => output.child(result));
+          // 信号 → 视图：computed 派生文本，写入信号即原地更新
+          box.output((output) => output.child(vText(outputText)));
         });
       });
     }
@@ -101,9 +109,9 @@ const htmlNativeApiGroups = [
         "label.textContent('B')"
       ],
       [
-        'node.child(vText(fn))',
-        '文本跟随状态：函数值绑定原地更新，不替换元素、不丢焦点。',
-        'line.child(vText(() => data.label))'
+        'node.child(vText(handle))',
+        '文本跟随状态：传 ref / computed 句柄（或零参闭包），原地更新、不替换元素、不丢焦点。',
+        'line.child(vText(count))'
       ]
     ],
     sample: `// 追加：元素 text() 每次都加一个文本节点，反复同步会堆叠
@@ -286,7 +294,7 @@ function HtmlNativeDemoSection() {
   const liveDemo = HtmlNativeExample1();
   const sourcePanel = ComponentSource({
     component: HtmlNativeExample1,
-    imports: ['input', 'section', 'vText'],
+    imports: ['computed', 'ref', 'section', 'vText'],
     sourceComponent: HtmlNativeExample1,
     title: 'HTML 原生源码'
   });
