@@ -109,13 +109,16 @@ installSignals(null); // 回到内置引擎
 ```
 
 - 引擎契约只有四个方法：`createSignal` / `read` / `write` / `subscribe`。依赖收集与 `computed` 由 core 负责，所以换引擎不改变依赖与派生语义。
+- **signals 类库与 store 类库都能当引擎**：value 单元可以是一个极小的 store
+  （`getState` / `setState` / `subscribe`）——现成适配器见 `yoya-ui/signals-preact`
+  与 `yoya-ui/signals-zustand`，都接收第三方模块作为参数。
 - **同一时刻只激活一个引擎**：两个引擎版本同页面会让依赖追踪各说各话（表现为该更新时不更新）。
 - 业务代码只依赖 `yoya-ui` 的 `ref` / `computed`，不直接 import 引擎实现。
-- 照着写新适配器时，看第三方适配器范例 `signals/preact/index.js` 即可
-  （示例站「Signals 状态管理」页直接展示这份原文）；内置适配器在 `core/signals/engine.js`，
-  可当最小骨架对照。
+- 照着写新适配器时，看这两份范例即可：`signals/preact/index.js`（signals 类库）、
+  `signals/zustand/index.js`（store 类库），示例站「Signals 状态管理」页直接展示原文；
+  内置适配器在 `core/signals/engine.js`，可当最小骨架对照。
   两个容易踩的差异：引擎的 `subscribe` 通常会立即回调一次（契约要求吞掉首次）；
-  监听器内部读值要用引擎的 `untracked` 包一层，否则重建期间的读取会把订阅自我放大。
+  监听器内部读值要用引擎的 `untracked` 包一层（store 类库通常不需要），否则重建期间的读取会把订阅自我放大。
 
 ## SSR 纪律
 

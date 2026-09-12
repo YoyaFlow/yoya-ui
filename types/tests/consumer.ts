@@ -22,6 +22,7 @@ import {
   vText,
   computed,
   createI18n,
+  installSignals,
   ref,
   renderToString,
   router,
@@ -77,6 +78,8 @@ import {
 } from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
+import { createPreactAdapter } from 'yoya-ui/signals-preact';
+import { createZustandAdapter } from 'yoya-ui/signals-zustand';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
   disableDevtools,
@@ -214,6 +217,11 @@ const result = renderToString(() => div('hello'), { state: { path: '/home' } });
 const serialized = result.state;
 const parsed = parseState(serialized);
 void parsed;
+
+// Swappable state engines: signals library or store library, same contract.
+installSignals(createPreactAdapter(await import('@preact/signals-core')));
+installSignals(createZustandAdapter(await import('zustand/vanilla')));
+installSignals(null);
 
 const hydrated = hydrate(() => div('hello'), '#app', {});
 const mounted = mount(() => div('hello'), document.body);

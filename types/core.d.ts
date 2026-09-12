@@ -560,17 +560,16 @@ export function isSignal(value: unknown): value is SignalHandle<unknown>;
 export function batch<T>(run: () => T): T;
 
 /**
- * Signals engine adapter contract: value cells, change notification and
- * dependency collection only. Derivation, scheduling and lifetimes stay in core.
+ * State engine adapter contract: value cells and change notification only.
+ * Dependency collection, derivation, scheduling and lifetimes stay in core,
+ * so signals libraries and store-shaped libraries (e.g. zustand) both qualify.
  */
 export interface SignalsAdapter {
   name?: string;
   createSignal<T>(initial: T): unknown;
   read(source: unknown): any;
-  peek(source: unknown): any;
   write(source: unknown, value: unknown): void;
   subscribe(source: unknown, listener: (value: unknown) => void): () => void;
-  collect<T>(run: () => T): { value: T; sources: unknown[] };
   batch?<T>(run: () => T): T;
   untracked?<T>(run: () => T): T;
   effect?(run: () => void): () => void;

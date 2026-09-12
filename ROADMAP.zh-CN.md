@@ -28,6 +28,8 @@ npm 与 CDN，消除双 core 与 `./ssr` 子路径残留。
 - [x] SSR + 官方组件的单 core 冒烟测试固化
 - [x] 状态模型统一到 Signals：移除节点级 `state` / `setState` 与 `vStateNode`
       （破坏性变更，迁移对照见 `docs/migration-0.5.zh-CN.md`）
+- [x] 状态引擎可插拔：引擎契约只要求「值单元 + 通知」，signals 类库与 store 类库都能
+      做成插件接入（`yoya-ui/signals-preact`、`yoya-ui/signals-zustand`）
 
 ## M3 · 开发者体验与错误定位
 
