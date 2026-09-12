@@ -40,7 +40,13 @@ div((root) => {
 
 动态文本用 `vText()` 创建：渲染为真实 Text 节点，可放进任何接受子节点的位置；SSR 输出自动转义。
 
-状态用内置信号 `ref` 持有，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建；派生值用 `computed`。
+状态用内置信号 `ref` 持有，值位置直接传句柄（`attr(key, count)`、`vText(count)`、`vInput({ value: count, disabled: locked })`），写入后绑定原地更新、DOM 不重建。
+
+值位置三条铁律：
+
+- **纯占位就传句柄本身，不要包一层**：`vText(count)` / `attr('data-count', count)` / `child(vText(count))`。写成 `computed(() => count.value)` 是白包；写成 `count.value` 或 `String(count.value)` 是**死快照**（写完不再更新）。
+- **`computed` 只用于派生**：模板串、`toFixed` / `Math.round`、多信号组合、三元分支。看到 `computed(() => x.value)` 直接删掉它。
+- **`String()` 只在需要字符串语义时用**（拼接、`'auto' | 'none'`）。`attr` / `style` / `styles` / `vText` / `text()` 都吃 number，不用手工转字符串。
 
 ```js
 import { computed, div, ref, vButton, vText } from '@yoyaflow/yoya-ui';

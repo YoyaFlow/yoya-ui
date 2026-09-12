@@ -121,6 +121,8 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）。组件可继续暴露链式 API（`value(next)`、`disabled(next)`）。
 
+值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。文本位置优先 `child(vText(a))`——`text(handle)` 运行时可用但类型未声明。
+
 Signals 的句柄与绑定、区域依赖捕获与谓词门禁、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 
 ## 组合、事件与生命周期
