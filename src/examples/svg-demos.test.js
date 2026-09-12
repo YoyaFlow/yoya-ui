@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bindWindowEvent, computed, div, ref, svg, SvgElementNode, vText } from '../index.js';
+import { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText } from '../index.js';
 
 /**
  * 三个单文件 SVG 演示是自包含 HTML：内联模块从 CDN 引库，因此测试抽出台本，
  * 注入本仓库的库符号后执行，验证「能启动 + 关键交互生效」。
  */
-const demoLibrary = { bindWindowEvent, computed, div, ref, svg, SvgElementNode, vText };
+const demoLibrary = { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText };
 const demoLibraryNames = Object.keys(demoLibrary);
 
 function bootDemo(file) {
@@ -130,4 +130,45 @@ describe('svg tower defense demo', () => {
     expect(enemy).not.toBeNull();
     expect(enemy.querySelector('.enemy-hp-fill')).not.toBeNull();
   }, 10000);
+});
+
+describe('svg breakout demo', () => {
+  it('bounces the ball, moves the paddle with the keyboard and rebuilds broken bricks', async () => {
+    const app = bootDemo('svg-breakout.html');
+    const paddle = app.querySelector('.paddle');
+    const ball = app.querySelector('.ball');
+    const bricksBefore = app.querySelectorAll('.brick').length;
+    const scoreBefore = Number(app.querySelector('.hud-value').textContent);
+
+    expect(bricksBefore).toBe(50);
+    expect(app.querySelector('.hud').textContent).toContain('最高分');
+
+    // 每帧写回信号：球的位置原地更新，节点不重建
+    const ballStart = ball.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(ball.getAttribute('transform')).not.toBe(ballStart);
+
+    // 键盘驱动球拍：按住左方向键，transform 原地变化
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    const paddleStart = paddle.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(paddle.getAttribute('transform')).not.toBe(paddleStart);
+    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+
+    // 空格暂停：写入 phase 信号，遮罩与文案跟着切换，球停住
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+    const pausedAt = ball.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
+    expect(ball.getAttribute('transform')).toBe(pausedAt);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+    // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
+    const broken = await waitFor(() => app.querySelectorAll('.brick').length < bricksBefore, 8000);
+    expect(broken).toBe(true);
+    expect(Number(app.querySelector('.hud-value').textContent)).toBeGreaterThan(scoreBefore);
+  }, 20000);
 });
