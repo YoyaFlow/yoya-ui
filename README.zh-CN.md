@@ -332,7 +332,7 @@ npm run typecheck    # 校验声明文件与消费方类型测试
 | 图表        | `vEchart`（基于 ECharts，按需引入）                                                                                         |
 | 3D          | `vThree`（基于 Three.js，按需引入）                                                                                         |
 | 异步        | `vDynamicLoader`                                                                                                            |
-| 状态        | `ref` / `computed` / 由信号驱动的区域；可选 `@preact/signals-core` 互操作                                                   |
+| 状态        | `ref` / `computed` / 由信号驱动的区域；状态引擎可插拔（自写适配器，模板见示例站）                                           |
 | i18n / 主题 | `createI18n` / `withI18nStringShortcut` / 主题令牌与明暗模式                                                                |
 
 ## 工程信号（在查看 Star 数之前，先读这里）

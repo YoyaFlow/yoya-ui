@@ -357,7 +357,7 @@ npm run typecheck    # validates declaration files and consumer type tests
 | Charts       | `vEchart` (ECharts-based, import on demand)                                                                                   |
 | 3D           | `vThree` (Three.js-based, import on demand)                                                                                   |
 | Async        | `vDynamicLoader`                                                                                                              |
-| State        | `ref` / `computed` / signal-driven regions; optional `@preact/signals-core` interop                                           |
+| State        | `ref` / `computed` / signal-driven regions; pluggable state engines (write your own adapter, template in the examples site)   |
 | i18n / Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                   |
 
 ## Engineering signals (read these before the star count)

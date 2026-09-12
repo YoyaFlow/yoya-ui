@@ -13,8 +13,7 @@ const SHARED_INPUTS = {
   router: 'src/yoya.router.js',
   echart: 'src/yoya.echart.js',
   three: 'src/yoya.three.js',
-  devtools: 'src/yoya.devtools.js',
-  'signals-preact': 'src/yoya.signals-preact.js'
+  devtools: 'src/yoya.devtools.js'
 };
 
 const FULL_INPUTS = [

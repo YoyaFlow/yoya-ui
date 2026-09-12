@@ -78,7 +78,7 @@ import {
 } from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
-import { createPreactAdapter } from 'yoya-ui/signals-preact';
+import type { SignalsAdapter } from 'yoya-ui/core';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
   disableDevtools,
@@ -217,8 +217,23 @@ const serialized = result.state;
 const parsed = parseState(serialized);
 void parsed;
 
-// Swappable state engines: signals library or store library, same contract.
-installSignals(createPreactAdapter(await import('@preact/signals-core')));
+// Pluggable state engine: the adapter contract is public and plugins are user-written
+// (the examples site ships a copy-paste template).
+const myEngine: SignalsAdapter = {
+  name: 'my-engine',
+  createSignal: (initial: unknown) => ({ value: initial, listeners: new Set<() => void>() }),
+  read: (source: any) => source.value,
+  write: (source: any, value: unknown) => {
+    source.value = value;
+    source.listeners.forEach((listener: () => void) => listener());
+  },
+  subscribe: (source: any, listener: (value: unknown) => void) => {
+    const notify = () => listener(source.value);
+    source.listeners.add(notify);
+    return () => source.listeners.delete(notify);
+  }
+};
+installSignals(myEngine);
 installSignals(null);
 
 const hydrated = hydrate(() => div('hello'), '#app', {});
