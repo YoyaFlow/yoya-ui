@@ -176,7 +176,7 @@
       const VIEW = { width: 900, height: 600 };
       const PLAY = { left: 24, right: 876, top: 24 };
       const PADDLE = { width: 132, height: 16, y: 546, speed: 12 };
-      const BALL = { radius: 9, speed: 6.4, startY: 496 };
+      const BALL = { radius: 9, baseSpeed: 3.1, maxSpeed: 8, startY: 496 };
       const WALL = {
         cols: 10,
         rows: 5,
@@ -188,7 +188,8 @@
         top: 70
       };
       const BRICK_SCORE = [50, 40, 30, 20, 10];
-      const LEVEL_SPEED_STEP = 0.9;
+      const LEVEL_SPEED_STEP = 0.8; // 每过一关的保底提速
+      const BRICK_SPEED_STEP = 0.06; // 每打掉一块砖的提速，分数越高球越快
       const START_LIVES = 3;
 
       function clamp(value, min, max) {
@@ -210,8 +211,9 @@
           this.paddleX = ref(VIEW.width / 2);
           this.ballX = ref(VIEW.width / 2);
           this.ballY = ref(BALL.startY);
-          this.ballVX = ref(3.2);
-          this.ballVY = ref(-BALL.speed);
+          this.ballVX = ref(0);
+          this.ballVY = ref(0);
+          this.serve();
         }
 
         /** 砖块布局是纯数据，放在状态类里，换关卡时复用同一份。 */
@@ -233,7 +235,11 @@
         }
 
         get ballSpeed() {
-          return BALL.speed + (this.level.value - 1) * LEVEL_SPEED_STEP;
+          const cleared = WALL.cols * WALL.rows - this.bricks.value.length;
+          const speed =
+            BALL.baseSpeed + (this.level.value - 1) * LEVEL_SPEED_STEP + cleared * BRICK_SPEED_STEP;
+
+          return Math.min(speed, BALL.maxSpeed);
         }
 
         /** 每帧推进一帧固定步长：球拍跟手、球位移与反弹、碰砖、落底。 */
@@ -292,6 +298,12 @@
             return;
           }
 
+          // 速率随进度增长，方向仍由反弹决定：这里只把当前速度向量归一化到目标速率
+          const speed = this.ballSpeed;
+          const magnitude = Math.hypot(vx, vy) || speed;
+          vx = (vx / magnitude) * speed;
+          vy = (vy / magnitude) * speed;
+
           this.ballX.value = x;
           this.ballY.value = y;
           this.ballVX.value = vx;
@@ -340,10 +352,12 @@
         }
 
         serve() {
+          const speed = this.ballSpeed;
+
           this.ballX.value = this.paddleX.value;
           this.ballY.value = BALL.startY;
-          this.ballVX.value = 3.2;
-          this.ballVY.value = -this.ballSpeed;
+          this.ballVX.value = speed * 0.5;
+          this.ballVY.value = -speed * 0.87;
         }
 
         _findHit(x, y, previousY) {
@@ -511,10 +525,11 @@
         const bestText = computed(() => String(state.best.value));
         const livesText = computed(() => '❤'.repeat(Math.max(state.lives.value, 0)) || '—');
         const levelText = computed(() => `第 ${state.level.value} 关`);
+        const speedText = computed(() => state.ballSpeed.toFixed(1));
 
-        function item(label, value) {
+        function item(key, label, value) {
           return div((entry) => {
-            entry.className('hud-item');
+            entry.className(`hud-item hud-item--${key}`);
             entry.span((name) => name.className('hud-label').text(label));
             entry.strong((number) => {
               number.className('hud-value');
@@ -527,10 +542,11 @@
           render() {
             return div((hud) => {
               hud.className('hud');
-              hud.child(item('分数', scoreText));
-              hud.child(item('最高分', bestText));
-              hud.child(item('生命', livesText));
-              hud.child(item('进度', levelText));
+              hud.child(item('score', '分数', scoreText));
+              hud.child(item('best', '最高分', bestText));
+              hud.child(item('lives', '生命', livesText));
+              hud.child(item('level', '进度', levelText));
+              hud.child(item('speed', '球速', speedText));
             });
           }
         };

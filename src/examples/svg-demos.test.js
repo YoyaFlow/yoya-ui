@@ -138,10 +138,13 @@ describe('svg breakout demo', () => {
     const paddle = app.querySelector('.paddle');
     const ball = app.querySelector('.ball');
     const bricksBefore = app.querySelectorAll('.brick').length;
-    const scoreBefore = Number(app.querySelector('.hud-value').textContent);
+    const scoreBefore = Number(app.querySelector('.hud-item--score .hud-value').textContent);
+    const speedBefore = Number(app.querySelector('.hud-item--speed .hud-value').textContent);
 
     expect(bricksBefore).toBe(50);
     expect(app.querySelector('.hud').textContent).toContain('最高分');
+    // 初始球速要慢，之后随打掉的砖块逐块加快
+    expect(speedBefore).toBe(3.1);
 
     // 每帧写回信号：球的位置原地更新，节点不重建
     const ballStart = ball.getAttribute('transform');
@@ -169,6 +172,11 @@ describe('svg breakout demo', () => {
     // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
     const broken = await waitFor(() => app.querySelectorAll('.brick').length < bricksBefore, 8000);
     expect(broken).toBe(true);
-    expect(Number(app.querySelector('.hud-value').textContent)).toBeGreaterThan(scoreBefore);
+    expect(Number(app.querySelector('.hud-item--score .hud-value').textContent)).toBeGreaterThan(
+      scoreBefore
+    );
+    expect(Number(app.querySelector('.hud-item--speed .hud-value').textContent)).toBeGreaterThan(
+      speedBefore
+    );
   }, 20000);
 });
