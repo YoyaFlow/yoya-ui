@@ -113,6 +113,41 @@
         transform: translateY(1px);
       }
 
+      .pad {
+        display: none;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .pad-key {
+        align-items: center;
+        -webkit-tap-highlight-color: transparent;
+        background: #1c2942;
+        border: 1px solid #2f4368;
+        border-radius: 12px;
+        color: #e2e8f0;
+        display: flex;
+        flex: 1;
+        font-family: inherit;
+        font-size: 22px;
+        justify-content: center;
+        min-height: 56px;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .pad-key[data-held='true'] {
+        background: #2b3d5f;
+        color: #facc15;
+      }
+
+      /* 手机 / 平板（无悬停的粗指针）以及窄窗口：显示底部左右手柄 */
+      @media (hover: none), (pointer: coarse), (max-width: 640px) {
+        .pad {
+          display: flex;
+        }
+      }
+
       .playfield {
         background: #16213a;
         border: 1px solid #2b3d5f;
@@ -477,8 +512,13 @@
 
       /* ── 视图组件 ───────────────────────────────────────────────────── */
 
-      function KeyboardInput({ onPress }) {
-        const pressed = new Set();
+      /**
+       * 球拍输入：键盘（方向键 / WASD）与触屏手柄（◀ ▶）合并成同一个方向轴，
+       * 另把空格、回车这类动作键转给页面。按住不放即持续移动，松手即停。
+       */
+      function PaddleInput({ onPress }) {
+        const keyboardHeld = new Set();
+        const padHeld = new Set();
         const moveKeys = { ArrowLeft: 'left', ArrowRight: 'right', a: 'left', d: 'right' };
 
         function normalize(event) {
@@ -491,11 +531,16 @@
 
           if (move) {
             event.preventDefault();
-            pressed.add(move);
+            keyboardHeld.add(move);
             return;
           }
 
           if (key === ' ' || key === 'Enter') {
+            // 焦点落在按钮上时交给原生点击，避免同一次按键被处理两次
+            if (event.target instanceof Element && event.target.closest('button')) {
+              return;
+            }
+
             event.preventDefault();
             onPress(key);
           }
@@ -504,12 +549,13 @@
         function handleKeyUp(event) {
           const move = moveKeys[normalize(event)];
           if (move) {
-            pressed.delete(move);
+            keyboardHeld.delete(move);
           }
         }
 
         function clear() {
-          pressed.clear();
+          keyboardHeld.clear();
+          padHeld.clear();
         }
 
         return {
@@ -524,10 +570,59 @@
           },
 
           axis() {
-            return (pressed.has('right') ? 1 : 0) - (pressed.has('left') ? 1 : 0);
+            const left = keyboardHeld.has('left') || padHeld.has('left');
+            const right = keyboardHeld.has('right') || padHeld.has('right');
+
+            return (right ? 1 : 0) - (left ? 1 : 0);
+          },
+
+          hold(direction) {
+            padHeld.add(direction);
+          },
+
+          release(direction) {
+            padHeld.delete(direction);
           },
 
           clear
+        };
+      }
+
+      /** 底部手柄：按住 ◀ / ▶ 持续移动球拍，松手或移出按键即停。 */
+      function PaddlePad(input) {
+        function key(direction, glyph, label) {
+          return div((cell) => {
+            cell.button((button) => {
+              function start(event) {
+                event.preventDefault();
+                button.attr('data-held', 'true');
+                input.hold(direction);
+              }
+
+              function stop() {
+                button.attr('data-held', null);
+                input.release(direction);
+              }
+
+              button.className(`pad-key pad-key--${direction}`);
+              button.attr({ type: 'button', 'aria-label': label });
+              button.text(glyph);
+              button.on('pointerdown', start);
+              button.on('pointerup', stop);
+              button.on('pointercancel', stop);
+              button.on('pointerleave', stop);
+            });
+          });
+        }
+
+        return {
+          render() {
+            return div((pad) => {
+              pad.className('pad');
+              pad.child(key('left', '◀', '球拍向左'));
+              pad.child(key('right', '▶', '球拍向右'));
+            });
+          }
         };
       }
 
@@ -742,7 +837,7 @@
 
       function BreakoutPage() {
         const state = new BreakoutPageState();
-        const input = KeyboardInput({
+        const input = PaddleInput({
           onPress: (key) => {
             if (key === ' ') {
               state.togglePause();
@@ -788,7 +883,7 @@
                 card.className('demo-card');
                 card.h1('SVG 打砖块：← → 控制球拍');
                 card.p(
-                  '方向键、WASD 或直接拖动球拍；空格暂停，回车重开。砖块被打掉后整片区域按新数据重建，球速随分数越来越快。'
+                  '键盘用方向键 / WASD，手机用底部 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
                 );
                 card.div((bar) => {
                   bar.className('hud-bar');
@@ -796,6 +891,7 @@
                   bar.child(Controls(state));
                 });
                 card.child(field);
+                card.child(PaddlePad(input));
               });
             });
           },

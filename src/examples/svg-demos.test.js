@@ -166,6 +166,22 @@ describe('svg breakout demo', () => {
     field.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 950 }));
     expect(paddle.getAttribute('transform')).toBe('translate(810 546)');
 
+    // 手机手柄：按住 ◀ 持续左移，松手即停并清掉按下态
+    const padLeft = app.querySelector('.pad-key--left');
+    padLeft.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    await nextFrame();
+    await nextFrame();
+    const heldAt = paddle.getAttribute('transform');
+    expect(heldAt).not.toBe('translate(810 546)');
+    expect(padLeft.getAttribute('data-held')).toBe('true');
+
+    padLeft.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    const releasedAt = paddle.getAttribute('transform');
+    await nextFrame();
+    await nextFrame();
+    expect(paddle.getAttribute('transform')).toBe(releasedAt);
+    expect(padLeft.getAttribute('data-held')).toBeNull();
+
     // 空格暂停：写入 phase 信号，遮罩与文案跟着切换，球停住
     window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
     const pausedAt = ball.getAttribute('transform');
@@ -181,6 +197,11 @@ describe('svg breakout demo', () => {
     expect(app.querySelector('.overlay-title').textContent).toBe('已暂停');
     expect(pauseButton.textContent).toBe('继续');
     pauseButton.click();
+    expect(pauseButton.textContent).toBe('暂停');
+
+    // 焦点在按钮上时，空格交给原生点击，全局监听不再重复切换一次
+    pauseButton.focus();
+    pauseButton.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     expect(pauseButton.textContent).toBe('暂停');
 
     // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
