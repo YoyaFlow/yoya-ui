@@ -254,7 +254,8 @@ function escapeHtmlAttribute(value) {
 
 /**
  * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，
- * 状态序列化进可自定义 id 的 script（默认 __YOYA_DATA__），末尾挂客户端入口。
+ * 状态序列化进可自定义 id 的 script（默认 __YOYA_DATA__），末尾默认挂客户端入口
+ * （client 传 false 可关掉，自行用 head DSL 放置，例如提前下载或 modulepreload 配合）。
  * state 是唯一请求状态来源，回调签名 (node, state)；options.messages 或 i18n
  * 二选一用于按 state.lang 建每请求实例。
  */
@@ -301,7 +302,10 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         ? `${appContainer}</div>`
         : `${appContainer}${bodyNode.toHTML()}</div>`;
       const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
-      const clientScript = `<script type="module" src="${escapeHtmlAttribute(client)}"></script>`;
+      // type="module" 自带 defer：执行时 #app 与状态脚本一定已解析完，放 body 末尾最稳。
+      const clientScript = client
+        ? `<script type="module" src="${escapeHtmlAttribute(client)}"></script>`
+        : '';
 
       headNode.destroy();
       bodyNode.destroy();

@@ -126,6 +126,17 @@ hydrateOrMount(HomePage, { messages });
 
 `renderPage` 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 包在 `<div id="app">` 内）+ 状态脚本 + 客户端入口。`stateId`（默认 `__YOYA_DATA__`）与客户端容器可配置，多局部场景各自命名即可（局部渲染用底层 `renderToString`，见第 6 节）。
 
+客户端入口默认放在 `</body>` 前：`type="module"` 自带 defer，下载不阻塞解析、执行在解析完成之后，所以那一行执行时 `#app` 与状态脚本一定已就绪。想更早开始下载，可 `renderPage(..., { client: false })` 关掉默认那行，自己在 head DSL 里放置：
+
+```js
+page.head((head) => {
+  head.link({ rel: 'modulepreload', href: '/client.js' });
+  head.script({ type: 'module', src: '/client.js' });
+});
+```
+
+不要改成没有 `defer` 的普通 `<script src>`：那会阻塞解析，并且在 `#app` 解析出来之前执行。
+
 ## 3. 服务端初始化（配合你的服务端代码）
 
 库本身不依赖任何框架，`node:http`、Express、Hono、Koa 均可。核心只有两步：`renderToString` + 组装外壳。

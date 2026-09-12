@@ -126,6 +126,17 @@ hydrateOrMount(HomePage, { messages });
 
 `renderPage` output structure: `<!doctype html>` + `<head>` (head DSL) + `<body>` (body DSL wrapped in `<div id="app">`) + state script + client entry. `stateId` (default `__YOYA_DATA__`) and the client container are configurable; multi-island scenarios give each island its own name (islands use the low-level `renderToString`, see §6).
 
+The client entry is emitted right before `</body>`: `type="module"` scripts are deferred, so parsing never blocks and the tag runs only after `#app` and the state script exist. To start the download earlier, pass `renderPage(..., { client: false })` and place the tag yourself from the head DSL:
+
+```js
+page.head((head) => {
+  head.link({ rel: 'modulepreload', href: '/client.js' });
+  head.script({ type: 'module', src: '/client.js' });
+});
+```
+
+Never switch it to a plain `<script src>` without `defer`: that blocks parsing and runs before `#app` exists.
+
 ## 3. Server initialization (with your server code)
 
 The library does not depend on any framework; `node:http`, Express, Hono, or Koa all work. The core has two steps: `renderToString` + shell assembly.

@@ -119,8 +119,11 @@ export interface RenderPageOptions<S = unknown>
   stateId?: string;
   /** Hydration container id. Defaults to "app". */
   containerId?: string;
-  /** Client entry script src. Defaults to "/client.js". */
-  client?: string;
+  /**
+   * Client entry script src. Defaults to "/client.js" (emitted at the end of body).
+   * Pass false to omit it and place the tag yourself, e.g. in head via head.script().
+   */
+  client?: string | false | null;
 }
 
 /** Renders a complete HTML document from DSL-defined head/body. */

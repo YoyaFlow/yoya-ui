@@ -30,6 +30,40 @@ describe('renderPage', () => {
     expect([...html.matchAll(/<body/g)]).toHaveLength(1);
   });
 
+  it('lets server code point the page at a custom client bundle path', () => {
+    const html = renderPage(
+      { page: (page) => page.body((body) => body.p('内容')) },
+      {},
+      { client: '/assets/client.js', containerId: 'root', stateId: 'yoya-data-page' }
+    );
+
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('id="yoya-data-page"');
+    expect(html).toContain('<script type="module" src="/assets/client.js"></script>');
+  });
+
+  it('can omit the default client tag so the tag can live in head', () => {
+    const html = renderPage(
+      {
+        page: (page) => {
+          page.head((head) => {
+            head.script({ type: 'module', src: '/client.js' });
+            head.link({ rel: 'modulepreload', href: '/client.js' });
+          });
+          page.body((body) => body.p('内容'));
+        }
+      },
+      {},
+      { client: false }
+    );
+
+    const headHtml = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
+    expect(headHtml).toContain('<script type="module" src="/client.js"></script>');
+    expect(headHtml).toContain('rel="modulepreload"');
+    // 默认那行不再出现在 body 末尾
+    expect([...html.matchAll(/<script type="module"/g)]).toHaveLength(1);
+  });
+
   it('renders a complete HTML document with DSL head and body', () => {
     const html = renderPage(
       {

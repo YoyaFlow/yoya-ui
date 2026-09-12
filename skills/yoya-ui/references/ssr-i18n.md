@@ -3,18 +3,42 @@
 ## 流程：HomePage → 服务端 → 客户端
 
 ```text
-home-page.js   HomePage(state)                          ← 两端共用同一份工厂
-     │
-     ├─ 服务端   renderPage(..., state, { messages })    → 完整 HTML + __YOYA_DATA__
-     │
-     └─ 客户端   hydrateOrMount(HomePage, { messages })  → 收养 HTML、绑事件（无服务端 HTML 时 mount）
+src/home-page.js   HomePage(state)                          ← 两端共用同一份工厂
+        │
+        ├─ 服务端  renderPage(..., state, { messages })      → 完整 HTML + __YOYA_DATA__
+        │
+        └─ 客户端  hydrateOrMount(HomePage, { messages })    → 收养 HTML、绑事件（空壳则 mount）
 ```
 
 同一份页面工厂在两端各跑一次：服务端把结果写成 HTML，客户端用相同输入重建同一棵树，hydration 才能按节点对齐（**输入相同 → 树相同**）。事件处理是闭包，不跨网络。
 
-下面三份文件复制到自己的工程即可跑通。
+## 文件布局与请求时序
 
-## 1. home-page.js —— 页面组件（两端共用）
+```text
+your-app/
+├─ src/home-page.js   ① 页面工厂（服务端 / 客户端共用）
+├─ src/server.mjs     ② 服务端：renderPage 出 HTML，静态提供 dist/
+├─ src/client.js      ③ 浏览器入口：hydrateOrMount 就写在这个文件里
+└─ vite.config.js     ④ 把 src/client.js 构建成 dist/client.js
+```
+
+```text
+浏览器 GET /            → 服务端 renderPage(...) 返回 HTML：
+                            <div id="app">服务端渲染的 HTML</div>
+                            <script type="application/json" id="__YOYA_DATA__">…</script>
+                            <script type="module" src="/client.js"></script>   ← renderPage 默认插入这一行
+浏览器 GET /client.js   → 服务端从 dist/ 静态返回（vite 构建 src/client.js 的产物）
+client.js 执行          → hydrateOrMount(HomePage, { messages })
+                            ├─ 读 __YOYA_DATA__ 拿请求状态
+                            ├─ #app 里有服务端 HTML → hydrate（收养 DOM，只补事件适配器）
+                            └─ #app 是空壳（maxNodes 回退 / 纯客户端）→ mount（全量渲染）
+```
+
+**`hydrateOrMount(...)` 写在 `src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；服务端只在 HTML 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。自定义路径用 `renderPage(..., { client: '/assets/client.js' })`，服务端要能把该路径静态发出去。
+
+下面四份文件复制到自己的工程即可跑通。
+
+## ① src/home-page.js —— 页面组件（两端共用）
 
 ```js
 // home-page.js —— 页面即形态 A 组件，服务端与客户端共用
@@ -36,6 +60,7 @@ export function HomePage(state) {
   return div((root) => {
     root.h1('SSR 示例'.s('title'));
     root.child(router);
+    root.p('服务端渲染完成，事件由 hydrate 在浏览器端绑定。');
   });
 }
 ```
@@ -47,7 +72,7 @@ export function HomePage(state) {
 - 每请求的数据与实例在工厂内部创建（信号、区域节点、组件实例），不要放模块级
 - `'文案'.s('key')` 的 i18n 实例由入口的 `{ messages }` / `{ i18n }` 每请求作用域化
 
-## 2. server.mjs —— 服务端入口
+## ② src/server.mjs —— 服务端入口
 
 ```js
 // server.mjs —— 服务端（node:http，无框架依赖）
@@ -57,13 +82,14 @@ import { extname, join } from 'node:path';
 import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
-const DIST = join(import.meta.dirname, 'dist'); // npm run build 的产物
+const DIST = join(import.meta.dirname, '..', 'dist'); // npm run build 的产物
 const MIME = { '.css': 'text/css', '.js': 'text/javascript' };
+const PORT = Number(process.env.PORT || 3000);
 
 createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
 
-  // 静态资源：从 dist 目录按路径提供
+  // 静态资源：client.js 与 assets/yoya.ui.css 都由 npm run build 产出
   if (path !== '/') {
     const file = join(DIST, path.slice(1));
     if (existsSync(file)) {
@@ -82,10 +108,10 @@ createServer((req, res) => {
         page.head((head) => {
           head.title('SSR 示例'.s('title'));
           head.meta({ charset: 'utf-8' });
-          head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
+          head.link({ rel: 'stylesheet', href: '/assets/yoya.ui.css' });
         });
         page.body((body) => {
-          body.div((shell) => {
+          body.vBody((shell) => {
             shell.child(HomePage(state)); // state = { lang, path, mode }
           });
         });
@@ -97,38 +123,79 @@ createServer((req, res) => {
 
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(html);
-}).listen(3000);
+}).listen(PORT, () => console.log(`SSR server: http://localhost:${PORT}`));
 ```
 
 要点：
 
 - `renderPage(pageConfig, state, { messages })` 一次收敛「语言实例 + 渲染 + 外壳组装 + 状态序列化」
-- 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 在 `<div id="app">` 内）+ `__YOYA_DATA__` 状态脚本 + `client.js` 入口
-- `state` 是唯一来源：`{ lang, path, mode }` 由你的服务端解析后传入，透传给工厂与客户端
-- 静态资源（`yoya.ui.css` / `client.js` / `yoya.core.js` …）从 `dist/` 目录提供；`echarts.min.js` 用 `<script>` 全局引入，不要打进模块
+- 输出结构：`<!doctype html>` + `<head>`（head DSL）+ `<body>`（body DSL 在 `<div id="app">` 内）+ `__YOYA_DATA__` 状态脚本 + `<script type="module" src="/client.js">`；路径用 `{ client }` 改，容器与状态脚本用 `{ containerId }` / `{ stateId }` 改
+- **客户端入口默认放在 `</body>` 前**：`type="module"` 自带 defer（下载不阻塞解析、执行在解析完成之后），所以那一行执行时 `#app` 与状态脚本一定已就绪，不需要放 head。想更早开始下载就自己放 head：`head.script({ type: 'module', src: '/client.js' })` + `{ client: false }` 关掉默认那行，需要时再加 `<link rel="modulepreload" href="/client.js">`。不要写成没有 `defer` 的普通 `<script src>`——它会阻塞解析，而且在 `#app` 解析出来之前执行
+- 静态分支必须能提供 `/client.js` 与 `/assets/yoya.ui.css`（就是 `dist/` 下这两个文件）
+- `state` 是唯一来源：`{ lang, path, mode }` 由你的服务端解析后传入，同一份交给工厂与客户端
 
-## 3. client.js —— 浏览器启动
+## ③ src/client.js —— 浏览器入口（`hydrateOrMount` 写在这里）
 
 ```js
-// client.js —— 浏览器端（由打包器构建，与 yoya-ui/core、yoya-ui/router 同一份共享模块）
+// client.js —— 浏览器入口，由 vite 构建成 dist/client.js
+import '@yoyaflow/yoya-ui/ui.css';
 import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
+// 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate，否则 mount
 hydrateOrMount(HomePage, { messages });
-// 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate（收养 DOM、绑事件），否则 mount
 ```
 
 要点：
 
+- 这个文件的代码在**浏览器**里执行；触发它的是服务端 HTML 里那行 `<script type="module" src="/client.js"></script>`
+- `hydrateOrMount` 从页面里读两样东西：`__YOYA_DATA__`（请求状态）与 `#app`（服务端 DOM）；有 DOM 就收养、不重建，只绑事件
 - 多局部：`hydrateOrMount(createStats, { messages, stateId: 'yoya-data-stats', target: '#stats' })`，每块各自命名状态脚本与容器
-- `renderPage` 的 `maxNodes` 超限回退也走这里：服务端输出空壳，客户端 `mount()` 全量渲染
-- `client.js` 由打包器构建，保证 `home-page.js` 与 `yoya-ui/core`、`yoya-ui/router` 解析到同一份共享模块（双副本会导致 `instanceof` 失配）
+- `renderPage` 的 `maxNodes` 超限回退也走这里：服务端输出空壳 `#app`，客户端自动 `mount()` 全量渲染
+- 由打包器构建，保证 `home-page.js` 与 `@yoyaflow/yoya-ui/core`、`/router` 解析到同一份共享模块（双副本会导致 `instanceof` 失配）
 
-## 4. 跑起来
+## ④ vite.config.js —— 构建 `dist/client.js`
 
-1. `npm run build` 生成 `dist/`（`yoya.core.js` / `yoya.ui.js` / `yoya.router.js` / `yoya.ui.css` 等），把它挂成静态目录
-2. 启动 `server.mjs`（仓库内可参考 `src/examples/ssr/server-http.mjs`），浏览器访问 `http://localhost:3000`
-3. 服务端先出 HTML，客户端 `client.js` 接管交互；history 模式服务端对未匹配路径返回首页，hash 模式只需输出首页
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  build: {
+    emptyOutDir: true,
+    outDir: 'dist',
+    rollupOptions: {
+      input: 'src/client.js',
+      output: {
+        assetFileNames: (assetInfo) =>
+          assetInfo.name?.endsWith('.css') ? 'assets/yoya.ui.css' : 'assets/[name][extname]',
+        entryFileNames: 'client.js'
+      }
+    }
+  }
+});
+```
+
+```json
+// package.json
+{
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "start": "node src/server.mjs"
+  }
+}
+```
+
+## 跑起来
+
+```bash
+npm install
+npm run build   # 产出 dist/client.js 与 dist/assets/yoya.ui.css
+npm start       # http://localhost:3000
+```
+
+访问首页：服务端先出 HTML（关掉 JS 也能看到内容），`client.js` 加载后接管交互。history 模式服务端对未匹配路径返回首页（SPA fallback）；hash 模式只需输出首页。仓库内同形的可运行模板见 `create-yoya-ui/templates/ssr`。
 
 ## 低层原语（需要定制外壳时）
 
@@ -152,7 +219,7 @@ const { exceeded, html, state } = renderToString(HomePage, {
 ```
 
 ```js
-// 客户端：自己判断 hydrate / mount
+// 客户端：自己判断 hydrate / mount（不打包、或要手工接线时用）
 import { hydrate, mount, parseState } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
@@ -166,6 +233,8 @@ if (app.firstElementChild) {
   mount(HomePage, app, data, { i18n });
 }
 ```
+
+仓库里的 `src/examples/ssr/server-http.mjs` 就是这条不打包路线：服务端直接返回 `clientBoot` 字符串作为 `/client.js`，从 `/vendor/*` 提供 dist 产物。
 
 语言切换写 cookie（如 `document.cookie = 'yoya-lang=en; path=/'`），之后请求自动带上；页面级缓存需 `Vary: Cookie` 或按语言拆缓存。
 
@@ -201,12 +270,13 @@ if (app.firstElementChild) {
 
 ## 常见错误
 
-| 现象                                          | 原因                                                              |
-| --------------------------------------------- | ----------------------------------------------------------------- |
-| `renderToString/mount requires a ViewNode...` | 工厂返回非 ViewNode，或库被打了双份导致 `instanceof` 失配         |
-| hydration 后表单值被重置                      | 绑定阶段重放服务端快照；确认使用先回读快照再绑定的版本            |
-| 服务端 id 每次不同                            | 模块级计数器被跨请求共享；组件应使用 `allocateId`                 |
-| ECharts 相关报错                              | 需用 `<script>` 引入 `echarts.min.js`，避免打包器按 CommonJS 包裹 |
+| 现象                                          | 原因                                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `renderToString/mount requires a ViewNode...` | 工厂返回非 ViewNode，或库被打了双份导致 `instanceof` 失配                          |
+| hydration 后表单值被重置                      | 绑定阶段重放服务端快照；确认使用先回读快照再绑定的版本                             |
+| 服务端 id 每次不同                            | 模块级计数器被跨请求共享；组件应使用 `allocateId`                                  |
+| 页面只有首屏、点击无反应                      | `/client.js` 没被静态提供（404）或没执行；检查 HTML 里的 script 标签与构建产物路径 |
+| ECharts 相关报错                              | 需用 `<script>` 引入 `echarts.min.js`，避免打包器按 CommonJS 包裹                  |
 
 ## i18n
 
