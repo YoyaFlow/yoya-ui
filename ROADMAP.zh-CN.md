@@ -1,6 +1,6 @@
 # yoya-ui 路线图
 
-> 当前版本：0.5.0（状态模型统一到 Signals 线，破坏性变更见 `docs/migration-0.5.zh-CN.md`）。
+> 当前版本：0.5.2（状态模型统一到 Signals 线）。
 > 本文档只描述对外能力规划，任务规格与实现细节不在此展开。
 
 ## M1 · 产物重构收口并发布（0.4.0）
@@ -26,8 +26,7 @@ npm 与 CDN，消除双 core 与 `./ssr` 子路径残留。
 - [x] 打包器 tree-shaking 验证与体积预算门禁
 - [x] 子入口类型测试纳入 CI
 - [x] SSR + 官方组件的单 core 冒烟测试固化
-- [x] 状态模型统一到 Signals：移除节点级 `state` / `setState` 与 `vStateNode`
-      （破坏性变更，迁移对照见 `docs/migration-0.5.zh-CN.md`）
+- [x] 状态模型统一到 Signals：移除节点级 `state` / `setState` 与 `vStateNode`（破坏性变更）
 - [x] 状态引擎可插拔：契约只要求「值单元 + 通知」，插件由使用者自己写
       （示例站给插件模板，core/signals/engine.js 是最小可跑实现）
 - [ ] 发布 @yoyaflow/yoya-ui@0.5.0，随后发布 create-yoya-ui@0.5.0

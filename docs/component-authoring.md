@@ -108,7 +108,7 @@ Component text input should uniformly accept the following four forms (`vText` /
 
 ## 6. State and updates
 
-yoya-ui state is driven by the built-in Signals: a component holds state in `ref` and passes the handle straight into value positions, so writes update bindings in place; structural changes are driven by `rebuildable()` regions that read signals. Node-level `state()` / `setState()` / `getXState()` and `vStateNode` were removed in 0.5; see [`migration-0.5.md`](migration-0.5.md) for the mapping.
+yoya-ui state is driven by the built-in Signals: a component holds state in `ref` and passes the handle straight into value positions, so writes update bindings in place; structural changes are driven by `rebuildable()` regions that read signals. Node-level `state()` / `setState()` / `getXState()` and `vStateNode` were removed in 0.5.
 
 - Values: `const count = ref(0)`; the handle can be passed to `attr` / `style` / `vText` / component props. Writing `.value` (or `handle.update(fn)`) updates the binding in place without rebuilding DOM or losing focus. Derived values use `computed(fn)` (read-only, lazy, cached).
 - Structure: `rebuildable(predicate?)` marks a node as a rebuildable region; signals read inside become its dependencies and drive predicate-gated rebuilds. Call `rebuild()` to force one.

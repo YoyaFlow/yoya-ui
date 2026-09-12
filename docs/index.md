@@ -20,7 +20,6 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`theme.md`](theme.md)                             | Theme and styling spec                                  | Rebuilt                                          |
 | [`devtools.md`](devtools.md)                       | DevTools guide                                          | Rebuilt                                          |
 | [`component-authoring.md`](component-authoring.md) | Component library authoring guide (third-party authors) | Rebuilt                                          |
-| [`migration-0.5.md`](migration-0.5.md)             | 0.4 → 0.5 breaking changes and migration map            | New                                              |
 
 ## Suggested reading path
 
@@ -28,4 +27,3 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 2. Read `highlights.md` for a feature overview. The component catalog is maintained in the examples site rather than a separate document.
 3. Pick the guide that matches your task: `access-control.md`, `ssr.md`, `theme.md`, or `devtools.md`.
 4. Read `component-authoring.md` when you want to build components for the ecosystem.
-5. Upgrading from 0.4? Start with `migration-0.5.md`.

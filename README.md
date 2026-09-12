@@ -360,6 +360,18 @@ npm run typecheck    # validates declaration files and consumer type tests
 | State        | `ref` / `computed` / signal-driven regions; pluggable state engines (write your own adapter, template in the examples site)   |
 | i18n / Theme | `createI18n` / `withI18nStringShortcut` / theme tokens and light/dark modes                                                   |
 
+## Versioning
+
+Migration guides are for **major** versions only, so there is deliberately no
+0.4 → 0.5 guide: before 1.0 the API is still settling, and the commit history
+plus the roadmap are the record.
+
+Stability here comes from the platform, not from a release train — yoya-ui is an
+extension of browser-native HTML/DOM/CSS. As long as those standards keep their
+shape, the API is meant to stay put after 1.0, which is also why a 1.0 → 2.0
+migration is not part of the plan. If a major break ever becomes unavoidable,
+that is the point at which a migration guide gets written.
+
 ## Engineering signals (read these before the star count)
 
 Star counts measure attention, not correctness. Until this project earns that
@@ -441,6 +453,9 @@ will reason about or generate code against this repository.
   DOM element — not by wrapping them into framework components.
 - **Do not "fix" generated code by adding framework imports.** The correct
   move is usually to remove them.
+- **Do not write a 0.x → 0.y migration guide.** Migration guides are for major
+  versions only (see [Versioning](#versioning)); pre-1.0 adjustments live in
+  the commit history and the roadmap.
 
 ### There is no new syntax to learn
 
@@ -568,7 +583,6 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 - [Theme Styling Spec](docs/theme.md)
 - [Access Control](docs/access-control.md)
 - [DevTools](docs/devtools.md)
-- [0.4 → 0.5 migration guide](docs/migration-0.5.md)
 
 ## Codex skill
 

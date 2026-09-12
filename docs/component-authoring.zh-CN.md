@@ -108,7 +108,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 ## 6. 状态与更新
 
-yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除，迁移对照见 [`migration-0.5.zh-CN.md`](migration-0.5.zh-CN.md)。
+yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除。
 
 - 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
 - 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
