@@ -810,7 +810,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelectorAll('[data-signals-advantages] li')).toHaveLength(5);
   });
 
-  it('syncs Signals state to the view without vStateNode', async () => {
+  it('syncs ref and computed state to the view', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/third-party/signals');
@@ -850,7 +850,7 @@ describe('renderExamplesIndex', () => {
     expect(sharedDemo.querySelector('[data-signals-shared-count]').textContent).toBe('1');
   });
 
-  it('switches the vStateNode dynamic form by type', async () => {
+  it('switches the ref-driven dynamic form by type', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/guides/state-node');
@@ -883,7 +883,7 @@ describe('renderExamplesIndex', () => {
     expect(demo.querySelector('input[type="date"]')).not.toBeNull();
   });
 
-  it('calls custom methods defined on a vStateNode config', async () => {
+  it('calls custom methods defined on a ref-based component', async () => {
     root = renderExamplesIndex('#app');
 
     await openRoute('/components/guides/state-node');
@@ -1149,7 +1149,7 @@ describe('renderExamplesIndex', () => {
     const compareSource = compareDemo.querySelector('[data-source-example]').textContent;
     expect(compareSource).toContain('function ComponentStatePanel(');
     expect(compareSource).toContain('function ExternalDataSourcePanel(');
-    expect(compareSource).toContain('function NodeStatePanel(');
+    expect(compareSource).toContain('function RegionSignalPanel(');
     expect(compareSource).toContain('export function RegionStateVsSourceExample(');
   });
 

@@ -212,7 +212,7 @@ export function RegionStateVsSourceExample() {
     list.attr('data-region-compare', 'true');
     list.child(ComponentStatePanel());
     list.child(ExternalDataSourcePanel());
-    list.child(NodeStatePanel());
+    list.child(RegionSignalPanel());
   });
 }
 
@@ -259,7 +259,7 @@ function ExternalDataSourcePanel() {
 }
 
 /** ③ 区域依赖：区域构建期直读 ref，写入触发重建；值绑定覆盖不到的结构变化走这里。 */
-function NodeStatePanel() {
+function RegionSignalPanel() {
   const count = ref(0);
 
   return {
@@ -284,7 +284,7 @@ function NodeStatePanel() {
 export const regionCompareBlocksSource = [
   ComponentStatePanel,
   ExternalDataSourcePanel,
-  NodeStatePanel
+  RegionSignalPanel
 ]
   .map((block) => componentSource(block, []).replace(/^export /, ''))
   .join('\n\n');

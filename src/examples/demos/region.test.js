@@ -80,7 +80,7 @@ describe('region demos', () => {
     expect(element.querySelector('[data-region-flush-label]').textContent).toBe('B');
   });
 
-  it('contrasts component state, external data and node state', () => {
+  it('contrasts component ref, external data and region signals', () => {
     const element = RegionStateVsSourceExample().renderDom();
     const statePanel = element.querySelector('[data-region-state]');
     const externalPanel = element.querySelector('[data-region-source]');
@@ -88,21 +88,21 @@ describe('region demos', () => {
 
     expect(statePanel.textContent).toContain('组件状态：0');
     expect(externalPanel.textContent).toContain('外部数据源：0');
-    expect(localPanel.textContent).toContain('节点状态：0');
+    expect(localPanel.textContent).toContain('区域信号：0');
 
     element.querySelector('[data-region-state-add]').click();
-    // 组件状态：setState 自动驱动绑定，另外两块不受影响
+    // 组件内 ref：写入后值绑定自动写回，另外两块不受影响
     expect(statePanel.textContent).toContain('组件状态：1');
     expect(externalPanel.textContent).toContain('外部数据源：0');
 
     element.querySelector('[data-region-source-add]').click();
-    // 外部数据源：数据在组件外，flush() 拉取一次
+    // 组件外 ref：写入即写回，无需 flush
     expect(externalPanel.textContent).toContain('外部数据源：1');
-    expect(localPanel.textContent).toContain('节点状态：0');
+    expect(localPanel.textContent).toContain('区域信号：0');
 
     element.querySelector('[data-region-local-add]').click();
-    // 节点状态：只有手写接线的处理器会更新
-    expect(localPanel.textContent).toContain('节点状态：1');
+    // 区域依赖：构建期直读 ref，写入触发重建
+    expect(localPanel.textContent).toContain('区域信号：1');
     expect(statePanel.textContent).toContain('组件状态：1');
     expect(externalPanel.textContent).toContain('外部数据源：1');
   });
