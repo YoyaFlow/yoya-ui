@@ -9,8 +9,8 @@ hydration 失配诊断。每条结论都以源码与测试为依据，其中信�
 一句话版本：**「重建即弃建」是显式协议且解法齐备——值绑定、谓词、预制节点
 挂载，或干脆不用 rebuildable、以 style / attr 动态值控制显隐；「收养式局部协调」
 是 vDOM 为隐式身份发明的机制，纯 JS 模式身份由句柄显式持有，无需额外处理。
-keyed 列表同理理应如此；错误回滚没有魔法，报错位置就是业务代码位置。真正的
-欠账收窄为：组件层的同步渲染 ErrorBoundary / KeepAlive，以及基础库层的跨信号重建合并；异步场景错误用 `vDynamicLoader` 即可。**
+computed 菱形由引擎天然支持；keyed 列表理应如此；错误回滚没有魔法，报错位置就是业务代码位置。真正的
+欠账收窄为：组件层的同步渲染 ErrorBoundary 与基础库层的跨信号重建合并；页面缓存由 RouterViews 天然提供，异步场景错误用 `vDynamicLoader` 即可。**
 
 ## 逐条结论
 
@@ -18,10 +18,10 @@ keyed 列表同理理应如此；错误回滚没有魔法，报错位置就是�
 | --- | ------------------ | -------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | 1   | 区域重建 DOM 身份  | 基础库                           | 弃建。子树整体重建、不收养；宿主元素身份保留                                | 值绑定原地更新；谓词延迟重建；预制节点挂载；**放弃 rebuildable：style / attr 动态值控制显隐**，身份天然保持                                   | [node.js](../src/core/node.js)、[region-flush.test.js](../src/core/region-flush.test.js)                     |
 | 2   | 信号传播语义       | 基础库                           | 同步级联；`batch()` 不合并「同一区域订阅的多个信号」的重建                  | 短期：一次事件里合并写点 / 用 batch 避免中间态；根治：区域 pending 去重（同批次只重建一次）                                                   | 实验验证 + [engine.test.js](../src/core/signals/engine.test.js)                                              |
-| 3   | computed 菱形      | 基础库                           | 内置引擎 glitch-free（实验验证）；适配器契约不保证该语义                    | 内置引擎直接用；conformance 套件补菱形用例，或在契约文档标注「求值顺序依赖引擎调度」                                                          | 实验验证 + [contract.js](../src/core/signals/contract.js)                                                    |
+| 3   | computed 菱形      | 基础库                           | 不是问题：菱形一致性由内置引擎天然支持（实验验证）                          | 直接用 `computed` 组合菱形依赖，无需额外处理                                                                                                  | 实验验证 + [engine.js](../src/core/signals/engine.js)                                                        |
 | 4   | 列表协调语义       | 基础库（设计如此）               | 不是缺陷：JS 循环 / 判断就是 v-for / v-if，keyed 原语齐备，策略由开发者决定 | `addChild(key, node)` / `getChild(key)` / `removeChild(key)` 增量增删；预制节点挂载保身份；`vTable` 整体重建是组件自身实现选择，不是库缺口    | [keyed-child.test.js](../src/core/keyed-child.test.js)、[state-node.js](../src/examples/demos/state-node.js) |
 | 5   | 错误边界与恢复     | 组件层缺组件，基础库已有回滚原语 | 无 ErrorBoundary 组件；区域 rebuild 失败回滚保留旧内容                      | 基础库：区域回滚直接用（报错位置即业务代码位置）；异步错误用 `vDynamicLoader`（error 态 + retry）；剩余缺口：同步渲染意外异常的 ErrorBoundary | [beginner-feedback.zh-CN.md](beginner-feedback.zh-CN.md) §31                                                 |
-| 6   | 过渡与 KeepAlive   | 组件                             | `vTransition` 有（保身份 show/hide）；KeepAlive 与列表过渡无                | 现状：`vTransition` motion:'always' 可当轻量保活；组件层补 KeepAlive / TransitionGroup                                                        | [transition.js](../src/effects/transition.js)                                                                |
+| 6   | 过渡与页面缓存     | 组件                             | `vTransition` 有（保身份 show/hide）；页面缓存由 `RouterViews` 天然提供     | 过渡用 `vTransition`；页面缓存用 `vRouterViews`（标签保持 + localStorage 持久化 + 刷新恢复）；DOM 保活用预制节点显隐                          | [transition.js](../src/effects/transition.js)、[router.js](../src/router/router.js)                          |
 | 6.5 | hydration 失配诊断 | 基础库                           | 有 devtools 事件可定位；生产静默替换                                        | 开 `enableDevtools()` 订阅 `hydrate-mismatch`（expected/existing + 节点引用）；改进：dev 默认 console 警告 + DOM 路径                         | [hydrate-mismatch.test.js](../src/core/hydrate-mismatch.test.js)                                             |
 
 ## 1. 区域重建：明确「弃建」协议，解法齐备（基础库层）
@@ -74,21 +74,15 @@ style / attr、长生命周期内容外置或预制挂载。「收养式局部�
 消除中间态提交）；根治在区域侧加 pending 去重——同批次内多次触发只重建一次。
 DevTools 的 `region` 事件（`trigger: 'signal'`）可直接计数验证改进效果。
 
-## 3. computed 菱形：内置引擎 glitch-free，契约不背书（基础库层）
+## 3. computed 菱形：由引擎天然支持，当前没有此问题（基础库层）
 
 实验验证 A→(B,C)→D 菱形：`a` 变更后，`d` 的订阅者**只收到一次终值**，没有中间
-值。原因是内置引擎对效果通知做分代调度：B/C 的重算先跑，D 的效果排在其后，
-求值时两个输入都已是新值。
+值。一致性由内置引擎**天然支持**：效果通知分代调度——B / C 的重算先跑，D 的
+效果排在其后，求值时两个输入都已是新值。这不是需要使用者绕开的边界，而是
+引擎当前直接提供的行为。
 
-但要诚实标注边界：yoya 的 `computed` 由 core 在「原始值单元」之上自实现
-（[handle.js](../src/core/signals/handle.js)），glitch-free 依赖引擎的通知顺序。
-而引擎契约（[contract.js](../src/core/signals/contract.js)）只要求
-`createSignal/read/subscribe/write` 四个方法——换成同步逐个通知的 store 形态
-适配器（conformance 套件自带的测试适配器就是这种形态），菱形中间态没有任何
-契约保证，conformance 测试也没有菱形用例。
-
-**解决方案**：内置引擎下菱形直接可用；若要兑现「换引擎语义不变」，给
-conformance 套件补菱形用例，或在契约文档明确「求值顺序语义依赖引擎调度」。
+**解决方案**：直接用 `computed` 组合任意菱形依赖即可，无需额外处理——一致性
+由引擎保证。派生链可任意分层（惰性求值 + 缓存），下游绑定与区域只读终值。
 
 ## 4. 列表协调：纯 JS 模式下理应如此，不是欠账
 
@@ -154,22 +148,28 @@ core 侧 keyed / region / devtools 测试均覆盖。
 retry 都是正常 UI）；剩余的同步渲染意外异常才需要 ErrorBoundary——捕获子树
 构建异常、渲染降级 UI、支持重试，页面级兜底在此之前是使用方职责。
 
-## 6. 过渡与 KeepAlive：一半有一半没有（组件层）
+## 6. 过渡与页面缓存：vTransition + RouterViews 已覆盖（组件层）
 
 `vTransition`（[transition.js](../src/effects/transition.js)）是**保身份**的
 show/hide 过渡：同一元素切 enter/leave class（或 WAAPI），尊重
 `prefers-reduced-motion`，SSR `toHTML()` 安全，`destroy()` 取消动画。因为它靠
-`display` 切换而不是销毁节点，`motion: 'always'` 模式可当轻量 KeepAlive 用。
+`display` 切换而不是销毁节点，`motion: 'always'` 模式可当轻量保活用。
 
-没有的：
+**页面缓存由 `RouterViews` 天然提供**（[router.js](../src/router/router.js)）：
+`vRouterViews` 是多标签工作区——打开的页面以标签保持，切换不关闭；标签列表
+（`paths`）与激活页（`activePath`）持久化到 localStorage（`persist` 默认开启，
+可配 `storageKey`），刷新后 `restoreTabs` 恢复整个工作区；配合路由
+query / params，列表筛选状态编码在 URL 里随标签保留，回到标签即回到同一数据
+视图。后台系统「列表页缓存」的刚需由此覆盖，无需专用 KeepAlive 组件。
 
-- **KeepAlive 等价物**：全库检索零命中，router 无页面缓存；
-- **列表过渡 / TransitionGroup**：无 keyed move 动画；
-- **跨内容切换过渡（out-in 等）**：无，且区域重建会直接中断区域内动画
-  （第 1 条弃建协议的直接后果）。
+DOM 级保活继续用第 1 条的纯 JS 标准解法：预制节点持有句柄 + 动态
+style / attr 显隐。
 
-**解决方案**：轻量保活现在就用 `vTransition` display 切换；组件层 roadmap 补
-KeepAlive（缓存 + 激活态生命周期）与列表过渡。
+当前边界（如实）：无列表 move 过渡组件（TransitionGroup）、无跨内容切换过渡
+（out-in 等）；区域重建会中断区域内动画（第 1 条弃建协议的直接后果）。
+
+**解决方案**：过渡用 `vTransition`；页面缓存直接用 `vRouterViews`；DOM 级保活
+用预制节点 + 显隐控制。
 
 ## 6.5 hydration 失配：有可观测性，DX 中等（基础库层）
 
@@ -190,11 +190,10 @@ dev 下默认 console 警告并输出 DOM 路径 / 两侧片段。
 **基础库层**：
 
 1. **P0 区域重建合并**：同批次多信号触发只重建一次（严重，协议层小改）；
-2. **P1 conformance 菱形用例**：把 glitch-free 从「内置引擎事实」变成受测语义（严重）；
-3. **P2 hydration 失配 DX**：dev 下默认 console 警告 + DOM 路径输出（中等）。
+
+2. **P2 hydration 失配 DX**：dev 下默认 console 警告 + DOM 路径输出（中等）。
 
 **组件层**：
 
 1. **P0 ErrorBoundary**：页面级 / 组件级错误边界节点，异常隔离 + 降级 UI（致命）；
-2. **P2 KeepAlive / TransitionGroup**：display 保活组件、router 页面缓存、列表
-   move 过渡（中等）。
+2. **P2 TransitionGroup**：列表 move 过渡组件（中等）。

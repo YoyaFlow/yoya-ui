@@ -335,9 +335,9 @@
               <td>3</td>
               <td>computed 菱形 glitch-free</td>
               <td><span class="badge b-lib">基础库</span></td>
-              <td>内置引擎已验证 glitch-free；换适配器时求值顺序由适配器决定</td>
-              <td>菱形依赖直接使用内置引擎</td>
-              <td><span class="verdict v-ok">默认引擎下成立</span></td>
+              <td>当前没有此问题：菱形一致性由内置引擎天然支持（实验验证）</td>
+              <td>直接使用 computed 组合菱形依赖，无需额外处理</td>
+              <td><span class="verdict v-ok">不成立（引擎已支持）</span></td>
             </tr>
             <tr>
               <td>4</td>
@@ -359,11 +359,13 @@
             </tr>
             <tr>
               <td>6</td>
-              <td>过渡动画与 KeepAlive</td>
+              <td>过渡动画与页面缓存</td>
               <td><span class="badge b-comp">组件</span></td>
-              <td>vTransition 已有；无专用 KeepAlive 组件</td>
-              <td>vTransition 保身份 show/hide；motion: 'always' display 切换即轻量保活</td>
-              <td><span class="verdict v-partial">部分成立</span></td>
+              <td>
+                vTransition 已有；页面缓存由 RouterViews 天然提供（多标签 + localStorage 持久化）
+              </td>
+              <td>过渡用 vTransition；页面缓存用 vRouterViews；DOM 级保活用预制节点 + 显隐</td>
+              <td><span class="verdict v-ok">不成立（换形态）</span></td>
             </tr>
             <tr>
               <td>6.5</td>
@@ -484,8 +486,8 @@
 
       <section class="card" id="q3">
         <h2>
-          3. computed 菱形：内置引擎已验证 glitch-free <span class="badge b-lib">基础库</span>
-          <span class="verdict v-ok">默认引擎下成立</span>
+          3. computed 菱形：由引擎天然支持，当前没有此问题 <span class="badge b-lib">基础库</span>
+          <span class="verdict v-ok">不成立（引擎已支持）</span>
         </h2>
         <div class="split">
           <div class="panel now">
@@ -495,22 +497,19 @@
                 A→(B,C)→D 菱形：a 变更后，d 的订阅者<strong>只收到一次终值</strong>，无中间值。
               </li>
               <li>
-                原理：内置引擎对效果通知分代调度——B/C 先重算，D 排在其后，求值时两个输入都已是新值。
+                一致性由内置引擎<strong>天然支持</strong>：效果通知分代调度——B / C 先重算，D
+                排在其后，求值时两个输入都已是新值。
               </li>
-              <li>
-                边界：yoya 的 computed 由 core 在原始值单元之上自实现，glitch-free
-                依赖引擎通知顺序；引擎契约只要求四个方法，换自定义适配器时求值顺序由该适配器决定。
-              </li>
+              <li>这不是需要使用者绕开的边界，而是引擎当前直接提供的行为。</li>
             </ul>
           </div>
           <div class="panel how">
             <h3>当前已提供的解决方案</h3>
             <ul>
-              <li>菱形依赖直接使用内置引擎即可，行为已受实验验证。</li>
               <li>
-                需要自定义引擎时，通过
-                <code>installSignals(adapter)</code> 安装，求值顺序语义以所选适配器为准。
+                直接用 <code>computed</code> 组合任意菱形依赖即可，无需额外处理——一致性由引擎保证。
               </li>
+              <li>派生链可任意分层（惰性求值 + 缓存），下游绑定与区域只读终值。</li>
             </ul>
           </div>
         </div>
@@ -612,20 +611,28 @@ list.removeChild('r1');     // 删除单个子节点（增量，不碰兄弟）<
 
       <section class="card" id="q6">
         <h2>
-          6. 过渡与保活：vTransition 已有 <span class="badge b-comp">组件</span>
-          <span class="verdict v-partial">部分成立</span>
+          6. 过渡与页面缓存：vTransition + RouterViews 已覆盖 <span class="badge b-comp">组件</span>
+          <span class="verdict v-ok">不成立（换形态）</span>
         </h2>
         <div class="split">
           <div class="panel now">
             <h3>当前情况</h3>
             <ul>
               <li>
-                vTransition 是<strong>保身份</strong>的 show / hide 过渡：同一元素切 enter / leave
-                class（或 WAAPI），尊重 prefers-reduced-motion，SSR toHTML 安全，destroy 取消动画。
+                <strong>vTransition</strong> 是<strong>保身份</strong>的 show / hide
+                过渡：同一元素切 enter / leave class（或 WAAPI），尊重 prefers-reduced-motion，SSR
+                toHTML 安全，destroy 取消动画。
               </li>
               <li>
-                当前边界：无专用 KeepAlive 组件、无列表 move 过渡（TransitionGroup）、无跨内容
-                out-in 模式；区域重建会中断区域内动画（弃建协议的直接后果）。
+                <strong>页面缓存由 RouterViews 天然提供</strong>：vRouterViews
+                是多标签工作区——打开的页面以标签保持，切换不关闭；标签列表（paths）与激活页（activePath）持久化到
+                localStorage（persist 默认开启，可配 storageKey），刷新后 restoreTabs
+                恢复整个工作区；配合路由 query / params，列表筛选状态编码在 URL
+                里随标签保留，回到标签即回到同一数据视图。
+              </li>
+              <li>
+                当前边界（如实）：无列表 move 过渡组件、无跨内容 out-in
+                模式；区域重建会中断区域内动画（弃建协议的直接后果）。
               </li>
             </ul>
           </div>
@@ -637,10 +644,13 @@ list.removeChild('r1');     // 删除单个子节点（增量，不碰兄弟）<
                 toggle()，duration 与 motion 可配。
               </li>
               <li>
-                轻量保活用 <code>motion: 'always'</code>：display
-                切换而非销毁节点，节点身份与内部状态保持。
+                后台列表页缓存直接用 <code>vRouterViews</code>：标签保持打开 + 工作区持久化 +
+                刷新恢复，筛选状态走 URL query。
               </li>
-              <li>长生命周期内容结合第 1 条方案：放区域外 / 预制节点挂载 / 动态 style 显隐。</li>
+              <li>
+                DOM 级保活用预制节点 + 动态 style / attr 显隐（第 1
+                条的标准解法），节点身份与内部状态保持。
+              </li>
             </ul>
           </div>
         </div>
