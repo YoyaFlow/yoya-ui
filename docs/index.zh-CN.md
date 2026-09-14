@@ -22,6 +22,7 @@
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)         | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建        |
 | [`security-review-feedback.zh-CN.md`](security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建        |
 | [`beginner-feedback.zh-CN.md`](beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建        |
+| [`reactive-engine-feedback.zh-CN.md`](reactive-engine-feedback.zh-CN.md) | 响应式引擎生产评审反馈：区域重建、信号传播、错误边界等 7.5 问逐条回应                  | 新建        |
 
 ## 阅读路径建议
 
@@ -29,4 +30,4 @@
 2. 特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不维护独立清单文档，跨库对照（Ant Design / Element Plus ↔ yoya-ui、扩展库接入）见 `component-comparison.zh-CN.md`；
 3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；
 4. 要扩展组件生态时读 `component-authoring.zh-CN.md`，常见第三方库的接入清单见 `component-comparison.zh-CN.md` 第二节。
-5. 收到针对本库的安全评审时，先读 `security-review-feedback.zh-CN.md`；整理新手 / Vue / React 背景使用者的反馈或撰写 FAQ 时，先读 `beginner-feedback.zh-CN.md`。
+5. 收到针对本库的安全评审时，先读 `security-review-feedback.zh-CN.md`；整理新手 / Vue / React 背景使用者的反馈或撰写 FAQ 时，先读 `beginner-feedback.zh-CN.md`；收到针对响应式引擎的生产评审时，先读 `reactive-engine-feedback.zh-CN.md`。
