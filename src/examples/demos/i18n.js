@@ -59,8 +59,6 @@ export function I18nReactiveExample1() {
 
 export function I18nParamsExample1() {
   let count = 1;
-  let userCount = null;
-  let unknownStatus = null;
   const locale = createI18n({
     fallbackLanguage: 'zh-CN',
     language: 'zh-CN',
@@ -85,11 +83,11 @@ export function I18nParamsExample1() {
     }
   });
 
+  const userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
+  const unknownStatus = '未知状态'.s('status.unknown', locale);
+
   return {
     render() {
-      userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
-      unknownStatus = '未知状态'.s('status.unknown', locale);
-
       return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p('词典支持 dot path 和 {param} 插值，未注册语言内容会回退到默认语言内容。');
