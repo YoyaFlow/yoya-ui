@@ -1,5 +1,5 @@
 import { computed, ref, section, vText } from '../index.js';
-import { KeyedListExample } from './demos/keyed-native.js';
+import { KeyedTableExample } from './demos/keyed-table.js';
 import { ComponentSource } from './component-source.js';
 
 function HtmlNativeExample1() {
@@ -346,13 +346,13 @@ box.button('保存').on('click', save);`);
   };
 }
 
-function KeyedListDemoSection() {
-  const liveDemo = KeyedListExample();
+function KeyedTableDemoSection() {
+  const liveDemo = KeyedTableExample();
   const sourcePanel = ComponentSource({
-    component: KeyedListExample,
-    imports: ['li', 'ref', 'vstack'],
-    sourceComponent: KeyedListExample,
-    title: 'keyed 列表协调源码'
+    component: KeyedTableExample,
+    imports: ['ref', 'th', 'tr', 'vstack'],
+    sourceComponent: KeyedTableExample,
+    title: 'keyed 表格协调源码'
   });
 
   return {
@@ -360,9 +360,9 @@ function KeyedListDemoSection() {
       return section((example) => {
         example.className('components-html-native-demo components-html-native-keyed-demo');
         example.attr('data-native-demo', 'keyed');
-        example.h2('keyed 列表协调');
+        example.h2('keyed 表格协调');
         example.p(
-          'ul.keyed(rows, keyFn, build) 用信号驱动原生列表：添加 / 删除 / 反转按 key 对账，行节点身份保持。'
+          'table.keyed(rows, keyFn, build) 用信号驱动原生表格：追加 / 上移 / 改状态按 key 对账，行节点身份保持，行内按钮闭包不失效。'
         );
         example.div((live) => {
           live.className('components-html-native-demo-live');
@@ -412,7 +412,7 @@ export function HtmlNativeDocumentationPage() {
         page.child(HtmlNativeApiSection());
         page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
-        page.child(KeyedListDemoSection());
+        page.child(KeyedTableDemoSection());
       });
     }
   };

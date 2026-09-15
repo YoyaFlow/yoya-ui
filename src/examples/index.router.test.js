@@ -1222,25 +1222,39 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
 
     const keyedDemo = page.querySelector('[data-native-demo="keyed"]');
+    const keyedTable = keyedDemo.querySelector('[data-keyed-table]');
+    const rowIds = () =>
+      [...keyedTable.querySelectorAll('tbody tr')].map((row) => row.getAttribute('data-row-id'));
+
     expect(keyedDemo).not.toBeNull();
-    expect(keyedDemo.querySelectorAll('[data-keyed-list] li')).toHaveLength(1);
+    expect(keyedTable.querySelectorAll('thead th')).toHaveLength(4);
+    expect(rowIds()).toEqual(['1', '2', '3']);
 
     keyedDemo.querySelector('[data-keyed-add]').click();
     await vi.waitFor(() => {
-      expect(keyedDemo.querySelectorAll('[data-keyed-list] li')).toHaveLength(2);
+      expect(rowIds()).toEqual(['1', '2', '3', '4']);
     });
 
-    keyedDemo.querySelector('[data-keyed-reverse]').click();
-    await vi.waitFor(() => {
-      expect(
-        [...keyedDemo.querySelectorAll('[data-keyed-list] li')].map((item) => item.textContent)
-      ).toEqual(['任务 2', '任务 1']);
-    });
+    // 上移第三行：顺序变化走 insertBefore，未动的行节点身份保持
+    const keptRow = keyedTable.querySelector('[data-row-id="1"]');
+    const movedRow = keyedTable.querySelector('[data-row-id="3"]');
+    movedRow.querySelectorAll('button')[0].click();
 
-    keyedDemo.querySelector('[data-keyed-remove]').click();
     await vi.waitFor(() => {
-      expect(keyedDemo.querySelectorAll('[data-keyed-list] li')).toHaveLength(1);
+      expect(rowIds()).toEqual(['1', '3', '2', '4']);
     });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+    expect(keyedTable.querySelector('[data-row-id="3"]')).toBe(movedRow);
+
+    // 行引用变化 → 该行原位换新，其余行不受影响
+    const flippedRow = keyedTable.querySelector('[data-row-id="2"]');
+    flippedRow.querySelectorAll('button')[1].click();
+
+    await vi.waitFor(() => {
+      expect(keyedTable.querySelector('[data-row-id="2"]').textContent).toContain('已完成');
+    });
+    expect(flippedRow.isConnected).toBe(false);
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
 
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();
