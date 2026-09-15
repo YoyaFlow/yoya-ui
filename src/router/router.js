@@ -893,7 +893,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           })
-          .text(title);
+          .child(title);
         const closeButton = new ElementNode('button')
           .className('yoya-vrouter-views-popup-close')
           .attr({ type: 'button', 'aria-label': `关闭 ${title}` })
@@ -907,7 +907,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
             lineHeight: '1',
             padding: '2px 4px'
           })
-          .text('×');
+          .child('×');
         if (path === routerInstance.currentPath()) {
           item.attr('aria-current', 'true');
           item.styles({
@@ -1166,7 +1166,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       const item = new ElementNode('div')
         .className('yoya-vrouter-views-context-item')
         .attr({ role: 'menuitem', tabIndex: '0' })
-        .text(label)
+        .child(label)
         .styles({
           alignItems: 'center',
           borderRadius: '6px',
@@ -1283,7 +1283,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
         lineHeight: '1',
         padding: '0'
       });
-      closeButton.text('×');
+      closeButton.child('×');
       closeButton.on('click', (event) => closeTitleTab(path, event));
       tab.on('contextmenu', (event) => {
         event.preventDefault();

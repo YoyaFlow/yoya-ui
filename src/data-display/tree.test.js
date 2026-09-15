@@ -72,7 +72,7 @@ describe('vTree', () => {
   });
 
   it('supports custom expand and collapse toggle icons', () => {
-    const toggleIcon = vi.fn((iconBox, expanded) => iconBox.text(expanded ? '开' : '关'));
+    const toggleIcon = vi.fn((iconBox, expanded) => iconBox.child(expanded ? '开' : '关'));
     const tree = vTree({
       nodes: [
         {

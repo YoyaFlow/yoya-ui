@@ -61,7 +61,7 @@ describe('devtools signal-write events', () => {
     const box = div((ele) => {
       ele.rebuildable(() => false);
       ele.attr('data-count', count); // 值绑定依赖
-      ele.text(count.value >= 0 ? 'stable' : 'neg'); // 区域构建期直读依赖
+      ele.child(count.value >= 0 ? 'stable' : 'neg'); // 区域构建期直读依赖
     });
     box.renderDom();
 

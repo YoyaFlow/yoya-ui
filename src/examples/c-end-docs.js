@@ -87,7 +87,7 @@ function TransitionToggleExample() {
         fontWeight: '700',
         padding: '16px'
       });
-      block.text('这是过渡动画包裹的内容，支持 enter / leave 进出场。');
+      block.child('这是过渡动画包裹的内容，支持 enter / leave 进出场。');
     })
   });
 
@@ -123,7 +123,7 @@ function TransitionForceExample() {
         fontWeight: '700',
         padding: '16px'
       });
-      block.text('强制动画内容块：即使系统开启“减少动态效果”也始终播放。');
+      block.child('强制动画内容块：即使系统开启“减少动态效果”也始终播放。');
     }),
     motion: 'always'
   });
@@ -169,7 +169,7 @@ function MasonryFixedExample() {
           height: item.height,
           padding: '12px'
         });
-        card.text(item.text);
+        card.child(item.text);
       });
     });
   });
@@ -186,7 +186,7 @@ function MasonryResponsiveExample() {
           height: item.height,
           padding: '12px'
         });
-        card.text(item.text);
+        card.child(item.text);
       });
     });
   });
@@ -213,7 +213,7 @@ function MasonryScrollExample() {
             height: item.height,
             padding: '12px'
           });
-          card.text(item.text);
+          card.child(item.text);
         });
       });
     });

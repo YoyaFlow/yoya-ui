@@ -22,7 +22,7 @@ describe('documentation example adapters', () => {
     const box = div((ele) => {
       ele.rebuildable();
       ele.attr({ 'data-count': count, 'data-double': double });
-      ele.text(`n=${count.value}`); // 区域构建期直读信号：写入会重建这块
+      ele.child(`n=${count.value}`); // 区域构建期直读信号：写入会重建这块
       ele.on('click', () => {
         count.value += 1;
       });

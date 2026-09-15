@@ -244,8 +244,6 @@ export class ViewNode {
    * each call appends one text node, so use a kept VTextNode handle when you
    * need to replace the text repeatedly.
    */
-  text(content: TextContent): this;
-
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
 

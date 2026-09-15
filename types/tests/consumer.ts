@@ -173,7 +173,7 @@ tree.expandAll().checkedKeys(['a']);
 // Rebuildable region API.
 const region = div((ele) => {
   ele.rebuildable(() => true);
-  ele.text('region');
+  ele.child('region');
 });
 region.rebuildable(null);
 region.rebuild();
@@ -191,9 +191,9 @@ const counter = div((ele) => {
 });
 counter.flush();
 
-// Text positions take handles directly: HTML text() and SVG text hosts.
+// Text positions take handles directly: HTML child() and SVG text hosts.
 const label = ref('待处理');
-const labelLine = div((ele) => ele.text(label));
+const labelLine = div((ele) => ele.child(vText(label)));
 const labelChild = div((ele) => ele.child(label));
 const labelText = svgs.text((line) => line.text(label));
 void labelLine;

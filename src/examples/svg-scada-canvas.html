@@ -596,7 +596,7 @@
                         'box-shadow',
                         computed(() => (tool.value === def.kind ? '0 0 0 2px #facc15' : null))
                       );
-                      button.text(def.name);
+                      button.child(def.name);
                       button.on('click', () => {
                         tool.value = def.kind;
                         connectMode.value = false;
@@ -616,7 +616,7 @@
                   grid.button((button) => {
                     button.attr({ class: 'scada-button', 'data-action': 'connect' });
                     button.style('box-shadow', connectShadow);
-                    button.text(connectLabel);
+                    button.child(connectLabel);
                     button.on('click', () => {
                       const nextConnect = !connectMode.value;
                       connectMode.value = nextConnect;
@@ -627,19 +627,19 @@
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('删除选中');
+                    button.child('删除选中');
                     button.on('click', callbacks.onDelete);
                   });
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('清空画布');
+                    button.child('清空画布');
                     button.on('click', callbacks.onClear);
                   });
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text(runLabel);
+                    button.child(runLabel);
                     button.on('click', () => {
                       const nextRunning = !running.value;
                       running.value = nextRunning;
@@ -649,13 +649,13 @@
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('放大');
+                    button.child('放大');
                     button.on('click', callbacks.onZoomIn);
                   });
 
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('缩小');
+                    button.child('缩小');
                     button.on('click', callbacks.onZoomOut);
                   });
                 });
@@ -668,7 +668,7 @@
                 section.textarea((area) => {
                   area.className('scada-json');
                   area.attr('placeholder', '点击“导出 JSON”或粘贴工程数据');
-                  area.text(jsonText);
+                  area.child(jsonText);
                   area.on('input', (event) => {
                     jsonText.value = event.target.value;
                   });
@@ -678,17 +678,17 @@
                   grid.className('scada-grid');
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('导出 JSON');
+                    button.child('导出 JSON');
                     button.on('click', callbacks.onExport);
                   });
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('导入 JSON');
+                    button.child('导入 JSON');
                     button.on('click', callbacks.onImport);
                   });
                   grid.button((button) => {
                     button.className('scada-button');
-                    button.text('载入示例');
+                    button.child('载入示例');
                     button.on('click', callbacks.onLoadSample);
                   });
                 });
@@ -696,7 +696,7 @@
 
               sidebar.p((status) => {
                 status.className('scada-status');
-                status.text(statusText);
+                status.child(statusText);
               });
             });
           },

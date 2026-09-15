@@ -29,7 +29,7 @@ describe('rebuildable region SSR first paint', () => {
       div((ele) => {
         ele.rebuildable();
         builds += 1;
-        ele.text('x');
+        ele.child('x');
       });
 
     renderToString(createPage);

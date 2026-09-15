@@ -48,7 +48,7 @@ describe('rebuildable region devtools events', () => {
     const n = ref(0);
     const region = div((ele) => {
       ele.rebuildable();
-      ele.text(`n=${n.value}`);
+      ele.child(`n=${n.value}`);
     });
     region.renderDom();
     events = [];

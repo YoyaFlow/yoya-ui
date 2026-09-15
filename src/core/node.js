@@ -812,7 +812,7 @@ export class ViewNode {
       // 值位置传句柄：等价 child(vText(handle))，写入即原地刷文本
       this.child(setup);
     } else if (typeof setup === 'string' || typeof setup === 'number') {
-      this.text(setup);
+      this.child(setup);
     } else if (setup && typeof setup === 'object') {
       this._setupObject(setup);
     }
@@ -1579,8 +1579,17 @@ export class ViewNode {
     return this;
   }
 
-  text(content) {
-    return this.child(new VTextNode(content));
+  /**
+   * 已移除：追加文本用 child(content)（字符串 / 数字 / 句柄 / 动态读函数都吃），
+   * 需要替换同一处文本时持有 vText() 句柄调 textContent(next)。
+   * 组件自己的 text()（badge / progress / menu / tabs / tree / …）与方法覆盖无关。
+   */
+  text() {
+    throw new TypeError(
+      'text() was removed: use child(content) to append text ' +
+        '(wrap a zero-argument reader as vText(fn)), or keep a vText() handle ' +
+        'and call textContent(next) to replace text'
+    );
   }
 
   /**

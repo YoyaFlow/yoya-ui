@@ -9,7 +9,7 @@ describe('rebuildable region registration reset', () => {
     const box = div((ele) => {
       ele.rebuildable();
       builds += 1;
-      ele.text(`x${builds}`);
+      ele.child(`x${builds}`);
     });
     box.renderDom();
 
@@ -43,7 +43,7 @@ describe('rebuildable region registration reset', () => {
       const box = div((ele) => {
         ele.rebuildable();
         bindDocumentEvent('pointerdown', () => {});
-        ele.text('x');
+        ele.child('x');
       });
       box.renderDom();
 
@@ -66,7 +66,7 @@ describe('rebuildable region registration reset', () => {
       host.div((child) => {
         child.rebuildable(() => true);
         childBuilds += 1;
-        child.text(`n=${n.value}`);
+        child.child(`n=${n.value}`);
       });
     });
     const element = parent.renderDom();
@@ -87,7 +87,7 @@ describe('rebuildable region registration reset', () => {
 
     setupContentSlot(node, (slot) => {
       slot.rebuildable();
-      slot.text('slot');
+      slot.child('slot');
     });
 
     expect(() => node.rebuild()).not.toThrow();

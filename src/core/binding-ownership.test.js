@@ -28,7 +28,7 @@ describe('binding ownership without a declared scope', () => {
     const tick = ref(0);
     const panel = div((host) => {
       host.rebuildable();
-      host.text(`tick=${tick.value}`);
+      host.child(`tick=${tick.value}`);
     });
     div().child(panel).child(box).renderDom();
 

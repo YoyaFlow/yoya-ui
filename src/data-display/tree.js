@@ -1071,7 +1071,7 @@ export function VTree(first = null, second = null, third = null) {
 
       toggle.child(iconBox);
     } else {
-      toggle.text(expanded ? '▾' : '▸');
+      toggle.child(expanded ? '▾' : '▸');
     }
 
     toggle.on('click', (event) => {

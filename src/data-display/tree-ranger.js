@@ -473,7 +473,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
             flex: '0 0 auto',
             opacity: '0.7'
           });
-        separator.text('/');
+        separator.child('/');
         crumbs.child(separator);
       }
       crumbs.child(buildCrumb(segment, index === segments.length - 1));
@@ -499,7 +499,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
       });
-    crumb.text(segment.text);
+    crumb.child(segment.text);
     if (segment.canJump) {
       crumb.on('click', () => jumpTo(segment.levelIndex));
       crumb.on('keydown', (event) => {

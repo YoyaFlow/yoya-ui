@@ -65,7 +65,7 @@ describe('store-shaped adapter as the active engine', () => {
     const list = div((box) => {
       box.rebuildable();
       box.attr({ 'data-count': count, 'data-double': double });
-      box.text(`n=${count.value}`); // 区域构建期直读信号：写入会重建这块
+      box.child(`n=${count.value}`); // 区域构建期直读信号：写入会重建这块
       box.on('click', () => {
         count.value += 1;
       });

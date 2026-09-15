@@ -306,7 +306,7 @@ export class VRate extends HtmlElementNode {
         lineHeight: '1',
         position: 'absolute'
       })
-      .text(this._character);
+      .child(this._character);
     const fill = new HtmlElementNode('span')
       .className('yoya-vrate-star-fill')
       .styles({
@@ -321,7 +321,7 @@ export class VRate extends HtmlElementNode {
         position: 'absolute',
         WebkitClipPath: 'inset(0 100% 0 0)'
       })
-      .text(this._character);
+      .child(this._character);
 
     button.child(base, fill);
     button.on('click', (event) => {

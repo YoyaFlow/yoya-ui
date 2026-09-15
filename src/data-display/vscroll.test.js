@@ -204,7 +204,7 @@ describe('vScroll', () => {
   it('keeps the item renderer after reset so later appends stay structured', () => {
     const scroll = vScroll({
       items: ['A', 'B'],
-      renderItem: (item) => div((row) => row.className('demo-item').text(item))
+      renderItem: (item) => div((row) => row.className('demo-item').child(item))
     });
     const element = scroll.renderDom();
 

@@ -60,7 +60,7 @@ export class VCascader extends HtmlElementNode {
         this._triggerText,
         new HtmlElementNode('span')
           .styles({ color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' })
-          .text('▾')
+          .child('▾')
       )
       .on('click', () => this.toggle());
 
@@ -270,11 +270,11 @@ export class VCascader extends HtmlElementNode {
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             })
-            .text(option.label),
+            .child(option.label),
           option.children.length > 0
             ? new HtmlElementNode('span')
                 .styles({ color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' })
-                .text('›')
+                .child('›')
             : null
         );
         column.child(row);

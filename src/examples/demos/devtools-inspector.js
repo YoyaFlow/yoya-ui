@@ -241,7 +241,7 @@ export function DevtoolsInspectorDemo() {
       pre.className('devtools-detail-code');
       pre.code((block) => {
         block.attr('data-devtools-detail', 'true');
-        block.text(
+        block.child(
           JSON.stringify(
             {
               node: snapshot,
@@ -363,7 +363,7 @@ export function DevtoolsInspectorDemo() {
       const row = stateHost.pre();
       row.className('devtools-state-row');
       row.attr('data-devtools-state-row', 'true');
-      row.text(`#${signalId}: ${JSON.stringify(latest)}`);
+      row.child(`#${signalId}: ${JSON.stringify(latest)}`);
     });
     flushHost(stateHost);
   }

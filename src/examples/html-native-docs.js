@@ -27,7 +27,7 @@ function HtmlNativeExample1() {
           });
           box.button((button) => {
             button.className('html-native-button');
-            button.text('更新');
+            button.child('更新');
             // 属性也接句柄：输入为空时按钮禁用
             button.attr(
               'disabled',
@@ -110,9 +110,9 @@ const htmlNativeApiGroups = [
     title: '文本：text 与 textContent',
     rows: [
       [
-        'node.text(content)',
-        '追加一个文本节点，等价 child(vText(content))；它不是「设置文案」，反复调用会越堆越多。',
-        "p.text('共 ')"
+        'node.child(content)',
+        '追加子节点：字符串 / 数字 / 句柄 / 节点 / 数组都吃；**不是**「设置文案」，反复追加会越堆越多。',
+        "p.child('共 ')"
       ],
       [
         'node.textContent()',
@@ -135,9 +135,9 @@ const htmlNativeApiGroups = [
         'line.child(count)'
       ]
     ],
-    sample: `// 追加：元素 text() 每次都加一个文本节点，反复同步会堆叠
-p.text('状态：已同步');
-p.text('状态：已跳过'); // 结果是两段文案拼在一起
+    sample: `// 追加：child() 每次都加一个子节点，反复同步会堆叠（节点级 text() 已移除）
+p.child('状态：已同步');
+p.child('状态：已跳过'); // 结果是两段文案拼在一起
 
 // 替换：持有文本节点句柄，textContent(value) 原地更新
 const statusText = vText('状态：已同步');

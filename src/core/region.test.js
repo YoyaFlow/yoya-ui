@@ -6,7 +6,7 @@ describe('rebuildable region', () => {
     const rows = ['a'];
     const box = div((ele) => {
       ele.rebuildable();
-      rows.forEach((row) => ele.div((item) => item.text(row)));
+      rows.forEach((row) => ele.div((item) => item.child(row)));
     });
     const element = box.renderDom();
     const firstChildElement = element.firstElementChild;
@@ -27,7 +27,7 @@ describe('rebuildable region', () => {
     const sibling = div('sibling');
     const box = div((ele) => {
       ele.rebuildable();
-      ele.text('region');
+      ele.child('region');
     });
     const host = div((ele) => {
       ele.child(sibling);
@@ -47,7 +47,7 @@ describe('rebuildable region', () => {
     let fail = false;
     const box = div((ele) => {
       ele.rebuildable();
-      ele.text(fail ? 'broken' : 'ok');
+      ele.child(fail ? 'broken' : 'ok');
       if (fail) {
         throw new Error('builder failed');
       }
@@ -71,7 +71,7 @@ describe('rebuildable region', () => {
     let sequence = 1;
     const box = div((ele) => {
       ele.rebuildable(() => allow);
-      ele.text(`v${sequence}`);
+      ele.child(`v${sequence}`);
     });
     const element = box.renderDom();
 
@@ -92,7 +92,7 @@ describe('rebuildable region', () => {
     let sequence = 1;
     const box = div((ele) => {
       ele.rebuildable(() => false);
-      ele.text(`v${sequence}`);
+      ele.child(`v${sequence}`);
     });
     const element = box.renderDom();
 

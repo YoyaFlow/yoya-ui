@@ -94,7 +94,7 @@ export function VPagination(first = null, second = null, third = null) {
       color: themeValue('color-text-muted', '#64748b'),
       fontSize: '12px'
     })
-    .text('页');
+    .child('页');
   const pageSizeLabel = new HtmlElementNode('label')
     .className('yoya-vpagination-size-label')
     .attr('for', pageSizeId)

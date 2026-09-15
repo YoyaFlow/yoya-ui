@@ -9,7 +9,7 @@ describe('vDialog', () => {
   it('renders content and toggles open state', () => {
     const dialog = vDialog((sheet) => {
       sheet.content((content) => {
-        content.text('确认发布');
+        content.child('确认发布');
       });
     });
 
@@ -64,7 +64,7 @@ describe('vDialog', () => {
 
   it('shows a close button by default and closes on click', () => {
     const dialog = vDialog((sheet) => {
-      sheet.content((content) => content.text('确认发布'));
+      sheet.content((content) => content.child('确认发布'));
     });
     const element = dialog.renderDom();
     const closeButton = element.querySelector('.yoya-vdialog-close');

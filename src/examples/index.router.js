@@ -465,7 +465,7 @@ function createComponentsView(appRouter) {
             'data-top-nav-item': entry.categoryId,
             'data-top-nav-path': entry.path
           });
-          entryView.text(entry.label);
+          entryView.child(entry.label);
           entryView.on('click', () => appRouter.navigate(entry.path));
           topNavItemRefs.push({ entry, node: entryView });
         });
@@ -770,7 +770,7 @@ function createNotFoundView(path) {
 
     view.a((link) => {
       link.attr({ href: '#/components' });
-      link.text('返回组件目录');
+      link.child('返回组件目录');
     });
   });
 }

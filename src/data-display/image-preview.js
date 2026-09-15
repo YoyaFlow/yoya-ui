@@ -175,23 +175,23 @@ export class VImagePreview extends HtmlElementNode {
     const closeButton = new HtmlElementNode('button')
       .className('yoya-vimagepreview-close')
       .attr({ 'aria-label': '关闭预览', type: 'button' })
-      .text('×')
+      .child('×')
       .on('click', () => this.close());
 
     const zoomOut = new HtmlElementNode('button')
       .className('yoya-vimagepreview-tool')
       .attr({ 'aria-label': '缩小', type: 'button' })
-      .text('−')
+      .child('−')
       .on('click', () => this.zoom(this._zoom - 0.5));
     const zoomReset = new HtmlElementNode('button')
       .className('yoya-vimagepreview-tool')
       .attr({ 'aria-label': '重置缩放', type: 'button' })
-      .text('1:1')
+      .child('1:1')
       .on('click', () => this.resetZoom());
     const zoomIn = new HtmlElementNode('button')
       .className('yoya-vimagepreview-tool')
       .attr({ 'aria-label': '放大', type: 'button' })
-      .text('＋')
+      .child('＋')
       .on('click', () => this.zoom(this._zoom + 0.5));
 
     const toolbar = new HtmlElementNode('div')

@@ -282,14 +282,14 @@ export class VTreeTable extends HtmlElementNode {
     const headRow = new HtmlElementNode('tr');
     const treeTh = new HtmlElementNode('th').attr('data-role', 'structure');
     if (this._selection) {
-      treeTh.text('选择');
+      treeTh.child('选择');
     }
     headRow.child(treeTh);
     this._columns.forEach((column) =>
       headRow.child(
         new HtmlElementNode('th')
           .attr('data-key', column.key)
-          .text(column.title ?? column.label ?? column.key ?? '')
+          .child(column.title ?? column.label ?? column.key ?? '')
       )
     );
 
@@ -319,7 +319,7 @@ export class VTreeTable extends HtmlElementNode {
       if (entry.expander) {
         const open = this._expanded.has(item.key);
         entry.expander.attr('aria-expanded', open ? 'true' : 'false');
-        // 展开符号是常驻文本节点：`element.text()` 是追加子节点，重复同步会越点越多
+        // 展开符号是常驻文本节点：`element.child()` 是追加子节点，重复同步会越点越多
         entry.symbol.textContent(open ? '▾' : '▸');
       }
       // 懒加载出子节点后，祖先的勾选态可能从「全选」变成「半选」

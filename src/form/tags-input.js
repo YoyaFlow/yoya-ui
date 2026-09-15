@@ -181,7 +181,7 @@ export class VTagsInput extends HtmlElementNode {
             padding: '1px 6px'
           })
           .child(
-            new HtmlElementNode('span').text(tag),
+            new HtmlElementNode('span').child(tag),
             new HtmlElementNode('button')
               .attr({
                 'aria-label': `移除 ${tag}`,
@@ -198,7 +198,7 @@ export class VTagsInput extends HtmlElementNode {
                 lineHeight: '1',
                 padding: '0'
               })
-              .text('×')
+              .child('×')
               .on('click', () => this._removeTag(index))
           )
       )

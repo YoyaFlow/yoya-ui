@@ -8,7 +8,7 @@ describe('rebuildable region bindings', () => {
     const box = div((ele) => {
       ele.rebuildable(() => allow);
       ele.attr('data-count', () => String(data.count));
-      ele.text('stable');
+      ele.child('stable');
     });
     const element = box.renderDom();
 

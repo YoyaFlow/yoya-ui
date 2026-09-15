@@ -79,7 +79,7 @@ describe('layout components', () => {
 
   it('creates a 24-column vRow / vCol grid with gutter and offsets', () => {
     const row = vRow({ gutter: 20, justify: 'space-between', align: 'center' }, (root) => {
-      root.vCol({ span: 6, offset: 2 }, (col) => col.text('A'));
+      root.vCol({ span: 6, offset: 2 }, (col) => col.child('A'));
       root.vCol({ span: 8, push: 4, pull: 2 }, 'B');
       root.vCol({ span: 24 }, 'C');
     });

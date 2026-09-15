@@ -130,7 +130,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = ref(0)`，值位置直接传句柄 `attr(key, a)` / `vText(a)` / `vInput({ value: a })`；派生用 `computed`），写入后绑定原地更新、DOM 不重建；**结构变化**用可重建区域（`rebuildable()` 之后读信号，信号变化自动按谓词重建）。组件可继续暴露链式 API（`value(next)`、`disabled(next)`）。
 
-值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)` / `child(a)` / `ele.text(a)` / 元素工厂 setup 位置的 `div(a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。
+值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)` / `child(a)` / 元素工厂 setup 位置的 `div(a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。节点级 `text()` 已移除（组件自己的 `text()` 与 SVG `<text>` 的 `text()` 不受影响）。
 
 结构变化按代价分三档，都写在 setup 期：列表用 `keyed(rows, keyFn, build)`（同 key 且行引用未变复用节点、排序保身份），条件挂载用 `mountable(cond)`（为假脱离文档、为真按槽位回归，状态保留），整片换新用 `rebuildable()` 区域；子树出错用 `whenFailed(handler)` 兜底（返回节点降级替换、返回 null 仅上报）。
 

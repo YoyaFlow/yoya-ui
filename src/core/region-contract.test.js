@@ -9,7 +9,7 @@ describe('rebuildable region contracts', () => {
         calls += 1;
         return true;
       });
-      ele.text('x');
+      ele.child('x');
     });
     box.renderDom();
 
@@ -23,7 +23,7 @@ describe('rebuildable region contracts', () => {
     let allow = false;
     const box = div((ele) => {
       ele.rebuildable(() => allow);
-      ele.text('x');
+      ele.child('x');
     });
     box.renderDom();
 
@@ -43,7 +43,7 @@ describe('rebuildable region contracts', () => {
       host.div((ele) => {
         region = ele;
         ele.rebuildable();
-        ele.text('region');
+        ele.child('region');
       });
     });
     const element = page.renderDom();
@@ -76,7 +76,7 @@ describe('rebuildable region contracts', () => {
   it('rejects children appended to a region outside its builder', () => {
     const box = div((ele) => {
       ele.rebuildable();
-      ele.text('x');
+      ele.child('x');
     });
 
     expect(() => box.child(div('y'))).toThrow(/region builder/);

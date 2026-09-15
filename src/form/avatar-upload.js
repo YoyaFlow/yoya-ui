@@ -249,7 +249,7 @@ export class VAvatarUpload extends HtmlElementNode {
             height: '28px',
             width: '28px'
           }),
-          new HtmlElementNode('span').className('yoya-vavatar-upload-hint').text('点击上传头像')
+          new HtmlElementNode('span').className('yoya-vavatar-upload-hint').child('点击上传头像')
         )
       );
     }
