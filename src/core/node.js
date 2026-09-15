@@ -1662,6 +1662,34 @@ export class ViewNode {
     return this;
   }
 
+  /**
+   * 显式归属到本节点的 window 级监听：destroy() 时自动卸载。
+   * 在区域构建期调用时，监听随每轮重建重置（与独立 bindWindowEvent 语义一致）；
+   * 需要提前解绑时仍使用独立函数并自行保存返回的 unbind。
+   */
+  bindWindowEvent(type, handler, options = undefined) {
+    if (typeof window !== 'undefined') {
+      window.addEventListener(type, handler, options);
+      const unbind = () => window.removeEventListener(type, handler, options);
+      registerRegionCleanup(unbind);
+      this._cleanup.push(unbind);
+    }
+
+    return this;
+  }
+
+  /** document 级同类入口：显式归属本节点，destroy() 自动卸载。 */
+  bindDocumentEvent(type, handler, options = undefined) {
+    if (typeof document !== 'undefined') {
+      document.addEventListener(type, handler, options);
+      const unbind = () => document.removeEventListener(type, handler, options);
+      registerRegionCleanup(unbind);
+      this._cleanup.push(unbind);
+    }
+
+    return this;
+  }
+
   _bindDomAdapter(eventName, previousOptions, nextOptions) {
     const existing = this._domAdapters.get(eventName);
     if (existing) {

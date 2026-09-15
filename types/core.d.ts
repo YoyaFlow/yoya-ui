@@ -342,6 +342,23 @@ export class ViewNode {
     ) => ViewNode | ComponentLike | string | number | null | undefined | void
   ): this;
 
+  /**
+   * Binds a window-level listener owned by this node; unbound automatically
+   * on destroy() and reset across region rebuilds when called in a builder.
+   */
+  bindWindowEvent(
+    type: string,
+    handler: (event: Event) => void,
+    options?: AddEventListenerOptions | boolean
+  ): this;
+
+  /** Document-level twin of bindWindowEvent(); owned by this node. */
+  bindDocumentEvent(
+    type: string,
+    handler: (event: Event) => void,
+    options?: AddEventListenerOptions | boolean
+  ): this;
+
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
 

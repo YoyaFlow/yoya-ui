@@ -146,7 +146,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
 - 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（首屏构建期求值一次，需要重新求值时自己调 `flush()`）。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
-- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。显式归属节点时用节点方法：`ele.bindWindowEvent(type, handler)` / `ele.bindDocumentEvent(...)`，`destroy()` 自动卸载；独立函数的原有用法（自行保存 unbind）保持不变。
 - 区域自己订阅依赖：区域内读到的信号变化即触发重建（devtools 里记为 `trigger: 'signal'`）；嵌套区域各订阅各的，不会互相代管。
 - **列表协调**：`node.keyed(rows, keyFn, build)` 用信号驱动子项——同 key 且行引用未变时复用节点，行引用变化原位换新，顺序变化保身份移动；行内字段用信号可在不重建的前提下原地刷值。自定义策略用 `insertBefore(key, child, beforeKey)` / `insertAfter(key, child, afterKey)` / `moveBefore(key, beforeKey)` / `moveAfter(key, afterKey)` / `replaceChild(key, child)` 原语。
 - **条件挂载**：`panel.mountable(cond)` 是唯一公共入口——条件接受 ref/computed 句柄、布尔或零参闭包，**省略参数即默认常挂 `true`**；惰性存在子节点上，入树时父节点收养建绑定，**入树后随时再调 `mountable()` 即可替换条件并立即生效**（闭包变化后用**父节点** `flush()` 重求值）。为假时子元素脱离文档但 ViewNode 与状态保留，为真时按子节点槽位回归；SSR 条件假输出空串。`node.isMounted()` 查询自身挂载条件的最近提交状态；「元素此刻是否在文档里」查 `node._el?.isConnected`。它与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档：**不在但活着**。挂载绑定登记在父节点，条件存在子节点自己的值单元里（无需父指针）；`div({ mountable: cond })` 配置形态走同一条收养路径。
