@@ -27,11 +27,11 @@ const regionDemos = [
   {
     component: RegionGateExample,
     description:
-      '谓词返回 false 时只写回函数值绑定、结构保持不变，并记为待重建；谓词恢复后 rebuild() 补一次重建。',
+      '忙碌（编辑 / 拖拽）时谓词拦截重建：区域内值绑定照常刷新、列表结构不动并记为待重建；恢复空闲后一次 rebuild() 补齐全部变更。',
     id: 'gate',
-    imports: ['div', 'hstack', 'vButton', 'vText', 'vstack'],
+    imports: ['computed', 'div', 'ref', 'vText', 'vstack'],
     sourceTitle: '谓词门禁源码',
-    title: '时机门禁：rebuildable(() => !locked)'
+    title: '时机门禁：忙碌时跳过结构重建'
   },
   {
     component: RegionScopeExample,

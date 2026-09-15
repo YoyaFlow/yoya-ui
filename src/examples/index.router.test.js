@@ -1097,24 +1097,23 @@ describe('renderExamplesIndex', () => {
     expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
 
     const gateDemo = page.querySelector('[data-region-demo="gate"]');
-    expect(gateDemo.querySelector('[data-region-label]').textContent).toBe('A');
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
 
     gateDemo.querySelector('[data-region-next]').click();
-    // 谓词为真：区域重跑，区域内节点被替换
-    const rebuiltLabel = gateDemo.querySelector('[data-region-label]');
-    expect(rebuiltLabel.textContent).toBe('B');
+    // 空闲：信号写入立即重建结构
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
 
     gateDemo.querySelector('[data-region-lock]').click();
     gateDemo.querySelector('[data-region-next]').click();
-    // 谓词为假：结构不动（元素引用不变），只写回函数值绑定，并记为待重建
-    expect(gateDemo.querySelector('[data-region-label]')).toBe(rebuiltLabel);
-    expect(rebuiltLabel.textContent).toBe('A');
+    // 忙碌：结构不动，区域内的值绑定照常刷新，并记为待重建
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(gateDemo.querySelector('[data-region-count]').textContent).toBe('值绑定行数：3');
     expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('待重建');
 
     gateDemo.querySelector('[data-region-lock]').click();
-    // 谓词恢复：补一次重建
-    expect(gateDemo.querySelector('[data-region-label]')).not.toBe(rebuiltLabel);
-    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('已同步');
+    // 空闲：一次 rebuild 补齐挂起的结构变更
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(3);
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('空闲');
 
     const sourceDemo = page.querySelector('[data-region-demo="source"]');
     expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('0');

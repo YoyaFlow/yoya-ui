@@ -25,32 +25,37 @@ describe('region demos', () => {
     expect(list.children).toHaveLength(0);
   });
 
-  it('keeps one status text node and flushes in place while the gate is locked', () => {
+  it('keeps structure untouched while busy and applies pending rows once when idle', () => {
     const demo = RegionGateExample();
     const element = demo.render().renderDom();
     const status = element.querySelector('[data-region-pending]');
-    const label = element.querySelector('[data-region-label]');
+    const gate = element.querySelector('.demo-region-gate');
 
-    expect(status.textContent).toBe('状态：已同步');
-    expect(status.childNodes).toHaveLength(1);
-    expect(label.textContent).toBe('A');
+    expect(element.querySelector('[data-region-list] li')).not.toBeNull();
+    expect(element.querySelector('[data-region-count]').textContent).toBe('值绑定行数：1');
+    expect(status.textContent).toBe('状态：空闲，结构随信号自动重建');
 
-    demo.toggleLock();
-    expect(status.textContent).toBe('状态：已同步');
+    demo.addRow();
+    expect(element.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(element.querySelector('[data-region-count]').textContent).toBe('值绑定行数：2');
 
-    demo.toggleLabel();
-    expect(label.textContent).toBe('B');
-    expect(element.querySelector('[data-region-label]')).toBe(label);
-    expect(status.textContent).toBe('状态：已跳过（待重建）');
+    demo.toggleBusy();
+    const busyList = element.querySelector('[data-region-list]');
+    expect(gate.getAttribute('data-region-locked')).toBe('true');
 
-    demo.toggleLabel();
-    expect(label.textContent).toBe('A');
-    expect(status.childNodes).toHaveLength(1);
+    demo.addRow();
+    demo.addRow();
+    expect(element.querySelector('[data-region-list]')).toBe(busyList);
+    expect(busyList.querySelectorAll('li')).toHaveLength(2);
+    expect(element.querySelector('[data-region-count]').textContent).toBe('值绑定行数：4');
+    expect(status.textContent).toContain('待重建：是');
 
-    demo.toggleLock();
-    expect(status.textContent).toBe('状态：已同步');
-    expect(element.querySelector('[data-region-label]')).not.toBe(label);
-    expect(element.querySelector('[data-region-locked]')).toBeNull();
+    demo.toggleBusy();
+    const idleList = element.querySelector('[data-region-list]');
+    expect(idleList).not.toBe(busyList);
+    expect(idleList.querySelectorAll('li')).toHaveLength(4);
+    expect(status.textContent).toBe('状态：空闲，结构随信号自动重建');
+    expect(gate.getAttribute('data-region-locked')).toBeNull();
   });
 
   it('reads subtree data through a zero-argument closure', () => {

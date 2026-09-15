@@ -38,7 +38,6 @@ const LONG_DEMO_BUDGET = Object.freeze({
   'guides:devtools :: DevtoolsInspectorDemo': 552,
   'guides:i18n :: I18nExtendExample1': 77,
   'guides:i18n :: I18nParamsExample1': 72,
-  'guides:lifecycle :: RegionGateExample': 61,
   'guides:state-node :: StateDynamicAttrsExample1': 64,
   'guides:state-node :: StateEventOverwriteExample1': 61,
   'layout:body :: BodyShellExample1': 126,
