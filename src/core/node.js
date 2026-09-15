@@ -960,6 +960,94 @@ export class ViewNode {
     return this;
   }
 
+  /** 把已有 keyed 子节点移动到 beforeKey 之前；beforeKey 为空时移动到末尾。 */
+  moveBefore(key, beforeKey = null) {
+    assertRegionChildAllowed(this);
+
+    const rawKey = String(key);
+    const viewNode = this._childKeys.get(rawKey);
+    if (!viewNode) {
+      throw new TypeError(`moveBefore() requires an existing key "${rawKey}"`);
+    }
+
+    const hasBefore = beforeKey !== null && beforeKey !== undefined;
+    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    if (hasBefore && !beforeNode) {
+      throw new TypeError(`moveBefore() requires an existing beforeKey "${String(beforeKey)}"`);
+    }
+    if (viewNode === beforeNode) {
+      return this;
+    }
+
+    const currentIndex = this._children.indexOf(viewNode);
+    if (currentIndex !== -1) {
+      this._children.splice(currentIndex, 1);
+    }
+    const targetIndex = beforeNode ? this._children.indexOf(beforeNode) : this._children.length;
+    this._children.splice(targetIndex === -1 ? this._children.length : targetIndex, 0, viewNode);
+    this._childrenDirty = true;
+
+    if (this._el && viewNode._el) {
+      const anchor = beforeNode?._el?.parentNode === this._el ? beforeNode._el : null;
+      this._el.insertBefore(viewNode._el, anchor);
+    }
+
+    return this;
+  }
+
+  /** 把已有 keyed 子节点移动到 afterKey 之后；afterKey 为空时移动到开头。 */
+  moveAfter(key, afterKey = null) {
+    assertRegionChildAllowed(this);
+
+    const rawKey = String(key);
+    const viewNode = this._childKeys.get(rawKey);
+    if (!viewNode) {
+      throw new TypeError(`moveAfter() requires an existing key "${rawKey}"`);
+    }
+
+    const hasAfter = afterKey !== null && afterKey !== undefined;
+    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    if (hasAfter && !afterNode) {
+      throw new TypeError(`moveAfter() requires an existing afterKey "${String(afterKey)}"`);
+    }
+    if (viewNode === afterNode) {
+      return this;
+    }
+
+    const currentIndex = this._children.indexOf(viewNode);
+    if (currentIndex !== -1) {
+      this._children.splice(currentIndex, 1);
+    }
+    const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
+    if (afterIndex === -1) {
+      this._children.unshift(viewNode);
+    } else {
+      this._children.splice(afterIndex + 1, 0, viewNode);
+    }
+    this._childrenDirty = true;
+
+    if (this._el && viewNode._el) {
+      let anchor = null;
+      if (afterNode) {
+        for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
+          const sibling = this._children[i];
+          if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
+            anchor = sibling._el;
+            break;
+          }
+        }
+      } else {
+        const first = this._children.find(
+          (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
+        );
+        anchor = first?._el ?? null;
+      }
+      this._el.insertBefore(viewNode._el, anchor);
+    }
+
+    return this;
+  }
+
   /** 按 key 读取子节点；不存在返回 null。 */
   getChild(key) {
     return this._childKeys.get(String(key)) || null;

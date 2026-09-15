@@ -84,6 +84,66 @@ describe('keyed children', () => {
     expect(() => list.insertAfter('a', div('A2'), null)).toThrow(/duplicate key/i);
   });
 
+  it('moves a keyed child before a reference with identity preserved', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('b', div('B'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+    const nodeC = list.getChild('c');
+
+    const returned = list.moveBefore('c', 'a');
+
+    expect(returned).toBe(list);
+    expect(list.getChild('c')).toBe(nodeC);
+    expect(list.children().map((child) => child.textContent())).toEqual(['C', 'A', 'B']);
+    expect([...element.children].map((child) => child.textContent)).toEqual(['C', 'A', 'B']);
+    expect(element.children[0]).toBe(nodeC._el);
+  });
+
+  it('moves a keyed child to the end when beforeKey is null', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('b', div('B'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+
+    list.moveBefore('a', null);
+
+    expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
+  });
+
+  it('moves a keyed child after a reference and to the start on null', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('b', div('B'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+    const nodeA = list.getChild('a');
+
+    list.moveAfter('a', 'c');
+    expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
+    expect(element.children[2]).toBe(nodeA._el);
+
+    list.moveAfter('a', null);
+    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('treats self references as no-ops and validates inputs', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('b', div('B'));
+
+    const before = list.moveBefore('a', 'a');
+    expect(before.children().map((child) => child.textContent())).toEqual(['A', 'B']);
+    expect(list.moveAfter('b', 'b').children().map((child) => child.textContent())).toEqual([
+      'A',
+      'B'
+    ]);
+    expect(() => list.moveBefore('missing', 'a')).toThrow(/moveBefore\(\)/);
+    expect(() => list.moveAfter('a', 'missing')).toThrow(/moveAfter\(\)/);
+  });
+
   it('rejects duplicate keys', () => {
     const list = div();
 
