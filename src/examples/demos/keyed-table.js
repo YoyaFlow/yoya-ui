@@ -1,35 +1,31 @@
 import { ref, th, tr, vstack } from '../../index.js';
 
 /**
- * HTML 原生元素页的 keyed 演示：信号驱动的任务表按 key 对账——
- * 追加 / 上移 / 改状态只动变化的行，其余行节点身份保持。
+ * HTML 原生元素页的 keyed 演示：任务表按 key 对账——
+ * 状态是 ref 字段（写句柄只刷那一格），任务是普通字段（换新行对象才刷新）。
  */
 export function KeyedTableExample() {
   let serial = 3;
-  const columns = ['任务', '负责人', '状态', '操作'];
+  const columns = ['任务', '负责人', '状态'];
   const rows = ref([
-    { id: 1, title: '登录页联调', owner: 'Ada', done: true },
-    { id: 2, title: '权限矩阵', owner: 'Lin', done: false },
-    { id: 3, title: '表格虚拟滚动', owner: 'Mo', done: false }
+    { id: 1, title: '登录页联调', owner: 'Ada', status: ref('已完成') },
+    { id: 2, title: '权限矩阵', owner: 'Lin', status: ref('进行中') },
+    { id: 3, title: '表格虚拟滚动', owner: 'Mo', status: ref('进行中') }
   ]);
 
   const api = {
     addRow() {
       serial += 1;
-      const row = { id: serial, title: `任务 ${serial}`, owner: '未分配', done: false };
+      const row = { id: serial, title: `任务 ${serial}`, owner: '未分配', status: ref('进行中') };
       rows.value = [...rows.value, row];
       return api;
     },
-    moveUp(id) {
-      const next = [...rows.value];
-      const index = next.findIndex((row) => row.id === id);
-      if (index < 1) return api;
-      next.splice(index - 1, 0, next.splice(index, 1)[0]);
-      rows.value = next;
+    toggle(row) {
+      row.status.value = row.status.value === '进行中' ? '已完成' : '进行中';
       return api;
     },
-    flip(id) {
-      rows.value = rows.value.map((row) => (row.id === id ? { ...row, done: !row.done } : row));
+    reverse() {
+      rows.value = [...rows.value].reverse();
       return api;
     },
     render() {
@@ -42,14 +38,11 @@ export function KeyedTableExample() {
           grid.tbody((body) => {
             body.keyed(rows, (row) => row.id, (row) =>
               tr((line) => {
-                const { id, done } = row;
-                line.attr('data-row-id', id);
+                line.attr('data-row-id', row.id);
                 line.td(row.title);
                 line.td(row.owner);
-                line.td(done ? '已完成' : '进行中');
                 line.td((cell) => {
-                  cell.button('上移', (up) => up.on('click', () => api.moveUp(id)));
-                  cell.button(done ? '重开' : '完成', (act) => act.on('click', () => api.flip(id)));
+                  cell.button(row.status, (act) => act.on('click', () => api.toggle(row)));
                 });
               })
             );
@@ -58,8 +51,12 @@ export function KeyedTableExample() {
         stack.button('追加任务', (add) => {
           add.attr('data-keyed-add', 'true').on('click', () => api.addRow());
         });
+        stack.button('反转', (reverse) => {
+          reverse.attr('data-keyed-reverse', 'true').on('click', () => api.reverse());
+        });
       });
     }
   };
+
   return api;
 }

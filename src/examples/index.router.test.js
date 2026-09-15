@@ -1227,34 +1227,35 @@ describe('renderExamplesIndex', () => {
       [...keyedTable.querySelectorAll('tbody tr')].map((row) => row.getAttribute('data-row-id'));
 
     expect(keyedDemo).not.toBeNull();
-    expect(keyedTable.querySelectorAll('thead th')).toHaveLength(4);
+    expect(keyedTable.querySelectorAll('thead th')).toHaveLength(3);
     expect(rowIds()).toEqual(['1', '2', '3']);
 
+    // ref 字段：写句柄只刷那一格，行节点身份不变
+    const keptRow = keyedTable.querySelector('[data-row-id="1"]');
+    const statusButton = keptRow.querySelector('button');
+    expect(statusButton.textContent).toBe('已完成');
+    statusButton.click();
+
+    await vi.waitFor(() => {
+      expect(keptRow.querySelector('button').textContent).toBe('进行中');
+    });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+
+    // keyed 增行：新 key 建新行，已有行不动
     keyedDemo.querySelector('[data-keyed-add]').click();
     await vi.waitFor(() => {
       expect(rowIds()).toEqual(['1', '2', '3', '4']);
     });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
 
-    // 上移第三行：顺序变化走 insertBefore，未动的行节点身份保持
-    const keptRow = keyedTable.querySelector('[data-row-id="1"]');
-    const movedRow = keyedTable.querySelector('[data-row-id="3"]');
-    movedRow.querySelectorAll('button')[0].click();
-
+    // 顺序变化走 insertBefore：行节点身份保持
+    const secondRow = keyedTable.querySelector('[data-row-id="2"]');
+    keyedDemo.querySelector('[data-keyed-reverse]').click();
     await vi.waitFor(() => {
-      expect(rowIds()).toEqual(['1', '3', '2', '4']);
+      expect(rowIds()).toEqual(['4', '3', '2', '1']);
     });
     expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
-    expect(keyedTable.querySelector('[data-row-id="3"]')).toBe(movedRow);
-
-    // 行引用变化 → 该行原位换新，其余行不受影响
-    const flippedRow = keyedTable.querySelector('[data-row-id="2"]');
-    flippedRow.querySelectorAll('button')[1].click();
-
-    await vi.waitFor(() => {
-      expect(keyedTable.querySelector('[data-row-id="2"]').textContent).toContain('已完成');
-    });
-    expect(flippedRow.isConnected).toBe(false);
-    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+    expect(keyedTable.querySelector('[data-row-id="2"]')).toBe(secondRow);
 
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();

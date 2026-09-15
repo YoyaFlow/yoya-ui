@@ -362,7 +362,8 @@ function KeyedTableDemoSection() {
         example.attr('data-native-demo', 'keyed');
         example.h2('keyed 表格协调');
         example.p(
-          'table.keyed(rows, keyFn, build) 用信号驱动原生表格：追加 / 上移 / 改状态按 key 对账，行节点身份保持，行内按钮闭包不失效。'
+          'table.keyed(rows, keyFn, build) 用信号驱动原生表格：状态列是 ref 字段，写句柄只刷那一格；' +
+            '任务 / 负责人是普通字段，换新行对象才刷新。追加 / 反转按 key 对账，行节点身份保持。'
         );
         example.div((live) => {
           live.className('components-html-native-demo-live');
