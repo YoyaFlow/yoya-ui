@@ -20,6 +20,38 @@ describe('keyed children', () => {
     expect(element.children[1].getAttribute('data-row-key')).toBe('u2');
   });
 
+  it('inserts a keyed child before an existing key', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('c', div('C'));
+
+    const returned = list.insertBefore('b', div('B'), 'a');
+
+    expect(returned).toBe(list);
+    expect(list.children().map((child) => child.textContent())).toEqual(['B', 'A', 'C']);
+  });
+
+  it('inserts into rendered DOM at the anchored position', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+
+    list.insertBefore('b', div('B'), 'c');
+
+    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('appends when beforeKey is null and rejects unknown or duplicate keys', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+
+    list.insertBefore('z', div('Z'), null);
+    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'Z']);
+    expect(() => list.insertBefore('q', div('Q'), 'missing')).toThrow(/insertBefore\(\)/);
+    expect(() => list.insertBefore('a', div('A2'))).toThrow(/duplicate key/i);
+  });
+
   it('rejects duplicate keys', () => {
     const list = div();
 

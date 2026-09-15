@@ -853,6 +853,53 @@ export class ViewNode {
     return this;
   }
 
+  /** 在 beforeKey 对应子节点之前插入 keyed 子节点；beforeKey 为空时追加到末尾。 */
+  insertBefore(key, child, beforeKey = null) {
+    assertRegionChildAllowed(this);
+
+    const rawKey = String(key);
+    if (this._childKeys.has(rawKey)) {
+      throw new TypeError(`duplicate key "${rawKey}"`);
+    }
+
+    const hasBefore = beforeKey !== null && beforeKey !== undefined;
+    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    if (hasBefore && !beforeNode) {
+      throw new TypeError(`insertBefore() requires an existing beforeKey "${String(beforeKey)}"`);
+    }
+
+    const viewNode = normalizeChildWithContext(this, child);
+    this._childKeys.set(rawKey, viewNode);
+    if (typeof viewNode.attr === 'function') {
+      viewNode.attr('data-row-key', rawKey);
+    }
+    this._pendingRemovals.delete(viewNode);
+
+    const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
+    if (beforeIndex === -1) {
+      this._children.push(viewNode);
+    } else {
+      this._children.splice(beforeIndex, 0, viewNode);
+    }
+    this._childrenDirty = true;
+
+    if (this._el) {
+      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
+        viewNode.renderDom()
+      );
+      if (childElement && childElement.parentNode !== this._el) {
+        const beforeElement = beforeNode?._el;
+        const anchor = beforeElement && beforeElement.parentNode === this._el ? beforeElement : null;
+        this._el.insertBefore(childElement, anchor);
+      }
+      if (isDevtoolsEnabled() && !this._devtoolsRendering) {
+        notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
+      }
+    }
+
+    return this;
+  }
+
   /** 按 key 读取子节点；不存在返回 null。 */
   getChild(key) {
     return this._childKeys.get(String(key)) || null;
