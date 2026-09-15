@@ -12,12 +12,12 @@ serialized, and the SSR state script escapes `<` so it cannot break out of its
 
 ## Verdicts
 
-| Review claim                                               | Verdict                                          | Evidence                                                                                                                                                                                                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| i18n `{name}` interpolation can inject markup              | Does not hold for HTML output                    | Interpolation does not escape ([i18n.js](../src/core/i18n.js)), but the result lands in a text node and `VTextNode.toHTML()` escapes it ([node.js](../src/core/node.js)); the DOM path writes `textContent` / `setAttribute`                                                |
-| SSR XSS: unfiltered user input, "enable template escaping" | Does not hold, and the advice has no counterpart | There is no template engine. SSR output is built from the node tree: text and attributes are escaped, shell ids/lang go through `escapeHtmlAttribute`, and `serializeState()` does `JSON.stringify(...).replace(/</g, '\\u003c')` ([ssr.js](../src/core/ssr.js))            |
-| Bare permission strings are guessable/forgeable            | Wrong direction                                  | Client-side access is presentation only — the project documents this ([access-control.md](access-control.md)). Grants come from the server via `createAccess({ permissions })`; guessing a code does not grant it, and client-side validation cannot stop anyone editing JS |
-| `on('click')` has no throttling                            | True, but not a security issue                   | `.on()` forwards native events with one handler per node/event and cleans up on `destroy()`. Throttling is an application policy; enabling it by default would change semantics (click counting, submit buttons)                                                            |
+| Review claim                                               | Verdict                                          | Evidence                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| i18n `{name}` interpolation can inject markup              | Does not hold for HTML output                    | Interpolation does not escape ([i18n.js](../../src/core/i18n.js)), but the result lands in a text node and `VTextNode.toHTML()` escapes it ([node.js](../../src/core/node.js)); the DOM path writes `textContent` / `setAttribute`                                             |
+| SSR XSS: unfiltered user input, "enable template escaping" | Does not hold, and the advice has no counterpart | There is no template engine. SSR output is built from the node tree: text and attributes are escaped, shell ids/lang go through `escapeHtmlAttribute`, and `serializeState()` does `JSON.stringify(...).replace(/</g, '\\u003c')` ([ssr.js](../../src/core/ssr.js))            |
+| Bare permission strings are guessable/forgeable            | Wrong direction                                  | Client-side access is presentation only — the project documents this ([access-control.md](../access-control.md)). Grants come from the server via `createAccess({ permissions })`; guessing a code does not grant it, and client-side validation cannot stop anyone editing JS |
+| `on('click')` has no throttling                            | True, but not a security issue                   | `.on()` forwards native events with one handler per node/event and cleans up on `destroy()`. Throttling is an application policy; enabling it by default would change semantics (click counting, submit buttons)                                                               |
 
 ## What the review did surface
 
@@ -26,7 +26,7 @@ serialized, and the SSR state script escapes `<` so it cannot break out of its
    `toggleIcon('<b>▸</b>')` produced real markup while the type said "child
    text". Strings are now rendered as text (matching `ChildInput`); pass a node
    when you want custom markup. Covered by a test in
-   [tree.test.js](../src/data-display/tree.test.js).
+   [tree.test.js](../../src/data-display/tree.test.js).
 2. **A demo built row markup with `innerHTML`.** The AG Grid HR demo assembled
    `<b>${row.name}</b>` strings; it now creates elements and assigns
    `textContent`, so the pattern cannot be copied into code that renders real
