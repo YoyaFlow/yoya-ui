@@ -1,6 +1,10 @@
 import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
-import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
+import {
+  ComponentLifecycleDiagram,
+  componentLifecyclePhases,
+  DataUpdateFlowDiagram
+} from './component-lifecycle.js';
 import {
   regionCompareBlocksSource,
   RegionFlushExample,
@@ -23,11 +27,11 @@ const regionDemos = [
   {
     component: RegionGateExample,
     description:
-      '谓词返回 false 时只写回函数值绑定、结构保持不变，并记为待重建；谓词恢复后 rebuild() 补一次重建。',
+      '忙碌（编辑 / 拖拽）时谓词拦截重建：区域内值绑定照常刷新、列表结构不动并记为待重建；恢复空闲后一次 rebuild() 补齐全部变更。',
     id: 'gate',
-    imports: ['div', 'hstack', 'vButton', 'vText', 'vstack'],
+    imports: ['computed', 'div', 'ref', 'vText', 'vstack'],
     sourceTitle: '谓词门禁源码',
-    title: '时机门禁：rebuildable(() => !locked)'
+    title: '时机门禁：忙碌时跳过结构重建'
   },
   {
     component: RegionScopeExample,
@@ -78,6 +82,14 @@ export function ComponentLifecycleDocumentationPage() {
               list.li(`${phase.title}：${phase.summary}`)
             );
           });
+        });
+
+        page.section((update) => {
+          update.className('components-guide-section components-lifecycle-update');
+          update.attr('data-lifecycle-update', 'true');
+          update.h2('数据更新机制');
+          update.p('值变化走绑定原地写回，结构变化走区域重建；两条路径的代价与 DOM 身份影响不同。');
+          update.child(DataUpdateFlowDiagram());
         });
 
         page.section((region) => {

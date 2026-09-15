@@ -1076,6 +1076,13 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('h1').textContent).toBe('组件生命周期');
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
+
+    const updateFlow = page.querySelector('[data-update-flow-diagram]');
+    expect(updateFlow).not.toBeNull();
+    expect(updateFlow.textContent).toContain('flush()');
+    expect(updateFlow.textContent).toContain('rebuild()');
+    expect(updateFlow.textContent).toContain('rebuildScheduled()');
+    expect(updateFlow.textContent).toContain('rebuildPending()');
     expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
 
     const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
@@ -1090,24 +1097,23 @@ describe('renderExamplesIndex', () => {
     expect(rebuildDemo.querySelectorAll('[data-region-list] li')).toHaveLength(0);
 
     const gateDemo = page.querySelector('[data-region-demo="gate"]');
-    expect(gateDemo.querySelector('[data-region-label]').textContent).toBe('A');
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(1);
 
     gateDemo.querySelector('[data-region-next]').click();
-    // 谓词为真：区域重跑，区域内节点被替换
-    const rebuiltLabel = gateDemo.querySelector('[data-region-label]');
-    expect(rebuiltLabel.textContent).toBe('B');
+    // 空闲：信号写入立即重建结构
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
 
     gateDemo.querySelector('[data-region-lock]').click();
     gateDemo.querySelector('[data-region-next]').click();
-    // 谓词为假：结构不动（元素引用不变），只写回函数值绑定，并记为待重建
-    expect(gateDemo.querySelector('[data-region-label]')).toBe(rebuiltLabel);
-    expect(rebuiltLabel.textContent).toBe('A');
+    // 忙碌：结构不动，区域内的值绑定照常刷新，并记为待重建
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(2);
+    expect(gateDemo.querySelector('[data-region-count]').textContent).toBe('值绑定行数：3');
     expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('待重建');
 
     gateDemo.querySelector('[data-region-lock]').click();
-    // 谓词恢复：补一次重建
-    expect(gateDemo.querySelector('[data-region-label]')).not.toBe(rebuiltLabel);
-    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('已同步');
+    // 空闲：一次 rebuild 补齐挂起的结构变更
+    expect(gateDemo.querySelectorAll('[data-region-list] li')).toHaveLength(3);
+    expect(gateDemo.querySelector('[data-region-pending]').textContent).toContain('空闲');
 
     const sourceDemo = page.querySelector('[data-region-demo="source"]');
     expect(sourceDemo.querySelector('[data-region-source]').getAttribute('data-count')).toBe('0');
@@ -1225,7 +1231,7 @@ describe('renderExamplesIndex', () => {
       'reactive',
       'I18nReactiveExample1',
       'createI18n(',
-      4
+      5
     ],
     [
       '/components/guides/state-node',
@@ -1692,6 +1698,38 @@ describe('renderExamplesIndex', () => {
 
     expect(shortcut.textContent).toContain('Saved');
     expect(shortcut.textContent).toContain('Hello, Ada');
+
+    const globalDemo = page.querySelector('[data-i18n-demo="global"] .components-i18n-demo-live');
+    expect(globalDemo.textContent).toContain('你好，Ada');
+    expect(globalDemo.textContent).toContain('console');
+    expect(globalDemo.textContent).toContain('已安装');
+
+    const globalChinese = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('中文')
+    );
+    const globalEnglish = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('English')
+    );
+    globalEnglish.click();
+    expect(globalDemo.textContent).toContain('Hello, Ada');
+
+    const unregisterButton = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('注销全局实例')
+    );
+    unregisterButton.click();
+    expect(globalDemo.textContent).toContain('未安装');
+
+    globalChinese.click();
+    expect(globalDemo.textContent).toContain('Hello, Ada');
+
+    const reinstallButton = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('重新安装')
+    );
+    reinstallButton.click();
+    expect(globalDemo.textContent).toContain('已安装');
+
+    globalChinese.click();
+    expect(globalDemo.textContent).toContain('你好，Ada');
 
     const extend = page.querySelector('[data-i18n-demo="extend"] .components-i18n-demo-live');
     expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);

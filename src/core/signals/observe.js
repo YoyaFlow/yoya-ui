@@ -1,6 +1,7 @@
 // 绑定订阅注册表：为 devtools 写入事件提供「依赖该信号的绑定数」。
 // 只登记 core 自己发起的订阅（值绑定与区域依赖），引擎内部派生不计入。
 const subscribers = new WeakMap();
+const regionOwners = new WeakMap();
 
 /**
  * 经注册表订阅：与 adapter.subscribe 等价，额外维护 source → 监听器集合，
@@ -24,4 +25,20 @@ export function trackedSubscribe(adapter, source, listener) {
 /** 依赖该信号的绑定数（值绑定 + 区域依赖）。 */
 export function dependentCount(source) {
   return subscribers.get(source)?.size || 0;
+}
+
+/** 登记依赖该信号的区域节点；写入口据此在 batch 内提前标记调度。 */
+export function trackRegionOwner(source, node) {
+  let set = regionOwners.get(source);
+  if (!set) {
+    set = new Set();
+    regionOwners.set(source, set);
+  }
+  set.add(node);
+  return () => set.delete(node);
+}
+
+/** 依赖该信号的区域节点（快照）。 */
+export function dependentRegions(source) {
+  return Array.from(regionOwners.get(source) || []);
 }

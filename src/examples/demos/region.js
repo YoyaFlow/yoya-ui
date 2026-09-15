@@ -58,55 +58,55 @@ export function RegionRebuildExample() {
  * 区域节点与状态行都在 render 之外建好，方法里直接改它们；
  * 状态行持有文本节点句柄，重复同步才是替换内容（元素 .text() 是追加子节点）。
  */
+/**
+ * 区域演示 2：时机门禁。忙碌（编辑 / 拖拽）时谓词拦截结构重建：
+ * 区域内值绑定照常刷新，列表结构不动并记为 rebuildPending()；
+ * 恢复空闲后一次 rebuild() 补齐全部挂起的结构变更。
+ */
 export function RegionGateExample() {
-  const data = { label: 'A' };
-  let locked = false;
-  const box = div((ele) => {
+  const rows = ref(['任务 1']);
+  const busy = ref(false);
+  const count = computed(() => `值绑定行数：${rows.value.length}`);
+  const statusText = vText('状态：空闲，结构随信号自动重建');
+
+  const list = div((ele) => {
     ele.className('demo-region-gate');
-    // 先声明区域，再写值函数与其它登记
-    ele.rebuildable(() => !locked);
-    ele.attr({
-      'data-region-gate': 'true',
-      'data-region-locked': () => (locked ? 'true' : null)
+    ele.rebuildable(() => !busy.value);
+    ele.attr({ 'data-region-locked': computed(() => (busy.value ? 'true' : null)) });
+    ele.ul((listOfRows) => {
+      listOfRows.attr('data-region-list', 'true');
+      rows.value.forEach((row) => listOfRows.li(row));
     });
-    ele.span((line) => {
-      line.attr('data-region-label', 'true');
-      line.child(vText(() => data.label));
-    });
+    ele.span((line) => line.attr('data-region-count', 'true').child(vText(count)));
   });
-  const statusText = vText('状态：已同步');
-  const status = div((line) => {
-    line.attr('data-region-pending', 'true');
-    line.child(statusText);
-  });
+  const status = div((line) => line.attr('data-region-pending', 'true').child(statusText));
 
   const api = {
-    toggleLabel() {
-      data.label = data.label === 'A' ? 'B' : 'A';
-      box.rebuild();
+    addRow() {
+      rows.value = [...rows.value, `任务 ${rows.value.length + 1}`];
       syncStatus();
       return api;
     },
-    toggleLock() {
-      locked = !locked;
-      if (!locked && box.rebuildPending()) {
-        box.rebuild();
+    toggleBusy() {
+      busy.value = !busy.value;
+      if (!busy.value && list.rebuildPending()) {
+        list.rebuild();
       }
       syncStatus();
       return api;
     },
     render() {
       return vstack({ gap: '12px' }, (stack) => {
-        stack.child(box).child(status);
+        stack.child(list).child(status);
         stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton('切换标签', (button) => {
+          row.vButton('添加一行', (button) => {
             button.variant('primary');
             button.attr('data-region-next', 'true');
-            button.on('click', () => api.toggleLabel());
+            button.on('click', () => api.addRow());
           });
-          row.vButton('锁定 / 解锁', (button) => {
+          row.vButton('忙碌 / 空闲', (button) => {
             button.attr('data-region-lock', 'true');
-            button.on('click', () => api.toggleLock());
+            button.on('click', () => api.toggleBusy());
           });
         });
       });
@@ -114,12 +114,14 @@ export function RegionGateExample() {
   };
 
   function syncStatus() {
-    statusText.textContent(box.rebuildPending() ? '状态：已跳过（待重建）' : '状态：已同步');
+    const pending = list.rebuildPending() ? '是' : '否';
+    statusText.textContent(
+      busy.value ? `状态：忙碌，结构锁定；待重建：${pending}` : '状态：空闲，结构随信号自动重建'
+    );
   }
 
   return api;
 }
-
 /**
  * 区域演示 3：独立子树的零参闭包直接读外部数据，改动后手动 flush。
  * 只刷值时不需要 rebuildable()——它只用来声明「结构可变」。

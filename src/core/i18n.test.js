@@ -90,6 +90,136 @@ describe('I18n', () => {
     expect(node.textContent()).toBe('Save 3 items');
   });
 
+  it('updates text automatically when a signal param changes', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: {
+        'zh-CN': { save: '保存 {count} 项' },
+        en: { save: 'Save {count} items' }
+      }
+    });
+    const count = yoya.ref(1);
+    const node = locale.text('save', { count });
+
+    expect(node.textContent()).toBe('保存 1 项');
+
+    count.value = 3;
+
+    expect(node.textContent()).toBe('保存 3 项');
+
+    locale.setLanguage('en');
+
+    expect(node.textContent()).toBe('Save 3 items');
+  });
+
+  it('resyncs signal param subscriptions when params are replaced', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const first = yoya.ref(1);
+    const second = yoya.ref(10);
+    const node = locale.text('save', { count: first });
+
+    first.value = 2;
+    expect(node.textContent()).toBe('保存 2 项');
+
+    node.params({ count: second });
+    expect(node.textContent()).toBe('保存 10 项');
+
+    first.value = 9;
+    expect(node.textContent()).toBe('保存 10 项');
+
+    second.value = 11;
+    expect(node.textContent()).toBe('保存 11 项');
+  });
+
+  it('stops watching signal params after the text node is destroyed', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const count = yoya.ref(1);
+    const node = locale.text('save', { count });
+
+    node.destroy();
+
+    expect(() => {
+      count.value = 9;
+    }).not.toThrow();
+    expect(node.textContent()).toBe('保存 1 项');
+  });
+
+  it('keeps signal params out of region dependencies', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const rows = yoya.ref(['a']);
+    const count = yoya.ref(1);
+    let builds = 0;
+    const region = yoya.div((el) => {
+      builds += 1;
+      el.rebuildable();
+      rows.value.forEach((row) => el.div(row));
+      el.child(locale.text('save', { count }));
+    });
+    region.renderDom();
+
+    count.value = 2;
+
+    expect(region.textContent()).toContain('保存 2 项');
+    expect(builds).toBe(1);
+  });
+
+  it('interpolates signal params in synchronous t() reads', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const count = yoya.ref(1);
+
+    expect(locale.t('save', { count })).toBe('保存 1 项');
+
+    count.value = 3;
+
+    expect(locale.t('save', { count })).toBe('保存 3 项');
+  });
+
+  it('lets computed derive translated text from signal params', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const count = yoya.ref(1);
+    const label = yoya.computed(() => locale.t('save', { count }));
+
+    expect(label.value).toBe('保存 1 项');
+
+    count.value = 3;
+
+    expect(label.value).toBe('保存 3 项');
+  });
+
+  it('lets regions read signal params through t()', () => {
+    const locale = yoya.createI18n({
+      language: 'zh-CN',
+      messages: { 'zh-CN': { save: '保存 {count} 项' } }
+    });
+    const count = yoya.ref(1);
+    const region = yoya.div((el) => {
+      el.rebuildable();
+      el.span(locale.t('save', { count }));
+    });
+    region.renderDom();
+
+    expect(region.textContent()).toBe('保存 1 项');
+
+    count.value = 2;
+
+    expect(region.textContent()).toBe('保存 2 项');
+  });
+
   it('merges nested JSON messages from multiple corpus files', () => {
     const commonCorpus = {
       'zh-CN': {

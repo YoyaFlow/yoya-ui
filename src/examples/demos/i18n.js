@@ -1,8 +1,12 @@
 import {
+  computed,
   createI18n,
+  getI18n,
   installI18nStringShortcut,
+  ref,
+  registerI18n,
+  unregisterI18n,
   vLanguageSwitch,
-  vText,
   vstack
 } from '../../index.js';
 
@@ -25,7 +29,7 @@ export function I18nReactiveExample1() {
       }
     }
   });
-  const language = vText(locale.getLanguage());
+  const language = ref(locale.getLanguage());
 
   return {
     render() {
@@ -46,7 +50,7 @@ export function I18nReactiveExample1() {
           stack.child(
             vLanguageSwitch({
               locale,
-              onChange: () => language.textContent(locale.getLanguage())
+              onChange: () => (language.value = locale.getLanguage())
             })
           );
           });
@@ -55,9 +59,7 @@ export function I18nReactiveExample1() {
 }
 
 export function I18nParamsExample1() {
-  let count = 1;
-  let userCount = null;
-  let unknownStatus = null;
+  const count = ref(1);
   const locale = createI18n({
     fallbackLanguage: 'zh-CN',
     language: 'zh-CN',
@@ -82,11 +84,11 @@ export function I18nParamsExample1() {
     }
   });
 
+  const userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
+  const unknownStatus = '未知状态'.s('status.unknown', locale);
+
   return {
     render() {
-      userCount = '用户数：{count}'.s('page.stats.users', { count }, locale);
-      unknownStatus = '未知状态'.s('status.unknown', locale);
-
       return vstack((stack) => {
             stack.style('gap', '14px');
             stack.p('词典支持 dot path 和 {param} 插值，未注册语言内容会回退到默认语言内容。');
@@ -104,8 +106,7 @@ export function I18nParamsExample1() {
             });
           stack.vButton('数量 +1', (button) => {
             button.on('click', () => {
-              count += 1;
-              userCount.params({ count });
+              count.value += 1;
             });
           });
           stack.vButton('中文', (button) => {
@@ -199,14 +200,14 @@ export function I18nExtendExample1() {
       }
     }
   });
-  const language = vText(locale.getLanguage());
+  const language = ref(locale.getLanguage());
   const languageSwitch = vLanguageSwitch({
     locale,
     languages: [
       { label: '中文', value: 'zh-CN' },
       { label: 'English', value: 'en' }
     ],
-    onChange: () => language.textContent(locale.getLanguage())
+    onChange: () => (language.value = locale.getLanguage())
   });
   let jaAdded = false;
   let addButton = null;
@@ -255,6 +256,58 @@ export function I18nExtendExample1() {
             button.on('click', addJapanese);
           });
           });
+    }
+  };
+}
+
+export function I18nGlobalExample1() {
+  const locale = createI18n({
+    key: 'console',
+    language: 'zh-CN',
+    messages: {
+      'zh-CN': { greeting: '你好，{name}', registryState: '注册表状态' },
+      en: { greeting: 'Hello, {name}', registryState: 'Registry state' }
+    }
+  });
+  const installed = ref(true);
+  const registryState = computed(() => `console · ${installed.value ? '已安装' : '未安装'}`);
+  let toggleButton = null;
+
+  const toggleInstall = () => {
+    installed.value = !installed.value;
+    if (installed.value) {
+      registerI18n(locale);
+    } else {
+      unregisterI18n(locale);
+    }
+    toggleButton?.label(installed.value ? '注销全局实例' : '重新安装');
+  };
+
+  return {
+    render() {
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.p('配置 key 的实例会自动进入全局注册表，其他模块用 getI18n(key) 取回同一个实例。');
+        stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
+        stack.hstack((row) => {
+          row.style('alignItems', 'center');
+          row.span('注册表状态'.s('registryState', locale));
+          row.spacer();
+          row.output((output) => output.child(registryState));
+        });
+        stack.vButton('中文', (button) => {
+          button.variant('secondary');
+          button.on('click', () => getI18n(locale.key())?.setLanguage('zh-CN'));
+        });
+        stack.vButton('English', (button) => {
+          button.on('click', () => getI18n(locale.key())?.setLanguage('en'));
+        });
+        stack.vButton('注销全局实例', (button) => {
+          toggleButton = button;
+          button.variant('primary');
+          button.on('click', toggleInstall);
+        });
+      });
     }
   };
 }
