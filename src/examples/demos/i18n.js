@@ -58,7 +58,7 @@ export function I18nReactiveExample1() {
 }
 
 export function I18nParamsExample1() {
-  let count = 1;
+  const count = ref(1);
   const locale = createI18n({
     fallbackLanguage: 'zh-CN',
     language: 'zh-CN',
@@ -105,8 +105,7 @@ export function I18nParamsExample1() {
             });
           stack.vButton('数量 +1', (button) => {
             button.on('click', () => {
-              count += 1;
-              userCount.params({ count });
+              count.value += 1;
             });
           });
           stack.vButton('中文', (button) => {

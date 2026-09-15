@@ -21,10 +21,10 @@ const i18nDemoDefinitions = Object.freeze([
   {
     id: 'params',
     title: '参数与回退',
-    description: '参数插值、增量注册和默认语言回退可以组合使用。',
+    description: '参数插值支持 ref 句柄自动刷新，增量注册和默认语言回退可以组合使用。',
     component: I18nParamsExample1,
     sourceComponent: I18nParamsExample1,
-    imports: ['createI18n', 'vstack'],
+    imports: ['createI18n', 'ref', 'vstack'],
     sourceTitle: '参数与回退核心源码'
   },
   {
@@ -143,7 +143,7 @@ export function I18nDocumentationPage() {
                 ],
                 [
                   'locale.text(key, params, defaultValue)',
-                  '创建随语言自动刷新的文本节点。',
+                  '创建随语言自动刷新的文本节点；插值参数支持 ref 句柄自动刷新。',
                   "locale.text('greeting', { name: 'Ada' })"
                 ],
                 [
@@ -178,7 +178,7 @@ export function I18nDocumentationPage() {
                 ],
                 [
                   '"内容".s(key, params?, locale?)',
-                  '用默认语言内容创建响应式文本，可显式指定 locale。',
+                  '用默认语言内容创建响应式文本；插值参数支持 ref 句柄。',
                   "'你好，{name}'.s('greeting', { name: 'Ada' }, locale)"
                 ]
               ].forEach(([name, purpose, example]) => {

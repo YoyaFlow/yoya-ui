@@ -1,3 +1,4 @@
+import { isSignal } from './signals/handle.js';
 import { VTextNode, registerI18nScopeBridge } from './node.js';
 
 /** 多 key locale 共享存储的默认记录键。 */
@@ -206,17 +207,39 @@ export class I18n {
   }
 }
 
+/** 插值参数支持 signal 句柄：求值用 peek，不把参数泄漏成区域依赖。 */
+function resolveI18nParams(params) {
+  if (!params) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(params).map(([key, value]) => [key, isSignal(value) ? value.peek() : value])
+  );
+}
+
 /**
- * I18nTextNode 继承 VTextNode，语言变化时只更新文本节点内容。
+ * I18nTextNode 继承 VTextNode，语言变化时只更新文本节点内容；
+ * 插值参数传 signal 句柄时，写入同样自动刷新。
  */
 export class I18nTextNode extends VTextNode {
   constructor(i18n, key, params = {}, defaultValue = undefined) {
-    super(i18n.t(key, params, defaultValue));
+    super(i18n.t(key, resolveI18nParams(params), defaultValue));
     this._i18n = i18n;
     this._key = key;
     this._params = params || {};
     this._defaultValue = defaultValue;
+    this._paramDisposers = [];
     this._unsubscribe = i18n.subscribe(() => this.refresh());
+    this.watchParamSignals();
+  }
+
+  /** 只订阅 signal 形态的参数；params() 替换后重订。 */
+  watchParamSignals() {
+    this._paramDisposers.forEach((dispose) => dispose());
+    this._paramDisposers = Object.values(this._params)
+      .filter((value) => isSignal(value))
+      .map((signal) => signal.subscribe(() => this.refresh()));
   }
 
   key(value) {
@@ -234,6 +257,7 @@ export class I18nTextNode extends VTextNode {
     }
 
     this._params = value || {};
+    this.watchParamSignals();
     return this.refresh();
   }
 
@@ -247,11 +271,14 @@ export class I18nTextNode extends VTextNode {
   }
 
   refresh() {
-    this.textContent(this._i18n.t(this._key, this._params, this._defaultValue));
+    const params = resolveI18nParams(this._params);
+    this.textContent(this._i18n.t(this._key, params, this._defaultValue));
     return this;
   }
 
   destroy() {
+    this._paramDisposers.forEach((dispose) => dispose());
+    this._paramDisposers = [];
     if (this._unsubscribe) {
       this._unsubscribe();
       this._unsubscribe = null;

@@ -502,14 +502,14 @@ export class I18n {
   /** Translates a key with dot-path lookup, fallback language and {name} params. */
   t(key: string, params?: Record<string, unknown>, defaultValue?: unknown): string;
 
-  /** Creates a text node that refreshes when the language changes. */
+  /** Creates a text node that refreshes on language changes; signal params refresh in place. */
   text(key: string, params?: Record<string, unknown>, defaultValue?: unknown): I18nTextNode;
 
   /** Subscribes to language changes; returns an unsubscribe function. */
   subscribe(listener: (i18n: I18n) => void): () => void;
 }
 
-/** Text node bound to an I18n instance; refreshes on language changes. */
+/** Text node bound to an I18n instance; refreshes on language changes and signal param writes. */
 export class I18nTextNode extends VTextNode {
   constructor(i18n: I18n, key: string, params?: Record<string, unknown>, defaultValue?: unknown);
 
@@ -732,6 +732,7 @@ declare global {
   interface String {
     /**
      * i18n string shortcut: "default text".s(key, paramsOrLocale?, maybeLocale?).
+     * Param values accept signal handles; writes refresh the text in place.
      * The locale argument may be an I18n instance or a registered locale key.
      */
     s(
