@@ -42,7 +42,7 @@ connection is required). To pin a version, replace the version number in the URL
     <title>yoya-ui quick start</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -52,7 +52,7 @@ connection is required). To pin a version, replace the version number in the URL
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.full.min.js';
 
       div((page) => {
         page.vButton('Start task', (button) => {

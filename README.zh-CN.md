@@ -40,7 +40,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 里的版本号换
     <title>yoya-ui 快速体验</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -50,7 +50,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 里的版本号换
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.full.min.js';
 
       div((page) => {
         page.vButton('开始任务', (button) => {
