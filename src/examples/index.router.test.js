@@ -1195,6 +1195,13 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
     expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
 
+    const setupGuide = page.querySelector('[data-html-native-setup]');
+    expect(setupGuide).not.toBeNull();
+    expect(setupGuide.textContent).toContain('setupString');
+    expect(setupGuide.textContent).toContain('setupObject');
+    expect(setupGuide.textContent).toContain('setupFunction');
+    expect(setupGuide.textContent).toContain('区域重建');
+
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();
     expect(usageNote.textContent).toContain("box.button('保存', (btn) => btn.on('click', save))");

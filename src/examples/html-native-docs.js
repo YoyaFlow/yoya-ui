@@ -223,6 +223,87 @@ ele.flush();`
   }
 ];
 
+const htmlNativeSetupForms = [
+  {
+    name: 'setupString',
+    usage: "div('服务运行中') / div(42)",
+    behavior:
+      '字符串或数字会追加为一个文本子节点；这是构建期快照，不随状态变化（要跟随状态请用 vText(handle)）。',
+    example: "span('共 3 项')"
+  },
+  {
+    name: 'setupObject',
+    usage: 'div({ class, attrs, style, children, onXxx, ... })',
+    behavior:
+      '配置对象按键分发：class/className、attrs、style、children、onXxx 事件；节点同名方法直接调用，其余非函数键落到 attr；值位置传 signal 句柄即建立活绑定。',
+    example: "div({ attrs: { 'data-count': count } })"
+  },
+  {
+    name: 'setupFunction',
+    usage: 'div((el) => { ... })',
+    behavior:
+      '回调进入构建栈执行并登记为 builder：可参与区域重建、捕获构建期作用域（access / context / i18n），是声明式组合的主形态。',
+    example: "div((el) => el.span('运行中'))"
+  }
+];
+
+function HtmlNativeSetupSection() {
+  return {
+    render() {
+      return section((setup) => {
+        setup.className('components-html-native-setup');
+        setup.attr('data-html-native-setup', 'true');
+        setup.h2('三种 setup 形态');
+        setup.p(
+          '原生工厂的 setup 参数支持三种形态：字符串快照、配置对象、回调函数；' +
+            '文本与回调还可以同时传入，先落地文本再继续配置。'
+        );
+        setup.table((table) => {
+          table.thead((head) => {
+            head.tr((row) => {
+              row.th('形态');
+              row.th('写法');
+              row.th('行为');
+              row.th('示例');
+            });
+          });
+          table.tbody((body) => {
+            htmlNativeSetupForms.forEach((form) => {
+              body.tr((row) => {
+                row.td((cell) => cell.code(form.name));
+                row.td((cell) => cell.code(form.usage));
+                row.td(form.behavior);
+                row.td((cell) => cell.code(form.example));
+              });
+            });
+          });
+        });
+        setup.pre((pre) => {
+          pre.className('guide-code');
+          pre.code(`// setupString：静态文本，构建期就是最终值
+div('服务运行中');
+
+// setupObject：配置按键分发；值位置传句柄 → 属性原地更新
+div({
+  class: 'panel',
+  attrs: { 'data-count': count },
+  children: [span('共 3 项')]
+});
+
+// setupFunction：自由组合；登记的 builder 可被 rebuildable() 区域重跑
+div((el) => {
+  el.className('panel');
+  el.span('服务运行中');
+});
+
+// 组合写法：文本先落地，回调继续配置
+div('标题', (el) => el.className('title'));`);
+        });
+      });
+    }
+  };
+}
+
 function HtmlNativeApiSection() {
   return {
     render() {
@@ -325,6 +406,7 @@ export function HtmlNativeDocumentationPage() {
         page.ul((list) => {
           htmlNativeNotes.forEach((note) => list.li(note));
         });
+        page.child(HtmlNativeSetupSection());
         page.child(HtmlNativeApiSection());
         page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
