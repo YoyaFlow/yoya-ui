@@ -554,26 +554,27 @@ types/...（root / core / ui / actions / navigation / feedback / form / data-dis
 
 ### 产物与体积
 
-`npm run report:bundle` 打印完整表格（含公共 chunk）。常用几项（min+gzip）：
+增量入口给两个数：**入口文件本身**与**实际下载量**（入口 + 它引用的公共 chunk）。
+只看入口文件会以为 core 只有几 KB——实际差距很大，按实际下载量估算首屏。
 
-| 产物                                               | raw      | min      | min+gzip |
-| -------------------------------------------------- | -------- | -------- | -------- |
-| `yoya.core.js`（core 增量入口）                    | 8.5 KB   | 6.5 KB   | 2.9 KB   |
-| `yoya.ui.js`（组件增量入口）                       | 23.7 KB  | 15.2 KB  | 5.6 KB   |
-| `yoya.router.js`（router + SSR 原语）              | 58.6 KB  | 30.1 KB  | 9.8 KB   |
-| `yoya.devtools.js`（开发期）                       | 0.3 KB   | 0.2 KB   | 0.1 KB   |
-| `yoya.router.full.js`（自包含：core + router/SSR） | 213.6 KB | 107.5 KB | 31.0 KB  |
-| `yoya.ui-router.full.js`（自包含：全量）           | 747.2 KB | 439.8 KB | 105.8 KB |
-| `yoya.ui.css`（组件皮肤）                          | 60.3 KB  | —        | 8.7 KB   |
+| 入口                               | min+gzip（入口文件 ~ 实际下载量） |
+| ---------------------------------- | --------------------------------- |
+| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**              |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **93.6 KB**              |
+| `yoya.router.js`（含 SSR 原语）    | 9.8 KB ~ **24.4 KB**              |
+| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB     |
 
-增量入口不含 core，运行时自动加载公共 chunk：实际下载量 = 入口 + 它引用到的
-chunk（表里逐项可加）。core 层没有自带皮肤，`yoya.ui.css` 全部是组件样式。
-npm 子路径对应 `@yoyaflow/yoya-ui/core`、`@yoyaflow/yoya-ui/ui`、
-`@yoyaflow/yoya-ui/actions`、`@yoyaflow/yoya-ui/navigation`、
-`@yoyaflow/yoya-ui/feedback`、`@yoyaflow/yoya-ui/form`、
-`@yoyaflow/yoya-ui/data-display`、`@yoyaflow/yoya-ui/async` 与
-`@yoyaflow/yoya-ui/router`；SSR 渲染原语从 `./router` 导入，不再单独提供
-`./ssr` 子路径。
+自包含入口（core 已内联，单文件直用）：
+
+| 产物                             | raw      | min      | min+gzip |
+| -------------------------------- | -------- | -------- | -------- |
+| `yoya.router.full.js`            | 213.6 KB | 107.5 KB | 31.0 KB  |
+| `yoya.ui.full.js`                | 682.1 KB | 409.3 KB | 96.8 KB  |
+| `yoya.ui-router.full.js`（全量） | 747.2 KB | 439.8 KB | 105.8 KB |
+
+组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+只用 core 不需要引它。`npm run report:bundle` 打印完整表格（含每个公共 chunk 的 raw / min / min+gzip）。
 
 ## 开发
 

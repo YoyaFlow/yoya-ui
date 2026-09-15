@@ -613,28 +613,29 @@ the CDN / no-build single-file form. npm subpaths map to
 
 ### Bundle size
 
-`npm run report:bundle` prints the full table (public chunks included). Common rows
-(min+gzip):
+Incremental entries report two numbers: **the entry file itself** and **what a page
+actually downloads** (entry plus the shared chunks it imports). Reading only the
+entry file overstates how small core is — budget against the download column.
 
-| Artifact                                                  | raw      | min      | min+gzip |
-| --------------------------------------------------------- | -------- | -------- | -------- |
-| `yoya.core.js` (core entry)                               | 8.5 KB   | 6.5 KB   | 2.9 KB   |
-| `yoya.ui.js` (components entry)                           | 23.7 KB  | 15.2 KB  | 5.6 KB   |
-| `yoya.router.js` (router + SSR primitives)                | 58.6 KB  | 30.1 KB  | 9.8 KB   |
-| `yoya.devtools.js` (dev only)                             | 0.3 KB   | 0.2 KB   | 0.1 KB   |
-| `yoya.router.full.js` (self-contained: core + router/SSR) | 213.6 KB | 107.5 KB | 31.0 KB  |
-| `yoya.ui-router.full.js` (self-contained: everything)     | 747.2 KB | 439.8 KB | 105.8 KB |
-| `yoya.ui.css` (component skin)                            | 60.3 KB  | —        | 8.7 KB   |
+| Entry                                      | min+gzip (entry file ~ actual download) |
+| ------------------------------------------ | --------------------------------------- |
+| `yoya.core.js`                             | 2.9 KB ~ **21.5 KB**                    |
+| `yoya.ui.js` (all categories)              | 5.6 KB ~ **93.6 KB**                    |
+| `yoya.router.js` (router + SSR primitives) | 9.8 KB ~ **24.4 KB**                    |
+| `yoya.devtools.js` (dev only)              | 0.1 KB ~ 1.6 KB                         |
+| `yoya.echart.js` / `yoya.three.js`         | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB           |
 
-Incremental entries exclude core and load shared chunks at runtime: what a page
-downloads is the entry plus the chunks it imports (add the rows above). The core
-layer ships no skin of its own — `yoya.ui.css` is component styles only.
-`@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui`,
-`@yoyaflow/yoya-ui/actions`, `@yoyaflow/yoya-ui/navigation`,
-`@yoyaflow/yoya-ui/feedback`, `@yoyaflow/yoya-ui/form`,
-`@yoyaflow/yoya-ui/data-display`, `@yoyaflow/yoya-ui/async` and
-`@yoyaflow/yoya-ui/router`; SSR primitives come from `./router` — there is no
-separate `./ssr` subpath.
+Self-contained entries (core inlined, single file):
+
+| Artifact                              | raw      | min      | min+gzip |
+| ------------------------------------- | -------- | -------- | -------- |
+| `yoya.router.full.js`                 | 213.6 KB | 107.5 KB | 31.0 KB  |
+| `yoya.ui.full.js`                     | 682.1 KB | 409.3 KB | 96.8 KB  |
+| `yoya.ui-router.full.js` (everything) | 747.2 KB | 439.8 KB | 105.8 KB |
+
+Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no
+skin of its own (it behaves like plain HTML), so core-only pages do not load it.
+`npm run report:bundle` prints the full table, including every shared chunk.
 
 ## Development
 
