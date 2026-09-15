@@ -1410,7 +1410,7 @@ export class ViewNode {
     viewNode._errorBoundary = this._errorHandler ? this : this._errorBoundary;
   }
 
-  /** 边界处理入口：通知 → handler → 降级替换 / 向外链。返回降级节点或 null。 */
+  /** 边界处理入口：通知 → handler → 降级替换 / 保持现状。返回降级节点或 null。 */
   _handleError(error, source, phase) {
     const info = {
       phase,
@@ -1425,36 +1425,17 @@ export class ViewNode {
 
     let fallback = null;
     if (typeof this._errorHandler === 'function') {
-      try {
-        fallback = this._errorHandler(error, info);
-      } catch (handlerError) {
-        this._forwardBoundaryError(handlerError, source, phase);
-        return null;
-      }
+      // handler 自身抛错 = 边界故障：标记该错误已由本边界处理过，再向外抛，
+      // 避免父级渲染循环把它重新送回同一个边界造成重复处理 / 死循环。
+      fallback = this._errorHandler(error, info);
     }
 
     if (fallback) {
-      try {
-        return this._replaceBoundaryContent(fallback);
-      } catch (renderError) {
-        this._forwardBoundaryError(renderError, source, phase);
-        return null;
-      }
+      return this._replaceBoundaryContent(fallback);
     }
 
-    // handler 返回空：仅上报。有外层边界则继续向外；无外层视为已观测，止步。
-    if (this._errorBoundary) {
-      return this._errorBoundary._handleError(error, source, phase);
-    }
+    // handler 返回空：仅上报 + 保持现状，不再向外（最近的边界独占这次捕获）。
     return null;
-  }
-
-  _forwardBoundaryError(error, source, phase) {
-    if (this._errorBoundary) {
-      this._errorBoundary._handleError(error, source, phase);
-      return;
-    }
-    throw error;
   }
 
   /** 降级替换：先构建成功（含渲染），再原子替换子树。 */

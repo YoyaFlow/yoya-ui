@@ -123,21 +123,25 @@ describe('whenFailed error boundary', () => {
     expect(outerHandler).not.toHaveBeenCalled();
   });
 
-  it('chains outward when the inner handler returns null', () => {
+  it('stops at the innermost boundary when its handler returns null', () => {
+    const outerHandler = vi.fn(() => p('outer fallback'));
     const inner = div((node) => {
       node.whenFailed(() => null);
       node.child(failingNode());
     });
     const outer = div((node) => {
-      node.whenFailed(() => p('outer fallback'));
+      node.whenFailed(outerHandler);
       node.child(inner);
     });
     outer.renderDom();
 
-    expect(outer.children()[0].textContent()).toBe('outer fallback');
+    expect(outerHandler).not.toHaveBeenCalled();
+    // 最近边界独占这次捕获；失败节点仍留在树里，后续渲染会再次触发捕获
+    expect(errorSpy).toHaveBeenCalled();
   });
 
-  it('propagates handler failures to the outer boundary', () => {
+  it('rethrows when the boundary handler itself throws', () => {
+    const outerHandler = vi.fn(() => p('outer fallback'));
     const inner = div((node) => {
       node.whenFailed(() => {
         throw new Error('handler boom');
@@ -145,12 +149,12 @@ describe('whenFailed error boundary', () => {
       node.child(failingNode());
     });
     const outer = div((node) => {
-      node.whenFailed((error) => p(`outer caught ${error.message}`));
+      node.whenFailed(outerHandler);
       node.child(inner);
     });
-    outer.renderDom();
 
-    expect(outer.children()[0].textContent()).toBe('outer caught handler boom');
+    expect(() => outer.renderDom()).toThrow('handler boom');
+    expect(outerHandler).not.toHaveBeenCalled();
   });
 
   it('fails fast when no boundary exists', () => {
