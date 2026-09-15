@@ -31,7 +31,7 @@
 
 - Produces: `ViewNode.prototype.insertBefore(key: string|number, child: ViewNode|ComponentLike|string|number, beforeKey?: string|number|null): this`。`beforeKey` 为空追加到末尾；重复 key 抛 `TypeError`；`beforeKey` 不存在抛 `TypeError`；已渲染时用 `insertBefore` 插入 DOM。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
@@ -69,12 +69,12 @@ it('appends when beforeKey is null and rejects unknown or duplicate keys', () =>
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: FAIL，`list.insertBefore is not a function`。
 
-- [ ] **Step 3: 最小实现**
+- [x] **Step 3: 最小实现**
 
 在 `src/core/node.js` 的 `addChild` 方法后插入：
 
@@ -128,12 +128,12 @@ Expected: FAIL，`list.insertBefore is not a function`。
   }
 ```
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: PASS（原有用例不回归）。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/keyed-child.test.js
@@ -153,7 +153,7 @@ git commit -m "feat(core): add insertBefore keyed primitive"
 
 - Produces: `ViewNode.prototype.insertAfter(key: string|number, child: ViewNode|ComponentLike|string|number, afterKey?: string|number|null): this`。`afterKey` 为空时插入到**开头**（与 `insertBefore` 空参考 = 尾插对称）；重复 key / 未知 `afterKey` 抛 `TypeError`；DOM 插入锚点 = `afterKey` 元素之后第一个**已挂载**的兄弟（跳过被 `mounted` 摘除的节点），没有则追加。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
@@ -191,12 +191,12 @@ it('rejects unknown afterKey and duplicate keys', () => {
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: FAIL，`list.insertAfter is not a function`。
 
-- [ ] **Step 3: 最小实现**
+- [x] **Step 3: 最小实现**
 
 在 `insertBefore` 方法后插入：
 
@@ -263,12 +263,12 @@ Expected: FAIL，`list.insertAfter is not a function`。
   }
 ```
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/keyed-child.test.js
@@ -291,7 +291,7 @@ git commit -m "feat(core): add insertAfter keyed primitive"
   - `ViewNode.prototype.moveAfter(key: string|number, afterKey?: string|number|null): this` —— 移动到参考之后；`afterKey` 为空时移动到**开头**。校验与 no-op 规则同上。
   - 两者 DOM 移动均用 `insertBefore`，节点身份保持；`moveAfter` 锚点跳过被 `mounted` 摘除的兄弟。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
@@ -359,12 +359,12 @@ it('treats self references as no-ops and validates inputs', () => {
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: FAIL，`list.moveBefore is not a function`。
 
-- [ ] **Step 3: 最小实现**
+- [x] **Step 3: 最小实现**
 
 在 `insertAfter` 方法后插入：
 
@@ -458,12 +458,12 @@ Expected: FAIL，`list.moveBefore is not a function`。
   }
 ```
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/keyed-child.test.js
@@ -484,7 +484,7 @@ git commit -m "feat(core): add moveBefore and moveAfter keyed primitives"
 - Consumes: Task 1 的插入路径形状。
 - Produces: `ViewNode.prototype.replaceChild(key: string|number, child: ViewNode|ComponentLike|string|number): this`。同 key 原位换新：`_children` 同槽位替换、`_childKeys` 同 key 指向新节点、DOM 新元素先 `insertBefore` 旧元素再销毁旧节点，邻居零扰动；新节点若声明了 `.mounted(cond)` 则在本插入路径同样收养（旧节点的挂载条件**不转移**——新节点自带新声明）；未知 key 抛 `TypeError`。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
@@ -515,12 +515,12 @@ it('rejects unknown keys', () => {
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: FAIL，`list.replaceChild is not a function`。
 
-- [ ] **Step 3: 最小实现**
+- [x] **Step 3: 最小实现**
 
 在 `moveAfter` 方法后插入：
 
@@ -579,12 +579,12 @@ Expected: FAIL，`list.replaceChild is not a function`。
 
 （`_adoptMountCondition` / `_childMountStates` 依赖 Task 6；Task 4 先落地时，实现里的收养与状态清理两段在 Task 6 一并补上，收养用例也移至 Task 6 测试文件。）
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/keyed-child.test.js`
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/keyed-child.test.js
@@ -608,7 +608,7 @@ git commit -m "feat(core): add replaceChild keyed primitive"
   - `ViewNode.prototype.keyed(source: SignalHandle, keyFn: (row, index) => string|number, build): this`
   - 语义：同 key 且行引用未变 → 复用节点（build 不重跑）；行引用变 → 原位换新；顺序变化 → `insertBefore` 保身份；源数组重复 key 抛错；`clearChildren()` 后自愈（死成员剪枝）。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `src/core/keyed-children.test.js`：
 
@@ -753,12 +753,12 @@ describe('keyed children binding', () => {
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/keyed-children.test.js`
 Expected: FAIL，`node.keyed is not a function`。
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 `src/core/node.js` 构造器 `_pendingRemovals` 附近追加：
 
@@ -936,12 +936,12 @@ ViewNode 方法（放在 `replaceChild` 之后）：
 
 注意：`keyed()` 登记的绑定读取走 `() => source.value`——登记发生在绑定自己的 `withCollect` 上下文内，嵌套进区域 builder 时**不会**把 source 记进区域依赖（`recordRead` 只记最内层收集器），这正是 Task 3 全局约束要求的隔离。
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/keyed-children.test.js src/core/keyed-child.test.js`
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/keyed-children.test.js
@@ -965,7 +965,7 @@ git commit -m "feat(core): add keyed children binding"
   - `ViewNode.prototype.isMounted(): boolean` —— 返回**自身挂载条件的最近提交状态**（父节点绑定 commit 单向镜像到子节点 `_isMounted`，默认 true）。「元素此刻是否在文档里」另用 `node._el?.isConnected`（受祖先挂载与渲染时机影响），两层真相文档必须分清。
   - 私有 `_adoptMountCondition(node, condition)`：由 `child()` / `addChild()` / `insertBefore()` 插入路径调用，在**父节点**登记绑定（kind: `'mount'`，key 为子节点）并镜像状态。**不提供公共父侧 API**——运行期对已入树节点补挂条件暂无入口（创建期声明解决，YAGNI），文档写明。
   - 子节点 ViewNode 树与控件状态跨显隐保留；SSR 条件假时父节点 `toHTML()` 跳过该子节点。**不引入 `_parent` 指针**——挂载拓扑知识单侧归父节点。
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `src/core/node-mounted.test.js`：
 
@@ -1123,12 +1123,12 @@ describe('mounted condition adoption', () => {
 });
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npx vitest run src/core/node-mounted.test.js`
 Expected: FAIL，`panel.mounted is not a function`。
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 1. 构造器追加（`_keyedSegments` 旁）：
 
@@ -1235,12 +1235,12 @@ if (viewNode._mountCondition) {
 this._childMountStates.clear();
 ```
 
-- [ ] **Step 4: 转绿**
+- [x] **Step 4: 转绿**
 
 Run: `npx vitest run src/core/node-mounted.test.js src/core/keyed-children.test.js`
 Expected: PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/core/node.js src/core/node-mounted.test.js
@@ -1260,7 +1260,7 @@ git commit -m "feat(core): add child-declared mounted condition adoption"
 
 - Consumes: Task 1-4 的最终 API。
 
-- [ ] **Step 1: 类型声明**
+- [x] **Step 1: 类型声明**
 
 在 `types/core.d.ts` ViewNode 类的 `bindDocumentEvent` 声明后追加：
 
@@ -1317,7 +1317,7 @@ git commit -m "feat(core): add child-declared mounted condition adoption"
   isMounted(): boolean;
 ```
 
-- [ ] **Step 2: 文档条目**
+- [x] **Step 2: 文档条目**
 
 `docs/component-authoring.zh-CN.md` §6「契约与边界」清单追加：
 
@@ -1333,7 +1333,7 @@ git commit -m "feat(core): add child-declared mounted condition adoption"
 - **Conditional attachment**: `panel.mounted(cond)` is the single public entry — the condition accepts a ref/computed handle or a zero-argument closure, rests inertly on the child, and the parent adopts it at tree entry (closure changes refresh via the **parent** `flush()`). False detaches the child element from the document while keeping the child ViewNode and its state alive; true reattaches it at its child slot, and SSR omits it while the condition is false. `node.isMounted()` reports the latest committed state of its own mount condition; "is the element in the document right now" is `node._el?.isConnected`. Together with `display` toggling (invisible but present) and `rebuildable()` (destroy and rebuild) it forms the third tier: absent but alive. The binding is registered on the parent; the `div({ mounted: cond })` config form shares the same adoption path, and there is intentionally no public API for attaching a condition to an already-inserted node (declare it at creation).
 ```
 
-- [ ] **Step 3: 全量校验**
+- [x] **Step 3: 全量校验**
 
 ```bash
 npm run lint
@@ -1345,7 +1345,7 @@ npm run build
 
 Expected: 全部通过（无关重型页面的 5s 超时按全局约束隔离复跑确认）。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add types/core.d.ts docs/component-authoring.md docs/component-authoring.zh-CN.md
@@ -1357,3 +1357,16 @@ git commit -m "docs(core): document keyed and mounted node APIs"
 ```bash
 git push -u origin feat/keyed-mounted-children
 ```
+
+---
+
+## 计划外追加（2026-09-15）
+
+计划内 Task 1-7 全部落地后，同一分支上继续补齐了两块内容：
+
+- **子树错误边界**：`node.whenFailed(handler)` 与组件对象 `whenFailed` 成员（`ComponentNode`
+  自动挂载）、devtools `error` 事件，测试见 `src/core/node-when-failed.test.js`；
+  示例站新增独立「错误处理」页（报告模式 / 组件协议降级）。
+- **文档与 skill 回填**：`docs/highlights` §5、`docs/component-authoring` §6、README 能力一览、
+  `docs/beginner-feedback.zh-CN.md` 回填记录、示例站原生页 API 表，以及
+  `skills/yoya-ui`（SKILL.md / references/state.md / references/core.md）。
