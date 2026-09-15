@@ -1,10 +1,8 @@
 export {
   ElementNode,
   ComponentNode,
-  TextNode,
   VTextNode,
   ViewNode,
-  ViewTextNode,
   createElementFactory,
   applyElementOptions,
   escapeHtml,

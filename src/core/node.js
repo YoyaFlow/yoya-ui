@@ -2743,5 +2743,3 @@ export function registerChildFactories(NodeClass, factories, options = {}) {
     };
   });
 }
-
-export { VTextNode as TextNode, VTextNode as ViewTextNode };
