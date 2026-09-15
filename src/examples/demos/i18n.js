@@ -1,6 +1,9 @@
 import {
   createI18n,
+  getI18n,
   installI18nStringShortcut,
+  registerI18n,
+  unregisterI18n,
   vLanguageSwitch,
   vText,
   vstack
@@ -255,6 +258,59 @@ export function I18nExtendExample1() {
             button.on('click', addJapanese);
           });
           });
+    }
+  };
+}
+
+export function I18nGlobalExample1() {
+  const locale = createI18n({
+    key: 'console',
+    language: 'zh-CN',
+    messages: {
+      'zh-CN': { greeting: '你好，{name}', registryState: '注册表状态' },
+      en: { greeting: 'Hello, {name}', registryState: 'Registry state' }
+    }
+  });
+  const registryState = vText('console · 已安装');
+  let installed = true;
+  let toggleButton = null;
+
+  const toggleInstall = () => {
+    installed = !installed;
+    if (installed) {
+      registerI18n(locale);
+    } else {
+      unregisterI18n(locale);
+    }
+    registryState.textContent(`console · ${installed ? '已安装' : '未安装'}`);
+    toggleButton?.label(installed ? '注销全局实例' : '重新安装');
+  };
+
+  return {
+    render() {
+      return vstack((stack) => {
+        stack.style('gap', '14px');
+        stack.p('配置 key 的实例会自动进入全局注册表，其他模块用 getI18n(key) 取回同一个实例。');
+        stack.p('你好，{name}'.s('greeting', { name: 'Ada' }, locale));
+        stack.hstack((row) => {
+          row.style('alignItems', 'center');
+          row.span('注册表状态'.s('registryState', locale));
+          row.spacer();
+          row.output((output) => output.child(registryState));
+        });
+        stack.vButton('中文', (button) => {
+          button.variant('secondary');
+          button.on('click', () => getI18n(locale.key())?.setLanguage('zh-CN'));
+        });
+        stack.vButton('English', (button) => {
+          button.on('click', () => getI18n(locale.key())?.setLanguage('en'));
+        });
+        stack.vButton('注销全局实例', (button) => {
+          toggleButton = button;
+          button.variant('primary');
+          button.on('click', toggleInstall);
+        });
+      });
     }
   };
 }

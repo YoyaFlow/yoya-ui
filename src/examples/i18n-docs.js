@@ -2,6 +2,7 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   I18nExtendExample1,
+  I18nGlobalExample1,
   I18nParamsExample1,
   I18nReactiveExample1,
   I18nShortcutExample1
@@ -34,6 +35,15 @@ const i18nDemoDefinitions = Object.freeze([
     sourceComponent: I18nShortcutExample1,
     imports: ['createI18n', 'installI18nStringShortcut', 'vstack'],
     sourceTitle: '字符串快捷写法核心源码'
+  },
+  {
+    id: 'global',
+    title: '安装全局 locale',
+    description: '配置 key 的实例自动进入全局注册表，任意模块用 getI18n(key) 取回同一个实例。',
+    component: I18nGlobalExample1,
+    sourceComponent: I18nGlobalExample1,
+    imports: ['createI18n', 'getI18n', 'registerI18n', 'unregisterI18n', 'vText', 'vstack'],
+    sourceTitle: '安装全局 locale 核心源码'
   },
   {
     id: 'extend',
@@ -147,6 +157,21 @@ export function I18nDocumentationPage() {
                   'locale.registerMessages([commonCorpus, pageCorpus])'
                 ],
                 [
+                  'createI18n({ key })',
+                  '创建带 key 的实例，并自动注册进全局 locale 注册表。',
+                  "createI18n({ key: 'app', language: 'zh-CN' })"
+                ],
+                [
+                  'getI18n(key)',
+                  '按 key 取回全局注册的 locale 实例，未找到返回 null。',
+                  "getI18n('app')"
+                ],
+                [
+                  'registerI18n(instance) / unregisterI18n(keyOrInstance)',
+                  '手动安装或注销全局 locale 实例。',
+                  "unregisterI18n('app')"
+                ],
+                [
                   'installI18nStringShortcut(locale)',
                   '启用字符串 s(key, params) 快捷写法。',
                   'installI18nStringShortcut(locale)'
@@ -186,7 +211,9 @@ i18n.registerMessages(parse(enYaml));`);
         page.section((examples) => {
           examples.className('components-i18n-docs-examples');
           examples.h2('代码演示');
-          examples.p('四个示例分别展示响应式翻译、参数回退、字符串快捷写法，以及如何扩展新语言。');
+          examples.p(
+            '五个示例分别展示响应式翻译、参数回退、字符串快捷写法、全局 locale 注册表，以及如何扩展新语言。'
+          );
           i18nDemoDefinitions.forEach((demo) => {
             examples.child(I18nExampleSection(demo));
           });

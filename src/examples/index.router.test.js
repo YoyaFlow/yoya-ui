@@ -1225,7 +1225,7 @@ describe('renderExamplesIndex', () => {
       'reactive',
       'I18nReactiveExample1',
       'createI18n(',
-      4
+      5
     ],
     [
       '/components/guides/state-node',
@@ -1692,6 +1692,38 @@ describe('renderExamplesIndex', () => {
 
     expect(shortcut.textContent).toContain('Saved');
     expect(shortcut.textContent).toContain('Hello, Ada');
+
+    const globalDemo = page.querySelector('[data-i18n-demo="global"] .components-i18n-demo-live');
+    expect(globalDemo.textContent).toContain('你好，Ada');
+    expect(globalDemo.textContent).toContain('console');
+    expect(globalDemo.textContent).toContain('已安装');
+
+    const globalChinese = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('中文')
+    );
+    const globalEnglish = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('English')
+    );
+    globalEnglish.click();
+    expect(globalDemo.textContent).toContain('Hello, Ada');
+
+    const unregisterButton = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('注销全局实例')
+    );
+    unregisterButton.click();
+    expect(globalDemo.textContent).toContain('未安装');
+
+    globalChinese.click();
+    expect(globalDemo.textContent).toContain('Hello, Ada');
+
+    const reinstallButton = [...globalDemo.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('重新安装')
+    );
+    reinstallButton.click();
+    expect(globalDemo.textContent).toContain('已安装');
+
+    globalChinese.click();
+    expect(globalDemo.textContent).toContain('你好，Ada');
 
     const extend = page.querySelector('[data-i18n-demo="extend"] .components-i18n-demo-live');
     expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);
