@@ -251,7 +251,7 @@
 ### 31. 没有 ErrorBoundary，一个组件抛错是不是整个页面白屏？
 
 - 分类：②（2026-09-15 回填，原 ③）
-- 现状：子树错误边界已内建：`node.whenFailed(handler)` 圈定本节点子树，handler 收 `(error, info)`（`info.phase` = build / render / event / update）——返回节点则降级替换子树，返回 null 仅上报并保持现状；组件对象可写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载。嵌套边界内层接管即止步、返回空继续向外、handler 自身抛错交给外层；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。无边界时错误原样传播（fail fast），区域更新失败仍先回滚保旧内容。**页面级兜底**（window.onerror 降级页、SSR 整页失败页）仍是使用方职责。
+- 现状：子树错误边界已内建：`node.whenFailed(handler)` 圈定本节点子树，handler 收 `(error, info)`（`info.phase` = build / render / event / update）——返回节点则降级替换子树，返回空仅上报并保持现状；组件对象可写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载。错误向上交给**最近的**边界，由它独占捕获、不再向外；handler 自身抛错则向外抛出；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。无边界时错误原样传播（fail fast），区域更新失败仍先回滚保旧内容。**页面级兜底**（window.onerror 降级页、SSR 整页失败页）仍是使用方职责。
 - 文档动作：FAQ 条目改为「子树边界用 whenFailed，页面级兜底归应用」；roadmap 记为「子树边界已落地，页面级边界仍为候选」。
 - 优先级：P1 ☐
 

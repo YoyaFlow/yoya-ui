@@ -161,7 +161,7 @@ div((box) => {
 
 - handler 收 `(error, info)`，`info.phase` ∈ `build` / `render` / `event` / `update`；返回节点则降级替换子树，返回空（null / undefined）只上报并保持现状。
 - 组件对象可以写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载——组件自带降级，调用方不必重复声明。
-- 嵌套边界：内层接管即止步；handler 返回空则继续向外；handler 自身抛错交给外层。无边界时错误原样传播（fail fast）。
+- 嵌套边界：错误向上交给**最近的**边界，由它独占捕获、不再向外；handler 返回空 = 仅上报并保持现状；handler 自身抛错则向外抛出。无边界时错误原样传播（fail fast）。
 - 捕获永不静默：`console.error` 必发（含原始 error），devtools 开启时追加 `error` 事件（phase / source / boundary）。
 - 区域更新失败仍先回滚保旧内容，再交给边界决定；降级替换是原子的（先构建成功再换子树）。
 

@@ -40,7 +40,9 @@ export function ErrorHandlingDocumentationPage() {
           list.li(
             '捕获永不静默：console.error 必发（含原始 error 对象），devtools 开启时追加 error 事件。'
           );
-          list.li('嵌套边界内层接管即止步；返回空继续向外；handler 自身抛错交由外层处理。');
+          list.li(
+            '错误向上找最近的边界，由它独占捕获、不再向外；handler 返回空则仅上报并保持现状。'
+          );
           list.li('无边界时错误原样传播（fail fast）；区域更新失败仍先回滚保旧，再交给边界决定。');
         });
         errorDemos.forEach((demo) => page.child(ErrorDemoSection(demo)));

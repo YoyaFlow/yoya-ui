@@ -319,8 +319,10 @@ export class ViewNode {
    * Subtree error boundary. The handler receives the original error and an info
    * object ({ phase: 'build' | 'render' | 'event' | 'update', message, source,
    * boundary }). Returning a node replaces this subtree with a fallback; returning
-   * null only reports and keeps the current state. Captures are never silent:
-   * console.error always fires and a devtools 'error' event is emitted when enabled.
+   * nothing only reports and keeps the current state. The nearest boundary owns the
+   * capture and never forwards it further; a throwing handler propagates outward.
+   * Captures are never silent: console.error always fires and a devtools 'error'
+   * event is emitted when enabled.
    */
   whenFailed(
     handler: (
