@@ -145,7 +145,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
 - 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（首屏构建期求值一次，需要重新求值时自己调 `flush()`）。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
-- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。显式归属节点时用节点方法：`ele.bindWindowEvent(type, handler)` / `ele.bindDocumentEvent(...)`，`destroy()` 自动卸载；独立函数的原有用法（自行保存 unbind）保持不变。
 - 区域自己订阅依赖：区域内读到的信号变化即触发重建（devtools 里记为 `trigger: 'signal'`）；嵌套区域各订阅各的，不会互相代管。
 - 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用值绑定——它们是原地更新，不重建 DOM。
 
