@@ -235,7 +235,7 @@ const htmlNativeSetupForms = [
     name: 'setupObject',
     usage: 'div({ class, attrs, style, children, onXxx, ... })',
     behavior:
-      '配置对象按键分发：class/className、attrs、style、children、onXxx 事件；节点同名方法直接调用，其余非函数键落到 attr；值位置传 signal 句柄即建立活绑定。',
+      '配置对象按键分发：class/className、attrs、style、children、onXxx 事件（on 开头 + 函数值自动识别，去 on 前缀转小写）；节点同名方法直接调用，其余非函数键落到 attr；值位置传 signal 句柄即建立活绑定。',
     example: "div({ attrs: { 'data-count': count } })"
   },
   {
@@ -284,9 +284,11 @@ function HtmlNativeSetupSection() {
 div('服务运行中');
 
 // setupObject：配置按键分发；值位置传句柄 → 属性原地更新
+// onclick 自动识别为 on('click')，onInput → on('input')
 div({
   class: 'panel',
   attrs: { 'data-count': count },
+  onclick: () => save(),
   children: [span('共 3 项')]
 });
 
