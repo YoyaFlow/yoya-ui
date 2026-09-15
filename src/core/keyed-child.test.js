@@ -52,6 +52,38 @@ describe('keyed children', () => {
     expect(() => list.insertBefore('a', div('A2'))).toThrow(/duplicate key/i);
   });
 
+  it('inserts a keyed child after an existing key', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('c', div('C'));
+
+    const returned = list.insertAfter('b', div('B'), 'a');
+
+    expect(returned).toBe(list);
+    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B', 'C']);
+  });
+
+  it('inserts into rendered DOM at the anchored position and prepends on null', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+
+    list.insertAfter('b', div('B'), 'a');
+    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+
+    list.insertAfter('head', div('H'), null);
+    expect([...element.children].map((child) => child.textContent)).toEqual(['H', 'A', 'B', 'C']);
+  });
+
+  it('rejects unknown afterKey and duplicate keys', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+
+    expect(() => list.insertAfter('q', div('Q'), 'missing')).toThrow(/insertAfter\(\)/);
+    expect(() => list.insertAfter('a', div('A2'), null)).toThrow(/duplicate key/i);
+  });
+
   it('rejects duplicate keys', () => {
     const list = div();
 

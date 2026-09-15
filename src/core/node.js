@@ -900,6 +900,66 @@ export class ViewNode {
     return this;
   }
 
+  /** 在 afterKey 对应子节点之后插入 keyed 子节点；afterKey 为空时插入到开头。 */
+  insertAfter(key, child, afterKey = null) {
+    assertRegionChildAllowed(this);
+
+    const rawKey = String(key);
+    if (this._childKeys.has(rawKey)) {
+      throw new TypeError(`duplicate key "${rawKey}"`);
+    }
+
+    const hasAfter = afterKey !== null && afterKey !== undefined;
+    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    if (hasAfter && !afterNode) {
+      throw new TypeError(`insertAfter() requires an existing afterKey "${String(afterKey)}"`);
+    }
+
+    const viewNode = normalizeChildWithContext(this, child);
+    this._childKeys.set(rawKey, viewNode);
+    if (typeof viewNode.attr === 'function') {
+      viewNode.attr('data-row-key', rawKey);
+    }
+    this._pendingRemovals.delete(viewNode);
+
+    const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
+    if (afterIndex === -1) {
+      this._children.unshift(viewNode);
+    } else {
+      this._children.splice(afterIndex + 1, 0, viewNode);
+    }
+    this._childrenDirty = true;
+
+    if (this._el) {
+      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
+        viewNode.renderDom()
+      );
+      if (childElement && childElement.parentNode !== this._el) {
+        let anchor = null;
+        if (afterNode) {
+          for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
+            const sibling = this._children[i];
+            if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
+              anchor = sibling._el;
+              break;
+            }
+          }
+        } else {
+          const first = this._children.find(
+            (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
+          );
+          anchor = first?._el ?? null;
+        }
+        this._el.insertBefore(childElement, anchor);
+      }
+      if (isDevtoolsEnabled() && !this._devtoolsRendering) {
+        notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
+      }
+    }
+
+    return this;
+  }
+
   /** 按 key 读取子节点；不存在返回 null。 */
   getChild(key) {
     return this._childKeys.get(String(key)) || null;
