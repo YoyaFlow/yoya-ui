@@ -409,6 +409,148 @@ function resolveInsertAnchor(parent, fromNode) {
   return null;
 }
 
+function describeKeyedRowKey(rawKey) {
+  return typeof rawKey === 'string' ? rawKey : 'row reference';
+}
+
+function destroyKeyedMember(parent, entry) {
+  const index = parent._children.indexOf(entry.node);
+  if (index !== -1) {
+    parent._children.splice(index, 1);
+  }
+  parent._childrenDirty = true;
+  entry.node.destroy();
+}
+
+/** 段尾锚点：段内最后一个成员（或登记锚点）之后第一个非成员子节点；无则 null（追加）。 */
+function keyedSegmentTailNode(parent, segment, memberNodes) {
+  let last = segment.anchorNode ? parent._children.indexOf(segment.anchorNode) : -1;
+  parent._children.forEach((child, index) => {
+    if (memberNodes.has(child) && index > last) {
+      last = index;
+    }
+  });
+
+  for (let i = last + 1; i < parent._children.length; i += 1) {
+    if (!memberNodes.has(parent._children[i])) {
+      return parent._children[i];
+    }
+  }
+
+  return null;
+}
+
+function placeKeyedMember(parent, entry, beforeNode, tailNode) {
+  parent._pendingRemovals.delete(entry.node);
+  const anchorNode = beforeNode ?? tailNode;
+  const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
+  if (beforeIndex === -1) {
+    parent._children.push(entry.node);
+  } else {
+    parent._children.splice(beforeIndex, 0, entry.node);
+  }
+  parent._childrenDirty = true;
+
+  if (parent._el) {
+    const element = withRenderScope(parent._access ?? currentInheritedScope(), () =>
+      entry.node.renderDom()
+    );
+    if (element && element.parentNode !== parent._el) {
+      const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
+      parent._el.insertBefore(element, anchor ?? resolveInsertAnchor(parent, anchorNode));
+    }
+    if (isDevtoolsEnabled() && !parent._devtoolsRendering) {
+      notifyDevtoolsMutation(parent, 'child', { added: [ensureDevtoolsNodeId(entry.node)] });
+    }
+  }
+}
+
+function syncKeyedSegment(parent, segment, rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const members = segment.members;
+
+  members.forEach((entry, rawKey) => {
+    if (entry.node._deleted) {
+      members.delete(rawKey);
+    }
+  });
+
+  const desired = [];
+  const seen = new Set();
+  list.forEach((row, index) => {
+    const rawKey = segment.keyFn ? segment.keyFn(row, index) : row;
+    if (seen.has(rawKey)) {
+      throw new TypeError(`keyed() duplicate row key: ${describeKeyedRowKey(rawKey)}`);
+    }
+    seen.add(rawKey);
+    desired.push({ rawKey, row, index });
+  });
+
+  const keep = new Set(
+    desired
+      .filter((item) => {
+        const existing = members.get(item.rawKey);
+        return existing && existing.row === item.row;
+      })
+      .map((item) => item.rawKey)
+  );
+  members.forEach((entry, rawKey) => {
+    if (!keep.has(rawKey)) {
+      destroyKeyedMember(parent, entry);
+      members.delete(rawKey);
+    }
+  });
+
+  const next = desired.map((item) => {
+    const existing = members.get(item.rawKey);
+    if (existing) {
+      return { ...item, node: existing.node };
+    }
+
+    const node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
+    const entry = { rawKey: item.rawKey, row: item.row, node };
+    members.set(item.rawKey, entry);
+    if (
+      typeof node.attr === 'function' &&
+      (typeof item.rawKey === 'string' || typeof item.rawKey === 'number')
+    ) {
+      node.attr('data-row-key', String(item.rawKey));
+    }
+    return { ...item, node };
+  });
+
+  const memberNodes = new Set();
+  members.forEach((entry) => memberNodes.add(entry.node));
+  const tailNode = keyedSegmentTailNode(parent, segment, memberNodes);
+
+  for (let i = next.length - 1; i >= 0; i -= 1) {
+    const node = next[i].node;
+    const beforeNode = i + 1 < next.length ? next[i + 1].node : null;
+    const currentIndex = parent._children.indexOf(node);
+    if (currentIndex === -1) {
+      placeKeyedMember(parent, members.get(next[i].rawKey), beforeNode, tailNode);
+      continue;
+    }
+
+    if (!beforeNode) {
+      continue;
+    }
+
+    const beforeIndex = parent._children.indexOf(beforeNode);
+    if (beforeIndex !== -1 && currentIndex >= beforeIndex) {
+      parent._children.splice(currentIndex, 1);
+      const anchorNode = beforeNode ?? tailNode;
+      const target = anchorNode ? parent._children.indexOf(anchorNode) : -1;
+      parent._children.splice(target === -1 ? parent._children.length : target, 0, node);
+      parent._childrenDirty = true;
+      if (parent._el && node._el) {
+        const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
+        parent._el.insertBefore(node._el, anchor ?? resolveInsertAnchor(parent, anchorNode));
+      }
+    }
+  }
+}
+
 /** 上报区域重建事件，便于 devtools 回答「这块为什么重建 / 为什么只是刷值」。 */
 function emitRegionEvent(node, action, trigger) {
   if (!isDevtoolsEnabled()) {
@@ -548,6 +690,7 @@ export class ViewNode {
     this._domAdapters = new Map();
     this._cleanup = [];
     this._pendingRemovals = new Set();
+    this._keyedSegments = [];
     this._childrenDirty = false;
     this._deleted = false;
     this._access = null;
@@ -1104,6 +1247,37 @@ export class ViewNode {
     }
 
     previous.destroy();
+
+    return this;
+  }
+
+  /**
+   * keyed 子项绑定：source 是 ref/computed 句柄。
+   * 同 key 且行引用未变时复用节点（build 不重跑）；行引用变化原位换新；
+   * 顺序变化 insertBefore 保身份。keyFn 缺省时用行引用身份做 key。
+   */
+  keyed(source, keyOrBuild, maybeBuild = null) {
+    const build = typeof maybeBuild === 'function' ? maybeBuild : keyOrBuild;
+    const keyFn = typeof maybeBuild === 'function' ? keyOrBuild : null;
+
+    if (!isSignal(source)) {
+      throw new TypeError('keyed() requires a signal handle as its source');
+    }
+    if (typeof build !== 'function') {
+      throw new TypeError('keyed() requires a build function');
+    }
+
+    assertRegionChildAllowed(this);
+    const segment = {
+      anchorNode: this._children[this._children.length - 1] ?? null,
+      keyFn,
+      build,
+      members: new Map()
+    };
+    this._keyedSegments.push(segment);
+    registerNodeBinding(this, 'keyed', null, () => source.value, (rows) => {
+      syncKeyedSegment(this, segment, rows);
+    });
 
     return this;
   }
