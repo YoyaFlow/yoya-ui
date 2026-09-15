@@ -9,20 +9,19 @@ hydration 失配诊断。每条结论都以源码与测试为依据，其中信�
 一句话版本：**「重建即弃建」是显式协议且解法齐备——值绑定、谓词、预制节点
 挂载，或干脆不用 rebuildable、以 style / attr 动态值控制显隐；「收养式局部协调」
 是 vDOM 为隐式身份发明的机制，纯 JS 模式身份由句柄显式持有，无需额外处理。
-computed 菱形由引擎天然支持；keyed 列表理应如此；错误回滚没有魔法，报错位置就是业务代码位置。真正的
-欠账收窄为：组件层的同步渲染 ErrorBoundary 与基础库层的跨信号重建合并；页面缓存由 RouterViews 天然提供，异步场景错误用 `vDynamicLoader` 即可。**
+computed 菱形由引擎天然支持；keyed 列表协调已有 `keyed()` 绑定与 insert/move/replace 原语；错误回滚没有魔法，报错位置就是业务代码位置。原两项 P0 欠账均已落地：跨信号重建合并由 `batch()` + `rebuildScheduled()` 提供，同步渲染错误边界由 `whenFailed`（节点方法 + 组件协议成员）提供；页面缓存由 RouterViews 天然提供，异步场景错误用 `vDynamicLoader` 即可。**
 
 ## 逐条结论
 
-| #   | 问题               | 层级                             | 结论                                                                        | 解决方案                                                                                                                                      | 依据                                                                                                               |
-| --- | ------------------ | -------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 1   | 区域重建 DOM 身份  | 基础库                           | 弃建。子树整体重建、不收养；宿主元素身份保留                                | 值绑定原地更新；谓词延迟重建；预制节点挂载；**放弃 rebuildable：style / attr 动态值控制显隐**，身份天然保持                                   | [node.js](../../src/core/node.js)、[region-flush.test.js](../../src/core/region-flush.test.js)                     |
-| 2   | 信号传播语义       | 基础库                           | 同步级联；`batch()` 不合并「同一区域订阅的多个信号」的重建                  | 短期：一次事件里合并写点 / 用 batch 避免中间态；根治：区域 pending 去重（同批次只重建一次）                                                   | 实验验证 + [engine.test.js](../../src/core/signals/engine.test.js)                                                 |
-| 3   | computed 菱形      | 基础库                           | 不是问题：菱形一致性由内置引擎天然支持（实验验证）                          | 直接用 `computed` 组合菱形依赖，无需额外处理                                                                                                  | 实验验证 + [engine.js](../../src/core/signals/engine.js)                                                           |
-| 4   | 列表协调语义       | 基础库（设计如此）               | 不是缺陷：JS 循环 / 判断就是 v-for / v-if，keyed 原语齐备，策略由开发者决定 | `addChild(key, node)` / `getChild(key)` / `removeChild(key)` 增量增删；预制节点挂载保身份；`vTable` 整体重建是组件自身实现选择，不是库缺口    | [keyed-child.test.js](../../src/core/keyed-child.test.js)、[state-node.js](../../src/examples/demos/state-node.js) |
-| 5   | 错误边界与恢复     | 组件层缺组件，基础库已有回滚原语 | 无 ErrorBoundary 组件；区域 rebuild 失败回滚保留旧内容                      | 基础库：区域回滚直接用（报错位置即业务代码位置）；异步错误用 `vDynamicLoader`（error 态 + retry）；剩余缺口：同步渲染意外异常的 ErrorBoundary | [beginner-feedback.zh-CN.md](beginner-feedback.zh-CN.md) §31                                                       |
-| 6   | 过渡与页面缓存     | 组件                             | `vTransition` 有（保身份 show/hide）；页面缓存由 `RouterViews` 天然提供     | 过渡用 `vTransition`；页面缓存用 `vRouterViews`（标签保持 + localStorage 持久化 + 刷新恢复）；DOM 保活用预制节点显隐                          | [transition.js](../../src/effects/transition.js)、[router.js](../../src/router/router.js)                          |
-| 6.5 | hydration 失配诊断 | 基础库                           | 有 devtools 事件可定位；生产静默替换                                        | 开 `enableDevtools()` 订阅 `hydrate-mismatch`（expected/existing + 节点引用）；改进：dev 默认 console 警告 + DOM 路径                         | [hydrate-mismatch.test.js](../../src/core/hydrate-mismatch.test.js)                                                |
+| #   | 问题               | 层级                 | 结论                                                                    | 解决方案                                                                                                                            | 依据                                                                                                                       |
+| --- | ------------------ | -------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 区域重建 DOM 身份  | 基础库               | 弃建。子树整体重建、不收养；宿主元素身份保留                            | 值绑定原地更新；谓词延迟重建；预制节点挂载；**放弃 rebuildable：style / attr 动态值控制显隐**，身份天然保持                         | [node.js](../../src/core/node.js)、[region-flush.test.js](../../src/core/region-flush.test.js)                             |
+| 2   | 信号传播语义       | 基础库（**已修复**） | 原同步级联且 batch 不合并同区域重建                                     | 已落地：core 自有 batch 作用域内按区域去重，`rebuildScheduled()` 查询挂起重建，同批次只重建一次（含无 batch 引擎一致性用例）        | [region-schedule.test.js](../../src/core/region-schedule.test.js)、[schedule.js](../../src/core/signals/schedule.js)       |
+| 3   | computed 菱形      | 基础库               | 不是问题：菱形一致性由内置引擎天然支持（实验验证）                      | 直接用 `computed` 组合菱形依赖，无需额外处理                                                                                        | 实验验证 + [engine.js](../../src/core/signals/engine.js)                                                                   |
+| 4   | 列表协调语义       | 基础库（**已补齐**） | 原 keyed 原语只有增删，缺移动/替换；排序保身份无路可走                  | 已落地：`keyed(rows, keyFn, build)` 信号驱动绑定（同 key 引用未变复用节点、引用变原位换新、排序保身份）+ insert/move/replace 五原语 | [keyed-children.test.js](../../src/core/keyed-children.test.js)、[keyed-child.test.js](../../src/core/keyed-child.test.js) |
+| 5   | 错误边界与恢复     | 基础库（**已补齐**） | 原无同步渲染错误边界；区域 rebuild 失败回滚保留旧内容                   | 已落地：`whenFailed(handler)` 节点方法 + 组件协议可选成员；返回节点降级替换、返回 null 仅上报；捕获必发 console.error               | [node-when-failed.test.js](../../src/core/node-when-failed.test.js)                                                        |
+| 6   | 过渡与页面缓存     | 组件                 | `vTransition` 有（保身份 show/hide）；页面缓存由 `RouterViews` 天然提供 | 过渡用 `vTransition`；页面缓存用 `vRouterViews`（标签保持 + localStorage 持久化 + 刷新恢复）；DOM 保活用预制节点显隐                | [transition.js](../../src/effects/transition.js)、[router.js](../../src/router/router.js)                                  |
+| 6.5 | hydration 失配诊断 | 基础库               | 有 devtools 事件可定位；生产静默替换                                    | 开 `enableDevtools()` 订阅 `hydrate-mismatch`（expected/existing + 节点引用）；改进：dev 默认 console 警告 + DOM 路径               | [hydrate-mismatch.test.js](../../src/core/hydrate-mismatch.test.js)                                                        |
 
 ## 1. 区域重建：明确「弃建」协议，解法齐备（基础库层）
 
@@ -189,11 +188,12 @@ dev 下默认 console 警告并输出 DOM 路径 / 两侧片段。
 
 **基础库层**：
 
-1. **P0 区域重建合并**：同批次多信号触发只重建一次（严重，协议层小改）；
+1. ~~**P0 区域重建合并**~~ ✅ 已完成：`batch()` 内同区域多信号只重建一次，`rebuildScheduled()` 查询挂起状态；
 
-2. **P2 hydration 失配 DX**：dev 下默认 console 警告 + DOM 路径输出（中等）。
+2. ~~**P0 错误边界**~~ ✅ 已完成：`whenFailed` 双入口（节点方法 / 组件协议成员），返回节点降级、返回 null 上报；
+
+3. **P2 hydration 失配 DX**：dev 下默认 console 警告 + DOM 路径输出（中等）。
 
 **组件层**：
 
-1. **P0 ErrorBoundary**：页面级 / 组件级错误边界节点，异常隔离 + 降级 UI（致命）；
-2. **P2 TransitionGroup**：列表 move 过渡组件（中等）。
+1. **P2 TransitionGroup**：列表 move 过渡组件（中等）。

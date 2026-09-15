@@ -244,10 +244,10 @@
 
 ### 31. 没有 ErrorBoundary，一个组件抛错是不是整个页面白屏？
 
-- 分类：③
-- 现状：无全局错误边界组件。现有缓解：区域 rebuild 构建失败自动回滚、旧内容保留（`rebuild()` 的 catch 路径）；SSR 每请求隔离，单请求异常不影响下一请求。页面级兜底（window.onerror 降级页）目前是使用方职责。
-- 文档动作：FAQ 诚实条目 + roadmap 候选（页面级错误边界节点）。
-- 优先级：P1 ☐
+- 分类：③（**已解决**）
+- 现状：`whenFailed(handler)` 已提供子树错误边界——节点方法就地圈界；组件对象写与 `render()` 同层的 `whenFailed(error, info)` 成员由 ComponentNode 自动挂载。返回节点替换子树降级、返回 null 仅上报保现状；嵌套内层接管即止步；捕获必发 console.error（原始 error 透传），devtools 开启时追加 `error` 事件。区域 rebuild 失败仍先回滚保旧再交边界决定；SSR 每请求隔离。
+- 文档动作：component-authoring「错误边界」条目 + 示例站「错误处理」独立指南页（两个交互演示）。
+- 优先级：P1 ☑
 
 ### 32. 怎么单测？没有 test-utils、没有 testing-library，断言 DOM 还是 ViewNode？
 
