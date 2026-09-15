@@ -1,4 +1,5 @@
 import {
+  computed,
   createI18n,
   getI18n,
   installI18nStringShortcut,
@@ -268,19 +269,18 @@ export function I18nGlobalExample1() {
       en: { greeting: 'Hello, {name}', registryState: 'Registry state' }
     }
   });
-  const registryState = ref('console · 已安装');
-  let installed = true;
+  const installed = ref(true);
+  const registryState = computed(() => `console · ${installed.value ? '已安装' : '未安装'}`);
   let toggleButton = null;
 
   const toggleInstall = () => {
-    installed = !installed;
-    if (installed) {
+    installed.value = !installed.value;
+    if (installed.value) {
       registerI18n(locale);
     } else {
       unregisterI18n(locale);
     }
-    registryState.value = `console · ${installed ? '已安装' : '未安装'}`;
-    toggleButton?.label(installed ? '注销全局实例' : '重新安装');
+    toggleButton?.label(installed.value ? '注销全局实例' : '重新安装');
   };
 
   return {

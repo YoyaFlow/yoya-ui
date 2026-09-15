@@ -42,7 +42,15 @@ const i18nDemoDefinitions = Object.freeze([
     description: '配置 key 的实例自动进入全局注册表，任意模块用 getI18n(key) 取回同一个实例。',
     component: I18nGlobalExample1,
     sourceComponent: I18nGlobalExample1,
-    imports: ['createI18n', 'getI18n', 'ref', 'registerI18n', 'unregisterI18n', 'vstack'],
+    imports: [
+      'computed',
+      'createI18n',
+      'getI18n',
+      'ref',
+      'registerI18n',
+      'unregisterI18n',
+      'vstack'
+    ],
     sourceTitle: '安装全局 locale 核心源码'
   },
   {
