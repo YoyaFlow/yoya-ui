@@ -589,6 +589,12 @@ function createOverviewView() {
             points: ['无虚拟 DOM 与框架运行时，产出原生 HTML/DOM/JS，长期运行不过时。']
           },
           {
+            title: '浏览器原生调试',
+            points: [
+              '无虚拟 DOM 与构建链路，Elements、断点、Console 即查即用；故障定位与业务调试通常无需额外插件或工具。'
+            ]
+          },
+          {
             title: '可嵌入局部增强',
             points: ['bindTo() 可挂载进 HTML、Vue、React、htmx、PHP、JSP 等既有项目，渐进增强。']
           },

@@ -88,6 +88,10 @@ div((page) => {
 
 - The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, component objects, strings, and numbers uniformly.
 - `registerChildFactories` registers components as parent shortcuts (`card.vCardHeader`), so third-party components can extend the DSL too.
+- The real DOM is the view tree: the Elements panel shows the exact hierarchy, styles, and accessibility attributes — inspect and edit directly.
+- Events are native DOM events: the Event Listeners panel locates business handlers, and stack traces point to your source closures with no framework runtime in between.
+- Debug business content without a build environment: breakpoints, the console, and the Performance panel work out of the box; troubleshooting rarely needs extra plugins or tools.
+- To observe signal writes, region rebuilds, or hydration mismatches, enable the built-in DevTools bridge (`enableDevtools()`, beta).
 
 ## 5. Forms: one collection point, view/edit built in
 

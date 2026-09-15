@@ -137,7 +137,8 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelector('.components-route-page--overview')).not.toBeNull();
     expect(document.querySelector('[data-overview-page]')).not.toBeNull();
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(7);
+    expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(8);
+    expect(document.querySelector('[data-overview-principle="浏览器原生调试"]')).not.toBeNull();
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(7);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();

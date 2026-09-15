@@ -88,6 +88,10 @@ div((page) => {
 
 - 同一份代码既可直接 `.bindTo()` 上浏览器，也可 `toHTML()` / SSR；`child()` 统一接受 ViewNode / 组件对象 / 字符串数字。
 - `registerChildFactories` 把组件注册为父节点快捷方法（`card.vCardHeader`），第三方组件也能扩展 DSL。
+- 真实 DOM 即视图树：DevTools 的 Elements 面板看到的层级、样式、无障碍属性就是页面本身，即查即改。
+- 事件是原生 DOM 事件：Event Listeners 面板可直接定位业务处理器，调用栈指向源码闭包，没有框架运行时隔层。
+- 不依赖编译环境即可调试业务内容：断点、Console、Performance 开箱即用，页面故障定位大多数时候不需要安装额外插件或工具。
+- 需要观察信号写入、区域重建、hydration 失配时，再开启内建 DevTools 桥（`enableDevtools()`，Beta）。
 
 ## 5. 表单：一处收集，查看/编辑态内建
 
