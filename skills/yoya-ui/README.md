@@ -1,6 +1,6 @@
 # yoya-ui Codex 技能安装说明
 
-本目录是 [yoya-ui](../../README.zh-CN.md) 的 Codex 技能。安装后，Codex 能在项目中使用 yoya-ui 时给出正确指导：声明式组件 DSL、页面组合、表单收集与校验、主题 token、SSR/hydrate、i18n，以及基于 `@yoyaflow/yoya-ui/core` 开发第三方组件。
+本目录是 [yoya-ui](../../README.zh-CN.md) 的 Codex 技能。安装后，Codex 能在项目中使用 yoya-ui 时给出正确指导：声明式组件 DSL、页面组合、keyed 列表协调、条件挂载与子树错误边界、表单收集与校验、主题 token、SSR/hydrate、i18n，以及基于 `@yoyaflow/yoya-ui/core` 开发第三方组件。
 
 ## 前置要求
 

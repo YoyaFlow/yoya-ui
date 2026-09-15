@@ -1,6 +1,6 @@
 ---
 name: yoya-ui
-description: 在项目中正确使用 yoya-ui UI 库时使用：声明式组件 DSL、页面组合、状态与可重建区域、表单收集与校验、权限与 Context、主题 token、SSR/hydrate、i18n；也适用于基于 yoya-ui/core 开发第三方组件。
+description: 在项目中正确使用 yoya-ui UI 库时使用：声明式组件 DSL、页面组合、状态与可重建区域、keyed 列表协调、条件挂载与错误边界、表单收集与校验、权限与 Context、主题 token、SSR/hydrate、i18n；也适用于基于 yoya-ui/core 开发第三方组件。
 ---
 
 # Yoya UI
@@ -71,6 +71,14 @@ div((root) => {
 
 需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：声明 `rebuildable(谓词?)` 后，区域内读到的信号就成为它的依赖，信号变化时自动按谓词重建（也可手动 `rebuild()`）。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷值并记 `rebuildPending()`。详见 references/state.md。
 
+结构变化的粒度不止「整片重建」，按代价选三档：
+
+- **列表协调**：`ul.keyed(rows, (row) => row.id, (row) => li(row.title))` 用信号驱动对账——同 key 且行引用未变复用节点（`build` 不重跑）、行引用变原位换新、排序 `insertBefore` 保身份；自定义策略用 `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` 五个 keyed 原语。
+- **条件挂载**：`panel.mounted(cond)`（句柄或零参闭包）——为假脱离文档、为真按子节点槽位回归，ViewNode 与控件状态保留；与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档；`isMounted()` 查询条件状态。
+- **子树错误边界**：`box.whenFailed((error, info) => fallback)`——返回节点降级替换子树、返回 null 仅上报并保持现状；组件对象写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。
+
+`mounted()` 在 setup 期声明（已入树后补挂没有公共入口），绑定登记在父节点；三者的细节与坑位见 references/state.md。
+
 ## 表单
 
 `vForm` + `vFormItem` 收集与校验；控件设 `name()` 后自动进 `form.values()`；`form.validate()` 校验必填与自定义规则。详见 references/forms.md。
@@ -99,7 +107,7 @@ div((root) => {
 
 ## DevTools（Beta）
 
-开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `signal-write` / `region`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
+开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `signal-write` / `region` / `error`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
 
 ## 参考文件（按需读取）
 
@@ -108,7 +116,7 @@ div((root) => {
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
-- [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、引擎替换、fragment 与 keyed 子节点、事件单槽
+- [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、事件单槽
 - [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与通用 Context 注入、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
