@@ -512,9 +512,7 @@ function placeKeyedMember(parent, entry, beforeNode, tailNode) {
   parent._childrenDirty = true;
 
   if (parent._el) {
-    const element = withRenderScope(parent._access ?? currentInheritedScope(), () =>
-      entry.node.renderDom()
-    );
+    const element = parent._renderChildForInsert(entry.node);
     if (element && element.parentNode !== parent._el) {
       const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
       parent._el.insertBefore(element, anchor ?? resolveInsertAnchor(parent, anchorNode));
@@ -759,6 +757,7 @@ export class ViewNode {
     this._errorBoundary = null;
     this._childrenDirty = false;
     this._deleted = false;
+    this._failed = false; // 渲染/构建失败标记：跳过重复尝试，重新挂载会清掉
     this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
     this._builders = []; // 区域重建时按顺序重跑的构建函数
@@ -1070,9 +1069,7 @@ export class ViewNode {
     this._inheritErrorBoundary(viewNode);
 
     if (this._el) {
-      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
-        viewNode.renderDom()
-      );
+      const childElement = this._renderChildForInsert(viewNode);
       if (childElement && childElement.parentNode !== this._el) {
         this._el.appendChild(childElement);
       }
@@ -1117,9 +1114,7 @@ export class ViewNode {
     this._childrenDirty = true;
 
     if (this._el) {
-      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
-        viewNode.renderDom()
-      );
+      const childElement = this._renderChildForInsert(viewNode);
       if (childElement && childElement.parentNode !== this._el) {
         const beforeElement = beforeNode?._el;
         const anchor =
@@ -1167,9 +1162,7 @@ export class ViewNode {
     this._childrenDirty = true;
 
     if (this._el) {
-      const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
-        viewNode.renderDom()
-      );
+      const childElement = this._renderChildForInsert(viewNode);
       if (childElement && childElement.parentNode !== this._el) {
         let anchor = null;
         if (afterNode) {
@@ -1312,9 +1305,7 @@ export class ViewNode {
     this._childrenDirty = true;
 
     if (this._el) {
-      const newElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
-        viewNode.renderDom()
-      );
+      const newElement = this._renderChildForInsert(viewNode);
       const oldElement = previous._el;
       if (newElement && newElement.parentNode !== this._el) {
         const anchor = oldElement?.parentNode === this._el ? oldElement : null;
@@ -1405,9 +1396,26 @@ export class ViewNode {
     return this;
   }
 
-  /** 插入路径统一入口：向子节点传播最近边界引用。 */
+  /**
+   * 插入路径统一入口：向子节点传播最近边界引用。
+   * 重新挂载（插入 / 换新 / 区域重建）同时清掉上一次的失败标记，允许再试一次。
+   */
   _inheritErrorBoundary(viewNode) {
     viewNode._errorBoundary = this._errorHandler ? this : this._errorBoundary;
+    viewNode._failed = false;
+  }
+
+  /**
+   * 插入路径的即时渲染：失败交给最近边界（与其它渲染路径一致）。
+   * 返回要挂载的元素——正常是子节点自己的元素，降级时是 fallback 的元素。
+   */
+  _renderChildForInsert(viewNode) {
+    try {
+      return withRenderScope(this._access ?? currentInheritedScope(), () => viewNode.renderDom());
+    } catch (error) {
+      const replacement = captureNodeError(viewNode, error, 'render');
+      return replacement?._el ?? null;
+    }
   }
 
   /** 边界处理入口：通知 → handler → 降级替换 / 保持现状。返回降级节点或 null。 */
@@ -1435,6 +1443,11 @@ export class ViewNode {
     }
 
     // handler 返回空：仅上报 + 保持现状，不再向外（最近的边界独占这次捕获）。
+    // render / build 阶段的失败节点留在树里会反复失败：标记后跳过后续尝试，
+    // 重新挂载（插入 / 换新 / 区域重建）会清掉标记，允许再试一次。
+    if ((phase === 'render' || phase === 'build') && source) {
+      source._failed = true;
+    }
     return null;
   }
 
@@ -1970,6 +1983,10 @@ export class ComponentNode extends ViewNode {
 
       const nodes = [];
       list.forEach((root) => {
+        if (root._failed) {
+          return;
+        }
+
         const element = withRenderScope(this._access ?? inherited, () => {
           try {
             return root.renderDom();
@@ -1991,6 +2008,11 @@ export class ComponentNode extends ViewNode {
     const resolved = list[0];
     return withRenderScope(this._access ?? inherited, () => {
       let element;
+      if (resolved._failed) {
+        this._el = null;
+        return null;
+      }
+
       try {
         element = resolved.renderDom();
       } catch (error) {
@@ -2010,7 +2032,10 @@ export class ComponentNode extends ViewNode {
     const inherited = currentInheritedScope();
     const list = this._resolveList();
     return withRenderScope(this._access ?? inherited, () =>
-      list.map((root) => root.toHTML()).join('')
+      list
+        .filter((root) => !root._failed)
+        .map((root) => root.toHTML())
+        .join('')
     );
   }
 
@@ -2436,9 +2461,7 @@ export class ElementNode extends ViewNode {
       this._inheritErrorBoundary(viewNode);
 
       if (this._el) {
-        const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
-          viewNode.renderDom()
-        );
+        const childElement = this._renderChildForInsert(viewNode);
         if (childElement && childElement.parentNode !== this._el) {
           this._el.appendChild(childElement);
         }
@@ -2509,6 +2532,10 @@ export class ElementNode extends ViewNode {
       this._commitChildren();
       this._children.forEach((child) => {
         withRenderScope(inherited, () => {
+          if (child._failed) {
+            return;
+          }
+
           let childElement;
           try {
             childElement = child.renderDom();
@@ -2571,7 +2598,7 @@ export class ElementNode extends ViewNode {
       }
 
       const mountedChildren = this._children.filter(
-        (child) => this._childMountStates.get(child) !== false
+        (child) => this._childMountStates.get(child) !== false && !child._failed
       );
 
       const childHTML = mountedChildren
@@ -2605,6 +2632,10 @@ export class ElementNode extends ViewNode {
   _applySnapshotToElement() {
     this._applyBindingsToElement();
     this._children.forEach((child) => {
+      if (child._failed) {
+        return;
+      }
+
       let childElement;
       try {
         childElement = child.renderDom();

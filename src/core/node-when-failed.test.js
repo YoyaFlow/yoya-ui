@@ -136,8 +136,32 @@ describe('whenFailed error boundary', () => {
     outer.renderDom();
 
     expect(outerHandler).not.toHaveBeenCalled();
-    // 最近边界独占这次捕获；失败节点仍留在树里，后续渲染会再次触发捕获
-    expect(errorSpy).toHaveBeenCalled();
+    // 最近边界独占这次捕获；失败节点被打标记，不再重复渲染与记录
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a failed node on later render passes and retries after re-insertion', () => {
+    const box = div((node) => {
+      node.whenFailed(() => null);
+      node.child(failingNode());
+    });
+    const element = box.renderDom();
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    // 后续渲染不再尝试失败节点，也不重复记录
+    box.renderDom();
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+
+    // 重新挂载 = 清掉标记，允许再试一次（失败则再记录一次）
+    const failed = box.children()[0];
+    box.clearChildren();
+    box.child(failed);
+    box.renderDom();
+
+    expect(errorSpy).toHaveBeenCalledTimes(2);
+    expect(failed._failed).toBe(true);
+    element.remove();
   });
 
   it('rethrows when the boundary handler itself throws', () => {
