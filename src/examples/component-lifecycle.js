@@ -190,3 +190,223 @@ export function ComponentLifecycleDiagram() {
     );
   });
 }
+
+/**
+ * 数据更新机制流程图：左列是值绑定 / flush() 的原地更新路径，
+ * 右列是区域依赖 → 调度 → rebuild() 的结构重建路径（含谓词分支）。
+ * 与生命周期图同款 SVG DSL 与主题 token，明暗模式自动跟随。
+ */
+export function DataUpdateFlowDiagram() {
+  return svg((canvas) => {
+    canvas.className('components-update-flow-diagram');
+    canvas.attr({
+      'data-update-flow-diagram': 'true',
+      role: 'img',
+      'aria-label': '数据更新机制：值绑定原地更新与区域重建两条路径',
+      viewBox: '0 0 1200 660'
+    });
+    canvas.style('display', 'block');
+    canvas.style('width', '100%');
+    canvas.style('height', 'auto');
+
+    canvas.defs((defs) => {
+      defs.marker((marker) => {
+        marker.attr({
+          id: 'yoya-update-flow-arrow',
+          markerWidth: 10,
+          markerHeight: 10,
+          refX: 8,
+          refY: 3,
+          orient: 'auto'
+        });
+        marker.path((head) => head.attr({ d: 'M0,0 L8,3 L0,6 Z', fill: primary }));
+      });
+    });
+
+    const box = ({ x, y, width, height, title, lines = [], muted = false }) => {
+      canvas.g((group) => {
+        group.rect((rect) =>
+          rect.attr({
+            x,
+            y,
+            width,
+            height,
+            rx: 10,
+            fill: muted ? subtle : surface,
+            stroke
+          })
+        );
+        group.text(title, (label) =>
+          label.attr({
+            x: x + width / 2,
+            y: y + 25,
+            'text-anchor': 'middle',
+            'font-size': 13,
+            'font-weight': 700,
+            fill: titleColor
+          })
+        );
+        lines.forEach((line, index) => {
+          group.text(line, (item) =>
+            item.attr({
+              x: x + width / 2,
+              y: y + 47 + index * 20,
+              'text-anchor': 'middle',
+              'font-size': 11,
+              fill: mutedColor
+            })
+          );
+        });
+      });
+    };
+
+    const arrow = (x1, y1, x2, y2) => {
+      canvas.line((line) =>
+        line.attr({
+          x1,
+          y1,
+          x2,
+          y2,
+          stroke: primary,
+          'stroke-width': 1.5,
+          'marker-end': 'url(#yoya-update-flow-arrow)'
+        })
+      );
+    };
+
+    // 起点
+    box({ x: 430, y: 18, width: 340, height: 48, title: '状态变化：写入 ref / 信号' });
+    canvas.path((leftSplit) =>
+      leftSplit.attr({
+        d: 'M600 66 C 600 92, 230 78, 230 106',
+        fill: 'none',
+        stroke: primary,
+        'stroke-width': 1.5,
+        'marker-end': 'url(#yoya-update-flow-arrow)'
+      })
+    );
+    canvas.path((rightSplit) =>
+      rightSplit.attr({
+        d: 'M600 66 C 600 92, 920 78, 920 106',
+        fill: 'none',
+        stroke: primary,
+        'stroke-width': 1.5,
+        'marker-end': 'url(#yoya-update-flow-arrow)'
+      })
+    );
+
+    // 左列：值绑定 / flush()
+    box({
+      x: 40,
+      y: 110,
+      width: 380,
+      height: 40,
+      title: '值绑定 · 原地更新',
+      muted: true
+    });
+    box({
+      x: 40,
+      y: 172,
+      width: 380,
+      height: 64,
+      title: '值位置直接传句柄',
+      lines: ['attr / style / text / 组件 props']
+    });
+    arrow(230, 236, 230, 260);
+    box({
+      x: 40,
+      y: 266,
+      width: 380,
+      height: 64,
+      title: '自动原地写回',
+      lines: ['值相同跳过；值不同只改属性 / 文本']
+    });
+    arrow(230, 330, 230, 354);
+    box({
+      x: 40,
+      y: 360,
+      width: 380,
+      height: 64,
+      title: 'flush()：手动补刷',
+      lines: ['求值已登记绑定并写回；幂等，不重建']
+    });
+    arrow(230, 424, 230, 448);
+    box({
+      x: 40,
+      y: 454,
+      width: 380,
+      height: 64,
+      title: '元素身份不变',
+      lines: ['焦点 / 选区 / 第三方实例保留'],
+      muted: true
+    });
+
+    // 右列：区域依赖 / rebuild()
+    box({
+      x: 680,
+      y: 110,
+      width: 480,
+      height: 40,
+      title: '区域依赖 · 结构重建',
+      muted: true
+    });
+    box({
+      x: 680,
+      y: 172,
+      width: 480,
+      height: 56,
+      title: '区域构建期读到的信号',
+      lines: ['声明 rebuildable() 之后读取才计入依赖']
+    });
+    arrow(920, 228, 920, 252);
+    box({
+      x: 680,
+      y: 258,
+      width: 480,
+      height: 72,
+      title: '自动调度',
+      lines: ['batch 内：合并为一次 rebuildScheduled()', 'batch 外：立即同步；重建中写入排队补跑']
+    });
+    arrow(920, 330, 920, 354);
+    box({
+      x: 680,
+      y: 360,
+      width: 480,
+      height: 56,
+      title: 'rebuild()：先构建新子树',
+      lines: ['构建成功才替换，失败回滚保留旧内容']
+    });
+    arrow(796, 416, 796, 440);
+    arrow(1044, 416, 1044, 440);
+    box({
+      x: 680,
+      y: 446,
+      width: 232,
+      height: 72,
+      title: '谓词 false',
+      lines: ['只刷值 + rebuildPending()', '结构 / 焦点不动；force 可补']
+    });
+    box({
+      x: 928,
+      y: 446,
+      width: 232,
+      height: 72,
+      title: '谓词 true',
+      lines: ['释放旧绑定 → 替换 DOM', '重捕依赖并重订订阅']
+    });
+
+    // 底部规则说明
+    box({
+      x: 40,
+      y: 556,
+      width: 1120,
+      height: 76,
+      title: '选择规则',
+      lines: [
+        '值变化 → 值绑定 / flush()（原地更新）；结构变化 → rebuildable() + rebuild()（弃建协议）',
+        '区域内 DOM 身份不保留（焦点 / 滚动 / 第三方实例会重建）；区域外兄弟节点不受影响'
+      ],
+      muted: true
+    });
+  });
+}

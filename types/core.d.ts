@@ -254,6 +254,12 @@ export class ViewNode {
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
   rebuildPending(): boolean;
 
+  /**
+   * Whether a signal-triggered rebuild is queued and will run automatically:
+   * coalesced inside the current batch, or re-queued while a rebuild is running.
+   */
+  rebuildScheduled(): boolean;
+
   /** Flushes bound values in this subtree without rebuilding structure. */
   flush(): this;
 
@@ -603,17 +609,20 @@ export class I18n {
   /** Registers one or more corpora: multi-language files or { language, messages }. */
   registerMessages(corpus?: Record<string, unknown> | Array<unknown>): this;
 
-  /** Translates a key with dot-path lookup, fallback language and {name} params. */
+  /**
+   * Translates a key with dot-path lookup, fallback language and {name} params.
+   * Signal params use tracked reads, so t() composes with computed() and regions.
+   */
   t(key: string, params?: Record<string, unknown>, defaultValue?: unknown): string;
 
-  /** Creates a text node that refreshes when the language changes. */
+  /** Creates a text node that refreshes on language changes; signal params refresh in place. */
   text(key: string, params?: Record<string, unknown>, defaultValue?: unknown): I18nTextNode;
 
   /** Subscribes to language changes; returns an unsubscribe function. */
   subscribe(listener: (i18n: I18n) => void): () => void;
 }
 
-/** Text node bound to an I18n instance; refreshes on language changes. */
+/** Text node bound to an I18n instance; refreshes on language changes and signal param writes. */
 export class I18nTextNode extends VTextNode {
   constructor(i18n: I18n, key: string, params?: Record<string, unknown>, defaultValue?: unknown);
 
@@ -836,6 +845,7 @@ declare global {
   interface String {
     /**
      * i18n string shortcut: "default text".s(key, paramsOrLocale?, maybeLocale?).
+     * Param values accept signal handles; writes refresh the text in place.
      * The locale argument may be an I18n instance or a registered locale key.
      */
     s(

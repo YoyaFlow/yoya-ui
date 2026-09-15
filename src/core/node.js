@@ -5,7 +5,12 @@ import { isSignal, ref } from './signals/handle.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
-import { trackedSubscribe } from './signals/observe.js';
+import { trackedSubscribe, trackRegionOwner } from './signals/observe.js';
+import {
+  cancelScheduledRegionRebuild,
+  isSignalsBatchActive,
+  scheduleRegionRebuild
+} from './signals/schedule.js';
 
 // 区域环境恢复需要读取/恢复字符串快捷写法实例；i18n.js 依赖本模块，
 // 因此用注册方式桥接，避免循环引用。
@@ -415,9 +420,16 @@ function subscribeRegion(node) {
       return;
     }
 
+    const disposeSubscription = trackedSubscribe(adapter, source, () =>
+      scheduleRegionRebuild(node)
+    );
+    const untrackOwner = trackRegionOwner(source, node);
     next.push({
       source,
-      dispose: trackedSubscribe(adapter, source, () => node.rebuild({ trigger: 'signal' }))
+      dispose: () => {
+        untrackOwner();
+        disposeSubscription();
+      }
     });
   });
 
@@ -428,6 +440,7 @@ function subscribeRegion(node) {
 /** 区域销毁 / 离开 DOM 时退订。 */
 function releaseRegion(node) {
   node._regionActive = false;
+  cancelScheduledRegionRebuild(node);
   releaseRegionSubscriptions(node);
 }
 
@@ -790,7 +803,9 @@ export class ViewNode {
     this._ownBindingScope = null; // 节点自己的绑定归属：零参闭包登记在这里
     this._regionGuard = null;
     this._rebuildPending = false;
+    this._regionScheduled = false; // 信号触发、等待补跑的重建（batch 合并 / 运行中排队）
     this._regionRunning = false;
+    this._regionRequeueDepth = 0;
     this._regionEnv = null; // 构建期环境快照：access / context / i18n
     this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
 
@@ -879,6 +894,11 @@ export class ViewNode {
     return this._rebuildPending;
   }
 
+  /** 区域是否有已排队、尚未执行的信号触发重建（batch 合并 / 运行中排队）。 */
+  rebuildScheduled() {
+    return this._regionScheduled === true;
+  }
+
   /**
    * 值级刷新：只把本节点子树里已登记的绑定求值写回，不重建结构、不触发谓词。
    * 幂等——值未变化时不会写 DOM；节点已销毁时安全返回。
@@ -960,6 +980,21 @@ export class ViewNode {
     subscribeRegion(this);
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
+    }
+
+    // 构建期间依赖又变化时补跑一次，而不是丢弃；batch 内留给作用域结束统一合并。
+    if (this._regionScheduled && !this._deleted && !isSignalsBatchActive()) {
+      this._regionScheduled = false;
+      this._regionRequeueDepth += 1;
+      if (this._regionRequeueDepth > 100) {
+        throw new Error('Region rebuild cycle detected');
+      }
+
+      try {
+        return this.rebuild({ trigger: 'signal' });
+      } finally {
+        this._regionRequeueDepth = Math.max(0, this._regionRequeueDepth - 1);
+      }
     }
 
     return this;

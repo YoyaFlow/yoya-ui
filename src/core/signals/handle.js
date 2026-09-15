@@ -1,6 +1,12 @@
 import { currentSignals } from './contract.js';
 import { recordRead, withCollect, withoutCollect } from './deps.js';
 import { dependentCount } from './observe.js';
+import {
+  beginSignalsBatch,
+  endSignalsBatch,
+  isSignalsBatchActive,
+  scheduleRegionsForSource
+} from './schedule.js';
 
 // 句柄品牌：用 Symbol.for 让同一页面里的多份 yoya-ui 副本也能互相识别，
 // 与 instanceof 相比不受模块重复打包影响。
@@ -54,15 +60,22 @@ export class SignalHandle {
       throw new TypeError('computed signal is read-only');
     }
 
+    const batchActive = isSignalsBatchActive();
     const bridge = currentDevtoolsBridge();
+    const needsPrevious = batchActive || (bridge && bridge.enabled());
+    const previous = needsPrevious ? withoutCollect(() => this._adapter.read(this._source)) : null;
+    const changed = needsPrevious ? !Object.is(previous, next) : false;
+    if (batchActive && changed) {
+      scheduleRegionsForSource(this._source);
+    }
+
     if (!bridge || !bridge.enabled()) {
       this._adapter.write(this._source, next);
       return;
     }
 
-    const previous = withoutCollect(() => this._adapter.read(this._source));
     this._adapter.write(this._source, next);
-    if (!Object.is(previous, next)) {
+    if (changed) {
       bridge.emit({
         type: 'signal-write',
         signalId: signalDebugId(this),
@@ -166,11 +179,16 @@ export function computed(fn) {
   return new SignalHandle(adapter, source, { writable: false, beforeRead: ensureLive });
 }
 
-/** 批量提交：交由引擎合并通知（batch 是引擎契约的必需方法）。 */
+/** 批量提交：core 拥有批次内的区域合并语义，引擎 batch 负责通知去重（契约必需方法）。 */
 export function batch(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('batch() requires a function');
   }
 
-  return currentSignals().batch(fn);
+  beginSignalsBatch();
+  try {
+    return currentSignals().batch(fn);
+  } finally {
+    endSignalsBatch();
+  }
 }

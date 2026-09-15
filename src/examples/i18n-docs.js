@@ -2,6 +2,7 @@ import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import {
   I18nExtendExample1,
+  I18nGlobalExample1,
   I18nParamsExample1,
   I18nReactiveExample1,
   I18nShortcutExample1
@@ -14,16 +15,16 @@ const i18nDemoDefinitions = Object.freeze([
     description: 'vLanguageSwitch 提供预制下拉切换，语言列表可扩展，选择会写入对应存储。',
     component: I18nReactiveExample1,
     sourceComponent: I18nReactiveExample1,
-    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
+    imports: ['createI18n', 'ref', 'vLanguageSwitch', 'vstack'],
     sourceTitle: '响应式翻译核心源码'
   },
   {
     id: 'params',
     title: '参数与回退',
-    description: '参数插值、增量注册和默认语言回退可以组合使用。',
+    description: '参数插值支持 ref 句柄自动刷新，增量注册和默认语言回退可以组合使用。',
     component: I18nParamsExample1,
     sourceComponent: I18nParamsExample1,
-    imports: ['createI18n', 'vstack'],
+    imports: ['createI18n', 'ref', 'vstack'],
     sourceTitle: '参数与回退核心源码'
   },
   {
@@ -36,12 +37,29 @@ const i18nDemoDefinitions = Object.freeze([
     sourceTitle: '字符串快捷写法核心源码'
   },
   {
+    id: 'global',
+    title: '安装全局 locale',
+    description: '配置 key 的实例自动进入全局注册表，任意模块用 getI18n(key) 取回同一个实例。',
+    component: I18nGlobalExample1,
+    sourceComponent: I18nGlobalExample1,
+    imports: [
+      'computed',
+      'createI18n',
+      'getI18n',
+      'ref',
+      'registerI18n',
+      'unregisterI18n',
+      'vstack'
+    ],
+    sourceTitle: '安装全局 locale 核心源码'
+  },
+  {
     id: 'extend',
     title: '扩展新语言',
     description: '动态注册词典，再通过 languages() 把新语言加入 vLanguageSwitch。',
     component: I18nExtendExample1,
     sourceComponent: I18nExtendExample1,
-    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
+    imports: ['createI18n', 'ref', 'vLanguageSwitch', 'vstack'],
     sourceTitle: '扩展新语言核心源码'
   }
 ]);
@@ -128,12 +146,12 @@ export function I18nDocumentationPage() {
                 ],
                 [
                   'locale.t(key, params, defaultValue)',
-                  '同步翻译，支持 dot path 和参数替换。',
-                  "locale.t('page.title', { name: 'Ada' })"
+                  '同步翻译，支持 dot path、参数替换和 ref 句柄；句柄可进 computed / 区域。',
+                  "locale.t('page.title', { name })"
                 ],
                 [
                   'locale.text(key, params, defaultValue)',
-                  '创建随语言自动刷新的文本节点。',
+                  '创建随语言自动刷新的文本节点；插值参数支持 ref 句柄自动刷新。',
                   "locale.text('greeting', { name: 'Ada' })"
                 ],
                 [
@@ -147,13 +165,28 @@ export function I18nDocumentationPage() {
                   'locale.registerMessages([commonCorpus, pageCorpus])'
                 ],
                 [
+                  'createI18n({ key })',
+                  '创建带 key 的实例，并自动注册进全局 locale 注册表。',
+                  "createI18n({ key: 'app', language: 'zh-CN' })"
+                ],
+                [
+                  'getI18n(key)',
+                  '按 key 取回全局注册的 locale 实例，未找到返回 null。',
+                  "getI18n('app')"
+                ],
+                [
+                  'registerI18n(instance) / unregisterI18n(keyOrInstance)',
+                  '手动安装或注销全局 locale 实例。',
+                  "unregisterI18n('app')"
+                ],
+                [
                   'installI18nStringShortcut(locale)',
                   '启用字符串 s(key, params) 快捷写法。',
                   'installI18nStringShortcut(locale)'
                 ],
                 [
                   '"内容".s(key, params?, locale?)',
-                  '用默认语言内容创建响应式文本，可显式指定 locale。',
+                  '用默认语言内容创建响应式文本；插值参数支持 ref 句柄。',
                   "'你好，{name}'.s('greeting', { name: 'Ada' }, locale)"
                 ]
               ].forEach(([name, purpose, example]) => {
@@ -161,6 +194,51 @@ export function I18nDocumentationPage() {
                   row.td((cell) => cell.code(name));
                   row.td(purpose);
                   row.td((cell) => cell.code(example));
+                });
+              });
+            });
+          });
+
+          api.h3('ref / computed 与插值参数');
+          api.p(
+            '插值参数可以直接传 signal 句柄。locale.text() / "文案".s() 内部用 peek 读取并自行订阅：参数写入与语言切换都原地刷新文本，也不会把参数泄漏成区域依赖。'
+          );
+          api.p(
+            'locale.t() 内部用追踪读：句柄可以进入 computed 或区域 builder，依赖收集照常工作；computed 的结果句柄放进文本值位置即建立绑定。'
+          );
+          api.pre((pre) => {
+            pre.className('i18n-api-signature');
+            pre.code(`const count = ref(1);
+
+// 路径一：文本节点 —— 参数 + 语言都自动刷新（推荐）
+el.span('保存 {count} 项'.s('save', { count }, locale));
+
+// 路径二：computed 派生 —— 信号变化重算，值位置原地更新
+const label = computed(() => locale.t('save', { count }));
+el.span(label);
+
+count.value += 1; // 两条路径都会自动更新，区域不需要重跑`);
+          });
+          api.table((table) => {
+            table.thead((head) => {
+              head.tr((row) => {
+                row.th('写法');
+                row.th('参数更新');
+                row.th('语言切换');
+                row.th('区域重跑');
+              });
+            });
+            table.tbody((body) => {
+              [
+                ["'…'.s(key, { count }, locale) / locale.text()", '原地刷新', '原地刷新', '不需要'],
+                ['computed(() => locale.t(key, { count }))', '原地刷新', '不触发', '不需要'],
+                ['locale.t(key, { count }) 字符串直写', '仅区域重跑时', '仅区域重跑时', '需要']
+              ].forEach(([write, paramUpdate, languageSwitch, rerun]) => {
+                body.tr((row) => {
+                  row.td((cell) => cell.code(write));
+                  row.td(paramUpdate);
+                  row.td(languageSwitch);
+                  row.td(rerun);
                 });
               });
             });
@@ -186,7 +264,9 @@ i18n.registerMessages(parse(enYaml));`);
         page.section((examples) => {
           examples.className('components-i18n-docs-examples');
           examples.h2('代码演示');
-          examples.p('四个示例分别展示响应式翻译、参数回退、字符串快捷写法，以及如何扩展新语言。');
+          examples.p(
+            '五个示例分别展示响应式翻译、参数回退、字符串快捷写法、全局 locale 注册表，以及如何扩展新语言。'
+          );
           i18nDemoDefinitions.forEach((demo) => {
             examples.child(I18nExampleSection(demo));
           });
