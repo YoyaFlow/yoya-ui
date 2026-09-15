@@ -236,14 +236,18 @@ export class ViewNode {
   /** Removes and schedules all children for destruction. */
   clearChildren(): this;
 
+  /** Appends a keyed child; on elements the key is mirrored to data-row-key. */
+  addChild(key: string | number, child: ChildInput): this;
+
+  /** Returns the keyed child for a key, or null when it is not registered. */
+  getChild(key: string | number): ViewNode | null;
+
+  /** Removes and destroys the keyed child for a key. */
+  removeChild(key: string | number): this;
+
   /** Adds children; strings/numbers are wrapped into text nodes. */
   child(...children: ChildInput[]): this;
 
-  /**
-   * Adds a text child. Passing a signal handle keeps the text bound to it;
-   * each call appends one text node, so use a kept VTextNode handle when you
-   * need to replace the text repeatedly.
-   */
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
 
@@ -264,6 +268,9 @@ export class ViewNode {
 
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
+
+  /** Removes the listener (and its DOM adapter) for an event name. */
+  off(eventName: string): this;
 
   /** Inserts a keyed child before another keyed child; null beforeKey appends. */
   insertBefore(
@@ -412,6 +419,9 @@ export class ElementNode extends ViewNode {
   class(...classes: ClassNameInput[]): this;
 
   replaceClassName(old: string, next: string, tolerate?: boolean): this;
+
+  /** Toggles a class from a truthy value; a signal handle or closure makes it live. */
+  toggleClass(name: string, value: boolean | SignalHandle<unknown> | (() => unknown)): this;
 
   /** Reads a single style property. */
   style(name: string): StyleValue | undefined;

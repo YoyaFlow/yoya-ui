@@ -200,6 +200,18 @@ void labelLine;
 void labelChild;
 void labelText;
 
+// Keyed children, event removal and class toggling are part of the node API.
+const keyedHost = div((ele) => {
+  ele.addChild('row-1', ele.span('A'));
+  ele.getChild('row-1');
+  ele.removeChild('row-1');
+  ele.on('click', () => {});
+  ele.off('click');
+  ele.toggleClass('is-active', true);
+  ele.toggleClass('is-busy', label);
+});
+void keyedHost;
+
 // htmls namespace: every WHATWG tag factory on one object, style alias included.
 const byNamespace = htmls.div((root) => root.span('via htmls'));
 const styleFactory = htmls.style;
