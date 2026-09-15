@@ -13,19 +13,6 @@ export function KeyedTableExample() {
     { id: 3, title: '表格虚拟滚动', owner: 'Mo', done: false }
   ]);
 
-  function rowNode(row) {
-    return tr((line) => {
-      line.attr('data-row-id', row.id);
-      line.td(row.title);
-      line.td(row.owner);
-      line.td(row.done ? '已完成' : '进行中');
-      line.td((cell) => {
-        cell.button('上移', (up) => up.on('click', () => api.moveUp(row.id)));
-        cell.button(row.done ? '重开' : '完成', (act) => act.on('click', () => api.flip(row.id)));
-      });
-    });
-  }
-
   const api = {
     addRow() {
       serial += 1;
@@ -52,7 +39,21 @@ export function KeyedTableExample() {
           grid.thead((head) => {
             head.tr((line) => line.child(columns.map((text) => th(text))));
           });
-          grid.tbody((body) => body.keyed(rows, (row) => row.id, rowNode));
+          grid.tbody((body) => {
+            body.keyed(rows, (row) => row.id, (row) =>
+              tr((line) => {
+                const { id, done } = row;
+                line.attr('data-row-id', id);
+                line.td(row.title);
+                line.td(row.owner);
+                line.td(done ? '已完成' : '进行中');
+                line.td((cell) => {
+                  cell.button('上移', (up) => up.on('click', () => api.moveUp(id)));
+                  cell.button(done ? '重开' : '完成', (act) => act.on('click', () => api.flip(id)));
+                });
+              })
+            );
+          });
         });
         stack.button('追加任务', (add) => {
           add.attr('data-keyed-add', 'true').on('click', () => api.addRow());
@@ -60,6 +61,5 @@ export function KeyedTableExample() {
       });
     }
   };
-
   return api;
 }
