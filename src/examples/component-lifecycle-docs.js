@@ -1,6 +1,10 @@
 import { section } from '../index.js';
 import { ComponentSource } from './component-source.js';
-import { ComponentLifecycleDiagram, componentLifecyclePhases } from './component-lifecycle.js';
+import {
+  ComponentLifecycleDiagram,
+  componentLifecyclePhases,
+  DataUpdateFlowDiagram
+} from './component-lifecycle.js';
 import {
   regionCompareBlocksSource,
   RegionFlushExample,
@@ -78,6 +82,14 @@ export function ComponentLifecycleDocumentationPage() {
               list.li(`${phase.title}：${phase.summary}`)
             );
           });
+        });
+
+        page.section((update) => {
+          update.className('components-guide-section components-lifecycle-update');
+          update.attr('data-lifecycle-update', 'true');
+          update.h2('数据更新机制');
+          update.p('值变化走绑定原地写回，结构变化走区域重建；两条路径的代价与 DOM 身份影响不同。');
+          update.child(DataUpdateFlowDiagram());
         });
 
         page.section((region) => {

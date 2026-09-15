@@ -1076,6 +1076,13 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('h1').textContent).toBe('组件生命周期');
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
+
+    const updateFlow = page.querySelector('[data-update-flow-diagram]');
+    expect(updateFlow).not.toBeNull();
+    expect(updateFlow.textContent).toContain('flush()');
+    expect(updateFlow.textContent).toContain('rebuild()');
+    expect(updateFlow.textContent).toContain('rebuildScheduled()');
+    expect(updateFlow.textContent).toContain('rebuildPending()');
     expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
 
     const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
