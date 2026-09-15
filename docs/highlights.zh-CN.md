@@ -89,7 +89,31 @@ div((page) => {
 - 同一份代码既可直接 `.bindTo()` 上浏览器，也可 `toHTML()` / SSR；`child()` 统一接受 ViewNode / 组件对象 / 字符串数字。
 - `registerChildFactories` 把组件注册为父节点快捷方法（`card.vCardHeader`），第三方组件也能扩展 DSL。
 
-## 5. 表单：一处收集，查看/编辑态内建
+## 5. 列表协调与容错：keyed / mounted / whenFailed
+
+结构随数据变化不再只有「整块弃建」一条路。三类原语按代价分层，全部显式声明：
+
+```js
+import { li, ref, ul } from '@yoyaflow/yoya-ui';
+
+const rows = ref([{ id: 1, title: '任务 1' }]);
+
+ul((list) => {
+  list.keyed(
+    rows,
+    (row) => row.id,
+    (row) => li(row.title)
+  );
+});
+
+rows.value = [...rows.value].reverse(); // 自动 diff：增删/移位保身份
+```
+
+- `keyed(rows, keyFn, build)`：同 key 行引用未变复用节点（build 不重跑）、引用变原位换新、排序 `insertBefore` 保身份；自定义策略用 `insertBefore / insertAfter / moveBefore / moveAfter / replaceChild` 五原语。
+- `panel.mounted(cond)`：条件挂载——为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留（`display` 显隐、`mounted` 不在但活着、`rebuildable` 销毁重建三档）；`isMounted()` 查询条件状态。
+- `box.whenFailed(handler)`：子树错误边界——返回节点降级替换、返回 null 仅上报；组件对象可写与 `render()` 同层的 `whenFailed` 成员自动挂载；捕获必发 console.error，永不静默。
+
+## 6. 表单：一处收集，查看/编辑态内建
 
 不手写 state、逐个读 input value。`vForm` 里放控件，`form.values()` 一次取全部字段；`vField` 自带 view / edit 两种模式。
 
