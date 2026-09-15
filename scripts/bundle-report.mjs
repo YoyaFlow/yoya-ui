@@ -40,6 +40,23 @@ const INCREMENTAL = [
   'yoya.echart.js',
   'yoya.three.js'
 ];
+
+// 每个入口包含什么——只看体积数字没人知道 core 里有 i18n。
+const CONTENTS = {
+  'yoya.core.js':
+    '节点引擎（ViewNode / ElementNode / 工厂）、全部 HTML 标签工厂、SVG 工厂与内置图标集、Signals（ref / computed / batch）、i18n、权限 access、context、a11y、theme helper、ClientOnly',
+  'yoya.ui.js':
+    '全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme',
+  'yoya.router.js':
+    'router（createRouter / vRouter / vLink / vRouterViews）+ SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount / serializeState / parseState）',
+  'yoya.devtools.js':
+    'enableDevtools / disableDevtools / subscribeDevtools / getDevtoolsSnapshot / getDevtoolsDom / getDevtoolsScope',
+  'yoya.echart.js': 'vEchart（ECharts 封装）',
+  'yoya.three.js': 'vThree（Three.js 封装）',
+  'yoya.router.full.js': 'core + router / SSR（自包含）',
+  'yoya.ui.full.js': 'core + 全部组件（自包含）',
+  'yoya.ui-router.full.js': 'core + 全部组件 + router / SSR（自包含，全量）'
+};
 const FULL = readdirSync(dist)
   .filter((name) => /^yoya\.[\w-]+\.full\.js$/.test(name))
   .sort();
@@ -50,20 +67,22 @@ const CHUNKS = readdirSync(dist)
 const lines = [];
 
 lines.push('### 增量入口（ESM，不含 core）\n');
-lines.push('| 入口 | 入口文件 min+gzip | 实际下载量 min+gzip |');
-lines.push('| --- | --- | --- |');
+lines.push('| 入口 | 入口文件 min+gzip | 实际下载量 min+gzip | 包含内容 |');
+lines.push('| --- | --- | --- | --- |');
 for (const entry of INCREMENTAL) {
   const own = fileSize(entry);
   const full = await downloadSize(entry);
-  lines.push(`| \`${entry}\` | ${kb(own.gzip)} KB | ${kb(full.gzip)} KB |`);
+  lines.push(`| \`${entry}\` | ${kb(own.gzip)} KB | ${kb(full.gzip)} KB | ${CONTENTS[entry]} |`);
 }
 
 lines.push('\n### 自包含入口（ESM，core 已内联）\n');
-lines.push('| 产物 | raw | min | min+gzip |');
-lines.push('| --- | --- | --- | --- |');
+lines.push('| 产物 | raw | min | min+gzip | 包含内容 |');
+lines.push('| --- | --- | --- | --- | --- |');
 for (const file of FULL) {
   const size = fileSize(file);
-  lines.push(`| \`${file}\` | ${kb(size.raw)} KB | ${kb(size.min)} KB | ${kb(size.gzip)} KB |`);
+  lines.push(
+    `| \`${file}\` | ${kb(size.raw)} KB | ${kb(size.min)} KB | ${kb(size.gzip)} KB | ${CONTENTS[file] ?? ''} |`
+  );
 }
 
 lines.push('\n### 公共 chunk（内部命名，被增量入口自动引用）\n');
