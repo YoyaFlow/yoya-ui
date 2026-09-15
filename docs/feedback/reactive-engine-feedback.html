@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>yoya-ui 响应式引擎生产评审反馈报告</title>
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --surface: #ffffff;
+        --ink: #172033;
+        --muted: #64748b;
+        --line: #d8dee8;
+        --brand: #2563eb;
+        --brand-soft: rgba(37, 99, 235, 0.08);
+        --ok: #16a34a;
+        --ok-soft: rgba(22, 163, 74, 0.1);
+        --warn: #d97706;
+        --warn-soft: rgba(217, 119, 6, 0.1);
+        --bad: #dc2626;
+        --bad-soft: rgba(220, 38, 38, 0.08);
+        --mono: ui-monospace, sfmono-regular, consolas, 'courier new', monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          'pingfang sc',
+          'microsoft yahei',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        line-height: 1.7;
+      }
+      header {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb 60%, #3b82f6);
+        color: #fff;
+        padding: 48px 24px 40px;
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      header .wrap {
+        padding: 0;
+      }
+      header h1 {
+        margin: 0 0 10px;
+        font-size: 30px;
+        letter-spacing: 0.5px;
+      }
+      header p {
+        margin: 0;
+        opacity: 0.92;
+        max-width: 860px;
+      }
+      .meta {
+        margin-top: 18px;
+        font-size: 13px;
+        opacity: 0.85;
+      }
+      .summary {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: -28px auto 28px;
+        box-shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
+      }
+      .summary strong {
+        color: var(--brand);
+      }
+      nav {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 28px;
+        font-size: 14px;
+      }
+      nav a {
+        color: var(--brand);
+        text-decoration: none;
+        margin-right: 16px;
+        white-space: nowrap;
+      }
+      nav a:hover {
+        text-decoration: underline;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 36px 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--brand-soft);
+      }
+      h3 {
+        font-size: 16px;
+        margin: 18px 0 8px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 22px 26px;
+        margin-bottom: 20px;
+      }
+      .card > h2 {
+        margin-top: 0;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 12px;
+        line-height: 20px;
+      }
+      .b-lib {
+        background: var(--brand-soft);
+        color: var(--brand);
+      }
+      .b-comp {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .b-design {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+      .verdict {
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 2px 12px;
+        line-height: 20px;
+      }
+      .v-ok {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+      .v-partial {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+      .v-miss {
+        background: var(--bad-soft);
+        color: var(--bad);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: var(--surface);
+      }
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #eef2fb;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .tablewrap {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        margin-bottom: 8px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        border-radius: 10px;
+        padding: 14px 18px;
+        border: 1px solid var(--line);
+      }
+      .panel h3 {
+        margin-top: 0;
+      }
+      .panel.now {
+        background: #fbfdff;
+      }
+      .panel.how {
+        background: #f4fbf6;
+        border-color: #bfe5cc;
+      }
+      .panel.now h3 {
+        color: var(--brand);
+      }
+      .panel.how h3 {
+        color: var(--ok);
+      }
+      ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+      li {
+        margin: 4px 0;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+        background: #eef2fb;
+        border-radius: 4px;
+        padding: 1px 6px;
+        color: #1d4ed8;
+      }
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 18px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      pre code {
+        background: none;
+        color: inherit;
+        padding: 0;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .check {
+        color: var(--ok);
+        font-weight: 700;
+      }
+      .method {
+        display: inline-block;
+        font-size: 12px;
+        background: #eef2fb;
+        color: #475569;
+        border-radius: 6px;
+        padding: 2px 10px;
+        margin: 2px 4px 2px 0;
+      }
+      footer {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 28px 0 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>yoya-ui 响应式引擎生产评审反馈报告</h1>
+        <p>
+          回应外部「生产影响评审」提出的 7.5 个关键问题：区域重建、信号传播、computed
+          菱形、列表协调、错误边界、过渡与 KeepAlive、hydration
+          失配诊断。每条结论以源码与测试为依据；信号传播与菱形两条另做了可复现实验验证。本报告只陈述<strong>当前情况</strong>与<strong>当前已提供的解决方案</strong>。
+        </p>
+        <div class="meta">
+          评审对象：yoya-ui 响应式引擎 · 报告日期：2026-09-14 · 依据：源码审读 + 测试 + 2 项探针实验
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="summary">
+        <strong>一句话总评：</strong>「重建即弃建」是显式协议且解法齐备；keyed 列表是纯 JS
+        模式的设计本意（循环与判断就是 v-for /
+        v-if，子节点原语已齐备，怎么协调由开发者决定）；异步错误走
+        <code>vDynamicLoader</code>
+        状态流；区域回滚没有魔法，报错位置就是业务代码位置。评审中最重的两把刀（DOM
+        身份、列表协调）都属于把模板 / vDOM 框架的前提硬套到纯 JS 模式上。
+      </div>
+
+      <nav>
+        <a href="#overview">总览</a><a href="#q1">1 区域重建</a><a href="#q2">2 信号传播</a
+        ><a href="#q3">3 computed 菱形</a><a href="#q4">4 列表协调</a><a href="#q5">5 错误处理</a
+        ><a href="#q6">6 过渡与保活</a><a href="#q65">6.5 hydration 失配</a
+        ><a href="#verify">验证方式</a>
+      </nav>
+
+      <h2 id="overview">总览</h2>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>问题</th>
+              <th>层级</th>
+              <th>当前情况</th>
+              <th>当前已提供的解决方案</th>
+              <th>评审认定</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>区域重建的 DOM 身份保持</td>
+              <td><span class="badge b-lib">基础库</span></td>
+              <td>弃建协议：子树整体重建，区域内身份不保留；宿主元素身份保留</td>
+              <td>
+                值绑定原地更新；谓词延迟；预制节点挂载；放弃 rebuildable 用 style / attr
+                动态值控制显隐
+              </td>
+              <td><span class="verdict v-ok">不成立（换形态）</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>信号传播语义</td>
+              <td><span class="badge b-lib">基础库</span></td>
+              <td>同步级联；batch 不合并「同区域多信号」的重建次数</td>
+              <td>batch() 消除中间态提交；DevTools region 事件计数核对</td>
+              <td><span class="verdict v-partial">部分成立</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>computed 菱形 glitch-free</td>
+              <td><span class="badge b-lib">基础库</span></td>
+              <td>当前没有此问题：菱形一致性由内置引擎天然支持（实验验证）</td>
+              <td>直接使用 computed 组合菱形依赖，无需额外处理</td>
+              <td><span class="verdict v-ok">不成立（引擎已支持）</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>列表协调语义</td>
+              <td><span class="badge b-design">设计如此</span></td>
+              <td>JS 循环 / 判断即 v-for / v-if；keyed 原语齐备，策略由开发者决定</td>
+              <td>addChild(key) / getChild(key) / removeChild(key) 增量协调；预制节点挂载保身份</td>
+              <td><span class="verdict v-ok">不成立（旧直觉化石）</span></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>错误边界与恢复</td>
+              <td><span class="badge b-lib">基础库 + 异步组件</span></td>
+              <td>区域回滚已有；异步错误已有状态流；同步渲染意外异常无通用隔离层</td>
+              <td>
+                区域 rebuild 失败自动回滚保旧内容；异步场景用 vDynamicLoader（error 态 + retry）
+              </td>
+              <td><span class="verdict v-partial">部分成立</span></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>过渡动画与页面缓存</td>
+              <td><span class="badge b-comp">组件</span></td>
+              <td>
+                vTransition 已有；页面缓存由 RouterViews 天然提供（多标签 + localStorage 持久化）
+              </td>
+              <td>过渡用 vTransition；页面缓存用 vRouterViews；DOM 级保活用预制节点 + 显隐</td>
+              <td><span class="verdict v-ok">不成立（换形态）</span></td>
+            </tr>
+            <tr>
+              <td>6.5</td>
+              <td>hydration 失配诊断</td>
+              <td><span class="badge b-lib">基础库</span></td>
+              <td>失配上报 devtools 事件（expected / existing + 节点引用）；生产零开销静默替换</td>
+              <td>开发期 enableDevtools() 订阅 hydrate-mismatch 事件定位</td>
+              <td><span class="verdict v-ok">基本已有</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        评审认定口径：<span class="verdict v-ok">不成立</span> = 评审前提来自模板 / vDOM 框架；<span
+          class="verdict v-partial"
+          >部分成立</span
+        >
+        = 能力存在或形态不同，但存在明确的当前边界；<span class="verdict v-miss">成立</span> =
+        当前确实缺失。
+      </p>
+
+      <section class="card" id="q1">
+        <h2>
+          1. 区域重建：明确「弃建」协议，解法齐备 <span class="badge b-lib">基础库</span>
+          <span class="verdict v-ok">不成立（换形态）</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况</h3>
+            <ul>
+              <li>
+                <code>rebuild()</code> 清空子节点并重跑 setup：旧子树销毁、新子树新建，成功后才替换
+                DOM；失败自动回滚保旧内容。
+              </li>
+              <li>
+                区域宿主元素身份保留，<strong>子树内元素身份不保留</strong>：焦点、光标、选区、滚动、iframe、媒体播放、CSS
+                过渡随重建丢失。
+              </li>
+              <li>
+                这是写进文档的显式协议，并被 region-flush 测试锁定：flush 后元素身份不变，rebuild
+                后身份改变。
+              </li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>
+                <strong>值绑定原地更新</strong>：signal 句柄传进 attr / style /
+                vText，写入只改值、不重建 DOM、不丢焦点。
+              </li>
+              <li>
+                <strong>放弃 rebuildable，动态值控制显隐</strong>：结构不变的显示 / 隐藏场景，直接
+                <code>style('display', signal)</code>、<code>style('visibility', signal)</code
+                >、<code>attr('aria-hidden', signal)</code>——身份天然保持，无需任何额外处理。
+              </li>
+              <li>
+                <strong>谓词延迟</strong>：<code>rebuildable(predicate)</code> 为假时只 flush
+                值绑定，结构原样保留。
+              </li>
+              <li>
+                <strong>预制节点挂载</strong
+                >：节点先创建、句柄先持有，再挂进主结构，身份跟着句柄走。
+              </li>
+              <li><strong>结构边界外置</strong>：播放器、第三方实例等长生命周期内容放区域之外。</li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">
+          「收养式局部协调」是 vDOM diff
+          为保住<strong>隐式身份</strong>被迫发明的机制：模板框架里节点身份只能靠树比对推断。纯 JS
+          模式下身份由 ViewNode
+          句柄<strong>显式持有</strong>，保身份就是继续用同一个节点改值——不需要额外处理。
+        </p>
+      </section>
+
+      <section class="card" id="q2">
+        <h2>
+          2. 信号传播：同步级联，batch 的边界已实测 <span class="badge b-lib">基础库</span>
+          <span class="verdict v-partial">部分成立</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况（实验验证）</h3>
+            <ul>
+              <li>
+                默认引擎为内化
+                @preact/signals-core，写入<strong>同步</strong>传播，无自动微任务批处理。
+              </li>
+              <li>区域同时订阅 a、b 两个信号，一次事件连续写两个 → <strong>重建 2 次</strong>。</li>
+              <li>
+                包进 <code>batch()</code> →
+                <strong>仍是 2 次</strong>：每个依赖信号各有一条独立订阅，batch
+                只合并「同一信号的多次写入」。
+              </li>
+              <li>
+                batch
+                的真实收益：通知推迟到批结束，第一次重建读到的已是全部终值，<strong>不提交中间态</strong>。
+              </li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>
+                一次事件里的多个写点收进同一处理器并包
+                <code>batch()</code>——消除中间态提交，首重建即见终值。
+              </li>
+              <li>
+                DevTools 的 <code>region</code> 事件（<code>trigger: 'signal'</code
+                >）直接计数核对重建行为。
+              </li>
+              <li>值绑定按「值未变不写 DOM」提交，刷新幂等。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="q3">
+        <h2>
+          3. computed 菱形：由引擎天然支持，当前没有此问题 <span class="badge b-lib">基础库</span>
+          <span class="verdict v-ok">不成立（引擎已支持）</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况（实验验证）</h3>
+            <ul>
+              <li>
+                A→(B,C)→D 菱形：a 变更后，d 的订阅者<strong>只收到一次终值</strong>，无中间值。
+              </li>
+              <li>
+                一致性由内置引擎<strong>天然支持</strong>：效果通知分代调度——B / C 先重算，D
+                排在其后，求值时两个输入都已是新值。
+              </li>
+              <li>这不是需要使用者绕开的边界，而是引擎当前直接提供的行为。</li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>
+                直接用 <code>computed</code> 组合任意菱形依赖即可，无需额外处理——一致性由引擎保证。
+              </li>
+              <li>派生链可任意分层（惰性求值 + 缓存），下游绑定与区域只读终值。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="q4">
+        <h2>
+          4. 列表协调：纯 JS 模式下理应如此 <span class="badge b-design">设计如此</span>
+          <span class="verdict v-ok">不成立（旧直觉化石）</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况</h3>
+            <ul>
+              <li>
+                评审预设「框架必须内建 keyed diff / move」——那是模板 + vDOM
+                框架的问题：模板把结构变化藏进框架，协调语义只能由框架猜测。
+              </li>
+              <li>
+                yoya 是纯 JS 声明式构建：<strong
+                  >forEach / map 循环就是 v-for，if / 三元就是 v-if</strong
+                >，结构怎么变代码就怎么写，没有隐藏语义。
+              </li>
+              <li>
+                基础库已提供子节点操作原语，key 唯一性校验、data-row-key 镜像、DOM
+                身份保留均有测试锁定；区域重建时 keyed 子节点重跑不报重复 key。
+              </li>
+              <li>
+                演示与测试都有体积：StateKeyedExample1 演示追加 / 移除完整交互，definition-complex
+                用 task.id 做 key 组装任务行，core 侧 keyed / region / devtools 测试均覆盖。
+              </li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案（标准用法）</h3>
+            <ul>
+              <li><code>addChild(key, node)</code>：挂载并登记唯一 key。</li>
+              <li><code>getChild(key)</code>：按 key 复用。</li>
+              <li><code>removeChild(key)</code>：删除单个子节点并销毁，不碰兄弟。</li>
+              <li>预制节点挂载：节点先创建、句柄先持有，再挂进主结构——身份跟着 JS 对象走。</li>
+            </ul>
+          </div>
+        </div>
+        <pre><code>const list = div();
+const row = div((line) =&gt; line.text('第一行')); // 预制节点：句柄在手
+
+list.addChild('r1', row);   // 挂载进主结构，身份由 ViewNode 句柄持有
+list.getChild('r1');        // 复用
+list.removeChild('r1');     // 删除单个子节点（增量，不碰兄弟）</code></pre>
+        <p class="note">
+          排序 / 过滤场景在循环里用 addChild / removeChild 增量协调即可；把可变列表放进 rebuildable
+          区域任其整树重跑，才会出现「丢状态」——那是用法问题，不是库缺口。组件各自的选择互不构成库层欠账：vTable
+          清空重建是「简单数据驱动优先」的实现选择，tree-table
+          展开折叠保留行身份，说明同一套原语组件随时可自管。
+        </p>
+      </section>
+
+      <section class="card" id="q5">
+        <h2>
+          5. 错误处理：三层能力，两层已提供 <span class="badge b-lib">基础库 + 异步组件</span>
+          <span class="verdict v-partial">部分成立</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况</h3>
+            <ul>
+              <li>
+                <strong>基础库（已有）</strong>：区域 rebuild
+                先构建成功再替换，抛错自动回滚、旧内容保留。<strong>没有魔法</strong>——重跑的是使用方写的
+                builder，异常从业务代码抛出、原样 re-throw，报错位置（stack）就是业务代码位置。
+              </li>
+              <li>
+                <strong>异步组件（已有）</strong>：vDynamicLoader 内建 loading / error 状态、retry()
+                与竞态代守卫（generation），错误就是组件状态的一部分；echart / three 各自内部
+                try/catch 降级。
+              </li>
+              <li>
+                <strong>当前边界</strong
+                >：同步渲染期的意外异常（初始构建、非区域节点抛错）无通用隔离层，页面级兜底目前是使用方职责。
+              </li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>区域内可恢复更新直接依赖 rebuild 回滚——异常即业务异常，定位零成本。</li>
+              <li>
+                异步数据 / 动态加载场景用 <code>vDynamicLoader</code>：loading / error / retry
+                都是正常 UI 状态，错误纳入状态流展示。
+              </li>
+              <li>
+                请求层错误统一走 Result / configureRequest 语义（ok=false 抛错，错误带 code /
+                showType）。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="q6">
+        <h2>
+          6. 过渡与页面缓存：vTransition + RouterViews 已覆盖 <span class="badge b-comp">组件</span>
+          <span class="verdict v-ok">不成立（换形态）</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况</h3>
+            <ul>
+              <li>
+                <strong>vTransition</strong> 是<strong>保身份</strong>的 show / hide
+                过渡：同一元素切 enter / leave class（或 WAAPI），尊重 prefers-reduced-motion，SSR
+                toHTML 安全，destroy 取消动画。
+              </li>
+              <li>
+                <strong>页面缓存由 RouterViews 天然提供</strong>：vRouterViews
+                是多标签工作区——打开的页面以标签保持，切换不关闭；标签列表（paths）与激活页（activePath）持久化到
+                localStorage（persist 默认开启，可配 storageKey），刷新后 restoreTabs
+                恢复整个工作区；配合路由 query / params，列表筛选状态编码在 URL
+                里随标签保留，回到标签即回到同一数据视图。
+              </li>
+              <li>
+                当前边界（如实）：无列表 move 过渡组件、无跨内容 out-in
+                模式；区域重建会中断区域内动画（弃建协议的直接后果）。
+              </li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>
+                显示 / 隐藏动画直接用 <code>vTransition</code>：show() / enter() / leave() /
+                toggle()，duration 与 motion 可配。
+              </li>
+              <li>
+                后台列表页缓存直接用 <code>vRouterViews</code>：标签保持打开 + 工作区持久化 +
+                刷新恢复，筛选状态走 URL query。
+              </li>
+              <li>
+                DOM 级保活用预制节点 + 动态 style / attr 显隐（第 1
+                条的标准解法），节点身份与内部状态保持。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="q65">
+        <h2>
+          6.5 hydration 失配：已有可观测性 <span class="badge b-lib">基础库</span>
+          <span class="verdict v-ok">基本已有</span>
+        </h2>
+        <div class="split">
+          <div class="panel now">
+            <h3>当前情况</h3>
+            <ul>
+              <li>
+                hydrate 是收养式：adoptElement 逐节点对齐服务端 DOM，匹配则收养（不重建元素）。
+              </li>
+              <li>
+                失配（标签 / 节点类型不一致）时替换节点并上报 <code>hydrate-mismatch</code> devtools
+                事件：expected / existing 可读名（如 div vs span、#text vs em）+ ViewNode 引用。
+              </li>
+              <li>事件只在 devtools 开启时上报，生产路径零开销、静默替换。</li>
+              <li>测试覆盖：标签失配、文本槽失配、匹配时保持安静。</li>
+            </ul>
+          </div>
+          <div class="panel how">
+            <h3>当前已提供的解决方案</h3>
+            <ul>
+              <li>
+                开发期开 <code>enableDevtools()</code> 并订阅 <code>hydrate-mismatch</code> 事件，拿
+                expected / existing 与节点引用直接定位。
+              </li>
+              <li>
+                两端确定性由 SSR 纪律保证：render / toHTML 不读 document /
+                window、不用随机值，hydrate 前提写进文档。
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <h2 id="verify">验证方式</h2>
+      <div class="card">
+        <ul>
+          <li>
+            <span class="check">✓</span> <strong>区域重建身份</strong>：region-flush 测试断言 flush
+            后同一元素、rebuild 后不同元素。
+          </li>
+          <li>
+            <span class="check">✓</span> <strong>信号传播</strong>：devtools region
+            事件计数探针实验——同步连写两信号重建 2 次，batch 下仍 2 次、首重建即见终值。
+          </li>
+          <li>
+            <span class="check">✓</span> <strong>computed 菱形</strong>：探针实验——a 变更后 d
+            的订阅者只收到一次终值，无中间值。
+          </li>
+          <li>
+            <span class="check">✓</span> <strong>keyed 原语</strong>：keyed-child 测试锁定 key
+            唯一性、身份保留、data-row-key 镜像；region 测试锁定重跑不报重复 key。
+          </li>
+          <li>
+            <span class="check">✓</span> <strong>错误回滚</strong>：rebuild 的 catch
+            路径源码审读——构建失败恢复旧子树、原样 re-throw。
+          </li>
+          <li>
+            <span class="check">✓</span> <strong>hydration 失配</strong>：hydrate-mismatch
+            测试覆盖三类场景（标签失配 / 文本槽失配 / 匹配安静）。
+          </li>
+        </ul>
+        <p class="note">
+          <span class="method">源码审读</span><span class="method">测试锁定</span
+          ><span class="method">DevTools 计数</span><span class="method">探针实验</span
+          ><span class="method">故意制造失配</span>
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      yoya-ui 响应式引擎生产评审反馈报告 · 2026-09-14 · 仅陈述当前情况与当前已提供的解决方案
+    </footer>
+  </body>
+</html>

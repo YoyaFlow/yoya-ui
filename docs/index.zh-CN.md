@@ -10,18 +10,19 @@
 
 ## 文档集合
 
-| 文件                                                                     | 内容                                                                                   | 来源 / 状态 |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ----------- |
-| [`index.zh-CN.md`](index.zh-CN.md)                                       | 文档导航与内容规划（本页）                                                             | 新建        |
-| [`highlights.zh-CN.md`](highlights.zh-CN.md)                             | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建        |
-| [`access-control.zh-CN.md`](access-control.zh-CN.md)                     | 权限控制使用指南                                                                       | 重建        |
-| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                           | 服务端渲染集成指南                                                                     | 重建        |
-| [`theme.zh-CN.md`](theme.zh-CN.md)                                       | 主题样式规范                                                                           | 重建并改名  |
-| [`devtools.zh-CN.md`](devtools.zh-CN.md)                                 | DevTools 使用指南                                                                      | 重建        |
-| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)           | 组件库开发指南（第三方 / 生态作者）                                                    | 重建并改名  |
-| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)         | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建        |
-| [`security-review-feedback.zh-CN.md`](security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建        |
-| [`beginner-feedback.zh-CN.md`](beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建        |
+| 文件                                                                                       | 内容                                                                                   | 来源 / 状态 |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ----------- |
+| [`index.zh-CN.md`](index.zh-CN.md)                                                         | 文档导航与内容规划（本页）                                                             | 新建        |
+| [`highlights.zh-CN.md`](highlights.zh-CN.md)                                               | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建        |
+| [`access-control.zh-CN.md`](access-control.zh-CN.md)                                       | 权限控制使用指南                                                                       | 重建        |
+| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                                             | 服务端渲染集成指南                                                                     | 重建        |
+| [`theme.zh-CN.md`](theme.zh-CN.md)                                                         | 主题样式规范                                                                           | 重建并改名  |
+| [`devtools.zh-CN.md`](devtools.zh-CN.md)                                                   | DevTools 使用指南                                                                      | 重建        |
+| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)                             | 组件库开发指南（第三方 / 生态作者）                                                    | 重建并改名  |
+| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建        |
+| [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建        |
+| [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建        |
+| [`feedback/reactive-engine-feedback.zh-CN.md`](feedback/reactive-engine-feedback.zh-CN.md) | 响应式引擎生产评审反馈：区域重建、信号传播、错误边界等 7.5 问逐条回应                  | 新建        |
 
 ## 阅读路径建议
 
@@ -29,4 +30,4 @@
 2. 特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不维护独立清单文档，跨库对照（Ant Design / Element Plus ↔ yoya-ui、扩展库接入）见 `component-comparison.zh-CN.md`；
 3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；
 4. 要扩展组件生态时读 `component-authoring.zh-CN.md`，常见第三方库的接入清单见 `component-comparison.zh-CN.md` 第二节。
-5. 收到针对本库的安全评审时，先读 `security-review-feedback.zh-CN.md`；整理新手 / Vue / React 背景使用者的反馈或撰写 FAQ 时，先读 `beginner-feedback.zh-CN.md`。
+5. 收到针对本库的安全评审时，先读 `feedback/security-review-feedback.zh-CN.md`；整理新手 / Vue / React 背景使用者的反馈或撰写 FAQ 时，先读 `feedback/beginner-feedback.zh-CN.md`；收到针对响应式引擎的生产评审时，先读 `feedback/reactive-engine-feedback.zh-CN.md`。
