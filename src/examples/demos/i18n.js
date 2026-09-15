@@ -2,10 +2,10 @@ import {
   createI18n,
   getI18n,
   installI18nStringShortcut,
+  ref,
   registerI18n,
   unregisterI18n,
   vLanguageSwitch,
-  vText,
   vstack
 } from '../../index.js';
 
@@ -28,7 +28,7 @@ export function I18nReactiveExample1() {
       }
     }
   });
-  const language = vText(locale.getLanguage());
+  const language = ref(locale.getLanguage());
 
   return {
     render() {
@@ -49,7 +49,7 @@ export function I18nReactiveExample1() {
           stack.child(
             vLanguageSwitch({
               locale,
-              onChange: () => language.textContent(locale.getLanguage())
+              onChange: () => (language.value = locale.getLanguage())
             })
           );
           });
@@ -202,14 +202,14 @@ export function I18nExtendExample1() {
       }
     }
   });
-  const language = vText(locale.getLanguage());
+  const language = ref(locale.getLanguage());
   const languageSwitch = vLanguageSwitch({
     locale,
     languages: [
       { label: '中文', value: 'zh-CN' },
       { label: 'English', value: 'en' }
     ],
-    onChange: () => language.textContent(locale.getLanguage())
+    onChange: () => (language.value = locale.getLanguage())
   });
   let jaAdded = false;
   let addButton = null;
@@ -271,7 +271,7 @@ export function I18nGlobalExample1() {
       en: { greeting: 'Hello, {name}', registryState: 'Registry state' }
     }
   });
-  const registryState = vText('console · 已安装');
+  const registryState = ref('console · 已安装');
   let installed = true;
   let toggleButton = null;
 
@@ -282,7 +282,7 @@ export function I18nGlobalExample1() {
     } else {
       unregisterI18n(locale);
     }
-    registryState.textContent(`console · ${installed ? '已安装' : '未安装'}`);
+    registryState.value = `console · ${installed ? '已安装' : '未安装'}`;
     toggleButton?.label(installed ? '注销全局实例' : '重新安装');
   };
 

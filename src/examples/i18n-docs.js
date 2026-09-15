@@ -15,7 +15,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: 'vLanguageSwitch 提供预制下拉切换，语言列表可扩展，选择会写入对应存储。',
     component: I18nReactiveExample1,
     sourceComponent: I18nReactiveExample1,
-    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
+    imports: ['createI18n', 'ref', 'vLanguageSwitch', 'vstack'],
     sourceTitle: '响应式翻译核心源码'
   },
   {
@@ -42,7 +42,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: '配置 key 的实例自动进入全局注册表，任意模块用 getI18n(key) 取回同一个实例。',
     component: I18nGlobalExample1,
     sourceComponent: I18nGlobalExample1,
-    imports: ['createI18n', 'getI18n', 'registerI18n', 'unregisterI18n', 'vText', 'vstack'],
+    imports: ['createI18n', 'getI18n', 'ref', 'registerI18n', 'unregisterI18n', 'vstack'],
     sourceTitle: '安装全局 locale 核心源码'
   },
   {
@@ -51,7 +51,7 @@ const i18nDemoDefinitions = Object.freeze([
     description: '动态注册词典，再通过 languages() 把新语言加入 vLanguageSwitch。',
     component: I18nExtendExample1,
     sourceComponent: I18nExtendExample1,
-    imports: ['createI18n', 'vLanguageSwitch', 'vText', 'vstack'],
+    imports: ['createI18n', 'ref', 'vLanguageSwitch', 'vstack'],
     sourceTitle: '扩展新语言核心源码'
   }
 ]);
