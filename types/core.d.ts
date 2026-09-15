@@ -29,7 +29,7 @@ export type StyleValue = string | number | null | undefined | SignalHandle<unkno
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
 
-/** Text content accepted by vText() and text(): a signal handle makes it a live binding. */
+/** Text content accepted by vText(): a signal handle makes it a live binding. */
 export type TextContent = string | number | SignalHandle<unknown>;
 
 /** Options accepted by on(). */
@@ -520,8 +520,6 @@ export function resolveTarget(target: string | ParentNode): ParentNode | null;
 /** Creates a text node. */
 export function vText(content?: TextContent): VTextNode;
 /** Alias of vText(). */
-export const text: typeof vText;
-
 // ---------------------------------------------------------------------------
 // Client-only (SSR placeholder)
 // ---------------------------------------------------------------------------

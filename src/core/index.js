@@ -12,7 +12,6 @@ export {
   normalizeSetupArguments,
   registerChildFactories,
   resolveTarget,
-  text,
   vText
 } from './node.js';
 export { ClientOnlyNode, vClientOnly } from './client-only.js';
