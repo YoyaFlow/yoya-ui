@@ -1,4 +1,5 @@
 import { computed, ref, section, vText } from '../index.js';
+import { KeyedListExample } from './demos/keyed-native.js';
 import { ComponentSource } from './component-source.js';
 
 function HtmlNativeExample1() {
@@ -290,6 +291,34 @@ box.button('保存').on('click', save);`);
   };
 }
 
+function KeyedListDemoSection() {
+  const liveDemo = KeyedListExample();
+  const sourcePanel = ComponentSource({
+    component: KeyedListExample,
+    imports: ['li', 'ref', 'ul', 'vstack'],
+    sourceComponent: KeyedListExample,
+    title: 'keyed 列表协调源码'
+  });
+
+  return {
+    render() {
+      return section((example) => {
+        example.className('components-html-native-demo components-html-native-keyed-demo');
+        example.attr('data-native-demo', 'keyed');
+        example.h2('keyed 列表协调');
+        example.p(
+          'ul.keyed(rows, keyFn, build) 用信号驱动原生列表：添加 / 删除 / 反转按 key 对账，行节点身份保持。'
+        );
+        example.div((live) => {
+          live.className('components-html-native-demo-live');
+          live.child(liveDemo);
+        });
+        example.child(sourcePanel);
+      });
+    }
+  };
+}
+
 function HtmlNativeDemoSection() {
   const liveDemo = HtmlNativeExample1();
   const sourcePanel = ComponentSource({
@@ -328,6 +357,7 @@ export function HtmlNativeDocumentationPage() {
         page.child(HtmlNativeApiSection());
         page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
+        page.child(KeyedListDemoSection());
       });
     }
   };

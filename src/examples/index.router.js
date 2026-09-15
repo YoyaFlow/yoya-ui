@@ -36,7 +36,8 @@ const componentMenuSections = [
       { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
       { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
-      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
+      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' },
+      { key: 'error-handling', label: '错误处理', details: 'whenFailed / 边界 / 降级' }
     ]
   },
   {
@@ -236,6 +237,8 @@ export const docsRouteLoaders = Object.freeze({
   'data-display:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'guides:error-handling': () =>
+    import('./error-handling-docs.js').then((m) => m.ErrorHandlingDocumentationPage()),
   'feedback:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
   'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:button-group': () =>
@@ -704,6 +707,11 @@ function createOverviewView() {
             label: '服务端渲染',
             path: '/components/guides/ssr',
             details: 'renderToString / hydrate / mount'
+          },
+          {
+            label: '错误处理',
+            path: '/components/guides/error-handling',
+            details: 'whenFailed / 边界 / 降级'
           }
         ].forEach((guide) => {
           grid.a((card) => {
