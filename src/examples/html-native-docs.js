@@ -59,8 +59,8 @@ const htmlNativeApiGroups = [
     rows: [
       [
         'div(setup?)',
-        '原生工厂创建元素，支持 div(setup)、div("文本")、div({ ...config }) 三种写法。',
-        "div('内容')"
+        '原生工厂创建元素：div(setup)、div("文本")、div(句柄)（等价 child(handle)，动态文本）、div({ ...config }) 四种写法。',
+        'div(count)'
       ],
       [
         'div({ ...config })',
@@ -130,9 +130,9 @@ const htmlNativeApiGroups = [
         "label.textContent('B')"
       ],
       [
-        'node.child(vText(handle))',
-        '文本跟随状态：传 ref / computed 句柄（或零参闭包），原地更新、不替换元素、不丢焦点。',
-        'line.child(vText(count))'
+        'node.child(handle) / node.child(vText(handle))',
+        '文本跟随状态：传 ref / computed 句柄（或零参闭包），原地更新、不替换元素、不丢焦点；工厂 setup 位置写 div(handle) 等价。',
+        'line.child(count)'
       ]
     ],
     sample: `// 追加：元素 text() 每次都加一个文本节点，反复同步会堆叠
