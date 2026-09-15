@@ -1358,7 +1358,7 @@ git add types/core.d.ts docs/component-authoring.md docs/component-authoring.zh-
 git commit -m "docs(core): document keyed and mounted node APIs"
 ```
 
-- [ ] **Step 5: 推送**
+- [x] **Step 5: 推送**
 
 ```bash
 git push -u origin feat/keyed-mounted-children
