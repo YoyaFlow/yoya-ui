@@ -393,6 +393,22 @@ export function registerRegionCleanup(cleanup) {
   region._regionRunCleanups.push(cleanup);
 }
 
+/** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟元素；找不到返回 null（追加）。 */
+function resolveInsertAnchor(parent, fromNode) {
+  if (!fromNode) {
+    return null;
+  }
+
+  for (let i = parent._children.indexOf(fromNode) + 1; i < parent._children.length; i += 1) {
+    const element = parent._children[i]._el;
+    if (element?.parentNode === parent._el) {
+      return element;
+    }
+  }
+
+  return null;
+}
+
 /** 上报区域重建事件，便于 devtools 回答「这块为什么重建 / 为什么只是刷值」。 */
 function emitRegionEvent(node, action, trigger) {
   if (!isDevtoolsEnabled()) {
@@ -1044,6 +1060,50 @@ export class ViewNode {
       }
       this._el.insertBefore(viewNode._el, anchor);
     }
+
+    return this;
+  }
+
+  /** 同 key 原位换新：旧节点销毁、新节点占据同一槽位，邻居不受影响。 */
+  replaceChild(key, child) {
+    assertRegionChildAllowed(this);
+
+    const rawKey = String(key);
+    const previous = this._childKeys.get(rawKey);
+    if (!previous) {
+      throw new TypeError(`replaceChild() requires an existing key "${rawKey}"`);
+    }
+
+    const viewNode = normalizeChildWithContext(this, child);
+    if (typeof viewNode.attr === 'function') {
+      viewNode.attr('data-row-key', rawKey);
+    }
+
+    this._childKeys.set(rawKey, viewNode);
+    this._pendingRemovals.delete(viewNode);
+    const index = this._children.indexOf(previous);
+    if (index === -1) {
+      this._children.push(viewNode);
+    } else {
+      this._children.splice(index, 1, viewNode);
+    }
+    this._childrenDirty = true;
+
+    if (this._el) {
+      const newElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
+        viewNode.renderDom()
+      );
+      const oldElement = previous._el;
+      if (newElement && newElement.parentNode !== this._el) {
+        const anchor = oldElement?.parentNode === this._el ? oldElement : null;
+        this._el.insertBefore(newElement, anchor ?? resolveInsertAnchor(this, previous));
+      }
+      if (isDevtoolsEnabled() && !this._devtoolsRendering) {
+        notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
+      }
+    }
+
+    previous.destroy();
 
     return this;
   }

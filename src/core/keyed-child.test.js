@@ -144,6 +144,31 @@ describe('keyed children', () => {
     expect(() => list.moveAfter('a', 'missing')).toThrow(/moveAfter\(\)/);
   });
 
+  it('replaces a keyed child at the same slot without disturbing siblings', () => {
+    const list = div();
+    list.addChild('a', div('A'));
+    list.addChild('b', div('B-old'));
+    list.addChild('c', div('C'));
+    const element = list.renderDom();
+    const nodeA = list.getChild('a');
+    const nodeC = list.getChild('c');
+
+    const returned = list.replaceChild('b', div('B-new'));
+
+    expect(returned).toBe(list);
+    expect(list.getChild('b').textContent()).toBe('B-new');
+    expect(list.getChild('a')).toBe(nodeA);
+    expect(list.getChild('c')).toBe(nodeC);
+    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B-new', 'C']);
+    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B-new', 'C']);
+  });
+
+  it('rejects unknown keys for replacement', () => {
+    const list = div();
+
+    expect(() => list.replaceChild('missing', div('X'))).toThrow(/replaceChild\(\)/);
+  });
+
   it('rejects duplicate keys', () => {
     const list = div();
 
