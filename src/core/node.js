@@ -1324,12 +1324,12 @@ export class ViewNode {
    * 条件挂载声明：把条件（句柄或零参闭包）惰性存放在本节点上，
    * 入树时由父节点收养建绑定。已被收养后再次调用属于重复声明，直接抛错。
    */
-  mounted(condition) {
+  mountable(condition) {
     if (!isSignal(condition) && typeof condition !== 'function') {
-      throw new TypeError('mounted() requires a signal handle or a zero-argument function');
+      throw new TypeError('mountable() requires a signal handle or a zero-argument function');
     }
     if (this._mountAdopted) {
-      throw new TypeError('mounted() condition was already adopted by its parent');
+      throw new TypeError('mountable() was already adopted by its parent');
     }
 
     this._mountCondition = condition;
@@ -2186,7 +2186,7 @@ export class ElementNode extends ViewNode {
         return;
       }
 
-      if (key === 'mounted' && (isSignal(value) || typeof value === 'function')) {
+      if (key === 'mountable' && (isSignal(value) || typeof value === 'function')) {
         this._mountCondition = value;
         return;
       }

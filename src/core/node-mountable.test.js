@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { div, ref, section } from '../index.js';
 
-describe('mounted condition adoption', () => {
+describe('mountable condition adoption', () => {
   it('omits server HTML and detached DOM when the condition is false', () => {
     const visible = ref(false);
     const box = section((node) => {
       node.div((panel) => {
-        panel.mounted(visible);
+        panel.mountable(visible);
         panel.attr('data-panel', 'true');
       });
     });
@@ -23,7 +23,7 @@ describe('mounted condition adoption', () => {
     const box = section((node) => {
       node.div('before');
       node.div((panel) => {
-        panel.mounted(visible);
+        panel.mountable(visible);
         panel.input((field) => field.attr('name', 'keyword'));
       });
       node.div('after');
@@ -51,11 +51,11 @@ describe('mounted condition adoption', () => {
     host.addChild(
       'k',
       div((node) => {
-        node.mounted(visible);
+        node.mountable(visible);
         node.attr('data-keyed', 'true');
       })
     );
-    const lazy = div({ mounted: visible });
+    const lazy = div({ mountable: visible });
     host.child(lazy);
     const element = host.renderDom();
 
@@ -74,7 +74,7 @@ describe('mounted condition adoption', () => {
     let shown = false;
     const host = div();
     const panel = div((node) => {
-      node.mounted(() => shown);
+      node.mountable(() => shown);
       node.attr('data-closure', 'true');
     });
     host.child(panel);
@@ -93,18 +93,18 @@ describe('mounted condition adoption', () => {
   it('rejects bad conditions and redeclaration after adoption', () => {
     const visible = ref(true);
     const host = div();
-    const panel = div((node) => node.mounted(visible));
+    const panel = div((node) => node.mountable(visible));
     host.child(panel);
     host.renderDom();
 
-    expect(() => div().mounted(true)).toThrow(/signal handle or a zero-argument function/i);
-    expect(() => div((node) => node.mounted('yes'))).toThrow(
+    expect(() => div().mountable(true)).toThrow(/signal handle or a zero-argument function/i);
+    expect(() => div((node) => node.mountable('yes'))).toThrow(
       /signal handle or a zero-argument function/i
     );
-    expect(() => panel.mounted(visible)).toThrow(/adopted/i);
+    expect(() => panel.mountable(visible)).toThrow(/adopted/i);
   });
 
-  it('adopts a mounted declaration on replaceChild replacements', () => {
+  it('adopts a mountable declaration on replaceChild replacements', () => {
     const visible = ref(true);
     const list = div();
     list.addChild('b', div('B-old'));
@@ -113,7 +113,7 @@ describe('mounted condition adoption', () => {
     list.replaceChild(
       'b',
       div((node) => {
-        node.mounted(visible);
+        node.mountable(visible);
         node.attr('data-new', 'true');
       })
     );
@@ -128,7 +128,7 @@ describe('mounted condition adoption', () => {
   it('does not reattach during the clearChildren removal window', () => {
     const visible = ref(false);
     const host = div();
-    const box = div((panel) => panel.mounted(visible));
+    const box = div((panel) => panel.mountable(visible));
     host.child(box);
     const element = host.renderDom();
 
@@ -142,7 +142,7 @@ describe('mounted condition adoption', () => {
   it('destroys safely from the detached state', () => {
     const visible = ref(false);
     const host = div();
-    const box = div((panel) => panel.mounted(visible));
+    const box = div((panel) => panel.mountable(visible));
     host.child(box);
     host.renderDom();
 

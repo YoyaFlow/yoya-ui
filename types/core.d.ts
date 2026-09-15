@@ -306,7 +306,7 @@ export class ViewNode {
    * entry. Calling after adoption throws. Closure refresh goes through the
    * parent's flush().
    */
-  mounted(condition: SignalHandle | (() => unknown)): this;
+  mountable(condition: SignalHandle | (() => unknown)): this;
 
   /** Latest committed state of this node's own mount condition (default true). */
   isMounted(): boolean;

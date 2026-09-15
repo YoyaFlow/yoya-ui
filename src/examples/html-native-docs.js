@@ -256,9 +256,9 @@ ele.flush();`
         'list.keyed(rows, (row) => li(row.title))'
       ],
       [
-        'node.mounted(cond) / isMounted()',
-        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；div({ mounted: cond }) 等价。',
-        'panel.mounted(visible)'
+        'node.mountable(cond) / isMounted()',
+        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；div({ mountable: cond }) 等价。',
+        'panel.mountable(visible)'
       ],
       [
         'node.whenFailed(handler)',
@@ -272,7 +272,7 @@ ele.flush();`
 ul.keyed(rows, (row) => row.id, (row) => li(row.title));
 
 // ② 条件挂载：为假脱离文档但状态保留，为真按子节点槽位回归
-panel.mounted(visible);
+panel.mountable(visible);
 
 // ③ 子树错误边界：返回节点降级替换，返回 null 只上报并保持现状
 box.whenFailed((error, info) => span(\`\${info.phase} 失败：\${error.message}\`));`
