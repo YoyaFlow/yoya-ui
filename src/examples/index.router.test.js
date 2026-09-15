@@ -1077,6 +1077,26 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
     expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
+    expect(page.querySelectorAll('[data-error-demo]')).toHaveLength(2);
+
+    const reportDemo = page.querySelector('[data-error-demo="report"]');
+    expect(reportDemo).not.toBeNull();
+    const reportBox = reportDemo.querySelector('[data-when-failed-box]');
+    expect(reportBox).not.toBeNull();
+
+    reportDemo.querySelector('[data-when-failed-trigger]').click();
+
+    expect(reportDemo.querySelector('[data-when-failed-box]')).toBe(reportBox);
+    expect(reportDemo.textContent).toContain('已捕获 1 次故障');
+
+    const componentDemo = page.querySelector('[data-error-demo="component"]');
+    expect(componentDemo).not.toBeNull();
+
+    componentDemo.querySelector('[data-when-failed-trigger]').click();
+
+    await vi.waitFor(() => {
+      expect(componentDemo.textContent).toContain('组件降级');
+    });
 
     const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
     const outsideField = rebuildDemo.querySelector('[data-region-outside]');
