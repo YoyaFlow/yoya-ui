@@ -557,13 +557,13 @@ types/...（root / core / ui / actions / navigation / feedback / form / data-dis
 增量入口给两个数：**入口文件本身**与**实际下载量**（入口 + 它引用的公共 chunk）。
 只看入口文件会以为 core 只有几 KB——实际差距很大，按实际下载量估算首屏。
 
-| 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                                                                     |
-| ---------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**              | 节点引擎（ViewNode / ElementNode / 工厂）、全部 HTML 标签工厂、SVG 工厂与内置图标集、Signals（`ref` / `computed` / `batch`）、**i18n**、权限 access、context、a11y、theme helper、ClientOnly |
-| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **93.6 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                            |
-| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）                                        |
-| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                       |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB     | `vEchart` / `vThree` 封装                                                                                                                                                                    |
+| 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                              |
+| ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **93.6 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
+| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
+| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB     | `vEchart` / `vThree` 封装                                                                                                                             |
 
 自包含入口（core 已内联，单文件直用）：
 

@@ -44,7 +44,7 @@ const INCREMENTAL = [
 // 每个入口包含什么——只看体积数字没人知道 core 里有 i18n。
 const CONTENTS = {
   'yoya.core.js':
-    '节点引擎（ViewNode / ElementNode / 工厂）、全部 HTML 标签工厂、SVG 工厂与内置图标集、Signals（ref / computed / batch）、i18n、权限 access、context、a11y、theme helper、ClientOnly',
+    '核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly',
   'yoya.ui.js':
     '全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme',
   'yoya.router.js':
