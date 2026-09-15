@@ -691,6 +691,10 @@ export class ViewNode {
     this._cleanup = [];
     this._pendingRemovals = new Set();
     this._keyedSegments = [];
+    this._childMountStates = new Map();
+    this._mountCondition = null;
+    this._mountAdopted = false;
+    this._isMounted = true;
     this._childrenDirty = false;
     this._deleted = false;
     this._access = null;
@@ -996,6 +1000,7 @@ export class ViewNode {
     this._pendingRemovals.delete(viewNode);
     this._children.push(viewNode);
     this._childrenDirty = true;
+    this._adoptPendingMount(viewNode);
 
     if (this._el) {
       const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
@@ -1033,6 +1038,7 @@ export class ViewNode {
       viewNode.attr('data-row-key', rawKey);
     }
     this._pendingRemovals.delete(viewNode);
+    this._adoptPendingMount(viewNode);
 
     const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
     if (beforeIndex === -1) {
@@ -1080,6 +1086,7 @@ export class ViewNode {
       viewNode.attr('data-row-key', rawKey);
     }
     this._pendingRemovals.delete(viewNode);
+    this._adoptPendingMount(viewNode);
 
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
@@ -1224,6 +1231,7 @@ export class ViewNode {
 
     this._childKeys.set(rawKey, viewNode);
     this._pendingRemovals.delete(viewNode);
+    this._adoptPendingMount(viewNode);
     const index = this._children.indexOf(previous);
     if (index === -1) {
       this._children.push(viewNode);
@@ -1246,6 +1254,7 @@ export class ViewNode {
       }
     }
 
+    this._childMountStates.delete(previous);
     previous.destroy();
 
     return this;
@@ -1280,6 +1289,79 @@ export class ViewNode {
     });
 
     return this;
+  }
+
+  /**
+   * 条件挂载声明：把条件（句柄或零参闭包）惰性存放在本节点上，
+   * 入树时由父节点收养建绑定。已被收养后再次调用属于重复声明，直接抛错。
+   */
+  mounted(condition) {
+    if (!isSignal(condition) && typeof condition !== 'function') {
+      throw new TypeError('mounted() requires a signal handle or a zero-argument function');
+    }
+    if (this._mountAdopted) {
+      throw new TypeError('mounted() condition was already adopted by its parent');
+    }
+
+    this._mountCondition = condition;
+    return this;
+  }
+
+  /**
+   * 自身挂载条件的最近提交状态（父节点单向镜像写入，默认 true）。
+   * 元素此刻是否在文档里另查 _el?.isConnected——受祖先挂载与渲染时机影响。
+   */
+  isMounted() {
+    return this._isMounted;
+  }
+
+  /** 插入路径统一入口：子节点带惰性挂载条件时由本节点收养。 */
+  _adoptPendingMount(viewNode) {
+    if (viewNode._mountCondition) {
+      const condition = viewNode._mountCondition;
+      viewNode._mountCondition = null;
+      this._adoptMountCondition(viewNode, condition);
+    }
+  }
+
+  /** 插入路径专用：收养子节点的惰性挂载条件，在父节点登记绑定。 */
+  _adoptMountCondition(node, condition) {
+    node._mountAdopted = true;
+
+    registerNodeBinding(this, 'mount', node, toBindingRead(condition), (next) => {
+      const mounted = Boolean(next);
+      this._childMountStates.set(node, mounted);
+      node._isMounted = mounted; // 单向镜像：父写子读，isMounted() 无需父指针
+      this._syncChildMounted(node, mounted);
+    });
+
+    // 渲染后收养：登记时只求值未激活订阅，这里手动补上
+    if (this._el && setupStack.length === 0 && regionBuildStack.length === 0) {
+      this._bindings[this._bindings.length - 1]?.activate();
+    }
+  }
+
+  _syncChildMounted(node, mounted) {
+    if (this._deleted || node._deleted || !this._el || !node._el) {
+      return;
+    }
+
+    // membership 校验：clearChildren / 区域换子后的残留绑定安全 no-op，
+    // 不需要父指针，也没有双向同步问题。
+    if (!this._children.includes(node)) {
+      return;
+    }
+
+    if (mounted) {
+      if (node._el.parentNode !== this._el) {
+        this._el.insertBefore(node._el, resolveInsertAnchor(this, node));
+      }
+      return;
+    }
+
+    if (node._el.parentNode === this._el) {
+      this._el.removeChild(node._el);
+    }
   }
 
   /** 按 key 读取子节点；不存在返回 null。 */
@@ -1337,6 +1419,7 @@ export class ViewNode {
       this._pendingRemovals.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
+      this._adoptPendingMount(viewNode);
     });
 
     return this;
@@ -1470,6 +1553,7 @@ export class ViewNode {
     }
     this._cleanup.forEach((cleanup) => cleanup());
     this._cleanup = [];
+    this._childMountStates.clear();
     this._children.forEach((child) => child.destroy());
     this._pendingRemovals.forEach((child) => child.destroy());
     this._pendingRemovals.clear();
@@ -1949,6 +2033,11 @@ export class ElementNode extends ViewNode {
         return;
       }
 
+      if (key === 'mounted' && (isSignal(value) || typeof value === 'function')) {
+        this._mountCondition = value;
+        return;
+      }
+
       if (typeof this[key] === 'function') {
         if (isSignal(value)) {
           registerNodeBinding(
@@ -2160,6 +2249,7 @@ export class ElementNode extends ViewNode {
       this._pendingRemovals.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
+      this._adoptPendingMount(viewNode);
 
       if (this._el) {
         const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
@@ -2236,7 +2326,11 @@ export class ElementNode extends ViewNode {
       this._children.forEach((child) => {
         withRenderScope(inherited, () => {
           const childElement = child.renderDom();
-          if (childElement && childElement.parentNode !== this._el) {
+          if (
+            childElement &&
+            childElement.parentNode !== this._el &&
+            this._childMountStates.get(child) !== false
+          ) {
             this._el.appendChild(childElement);
           } else if (!childElement && child._el && child._el.parentNode === this._el) {
             this._el.removeChild(child._el);
@@ -2283,7 +2377,11 @@ export class ElementNode extends ViewNode {
         return startTag;
       }
 
-      return `${startTag}${this._children.map((child) => child.toHTML()).join('')}</${this._tagName}>`;
+      const mountedChildren = this._children.filter(
+        (child) => this._childMountStates.get(child) !== false
+      );
+
+      return `${startTag}${mountedChildren.map((child) => child.toHTML()).join('')}</${this._tagName}>`;
     });
   }
 
@@ -2305,7 +2403,7 @@ export class ElementNode extends ViewNode {
     this._applyBindingsToElement();
     this._children.forEach((child) => {
       const childElement = child.renderDom();
-      if (childElement) {
+      if (childElement && this._childMountStates.get(child) !== false) {
         this._el.appendChild(childElement);
       }
     });
