@@ -17,7 +17,7 @@ Nine reasons, in short:
 | Reason                                  | What it means                                                                                                                                                                                                                                                                               |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Built for long-term maintenance**     | A stable API on native Web standards: you maintain one codebase, not projects built against several framework major versions, and you never rewrite for a framework's breaking upgrade.                                                                                                     |
-| **Free choice of integration**          | Script tag, npm ESM/UMD, Vite/webpack, SSR or a scaffolded template all work; capabilities are imported per module, on demand.                                                                                                                                                              |
+| **Free choice of integration**          | Script tag, npm ESM, Vite/webpack, SSR or a scaffolded template all work; capabilities are imported per module, on demand.                                                                                                                                                                  |
 | **Declarative, intuitive and flexible** | Plain-JS declarative DSL, setup callbacks and parent shortcuts — no JSX/SFC template layer; the view structure is the code structure.                                                                                                                                                       |
 | **One stack across scenarios**          | The same page factory and state logic covers a full SPA, server-side templates and SSR/hydration — one Web-UI development logic across the whole stack.                                                                                                                                     |
 | **Plain JS, assets that do not expire** | Highly adaptable plain JS with no virtual DOM or framework runtime: output is real HTML/DOM/JS, so standards-based Web software keeps running as browsers evolve.                                                                                                                           |
@@ -90,8 +90,8 @@ div((page) => {
 
 Without a bundler, you can also load the incremental entries
 `dist/yoya.core.js` / `dist/yoya.ui.js` (shared core loads automatically) as ES
-modules, load the self-contained `dist/yoya.ui-router.full.js`, or use
-`dist/yoya.ui-router.umd.js` (`window.YoyaUI`) with a classic script tag.
+modules, or load the self-contained `dist/yoya.ui-router.full.js` (core inlined)
+for CDN / no-build single-file usage.
 
 ### Scaffold a full project
 
@@ -406,7 +406,7 @@ types badge is static and only changes if its wording does.
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
-| Distribution formats | ESM per-module entries, UMD, single CSS theme file                                                  | `npm run build` → `dist/`                                    |
+| Distribution formats | ESM per-module entries, single CSS theme file                                                       | `npm run build` → `dist/`                                    |
 | Dist verification    | Category isolation, SSR single-core smoke and size budgets are gated in CI                          | `npm run verify:dist` (after `npm run build`)                |
 | Public roadmap       | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md): current focus, 1.0 contract freeze, GenUI direction (Chinese) | (open the file)                                              |
 | Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
@@ -602,17 +602,33 @@ yoya.ui.full.js / yoya.ui.full.min.js       core + ui
 yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
 yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
-# UMD (self-contained, classic script tag)
-yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
-
 # Styles and types
 yoya.ui.css
 types/... (root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
 ```
 
 Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
-shared chunk loads automatically); `.full` is self-contained (core inlined); `.umd`
-exposes the `window.YoyaUI` global. npm subpaths map to
+shared chunk loads automatically); `.full` is self-contained (core inlined) and is
+the CDN / no-build single-file form. npm subpaths map to
+
+### Bundle size
+
+`npm run report:bundle` prints the full table (public chunks included). Common rows
+(min+gzip):
+
+| Artifact                                                  | raw      | min      | min+gzip |
+| --------------------------------------------------------- | -------- | -------- | -------- |
+| `yoya.core.js` (core entry)                               | 8.5 KB   | 6.5 KB   | 2.9 KB   |
+| `yoya.ui.js` (components entry)                           | 23.7 KB  | 15.2 KB  | 5.6 KB   |
+| `yoya.router.js` (router + SSR primitives)                | 58.6 KB  | 30.1 KB  | 9.8 KB   |
+| `yoya.devtools.js` (dev only)                             | 0.3 KB   | 0.2 KB   | 0.1 KB   |
+| `yoya.router.full.js` (self-contained: core + router/SSR) | 213.6 KB | 107.5 KB | 31.0 KB  |
+| `yoya.ui-router.full.js` (self-contained: everything)     | 747.2 KB | 439.8 KB | 105.8 KB |
+| `yoya.ui.css` (component skin)                            | 60.3 KB  | —        | 8.7 KB   |
+
+Incremental entries exclude core and load shared chunks at runtime: what a page
+downloads is the entry plus the chunks it imports (add the rows above). The core
+layer ships no skin of its own — `yoya.ui.css` is component styles only.
 `@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui`,
 `@yoyaflow/yoya-ui/actions`, `@yoyaflow/yoya-ui/navigation`,
 `@yoyaflow/yoya-ui/feedback`, `@yoyaflow/yoya-ui/form`,

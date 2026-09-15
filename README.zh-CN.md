@@ -16,7 +16,7 @@ yoya-ui 的价值可以浓缩为九点，它们决定了它适合什么样的项
 | 亮点                       | 说明                                                                                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **面向长期维护**           | 构建于原生 Web 标准之上，API 稳定：只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。                                                                    |
-| **接入方式自由**           | script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                                                                                     |
+| **接入方式自由**           | script 标签、npm ESM、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                                                                                         |
 | **声明式直观且灵活**       | 普通 JS 声明式 DSL + setup 回调 + 父节点快捷方法，没有 JSX/SFC 模板层；视图结构直观，组合灵活。                                                                                            |
 | **多场景适用、全栈统一**   | 同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板与 SSR/hydration，Web 界面开发逻辑全栈一致。                                                                                               |
 | **原生 JS 适应性高**       | 没有虚拟 DOM 与框架运行时，产出真实 HTML/DOM/JS，原生 JS 适应性高；Web 标准向后兼容，开发出的 Web 软件资产不过时。                                                                         |
@@ -87,9 +87,8 @@ div((page) => {
 ```
 
 不需要打包器时，也可以把 `dist/yoya.core.js` / `dist/yoya.ui.js`（增量入口，
-自动加载共享 core）作为 ES module 加载；需要单文件直用时可加载
-`dist/yoya.ui-router.full.js`，或用经典 script 标签加载
-`dist/yoya.ui-router.umd.js`（`window.YoyaUI`）。
+自动加载共享 core）作为 ES module 加载；需要单文件直用（CDN / 免构建）时加载
+`dist/yoya.ui-router.full.js`（自包含，core 已内联）。
 
 ### 脚手架：创建完整项目
 
@@ -373,7 +372,7 @@ release 徽章直接读 npm 上已发布的版本，不会过期；types 徽章�
 | 运行时依赖 | **0**                                                                                | `package.json` —— 没有 `dependencies` 块                                 |
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
-| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                                             | `npm run build` → `dist/`                                                |
+| 分发格式   | 按模块拆分的 ESM、单一 CSS 主题文件                                                  | `npm run build` → `dist/`                                                |
 | 产物校验   | 分类隔离、SSR 单 core 冒烟与体积预算在 CI 中门禁                                     | `npm run verify:dist`（在 `npm run build` 之后）                         |
 | 公开路线图 | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md)：当前重点、1.0 契约冻结与 GenUI 方向            | （打开文件查看）                                                         |
 | 组件契约   | 组件开发指南固化三种受支持的组件形态                                                 | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
@@ -545,16 +544,30 @@ yoya.ui.full.js / yoya.ui.full.min.js       core + ui
 yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
 yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
-# UMD（自包含，经典 script 标签）
-yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
-
 # 样式与类型
 yoya.ui.css
 types/...（root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools）
 ```
 
 命名规则：无后缀与 `.min` 是 ESM 增量入口（不含 core，运行时会自动加载共享
-块）；`.full` 是自包含文件（core 已内联）；`.umd` 提供 `window.YoyaUI` 全局。
+块）；`.full` 是自包含文件（core 已内联），适合 CDN 与免构建单文件直用。
+
+### 产物与体积
+
+`npm run report:bundle` 打印完整表格（含公共 chunk）。常用几项（min+gzip）：
+
+| 产物                                               | raw      | min      | min+gzip |
+| -------------------------------------------------- | -------- | -------- | -------- |
+| `yoya.core.js`（core 增量入口）                    | 8.5 KB   | 6.5 KB   | 2.9 KB   |
+| `yoya.ui.js`（组件增量入口）                       | 23.7 KB  | 15.2 KB  | 5.6 KB   |
+| `yoya.router.js`（router + SSR 原语）              | 58.6 KB  | 30.1 KB  | 9.8 KB   |
+| `yoya.devtools.js`（开发期）                       | 0.3 KB   | 0.2 KB   | 0.1 KB   |
+| `yoya.router.full.js`（自包含：core + router/SSR） | 213.6 KB | 107.5 KB | 31.0 KB  |
+| `yoya.ui-router.full.js`（自包含：全量）           | 747.2 KB | 439.8 KB | 105.8 KB |
+| `yoya.ui.css`（组件皮肤）                          | 60.3 KB  | —        | 8.7 KB   |
+
+增量入口不含 core，运行时自动加载公共 chunk：实际下载量 = 入口 + 它引用到的
+chunk（表里逐项可加）。core 层没有自带皮肤，`yoya.ui.css` 全部是组件样式。
 npm 子路径对应 `@yoyaflow/yoya-ui/core`、`@yoyaflow/yoya-ui/ui`、
 `@yoyaflow/yoya-ui/actions`、`@yoyaflow/yoya-ui/navigation`、
 `@yoyaflow/yoya-ui/feedback`、`@yoyaflow/yoya-ui/form`、

@@ -53,19 +53,6 @@ async function buildSingle(input, outputFile, minify) {
   });
 }
 
-async function buildUmd(minify) {
-  const bundle = await rolldown({
-    input: 'src/yoya.ui-router.js'
-  });
-  await bundle.write({
-    dir: 'dist',
-    format: 'umd',
-    name: 'YoyaUI',
-    entryFileNames: `yoya.ui-router.umd${minify ? '.min' : ''}.js`,
-    minify
-  });
-}
-
 rmSync('dist', { recursive: true, force: true });
 
 await buildShared(false);
@@ -75,9 +62,6 @@ for (const [name, input] of FULL_INPUTS) {
   await buildSingle(input, entryFileName(name, false), false);
   await buildSingle(input, entryFileName(name, true), true);
 }
-
-await buildUmd(false);
-await buildUmd(true);
 
 cpSync('src/chart/echarts.min.js', 'dist/echarts.min.js');
 cpSync('src/yoya.ui.css', 'dist/yoya.ui.css');

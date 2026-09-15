@@ -577,7 +577,7 @@ function createOverviewView() {
           },
           {
             title: '接入方式自由',
-            points: ['script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
+            points: ['script 标签、npm ESM、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
           },
           {
             title: '声明式直观灵活',

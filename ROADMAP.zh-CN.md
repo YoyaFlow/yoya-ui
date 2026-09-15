@@ -11,7 +11,7 @@
 ## 已完成（0.2 → 0.5，简述）
 
 - **产物形态**：增量入口（core / ui / router / echart / three / devtools，共享 core chunk）、
-  自包含 full 与 UMD；`exports` 收敛，SSR 原语并入 `./router`。
+  自包含 full；`exports` 收敛，SSR 原语并入 `./router`。
 - **状态模型**：统一到 Signals（`ref` / `computed`），移除节点级 `state` / `setState`
   与 `vStateNode`；引擎可插拔，插件由使用者自己写（core 只给契约、模板与一致性用例）。
 - **能力面**：组件分类子入口、SSR / hydrate、按请求 i18n、主题 token、权限声明、

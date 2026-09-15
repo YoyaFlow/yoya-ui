@@ -286,7 +286,7 @@
 ### 36. 为什么能 CDN 直接 import 就跑？生产也这么干吗？怎么 tree-shaking？
 
 - 分类：②
-- 现状：无构建与有构建都是一等公民：CDN 单文件（README quickstart 即此形态，jsdelivr）、npm ESM 分模块入口（天然 tree-shaking）、UMD、单 CSS 主题文件；`verify:dist` 在 CI 做体积预算门禁。生产可 CDN 也可 self-host dist。
+- 现状：无构建与有构建都是一等公民：CDN 单文件（README quickstart 即此形态，jsdelivr）、npm ESM 分模块入口（天然 tree-shaking）、单 CSS 主题文件；`verify:dist` 在 CI 做体积预算门禁。生产可 CDN 也可 self-host dist。
 - 文档动作：README Build output 一节已覆盖，FAQ 指路。
 - 优先级：P1 ☐
 
