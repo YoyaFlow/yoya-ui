@@ -146,7 +146,7 @@ Contract and boundaries:
 - Value bindings accept exactly two sources: a **signal handle** (recommended) or a **zero-argument closure** `() => value` (evaluated once at build time; call `flush()` yourself when it needs re-evaluation). The parameterized form `(s) => value` was removed together with node-level state and now throws when registered. A region rebuild releases the previous bindings and the new ones take effect immediately.
 - Declaration order: call `rebuildable()` first, then write value functions and other registrations.
 - Do **not** put one-off side effects (third-party instance creation, requests, analytics) in a region setup. `bindDocumentEvent` / `bindWindowEvent` are reset across rebuilds by the engine; timers must be registered through `registerRegionCleanup(fn)`.
-- Every region subscribes to its own dependencies: a signal read inside it triggers a rebuild (reported by devtools as `trigger: 'signal'`); nested regions subscribe independently.
+- Every region subscribes to its own dependencies: a signal read inside it triggers a rebuild (reported by devtools as `trigger: 'signal'`); nested regions subscribe independently. Writing several signals inside `batch()` rebuilds a multi-source region once, synchronously at the end of the batch; use `rebuildScheduled()` to check whether a signal-triggered rebuild is queued. Writes outside a batch still rebuild synchronously, and a dependency that changes again during a rebuild re-runs it afterwards instead of being dropped.
 - To keep focus or third-party instances, leave that part outside the region or use value bindings, which update in place without rebuilding DOM.
 
 ## 7. Composition, events, and lifecycle

@@ -235,6 +235,12 @@ export class ViewNode {
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
   rebuildPending(): boolean;
 
+  /**
+   * Whether a signal-triggered rebuild is queued and will run automatically:
+   * coalesced inside the current batch, or re-queued while a rebuild is running.
+   */
+  rebuildScheduled(): boolean;
+
   /** Flushes bound values in this subtree without rebuilding structure. */
   flush(): this;
 
