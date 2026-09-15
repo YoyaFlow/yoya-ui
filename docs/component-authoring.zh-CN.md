@@ -150,6 +150,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - **列表协调**：`node.keyed(rows, keyFn, build)` 用信号驱动子项——同 key 且行引用未变时复用节点，行引用变化原位换新，顺序变化保身份移动；行内字段用信号可在不重建的前提下原地刷值。自定义策略用 `insertBefore(key, child, beforeKey)` / `insertAfter(key, child, afterKey)` / `moveBefore(key, beforeKey)` / `moveAfter(key, afterKey)` / `replaceChild(key, child)` 原语。
 - **条件挂载**：`panel.mounted(cond)` 是唯一公共入口——条件接受 ref/computed 句柄或零参闭包，惰性存在子节点上，入树时父节点收养建绑定（闭包变化后用**父节点** `flush()` 重求值）。为假时子元素脱离文档但 ViewNode 与状态保留，为真时按子节点槽位回归；SSR 条件假输出空串。`node.isMounted()` 查询自身挂载条件的最近提交状态；「元素此刻是否在文档里」查 `node._el?.isConnected`。它与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档：**不在但活着**。挂载绑定登记在父节点；`div({ mounted: cond })` 配置形态走同一条收养路径；运行期对已入树节点补挂条件暂无公共入口（创建期声明解决）。
 - 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用值绑定——它们是原地更新，不重建 DOM。
+- **错误边界**：`node.whenFailed(handler)` 声明子树边界——handler 返回节点则替换子树降级、返回空仅上报并保持现状；组件对象可写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载。捕获永不静默：`console.error` 必发，devtools 开启时追加 `error` 事件；嵌套边界内层接管即止步，返回空则继续向外；handler 自身抛错交由外层。无边界时错误原样传播（fail fast）。
 
 ## 7. 组合、事件与生命周期
 

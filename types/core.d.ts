@@ -41,6 +41,19 @@ export type EventHandler<E extends Event = Event> = (event: E) => void;
 /** A component object with a render() method (form B component). */
 export interface ComponentLike {
   render(): ViewNode;
+  /**
+   * Optional error-boundary member: ComponentNode declares it automatically,
+   * so component-level failures degrade without affecting callers.
+   */
+  whenFailed?(
+    error: unknown,
+    info: {
+      phase: 'build' | 'render' | 'event' | 'update';
+      message: string;
+      source: unknown;
+      boundary: unknown;
+    }
+  ): ViewNode | ComponentLike | string | number | null | undefined | void;
   [key: string]: any;
 }
 
@@ -297,6 +310,25 @@ export class ViewNode {
 
   /** Latest committed state of this node's own mount condition (default true). */
   isMounted(): boolean;
+
+  /**
+   * Subtree error boundary. The handler receives the original error and an info
+   * object ({ phase: 'build' | 'render' | 'event' | 'update', message, source,
+   * boundary }). Returning a node replaces this subtree with a fallback; returning
+   * null only reports and keeps the current state. Captures are never silent:
+   * console.error always fires and a devtools 'error' event is emitted when enabled.
+   */
+  whenFailed(
+    handler: (
+      error: unknown,
+      info: {
+        phase: 'build' | 'render' | 'event' | 'update';
+        message: string;
+        source: unknown;
+        boundary: unknown;
+      }
+    ) => ViewNode | ComponentLike | string | number | null | undefined | void
+  ): this;
 
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;

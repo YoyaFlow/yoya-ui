@@ -284,7 +284,12 @@ function commitBindingValue(binding, next) {
   if (!binding.committed || !Object.is(next, binding.last)) {
     binding.committed = true;
     binding.last = next;
-    binding.commit(next);
+    try {
+      binding.commit(next);
+    } catch (error) {
+      const phase = setupStack.length > 0 || regionBuildStack.length > 0 ? 'build' : 'update';
+      captureNodeError(binding.owner, error, phase);
+    }
   }
 }
 
@@ -393,6 +398,16 @@ export function registerRegionCleanup(cleanup) {
   region._regionRunCleanups.push(cleanup);
 }
 
+/** 找最近边界并处理；无边界时原样重抛（fail fast）。返回降级替换节点或 null。 */
+function captureNodeError(node, error, phase) {
+  const boundary = node._errorHandler ? node : node._errorBoundary;
+  if (!boundary) {
+    throw error;
+  }
+
+  return boundary._handleError(error, node, phase);
+}
+
 /** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟元素；找不到返回 null（追加）。 */
 function resolveInsertAnchor(parent, fromNode) {
   if (!fromNode) {
@@ -442,6 +457,7 @@ function keyedSegmentTailNode(parent, segment, memberNodes) {
 
 function placeKeyedMember(parent, entry, beforeNode, tailNode) {
   parent._pendingRemovals.delete(entry.node);
+  parent._inheritErrorBoundary(entry.node);
   const anchorNode = beforeNode ?? tailNode;
   const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
   if (beforeIndex === -1) {
@@ -695,6 +711,8 @@ export class ViewNode {
     this._mountCondition = null;
     this._mountAdopted = false;
     this._isMounted = true;
+    this._errorHandler = null;
+    this._errorBoundary = null;
     this._childrenDirty = false;
     this._deleted = false;
     this._access = null;
@@ -1001,6 +1019,7 @@ export class ViewNode {
     this._children.push(viewNode);
     this._childrenDirty = true;
     this._adoptPendingMount(viewNode);
+    this._inheritErrorBoundary(viewNode);
 
     if (this._el) {
       const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
@@ -1039,6 +1058,7 @@ export class ViewNode {
     }
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
+    this._inheritErrorBoundary(viewNode);
 
     const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
     if (beforeIndex === -1) {
@@ -1088,6 +1108,7 @@ export class ViewNode {
     }
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
+    this._inheritErrorBoundary(viewNode);
 
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
@@ -1233,6 +1254,7 @@ export class ViewNode {
     this._childKeys.set(rawKey, viewNode);
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
+    this._inheritErrorBoundary(viewNode);
     const index = this._children.indexOf(previous);
     if (index === -1) {
       this._children.push(viewNode);
@@ -1320,6 +1342,87 @@ export class ViewNode {
    */
   isMounted() {
     return this._isMounted;
+  }
+
+  /**
+   * 子树错误边界：影响范围 = 本节点子树。handler(error, info) 返回节点则
+   * 替换子树降级；返回空仅上报并保持现状。捕获永不静默（console.error 必发）。
+   */
+  whenFailed(handler) {
+    if (typeof handler !== 'function') {
+      throw new TypeError('whenFailed() requires a handler function');
+    }
+
+    this._errorHandler = handler;
+    return this;
+  }
+
+  /** 插入路径统一入口：向子节点传播最近边界引用。 */
+  _inheritErrorBoundary(viewNode) {
+    viewNode._errorBoundary = this._errorHandler ? this : this._errorBoundary;
+  }
+
+  /** 边界处理入口：通知 → handler → 降级替换 / 向外链。返回降级节点或 null。 */
+  _handleError(error, source, phase) {
+    const info = {
+      phase,
+      message: String(error?.message ?? error),
+      source,
+      boundary: this
+    };
+    console.error('[yoya] whenFailed captured an error', error, info);
+    if (isDevtoolsEnabled()) {
+      emitDevtools({ type: 'error', phase, source, boundary: this, error });
+    }
+
+    let fallback = null;
+    if (typeof this._errorHandler === 'function') {
+      try {
+        fallback = this._errorHandler(error, info);
+      } catch (handlerError) {
+        this._forwardBoundaryError(handlerError, source, phase);
+        return null;
+      }
+    }
+
+    if (fallback) {
+      try {
+        return this._replaceBoundaryContent(fallback);
+      } catch (renderError) {
+        this._forwardBoundaryError(renderError, source, phase);
+        return null;
+      }
+    }
+
+    // handler 返回空：仅上报。有外层边界则继续向外；无外层视为已观测，止步。
+    if (this._errorBoundary) {
+      return this._errorBoundary._handleError(error, source, phase);
+    }
+    return null;
+  }
+
+  _forwardBoundaryError(error, source, phase) {
+    if (this._errorBoundary) {
+      this._errorBoundary._handleError(error, source, phase);
+      return;
+    }
+    throw error;
+  }
+
+  /** 降级替换：先构建成功（含渲染），再原子替换子树。 */
+  _replaceBoundaryContent(fallback) {
+    const viewNode = normalizeChildWithContext(this, fallback);
+    if (this._el) {
+      withRenderScope(this._access ?? currentInheritedScope(), () => viewNode.renderDom());
+    }
+
+    this.clearChildren();
+    this.child(viewNode);
+    this._inheritErrorBoundary(viewNode);
+    if (this._el) {
+      this._commitChildren();
+    }
+    return viewNode;
   }
 
   /** 插入路径统一入口：子节点带惰性挂载条件时由本节点收养。 */
@@ -1427,6 +1530,8 @@ export class ViewNode {
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
+      this._inheritErrorBoundary(viewNode);
+      this._inheritErrorBoundary(viewNode);
     });
 
     return this;
@@ -1482,7 +1587,11 @@ export class ViewNode {
       if (!current || typeof current.handler !== 'function') {
         return;
       }
-      current.handler.call(this, event);
+      try {
+        current.handler.call(this, event);
+      } catch (error) {
+        captureNodeError(this, error, 'event');
+      }
       if (current.options?.once) {
         this.off(eventName);
       }
@@ -1658,6 +1767,9 @@ export class ComponentNode extends ViewNode {
   constructor(component) {
     super(null);
     this._component = component;
+    if (component && typeof component === 'object' && typeof component.whenFailed === 'function') {
+      this.whenFailed(component.whenFailed.bind(component));
+    }
     this._resolved = null; // 第一个根，供外部兼容读取
     this._resolvedList = null; // 全部根
     this._roots = null; // 多根模式时非 null
@@ -1692,6 +1804,7 @@ export class ComponentNode extends ViewNode {
     this._resolvedList = list;
     this._resolved = list[0] || null;
     this._roots = Array.isArray(resolved) ? list : null;
+    list.forEach((root) => this._inheritErrorBoundary(root));
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -1775,6 +1888,26 @@ export class ComponentNode extends ViewNode {
     previousList.forEach((root) => root.destroy());
   }
 
+  /** 组件边界降级：销毁旧根，替换为降级节点。 */
+  _replaceBoundaryContent(fallback) {
+    const viewNode = normalizeChildWithContext(this, fallback);
+    const previousList = this._resolvedList || [];
+    const inherited = this._access ?? currentInheritedScope();
+    const element = withRenderScope(inherited, () => viewNode.renderDom());
+    const firstOld = previousList[0]?._el;
+    if (element && firstOld?.parentNode) {
+      firstOld.parentNode.insertBefore(element, firstOld);
+    }
+
+    this._resolvedList = [viewNode];
+    this._resolved = viewNode;
+    this._roots = null;
+    this._fragmentDom = null;
+    this._inheritErrorBoundary(viewNode);
+    previousList.forEach((root) => root.destroy());
+    return viewNode;
+  }
+
   children() {
     if (!this._resolvedList) {
       return [];
@@ -1808,7 +1941,14 @@ export class ComponentNode extends ViewNode {
 
       const nodes = [];
       list.forEach((root) => {
-        const element = withRenderScope(this._access ?? inherited, () => root.renderDom());
+        const element = withRenderScope(this._access ?? inherited, () => {
+          try {
+            return root.renderDom();
+          } catch (error) {
+            const replacement = captureNodeError(root, error, 'render');
+            return replacement?._el ?? null;
+          }
+        });
         if (element) {
           nodes.push(element);
         }
@@ -1821,7 +1961,13 @@ export class ComponentNode extends ViewNode {
 
     const resolved = list[0];
     return withRenderScope(this._access ?? inherited, () => {
-      const element = resolved.renderDom();
+      let element;
+      try {
+        element = resolved.renderDom();
+      } catch (error) {
+        const replacement = captureNodeError(resolved, error, 'render');
+        element = replacement?._el ?? null;
+      }
       this._el = element;
       return element;
     });
@@ -2257,6 +2403,8 @@ export class ElementNode extends ViewNode {
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
+      this._inheritErrorBoundary(viewNode);
+      this._inheritErrorBoundary(viewNode);
 
       if (this._el) {
         const childElement = withRenderScope(this._access ?? currentInheritedScope(), () =>
@@ -2332,7 +2480,16 @@ export class ElementNode extends ViewNode {
       this._commitChildren();
       this._children.forEach((child) => {
         withRenderScope(inherited, () => {
-          const childElement = child.renderDom();
+          let childElement;
+          try {
+            childElement = child.renderDom();
+          } catch (error) {
+            const replacement = captureNodeError(child, error, 'render');
+            if (replacement?._el && replacement._el.parentNode !== this._el) {
+              this._el.appendChild(replacement._el);
+            }
+            return;
+          }
           if (
             childElement &&
             childElement.parentNode !== this._el &&
@@ -2388,7 +2545,17 @@ export class ElementNode extends ViewNode {
         (child) => this._childMountStates.get(child) !== false
       );
 
-      return `${startTag}${mountedChildren.map((child) => child.toHTML()).join('')}</${this._tagName}>`;
+      const childHTML = mountedChildren
+        .map((child) => {
+          try {
+            return child.toHTML();
+          } catch (error) {
+            const replacement = captureNodeError(child, error, 'render');
+            return replacement ? replacement.toHTML() : '';
+          }
+        })
+        .join('');
+      return `${startTag}${childHTML}</${this._tagName}>`;
     });
   }
 
@@ -2409,7 +2576,16 @@ export class ElementNode extends ViewNode {
   _applySnapshotToElement() {
     this._applyBindingsToElement();
     this._children.forEach((child) => {
-      const childElement = child.renderDom();
+      let childElement;
+      try {
+        childElement = child.renderDom();
+      } catch (error) {
+        const replacement = captureNodeError(child, error, 'render');
+        if (replacement?._el && replacement._el.parentNode !== this._el) {
+          this._el.appendChild(replacement._el);
+        }
+        return;
+      }
       if (childElement && this._childMountStates.get(child) !== false) {
         this._el.appendChild(childElement);
       }
