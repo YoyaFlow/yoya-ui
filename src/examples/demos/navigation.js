@@ -260,7 +260,7 @@ export function AdminSidebarCard({ toast }) {
               panel.p('左侧菜单演示管理系统的常用导航结构，支持分组、子菜单和折叠。');
               panel.div((badge) => {
                 badge.className('components-route-note');
-                badge.text('工作台 / 数据概览');
+                badge.child('工作台 / 数据概览');
               });
             });
           });

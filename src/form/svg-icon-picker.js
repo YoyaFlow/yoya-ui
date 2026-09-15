@@ -113,7 +113,7 @@ export class VSvgIconPicker extends HtmlElementNode {
           fontWeight: '600',
           marginBottom: '12px'
         });
-        title.text('选择图标');
+        title.child('选择图标');
       });
       this._grid = new HtmlElementNode('div')
         .className('yoya-vsvg-icon-picker-grid')

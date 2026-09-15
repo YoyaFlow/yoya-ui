@@ -150,7 +150,7 @@ export function IconsDocumentationPage() {
           card.vCardBody((body) => {
             body.pre((source) => {
               source.className('components-icon-source-dialog-code');
-              source.code((code) => code.text(formatIconSource(factory)));
+              source.code((code) => code.child(formatIconSource(factory)));
             });
           });
         })
@@ -245,7 +245,7 @@ export function IconsDocumentationPage() {
               cell.strong(name);
               cell.span((descriptionNode) => {
                 descriptionNode.className('components-icon-description');
-                descriptionNode.text(description);
+                descriptionNode.child(description);
               });
               cell.vSymbolButton((sourceButton) => {
                 sourceButton.className('components-icon-source-trigger');

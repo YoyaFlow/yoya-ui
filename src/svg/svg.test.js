@@ -86,7 +86,7 @@ describe('SVG element factories', () => {
     expect(yoya.script().tagName()).toBe('script');
     expect(yoya.style().tagName()).toBe('style');
     expect(yoya.title().tagName()).toBe('title');
-    expect(yoya.text('plain').textContent()).toBe('plain');
+    expect(yoya.vText('plain').textContent()).toBe('plain');
   });
 
   it('exposes detached inner-node factories through the svgs namespace', () => {
@@ -261,7 +261,7 @@ describe('SVG element factories', () => {
     expect(root.style('display')).toBe('grid');
     expect(root.circle).toBeUndefined();
     expect(root.path).toBeUndefined();
-    expect(yoya.text('plain').textContent()).toBe('plain');
+    expect(yoya.vText('plain').textContent()).toBe('plain');
     expect(yoya.title('HTML').tagName()).toBe('title');
     expect(yoya.switch).toBeUndefined();
     expect(htmlTitle.tagName()).toBe('title');

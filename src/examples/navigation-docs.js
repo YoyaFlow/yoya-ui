@@ -902,7 +902,7 @@ function NavbarShellExample1() {
             });
             actions.span((badge) => {
               badge.className('components-route-note');
-              badge.text('在线');
+              badge.child('在线');
             });
             actions.vButton('登录', (button) => {
               button.variant('primary');

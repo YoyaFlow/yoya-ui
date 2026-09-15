@@ -1596,7 +1596,7 @@ function TableDeclarativeExample1() {
             foot.vTr((row) => {
               row.vTd((cell) => {
                 cell.attr('colspan', 3);
-                cell.text('表尾单元格可以跨列');
+                cell.child('表尾单元格可以跨列');
               });
             });
           });
@@ -1930,7 +1930,7 @@ function TreeBuilderExample1() {
       node
         .id(id)
         .label(label)
-        .icon((iconBox) => iconBox.text(icon));
+        .icon((iconBox) => iconBox.child(icon));
       if (selected) {
         node.selected(true);
       }
@@ -1947,14 +1947,14 @@ function TreeBuilderExample1() {
         .id('organization')
         .label('组织架构')
         .expanded(true)
-        .icon((icon) => icon.text('O'))
+        .icon((icon) => icon.child('O'))
         .child([
           (group) => {
             group
               .id('platform')
               .label('平台组')
               .expanded(true)
-              .icon((icon) => icon.text('P'))
+              .icon((icon) => icon.child('P'))
               .child([
                 leaf('sre', 'SRE', { icon: 'S', selected: true }),
                 leaf('qa', 'QA', { icon: 'Q' })
@@ -1966,7 +1966,7 @@ function TreeBuilderExample1() {
               .id('business')
               .label('业务组')
               .expanded(true)
-              .icon((icon) => icon.text('B'))
+              .icon((icon) => icon.child('B'))
               .child([
                 leaf('finance', '财务', { icon: 'F' }),
                 leaf('operations', '运营', { icon: 'O' })
@@ -1980,7 +1980,7 @@ function TreeBuilderExample1() {
       node
         .id('security')
         .label('安全中心')
-        .icon((icon) => icon.text('S'));
+        .icon((icon) => icon.child('S'));
       addRowAction(node);
     });
   });
@@ -2360,7 +2360,7 @@ function CarouselAutoplayExample1() {
           fontSize: '18px',
           fontWeight: '700'
         });
-        block.text(item);
+        block.child(item);
       })
     );
     carousel.autoplay(true);
@@ -2418,7 +2418,7 @@ function CarouselLoopExample1() {
           fontSize: '18px',
           fontWeight: '700'
         });
-        block.text(item);
+        block.child(item);
       })
     );
     carousel.on('change', syncStatus);
@@ -2483,7 +2483,7 @@ function CarouselSwipeExample1() {
           fontSize: '18px',
           fontWeight: '700'
         });
-        block.text(item);
+        block.child(item);
       })
     );
   });

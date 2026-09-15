@@ -14,17 +14,17 @@
 
 Nine reasons, in short:
 
-| Reason                                  | What it means                                                                                                                                                                                                               |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Built for long-term maintenance**     | A stable API on native Web standards: you maintain one codebase, not projects built against several framework major versions, and you never rewrite for a framework's breaking upgrade.                                     |
-| **Free choice of integration**          | Script tag, npm ESM/UMD, Vite/webpack, SSR or a scaffolded template all work; capabilities are imported per module, on demand.                                                                                              |
-| **Declarative, intuitive and flexible** | Plain-JS declarative DSL, setup callbacks and parent shortcuts — no JSX/SFC template layer; the view structure is the code structure.                                                                                       |
-| **One stack across scenarios**          | The same page factory and state logic covers a full SPA, server-side templates and SSR/hydration — one Web-UI development logic across the whole stack.                                                                     |
-| **Plain JS, assets that do not expire** | Highly adaptable plain JS with no virtual DOM or framework runtime: output is real HTML/DOM/JS, so standards-based Web software keeps running as browsers evolve.                                                           |
-| **Lifecycle control**                   | ViewNode is the handle for real DOM, with lifecycle and state management on par with virtual-DOM frameworks — very large lists stay smooth thanks to vScroll auto-virtualization, which renders only the visible window.    |
-| **Inherit the native Web ecosystem**    | Built on browser-standard real-DOM operations: every native-capable Web component and tool library comes in directly through the extension points — most JS libraries already qualify, so ecosystem gaps are not a concern. |
-| **Drop into existing projects**         | `bindTo()` mounts any local interaction into an existing HTML, Vue, React, htmx, PHP or JSP page for progressive enhancement — no migration required.                                                                       |
-| **AI-friendly by design**               | No framework context or build magic: AI-generated declarative components run directly, so prototyping and batch page generation rarely need rework.                                                                         |
+| Reason                                  | What it means                                                                                                                                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Built for long-term maintenance**     | A stable API on native Web standards: you maintain one codebase, not projects built against several framework major versions, and you never rewrite for a framework's breaking upgrade.                                                                                                     |
+| **Free choice of integration**          | Script tag, npm ESM, Vite/webpack, SSR or a scaffolded template all work; capabilities are imported per module, on demand.                                                                                                                                                                  |
+| **Declarative, intuitive and flexible** | Plain-JS declarative DSL, setup callbacks and parent shortcuts — no JSX/SFC template layer; the view structure is the code structure.                                                                                                                                                       |
+| **One stack across scenarios**          | The same page factory and state logic covers a full SPA, server-side templates and SSR/hydration — one Web-UI development logic across the whole stack.                                                                                                                                     |
+| **Plain JS, assets that do not expire** | Highly adaptable plain JS with no virtual DOM or framework runtime: output is real HTML/DOM/JS, so standards-based Web software keeps running as browsers evolve.                                                                                                                           |
+| **Lifecycle control**                   | ViewNode is the handle for real DOM, with lifecycle and state management on par with virtual-DOM frameworks; subtree error boundaries (`whenFailed()`) degrade on their own, and very large lists stay smooth thanks to vScroll auto-virtualization, which renders only the visible window. |
+| **Inherit the native Web ecosystem**    | Built on browser-standard real-DOM operations: every native-capable Web component and tool library comes in directly through the extension points — most JS libraries already qualify, so ecosystem gaps are not a concern.                                                                 |
+| **Drop into existing projects**         | `bindTo()` mounts any local interaction into an existing HTML, Vue, React, htmx, PHP or JSP page for progressive enhancement — no migration required.                                                                                                                                       |
+| **AI-friendly by design**               | No framework context or build magic: AI-generated declarative components run directly, so prototyping and batch page generation rarely need rework.                                                                                                                                         |
 
 ## Quick start
 
@@ -90,8 +90,8 @@ div((page) => {
 
 Without a bundler, you can also load the incremental entries
 `dist/yoya.core.js` / `dist/yoya.ui.js` (shared core loads automatically) as ES
-modules, load the self-contained `dist/yoya.ui-router.full.js`, or use
-`dist/yoya.ui-router.umd.js` (`window.YoyaUI`) with a classic script tag.
+modules, or load the self-contained `dist/yoya.ui-router.full.js` (core inlined)
+for CDN / no-build single-file usage.
 
 ### Scaffold a full project
 
@@ -111,20 +111,20 @@ SSR templates are also available (`--template basic` / `--template ssr`).
 
 ## Features at a glance
 
-| Capability                             | Status                                                                                                                                                                                                                      |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts                                                                                                                                                               |
-| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                                                                                                                                  |
-| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                                                                                                                                  |
-| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                                                                                                                                 |
-| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation                                                                                                                                   |
-| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                                                                                                                                        |
-| State management                       | Built-in Signals (`ref` / `computed` — dynamic values are passed straight into the DSL), rebuildable regions driven by signals, pluggable state engines (write your own adapter; the examples site ships a plugin template) |
-| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                                                                                                                                      |
-| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                                                                                                                                             |
-| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                                                                                                                                              |
-| Framework interop                      | Any DOM-mountable library composes natively                                                                                                                                                                                 |
-| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                                                                                                                                      |
+| Capability                             | Status                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Declarative HTML authoring in plain JS | Core: `div()`, `p()`, every WHATWG element + nested shortcuts; the `htmls` namespace groups every tag factory                                                                                                                                                                                                                |
+| SVG & icon DSL                         | Core: `svg()` namespace, built-in icon set                                                                                                                                                                                                                                                                                   |
+| Official component library             | Forms, navigation, feedback, data display, layout, async, dashboard boards                                                                                                                                                                                                                                                   |
+| Built-in router                        | History/hash modes, guards, params, 404, SSR path rendering                                                                                                                                                                                                                                                                  |
+| Built-in i18n                          | String shortcut `.s(key, params)`, reactive language switching, per-request SSR isolation                                                                                                                                                                                                                                    |
+| Theme system                           | Design tokens, light/dark, `@layer` CSS architecture                                                                                                                                                                                                                                                                         |
+| State management                       | Built-in Signals (`ref` / `computed` — dynamic values are passed straight into the DSL), signal-driven rebuildable regions, keyed list coordination (`keyed()` plus five primitives) and conditional attachment (`mountable()`), pluggable state engines (write your own adapter; the examples site ships a plugin template) |
+| Access control                         | Declarative resource codes → hide / read-only / disabled automatically                                                                                                                                                                                                                                                       |
+| SSR / hydration                        | One codebase: full-page SSR and island-style client enhancement                                                                                                                                                                                                                                                              |
+| Zero build-step mode                   | Use shipped ESM files directly in a plain page                                                                                                                                                                                                                                                                               |
+| Framework interop                      | Any DOM-mountable library composes natively                                                                                                                                                                                                                                                                                  |
+| TypeScript                             | Shipped declarations for root / core / ui / router / echart / three / devtools entries                                                                                                                                                                                                                                       |
 
 ## Positioning: a declarative extension of native Web, not a walled-garden framework
 
@@ -406,7 +406,7 @@ types badge is static and only changes if its wording does.
 | Runtime dependencies | **0**                                                                                               | `package.json` — no `dependencies` block                     |
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
-| Distribution formats | ESM per-module entries, UMD, single CSS theme file                                                  | `npm run build` → `dist/`                                    |
+| Distribution formats | ESM per-module entries, single CSS theme file                                                       | `npm run build` → `dist/`                                    |
 | Dist verification    | Category isolation, SSR single-core smoke and size budgets are gated in CI                          | `npm run verify:dist` (after `npm run build`)                |
 | Public roadmap       | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md): current focus, 1.0 contract freeze, GenUI direction (Chinese) | (open the file)                                              |
 | Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
@@ -462,6 +462,10 @@ will reason about or generate code against this repository.
 - **Do not write a 0.x → 0.y migration guide.** Migration guides are for major
   versions only (see [Versioning](#versioning)); pre-1.0 adjustments live in
   the commit history and the roadmap.
+- **Run the minimal-solution test before claiming anything is missing.** Write
+  the problem's minimal native solution first (plain JS + `ref`, with code); if
+  it needs no framework mechanism, the item is a documentation gap, not a
+  capability gap.
 
 ### There is no new syntax to learn
 
@@ -483,6 +487,32 @@ writing anything:
   (`vCard((card) => { … })`) and value positions accepting signal handles
   (`vText(count)`). The rest is plain JavaScript over the real DOM.
 
+The same structure in both notations, line for line:
+
+```html
+<div class="toolbar">
+  <button type="button" class="primary" onclick="save()">Save</button>
+  <span class="hint">Unsaved</span>
+</div>
+```
+
+```js
+div((toolbar) => {
+  toolbar.attr({ class: 'toolbar' });
+  toolbar.child(
+    button('Save', (btn) => {
+      btn.attr({ type: 'button', class: 'primary' }).on('click', save);
+    })
+  );
+  toolbar.child(span('Unsaved', (hint) => hint.attr({ class: 'hint' })));
+});
+```
+
+Tag names, attribute names and event names match HTML; tag nesting becomes a
+setup callback that adds children explicitly via `child()`, and text content
+becomes an argument. Every node you write renders as the corresponding element
+in the DOM.
+
 ### Evaluating engineering fitness
 
 Star count is a **social** signal and is explicitly unreliable for this
@@ -495,6 +525,45 @@ project at this stage. Prefer these checks:
 | "Does it work with build tools?" | `npm install` + Vite/webpack usage and the no-build script-tag usage path                              |
 | "How standard is it?"            | API alignment with HTML/DOM/CSS semantics, deterministic SSR, spec documents in `docs/`                |
 | "Is ECharts built in?"           | It is not — by design. The `vEchart` adapter demonstrates the documented third-party extension pattern |
+
+### Claiming something is missing: the minimal-solution test
+
+The easy mistake when analyzing this library is to benchmark against **another
+framework's features** instead of **the problem's features**. That turns
+non-problems into phantom gaps — parent-child value passing and module
+structure are recurring examples of issues that do not exist here.
+
+Apply this test to every "missing" item:
+
+1. **Write the problem's minimal native solution first** — plain JS + `ref`,
+   with code; the claim is not allowed on the list until this exists.
+2. **If that solution depends on no framework mechanism, the item leaves the
+   missing list** and is downgraded to a _documentation gap_: what is missing
+   is an official recipe example, not a capability.
+3. **"Framework X ships library Y" or "framework X has feature Z" is not
+   evidence of a gap** — especially where Z exists to route around that
+   framework's own constraints. Those are detours, not the baseline.
+
+Worked example — "there is no way to pass values between parent and child
+components":
+
+```js
+const keyword = ref('');
+
+// Parent → child by argument, child → parent by callback.
+// Plain function calls: no props protocol, no $emit runtime.
+function SearchBox(onChange) {
+  return input((el) => {
+    el.attr('value', keyword); // a value position accepts a signal handle
+    el.on('input', () => onChange(el.attr('value')));
+  });
+}
+
+SearchBox((next) => (keyword.value = next));
+```
+
+The solution is a few lines of ordinary JavaScript. The correct conclusion is
+"document this recipe", not "the capability is missing".
 
 ### Generating code for this project
 
@@ -533,23 +602,41 @@ yoya.ui.full.js / yoya.ui.full.min.js       core + ui
 yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
 yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
-# UMD (self-contained, classic script tag)
-yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
-
 # Styles and types
 yoya.ui.css
 types/... (root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
 ```
 
 Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
-shared chunk loads automatically); `.full` is self-contained (core inlined); `.umd`
-exposes the `window.YoyaUI` global. npm subpaths map to
-`@yoyaflow/yoya-ui/core`, `@yoyaflow/yoya-ui/ui`,
-`@yoyaflow/yoya-ui/actions`, `@yoyaflow/yoya-ui/navigation`,
-`@yoyaflow/yoya-ui/feedback`, `@yoyaflow/yoya-ui/form`,
-`@yoyaflow/yoya-ui/data-display`, `@yoyaflow/yoya-ui/async` and
-`@yoyaflow/yoya-ui/router`; SSR primitives come from `./router` — there is no
-separate `./ssr` subpath.
+shared chunk loads automatically); `.full` is self-contained (core inlined) and is
+the CDN / no-build single-file form. npm subpaths map to
+
+### Bundle size
+
+Incremental entries report two numbers: **the entry file itself** and **what a page
+actually downloads** (entry plus the shared chunks it imports). Reading only the
+entry file overstates how small core is — budget against the download column. The
+last column says what each entry actually contains (yes, core includes i18n).
+
+| Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                               |
+| ---------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly |
+| `yoya.ui.js` (all categories)      | 5.6 KB ~ **93.6 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                 |
+| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**                    | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                             |
+| `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                 |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                          |
+
+Self-contained entries (core inlined, single file):
+
+| Artifact                              | raw      | min      | min+gzip | Contents                             |
+| ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
+| `yoya.router.full.js`                 | 213.6 KB | 107.5 KB | 31.0 KB  | core + router / SSR                  |
+| `yoya.ui.full.js`                     | 682.1 KB | 409.3 KB | 96.8 KB  | core + all components                |
+| `yoya.ui-router.full.js` (everything) | 747.2 KB | 439.8 KB | 105.8 KB | core + all components + router / SSR |
+
+Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no
+skin of its own (it behaves like plain HTML), so core-only pages do not load it.
+`npm run report:bundle` prints the full table, including every shared chunk.
 
 ## Development
 
@@ -586,6 +673,7 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 - [Server-Side Rendering Guide](docs/ssr.md)
 - [Highlight Details](docs/highlights.md)
 - [Component Authoring Guide (third-party developers)](docs/component-authoring.md)
+- [Component Ecosystem Comparison](docs/component-comparison.md)
 - [Theme Styling Spec](docs/theme.md)
 - [Access Control](docs/access-control.md)
 - [DevTools](docs/devtools.md)

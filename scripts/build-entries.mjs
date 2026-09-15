@@ -22,19 +22,6 @@ const FULL_INPUTS = [
   ['ui-router.full', 'src/yoya.ui-router.js']
 ];
 
-function isCoreModule(id) {
-  const normalized = String(id).replace(/\\/g, '/');
-  if (!normalized.includes('/src/')) {
-    return false;
-  }
-  return (
-    normalized.includes('/src/core/') ||
-    normalized.includes('/src/html/') ||
-    normalized.includes('/src/svg/') ||
-    normalized.includes('/src/components/')
-  );
-}
-
 function entryFileName(name, minify) {
   return `yoya.${name}${minify ? '.min' : ''}.js`;
 }
@@ -48,10 +35,9 @@ async function buildShared(minify) {
     format: 'es',
     entryFileNames: (chunk) => entryFileName(chunk.name, minify),
     chunkFileNames: (chunk) => `${chunk.name}${minify ? '.min' : ''}.js`,
-    minify,
-    manualChunks(id) {
-      return isCoreModule(id) ? 'yoya.core.chunk' : undefined;
-    }
+    // 不按目录强行归并：让 bundler 只把「被多个入口共享」的模块提到公共 chunk，
+    // 只被单一入口使用的模块（如 core/ssr.js、core/devtools.js）留在自己的入口里。
+    minify
   });
 }
 
@@ -67,19 +53,6 @@ async function buildSingle(input, outputFile, minify) {
   });
 }
 
-async function buildUmd(minify) {
-  const bundle = await rolldown({
-    input: 'src/yoya.ui-router.js'
-  });
-  await bundle.write({
-    dir: 'dist',
-    format: 'umd',
-    name: 'YoyaUI',
-    entryFileNames: `yoya.ui-router.umd${minify ? '.min' : ''}.js`,
-    minify
-  });
-}
-
 rmSync('dist', { recursive: true, force: true });
 
 await buildShared(false);
@@ -89,9 +62,6 @@ for (const [name, input] of FULL_INPUTS) {
   await buildSingle(input, entryFileName(name, false), false);
   await buildSingle(input, entryFileName(name, true), true);
 }
-
-await buildUmd(false);
-await buildUmd(true);
 
 cpSync('src/chart/echarts.min.js', 'dist/echarts.min.js');
 cpSync('src/yoya.ui.css', 'dist/yoya.ui.css');

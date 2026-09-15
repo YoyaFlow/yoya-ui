@@ -53,7 +53,7 @@ export class VDialog extends HtmlElementNode {
         padding: '0',
         width: '28px'
       })
-      .text('×')
+      .child('×')
       .on('click', () => this.close());
     this._header = new HtmlElementNode('div').className('yoya-vdialog-header').styles({
       alignItems: 'center',

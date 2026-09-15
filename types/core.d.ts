@@ -29,7 +29,7 @@ export type StyleValue = string | number | null | undefined | SignalHandle<unkno
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
 
-/** Text content accepted by vText() and text(): a signal handle makes it a live binding. */
+/** Text content accepted by vText(): a signal handle makes it a live binding. */
 export type TextContent = string | number | SignalHandle<unknown>;
 
 /** Options accepted by on(). */
@@ -41,6 +41,19 @@ export type EventHandler<E extends Event = Event> = (event: E) => void;
 /** A component object with a render() method (form B component). */
 export interface ComponentLike {
   render(): ViewNode;
+  /**
+   * Optional error-boundary member: ComponentNode declares it automatically,
+   * so component-level failures degrade without affecting callers.
+   */
+  whenFailed?(
+    error: unknown,
+    info: {
+      phase: 'build' | 'render' | 'event' | 'update';
+      message: string;
+      source: unknown;
+      boundary: unknown;
+    }
+  ): ViewNode | ComponentLike | string | number | null | undefined | void;
   [key: string]: any;
 }
 
@@ -76,14 +89,18 @@ export interface ElementOptions {
   [key: string]: unknown;
 }
 
-/** Unified setup input: callback, node instance, text, object config or children. */
+/**
+ * Unified setup input: callback, node instance, text, signal handle (bound
+ * text), object config or children.
+ */
 export type SetupInput<N = ViewNode> =
   N | string | number | SetupCallback<N> | ElementOptions | ChildInput;
 
 /**
  * Signature shared by every element/component factory. Supports the three
  * declarative forms: `factory(callback)`, `factory(text, callback)`,
- * `factory(first, options, callback)` and plain object config.
+ * `factory(first, options, callback)` and plain object config. A signal handle
+ * in the first position becomes bound text, like `child(handle)`.
  */
 export interface ElementFactory<N = ViewNode> {
   (first?: SetupInput<N> | null): N;
@@ -210,7 +227,7 @@ export function moveByKey(options: {
 export class ViewNode {
   constructor(setup?: SetupInput<ViewNode> | null);
 
-  /** Unified initialization: function, text, node instance or object config. */
+  /** Unified initialization: callback, text, node instance, signal handle or object config. */
   setup(setup: SetupInput<ViewNode> | null): this;
 
   /** Returns a snapshot of child nodes. */
@@ -219,15 +236,17 @@ export class ViewNode {
   /** Removes and schedules all children for destruction. */
   clearChildren(): this;
 
+  /** Appends a keyed child; on elements the key is mirrored to data-row-key. */
+  addChild(key: string | number, child: ChildInput): this;
+
+  /** Returns the keyed child for a key, or null when it is not registered. */
+  getChild(key: string | number): ViewNode | null;
+
+  /** Removes and destroys the keyed child for a key. */
+  removeChild(key: string | number): this;
+
   /** Adds children; strings/numbers are wrapped into text nodes. */
   child(...children: ChildInput[]): this;
-
-  /**
-   * Adds a text child. Passing a signal handle keeps the text bound to it;
-   * each call appends one text node, so use a kept VTextNode handle when you
-   * need to replace the text repeatedly.
-   */
-  text(content: TextContent): this;
 
   /** Marks this node as a region whose content can be rebuilt from its own setup. */
   rebuildable(predicate?: (() => boolean) | null): this;
@@ -249,6 +268,79 @@ export class ViewNode {
 
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
+
+  /** Removes the listener (and its DOM adapter) for an event name. */
+  off(eventName: string): this;
+
+  /** Inserts a keyed child before another keyed child; null beforeKey appends. */
+  insertBefore(
+    key: string | number,
+    child: ViewNode | ComponentLike | string | number,
+    beforeKey?: string | number | null
+  ): this;
+
+  /** Inserts a keyed child after another keyed child; null afterKey prepends. */
+  insertAfter(
+    key: string | number,
+    child: ViewNode | ComponentLike | string | number,
+    afterKey?: string | number | null
+  ): this;
+
+  /** Moves an existing keyed child before another keyed child; null beforeKey moves to end. */
+  moveBefore(key: string | number, beforeKey?: string | number | null): this;
+
+  /** Moves an existing keyed child after another keyed child; null afterKey moves to start. */
+  moveAfter(key: string | number, afterKey?: string | number | null): this;
+
+  /** Replaces the keyed child at the same slot with a fresh node; siblings stay untouched. */
+  replaceChild(key: string | number, child: ViewNode | ComponentLike | string | number): this;
+
+  /**
+   * Signal-driven keyed item binding. Rows whose key and reference are unchanged
+   * keep their nodes; changed rows are rebuilt in place; ordering uses insertBefore.
+   */
+  keyed(
+    source: SignalHandle,
+    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  ): this;
+  keyed(
+    source: SignalHandle,
+    keyFn: (row: unknown, index: number) => string | number,
+    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  ): this;
+
+  /**
+   * Declares or replaces conditional attachment. The condition may be a signal
+   * handle, a boolean or a zero-argument closure; it defaults to `true` (always
+   * attached). The parent adopts it at tree entry, and calling this again on an
+   * attached node replaces the condition immediately. Closure conditions refresh
+   * through the parent's flush().
+   */
+  mountable(condition?: SignalHandle | boolean | (() => unknown)): this;
+
+  /** Latest committed state of this node's own mount condition (default true). */
+  isMounted(): boolean;
+
+  /**
+   * Subtree error boundary. The handler receives the original error and an info
+   * object ({ phase: 'build' | 'render' | 'event' | 'update', message, source,
+   * boundary }). Returning a node replaces this subtree with a fallback; returning
+   * nothing only reports and keeps the current state. The nearest boundary owns the
+   * capture and never forwards it further; a throwing handler propagates outward.
+   * Captures are never silent: console.error always fires and a devtools 'error'
+   * event is emitted when enabled.
+   */
+  whenFailed(
+    handler: (
+      error: unknown,
+      info: {
+        phase: 'build' | 'render' | 'event' | 'update';
+        message: string;
+        source: unknown;
+        boundary: unknown;
+      }
+    ) => ViewNode | ComponentLike | string | number | null | undefined | void
+  ): this;
 
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
@@ -327,6 +419,9 @@ export class ElementNode extends ViewNode {
   class(...classes: ClassNameInput[]): this;
 
   replaceClassName(old: string, next: string, tolerate?: boolean): this;
+
+  /** Toggles a class from a truthy value; a signal handle or closure makes it live. */
+  toggleClass(name: string, value: boolean | SignalHandle<unknown> | (() => unknown)): this;
 
   /** Reads a single style property. */
   style(name: string): StyleValue | undefined;
@@ -436,8 +531,6 @@ export function resolveTarget(target: string | ParentNode): ParentNode | null;
 /** Creates a text node. */
 export function vText(content?: TextContent): VTextNode;
 /** Alias of vText(). */
-export const text: typeof vText;
-
 // ---------------------------------------------------------------------------
 // Client-only (SSR placeholder)
 // ---------------------------------------------------------------------------
@@ -587,7 +680,7 @@ export interface SignalsAdapter {
   read(source: unknown): any;
   write(source: unknown, value: unknown): void;
   subscribe(source: unknown, listener: (value: unknown) => void): () => void;
-  batch?<T>(run: () => T): T;
+  batch<T>(run: () => T): T;
   untracked?<T>(run: () => T): T;
   effect?(run: () => void): () => void;
   isSource?(value: unknown): boolean;

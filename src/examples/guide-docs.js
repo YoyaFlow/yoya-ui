@@ -48,7 +48,7 @@ export function GuideOverviewPage() {
         title: '核心亮点',
         points: [
           '长期维护友好：API 构建于稳定的原生 Web 标准之上，只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。',
-          '接入方式自由：script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架模板均可接入，能力按模块按需引入。',
+          '接入方式自由：script 标签、npm ESM、Vite/webpack、SSR 与脚手架模板均可接入，能力按模块按需引入。',
           '声明式直观且灵活：普通 JS 声明式 DSL、setup 回调与父节点快捷方法，视图结构即代码结构，直观且易于组合。',
           '多场景适用、全栈统一：同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板、SSR 与局部增强，Web 界面开发逻辑全栈一致。',
           '原生 JS 适应性高、资产不过时：无虚拟 DOM 与框架运行时，输出真实 HTML/DOM/JS；Web 标准持续向后兼容，既有界面资产长期可用。',
@@ -88,7 +88,7 @@ export function GuideOverviewPage() {
       {
         title: '产物清单',
         paragraphs: [
-          '无后缀与 .min 是 ESM 增量入口（不含 core，自动加载共享块）；.full 是自包含文件（core 已内联），适合 CDN 与免构建单文件直用；.umd 提供 window.YoyaUI 全局。SSR 原语从 router 入口导入，不单独提供 ssr 子路径。'
+          '无后缀与 .min 是 ESM 增量入口（不含 core，自动加载共享块）；.full 是自包含文件（core 已内联），适合 CDN 与免构建单文件直用。SSR 原语从 router 入口导入，不单独提供 ssr 子路径。'
         ],
         code: `# 共享增量入口（ESM，自动加载共享 core 块）
 yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + state/i18n/access
@@ -102,9 +102,6 @@ yoya.echart.js / yoya.three.js / yoya.devtools.js（+ .min）
 yoya.ui.full.js / yoya.ui.full.min.js       core + ui
 yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
 yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
-
-# UMD（经典 script 标签）
-yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
 
 # 样式与类型
 yoya.ui.css
@@ -149,7 +146,7 @@ npm run dev`
       {
         title: '构建产物',
         paragraphs: [
-          'dist 目录提供 yoya.core.js / yoya.ui.js / yoya.router.js 增量入口，自包含的 yoya.ui-router.full.js 与 UMD 版 yoya.ui-router.umd.js，以及 yoya.echart.js / yoya.three.js 扩展和 yoya.ui.css。'
+          'dist 目录提供 yoya.core.js / yoya.ui.js / yoya.router.js 增量入口，自包含的 yoya.ui-router.full.js / yoya.ui.full.js / yoya.router.full.js，以及 yoya.echart.js / yoya.three.js 扩展和 yoya.ui.css。'
         ]
       },
       {

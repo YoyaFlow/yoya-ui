@@ -169,6 +169,33 @@ export default {
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法；**要驱动视图的字段用 `ref` 持有**（同模块的视图 / 组件直接绑句柄），`subscribe(listener)` 只留给非视图副作用
 - **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态——写入 `ref` 就完成通知；需要"结构随数据变化"时用可重建区域读信号（见 core.md）
+- **结果结构 / 视图模型（`api/<域>.views.js`）**：字段是否响应式按热度分——**行内会改的字段用 `ref` 持有**，只读 / 低频字段保持普通值；类实例身份必须稳定（`keyed()` 的复用判据看的是行引用），刷新时按 key `apply()` 合并而不是重建实例
+- **没有深代理**：`item.name = x` 不会通知，也没有代理 store；字段级更新只有两条路——把该字段做成句柄，或换掉整行引用（后者会重建该行）
+
+```js
+// features/system/members/api/member.views.js
+import { computed, ref } from '@yoyaflow/yoya-ui';
+
+class ListItem {
+  constructor(row = {}) {
+    this.id = row.id; // key：普通值，不能是句柄
+    this.name = ref(row.name ?? ''); // 热点字段：句柄 → 单元格级更新
+    this.status = ref(row.status ?? 'off');
+    this.email = row.email ?? ''; // 冷字段：普通值 → 随 apply 刷新
+    this.label = computed(() => `${this.name.value} · ${this.status.value}`);
+  }
+
+  /** 合并而非重建：实例身份不变，keyed 不重建，只刷变化的位置 */
+  apply(row) {
+    this.name.value = row.name;
+    this.status.value = row.status;
+    this.email = row.email;
+    return this;
+  }
+}
+
+export default { ListItem };
+```
 
 ```js
 // features/system/members/api/member.state.js

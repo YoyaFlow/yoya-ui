@@ -317,7 +317,7 @@ export function SsrDocumentationPage() {
         padding: '8px 14px',
         textDecoration: 'none'
       });
-      entry.text('打开独立演示页面（新标签页）');
+      entry.child('打开独立演示页面（新标签页）');
     });
 
     page.section((usage) => {

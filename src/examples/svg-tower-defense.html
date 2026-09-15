@@ -861,19 +861,19 @@
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('金币');
-                  box.strong((value) => value.text(gold));
+                  box.strong((value) => value.child(gold));
                 });
 
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('生命');
-                  box.strong((value) => value.text(lives));
+                  box.strong((value) => value.child(lives));
                 });
 
                 statRow.div((box) => {
                   box.className('stat-box');
                   box.span('波次');
-                  box.strong((value) => value.text(wave));
+                  box.strong((value) => value.child(wave));
                 });
               });
 
@@ -889,7 +889,7 @@
                       'box-shadow',
                       computed(() => (selectedType.value === kind ? '0 0 0 2px #facc15' : null))
                     );
-                    button.text(def.name);
+                    button.child(def.name);
                     button.small(`花费 ${def.cost} · 伤害 ${def.damage}`);
                     button.on('click', () => {
                       selectedType.value = kind;
@@ -902,12 +902,12 @@
               sidebar.button((button) => {
                 button.className('wave-button');
                 button.on('click', onStartWave);
-                button.text(waveLabel);
+                button.child(waveLabel);
               });
 
               sidebar.p((line) => {
                 line.className('game-message');
-                line.text(messageText);
+                line.child(messageText);
               });
             });
           },

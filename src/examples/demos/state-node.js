@@ -245,7 +245,7 @@ export function StateKeyedExample1() {
         margin: '4px',
         padding: '2px 10px'
       });
-      item.text(label);
+      item.child(label);
     });
 
   const api = {
@@ -321,7 +321,7 @@ export function StateEventOverwriteExample1() {
             padding: '16px',
             textAlign: 'center'
           });
-          area.text('点击区域');
+          area.child('点击区域');
         });
         stack.output((out) => {
           outputElement = out;

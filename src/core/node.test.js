@@ -40,7 +40,7 @@ describe('ViewNode core', () => {
       className: ['surface', 'active'],
       style: { color: 'red' },
       onclick: action,
-      children: [h1('Users'), p((paragraph) => paragraph.text('Created from function setup'))]
+      children: [h1('Users'), p((paragraph) => paragraph.child('Created from function setup'))]
     });
 
     const element = root.renderDom();
@@ -194,7 +194,7 @@ describe('ViewNode core', () => {
   });
 
   it('exposes commit as the semantic DOM synchronization entry point', () => {
-    const root = div().text('Committed');
+    const root = div().child('Committed');
 
     expect(root.commit()).toBe(root.renderDom());
     expect(root.commit().textContent).toBe('Committed');
@@ -202,7 +202,7 @@ describe('ViewNode core', () => {
 
   it('keeps a text() child bound to a signal handle', () => {
     const label = ref('待处理');
-    const root = div((page) => page.text(label));
+    const root = div((page) => page.child(label));
     const element = root.renderDom();
     document.body.appendChild(element);
 
@@ -226,6 +226,33 @@ describe('ViewNode core', () => {
 
     expect(element.textContent).toBe('已完成');
     element.remove();
+  });
+
+  it('treats a signal handle passed as the setup value as bound text', () => {
+    const count = ref(0);
+    const root = div(count);
+
+    expect(root.toHTML()).toBe('<div>0</div>');
+
+    const element = root.renderDom();
+    document.body.appendChild(element);
+
+    expect(element.textContent).toBe('0');
+
+    count.value = 2;
+
+    expect(element.textContent).toBe('2');
+    element.remove();
+  });
+
+  it('rejects the removed node-level text() with migration guidance', () => {
+    expect(() => div().text('x')).toThrow(/text\(\) was removed/);
+    expect(() => p().text('x')).toThrow(/child\(content\)/);
+  });
+
+  it('keeps text and object setup values unchanged next to the handle form', () => {
+    expect(div('快照').toHTML()).toBe('<div>快照</div>');
+    expect(div({ attrs: { 'data-role': 'panel' } }).toHTML()).toBe('<div data-role="panel"></div>');
   });
 
   it('cancels pending removal when a child is added again before render', () => {

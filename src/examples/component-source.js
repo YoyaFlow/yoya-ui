@@ -62,7 +62,7 @@ export function ComponentSource({
           pre.className('source-code');
           pre.code((code) => {
             code.attr('data-source-example', title);
-            code.text(fullSource);
+            code.child(fullSource);
           });
         });
       });

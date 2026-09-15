@@ -254,7 +254,6 @@ dist/
   yoya.ui-router.full.js  # self-contained full (core + ui + router/SSR), CDN no-build
   echarts.min.js        # ECharts itself (loaded with a script tag)
   yoya.ui.css           # styles
-  yoya.ui-router.umd.js # UMD build (window.YoyaUI)
 ```
 
 Mount `dist/` as a static directory on the server (`/assets/*` or `/vendor/*`) and return correct MIME types (`.js` / `.css` / `.html` / `.svg`, etc.). Load ECharts with a classic `<script>` so bundler CommonJS wrapping does not hide `window.echarts`.

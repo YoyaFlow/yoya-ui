@@ -87,10 +87,6 @@ export function describeSignalsAdapter(label, createAdapter) {
 
   it(`${label}: notifies once per source when batching`, () => {
     withAdapter((adapter) => {
-      if (typeof adapter.batch !== 'function') {
-        return;
-      }
-
       const count = adapter.createSignal(0);
       let calls = 0;
       const dispose = adapter.subscribe(count, () => {

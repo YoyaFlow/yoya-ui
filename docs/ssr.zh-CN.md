@@ -254,7 +254,6 @@ dist/
   yoya.ui-router.full.js  # 自包含全量（core + ui + router/SSR），CDN 免构建
   echarts.min.js        # ECharts 本体（用 script 标签引入）
   yoya.ui.css           # 样式
-  yoya.ui-router.umd.js # UMD 版（window.YoyaUI）
 ```
 
 服务端把 `dist/` 作为静态目录挂载（`/assets/*` 或 `/vendor/*`），并按 MIME 返回（`.js`/`.css`/`.html`/`.svg` 等）。ECharts 用经典 `<script>` 全局引入，避免被打包器按 CommonJS 包裹后 `window.echarts` 丢失。

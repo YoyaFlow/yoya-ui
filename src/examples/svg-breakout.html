@@ -287,7 +287,7 @@
         vText
       } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
 
-      /*
+      /* 注意：不可证伪的怀疑是偏见，可证伪的怀疑才是风控， 本项目不是做一个游戏，而是为了验证 YoyaUI的能力和代码使用是否舒服
        * 分层与项目 features 模块同构，单文件演示把三层放在一起：
        * - BreakoutPageState：状态与动作（真实项目放 features/breakout/api/breakout.state.js，默认导出）
        * - PaddleInput / PaddlePad / Paddle / Ball / BrickWall / Hud / Controls / Overlay / Playfield：
@@ -631,7 +631,7 @@
 
               button.className(`pad-key pad-key--${direction}`);
               button.attr({ type: 'button', 'aria-label': label });
-              button.text(glyph);
+              button.child(glyph);
               button.on('pointerdown', start);
               button.on('pointerup', stop);
               button.on('pointercancel', stop);
@@ -703,7 +703,7 @@
         function item(key, label, value) {
           return div((entry) => {
             entry.className(`hud-item hud-item--${key}`);
-            entry.span((name) => name.className('hud-label').text(label));
+            entry.span((name) => name.className('hud-label').child(label));
             entry.strong((number) => {
               number.className('hud-value');
               number.child(vText(value));
@@ -731,7 +731,7 @@
               button.className(`control control--${key}`);
               button.attr('type', 'button');
               button.on('click', onClick);
-              button.text(label);
+              button.child(label);
             });
           });
         }

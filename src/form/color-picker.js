@@ -173,7 +173,7 @@ export class VColorPicker extends HtmlElementNode {
         fontSize: '12px',
         padding: '0'
       })
-      .text('清除')
+      .child('清除')
       .on('click', () => this.clearValue());
 
     this._selected.child(this._selectedPreview, this._selectedText, this._clearSelectedButton);

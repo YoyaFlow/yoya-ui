@@ -264,6 +264,14 @@ export const {
 } = factories;
 
 /**
+ * htmls 命名空间：把全部 HTML 标签工厂挂在一个对象上，便于按名取用或整体引用：
+ *     htmls.div((root) => root.p('hello'));
+ *     htmls.span('文本');
+ * <html> 标签工厂为 htmls.html；style 别名只出现在命名空间内（styleTag 同名可用）。
+ */
+export const htmls = factories;
+
+/**
  * 标签定义默认使用同名工厂；遇到 JS 关键字或节点方法冲突时声明别名。
  */
 function normalizeElementDefinition(definition) {

@@ -292,7 +292,7 @@ export class VAutocomplete extends HtmlElementNode {
           this._select(item);
         })
         .on('mouseenter', () => this._setHighlight(index))
-        .text(item.label);
+        .child(item.label);
       this._optionNodes.push(option);
       list.child(option);
     });

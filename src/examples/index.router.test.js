@@ -139,7 +139,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('.components-overview-grid')).toHaveLength(3);
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(7);
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(7);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(8);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
@@ -1064,6 +1064,32 @@ describe('renderExamplesIndex', () => {
     expect(complexSource).toContain('export function ComplexWorkbenchExample(');
   });
 
+  it('renders the error handling guide with whenFailed demos', async () => {
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/guides/error-handling');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('错误处理');
+    });
+
+    const page = document.querySelector('[data-error-page]');
+    expect(page).not.toBeNull();
+    expect(page.querySelector('h1').textContent).toBe('错误处理');
+    expect(page.querySelectorAll('[data-error-demo]')).toHaveLength(2);
+
+    const reportDemo = page.querySelector('[data-error-demo="report"]');
+    const reportBox = reportDemo.querySelector('[data-when-failed-box]');
+    reportDemo.querySelector('[data-when-failed-trigger]').click();
+    expect(reportDemo.querySelector('[data-when-failed-box]')).toBe(reportBox);
+    expect(reportDemo.textContent).toContain('已捕获 1 次故障');
+
+    const componentDemo = page.querySelector('[data-error-demo="component"]');
+    componentDemo.querySelector('[data-when-failed-trigger]').click();
+    await vi.waitFor(() => {
+      expect(componentDemo.textContent).toContain('组件降级');
+    });
+  });
+
   it('renders the component lifecycle page with the rebuildable region demos', async () => {
     root = renderExamplesIndex('#app');
 
@@ -1077,6 +1103,7 @@ describe('renderExamplesIndex', () => {
     expect(page.querySelector('[data-lifecycle-diagram]')).not.toBeNull();
     expect(page.querySelectorAll('svg text').length).toBeGreaterThan(12);
     expect(page.querySelectorAll('[data-region-demo]')).toHaveLength(5);
+    expect(page.querySelector('[data-error-demo]')).toBeNull();
 
     const rebuildDemo = page.querySelector('[data-region-demo="rebuild"]');
     const outsideField = rebuildDemo.querySelector('[data-region-outside]');
@@ -1193,6 +1220,42 @@ describe('renderExamplesIndex', () => {
     expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
     expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
     expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
+
+    const keyedDemo = page.querySelector('[data-native-demo="keyed"]');
+    const keyedTable = keyedDemo.querySelector('[data-keyed-table]');
+    const rowIds = () =>
+      [...keyedTable.querySelectorAll('tbody tr')].map((row) => row.getAttribute('data-row-id'));
+
+    expect(keyedDemo).not.toBeNull();
+    expect(keyedTable.querySelectorAll('thead th')).toHaveLength(3);
+    expect(rowIds()).toEqual(['1', '2', '3']);
+
+    // ref 字段：写句柄只刷那一格，行节点身份不变
+    const keptRow = keyedTable.querySelector('[data-row-id="1"]');
+    const statusButton = keptRow.querySelector('button');
+    expect(statusButton.textContent).toBe('已完成');
+    statusButton.click();
+
+    await vi.waitFor(() => {
+      expect(keptRow.querySelector('button').textContent).toBe('进行中');
+    });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+
+    // keyed 增行：新 key 建新行，已有行不动
+    keyedDemo.querySelector('[data-keyed-add]').click();
+    await vi.waitFor(() => {
+      expect(rowIds()).toEqual(['1', '2', '3', '4']);
+    });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+
+    // 顺序变化走 insertBefore：行节点身份保持
+    const secondRow = keyedTable.querySelector('[data-row-id="2"]');
+    keyedDemo.querySelector('[data-keyed-reverse]').click();
+    await vi.waitFor(() => {
+      expect(rowIds()).toEqual(['4', '3', '2', '1']);
+    });
+    expect(keyedTable.querySelector('[data-row-id="1"]')).toBe(keptRow);
+    expect(keyedTable.querySelector('[data-row-id="2"]')).toBe(secondRow);
 
     const usageNote = page.querySelector('[data-html-native-usage]');
     expect(usageNote).not.toBeNull();

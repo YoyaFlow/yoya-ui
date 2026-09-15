@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as yoya from '../index.js';
 
 describe('I18n', () => {
-  it('creates reactive text nodes backed by ViewTextNode', () => {
-    expect(yoya.ViewTextNode).toBe(yoya.VTextNode);
+  it('creates reactive text nodes backed by VTextNode', () => {
     expect(yoya.I18n).toBeTypeOf('function');
 
     const locale = new yoya.I18n({
@@ -21,7 +20,7 @@ describe('I18n', () => {
     const node = locale.text('greeting', { name: 'Ada' });
 
     expect(node).toBeInstanceOf(yoya.I18nTextNode);
-    expect(node).toBeInstanceOf(yoya.ViewTextNode);
+    expect(node).toBeInstanceOf(yoya.VTextNode);
     expect(node.textContent()).toBe('你好，Ada');
 
     locale.setLanguage('en');

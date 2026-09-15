@@ -11,7 +11,7 @@ export function ConfirmExample() {
           stack.div((b) => {
             box = b;
             b.attr('data-confirm-result', 'true');
-            b.text(result ?? '尚未确认');
+            b.child(result ?? '尚未确认');
           });
           stack.vButton('删除服务', (b) => {
             b.variant('danger');

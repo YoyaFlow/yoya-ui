@@ -53,9 +53,15 @@ export function createMyAdapter(myStateLibrary) {
       //   listener(value);
       // });
       return source.listen(listener);
+    },
+
+    batch(run) {
+      // TODO: 把一组写入合并成一次通知。
+      // 库没有批量能力时可以返回 run()——通知会逐条发出，语义仍然正确。
+      return run();
     }
 
-    // 可选方法：batch / untracked / effect / isSource 有就转发，
+    // 可选方法：untracked / effect / isSource 有就转发，
     // 没有 core 会退回自己的默认实现。
   };
 }

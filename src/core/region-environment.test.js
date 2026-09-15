@@ -24,7 +24,7 @@ describe('rebuildable region environment', () => {
             div((ele) => {
               region = ele;
               ele.rebuildable();
-              ele.text('secret');
+              ele.child('secret');
             })
           );
         })
