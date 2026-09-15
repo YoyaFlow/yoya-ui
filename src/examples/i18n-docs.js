@@ -199,6 +199,51 @@ export function I18nDocumentationPage() {
             });
           });
 
+          api.h3('ref / computed 与插值参数');
+          api.p(
+            '插值参数可以直接传 signal 句柄。locale.text() / "文案".s() 内部用 peek 读取并自行订阅：参数写入与语言切换都原地刷新文本，也不会把参数泄漏成区域依赖。'
+          );
+          api.p(
+            'locale.t() 内部用追踪读：句柄可以进入 computed 或区域 builder，依赖收集照常工作；computed 的结果句柄放进文本值位置即建立绑定。'
+          );
+          api.pre((pre) => {
+            pre.className('i18n-api-signature');
+            pre.code(`const count = ref(1);
+
+// 路径一：文本节点 —— 参数 + 语言都自动刷新（推荐）
+el.span('保存 {count} 项'.s('save', { count }, locale));
+
+// 路径二：computed 派生 —— 信号变化重算，值位置原地更新
+const label = computed(() => locale.t('save', { count }));
+el.span(label);
+
+count.value += 1; // 两条路径都会自动更新，区域不需要重跑`);
+          });
+          api.table((table) => {
+            table.thead((head) => {
+              head.tr((row) => {
+                row.th('写法');
+                row.th('参数更新');
+                row.th('语言切换');
+                row.th('区域重跑');
+              });
+            });
+            table.tbody((body) => {
+              [
+                ["'…'.s(key, { count }, locale) / locale.text()", '原地刷新', '原地刷新', '不需要'],
+                ['computed(() => locale.t(key, { count }))', '原地刷新', '不触发', '不需要'],
+                ['locale.t(key, { count }) 字符串直写', '仅区域重跑时', '仅区域重跑时', '需要']
+              ].forEach(([write, paramUpdate, languageSwitch, rerun]) => {
+                body.tr((row) => {
+                  row.td((cell) => cell.code(write));
+                  row.td(paramUpdate);
+                  row.td(languageSwitch);
+                  row.td(rerun);
+                });
+              });
+            });
+          });
+
           api.p('语料文件注册：JSON 可以直接 import，YAML/TOML 等先解析成 JS 对象。');
           api.pre((pre) => {
             pre.className('i18n-api-signature');
