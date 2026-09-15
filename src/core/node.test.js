@@ -228,6 +228,28 @@ describe('ViewNode core', () => {
     element.remove();
   });
 
+  it('treats a signal handle passed as the setup value as bound text', () => {
+    const count = ref(0);
+    const root = div(count);
+
+    expect(root.toHTML()).toBe('<div>0</div>');
+
+    const element = root.renderDom();
+    document.body.appendChild(element);
+
+    expect(element.textContent).toBe('0');
+
+    count.value = 2;
+
+    expect(element.textContent).toBe('2');
+    element.remove();
+  });
+
+  it('keeps text and object setup values unchanged next to the handle form', () => {
+    expect(div('快照').toHTML()).toBe('<div>快照</div>');
+    expect(div({ attrs: { 'data-role': 'panel' } }).toHTML()).toBe('<div data-role="panel"></div>');
+  });
+
   it('cancels pending removal when a child is added again before render', () => {
     const child = p('keep');
     const root = div().child(child);

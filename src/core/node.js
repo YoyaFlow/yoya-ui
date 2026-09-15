@@ -743,7 +743,7 @@ export class ViewNode {
   }
 
   /**
-   * 统一初始化入口，支持函数、文本和对象配置三种写法。
+   * 统一初始化入口：回调、节点、文本 / 句柄、对象配置四种写法。
    */
   setup(setup) {
     if (typeof setup === 'function') {
@@ -763,6 +763,9 @@ export class ViewNode {
         flushBindingsIn(this);
       }
     } else if (setup instanceof ViewNode) {
+      this.child(setup);
+    } else if (isSignal(setup)) {
+      // 值位置传句柄：等价 child(vText(handle))，写入即原地刷文本
       this.child(setup);
     } else if (typeof setup === 'string' || typeof setup === 'number') {
       this.text(setup);

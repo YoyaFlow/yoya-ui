@@ -89,14 +89,18 @@ export interface ElementOptions {
   [key: string]: unknown;
 }
 
-/** Unified setup input: callback, node instance, text, object config or children. */
+/**
+ * Unified setup input: callback, node instance, text, signal handle (bound
+ * text), object config or children.
+ */
 export type SetupInput<N = ViewNode> =
   N | string | number | SetupCallback<N> | ElementOptions | ChildInput;
 
 /**
  * Signature shared by every element/component factory. Supports the three
  * declarative forms: `factory(callback)`, `factory(text, callback)`,
- * `factory(first, options, callback)` and plain object config.
+ * `factory(first, options, callback)` and plain object config. A signal handle
+ * in the first position becomes bound text, like `child(handle)`.
  */
 export interface ElementFactory<N = ViewNode> {
   (first?: SetupInput<N> | null): N;
@@ -223,7 +227,7 @@ export function moveByKey(options: {
 export class ViewNode {
   constructor(setup?: SetupInput<ViewNode> | null);
 
-  /** Unified initialization: function, text, node instance or object config. */
+  /** Unified initialization: callback, text, node instance, signal handle or object config. */
   setup(setup: SetupInput<ViewNode> | null): this;
 
   /** Returns a snapshot of child nodes. */
