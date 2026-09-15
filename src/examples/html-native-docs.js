@@ -295,7 +295,7 @@ function KeyedListDemoSection() {
   const liveDemo = KeyedListExample();
   const sourcePanel = ComponentSource({
     component: KeyedListExample,
-    imports: ['li', 'ref', 'ul', 'vstack'],
+    imports: ['li', 'ref', 'vstack'],
     sourceComponent: KeyedListExample,
     title: 'keyed 列表协调源码'
   });

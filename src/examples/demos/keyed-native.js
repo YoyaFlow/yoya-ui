@@ -1,4 +1,4 @@
-import { li, ref, ul, vstack } from '../../index.js';
+import { li, ref, vstack } from '../../index.js';
 
 /**
  * HTML 原生元素页的 keyed 演示：信号驱动 ul/li 列表——
@@ -7,11 +7,6 @@ import { li, ref, ul, vstack } from '../../index.js';
 export function KeyedListExample() {
   let serial = 1;
   const rows = ref([{ id: 1, title: '任务 1' }]);
-  const list = ul((node) => {
-    node.className('demo-keyed-list');
-    node.attr('data-keyed-list', 'true');
-    node.keyed(rows, (row) => row.id, (row) => li(row.title));
-  });
   const api = {
     addRow() {
       serial += 1;
@@ -28,7 +23,11 @@ export function KeyedListExample() {
     },
     render() {
       return vstack({ gap: '10px' }, (stack) => {
-        stack.child(list);
+        stack.ul((node) => {
+          node.className('demo-keyed-list');
+          node.attr('data-keyed-list', 'true');
+          node.keyed(rows, (row) => row.id, (row) => li(row.title));
+        });
         stack.hstack({ gap: '8px' }, (row) => {
           row.vButton('添加一行', (button) => {
             button.attr('data-keyed-add', 'true');
