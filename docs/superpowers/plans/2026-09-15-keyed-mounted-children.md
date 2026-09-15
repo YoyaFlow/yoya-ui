@@ -23,10 +23,12 @@
 ### Task 1: `insertBefore` 原语
 
 **Files:**
+
 - Modify: `src/core/node.js`（ViewNode 类，放在 `addChild` 之后）
 - Test: `src/core/keyed-child.test.js`（追加用例）
 
 **Interfaces:**
+
 - Produces: `ViewNode.prototype.insertBefore(key: string|number, child: ViewNode|ComponentLike|string|number, beforeKey?: string|number|null): this`。`beforeKey` 为空追加到末尾；重复 key 抛 `TypeError`；`beforeKey` 不存在抛 `TypeError`；已渲染时用 `insertBefore` 插入 DOM。
 
 - [ ] **Step 1: 写失败测试**
@@ -34,37 +36,37 @@
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
-  it('inserts a keyed child before an existing key', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('c', div('C'));
+it('inserts a keyed child before an existing key', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('c', div('C'));
 
-    const returned = list.insertBefore('b', div('B'), 'a');
+  const returned = list.insertBefore('b', div('B'), 'a');
 
-    expect(returned).toBe(list);
-    expect(list.children().map((child) => child.textContent())).toEqual(['B', 'A', 'C']);
-  });
+  expect(returned).toBe(list);
+  expect(list.children().map((child) => child.textContent())).toEqual(['B', 'A', 'C']);
+});
 
-  it('inserts into rendered DOM at the anchored position', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
+it('inserts into rendered DOM at the anchored position', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
 
-    list.insertBefore('b', div('B'), 'c');
+  list.insertBefore('b', div('B'), 'c');
 
-    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
-  });
+  expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+});
 
-  it('appends when beforeKey is null and rejects unknown or duplicate keys', () => {
-    const list = div();
-    list.addChild('a', div('A'));
+it('appends when beforeKey is null and rejects unknown or duplicate keys', () => {
+  const list = div();
+  list.addChild('a', div('A'));
 
-    list.insertBefore('z', div('Z'), null);
-    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'Z']);
-    expect(() => list.insertBefore('q', div('Q'), 'missing')).toThrow(/insertBefore\(\)/);
-    expect(() => list.insertBefore('a', div('A2'))).toThrow(/duplicate key/i);
-  });
+  list.insertBefore('z', div('Z'), null);
+  expect(list.children().map((child) => child.textContent())).toEqual(['A', 'Z']);
+  expect(() => list.insertBefore('q', div('Q'), 'missing')).toThrow(/insertBefore\(\)/);
+  expect(() => list.insertBefore('a', div('A2'))).toThrow(/duplicate key/i);
+});
 ```
 
 - [ ] **Step 2: 确认失败**
@@ -143,10 +145,12 @@ git commit -m "feat(core): add insertBefore keyed primitive"
 ### Task 2: `insertAfter` 原语
 
 **Files:**
+
 - Modify: `src/core/node.js`（ViewNode 类，放在 `insertBefore` 之后）
 - Test: `src/core/keyed-child.test.js`
 
 **Interfaces:**
+
 - Produces: `ViewNode.prototype.insertAfter(key: string|number, child: ViewNode|ComponentLike|string|number, afterKey?: string|number|null): this`。`afterKey` 为空时插入到**开头**（与 `insertBefore` 空参考 = 尾插对称）；重复 key / 未知 `afterKey` 抛 `TypeError`；DOM 插入锚点 = `afterKey` 元素之后第一个**已挂载**的兄弟（跳过被 `mounted` 摘除的节点），没有则追加。
 
 - [ ] **Step 1: 写失败测试**
@@ -154,37 +158,37 @@ git commit -m "feat(core): add insertBefore keyed primitive"
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
-  it('inserts a keyed child after an existing key', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('c', div('C'));
+it('inserts a keyed child after an existing key', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('c', div('C'));
 
-    const returned = list.insertAfter('b', div('B'), 'a');
+  const returned = list.insertAfter('b', div('B'), 'a');
 
-    expect(returned).toBe(list);
-    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B', 'C']);
-  });
+  expect(returned).toBe(list);
+  expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B', 'C']);
+});
 
-  it('inserts into rendered DOM at the anchored position and prepends on null', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
+it('inserts into rendered DOM at the anchored position and prepends on null', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
 
-    list.insertAfter('b', div('B'), 'a');
-    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+  list.insertAfter('b', div('B'), 'a');
+  expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
 
-    list.insertAfter('head', div('H'), null);
-    expect([...element.children].map((child) => child.textContent)).toEqual(['H', 'A', 'B', 'C']);
-  });
+  list.insertAfter('head', div('H'), null);
+  expect([...element.children].map((child) => child.textContent)).toEqual(['H', 'A', 'B', 'C']);
+});
 
-  it('rejects unknown afterKey and duplicate keys', () => {
-    const list = div();
-    list.addChild('a', div('A'));
+it('rejects unknown afterKey and duplicate keys', () => {
+  const list = div();
+  list.addChild('a', div('A'));
 
-    expect(() => list.insertAfter('q', div('Q'), 'missing')).toThrow(/insertAfter\(\)/);
-    expect(() => list.insertAfter('a', div('A2'), null)).toThrow(/duplicate key/i);
-  });
+  expect(() => list.insertAfter('q', div('Q'), 'missing')).toThrow(/insertAfter\(\)/);
+  expect(() => list.insertAfter('a', div('A2'), null)).toThrow(/duplicate key/i);
+});
 ```
 
 - [ ] **Step 2: 确认失败**
@@ -270,15 +274,18 @@ Expected: PASS。
 git add src/core/node.js src/core/keyed-child.test.js
 git commit -m "feat(core): add insertAfter keyed primitive"
 ```
+
 ---
 
 ### Task 3: `moveBefore` / `moveAfter` 原语
 
 **Files:**
+
 - Modify: `src/core/node.js`（ViewNode 类，放在 `insertAfter` 之后）
 - Test: `src/core/keyed-child.test.js`
 
 **Interfaces:**
+
 - Produces:
   - `ViewNode.prototype.moveBefore(key: string|number, beforeKey?: string|number|null): this` —— 把已有 keyed 子节点移动到参考之前；`beforeKey` 为空时移动到**末尾**。未知 key / `beforeKey` 抛 `TypeError`；`key === beforeKey` 为 no-op。
   - `ViewNode.prototype.moveAfter(key: string|number, afterKey?: string|number|null): this` —— 移动到参考之后；`afterKey` 为空时移动到**开头**。校验与 no-op 规则同上。
@@ -289,65 +296,67 @@ git commit -m "feat(core): add insertAfter keyed primitive"
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
-  it('moves a keyed child before a reference with identity preserved', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('b', div('B'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
-    const nodeC = list.getChild('c');
+it('moves a keyed child before a reference with identity preserved', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('b', div('B'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
+  const nodeC = list.getChild('c');
 
-    const returned = list.moveBefore('c', 'a');
+  const returned = list.moveBefore('c', 'a');
 
-    expect(returned).toBe(list);
-    expect(list.getChild('c')).toBe(nodeC);
-    expect(list.children().map((child) => child.textContent())).toEqual(['C', 'A', 'B']);
-    expect([...element.children].map((child) => child.textContent)).toEqual(['C', 'A', 'B']);
-    expect(element.children[0]).toBe(nodeC._el);
-  });
+  expect(returned).toBe(list);
+  expect(list.getChild('c')).toBe(nodeC);
+  expect(list.children().map((child) => child.textContent())).toEqual(['C', 'A', 'B']);
+  expect([...element.children].map((child) => child.textContent)).toEqual(['C', 'A', 'B']);
+  expect(element.children[0]).toBe(nodeC._el);
+});
 
-  it('moves a keyed child to the end when beforeKey is null', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('b', div('B'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
+it('moves a keyed child to the end when beforeKey is null', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('b', div('B'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
 
-    list.moveBefore('a', null);
+  list.moveBefore('a', null);
 
-    expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
-  });
+  expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
+});
 
-  it('moves a keyed child after a reference and to the start on null', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('b', div('B'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
-    const nodeA = list.getChild('a');
+it('moves a keyed child after a reference and to the start on null', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('b', div('B'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
+  const nodeA = list.getChild('a');
 
-    list.moveAfter('a', 'c');
-    expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
-    expect(element.children[2]).toBe(nodeA._el);
+  list.moveAfter('a', 'c');
+  expect([...element.children].map((child) => child.textContent)).toEqual(['B', 'C', 'A']);
+  expect(element.children[2]).toBe(nodeA._el);
 
-    list.moveAfter('a', null);
-    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
-  });
+  list.moveAfter('a', null);
+  expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B', 'C']);
+});
 
-  it('treats self references as no-ops and validates inputs', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('b', div('B'));
+it('treats self references as no-ops and validates inputs', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('b', div('B'));
 
-    const before = list.moveBefore('a', 'a');
-    expect(before.children().map((child) => child.textContent())).toEqual(['A', 'B']);
-    expect(list.moveAfter('b', 'b').children().map((child) => child.textContent())).toEqual([
-      'A',
-      'B'
-    ]);
-    expect(() => list.moveBefore('missing', 'a')).toThrow(/moveBefore\(\)/);
-    expect(() => list.moveAfter('a', 'missing')).toThrow(/moveAfter\(\)/);
-  });
+  const before = list.moveBefore('a', 'a');
+  expect(before.children().map((child) => child.textContent())).toEqual(['A', 'B']);
+  expect(
+    list
+      .moveAfter('b', 'b')
+      .children()
+      .map((child) => child.textContent())
+  ).toEqual(['A', 'B']);
+  expect(() => list.moveBefore('missing', 'a')).toThrow(/moveBefore\(\)/);
+  expect(() => list.moveAfter('a', 'missing')).toThrow(/moveAfter\(\)/);
+});
 ```
 
 - [ ] **Step 2: 确认失败**
@@ -460,15 +469,18 @@ Expected: PASS。
 git add src/core/node.js src/core/keyed-child.test.js
 git commit -m "feat(core): add moveBefore and moveAfter keyed primitives"
 ```
+
 ---
 
 ### Task 4: `replaceChild` 原语
 
 **Files:**
+
 - Modify: `src/core/node.js`（ViewNode 类，放在 `moveAfter` 之后）
 - Test: `src/core/keyed-child.test.js`
 
 **Interfaces:**
+
 - Consumes: Task 1 的插入路径形状。
 - Produces: `ViewNode.prototype.replaceChild(key: string|number, child: ViewNode|ComponentLike|string|number): this`。同 key 原位换新：`_children` 同槽位替换、`_childKeys` 同 key 指向新节点、DOM 新元素先 `insertBefore` 旧元素再销毁旧节点，邻居零扰动；新节点若声明了 `.mounted(cond)` 则在本插入路径同样收养（旧节点的挂载条件**不转移**——新节点自带新声明）；未知 key 抛 `TypeError`。
 
@@ -477,30 +489,30 @@ git commit -m "feat(core): add moveBefore and moveAfter keyed primitives"
 在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
-  it('replaces a keyed child at the same slot without disturbing siblings', () => {
-    const list = div();
-    list.addChild('a', div('A'));
-    list.addChild('b', div('B-old'));
-    list.addChild('c', div('C'));
-    const element = list.renderDom();
-    const nodeA = list.getChild('a');
-    const nodeC = list.getChild('c');
+it('replaces a keyed child at the same slot without disturbing siblings', () => {
+  const list = div();
+  list.addChild('a', div('A'));
+  list.addChild('b', div('B-old'));
+  list.addChild('c', div('C'));
+  const element = list.renderDom();
+  const nodeA = list.getChild('a');
+  const nodeC = list.getChild('c');
 
-    const returned = list.replaceChild('b', div('B-new'));
+  const returned = list.replaceChild('b', div('B-new'));
 
-    expect(returned).toBe(list);
-    expect(list.getChild('b').textContent()).toBe('B-new');
-    expect(list.getChild('a')).toBe(nodeA);
-    expect(list.getChild('c')).toBe(nodeC);
-    expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B-new', 'C']);
-    expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B-new', 'C']);
-  });
+  expect(returned).toBe(list);
+  expect(list.getChild('b').textContent()).toBe('B-new');
+  expect(list.getChild('a')).toBe(nodeA);
+  expect(list.getChild('c')).toBe(nodeC);
+  expect(list.children().map((child) => child.textContent())).toEqual(['A', 'B-new', 'C']);
+  expect([...element.children].map((child) => child.textContent)).toEqual(['A', 'B-new', 'C']);
+});
 
-  it('rejects unknown keys', () => {
-    const list = div();
+it('rejects unknown keys', () => {
+  const list = div();
 
-    expect(() => list.replaceChild('missing', div('X'))).toThrow(/replaceChild\(\)/);
-  });
+  expect(() => list.replaceChild('missing', div('X'))).toThrow(/replaceChild\(\)/);
+});
 ```
 
 - [ ] **Step 2: 确认失败**
@@ -578,15 +590,18 @@ Expected: PASS。
 git add src/core/node.js src/core/keyed-child.test.js
 git commit -m "feat(core): add replaceChild keyed primitive"
 ```
+
 ---
 
 ### Task 5: `keyed()` 信号驱动子项绑定
 
 **Files:**
+
 - Create: `src/core/keyed-children.test.js`
 - Modify: `src/core/node.js`（构造器 `_keyedSegments` 初始化、ViewNode 新增 `keyed()` 方法、模块级 sync 辅助函数放在 `registerRegionCleanup` 附近）
 
 **Interfaces:**
+
 - Consumes: Task 1/2 的锚点思想（内部不复用公开方法，走模块级辅助函数）。
 - Produces:
   - `ViewNode.prototype.keyed(source: SignalHandle, build: (row, index) => ChildInput): this`
@@ -603,9 +618,16 @@ import { div, li, ref, ul } from '../index.js';
 
 describe('keyed children binding', () => {
   it('renders rows from a signal and reuses nodes across reorders', () => {
-    const rows = ref([{ id: 1, title: 'A' }, { id: 2, title: 'B' }]);
+    const rows = ref([
+      { id: 1, title: 'A' },
+      { id: 2, title: 'B' }
+    ]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.title));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.title)
+      );
     });
     const element = list.renderDom();
 
@@ -624,10 +646,14 @@ describe('keyed children binding', () => {
     const rows = ref([rowA]);
     const builds = [];
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => {
-        builds.push(row.id);
-        return li(row.title);
-      });
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => {
+          builds.push(row.id);
+          return li(row.title);
+        }
+      );
     });
     list.renderDom();
 
@@ -640,7 +666,11 @@ describe('keyed children binding', () => {
   it('replaces an item in place when its row reference changes', () => {
     const rows = ref([{ id: 1 }, { id: 2 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(`row-${row.id}`));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(`row-${row.id}`)
+      );
     });
     const element = list.renderDom();
     const secondNode = list.children()[1];
@@ -655,7 +685,11 @@ describe('keyed children binding', () => {
     const rows = ref([{ id: 'x' }]);
     const list = ul((node) => {
       node.li('head');
-      node.keyed(rows, (row) => row.id, (row) => li(`item-${row.id}`));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(`item-${row.id}`)
+      );
       node.li('tail');
     });
     const element = list.renderDom();
@@ -670,7 +704,11 @@ describe('keyed children binding', () => {
   it('rejects duplicate row keys and non-signal sources', () => {
     const rows = ref([{ id: 1 }, { id: 1 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.id));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
     });
     list.renderDom();
 
@@ -683,7 +721,11 @@ describe('keyed children binding', () => {
   it('self-heals after clearChildren', () => {
     const rows = ref([{ id: 1 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.id));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
     });
     list.renderDom();
     list.clearChildren();
@@ -696,7 +738,11 @@ describe('keyed children binding', () => {
   it('renders once on the server without subscribing', () => {
     const rows = ref([{ id: 1, title: 'A' }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.title));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.title)
+      );
     });
 
     expect(list.toHTML()).toBe('<ul><li>A</li></ul>');
@@ -717,7 +763,7 @@ Expected: FAIL，`node.keyed is not a function`。
 `src/core/node.js` 构造器 `_pendingRemovals` 附近追加：
 
 ```js
-    this._keyedSegments = [];
+this._keyedSegments = [];
 ```
 
 模块级辅助函数（放在 `registerRegionCleanup` 之后）：
@@ -907,10 +953,12 @@ git commit -m "feat(core): add keyed children binding"
 ### Task 6: `mounted()` 条件挂载（子声明 + 父收养，无显式父 API）
 
 **Files:**
+
 - Create: `src/core/node-mounted.test.js`
 - Modify: `src/core/node.js`（构造器 `_childMountStates`/`_mountCondition`/`_isMounted`、ViewNode 新增 `mounted()` / `isMounted()` 与私有 `_adoptMountCondition()` / `_syncChildMounted()`、`_setupObject` 特判、ElementNode `toHTML()` 挂点、父节点 renderDom 追加循环挂点）
 
 **Interfaces:**
+
 - Consumes: Task 5 的 `resolveInsertAnchor`。
 - Produces:
   - `ViewNode.prototype.mounted(condition: SignalHandle | (() => unknown)): this` —— 唯一公共声明入口：把条件（句柄或零参闭包）存为惰性 `_mountCondition`（不建绑定、不碰 DOM，setup 期节点尚未进父树）；入树时由父节点**私有收养**。已被收养后再次调用抛 `TypeError`。闭包形态构建期求值一次，之后由**父节点** `flush()` 重新求值（绑定 owner 是父节点）。
@@ -972,10 +1020,13 @@ describe('mounted condition adoption', () => {
   it('supports keyed insertion, setup object form, and isMounted', () => {
     const visible = ref(true);
     const host = div();
-    host.addChild('k', div((node) => {
-      node.mounted(visible);
-      node.attr('data-keyed', 'true');
-    }));
+    host.addChild(
+      'k',
+      div((node) => {
+        node.mounted(visible);
+        node.attr('data-keyed', 'true');
+      })
+    );
     const lazy = div({ mounted: visible });
     host.child(lazy);
     const element = host.renderDom();
@@ -1019,7 +1070,9 @@ describe('mounted condition adoption', () => {
     host.renderDom();
 
     expect(() => div().mounted(true)).toThrow(/signal handle or a zero-argument function/i);
-    expect(() => div((node) => node.mounted('yes'))).toThrow(/signal handle or a zero-argument function/i);
+    expect(() => div((node) => node.mounted('yes'))).toThrow(
+      /signal handle or a zero-argument function/i
+    );
     expect(() => panel.mounted(visible)).toThrow(/adopted/i);
   });
 
@@ -1029,10 +1082,13 @@ describe('mounted condition adoption', () => {
     list.addChild('b', div('B-old'));
     list.renderDom();
 
-    list.replaceChild('b', div((node) => {
-      node.mounted(visible);
-      node.attr('data-new', 'true');
-    }));
+    list.replaceChild(
+      'b',
+      div((node) => {
+        node.mounted(visible);
+        node.attr('data-new', 'true');
+      })
+    );
 
     visible.value = false;
     expect(list.children()[0]._el.parentNode).toBeNull();
@@ -1077,10 +1133,10 @@ Expected: FAIL，`panel.mounted is not a function`。
 1. 构造器追加（`_keyedSegments` 旁）：
 
 ```js
-    this._childMountStates = new Map();
-    this._mountCondition = null;
-    this._mountAdopted = false;
-    this._isMounted = true;
+this._childMountStates = new Map();
+this._mountCondition = null;
+this._mountAdopted = false;
+this._isMounted = true;
 ```
 
 2. ViewNode 公共方法（`keyed()` 之后）：
@@ -1153,20 +1209,20 @@ Expected: FAIL，`panel.mounted is not a function`。
 4. `ElementNode._setupObject` 的方法分发之前追加特判（配置形态只存惰性条件，不建绑定）：
 
 ```js
-      if (key === 'mounted' && (isSignal(value) || typeof value === 'function')) {
-        this._mountCondition = value;
-        return;
-      }
+if (key === 'mounted' && (isSignal(value) || typeof value === 'function')) {
+  this._mountCondition = value;
+  return;
+}
 ```
 
 5. `child()` / `addChild()` / `insertBefore()` / `insertAfter()` / `replaceChild()` 五处插入路径，在 `this._children.push(viewNode)`（或 splice）之后统一追加收养：
 
 ```js
-      if (viewNode._mountCondition) {
-        const condition = viewNode._mountCondition;
-        viewNode._mountCondition = null;
-        this._adoptMountCondition(viewNode, condition);
-      }
+if (viewNode._mountCondition) {
+  const condition = viewNode._mountCondition;
+  viewNode._mountCondition = null;
+  this._adoptMountCondition(viewNode, condition);
+}
 ```
 
 6. SSR 挂点：ElementNode `toHTML()` 的子节点序列化循环跳过 `this._childMountStates.get(child) === false` 的子节点。
@@ -1176,7 +1232,7 @@ Expected: FAIL，`panel.mounted is not a function`。
 8. `destroy()` 内追加整洁清理（非正确性依赖）：
 
 ```js
-    this._childMountStates.clear();
+this._childMountStates.clear();
 ```
 
 - [ ] **Step 4: 转绿**
@@ -1190,15 +1246,18 @@ Expected: PASS。
 git add src/core/node.js src/core/node-mounted.test.js
 git commit -m "feat(core): add child-declared mounted condition adoption"
 ```
+
 ---
 
 ### Task 7: 类型、文档与全量校验
 
 **Files:**
+
 - Modify: `types/core.d.ts`（ViewNode 类，`bindDocumentEvent` 声明之后）
 - Modify: `docs/component-authoring.zh-CN.md`、`docs/component-authoring.md`（§6 可重建区域清单追加条目）
 
 **Interfaces:**
+
 - Consumes: Task 1-4 的最终 API。
 
 - [ ] **Step 1: 类型声明**

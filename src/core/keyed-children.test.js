@@ -3,9 +3,16 @@ import { div, li, ref, ul } from '../index.js';
 
 describe('keyed children binding', () => {
   it('renders rows from a signal and reuses nodes across reorders', () => {
-    const rows = ref([{ id: 1, title: 'A' }, { id: 2, title: 'B' }]);
+    const rows = ref([
+      { id: 1, title: 'A' },
+      { id: 2, title: 'B' }
+    ]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.title));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.title)
+      );
     });
     const element = list.renderDom();
 
@@ -24,10 +31,14 @@ describe('keyed children binding', () => {
     const rows = ref([rowA]);
     const builds = [];
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => {
-        builds.push(row.id);
-        return li(row.title);
-      });
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => {
+          builds.push(row.id);
+          return li(row.title);
+        }
+      );
     });
     list.renderDom();
 
@@ -40,7 +51,11 @@ describe('keyed children binding', () => {
   it('replaces an item in place when its row reference changes', () => {
     const rows = ref([{ id: 1 }, { id: 2 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(`row-${row.id}`));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(`row-${row.id}`)
+      );
     });
     const element = list.renderDom();
     const secondNode = list.children()[1];
@@ -55,7 +70,11 @@ describe('keyed children binding', () => {
     const rows = ref([{ id: 'x' }]);
     const list = ul((node) => {
       node.li('head');
-      node.keyed(rows, (row) => row.id, (row) => li(`item-${row.id}`));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(`item-${row.id}`)
+      );
       node.li('tail');
     });
     const element = list.renderDom();
@@ -70,7 +89,11 @@ describe('keyed children binding', () => {
   it('rejects duplicate row keys and non-signal sources', () => {
     const rows = ref([{ id: 1 }, { id: 2 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.id));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
     });
     list.renderDom();
 
@@ -83,7 +106,11 @@ describe('keyed children binding', () => {
   it('self-heals after clearChildren', () => {
     const rows = ref([{ id: 1 }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.id));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
     });
     list.renderDom();
     list.clearChildren();
@@ -96,7 +123,11 @@ describe('keyed children binding', () => {
   it('renders once on the server without subscribing', () => {
     const rows = ref([{ id: 1, title: 'A' }]);
     const list = ul((node) => {
-      node.keyed(rows, (row) => row.id, (row) => li(row.title));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.title)
+      );
     });
 
     expect(list.toHTML()).toBe('<ul><li data-row-key="1">A</li></ul>');

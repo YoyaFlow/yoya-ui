@@ -1054,7 +1054,8 @@ export class ViewNode {
       );
       if (childElement && childElement.parentNode !== this._el) {
         const beforeElement = beforeNode?._el;
-        const anchor = beforeElement && beforeElement.parentNode === this._el ? beforeElement : null;
+        const anchor =
+          beforeElement && beforeElement.parentNode === this._el ? beforeElement : null;
         this._el.insertBefore(childElement, anchor);
       }
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
@@ -1284,9 +1285,15 @@ export class ViewNode {
       members: new Map()
     };
     this._keyedSegments.push(segment);
-    registerNodeBinding(this, 'keyed', null, () => source.value, (rows) => {
-      syncKeyedSegment(this, segment, rows);
-    });
+    registerNodeBinding(
+      this,
+      'keyed',
+      null,
+      () => source.value,
+      (rows) => {
+        syncKeyedSegment(this, segment, rows);
+      }
+    );
 
     return this;
   }

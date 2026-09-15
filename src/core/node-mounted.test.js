@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, input, ref, section } from '../index.js';
+import { div, ref, section } from '../index.js';
 
 describe('mounted condition adoption', () => {
   it('omits server HTML and detached DOM when the condition is false', () => {
@@ -48,10 +48,13 @@ describe('mounted condition adoption', () => {
   it('supports keyed insertion, setup object form, and isMounted', () => {
     const visible = ref(true);
     const host = div();
-    host.addChild('k', div((node) => {
-      node.mounted(visible);
-      node.attr('data-keyed', 'true');
-    }));
+    host.addChild(
+      'k',
+      div((node) => {
+        node.mounted(visible);
+        node.attr('data-keyed', 'true');
+      })
+    );
     const lazy = div({ mounted: visible });
     host.child(lazy);
     const element = host.renderDom();
@@ -107,10 +110,13 @@ describe('mounted condition adoption', () => {
     list.addChild('b', div('B-old'));
     list.renderDom();
 
-    list.replaceChild('b', div((node) => {
-      node.mounted(visible);
-      node.attr('data-new', 'true');
-    }));
+    list.replaceChild(
+      'b',
+      div((node) => {
+        node.mounted(visible);
+        node.attr('data-new', 'true');
+      })
+    );
 
     visible.value = false;
     expect(list.children()[0]._el.parentNode).toBeNull();

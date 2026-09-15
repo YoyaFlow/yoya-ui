@@ -250,6 +250,54 @@ export class ViewNode {
   /** Registers an event listener, bound immediately or at render time. */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
 
+  /** Inserts a keyed child before another keyed child; null beforeKey appends. */
+  insertBefore(
+    key: string | number,
+    child: ViewNode | ComponentLike | string | number,
+    beforeKey?: string | number | null
+  ): this;
+
+  /** Inserts a keyed child after another keyed child; null afterKey prepends. */
+  insertAfter(
+    key: string | number,
+    child: ViewNode | ComponentLike | string | number,
+    afterKey?: string | number | null
+  ): this;
+
+  /** Moves an existing keyed child before another keyed child; null beforeKey moves to end. */
+  moveBefore(key: string | number, beforeKey?: string | number | null): this;
+
+  /** Moves an existing keyed child after another keyed child; null afterKey moves to start. */
+  moveAfter(key: string | number, afterKey?: string | number | null): this;
+
+  /** Replaces the keyed child at the same slot with a fresh node; siblings stay untouched. */
+  replaceChild(key: string | number, child: ViewNode | ComponentLike | string | number): this;
+
+  /**
+   * Signal-driven keyed item binding. Rows whose key and reference are unchanged
+   * keep their nodes; changed rows are rebuilt in place; ordering uses insertBefore.
+   */
+  keyed(
+    source: SignalHandle,
+    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  ): this;
+  keyed(
+    source: SignalHandle,
+    keyFn: (row: unknown, index: number) => string | number,
+    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  ): this;
+
+  /**
+   * Declares conditional attachment: stores the condition (signal handle or
+   * zero-argument closure) inertly on this node; the parent adopts it at tree
+   * entry. Calling after adoption throws. Closure refresh goes through the
+   * parent's flush().
+   */
+  mounted(condition: SignalHandle | (() => unknown)): this;
+
+  /** Latest committed state of this node's own mount condition (default true). */
+  isMounted(): boolean;
+
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
 

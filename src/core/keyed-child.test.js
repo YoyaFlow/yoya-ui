@@ -136,10 +136,12 @@ describe('keyed children', () => {
 
     const before = list.moveBefore('a', 'a');
     expect(before.children().map((child) => child.textContent())).toEqual(['A', 'B']);
-    expect(list.moveAfter('b', 'b').children().map((child) => child.textContent())).toEqual([
-      'A',
-      'B'
-    ]);
+    expect(
+      list
+        .moveAfter('b', 'b')
+        .children()
+        .map((child) => child.textContent())
+    ).toEqual(['A', 'B']);
     expect(() => list.moveBefore('missing', 'a')).toThrow(/moveBefore\(\)/);
     expect(() => list.moveAfter('a', 'missing')).toThrow(/moveAfter\(\)/);
   });
