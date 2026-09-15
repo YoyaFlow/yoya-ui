@@ -32,7 +32,7 @@
 - **默认即正确**：默认转义、SSR 输出确定、无隐藏全局状态；安全性不由使用方
   额外补丁承担。
 - **结构能力补齐**：列表协调（`keyed()` 绑定 + `insertBefore` / `insertAfter` /
-  `moveBefore` / `moveAfter` / `replaceChild` 原语）、条件挂载（`mounted()`）、
+  `moveBefore` / `moveAfter` / `replaceChild` 原语）、条件挂载（`mountable()`）、
   子树错误边界（`whenFailed()`）已落地，随 1.0 一并进入稳定契约；页面级兜底
   （整页降级、`window.onerror` 兜底页）仍归使用方，节点级候选暂不排期。
 

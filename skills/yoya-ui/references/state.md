@@ -126,26 +126,26 @@ ul((list) => {
 - 自定义策略（拖拽排序、局部替换）用五个原语：`insertBefore(key, child, beforeKey)`、`insertAfter(key, child, afterKey)`、`moveBefore(key, beforeKey)`、`moveAfter(key, afterKey)`、`replaceChild(key, child)`；配套 `addChild(key, child)` / `getChild(key)` / `removeChild(key)`，key 都会镜像成 `data-row-key`。
 - 与区域的关系：`keyed()` 的信号读取走自己的绑定收集上下文，**不**记进外层区域依赖——行数据变化不会让外层区域整片重建。
 
-## 条件挂载：mounted()
+## 条件挂载：mountable()
 
-`display` 样式显隐是「看不见但在」，`rebuildable()` 是「销毁重建」，`mounted()` 是中间那档：**不在但活着**。
+`display` 样式显隐是「看不见但在」，`rebuildable()` 是「销毁重建」，`mountable()` 是中间那档：**不在但活着**。
 
 ```js
 const visible = ref(false);
 
 div((box) => {
   box.div((panel) => {
-    panel.mounted(visible); // 句柄或零参闭包 () => shown
+    panel.mountable(visible); // 句柄或零参闭包 () => shown
     panel.input((field) => field.attr('name', 'keyword')); // 状态跨显隐保留
   });
 });
 ```
 
 - 条件为假：元素脱离文档（SSR 不输出该子树），ViewNode 与控件状态保留；为真：按子节点槽位归位，不是追加到末尾。
-- 声明在子节点、绑定在父节点：`mounted()` 在 setup 期声明，入树时由父节点收养；零参闭包形态由**父节点** `flush()` 重新求值。
-- 已被收养后再调用 `mounted()` 会抛错；运行期给已入树节点补挂条件没有公共入口——创建期声明。
+- 声明在子节点、绑定在父节点：`mountable()` 在 setup 期声明，入树时由父节点收养；零参闭包形态由**父节点** `flush()` 重新求值。
+- 已被收养后再调用 `mountable()` 会抛错；运行期给已入树节点补挂条件没有公共入口——创建期声明。
 - `node.isMounted()` 返回自身挂载条件的最近提交状态；「元素此刻是否在文档里」另查 `node._el?.isConnected`（受祖先挂载与渲染时机影响）。
-- 配置形态等价：`div({ mounted: cond })`（父节点走同一条收养路径）。
+- 配置形态等价：`div({ mountable: cond })`（父节点走同一条收养路径）。
 
 ## 子树错误边界：whenFailed()
 
@@ -203,7 +203,7 @@ installSignals(null); // 回到内置引擎
 | 输入框光标跳到末尾     | 写回时值被转换过，绑定写入了不同的值                                                                             |
 | 列表重建后焦点丢失     | 该块在区域内；把输入框移出区域，或用值绑定                                                                       |
 | 列表重排后行内输入失焦 | 行没走 `keyed()`，而是区域整片重建；改用 `keyed()` 并在行内用值绑定                                              |
-| 显隐切换后控件状态丢了 | 用了 `rebuildable()` 重建而不是 `mounted()`：条件挂载才是「不在但活着」                                          |
+| 显隐切换后控件状态丢了 | 用了 `rebuildable()` 重建而不是 `mountable()`：条件挂载才是「不在但活着」                                        |
 | 结构没随筛选变化       | 区域没声明 `rebuildable()`，或读的不是信号（`rows.value` 没读）                                                  |
 | 并发请求串数据         | 信号放在了模块级                                                                                                 |
 | 值不更新（快照）       | 值位置传了 `x.value` / `String(x.value)` 而不是句柄本身                                                          |

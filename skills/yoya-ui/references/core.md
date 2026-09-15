@@ -9,7 +9,7 @@
 | 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                   |
 | 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
 | 状态       | `ref` / `computed`（Signals）                                                                                                                  |
-| 更新与容错 | `keyed()`、`mounted()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                        |
+| 更新与容错 | `keyed()`、`mountable()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                      |
 | 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
 
 ## vText 文本节点
@@ -132,9 +132,9 @@ yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = r
 
 值位置**不要再包一层**：纯占位写 `vText(a)` / `attr('data-x', a)` / `child(a)` / `ele.text(a)`，不要写 `computed(() => a.value)`（白包）或 `String(a.value)` / `a.value`（死快照）；`computed` 只留给拼接、运算、分支、多信号组合，`String()` 只在需要字符串语义（拼接、`'auto' | 'none'`）时用。
 
-结构变化按代价分三档，都写在 setup 期：列表用 `keyed(rows, keyFn, build)`（同 key 且行引用未变复用节点、排序保身份），条件挂载用 `mounted(cond)`（为假脱离文档、为真按槽位回归，状态保留），整片换新用 `rebuildable()` 区域；子树出错用 `whenFailed(handler)` 兜底（返回节点降级替换、返回 null 仅上报）。
+结构变化按代价分三档，都写在 setup 期：列表用 `keyed(rows, keyFn, build)`（同 key 且行引用未变复用节点、排序保身份），条件挂载用 `mountable(cond)`（为假脱离文档、为真按槽位回归，状态保留），整片换新用 `rebuildable()` 区域；子树出错用 `whenFailed(handler)` 兜底（返回节点降级替换、返回 null 仅上报）。
 
-Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mounted / whenFailed 用法、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
+Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountable / whenFailed 用法、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
 
 ## 组合、事件与生命周期
 

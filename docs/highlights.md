@@ -89,7 +89,7 @@ div((page) => {
 - The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, component objects, strings, and numbers uniformly.
 - `registerChildFactories` registers components as parent shortcuts (`card.vCardHeader`), so third-party components can extend the DSL too.
 
-## 5. List coordination and fault tolerance: keyed / mounted / whenFailed
+## 5. List coordination and fault tolerance: keyed / mountable / whenFailed
 
 Structural updates no longer force whole-subtree teardown. Three explicit tiers by cost:
 
@@ -110,7 +110,7 @@ rows.value = [...rows.value].reverse(); // auto diff: add/remove/move with ident
 ```
 
 - `keyed(rows, keyFn, build)`: rows whose key and reference are unchanged keep their nodes (build does not rerun), changed rows rebuild in place, and reorders move nodes with identity preserved; custom strategies use the `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` primitives.
-- `panel.mounted(cond)`: conditional attachment — false detaches the element from the document while the ViewNode and its state stay alive, true reattaches at its child slot (`display` toggling, `mounted` absent-but-alive, and `rebuildable` destroy-and-rebuild form three tiers); `isMounted()` reports the condition state.
+- `panel.mountable(cond)`: conditional attachment — false detaches the element from the document while the ViewNode and its state stay alive, true reattaches at its child slot (`display` toggling, `mountable` absent-but-alive, and `rebuildable` destroy-and-rebuild form three tiers); `isMounted()` reports the condition state.
 - `box.whenFailed(handler)`: subtree error boundary — returning a node degrades, returning null only reports; component objects may define a `whenFailed` member next to `render()` that mounts automatically; captures always console.error and never stay silent.
 
 ## 6. Forms: one collection point, view/edit built in

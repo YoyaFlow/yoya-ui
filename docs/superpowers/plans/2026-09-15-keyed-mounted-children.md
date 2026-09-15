@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **更名记录（2026-09-15）**：本文写作时的条件挂载 API 名 `mounted()` 已更名为
+> `mountable()`（避免与 Vue 生命周期钩子同名导致的静默误用），测试文件同步由
+> `src/core/node-mounted.test.js` 改名为 `src/core/node-mountable.test.js`。
+> 本文按当时的规格原样保留，**以下代码与签名里的 `mounted` 一律读作 `mountable`**；
+> 当前口径以 `docs/`、`types/core.d.ts` 与 `src/` 为准。
+
 **Goal:** 补齐显式列表协调与条件挂载：keyed 插入/移动原语、`keyed()` 信号驱动子项绑定、`mounted()` 条件挂载（DOM 隔离但状态保留）。
 
 **Architecture:** 全部实现收敛在 `src/core/node.js`（沿用现有绑定管线 `registerNodeBinding` 与区域机制，不新建并行体系）。原语先行（Task 1-4：insertBefore / insertAfter / moveBefore / moveAfter / replaceChild），`keyed()` 是薄编排层（Task 5），`mounted()` 采用子声明 + 父收养、不引入 `_parent` 指针（Task 6），类型与文档最后收口（Task 7）。
@@ -1370,3 +1376,5 @@ git push -u origin feat/keyed-mounted-children
 - **文档与 skill 回填**：`docs/highlights` §5、`docs/component-authoring` §6、README 能力一览、
   `docs/beginner-feedback.zh-CN.md` 回填记录、示例站原生页 API 表，以及
   `skills/yoya-ui`（SKILL.md / references/state.md / references/core.md）。
+- **API 更名**：`mounted()` → `mountable()`，同步 `types/core.d.ts`、测试文件名、
+  示例站 API 表、docs、README / ROADMAP 与本机 skill 安装目录。

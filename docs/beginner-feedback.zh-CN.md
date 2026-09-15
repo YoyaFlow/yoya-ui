@@ -10,7 +10,7 @@
 
 > **2026-09-15 回填**：清单里三处「能力缺口」已经做成库能力——keyed 列表协调
 > （`keyed()` + `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild`）、
-> 条件挂载 `mounted()`、子树错误边界 `whenFailed()`。受影响条目（5 / 21 / 22 / 31）
+> 条件挂载 `mountable()`、子树错误边界 `whenFailed()`。受影响条目（5 / 21 / 22 / 31）
 > 的「现状」已改成当前口径，第 31 题由 ③ 转 ②，③ 真缺失从 6 条降为 5 条。
 > 口径出处见 highlights 第 5 节与 component-authoring 第 6 节，回填明细见文末「回填记录」。
 
@@ -63,7 +63,7 @@
 ### 5. `v-if` 和 `v-for` 在哪？条件渲染和列表循环到底怎么写？
 
 - 分类：②
-- 现状：条件有两档——**条件挂载** `panel.mounted(cond)`（为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留）与 `rebuildable()` 区域内 `if` / 三元（销毁重建）；循环用 `keyed(rows, keyFn, build)` 按 key 对账（增删 / 排序保身份），数据表另有 `vTable` 的 `rows()/data()`。对应关系：`v-if` ↔ `mounted()` / `rebuildable()`，`v-for` ↔ `keyed()`，`v-show` ↔ 显隐样式。
+- 现状：条件有两档——**条件挂载** `panel.mountable(cond)`（为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留）与 `rebuildable()` 区域内 `if` / 三元（销毁重建）；循环用 `keyed(rows, keyFn, build)` 按 key 对账（增删 / 排序保身份），数据表另有 `vTable` 的 `rows()/data()`。对应关系：`v-if` ↔ `mountable()` / `rebuildable()`，`v-for` ↔ `keyed()`，`v-show` ↔ 显隐样式。
 - 文档动作：quickstart 增设「Vue 模板指令 ↔ yoya 写法」映射表（v-if / v-for / v-show / v-model）。
 - 优先级：P0 ☐
 
@@ -179,8 +179,8 @@
 ### 21. `key` 呢？列表重建不需要 key 吗？不怕有状态子节点被销毁重建吗？
 
 - 分类：②
-- 现状：keyed 协调已是一等能力：`keyed(rows, keyFn, build)` 用信号驱动对账——同 key 且**行引用未变**复用节点（`build` 不重跑）、行引用变化原位换新、顺序变化用 `insertBefore` 保身份（行内输入焦点、滚动、第三方实例不重建）；手工登记用 `addChild(key, child)`（唯一性校验 + `data-row-key` 镜像），自定义策略用五个 keyed 原语。`rebuildable()` 区域仍是整片替换，两条路径按需选：列表协调用 `keyed()`，结构整体换新用区域，只刷值用绑定，隐藏保活用 `mounted()`。
-- 文档动作：新增「状态什么时候会丢 / 不会丢」FAQ：keyed 保身份、mounted 不在但活着、rebuildable 销毁重建三档对照。
+- 现状：keyed 协调已是一等能力：`keyed(rows, keyFn, build)` 用信号驱动对账——同 key 且**行引用未变**复用节点（`build` 不重跑）、行引用变化原位换新、顺序变化用 `insertBefore` 保身份（行内输入焦点、滚动、第三方实例不重建）；手工登记用 `addChild(key, child)`（唯一性校验 + `data-row-key` 镜像），自定义策略用五个 keyed 原语。`rebuildable()` 区域仍是整片替换，两条路径按需选：列表协调用 `keyed()`，结构整体换新用区域，只刷值用绑定，隐藏保活用 `mountable()`。
+- 文档动作：新增「状态什么时候会丢 / 不会丢」FAQ：keyed 保身份、mountable 不在但活着、rebuildable 销毁重建三档对照。
 - 优先级：P0 ☐
 
 ### 22. 列表更新为什么走整片区域重建，而不是 vdom diff？列表有 5000 个节点怎么办？
@@ -355,7 +355,7 @@
 1. 新增 FAQ 页，首批收录 P0 十二问：1 / 3 / 4 / 5 / 6 / 17 / 21 / 23 / 28 / 34 / 37 / 38。
 2. quickstart 增「Vue / React 概念映射表」：v-if / v-for / v-model / $emit / provide-inject / watch / slot → yoya 对应写法（覆盖 4 / 5 / 6 / 10 / 11 / 19）。
 3. 「响应式语义」一节：浅层赋值通知（17）、依赖按读取收集（18）、`rebuildable()` 先声明再读数据的加粗警告与排查（23）。
-4. 「状态什么时候会丢 / 不会丢」FAQ：keyed 保身份（`keyed()`）、不在但活着（`mounted()`）、销毁重建（`rebuildable()`）三档对照（21）。
+4. 「状态什么时候会丢 / 不会丢」FAQ：keyed 保身份（`keyed()`）、不在但活着（`mountable()`）、销毁重建（`rebuildable()`）三档对照（21）。
 5. README 特性列表点名 router 与 devtools 子入口、按分类点名组件面（28 / 34 / 38）。
 
 ### P1（采用决策相关）
@@ -380,13 +380,13 @@
 
 本轮把清单里的三条能力缺口做成了库能力，口径同步到 `docs/`、示例站与 skill：
 
-| 缺口                | 落地形态                                                                                                 | 口径出处                                              |
-| ------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| 列表协调（21 / 22） | `keyed(rows, keyFn, build)` 信号驱动对账 + 五个 keyed 原语；同 key 且行引用未变复用节点、排序保身份      | highlights §5、component-authoring §6                 |
-| 条件渲染（5）       | `panel.mounted(cond)` 条件挂载（不在但活着）+ `isMounted()`；与 `display` 显隐、`rebuildable()` 三档并列 | highlights §5、component-authoring §6                 |
-| 错误边界（31）      | `node.whenFailed(handler)` 子树边界；组件对象 `whenFailed` 成员由 `ComponentNode` 自动挂载               | highlights §5、component-authoring §6、错误处理示例页 |
-| 示例站              | keyed 演示进「HTML 原生元素」页，错误处理独立成页（报告模式 / 组件协议降级）                             | 示例站 guides 导航                                    |
-| skill               | references/state.md 增补 keyed / mounted / whenFailed 三条用法与坑位                                     | skills/yoya-ui                                        |
+| 缺口                | 落地形态                                                                                                   | 口径出处                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 列表协调（21 / 22） | `keyed(rows, keyFn, build)` 信号驱动对账 + 五个 keyed 原语；同 key 且行引用未变复用节点、排序保身份        | highlights §5、component-authoring §6                 |
+| 条件渲染（5）       | `panel.mountable(cond)` 条件挂载（不在但活着）+ `isMounted()`；与 `display` 显隐、`rebuildable()` 三档并列 | highlights §5、component-authoring §6                 |
+| 错误边界（31）      | `node.whenFailed(handler)` 子树边界；组件对象 `whenFailed` 成员由 `ComponentNode` 自动挂载                 | highlights §5、component-authoring §6、错误处理示例页 |
+| 示例站              | keyed 演示进「HTML 原生元素」页，错误处理独立成页（报告模式 / 组件协议降级）                               | 示例站 guides 导航                                    |
+| skill               | references/state.md 增补 keyed / mountable / whenFailed 三条用法与坑位                                     | skills/yoya-ui                                        |
 
 仍未回填的 ③ 真缺失还是 20 / 23 / 27 / 41 / 42：深层 reactive（刻意取舍）、
 `rebuildable()` 顺序的 dev 期提示、CSS scoped 隔离（有缓解）、社交信号与单维护者风险（非代码项）。
