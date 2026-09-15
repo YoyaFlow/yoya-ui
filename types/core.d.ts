@@ -499,7 +499,10 @@ export class I18n {
   /** Registers one or more corpora: multi-language files or { language, messages }. */
   registerMessages(corpus?: Record<string, unknown> | Array<unknown>): this;
 
-  /** Translates a key with dot-path lookup, fallback language and {name} params. */
+  /**
+   * Translates a key with dot-path lookup, fallback language and {name} params.
+   * Signal params use tracked reads, so t() composes with computed() and regions.
+   */
   t(key: string, params?: Record<string, unknown>, defaultValue?: unknown): string;
 
   /** Creates a text node that refreshes on language changes; signal params refresh in place. */

@@ -143,14 +143,16 @@ export class I18n {
    * 翻译 key。支持 dot path、fallback language、默认文案和 {name} 参数替换。
    */
   t(key, params = {}, defaultValue = undefined) {
+    // 追踪读：computed / 区域里传句柄即建立依赖，写入后重算或重建。
+    const resolved = resolveI18nParams(params, (signal) => signal.value);
     const message =
       readMessage(this._messages[this._language], key) ??
       readMessage(this._messages[this._fallbackLanguage], key) ??
       defaultValue ??
       key;
 
-    const value = typeof message === 'function' ? message(params, this) : message;
-    return interpolate(value, params, this);
+    const value = typeof message === 'function' ? message(resolved, this) : message;
+    return interpolate(value, resolved, this);
   }
 
   /**
@@ -207,14 +209,17 @@ export class I18n {
   }
 }
 
-/** 插值参数支持 signal 句柄：求值用 peek，不把参数泄漏成区域依赖。 */
-function resolveI18nParams(params) {
+/**
+ * 插值参数支持 signal 句柄；读取方式由调用方决定：
+ * t() 用追踪读（可进 computed / 区域依赖），I18nTextNode 用 peek（文本自刷、不泄漏依赖）。
+ */
+function resolveI18nParams(params, readSignal) {
   if (!params) {
     return {};
   }
 
   return Object.fromEntries(
-    Object.entries(params).map(([key, value]) => [key, isSignal(value) ? value.peek() : value])
+    Object.entries(params).map(([key, value]) => [key, isSignal(value) ? readSignal(value) : value])
   );
 }
 
@@ -224,7 +229,13 @@ function resolveI18nParams(params) {
  */
 export class I18nTextNode extends VTextNode {
   constructor(i18n, key, params = {}, defaultValue = undefined) {
-    super(i18n.t(key, resolveI18nParams(params), defaultValue));
+    super(
+      i18n.t(
+        key,
+        resolveI18nParams(params, (signal) => signal.peek()),
+        defaultValue
+      )
+    );
     this._i18n = i18n;
     this._key = key;
     this._params = params || {};
@@ -271,7 +282,7 @@ export class I18nTextNode extends VTextNode {
   }
 
   refresh() {
-    const params = resolveI18nParams(this._params);
+    const params = resolveI18nParams(this._params, (signal) => signal.peek());
     this.textContent(this._i18n.t(this._key, params, this._defaultValue));
     return this;
   }

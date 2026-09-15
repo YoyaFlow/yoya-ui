@@ -138,8 +138,8 @@ export function I18nDocumentationPage() {
                 ],
                 [
                   'locale.t(key, params, defaultValue)',
-                  '同步翻译，支持 dot path 和参数替换。',
-                  "locale.t('page.title', { name: 'Ada' })"
+                  '同步翻译，支持 dot path、参数替换和 ref 句柄；句柄可进 computed / 区域。',
+                  "locale.t('page.title', { name })"
                 ],
                 [
                   'locale.text(key, params, defaultValue)',
