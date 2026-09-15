@@ -670,7 +670,7 @@ export interface SignalsAdapter {
   read(source: unknown): any;
   write(source: unknown, value: unknown): void;
   subscribe(source: unknown, listener: (value: unknown) => void): () => void;
-  batch?<T>(run: () => T): T;
+  batch<T>(run: () => T): T;
   untracked?<T>(run: () => T): T;
   effect?(run: () => void): () => void;
   isSource?(value: unknown): boolean;

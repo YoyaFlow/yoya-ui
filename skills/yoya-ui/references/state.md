@@ -178,7 +178,7 @@ installSignals(adapter); // 换成第三方实现（替换语义，不并存）
 installSignals(null); // 回到内置引擎
 ```
 
-- 引擎契约只有四个方法：`createSignal` / `read` / `write` / `subscribe`。依赖收集与 `computed` 由 core 负责，所以换引擎不改变依赖与派生语义。
+- 引擎契约只有五个方法：`createSignal` / `read` / `write` / `subscribe` / `batch`。依赖收集与 `computed` 由 core 负责，所以换引擎不改变依赖与派生语义。
 - **插件由使用者自己写**：库不自带某家状态库的适配器，只提供契约、模板与一致性用例。
   value 单元可以是一个极小的 store（`getState` / `setState` / `subscribe`），
   所以 signals 类库与 store 类库（zustand 之类）都一样接。模板与两份演示代码

@@ -250,7 +250,8 @@ const myEngine: SignalsAdapter = {
     const notify = () => listener(source.value);
     source.listeners.add(notify);
     return () => source.listeners.delete(notify);
-  }
+  },
+  batch: <T>(run: () => T) => run()
 };
 installSignals(myEngine);
 installSignals(null);

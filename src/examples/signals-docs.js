@@ -71,7 +71,7 @@ export function SignalsDocumentationPage() {
           );
           adapter.ul((list) => {
             list.li(
-              '必需四个方法：createSignal(initial) / read(source) / write(source, value) / subscribe(source, listener)。'
+              '必需五个方法：createSignal(initial) / read(source) / write(source, value) / subscribe(source, listener) / batch(run)。'
             );
             list.li(
               '订阅不跑首次：多数引擎的 subscribe 会立即回调一次，契约要求吞掉这一次（绑定在构建期已经求值过）。'
@@ -80,7 +80,7 @@ export function SignalsDocumentationPage() {
               '监听器内部读值不能登记成依赖：用引擎的 untracked 包一层，否则重建期间的读取会把订阅自我放大。'
             );
             list.li(
-              '可选方法 batch / untracked / effect / isSource 有就转发，没有 core 会退回自己的默认实现。'
+              '可选方法 untracked / effect / isSource 有就转发，没有 core 会退回自己的默认实现。'
             );
             list.li(
               'store 形态（getState / setState / subscribe）不需要 untracked——通知来自 store 而不是 effect；通知期间的重订已由 core 按「只动变化的依赖」处理，插件不必自己兜。'

@@ -166,12 +166,11 @@ export function computed(fn) {
   return new SignalHandle(adapter, source, { writable: false, beforeRead: ensureLive });
 }
 
-/** 批量提交：引擎支持时交给引擎，否则直接执行（core 的脏集合另行合并）。 */
+/** 批量提交：交由引擎合并通知（batch 是引擎契约的必需方法）。 */
 export function batch(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('batch() requires a function');
   }
 
-  const adapter = currentSignals();
-  return typeof adapter.batch === 'function' ? adapter.batch(fn) : fn();
+  return currentSignals().batch(fn);
 }

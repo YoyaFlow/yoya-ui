@@ -27,17 +27,61 @@ function createStore(initialState = {}) {
 }
 
 function createStoreAdapter() {
+  const registry = new WeakMap(); // source -> Set<listener>
+  const pending = new Map(); // source -> value（批量期间合并）
+  let depth = 0;
+
+  const notify = (source, value) => {
+    const listeners = registry.get(source);
+    if (listeners) {
+      listeners.forEach((listener) => listener(value));
+    }
+  };
+
+  const flush = () => {
+    const jobs = [...pending];
+    pending.clear();
+    jobs.forEach(([source, value]) => notify(source, value));
+  };
+
   return {
     name: 'store-shaped (test-only)',
     createSignal: (initial) => createStore({ value: initial }),
     read: (source) => source.getState().value,
-    write: (source, value) => source.setState({ value }),
-    subscribe: (source, listener) =>
-      source.subscribe((state, previous) => {
-        if (!Object.is(state.value, previous.value)) {
-          listener(state.value);
+    write: (source, value) => {
+      if (Object.is(source.getState().value, value)) {
+        return;
+      }
+
+      source.setState({ value });
+      if (depth > 0) {
+        pending.set(source, value);
+      } else {
+        notify(source, value);
+      }
+    },
+    subscribe: (source, listener) => {
+      let listeners = registry.get(source);
+      if (!listeners) {
+        listeners = new Set();
+        registry.set(source, listeners);
+      }
+
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    // 批量：期间只记最后一个值，退出时每个 source 只通知一次
+    batch: (run) => {
+      depth += 1;
+      try {
+        return run();
+      } finally {
+        depth -= 1;
+        if (depth === 0) {
+          flush();
         }
-      })
+      }
+    }
   };
 }
 
