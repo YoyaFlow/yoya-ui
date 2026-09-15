@@ -82,6 +82,26 @@ const htmlNativeApiGroups = [
         '按 key 取用或移除；removeChild 会销毁该子树。',
         "list.removeChild('row-1')"
       ],
+      [
+        'node.insertBefore(key, child, beforeKey?)',
+        '在 beforeKey 之前插入 keyed 子节点，beforeKey 为空则追加；重复 key 或 beforeKey 不存在会抛错。',
+        "list.insertBefore('row-2', row, 'row-3')"
+      ],
+      [
+        'node.insertAfter(key, child, afterKey?)',
+        '在 afterKey 之后插入 keyed 子节点，afterKey 为空则插到开头；afterKey 不存在会抛错。',
+        "list.insertAfter('row-0', row, null)"
+      ],
+      [
+        'node.moveBefore(key, beforeKey?) / moveAfter(key, afterKey?)',
+        '移动已有 keyed 子节点，节点身份与 DOM 状态保持；参考为空时分别移到末尾 / 开头。',
+        "list.moveBefore('row-3', 'row-1')"
+      ],
+      [
+        'node.replaceChild(key, child)',
+        '同 key 原位换新：旧节点销毁、新节点占同一槽位，邻居节点不受影响。',
+        "list.replaceChild('row-2', row)"
+      ],
       ['node.children()', '返回子节点数组快照，改快照不影响内部结构。', 'node.children().length'],
       ['node.clearChildren()', '清空子节点，旧节点在下一次提交时销毁。', 'box.clearChildren()']
     ]
@@ -221,6 +241,41 @@ ele.span(\`\${count.value} 项\`);
 
 // ④ 非信号数据源（外部对象）才需要手动刷新：flush() 只刷值，flushAll() 区域重建
 ele.flush();`
+  },
+  {
+    title: '列表协调、条件挂载与容错',
+    rows: [
+      [
+        'node.keyed(rows, keyFn, build)',
+        '信号驱动 keyed 子项：同 key 且行引用未变复用节点（build 不重跑）、行引用变原位换新、排序保身份。',
+        'list.keyed(rows, (row) => row.id, (row) => li(row.title))'
+      ],
+      [
+        'node.keyed(rows, build)',
+        '省略 keyFn 时用行引用本身做 key；重复 key 直接抛错，不会静默覆盖。',
+        'list.keyed(rows, (row) => li(row.title))'
+      ],
+      [
+        'node.mounted(cond) / isMounted()',
+        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；div({ mounted: cond }) 等价。',
+        'panel.mounted(visible)'
+      ],
+      [
+        'node.whenFailed(handler)',
+        '子树错误边界：返回节点降级替换、返回 null 仅上报；捕获必发 console.error，从不静默。',
+        'box.whenFailed((error, info) => span(`${info.phase} 失败`))'
+      ]
+    ],
+    sample: `// 以下都在 setup 里
+
+// ① 列表按 key 对账：增删 / 排序保持节点身份，行内值绑定原地刷值
+ul.keyed(rows, (row) => row.id, (row) => li(row.title));
+
+// ② 条件挂载：为假脱离文档但状态保留，为真按子节点槽位回归
+panel.mounted(visible);
+
+// ③ 子树错误边界：返回节点降级替换，返回 null 只上报并保持现状
+box.whenFailed((error, info) => span(\`\${info.phase} 失败：\${error.message}\`));`
   }
 ];
 
