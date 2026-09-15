@@ -3,7 +3,7 @@ import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext } from './context.js';
 import { isSignal } from './signals/handle.js';
 import { currentSignals } from './signals/contract.js';
-import { beginCollect, endCollect } from './signals/deps.js';
+import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
 import { trackedSubscribe } from './signals/observe.js';
 
@@ -314,6 +314,50 @@ function closeRegionCapture(node) {
   node._regionCaptureToken = null;
   node._regionSources = endCollect(token);
   node._regionAdapter = node._regionAdapter || currentSignals();
+}
+
+/**
+ * dev 护栏：区域 builder 里「rebuildable() 之前」读到的信号不会成为依赖
+ * （语义是「声明之后读到的才算」），这类写法今天会静默失效——数据变了界面不动。
+ * 只在 devtools 开启时记账，生产路径一次布尔判断即返回。
+ */
+const preRegionReads = new WeakMap();
+
+setReadObserver((_source) => {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  const node = setupStack[setupStack.length - 1];
+  if (!node || node._regionCaptureToken || node._deleted) {
+    return;
+  }
+
+  const record = preRegionReads.get(node) || { count: 0, stack: null };
+  record.count += 1;
+  // 只留第一处：护栏的价值在定位，不在计数
+  record.stack = record.stack || new Error('[yoya] 区域声明前的读取').stack;
+  preRegionReads.set(node, record);
+});
+
+/** 收口护栏记账：只有真的声明的区域才报（普通节点读快照是合法写法）。 */
+function reportPreRegionReads(node) {
+  const record = preRegionReads.get(node);
+  if (!record) {
+    return;
+  }
+
+  preRegionReads.delete(node);
+
+  if (!node._rebuildable) {
+    return;
+  }
+
+  console.warn(
+    `[yoya] rebuildable() 之前的 ${record.count} 次读取不会成为区域依赖：` +
+      '把 rebuildable() 提到 builder 第一行，或改用 handle.peek() 表示「只读不订阅」。' +
+      (record.stack ? `\n${record.stack}` : '')
+  );
 }
 
 /** 区域进入 DOM 后订阅自己读到的 signal；服务端不订阅。 */
@@ -755,6 +799,7 @@ export class ViewNode {
       } finally {
         setupStack.pop();
         closeRegionCapture(this);
+        reportPreRegionReads(this);
       }
 
       // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
