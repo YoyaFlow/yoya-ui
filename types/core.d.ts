@@ -303,12 +303,13 @@ export class ViewNode {
   ): this;
 
   /**
-   * Declares conditional attachment: stores the condition (signal handle or
-   * zero-argument closure) inertly on this node; the parent adopts it at tree
-   * entry. Calling after adoption throws. Closure refresh goes through the
-   * parent's flush().
+   * Declares or replaces conditional attachment. The condition may be a signal
+   * handle, a boolean or a zero-argument closure; it defaults to `true` (always
+   * attached). The parent adopts it at tree entry, and calling this again on an
+   * attached node replaces the condition immediately. Closure conditions refresh
+   * through the parent's flush().
    */
-  mountable(condition: SignalHandle | (() => unknown)): this;
+  mountable(condition?: SignalHandle | boolean | (() => unknown)): this;
 
   /** Latest committed state of this node's own mount condition (default true). */
   isMounted(): boolean;

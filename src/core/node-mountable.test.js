@@ -90,18 +90,56 @@ describe('mountable condition adoption', () => {
     expect(element.querySelector('[data-closure]')).not.toBeNull();
   });
 
-  it('rejects bad conditions and redeclaration after adoption', () => {
+  it('replaces the condition any time and rejects bad conditions', () => {
     const visible = ref(true);
+    const hidden = ref(false);
     const host = div();
-    const panel = div((node) => node.mountable(visible));
+    const panel = div((node) => {
+      node.mountable(visible);
+      node.attr('data-panel', 'true');
+    });
     host.child(panel);
-    host.renderDom();
+    const element = host.renderDom();
 
-    expect(() => div().mountable(true)).toThrow(/signal handle or a zero-argument function/i);
+    expect(element.querySelector('[data-panel]')).not.toBeNull();
+
+    expect(() => div().mountable('yes')).toThrow(/signal handle.*boolean.*zero-argument function/i);
     expect(() => div((node) => node.mountable('yes'))).toThrow(
-      /signal handle or a zero-argument function/i
+      /signal handle.*boolean.*zero-argument function/i
     );
-    expect(() => panel.mountable(visible)).toThrow(/adopted/i);
+
+    // 入树后随时替换：句柄 → 句柄、句柄 → 常量都立即生效
+    panel.mountable(hidden);
+    expect(panel.isMounted()).toBe(false);
+    expect(element.querySelector('[data-panel]')).toBeNull();
+
+    panel.mountable(true);
+    expect(panel.isMounted()).toBe(true);
+    expect(element.querySelector('[data-panel]')).not.toBeNull();
+
+    panel.mountable(false);
+    expect(panel.isMounted()).toBe(false);
+    expect(element.querySelector('[data-panel]')).toBeNull();
+
+    expect(panel.mountable()).toBe(panel);
+    expect(panel.isMounted()).toBe(true);
+    expect(element.querySelector('[data-panel]')).not.toBeNull();
+  });
+
+  it('defaults to mounted when mountable() is called without a condition', () => {
+    const host = div();
+    const panel = div((node) => {
+      node.mountable();
+      node.attr('data-panel', 'true');
+    });
+    host.child(panel);
+    const element = host.renderDom();
+
+    expect(panel.isMounted()).toBe(true);
+    expect(element.querySelector('[data-panel]')).not.toBeNull();
+
+    panel.mountable(false);
+    expect(element.querySelector('[data-panel]')).toBeNull();
   });
 
   it('adopts a mountable declaration on replaceChild replacements', () => {

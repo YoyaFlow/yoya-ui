@@ -77,7 +77,7 @@ div((root) => {
 - **条件挂载**：`panel.mountable(cond)`（句柄或零参闭包）——为假脱离文档、为真按子节点槽位回归，ViewNode 与控件状态保留；与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档；`isMounted()` 查询条件状态。
 - **子树错误边界**：`box.whenFailed((error, info) => fallback)`——返回节点降级替换子树、返回 null 仅上报并保持现状；组件对象写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。
 
-`mountable()` 在 setup 期声明（已入树后补挂没有公共入口），绑定登记在父节点；三者的细节与坑位见 references/state.md。
+`mountable()` 省略参数即默认常挂，入树后可随时再调来替换条件；绑定登记在父节点、条件存在子节点自己的值单元里。三者的细节与坑位见 references/state.md。
 
 ## 表单
 

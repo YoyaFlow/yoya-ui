@@ -1,7 +1,7 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext } from './context.js';
-import { isSignal } from './signals/handle.js';
+import { isSignal, ref } from './signals/handle.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
@@ -175,6 +175,24 @@ function toBindingRead(value) {
   }
 
   return value;
+}
+
+/**
+ * 读取节点的挂载条件：布尔常量、句柄或零参闭包都在这里求值。
+ * 值单元与句柄的读取都发生在绑定的收集上下文里，因此替换条件 / 句柄写入都会重算。
+ */
+function resolveMountCondition(node) {
+  const current = node._mountConditionRef ? node._mountConditionRef.value : true;
+
+  if (typeof current === 'function') {
+    return Boolean(current());
+  }
+
+  if (isSignal(current)) {
+    return Boolean(current.value);
+  }
+
+  return Boolean(current);
 }
 
 /**
@@ -751,7 +769,7 @@ export class ViewNode {
     this._keyedSegments = [];
     this._childMountStates = new Map();
     this._mountCondition = null;
-    this._mountAdopted = false;
+    this._mountConditionRef = null; // 入树后由父节点收养：条件存这里，替换 = 写它
     this._isMounted = true;
     this._errorHandler = null;
     this._errorBoundary = null;
@@ -1364,14 +1382,21 @@ export class ViewNode {
    * 入树时由父节点收养建绑定。已被收养后再次调用属于重复声明，直接抛错。
    */
   mountable(condition) {
-    if (!isSignal(condition) && typeof condition !== 'function') {
-      throw new TypeError('mountable() requires a signal handle or a zero-argument function');
-    }
-    if (this._mountAdopted) {
-      throw new TypeError('mountable() was already adopted by its parent');
+    const next = condition === undefined ? true : condition;
+    if (!isSignal(next) && typeof next !== 'function' && typeof next !== 'boolean') {
+      throw new TypeError(
+        'mountable() requires a signal handle, a boolean or a zero-argument function'
+      );
     }
 
-    this._mountCondition = condition;
+    // 已入树：改写内部值单元，父节点的绑定立即重算（随时替换）
+    if (this._mountConditionRef) {
+      this._mountConditionRef.value = next;
+      return this;
+    }
+
+    // 未入树：惰性声明，入树时由父节点收养
+    this._mountCondition = next;
     return this;
   }
 
@@ -1469,23 +1494,38 @@ export class ViewNode {
 
   /** 插入路径统一入口：子节点带惰性挂载条件时由本节点收养。 */
   _adoptPendingMount(viewNode) {
-    if (viewNode._mountCondition) {
-      const condition = viewNode._mountCondition;
-      viewNode._mountCondition = null;
-      this._adoptMountCondition(viewNode, condition);
+    const declared = viewNode._mountCondition;
+    if (declared === null && !viewNode._mountConditionRef) {
+      return; // 没有声明条件 → 默认常挂
     }
+
+    viewNode._mountCondition = null;
+    this._adoptMountCondition(viewNode, declared);
   }
 
-  /** 插入路径专用：收养子节点的惰性挂载条件，在父节点登记绑定。 */
+  /**
+   * 插入路径专用：收养子节点的挂载条件，在父节点登记绑定。
+   * 条件存进子节点自己的值单元，父节点订阅它——替换条件时无需父指针，父节点自动重算。
+   */
   _adoptMountCondition(node, condition) {
-    node._mountAdopted = true;
+    if (!node._mountConditionRef) {
+      node._mountConditionRef = ref(condition === null ? true : condition);
+    } else if (condition !== null) {
+      node._mountConditionRef.value = condition;
+    }
 
-    registerNodeBinding(this, 'mount', node, toBindingRead(condition), (next) => {
-      const mounted = Boolean(next);
-      this._childMountStates.set(node, mounted);
-      node._isMounted = mounted; // 单向镜像：父写子读，isMounted() 无需父指针
-      this._syncChildMounted(node, mounted);
-    });
+    registerNodeBinding(
+      this,
+      'mount',
+      node,
+      () => resolveMountCondition(node),
+      (next) => {
+        const mounted = Boolean(next);
+        this._childMountStates.set(node, mounted);
+        node._isMounted = mounted; // 单向镜像：父写子读，isMounted() 无需父指针
+        this._syncChildMounted(node, mounted);
+      }
+    );
 
     // 渲染后收养：登记时只求值未激活订阅，这里手动补上
     if (this._el && setupStack.length === 0 && regionBuildStack.length === 0) {
@@ -2249,7 +2289,10 @@ export class ElementNode extends ViewNode {
         return;
       }
 
-      if (key === 'mountable' && (isSignal(value) || typeof value === 'function')) {
+      if (
+        key === 'mountable' &&
+        (isSignal(value) || typeof value === 'function' || typeof value === 'boolean')
+      ) {
         this._mountCondition = value;
         return;
       }

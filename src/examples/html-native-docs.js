@@ -257,7 +257,7 @@ ele.flush();`
       ],
       [
         'node.mountable(cond) / isMounted()',
-        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；div({ mountable: cond }) 等价。',
+        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；省略参数默认常挂，入树后可再调替换。',
         'panel.mountable(visible)'
       ],
       [
