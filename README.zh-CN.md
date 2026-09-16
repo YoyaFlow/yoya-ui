@@ -572,9 +572,9 @@ types/...（root / core / api / ui / actions / navigation / feedback / form / da
 
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 217.4 KB | 108.7 KB | 31.1 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 751.3 KB | 441.2 KB | 106.1 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 686.2 KB | 410.7 KB | 97.1 KB  | core + 全部组件                |
+| `yoya.router.full.js`            | 217.3 KB | 108.6 KB | 31.1 KB  | core + router / SSR            |
+| `yoya.ui-router.full.js`（全量） | 751.2 KB | 441.1 KB | 106.1 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 686.1 KB | 410.6 KB | 97.1 KB  | core + 全部组件                |
 
 组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。`npm run build` 结束时直接输出完整表格（含每个公共 chunk 的 raw / min / min+gzip）；
