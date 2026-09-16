@@ -554,6 +554,16 @@ function placeKeyedMember(parent, entry, beforeNode, tailNode) {
   }
 }
 
+/** keyed() 的 options 只接受普通对象（数组、句柄、函数一律拒绝）。 */
+function isKeyedOptions(value) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 function syncKeyedSegment(parent, segment, rows) {
   const list = Array.isArray(rows) ? rows : [];
   const members = segment.members;
@@ -579,7 +589,27 @@ function syncKeyedSegment(parent, segment, rows) {
     desired
       .filter((item) => {
         const existing = members.get(item.rawKey);
-        return existing && existing.row === item.row;
+        if (!existing) {
+          return false;
+        }
+        if (existing.row === item.row) {
+          return true;
+        }
+
+        // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
+        // 两者都没有时保持旧行为——销毁该行并原位换新。
+        if (segment.equals && segment.equals(existing.row, item.row)) {
+          existing.row = item.row;
+          return true;
+        }
+
+        if (segment.update) {
+          segment.update(existing.node, existing.row, item.row);
+          existing.row = item.row;
+          return true;
+        }
+
+        return false;
       })
       .map((item) => item.rawKey)
   );
@@ -1379,10 +1409,17 @@ export class ViewNode {
    * keyed 子项绑定：source 是 ref/computed 句柄。
    * 同 key 且行引用未变时复用节点（build 不重跑）；行引用变化原位换新；
    * 顺序变化 insertBefore 保身份。keyFn 缺省时用行引用身份做 key。
+   *
+   * options 可声明行级更新协议（可选，不传就是上面的旧行为）：
+   * - equals(prevRow, nextRow)：同 key 且引用变化时做内容等价比较，为真则复用节点（不重建）。
+   * - update(node, prevRow, nextRow)：同 key 且引用变化且不等价时原地更新节点（不重建）。
+   * 两者同时给出时 equals 优先；判定为「确实变了」的行仍然原位换新。
    */
-  keyed(source, keyOrBuild, maybeBuild = null) {
-    const build = typeof maybeBuild === 'function' ? maybeBuild : keyOrBuild;
-    const keyFn = typeof maybeBuild === 'function' ? keyOrBuild : null;
+  keyed(source, keyOrBuild, maybeBuild = null, maybeOptions = null) {
+    const withKeyFn = typeof maybeBuild === 'function';
+    const build = withKeyFn ? maybeBuild : keyOrBuild;
+    const keyFn = withKeyFn ? keyOrBuild : null;
+    const options = withKeyFn ? maybeOptions : maybeBuild;
 
     if (!isSignal(source)) {
       throw new TypeError('keyed() requires a signal handle as its source');
@@ -1390,13 +1427,23 @@ export class ViewNode {
     if (typeof build !== 'function') {
       throw new TypeError('keyed() requires a build function');
     }
+    if (options !== null && options !== undefined && !isKeyedOptions(options)) {
+      throw new TypeError('keyed() options must be a plain object');
+    }
+    for (const hook of ['equals', 'update']) {
+      if (options?.[hook] !== undefined && typeof options[hook] !== 'function') {
+        throw new TypeError(`keyed() ${hook} must be a function`);
+      }
+    }
 
     assertRegionChildAllowed(this);
     const segment = {
       anchorNode: this._children[this._children.length - 1] ?? null,
+      equals: options?.equals ?? null,
       keyFn,
       build,
-      members: new Map()
+      members: new Map(),
+      update: options?.update ?? null
     };
     this._keyedSegments.push(segment);
     registerNodeBinding(

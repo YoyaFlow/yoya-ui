@@ -125,6 +125,34 @@ ul((list) => {
 ```
 
 - 对账规则：同 key 且**行引用未变**→ 复用节点（`build` 不重跑，行内用值绑定或组件方法原地更新）；同 key 行引用变化→ 原位换新；顺序变化→ `insertBefore` 移动，节点身份与 DOM 状态保留（焦点、滚动、第三方实例不重建）。
+- **行级更新协议（第四参数 `options`）**：行引用变了但内容等价、或只想改一两个字段时，不必整行重建——三档代价从高到低：
+  `equals(prevRow, nextRow)` 为真 → 当没变，节点直接复用（只更新记录的引用，下次比较用新行）；
+  否则 `update(node, prevRow, nextRow)` → 由你原地改写该行（句柄赋值 / 组件方法），节点身份保留；
+  两者都没有（默认）→ 原位换新。`equals` 与 `update` 同时给出时 `equals` 优先，判定为「确实变了」的行仍走原位换新。
+
+```js
+ul((list) => {
+  list.keyed(
+    rows,
+    (row) => row.id,
+    (row) => {
+      const title = ref(row.title); // 行内热字段用句柄，update 时原地写
+      row.titleHandle = title;
+      return li((item) => item.child(vText(title)));
+    },
+    {
+      equals: (prev, next) => prev.title === next.title,
+      update: (node, prev, next) => {
+        next.titleHandle = prev.titleHandle;
+        next.titleHandle.value = next.title;
+        return node;
+      }
+    }
+  );
+});
+```
+
+- 基准（`npm run bench:keyed`，500 行 × 20 轮、每轮整批换引用且 1 行内容变化）：重建行数 **10000 → 20（equals）→ 0（update）**；耗时约 250 ms → 5~15 ms（20× 上下），`update` 档首行节点身份保留。行数是确定的，毫秒数随机器波动。
 - 省略 `keyFn` 时用**行引用本身**做 key（行对象稳定时可用）；重复 key 直接抛错，不会静默覆盖。
 - `keyed()` 只协调自己这一段：新成员落在本段末尾（本段之后第一个兄弟节点之前），其它兄弟节点（含其它 keyed 段）不参与对账。
 - 行内字段变化优先走值绑定：`computed` 句柄放文本 / 属性位置即可原地刷值，不必重建行。

@@ -24,11 +24,13 @@ import {
   computed,
   createI18n,
   installSignals,
+  li,
   ref,
   renderToString,
   router,
   svgs,
   toast,
+  ul,
   SearchOutlined
 } from 'yoya-ui';
 import { ElementNode } from 'yoya-ui/core';
@@ -241,6 +243,26 @@ const keyedHost = div((ele) => {
   ele.toggleClass('is-busy', label);
 });
 void keyedHost;
+
+// Row-level update protocol: keep the node when the row is content-equivalent,
+// or update it in place when it really changed.
+const keyedRows = ref([{ id: 1, title: 'A' }]);
+const keyedWithProtocol = ul((ele) => {
+  ele.keyed(
+    keyedRows,
+    (row) => row.id,
+    (row) => li((item) => item.child(vText(row.title))),
+    {
+      equals: (previous, next) => previous.title === next.title,
+      update: (node, previous, next) => {
+        void previous;
+        void next;
+        return node;
+      }
+    }
+  );
+});
+void keyedWithProtocol;
 
 // htmls namespace: every WHATWG tag factory on one object, style alias included.
 const byNamespace = htmls.div((root) => root.span('via htmls'));

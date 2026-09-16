@@ -88,6 +88,18 @@ export type ChildInput =
 export type SetupCallback<N> = (node: N) => void;
 
 /**
+ * Row-level update protocol for `keyed()`. Without it, a row whose reference
+ * changed is destroyed and rebuilt; with it, equivalent rows keep their node and
+ * genuinely changed rows can be updated in place.
+ */
+export interface KeyedRowUpdate<TRow = unknown> {
+  /** Key matched but the reference changed: return true to reuse the node as-is. */
+  equals?(previousRow: TRow, nextRow: TRow): boolean;
+  /** Key matched and the row really changed: update the existing node in place. */
+  update?(node: ViewNode, previousRow: TRow, nextRow: TRow): unknown;
+}
+
+/**
  * Object-form setup accepted by every factory: class/className, attrs, style,
  * children, onXxx event handlers and arbitrary attribute keys.
  */
@@ -317,15 +329,20 @@ export class ViewNode {
   /**
    * Signal-driven keyed item binding. Rows whose key and reference are unchanged
    * keep their nodes; changed rows are rebuilt in place; ordering uses insertBefore.
+   * Pass `options` to reuse or update rows whose reference changed:
+   * `equals` marks content-equivalent rows as unchanged, `update` rewrites the
+   * existing node in place (`equals` wins when both are given).
    */
-  keyed(
-    source: SignalHandle,
-    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  keyed<TRow>(
+    source: SignalHandle<TRow[]>,
+    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
   ): this;
-  keyed(
-    source: SignalHandle,
-    keyFn: (row: unknown, index: number) => string | number,
-    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  keyed<TRow>(
+    source: SignalHandle<TRow[]>,
+    keyFn: (row: TRow, index: number) => string | number,
+    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
   ): this;
 
   /**
