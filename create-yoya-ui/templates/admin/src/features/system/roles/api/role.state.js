@@ -1,78 +1,49 @@
-// 角色页状态类。
+// 角色页状态类：视图字段用 ref 持有，动作写句柄即完成通知。
+import { ref } from '@yoyaflow/yoya-ui';
+import { mergeRowsByKey } from '../../../../shared/state.rows.js';
 import RoleMgr from './role.mgr.js';
 
 export default class RolesPageState {
   constructor() {
-    this._items = [];
-    this._keyword = '';
-    this._status = '';
-    this._page = 1;
-    this._pageSize = 10;
-    this._total = 0;
-    this._listeners = new Set();
-  }
-
-  items() {
-    return this._items;
-  }
-
-  keyword() {
-    return this._keyword;
-  }
-
-  status() {
-    return this._status;
-  }
-
-  page() {
-    return this._page;
-  }
-
-  pageSize() {
-    return this._pageSize;
-  }
-
-  total() {
-    return this._total;
+    this.items = ref([]);
+    this.total = ref(0);
+    this.page = ref(1);
+    this.pageSize = ref(10);
+    this.keyword = ref('');
+    this.status = ref('');
   }
 
   setKeyword(value) {
-    this._keyword = value;
+    this.keyword.value = value;
   }
 
   setStatus(value) {
-    this._status = value;
+    this.status.value = value;
   }
 
   setPage(value) {
-    this._page = Math.max(1, Number(value) || 1);
+    this.page.value = Math.max(1, Number(value) || 1);
   }
 
   setPageSize(value) {
-    this._pageSize = Math.max(1, Number(value) || 10);
-  }
-
-  subscribe(listener) {
-    this._listeners.add(listener);
-    return () => this._listeners.delete(listener);
+    this.pageSize.value = Math.max(1, Number(value) || 10);
   }
 
   async load() {
     const result = await RoleMgr.Query({
-      page: this._page,
-      pageSize: this._pageSize,
-      keyword: this._keyword,
-      status: this._status
+      page: this.page.value,
+      pageSize: this.pageSize.value,
+      keyword: this.keyword.value,
+      status: this.status.value
     }).submit();
-    this._items = result.data;
-    this._total = result.total;
-    this._emit();
+    this.items.value = mergeRowsByKey(this.items.peek(), result.data);
+    this.total.value = result.total;
     return result;
   }
 
   async add(payload) {
     await RoleMgr.Create(payload).submit();
-    this._page = 1;
+    this.page.value = 1;
     await this.load();
     return payload;
   }
@@ -85,13 +56,9 @@ export default class RolesPageState {
 
   async remove(id) {
     await RoleMgr.Remove({ id }).submit();
-    if (this._items.length === 1 && this._page > 1) {
-      this._page -= 1;
+    if (this.items.peek().length === 1 && this.page.value > 1) {
+      this.page.value -= 1;
     }
     await this.load();
-  }
-
-  _emit() {
-    this._listeners.forEach((listener) => listener());
   }
 }

@@ -1,4 +1,5 @@
 import { vDialog } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
 import { statusOptions } from '../utils/options.js';
 
 const rowStyle = {
@@ -15,6 +16,11 @@ export function RoleFormDialog({ onSubmit }) {
 
   function open(role = null) {
     editingId = role?.id ?? null;
+    const name = fieldValue(role?.name) ?? '';
+    const code = fieldValue(role?.code) ?? '';
+    const description = fieldValue(role?.description) ?? '';
+    const status = fieldValue(role?.status) ?? 'active';
+    const sort = fieldValue(role?.sort) ?? 0;
     dialog.content((content) => {
       content.vForm((form) => {
         form.styles({
@@ -28,19 +34,17 @@ export function RoleFormDialog({ onSubmit }) {
         form.vFormItem((item) => {
           item.styles(rowStyle);
           item.label('名称').name('name').required({ message: '请填写名称' });
-          item.control((editor) => editor.vInput({ name: 'name', value: role?.name ?? '' }));
+          item.control((editor) => editor.vInput({ name: 'name', value: name }));
         });
         form.vFormItem((item) => {
           item.styles(rowStyle);
           item.label('角色标识').name('code').required({ message: '请填写角色标识' });
-          item.control((editor) => editor.vInput({ name: 'code', value: role?.code ?? '' }));
+          item.control((editor) => editor.vInput({ name: 'code', value: code }));
         });
         form.vFormItem((item) => {
           item.styles(rowStyle);
           item.label('描述').name('description');
-          item.control((editor) =>
-            editor.vInput({ name: 'description', value: role?.description ?? '' })
-          );
+          item.control((editor) => editor.vInput({ name: 'description', value: description }));
         });
         form.vFormItem((item) => {
           item.styles(rowStyle);
@@ -49,14 +53,14 @@ export function RoleFormDialog({ onSubmit }) {
             editor.vSelect({
               name: 'status',
               options: statusOptions,
-              value: role?.status ?? 'active'
+              value: status
             })
           );
         });
         form.vFormItem((item) => {
           item.styles(rowStyle);
           item.label('排序').name('sort');
-          item.control((editor) => editor.vInput({ name: 'sort', value: String(role?.sort ?? 0) }));
+          item.control((editor) => editor.vInput({ name: 'sort', value: String(sort) }));
         });
         form.vButton('保存', (btn) => {
           btn.variant('primary');

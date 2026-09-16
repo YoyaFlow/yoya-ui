@@ -25,8 +25,12 @@
       "yoya-ui/devtools": ["./types/yoya.devtools.d.ts"],
       "yoya-ui/echart": ["./types/yoya.echart.d.ts"],
       "yoya-ui/three": ["./types/yoya.three.d.ts"],
-      "yoya-ui/router": ["./types/yoya.router.d.ts"]
+      "yoya-ui/router": ["./types/yoya.router.d.ts"],
+      // 脚手架模板按使用者的写法 import '@yoyaflow/yoya-ui'，这里映射到本包类型
+      "@yoyaflow/yoya-ui": ["./types/index.d.ts"],
+      "@yoyaflow/yoya-ui/core": ["./types/yoya.core.d.ts"],
+      "@yoyaflow/yoya-ui/api": ["./types/yoya.api.d.ts"]
     }
   },
-  "include": ["types/**/*.d.ts", "types/**/*.ts"]
+  "include": ["types/**/*.d.ts", "types/**/*.ts", "create-yoya-ui/templates/**/*.d.ts"]
 }

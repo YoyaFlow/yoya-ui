@@ -5,7 +5,7 @@ export function SidebarMenu({ module, activePath, onNavigate }) {
     group.label(module.label);
     module.routes.forEach((route) => {
       group.vMenuItem((item) => {
-        item.text(route.title);
+        item.child(route.title);
         item.active(route.path === activePath);
         item.on('click', () => onNavigate(route.path));
       });

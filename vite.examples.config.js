@@ -9,6 +9,11 @@ const packageAlias = [
   {
     find: /^@yoyaflow\/yoya-ui$/,
     replacement: fileURLToPath(new URL('./src/index.js', import.meta.url))
+  },
+  {
+    // 子入口（/core、/api、/router …）同样解析到源码；ui.css 这类资源不在此列
+    find: /^@yoyaflow\/yoya-ui\/(?!ui\.css$)([\w.-]+)$/,
+    replacement: fileURLToPath(new URL('./src/yoya.$1.js', import.meta.url))
   }
 ];
 

@@ -24,6 +24,7 @@ src/
 - 页面：`<名字>-page.js`（`member-list-page.js`、`todo-approval-page.js`）
 - 组件：PascalCase（`AdminShell`、`MemberTable`）
 - 共享 UI 类别文件：`ui.<类别>.js`（`ui.buttons.js`、`ui.pages.js`）
+- 共享纯状态工具：`state.<类别>.js`（`state.rows.js` 的行合并与字段读取）
 
 ## 3. api 分层
 
@@ -31,8 +32,8 @@ src/
 
 - `mgr.js`：本域管理请求命令（增删改查等）
 - `req.js`：对外能力入口（其他模块 / 共享组件调用本域时使用）
-- `views.js`：领域结果结构（纯数据类），由命令的 `toItem / toDetail` 映射
-- `state.js`：状态类，持有数据与筛选，`subscribe(listener)` 通知视图更新
+- `views.js`：领域结果结构（纯数据类），由命令的 `toItem / toDetail` 映射；**字段按热度分**——行内展示且会变的字段用 `ref` 句柄，key 与不参与原地刷新的字段保持普通值，并提供 `apply(row)` 原地合并
+- `state.js`：状态类，持有数据与筛选；**要驱动视图的字段用 `ref` 持有**（写入即完成通知），`subscribe(listener)` 只留给非视图副作用（埋点 / 持久化）
 - `mock.js`：演示用内存 mock（接入真实后端后删除）
 
 判据：有管理动作用 `mgr.js`；只提供查询给外部用 `req.js`；两者可并存（如 `member.mgr.js` + `member.req.js`）。
@@ -56,6 +57,7 @@ export default {
 ## 5. 共享组件
 
 - **通用 UI**（无业务语义）：放 `shared/ui.<类别>.js`
+- **纯状态工具**（无 UI）：放 `shared/state.<类别>.js`，如 `state.rows.js` 的 `mergeRowsByKey()` / `fieldValue()`
 - **业务共享组件**（带业务语义且多模块使用）：放 `shared/<组件>/` 自包含子目录（组件 + 状态 + 文案），对外只暴露工厂
 - **数据获取走 req.js**：共享组件需要业务数据时调用所属域 `api/<域>.req.js` 的公开能力（如 `MemberReq.QueryAvailable().submit()`），不自造数据请求、不注入数据源
 - **不深层 import**：只允许跨模块引用 `req.js`，不 import 业务域的 pages / components / state 内部实现
@@ -67,17 +69,20 @@ export default {
 ## 6. 外壳与导航状态
 
 - `ShellState` 是导航状态（当前模块 / 当前路径）的**唯一事实源**，持有 router，暴露 `switchModule(module)` / `navigate(path)`
-- 路由订阅驱动同步：`router.subscribe → state.syncFromPath(path)`，状态变化时通知订阅者
-- 顶栏 / 侧栏从状态**派生高亮**，组件不持有自己的激活状态
-- `AdminShell` 只做装配：布局组装 + 状态接线，不直接操作 router
-- 组件统一写法：节点在 `render()` 内声明式构建，内部引用（如 sidebar 实例、items Map）只用于动态更新
-- 前进 / 后退、同模块内切换路由的高亮同步由状态管道自动完成，不需要手动调用
+- 导航字段（`menus` / `activeModuleKey` / `activePath`）是 `ref`：`router.subscribe → state.syncFromPath(path)` 只把路径写回信号
+- 顶栏 / 侧栏从状态**派生高亮**：菜单区先 `rebuildable()` 再读信号（模块 / 路径变化自动重建），组件不持有自己的激活状态
+- `AdminShell` 只做装配：布局组装，不直接操作 router，也不需要订阅回调转发
+- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口
 
 ## 7. 页面规则
 
 - **简单 / 占位页**：只放 `pages/<页面>-page.js`，可复用 `shared/ui.pages.js` 的 `PlaceholderPage`
 - **有数据交互的页面**：展开完整模块（api / components / pages / utils）
-- 页面只做编排：组合子组件、绑定事件、调用 state 动作，不写请求逻辑
+- **页面只做编排**：组合子组件、绑定事件、调用 state 动作，不写请求逻辑
+- **状态到位即刷新**：表格 / 文本绑句柄（`rows: state.items`、`vText(handle)`），动作里写 ref 就完成更新；不要写 `state.subscribe(() => table.refresh())`
+- **列表按 key 对账**：表格 `tbody.keyed(rows, (row) => row.id, buildRow)`，行模型刷新走 `mergeRowsByKey()`（复用实例 → 不重建行），行内热字段句柄只刷自己那一格
+- **命令式组件由动作同步**：`vPagination` / `vTree` 这类逐次调用的组件不是信号感知的，数据到位后在动作里 `pagination.update({...})` / `tree.nodes(...)` 同步一次
+- **行模型传入弹窗要读值**：弹窗回填用 `fieldValue(row.name)`，它同时吃句柄（行模型）与普通值（裸行）
 
 ## 8. mock 与数据接入
 
@@ -108,7 +113,13 @@ export default {
 
 ## 12. 权限接入
 
-- **会话与权限**：会话请求命令并入 `shell.req.js`（`ShellReq.Me()`），`shell/api/auth.mock.js` 提供 `/auth/me` 演示数据；会话状态融合进 `ShellState`（`user()` / `roles()` / `permissions()`），`loadSession()` 内 `installAccess` 注入全局。
+- **会话与权限**：会话请求命令并入 `shell.req.js`（`ShellReq.Me()`），`shell/api/auth.mock.js` 提供 `/auth/me` 演示数据；会话状态融合进 `ShellState`（普通字段 `user` / `roles` / `permissions`，不参与渲染），`loadSession()` 内 `installAccess` 注入全局。
 - **菜单 / 路由**：`shell.mock.js` 的每条路由声明 `permCode`（与权限管理页的 code 对齐），`ShellState.load()` 按 `currentAccess().canRead(permCode)` 过滤菜单；无读的路由不注册，直达 URL 落到未找到页。
 - **按钮 / 操作**：直接在按钮上声明 `.access('system:member:create')` 等裸码，无写权限自动禁用、无读自动隐藏（见 member-toolbar / member-table）。
 - **体验层**：前端只做显隐 / 禁用，真正的拦截必须由后端按权限码校验。
+
+## 13. 节点写法（易错点）
+
+- **没有节点级 `text()`**：追加文本用 `child(content)`；反复替换同一处文本留一个 `vText()` 句柄用 `textContent(next)`；组件自带的 `text()` 与 SVG `<text>` 的 `text()` 不受影响
+- **句柄进组件 props 要包节点**：`vTd(vText(handle))`、`cell.child(handle)` 建立绑定；`vTd(handle)` 会被当成无效 setup 丢掉
+- **值位置直接接句柄**：`attr('data-count', count)`、`vText(count)`；`count.value` 是快照，写完不再更新

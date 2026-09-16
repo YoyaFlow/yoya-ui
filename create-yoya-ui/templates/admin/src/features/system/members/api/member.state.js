@@ -1,78 +1,51 @@
-// 页面数据状态类：持有数据与筛选，动作构造命令并 submit 后写入状态、通知订阅者。
+// 页面数据状态类：要驱动视图的字段用 ref 持有——动作里写句柄即完成通知，
+// 页面不需要订阅回调去手动 refresh。subscribe() 只留给非视图副作用（埋点 / 持久化）。
+import { ref } from '@yoyaflow/yoya-ui';
+import { mergeRowsByKey } from '../../../../shared/state.rows.js';
 import MemberMgr from './member.mgr.js';
 
 export default class MembersPageState {
   constructor() {
-    this._items = [];
-    this._keyword = '';
-    this._status = '';
-    this._page = 1;
-    this._pageSize = 5;
-    this._total = 0;
-    this._listeners = new Set();
-  }
-
-  items() {
-    return this._items;
-  }
-
-  keyword() {
-    return this._keyword;
-  }
-
-  status() {
-    return this._status;
-  }
-
-  page() {
-    return this._page;
-  }
-
-  pageSize() {
-    return this._pageSize;
-  }
-
-  total() {
-    return this._total;
+    this.items = ref([]);
+    this.total = ref(0);
+    this.page = ref(1);
+    this.pageSize = ref(5);
+    this.keyword = ref('');
+    this.status = ref('');
   }
 
   setKeyword(value) {
-    this._keyword = value;
+    this.keyword.value = value;
   }
 
   setStatus(value) {
-    this._status = value;
+    this.status.value = value;
   }
 
   setPage(value) {
-    this._page = Math.max(1, Number(value) || 1);
+    this.page.value = Math.max(1, Number(value) || 1);
   }
 
   setPageSize(value) {
-    this._pageSize = Math.max(1, Number(value) || 5);
-  }
-
-  subscribe(listener) {
-    this._listeners.add(listener);
-    return () => this._listeners.delete(listener);
+    this.pageSize.value = Math.max(1, Number(value) || 5);
   }
 
   async load() {
     const result = await MemberMgr.Query({
-      page: this._page,
-      pageSize: this._pageSize,
-      keyword: this._keyword,
-      status: this._status
+      page: this.page.value,
+      pageSize: this.pageSize.value,
+      keyword: this.keyword.value,
+      status: this.status.value
     }).submit();
-    this._items = result.data;
-    this._total = result.total;
-    this._emit();
+    // 按 key 合并：能复用的行保持实例身份，表格只刷变化的格子
+    this.items.value = mergeRowsByKey(this.items.peek(), result.data);
+    this.total.value = result.total;
     return result;
   }
 
   async add(payload) {
     await MemberMgr.Create(payload).submit();
-    this._page = 1;
+    this.page.value = 1;
     await this.load();
     return payload;
   }
@@ -85,13 +58,9 @@ export default class MembersPageState {
 
   async remove(id) {
     await MemberMgr.Remove({ id }).submit();
-    if (this._items.length === 1 && this._page > 1) {
-      this._page -= 1;
+    if (this.items.peek().length === 1 && this.page.value > 1) {
+      this.page.value -= 1;
     }
     await this.load();
-  }
-
-  _emit() {
-    this._listeners.forEach((listener) => listener());
   }
 }

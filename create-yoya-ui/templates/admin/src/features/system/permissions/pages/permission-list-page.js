@@ -8,10 +8,13 @@ export function PermissionListPage() {
   const dialog = PermissionFormDialog({ onSubmit: savePermission });
   const tree = vTree({ ariaLabel: '权限树' });
 
-  state.subscribe(() => {
-    tree.nodes(buildTreeNodes(state.tree()));
-  });
-  state.load();
+  load();
+
+  // vTree 是命令式组件（整树重建，不做行级对账）：数据到位后由动作把 ref 值喂给它
+  async function load() {
+    await state.load();
+    tree.nodes(buildTreeNodes(state.tree.value));
+  }
 
   function buildTreeNodes(nodes) {
     return nodes.map((node) => ({
@@ -75,7 +78,7 @@ export function PermissionListPage() {
                   btn.variant('primary');
                   btn.on('click', () => dialog.open({}));
                 });
-                toolbar.vButton('刷新', (btn) => btn.on('click', () => state.load()));
+                toolbar.vButton('刷新', (btn) => btn.on('click', () => load()));
               });
               content.child(tree);
             });
@@ -85,7 +88,7 @@ export function PermissionListPage() {
       });
     },
     refresh() {
-      return state.load();
+      return load();
     }
   };
 }

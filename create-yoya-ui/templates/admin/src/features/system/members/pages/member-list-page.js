@@ -4,13 +4,13 @@ import { MemberToolbar } from '../components/member-toolbar.js';
 import { MemberTable } from '../components/member-table.js';
 import { MemberFormDialog } from '../components/member-form-dialog.js';
 
-// 页面只做编排：组合工具栏、表格、弹窗与分页，逻辑在组件 / service / state 中
+// 页面只做编排：状态用 ref 持有视图字段，表格绑句柄后写入即刷新，不需要订阅接线。
 export function MemberListPage() {
   const state = new MembersPageState();
   const dialog = MemberFormDialog({ onSubmit: saveMember });
   const toolbar = MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) });
   const table = MemberTable({
-    rows: () => state.items(),
+    rows: state.items,
     onEdit: (member) => dialog.open(member),
     onRemove: removeMemberAction
   });
@@ -20,22 +20,26 @@ export function MemberListPage() {
     onChange({ page: nextPage, pageSize: nextSize }) {
       state.setPage(nextPage);
       state.setPageSize(nextSize);
-      state.load();
+      load();
     }
   });
 
-  state.subscribe(() => {
-    table.refresh();
+  load();
+
+  // vPagination 是命令式组件（不是信号感知的）：数据到位后由动作同步一次
+  async function load() {
+    await state.load();
     syncPagination();
-  });
-  state.load();
+  }
 
   function syncPagination() {
+    const total = state.total.value;
+    const pageSize = state.pageSize.value;
     pagination.update({
-      page: state.page(),
-      pageSize: state.pageSize(),
-      total: state.total(),
-      totalPages: Math.max(1, Math.ceil(state.total() / state.pageSize()))
+      page: state.page.value,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize))
     });
   }
 
@@ -43,12 +47,12 @@ export function MemberListPage() {
     state.setKeyword(values.keyword ?? '');
     state.setStatus(values.status ?? '');
     state.setPage(1);
-    state.load();
+    load();
   }
 
   async function removeMemberAction(member) {
     await state.remove(member.id);
-    toast.success(`已删除 ${member.name}`);
+    toast.success(`已删除 ${member.name.value}`);
   }
 
   async function saveMember(editingId, payload) {
@@ -78,8 +82,9 @@ export function MemberListPage() {
         stack.child(dialog);
       });
     },
+    // 页面也是组件：父级 / 路由可以调用实例方法刷新
     refresh() {
-      return state.load();
+      return load();
     }
   };
 }

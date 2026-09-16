@@ -1,4 +1,5 @@
 import { vDialog } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
 import { roleOptions, statusOptions } from '../utils/options.js';
 
 const rowStyle = {
@@ -14,6 +15,11 @@ export function MemberFormDialog({ onSubmit }) {
   let editingId = null;
 
   function buildFormFields(form, member) {
+    const name = fieldValue(member?.name) ?? '';
+    const email = fieldValue(member?.email) ?? '';
+    const role = fieldValue(member?.role) ?? 'viewer';
+    const status = fieldValue(member?.status) ?? 'active';
+
     form.styles({
       border: '1px solid var(--yoya-color-border, #d8dee8)',
       borderRadius: '8px',
@@ -25,19 +31,17 @@ export function MemberFormDialog({ onSubmit }) {
     form.vFormItem((item) => {
       item.styles(rowStyle);
       item.label('姓名').name('name').required({ message: '请填写姓名' });
-      item.control((editor) => editor.vInput({ name: 'name', value: member?.name ?? '' }));
+      item.control((editor) => editor.vInput({ name: 'name', value: name }));
     });
     form.vFormItem((item) => {
       item.styles(rowStyle);
       item.label('邮箱').name('email').required({ message: '请填写邮箱' });
-      item.control((editor) => editor.vInput({ name: 'email', value: member?.email ?? '' }));
+      item.control((editor) => editor.vInput({ name: 'email', value: email }));
     });
     form.vFormItem((item) => {
       item.styles(rowStyle);
       item.label('角色').name('role');
-      item.control((editor) =>
-        editor.vSelect({ name: 'role', options: roleOptions, value: member?.role ?? 'viewer' })
-      );
+      item.control((editor) => editor.vSelect({ name: 'role', options: roleOptions, value: role }));
     });
     form.vFormItem((item) => {
       item.styles(rowStyle);
@@ -46,7 +50,7 @@ export function MemberFormDialog({ onSubmit }) {
         editor.vSelect({
           name: 'status',
           options: statusOptions,
-          value: member?.status ?? 'active'
+          value: status
         })
       );
     });

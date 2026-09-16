@@ -18,7 +18,7 @@ src/
   api/                     # 全局传输层（注意与业务域内的 api/ 区分）
     fetch.api.js           # 原始传输：fetch 实现，换 ajax / 请求库只改这里
     domain.api.js          # 领域入口：mock 分发 + fetch 兜底 + Result 归一 + configureRequest
-  shared/                  # 跨模块共享：ui.<类别>.js（通用 UI）或 <组件>/（带业务语义，自包含）
+  shared/                  # 跨模块共享：ui.<类别>.js（通用 UI）或 state.<类别>.js（纯状态工具）或 <组件>/（带业务语义，自包含）
   shell/                   # 应用外壳（本身也是一个模块）
     router.js              # createAppRouter + viewRegistry（viewKey → 页面组件）
     api/                   # shell.views.js / shell.req.js / shell.state.js / *.mock.js
@@ -56,26 +56,32 @@ export function MemberListPage() {
 
   // 需要驱动的组件先建再挂：child() / page.vXxx() 都返回父节点，内联拿不到句柄
   const dialog = MemberFormDialog({ onSubmit: saveMember });
-  const table = MemberTable({ rows: () => state.items(), onEdit: (row) => dialog.open(row) });
+  // 表格绑状态里的句柄：动作写 ref 就刷新，不需要 state.subscribe(() => table.refresh())
+  const table = MemberTable({ rows: state.items, onEdit: (row) => dialog.open(row) });
   const pagination = vPagination({ pageSize: 5, onChange: ({ page }) => applyPage(page) });
 
-  // 关键接线：状态变化后由页面显式驱动视图（若状态是信号，绑定与区域会自动更新，无需这段接线）
-  state.subscribe(() => {
-    table.refresh();
-    pagination.update({ page: state.page(), pageSize: state.pageSize(), total: state.total() });
-  });
-  state.load();
+  load();
+
+  // 命令式组件（vPagination / vTree 等）不是信号感知的：数据到位后由动作同步一次
+  async function load() {
+    await state.load();
+    pagination.update({
+      page: state.page.value,
+      pageSize: state.pageSize.value,
+      total: state.total.value
+    });
+  }
 
   function applyPage(page) {
     state.setPage(page);
-    state.load();
+    load();
   }
 
   function applyFilters(values) {
     state.setKeyword(values.keyword ?? '');
     state.setStatus(values.status ?? '');
     state.setPage(1);
-    state.load();
+    load();
   }
 
   async function saveMember(id, payload) {
@@ -100,11 +106,14 @@ export function MemberListPage() {
     },
     // 页面也是组件：父级 / 路由可以调用实例方法刷新
     refresh() {
-      return state.load();
+      return load();
     }
   };
 }
 ```
+
+- **信号感知的视图**（表格 / 文本 / 区域）绑句柄后自动更新；**命令式组件**（`vPagination` / `vTree`）没有绑定通道，由动作在数据到位后同步一次
+- 页面里不写 `state.subscribe(() => table.refresh())` 这类「通知 → 手动重建」接线：写入 ref 就是通知，列表按 key 对账
 
 ## api 目录（请求命令、结果结构与状态）
 
@@ -169,27 +178,27 @@ export default {
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法；**要驱动视图的字段用 `ref` 持有**（同模块的视图 / 组件直接绑句柄），`subscribe(listener)` 只留给非视图副作用
 - **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态——写入 `ref` 就完成通知；需要"结构随数据变化"时用可重建区域读信号（见 core.md）
-- **结果结构 / 视图模型（`api/<域>.views.js`）**：字段是否响应式按热度分——**行内会改的字段用 `ref` 持有**，只读 / 低频字段保持普通值；类实例身份必须稳定（`keyed()` 的复用判据看的是行引用），刷新时按 key `apply()` 合并而不是重建实例
+- **结果结构 / 视图模型（`api/<域>.views.js`）**：字段是否响应式按热度分——**行内展示且会原地变化的字段用 `ref` 持有**，key 与不参与原地刷新的字段（关系字段、未展示字段）保持普通值；类实例身份必须稳定（`keyed()` 的复用判据看的是行引用），刷新时按 key `apply()` 合并而不是重建实例。冷字段在行复用期间不会自己刷新——要它就升级成句柄
 - **没有深代理**：`item.name = x` 不会通知，也没有代理 store；字段级更新只有两条路——把该字段做成句柄，或换掉整行引用（后者会重建该行）
 
 ```js
 // features/system/members/api/member.views.js
-import { computed, ref } from '@yoyaflow/yoya-ui';
+import { ref } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
 
 class ListItem {
   constructor(row = {}) {
     this.id = row.id; // key：普通值，不能是句柄
-    this.name = ref(row.name ?? ''); // 热点字段：句柄 → 单元格级更新
-    this.status = ref(row.status ?? 'off');
-    this.email = row.email ?? ''; // 冷字段：普通值 → 随 apply 刷新
-    this.label = computed(() => `${this.name.value} · ${this.status.value}`);
+    this.name = ref(fieldValue(row.name) ?? ''); // 热字段：句柄 → 只刷那一格
+    this.status = ref(fieldValue(row.status) ?? 'active');
+    this.email = ref(fieldValue(row.email) ?? '');
   }
 
-  /** 合并而非重建：实例身份不变，keyed 不重建，只刷变化的位置 */
+  /** 合并而非重建：实例身份不变，keyed 复用行节点，只刷句柄绑定的位置 */
   apply(row) {
-    this.name.value = row.name;
-    this.status.value = row.status;
-    this.email = row.email;
+    this.name.value = fieldValue(row.name) ?? '';
+    this.status.value = fieldValue(row.status) ?? 'active';
+    this.email.value = fieldValue(row.email) ?? '';
     return this;
   }
 }
@@ -197,38 +206,37 @@ class ListItem {
 export default { ListItem };
 ```
 
+`fieldValue()` 与 `mergeRowsByKey()` 来自 `shared/state.rows.js`：前者让 `apply()` / 表单回填同时吃句柄与裸行，后者按 key 复用实例。
+
 ```js
 // features/system/members/api/member.state.js
 import { ref } from '@yoyaflow/yoya-ui';
+import { mergeRowsByKey } from '../../../../shared/state.rows.js';
 import MemberMgr from './member.mgr.js';
 
 export default class MembersPageState {
-  constructor(initial = {}) {
-    this._filters = initial;
+  constructor() {
     // 要驱动视图的数据用 ref 持有：视图绑句柄，写入即更新，不需要手动通知
     this.items = ref([]);
     this.total = ref(0);
-    this._listeners = new Set(); // 仅非视图副作用（埋点、持久化等）才需要
-  }
-
-  subscribe(listener) {
-    this._listeners.add(listener);
-    return () => this._listeners.delete(listener);
+    this.page = ref(1);
+    this.keyword = ref('');
   }
 
   async load() {
-    const result = await MemberMgr.Query(this._filters).submit();
-    this.items.value = result.data;
+    const result = await MemberMgr.Query({
+      page: this.page.value,
+      keyword: this.keyword.value
+    }).submit();
+    // 按 key 合并：能复用的行保持实例身份，表格只刷变化的格子
+    this.items.value = mergeRowsByKey(this.items.peek(), result.data);
     this.total.value = result.total ?? result.data.length;
-    this._emit();
     return result;
-  }
-
-  _emit() {
-    this._listeners.forEach((listener) => listener());
   }
 }
 ```
+
+- 只有确实存在**非视图副作用**（埋点、持久化、第三方实例同步）时才在状态类上加 `subscribe(listener)`；视图更新一律走句柄绑定
 
 ## 业务组件
 
@@ -274,9 +282,9 @@ page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 应用外壳（管理台布局、顶栏 / 侧栏 / 内容区）同样按模块组织：`shell/api/`（请求与状态）+ `shell/components/`（外壳组件）+ `shell/router.js`（路由与 `viewRegistry`），参考 admin 模板。
 
 - **导航状态单一事实源**：当前模块 / 当前路径只存在状态对象（`ShellState`），持有 router，暴露 `switchModule(module)` / `navigate(path)` / `syncFromPath(path)`
-- **路由订阅驱动**：`router.subscribe((context) => state.syncFromPath(context.path))`，状态变化时通知订阅者
-- **组件只派生**：顶栏 / 侧栏从状态读取高亮，不持有自己的激活状态；外壳组件只做装配（`AdminShell` 不直接操作 router）
-- 前进 / 后退、同模块内切换路由的高亮同步由状态管道自动完成，不需要手动调用
+- **导航字段是信号**：`menus` / `activeModuleKey` / `activePath` 用 `ref`；`router.subscribe((context) => state.syncFromPath(context.path))` 只把路径写回信号，不再转发通知
+- **组件只派生**：顶栏 / 侧栏的菜单区先 `rebuildable()` 再读信号（模块 / 路径变化时自动重建），组件不持有自己的激活状态、不保留 `applyState()` 手动同步入口；外壳组件只做装配（`AdminShell` 不直接操作 router、不需要订阅回调）
+- 前进 / 后退、同模块内切换路由的高亮同步由信号驱动自动完成，不需要手动调用
 - **会话与权限**：`loadSession()` 拿用户/角色/权限并 `installAccess(createAccess(...))` 注入全局；菜单每条路由声明 `permCode`，`load()` 按 `currentAccess().canRead(permCode)` 过滤，无读路由不注册（直达 URL 落到未找到页）
 
 ## 组件函数命名与页面组合
@@ -316,7 +324,7 @@ function MemberFilter({ onInput }) {
 
 function MemberRow({ row, onSelect }) {
   return li((item) => {
-    item.text(row.name);
+    item.child(vText(row.name)); // 行内热字段是句柄：只刷这一处文本
     item.on('click', () => onSelect(row.id));
   });
 }
