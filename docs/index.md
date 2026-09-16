@@ -11,16 +11,16 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 
 ## Document set
 
-| File                                                                           | Content                                                 | Source / status                                  |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------ |
-| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)       | New                                              |
-| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms       | Rebuilt from `index.zh-CN.md` highlights section |
-| [`access-control.md`](access-control.md)                                       | Access control guide                                    | Rebuilt                                          |
-| [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                 | Rebuilt                                          |
-| [`theme.md`](theme.md)                                                         | Theme and styling spec                                  | Rebuilt                                          |
-| [`devtools.md`](devtools.md)                                                   | DevTools guide                                          | Rebuilt                                          |
-| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors) | Rebuilt                                          |
-| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not | New                                              |
+| File                                                                           | Content                                                      | Source / status                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ |
+| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)            | New                                              |
+| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms            | Rebuilt from `index.zh-CN.md` highlights section |
+| [`access-control.md`](access-control.md)                                       | Access control guide                                         | Rebuilt                                          |
+| [`api.md`](api.md)                                                             | Request commands, transport registration, and Result mapping | New                                              |     | Server-side rendering integration guide | Rebuilt |
+| [`theme.md`](theme.md)                                                         | Theme and styling spec                                       | Rebuilt                                          |
+| [`devtools.md`](devtools.md)                                                   | DevTools guide                                               | Rebuilt                                          |
+| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                                          |
+| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not      | New                                              |
 
 ## Suggested reading path
 

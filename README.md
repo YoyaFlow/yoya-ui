@@ -312,6 +312,7 @@ import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // officia
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring your own echarts)
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring your own three)
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
+import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // communication helpers
 import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
 
@@ -320,7 +321,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 The source stays plain JavaScript — it runs directly with zero build. Full
 TypeScript experience comes from the type declarations shipped with the
 package; the `types/` directory covers all entry points (root / `core` / `ui` /
-`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` /
+`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` / `api` /
 `router` / `echart` / `three` / `devtools`) and includes node classes, factory
 signatures, component state APIs and parent shortcut methods.
 
@@ -593,6 +594,7 @@ yoya.actions.js / yoya.navigation.js / yoya.feedback.js (+ .min)
                                             category increments for bundlers / on-demand pages
 yoya.form.js / yoya.data-display.js / yoya.async.js (+ .min)
                                             category increments for bundlers / on-demand pages
+yoya.api.js / yoya.api.min.js               communication helpers (RequestBase / Result / configureRequest)
 yoya.router.js / yoya.router.min.js         router + SSR primitives
 yoya.echart.js / yoya.three.js / yoya.devtools.js (+ .min)
                                             extension increments (bring your own echarts / three)
@@ -604,7 +606,7 @@ yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
 # Styles and types
 yoya.ui.css
-types/... (root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
+types/... (root / core / api / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
 ```
 
 Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
@@ -671,6 +673,7 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 
 - [Documentation Index](docs/index.md)
 - [Server-Side Rendering Guide](docs/ssr.md)
+- [Request and Communication Helpers](docs/api.md)
 - [Highlight Details](docs/highlights.md)
 - [Component Authoring Guide (third-party developers)](docs/component-authoring.md)
 - [Component Ecosystem Comparison](docs/component-comparison.md)

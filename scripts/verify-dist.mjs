@@ -34,6 +34,17 @@ async function loadEntry(name) {
 }
 
 // ---- 1. SSR + 官方组件单 core 冒烟 -----------------------------------------
+async function verifyApiEntry() {
+  const core = await loadEntry('yoya.core.js');
+  const api = await loadEntry('yoya.api.js');
+  assert(typeof api.configureRequest === 'function', 'API 入口缺少 configureRequest');
+  assert(typeof api.RequestBase === 'function', 'API 入口缺少 RequestBase');
+  assert(typeof api.Result === 'function', 'API 入口缺少 Result');
+  assert(core.configureRequest === undefined, 'core 入口仍导出 configureRequest');
+  assert(core.RequestBase === undefined, 'core 入口仍导出 RequestBase');
+  assert(core.Result === undefined, 'core 入口仍导出 Result');
+}
+
 async function verifySsrSingleCore() {
   const core = await loadEntry('yoya.core.js');
   const ui = await loadEntry('yoya.ui.js');
@@ -130,6 +141,7 @@ const BUDGET_ARTIFACTS = {
   'core.min.js': 12 * 1024,
   // 入口产物
   'yoya.core.min.js': 9 * 1024,
+  'yoya.api.min.js': 4 * 1024,
   'yoya.ui.min.js': 20 * 1024,
   'yoya.router.min.js': 40 * 1024,
   'devtools.min.js': 6 * 1024
@@ -163,6 +175,9 @@ async function verifyBudgets() {
     );
   }
 }
+
+await verifyApiEntry();
+console.log('API 入口隔离通过：通讯符号只在 yoya.api.js 导出。');
 
 await verifySsrSingleCore();
 console.log('SSR 单 core 冒烟通过：core/ui/router 共享同一实例，官方组件可 SSR。');

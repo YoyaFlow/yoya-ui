@@ -1,5 +1,5 @@
 // 字典管理请求命令：字典类型与字典项。
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Dicts from './dict.views.js';
 
 class QueryTypes extends RequestBase {

@@ -119,7 +119,7 @@ export function MemberListPage() {
 
 判据：有管理动作用 `mgr.js`；只对外提供查询/能力用 `req.js`；两者可并存（`member.mgr.js` + `member.req.js`）。
 
-传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
+通讯契约从独立入口 `@yoyaflow/yoya-ui/api` 导出（root / core 不再导出）。传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
 
 ## 请求命令范式
 
@@ -131,7 +131,7 @@ export function MemberListPage() {
 
 ```js
 // features/system/members/api/member.mgr.js
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Members from './member.views.js';
 
 class Query extends RequestBase {

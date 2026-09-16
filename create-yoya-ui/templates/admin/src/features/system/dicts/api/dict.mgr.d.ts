@@ -1,5 +1,5 @@
 /** 字典管理请求命令类型声明（对应 dict.mgr.js）。 */
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Dicts, { DictStatus } from './dict.views.js';
 
 type DictTypeInstance = InstanceType<typeof Dicts.DictTypeItem>;

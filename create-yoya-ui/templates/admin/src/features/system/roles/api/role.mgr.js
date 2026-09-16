@@ -1,5 +1,5 @@
 // 角色管理请求命令。
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Roles from './role.views.js';
 
 class Query extends RequestBase {

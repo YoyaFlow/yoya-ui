@@ -1,5 +1,5 @@
 // 管理请求命令：字段在构造器声明，方法由 RequestBase 基类提供、子类覆写。
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Members from './member.views.js';
 
 class Query extends RequestBase {

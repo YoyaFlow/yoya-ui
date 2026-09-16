@@ -288,6 +288,7 @@ import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方�
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自行引入 echarts）
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自行引入 three）
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
+import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // 通讯辅助约束
 import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 ```
 
@@ -295,7 +296,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // 默认样式与主题变量
 
 源码保持纯 JavaScript——零构建直接运行。完整 TypeScript 体验来自随包发布的
 类型声明；`types/` 目录覆盖全部入口（root / `core` / `ui` / `router` /
-`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` /
+`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` / `api` /
 `router` / `echart` / `three` / `devtools`），包含节点类、工厂签名、组件状态 API 与父节点快捷方法。
 
 ```ts
@@ -535,6 +536,7 @@ yoya.actions.js / yoya.navigation.js / yoya.feedback.js（+ .min）
                                             分类增量（供打包器 / 按需页面）
 yoya.form.js / yoya.data-display.js / yoya.async.js（+ .min）
                                             分类增量（供打包器 / 按需页面）
+yoya.api.js / yoya.api.min.js               通讯辅助约束（RequestBase / Result / configureRequest）
 yoya.router.js / yoya.router.min.js         router + SSR 原语
 yoya.echart.js / yoya.three.js / yoya.devtools.js（+ .min）
                                             扩展增量（自行引入 echarts / three）
@@ -546,7 +548,7 @@ yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
 # 样式与类型
 yoya.ui.css
-types/...（root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools）
+types/...（root / core / api / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools）
 ```
 
 命名规则：无后缀与 `.min` 是 ESM 增量入口（不含 core，运行时会自动加载共享
@@ -609,6 +611,7 @@ docs/          对外说明文档（SSR、主题、权限、DevTools、组件开
 
 - [文档首页](docs/index.zh-CN.md)
 - [服务端渲染指南](docs/ssr.zh-CN.md)
+- [请求与通讯辅助约定](docs/api.zh-CN.md)
 - [亮点细节](docs/highlights.zh-CN.md)
 - [组件开发指南（第三方开发者）](docs/component-authoring.zh-CN.md)
 - [组件生态对比](docs/component-comparison.zh-CN.md)

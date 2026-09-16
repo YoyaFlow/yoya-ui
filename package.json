@@ -17,6 +17,10 @@
       "types": "./types/yoya.core.d.ts",
       "import": "./dist/yoya.core.js"
     },
+    "./api": {
+      "types": "./types/yoya.api.d.ts",
+      "import": "./dist/yoya.api.js"
+    },
     "./ui": {
       "types": "./types/yoya.ui.d.ts",
       "import": "./dist/yoya.ui.js"

@@ -1,5 +1,5 @@
 /** 管理请求命令类型声明（对应 member.mgr.js）。 */
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Members from './member.views.js';
 
 type MemberListItem = InstanceType<typeof Members.ListItem>;

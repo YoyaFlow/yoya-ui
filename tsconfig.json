@@ -15,6 +15,7 @@
     "paths": {
       "yoya-ui": ["./types/index.d.ts"],
       "yoya-ui/core": ["./types/yoya.core.d.ts"],
+      "yoya-ui/api": ["./types/yoya.api.d.ts"],
       "yoya-ui/actions": ["./types/yoya.actions.d.ts"],
       "yoya-ui/navigation": ["./types/yoya.navigation.d.ts"],
       "yoya-ui/feedback": ["./types/yoya.feedback.d.ts"],

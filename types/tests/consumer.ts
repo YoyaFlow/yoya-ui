@@ -32,6 +32,7 @@ import {
   SearchOutlined
 } from 'yoya-ui';
 import { ElementNode } from 'yoya-ui/core';
+import { configureRequest, RequestBase, Result } from 'yoya-ui/api';
 import {
   VButton as ActionsVButton,
   vButton as actionsVButton,
@@ -125,6 +126,13 @@ const page = div((root) => {
     ]);
   });
 });
+
+// Communication contracts live in their own API entry.
+const requestCommand: RequestBase = new RequestBase();
+const requestResult: Result<string> = Result.from({ ok: true, data: 'ok' });
+void configureRequest({ submit: () => ({ ok: true, data: null }) });
+void requestCommand;
+void requestResult;
 
 // Return types are concrete node types.
 const buttonNode: VButton = vButton('label', (b) => b.variant('danger'));
