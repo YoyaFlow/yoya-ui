@@ -1,5 +1,5 @@
 /** 角色管理请求命令类型声明（对应 role.mgr.js）。 */
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Roles, { RoleStatus } from './role.views.js';
 
 type RoleListItem = InstanceType<typeof Roles.ListItem>;

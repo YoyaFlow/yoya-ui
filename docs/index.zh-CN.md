@@ -15,6 +15,7 @@
 | [`index.zh-CN.md`](index.zh-CN.md)                                                         | 文档导航与内容规划（本页）                                                             | 新建        |
 | [`highlights.zh-CN.md`](highlights.zh-CN.md)                                               | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建        |
 | [`access-control.zh-CN.md`](access-control.zh-CN.md)                                       | 权限控制使用指南                                                                       | 重建        |
+| [`api.zh-CN.md`](api.zh-CN.md)                                                             | 请求命令、传输注册与 Result 映射                                                       | 新建        |
 | [`ssr.zh-CN.md`](ssr.zh-CN.md)                                                             | 服务端渲染集成指南                                                                     | 重建        |
 | [`theme.zh-CN.md`](theme.zh-CN.md)                                                         | 主题样式规范                                                                           | 重建并改名  |
 | [`devtools.zh-CN.md`](devtools.zh-CN.md)                                                   | DevTools 使用指南                                                                      | 重建        |

@@ -1,5 +1,5 @@
 // 外部请求命令：其他模块调用本域能力的入口。
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Members from './member.views.js';
 
 class QueryAvailable extends RequestBase {

@@ -1,5 +1,5 @@
 // 领域请求入口：统一 Result 解析 + mock / 真实传输切换。
-import { configureRequest, Result } from '@yoyaflow/yoya-ui';
+import { configureRequest, Result } from '@yoyaflow/yoya-ui/api';
 import { fetchSubmit } from './fetch.api.js';
 
 const mockHandlers = new Map();

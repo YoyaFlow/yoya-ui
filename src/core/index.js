@@ -52,5 +52,3 @@ export {
 } from './context.js';
 export { announce, createFocusTrap, getFocusableElements, moveByKey } from './a11y.js';
 export * from './theme.js';
-export * from './request.js';
-export * from './result.js';

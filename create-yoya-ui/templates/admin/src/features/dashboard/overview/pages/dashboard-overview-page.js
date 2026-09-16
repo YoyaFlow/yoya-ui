@@ -144,7 +144,7 @@ export function DashboardOverviewPage() {
                       color: 'var(--yoya-color-text-muted, #64748b)',
                       fontSize: '12px'
                     });
-                    text.text('CPU 使用率');
+                    text.child('CPU 使用率');
                   });
                 });
                 row.div((box) => {
@@ -155,7 +155,7 @@ export function DashboardOverviewPage() {
                       color: 'var(--yoya-color-text-muted, #64748b)',
                       fontSize: '12px'
                     });
-                    text.text('内存使用率');
+                    text.child('内存使用率');
                   });
                 });
               });

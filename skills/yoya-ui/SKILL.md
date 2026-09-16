@@ -69,11 +69,13 @@ div((root) => {
 
 也可以持有文本节点句柄用 `textContent(value)` 原地替换（命令式写法），但状态驱动优先用信号。
 
+值位置口径：元素值位置（`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable`）接受字面值、句柄与**零参闭包**（正式支持；闭包读到的信号就是它的依赖）；**组件 props 只接受字面值与句柄**，传闭包显式报错；`child(fn)` 是组件渲染槽，文本闭包写 `vText(fn)`。详见 references/state.md。
+
 需要「结构随数据变化」的局部内容（列表重排、字段切换）用区域：声明 `rebuildable(谓词?)` 后，区域内读到的信号就成为它的依赖，信号变化时自动按谓词重建（也可手动 `rebuild()`）。区域重跑不保留区域内 DOM 身份（焦点/滚动/第三方实例会重建），区域外不受影响；谓词只决定「这次要不要花重建」，为假时只刷值并记 `rebuildPending()`。详见 references/state.md。
 
 结构变化的粒度不止「整片重建」，按代价选三档：
 
-- **列表协调**：`ul.keyed(rows, (row) => row.id, (row) => li(row.title))` 用信号驱动对账——同 key 且行引用未变复用节点（`build` 不重跑）、行引用变原位换新、排序 `insertBefore` 保身份；自定义策略用 `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` 五个 keyed 原语。
+- **列表协调**：`ul.keyed(rows, (row) => row.id, (row) => li(row.title))` 用信号驱动对账——同 key 且行引用未变复用节点（`build` 不重跑）、行引用变原位换新、排序 `insertBefore` 保身份；行引用变了但内容等价 / 只需改字段时，第四参数 `{ equals, update }` 让整行免于重建（`equals` 为真直接复用，否则 `update(node, prev, next)` 原地改写）；自定义策略用 `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` 五个 keyed 原语。
 - **条件挂载**：`panel.mountable(cond)`（句柄或零参闭包）——为假脱离文档、为真按子节点槽位回归，ViewNode 与控件状态保留；与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档；`isMounted()` 查询条件状态。
 - **子树错误边界**：`box.whenFailed((error, info) => fallback)`——返回节点降级替换子树、返回 null 仅上报并保持现状；组件对象写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。
 

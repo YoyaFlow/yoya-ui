@@ -3,6 +3,7 @@ import { rolldown } from 'rolldown';
 
 const SHARED_INPUTS = {
   core: 'src/yoya.core.js',
+  api: 'src/yoya.api.js',
   ui: 'src/yoya.ui.js',
   actions: 'src/yoya.actions.js',
   navigation: 'src/yoya.navigation.js',

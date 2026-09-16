@@ -31,7 +31,7 @@ export function PermissionFormDialog({ onSubmit }) {
               margin: '0',
               padding: '0'
             });
-            p.text(`父级：${parentName}`);
+            p.child(`父级：${parentName}`);
           });
         }
         buildFormFields(form, node);

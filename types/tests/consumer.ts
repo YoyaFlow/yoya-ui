@@ -24,14 +24,17 @@ import {
   computed,
   createI18n,
   installSignals,
+  li,
   ref,
   renderToString,
   router,
   svgs,
   toast,
+  ul,
   SearchOutlined
 } from 'yoya-ui';
 import { ElementNode } from 'yoya-ui/core';
+import { configureRequest, RequestBase, Result } from 'yoya-ui/api';
 import {
   VButton as ActionsVButton,
   vButton as actionsVButton,
@@ -126,6 +129,13 @@ const page = div((root) => {
   });
 });
 
+// Communication contracts live in their own API entry.
+const requestCommand: RequestBase = new RequestBase();
+const requestResult: Result<string> = Result.from({ ok: true, data: 'ok' });
+void configureRequest({ submit: () => ({ ok: true, data: null }) });
+void requestCommand;
+void requestResult;
+
 // Return types are concrete node types.
 const buttonNode: VButton = vButton('label', (b) => b.variant('danger'));
 const badge = vBadge('notifications').count(3);
@@ -200,6 +210,28 @@ void labelLine;
 void labelChild;
 void labelText;
 
+// Element value positions take literals, signal handles and zero-argument readers.
+const readerCount = ref(3);
+const readerNode = div((ele) => {
+  ele.attr('data-count', readerCount);
+  ele.attr('data-doubled', () => readerCount.value * 2);
+  ele.style('width', () => `${readerCount.value}px`);
+  ele.styles({ opacity: () => (readerCount.value > 0 ? 1 : 0) });
+  ele.toggleClass('is-many', () => readerCount.value > 1);
+  ele.child(vText(() => `count=${readerCount.value}`));
+});
+readerNode.mountable(() => readerCount.value > 0);
+readerNode.flush();
+void readerNode;
+
+// @ts-expect-error parameterized readers are rejected at runtime and by the types
+readerNode.attr('data-invalid', (value: string) => value);
+
+// Component props take handles; readers belong to element value positions.
+const propName = ref('待处理');
+const propInput = vInput({ name: 'prop', value: propName, placeholder: '搜索' });
+void propInput;
+
 // Keyed children, event removal and class toggling are part of the node API.
 const keyedHost = div((ele) => {
   ele.addChild('row-1', ele.span('A'));
@@ -211,6 +243,26 @@ const keyedHost = div((ele) => {
   ele.toggleClass('is-busy', label);
 });
 void keyedHost;
+
+// Row-level update protocol: keep the node when the row is content-equivalent,
+// or update it in place when it really changed.
+const keyedRows = ref([{ id: 1, title: 'A' }]);
+const keyedWithProtocol = ul((ele) => {
+  ele.keyed(
+    keyedRows,
+    (row) => row.id,
+    (row) => li((item) => item.child(vText(row.title))),
+    {
+      equals: (previous, next) => previous.title === next.title,
+      update: (node, previous, next) => {
+        void previous;
+        void next;
+        return node;
+      }
+    }
+  );
+});
+void keyedWithProtocol;
 
 // htmls namespace: every WHATWG tag factory on one object, style alias included.
 const byNamespace = htmls.div((root) => root.span('via htmls'));

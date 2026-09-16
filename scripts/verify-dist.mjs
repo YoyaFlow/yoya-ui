@@ -1,12 +1,14 @@
 // 构建产物验证（CI 在 `npm run build` 之后执行）：
 // 1. SSR + 官方组件单 core 冒烟：dist 的 core/ui/router 共享同一 core chunk；
 // 2. 分类子入口 tree-shaking 隔离：仅打包目标类目，不夹带其他类目组件；
-// 3. 体积预算门禁：自包含 full 产物与分类按需打包体积不得超过预算。
-import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+// 3. 体积预算门禁：自包含 full 产物、核心入口、实际下载量与组件皮肤不得超过预算；
+// 4. README 体积表与产物一致：表格数字不再靠手工维护，漂移即失败。
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
+import { collectBundleReport, compareReadmeSizes } from './bundle-metrics.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = join(root, 'dist');
@@ -34,6 +36,17 @@ async function loadEntry(name) {
 }
 
 // ---- 1. SSR + 官方组件单 core 冒烟 -----------------------------------------
+async function verifyApiEntry() {
+  const core = await loadEntry('yoya.core.js');
+  const api = await loadEntry('yoya.api.js');
+  assert(typeof api.configureRequest === 'function', 'API 入口缺少 configureRequest');
+  assert(typeof api.RequestBase === 'function', 'API 入口缺少 RequestBase');
+  assert(typeof api.Result === 'function', 'API 入口缺少 Result');
+  assert(core.configureRequest === undefined, 'core 入口仍导出 configureRequest');
+  assert(core.RequestBase === undefined, 'core 入口仍导出 RequestBase');
+  assert(core.Result === undefined, 'core 入口仍导出 Result');
+}
+
 async function verifySsrSingleCore() {
   const core = await loadEntry('yoya.core.js');
   const ui = await loadEntry('yoya.ui.js');
@@ -130,9 +143,18 @@ const BUDGET_ARTIFACTS = {
   'core.min.js': 12 * 1024,
   // 入口产物
   'yoya.core.min.js': 9 * 1024,
+  'yoya.api.min.js': 4 * 1024,
   'yoya.ui.min.js': 20 * 1024,
   'yoya.router.min.js': 40 * 1024,
-  'devtools.min.js': 6 * 1024
+  'devtools.min.js': 6 * 1024,
+  // 组件皮肤：core 层无皮肤，这里只盯组件样式本身的膨胀
+  'yoya.ui.css': 96 * 1024
+};
+
+// 首屏真实成本是「入口 + 它引用的公共 chunk」，按实际下载量（min+gzip）单独设预算。
+const BUDGET_DOWNLOADS = {
+  'yoya.core.js': 30 * 1024,
+  'yoya.ui.js': 130 * 1024
 };
 
 const BUDGET_CATEGORY_BUNDLE = 220 * 1024;
@@ -143,6 +165,12 @@ async function verifyBudgets() {
     const size = statSync(join(dist, file)).size;
     report.push({ name: file, size, budget });
     assert(size <= budget, `${file} 超过预算（${kb(size)} > ${kb(budget)}）`);
+  }
+
+  for (const [entry, budget] of Object.entries(BUDGET_DOWNLOADS)) {
+    const size = bundleReport.incremental.find((row) => row.entry === entry).download.gzip;
+    report.push({ name: `${entry} 实际下载 (min+gzip)`, size, budget });
+    assert(size <= budget, `${entry} 实际下载量超过预算（${kb(size)} > ${kb(budget)}）`);
   }
 
   for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
@@ -164,6 +192,29 @@ async function verifyBudgets() {
   }
 }
 
+// ---- 4. README 体积表与产物一致 ----------------------------------------------
+function verifyReadmeSizes() {
+  for (const file of ['README.md', 'README.zh-CN.md']) {
+    const mismatches = compareReadmeSizes(readFileSync(join(root, file), 'utf8'), bundleReport);
+    if (mismatches.length > 0) {
+      const lines = mismatches.map(
+        (item) =>
+          `  ${item.name}: README ${item.actual ? item.actual.join(' / ') : '（缺少该行）'} ≠ 产物 ${item.expected.join(' / ')}`
+      );
+      throw new Error(
+        `${file} 体积表与当前产物不一致：\n${lines.join('\n')}\n  提示：npm run report:bundle:write 可刷新（会同时格式化）`
+      );
+    }
+    console.log(`README 体积表与产物一致：${file}`);
+  }
+}
+
+// 体积报表同时供预算与 README 校验使用（一次采集，避免重复打包）。
+const bundleReport = await collectBundleReport();
+
+await verifyApiEntry();
+console.log('API 入口隔离通过：通讯符号只在 yoya.api.js 导出。');
+
 await verifySsrSingleCore();
 console.log('SSR 单 core 冒烟通过：core/ui/router 共享同一实例，官方组件可 SSR。');
 
@@ -180,5 +231,7 @@ for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
 }
 
 await verifyBudgets();
+
+verifyReadmeSizes();
 
 console.log('verify-dist: 全部通过');

@@ -1,4 +1,4 @@
-import { toast, vConfirm, vPagination, vTable, vstack } from '@yoyaflow/yoya-ui';
+import { computed, toast, vConfirm, vPagination, vText, vTr, vstack } from '@yoyaflow/yoya-ui';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import DictsPageState from '../api/dict.state.js';
 import { DictEditorDialog } from '../components/dict-editor-dialog.js';
@@ -13,58 +13,33 @@ export function DictListPage() {
     onChange({ page: nextPage, pageSize: nextSize }) {
       state.setPage(nextPage);
       state.setPageSize(nextSize);
-      state.loadTypes();
+      load();
     }
   });
-  let typesBody = null;
 
-  state.subscribe(() => {
-    renderTypes();
+  load();
+
+  // vPagination 是命令式组件（不是信号感知的）：数据到位后由动作同步一次
+  async function load() {
+    await state.loadTypes();
     syncPagination();
-  });
-  state.loadTypes();
-
-  function syncPagination() {
-    pagination.update({
-      page: state.page(),
-      pageSize: state.pageSize(),
-      total: state.total(),
-      totalPages: Math.max(1, Math.ceil(state.total() / state.pageSize()))
-    });
   }
 
-  function renderTypes() {
-    if (!typesBody) {
-      return;
-    }
-    typesBody.children().forEach((child) => child.destroy());
-    state.types().forEach((type) => {
-      typesBody.vTr((row) => {
-        row.vTd(type.name);
-        row.vTd(type.code);
-        row.vTd(statusText[type.status] ?? type.status);
-        row.vTd(type.remark || '—');
-        row.vTd((cell) => {
-          cell.hstack({ gap: '8px' }, (actions) => {
-            actions.child(
-              RowActionButton('编辑', (btn) => btn.on('click', () => editorDialog.open(type)))
-            );
-            actions.child(
-              RowActionButton('删除', (btn) => {
-                btn.variant('danger');
-                btn.on('click', () => askRemoveType(type));
-              })
-            );
-          });
-        });
-      });
+  function syncPagination() {
+    const total = state.total.value;
+    const pageSize = state.pageSize.value;
+    pagination.update({
+      page: state.page.value,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize))
     });
   }
 
   async function askRemoveType(type) {
     const ok = await vConfirm({
       title: '删除字典',
-      content: `确定删除字典「${type.name}」及其所有字典值？`,
+      content: `确定删除字典「${type.name.value}」及其所有字典值？`,
       danger: true,
       confirmText: '删除'
     });
@@ -72,7 +47,7 @@ export function DictListPage() {
       return;
     }
     await state.removeType(type.id);
-    toast.success(`已删除 ${type.name}`);
+    toast.success(`已删除 ${type.name.value}`);
   }
 
   async function saveType(editingId, payload) {
@@ -83,6 +58,28 @@ export function DictListPage() {
       await state.editType(editingId, payload);
       toast.success('已更新字典');
     }
+  }
+
+  function buildTypeRow(type) {
+    return vTr((row) => {
+      row.vTd(vText(type.name));
+      row.vTd(vText(type.code));
+      row.vTd(vText(computed(() => statusText[type.status.value] ?? type.status.value)));
+      row.vTd(vText(computed(() => type.remark.value || '—')));
+      row.vTd((cell) => {
+        cell.hstack({ gap: '8px' }, (actions) => {
+          actions.child(
+            RowActionButton('编辑', (btn) => btn.on('click', () => editorDialog.open(type)))
+          );
+          actions.child(
+            RowActionButton('删除', (btn) => {
+              btn.variant('danger');
+              btn.on('click', () => askRemoveType(type));
+            })
+          );
+        });
+      });
+    });
   }
 
   return {
@@ -99,29 +96,30 @@ export function DictListPage() {
               toolbar.spacer();
               toolbar.span((hint) => {
                 hint.style('color', 'var(--yoya-color-text-muted, #64748b)');
-                hint.text('点击「编辑」可在弹窗中维护基本信息与字典值');
+                hint.child('点击「编辑」可在弹窗中维护基本信息与字典值');
               });
             });
           });
           card.vCardBody((body) => {
             body.vstack({ gap: '12px' }, (content) => {
-              content.child(
-                vTable((table) => {
-                  table.vThead((head) => {
-                    head.vTr((row) => {
-                      row.vTh('名称');
-                      row.vTh('编码');
-                      row.vTh('状态');
-                      row.vTh('备注');
-                      row.vTh('操作');
-                    });
+              content.vTable((table) => {
+                table.vThead((head) => {
+                  head.vTr((row) => {
+                    row.vTh('名称');
+                    row.vTh('编码');
+                    row.vTh('状态');
+                    row.vTh('备注');
+                    row.vTh('操作');
                   });
-                  table.vTbody((bodyNode) => {
-                    typesBody = bodyNode;
-                    renderTypes();
-                  });
-                })
-              );
+                });
+                table.vTbody((tbody) => {
+                  tbody.keyed(
+                    state.types,
+                    (type) => type.id,
+                    (type) => buildTypeRow(type)
+                  );
+                });
+              });
               content.child(pagination);
             });
           });
@@ -130,7 +128,7 @@ export function DictListPage() {
       });
     },
     refresh() {
-      return state.loadTypes();
+      return load();
     }
   };
 }

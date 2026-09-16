@@ -19,6 +19,9 @@ export class SvgElementNode extends ElementNode {
    * On text hosts (`<text>` / `<tspan>` / `<title>` …) this sets the content;
    * a signal handle stays bound. On other elements it creates a `<text>` child.
    */
+  text(setup: SetupCallback<SvgElementNode>): this;
+
+  /** Content form: literal, signal handle or zero-argument reader. */
   text(content: TextContent, setup?: SetupCallback<SvgElementNode>): this;
 
   /** Creates a `<text>` child on any SVG element. */
@@ -40,6 +43,8 @@ export interface SvgElementFactory {
 export interface SvgChildShortcuts {
   svg(...setups: Array<SetupInput<SvgElementNode> | null | undefined>): SvgElementNode;
   /** Creates a `<text>` child; on text hosts it binds the content instead. */
+  text(setup: SetupCallback<SvgElementNode>): SvgElementNode;
+  /** Content form: literal, signal handle or zero-argument reader. */
   text(content: TextContent, setup?: SetupCallback<SvgElementNode>): SvgElementNode;
   text(
     ...setups: Array<

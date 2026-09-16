@@ -1,5 +1,5 @@
 // 权限管理请求命令：查询树、新增、编辑、删除。
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Permissions from './permission.views.js';
 
 class QueryTree extends RequestBase {

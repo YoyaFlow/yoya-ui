@@ -312,6 +312,7 @@ import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // officia
 import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring your own echarts)
 import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring your own three)
 import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
+import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // communication helpers
 import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 ```
 
@@ -320,7 +321,7 @@ import '@yoyaflow/yoya-ui/ui.css'; // default styles and theme variables
 The source stays plain JavaScript — it runs directly with zero build. Full
 TypeScript experience comes from the type declarations shipped with the
 package; the `types/` directory covers all entry points (root / `core` / `ui` /
-`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` /
+`actions` / `navigation` / `feedback` / `form` / `data-display` / `async` / `api` /
 `router` / `echart` / `three` / `devtools`) and includes node classes, factory
 signatures, component state APIs and parent shortcut methods.
 
@@ -407,7 +408,7 @@ types badge is static and only changes if its wording does.
 | Type declarations    | Shipped for root / core / ui / router / echart / three / devtools, validated by consumer type tests | `npm run typecheck`                                          |
 | SSR determinism      | Render/hydrate/mount paths covered by tests, DOM-free by design                                     | `src/*.ssr.test.js`, `docs/ssr.md`                           |
 | Distribution formats | ESM per-module entries, single CSS theme file                                                       | `npm run build` → `dist/`                                    |
-| Dist verification    | Category isolation, SSR single-core smoke and size budgets are gated in CI                          | `npm run verify:dist` (after `npm run build`)                |
+| Dist verification    | Category isolation, SSR single-core smoke, size budgets and README size tables are gated in CI      | `npm run verify:dist` (after `npm run build`)                |
 | Public roadmap       | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md): current focus, 1.0 contract freeze, GenUI direction (Chinese) | (open the file)                                              |
 | Component contracts  | Authoring guide freezes the three supported component shapes                                        | [`docs/component-authoring.md`](docs/component-authoring.md) |
 
@@ -419,7 +420,7 @@ npm test              # 900+ tests: DOM, state, i18n, router, access, SSR/hydrat
 npm run typecheck     # type declarations + consumer type tests
 npm run lint          # ESLint
 npm run format:check  # Prettier
-npm run build && npm run verify:dist  # dist: category isolation, SSR smoke, budgets
+npm run build && npm run verify:dist  # dist: category isolation, SSR smoke, budgets, README size tables
 ```
 
 ## Honest about the cold start — and why that is early-adopter value
@@ -587,12 +588,13 @@ npm run build
 ```text
 # Incremental ESM entries (load the shared core chunk automatically; bundlers / multi-file CDN)
 yoya.core.js / yoya.core.min.js             core: engine + html + svg + signals/i18n/access
-yoya.core.chunk.js / yoya.core.chunk.min.js internal shared chunk (auto-loaded by core/ui/router)
+core.js / html.js / svg.js (+ .min)           internal shared chunks (the build report lists them all)
 yoya.ui.js / yoya.ui.min.js                 components + layout + theme
 yoya.actions.js / yoya.navigation.js / yoya.feedback.js (+ .min)
                                             category increments for bundlers / on-demand pages
 yoya.form.js / yoya.data-display.js / yoya.async.js (+ .min)
                                             category increments for bundlers / on-demand pages
+yoya.api.js / yoya.api.min.js               communication helpers (RequestBase / Result / configureRequest)
 yoya.router.js / yoya.router.min.js         router + SSR primitives
 yoya.echart.js / yoya.three.js / yoya.devtools.js (+ .min)
                                             extension increments (bring your own echarts / three)
@@ -604,7 +606,7 @@ yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
 # Styles and types
 yoya.ui.css
-types/... (root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
+types/... (root / core / api / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools)
 ```
 
 Naming rules: no suffix and `.min` are incremental ESM entries (no core inside; the
@@ -620,23 +622,26 @@ last column says what each entry actually contains (yes, core includes i18n).
 
 | Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                               |
 | ---------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly |
-| `yoya.ui.js` (all categories)      | 5.6 KB ~ **93.6 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                 |
-| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**                    | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                             |
+| `yoya.core.js`                     | 2.3 KB ~ **21.7 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly |
+| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                   |
+| `yoya.ui.js` (all categories)      | 5.6 KB ~ **94.3 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                 |
+| `yoya.router.js`                   | 9.8 KB ~ **25.0 KB**                    | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                             |
 | `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                 |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                          |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.7 / 15.2 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                          |
 
 Self-contained entries (core inlined, single file):
 
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 213.6 KB | 107.5 KB | 31.0 KB  | core + router / SSR                  |
-| `yoya.ui.full.js`                     | 682.1 KB | 409.3 KB | 96.8 KB  | core + all components                |
-| `yoya.ui-router.full.js` (everything) | 747.2 KB | 439.8 KB | 105.8 KB | core + all components + router / SSR |
+| `yoya.router.full.js`                 | 217.9 KB | 108.8 KB | 31.2 KB  | core + router / SSR                  |
+| `yoya.ui-router.full.js` (everything) | 751.8 KB | 441.3 KB | 106.1 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 686.6 KB | 410.9 KB | 97.1 KB  | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no
 skin of its own (it behaves like plain HTML), so core-only pages do not load it.
-`npm run report:bundle` prints the full table, including every shared chunk.
+`npm run build` prints the full table at the end, including every shared chunk, and
+`npm run verify:dist` fails when this table drifts from the artifacts.
+`npm run report:bundle:write` refreshes both README tables from the current build.
 
 ## Development
 
@@ -645,7 +650,7 @@ npm install
 npm test              # Vitest full suite
 npm run lint          # ESLint
 npm run build         # full build
-npm run verify:dist   # tree-shaking isolation, SSR single-core smoke, size budgets
+npm run verify:dist   # tree-shaking isolation, SSR single-core smoke, size budgets, README size tables
 npm run examples:html # example site (localhost:5173)
 npm run format        # Prettier
 ```
@@ -671,6 +676,7 @@ docs/          public guides (SSR, theme, access control, devtools, authoring)
 
 - [Documentation Index](docs/index.md)
 - [Server-Side Rendering Guide](docs/ssr.md)
+- [Request and Communication Helpers](docs/api.md)
 - [Highlight Details](docs/highlights.md)
 - [Component Authoring Guide (third-party developers)](docs/component-authoring.md)
 - [Component Ecosystem Comparison](docs/component-comparison.md)

@@ -1,4 +1,5 @@
-import { toast, vConfirm, vDialog, vTable } from '@yoyaflow/yoya-ui';
+import { computed, toast, vConfirm, vDialog, vText, vTr } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import { DictItemFormDialog } from './dict-item-form-dialog.js';
 import { statusOptions, statusText } from '../utils/options.js';
@@ -12,24 +13,28 @@ const rowStyle = {
 };
 
 // 字典编辑弹窗：上半部分是字典基本信息表单，下半部分维护该字典的字典值表格。
+// 字典值表格绑 state.items 句柄，增删改写入信号后自动刷新，不需要手动重建行。
 export function DictEditorDialog({ state, onSubmit }) {
   const dialog = vDialog();
   const itemDialog = DictItemFormDialog({ onSubmit: saveItem });
   let editingId = null;
-  let itemsBody = null;
-  let itemsCountText = null;
-  let addItemButton = null;
   let form = null;
 
   dialog.style('maxWidth', 'min(92vw, 880px)');
 
   function open(type = null) {
     editingId = type?.id ?? null;
-    state.selectType(editingId).then(() => renderItems());
+    // 写入 state.items（ref）即刷新弹窗里的字典值表格
+    state.selectType(editingId);
+
+    const name = fieldValue(type?.name) ?? '';
+    const code = fieldValue(type?.code) ?? '';
+    const status = fieldValue(type?.status) ?? 'active';
+    const remark = fieldValue(type?.remark) ?? '';
 
     dialog.content((content) => {
       content.vstack({ gap: '16px' }, (stack) => {
-        stack.h3(type ? `编辑字典「${type.name}」` : '新增字典');
+        stack.h3(type ? `编辑字典「${name}」` : '新增字典');
 
         stack.vForm((editor) => {
           form = editor;
@@ -44,30 +49,24 @@ export function DictEditorDialog({ state, onSubmit }) {
           editor.vFormItem((item) => {
             item.styles(rowStyle);
             item.label('名称').name('name').required({ message: '请填写名称' });
-            item.control((control) => control.vInput({ name: 'name', value: type?.name ?? '' }));
+            item.control((control) => control.vInput({ name: 'name', value: name }));
           });
           editor.vFormItem((item) => {
             item.styles(rowStyle);
             item.label('编码').name('code').required({ message: '请填写编码' });
-            item.control((control) => control.vInput({ name: 'code', value: type?.code ?? '' }));
+            item.control((control) => control.vInput({ name: 'code', value: code }));
           });
           editor.vFormItem((item) => {
             item.styles(rowStyle);
             item.label('状态').name('status');
             item.control((control) =>
-              control.vSelect({
-                name: 'status',
-                options: statusOptions,
-                value: type?.status ?? 'active'
-              })
+              control.vSelect({ name: 'status', options: statusOptions, value: status })
             );
           });
           editor.vFormItem((item) => {
             item.styles(rowStyle);
             item.label('备注').name('remark');
-            item.control((control) =>
-              control.vInput({ name: 'remark', value: type?.remark ?? '' })
-            );
+            item.control((control) => control.vInput({ name: 'remark', value: remark }));
           });
         });
 
@@ -75,7 +74,6 @@ export function DictEditorDialog({ state, onSubmit }) {
           section.vstack({ gap: '10px' }, (items) => {
             items.hstack({ alignItems: 'center', gap: '10px' }, (toolbar) => {
               toolbar.vButton('新增字典值', (btn) => {
-                addItemButton = btn;
                 btn.variant('primary');
                 btn.disabled(editingId === null);
                 btn.on('click', () => itemDialog.open(null));
@@ -83,33 +81,33 @@ export function DictEditorDialog({ state, onSubmit }) {
               toolbar.spacer();
               toolbar.span((count) => {
                 count.style('color', 'var(--yoya-color-text-muted, #64748b)');
-                itemsCountText = count;
-                syncItemsCount();
+                count.child(vText(computed(() => `共 ${state.items.value.length} 条`)));
               });
             });
             items.p((hint) => {
               hint.style('color', 'var(--yoya-color-text-muted, #64748b)');
-              hint.text(
+              hint.child(
                 editingId === null ? '保存字典类型后即可添加字典值。' : '维护当前字典的字典值。'
               );
             });
-            items.child(
-              vTable((table) => {
-                table.vThead((head) => {
-                  head.vTr((row) => {
-                    row.vTh('标签');
-                    row.vTh('值');
-                    row.vTh('排序');
-                    row.vTh('状态');
-                    row.vTh('操作');
-                  });
+            items.vTable((table) => {
+              table.vThead((head) => {
+                head.vTr((row) => {
+                  row.vTh('标签');
+                  row.vTh('值');
+                  row.vTh('排序');
+                  row.vTh('状态');
+                  row.vTh('操作');
                 });
-                table.vTbody((body) => {
-                  itemsBody = body;
-                  renderItems();
-                });
-              })
-            );
+              });
+              table.vTbody((tbody) => {
+                tbody.keyed(
+                  state.items,
+                  (item) => item.id,
+                  (item) => buildItemRow(item)
+                );
+              });
+            });
           });
         });
 
@@ -128,48 +126,32 @@ export function DictEditorDialog({ state, onSubmit }) {
     dialog.open(true);
   }
 
-  function renderItems() {
-    if (!itemsBody) {
-      return;
-    }
-    itemsBody.children().forEach((child) => child.destroy());
-    state.items().forEach((item) => {
-      itemsBody.vTr((row) => {
-        row.vTd(item.label);
-        row.vTd(item.value);
-        row.vTd(String(item.sort));
-        row.vTd(statusText[item.status] ?? item.status);
-        row.vTd((cell) => {
-          cell.hstack({ gap: '8px' }, (actions) => {
-            actions.child(
-              RowActionButton('编辑', (btn) => btn.on('click', () => itemDialog.open(item)))
-            );
-            actions.child(
-              RowActionButton('删除', (btn) => {
-                btn.variant('danger');
-                btn.on('click', () => askRemoveItem(item));
-              })
-            );
-          });
+  function buildItemRow(item) {
+    return vTr((row) => {
+      row.vTd(vText(item.label));
+      row.vTd(vText(item.value));
+      row.vTd(vText(computed(() => String(item.sort.value))));
+      row.vTd(vText(computed(() => statusText[item.status.value] ?? item.status.value)));
+      row.vTd((cell) => {
+        cell.hstack({ gap: '8px' }, (actions) => {
+          actions.child(
+            RowActionButton('编辑', (btn) => btn.on('click', () => itemDialog.open(item)))
+          );
+          actions.child(
+            RowActionButton('删除', (btn) => {
+              btn.variant('danger');
+              btn.on('click', () => askRemoveItem(item));
+            })
+          );
         });
       });
     });
-    syncItemsCount();
-  }
-
-  function syncItemsCount() {
-    if (itemsCountText) {
-      itemsCountText.textContent(`共 ${state.items().length} 条`);
-    }
-    if (addItemButton) {
-      addItemButton.disabled(editingId === null);
-    }
   }
 
   async function askRemoveItem(item) {
     const ok = await vConfirm({
       title: '删除字典值',
-      content: `确定删除字典值「${item.label}」？`,
+      content: `确定删除字典值「${item.label.value}」？`,
       danger: true,
       confirmText: '删除'
     });
@@ -177,8 +159,7 @@ export function DictEditorDialog({ state, onSubmit }) {
       return;
     }
     await state.removeItem(item.id);
-    toast.success(`已删除 ${item.label}`);
-    renderItems();
+    toast.success(`已删除字典值 ${item.label.value}`);
   }
 
   async function saveItem(itemId, payload) {
@@ -189,7 +170,6 @@ export function DictEditorDialog({ state, onSubmit }) {
       await state.editItem(itemId, payload);
       toast.success('已更新字典值');
     }
-    renderItems();
   }
 
   function save() {

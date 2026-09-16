@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, li, ref, ul } from '../index.js';
+import { div, li, ref, ul, vText } from '../index.js';
 
 describe('keyed children binding', () => {
   it('renders rows from a signal and reuses nodes across reorders', () => {
@@ -134,5 +134,185 @@ describe('keyed children binding', () => {
 
     rows.value = [];
     expect(list.toHTML()).toBe('<ul><li data-row-key="1">A</li></ul>');
+  });
+});
+
+describe('keyed row update protocol', () => {
+  it('reuses nodes for rows that compare equal even when the reference changed', () => {
+    const rows = ref([{ id: 1, title: 'A' }]);
+    const builds = [];
+    const compared = [];
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => {
+          builds.push(row.id);
+          return li(row.title);
+        },
+        {
+          equals: (prev, next) => {
+            compared.push([prev.title, next.title]);
+            return prev.title === next.title;
+          }
+        }
+      );
+    });
+    const element = list.renderDom();
+    const firstRow = list.children()[0];
+
+    rows.value = [{ id: 1, title: 'A' }];
+
+    expect(builds).toEqual([1]);
+    expect(compared).toEqual([['A', 'A']]);
+    expect(list.children()[0]).toBe(firstRow);
+    expect(element.textContent).toBe('A');
+  });
+
+  it('updates rows in place through the update hook instead of rebuilding them', () => {
+    const rows = ref([{ id: 1, title: 'A' }]);
+    const builds = [];
+    const updates = [];
+    const titles = new Map();
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => {
+          builds.push(row.id);
+          const title = ref(row.title);
+          titles.set(row.id, title);
+          return li((item) => item.child(vText(title)));
+        },
+        {
+          update: (rowNode, prev, next) => {
+            updates.push([prev.title, next.title]);
+            titles.get(next.id).value = next.title;
+            return rowNode;
+          }
+        }
+      );
+    });
+    const element = list.renderDom();
+    const firstRow = list.children()[0];
+
+    rows.value = [{ id: 1, title: 'B' }];
+
+    expect(builds).toEqual([1]);
+    expect(updates).toEqual([['A', 'B']]);
+    expect(list.children()[0]).toBe(firstRow);
+    expect(element.textContent).toBe('B');
+  });
+
+  it('prefers equals over update and rebuilds rows that are neither', () => {
+    const rows = ref([{ id: 1, title: 'A' }]);
+    const calls = [];
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => {
+          calls.push(`build:${row.title}`);
+          return li(row.title);
+        },
+        {
+          equals: (prev, next) => {
+            calls.push(`equals:${prev.title}->${next.title}`);
+            return prev.title === next.title;
+          },
+          update: (rowNode, prev, next) => {
+            calls.push(`update:${prev.title}->${next.title}`);
+            return rowNode;
+          }
+        }
+      );
+    });
+    const element = list.renderDom();
+    const firstRow = list.children()[0];
+
+    rows.value = [{ id: 1, title: 'A' }];
+    expect(calls).toEqual(['build:A', 'equals:A->A']);
+    expect(list.children()[0]).toBe(firstRow);
+
+    // 内容真的变了：equals 为假 → 走原地更新
+    rows.value = [{ id: 1, title: 'B' }];
+    expect(calls.slice(-2)).toEqual(['equals:A->B', 'update:A->B']);
+    expect(list.children()[0]).toBe(firstRow);
+    expect(element.textContent).toBe('A');
+
+    // 没有 update 时保持旧行为：原位换新
+    const plainRows = ref([{ id: 7, title: 'X' }]);
+    const plainList = ul((node) => {
+      node.keyed(
+        plainRows,
+        (row) => row.id,
+        (row) => li(row.title),
+        { equals: () => false }
+      );
+    });
+    plainList.renderDom();
+    const plainRow = plainList.children()[0];
+
+    plainRows.value = [{ id: 7, title: 'Y' }];
+
+    expect(plainList.children()[0]).not.toBe(plainRow);
+    expect(plainList.textContent()).toBe('Y');
+  });
+
+  it('keeps identity on reorder while the update hook is declared', () => {
+    const rows = ref([
+      { id: 1, title: 'A' },
+      { id: 2, title: 'B' }
+    ]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(row.title),
+        { update: () => {} }
+      );
+    });
+    list.renderDom();
+    const firstRow = list.children()[0];
+
+    rows.value = [rows.value[1], { id: 1, title: 'A2' }];
+
+    expect(list.children()[1]).toBe(firstRow);
+    expect(list.textContent()).toBe('BA');
+  });
+
+  it('rejects malformed options', () => {
+    const rows = ref([]);
+
+    expect(() =>
+      ul((node) =>
+        node.keyed(
+          rows,
+          (row) => row.id,
+          () => li(),
+          []
+        )
+      )
+    ).toThrow(/options must be a plain object/);
+    expect(() =>
+      ul((node) =>
+        node.keyed(
+          rows,
+          (row) => row.id,
+          () => li(),
+          { equals: 'nope' }
+        )
+      )
+    ).toThrow(/equals must be a function/);
+    expect(() =>
+      ul((node) =>
+        node.keyed(
+          rows,
+          (row) => row.id,
+          () => li(),
+          { update: 1 }
+        )
+      )
+    ).toThrow(/update must be a function/);
   });
 });

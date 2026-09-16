@@ -64,7 +64,9 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 
 - 传句柄即建立绑定：写入后只改属性 / 文本，元素与焦点不重建。
 - 绑定在**构建期求值一次**（服务端据此输出 HTML），订阅在客户端 `renderDom()` 时激活、`destroy()` 与区域重跑时释放。
-- 纯函数式动态值（零参闭包 `() => …`）仍可用，属过渡写法；新代码用信号。
+- **值位置口径（正式支持两种来源）**：字面值、**signal 句柄**（推荐）、**零参闭包** `() => value`（reader）。句柄与闭包走同一条绑定管线——闭包在构建期求值一次，**读了信号的那些信号就成为它的依赖**，写入即重算；读的是普通变量时，需要重新求值就自己调 `flush()`（`mountable()` 的闭包由父节点 `flush()` 重求值）。带参形式 `(s) => value` 已随节点级状态移除：登记时直接抛错，类型上也不接受。
+- **组件 props 是配置位，只接受字面值与句柄**：需要动态值就传句柄（`vInput({ value: name })`）；传零参闭包会在组件构造时显式抛错，不会被静默串成源码文本（props 里的函数另有语义：`onChange` / `render`）。
+- **`child(fn)` 是组件渲染槽，不是文本值位置**：文本用零参闭包要包节点——`child(vText(() => text))`；直接 `child(() => 'x')` 会被当成组件渲染函数并按「必须返回 ViewNode」报错。
 - **别白包**：`attr('data-count', computed(() => count.value))`、`vText(computed(() => String(count.value)))` 都多了一层；值位置自己会读句柄，数字也会自己转成字符串。`computed` 只留给真派生（拼接 / 运算 / 分支 / 多信号组合）。
 - **别漏句柄**：`vText(count.value)`、`attr('x', count.value)` 传的是**快照**，写完就不再更新；只有确实要一次性写入时才这么写。
 - **文本位置三种等价写法**：`child(vText(handle))`、`child(handle)`、元素工厂 setup 位置的 `div(handle)`（等价 `div((el) => el.child(handle))`）都建立同一个绑定（HTML 元素与 SVG 文本宿主都支持）。节点级 `text()` 已移除：追加文本用 `child(content)`，反复追加会堆叠；要反复替换同一处文本，就留一个 `vText()` 句柄用 `textContent(next)`。
@@ -123,6 +125,34 @@ ul((list) => {
 ```
 
 - 对账规则：同 key 且**行引用未变**→ 复用节点（`build` 不重跑，行内用值绑定或组件方法原地更新）；同 key 行引用变化→ 原位换新；顺序变化→ `insertBefore` 移动，节点身份与 DOM 状态保留（焦点、滚动、第三方实例不重建）。
+- **行级更新协议（第四参数 `options`）**：行引用变了但内容等价、或只想改一两个字段时，不必整行重建——三档代价从高到低：
+  `equals(prevRow, nextRow)` 为真 → 当没变，节点直接复用（只更新记录的引用，下次比较用新行）；
+  否则 `update(node, prevRow, nextRow)` → 由你原地改写该行（句柄赋值 / 组件方法），节点身份保留；
+  两者都没有（默认）→ 原位换新。`equals` 与 `update` 同时给出时 `equals` 优先，判定为「确实变了」的行仍走原位换新。
+
+```js
+ul((list) => {
+  list.keyed(
+    rows,
+    (row) => row.id,
+    (row) => {
+      const title = ref(row.title); // 行内热字段用句柄，update 时原地写
+      row.titleHandle = title;
+      return li((item) => item.child(vText(title)));
+    },
+    {
+      equals: (prev, next) => prev.title === next.title,
+      update: (node, prev, next) => {
+        next.titleHandle = prev.titleHandle;
+        next.titleHandle.value = next.title;
+        return node;
+      }
+    }
+  );
+});
+```
+
+- 基准（`npm run bench:keyed`，500 行 × 20 轮、每轮整批换引用且 1 行内容变化）：重建行数 **10000 → 20（equals）→ 0（update）**；耗时约 250 ms → 5~15 ms（20× 上下），`update` 档首行节点身份保留。行数是确定的，毫秒数随机器波动。
 - 省略 `keyFn` 时用**行引用本身**做 key（行对象稳定时可用）；重复 key 直接抛错，不会静默覆盖。
 - `keyed()` 只协调自己这一段：新成员落在本段末尾（本段之后第一个兄弟节点之前），其它兄弟节点（含其它 keyed 段）不参与对账。
 - 行内字段变化优先走值绑定：`computed` 句柄放文本 / 属性位置即可原地刷值，不必重建行。

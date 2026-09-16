@@ -1,4 +1,5 @@
 import { vDialog } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
 import { statusOptions } from '../utils/options.js';
 
 const rowStyle = {
@@ -15,6 +16,10 @@ export function DictItemFormDialog({ onSubmit }) {
 
   function open(item = null) {
     editingId = item?.id ?? null;
+    const label = fieldValue(item?.label) ?? '';
+    const value = fieldValue(item?.value) ?? '';
+    const sort = fieldValue(item?.sort) ?? 0;
+    const status = fieldValue(item?.status) ?? 'active';
     dialog.content((content) => {
       content.vForm((form) => {
         form.styles({
@@ -28,19 +33,17 @@ export function DictItemFormDialog({ onSubmit }) {
         form.vFormItem((field) => {
           field.styles(rowStyle);
           field.label('标签').name('label').required({ message: '请填写标签' });
-          field.control((editor) => editor.vInput({ name: 'label', value: item?.label ?? '' }));
+          field.control((editor) => editor.vInput({ name: 'label', value: label }));
         });
         form.vFormItem((field) => {
           field.styles(rowStyle);
           field.label('值').name('value').required({ message: '请填写值' });
-          field.control((editor) => editor.vInput({ name: 'value', value: item?.value ?? '' }));
+          field.control((editor) => editor.vInput({ name: 'value', value }));
         });
         form.vFormItem((field) => {
           field.styles(rowStyle);
           field.label('排序').name('sort');
-          field.control((editor) =>
-            editor.vInput({ name: 'sort', value: String(item?.sort ?? 0) })
-          );
+          field.control((editor) => editor.vInput({ name: 'sort', value: String(sort) }));
         });
         form.vFormItem((field) => {
           field.styles(rowStyle);
@@ -49,7 +52,7 @@ export function DictItemFormDialog({ onSubmit }) {
             editor.vSelect({
               name: 'status',
               options: statusOptions,
-              value: item?.status ?? 'active'
+              value: status
             })
           );
         });

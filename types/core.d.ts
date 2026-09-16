@@ -20,17 +20,30 @@ import type { VThemeModeSwitch } from './theme.js';
 /** Class name input accepted by className()/class(): strings, arrays, falsy values. */
 export type ClassNameInput = string | number | null | undefined | false | ClassNameInput[];
 
-/** Attribute values supported by attr(); a signal handle makes it a live binding. */
-export type AttrValue = string | number | boolean | null | undefined | SignalHandle<unknown>;
+/**
+ * Zero-argument reader accepted in element value positions (attr / style /
+ * styles / toggleClass / vText / mountable). It runs through the same binding
+ * pipeline as a signal handle, so a signal it reads keeps the position live.
+ */
+export type ValueReader<T = unknown> = () => T;
 
-/** Inline style values supported by style()/styles(); a signal handle makes it a live binding. */
-export type StyleValue = string | number | null | undefined | SignalHandle<unknown>;
+/** Attribute values supported by attr(); handle or reader makes it a live binding. */
+export type AttrValue =
+  string | number | boolean | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
+
+/** Inline style values supported by style()/styles(); handle or reader makes it live. */
+export type StyleValue =
+  string | number | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
 
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
 
-/** Text content accepted by vText(): a signal handle makes it a live binding. */
-export type TextContent = string | number | SignalHandle<unknown>;
+/**
+ * Text content accepted by vText(): a signal handle (recommended) or a
+ * zero-argument reader makes it a live binding. Note that `child(fn)` is a
+ * component render slot, not a text position — wrap readers in vText(fn).
+ */
+export type TextContent = string | number | SignalHandle<unknown> | ValueReader<unknown>;
 
 /** Options accepted by on(). */
 export type EventOptions = boolean | AddEventListenerOptions;
@@ -73,6 +86,18 @@ export type ChildInput =
 
 /** Declarative setup callback receiving the node. */
 export type SetupCallback<N> = (node: N) => void;
+
+/**
+ * Row-level update protocol for `keyed()`. Without it, a row whose reference
+ * changed is destroyed and rebuilt; with it, equivalent rows keep their node and
+ * genuinely changed rows can be updated in place.
+ */
+export interface KeyedRowUpdate<TRow = unknown> {
+  /** Key matched but the reference changed: return true to reuse the node as-is. */
+  equals?(previousRow: TRow, nextRow: TRow): boolean;
+  /** Key matched and the row really changed: update the existing node in place. */
+  update?(node: ViewNode, previousRow: TRow, nextRow: TRow): unknown;
+}
 
 /**
  * Object-form setup accepted by every factory: class/className, attrs, style,
@@ -304,15 +329,20 @@ export class ViewNode {
   /**
    * Signal-driven keyed item binding. Rows whose key and reference are unchanged
    * keep their nodes; changed rows are rebuilt in place; ordering uses insertBefore.
+   * Pass `options` to reuse or update rows whose reference changed:
+   * `equals` marks content-equivalent rows as unchanged, `update` rewrites the
+   * existing node in place (`equals` wins when both are given).
    */
-  keyed(
-    source: SignalHandle,
-    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  keyed<TRow>(
+    source: SignalHandle<TRow[]>,
+    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
   ): this;
-  keyed(
-    source: SignalHandle,
-    keyFn: (row: unknown, index: number) => string | number,
-    build: (row: unknown, index: number) => ViewNode | ComponentLike | string | number
+  keyed<TRow>(
+    source: SignalHandle<TRow[]>,
+    keyFn: (row: TRow, index: number) => string | number,
+    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
   ): this;
 
   /**
@@ -322,7 +352,7 @@ export class ViewNode {
    * attached node replaces the condition immediately. Closure conditions refresh
    * through the parent's flush().
    */
-  mountable(condition?: SignalHandle | boolean | (() => unknown)): this;
+  mountable(condition?: SignalHandle | boolean | ValueReader<unknown>): this;
 
   /** Latest committed state of this node's own mount condition (default true). */
   isMounted(): boolean;
@@ -444,7 +474,7 @@ export class ElementNode extends ViewNode {
   replaceClassName(old: string, next: string, tolerate?: boolean): this;
 
   /** Toggles a class from a truthy value; a signal handle or closure makes it live. */
-  toggleClass(name: string, value: boolean | SignalHandle<unknown> | (() => unknown)): this;
+  toggleClass(name: string, value: boolean | SignalHandle<unknown> | ValueReader<unknown>): this;
 
   /** Reads a single style property. */
   style(name: string): StyleValue | undefined;
@@ -720,69 +750,6 @@ export function currentSignals(): SignalsAdapter;
 
 /** Validates an adapter, throwing when required methods are missing. */
 export function assertSignalsAdapter(adapter: unknown): SignalsAdapter;
-
-// ---------------------------------------------------------------------------
-// Request
-// ---------------------------------------------------------------------------
-
-/** 请求传输层：RequestBase.submit() 会调用它，返回统一包装结构（如 Result.from 的 raw）。 */
-export type RequestSubmit = (request: RequestCommand) => unknown;
-
-/** 注册请求传输层；传 null 清除注册。 */
-export function configureRequest(options?: { submit?: RequestSubmit | null }): RequestSubmit | null;
-
-/** 请求实例：描述请求与映射，方法由 RequestBase 或子类提供。 */
-export interface RequestCommand {
-  address(): string;
-  method(): string;
-  headers(): Record<string, string>;
-  cookies(): string | null;
-  body(): unknown;
-  params(): Record<string, unknown>;
-  submit(): unknown;
-  toItem?: (row: unknown) => unknown;
-  toDetail?: (data: unknown) => unknown;
-  [key: string]: unknown;
-}
-
-/** 请求基类：定义请求描述与提交的默认逻辑，子类覆写或扩展。 */
-export class RequestBase {
-  method(): string;
-  headers(): Record<string, string>;
-  cookies(): string | null;
-  body(): unknown;
-  params(): Record<string, unknown>;
-  address(): string;
-  submit(): unknown;
-}
-
-// ---------------------------------------------------------------------------
-// Result
-// ---------------------------------------------------------------------------
-
-export type ResultKind = 'detail' | 'list' | 'page';
-
-/** 统一返回结构：自动判断 detail / list / page 并完成映射，失败时 from 抛错。 */
-export class Result<T = unknown> {
-  ok: boolean;
-  code: string;
-  msg: string | null;
-  showType: number;
-  data: T;
-  kind: ResultKind;
-  pageNum: number | null;
-  pageSize: number | null;
-  total: number | null;
-  readonly isSuccess: boolean;
-  readonly pages: number;
-
-  constructor(init?: Partial<Result<T>>);
-
-  static from<T = unknown>(
-    raw: unknown,
-    command?: { toItem?: (item: unknown) => unknown; toDetail?: (data: unknown) => unknown }
-  ): Result<T>;
-}
 
 // ---------------------------------------------------------------------------
 // Theme

@@ -1,5 +1,5 @@
 /** 领域请求入口类型声明（对应 domain.api.js）。 */
-import type { RequestCommand } from '@yoyaflow/yoya-ui';
+import type { RequestCommand } from '@yoyaflow/yoya-ui/api';
 
 export function mockRequest(
   method: string,

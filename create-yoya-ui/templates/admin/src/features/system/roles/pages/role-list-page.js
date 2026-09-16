@@ -9,7 +9,7 @@ export function RoleListPage() {
   const dialog = RoleFormDialog({ onSubmit: saveRole });
   const toolbar = RoleToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) });
   const table = RoleTable({
-    rows: () => state.items(),
+    rows: state.items,
     onEdit: (role) => dialog.open(role),
     onRemove: askRemove
   });
@@ -19,22 +19,26 @@ export function RoleListPage() {
     onChange({ page: nextPage, pageSize: nextSize }) {
       state.setPage(nextPage);
       state.setPageSize(nextSize);
-      state.load();
+      load();
     }
   });
 
-  state.subscribe(() => {
-    table.refresh();
+  load();
+
+  // vPagination 是命令式组件（不是信号感知的）：数据到位后由动作同步一次
+  async function load() {
+    await state.load();
     syncPagination();
-  });
-  state.load();
+  }
 
   function syncPagination() {
+    const total = state.total.value;
+    const pageSize = state.pageSize.value;
     pagination.update({
-      page: state.page(),
-      pageSize: state.pageSize(),
-      total: state.total(),
-      totalPages: Math.max(1, Math.ceil(state.total() / state.pageSize()))
+      page: state.page.value,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize))
     });
   }
 
@@ -42,13 +46,13 @@ export function RoleListPage() {
     state.setKeyword(values.keyword ?? '');
     state.setStatus(values.status ?? '');
     state.setPage(1);
-    state.load();
+    load();
   }
 
   async function askRemove(role) {
     const ok = await vConfirm({
       title: '删除角色',
-      content: `确定删除角色「${role.name}」？`,
+      content: `确定删除角色「${role.name.value}」？`,
       danger: true,
       confirmText: '删除'
     });
@@ -56,7 +60,7 @@ export function RoleListPage() {
       return;
     }
     await state.remove(role.id);
-    toast.success(`已删除 ${role.name}`);
+    toast.success(`已删除 ${role.name.value}`);
   }
 
   async function saveRole(editingId, payload) {
@@ -87,7 +91,7 @@ export function RoleListPage() {
       });
     },
     refresh() {
-      return state.load();
+      return load();
     }
   };
 }

@@ -1,5 +1,5 @@
 /** 权限管理请求命令类型声明（对应 permission.mgr.js）。 */
-import { RequestBase } from '@yoyaflow/yoya-ui';
+import { RequestBase } from '@yoyaflow/yoya-ui/api';
 import Permissions, { PermissionType } from './permission.views.js';
 
 type PermissionNodeInstance = InstanceType<typeof Permissions.PermissionNode>;

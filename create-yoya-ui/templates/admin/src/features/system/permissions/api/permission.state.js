@@ -1,25 +1,15 @@
-// 权限页状态类：持有权限树，动作构造命令并 submit 后写入状态、通知订阅者。
+// 权限页状态类：权限树用 ref 持有，动作写句柄即完成通知。
+import { ref } from '@yoyaflow/yoya-ui';
 import PermissionMgr from './permission.mgr.js';
 
 export default class PermissionsPageState {
   constructor() {
-    this._tree = [];
-    this._listeners = new Set();
-  }
-
-  tree() {
-    return this._tree;
-  }
-
-  subscribe(listener) {
-    this._listeners.add(listener);
-    return () => this._listeners.delete(listener);
+    this.tree = ref([]);
   }
 
   async load() {
     const result = await PermissionMgr.QueryTree().submit();
-    this._tree = result.data;
-    this._emit();
+    this.tree.value = result.data;
     return result;
   }
 
@@ -38,9 +28,5 @@ export default class PermissionsPageState {
   async remove(id) {
     await PermissionMgr.Remove({ id }).submit();
     await this.load();
-  }
-
-  _emit() {
-    this._listeners.forEach((listener) => listener());
   }
 }
