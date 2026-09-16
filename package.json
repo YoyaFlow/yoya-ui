@@ -77,11 +77,12 @@
     "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
+    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs",
     "build:entries": "node scripts/build-entries.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
     "report:bundle": "node scripts/bundle-report.mjs",
+    "report:bundle:write": "node scripts/bundle-report.mjs --write",
     "examples:html": "vite --config vite.examples.config.js --host 0.0.0.0",
     "examples:i18n": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5174",
     "examples:layout": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5175",

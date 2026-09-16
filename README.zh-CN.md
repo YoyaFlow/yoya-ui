@@ -374,7 +374,7 @@ release 徽章直接读 npm 上已发布的版本，不会过期；types 徽章�
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
 | 分发格式   | 按模块拆分的 ESM、单一 CSS 主题文件                                                  | `npm run build` → `dist/`                                                |
-| 产物校验   | 分类隔离、SSR 单 core 冒烟与体积预算在 CI 中门禁                                     | `npm run verify:dist`（在 `npm run build` 之后）                         |
+| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算与 README 体积表在 CI 中门禁                     | `npm run verify:dist`（在 `npm run build` 之后）                         |
 | 公开路线图 | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md)：当前重点、1.0 契约冻结与 GenUI 方向            | （打开文件查看）                                                         |
 | 组件契约   | 组件开发指南固化三种受支持的组件形态                                                 | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
 
@@ -386,7 +386,7 @@ npm test              # 900+ 用例：DOM、state、i18n、router、权限、SSR
 npm run typecheck     # 类型声明 + 消费方类型测试
 npm run lint          # ESLint
 npm run format:check  # Prettier
-npm run build && npm run verify:dist  # 产物：分类隔离、SSR 冒烟、体积预算
+npm run build && npm run verify:dist  # 产物：分类隔离、SSR 冒烟、体积预算、README 体积表
 ```
 
 ## 坦诚说明冷启动——而这正是早期采用者的红利
@@ -530,7 +530,7 @@ npm run build
 ```text
 # 共享增量入口（ESM，自动加载共享 core 块；供打包器 / 多文件 CDN）
 yoya.core.js / yoya.core.min.js             核心：引擎 + html + svg + signals/i18n/access
-yoya.core.chunk.js / yoya.core.chunk.min.js 内部共享块（core/ui/router 自动加载）
+core.js / html.js / svg.js（+ .min）          内部共享块（构建报告列出完整清单）
 yoya.ui.js / yoya.ui.min.js                 组件 + layout + theme
 yoya.actions.js / yoya.navigation.js / yoya.feedback.js（+ .min）
                                             分类增量（供打包器 / 按需页面）
@@ -561,22 +561,24 @@ types/...（root / core / api / ui / actions / navigation / feedback / form / da
 
 | 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                              |
 | ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
-| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **93.6 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
-| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
+| `yoya.core.js`                     | 2.3 KB ~ **21.5 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
+| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                   |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **94.0 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
+| `yoya.router.js`                   | 9.8 KB ~ **24.8 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
 | `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB     | `vEchart` / `vThree` 封装                                                                                                                             |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.6 / 15.0 KB     | `vEchart` / `vThree` 封装                                                                                                                             |
 
 自包含入口（core 已内联，单文件直用）：
 
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 213.6 KB | 107.5 KB | 31.0 KB  | core + router / SSR            |
-| `yoya.ui.full.js`                | 682.1 KB | 409.3 KB | 96.8 KB  | core + 全部组件                |
-| `yoya.ui-router.full.js`（全量） | 747.2 KB | 439.8 KB | 105.8 KB | core + 全部组件 + router / SSR |
+| `yoya.router.full.js`            | 216.4 KB | 108.4 KB | 31.0 KB  | core + router / SSR            |
+| `yoya.ui-router.full.js`（全量） | 750.0 KB | 440.6 KB | 105.8 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 684.9 KB | 410.1 KB | 96.8 KB  | core + 全部组件                |
 
 组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
-只用 core 不需要引它。`npm run report:bundle` 打印完整表格（含每个公共 chunk 的 raw / min / min+gzip）。
+只用 core 不需要引它。`npm run build` 结束时直接输出完整表格（含每个公共 chunk 的 raw / min / min+gzip）；
+`npm run verify:dist` 会在表格与产物不一致时失败，`npm run report:bundle:write` 按当前产物刷新中英两张表。
 
 ## 开发
 
@@ -585,7 +587,7 @@ npm install
 npm test              # Vitest 全量测试
 npm run lint          # ESLint
 npm run build         # 完整构建
-npm run verify:dist   # tree-shaking 隔离、SSR 单 core 冒烟、体积预算
+npm run verify:dist   # tree-shaking 隔离、SSR 单 core 冒烟、体积预算、README 体积表
 npm run examples:html # 示例站点（localhost:5173）
 npm run format        # Prettier
 ```
