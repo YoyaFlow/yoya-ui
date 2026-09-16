@@ -179,16 +179,15 @@ export function computed(fn) {
   return new SignalHandle(adapter, source, { writable: false, beforeRead: ensureLive });
 }
 
-/** 批量提交：core 拥有区域合并语义；引擎 batch 只负责通知去重（可选）。 */
+/** 批量提交：core 拥有批次内的区域合并语义，引擎 batch 负责通知去重（契约必需方法）。 */
 export function batch(fn) {
   if (typeof fn !== 'function') {
     throw new TypeError('batch() requires a function');
   }
 
-  const adapter = currentSignals();
   beginSignalsBatch();
   try {
-    return typeof adapter.batch === 'function' ? adapter.batch(fn) : fn();
+    return currentSignals().batch(fn);
   } finally {
     endSignalsBatch();
   }

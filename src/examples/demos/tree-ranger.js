@@ -140,7 +140,7 @@ export function TreeRangerActionsExample() {
         .div((name) => {
           name
             .styles({ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis' })
-            .text(item.name);
+            .child(item.name);
         });
       row.div((actions) => {
         actions.style('display', 'inline-flex');

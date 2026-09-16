@@ -173,7 +173,7 @@ tree.expandAll().checkedKeys(['a']);
 // Rebuildable region API.
 const region = div((ele) => {
   ele.rebuildable(() => true);
-  ele.text('region');
+  ele.child('region');
 });
 region.rebuildable(null);
 region.rebuild();
@@ -191,14 +191,26 @@ const counter = div((ele) => {
 });
 counter.flush();
 
-// Text positions take handles directly: HTML text() and SVG text hosts.
+// Text positions take handles directly: HTML child() and SVG text hosts.
 const label = ref('待处理');
-const labelLine = div((ele) => ele.text(label));
+const labelLine = div((ele) => ele.child(vText(label)));
 const labelChild = div((ele) => ele.child(label));
 const labelText = svgs.text((line) => line.text(label));
 void labelLine;
 void labelChild;
 void labelText;
+
+// Keyed children, event removal and class toggling are part of the node API.
+const keyedHost = div((ele) => {
+  ele.addChild('row-1', ele.span('A'));
+  ele.getChild('row-1');
+  ele.removeChild('row-1');
+  ele.on('click', () => {});
+  ele.off('click');
+  ele.toggleClass('is-active', true);
+  ele.toggleClass('is-busy', label);
+});
+void keyedHost;
 
 // htmls namespace: every WHATWG tag factory on one object, style alias included.
 const byNamespace = htmls.div((root) => root.span('via htmls'));
@@ -250,7 +262,8 @@ const myEngine: SignalsAdapter = {
     const notify = () => listener(source.value);
     source.listeners.add(notify);
     return () => source.listeners.delete(notify);
-  }
+  },
+  batch: <T>(run: () => T) => run()
 };
 installSignals(myEngine);
 installSignals(null);

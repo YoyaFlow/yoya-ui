@@ -8,7 +8,7 @@ describe('rebuildable region across component children', () => {
       render() {
         return div((ele) => {
           ele.rebuildable();
-          ele.text(`n=${n.value}`);
+          ele.child(`n=${n.value}`);
         });
       }
     };
@@ -38,7 +38,7 @@ describe('rebuildable region across component children', () => {
         innerBuilds += 1;
         return div((ele) => {
           ele.rebuildable(() => true);
-          ele.text('inner');
+          ele.child('inner');
         });
       }
     };

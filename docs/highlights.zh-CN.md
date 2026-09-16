@@ -88,8 +88,36 @@ div((page) => {
 
 - 同一份代码既可直接 `.bindTo()` 上浏览器，也可 `toHTML()` / SSR；`child()` 统一接受 ViewNode / 组件对象 / 字符串数字。
 - `registerChildFactories` 把组件注册为父节点快捷方法（`card.vCardHeader`），第三方组件也能扩展 DSL。
+- 真实 DOM 即视图树：DevTools 的 Elements 面板看到的层级、样式、无障碍属性就是页面本身，即查即改。
+- 事件是原生 DOM 事件：Event Listeners 面板可直接定位业务处理器，调用栈指向源码闭包，没有框架运行时隔层。
+- 不依赖编译环境即可调试业务内容：断点、Console、Performance 开箱即用，页面故障定位大多数时候不需要安装额外插件或工具。
+- 需要观察信号写入、区域重建、hydration 失配时，再开启内建 DevTools 桥（`enableDevtools()`，Beta）。
 
-## 5. 表单：一处收集，查看/编辑态内建
+## 5. 列表协调与容错：keyed / mountable / whenFailed
+
+结构随数据变化不再只有「整块弃建」一条路。三类原语按代价分层，全部显式声明：
+
+```js
+import { li, ref, ul } from '@yoyaflow/yoya-ui';
+
+const rows = ref([{ id: 1, title: '任务 1' }]);
+
+ul((list) => {
+  list.keyed(
+    rows,
+    (row) => row.id,
+    (row) => li(row.title)
+  );
+});
+
+rows.value = [...rows.value].reverse(); // 自动 diff：增删/移位保身份
+```
+
+- `keyed(rows, keyFn, build)`：同 key 行引用未变复用节点（build 不重跑）、引用变原位换新、排序 `insertBefore` 保身份；自定义策略用 `insertBefore / insertAfter / moveBefore / moveAfter / replaceChild` 五原语。
+- `panel.mountable(cond)`：条件挂载——为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留（`display` 显隐、`mountable` 不在但活着、`rebuildable` 销毁重建三档）；`isMounted()` 查询条件状态。
+- `box.whenFailed(handler)`：子树错误边界——返回节点降级替换、返回 null 仅上报；组件对象可写与 `render()` 同层的 `whenFailed` 成员自动挂载；捕获必发 console.error，永不静默。
+
+## 6. 表单：一处收集，查看/编辑态内建
 
 不手写 state、逐个读 input value。`vForm` 里放控件，`form.values()` 一次取全部字段；`vField` 自带 view / edit 两种模式。
 

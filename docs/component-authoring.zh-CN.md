@@ -111,8 +111,9 @@ export function vStatusDot(first = null, second = null, third = null) {
 yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除。
 
 - 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
+- **只有这一种反应式模型**：库不提供深层代理——`obj.field = x` 不会通知（对象整体替换才会）。字段要跟着更新，就把该字段本身做成句柄；列表行模型的做法见 skill 的「状态模块」一节（热字段句柄 + 按 key `apply()` 合并）。
 - 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
-- 文案：状态驱动的文案传句柄——`vText(count)`、`child(count)`、`ele.text(count)` 三种写法等价，只有值本身是派生结果时才套 `computed(fn)`；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。元素的 `.text(content)` 等价于 `child()`，**每次调用都会追加一个文本节点**，不要拿它当「设置文案」，否则反复同步会不断堆叠。
+- 文案：状态驱动的文案传句柄——`vText(count)`、`child(count)`、元素工厂 setup 位置的 `div(count)` 三种写法等价（`div(count)` 等价 `div((el) => el.child(count))`），只有值本身是派生结果时才套 `computed(fn)`；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。**节点级 `text()` 已移除**：追加文本用 `child(content)`，反复追加会堆叠，要"设置文案"就用 `vText()` 句柄的 `textContent(next)`；组件自己的 `text()`（`vBadge` / `vProgress` / `vMenu` 等）与 SVG `<text>` 的 `text()` 是另一套 API，照旧可用。
 - 对外只暴露方法：组件内部用 `ref` 持有状态，对外给 `value(next)` / `disabled(next)` 这类链式方法，不把内部信号对象交给使用者。
 
 ### 6.1 可重建区域
@@ -145,9 +146,13 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
 - 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（首屏构建期求值一次，需要重新求值时自己调 `flush()`）。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
-- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。
+- 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。显式归属节点时用节点方法：`ele.bindWindowEvent(type, handler)` / `ele.bindDocumentEvent(...)`，`destroy()` 自动卸载；独立函数的原有用法（自行保存 unbind）保持不变。
+- **列表协调**：`node.keyed(rows, keyFn, build)` 用信号驱动子项——同 key 且行引用未变时复用节点，行引用变化原位换新，顺序变化保身份移动；行内字段用信号可在不重建的前提下原地刷值。自定义策略用 `insertBefore(key, child, beforeKey)` / `insertAfter(key, child, afterKey)` / `moveBefore(key, beforeKey)` / `moveAfter(key, afterKey)` / `replaceChild(key, child)` 原语。
+- **条件挂载**：`panel.mountable(cond)` 是唯一公共入口——条件接受 ref/computed 句柄、布尔或零参闭包，**省略参数即默认常挂 `true`**；惰性存在子节点上，入树时父节点收养建绑定，**入树后随时再调 `mountable()` 即可替换条件并立即生效**（闭包变化后用**父节点** `flush()` 重求值）。为假时子元素脱离文档但 ViewNode 与状态保留，为真时按子节点槽位回归；SSR 条件假输出空串。`node.isMounted()` 查询自身挂载条件的最近提交状态；「元素此刻是否在文档里」查 `node._el?.isConnected`。它与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档：**不在但活着**。挂载绑定登记在父节点，条件存在子节点自己的值单元里（无需父指针）；`div({ mountable: cond })` 配置形态走同一条收养路径。
 - 区域自己订阅依赖：区域内读到的信号变化即触发重建（devtools 里记为 `trigger: 'signal'`）；嵌套区域各订阅各的，不会互相代管。`batch()` 内写入多个信号时，依赖多个源的区域只在批次结束时同步重建一次；用 `rebuildScheduled()` 查询是否有已排队的信号触发重建。批次外的写入仍同步立即重建；重建期间依赖再次变化会在本次重建后补跑，而不是丢弃。
+
 - 需要保留焦点或第三方实例时，把该部分留在区域之外，或只用值绑定——它们是原地更新，不重建 DOM。
+- **错误边界**：`node.whenFailed(handler)` 声明子树边界——handler 返回节点则替换子树降级、返回空仅上报并保持现状；组件对象可写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载。捕获永不静默：`console.error` 必发，devtools 开启时追加 `error` 事件。错误向上找**最近的**边界，由它独占捕获、捕获后不再向外；handler 自身抛错则向外抛出。render / build 阶段返回空时，失败子节点会被标记并跳过后续重试（避免反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。
 
 ## 7. 组合、事件与生命周期
 

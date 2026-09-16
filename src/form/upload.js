@@ -280,10 +280,10 @@ export class VUpload extends HtmlElementNode {
         }),
         new HtmlElementNode('span')
           .className('yoya-vupload-dropzone-title')
-          .text('点击或拖拽文件到此处'),
+          .child('点击或拖拽文件到此处'),
         new HtmlElementNode('span')
           .className('yoya-vupload-dropzone-hint')
-          .text(this._multiple ? '支持选择多个文件' : '支持选择单个文件')
+          .child(this._multiple ? '支持选择多个文件' : '支持选择单个文件')
       );
     }
 
@@ -299,10 +299,12 @@ export class VUpload extends HtmlElementNode {
       .className('yoya-vupload-item')
       .attr({ 'data-file-index': String(index) });
     const info = new HtmlElementNode('div').className('yoya-vupload-item-info');
-    const name = new HtmlElementNode('strong').className('yoya-vupload-item-name').text(entry.name);
+    const name = new HtmlElementNode('strong')
+      .className('yoya-vupload-item-name')
+      .child(entry.name);
     const meta = new HtmlElementNode('span')
       .className('yoya-vupload-item-meta')
-      .text(`${formatFileSize(entry.size)} · ${entry.status}`);
+      .child(`${formatFileSize(entry.size)} · ${entry.status}`);
     const progress = new HtmlElementNode('div')
       .className('yoya-vupload-progress')
       .attr('data-status', entry.status)

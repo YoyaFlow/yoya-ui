@@ -631,7 +631,7 @@
 
               button.className(`pad-key pad-key--${direction}`);
               button.attr({ type: 'button', 'aria-label': label });
-              button.text(glyph);
+              button.child(glyph);
               button.on('pointerdown', start);
               button.on('pointerup', stop);
               button.on('pointercancel', stop);
@@ -703,7 +703,7 @@
         function item(key, label, value) {
           return div((entry) => {
             entry.className(`hud-item hud-item--${key}`);
-            entry.span((name) => name.className('hud-label').text(label));
+            entry.span((name) => name.className('hud-label').child(label));
             entry.strong((number) => {
               number.className('hud-value');
               number.child(vText(value));
@@ -731,7 +731,7 @@
               button.className(`control control--${key}`);
               button.attr('type', 'button');
               button.on('click', onClick);
-              button.text(label);
+              button.child(label);
             });
           });
         }

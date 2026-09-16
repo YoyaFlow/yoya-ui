@@ -106,7 +106,7 @@ describe('vField floating edit', () => {
       item.label('负责人');
       item.display((box) => {
         box.strong('SRE');
-        box.text(' 团队');
+        box.child(' 团队');
       });
     });
     const el = field.renderDom();

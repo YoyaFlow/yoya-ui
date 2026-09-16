@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { batch, div, installSignals, ref } from '../index.js';
 
-/** 同步通知、无 batch 的 store 型引擎：验证合并语义不依赖引擎可选项。 */
+/**
+ * 同步通知的 store 型引擎：batch 是引擎契约的必需方法，这里只需直通执行，
+ * 用来验证「批次内的区域合并」由 core 提供，不依赖引擎如何合并通知。
+ */
 function createSyncAdapter() {
   return {
     createSignal(initial) {
@@ -21,6 +24,9 @@ function createSyncAdapter() {
     subscribe(source, listener) {
       source.listeners.add(listener);
       return () => source.listeners.delete(listener);
+    },
+    batch(run) {
+      return run();
     }
   };
 }
@@ -93,7 +99,7 @@ describe('region rebuild scheduling', () => {
     expect(region.textContent()).toBe('A');
   });
 
-  it('coalesces rebuilds without engine batch support', () => {
+  it('coalesces rebuilds when the engine batch only forwards', () => {
     installSignals(createSyncAdapter());
     const first = ref('a');
     const second = ref('b');

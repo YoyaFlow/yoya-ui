@@ -17,7 +17,7 @@ export class VLazyImage extends HtmlElementNode {
     this._retryButton = new HtmlElementNode('button')
       .className('yoya-vlazyimage-retry')
       .attr({ type: 'button' })
-      .text('加载失败，点击重试')
+      .child('加载失败，点击重试')
       .on('click', () => this.retry());
 
     this.className(componentClass, 'yoya-vlazyimage');

@@ -77,8 +77,10 @@ export function vConfirm(options = {}) {
 
     const message = new HtmlElementNode('div')
       .className('yoya-vconfirm-content')
-      .child(title ? new HtmlElementNode('div').className('yoya-vconfirm-title').text(title) : null)
-      .child(new HtmlElementNode('div').className('yoya-vconfirm-message').text(content));
+      .child(
+        title ? new HtmlElementNode('div').className('yoya-vconfirm-title').child(title) : null
+      )
+      .child(new HtmlElementNode('div').className('yoya-vconfirm-message').child(content));
 
     const actions = vstack({ direction: 'row', gap: '8px', justify: 'flex-end' }, (row) => {
       row.child(confirmButton, cancelButton);

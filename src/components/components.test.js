@@ -1659,7 +1659,7 @@ describe('compound components', () => {
     expect(dropdownElement.dataset.open).toBeUndefined();
 
     const contextMenu = vContextMenu((overlay) => {
-      overlay.target((target) => target.id('submenu-context-target').text('右键区域'));
+      overlay.target((target) => target.id('submenu-context-target').child('右键区域'));
       overlay.menuContent((menu) => {
         menu.vSubMenu((submenu) => {
           submenu.label('服务操作');
@@ -1702,7 +1702,7 @@ describe('compound components', () => {
     const contextMenu = vContextMenu((menu) => {
       menu.target((target) => {
         target.attr('id', 'service-row');
-        target.text('服务 api-gateway');
+        target.child('服务 api-gateway');
       });
       menu.menuContent((commands) => {
         commands.vMenuItem((item) => {
@@ -1738,7 +1738,7 @@ describe('compound components', () => {
 
   it('closes context menus from outside clicks and Escape', () => {
     const contextMenu = vContextMenu((menu) => {
-      menu.target((target) => target.attr('id', 'context-close-target').text('右键区域'));
+      menu.target((target) => target.attr('id', 'context-close-target').child('右键区域'));
       menu.menuContent((commands) => commands.vMenuItem('查看详情'));
     }).bindTo(document.body);
     const element = contextMenu.renderDom();
@@ -2501,7 +2501,7 @@ describe('compound components', () => {
       root.vFormItem((item) => {
         item.name('custom').label('自定义值');
         item.control((editor) => {
-          const custom = div().text('自定义组件');
+          const custom = div().child('自定义组件');
           custom.value = () => 'custom-result';
           editor.collectValue(() => custom.value());
           editor.child(custom);
@@ -2533,7 +2533,7 @@ describe('compound components', () => {
         item
           .name('node')
           .label('节点必填')
-          .required({ message: '不能为空', indicator: div((node) => node.text('必填')) });
+          .required({ message: '不能为空', indicator: div((node) => node.child('必填')) });
       });
     });
     const element = form.renderDom();

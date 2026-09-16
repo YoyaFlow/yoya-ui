@@ -12,7 +12,7 @@ describe('html native documentation page', () => {
     const rows = [...api.querySelectorAll('tbody tr')].map((row) => row.textContent);
     const findRow = (name) => rows.find((text) => text.startsWith(name));
 
-    expect(findRow('node.text(content)')).toContain('反复调用会越堆越多');
+    expect(findRow('node.child(content)')).toContain('反复追加会越堆越多');
     expect(findRow('node.textContent()')).toContain('只读');
     expect(findRow('textNode.textContent(value)')).toContain('原地替换');
     expect(findRow('node.attr(name) / attr(name, value)')).toContain('移除');
@@ -23,7 +23,7 @@ describe('html native documentation page', () => {
     expect(findRow('node.bindTo(target) / destroy()')).toBeTruthy();
 
     const samples = [...api.querySelectorAll('pre')].map((pre) => pre.textContent);
-    expect(samples[0]).toContain("p.text('状态：已同步')");
+    expect(samples[0]).toContain("p.child('状态：已同步')");
     expect(samples[1]).toContain('const count = ref(0)');
     expect(samples[1]).toContain("ele.attr('data-count', count)");
     expect(samples[1]).toContain('count.value += 1');

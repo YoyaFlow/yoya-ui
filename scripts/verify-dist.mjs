@@ -118,11 +118,21 @@ async function bundleConsumer(entryName, importedNames, minify) {
 
 // ---- 3. 体积预算 -------------------------------------------------------------
 // 预算为当前基线保留约 60% 余量；后续允许小幅上涨，但不能无限膨胀。
+// 说明：分块不再按目录强判，公共 chunk 由 bundler 按「被多个入口共享」自动生成
+// （html / svg / core / shared 等），因此预算改为盯住这些公共 chunk 与各入口产物。
 const BUDGET_ARTIFACTS = {
   'yoya.ui-router.full.min.js': 700 * 1024,
   'yoya.ui.full.min.js': 650 * 1024,
   'yoya.router.full.min.js': 150 * 1024,
-  'yoya.core.chunk.min.js': 110 * 1024
+  // 公共 chunk（引擎、HTML 工厂、SVG 与图标、i18n/a11y 等）
+  'html.min.js': 60 * 1024,
+  'svg.min.js': 24 * 1024,
+  'core.min.js': 12 * 1024,
+  // 入口产物
+  'yoya.core.min.js': 9 * 1024,
+  'yoya.ui.min.js': 20 * 1024,
+  'yoya.router.min.js': 40 * 1024,
+  'devtools.min.js': 6 * 1024
 };
 
 const BUDGET_CATEGORY_BUNDLE = 220 * 1024;

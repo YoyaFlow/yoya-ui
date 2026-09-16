@@ -6,18 +6,31 @@ function currentCollector() {
   return collectors.length > 0 ? collectors[collectors.length - 1] : null;
 }
 
+// 读取旁路：dev 护栏用（核心不依赖它）。与收集语义无关——收集仍只记最内层收集器。
+let readObserver = null;
+
+/** 内部：安装读取观察者；没有收集器时也会收到回调（正是「声明区域之前读」的场景）。 */
+export function setReadObserver(observer) {
+  readObserver = observer;
+}
+
 function uniqueSources(sources) {
   return sources.filter((source, index) => sources.indexOf(source) === index);
 }
 
-/** 记录一次依赖读取；没有收集器或当前收集器被抑制时静默跳过。 */
+/** 记录一次依赖读取；没有收集器或当前收集器被抑制时不进依赖表。 */
 export function recordRead(source) {
   const collector = currentCollector();
-  if (!collector || collector.suppressed) {
-    return;
+  const suppressed = Boolean(collector && collector.suppressed);
+
+  if (collector && !suppressed) {
+    collector.sources.push(source);
   }
 
-  collector.sources.push(source);
+  // peek() 走 withoutCollect：显式「只读不订阅」，观察者不该看到它。
+  if (readObserver && !suppressed) {
+    readObserver(source);
+  }
 }
 
 /** 打开一个收集器，返回令牌；用于「中途开始、别处结束」的场景（如区域 builder）。 */

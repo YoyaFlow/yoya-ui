@@ -135,7 +135,7 @@ function RegionDemoSection(demo) {
     render() {
       return section((example) => {
         example.className('components-lifecycle-demo');
-        example.attr('data-region-demo', demo.id);
+        example.attr(demo.scope === 'error' ? 'data-error-demo' : 'data-region-demo', demo.id);
         example.h3(demo.title);
         example.p(demo.description);
         example.div((live) => {

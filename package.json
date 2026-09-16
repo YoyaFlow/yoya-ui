@@ -1,10 +1,10 @@
 {
   "name": "@yoyaflow/yoya-ui",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "A browser-native JS UI library with declarative HTML authoring: component library, router, i18n, theming and layout, works with or without a build tool, SSR-ready.",
   "type": "module",
   "private": false,
-  "main": "./dist/yoya.ui-router.umd.js",
+  "main": "./dist/yoya.ui-router.full.js",
   "module": "./dist/yoya.ui-router.full.js",
   "style": "./dist/yoya.ui.css",
   "types": "./types/index.d.ts",
@@ -73,11 +73,11 @@
     "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "node scripts/build-entries.mjs && vite build --config vite.umd.config.js && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
-    "verify:dist": "node scripts/verify-dist.mjs",
+    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "build:entries": "node scripts/build-entries.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
-    "build:umd": "vite build --config vite.umd.config.js",
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "report:bundle": "node scripts/bundle-report.mjs",
     "examples:html": "vite --config vite.examples.config.js --host 0.0.0.0",
     "examples:i18n": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5174",
     "examples:layout": "vite --config vite.examples.config.js --host 0.0.0.0 --port 5175",

@@ -894,7 +894,7 @@ function FlexToolbarExample1() {
         ['全部', '在线', '异常', '慢请求'].forEach((label) => {
           toolbar.span((pill) => {
             pill.className('components-route-note');
-            pill.text(label);
+            pill.child(label);
           });
         });
         toolbar.spacer();
@@ -929,7 +929,7 @@ function FlexStackExample1() {
           row.spacer();
           row.span((status) => {
             status.className('components-route-note');
-            status.text('执行中');
+            status.child('执行中');
           });
         });
       });
@@ -1155,7 +1155,7 @@ function MobileLayoutExample1() {
               ['首页', '工作台', '我的'].forEach((label) => {
                 row.span((item) => {
                   item.className('components-mobile-tab');
-                  item.text(label);
+                  item.child(label);
                 });
               });
             });
@@ -1445,7 +1445,7 @@ function SpacerSummaryExample1() {
           row.spacer();
           row.span((badge) => {
             badge.className('components-route-note');
-            badge.text('SRE Team');
+            badge.child('SRE Team');
           });
         });
       });
@@ -1700,7 +1700,7 @@ function AdminTemplateExample1() {
                 ['左侧菜单区', '菜单项 1', '菜单项 2', '菜单项 3'].forEach((label) => {
                   nav.span((item) => {
                     item.className('structure-label');
-                    item.text(label);
+                    item.child(label);
                   });
                 });
               });
@@ -1714,7 +1714,7 @@ function AdminTemplateExample1() {
                 content.h2('主内容区');
                 content.div((placeholder) => {
                   placeholder.className('structure-placeholder');
-                  placeholder.text('内容占位区');
+                  placeholder.child('内容占位区');
                 });
               });
             });
@@ -1768,7 +1768,7 @@ function CloudWorkspaceTemplateExample1() {
                 ['左侧资源菜单', '资源组 1', '资源组 2', '资源组 3'].forEach((label) => {
                   nav.span((item) => {
                     item.className('structure-label');
-                    item.text(label);
+                    item.child(label);
                   });
                 });
               });
@@ -1784,13 +1784,13 @@ function CloudWorkspaceTemplateExample1() {
                   [8, 8, 8].forEach((span) => {
                     row.vCol({ span, xs: 12, md: span }, (cell) => {
                       cell.className('structure-placeholder');
-                      cell.text('指标占位区');
+                      cell.child('指标占位区');
                     });
                   });
                 });
                 content.div((placeholder) => {
                   placeholder.className('structure-placeholder');
-                  placeholder.text('资源列表区');
+                  placeholder.child('资源列表区');
                 });
               });
             });
@@ -1842,7 +1842,7 @@ function ProfileTemplateExample1() {
                 ['个人侧栏区', '简介', '作品', '动态'].forEach((label) => {
                   nav.span((item) => {
                     item.className('structure-label');
-                    item.text(label);
+                    item.child(label);
                   });
                 });
               });
@@ -1857,11 +1857,11 @@ function ProfileTemplateExample1() {
                 content.vRow({ gutter: 8 }, (row) => {
                   row.vCol({ span: 8, xs: 24, md: 8 }, (cell) => {
                     cell.className('structure-placeholder');
-                    cell.text('个人资料区');
+                    cell.child('个人资料区');
                   });
                   row.vCol({ span: 16, xs: 24, md: 16 }, (cell) => {
                     cell.className('structure-placeholder');
-                    cell.text('作品动态区');
+                    cell.child('作品动态区');
                   });
                 });
               });
@@ -1916,7 +1916,7 @@ function DocsTemplateExample1() {
                 ['文档目录区', '快速开始', '布局组件', 'API 参考'].forEach((label) => {
                   nav.span((item) => {
                     item.className('structure-label');
-                    item.text(label);
+                    item.child(label);
                   });
                 });
               });
@@ -1930,11 +1930,11 @@ function DocsTemplateExample1() {
                 article.h2('文章内容区');
                 article.div((placeholder) => {
                   placeholder.className('structure-placeholder');
-                  placeholder.text('正文占位区');
+                  placeholder.child('正文占位区');
                 });
                 article.div((placeholder) => {
                   placeholder.className('structure-placeholder');
-                  placeholder.text('代码块占位区');
+                  placeholder.child('代码块占位区');
                 });
               });
             });

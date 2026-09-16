@@ -48,7 +48,7 @@ function createClearButton(className, position = {}) {
       zIndex: '1',
       ...position
     })
-    .text('×');
+    .child('×');
 }
 
 function syncClearButton(control, inputNode, clearButton) {
@@ -2099,7 +2099,7 @@ export class VField extends HtmlElementNode {
     this._confirmButton = new HtmlElementNode('button')
       .className('yoya-vfield-confirm')
       .attr({ type: 'button', 'aria-label': '确认', title: '确认' })
-      .text('✓')
+      .child('✓')
       .styles({
         background: 'transparent',
         border: '0',
@@ -2116,7 +2116,7 @@ export class VField extends HtmlElementNode {
     this._cancelButton = new HtmlElementNode('button')
       .className('yoya-vfield-cancel')
       .attr({ type: 'button', 'aria-label': '取消', title: '取消' })
-      .text('✕')
+      .child('✕')
       .styles({
         background: 'transparent',
         border: '0',

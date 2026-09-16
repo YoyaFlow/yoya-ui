@@ -36,7 +36,8 @@ const componentMenuSections = [
       { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
       { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
-      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' }
+      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' },
+      { key: 'error-handling', label: '错误处理', details: 'whenFailed / 边界 / 降级' }
     ]
   },
   {
@@ -236,6 +237,8 @@ export const docsRouteLoaders = Object.freeze({
   'data-display:tree-table': () =>
     import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
   'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'guides:error-handling': () =>
+    import('./error-handling-docs.js').then((m) => m.ErrorHandlingDocumentationPage()),
   'feedback:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
   'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
   'general:button-group': () =>
@@ -462,7 +465,7 @@ function createComponentsView(appRouter) {
             'data-top-nav-item': entry.categoryId,
             'data-top-nav-path': entry.path
           });
-          entryView.text(entry.label);
+          entryView.child(entry.label);
           entryView.on('click', () => appRouter.navigate(entry.path));
           topNavItemRefs.push({ entry, node: entryView });
         });
@@ -574,7 +577,7 @@ function createOverviewView() {
           },
           {
             title: '接入方式自由',
-            points: ['script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
+            points: ['script 标签、npm ESM、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
           },
           {
             title: '声明式直观灵活',
@@ -587,6 +590,12 @@ function createOverviewView() {
           {
             title: '原生 JS 适应性高',
             points: ['无虚拟 DOM 与框架运行时，产出原生 HTML/DOM/JS，长期运行不过时。']
+          },
+          {
+            title: '浏览器原生调试',
+            points: [
+              '无虚拟 DOM 与构建链路，Elements、断点、Console 即查即用；故障定位与业务调试通常无需额外插件或工具。'
+            ]
           },
           {
             title: '可嵌入局部增强',
@@ -704,6 +713,11 @@ function createOverviewView() {
             label: '服务端渲染',
             path: '/components/guides/ssr',
             details: 'renderToString / hydrate / mount'
+          },
+          {
+            label: '错误处理',
+            path: '/components/guides/error-handling',
+            details: 'whenFailed / 边界 / 降级'
           }
         ].forEach((guide) => {
           grid.a((card) => {
@@ -762,7 +776,7 @@ function createNotFoundView(path) {
 
     view.a((link) => {
       link.attr({ href: '#/components' });
-      link.text('返回组件目录');
+      link.child('返回组件目录');
     });
   });
 }

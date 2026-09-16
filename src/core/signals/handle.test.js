@@ -155,4 +155,39 @@ describe('batch', () => {
 
     expect(result).toBe('done');
   });
+
+  it('rejects engines that do not implement batch', () => {
+    expect(() =>
+      installSignals({
+        createSignal: (initial) => ({ value: initial }),
+        read: (source) => source.value,
+        write: (source, value) => {
+          source.value = value;
+        },
+        subscribe: () => () => {}
+      })
+    ).toThrow(/batch/);
+  });
+
+  it('delegates to the installed engine batch', () => {
+    const calls = [];
+    installSignals({
+      createSignal: (initial) => ({ value: initial }),
+      read: (source) => source.value,
+      write: (source, value) => {
+        source.value = value;
+      },
+      subscribe: () => () => {},
+      batch: (run) => {
+        calls.push('enter');
+        const result = run();
+        calls.push('exit');
+        return result;
+      }
+    });
+
+    batch(() => calls.push('run'));
+
+    expect(calls).toEqual(['enter', 'run', 'exit']);
+  });
 });

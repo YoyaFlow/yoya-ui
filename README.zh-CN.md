@@ -13,17 +13,17 @@
 
 yoya-ui 的价值可以浓缩为九点，它们决定了它适合什么样的项目：
 
-| 亮点                       | 说明                                                                                                                                               |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **面向长期维护**           | 构建于原生 Web 标准之上，API 稳定：只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。                            |
-| **接入方式自由**           | script 标签、npm ESM/UMD、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                                             |
-| **声明式直观且灵活**       | 普通 JS 声明式 DSL + setup 回调 + 父节点快捷方法，没有 JSX/SFC 模板层；视图结构直观，组合灵活。                                                    |
-| **多场景适用、全栈统一**   | 同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板与 SSR/hydration，Web 界面开发逻辑全栈一致。                                                       |
-| **原生 JS 适应性高**       | 没有虚拟 DOM 与框架运行时，产出真实 HTML/DOM/JS，原生 JS 适应性高；Web 标准向后兼容，开发出的 Web 软件资产不过时。                                 |
-| **生命周期控制**           | 以 ViewNode 作为真实 DOM 的操作句柄，提供不输虚拟 DOM 的生命周期与状态管理能力；超大规模列表（vScroll 自动虚拟滚动、只渲染可视窗口）也能流畅渲染。 |
-| **原生生态继承**           | 操作基于浏览器原生标准的真实 DOM：所有支持原生 Web 的组件与工具库都能经扩展点直接继承接入；绝大多数 JS 库都以 DOM 为接口，无需担心生态缺失。       |
-| **可嵌入既有项目局部增强** | 通过 `bindTo()` 把任意局部交互嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有系统，渐进增强，无需整体迁移。                                           |
-| **AI 编程亲和性好**        | 无框架上下文与构建魔法，AI 生成的声明式组件可直接运行；原型迭代与批量生成页面时返工率低。                                                          |
+| 亮点                       | 说明                                                                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **面向长期维护**           | 构建于原生 Web 标准之上，API 稳定：只需维护一套代码，无需同时维护基于多种框架版本构建的项目，也不随框架大版本迁移重写。                                                                    |
+| **接入方式自由**           | script 标签、npm ESM、Vite/webpack、SSR 与脚手架模板均可接入；能力按模块按需引入。                                                                                                         |
+| **声明式直观且灵活**       | 普通 JS 声明式 DSL + setup 回调 + 父节点快捷方法，没有 JSX/SFC 模板层；视图结构直观，组合灵活。                                                                                            |
+| **多场景适用、全栈统一**   | 同一套页面工厂与状态逻辑覆盖整站 SPA、服务端模板与 SSR/hydration，Web 界面开发逻辑全栈一致。                                                                                               |
+| **原生 JS 适应性高**       | 没有虚拟 DOM 与框架运行时，产出真实 HTML/DOM/JS，原生 JS 适应性高；Web 标准向后兼容，开发出的 Web 软件资产不过时。                                                                         |
+| **生命周期控制**           | 以 ViewNode 作为真实 DOM 的操作句柄，提供不输虚拟 DOM 的生命周期与状态管理能力；子树错误边界（`whenFailed()`）自带降级；超大规模列表（vScroll 自动虚拟滚动、只渲染可视窗口）也能流畅渲染。 |
+| **原生生态继承**           | 操作基于浏览器原生标准的真实 DOM：所有支持原生 Web 的组件与工具库都能经扩展点直接继承接入；绝大多数 JS 库都以 DOM 为接口，无需担心生态缺失。                                               |
+| **可嵌入既有项目局部增强** | 通过 `bindTo()` 把任意局部交互嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有系统，渐进增强，无需整体迁移。                                                                                   |
+| **AI 编程亲和性好**        | 无框架上下文与构建魔法，AI 生成的声明式组件可直接运行；原型迭代与批量生成页面时返工率低。                                                                                                  |
 
 ## 快速开始
 
@@ -40,7 +40,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 里的版本号换
     <title>yoya-ui 快速体验</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -50,7 +50,7 @@ jsDelivr CDN（需要联网）。想锁定版本时，把 URL 里的版本号换
         div,
         vButton,
         toast
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.full.min.js';
 
       div((page) => {
         page.vButton('开始任务', (button) => {
@@ -87,9 +87,8 @@ div((page) => {
 ```
 
 不需要打包器时，也可以把 `dist/yoya.core.js` / `dist/yoya.ui.js`（增量入口，
-自动加载共享 core）作为 ES module 加载；需要单文件直用时可加载
-`dist/yoya.ui-router.full.js`，或用经典 script 标签加载
-`dist/yoya.ui-router.umd.js`（`window.YoyaUI`）。
+自动加载共享 core）作为 ES module 加载；需要单文件直用（CDN / 免构建）时加载
+`dist/yoya.ui-router.full.js`（自包含，core 已内联）。
 
 ### 脚手架：创建完整项目
 
@@ -109,20 +108,20 @@ npm run dev
 
 ## 能力一览
 
-| 能力                   | 状态                                                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法；`htmls` 命名空间挂全部标签工厂                                          |
-| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                                                                             |
-| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                                                                                   |
-| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                                                                                   |
-| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离                                                               |
-| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                                                                              |
-| 状态管理               | 内置 Signals（`ref` / `computed`，动态值直接传进 DSL）、由信号驱动的可重建区域、可插拔的状态引擎（自写适配器，示例站提供插件模板） |
-| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                                                                                |
-| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                                                                                |
-| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                                                                                  |
-| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                                                                                    |
-| TypeScript             | root / core / ui / router / echart / three / devtools 均随包发布类型声明                                                           |
+| 能力                   | 状态                                                                                                                                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 纯 JS 声明式 HTML 构建 | 核心能力：`div()`、`p()`、全部 WHATWG 元素 + 嵌套快捷方法；`htmls` 命名空间挂全部标签工厂                                                                                                             |
+| SVG 与图标 DSL         | 核心能力：`svg()` 命名空间、内置图标集                                                                                                                                                                |
+| 官方组件库             | 表单、导航、反馈、数据展示、布局、异步、看板系列                                                                                                                                                      |
+| 内置路由               | history/hash 模式、守卫、参数、404、SSR 路径渲染                                                                                                                                                      |
+| 内置 i18n              | 字符串快捷写法 `.s(key, params)`、语言切换响应式刷新、SSR 每请求隔离                                                                                                                                  |
+| 主题系统               | 设计令牌、明暗模式、`@layer` CSS 架构                                                                                                                                                                 |
+| 状态管理               | 内置 Signals（`ref` / `computed`，动态值直接传进 DSL）、由信号驱动的可重建区域、keyed 列表协调（`keyed()` + 五个原语）与条件挂载（`mountable()`）、可插拔的状态引擎（自写适配器，示例站提供插件模板） |
+| 权限控制               | 声明资源码 → 自动隐藏 / 只读 / 禁用                                                                                                                                                                   |
+| SSR / hydration        | 一套代码：整站 SSR 与局部客户端增强                                                                                                                                                                   |
+| 免构建模式             | 直接用产物 ESM 文件在普通页面运行                                                                                                                                                                     |
+| 框架互操作             | 任何可挂载 DOM 的库都能原生组合                                                                                                                                                                       |
+| TypeScript             | root / core / ui / router / echart / three / devtools 均随包发布类型声明                                                                                                                              |
 
 ## 定位：面向浏览器原生 Web 的声明式扩展，而不是封闭生态的框架
 
@@ -373,7 +372,7 @@ release 徽章直接读 npm 上已发布的版本，不会过期；types 徽章�
 | 运行时依赖 | **0**                                                                                | `package.json` —— 没有 `dependencies` 块                                 |
 | 类型声明   | 覆盖 root / core / ui / router / echart / three / devtools，并通过消费方类型测试验证 | `npm run typecheck`                                                      |
 | SSR 确定性 | 渲染 / hydrate / mount 路径均有测试覆盖，设计上不依赖 DOM                            | `src/*.ssr.test.js`、`docs/ssr.zh-CN.md`                                 |
-| 分发格式   | 按模块拆分的 ESM、UMD、单一 CSS 主题文件                                             | `npm run build` → `dist/`                                                |
+| 分发格式   | 按模块拆分的 ESM、单一 CSS 主题文件                                                  | `npm run build` → `dist/`                                                |
 | 产物校验   | 分类隔离、SSR 单 core 冒烟与体积预算在 CI 中门禁                                     | `npm run verify:dist`（在 `npm run build` 之后）                         |
 | 公开路线图 | [ROADMAP.zh-CN.md](ROADMAP.zh-CN.md)：当前重点、1.0 契约冻结与 GenUI 方向            | （打开文件查看）                                                         |
 | 组件契约   | 组件开发指南固化三种受支持的组件形态                                                 | [`docs/component-authoring.zh-CN.md`](docs/component-authoring.zh-CN.md) |
@@ -545,22 +544,37 @@ yoya.ui.full.js / yoya.ui.full.min.js       core + ui
 yoya.router.full.js / yoya.router.full.min.js   core + router/SSR
 yoya.ui-router.full.js / yoya.ui-router.full.min.js  core + ui + router/SSR
 
-# UMD（自包含，经典 script 标签）
-yoya.ui-router.umd.js / yoya.ui-router.umd.min.js    window.YoyaUI
-
 # 样式与类型
 yoya.ui.css
 types/...（root / core / ui / actions / navigation / feedback / form / data-display / async / router / echart / three / devtools）
 ```
 
 命名规则：无后缀与 `.min` 是 ESM 增量入口（不含 core，运行时会自动加载共享
-块）；`.full` 是自包含文件（core 已内联）；`.umd` 提供 `window.YoyaUI` 全局。
-npm 子路径对应 `@yoyaflow/yoya-ui/core`、`@yoyaflow/yoya-ui/ui`、
-`@yoyaflow/yoya-ui/actions`、`@yoyaflow/yoya-ui/navigation`、
-`@yoyaflow/yoya-ui/feedback`、`@yoyaflow/yoya-ui/form`、
-`@yoyaflow/yoya-ui/data-display`、`@yoyaflow/yoya-ui/async` 与
-`@yoyaflow/yoya-ui/router`；SSR 渲染原语从 `./router` 导入，不再单独提供
-`./ssr` 子路径。
+块）；`.full` 是自包含文件（core 已内联），适合 CDN 与免构建单文件直用。
+
+### 产物与体积
+
+增量入口给两个数：**入口文件本身**与**实际下载量**（入口 + 它引用的公共 chunk）。
+只看入口文件会以为 core 只有几 KB——实际差距很大，按实际下载量估算首屏。
+
+| 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                              |
+| ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yoya.core.js`                     | 2.9 KB ~ **21.5 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **93.6 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
+| `yoya.router.js`                   | 9.8 KB ~ **24.4 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
+| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 14.3 / 14.7 KB     | `vEchart` / `vThree` 封装                                                                                                                             |
+
+自包含入口（core 已内联，单文件直用）：
+
+| 产物                             | raw      | min      | min+gzip | 包含内容                       |
+| -------------------------------- | -------- | -------- | -------- | ------------------------------ |
+| `yoya.router.full.js`            | 213.6 KB | 107.5 KB | 31.0 KB  | core + router / SSR            |
+| `yoya.ui.full.js`                | 682.1 KB | 409.3 KB | 96.8 KB  | core + 全部组件                |
+| `yoya.ui-router.full.js`（全量） | 747.2 KB | 439.8 KB | 105.8 KB | core + 全部组件 + router / SSR |
+
+组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+只用 core 不需要引它。`npm run report:bundle` 打印完整表格（含每个公共 chunk 的 raw / min / min+gzip）。
 
 ## 开发
 

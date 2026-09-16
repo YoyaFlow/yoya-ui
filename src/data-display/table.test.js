@@ -21,7 +21,7 @@ describe('vTable declarative sections', () => {
         foot.vTr((row) => {
           row.vTd((cell) => {
             cell.attr('colspan', 2);
-            cell.text('共 1 条');
+            cell.child('共 1 条');
           });
         });
       });

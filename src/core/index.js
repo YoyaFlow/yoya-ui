@@ -1,10 +1,8 @@
 export {
   ElementNode,
   ComponentNode,
-  TextNode,
   VTextNode,
   ViewNode,
-  ViewTextNode,
   createElementFactory,
   applyElementOptions,
   escapeHtml,
@@ -12,7 +10,6 @@ export {
   normalizeSetupArguments,
   registerChildFactories,
   resolveTarget,
-  text,
   vText
 } from './node.js';
 export { ClientOnlyNode, vClientOnly } from './client-only.js';

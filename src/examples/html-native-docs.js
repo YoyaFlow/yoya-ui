@@ -1,4 +1,5 @@
 import { computed, ref, section, vText } from '../index.js';
+import { KeyedTableExample } from './demos/keyed-table.js';
 import { ComponentSource } from './component-source.js';
 
 function HtmlNativeExample1() {
@@ -26,7 +27,7 @@ function HtmlNativeExample1() {
           });
           box.button((button) => {
             button.className('html-native-button');
-            button.text('更新');
+            button.child('更新');
             // 属性也接句柄：输入为空时按钮禁用
             button.attr(
               'disabled',
@@ -58,8 +59,8 @@ const htmlNativeApiGroups = [
     rows: [
       [
         'div(setup?)',
-        '原生工厂创建元素，支持 div(setup)、div("文本")、div({ ...config }) 三种写法。',
-        "div('内容')"
+        '原生工厂创建元素：div(setup)、div("文本")、div(句柄)（等价 child(handle)，动态文本）、div({ ...config }) 四种写法。',
+        'div(count)'
       ],
       [
         'div({ ...config })',
@@ -81,6 +82,26 @@ const htmlNativeApiGroups = [
         '按 key 取用或移除；removeChild 会销毁该子树。',
         "list.removeChild('row-1')"
       ],
+      [
+        'node.insertBefore(key, child, beforeKey?)',
+        '在 beforeKey 之前插入 keyed 子节点，beforeKey 为空则追加；重复 key 或 beforeKey 不存在会抛错。',
+        "list.insertBefore('row-2', row, 'row-3')"
+      ],
+      [
+        'node.insertAfter(key, child, afterKey?)',
+        '在 afterKey 之后插入 keyed 子节点，afterKey 为空则插到开头；afterKey 不存在会抛错。',
+        "list.insertAfter('row-0', row, null)"
+      ],
+      [
+        'node.moveBefore(key, beforeKey?) / moveAfter(key, afterKey?)',
+        '移动已有 keyed 子节点，节点身份与 DOM 状态保持；参考为空时分别移到末尾 / 开头。',
+        "list.moveBefore('row-3', 'row-1')"
+      ],
+      [
+        'node.replaceChild(key, child)',
+        '同 key 原位换新：旧节点销毁、新节点占同一槽位，邻居节点不受影响。',
+        "list.replaceChild('row-2', row)"
+      ],
       ['node.children()', '返回子节点数组快照，改快照不影响内部结构。', 'node.children().length'],
       ['node.clearChildren()', '清空子节点，旧节点在下一次提交时销毁。', 'box.clearChildren()']
     ]
@@ -89,9 +110,9 @@ const htmlNativeApiGroups = [
     title: '文本：text 与 textContent',
     rows: [
       [
-        'node.text(content)',
-        '追加一个文本节点，等价 child(vText(content))；它不是「设置文案」，反复调用会越堆越多。',
-        "p.text('共 ')"
+        'node.child(content)',
+        '追加子节点：字符串 / 数字 / 句柄 / 节点 / 数组都吃；**不是**「设置文案」，反复追加会越堆越多。',
+        "p.child('共 ')"
       ],
       [
         'node.textContent()',
@@ -109,14 +130,14 @@ const htmlNativeApiGroups = [
         "label.textContent('B')"
       ],
       [
-        'node.child(vText(handle))',
-        '文本跟随状态：传 ref / computed 句柄（或零参闭包），原地更新、不替换元素、不丢焦点。',
-        'line.child(vText(count))'
+        'node.child(handle) / node.child(vText(handle))',
+        '文本跟随状态：传 ref / computed 句柄（或零参闭包），原地更新、不替换元素、不丢焦点；工厂 setup 位置写 div(handle) 等价。',
+        'line.child(count)'
       ]
     ],
-    sample: `// 追加：元素 text() 每次都加一个文本节点，反复同步会堆叠
-p.text('状态：已同步');
-p.text('状态：已跳过'); // 结果是两段文案拼在一起
+    sample: `// 追加：child() 每次都加一个子节点，反复同步会堆叠（节点级 text() 已移除）
+p.child('状态：已同步');
+p.child('状态：已跳过'); // 结果是两段文案拼在一起
 
 // 替换：持有文本节点句柄，textContent(value) 原地更新
 const statusText = vText('状态：已同步');
@@ -220,8 +241,126 @@ ele.span(\`\${count.value} 项\`);
 
 // ④ 非信号数据源（外部对象）才需要手动刷新：flush() 只刷值，flushAll() 区域重建
 ele.flush();`
+  },
+  {
+    title: '列表协调、条件挂载与容错',
+    rows: [
+      [
+        'node.keyed(rows, keyFn, build)',
+        '信号驱动 keyed 子项：同 key 且行引用未变复用节点（build 不重跑）、行引用变原位换新、排序保身份。',
+        'list.keyed(rows, (row) => row.id, (row) => li(row.title))'
+      ],
+      [
+        'node.keyed(rows, build)',
+        '省略 keyFn 时用行引用本身做 key；重复 key 直接抛错，不会静默覆盖。',
+        'list.keyed(rows, (row) => li(row.title))'
+      ],
+      [
+        'node.mountable(cond) / isMounted()',
+        '条件挂载：为假脱离文档、为真按槽位回归，ViewNode 与控件状态保留；省略参数默认常挂，入树后可再调替换。',
+        'panel.mountable(visible)'
+      ],
+      [
+        'node.whenFailed(handler)',
+        '子树错误边界：返回节点降级替换、返回 null 仅上报；捕获必发 console.error，从不静默。',
+        'box.whenFailed((error, info) => span(`${info.phase} 失败`))'
+      ]
+    ],
+    sample: `// 以下都在 setup 里
+
+// ① 列表按 key 对账：增删 / 排序保持节点身份，行内值绑定原地刷值
+ul.keyed(rows, (row) => row.id, (row) => li(row.title));
+
+// ② 条件挂载：为假脱离文档但状态保留，为真按子节点槽位回归
+panel.mountable(visible);
+
+// ③ 子树错误边界：返回节点降级替换，返回 null 只上报并保持现状
+box.whenFailed((error, info) => span(\`\${info.phase} 失败：\${error.message}\`));`
   }
 ];
+
+const htmlNativeSetupForms = [
+  {
+    name: 'setupString',
+    usage: "div('服务运行中') / div(42)",
+    behavior:
+      '字符串或数字会追加为一个文本子节点；这是构建期快照，不随状态变化（要跟随状态请用 vText(handle)）。',
+    example: "span('共 3 项')"
+  },
+  {
+    name: 'setupObject',
+    usage: 'div({ class, attrs, style, children, onXxx, ... })',
+    behavior:
+      '配置对象按键分发：class/className、attrs、style、children、onXxx 事件（on 开头 + 函数值自动识别，去 on 前缀转小写）；节点同名方法直接调用，其余非函数键落到 attr；值位置传 signal 句柄即建立活绑定。',
+    example: "div({ attrs: { 'data-count': count } })"
+  },
+  {
+    name: 'setupFunction',
+    usage: 'div((el) => { ... })',
+    behavior:
+      '回调进入构建栈执行并登记为 builder：可参与区域重建、捕获构建期作用域（access / context / i18n），是声明式组合的主形态。',
+    example: "div((el) => el.span('运行中'))"
+  }
+];
+
+function HtmlNativeSetupSection() {
+  return {
+    render() {
+      return section((setup) => {
+        setup.className('components-html-native-setup');
+        setup.attr('data-html-native-setup', 'true');
+        setup.h2('三种 setup 形态');
+        setup.p(
+          '原生工厂的 setup 参数支持三种形态：字符串快照、配置对象、回调函数；' +
+            '文本与回调还可以同时传入，先落地文本再继续配置。'
+        );
+        setup.table((table) => {
+          table.thead((head) => {
+            head.tr((row) => {
+              row.th('形态');
+              row.th('写法');
+              row.th('行为');
+              row.th('示例');
+            });
+          });
+          table.tbody((body) => {
+            htmlNativeSetupForms.forEach((form) => {
+              body.tr((row) => {
+                row.td((cell) => cell.code(form.name));
+                row.td((cell) => cell.code(form.usage));
+                row.td(form.behavior);
+                row.td((cell) => cell.code(form.example));
+              });
+            });
+          });
+        });
+        setup.pre((pre) => {
+          pre.className('guide-code');
+          pre.code(`// setupString：静态文本，构建期就是最终值
+div('服务运行中');
+
+// setupObject：配置按键分发；值位置传句柄 → 属性原地更新
+// onclick 自动识别为 on('click')，onInput → on('input')
+div({
+  class: 'panel',
+  attrs: { 'data-count': count },
+  onclick: () => save(),
+  children: [span('共 3 项')]
+});
+
+// setupFunction：自由组合；登记的 builder 可被 rebuildable() 区域重跑
+div((el) => {
+  el.className('panel');
+  el.span('服务运行中');
+});
+
+// 组合写法：文本先落地，回调继续配置
+div('标题', (el) => el.className('title'));`);
+        });
+      });
+    }
+  };
+}
 
 function HtmlNativeApiSection() {
   return {
@@ -290,6 +429,35 @@ box.button('保存').on('click', save);`);
   };
 }
 
+function KeyedTableDemoSection() {
+  const liveDemo = KeyedTableExample();
+  const sourcePanel = ComponentSource({
+    component: KeyedTableExample,
+    imports: ['ref', 'th', 'tr', 'vstack'],
+    sourceComponent: KeyedTableExample,
+    title: 'keyed 表格协调源码'
+  });
+
+  return {
+    render() {
+      return section((example) => {
+        example.className('components-html-native-demo components-html-native-keyed-demo');
+        example.attr('data-native-demo', 'keyed');
+        example.h2('keyed 表格协调');
+        example.p(
+          'table.keyed(rows, keyFn, build) 用信号驱动原生表格：状态列是 ref 字段，写句柄只刷那一格；' +
+            '任务 / 负责人是普通字段，换新行对象才刷新。追加 / 反转按 key 对账，行节点身份保持。'
+        );
+        example.div((live) => {
+          live.className('components-html-native-demo-live');
+          live.child(liveDemo);
+        });
+        example.child(sourcePanel);
+      });
+    }
+  };
+}
+
 function HtmlNativeDemoSection() {
   const liveDemo = HtmlNativeExample1();
   const sourcePanel = ComponentSource({
@@ -325,9 +493,11 @@ export function HtmlNativeDocumentationPage() {
         page.ul((list) => {
           htmlNativeNotes.forEach((note) => list.li(note));
         });
+        page.child(HtmlNativeSetupSection());
         page.child(HtmlNativeApiSection());
         page.child(HtmlNativeUsageNote());
         page.child(HtmlNativeDemoSection());
+        page.child(KeyedTableDemoSection());
       });
     }
   };
