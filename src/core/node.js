@@ -1695,7 +1695,6 @@ export class ViewNode {
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
       this._inheritErrorBoundary(viewNode);
-      this._inheritErrorBoundary(viewNode);
     });
 
     return this;
@@ -2606,7 +2605,6 @@ export class ElementNode extends ViewNode {
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
-      this._inheritErrorBoundary(viewNode);
       this._inheritErrorBoundary(viewNode);
 
       if (this._el) {
