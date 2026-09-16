@@ -1702,19 +1702,6 @@ export class ViewNode {
   }
 
   /**
-   * 已移除：追加文本用 child(content)（字符串 / 数字 / 句柄 / 动态读函数都吃），
-   * 需要替换同一处文本时持有 vText() 句柄调 textContent(next)。
-   * 组件自己的 text()（badge / progress / menu / tabs / tree / …）与方法覆盖无关。
-   */
-  text() {
-    throw new TypeError(
-      'text() was removed: use child(content) to append text ' +
-        '(wrap a zero-argument reader as vText(fn)), or keep a vText() handle ' +
-        'and call textContent(next) to replace text'
-    );
-  }
-
-  /**
    * 注册事件。同一节点同一事件只保留最新 handler；
    * 真实 DOM 上每个事件最多挂一个转发 adapter。
    */
