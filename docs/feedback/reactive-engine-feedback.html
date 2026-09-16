@@ -554,7 +554,7 @@
           </div>
         </div>
         <pre><code>const list = div();
-const row = div((line) =&gt; line.text('第一行')); // 预制节点：句柄在手
+const row = div((line) =&gt; line.child('第一行')); // 预制节点：句柄在手
 
 list.addChild('r1', row);   // 挂载进主结构，身份由 ViewNode 句柄持有
 list.getChild('r1');        // 复用
