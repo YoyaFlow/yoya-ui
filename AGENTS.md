@@ -13,6 +13,14 @@ Always prefer MCP graph tools over grep, glob, or file search for code discovery
 
 Fall back to text search for string literals, configuration, non-code files, or when the graph is stale or insufficient.
 
+## Local Work Tickets
+
+Local tickets are the source of truth for pending tracer-bullet work. They live under
+`.scratch/<feature-slug>/issues/*.md` (one ticket per file); `.scratch/` is intentionally
+git-ignored. When the user asks about “工作票” or remaining tasks, inspect the newest ticket
+set by directory modification time before answering. The current active set is
+`.scratch/post-0.6-followups/issues/`.
+
 ## Component Definition Patterns
 
 组件定义支持多种形态，按场景选用；新组件应从下列三种形态中选择，避免在模板之外另起结构。
