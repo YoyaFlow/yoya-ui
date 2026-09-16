@@ -20,17 +20,30 @@ import type { VThemeModeSwitch } from './theme.js';
 /** Class name input accepted by className()/class(): strings, arrays, falsy values. */
 export type ClassNameInput = string | number | null | undefined | false | ClassNameInput[];
 
-/** Attribute values supported by attr(); a signal handle makes it a live binding. */
-export type AttrValue = string | number | boolean | null | undefined | SignalHandle<unknown>;
+/**
+ * Zero-argument reader accepted in element value positions (attr / style /
+ * styles / toggleClass / vText / mountable). It runs through the same binding
+ * pipeline as a signal handle, so a signal it reads keeps the position live.
+ */
+export type ValueReader<T = unknown> = () => T;
 
-/** Inline style values supported by style()/styles(); a signal handle makes it a live binding. */
-export type StyleValue = string | number | null | undefined | SignalHandle<unknown>;
+/** Attribute values supported by attr(); handle or reader makes it a live binding. */
+export type AttrValue =
+  string | number | boolean | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
+
+/** Inline style values supported by style()/styles(); handle or reader makes it live. */
+export type StyleValue =
+  string | number | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
 
 /** Inline style map; keys are camelCase CSS property names. */
 export type StyleInput = Record<string, StyleValue>;
 
-/** Text content accepted by vText(): a signal handle makes it a live binding. */
-export type TextContent = string | number | SignalHandle<unknown>;
+/**
+ * Text content accepted by vText(): a signal handle (recommended) or a
+ * zero-argument reader makes it a live binding. Note that `child(fn)` is a
+ * component render slot, not a text position — wrap readers in vText(fn).
+ */
+export type TextContent = string | number | SignalHandle<unknown> | ValueReader<unknown>;
 
 /** Options accepted by on(). */
 export type EventOptions = boolean | AddEventListenerOptions;
@@ -322,7 +335,7 @@ export class ViewNode {
    * attached node replaces the condition immediately. Closure conditions refresh
    * through the parent's flush().
    */
-  mountable(condition?: SignalHandle | boolean | (() => unknown)): this;
+  mountable(condition?: SignalHandle | boolean | ValueReader<unknown>): this;
 
   /** Latest committed state of this node's own mount condition (default true). */
   isMounted(): boolean;
@@ -444,7 +457,7 @@ export class ElementNode extends ViewNode {
   replaceClassName(old: string, next: string, tolerate?: boolean): this;
 
   /** Toggles a class from a truthy value; a signal handle or closure makes it live. */
-  toggleClass(name: string, value: boolean | SignalHandle<unknown> | (() => unknown)): this;
+  toggleClass(name: string, value: boolean | SignalHandle<unknown> | ValueReader<unknown>): this;
 
   /** Reads a single style property. */
   style(name: string): StyleValue | undefined;

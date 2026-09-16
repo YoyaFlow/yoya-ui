@@ -445,6 +445,16 @@ export function resolveTextValue(value) {
     return String(value);
   }
 
+  // 组件 props 是配置位：只接受字面值与信号句柄。函数在这里没有绑定语义，
+  // 静默串成源码文本会让人以为传进去了（值位置接受零参闭包的地方另行说明）。
+  if (typeof value === 'function') {
+    throw new TypeError(
+      'property value does not accept a function: pass a ref/computed handle. ' +
+        'Zero-argument readers are only supported in element value positions ' +
+        '(attr / style / styles / toggleClass / vText / mountable)'
+    );
+  }
+
   if (typeof value.textContent === 'function') {
     return value.textContent();
   }

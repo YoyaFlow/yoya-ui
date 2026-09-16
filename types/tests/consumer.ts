@@ -208,6 +208,28 @@ void labelLine;
 void labelChild;
 void labelText;
 
+// Element value positions take literals, signal handles and zero-argument readers.
+const readerCount = ref(3);
+const readerNode = div((ele) => {
+  ele.attr('data-count', readerCount);
+  ele.attr('data-doubled', () => readerCount.value * 2);
+  ele.style('width', () => `${readerCount.value}px`);
+  ele.styles({ opacity: () => (readerCount.value > 0 ? 1 : 0) });
+  ele.toggleClass('is-many', () => readerCount.value > 1);
+  ele.child(vText(() => `count=${readerCount.value}`));
+});
+readerNode.mountable(() => readerCount.value > 0);
+readerNode.flush();
+void readerNode;
+
+// @ts-expect-error parameterized readers are rejected at runtime and by the types
+readerNode.attr('data-invalid', (value: string) => value);
+
+// Component props take handles; readers belong to element value positions.
+const propName = ref('待处理');
+const propInput = vInput({ name: 'prop', value: propName, placeholder: '搜索' });
+void propInput;
+
 // Keyed children, event removal and class toggling are part of the node API.
 const keyedHost = div((ele) => {
   ele.addChild('row-1', ele.span('A'));
