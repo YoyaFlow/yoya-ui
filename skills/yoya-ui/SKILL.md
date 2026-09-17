@@ -107,7 +107,7 @@ div((root) => {
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。通用数据注入用 `withContext(providers, build)` + `currentContext(key)`（构建期作用域，SSR 每请求隔离）。详见 references/access-context.md。
+组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。跨组件共享数据用 `provide(key, value)` + `inject(key, fallback)`（就近覆盖、随节点销毁，声明写在 setup / `render()` 里）；请求级注入用 `withContext(providers, build)` + `currentContext(key)`（SSR 每请求隔离）。详见 references/access-context.md。
 
 ## DevTools（Beta）
 
@@ -121,7 +121,7 @@ div((root) => {
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
 - [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、事件单槽
-- [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与通用 Context 注入、无障碍原语
+- [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与跨组件共享（provide/inject、withContext、installContext）、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
 - [references/modules.md](references/modules.md)：业务模块组织规则（目录结构、api 分层与命令范式、状态模块、业务/共享组件、应用外壳与导航、命名与结构分块、启动流程与新增菜单）

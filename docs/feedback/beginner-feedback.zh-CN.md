@@ -107,9 +107,9 @@
 ### 11. 跨了好几层的组件要共享状态怎么办？没有 `provide/inject`，没有 Context？
 
 - 分类：②（文档缺失）
-- 现状：对应物存在且已导出：`withContext(providers, build)` / `installContext` / `currentContext(key)`（`src/core/context.js`），权限作用域 `access()` 同样就近覆盖。缺的是面向使用者的文档。
-- 文档动作：新增 context 使用文档（当前只有 API 无文档）。
-- 优先级：P1 ☐
+- 现状：`provide(key, value)` / `inject(key, fallback)` 已落地（`src/core/context.js`）——声明写在构建这一帧（setup / 组件 `render()` / 页面工厂），挂在当前节点上，后代就近读取、随节点销毁；懒解析的组件沿父链上溯，异步加载的视图以 loader 节点为帧。请求级注入仍是 `withContext(providers, build)` / `installContext` + `currentContext(key)`，`inject()` 会回退到这两层，读侧可以统一用 `inject`。权限作用域 `access()` 同样就近覆盖。
+- 文档动作：`skills/yoya-ui/references/access-context.md` 已补「跨组件共享：provide / inject」与选型表。
+- 优先级：P1 ☑
 
 ### 12. 组件标签写法呢？DevTools 里看不到组件树，这还是组件化吗？
 
