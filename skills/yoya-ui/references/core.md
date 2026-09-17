@@ -118,7 +118,7 @@ export function CounterCard() {
 ```
 
 - **产物是组件节点本身**（`ComponentNode extends ViewNode`）：当根 `card.bindTo('#app')`、当子节点 `page.child(card)` 都行；不产生占位/包装元素，setup 返回数组即多根 fragment。
-- **命令方法收到 `api` 上**，工厂在返回前挂到节点本身；`api` 只收函数（非函数直接报错），**撞上节点已有成员（`child` / `destroy` / `renderDom` / `whenFailed` / `mountable` …）或 `render` / `_*` 直接抛错**，不静默覆盖。要捕获事件故障就把边界就近声明在 setup 里的容器上（`box.whenFailed(…)`），节点级能力（`mountable()` / `rebuildable()`）直接链在返回的节点上。
+- **命令方法收到 `api` 上**，工厂在返回前挂到节点本身；`api` 只收函数（非函数直接报错），**撞上节点已有成员（`child` / `destroy` / `renderDom` / `mountable` …）或 `render` / `_*` 直接抛错**，不静默覆盖。`api.whenFailed = (error, info) => 降级节点` 是例外：它声明组件自带的错误边界（等价 `node.whenFailed(fn)`，与组件对象协议成员同义）。其余节点级能力（`mountable()` / `rebuildable()`）直接链在返回的节点上。
 - **只多一个入口，不改旧写法**：形态 A/B/C、函数工厂、`child()` 接受的对象形式全部照旧；没有对外命令方法的展示组件仍用形态 A。
 
 **形态 C：类节点组件**（父子嵌套或重写生命周期，需导出成对 `vXxx` 工厂）

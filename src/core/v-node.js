@@ -8,9 +8,12 @@ const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
  *
  * setup(api) 里把对外命令方法收到 api 上（`api.reload = () => …`），并返回要渲染的
  * ViewNode（或 ViewNode 数组，按多根 fragment 落实）。工厂在返回节点前把 api 上的
- * 命令挂到节点本身：撞上节点自身 API（`child` / `attr` / `whenFailed` …）或内部字段
- * 直接抛错，不静默覆盖。命令里 `return api` 等价于返回节点，链式调用两头都通；
- * 错误边界用节点方法 `card.whenFailed(fn)`。
+ * 命令挂到节点本身：撞上节点自身 API（`child` / `destroy` / `mountable` …）或内部
+ * 字段直接抛错，不静默覆盖。两个约定：
+ *
+ * - 命令里 `return api` 等价于返回节点，链式调用两头都通；
+ * - `api.whenFailed = (error, info) => 降级节点` 声明组件自带的错误边界，等价于
+ *   `card.whenFailed(fn)`（与组件对象协议成员同名同义），不按命令合并。
  */
 export function vNode(setup) {
   if (typeof setup !== 'function') {
@@ -65,11 +68,17 @@ function attachCommands(node, api) {
       );
     }
 
+    // whenFailed 是错误边界声明，不是命令：路由到节点方法，语义同组件协议成员
+    if (key === 'whenFailed') {
+      node.whenFailed(command);
+      return;
+    }
+
     if (RESERVED_COMMAND_KEYS.has(key) || key.startsWith('_') || key in node) {
       throw new TypeError(
         `vNode command "${key}" collides with the node API. Rename it ` +
           '(for example "reloadAction" / "onReload"); node members such as child / attr / ' +
-          'whenFailed stay reserved, and error boundaries use card.whenFailed(fn).'
+          'destroy stay reserved, and error boundaries go to api.whenFailed.'
       );
     }
 

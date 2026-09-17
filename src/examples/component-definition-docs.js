@@ -220,8 +220,8 @@ const componentPatterns = [
     title: '形态 B 快捷工厂：vNode —— 定义即节点',
     intro:
       '需要对外命令方法时用 vNode：命令收到 api 上，工厂挂到返回的节点本身，重名（child / destroy / ' +
-      'whenFailed / mountable …）直接报错。产物是组件节点，可当根挂载、可当子节点，不产生占位元素；' +
-      '命令里 return api 等于 return 节点。旧写法不受影响。',
+      'mountable …）直接报错。产物是组件节点，可当根挂载、可当子节点，不产生占位元素；命令里 return api ' +
+      '等于 return 节点，自带边界写 api.whenFailed。旧写法不受影响。',
     code: `const card = vNode((api) => {
   api.bump = () => {
     count.value += 1;

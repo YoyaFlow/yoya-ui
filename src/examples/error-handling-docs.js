@@ -15,9 +15,9 @@ const errorDemos = [
   {
     component: WhenFailedComponentExample,
     description:
-      '组件对象定义与 render() 同层的 whenFailed 成员，ComponentNode 自动挂载；返回节点则替换组件输出为降级 UI。',
+      'vNode 定义即组件节点：命令挂 api，边界写在 api.whenFailed 上（等价于 node.whenFailed）；返回节点则把组件输出替换为降级 UI。',
     id: 'component',
-    imports: ['div', 'ref', 'span', 'vstack'],
+    imports: ['div', 'ref', 'span', 'vNode', 'vstack'],
     sourceTitle: '组件协议降级源码',
     title: '组件协议：自带降级'
   }

@@ -75,11 +75,40 @@ describe('vNode component factory', () => {
 
   it('rejects command names that collide with the node API', () => {
     expect(() => vNode((api) => ((api.child = () => {}), p('x')))).toThrow(/collides/);
-    expect(() => vNode((api) => ((api.whenFailed = () => {}), p('x')))).toThrow(/collides/);
     expect(() => vNode((api) => ((api.render = () => {}), p('x')))).toThrow(/collides/);
     expect(() => vNode((api) => ((api._hidden = () => {}), p('x')))).toThrow(/collides/);
     expect(() => vNode((api) => ((api.mountable = () => {}), p('x')))).toThrow(/collides/);
     expect(() => vNode((api) => ((api.destroy = () => {}), p('x')))).toThrow(/collides/);
+  });
+
+  it('takes api.whenFailed as the component boundary, not as a command', () => {
+    const card = vNode((api) => {
+      api.whenFailed = (error) => p(`降级：${error.message}`);
+      api.throwLater = () => {
+        throw new Error('内联故障');
+      };
+
+      return div((box) => {
+        box.button('触发', (button) => {
+          button.on('click', () => api.throwLater());
+        });
+      });
+    });
+    const host = mount(div((box) => box.child(card)));
+
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('降级：内联故障');
+    expect(errorSpy.mock.calls[0][2].phase).toBe('event');
+  });
+
+  it('rejects a non-function api.whenFailed', () => {
+    expect(() =>
+      vNode((api) => {
+        api.whenFailed = 'nope';
+        return p('x');
+      })
+    ).toThrow(/only collects command methods/);
   });
 
   it('rejects non-command api values and invalid setup results', () => {

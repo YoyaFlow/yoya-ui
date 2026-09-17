@@ -85,8 +85,8 @@ export function CounterCard() {
 ```
 
 - 返回的是组件节点（`ComponentNode extends ViewNode`）：当根挂载、当子节点、进 keyed 列表都用节点语义；不产生占位元素，setup 返回数组即多根 fragment。
-- `api` 只收命令函数；工厂把命令挂到节点本身，撞上节点已有成员（`child` / `destroy` / `whenFailed` / `mountable` …）或 `render` / `_*` 直接抛错，不静默覆盖。
-- 命令里 `return api` 等于 `return 节点`；错误边界就近声明在 setup 的容器上（`box.whenFailed(…)`），节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
+- `api` 只收命令函数；工厂把命令挂到节点本身，撞上节点已有成员（`child` / `destroy` / `mountable` …）或 `render` / `_*` 直接抛错，不静默覆盖。
+- 命令里 `return api` 等于 `return 节点`；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），其余节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
 - 旧写法不受影响：形态 A/B/C 与 `child(componentObject)` 全部照旧，没有对外命令方法的展示组件仍用形态 A。
 
 ### 形态 C：类节点组件（父子嵌套、操作子实例或重写生命周期）
