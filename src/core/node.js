@@ -475,12 +475,30 @@ export function registerRegionCleanup(cleanup) {
 
 /** 找最近边界并处理；无边界时原样重抛（fail fast）。返回降级替换节点或 null。 */
 function captureNodeError(node, error, phase) {
-  const boundary = node._errorHandler ? node : node._errorBoundary;
+  const boundary = findErrorBoundary(node);
   if (!boundary) {
     throw error;
   }
 
   return boundary._handleError(error, node, phase);
+}
+
+/**
+ * 沿父链上溯找最近的错误边界：本节点设了 whenFailed 就地处理，否则交给父节点继续上溯。
+ * 位置在出错时才解析，所以与声明顺序、子树深度、运行时插入无关；搬走的子树跟着新父走。
+ */
+function findErrorBoundary(node) {
+  let current = node;
+
+  while (current) {
+    if (current._errorHandler) {
+      return current;
+    }
+
+    current = current._parent;
+  }
+
+  return null;
 }
 
 /** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟元素；找不到返回 null（追加）。 */
@@ -532,7 +550,7 @@ function keyedSegmentTailNode(parent, segment, memberNodes) {
 
 function placeKeyedMember(parent, entry, beforeNode, tailNode) {
   parent._pendingRemovals.delete(entry.node);
-  parent._inheritErrorBoundary(entry.node);
+  parent._linkChild(entry.node);
   const anchorNode = beforeNode ?? tailNode;
   const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
   if (beforeIndex === -1) {
@@ -815,7 +833,7 @@ export class ViewNode {
     this._mountConditionRef = null; // 入树后由父节点收养：条件存这里，替换 = 写它
     this._isMounted = true;
     this._errorHandler = null;
-    this._errorBoundary = null;
+    this._parent = null; // 当前父节点：错误处理沿它逐级上溯
     this._childrenDirty = false;
     this._deleted = false;
     this._failed = false; // 渲染/构建失败标记：跳过重复尝试，重新挂载会清掉
@@ -1119,6 +1137,7 @@ export class ViewNode {
     this._dropChildKeys(this._children);
     this._children.forEach((child) => {
       this._pendingRemovals.add(child);
+      child._parent = null; // 脱离视图树：不再把错误交给旧父
     });
     this._children = [];
     this._childrenDirty = true;
@@ -1149,7 +1168,7 @@ export class ViewNode {
     this._children.push(viewNode);
     this._childrenDirty = true;
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
@@ -1186,7 +1205,7 @@ export class ViewNode {
     }
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
     if (beforeIndex === -1) {
@@ -1234,7 +1253,7 @@ export class ViewNode {
     }
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
@@ -1378,7 +1397,7 @@ export class ViewNode {
     this._childKeys.set(rawKey, viewNode);
     this._pendingRemovals.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
     const index = this._children.indexOf(previous);
     if (index === -1) {
       this._children.push(viewNode);
@@ -1504,11 +1523,12 @@ export class ViewNode {
   }
 
   /**
-   * 插入路径统一入口：向子节点传播最近边界引用。
+   * 插入路径统一入口：把子节点链接到当前父节点。
+   * 错误边界在出错时沿 _parent 上溯解析，这里只维护父子单向关系。
    * 重新挂载（插入 / 换新 / 区域重建）同时清掉上一次的失败标记，允许再试一次。
    */
-  _inheritErrorBoundary(viewNode) {
-    viewNode._errorBoundary = this._errorHandler ? this : this._errorBoundary;
+  _linkChild(viewNode) {
+    viewNode._parent = this;
     viewNode._failed = false;
   }
 
@@ -1565,12 +1585,21 @@ export class ViewNode {
       withRenderScope(this._access ?? currentInheritedScope(), () => viewNode.renderDom());
     }
 
-    this.clearChildren();
-    this.child(viewNode);
-    this._inheritErrorBoundary(viewNode);
-    if (this._el) {
-      this._commitChildren();
+    const swap = () => {
+      this.clearChildren();
+      this.child(viewNode);
+      if (this._el) {
+        this._commitChildren();
+      }
+    };
+
+    // 区域节点的子节点只能由区域构建产出：降级替换按一次区域构建执行
+    if (this._rebuildable) {
+      withRegionBuild(this, swap);
+    } else {
+      swap();
     }
+
     return viewNode;
   }
 
@@ -1694,7 +1723,7 @@ export class ViewNode {
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
-      this._inheritErrorBoundary(viewNode);
+      this._linkChild(viewNode);
     });
 
     return this;
@@ -1848,6 +1877,7 @@ export class ViewNode {
       unregisterDevtoolsNode(this);
     }
     this._deleted = true;
+    this._parent = null;
     releaseBindings(collectRegionBindings(this));
     releaseRegion(this);
     if (Array.isArray(this._regionRunCleanups)) {
@@ -1973,8 +2003,8 @@ export class ComponentNode extends ViewNode {
     const resolved = withAccess(this._accessContext || currentAccess(), build);
     const list = Array.isArray(resolved) ? resolved.slice() : [resolved];
     const componentInfo = describeComponent(this._component);
-    const ownerInfo = this._owner
-      ? ` It was added as a child of ${describeValue(this._owner)}.`
+    const ownerInfo = this._parent
+      ? ` It was added as a child of ${describeValue(this._parent)}.`
       : '';
     list.forEach((item) => {
       if (!(item instanceof ViewNode)) {
@@ -1991,7 +2021,7 @@ export class ComponentNode extends ViewNode {
     this._resolvedList = list;
     this._resolved = list[0] || null;
     this._roots = Array.isArray(resolved) ? list : null;
-    list.forEach((root) => this._inheritErrorBoundary(root));
+    list.forEach((root) => this._linkChild(root));
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -2040,6 +2070,7 @@ export class ComponentNode extends ViewNode {
     this._resolved = nextList[0] || null;
     this._roots = Array.isArray(nextView) ? nextList : null;
     this._fragmentDom = null;
+    nextList.forEach((root) => this._linkChild(root));
 
     if (oldNodes.length === 0) {
       previousList.forEach((root) => root.destroy());
@@ -2090,7 +2121,7 @@ export class ComponentNode extends ViewNode {
     this._resolved = viewNode;
     this._roots = null;
     this._fragmentDom = null;
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
     previousList.forEach((root) => root.destroy());
     return viewNode;
   }
@@ -2257,11 +2288,8 @@ function describeComponent(component) {
  */
 function normalizeChildWithContext(parent, child) {
   try {
-    const viewNode = normalizeChild(child);
-    if (viewNode._owner === undefined) {
-      viewNode._owner = parent;
-    }
-    return viewNode;
+    // 父链接由各插入路径的 _linkChild() 统一维护（含搬家覆盖与移除清理）
+    return normalizeChild(child);
   } catch (error) {
     if (error instanceof TypeError && String(error.message).startsWith('ViewNode child must')) {
       throw new TypeError(
@@ -2605,7 +2633,7 @@ export class ElementNode extends ViewNode {
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
-      this._inheritErrorBoundary(viewNode);
+      this._linkChild(viewNode);
 
       if (this._el) {
         const childElement = this._renderChildForInsert(viewNode);

@@ -167,7 +167,7 @@ Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountab
 - `child(...)` 接受 ViewNode、组件对象（自动包 `ComponentNode` 缓存 render 结果）或字符串/数字
 - `on(event, handler)` 绑定真实 DOM 事件，`destroy()` 自动清理
 - 类组件遵循 `renderDom` / `bindTo` / `destroy` 生命周期
-- 组件自带降级：对象组件写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）
+- 组件自带降级：对象组件写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）；边界在出错时沿父链上溯解析（就近优先），与声明顺序 / 嵌套深度 / 运行时插入 / 搬家无关
 
 ## 注册父节点快捷方法
 
