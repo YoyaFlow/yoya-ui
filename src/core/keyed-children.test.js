@@ -135,6 +135,65 @@ describe('keyed children binding', () => {
     rows.value = [];
     expect(list.toHTML()).toBe('<ul><li data-row-key="1">A</li></ul>');
   });
+
+  it('moves only the rows whose position changed', () => {
+    const rows = ref(Array.from({ length: 100 }, (unused, index) => ({ id: index + 1 })));
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(String(row.id))
+      );
+    });
+    const element = list.renderDom();
+    const moved = [];
+    const originalInsertBefore = element.insertBefore.bind(element);
+    element.insertBefore = (child, anchor) => {
+      moved.push(child.textContent);
+      return originalInsertBefore(child, anchor);
+    };
+    const identities = list.children().map((row) => row);
+
+    const swapped = rows.peek().slice();
+    [swapped[0], swapped[99]] = [swapped[99], swapped[0]];
+    rows.value = swapped;
+
+    // 首尾两行换位只搬这两行；旧的相邻比较会把后面 99 行逐个挪一遍。
+    expect(moved).toEqual(['1', '100']);
+    expect(element.firstChild.textContent).toBe('100');
+    expect(element.lastChild.textContent).toBe('1');
+    expect(list.children().map((row) => row)).toEqual([
+      identities[99],
+      ...identities.slice(1, 99),
+      identities[0]
+    ]);
+  });
+
+  it('keeps the moved count minimal for rotations and no-op updates', () => {
+    const rows = ref([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(String(row.id))
+      );
+    });
+    const element = list.renderDom();
+    const moved = [];
+    const originalInsertBefore = element.insertBefore.bind(element);
+    element.insertBefore = (child, anchor) => {
+      moved.push(child.textContent);
+      return originalInsertBefore(child, anchor);
+    };
+
+    rows.value = rows.peek().slice();
+    expect(moved).toEqual([]);
+
+    // [1, 2, 3] → [3, 1, 2]：只把 3 挪到最前
+    rows.value = [rows.peek()[2], rows.peek()[0], rows.peek()[1]];
+    expect(moved).toEqual(['3']);
+    expect(element.textContent).toBe('312');
+  });
 });
 
 describe('keyed row update protocol', () => {

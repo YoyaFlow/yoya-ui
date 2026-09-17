@@ -548,7 +548,73 @@ function keyedSegmentTailNode(parent, segment, memberNodes) {
   return null;
 }
 
-function placeKeyedMember(parent, entry, beforeNode, tailNode) {
+/** 成员在父元素里的直接子元素；不可见（惰性挂载 / 多根 / 未渲染）时返回 null。 */
+function keyedMemberElement(parent, node) {
+  const element = node?._el;
+  return element && element.parentNode === parent._el ? element : null;
+}
+
+/** 段尾锚点元素：段内成员都排在它前面；段尾自己不可见时退回到它之后第一个可见兄弟。 */
+function keyedSegmentTailElement(parent, tailNode) {
+  if (!tailNode) {
+    return null;
+  }
+
+  return keyedMemberElement(parent, tailNode) ?? resolveInsertAnchor(parent, tailNode);
+}
+
+/**
+ * 目标顺序里「原本就按旧顺序排列」的最长递增子序列——这些成员留在原地即可，
+ * 其余成员才需要挪到后继之前。交换两行因此只搬换位的行，而不是把后继之后的
+ * 每个兄弟逐个挪一遍（旧的相邻比较会退化成整表重排）。
+ * 新增成员不参与判定：插入路径一次就把它们放到正确位置。
+ */
+function collectKeyedMovedNodes(next, previousPosition) {
+  const tails = [];
+  const tailIndexes = [];
+  const previous = new Array(next.length).fill(-1);
+
+  next.forEach((item, index) => {
+    const position = previousPosition.get(item.node);
+    if (position === undefined) {
+      return;
+    }
+
+    let low = 0;
+    let high = tails.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (tails[middle] < position) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+
+    tails[low] = position;
+    tailIndexes[low] = index;
+    previous[index] = low > 0 ? tailIndexes[low - 1] : -1;
+  });
+
+  const stable = new Set();
+  for (
+    let cursor = tailIndexes[tailIndexes.length - 1] ?? -1;
+    cursor !== -1;
+    cursor = previous[cursor]
+  ) {
+    stable.add(next[cursor].node);
+  }
+
+  const moved = new Set();
+  next.forEach((item) => {
+    if (!stable.has(item.node)) {
+      moved.add(item.node);
+    }
+  });
+  return moved;
+}
+
+function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
   parent._pendingRemovals.delete(entry.node);
   parent._linkChild(entry.node);
   const anchorNode = beforeNode ?? tailNode;
@@ -563,12 +629,29 @@ function placeKeyedMember(parent, entry, beforeNode, tailNode) {
   if (parent._el) {
     const element = parent._renderChildForInsert(entry.node);
     if (element && element.parentNode !== parent._el) {
-      const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
-      parent._el.insertBefore(element, anchor ?? resolveInsertAnchor(parent, anchorNode));
+      parent._el.insertBefore(element, anchorElement ?? resolveInsertAnchor(parent, anchorNode));
     }
     if (isDevtoolsEnabled() && !parent._devtoolsRendering) {
       notifyDevtoolsMutation(parent, 'child', { added: [ensureDevtoolsNodeId(entry.node)] });
     }
+  }
+}
+
+/** 需要换位的成员：视图树里挪到后继之前，DOM 里只搬自己这一个元素。 */
+function reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement) {
+  const currentIndex = parent._children.indexOf(node);
+  if (currentIndex !== -1) {
+    parent._children.splice(currentIndex, 1);
+  }
+
+  const anchorNode = beforeNode ?? tailNode;
+  const target = anchorNode ? parent._children.indexOf(anchorNode) : -1;
+  parent._children.splice(target === -1 ? parent._children.length : target, 0, node);
+  parent._childrenDirty = true;
+
+  const element = keyedMemberElement(parent, node);
+  if (element && element.nextSibling !== anchorElement) {
+    parent._el.insertBefore(element, anchorElement);
   }
 }
 
@@ -660,30 +743,26 @@ function syncKeyedSegment(parent, segment, rows) {
   members.forEach((entry) => memberNodes.add(entry.node));
   const tailNode = keyedSegmentTailNode(parent, segment, memberNodes);
 
+  // 旧顺序快照 + 目标顺序：只搬不在最长递增子序列里的成员，
+  // 交换两行因此只动换位的两行，而不是把后续兄弟逐个挪一遍。
+  const previousPosition = new Map();
+  parent._children.forEach((child, index) => previousPosition.set(child, index));
+  const movedNodes = collectKeyedMovedNodes(next, previousPosition);
+  let anchorElement = keyedSegmentTailElement(parent, tailNode);
+
   for (let i = next.length - 1; i >= 0; i -= 1) {
-    const node = next[i].node;
+    const { node, rawKey } = next[i];
     const beforeNode = i + 1 < next.length ? next[i + 1].node : null;
-    const currentIndex = parent._children.indexOf(node);
-    if (currentIndex === -1) {
-      placeKeyedMember(parent, members.get(next[i].rawKey), beforeNode, tailNode);
-      continue;
+
+    if (!previousPosition.has(node)) {
+      placeKeyedMember(parent, members.get(rawKey), beforeNode, tailNode, anchorElement);
+    } else if (movedNodes.has(node)) {
+      reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement);
     }
 
-    if (!beforeNode) {
-      continue;
-    }
-
-    const beforeIndex = parent._children.indexOf(beforeNode);
-    if (beforeIndex !== -1 && currentIndex >= beforeIndex) {
-      parent._children.splice(currentIndex, 1);
-      const anchorNode = beforeNode ?? tailNode;
-      const target = anchorNode ? parent._children.indexOf(anchorNode) : -1;
-      parent._children.splice(target === -1 ? parent._children.length : target, 0, node);
-      parent._childrenDirty = true;
-      if (parent._el && node._el) {
-        const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
-        parent._el.insertBefore(node._el, anchor ?? resolveInsertAnchor(parent, anchorNode));
-      }
+    const element = keyedMemberElement(parent, node);
+    if (element) {
+      anchorElement = element;
     }
   }
 }
