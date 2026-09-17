@@ -41,7 +41,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
     <title>yoya-ui 计数器</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.css"
+      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -53,7 +53,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.5.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // 状态就是句柄：写入即更新绑定位置
 
