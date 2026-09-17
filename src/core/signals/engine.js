@@ -1,6 +1,7 @@
 import {
   Signal,
   batch as engineBatch,
+  computed as engineComputed,
   effect as engineEffect,
   signal as engineSignal,
   untracked as engineUntracked
@@ -16,6 +17,14 @@ export const defaultAdapter = {
 
   createSignal(initial) {
     return engineSignal(initial);
+  },
+
+  /**
+   * 可选能力：引擎原生派生。它自带失效版本号，未被观察时只缓存不订阅，
+   * 因此「读一次就不再有人看」的派生不会把闭包钉在长命依赖信号上。
+   */
+  createComputed(run) {
+    return engineComputed(run);
   },
 
   /** 读取当前值；是否登记依赖由 core 的收集器决定（core 在读到值前后自行记录）。 */

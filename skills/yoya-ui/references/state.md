@@ -50,6 +50,7 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 
 - `computed` 只读，写它会抛错。
 - `computed` 的依赖订阅跟着观察者走：值绑定、区域依赖、`subscribe()` 或外层派生在看它时保持订阅，**观察者清零就退订依赖**（再读时重新求值）——所以行内派生随行销毁一起释放，不会把长命信号和整行数据留在内存里。
+- 内置引擎还提供**原生派生**（可选能力 `createComputed`）：没人观察时既不订阅依赖也不重算，写入依赖后下次读取才惰性重算，因此「读一次就再没人看」的派生同样可回收。引擎没提供这项能力时走上面 core 自实现的派生路径（首次求值即订阅依赖以保持缓存）。
 - **浅层语义**：只有整值替换触发更新。`items.value.push(x)` 不触发，要 `items.value = [...items.value, x]`。
 - 依赖由 core 收集（不是引擎的追踪实现），所以换引擎不改变依赖与派生语义。
 
@@ -210,6 +211,7 @@ installSignals(null); // 回到内置引擎
 ```
 
 - 引擎契约只有五个方法：`createSignal` / `read` / `write` / `subscribe` / `batch`。依赖收集与 `computed` 由 core 负责，所以换引擎不改变依赖与派生语义。
+- 可选能力 `createComputed(run)`：引擎自带原生派生时由它承担失效判定（未被观察就不订阅依赖、写入不重算），core 直接包装成 `computed()` 句柄；不提供时回退到 core 自实现派生。内置引擎（内化 signals-core）实现了它。
 - **插件由使用者自己写**：库不自带某家状态库的适配器，只提供契约、模板与一致性用例。
   value 单元可以是一个极小的 store（`getState` / `setState` / `subscribe`），
   所以 signals 类库与 store 类库（zustand 之类）都一样接。模板与两份演示代码

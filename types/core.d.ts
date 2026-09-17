@@ -775,12 +775,15 @@ export function batch<T>(run: () => T): T;
 
 /**
  * State engine adapter contract: value cells and change notification only.
- * Dependency collection, derivation, scheduling and lifetimes stay in core,
- * so signals libraries and store-shaped libraries (e.g. zustand) both qualify.
+ * Dependency collection, scheduling and lifetimes stay in core, so signals
+ * libraries and store-shaped libraries (e.g. zustand) both qualify. Core owns
+ * `computed()`; an engine may optionally provide `createComputed` to derive
+ * natively, whose laziness keeps unobserved values from subscribing.
  */
 export interface SignalsAdapter {
   name?: string;
   createSignal<T>(initial: T): unknown;
+  createComputed?<T>(compute: () => T): unknown;
   read(source: unknown): any;
   write(source: unknown, value: unknown): void;
   subscribe(source: unknown, listener: (value: unknown) => void): () => void;

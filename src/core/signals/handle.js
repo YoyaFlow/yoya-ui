@@ -144,6 +144,20 @@ export function computed(fn) {
   }
 
   const adapter = currentSignals();
+
+  // 引擎自带原生派生时优先用它：原生派生按引擎的失效版本号惰性重算，
+  // 未被观察时既不订阅依赖也不持有闭包——「读一次就没人看」的派生因此可以回收。
+  if (typeof adapter.createComputed === 'function') {
+    // withCollect 让 fn 内部的读取落在自己的收集器里，不污染外层绑定 / 区域的依赖表。
+    return new SignalHandle(
+      adapter,
+      adapter.createComputed(() => withCollect(fn).value),
+      {
+        writable: false
+      }
+    );
+  }
+
   const source = adapter.createSignal(undefined);
   let live = false;
   let observers = 0;
