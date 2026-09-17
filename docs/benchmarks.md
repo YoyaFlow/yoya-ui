@@ -10,7 +10,7 @@ Definitions, comparability rules and the exact measurement recipe live in `bench
 - runs: 15 measured per operation
 - date: 2026-09-17T03:54:47.352Z
 
-## Standard operations (keyed, base primitives)
+## Standard operations (keyed, core base elements)
 
 | Operation  | Median   | p95      | Work     | Rows  | DOM nodes | Guards |
 | ---------- | -------- | -------- | -------- | ----- | --------- | ------ |
@@ -50,21 +50,21 @@ Definitions, comparability rules and the exact measurement recipe live in `bench
 | 10000        | 84         | 20            | 11.9 ms     | 11.5 ms   | 4.96    |
 | 100000       | 84         | 20            | 11.6 ms     | 12.5 ms   | 15.78   |
 
-## Component overhead: base primitives vs official components
+## Component overhead: core base elements vs UI components
 
-Both columns are yoya-ui code — **this is not "the library versus plain HTML"**. The left column builds rows from the base primitives (HTML element factories: `tr/td`), the right column uses the official table components (`vTable/vTr/vTd`). The left column is the **control baseline**, so the difference is what the component layer costs. Values are the work time (click → last DOM change, median), which is insensitive to frame latency.
+Both columns are yoya-ui code — **this is not "the library versus plain HTML"**. The left column builds rows from the **core layer** (element factories: `tr/td`), the right column uses the **UI layer** (official components: `vTable/vTr/vTd`). The left column is the **control baseline**, so the difference is what the UI component layer costs. Values are the work time (click → last DOM change, median), which is insensitive to frame latency.
 
-| Operation                    | Base primitives (work) | Official components (work) | Base nodes | Component nodes |
-| ---------------------------- | ---------------------- | -------------------------- | ---------- | --------------- |
-| `run` (create 1,000)         | 18.3 ms                | 46.8 ms                    | 7002       | 7005            |
-| `replace` (replace all)      | 30.5 ms                | 60.6 ms                    | 7002       | 7005            |
-| `runlots` (create 10,000)    | 244.9 ms               | 476.3 ms                   | 70002      | 70005           |
-| `add` (append 1,000)         | 20.8 ms                | 44.3 ms                    | 14002      | 14005           |
-| `update` (update every 10th) | 0.4 ms                 | 0.5 ms                     | 7002       | 7005            |
-| `select` (select row)        | 0 ms                   | 0 ms                       | 7002       | 7005            |
-| `remove` (remove row)        | 0.6 ms                 | 0.8 ms                     | 6995       | 6998            |
-| `swaprows` (swap rows)       | 4 ms                   | 4.9 ms                     | 7002       | 7005            |
-| `clear` (clear)              | 12 ms                  | 14.5 ms                    | 2          | 5               |
+| Operation                    | Core base elements (work) | UI components (work) | Core base element nodes | UI component nodes |
+| ---------------------------- | ------------------------- | -------------------- | ----------------------- | ------------------ |
+| `run` (create 1,000)         | 18.3 ms                   | 46.8 ms              | 7002                    | 7005               |
+| `replace` (replace all)      | 30.5 ms                   | 60.6 ms              | 7002                    | 7005               |
+| `runlots` (create 10,000)    | 244.9 ms                  | 476.3 ms             | 70002                   | 70005              |
+| `add` (append 1,000)         | 20.8 ms                   | 44.3 ms              | 14002                   | 14005              |
+| `update` (update every 10th) | 0.4 ms                    | 0.5 ms               | 7002                    | 7005               |
+| `select` (select row)        | 0 ms                      | 0 ms                 | 7002                    | 7005               |
+| `remove` (remove row)        | 0.6 ms                    | 0.8 ms               | 6995                    | 6998               |
+| `swaprows` (swap rows)       | 4 ms                      | 4.9 ms               | 7002                    | 7005               |
+| `clear` (clear)              | 12 ms                     | 14.5 ms              | 2                       | 5                  |
 
 ## Comparability and definitions
 
