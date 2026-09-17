@@ -615,7 +615,8 @@
 
       /** 底部手柄：按住 ◀ / ▶ 持续移动球拍，松手或移出按键即停。 */
       function PaddlePad({ input, state }) {
-        function padKey(direction, glyph, label) {
+        // 分块也走组件：PascalCase、描述 UI 单元、输入走参数
+        function PadKey({ direction, glyph, label }) {
           return div((cell) => {
             cell.className('pad-cell');
             cell.button(glyph, (button) => {
@@ -643,8 +644,8 @@
 
         return div((pad) => {
           pad.className('pad');
-          pad.child(padKey('left', '◀', '球拍向左'));
-          pad.child(padKey('right', '▶', '球拍向右'));
+          pad.child(PadKey({ direction: 'left', glyph: '◀', label: '球拍向左' }));
+          pad.child(PadKey({ direction: 'right', glyph: '▶', label: '球拍向右' }));
         });
       }
 
@@ -701,7 +702,7 @@
         const levelText = computed(() => `第 ${state.level.value} 关`);
         const speedText = computed(() => state.ballSpeed.toFixed(1));
 
-        function item(kind, label, valueText) {
+        function HudItem({ kind, label, valueText }) {
           return div((entry) => {
             entry.className(`hud-item hud-item--${kind}`);
             entry.span(label, (name) => name.className('hud-label'));
@@ -715,18 +716,18 @@
         return div((hud) => {
           hud.className('hud');
           // 纯数字直接用句柄，值位置会自己转成文本
-          hud.child(item('score', '分数', state.score));
-          hud.child(item('best', '最高分', state.best));
-          hud.child(item('lives', '生命', livesText));
-          hud.child(item('level', '进度', levelText));
-          hud.child(item('speed', '球速', speedText));
+          hud.child(HudItem({ kind: 'score', label: '分数', valueText: state.score }));
+          hud.child(HudItem({ kind: 'best', label: '最高分', valueText: state.best }));
+          hud.child(HudItem({ kind: 'lives', label: '生命', valueText: livesText }));
+          hud.child(HudItem({ kind: 'level', label: '进度', valueText: levelText }));
+          hud.child(HudItem({ kind: 'speed', label: '球速', valueText: speedText }));
         });
       }
 
       function Controls(state) {
         const pauseLabel = computed(() => (state.phase.value === 'paused' ? '继续' : '暂停'));
 
-        function control(kind, label, onClick) {
+        function ControlButton({ kind, label, onClick }) {
           return div((cell) => {
             cell.button(label, (button) => {
               button.className(`control control--${kind}`);
@@ -738,8 +739,12 @@
 
         return div((bar) => {
           bar.className('controls');
-          bar.child(control('pause', pauseLabel, () => state.togglePause()));
-          bar.child(control('restart', '重新开始', () => state.restart()));
+          bar.child(
+            ControlButton({ kind: 'pause', label: pauseLabel, onClick: () => state.togglePause() })
+          );
+          bar.child(
+            ControlButton({ kind: 'restart', label: '重新开始', onClick: () => state.restart() })
+          );
         });
       }
 
