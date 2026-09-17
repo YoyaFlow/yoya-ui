@@ -111,14 +111,16 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
    import '@yoyaflow/yoya-ui/ui.css'; // 组件皮肤与主题变量
    ```
 
-4. **完整应用。** 用脚手架起项目，或同一份页面工厂直接跑 SSR：
+4. **完整应用：SPA 或 SSR。** 整站单页应用不需要额外一层——内置路由（`history` / `hash` 模式、
+   参数、守卫、404、`vLink`、`vRouterViews`）加上组件分类与 `ref` 状态，同样不强制构建步骤；
+   需要服务端渲染时，复用同一份页面工厂即可：
 
    ```bash
    npm install -g create-yoya-ui
-   create-yoya-ui my-app --template admin   # admin / basic / ssr
+   create-yoya-ui my-app --template admin   # SPA 外壳（admin / basic）或 SSR（ssr）
    ```
 
-   服务端用 `renderPage()` 渲染同一份工厂，客户端用 `hydrateOrMount()` 接上——一套代码，没有第二套
+   服务端用 `renderPage()` 渲染这份工厂，浏览器端用 `hydrateOrMount()` 接上——一套代码，没有第二套
    渲染模型。详见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)。
 
 ## 能力一览

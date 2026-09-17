@@ -119,14 +119,17 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
    import '@yoyaflow/yoya-ui/ui.css'; // component skin and theme variables
    ```
 
-4. **A full application.** Scaffold one, or run SSR from the same page factory:
+4. **A full application: SPA or SSR.** A single-page app needs no extra layer — the built-in router
+   (`history` / `hash` modes, params, guards, 404, `vLink`, `vRouterViews`) plus the component
+   categories and `ref` state, still without a mandatory build step. Server rendering reuses the same
+   page factory instead:
 
    ```bash
    npm install -g create-yoya-ui
-   create-yoya-ui my-app --template admin   # admin / basic / ssr
+   create-yoya-ui my-app --template admin   # SPA shell (admin / basic) or SSR (ssr)
    ```
 
-   The server side renders the same factory with `renderPage()` and the client reuses it with
+   On the server, `renderPage()` renders that factory and the browser reuses it with
    `hydrateOrMount()` — one codebase, no second rendering model. Guide: [docs/ssr.md](docs/ssr.md).
 
 ## What's in the box
