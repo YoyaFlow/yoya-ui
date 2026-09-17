@@ -991,6 +991,24 @@ const stateExtraRules = [
   ]
 ];
 
+const provideInjectExtraRules = [
+  [
+    '.components-provide-inject-demo-live .yoya-vcard',
+    {
+      maxWidth: '640px',
+      width: '100%'
+    }
+  ],
+  [
+    '.components-provide-inject-demo-live .yoya-vcard-footer',
+    {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px'
+    }
+  ]
+];
+
 const demoRules = [
   ...baseRules,
   ...layoutExtraRules,
@@ -1010,6 +1028,7 @@ const demoRules = [
   ...definitionExtraRules,
   ...i18nExtraRules,
   ...stateExtraRules,
+  ...provideInjectExtraRules,
   ...genericRules
 ];
 

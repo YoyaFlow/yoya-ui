@@ -34,6 +34,11 @@ const componentMenuSections = [
       },
       { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
       { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
+      {
+        key: 'provide-inject',
+        label: '跨组件共享',
+        details: 'provide / inject / withContext'
+      },
       { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
       { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
       { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' },
@@ -231,6 +236,8 @@ export const docsRouteLoaders = Object.freeze({
   'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
   'guides:state-node': () =>
     import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:provide-inject': () =>
+    import('./provide-inject-docs.js').then((m) => m.ProvideInjectDocumentationPage()),
   'guides:access-control': () =>
     import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
   'guides:devtools': () => import('./devtools-docs.js').then((m) => m.DevtoolsDocumentationPage()),
@@ -703,6 +710,11 @@ function createOverviewView() {
             label: '状态节点',
             path: '/components/guides/state-node',
             details: 'ref / computed / 区域'
+          },
+          {
+            label: '跨组件共享',
+            path: '/components/guides/provide-inject',
+            details: 'provide / inject / withContext'
           },
           {
             label: '权限控制',
