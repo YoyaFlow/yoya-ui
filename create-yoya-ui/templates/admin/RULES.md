@@ -72,7 +72,7 @@ export default {
 - 导航字段（`menus` / `activeModuleKey` / `activePath`）是 `ref`：`router.subscribe → state.syncFromPath(path)` 只把路径写回信号
 - 顶栏 / 侧栏从状态**派生高亮**：菜单区先 `rebuildable()` 再读信号（模块 / 路径变化自动重建），组件不持有自己的激活状态
 - `AdminShell` 只做装配：布局组装，不直接操作 router，也不需要订阅回调转发
-- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口
+- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口；没有额外行为要定义（无内部状态、无对外命令方法）的组件直接返回 ViewNode 即可，不必包一层 `render()`
 
 ## 7. 页面规则
 

@@ -28,6 +28,8 @@ Choose one of these shapes for a new component; do not introduce a structure out
 
 ### Shape A: thin factory (no internal state, purely configured composition)
 
+Use it whenever the component has no extra behaviour to define — **demo code follows the same rule**: when a demo only shows structure or interaction and exposes no command methods, return the ViewNode directly instead of wrapping it in `render()` just for uniformity.
+
 ```js
 import { vBadge } from '@yoyaflow/yoya-ui/ui';
 

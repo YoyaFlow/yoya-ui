@@ -188,7 +188,8 @@ const componentPatterns = [
     intro:
       '确定这个组件没有额外行为要定义（没有内部状态、没有对外命令方法、没有生命周期诉求）时就用它：' +
       '函数直接返回 ViewNode，代码量最小。不要为了「以后可能要用」先包成对象组件，' +
-      '真有状态或命令方法时再升级到形态 B。',
+      '真有状态或命令方法时再升级到形态 B。演示代码同样按这个判据：只演示结构与交互、' +
+      '没有对外命令方法时直接返回节点，不要为了统一而包一层 render()。',
     code: `function ServiceTag(options) {
   return vBadge(options);
 }`,
