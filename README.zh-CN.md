@@ -230,7 +230,6 @@ npm run typecheck     # 类型声明 + 消费方类型测试
 npm run build         # 构建入口 + 体积报表
 npm run verify:dist   # 分类隔离、SSR 冒烟、体积预算、README 体积表
 npm run examples:html # 示例站（http://localhost:5173）
-npm run bench:keyed   # keyed 行级更新基准
 ```
 
 ```text
@@ -243,7 +242,7 @@ src/
   components/  组件聚合与共享逻辑
   examples/    示例站（SSR 演示与可复制指南）
   index.js     开发期聚合入口
-scripts/       入口构建、体积报表、基准
+scripts/       入口构建、体积报表
 types/         随包发布的全部入口 TypeScript 声明
 docs/          公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）
 ```

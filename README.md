@@ -245,7 +245,6 @@ npm run typecheck     # declarations + consumer type tests
 npm run build         # entries + size report
 npm run verify:dist   # isolation, SSR smoke, size budgets, README size tables
 npm run examples:html # example site (http://localhost:5173)
-npm run bench:keyed   # keyed row-update benchmark
 ```
 
 ```text
@@ -258,7 +257,7 @@ src/
   components/  component aggregation and shared logic
   examples/    example site (SSR demos and copy-paste guides)
   index.js     dev aggregate entry
-scripts/       entry build, size report, benchmarks
+scripts/       entry build and size report
 types/         shipped TypeScript declarations for all entries
 docs/          public guides (SSR, theme, access control, devtools, authoring, interop)
 ```

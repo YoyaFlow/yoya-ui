@@ -11,23 +11,21 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 
 ## Document set
 
-| File                                                                           | Content                                                                  | Source / status                                                      |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)                        | New                                                                  |
-| [`why-yoya-ui.md`](why-yoya-ui.md)                                             | Positioning, the nine reasons, trade-offs, how to evaluate               | Moved from `README.md`                                               |
-| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms                        | Rebuilt from `index.zh-CN.md`                                        |
-| [`access-control.md`](access-control.md)                                       | Access control guide                                                     | Rebuilt                                                              |
-| [`api.md`](api.md)                                                             | Request commands, transport registration, and Result mapping             | New                                                                  |
-| [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                                  | Rebuilt                                                              |
-| [`theme.md`](theme.md)                                                         | Theme and styling spec                                                   | Rebuilt                                                              |
-| [`devtools.md`](devtools.md)                                                   | DevTools guide                                                           | Rebuilt                                                              |
-| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)                  | Rebuilt                                                              |
-| [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element                        | Moved from `README.md`                                               |
-| [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators                        | Moved from `README.md`                                               |
-| [`benchmarks.md`](benchmarks.md)                                               | Core benchmark report: standard operations, startup, memory, guards      | Generated from `benchmarks/results/baseline.json`                    |
-| [`benchmarks-ui.md`](benchmarks-ui.md)                                         | UI library report: core base elements vs UI components, virtualized rows | Generated from `benchmarks/results/ui.json` (pending a clean UI run) |
-| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                                       | New                                                                  |
-| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not                  | New                                                                  |
+| File                                                                           | Content                                                      | Source / status               |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------- |
+| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)            | New                           |
+| [`why-yoya-ui.md`](why-yoya-ui.md)                                             | Positioning, the nine reasons, trade-offs, how to evaluate   | Moved from `README.md`        |
+| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms            | Rebuilt from `index.zh-CN.md` |
+| [`access-control.md`](access-control.md)                                       | Access control guide                                         | Rebuilt                       |
+| [`api.md`](api.md)                                                             | Request commands, transport registration, and Result mapping | New                           |
+| [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                      | Rebuilt                       |
+| [`theme.md`](theme.md)                                                         | Theme and styling spec                                       | Rebuilt                       |
+| [`devtools.md`](devtools.md)                                                   | DevTools guide                                               | Rebuilt                       |
+| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                       |
+| [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
+| [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators            | Moved from `README.md`        |
+| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                           | New                           |
+| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not      | New                           |
 
 ## Suggested reading path
 

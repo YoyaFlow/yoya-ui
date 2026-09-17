@@ -57,16 +57,6 @@ export default [
     }
   },
   {
-    // 基准实现页与 harness：浏览器侧（实现页）与 Node 侧（harness）混用
-    files: ['benchmarks/**/*.{js,mjs}'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node
-      }
-    }
-  },
-  {
     files: ['eslint.config.js', 'vite.config.js', 'vite.examples.config.js'],
     languageOptions: {
       globals: globals.node

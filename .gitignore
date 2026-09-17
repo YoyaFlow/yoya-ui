@@ -4,7 +4,5 @@ dist/
 coverage/
 .idea/
 .scratch/
-benchmarks/results/latest.json
-benchmarks/results/*.local.json
 *.local
 npm-debug.log*
