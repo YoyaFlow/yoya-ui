@@ -224,9 +224,9 @@ export function provide(key: string | symbol, value: unknown): unknown;
 export function inject<T = unknown>(key: string | symbol, fallback?: T): T | undefined;
 
 /**
- * Builds a subtree that is attached under host later (async loaders): the
- * subtree can inject from host's position in the tree, while its own
- * declarations scope to the produced subtree.
+ * Builds a subtree that is attached under host later (async loaders, route
+ * views): the subtree can inject from host's position in the tree, while its
+ * own declarations scope to the produced subtree.
  */
 export function buildInProviderScope<T>(host: unknown, build: () => T): T;
 

@@ -123,6 +123,18 @@ provide('config', { ...parent, color: 'red' });
 - 懒解析的组件（`{ render() }`）也读得到：解析时沿父链上溯，不依赖声明的调用栈还在不在
 - **先挂再建**：第三方组件若在挂到树上之前就构建子树（异步加载视图那类），用 `buildInProviderScope(host, build)` 构建——子树 inject 得到 host 所在位置的祖先，自己声明的 provide 也归属产出的子树而不外溢；`vDynamicLoader` 与路由视图（`router` / `vRouterViews` 保活页的同步、异步、加载 / 出错视图）已按这个模式接入
 
+```js
+import { buildInProviderScope, div, inject } from '@yoyaflow/yoya-ui';
+
+// 第三方组件：自己先构建子树，稍后才挂到 host 上（异步加载那类）
+export function createLazyPanel(host) {
+  const panel = buildInProviderScope(host, () => div(`用户：${inject('user').name}`));
+  return { node: panel, mount: () => host.child(panel) };
+}
+```
+
+`host` 是即将承载这棵子树的节点（它自己已经在树上）。省略这一步、直接 `build` 的话，构建期没有构建帧，`inject()` 会静默回退到 fallback——这是最难排查的一类「读到了但读到的是默认值」。
+
 ## Context：请求级作用域注入
 
 请求级数据（每请求的用户、租户、语言）用调用栈作用域：构建期内可见，结束后还原。
