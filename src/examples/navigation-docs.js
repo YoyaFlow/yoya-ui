@@ -28,6 +28,7 @@ import {
   RouterViewsTopStandalone
 } from './demos/router.js';
 import { RouterAsyncCard } from './demos/router-async.js';
+import { RouterDocumentCard, RouterViewsDocumentStandalone } from './demos/router-document.js';
 import { RouterParamsCard } from './demos/router-params.js';
 
 const examplesBaseUrl = import.meta.env?.BASE_URL || './';
@@ -307,9 +308,21 @@ const navigationDocsDefinitions = Object.freeze({
         sourceComponent: RouterParamsCard,
         sourceTitle: '参数传递路由核心源码',
         title: '参数传递路由'
+      },
+      {
+        component: RouterDocumentCard,
+        description:
+          '内部 HTML 页面与外部链接注册成文档路由：vLink 输出真实地址，进入即整页跳转（演示拦下跳转以便留在目录页，占位链接点了会真的走）。',
+        frame: true,
+        frameSrc: './router-document.html',
+        id: 'document',
+        imports: ['div', 'vRoute', 'vRouter', 'vText', 'vstack'],
+        sourceComponent: RouterDocumentCard,
+        sourceTitle: '文档路由核心源码',
+        title: '文档路由（HTML / 外链）'
       }
     ],
-    examplesIntro: '五个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
+    examplesIntro: '六个路由示例都运行在独立 iframe 中，避免与演示页 URL 冲突。',
     heading: 'Router 路由',
     intro:
       '路由组件负责把 URL、参数和视图连接起来。为了不让演示路由改动组件目录自身的 hash，这里全部使用 iframe 隔离运行。',
@@ -367,9 +380,21 @@ const navigationDocsDefinitions = Object.freeze({
         sourceComponent: RouterViewsTopStandalone,
         sourceTitle: '顶部标签路由视图核心源码',
         title: '顶部标签'
+      },
+      {
+        component: RouterViewsDocumentStandalone,
+        description:
+          '文档路由同样进标签栏：标签照常保留，内容区是被拦下的跳转占位（含可点链接），真实项目不拦截即整页跳转。',
+        frame: true,
+        frameSrc: './router-views-document.html',
+        id: 'document',
+        imports: ['div', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews', 'vText'],
+        sourceComponent: RouterViewsDocumentStandalone,
+        sourceTitle: '文档路由进标签页核心源码',
+        title: '文档路由标签'
       }
     ],
-    examplesIntro: '两个示例分别展示左侧标题栏和顶部标题栏。',
+    examplesIntro: '三个示例分别展示左侧标题栏、顶部标题栏与文档路由标签。',
     heading: 'vRouterViews 路由视图',
     intro:
       '路由视图适合把访问过的页面保留为标签，方便在多个路由之间切换。演示放在独立 iframe 中，标签状态和 URL 都不会和组件目录互相干扰。',

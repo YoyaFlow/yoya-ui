@@ -77,6 +77,8 @@ describe('renderExamplesIndex', () => {
       'router-async.html': 'RouterAsyncCard',
       'router-links.html': 'RouterNavigationCard',
       'router-params.html': 'RouterParamsCard',
+      'router-document.html': 'RouterDocumentCard',
+      'router-views-document.html': 'RouterViewsDocumentStandalone',
       'router-views-top.html': 'RouterViewsTopStandalone',
       'router-views.html': 'RouterViewsEditorStandalone'
     };
@@ -1461,7 +1463,7 @@ describe('renderExamplesIndex', () => {
       'links',
       'RouterNavigationCard',
       'vRouterView(',
-      5
+      6
     ],
     [
       '/components/navigation/router-views',
@@ -1471,7 +1473,7 @@ describe('renderExamplesIndex', () => {
       'editor',
       'RouterViewsEditorStandalone',
       'vRouterViews(',
-      2
+      3
     ],
     [
       '/components/feedback/message',
