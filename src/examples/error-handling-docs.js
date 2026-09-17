@@ -15,7 +15,7 @@ const errorDemos = [
   {
     component: WhenFailedComponentExample,
     description:
-      'vNode 产物就是节点，可以直接写在树里：命令挂 api、边界写 api.whenFailed（等价 node.whenFailed）；返回节点则把组件输出替换为降级 UI。',
+      'vNode 产物就是节点，可直接写在树里；边界写 api.whenFailed（等价 node.whenFailed）。触发/恢复按钮都在边界外：降级只替换组件自身输出，恢复靠父级区域重建拿到新实例，所以能反复观察。',
     id: 'component',
     imports: ['div', 'ref', 'span', 'vNode', 'vstack'],
     sourceTitle: '组件协议降级源码',

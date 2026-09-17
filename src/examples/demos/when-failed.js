@@ -35,20 +35,20 @@ export function WhenFailedReportExample() {
 }
 
 /**
- * 错误边界演示 2：组件自带降级。vNode 产物就是节点，直接写在树里（不必提前定义），
- * 边界写在 api.whenFailed 上；触发后组件输出被替换为降级 UI，兄弟内容不受影响。
+ * 错误边界演示 2：组件自带降级 + 边界外恢复。vNode 产物就是节点，直接写在树里；
+ * 边界写在 api.whenFailed 上，触发/恢复按钮都在边界外，所以可以反复观察。
  */
 export function WhenFailedComponentExample() {
   const rows = ref([{ status: 'ok' }]);
+  const attempt = ref(0);
 
   return vstack((stack) => {
     stack.style('gap', '10px');
+    stack.rebuildable();
+    // 读一次 attempt.value = 成为区域依赖：恢复时重建整块，拿到全新的组件实例
+    stack.attr('data-attempt', attempt.value);
     stack.child(
       vNode((api) => {
-        api.fail = () => {
-          rows.value = [{ status: 'bad' }];
-          return api;
-        };
         api.whenFailed = (error) => span(`组件降级：${error.message}`);
 
         return div((box) => {
@@ -59,14 +59,26 @@ export function WhenFailedComponentExample() {
             }
             return span('组件正常运行，故障由 whenFailed 兜底');
           });
-          box.vButton('触发渲染故障', (button) => {
-            button.variant('primary');
-            button.attr('data-when-failed-trigger', 'true');
-            button.on('click', () => api.fail());
-          });
         });
       })
     );
-    stack.p('兄弟内容不受影响：降级只替换组件自身的输出。');
+    stack.hstack((row) => {
+      row.style('gap', '8px');
+      row.vButton('触发渲染故障', (button) => {
+        button.variant('primary');
+        button.attr('data-when-failed-trigger', 'true');
+        button.on('click', () => {
+          rows.value = [{ status: 'bad' }];
+        });
+      });
+      row.vButton('恢复（重建组件）', (button) => {
+        button.attr('data-when-failed-recover', 'true');
+        button.on('click', () => {
+          rows.value = [{ status: 'ok' }];
+          attempt.value += 1;
+        });
+      });
+    });
+    stack.p('两个按钮都在边界外：降级只替换组件自身输出，所以可以反复触发与恢复。');
   });
 }

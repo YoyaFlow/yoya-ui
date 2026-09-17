@@ -1087,9 +1087,22 @@ describe('renderExamplesIndex', () => {
     expect(reportDemo.textContent).toContain('已捕获 1 次故障');
 
     const componentDemo = page.querySelector('[data-error-demo="component"]');
-    componentDemo.querySelector('[data-when-failed-trigger]').click();
+    const componentLive = componentDemo.querySelector('.components-error-demo-live');
+    componentLive.querySelector('[data-when-failed-trigger]').click();
     await vi.waitFor(() => {
-      expect(componentDemo.textContent).toContain('组件降级');
+      expect(componentLive.textContent).toContain('组件降级');
+    });
+
+    // 边界外的恢复按钮：重建父级区域后组件回到正常态，可以反复观察
+    componentLive.querySelector('[data-when-failed-recover]').click();
+    await vi.waitFor(() => {
+      expect(componentLive.textContent).toContain('组件正常运行');
+      expect(componentLive.textContent).not.toContain('组件降级');
+    });
+
+    componentLive.querySelector('[data-when-failed-trigger]').click();
+    await vi.waitFor(() => {
+      expect(componentLive.textContent).toContain('组件降级');
     });
   });
 
