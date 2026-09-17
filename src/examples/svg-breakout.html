@@ -899,6 +899,8 @@
           },
 
           destroy() {
+            // 页面对象自己销毁（节点还活着）时循环不会自动停：显式停一次
+            pageNode?.stopAnimationFrameLoop();
             input.clear();
             hostElement = null;
             pageNode = null;
