@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, li, ref, ul, vText } from '../index.js';
+import { div, li, ref, ul, vNode, vText } from '../index.js';
 
 function permutations(items) {
   if (items.length <= 1) {
@@ -283,6 +283,95 @@ describe('keyed children binding', () => {
 
     expect(element.textContent).toBe('415tail');
     expect(list.children().map((child) => child.textContent())).toEqual(['4', '1', '5', 'tail']);
+  });
+
+  it('adopts mountable conditions on keyed rows', () => {
+    const visible = ref(false);
+    const rows = ref([{ id: 1 }, { id: 2 }]);
+    const list = ul((node) => {
+      node.li('head');
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(String(row.id)).mountable(row.id === 2 ? visible : true)
+      );
+      node.li('tail');
+    });
+    const element = list.renderDom();
+    const hiddenRow = list.children()[2];
+
+    // 条件为假：行不落地，但节点、状态与渲染结果都还在
+    expect(element.textContent).toBe('head1tail');
+    expect(hiddenRow.isMounted()).toBe(false);
+    expect(hiddenRow._el).not.toBeNull();
+
+    visible.value = true;
+    expect(element.textContent).toBe('head12tail');
+    expect(element.children[2]).toBe(hiddenRow._el);
+
+    // 含隐藏行的换位：视图树与 DOM 都按可见顺序对齐
+    visible.value = false;
+    rows.value = [rows.peek()[1], rows.peek()[0]];
+    expect(element.textContent).toBe('head1tail');
+
+    visible.value = true;
+    expect(element.textContent).toBe('head21tail');
+    expect(list.children().map((child) => child.textContent())).toEqual(['head', '2', '1', 'tail']);
+  });
+
+  it('reorders multi-root component rows as a group', () => {
+    const rows = ref([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => () => [li(`${row.id}-1`), li(`${row.id}-2`)]
+      );
+    });
+    const element = list.renderDom();
+    const firstRowNode = list.children()[0];
+
+    expect(element.textContent).toBe('a-1a-2b-1b-2c-1c-2');
+
+    rows.value = [rows.peek()[2], rows.peek()[0], rows.peek()[1]];
+
+    expect(element.textContent).toBe('c-1c-2a-1a-2b-1b-2');
+    expect(list.children()[1]).toBe(firstRowNode);
+    expect([...element.children].map((child) => child.textContent)).toEqual([
+      'c-1',
+      'c-2',
+      'a-1',
+      'a-2',
+      'b-1',
+      'b-2'
+    ]);
+  });
+
+  it('keeps a mounted multi-root row together when it goes away and comes back', () => {
+    const visible = ref(false);
+    const rows = ref([{ id: 'a' }, { id: 'b' }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) =>
+          vNode(() => [li(`${row.id}-1`), li(`${row.id}-2`)]).mountable(
+            row.id === 'b' ? visible : true
+          )
+      );
+    });
+    const element = list.renderDom();
+    expect(element.textContent).toBe('a-1a-2');
+
+    visible.value = true;
+    expect(element.textContent).toBe('a-1a-2b-1b-2');
+
+    visible.value = false;
+    expect(element.textContent).toBe('a-1a-2');
+
+    rows.value = [rows.peek()[1], rows.peek()[0]];
+    visible.value = true;
+    expect(element.textContent).toBe('b-1b-2a-1a-2');
   });
 });
 

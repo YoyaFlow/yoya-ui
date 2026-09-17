@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div } from '../index.js';
+import { div, span } from '../index.js';
 
 describe('keyed children', () => {
   it('stores children by key and mirrors data-row-key on element children', () => {
@@ -193,5 +193,26 @@ describe('keyed children', () => {
     expect(list.children()).not.toContain(first);
     expect(element.querySelector('[data-row-key="u1"]')).toBeNull();
     expect(element.children.length).toBe(1);
+  });
+
+  it('moves multi-root component children as a group', () => {
+    const list = div();
+    list.addChild('u1', () => [span('x1'), span('x2')]);
+    list.addChild('u2', span('y'));
+    const element = list.renderDom();
+
+    expect(element.textContent).toBe('x1x2y');
+
+    list.moveAfter('u1', 'u2');
+
+    expect([...element.children].map((child) => child.textContent)).toEqual(['y', 'x1', 'x2']);
+
+    list.moveBefore('u1', 'u2');
+
+    expect([...element.children].map((child) => child.textContent)).toEqual(['x1', 'x2', 'y']);
+
+    list.removeChild('u1');
+
+    expect(element.textContent).toBe('y');
   });
 });

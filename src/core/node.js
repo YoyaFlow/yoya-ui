@@ -144,6 +144,8 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   if (setupStack.length === 0 && regionBuildStack.length === 0) {
     flushBindingsIn(owner);
   }
+
+  return binding;
 }
 
 /**
@@ -501,20 +503,59 @@ function findErrorBoundary(node) {
   return null;
 }
 
-/** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟元素；找不到返回 null（追加）。 */
+const DOCUMENT_FRAGMENT_NODE = 11;
+
+/** 子节点自己的 DOM 组：单根是 `[_el]`，多根组件是 `_fragmentDom`（文档顺序）。 */
+function nodeDomGroup(node) {
+  if (node?._fragmentDom?.length) {
+    return node._fragmentDom;
+  }
+
+  return node?._el ? [node._el] : [];
+}
+
+/** 子节点已经挂在给定父元素下的 DOM 组。 */
+function nodeAttachedGroup(parent, node) {
+  return nodeDomGroup(node).filter((element) => element.parentNode === parent._el);
+}
+
+/** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟；找不到返回 null（追加）。 */
 function resolveInsertAnchor(parent, fromNode) {
   if (!fromNode) {
     return null;
   }
 
   for (let i = parent._children.indexOf(fromNode) + 1; i < parent._children.length; i += 1) {
-    const element = parent._children[i]._el;
-    if (element?.parentNode === parent._el) {
+    const element = nodeAttachedGroup(parent, parent._children[i])[0];
+    if (element) {
       return element;
     }
   }
 
   return null;
+}
+
+/**
+ * 把子节点插到锚点之前。
+ * 多根组件的渲染结果是一次性 fragment，直接插入即可；已在别处渲染好的多根子树按元素顺序补插。
+ * 挂载条件为假时不落地——节点已经渲染（状态保留），条件转真时由 `_syncChildMounted()` 插回槽位。
+ */
+function attachChildDom(parent, node, rendered, anchor) {
+  if (parent._childMountStates.get(node) === false) {
+    return;
+  }
+
+  if (rendered && rendered.nodeType === DOCUMENT_FRAGMENT_NODE) {
+    parent._el.insertBefore(rendered, anchor ?? null);
+    return;
+  }
+
+  const elements = rendered ? [rendered] : nodeDomGroup(node);
+  elements.forEach((element) => {
+    if (element.parentNode !== parent._el) {
+      parent._el.insertBefore(element, anchor ?? null);
+    }
+  });
 }
 
 function describeKeyedRowKey(rawKey) {
@@ -548,10 +589,12 @@ function keyedSegmentTailNode(parent, segment, memberNodes) {
   return null;
 }
 
-/** 成员在父元素里的直接子元素；不可见（惰性挂载 / 多根 / 未渲染）时返回 null。 */
-function keyedMemberElement(parent, node) {
-  const element = node?._el;
-  return element && element.parentNode === parent._el ? element : null;
+/**
+ * 成员在父元素里的 DOM 组：单根是一元素，多根组件是一组元素。
+ * 不可见（惰性挂载 / 未渲染 / 元素不在本段）时返回空数组。
+ */
+function keyedMemberElements(parent, node) {
+  return nodeAttachedGroup(parent, node);
 }
 
 /** 段尾锚点元素：段内成员都排在它前面；段尾自己不可见时退回到它之后第一个可见兄弟。 */
@@ -560,7 +603,7 @@ function keyedSegmentTailElement(parent, tailNode) {
     return null;
   }
 
-  return keyedMemberElement(parent, tailNode) ?? resolveInsertAnchor(parent, tailNode);
+  return keyedMemberElements(parent, tailNode)[0] ?? resolveInsertAnchor(parent, tailNode);
 }
 
 /**
@@ -616,6 +659,9 @@ function collectKeyedMovedNodes(next, previousPosition) {
 
 function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
   parent._pendingRemovals.delete(entry.node);
+  // 惰性挂载声明由父节点收养（与 child() 路径一致）：条件为假时本行不落地，
+  // 但节点照常渲染，条件转真时按槽位插回。
+  parent._adoptPendingMount(entry.node);
   parent._linkChild(entry.node);
   const anchorNode = beforeNode ?? tailNode;
   const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
@@ -627,17 +673,16 @@ function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
   parent._childrenDirty = true;
 
   if (parent._el) {
-    const element = parent._renderChildForInsert(entry.node);
-    if (element && element.parentNode !== parent._el) {
-      parent._el.insertBefore(element, anchorElement ?? resolveInsertAnchor(parent, anchorNode));
-    }
+    const rendered = parent._renderChildForInsert(entry.node);
+    const anchor = anchorElement ?? resolveInsertAnchor(parent, anchorNode);
+    attachChildDom(parent, entry.node, rendered, anchor);
     if (isDevtoolsEnabled() && !parent._devtoolsRendering) {
       notifyDevtoolsMutation(parent, 'child', { added: [ensureDevtoolsNodeId(entry.node)] });
     }
   }
 }
 
-/** 需要换位的成员：视图树里挪到后继之前，DOM 里只搬自己这一个元素。 */
+/** 需要换位的成员：视图树里挪到后继之前，DOM 里整组（多根组件是一组）搬到锚点之前。 */
 function reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement) {
   const currentIndex = parent._children.indexOf(node);
   if (currentIndex !== -1) {
@@ -649,9 +694,9 @@ function reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement) {
   parent._children.splice(target === -1 ? parent._children.length : target, 0, node);
   parent._childrenDirty = true;
 
-  const element = keyedMemberElement(parent, node);
-  if (element && element.nextSibling !== anchorElement) {
-    parent._el.insertBefore(element, anchorElement);
+  const elements = keyedMemberElements(parent, node);
+  if (elements.length > 0 && elements[elements.length - 1].nextSibling !== anchorElement) {
+    elements.forEach((element) => parent._el.insertBefore(element, anchorElement));
   }
 }
 
@@ -760,9 +805,9 @@ function syncKeyedSegment(parent, segment, rows) {
       reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement);
     }
 
-    const element = keyedMemberElement(parent, node);
-    if (element) {
-      anchorElement = element;
+    const elements = keyedMemberElements(parent, node);
+    if (elements.length > 0) {
+      anchorElement = elements[0];
     }
   }
 }
@@ -910,6 +955,7 @@ export class ViewNode {
     this._childMountStates = new Map();
     this._mountCondition = null;
     this._mountConditionRef = null; // 入树后由父节点收养：条件存这里，替换 = 写它
+    this._parentMountCleanup = null; // 父节点为它登记的挂载绑定清账函数（销毁时执行）
     this._isMounted = true;
     this._errorHandler = null;
     this._parent = null; // 当前父节点：错误处理沿它逐级上溯
@@ -1257,9 +1303,7 @@ export class ViewNode {
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        this._el.appendChild(childElement);
-      }
+      attachChildDom(this, viewNode, childElement, null);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1302,12 +1346,7 @@ export class ViewNode {
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        const beforeElement = beforeNode?._el;
-        const anchor =
-          beforeElement && beforeElement.parentNode === this._el ? beforeElement : null;
-        this._el.insertBefore(childElement, anchor);
-      }
+      attachChildDom(this, viewNode, childElement, nodeAttachedGroup(this, beforeNode)[0] ?? null);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1350,24 +1389,23 @@ export class ViewNode {
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        let anchor = null;
-        if (afterNode) {
-          for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
-            const sibling = this._children[i];
-            if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
-              anchor = sibling._el;
-              break;
-            }
+      let anchor = null;
+      if (afterNode) {
+        for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
+          const sibling = this._children[i];
+          const element = sibling === viewNode ? null : nodeAttachedGroup(this, sibling)[0];
+          if (element) {
+            anchor = element;
+            break;
           }
-        } else {
-          const first = this._children.find(
-            (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
-          );
-          anchor = first?._el ?? null;
         }
-        this._el.insertBefore(childElement, anchor);
+      } else {
+        const first = this._children.find(
+          (sibling) => sibling !== viewNode && nodeAttachedGroup(this, sibling).length > 0
+        );
+        anchor = first ? nodeAttachedGroup(this, first)[0] : null;
       }
+      attachChildDom(this, viewNode, childElement, anchor);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1403,9 +1441,11 @@ export class ViewNode {
     this._children.splice(targetIndex === -1 ? this._children.length : targetIndex, 0, viewNode);
     this._childrenDirty = true;
 
-    if (this._el && viewNode._el) {
-      const anchor = beforeNode?._el?.parentNode === this._el ? beforeNode._el : null;
-      this._el.insertBefore(viewNode._el, anchor);
+    if (this._el) {
+      const anchor = nodeAttachedGroup(this, beforeNode)[0] ?? null;
+      nodeAttachedGroup(this, viewNode).forEach((element) =>
+        this._el.insertBefore(element, anchor)
+      );
     }
 
     return this;
@@ -1442,23 +1482,26 @@ export class ViewNode {
     }
     this._childrenDirty = true;
 
-    if (this._el && viewNode._el) {
+    if (this._el) {
       let anchor = null;
       if (afterNode) {
         for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
           const sibling = this._children[i];
-          if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
-            anchor = sibling._el;
+          const element = sibling === viewNode ? null : nodeAttachedGroup(this, sibling)[0];
+          if (element) {
+            anchor = element;
             break;
           }
         }
       } else {
         const first = this._children.find(
-          (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
+          (sibling) => sibling !== viewNode && nodeAttachedGroup(this, sibling).length > 0
         );
-        anchor = first?._el ?? null;
+        anchor = first ? nodeAttachedGroup(this, first)[0] : null;
       }
-      this._el.insertBefore(viewNode._el, anchor);
+      nodeAttachedGroup(this, viewNode).forEach((element) =>
+        this._el.insertBefore(element, anchor)
+      );
     }
 
     return this;
@@ -1493,11 +1536,8 @@ export class ViewNode {
 
     if (this._el) {
       const newElement = this._renderChildForInsert(viewNode);
-      const oldElement = previous._el;
-      if (newElement && newElement.parentNode !== this._el) {
-        const anchor = oldElement?.parentNode === this._el ? oldElement : null;
-        this._el.insertBefore(newElement, anchor ?? resolveInsertAnchor(this, previous));
-      }
+      const anchor = nodeAttachedGroup(this, previous)[0] ?? resolveInsertAnchor(this, previous);
+      attachChildDom(this, viewNode, newElement, anchor);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1710,7 +1750,7 @@ export class ViewNode {
       node._mountConditionRef.value = condition;
     }
 
-    registerNodeBinding(
+    const binding = registerNodeBinding(
       this,
       'mount',
       node,
@@ -1723,14 +1763,24 @@ export class ViewNode {
       }
     );
 
+    // 子节点销毁时释放父节点为它登记的挂载绑定与挂载状态：列表容器通常长命，
+    // 残留绑定会把已经销毁的行一直钉在内存里（keyed 行增删频繁时尤其明显）。
+    if (typeof node._parentMountCleanup === 'function') {
+      node._parentMountCleanup();
+    }
+    node._parentMountCleanup = () => {
+      releaseBindings([binding]);
+      this._childMountStates.delete(node);
+    };
+
     // 渲染后收养：登记时只求值未激活订阅，这里手动补上
     if (this._el && setupStack.length === 0 && regionBuildStack.length === 0) {
-      this._bindings[this._bindings.length - 1]?.activate();
+      binding.activate();
     }
   }
 
   _syncChildMounted(node, mounted) {
-    if (this._deleted || node._deleted || !this._el || !node._el) {
+    if (this._deleted || node._deleted || !this._el) {
       return;
     }
 
@@ -1741,15 +1791,21 @@ export class ViewNode {
     }
 
     if (mounted) {
-      if (node._el.parentNode !== this._el) {
-        this._el.insertBefore(node._el, resolveInsertAnchor(this, node));
-      }
+      const elements = nodeDomGroup(node);
+      const anchor = resolveInsertAnchor(this, node);
+      elements.forEach((element) => {
+        if (element.parentNode !== this._el) {
+          this._el.insertBefore(element, anchor);
+        }
+      });
       return;
     }
 
-    if (node._el.parentNode === this._el) {
-      this._el.removeChild(node._el);
-    }
+    nodeAttachedGroup(this, node).forEach((element) => {
+      if (element.parentNode === this._el) {
+        this._el.removeChild(element);
+      }
+    });
   }
 
   /** 按 key 读取子节点；不存在返回 null。 */
@@ -2038,6 +2094,11 @@ export class ViewNode {
     if (isDevtoolsEnabled()) {
       emitDevtools({ type: 'destroy', node: this });
       unregisterDevtoolsNode(this);
+    }
+    if (typeof this._parentMountCleanup === 'function') {
+      const cleanup = this._parentMountCleanup;
+      this._parentMountCleanup = null;
+      cleanup(); // 释放父节点为它登记的挂载绑定，父节点可能远比它长命
     }
     this._deleted = true;
     this._parent = null;
@@ -2810,9 +2871,7 @@ export class ElementNode extends ViewNode {
 
       if (this._el) {
         const childElement = this._renderChildForInsert(viewNode);
-        if (childElement && childElement.parentNode !== this._el) {
-          this._el.appendChild(childElement);
-        }
+        attachChildDom(this, viewNode, childElement, null);
         if (addedIds) {
           addedIds.push(ensureDevtoolsNodeId(viewNode));
         }
