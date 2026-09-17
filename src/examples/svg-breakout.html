@@ -292,6 +292,7 @@
        * - BreakoutPageState：状态与动作（真实项目放 features/breakout/api/breakout.state.js，默认导出）
        * - PaddleInput / PaddlePad / Paddle / Ball / BrickWall / Hud / Controls / Overlay / Playfield：
        *   视图组件，都是形态 A 薄工厂（没有额外行为，直接返回 ViewNode），句柄直接传进值位置
+       *   （BrickWall 用 keyed() 协调砖块：同 key 且行引用未变即复用节点，打掉一块只动一块 DOM）
        * - BreakoutPage：页面组合与主循环，有 start() / destroy() 所以是形态 B 对象组件
        */
 
@@ -675,12 +676,12 @@
       function BrickWall(bricks) {
         return svgs.g((wall) => {
           wall.className('brick-wall');
-          // 约定：先 rebuildable()，再读数据，区域内读到的信号才计入依赖
-          wall.rebuildable();
-
-          bricks.value.forEach((brick) => {
-            // 游离节点先建好，再挂进区域；区域重跑时整片按新数据重建
-            wall.child(
+          // keyed 协调：key 用行列稳定标识，行引用未变即复用节点；
+          // 打掉一块只销毁那一块，其余砖块的 DOM 身份不动
+          wall.keyed(
+            bricks,
+            (brick) => `${brick.row}-${brick.col}`,
+            (brick) =>
               svgs.rect({
                 class: `brick brick--row-${brick.row}`,
                 x: brick.x,
@@ -690,8 +691,7 @@
                 rx: 5,
                 'data-brick': `${brick.row}-${brick.col}`
               })
-            );
-          });
+          );
         });
       }
 
