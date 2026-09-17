@@ -135,8 +135,8 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   bindingSerial += 1;
   scope.bindings.push(binding);
 
-  if (owner && Array.isArray(owner._bindings)) {
-    owner._bindings.push(binding);
+  if (owner instanceof ViewNode) {
+    nodeBindings(owner).push(binding);
   }
 
   // 构建之外的登记（链式写法、挂载后追加）：立刻求值一次，让首屏与紧随其后的读取都有值；
@@ -266,7 +266,7 @@ function assertRegionChildAllowed(node) {
 
 /** 收集节点及其子树名下的绑定。 */
 function collectRegionBindings(node, out = []) {
-  node._bindings.forEach((binding) => out.push(binding));
+  node._bindings?.forEach((binding) => out.push(binding));
   childTraversalRoots(node).forEach((child) => collectRegionBindings(child, out));
   return out;
 }
@@ -295,8 +295,8 @@ function releaseBindings(bindings) {
     }
 
     const owner = binding.owner;
-    if (owner && Array.isArray(owner._bindings)) {
-      const ownerIndex = owner._bindings.indexOf(binding);
+    if (owner instanceof ViewNode) {
+      const ownerIndex = owner._bindings?.indexOf(binding) ?? -1;
       if (ownerIndex !== -1) {
         owner._bindings.splice(ownerIndex, 1);
       }
@@ -320,7 +320,7 @@ function commitBindingValue(binding, next) {
 
 /** 节点及其子树的绑定进入 DOM 后开始订阅依赖（服务端只求值不订阅）。 */
 function activateBindings(node) {
-  node._bindings.forEach((binding) => {
+  node._bindings?.forEach((binding) => {
     if (typeof binding.activate === 'function') {
       binding.activate();
     }
@@ -448,7 +448,7 @@ function releaseRegion(node) {
 
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
 function flushBindingsIn(node) {
-  node._bindings.forEach((binding) => {
+  node._bindings?.forEach((binding) => {
     commitBindingValue(binding, binding.evaluate());
   });
   childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
@@ -505,6 +505,47 @@ function findErrorBoundary(node) {
 
 const DOCUMENT_FRAGMENT_NODE = 11;
 
+/**
+ * 节点内部集合按需创建：空节点不该为 5 个 Map / Set 付固定开销
+ * （实测每个 Map/Set 约 150~200 B，1000 行 1 万个节点就是十几 MB）。
+ * 读取一律走 `?.`，写入走下面的取用函数。
+ */
+function nodeChildKeys(node) {
+  return node._childKeys ?? (node._childKeys = new Map());
+}
+
+function nodeEvents(node) {
+  return node._events ?? (node._events = new Map());
+}
+
+function nodeDomAdapters(node) {
+  return node._domAdapters ?? (node._domAdapters = new Map());
+}
+
+function nodeMountStates(node) {
+  return node._childMountStates ?? (node._childMountStates = new Map());
+}
+
+function nodePendingRemovals(node) {
+  return node._pendingRemovals ?? (node._pendingRemovals = new Set());
+}
+
+function nodeCleanup(node) {
+  return node._cleanup ?? (node._cleanup = []);
+}
+
+function nodeKeyedSegments(node) {
+  return node._keyedSegments ?? (node._keyedSegments = []);
+}
+
+function nodeBuilders(node) {
+  return node._builders ?? (node._builders = []);
+}
+
+function nodeBindings(node) {
+  return node._bindings ?? (node._bindings = []);
+}
+
 /** 子节点自己的 DOM 组：单根是 `[_el]`，多根组件是 `_fragmentDom`（文档顺序）。 */
 function nodeDomGroup(node) {
   if (node?._fragmentDom?.length) {
@@ -541,7 +582,7 @@ function resolveInsertAnchor(parent, fromNode) {
  * 挂载条件为假时不落地——节点已经渲染（状态保留），条件转真时由 `_syncChildMounted()` 插回槽位。
  */
 function attachChildDom(parent, node, rendered, anchor) {
-  if (parent._childMountStates.get(node) === false) {
+  if (parent._childMountStates?.get(node) === false) {
     return;
   }
 
@@ -658,7 +699,7 @@ function collectKeyedMovedNodes(next, previousPosition) {
 }
 
 function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
-  parent._pendingRemovals.delete(entry.node);
+  parent._pendingRemovals?.delete(entry.node);
   // 惰性挂载声明由父节点收养（与 child() 路径一致）：条件为假时本行不落地，
   // 但节点照常渲染，条件转真时按槽位插回。
   parent._adoptPendingMount(entry.node);
@@ -946,43 +987,12 @@ function sameEventListenerOptions(a, b) {
 export class ViewNode {
   constructor(setup = null) {
     this._children = [];
-    this._childKeys = new Map();
-    this._events = new Map();
-    this._domAdapters = new Map();
-    this._cleanup = [];
-    this._pendingRemovals = new Set();
-    this._keyedSegments = [];
-    this._childMountStates = new Map();
+    // 其余字段一律不预置：集合按需创建（见 nodeChildKeys 等），布尔 / 引用字段缺省即假值。
+    // 空节点因此只剩 _children 一个集合，实测裸节点开销 1.63 KB → 0.45 KB 量级。
     this._mountCondition = null;
     this._mountConditionRef = null; // 入树后由父节点收养：条件存这里，替换 = 写它
-    this._parentMountCleanup = null; // 父节点为它登记的挂载绑定清账函数（销毁时执行）
     this._isMounted = true;
-    this._errorHandler = null;
-    this._parent = null; // 当前父节点：错误处理沿它逐级上溯
-    this._frameLoopStop = null; // bindAnimationFrameLoop 的停止句柄
-    this._childrenDirty = false;
-    this._deleted = false;
-    this._failed = false; // 渲染/构建失败标记：跳过重复尝试，重新挂载会清掉
-    this._access = null;
     this._accessContext = currentAccess(); // 构建时捕获的权限上下文
-    this._builders = []; // 区域重建时按顺序重跑的构建函数
-    this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
-    this._rebuildable = false;
-    this._regionScope = null; // 区域自持的绑定作用域
-    this._regionCaptureToken = null; // 区域内联捕获：rebuildable() 声明后开始收集依赖
-    this._regionSources = []; // 区域读到的 signal 依赖
-    this._regionAdapter = null; // 区域依赖所属引擎
-    this._regionActive = false; // 区域是否已进入 DOM 并订阅
-    this._regionSubs = [];
-    this._ownBindingScope = null; // 节点自己的绑定归属：零参闭包登记在这里
-    this._regionGuard = null;
-    this._rebuildPending = false;
-    this._regionScheduled = false; // 信号触发、等待补跑的重建（batch 合并 / 运行中排队）
-    this._regionRunning = false;
-    this._regionRequeueDepth = 0;
-    this._regionEnv = null; // 构建期环境快照：access / context / i18n
-    this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
-    this._provides = null; // provide() 声明的就近作用域（Map，首次声明时创建）
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -998,7 +1008,7 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
-      this._builders.push(setup);
+      nodeBuilders(this).push(setup);
       const serialBefore = bindingSerial;
       setupStack.push(this);
       try {
@@ -1037,7 +1047,7 @@ export class ViewNode {
       throw new TypeError('rebuildable() predicate must be a function');
     }
 
-    if (this._builders.length === 0) {
+    if ((this._builders?.length ?? 0) === 0) {
       throw new TypeError('rebuildable() requires a setup builder on this node');
     }
 
@@ -1066,7 +1076,7 @@ export class ViewNode {
 
   /** 区域是否有被谓词跳过、等待补齐的重建。 */
   rebuildPending() {
-    return this._rebuildPending;
+    return this._rebuildPending === true;
   }
 
   /** 区域是否有已排队、尚未执行的信号触发重建（batch 合并 / 运行中排队）。 */
@@ -1118,16 +1128,16 @@ export class ViewNode {
     this._regionRunCleanups = [];
 
     this._children = [];
-    this._childKeys = new Map();
+    this._childKeys = null; // 新的一段用新的 key 表，按需创建
     this._childrenDirty = true;
-    previousChildren.forEach((child) => this._pendingRemovals.add(child));
+    previousChildren.forEach((child) => nodePendingRemovals(this).add(child));
 
     this._regionRunning = true;
     const regionToken = beginCollect();
     const previousSources = this._regionSources;
     try {
       this._runInRegionEnvironment(() =>
-        withProviderScope(this, () => this._builders.forEach((builder) => builder(this)), {
+        withProviderScope(this, () => this._builders?.forEach((builder) => builder(this)), {
           reset: true
         })
       );
@@ -1140,7 +1150,7 @@ export class ViewNode {
       this._children.forEach((child) => child.destroy());
       this._regionRunCleanups.forEach((cleanup) => cleanup());
       this._regionRunCleanups = previousCleanups;
-      previousChildren.forEach((child) => this._pendingRemovals.delete(child));
+      previousChildren.forEach((child) => this._pendingRemovals?.delete(child));
       this._children = previousChildren;
       this._childKeys = previousKeys;
       this._childrenDirty = false;
@@ -1164,7 +1174,7 @@ export class ViewNode {
     // 构建期间依赖又变化时补跑一次，而不是丢弃；batch 内留给作用域结束统一合并。
     if (this._regionScheduled && !this._deleted && !isSignalsBatchActive()) {
       this._regionScheduled = false;
-      this._regionRequeueDepth += 1;
+      this._regionRequeueDepth = (this._regionRequeueDepth ?? 0) + 1;
       if (this._regionRequeueDepth > 100) {
         throw new Error('Region rebuild cycle detected');
       }
@@ -1267,7 +1277,7 @@ export class ViewNode {
         : [];
     this._dropChildKeys(this._children);
     this._children.forEach((child) => {
-      this._pendingRemovals.add(child);
+      nodePendingRemovals(this).add(child);
       child._parent = null; // 脱离视图树：不再把错误交给旧父
     });
     this._children = [];
@@ -1286,16 +1296,16 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._children.push(viewNode);
     this._childrenDirty = true;
     this._adoptPendingMount(viewNode);
@@ -1317,22 +1327,22 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const hasBefore = beforeKey !== null && beforeKey !== undefined;
-    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    const beforeNode = hasBefore ? (this._childKeys?.get(String(beforeKey)) ?? null) : null;
     if (hasBefore && !beforeNode) {
       throw new TypeError(`insertBefore() requires an existing beforeKey "${String(beforeKey)}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
     this._linkChild(viewNode);
 
@@ -1360,22 +1370,22 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const hasAfter = afterKey !== null && afterKey !== undefined;
-    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    const afterNode = hasAfter ? (this._childKeys?.get(String(afterKey)) ?? null) : null;
     if (hasAfter && !afterNode) {
       throw new TypeError(`insertAfter() requires an existing afterKey "${String(afterKey)}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
     this._linkChild(viewNode);
 
@@ -1419,13 +1429,13 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       throw new TypeError(`moveBefore() requires an existing key "${rawKey}"`);
     }
 
     const hasBefore = beforeKey !== null && beforeKey !== undefined;
-    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    const beforeNode = hasBefore ? (this._childKeys?.get(String(beforeKey)) ?? null) : null;
     if (hasBefore && !beforeNode) {
       throw new TypeError(`moveBefore() requires an existing beforeKey "${String(beforeKey)}"`);
     }
@@ -1456,13 +1466,13 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       throw new TypeError(`moveAfter() requires an existing key "${rawKey}"`);
     }
 
     const hasAfter = afterKey !== null && afterKey !== undefined;
-    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    const afterNode = hasAfter ? (this._childKeys?.get(String(afterKey)) ?? null) : null;
     if (hasAfter && !afterNode) {
       throw new TypeError(`moveAfter() requires an existing afterKey "${String(afterKey)}"`);
     }
@@ -1512,7 +1522,7 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const previous = this._childKeys.get(rawKey);
+    const previous = this._childKeys?.get(rawKey);
     if (!previous) {
       throw new TypeError(`replaceChild() requires an existing key "${rawKey}"`);
     }
@@ -1522,8 +1532,8 @@ export class ViewNode {
       viewNode.attr('data-row-key', rawKey);
     }
 
-    this._childKeys.set(rawKey, viewNode);
-    this._pendingRemovals.delete(viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
     this._linkChild(viewNode);
     const index = this._children.indexOf(previous);
@@ -1543,7 +1553,7 @@ export class ViewNode {
       }
     }
 
-    this._childMountStates.delete(previous);
+    this._childMountStates?.delete(previous);
     previous.destroy();
 
     return this;
@@ -1589,7 +1599,7 @@ export class ViewNode {
       members: new Map(),
       update: options?.update ?? null
     };
-    this._keyedSegments.push(segment);
+    nodeKeyedSegments(this).push(segment);
     registerNodeBinding(
       this,
       'keyed',
@@ -1757,7 +1767,7 @@ export class ViewNode {
       () => resolveMountCondition(node),
       (next) => {
         const mounted = Boolean(next);
-        this._childMountStates.set(node, mounted);
+        nodeMountStates(this).set(node, mounted);
         node._isMounted = mounted; // 单向镜像：父写子读，isMounted() 无需父指针
         this._syncChildMounted(node, mounted);
       }
@@ -1770,7 +1780,7 @@ export class ViewNode {
     }
     node._parentMountCleanup = () => {
       releaseBindings([binding]);
-      this._childMountStates.delete(node);
+      this._childMountStates?.delete(node);
     };
 
     // 渲染后收养：登记时只求值未激活订阅，这里手动补上
@@ -1810,18 +1820,18 @@ export class ViewNode {
 
   /** 按 key 读取子节点；不存在返回 null。 */
   getChild(key) {
-    return this._childKeys.get(String(key)) || null;
+    return this._childKeys?.get(String(key)) || null;
   }
 
   /** 按 key 移除并销毁子节点。 */
   removeChild(key) {
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       return this;
     }
 
-    this._childKeys.delete(rawKey);
+    this._childKeys?.delete(rawKey);
     const index = this._children.indexOf(viewNode);
     if (index !== -1) {
       this._children.splice(index, 1);
@@ -1840,9 +1850,9 @@ export class ViewNode {
 
   _dropChildKeys(nodes) {
     const doomed = new Set(nodes);
-    this._childKeys.forEach((child, key) => {
+    this._childKeys?.forEach((child, key) => {
       if (doomed.has(child)) {
-        this._childKeys.delete(key);
+        this._childKeys?.delete(key);
       }
     });
   }
@@ -1860,7 +1870,7 @@ export class ViewNode {
       }
 
       const viewNode = normalizeChildWithContext(this, child);
-      this._pendingRemovals.delete(viewNode);
+      this._pendingRemovals?.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
@@ -1879,8 +1889,8 @@ export class ViewNode {
       throw new TypeError('ViewNode event handler must be a function');
     }
 
-    const previous = this._events.get(eventName);
-    this._events.set(eventName, { handler, options });
+    const previous = this._events?.get(eventName);
+    nodeEvents(this).set(eventName, { handler, options });
 
     if (this._el) {
       this._bindDomAdapter(eventName, previous?.options, options);
@@ -1890,12 +1900,12 @@ export class ViewNode {
   }
 
   off(eventName) {
-    this._events.delete(eventName);
-    const entry = this._domAdapters.get(eventName);
+    this._events?.delete(eventName);
+    const entry = this._domAdapters?.get(eventName);
     if (entry) {
       entry.cleanup();
       this._removeCleanup(entry.cleanup);
-      this._domAdapters.delete(eventName);
+      this._domAdapters?.delete(eventName);
     }
     return this;
   }
@@ -1910,7 +1920,7 @@ export class ViewNode {
       window.addEventListener(type, handler, options);
       const unbind = () => window.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      this._cleanup.push(unbind);
+      nodeCleanup(this).push(unbind);
     }
 
     return this;
@@ -1922,7 +1932,7 @@ export class ViewNode {
       document.addEventListener(type, handler, options);
       const unbind = () => document.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      this._cleanup.push(unbind);
+      nodeCleanup(this).push(unbind);
     }
 
     return this;
@@ -1952,7 +1962,7 @@ export class ViewNode {
       }
     };
 
-    this._cleanup.push(cancel);
+    nodeCleanup(this).push(cancel);
     return this;
   }
 
@@ -1996,7 +2006,7 @@ export class ViewNode {
 
     this._frameLoopStop = stop;
     frameId = requestAnimationFrame(step);
-    this._cleanup.push(stop);
+    nodeCleanup(this).push(stop);
     return this;
   }
 
@@ -2007,18 +2017,18 @@ export class ViewNode {
   }
 
   _bindDomAdapter(eventName, previousOptions, nextOptions) {
-    const existing = this._domAdapters.get(eventName);
+    const existing = this._domAdapters?.get(eventName);
     if (existing) {
       if (sameEventListenerOptions(previousOptions, nextOptions)) {
         return;
       }
       existing.cleanup();
       this._removeCleanup(existing.cleanup);
-      this._domAdapters.delete(eventName);
+      this._domAdapters?.delete(eventName);
     }
 
     const adapter = (event) => {
-      const current = this._events.get(eventName);
+      const current = this._events?.get(eventName);
       if (!current || typeof current.handler !== 'function') {
         return;
       }
@@ -2038,14 +2048,14 @@ export class ViewNode {
     };
 
     this._el.addEventListener(eventName, adapter, nextOptions);
-    this._domAdapters.set(eventName, { cleanup });
-    this._cleanup.push(cleanup);
+    nodeDomAdapters(this).set(eventName, { cleanup });
+    nodeCleanup(this).push(cleanup);
   }
 
   _removeCleanup(cleanup) {
-    const index = this._cleanup.indexOf(cleanup);
+    const index = this._cleanup?.indexOf(cleanup) ?? -1;
     if (index !== -1) {
-      this._cleanup.splice(index, 1);
+      this._cleanup?.splice(index, 1);
     }
   }
 
@@ -2068,8 +2078,8 @@ export class ViewNode {
   }
 
   _commitChildren() {
-    this._pendingRemovals.forEach((child) => child.destroy());
-    this._pendingRemovals.clear();
+    this._pendingRemovals?.forEach((child) => child.destroy());
+    this._pendingRemovals = null;
     this._childrenDirty = false;
   }
 
@@ -2108,14 +2118,14 @@ export class ViewNode {
       this._regionRunCleanups.forEach((cleanup) => cleanup());
       this._regionRunCleanups = [];
     }
-    this._cleanup.forEach((cleanup) => cleanup());
-    this._cleanup = [];
-    this._childMountStates.clear();
+    this._cleanup?.forEach((cleanup) => cleanup());
+    this._cleanup = null;
+    this._childMountStates = null;
     this._children.forEach((child) => child.destroy());
-    this._pendingRemovals.forEach((child) => child.destroy());
-    this._pendingRemovals.clear();
+    this._pendingRemovals?.forEach((child) => child.destroy());
+    this._pendingRemovals = null;
     this._children = [];
-    this._childKeys.clear();
+    this._childKeys = null;
 
     if (this._el?.parentNode) {
       this._el.parentNode.removeChild(this._el);
@@ -2863,7 +2873,7 @@ export class ElementNode extends ViewNode {
       }
 
       const viewNode = normalizeChildWithContext(this, child);
-      this._pendingRemovals.delete(viewNode);
+      this._pendingRemovals?.delete(viewNode);
       this._children.push(viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
@@ -2956,7 +2966,7 @@ export class ElementNode extends ViewNode {
           if (
             childElement &&
             childElement.parentNode !== this._el &&
-            this._childMountStates.get(child) !== false
+            this._childMountStates?.get(child) !== false
           ) {
             this._el.appendChild(childElement);
           } else if (!childElement && child._el && child._el.parentNode === this._el) {
@@ -3005,7 +3015,7 @@ export class ElementNode extends ViewNode {
       }
 
       const mountedChildren = this._children.filter(
-        (child) => this._childMountStates.get(child) !== false && !child._failed
+        (child) => this._childMountStates?.get(child) !== false && !child._failed
       );
 
       const childHTML = mountedChildren
@@ -3031,7 +3041,7 @@ export class ElementNode extends ViewNode {
     Object.entries(this._styles).forEach(([name, value]) => {
       this._el.style[name] = value;
     });
-    this._events.forEach((descriptor, eventName) => {
+    this._events?.forEach((descriptor, eventName) => {
       this._bindDomAdapter(eventName, undefined, descriptor.options);
     });
   }
@@ -3053,7 +3063,7 @@ export class ElementNode extends ViewNode {
         }
         return;
       }
-      if (childElement && this._childMountStates.get(child) !== false) {
+      if (childElement && this._childMountStates?.get(child) !== false) {
         this._el.appendChild(childElement);
       }
     });
