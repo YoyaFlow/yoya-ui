@@ -60,6 +60,35 @@ export function RateCard() {
 }
 ```
 
+### Shape B shortcut factory: `vNode((api) => view)`
+
+Use `vNode` when a component needs outward command methods — defining it gives you the node:
+
+```js
+import { computed, ref, vNode, vstack, vText } from '@yoyaflow/yoya-ui';
+
+export function CounterCard() {
+  const count = ref(0);
+
+  return vNode((api) => {
+    api.bump = () => {
+      count.value += 1;
+      return api; // same as returning the node
+    };
+
+    return vstack((stack) => {
+      stack.output((out) => out.child(vText(computed(() => `计数 ${count.value}`))));
+      stack.vButton('+1', (button) => button.on('click', () => api.bump()));
+    });
+  });
+}
+```
+
+- The result is the component node itself (`ComponentNode extends ViewNode`): mount it as a root, pass it as a child, or key it — no placeholder element, and an array return becomes a multi-root fragment.
+- `api` only collects command functions; the factory attaches them to the node, and a name hitting an existing node member (`child` / `destroy` / `whenFailed` / `mountable` …) or `render` / `_*` throws instead of silently overwriting.
+- `return api` inside a command is the same as returning the node; declare error boundaries on the container inside setup, and chain node capabilities (`mountable()` / `rebuildable()`) on the returned node.
+- Existing shapes A/B/C and `child(componentObject)` keep working; presentation-only components stay on shape A.
+
 ### Shape C: class node component (parent/child nesting, child instance control, or lifecycle overrides)
 
 Class node components must export a paired `vXxx` factory and use `createElementFactory`:

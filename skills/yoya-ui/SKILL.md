@@ -37,6 +37,7 @@ div((root) => {
 - **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
 - **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等）时才在 `render()` 之外先建再挂载；纯结构就地组合（`stack.div((box) => …)`、`page.vCard((card) => …)`），不要先把节点存成中间变量再 `child()` 挂回去
 - **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回 ViewNode，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法才写形态 B（`{ render(), ... }`），父子嵌套与生命周期重写才用形态 C。**演示代码用同一条判据**：只演示结构与交互、不需要对外命令方法时，函数直接 `return` 节点（`return vCard((card) => …)`），不要为了跟对象组件统一而白包一层 `render()`。详见 references/core.md
+- **`vNode` 是 ComponentNode 的快捷工厂**：`vNode((api) => 视图)` 定义即得到节点——可当根 `bindTo`、可当子节点、不产生占位元素，setup 返回数组即多根 fragment。对外命令方法收到 `api` 上（`api.reload = () => { …; return api }`），工厂把它们挂到节点本身，**撞上节点 API（`child` / `destroy` / `whenFailed` / `mountable` …）直接报错**，不静默覆盖；命令里 `return api` 等价于返回节点。需要节点能力就直接链在返回的节点上（`vNode(…).whenFailed(fn).mountable(cond)`）。详见 references/core.md
 
 ## 文本与状态
 

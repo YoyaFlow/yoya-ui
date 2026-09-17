@@ -60,6 +60,35 @@ export function RateCard() {
 }
 ```
 
+### 形态 B 的快捷工厂：`vNode((api) => 视图)`
+
+需要对外命令方法时，用 `vNode` 定义即得到组件节点：
+
+```js
+import { computed, ref, vNode, vstack, vText } from '@yoyaflow/yoya-ui';
+
+export function CounterCard() {
+  const count = ref(0);
+
+  return vNode((api) => {
+    api.bump = () => {
+      count.value += 1;
+      return api; // 等价于返回节点
+    };
+
+    return vstack((stack) => {
+      stack.output((out) => out.child(vText(computed(() => `计数 ${count.value}`))));
+      stack.vButton('+1', (button) => button.on('click', () => api.bump()));
+    });
+  });
+}
+```
+
+- 返回的是组件节点（`ComponentNode extends ViewNode`）：当根挂载、当子节点、进 keyed 列表都用节点语义；不产生占位元素，setup 返回数组即多根 fragment。
+- `api` 只收命令函数；工厂把命令挂到节点本身，撞上节点已有成员（`child` / `destroy` / `whenFailed` / `mountable` …）或 `render` / `_*` 直接抛错，不静默覆盖。
+- 命令里 `return api` 等于 `return 节点`；错误边界就近声明在 setup 的容器上（`box.whenFailed(…)`），节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
+- 旧写法不受影响：形态 A/B/C 与 `child(componentObject)` 全部照旧，没有对外命令方法的展示组件仍用形态 A。
+
 ### 形态 C：类节点组件（父子嵌套、操作子实例或重写生命周期）
 
 类节点组件必须同时导出成对 `vXxx` 工厂，并使用 `createElementFactory`：

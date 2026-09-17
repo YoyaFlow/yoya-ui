@@ -76,6 +76,7 @@ export function vTr(first = null, second = null, third = null) {
   - 形态 B：VPagination（render() + update/change 等状态 API）；
   - 形态 C：VButton/VCard/VTable/VTr/VTabs 等组件库主体。
 - child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
+- 形态 B 的快捷写法：`vNode((api) => 视图)` 定义即得到组件节点（ComponentNode），命令方法收到 api 上后由工厂挂到节点、重名报错；旧三形态与 child() 的对象形式不变。
 - 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
 
 ### Demo 演示组件

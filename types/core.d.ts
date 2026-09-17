@@ -439,6 +439,20 @@ export class ComponentNode extends ViewNode {
   destroy(): this;
 }
 
+/** Outward command methods collected on the api object of vNode's setup callback. */
+export type VNodeCommand = (...args: any[]) => any;
+export type VNodeApi = Record<string, VNodeCommand>;
+
+/**
+ * ComponentNode shortcut factory: build the view inside `setup(api)` and get the node
+ * back. Command methods collected on `api` are attached to the node itself; a name that
+ * collides with the node API (child / attr / whenFailed ...) throws instead of silently
+ * overwriting it. Returning `api` from a command is the same as returning the node.
+ */
+export function vNode<TApi extends VNodeApi = VNodeApi>(
+  setup: (api: TApi) => ViewNode | ViewNode[]
+): ComponentNode & TApi;
+
 /**
  * ElementNode renders a real DOM Element and synchronizes attrs, classes,
  * styles, events and children.

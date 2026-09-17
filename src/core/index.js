@@ -13,6 +13,7 @@ export {
   vText
 } from './node.js';
 export { ClientOnlyNode, vClientOnly } from './client-only.js';
+export { vNode } from './v-node.js';
 export {
   bindDocumentEvent,
   bindWindowEvent,

@@ -1,0 +1,81 @@
+import { ComponentNode, ViewNode } from './node.js';
+
+/** api 上不允许出现的键：与节点语义冲突，或属于内部实现（下划线前缀）。 */
+const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
+
+/**
+ * vNode：ComponentNode 的快捷工厂——定义即得到节点，不产生占位元素。
+ *
+ * setup(api) 里把对外命令方法收到 api 上（`api.reload = () => …`），并返回要渲染的
+ * ViewNode（或 ViewNode 数组，按多根 fragment 落实）。工厂在返回节点前把 api 上的
+ * 命令挂到节点本身：撞上节点自身 API（`child` / `attr` / `whenFailed` …）或内部字段
+ * 直接抛错，不静默覆盖。命令里 `return api` 等价于返回节点，链式调用两头都通；
+ * 错误边界用节点方法 `card.whenFailed(fn)`。
+ */
+export function vNode(setup) {
+  if (typeof setup !== 'function') {
+    throw new TypeError('vNode(setup) requires a setup function: vNode((api) => view)');
+  }
+
+  const api = {};
+  const root = setup(api);
+  assertViewRoot(root);
+
+  const node = new ComponentNode({
+    render: () => root
+  });
+
+  attachCommands(node, api);
+  return node;
+}
+
+function assertViewRoot(root) {
+  const list = Array.isArray(root) ? root : [root];
+
+  list.forEach((item) => {
+    if (!(item instanceof ViewNode)) {
+      throw new TypeError(
+        'vNode(setup) must return a ViewNode or an array of ViewNodes. ' +
+          `Received ${describeValue(root)}. Keep command methods on the api argument ` +
+          'and return the view from the setup callback.'
+      );
+    }
+  });
+}
+
+function describeValue(value) {
+  if (Array.isArray(value)) {
+    return 'an array containing a non-node value';
+  }
+
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+
+  return `a ${typeof value}`;
+}
+
+function attachCommands(node, api) {
+  Object.keys(api).forEach((key) => {
+    const command = api[key];
+
+    if (typeof command !== 'function') {
+      throw new TypeError(
+        `vNode api.${key} must be a function: the api object only collects command methods.`
+      );
+    }
+
+    if (RESERVED_COMMAND_KEYS.has(key) || key.startsWith('_') || key in node) {
+      throw new TypeError(
+        `vNode command "${key}" collides with the node API. Rename it ` +
+          '(for example "reloadAction" / "onReload"); node members such as child / attr / ' +
+          'whenFailed stay reserved, and error boundaries use card.whenFailed(fn).'
+      );
+    }
+
+    node[key] = (...args) => {
+      const result = command.apply(api, args);
+      return result === api ? node : result;
+    };
+  });
+}

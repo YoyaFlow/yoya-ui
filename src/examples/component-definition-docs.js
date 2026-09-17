@@ -215,6 +215,25 @@ const componentPatterns = [
   };
 }`,
     references: ['库内参考：VPagination（render() + update/change 等状态 API）。']
+  },
+  {
+    title: '形态 B 快捷工厂：vNode —— 定义即节点',
+    intro:
+      '需要对外命令方法时用 vNode：命令收到 api 上，工厂挂到返回的节点本身，重名（child / destroy / ' +
+      'whenFailed / mountable …）直接报错。产物是组件节点，可当根挂载、可当子节点，不产生占位元素；' +
+      '命令里 return api 等于 return 节点。旧写法不受影响。',
+    code: `const card = vNode((api) => {
+  api.bump = () => {
+    count.value += 1;
+    return api; // 等价于返回节点
+  };
+  return vstack((stack) => {
+    stack.vButton('+1', (button) => button.on('click', () => api.bump()));
+  });
+});`,
+    references: [
+      '节点级能力（whenFailed / mountable / rebuildable）链在返回的节点上；错误边界就近声明在 setup 的容器上。'
+    ]
   }
 ];
 
