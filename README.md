@@ -26,8 +26,8 @@ whenever you want. Positioning notes and the full rationale: [Why yoya-ui](docs/
   page, and an existing bundler setup is equally welcome.
 - **Delivery and long-term maintenance teams** — one stable API on Web standards, instead of
   rewriting for a framework's next major version.
-- **Legacy and server-rendered systems** — drop declarative interaction into an existing
-  PHP / JSP / hbs / htmx page, block by block, with no migration.
+- **Legacy systems and existing pages** — drop declarative interaction into an existing
+  PHP / JSP / Vue / React page, block by block, with no migration.
 - **AI-generated code that has to run as-is** — no framework context or build magic between the
   generated code and the browser.
 
@@ -105,8 +105,8 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
 ## Progressive by design: four levels
 
 1. **A script tag.** The quick start above: CDN, real page, zero tooling.
-2. **Progressive enhancement.** `bindTo()` mounts one interactive block into an existing page —
-   server-rendered, htmx, Vue, React, jQuery. Add a block, keep the rest of the page as it is.
+2. **Progressive enhancement.** `bindTo()` mounts one interactive block into an existing page — a
+   static HTML file, a PHP / JSP page, or a Vue / React app. Add a block, keep the rest as it is.
 3. **npm and modules.** `npm install @yoyaflow/yoya-ui`, then import per entry point:
 
    ```js

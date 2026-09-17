@@ -559,7 +559,7 @@ function createOverviewView() {
     view.attr('data-overview-page', 'true');
     view.h2('概述');
     view.p(
-      'yoya-ui 是基于浏览器原生 Web 技术的声明式 UI 基础库：普通 JS DSL 构建真实 DOM，无需构建即可运行；可独立搭建整站，也可嵌入 HTML、Vue、React、htmx、PHP、JSP 等既有项目做局部增强。'
+      'yoya-ui 是基于浏览器原生 Web 技术的声明式 UI 基础库：普通 JS DSL 构建真实 DOM，无需构建即可运行；可独立搭建整站，也可嵌入 HTML、PHP、JSP、Vue、React 等既有页面做局部增强。'
     );
     view.p('左侧菜单查看组件分类，右侧页面包含实时演示、源码面板和开发指南。');
 
@@ -599,7 +599,7 @@ function createOverviewView() {
           },
           {
             title: '可嵌入局部增强',
-            points: ['bindTo() 可挂载进 HTML、Vue、React、htmx、PHP、JSP 等既有项目，渐进增强。']
+            points: ['bindTo() 可挂载进 HTML、PHP、JSP、Vue、React 等既有页面，渐进增强。']
           },
           {
             title: 'AI 编程亲和',
