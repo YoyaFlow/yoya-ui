@@ -23,6 +23,7 @@
 | [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)                             | 组件库开发指南（第三方 / 生态作者）                                                    | 重建并改名     |
 | [`interop.zh-CN.md`](interop.zh-CN.md)                                                     | 第三方库接入：交出真实 DOM 元素（vEchart 参照实现与扩展开口）                          | 从 README 迁入 |
 | [`agents.zh-CN.md`](agents.zh-CN.md)                                                       | AI 代码助手阅读指南：如何阅读本仓库、如何生成与评估代码                                | 从 README 迁入 |
+| [`benchmarks.zh-CN.md`](benchmarks.zh-CN.md)                                               | 核心基准报告：标准操作、启动、内存、组件层开销与虚拟滚动（由结果 JSON 生成）           | 由基准结果生成 |
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建           |
 | [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建           |
 | [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建           |
