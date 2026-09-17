@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createI18n,
   div,
+  inject,
+  provide,
   router,
   vLink,
   vRoute,
@@ -1430,5 +1432,70 @@ describe('document routes', () => {
 
     expect(jumps).toEqual([['https://example.com/docs', false]]);
     expect(document.querySelector('#app').textContent).toBe('正在离开 yoya-ui…');
+  });
+});
+
+describe('router provide scope', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<main id="app"></main>';
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('builds a route view inside the outlet provide scope', () => {
+    const appRouter = router((r) => {
+      r.route('/scope', () => div((page) => page.p(`user:${inject('user', 'none')}`)));
+    });
+    div((root) => {
+      provide('user', 'Ada');
+      root.child(appRouter);
+    }).bindTo('#app');
+
+    appRouter.navigate('/scope', { replace: true });
+
+    expect(document.querySelector('#app').textContent).toBe('user:Ada');
+  });
+
+  it('builds an async route view inside the outlet provide scope', async () => {
+    let resolveView;
+    const appRouter = router((r) => {
+      r.route(
+        '/scope-async',
+        () =>
+          new Promise((resolve) => {
+            resolveView = resolve;
+          })
+      );
+    });
+    div((root) => {
+      provide('user', 'Ada');
+      root.child(appRouter);
+    }).bindTo('#app');
+
+    appRouter.navigate('/scope-async', { replace: true });
+    resolveView(() => div((page) => page.p(`user:${inject('user', 'none')}`)));
+    await flush();
+
+    expect(document.querySelector('#app').textContent).toBe('user:Ada');
+  });
+
+  it('builds keep-alive tab views inside the outlet provide scope', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/a', {
+          title: 'A',
+          view: () => div((page) => page.p(`a:${inject('user', 'none')}`))
+        })
+      ]
+    });
+    const views = vRouterViews(appRouter);
+    div((root) => {
+      provide('user', 'Ada');
+      root.child(views);
+    }).bindTo('#app');
+
+    appRouter.navigate('/a', { replace: true });
+
+    expect(document.querySelector('.yoya-vrouter-views-content').textContent).toBe('a:Ada');
   });
 });

@@ -1,5 +1,6 @@
 import {
   applyElementOptions,
+  buildInProviderScope,
   ElementNode,
   normalizeSetupArguments,
   registerChildFactories,
@@ -436,33 +437,50 @@ export class Router extends ElementNode {
   _renderResolved(resolved) {
     const { context, route, view } = resolved;
 
+    // 路由视图在挂进 outlet 之前就构建完成（同步与异步两条路径），构建帧因此要由
+    // 构建方显式声明：视图里的 inject 才能读到 outlet 祖先的 provide，视图自己声明的
+    // provide 也只落在产出的子树上，不外溢给 outlet 的同级。
+    const buildInOutletScope = (build) => buildInProviderScope(this._outlet, build);
+
     // 文档路由：不渲染 SPA 视图，交出一个「正在跳转」的占位（含可点的真实链接）。
     // refresh() / popstate 落到这类路由时只渲染占位、不重复整页跳转，避免回退死循环。
     if (route?.url) {
       this._navigationGeneration += 1;
-      this._commitView(resolved, buildDocumentView(route, context));
+      this._commitView(
+        resolved,
+        buildInOutletScope(() => buildDocumentView(route, context))
+      );
       return;
     }
 
-    const result = typeof view === 'function' ? view(context) : view;
+    const result = buildInOutletScope(() => (typeof view === 'function' ? view(context) : view));
 
     this._navigationGeneration += 1;
 
     if (!isPromiseLike(result)) {
-      this._commitView(resolved, normalizeRouteView(result, context));
+      this._commitView(
+        resolved,
+        buildInOutletScope(() => normalizeRouteView(result, context))
+      );
       return;
     }
 
     const generation = this._navigationGeneration;
-    this._commitView(resolved, this._buildLoadingView(route, context));
+    this._commitView(
+      resolved,
+      buildInOutletScope(() => this._buildLoadingView(route, context))
+    );
     Promise.resolve(result).then(
       (value) => {
         if (generation !== this._navigationGeneration || this._deleted) return value;
         let nextView;
         try {
-          nextView = normalizeRouteView(value, context);
+          nextView = buildInOutletScope(() => normalizeRouteView(value, context));
         } catch (error) {
-          this._commitView(resolved, this._buildErrorView(route, context, error));
+          this._commitView(
+            resolved,
+            buildInOutletScope(() => this._buildErrorView(route, context, error))
+          );
           return value;
         }
         this._commitView(resolved, nextView);
@@ -470,7 +488,10 @@ export class Router extends ElementNode {
       },
       (error) => {
         if (generation !== this._navigationGeneration || this._deleted) return error;
-        this._commitView(resolved, this._buildErrorView(route, context, error));
+        this._commitView(
+          resolved,
+          buildInOutletScope(() => this._buildErrorView(route, context, error))
+        );
         return error;
       }
     );
