@@ -32,7 +32,7 @@ div((root) => {
 - **事件绑定铁律**：快捷方法返回父节点而非子元素，事件必须用回调参数：
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
-- **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
+- **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`；**帧循环/单帧用节点方法** `node.bindAnimationFrameLoop(cb)` / `node.bindAnimationFrame(cb)`（`destroy()` 自动取消，`stopAnimationFrameLoop()` 提前停）；注入样式用 `injectDocumentStyle`
 - **挂载走 `bindTo`**：`node.bindTo('#app')` 渲染并挂到容器；SSR 用 `hydrate` / `mount`。不要在业务代码里 `document.querySelector('#app').appendChild(node.renderDom())`——绕开挂载约定，容器不存在时还会直接抛错
 - **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
 - **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等）时才在 `render()` 之外先建再挂载；纯结构就地组合（`stack.div((box) => …)`、`page.vCard((card) => …)`），不要先把节点存成中间变量再 `child()` 挂回去

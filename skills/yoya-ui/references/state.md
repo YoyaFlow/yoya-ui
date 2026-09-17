@@ -197,7 +197,7 @@ div((box) => {
 
 ## 组件作者注意
 
-自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`。组件可暴露链式 API（`value(next)`、`disabled(next)`），但对外只暴露方法，不要让使用者直接持有内部信号。
+自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`；动画帧用节点方法 `node.bindAnimationFrame(cb)`（单帧）与 `node.bindAnimationFrameLoop(cb)`（循环，`destroy()` 自动停，`stopAnimationFrameLoop()` 提前停，同节点只保留一条循环），不要自己存 frameId。组件可暴露链式 API（`value(next)`、`disabled(next)`），但对外只暴露方法，不要让使用者直接持有内部信号。
 
 ## 引擎与替换
 

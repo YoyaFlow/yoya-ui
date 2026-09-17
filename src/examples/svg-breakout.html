@@ -278,7 +278,6 @@
     <main id="app"></main>
     <script type="module">
       import {
-        bindWindowEvent,
         computed,
         div,
         ref,
@@ -584,14 +583,11 @@
         }
 
         return {
-          bind() {
-            const unbinds = [
-              bindWindowEvent('keydown', handleKeyDown),
-              bindWindowEvent('keyup', handleKeyUp),
-              bindWindowEvent('blur', clear)
-            ];
-
-            return () => unbinds.forEach((unbind) => unbind());
+          /** 显式归属页面节点：window 监听随节点 destroy() 自动卸载。 */
+          bind(node) {
+            node.bindWindowEvent('keydown', handleKeyDown);
+            node.bindWindowEvent('keyup', handleKeyUp);
+            node.bindWindowEvent('blur', clear);
           },
 
           axis() {
@@ -847,19 +843,17 @@
           }
         });
 
-        let frameId = null;
-        let unbindInput = null;
         let hostElement = null;
+        let pageNode = null;
 
         function tick() {
           // 页面被卸载后停帧：脱离文档的演示不该在后台继续空转
           if (hostElement && !hostElement.isConnected) {
-            frameId = null;
+            pageNode?.stopAnimationFrameLoop();
             return;
           }
 
           state.advance(input);
-          frameId = requestAnimationFrame(tick);
         }
 
         return {
@@ -898,16 +892,16 @@
           },
 
           start(rootNode) {
+            pageNode = rootNode;
             hostElement = rootNode.renderDom();
-            unbindInput = input.bind();
-            frameId = requestAnimationFrame(tick);
+            input.bind(rootNode); // window 监听显式归属页面节点
+            rootNode.bindAnimationFrameLoop(tick); // 帧循环随节点 destroy() 自动停
           },
 
           destroy() {
-            cancelAnimationFrame(frameId);
-            unbindInput?.();
             input.clear();
             hostElement = null;
+            pageNode = null;
           }
         };
       }

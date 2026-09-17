@@ -834,6 +834,7 @@ export class ViewNode {
     this._isMounted = true;
     this._errorHandler = null;
     this._parent = null; // 当前父节点：错误处理沿它逐级上溯
+    this._frameLoopStop = null; // bindAnimationFrameLoop 的停止句柄
     this._childrenDirty = false;
     this._deleted = false;
     this._failed = false; // 渲染/构建失败标记：跳过重复尝试，重新挂载会清掉
@@ -1784,6 +1785,84 @@ export class ViewNode {
       this._cleanup.push(unbind);
     }
 
+    return this;
+  }
+
+  /**
+   * 下一个动画帧执行一次 callback；节点 destroy() 时若还没执行会自动取消。
+   * 需要多处调度就多次调用，每次独立登记、互不影响（SSR 下为空操作）。
+   */
+  bindAnimationFrame(callback) {
+    if (typeof callback !== 'function') {
+      throw new TypeError('bindAnimationFrame(callback) requires a function');
+    }
+
+    if (this._deleted || typeof requestAnimationFrame !== 'function') {
+      return this;
+    }
+
+    let frameId = requestAnimationFrame((time) => {
+      frameId = null;
+      callback(time);
+    });
+    const cancel = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+    };
+
+    this._cleanup.push(cancel);
+    return this;
+  }
+
+  /**
+   * 每帧执行 callback，直到节点 destroy() 或显式 stopAnimationFrameLoop()。
+   * 同一节点只保留一条循环：重复调用会先停掉上一条再启动新的。
+   */
+  bindAnimationFrameLoop(callback) {
+    if (typeof callback !== 'function') {
+      throw new TypeError('bindAnimationFrameLoop(callback) requires a function');
+    }
+
+    if (this._deleted || typeof requestAnimationFrame !== 'function') {
+      return this;
+    }
+
+    this.stopAnimationFrameLoop();
+
+    let frameId = null;
+    const step = (time) => {
+      frameId = null;
+      callback(time);
+
+      // 回调里停掉或重启过循环：这一轮不再续帧
+      if (this._frameLoopStop !== stop) {
+        return;
+      }
+
+      frameId = requestAnimationFrame(step);
+    };
+    const stop = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+
+      if (this._frameLoopStop === stop) {
+        this._frameLoopStop = null;
+      }
+    };
+
+    this._frameLoopStop = stop;
+    frameId = requestAnimationFrame(step);
+    this._cleanup.push(stop);
+    return this;
+  }
+
+  /** 停止 bindAnimationFrameLoop() 启动的循环；没有循环时为空操作。 */
+  stopAnimationFrameLoop() {
+    this._frameLoopStop?.();
     return this;
   }
 

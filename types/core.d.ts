@@ -395,6 +395,21 @@ export class ViewNode {
     options?: AddEventListenerOptions | boolean
   ): this;
 
+  /**
+   * Runs callback once on the next animation frame; canceled automatically when
+   * the node is destroyed before it fires. No-op outside the browser.
+   */
+  bindAnimationFrame(callback: (time: number) => void): this;
+
+  /**
+   * Runs callback on every animation frame until destroy() or
+   * stopAnimationFrameLoop(); one loop per node (re-binding restarts it).
+   */
+  bindAnimationFrameLoop(callback: (time: number) => void): this;
+
+  /** Stops the loop started by bindAnimationFrameLoop(). */
+  stopAnimationFrameLoop(): this;
+
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
 
