@@ -42,7 +42,16 @@ src/
 - **页面也是组件**：PascalCase 组件名（`MemberListPage`、`OrderListPage`），文件 `<名字>-page.js`；SSR 场景用 `createPage(requestState)` 作为服务端与客户端复用的入口
 - 页面只做编排：组合业务组件、绑定事件、调用状态动作；不写请求逻辑、不堆散落结构
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
-- **要驱动的先建后放，纯结构直接内联**：需要 `refresh()` / `update()` / `open()` 的组件必须先建再 `child()` 挂载——`child()` 与 `page.vXxx()` 都返回父节点，内联创建拿不到子组件句柄；纯展示块直接写在 render 里即可
+- **要驱动的先建后放，非必要不提前建**：只有确实需要组件句柄（`refresh()` / `update()` / `open()` 等对外命令方法）时，才在 `render()` 之外先建再 `child()` 挂载——`child()` 与 `page.vXxx()` 都返回父节点，内联创建拿不到子组件句柄。**其余一律在 `render()` 里就地组合**（`stack.div((box) => …)` / `page.vCard((card) => …)`），不要把纯结构节点提到函数作用域再挂回来：
+
+  ```js
+  // 反例：box 只当子节点用，却先建到外面（多一次中间变量，读者要找它挂在哪）
+  const box = div((node) => node.p('内容'));
+  return { render: () => vstack((stack) => stack.child(box)) };
+
+  // 正例：就地组合；只有需要 box.rebuild() / box.update() 这类句柄时才提前建
+  return { render: () => vstack((stack) => stack.div((box) => box.p('内容'))) };
+  ```
 
 ```js
 import { toast, vPagination, vstack } from '@yoyaflow/yoya-ui';

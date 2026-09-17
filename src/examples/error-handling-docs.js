@@ -8,7 +8,7 @@ const errorDemos = [
     description:
       'handler 返回 null：只上报不替换结构。每次捕获都会 console.error（含原始堆栈），业务侧可用信号统计或上报。',
     id: 'report',
-    imports: ['computed', 'div', 'ref', 'vstack'],
+    imports: ['computed', 'ref', 'vstack'],
     sourceTitle: '报告模式源码',
     title: '报告模式：返回 null 保现状'
   },

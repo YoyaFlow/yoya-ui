@@ -7,27 +7,27 @@ import { computed, div, ref, span, vstack } from '../../index.js';
 export function WhenFailedReportExample() {
   const failures = ref(0);
   const message = computed(() => `已捕获 ${failures.value} 次故障，内容保持原样`);
-  const box = div((node) => {
-    node.className('demo-when-failed');
-    node.attr('data-when-failed-box', 'true');
-    node.whenFailed(() => {
-      failures.value += 1;
-      return null;
-    });
-    node.p('业务内容正常运行；打开控制台可见每次捕获的 console.error。');
-    node.button('触发事件故障', (button) => {
-      button.attr('data-when-failed-trigger', 'true');
-      button.on('click', () => {
-        throw new Error(`事件处理器故障 #${failures.value + 1}（phase=${'event'}）`);
-      });
-    });
-  });
 
   return {
     render() {
       return vstack((stack) => {
         stack.style('gap', '10px');
-        stack.child(box);
+        // 不需要句柄的节点就在 render 里组合，不提前建到函数作用域
+        stack.div((box) => {
+          box.className('demo-when-failed');
+          box.attr('data-when-failed-box', 'true');
+          box.whenFailed(() => {
+            failures.value += 1;
+            return null;
+          });
+          box.p('业务内容正常运行；打开控制台可见每次捕获的 console.error。');
+          box.button('触发事件故障', (button) => {
+            button.attr('data-when-failed-trigger', 'true');
+            button.on('click', () => {
+              throw new Error(`事件处理器故障 #${failures.value + 1}（phase=${'event'}）`);
+            });
+          });
+        });
         stack.p((line) => line.child(message));
       });
     }

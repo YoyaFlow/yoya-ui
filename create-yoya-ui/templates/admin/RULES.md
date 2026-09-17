@@ -121,5 +121,6 @@ export default {
 ## 13. 节点写法（易错点）
 
 - **没有节点级 `text()`**：追加文本用 `child(content)`；反复替换同一处文本留一个 `vText()` 句柄用 `textContent(next)`；组件自带的 `text()` 与 SVG `<text>` 的 `text()` 不受影响
+- **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等对外命令方法）时才在 `render()` 外先建再 `child()` 挂载；纯结构节点在 `render()` 里就地组合，不要先存成中间变量再挂回去
 - **句柄进组件 props 要包节点**：`vTd(vText(handle))`、`cell.child(handle)` 建立绑定；`vTd(handle)` 会被当成无效 setup 丢掉
 - **值位置直接接句柄**：`attr('data-count', count)`、`vText(count)`；`count.value` 是快照，写完不再更新
