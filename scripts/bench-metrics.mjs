@@ -104,7 +104,7 @@ const TEXT_BY_LANG = {
       'Bundle sizes come from the artifact report gated by the README size tables; the benchmark does not measure them again.'
     ],
     componentIntro:
-      'Same operations, two rendering units: native `tr/td` versus the official table components. Values are the work time (click → last DOM change, median) to keep the comparison independent of frame latency.',
+      'Both columns are yoya-ui code — **this is not "the library versus plain HTML"**. The left column builds rows from the base primitives (HTML element factories: `tr/td`), the right column uses the official table components (`vTable/vTr/vTd`). The left column is the **control baseline**, so the difference is what the component layer costs. Values are the work time (click → last DOM change, median), which is insensitive to frame latency.',
     fingerprint: 'Environment',
     memoryIntro: 'Heap sampled after a forced GC (MB).',
     metrics: [
@@ -116,14 +116,15 @@ const TEXT_BY_LANG = {
     guards:
       'Guards are hard failures: field updates must not rebuild rows (0 row builds, 0 childList changes), swaps and appends must preserve existing row nodes, and every operation is checked against the expected rows, ids and labels.',
     memory: 'Memory',
-    operations: 'Standard operations (keyed, native elements)',
+    operations: 'Standard operations (keyed, base primitives)',
     plan: 'Definitions, comparability rules and the exact measurement recipe live in `benchmarks/PLAN.md`.',
     startup: 'Startup (median of fresh pages)',
     tableHead: {
-      component: 'Component work',
+      component: 'Component overhead: base primitives vs official components',
       componentNodes: 'Component nodes',
-      native: 'Native work',
-      nativeNodes: 'Native nodes',
+      componentWork: 'Official components (work)',
+      nativeNodes: 'Base nodes',
+      nativeWork: 'Base primitives (work)',
       nodes: 'DOM nodes',
       op: 'Operation',
       p95: 'p95',
@@ -151,7 +152,7 @@ const TEXT_BY_LANG = {
       '体积数字取自产物报表（已由 README 体积表门禁校验），基准不重复测量。'
     ],
     componentIntro:
-      '同一批操作、两种渲染单元：原生 `tr/td` 对比官方表格组件。这里用「工作量」（点击到最后一次 DOM 变动，中位数），避免帧延迟干扰对照。',
+      '两列都是本库写法——**不是"本库 vs 手写 HTML"**。左列用基础原语构建行（HTML 元素工厂 `tr/td`），右列用官方表格组件（`vTable/vTr/vTd`）；左列是**对照基线**，两者之差就是组件层多付的成本。数值为「工作量」（点击 → 最后一次 DOM 变动，中位数），不受帧率影响。',
     fingerprint: '环境',
     memoryIntro: '强制 GC 后采样堆占用（MB）。',
     metrics: [
@@ -163,14 +164,15 @@ const TEXT_BY_LANG = {
     guards:
       '护栏是硬失败：字段更新不得发生整行重建（行构建 0 次、子节点变动 0 次）、重排与追加后既有行节点必须保留、每个操作的行数 / id / 标签都要与期望一致。',
     memory: '内存',
-    operations: '标准操作（keyed，原生元素）',
+    operations: '标准操作（keyed，基础原语）',
     plan: '口径、可比性规则与完整测量方法见 `benchmarks/PLAN.md`。',
     startup: '启动（多张新页面取中位数）',
     tableHead: {
-      component: '组件工作量',
+      component: '组件层开销：基础原语 vs 官方组件',
       componentNodes: '组件节点',
-      native: '原生工作量',
-      nativeNodes: '原生节点',
+      nativeNodes: '基础原语节点',
+      componentWork: '官方组件（工作量）',
+      nativeWork: '基础原语（工作量）',
       nodes: 'DOM 节点',
       op: '操作',
       p95: 'p95',
@@ -300,7 +302,7 @@ export async function formatBenchReport({ baseline, component, sizes }) {
       lines.push(text.componentIntro);
       lines.push('');
       lines.push(
-        `| ${text.tableHead.op} | ${text.tableHead.native} | ${text.tableHead.component} | ${text.tableHead.nativeNodes} | ${text.tableHead.componentNodes} |`
+        `| ${text.tableHead.op} | ${text.tableHead.nativeWork} | ${text.tableHead.componentWork} | ${text.tableHead.nativeNodes} | ${text.tableHead.componentNodes} |`
       );
       lines.push('| --- | --- | --- | --- | --- |');
       comparison.forEach((row) => {
