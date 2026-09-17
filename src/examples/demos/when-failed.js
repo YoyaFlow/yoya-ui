@@ -35,37 +35,38 @@ export function WhenFailedReportExample() {
 }
 
 /**
- * 错误边界演示 2：组件自带降级。vNode 定义即节点，边界写在 api.whenFailed 上，
- * 触发后组件输出被替换为降级 UI，页面其余部分与兄弟节点完全不受影响。
+ * 错误边界演示 2：组件自带降级。vNode 产物就是节点，直接写在树里（不必提前定义），
+ * 边界写在 api.whenFailed 上；触发后组件输出被替换为降级 UI，兄弟内容不受影响。
  */
 export function WhenFailedComponentExample() {
   const rows = ref([{ status: 'ok' }]);
 
-  const widget = vNode((api) => {
-    api.fail = () => {
-      rows.value = [{ status: 'bad' }];
-      return api;
-    };
-    api.whenFailed = (error) => span(`组件降级：${error.message}`);
-
-    return div((box) => {
-      box.attr('data-risky-widget', 'true');
-      box.keyed(rows, (row) => row.status, (row) => {
-        if (row.status === 'bad') {
-          throw new Error('业务渲染故障');
-        }
-        return span('组件正常运行，故障由 whenFailed 兜底');
-      });
-    });
-  });
-
   return vstack((stack) => {
     stack.style('gap', '10px');
-    stack.child(widget);
-    stack.vButton('触发渲染故障', (button) => {
-      button.variant('primary');
-      button.attr('data-when-failed-trigger', 'true');
-      button.on('click', () => widget.fail());
-    });
+    stack.child(
+      vNode((api) => {
+        api.fail = () => {
+          rows.value = [{ status: 'bad' }];
+          return api;
+        };
+        api.whenFailed = (error) => span(`组件降级：${error.message}`);
+
+        return div((box) => {
+          box.attr('data-risky-widget', 'true');
+          box.keyed(rows, (row) => row.status, (row) => {
+            if (row.status === 'bad') {
+              throw new Error('业务渲染故障');
+            }
+            return span('组件正常运行，故障由 whenFailed 兜底');
+          });
+          box.vButton('触发渲染故障', (button) => {
+            button.variant('primary');
+            button.attr('data-when-failed-trigger', 'true');
+            button.on('click', () => api.fail());
+          });
+        });
+      })
+    );
+    stack.p('兄弟内容不受影响：降级只替换组件自身的输出。');
   });
 }
