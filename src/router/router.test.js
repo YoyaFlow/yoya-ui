@@ -1289,3 +1289,146 @@ describe('router', () => {
     create.root.destroy();
   });
 });
+
+describe('document routes', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<main id="app"></main>';
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
+  });
+
+  function stubDocumentNavigation(appRouter) {
+    const jumps = [];
+    appRouter.navigateDocument = (url, options = {}) => {
+      jumps.push([url, options.replace === true]);
+      return appRouter;
+    };
+    return jumps;
+  }
+
+  it('navigates an internal HTML address as a real document', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/home', () => div('首页')),
+        vRoute('/legacy/report.html', { title: '旧报表', url: true })
+      ]
+    });
+    const jumps = stubDocumentNavigation(appRouter);
+    const views = vRouterViews(appRouter);
+    const root = div((page) => page.child(views)).bindTo('#app');
+
+    appRouter.navigate('/legacy/report.html', { replace: true });
+
+    expect(jumps).toEqual([['/legacy/report.html', true]]);
+    // 不写 SPA 历史：地址栏由浏览器的整页跳转负责
+    expect(window.location.pathname).toBe('/');
+
+    const placeholder = document.querySelector('.yoya-vrouter-document');
+    expect(placeholder.getAttribute('data-router-document')).toBe('/legacy/report.html');
+    expect(placeholder.querySelector('a').getAttribute('href')).toBe('/legacy/report.html');
+    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+      '旧报表'
+    );
+    root.destroy();
+  });
+
+  it('renders document routes with the address, target and rel they declare', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/docs', { url: 'https://example.com/docs', target: '_blank' }),
+        vRoute('/billing', { rel: 'nofollow', url: '/billing/index.html' })
+      ]
+    });
+    const external = vLink(appRouter, { label: '文档', to: '/docs' }).renderDom();
+    const internal = vLink(appRouter, { label: '账单', to: '/billing' }).renderDom();
+
+    expect(external.getAttribute('href')).toBe('https://example.com/docs');
+    expect(external.getAttribute('target')).toBe('_blank');
+    expect(external.getAttribute('rel')).toBe('noopener');
+    expect(internal.getAttribute('href')).toBe('/billing/index.html');
+    expect(internal.getAttribute('rel')).toBe('nofollow');
+  });
+
+  it('leaves document and raw external links to the browser', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/legacy/report.html', { url: true }),
+        vRoute('/docs', { url: 'https://example.com/docs' })
+      ]
+    });
+    const internalDoc = vLink(appRouter, { label: '旧报表', to: '/legacy/report.html' });
+    const externalRoute = vLink(appRouter, { label: '文档', to: '/docs' });
+    const rawExternal = vLink(appRouter, { label: '外链', to: 'https://example.com/plain' });
+
+    expect(rawExternal.renderDom().getAttribute('href')).toBe('https://example.com/plain');
+
+    const click = (node) => {
+      const event = new MouseEvent('click', { bubbles: true, button: 0, cancelable: true });
+      node.renderDom().dispatchEvent(event);
+      return event;
+    };
+
+    // 断言这几种链接都没有被 SPA 拦截；jsdom 会对整页跳转打印
+    // "Not implemented: navigation to another Document"，那正是「交给浏览器」的证据。
+    expect(click(internalDoc).defaultPrevented).toBe(false);
+    expect(click(externalRoute).defaultPrevented).toBe(false);
+    expect(click(rawExternal).defaultPrevented).toBe(false);
+    expect(appRouter.currentPath()).toBe('/');
+  });
+
+  it('navigates absolute addresses passed to navigate() directly', () => {
+    const appRouter = vRouter({ routes: [vRoute('/home', () => div('首页'))] });
+    const jumps = stubDocumentNavigation(appRouter);
+
+    appRouter.navigate('https://other.example/page');
+
+    expect(jumps).toEqual([['https://other.example/page', false]]);
+    expect(appRouter.currentPath()).toBe('/');
+  });
+
+  it('honours guards before a document route jumps', () => {
+    const guard = vi.fn(() => false);
+    const appRouter = vRouter({
+      routes: [vRoute('/legacy/report.html', { url: true })]
+    }).beforeEach(guard);
+    const jumps = stubDocumentNavigation(appRouter);
+
+    appRouter.navigate('/legacy/report.html');
+
+    expect(guard).toHaveBeenCalled();
+    expect(jumps).toEqual([]);
+  });
+
+  it('renders a linked placeholder for document routes while server rendering', () => {
+    const appRouter = vRouter({
+      routes: [vRoute('/legacy/report.html', { title: '旧报表', url: true })]
+    });
+    const navigateDocument = vi.fn(() => appRouter);
+    appRouter.navigateDocument = navigateDocument;
+
+    appRouter.renderPath('/legacy/report.html');
+
+    expect(navigateDocument).not.toHaveBeenCalled();
+    expect(appRouter.toHTML()).toContain('data-router-document="/legacy/report.html"');
+    expect(appRouter.toHTML()).toContain('<a class="yoya-vlink" href="/legacy/report.html">');
+  });
+
+  it('accepts a custom placeholder view for a document route', () => {
+    const appRouter = vRouter({
+      routes: [
+        vRoute('/docs', {
+          url: 'https://example.com/docs',
+          view: () => div('正在离开 yoya-ui…')
+        })
+      ]
+    });
+    const jumps = stubDocumentNavigation(appRouter);
+    const outlet = vRouterView(appRouter);
+    div((page) => page.child(outlet)).bindTo('#app');
+
+    appRouter.navigate('/docs');
+
+    expect(jumps).toEqual([['https://example.com/docs', false]]);
+    expect(document.querySelector('#app').textContent).toBe('正在离开 yoya-ui…');
+  });
+});

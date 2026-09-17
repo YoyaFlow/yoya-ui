@@ -83,6 +83,7 @@ import {
 } from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
+import { vLink, vRoute, vRouter } from 'yoya-ui/router';
 import type { SignalsAdapter } from 'yoya-ui/core';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
@@ -324,6 +325,17 @@ const hydrated = hydrate(() => div('hello'), '#app', {});
 const mounted = mount(() => div('hello'), document.body);
 void hydrated;
 void mounted;
+
+// Document routes: internal HTML addresses and external links jump as real documents.
+const documentRouter = vRouter({
+  routes: [
+    vRoute('/legacy/report.html', { title: '旧报表', url: true }),
+    vRoute('/docs', { target: '_blank', url: 'https://example.com/docs' })
+  ]
+});
+documentRouter.navigateDocument('/legacy/report.html', { replace: true });
+const documentLink = vLink(documentRouter, { label: '文档', to: '/docs' });
+void documentLink;
 
 // ECharts component and icons.
 vEchart((chart) => {

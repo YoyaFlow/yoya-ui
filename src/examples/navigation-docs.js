@@ -172,7 +172,8 @@ const navigationDocsDefinitions = Object.freeze({
   router: createNavigationDocsDefinition({
     apiIntro:
       '路由示例都运行在独立 iframe 页面中，不会修改组件目录自身的 hash 地址。' +
-      'vLink 委托 Router 导航，vRouterView 负责承载匹配视图；Router 同时支持异步视图与按需加载。',
+      'vLink 委托 Router 导航，vRouterView 负责承载匹配视图；Router 同时支持异步视图与按需加载，' +
+      '也支持把内部 HTML 地址与外部链接注册成「文档路由」做整页跳转。',
     apiRows: [
       [
         'router({ default, route, notFound })',
@@ -225,6 +226,16 @@ const navigationDocsDefinitions = Object.freeze({
         'currentRoute() / currentView()',
         '读取当前路由记录与已渲染视图。',
         'appRouter.currentView()'
+      ],
+      [
+        "vRoute(pattern, { url: true | '地址', target, rel, replace })",
+        '文档路由：内部 HTML 页面或外部链接，进入即整页跳转，不渲染 SPA 视图；url: true 表示路径本身即地址。',
+        "vRoute('/docs', { url: 'https://example.com/docs', target: '_blank' })"
+      ],
+      [
+        'router.navigateDocument(url, { replace })',
+        '整页跳转出口：文档路由默认走这里，可覆盖接入自定义跳转；服务端为 no-op。',
+        'appRouter.navigateDocument = (url) => myHost.open(url)'
       ],
       [
         'subscribe(listener)',
@@ -308,6 +319,7 @@ const navigationDocsDefinitions = Object.freeze({
     usageItems: [
       '需要 hash 或 history 路由、参数解析和视图切换时使用 Router / vRouter。',
       '页面跳转入口统一交给 vLink，不要在业务代码里手写 URL。',
+      '多页系统或外部链接用文档路由注册：r.route("/legacy/report.html", { url: true })、r.route("/docs", { url: "https://…", target: "_blank" })；vLink 输出真实地址且不做 SPA 拦截，vRouterViews 用占位（含可点链接）承载并随即整页跳转。',
       '路由演示放在 iframe 中，history 模式只影响 iframe 自己的地址。',
       '异步页面按需加载：view 直接返回 import()，模块用 export default 导出页面工厂。',
       '组件内取路由参数：页面工厂收 context；任意位置用 router.currentParams()；跟随变化用 subscribe()。'

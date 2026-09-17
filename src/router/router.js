@@ -21,6 +21,14 @@ import {
 const maxVisibleTitles = 8;
 let scrollbarStyle = null;
 
+// 绝对地址：带协议（http: / https: / mailto: / tel: …）或协议相对（//host）。
+const documentUrlPattern = /^[a-z][a-z0-9+.-]*:|\/\//i;
+
+/** 该地址是否应交给浏览器做整页跳转（而不是渲染 SPA 视图）。 */
+function isDocumentUrl(value) {
+  return typeof value === 'string' && documentUrlPattern.test(value.trim());
+}
+
 function ensureScrollbarStyle() {
   if (scrollbarStyle) return;
 
@@ -233,11 +241,24 @@ export class Router extends ElementNode {
    * 导航到指定路径。replace 为 true 时不新增浏览器历史记录。
    */
   navigate(path, options = {}) {
+    // 外部地址（未注册）直接整页跳转
+    if (isDocumentUrl(path)) {
+      return this.navigateDocument(String(path).trim(), options);
+    }
+
     const nextPath = normalizePath(path);
     const resolved = this._resolve(nextPath);
 
     if (!this._canEnter(resolved.context)) {
       return this;
+    }
+
+    // 文档路由：渲染占位视图，然后把地址交给浏览器（整页跳转，不 pushState）
+    if (resolved.route?.url) {
+      this._renderResolved(resolved);
+      return this.navigateDocument(resolved.route.url, {
+        replace: Boolean(options.replace || resolved.route.replace)
+      });
     }
 
     const pathChanged = writePath(nextPath, options, this._mode);
@@ -272,6 +293,24 @@ export class Router extends ElementNode {
     }
 
     this._renderResolved(resolved);
+    return this;
+  }
+
+  /**
+   * 整页跳转出口：文档路由（内部 HTML 地址 / 外部链接）默认走这里。
+   * 宿主环境可以覆盖以接入自己的跳转实现；无 window（服务端）时是 no-op。
+   */
+  navigateDocument(url, options = {}) {
+    if (!url || typeof window === 'undefined') {
+      return this;
+    }
+
+    if (options.replace) {
+      window.location.replace(url);
+    } else {
+      window.location.assign(url);
+    }
+
     return this;
   }
 
@@ -396,6 +435,15 @@ export class Router extends ElementNode {
 
   _renderResolved(resolved) {
     const { context, route, view } = resolved;
+
+    // 文档路由：不渲染 SPA 视图，交出一个「正在跳转」的占位（含可点的真实链接）。
+    // refresh() / popstate 落到这类路由时只渲染占位、不重复整页跳转，避免回退死循环。
+    if (route?.url) {
+      this._navigationGeneration += 1;
+      this._commitView(resolved, buildDocumentView(route, context));
+      return;
+    }
+
     const result = typeof view === 'function' ? view(context) : view;
 
     this._navigationGeneration += 1;
@@ -524,10 +572,11 @@ export function vLink(routerInstance, setup = null, callback = null) {
   updateLink(node, state, routerInstance);
   node.on('click', (event) => {
     if (!shouldHandleLinkClick(event, node)) return;
+    const target = buildLinkPath(state.to, state.params, state.query);
+    // 外部链接与文档路由交给浏览器整页跳转（href 已是真实地址）
+    if (resolveDocumentTarget(routerInstance, target)) return;
     event.preventDefault();
-    routerInstance.navigate(buildLinkPath(state.to, state.params, state.query), {
-      replace: state.replace
-    });
+    routerInstance.navigate(target, { replace: state.replace });
   });
 
   const unsubscribe = routerInstance.subscribe(() => updateLink(node, state, routerInstance));
@@ -1381,7 +1430,11 @@ function normalizeRoute(pattern, config) {
     error: null,
     loading: null,
     pattern: normalizePattern(pattern),
+    rel: null,
+    replace: false,
+    target: null,
     title: null,
+    url: null,
     view: null
   };
 
@@ -1396,6 +1449,15 @@ function normalizeRoute(pattern, config) {
     route.loading = config.loading ?? null;
     route.title = config.title ?? null;
     route.view = config.view || config.component || null;
+
+    // 文档路由：url 指向真实地址（内部 HTML 页面或外部链接），不走 SPA 视图渲染。
+    // url: true 表示「注册路径本身就是地址」。
+    if (config.url !== undefined && config.url !== null && config.url !== false) {
+      route.url = config.url === true ? route.pattern : String(config.url);
+      route.target = config.target ?? null;
+      route.rel = config.rel ?? (route.target === '_blank' ? 'noopener' : null);
+      route.replace = Boolean(config.replace);
+    }
   }
 
   return route;
@@ -1476,6 +1538,12 @@ function updateLinkValue(node, state, key, value) {
 function updateLink(node, state, routerInstance) {
   node._routerInstance = routerInstance;
   const target = buildLinkPath(state.to, state.params, state.query);
+  const documentTarget = resolveDocumentTarget(routerInstance, target);
+  const href = documentTarget
+    ? documentTarget.url
+    : routerInstance.mode() === 'history'
+      ? target
+      : `#${target}`;
   const active = isLinkActive(routerInstance.currentPath(), target, state.exact);
   const classes = new Set(
     String(node.attr('class') || '')
@@ -1488,12 +1556,34 @@ function updateLink(node, state, routerInstance) {
   node.attr({
     'aria-current': active ? 'page' : null,
     class: [...classes].join(' '),
-    href: routerInstance.mode() === 'history' ? target : `#${target}`
+    href
   });
+
+  // 路由声明的 target / rel 落到链接上（未声明时不动用户自己设的属性）
+  if (documentTarget?.target) node.attr('target', documentTarget.target);
+  if (documentTarget?.rel) node.attr('rel', documentTarget.rel);
   return node;
 }
 
+/**
+ * 链接目标是否应交给浏览器整页跳转：
+ * - 外部地址（绝对 URL）→ 直接按原值输出；
+ * - 注册成文档路由的站内地址 → 用路由声明的真实地址与 target/rel。
+ */
+function resolveDocumentTarget(routerInstance, target) {
+  if (isDocumentUrl(target)) {
+    return { rel: null, target: null, url: String(target).trim() };
+  }
+
+  const route = routerInstance._resolve(target).route;
+  return route?.url ? route : null;
+}
+
 function buildLinkPath(to, params, query) {
+  if (isDocumentUrl(to)) {
+    return String(to).trim();
+  }
+
   const normalized = normalizePath(to);
   const [pathTemplate, existingQuery = ''] = normalized.split('?');
   const pathname = pathTemplate.replace(/:([A-Za-z0-9_]+)/g, (match, name) =>
@@ -1528,6 +1618,34 @@ function shouldHandleLinkClick(event, node) {
     !event.altKey &&
     (!node.attr('target') || node.attr('target') === '_self')
   );
+}
+
+/**
+ * 文档路由的占位视图：默认输出一个指向真实地址的链接（无 JS 也能点），
+ * 客户端会在渲染后立刻整页跳转；路由自带 view 时以它为准。
+ */
+function buildDocumentView(route, context) {
+  if (typeof route.view === 'function') {
+    return normalizeRouteView(route.view(context), context);
+  }
+  if (route.view instanceof ViewNode) {
+    return route.view;
+  }
+
+  const url = route.url;
+  const label = route.title || url;
+  const box = new ElementNode('div').className('yoya-vrouter-document');
+  box.attr({
+    'data-router-document': url,
+    ...(route.target ? { 'data-router-target': route.target } : {})
+  });
+  box.child(
+    new ElementNode('a')
+      .className('yoya-vlink')
+      .attr({ href: url, rel: route.rel || null, target: route.target || null })
+      .child(label)
+  );
+  return box;
 }
 
 function normalizeRouteView(view, context) {
