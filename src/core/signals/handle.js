@@ -1,6 +1,6 @@
 import { currentSignals } from './contract.js';
 import { recordRead, withCollect, withoutCollect } from './deps.js';
-import { dependentCount } from './observe.js';
+import { dependentCount, registerSubscriberLedger, subscribeWithLedger } from './observe.js';
 import {
   beginSignalsBatch,
   endSignalsBatch,
@@ -105,7 +105,7 @@ export class SignalHandle {
       this._beforeRead();
     }
 
-    return this._adapter.subscribe(this._source, listener);
+    return subscribeWithLedger(this._adapter, this._source, listener);
   }
 
   update(updater) {
@@ -133,6 +133,10 @@ export function ref(initial) {
  * 创建一个只读派生信号。
  * 惰性：首次读取（或首次订阅）才求值；之后依赖变化时重算并写回承载信号，
  * 由引擎按「值是否变化」决定是否通知。派生语义因此与引擎无关。
+ *
+ * 生命周期：依赖订阅只在有观察者时长期维持。观察者（值绑定、区域依赖、句柄
+ * subscribe、外层派生）清零时退订依赖——否则长命依赖信号会一直持有 recompute
+ * 闭包，闭包捕获的行数据与节点跟着一起泄漏；此后再被读取或被观察时会重新求值。
  */
 export function computed(fn) {
   if (typeof fn !== 'function') {
@@ -142,6 +146,7 @@ export function computed(fn) {
   const adapter = currentSignals();
   const source = adapter.createSignal(undefined);
   let live = false;
+  let observers = 0;
   let subscriptions = []; // [{ source, dispose }]：依赖未变时复用订阅
 
   const recompute = () => {
@@ -159,7 +164,10 @@ export function computed(fn) {
         return;
       }
 
-      next.push({ source: dependency, dispose: adapter.subscribe(dependency, recompute) });
+      next.push({
+        source: dependency,
+        dispose: subscribeWithLedger(adapter, dependency, recompute)
+      });
     });
 
     pending.forEach((entry) => entry.dispose());
@@ -175,6 +183,29 @@ export function computed(fn) {
     live = true;
     recompute();
   };
+
+  const releaseDependencies = () => {
+    live = false;
+    subscriptions.forEach((entry) => entry.dispose());
+    subscriptions = [];
+  };
+
+  registerSubscriberLedger(source, {
+    add() {
+      observers += 1;
+      ensureLive();
+    },
+    remove() {
+      if (observers === 0) {
+        return;
+      }
+
+      observers -= 1;
+      if (observers === 0) {
+        releaseDependencies();
+      }
+    }
+  });
 
   return new SignalHandle(adapter, source, { writable: false, beforeRead: ensureLive });
 }

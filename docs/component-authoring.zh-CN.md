@@ -141,7 +141,7 @@ export function vStatusDot(first = null, second = null, third = null) {
 
 yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值位置直接传句柄，写入后绑定原地更新；结构变化由 `rebuildable()` 区域读取信号驱动。节点级 `state()` / `setState()` / `getXState()` 与 `vStateNode` 已在 0.5 移除。
 
-- 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）。
+- 值：`const count = ref(0)`，句柄可直接传给 `attr` / `style` / `vText` / 组件 props；写入 `.value` 或 `handle.update(fn)` 后绑定原地更新，不重建 DOM、不丢焦点。派生值用 `computed(fn)`（只读、惰性、带缓存）；它的依赖订阅跟着观察者走，观察者清零即退订，行内派生不会在行销毁后继续占着内存。
 - **只有这一种反应式模型**：库不提供深层代理——`obj.field = x` 不会通知（对象整体替换才会）。字段要跟着更新，就把该字段本身做成句柄；列表行模型的做法见 skill 的「状态模块」一节（热字段句柄 + 按 key `apply()` 合并）。
 - 结构：`rebuildable(谓词?)` 把节点声明为「可重建区域」，区域内读到的信号成为依赖，信号变化时按谓词重建；需要强制重建时手动 `rebuild()`。
 - 文案：状态驱动的文案传句柄——`vText(count)`、`child(count)`、元素工厂 setup 位置的 `div(count)` 三种写法等价（`div(count)` 等价 `div((el) => el.child(count))`），只有值本身是派生结果时才套 `computed(fn)`；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。**节点级 `text()` 已移除**：追加文本用 `child(content)`，反复追加会堆叠，要"设置文案"就用 `vText()` 句柄的 `textContent(next)`；组件自己的 `text()`（`vBadge` / `vProgress` / `vMenu` 等）与 SVG `<text>` 的 `text()` 是另一套 API，照旧可用。

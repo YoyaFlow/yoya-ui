@@ -7,6 +7,26 @@ afterEach(() => {
   installSignals(null);
 });
 
+/** 订阅计数适配器：统计当前活跃订阅数，用来验证观察者清零后依赖被退订。 */
+function installSubscriptionSpy() {
+  const spy = { active: 0 };
+
+  installSignals({
+    ...defaultAdapter,
+    subscribe(source, listener) {
+      spy.active += 1;
+      const dispose = defaultAdapter.subscribe(source, listener);
+
+      return () => {
+        spy.active -= 1;
+        dispose();
+      };
+    }
+  });
+
+  return spy;
+}
+
 describe('ref', () => {
   it('reads and writes through the handle', () => {
     const count = ref(0);
@@ -110,6 +130,29 @@ describe('computed', () => {
     const double = computed(() => count.value * 2);
 
     expect(double.peek()).toBe(4);
+  });
+
+  it('releases its dependencies when the last observer unsubscribes', () => {
+    const spy = installSubscriptionSpy();
+    const count = ref(1);
+    const double = computed(() => count.value * 2);
+    const seen = [];
+    const unsubscribe = double.subscribe((value) => seen.push(value));
+
+    // 承载信号 + 依赖各一条订阅
+    expect(spy.active).toBe(2);
+
+    unsubscribe();
+
+    // 观察者清零：依赖订阅一并退掉，长命依赖不会再持有派生闭包
+    expect(spy.active).toBe(0);
+
+    count.value = 5;
+    expect(seen).toEqual([]);
+
+    // 再被读取时重新求值并重建依赖订阅
+    expect(double.value).toBe(10);
+    expect(spy.active).toBe(1);
   });
 });
 
