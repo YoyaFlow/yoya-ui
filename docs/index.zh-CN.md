@@ -10,24 +10,25 @@
 
 ## 文档集合
 
-| 文件                                                                                       | 内容                                                                                   | 来源 / 状态    |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | -------------- |
-| [`index.zh-CN.md`](index.zh-CN.md)                                                         | 文档导航与内容规划（本页）                                                             | 新建           |
-| [`why-yoya-ui.zh-CN.md`](why-yoya-ui.zh-CN.md)                                             | 定位长文：九点理由、与框架的差异、取舍与评估方式                                       | 从 README 迁入 |
-| [`highlights.zh-CN.md`](highlights.zh-CN.md)                                               | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建           |
-| [`access-control.zh-CN.md`](access-control.zh-CN.md)                                       | 权限控制使用指南                                                                       | 重建           |
-| [`api.zh-CN.md`](api.zh-CN.md)                                                             | 请求命令、传输注册与 Result 映射                                                       | 新建           |
-| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                                             | 服务端渲染集成指南                                                                     | 重建           |
-| [`theme.zh-CN.md`](theme.zh-CN.md)                                                         | 主题样式规范                                                                           | 重建并改名     |
-| [`devtools.zh-CN.md`](devtools.zh-CN.md)                                                   | DevTools 使用指南                                                                      | 重建           |
-| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)                             | 组件库开发指南（第三方 / 生态作者）                                                    | 重建并改名     |
-| [`interop.zh-CN.md`](interop.zh-CN.md)                                                     | 第三方库接入：交出真实 DOM 元素（vEchart 参照实现与扩展开口）                          | 从 README 迁入 |
-| [`agents.zh-CN.md`](agents.zh-CN.md)                                                       | AI 代码助手阅读指南：如何阅读本仓库、如何生成与评估代码                                | 从 README 迁入 |
-| [`benchmarks.zh-CN.md`](benchmarks.zh-CN.md)                                               | 核心基准报告：标准操作、启动、内存、组件层开销与虚拟滚动（由结果 JSON 生成）           | 由基准结果生成 |
-| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建           |
-| [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建           |
-| [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建           |
-| [`feedback/reactive-engine-feedback.zh-CN.md`](feedback/reactive-engine-feedback.zh-CN.md) | 响应式引擎生产评审反馈：区域重建、信号传播、错误边界等 7.5 问逐条回应                  | 新建           |
+| 文件                                                                                       | 内容                                                                                   | 来源 / 状态            |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------------------- |
+| [`index.zh-CN.md`](index.zh-CN.md)                                                         | 文档导航与内容规划（本页）                                                             | 新建                   |
+| [`why-yoya-ui.zh-CN.md`](why-yoya-ui.zh-CN.md)                                             | 定位长文：九点理由、与框架的差异、取舍与评估方式                                       | 从 README 迁入         |
+| [`highlights.zh-CN.md`](highlights.zh-CN.md)                                               | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建                   |
+| [`access-control.zh-CN.md`](access-control.zh-CN.md)                                       | 权限控制使用指南                                                                       | 重建                   |
+| [`api.zh-CN.md`](api.zh-CN.md)                                                             | 请求命令、传输注册与 Result 映射                                                       | 新建                   |
+| [`ssr.zh-CN.md`](ssr.zh-CN.md)                                                             | 服务端渲染集成指南                                                                     | 重建                   |
+| [`theme.zh-CN.md`](theme.zh-CN.md)                                                         | 主题样式规范                                                                           | 重建并改名             |
+| [`devtools.zh-CN.md`](devtools.zh-CN.md)                                                   | DevTools 使用指南                                                                      | 重建                   |
+| [`component-authoring.zh-CN.md`](component-authoring.zh-CN.md)                             | 组件库开发指南（第三方 / 生态作者）                                                    | 重建并改名             |
+| [`interop.zh-CN.md`](interop.zh-CN.md)                                                     | 第三方库接入：交出真实 DOM 元素（vEchart 参照实现与扩展开口）                          | 从 README 迁入         |
+| [`agents.zh-CN.md`](agents.zh-CN.md)                                                       | AI 代码助手阅读指南：如何阅读本仓库、如何生成与评估代码                                | 从 README 迁入         |
+| [`benchmarks.zh-CN.md`](benchmarks.zh-CN.md)                                               | 核心库基准报告：标准操作、启动、内存与确定性护栏（由结果 JSON 生成）                   | 由基准结果生成         |
+| [`benchmarks-ui.zh-CN.md`](benchmarks-ui.zh-CN.md)                                         | UI 库基准报告：核心库基础元素 vs UI 库组件元素、虚拟滚动（由结果 JSON 生成）           | 待产出（clean UI run） |
+| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建                   |
+| [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建                   |
+| [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建                   |
+| [`feedback/reactive-engine-feedback.zh-CN.md`](feedback/reactive-engine-feedback.zh-CN.md) | 响应式引擎生产评审反馈：区域重建、信号传播、错误边界等 7.5 问逐条回应                  | 新建                   |
 
 ## 阅读路径建议
 

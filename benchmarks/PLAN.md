@@ -83,7 +83,8 @@
 - 结果：
   - `benchmarks/results/latest.json`：最近一次运行（不入库）；
   - `benchmarks/results/baseline.json`：基线（入库，作为报告表格的数据源，可用 `--write-baseline` 刷新）；
-  - 报告：由基线生成 `docs/benchmarks.md` 与 `docs/benchmarks.zh-CN.md`，由门禁校验"表格与 JSON 一致"，不允许手工改数字。
+  - **报告分两份**：核心库报告由基线生成（`docs/benchmarks.md` / `.zh-CN.md`，只含标准操作 / 启动 / 内存 / 护栏 / 体积）；UI 库报告由 `benchmarks/results/ui.json` 生成（`docs/benchmarks-ui.md` / `.zh-CN.md`，含核心库基础元素 vs UI 库组件元素、虚拟滚动）。UI 结果未产出时跳过该报告，不阻塞门禁。
+  - 门禁校验"表格与 JSON 一致"，不允许手工改数字。
 - 例行：夜间跑基准 + 归档产物；护栏违反硬失败，时间类指标仅同机同版本相对告警（>20%）。基准不进 PR 触发（噪声与耗时）。
 - 噪声控制：IQR 超过中位数一半时该操作标记为"噪声偏高"，**不允许**用这种运行覆盖基线（需 `--allow-noisy`）；每个操作开始前强制 GC 一次，轮次之间不强制（每轮强制会因冷堆重新增长而制造主 GC 停顿，实测方差更大）。
 - 更新基线后要跑一次 `npm run format`：结果 JSON 会被 Prettier 重排，未格式化的文件会被 `format:check` 拦下。

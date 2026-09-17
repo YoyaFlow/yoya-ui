@@ -60,6 +60,7 @@ function parseArgs(argv) {
     out: null,
     runs: 15,
     skipResources: false,
+    ui: false,
     variant: 'native',
     warmup: 3,
     writeBaseline: false
@@ -85,6 +86,10 @@ function parseArgs(argv) {
     } else if (flag === '--allow-noisy') {
       flags.allowNoisy = true;
     } else if (flag === '--skip-resources') {
+      flags.skipResources = true;
+    } else if (flag === '--ui') {
+      // UI 报告模式：同一会话内跑「核心库基础元素」与「UI 库组件元素」两组，并测虚拟滚动
+      flags.ui = true;
       flags.skipResources = true;
     } else if (flag === '--out') {
       flags.out = String(takeValue() ?? '').replace(/[^\w.-]/g, '');
@@ -535,7 +540,7 @@ function printTable(operations, variant) {
 function printResources(resources) {
   if (!resources) return;
 
-  const { memory, startup, vscroll } = resources;
+  const { memory, startup } = resources;
   const ms = (value) => (value === null || value === undefined ? 'n/a' : `${value} ms`);
 
   console.log('\n启动（中位数，fresh page）');
@@ -554,105 +559,98 @@ function printResources(resources) {
   console.log(
     `clear 后未回落 ${memory.clearResidue} · 10 轮建/清后相对初始 ${memory.tenRoundGrowth}`
   );
+}
 
-  if (vscroll) {
-    console.log('\n虚拟滚动档（仅内部可比）');
+/** 虚拟滚动档（UI 报告）：逻辑行 vs 真实 DOM。 */
+function printVScroll(vscroll) {
+  console.log('\n虚拟滚动档（仅内部可比）');
+  console.log(
+    `${'逻辑行'.padEnd(10)}${'真实节点'.padStart(10)}${'渲染行'.padStart(10)}${'跳转'.padStart(12)}${'追加 1k'.padStart(12)}${'堆 MB'.padStart(10)}`
+  );
+  vscroll.forEach((entry) => {
     console.log(
-      `${'逻辑行'.padEnd(10)}${'真实节点'.padStart(10)}${'渲染行'.padStart(10)}${'跳转'.padStart(12)}${'追加 1k'.padStart(12)}${'堆 MB'.padStart(10)}`
+      `${String(entry.logicalRows).padEnd(10)}${String(entry.realNodes).padStart(10)}${String(
+        entry.renderedRows
+      ).padStart(
+        10
+      )}${`${entry.jump.median} ms`.padStart(12)}${`${entry.append.median} ms`.padStart(
+        12
+      )}${String(entry.heapMb).padStart(10)}`
     );
-    vscroll.forEach((entry) => {
+  });
+}
+
+/** 跑一组操作（一个渲染单元），返回操作结果与护栏失败。 */
+async function runOperations(browser, origin, { ops, runs, variant, warmup }) {
+  const page = await browser.newPage();
+  const operations = [];
+  const allGuards = [];
+
+  try {
+    for (const op of ops) {
+      await page.goto(`${origin}/${PAGE}?variant=${variant}`, { waitUntil: 'load' });
+      await page.waitForFunction(() => window.__yoyaBench !== undefined);
+      const cdp = await page.context().newCDPSession(page);
+      const collectGarbage = () => cdp.send('HeapProfiler.collectGarbage');
+
+      // 每个操作开始前 GC 一次；后续轮次共享热堆（每轮强制 GC 会让冷堆重新增长，
+      // 反而在 replace / create 10,000 期间触发主 GC 停顿，实测方差更大）
+      await collectGarbage();
+
+      for (let round = 0; round < warmup; round += 1) {
+        await page.evaluate(prepareInPage, op);
+        await page.evaluate(measureInPage, op);
+      }
+
+      const durations = [];
+      const works = [];
+      let last = null;
+
+      for (let round = 0; round < runs; round += 1) {
+        await page.evaluate(prepareInPage, op);
+        last = await page.evaluate(measureInPage, op);
+        durations.push(last.duration);
+        works.push(last.work);
+      }
+
+      const guards = guardFailures(op, last);
+      allGuards.push({ guards, op });
+      const stats = summarize(durations);
+      const workStats = summarize(works);
+      // 噪声判据：IQR 超过中位数的一半，说明这轮受其他进程干扰，数字不可用作基线
+      const noisy = stats.median > 0 && stats.iqr / stats.median > 0.5;
+      operations.push({
+        guards,
+        nodes: last.nodeCount,
+        noisy,
+        op,
+        rows: last.afterRowCount,
+        stats,
+        work: workStats
+      });
       console.log(
-        `${String(entry.logicalRows).padEnd(10)}${String(entry.realNodes).padStart(10)}${String(
-          entry.renderedRows
-        ).padStart(
-          10
-        )}${`${entry.jump.median} ms`.padStart(12)}${`${entry.append.median} ms`.padStart(
-          12
-        )}${String(entry.heapMb).padStart(10)}`
+        `${variant} · ${op} 完成：中位数 ${stats.median} ms（工作量 ${workStats.median} ms），护栏 ${
+          guards.length === 0 ? '通过' : '失败'
+        }${noisy ? ' · 噪声偏高' : ''}`
       );
-    });
+    }
+  } finally {
+    await page.close();
   }
+
+  const failures = allGuards.flatMap(({ guards, op }) =>
+    guards.map((message) => `${op}: ${message}`)
+  );
+
+  return { failures, operations };
 }
 
-const flags = parseArgs(process.argv.slice(2));
-const server = await startStaticServer();
-const { browser, channel } = await launchChromium();
-const page = await browser.newPage();
-const env = fingerprint(browser, channel);
-const operations = [];
-const allGuards = [];
-let resources = null;
+/** 与已提交基线对比：时间类指标只做软告警（同机同版本才有意义）。 */
+function printBaselineComparison(operations) {
+  const baselineFile = resolve(RESULTS_DIR, 'baseline.json');
+  if (!existsSync(baselineFile)) return;
 
-try {
-  for (const op of flags.ops) {
-    await page.goto(`${server.origin}/${PAGE}?variant=${flags.variant}`, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.__yoyaBench !== undefined);
-    const cdp = await page.context().newCDPSession(page);
-    const collectGarbage = () => cdp.send('HeapProfiler.collectGarbage');
-
-    // 每个操作开始前 GC 一次；后续轮次共享热堆（每轮强制 GC 会让冷堆重新增长，
-    // 反而在 replace / create 10,000 期间触发主 GC 停顿，实测方差更大）
-    await collectGarbage();
-
-    for (let round = 0; round < flags.warmup; round += 1) {
-      await page.evaluate(prepareInPage, op);
-      await page.evaluate(measureInPage, op);
-    }
-
-    const durations = [];
-    const works = [];
-    let last = null;
-
-    for (let round = 0; round < flags.runs; round += 1) {
-      await page.evaluate(prepareInPage, op);
-      last = await page.evaluate(measureInPage, op);
-      durations.push(last.duration);
-      works.push(last.work);
-    }
-
-    const guards = guardFailures(op, last);
-    allGuards.push({ guards, op });
-    const stats = summarize(durations);
-    const workStats = summarize(works);
-    // 噪声判据：IQR 超过中位数的一半，说明这轮受其他进程干扰，数字不可用作基线
-    const noisy = stats.median > 0 && stats.iqr / stats.median > 0.5;
-    operations.push({
-      guards,
-      nodes: last.nodeCount,
-      noisy,
-      op,
-      rows: last.afterRowCount,
-      stats,
-      work: workStats
-    });
-    console.log(
-      `${op} 完成：中位数 ${stats.median} ms（工作量 ${workStats.median} ms），护栏 ${
-        guards.length === 0 ? '通过' : '失败'
-      }${noisy ? ' · 噪声偏高' : ''}`
-    );
-  }
-
-  if (!flags.skipResources) {
-    const clientUrl = `${server.origin}/${PAGE}?variant=${flags.variant}`;
-    const startup = {
-      client: await measureStartup(browser, clientUrl, 5),
-      ssr: await measureStartup(browser, `${clientUrl}&mode=ssr`, 5)
-    };
-    const memory = await measureMemory(browser, clientUrl);
-    const vscroll = await measureVScroll(browser, server.origin, [1000, 10000, 100000], 5);
-    resources = { memory, startup, vscroll };
-  }
-} finally {
-  await browser.close();
-  await server.close();
-}
-
-printTable(operations, flags.variant);
-printResources(resources);
-
-// 与已提交基线对比：时间类指标只做软告警（同机同版本才有意义）
-if (!flags.writeBaseline && existsSync(resolve(RESULTS_DIR, 'baseline.json'))) {
-  const baseline = JSON.parse(readFileSync(resolve(RESULTS_DIR, 'baseline.json'), 'utf8'));
+  const baseline = JSON.parse(readFileSync(baselineFile, 'utf8'));
   const regressionWarnings = [];
 
   console.log(
@@ -678,33 +676,119 @@ if (!flags.writeBaseline && existsSync(resolve(RESULTS_DIR, 'baseline.json'))) {
   }
 }
 
-const failures = allGuards.flatMap(({ guards, op }) =>
-  guards.map((message) => `${op}: ${message}`)
-);
+const flags = parseArgs(process.argv.slice(2));
+const server = await startStaticServer();
+const { browser, channel } = await launchChromium();
+const env = fingerprint(browser, channel);
+let report;
+
+try {
+  if (flags.ui) {
+    // UI 报告：两组渲染单元各自独占一个浏览器实例（避免组间 JIT / 堆状态耦合），再加虚拟滚动
+    const nativeBrowser = await launchChromium();
+    const coreRun = await runOperations(nativeBrowser.browser, server.origin, {
+      ops: flags.ops,
+      runs: flags.runs,
+      variant: 'native',
+      warmup: flags.warmup
+    });
+    await nativeBrowser.browser.close();
+
+    const componentBrowser = await launchChromium();
+    const componentRun = await runOperations(componentBrowser.browser, server.origin, {
+      ops: flags.ops,
+      runs: flags.runs,
+      variant: 'component',
+      warmup: flags.warmup
+    });
+    await componentBrowser.browser.close();
+    const vscroll = await measureVScroll(browser, server.origin, [1000, 10000, 100000], 5);
+
+    printTable(coreRun.operations, 'native');
+    printTable(componentRun.operations, 'component');
+    printVScroll(vscroll);
+
+    report = {
+      componentRun: { failures: componentRun.failures, operations: componentRun.operations },
+      coreRun: { failures: coreRun.failures, operations: coreRun.operations },
+      fingerprint: env,
+      layer: 'ui',
+      noisy: [...coreRun.operations, ...componentRun.operations].some((entry) => entry.noisy),
+      resources: { vscroll },
+      schema: 1
+    };
+
+    if (report.noisy) {
+      console.error(
+        '\n噪声偏高：本轮有操作 IQR 超过中位数一半，两组数字不能直接对照，建议机器空闲时重跑（需要 --allow-noisy 才能写入 ui.json）。'
+      );
+    }
+  } else {
+    const core = await runOperations(browser, server.origin, {
+      ops: flags.ops,
+      runs: flags.runs,
+      variant: flags.variant,
+      warmup: flags.warmup
+    });
+    let resources = null;
+
+    if (!flags.skipResources) {
+      const clientUrl = `${server.origin}/${PAGE}?variant=${flags.variant}`;
+      const startup = {
+        client: await measureStartup(browser, clientUrl, 5),
+        ssr: await measureStartup(browser, `${clientUrl}&mode=ssr`, 5)
+      };
+      resources = { memory: await measureMemory(browser, clientUrl), startup };
+    }
+
+    printTable(core.operations, flags.variant);
+    printResources(resources);
+    if (!flags.writeBaseline) {
+      printBaselineComparison(core.operations);
+    }
+
+    const noisyOperations = core.operations.filter((entry) => entry.noisy).map((entry) => entry.op);
+    if (noisyOperations.length > 0) {
+      console.error(
+        `\n噪声偏高（IQR > 中位数一半）：${noisyOperations.join(' / ')} —— 这轮数字不适合作为基线，建议机器空闲时重跑。`
+      );
+    }
+
+    report = {
+      fingerprint: env,
+      guards: { failures: core.failures, passed: core.failures.length === 0 },
+      noisy: noisyOperations.length > 0,
+      operations: core.operations,
+      resources,
+      schema: 1,
+      variant: flags.variant
+    };
+  }
+} finally {
+  await browser.close();
+  await server.close();
+}
+
+const failures = flags.ui
+  ? [...report.coreRun.failures, ...report.componentRun.failures]
+  : (report.guards?.failures ?? []);
+
 if (failures.length > 0) {
   console.error('\n护栏失败：');
   failures.forEach((message) => console.error(`  ${message}`));
 }
 
-const noisyOperations = operations.filter((entry) => entry.noisy).map((entry) => entry.op);
-if (noisyOperations.length > 0) {
-  console.error(
-    `\n噪声偏高（IQR > 中位数一半）：${noisyOperations.join(' / ')} —— 这轮数字不适合作为基线，建议机器空闲时重跑。`
-  );
-}
-
-const report = {
-  fingerprint: env,
-  guards: { failures, passed: failures.length === 0 },
-  noisy: noisyOperations.length > 0,
-  operations,
-  resources,
-  schema: 1,
-  variant: flags.variant
-};
-
 mkdirSync(RESULTS_DIR, { recursive: true });
 writeFileSync(resolve(RESULTS_DIR, 'latest.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+if (flags.ui) {
+  if (report.noisy && !flags.allowNoisy) {
+    console.error('\nui.json 未更新：本轮噪声偏高（需要 --allow-noisy 才能覆盖）');
+    process.exitCode = 1;
+  } else {
+    writeFileSync(resolve(RESULTS_DIR, 'ui.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    console.log('\n已写入：benchmarks/results/ui.json');
+  }
+}
 // --out=baseline 交给下面的噪声守卫处理，避免绕过基线保护
 if (flags.out && flags.out !== 'baseline') {
   writeFileSync(
@@ -714,7 +798,7 @@ if (flags.out && flags.out !== 'baseline') {
   );
   console.log(`\n已写入：benchmarks/results/${flags.out}.json`);
 }
-if (flags.writeBaseline) {
+if (flags.writeBaseline && !flags.ui) {
   if (report.noisy && !flags.allowNoisy) {
     console.error('\n基线未更新：本轮噪声偏高（需要 --allow-noisy 才能覆盖基线）');
     process.exitCode = 1;
