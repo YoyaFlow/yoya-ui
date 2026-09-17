@@ -45,9 +45,12 @@ export {
 export { computed, isSignal, ref, batch, SignalHandle } from './signals/handle.js';
 export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {
+  buildInProviderScope,
   clearInstalledContext,
   currentContext,
+  inject,
   installContext,
+  provide,
   snapshotContext,
   withContext
 } from './context.js';

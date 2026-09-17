@@ -1,4 +1,5 @@
 import { ElementNode, registerChildFactories, vText } from '../core/index.js';
+import { buildInProviderScope } from '../core/context.js';
 import {
   applyComponentArguments,
   applyElementOptions,
@@ -136,7 +137,11 @@ function renderState(node, views, status, payload) {
   if (node._el) node._el.replaceChildren();
 
   const source = views[status];
-  const view = typeof source === 'function' ? source(payload, node) : source;
+  // 视图在挂到树上之前就构建完了：以 loader 节点为构建帧，祖先的 provide
+  // 才读得到；视图自己声明的 provide 归属产出的子树，不外溢到槽位。
+  const view = buildInProviderScope(node, () =>
+    typeof source === 'function' ? source(payload, node) : source
+  );
   node.child(view ?? vText(''));
 }
 

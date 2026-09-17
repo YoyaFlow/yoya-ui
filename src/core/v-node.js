@@ -1,4 +1,5 @@
 import { ComponentNode, ViewNode } from './node.js';
+import { adoptProvides, createProviderFrame, withProviderScope } from './context.js';
 
 /** api 上不允许出现的键：与节点语义冲突，或属于内部实现（下划线前缀）。 */
 const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
@@ -21,13 +22,17 @@ export function vNode(setup) {
   }
 
   const api = {};
-  const root = setup(api);
+  // setup 在节点存在之前就跑了：声明先收在构建帧上，建好节点后再落到它身上，
+  // 这样 provide 只作用于本组件子树，不会外溢到同级。
+  const frame = createProviderFrame();
+  const root = withProviderScope(frame, () => setup(api));
   assertViewRoot(root);
 
   const node = new ComponentNode({
     render: () => root
   });
 
+  adoptProvides(frame, node);
   attachCommands(node, api);
   return node;
 }

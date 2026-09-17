@@ -1,6 +1,6 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
-import { snapshotContext, withContext } from './context.js';
+import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
@@ -857,6 +857,7 @@ export class ViewNode {
     this._regionRequeueDepth = 0;
     this._regionEnv = null; // 构建期环境快照：access / context / i18n
     this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
+    this._provides = null; // provide() 声明的就近作用域（Map，首次声明时创建）
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -876,7 +877,7 @@ export class ViewNode {
       const serialBefore = bindingSerial;
       setupStack.push(this);
       try {
-        setup(this);
+        withProviderScope(this, () => setup(this));
       } finally {
         setupStack.pop();
         closeRegionCapture(this);
@@ -1000,7 +1001,11 @@ export class ViewNode {
     const regionToken = beginCollect();
     const previousSources = this._regionSources;
     try {
-      this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
+      this._runInRegionEnvironment(() =>
+        withProviderScope(this, () => this._builders.forEach((builder) => builder(this)), {
+          reset: true
+        })
+      );
     } catch (error) {
       endCollect(regionToken);
       this._regionSources = previousSources;
@@ -2070,6 +2075,10 @@ export class ComponentNode extends ViewNode {
     this._resolvedList = null; // 全部根
     this._roots = null; // 多根模式时非 null
     this._fragmentDom = null; // 多根模式已落实的 DOM 节点
+    // render() 是懒解析：解析时刻可能已经离开构建作用域，所以在这里把
+    // 构建期环境存下来（与区域节点的 _regionEnv 同一套语义）。
+    this._contextSnapshot = snapshotContext();
+    this._i18nSnapshot = i18nScopeBridge ? i18nScopeBridge.current() : null;
   }
 
   _resolve() {
@@ -2078,8 +2087,14 @@ export class ComponentNode extends ViewNode {
     }
 
     const build = () =>
-      typeof this._component === 'function' ? this._component() : this._component.render();
-    const resolved = withAccess(this._accessContext || currentAccess(), build);
+      withProviderScope(this, () =>
+        typeof this._component === 'function' ? this._component() : this._component.render()
+      );
+    const withEnvironment = () =>
+      withContext(this._contextSnapshot, () =>
+        i18nScopeBridge ? i18nScopeBridge.runWith(this._i18nSnapshot, build) : build()
+      );
+    const resolved = withAccess(this._accessContext || currentAccess(), withEnvironment);
     const list = Array.isArray(resolved) ? resolved.slice() : [resolved];
     const componentInfo = describeComponent(this._component);
     const ownerInfo = this._parent

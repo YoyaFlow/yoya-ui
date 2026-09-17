@@ -211,6 +211,25 @@ export function currentContext<T = unknown>(key: string, defaultValue?: T): T | 
 /** Returns a shallow merged snapshot of the active context. */
 export function snapshotContext(): ContextProviders;
 
+/**
+ * Declares a value for the subtree being built right now (the current setup
+ * callback or component render). Throws when called outside a build frame.
+ */
+export function provide(key: string | symbol, value: unknown): unknown;
+
+/**
+ * Reads the nearest provided value: lexical build frames, then the parent
+ * chain, then withContext layers / installContext, then fallback.
+ */
+export function inject<T = unknown>(key: string | symbol, fallback?: T): T | undefined;
+
+/**
+ * Builds a subtree that is attached under host later (async loaders): the
+ * subtree can inject from host's position in the tree, while its own
+ * declarations scope to the produced subtree.
+ */
+export function buildInProviderScope<T>(host: unknown, build: () => T): T;
+
 // ---
 // Accessibility primitives
 // ---
