@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { div, li, ref, ul, vText } from '../index.js';
 
+function permutations(items) {
+  if (items.length <= 1) {
+    return [items];
+  }
+
+  return items.flatMap((item, index) =>
+    permutations([...items.slice(0, index), ...items.slice(index + 1)]).map((rest) => [
+      item,
+      ...rest
+    ])
+  );
+}
+
 describe('keyed children binding', () => {
   it('renders rows from a signal and reuses nodes across reorders', () => {
     const rows = ref([
@@ -193,6 +206,83 @@ describe('keyed children binding', () => {
     rows.value = [rows.peek()[2], rows.peek()[0], rows.peek()[1]];
     expect(moved).toEqual(['3']);
     expect(element.textContent).toBe('312');
+  });
+
+  it('keeps view order, DOM order and node identity for every reorder of five rows', () => {
+    for (const order of permutations([1, 2, 3, 4, 5])) {
+      const rows = ref([1, 2, 3, 4, 5].map((id) => ({ id })));
+      const list = ul((node) => {
+        node.keyed(
+          rows,
+          (row) => row.id,
+          (row) => li(String(row.id))
+        );
+      });
+      const element = list.renderDom();
+      const identities = list.children();
+
+      rows.value = order.map((id) => rows.peek().find((row) => row.id === id));
+
+      expect(element.textContent).toBe(order.join(''));
+      expect(list.children().map((row) => Number(row.textContent()))).toEqual(order);
+      order.forEach((id, index) => {
+        expect(list.children()[index]).toBe(identities[id - 1]);
+      });
+    }
+  });
+
+  it('keeps two keyed segments in their own regions', () => {
+    const left = ref([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+    const right = ref([{ id: 'x' }, { id: 'y' }]);
+    const list = ul((node) => {
+      node.li('head');
+      node.keyed(
+        left,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
+      node.li('middle');
+      node.keyed(
+        right,
+        (row) => row.id,
+        (row) => li(row.id)
+      );
+      node.li('tail');
+    });
+    const element = list.renderDom();
+
+    left.value = [left.peek()[2], left.peek()[0], left.peek()[1]];
+    right.value = [right.peek()[1], right.peek()[0]];
+
+    expect(element.textContent).toBe('headcabmiddleyxtail');
+    expect(list.children().map((child) => child.textContent())).toEqual([
+      'head',
+      'c',
+      'a',
+      'b',
+      'middle',
+      'y',
+      'x',
+      'tail'
+    ]);
+  });
+
+  it('handles delete, append and reorder in one update', () => {
+    const rows = ref([{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(String(row.id))
+      );
+      node.li('tail');
+    });
+    const element = list.renderDom();
+
+    rows.value = [{ id: 4 }, { id: 1 }, { id: 5 }];
+
+    expect(element.textContent).toBe('415tail');
+    expect(list.children().map((child) => child.textContent())).toEqual(['4', '1', '5', 'tail']);
   });
 });
 
