@@ -189,7 +189,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `yoya.core.js`                     | 2.3 KB ~ **24.0 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                   |
-| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **95.9 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **96.0 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
 | `yoya.router.js`                   | 10.3 KB ~ **27.0 KB**             | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
 | `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                |
 | `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 16.2 / 16.7 KB     | `vEchart` / `vThree` 封装                                                                                                                             |
@@ -198,9 +198,9 @@ npm run build   # 产出 dist/，末尾打印体积表
 
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 247.0 KB | 117.5 KB | 34.0 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 781.2 KB | 450.1 KB | 109.0 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 712.3 KB | 418.2 KB | 99.5 KB  | core + 全部组件                |
+| `yoya.router.full.js`            | 248.0 KB | 117.7 KB | 34.0 KB  | core + router / SSR            |
+| `yoya.ui-router.full.js`（全量） | 782.3 KB | 450.3 KB | 109.0 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 713.5 KB | 418.4 KB | 99.5 KB  | core + 全部组件                |
 
 组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。

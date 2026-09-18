@@ -150,17 +150,22 @@ function registerNodeBinding(owner, kind, key, read, commit) {
   // 归属：区域构建期登记的绑定归区域所有（重跑时统一释放），其余直接挂在节点自己的
   // 绑定数组上——不再为每个有绑定的节点多建一层 { bindings: [] } 作用域对象。
   const scope = bindingScopeFor(owner);
-  const ownerList = owner instanceof ViewNode ? nodeBindings(owner) : null;
-  const list = scope ? scope.bindings : nodeBindings(owner);
-  const binding = new NodeBinding(owner, kind, key, commit, list);
+  const binding = new NodeBinding(owner, kind, key, commit, null);
   binding.target = createReactiveTarget({ read, sink: binding });
   bindingSerial += 1;
-  list.push(binding);
 
-  // 区域绑定除了名单，还要留在所属节点名下：区域按名单整体释放，
-  // 节点销毁 / 区域换子时按自身名单收集。
-  if (ownerList && ownerList !== list) {
-    ownerList.push(binding);
+  // 名单首次写入走统一写入口（字面量数组，见 appendNodeEntry）。
+  if (scope) {
+    // 区域绑定除了区域名单，还要留在所属节点名下：区域按名单整体释放，
+    // 节点销毁 / 区域换子时按自身名单收集。
+    scope.bindings = appendNodeEntry(scope.bindings, binding);
+    binding.list = scope.bindings;
+    if (owner instanceof ViewNode) {
+      owner._bindings = appendNodeEntry(owner._bindings, binding);
+    }
+  } else {
+    owner._bindings = appendNodeEntry(owner._bindings, binding);
+    binding.list = owner._bindings;
   }
 
   afterRegisterBinding(owner);
@@ -190,7 +195,7 @@ function bindingScopeFor(owner) {
   }
 
   if (!owner._ownBindingScope) {
-    owner._ownBindingScope = { bindings: [] };
+    owner._ownBindingScope = { bindings: null };
   }
 
   return owner._ownBindingScope;
@@ -496,7 +501,7 @@ function releaseRegionSubscriptions(node) {
   }
 
   node._regionSubs.forEach((entry) => entry.dispose());
-  node._regionSubs = [];
+  node._regionSubs = null;
 }
 
 /**
@@ -511,13 +516,13 @@ function subscribeRegion(node) {
 
   const adapter = node._regionAdapter;
   const pending = new Map((node._regionSubs || []).map((entry) => [entry.source, entry]));
-  const next = [];
+  let next = null;
 
   (node._regionSources || []).forEach((source) => {
     const existing = pending.get(source);
     if (existing) {
       pending.delete(source);
-      next.push(existing);
+      next = appendNodeEntry(next, existing);
       return;
     }
 
@@ -525,7 +530,7 @@ function subscribeRegion(node) {
       scheduleRegionRebuild(node)
     );
     const untrackOwner = trackRegionOwner(source, node);
-    next.push({
+    next = appendNodeEntry(next, {
       source,
       dispose: () => {
         untrackOwner();
@@ -572,11 +577,7 @@ export function registerRegionCleanup(cleanup) {
     return;
   }
 
-  if (!Array.isArray(region._regionRunCleanups)) {
-    region._regionRunCleanups = [];
-  }
-
-  region._regionRunCleanups.push(cleanup);
+  region._regionRunCleanups = appendNodeEntry(region._regionRunCleanups, cleanup);
 }
 
 /** 找最近边界并处理；无边界时原样重抛（fail fast）。返回降级替换节点或 null。 */
@@ -636,6 +637,37 @@ export function nodeChildren(node) {
   return node._children;
 }
 
+/**
+ * 节点级名单的统一写入口：名单还空着时一次字面量落地，之后才走 push。
+ * 引擎对空数组的首次 push 会按 16 个槽预分配（单元素数组 Node 约 182 B、浏览器约 96 B；
+ * 字面量分别是 64 B / 32 B），而「先字面量再 push」反而更贵（约 208 B / 104 B），
+ * 所以只吃首次写入这份收益，第 2 个元素起保持 push（多元素容量见票 22）。
+ * 空名单有两种表示：未创建（null / undefined）与共享的 EMPTY_CHILDREN 哨兵。
+ */
+function appendNodeEntry(list, value) {
+  if (list === undefined || list === null || list === EMPTY_CHILDREN) {
+    return [value];
+  }
+
+  list.push(value);
+  return list;
+}
+
+/** 子节点名单走同一写入口；供 node.js 之外的节点模块（tree 等）复用。 */
+export function appendNodeChild(node, child) {
+  node._children = appendNodeEntry(node._children, child);
+}
+
+/** 头插同样可能是一次首次写入（父节点还没有子节点）。 */
+function prependNodeChild(node, child) {
+  if (node._children === EMPTY_CHILDREN) {
+    node._children = [child];
+    return;
+  }
+
+  node._children.unshift(child);
+}
+
 function nodeEvents(node) {
   return node._events ?? (node._events = new Map());
 }
@@ -652,20 +684,8 @@ function nodePendingRemovals(node) {
   return node._pendingRemovals ?? (node._pendingRemovals = new Set());
 }
 
-function nodeCleanup(node) {
-  return node._cleanup ?? (node._cleanup = []);
-}
-
-function nodeKeyedSegments(node) {
-  return node._keyedSegments ?? (node._keyedSegments = []);
-}
-
 function nodeBuilders(node) {
   return node._builders ?? (node._builders = []);
-}
-
-function nodeBindings(node) {
-  return node._bindings ?? (node._bindings = []);
 }
 
 /** 子节点自己的 DOM 组：单根是 `[_el]`，多根组件是 `_fragmentDom`（文档顺序）。 */
@@ -866,7 +886,7 @@ function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
   const anchorNode = beforeNode ?? tailNode;
   const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
   if (beforeIndex === -1) {
-    nodeChildren(parent).push(entry.node);
+    parent._children = appendNodeEntry(parent._children, entry.node);
   } else {
     nodeChildren(parent).splice(beforeIndex, 0, entry.node);
   }
@@ -1241,7 +1261,7 @@ export class ViewNode {
 
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
-      this._regionScope = { bindings: [] };
+      this._regionScope = { bindings: null };
       this._regionEnv = {
         access: this._accessContext || currentAccess(),
         context: snapshotContext(),
@@ -1303,7 +1323,7 @@ export class ViewNode {
     const previousKeys = this._childKeys;
     const previousBindings = new Set(collectRegionBindings(this));
     const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
-    this._regionRunCleanups = [];
+    this._regionRunCleanups = null;
 
     this._children = EMPTY_CHILDREN;
     this._childKeys = null; // 新的一段用新的 key 表，按需创建
@@ -1326,7 +1346,7 @@ export class ViewNode {
         collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
       );
       this._children.forEach((child) => child.destroy());
-      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups?.forEach((cleanup) => cleanup());
       this._regionRunCleanups = previousCleanups;
       previousChildren.forEach((child) => this._pendingRemovals?.delete(child));
       this._children = previousChildren;
@@ -1484,7 +1504,7 @@ export class ViewNode {
       viewNode.attr('data-row-key', rawKey);
     }
     this._pendingRemovals?.delete(viewNode);
-    nodeChildren(this).push(viewNode);
+    this._children = appendNodeEntry(this._children, viewNode);
     this._childrenDirty = true;
     this._adoptPendingMount(viewNode);
     this._linkChild(viewNode);
@@ -1526,7 +1546,7 @@ export class ViewNode {
 
     const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
     if (beforeIndex === -1) {
-      nodeChildren(this).push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
     } else {
       nodeChildren(this).splice(beforeIndex, 0, viewNode);
     }
@@ -1569,7 +1589,7 @@ export class ViewNode {
 
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
-      nodeChildren(this).unshift(viewNode);
+      prependNodeChild(this, viewNode);
     } else {
       nodeChildren(this).splice(afterIndex + 1, 0, viewNode);
     }
@@ -1668,7 +1688,7 @@ export class ViewNode {
     }
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
-      nodeChildren(this).unshift(viewNode);
+      prependNodeChild(this, viewNode);
     } else {
       nodeChildren(this).splice(afterIndex + 1, 0, viewNode);
     }
@@ -1720,7 +1740,7 @@ export class ViewNode {
     this._linkChild(viewNode);
     const index = this._children.indexOf(previous);
     if (index === -1) {
-      nodeChildren(this).push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
     } else {
       nodeChildren(this).splice(index, 1, viewNode);
     }
@@ -1781,7 +1801,9 @@ export class ViewNode {
       members: new Map(),
       update: options?.update ?? null
     };
-    nodeKeyedSegments(this).push(segment);
+    // 段只在本次 keyed() 的绑定闭包里使用（syncKeyedSegment(this, segment, rows)）；此前的
+    // _keyedSegments 名单只写不读，还会在每次区域重跑时追加、从不清理，把上一轮的
+    // members（行与节点引用）一直留在树上。名单已删除。
     registerNodeBinding(
       this,
       'keyed',
@@ -2054,7 +2076,7 @@ export class ViewNode {
 
       const viewNode = normalizeChildWithContext(this, child);
       this._pendingRemovals?.delete(viewNode);
-      nodeChildren(this).push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
       this._linkChild(viewNode);
@@ -2103,7 +2125,7 @@ export class ViewNode {
       window.addEventListener(type, handler, options);
       const unbind = () => window.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      nodeCleanup(this).push(unbind);
+      this._cleanup = appendNodeEntry(this._cleanup, unbind);
     }
 
     return this;
@@ -2115,7 +2137,7 @@ export class ViewNode {
       document.addEventListener(type, handler, options);
       const unbind = () => document.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      nodeCleanup(this).push(unbind);
+      this._cleanup = appendNodeEntry(this._cleanup, unbind);
     }
 
     return this;
@@ -2145,7 +2167,7 @@ export class ViewNode {
       }
     };
 
-    nodeCleanup(this).push(cancel);
+    this._cleanup = appendNodeEntry(this._cleanup, cancel);
     return this;
   }
 
@@ -2189,7 +2211,7 @@ export class ViewNode {
 
     this._frameLoopStop = stop;
     frameId = requestAnimationFrame(step);
-    nodeCleanup(this).push(stop);
+    this._cleanup = appendNodeEntry(this._cleanup, stop);
     return this;
   }
 
@@ -2235,7 +2257,7 @@ export class ViewNode {
 
     this._el.addEventListener(eventName, adapter, nextOptions);
     nodeDomAdapters(this).set(eventName, { cleanup });
-    nodeCleanup(this).push(cleanup);
+    this._cleanup = appendNodeEntry(this._cleanup, cleanup);
   }
 
   _removeCleanup(cleanup) {
@@ -3183,7 +3205,7 @@ export class ElementNode extends ViewNode {
 
       const viewNode = normalizeChildWithContext(this, child);
       this._pendingRemovals?.delete(viewNode);
-      nodeChildren(this).push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
       this._linkChild(viewNode);

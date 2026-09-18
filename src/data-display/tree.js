@@ -1,5 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
-import { ViewNode, nodeChildren } from '../core/node.js';
+import { ViewNode, appendNodeChild } from '../core/node.js';
 import { allocateId } from '../core/id.js';
 import {
   applyComponentArguments,
@@ -46,13 +46,13 @@ export class VTreeNode {
     };
     this.vTreeNode = (value) => {
       const child = value instanceof VTreeNode ? value : new VTreeNode(value);
-      nodeChildren(this).push(child);
+      appendNodeChild(this, child);
       return child;
     };
     this.node = this.vTreeNode;
     this.child = (...children) => {
       children.flat(Infinity).forEach((value) => {
-        nodeChildren(this).push(value instanceof VTreeNode ? value : new VTreeNode(value));
+        appendNodeChild(this, value instanceof VTreeNode ? value : new VTreeNode(value));
       });
       return this;
     };
