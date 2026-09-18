@@ -64,6 +64,12 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
   (`03 / 04 / 05 / 06`) are already close to vanilla.
 - **The clear path has caught up**: `09_clear1k_x8` went from 58 ms to 22.5 ms (vanilla: 15.5 ms), the result
   of the single-pass destroy plus batched detach.
+- **`04` / `03` also reflect the entry's state model, not only the framework**: the yoya entry derives each
+  row's selected class from one shared `selectedId` (`computed(() => selectedId.value === row.id)`), so a
+  click wakes every row — the same shape as Vue's `:class` + `v-memo` entry, while React passes a per-row
+  flag and memoizes rows, and the hand-written vanilla baseline touches only the two affected rows. Read the
+  `04` cell with that in mind; the O(1) alternative (selection state on the row) is documented in
+  `docs/component-authoring.md` §6.2.
 - **Memory is still the biggest order-of-magnitude gap**: 6.15 MB vs vanilla's 2.45 MB (2.51×) after creating
   1000 rows — 44% below 0.6.2's 11.03 MB. What remains is mostly DOM objects and V8 node headers.
 - **Size is a known cost**: the non-tree-shakeable core makes a page 5–7× vanilla's size
