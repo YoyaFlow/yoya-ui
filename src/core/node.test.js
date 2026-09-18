@@ -9,6 +9,8 @@ import {
   p,
   ref,
   span,
+  svg,
+  vBadge,
   vCard,
   vText
 } from '../index.js';
@@ -101,7 +103,8 @@ describe('ViewNode core', () => {
     });
 
     expect(root.toHTML()).toBe(
-      '<div id="profile" class="card"><h1>Profile</h1><input name="email" value="ada@example.com"></div>'
+      // 属性按名字排序输出（class < id；name < value），与写入顺序无关
+      '<div class="card" id="profile"><h1>Profile</h1><input name="email" value="ada@example.com"></div>'
     );
   });
 
@@ -245,9 +248,18 @@ describe('ViewNode core', () => {
     element.remove();
   });
 
-  it('rejects the removed node-level text() with migration guidance', () => {
-    expect(() => div().text('x')).toThrow(/text\(\) was removed/);
-    expect(() => p().text('x')).toThrow(/child\(content\)/);
+  it('does not expose a node-level text()', () => {
+    // 最终契约：节点级 text() 不存在（追加文本用 child(content)，替换文本用 vText() + textContent()）
+    expect(div().text).toBeUndefined();
+    expect(p().text).toBeUndefined();
+    expect(span().text).toBeUndefined();
+  });
+
+  it('keeps component and SVG text() APIs next to the node contract', () => {
+    // 组件自带的 text()（badge / progress / menu …）与 SVG <text> 的 text() 是另一套 API
+    expect(typeof vBadge('notifications').text).toBe('function');
+    expect(typeof svg().text).toBe('function');
+    expect(typeof vText('x').textContent).toBe('function');
   });
 
   it('keeps text and object setup values unchanged next to the handle form', () => {

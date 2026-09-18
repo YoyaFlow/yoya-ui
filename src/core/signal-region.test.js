@@ -87,7 +87,8 @@ describe('signal-driven regions', () => {
 
     list.destroy();
 
-    expect(list._regionSubs).toHaveLength(0);
+    // 订阅名单按需创建：清空后回到「没有名单」，而不是留一个空数组
+    expect(list._regionSubs).toBeNull();
 
     rows.value = ['a', 'b'];
 

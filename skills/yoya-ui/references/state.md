@@ -49,6 +49,8 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 ```
 
 - `computed` 只读，写它会抛错。
+- `computed` 的依赖订阅跟着观察者走：值绑定、区域依赖、`subscribe()` 或外层派生在看它时保持订阅，**观察者清零就退订依赖**（再读时重新求值）——所以行内派生随行销毁一起释放，不会把长命信号和整行数据留在内存里。
+- 内置引擎还提供**原生派生**（可选能力 `createComputed`）：没人观察时既不订阅依赖也不重算，写入依赖后下次读取才惰性重算，因此「读一次就再没人看」的派生同样可回收。引擎没提供这项能力时走上面 core 自实现的派生路径（首次求值即订阅依赖以保持缓存）。
 - **浅层语义**：只有整值替换触发更新。`items.value.push(x)` 不触发，要 `items.value = [...items.value, x]`。
 - 依赖由 core 收集（不是引擎的追踪实现），所以换引擎不改变依赖与派生语义。
 
@@ -89,6 +91,53 @@ vInput({
 - 绑定提交时会跳过"值已相同"的写入，所以打字过程中不会把光标顶到末尾；中间若插入转换（`Number()` / trim），值不再相等，此时需要自行判断。
 - 表单收集仍用 `vForm` + 控件的 `name()`。
 
+## 大列表：选中态别用共享句柄逐行派生
+
+长列表（1k 行以上）里 `computed(() => selectedId.value === row.id)` 这种「共享句柄 + 每行派生」在切换时会唤醒**全部**行：
+1000 行 = 1000 次派生求值，10k 行 = 10000 次，而真实只有两行变化。把选中态放在行自己身上
+（`row.selected = ref(false)` + `line.toggleClass('danger', row.selected)`，切换时写两行）是 O(1)，
+每行还省约 224 B；代价是成对写入要自己维护（键盘导航 / 全选 / 刷新都走同一个入口）。
+
+- 行数不大（几十~几百）或每次全量刷新时，继续用共享句柄派生更简洁。
+- 多选集合 / 过滤 / 悬浮 + 选中组合：自己维护 `Map<id, 行>` 索引，不要指望框架猜出「只有两行会变」。
+- 数字与复跑：`npm run perf:selection`；完整说明见 `docs/component-authoring(.zh-CN).md` 第 6.2 节。
+
+## 按键容器：keySet()（`ref([])` 的替代品）
+
+要把列表当 map 用（按 key 取/改/删行、行级状态、主从联动），用 `keySet` 代替 `ref([])`：
+元素是 `KeyItem { data, api }`，`keyed(list, (item) => …)` 直接渲染元素，第二个参数仍是下标。
+
+```js
+import { keySet, ref, tr, vText } from '@yoyaflow/yoya-ui';
+
+const list = keySet(
+  rows,
+  (row) => row.id,
+  (item) => {
+    item.api.selected = ref(false);
+    item.api.select = () => {
+      item.api.selected.value = true;
+    };
+  }
+);
+
+tbody((body) => {
+  body.keyed(list, (item) =>
+    tr((line) => {
+      line.child(vText(item.data.label));
+      line.toggleClass('danger', item.api.selected); // 行状态：同 key 同 api
+      line.on('click', item.api.select);
+    })
+  );
+});
+```
+
+- 同 key 同元素同 api；`item.data` 换引用 → 该行原位换新；key 变了 = 旧 key 离场（`item.api.dispose?.()`）+ 新 key 入场。
+- 数据操作（`add` / `insertBefore` / `replace` / `merge` / `remove` / `clear` / `replaceAll` / `moveBefore` / `moveAfter` / `sort`）各触发一次对账；写 `item.api` 上的信号**不触发**对账，只刷那一行——§6.2 里 O(1) 唤醒的容器版。
+- 排序比较器收元素：`list.sort((a, b) => a.api.rank - b.api.rank)`；多步写入用 `list.batch(() => …)` 合成一次对账。
+- 读：`item(key)` / `get(key)`（数据）/ `has` / `indexOf` / `keys()` / `items()` / `values()` / `size`；写句柄 `list.value = datas`，读句柄给元素表。
+- 写操作遇到不存在的 key 抛错，读返回 `undefined`/`false`；重复 key 抛错；小列表或每次全量刷新仍可用 `ref` + 派生。
+
 ## 可重建区域：结构随数据变化
 
 ```js
@@ -102,8 +151,10 @@ div((list) => {
 ```
 
 - 声明 `rebuildable()` **之后**读到的信号成为该区域的依赖；信号变化时按谓词门禁重建。
+- 依赖来自**构建期读到的值**（`sig.value`）；把手柄传进值位置（`attr('data-x', sig)`、`child(vText(sig))`）只建立值绑定、写入原地刷值，**不会**让区域重建——需要重建就显式读一次。
 - 谓词只回答「这次要不要花重建」：为假时结构不动、只刷值，并记 `rebuildPending()`，可由 `rebuild()` 补一次。
 - 约定：先 `rebuildable()` 再读数据（声明之前读到的信号不计入该区域依赖）。
+- 区域必须在该节点自己的 setup builder 内声明；非区域节点的构建闭包在构建返回处即释放，builder 已返回的节点再调 `rebuildable()` 会抛错。区域节点保留 builder，之后仍可用 `rebuildable(谓词)` 换谓词。
 - 区域重跑**不保留区域内 DOM 身份**（焦点、选区、内部滚动、第三方实例都会重建）；区域外的兄弟节点不受影响。要保住焦点就把那块留在区域外，或用值绑定。
 - 每次重建会重捕依赖，所以条件分支切换后依赖集正确。
 - 服务端只建一次（没有写入），重建只发生在客户端。
@@ -124,7 +175,7 @@ ul((list) => {
 });
 ```
 
-- 对账规则：同 key 且**行引用未变**→ 复用节点（`build` 不重跑，行内用值绑定或组件方法原地更新）；同 key 行引用变化→ 原位换新；顺序变化→ `insertBefore` 移动，节点身份与 DOM 状态保留（焦点、滚动、第三方实例不重建）。
+- 对账规则：同 key 且**行引用未变**→ 复用节点（`build` 不重跑，行内用值绑定或组件方法原地更新）；同 key 行引用变化→ 原位换新；顺序变化→ `insertBefore` 移动，节点身份与 DOM 状态保留（焦点、滚动、第三方实例不重建）。搬动只落在**真的换位**的行上（按旧顺序的最长递增子序列挑出保持原位的行，其余才移动）：交换表里相隔很远的两行只搬这两行，不会把中间的行逐个挪一遍。多根组件的行（`build` 返回节点数组）**整组**一起搬，行内多段 DOM 不会散开。
 - **行级更新协议（第四参数 `options`）**：行引用变了但内容等价、或只想改一两个字段时，不必整行重建——三档代价从高到低：
   `equals(prevRow, nextRow)` 为真 → 当没变，节点直接复用（只更新记录的引用，下次比较用新行）；
   否则 `update(node, prevRow, nextRow)` → 由你原地改写该行（句柄赋值 / 组件方法），节点身份保留；
@@ -152,7 +203,6 @@ ul((list) => {
 });
 ```
 
-- 基准（`npm run bench:keyed`，500 行 × 20 轮、每轮整批换引用且 1 行内容变化）：重建行数 **10000 → 20（equals）→ 0（update）**；耗时约 250 ms → 5~15 ms（20× 上下），`update` 档首行节点身份保留。行数是确定的，毫秒数随机器波动。
 - 省略 `keyFn` 时用**行引用本身**做 key（行对象稳定时可用）；重复 key 直接抛错，不会静默覆盖。
 - `keyed()` 只协调自己这一段：新成员落在本段末尾（本段之后第一个兄弟节点之前），其它兄弟节点（含其它 keyed 段）不参与对账。
 - 行内字段变化优先走值绑定：`computed` 句柄放文本 / 属性位置即可原地刷值，不必重建行。
@@ -176,6 +226,7 @@ div((box) => {
 
 - 条件为假：元素脱离文档（SSR 不输出该子树），ViewNode 与控件状态保留；为真：按子节点槽位归位，不是追加到末尾。
 - 声明在子节点、绑定在父节点：`mountable()` 在 setup 期声明，入树时由父节点收养；零参闭包形态由**父节点** `flush()` 重新求值。
+- `keyed()` 的行节点走同一条收养路径：条件为假时该行不落地，节点、行内状态与渲染结果都保留，条件转真时按槽位插回；行被销毁时（换 key、删行、清列表）父节点同步释放为它登记的挂载绑定与挂载状态，不会把已销毁的行留在内存里。
 - 省略参数即默认常挂（`true`）；已入树后随时再调 `mountable()` 会**替换条件并立即生效**（条件存在子节点自己的值单元里，绑定登记在父节点，所以不需要父指针）。
 - `node.isMounted()` 返回自身挂载条件的最近提交状态；「元素此刻是否在文档里」另查 `node._el?.isConnected`（受祖先挂载与渲染时机影响）。
 - 配置形态等价：`div({ mountable: cond })`（父节点走同一条收养路径）。
@@ -191,13 +242,13 @@ div((box) => {
 
 - handler 收 `(error, info)`，`info.phase` ∈ `build` / `render` / `event` / `update`；返回节点则降级替换子树，返回空（null / undefined）只上报并保持现状。
 - 组件对象可以写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载——组件自带降级，调用方不必重复声明。
-- 嵌套边界：错误向上交给**最近的**边界，由它独占捕获、不再向外；handler 返回空 = 仅上报并保持现状；handler 自身抛错则向外抛出。render / build 阶段返回空时失败节点会被标记、跳过后续重试（不反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。
+- 嵌套边界：错误**沿父链逐级上溯**交给最近的边界（本节点设了 `whenFailed` 就地处理，否则交给父节点），由它独占捕获、不再向外；位置在出错时才解析，所以与声明顺序、嵌套深度、运行时插入、子树搬家都无关。handler 返回空 = 仅上报并保持现状；handler 自身抛错则向外抛出。render / build 阶段返回空时失败节点会被标记、跳过后续重试（不反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。
 - 捕获永不静默：`console.error` 必发（含原始 error），devtools 开启时追加 `error` 事件（phase / source / boundary）。
-- 区域更新失败仍先回滚保旧内容，再交给边界决定；降级替换是原子的（先构建成功再换子树）。
+- 区域更新失败仍先回滚保旧内容，再交给边界决定；降级替换是原子的（先构建成功再换子树），区域节点的降级替换按一次区域构建执行（不会撞区域守卫）。边界放在 `vClientOnly` 外层同样生效（解析出来的节点接在岛节点的父链上）。
 
 ## 组件作者注意
 
-自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`。组件可暴露链式 API（`value(next)`、`disabled(next)`），但对外只暴露方法，不要让使用者直接持有内部信号。
+自定义组件不要直接操作 `document`，走节点 DSL；需要文档级 / 窗口级监听用 `bindDocumentEvent` / `bindWindowEvent`；动画帧用节点方法 `node.bindAnimationFrame(cb)`（单帧）与 `node.bindAnimationFrameLoop(cb)`（循环，`destroy()` 自动停，`stopAnimationFrameLoop()` 提前停，同节点只保留一条循环），不要自己存 frameId。组件可暴露链式 API（`value(next)`、`disabled(next)`），但对外只暴露方法，不要让使用者直接持有内部信号。
 
 ## 引擎与替换
 
@@ -209,6 +260,7 @@ installSignals(null); // 回到内置引擎
 ```
 
 - 引擎契约只有五个方法：`createSignal` / `read` / `write` / `subscribe` / `batch`。依赖收集与 `computed` 由 core 负责，所以换引擎不改变依赖与派生语义。
+- 可选能力 `createComputed(run)`：引擎自带原生派生时由它承担失效判定（未被观察就不订阅依赖、写入不重算），core 直接包装成 `computed()` 句柄；不提供时回退到 core 自实现派生。内置引擎（内化 signals-core）实现了它。
 - **插件由使用者自己写**：库不自带某家状态库的适配器，只提供契约、模板与一致性用例。
   value 单元可以是一个极小的 store（`getState` / `setState` / `subscribe`），
   所以 signals 类库与 store 类库（zustand 之类）都一样接。模板与两份演示代码

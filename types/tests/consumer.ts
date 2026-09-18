@@ -23,8 +23,17 @@ import {
   vText,
   computed,
   createI18n,
+  EMPTY_CHILDREN,
+  appendNodeChild,
+  elementAttrs,
+  elementClassNames,
+  elementHasClass,
+  elementStyles,
   installSignals,
+  isKeySet,
+  keySet,
   li,
+  nodeChildren,
   ref,
   renderToString,
   router,
@@ -33,7 +42,7 @@ import {
   ul,
   SearchOutlined
 } from 'yoya-ui';
-import { ElementNode } from 'yoya-ui/core';
+import { ElementNode, ViewNode } from 'yoya-ui/core';
 import { configureRequest, RequestBase, Result } from 'yoya-ui/api';
 import {
   VButton as ActionsVButton,
@@ -83,6 +92,7 @@ import {
 } from 'yoya-ui/async';
 import { vEchart } from 'yoya-ui/echart';
 import { vThree } from 'yoya-ui/three';
+import { vLink, vRoute, vRouter } from 'yoya-ui/router';
 import type { SignalsAdapter } from 'yoya-ui/core';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
 import {
@@ -150,6 +160,38 @@ const form = vForm((f) => {
 const layout = flex({ gap: 12, justify: 'space-between' }, (f) => {
   f.child(div('left'), div('right'));
 });
+
+// Node-internals helpers: class-node components touch child lists / classes / styles / attrs through these.
+const helperBox = div('x');
+appendNodeChild(helperBox, li('y'));
+const helperChildren: ViewNode[] = nodeChildren(helperBox);
+elementStyles(helperBox).color = 'red';
+elementAttrs(helperBox)['data-mode'] = 'dark';
+const helperClasses: string[] = elementClassNames(helperBox);
+const helperHasClass: boolean = elementHasClass(helperBox, 'acme-badge');
+void helperChildren;
+void helperClasses;
+void helperHasClass;
+void EMPTY_CHILDREN;
+
+// keySet: a key-addressed container that hands per-row apis to keyed().
+const keySetRows = keySet<{ id: number; label: string }>(
+  [],
+  (row) => row.id,
+  (item) => {
+    item.api.selected = ref(false);
+  }
+);
+const keySetEntry = keySetRows.item(1);
+if (keySetEntry) {
+  keySetEntry.data.label = keySetEntry.data.label.toUpperCase();
+}
+keySetRows.remove(1);
+const keySetList = ul((root) => {
+  root.keyed(keySetRows, (item, index) => li(`${item.data.label}@${index}`));
+});
+void isKeySet(keySetRows);
+void keySetList;
 
 // Data display components.
 vTable((table) => {
@@ -324,6 +366,17 @@ const hydrated = hydrate(() => div('hello'), '#app', {});
 const mounted = mount(() => div('hello'), document.body);
 void hydrated;
 void mounted;
+
+// Document routes: internal HTML addresses and external links jump as real documents.
+const documentRouter = vRouter({
+  routes: [
+    vRoute('/legacy/report.html', { title: '旧报表', url: true }),
+    vRoute('/docs', { target: '_blank', url: 'https://example.com/docs' })
+  ]
+});
+documentRouter.navigateDocument('/legacy/report.html', { replace: true });
+const documentLink = vLink(documentRouter, { label: '文档', to: '/docs' });
+void documentLink;
 
 // ECharts component and icons.
 vEchart((chart) => {

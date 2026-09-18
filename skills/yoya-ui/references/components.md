@@ -421,6 +421,26 @@ div((page) => page.child(router));
 router.start();
 ```
 
+**文档路由（内部 HTML 地址 / 外部链接）**：不是所有"路由"都该渲染 SPA 视图——旧系统的 HTML 页面与外部链接
+注册成文档路由后，进入即整页跳转，`vRouterViews` 用占位（默认是一个指向真实地址的可点链接，SSR 输出同样成立）承载：
+
+```js
+const router = vRouter({
+  routes: [
+    vRoute('/legacy/report.html', { url: true }), // 地址 = 注册路径
+    vRoute('/docs', { url: 'https://example.com/docs', target: '_blank' }) // 外链（_blank 自动补 rel="noopener"）
+  ]
+});
+
+vLink(router, { to: '/legacy/report.html' }); // href 就是 /legacy/report.html，点击交给浏览器
+router.navigate('/docs'); // 渲染占位后整页跳转
+```
+
+- 这类路由不渲染 SPA 视图，也不写 `pushState`：地址栏由浏览器的整页跳转负责；`replace: true` 走 `location.replace`。
+- `vLink` 对外链与文档路由输出真实 href、不再拦截点击（`target` / `rel` 取自路由声明）；未注册的绝对地址（`https://…`、`mailto:`…）同样按原样输出。
+- 跳转出口是 `router.navigateDocument(url, { replace })`，可覆盖以接入宿主自己的跳转实现；服务端渲染是 no-op。
+- `refresh()` / 回退落到文档路由时只渲染占位、不重复整页跳转，避免回退死循环。
+
 ### vDynamicLoader
 
 异步加载占位：传入异步组件工厂，加载中/失败可自定义；常用于按需加载大模块。

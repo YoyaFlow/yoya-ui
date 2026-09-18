@@ -81,4 +81,35 @@ describe('rebuildable region contracts', () => {
 
     expect(() => box.child(div('y'))).toThrow(/region builder/);
   });
+
+  it('releases the build closure of a non-region node when the build returns', () => {
+    const box = div((ele) => ele.child('x'));
+
+    // 只清值、保留字段槽位：属性仍在（隐藏类不分叉），引用已放开（闭包与其捕获环境可回收）。
+    expect('_builders' in box).toBe(true);
+    expect(box._builders).toBeNull();
+  });
+
+  it('keeps the build closure of a region so the builder can be re-run', () => {
+    let builds = 0;
+    const box = div((ele) => {
+      builds += 1;
+      ele.rebuildable();
+      ele.child(`build ${builds}`);
+    });
+    const element = box.renderDom();
+
+    expect(box._builders).toHaveLength(1);
+
+    box.rebuild();
+
+    expect(builds).toBe(2);
+    expect(element.textContent).toBe('build 2');
+  });
+
+  it('rejects declaring a region after its build returned', () => {
+    const box = div((ele) => ele.child('x'));
+
+    expect(() => box.rebuildable()).toThrow(/its own setup builder/);
+  });
 });

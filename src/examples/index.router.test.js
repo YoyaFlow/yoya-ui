@@ -77,6 +77,8 @@ describe('renderExamplesIndex', () => {
       'router-async.html': 'RouterAsyncCard',
       'router-links.html': 'RouterNavigationCard',
       'router-params.html': 'RouterParamsCard',
+      'router-document.html': 'RouterDocumentCard',
+      'router-views-document.html': 'RouterViewsDocumentStandalone',
       'router-views-top.html': 'RouterViewsTopStandalone',
       'router-views.html': 'RouterViewsEditorStandalone'
     };
@@ -140,7 +142,7 @@ describe('renderExamplesIndex', () => {
     expect(document.querySelectorAll('[data-overview-principle]')).toHaveLength(8);
     expect(document.querySelector('[data-overview-principle="浏览器原生调试"]')).not.toBeNull();
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
-    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(8);
+    expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(9);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
@@ -1085,9 +1087,22 @@ describe('renderExamplesIndex', () => {
     expect(reportDemo.textContent).toContain('已捕获 1 次故障');
 
     const componentDemo = page.querySelector('[data-error-demo="component"]');
-    componentDemo.querySelector('[data-when-failed-trigger]').click();
+    const componentLive = componentDemo.querySelector('.components-error-demo-live');
+    componentLive.querySelector('[data-when-failed-trigger]').click();
     await vi.waitFor(() => {
-      expect(componentDemo.textContent).toContain('组件降级');
+      expect(componentLive.textContent).toContain('组件降级');
+    });
+
+    // 边界外的恢复按钮：重建父级区域后组件回到正常态，可以反复观察
+    componentLive.querySelector('[data-when-failed-recover]').click();
+    await vi.waitFor(() => {
+      expect(componentLive.textContent).toContain('组件正常运行');
+      expect(componentLive.textContent).not.toContain('组件降级');
+    });
+
+    componentLive.querySelector('[data-when-failed-trigger]').click();
+    await vi.waitFor(() => {
+      expect(componentLive.textContent).toContain('组件降级');
     });
   });
 
@@ -1461,7 +1476,7 @@ describe('renderExamplesIndex', () => {
       'links',
       'RouterNavigationCard',
       'vRouterView(',
-      5
+      6
     ],
     [
       '/components/navigation/router-views',
@@ -1471,7 +1486,7 @@ describe('renderExamplesIndex', () => {
       'editor',
       'RouterViewsEditorStandalone',
       'vRouterViews(',
-      2
+      3
     ],
     [
       '/components/feedback/message',

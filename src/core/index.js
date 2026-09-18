@@ -1,11 +1,18 @@
 export {
   ElementNode,
   ComponentNode,
+  EMPTY_CHILDREN,
   VTextNode,
   ViewNode,
+  appendNodeChild,
   createElementFactory,
   applyElementOptions,
+  elementAttrs,
+  elementClassNames,
+  elementHasClass,
+  elementStyles,
   escapeHtml,
+  nodeChildren,
   normalizeChild,
   normalizeSetupArguments,
   registerChildFactories,
@@ -13,6 +20,7 @@ export {
   vText
 } from './node.js';
 export { ClientOnlyNode, vClientOnly } from './client-only.js';
+export { vNode } from './v-node.js';
 export {
   bindDocumentEvent,
   bindWindowEvent,
@@ -42,11 +50,15 @@ export {
   withAccess
 } from './access.js';
 export { computed, isSignal, ref, batch, SignalHandle } from './signals/handle.js';
+export { isKeySet, keySet } from './key-set.js';
 export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {
+  buildInProviderScope,
   clearInstalledContext,
   currentContext,
+  inject,
   installContext,
+  provide,
   snapshotContext,
   withContext
 } from './context.js';

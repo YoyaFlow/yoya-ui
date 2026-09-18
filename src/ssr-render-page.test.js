@@ -58,9 +58,13 @@ describe('renderPage', () => {
     );
 
     const headHtml = html.slice(html.indexOf('<head>'), html.indexOf('</head>'));
-    expect(headHtml).toContain('<script type="module" src="/assets/client.js"></script>');
+    // 属性按名字排序输出（src < type），断言只锁语义、不锁顺序
+    const scriptTag = headHtml.match(/<script [^>]*src="\/assets\/client\.js"[^>]*><\/script>/);
+    expect(scriptTag).not.toBeNull();
+    expect(scriptTag[0]).toContain('type="module"');
     expect(headHtml).toContain('rel="modulepreload"');
-    expect([...html.matchAll(/<script type="module"/g)]).toHaveLength(1);
+    // 属性按名字排序输出，用「标签内含 type="module"」匹配，不锁属性顺序
+    expect([...html.matchAll(/<script [^>]*type="module"/g)]).toHaveLength(1);
   });
 
   it('renders a complete HTML document with DSL head and body', () => {

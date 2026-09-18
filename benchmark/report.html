@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>js-framework-benchmark：原生 / yoya-ui / Vue / React</title>
+<style>
+    :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --bg:#f9fafb;
+      --good:#047857; --ok:#4b5563; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:32px 20px 64px; background:var(--bg); color:var(--ink);
+      font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif; }
+    main { max-width:1120px; margin:0 auto; }
+    h1 { font-size:24px; margin:0 0 6px; }
+    h2 { font-size:17px; margin:32px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+    .meta { color:var(--muted); font-size:13px; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:20px 0 8px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+    .card b { display:block; font-size:22px; margin-top:2px; }
+    .card span { color:var(--muted); font-size:12px; }
+    table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line);
+      border-radius:10px; overflow:hidden; }
+    th, td { padding:7px 10px; border-bottom:1px solid var(--line); text-align:right; vertical-align:middle; }
+    th:first-child, td:first-child { text-align:left; }
+    thead th { background:#f3f4f6; font-weight:600; }
+    tbody tr:last-child td { border-bottom:0; }
+    td.stack { line-height:1.35; }
+    td.stack b { display:block; font-weight:600; }
+    td.stack span { display:block; font-size:12px; }
+    .coef-good { color:var(--good); }
+    .coef-ok { color:var(--ok); }
+    .coef-warn { color:var(--warn); }
+    .coef-bad { color:var(--bad); }
+    .coef-coef { color:var(--muted); }
+    td.projected, th.projected { background:#fffbeb; }
+    td.projected-none { background:#fffbeb; color:var(--muted); }
+    ul { padding-left:20px; }
+    footer { margin-top:36px; color:var(--muted); font-size:12px; }
+    code { background:#f3f4f6; padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<!-- 由 scripts/benchmark-report-html.mjs 从 benchmark/results.json 生成，请勿手改 -->
+<main>
+<h1>js-framework-benchmark：原生 / yoya-ui / Vue / React</h1>
+<p class="meta">
+  官方 runner <code>playwright</code>（headless）+ Chrome for Testing 152.0.7977.64；
+  CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位）；
+  内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-18，
+  yoya 版本 <code>0.6.3-perf</code>（<code>d50f8ce</code>）。
+  <br />非原生条目的单元格分两层：<b>上方是实测值，下方是「÷ 原生」的归一系数</b>
+  （绿 ≤1.00×、灰 ≤1.25×、琥珀 ≤1.50×、红 &gt;1.50×）。
+  对照条目 Vue 3.5.39 / React 19.2.0 / yoya runtime（无编译） 与 yoya / 原生取自**同一轮**测量。
+</p>
+<section class="cards">
+  <div class="card"><span>九项几何平均 ÷ 原生</span><b>1.14×</b></div>
+  
+  <div class="card"><span>22 建 1000 行后内存</span><b>3.92 MB</b></div>
+  <div class="card"><span>42 体积（brotli）</span><b>20.9 KB</b></div>
+  <div class="card"><span>09 清空 ×8</span><b>20.6 ms</b></div>
+</section>
+
+<h2>九项标准操作（ms，中位数；下行 = 归一系数）</h2>
+<table>
+  <thead><tr><th>操作</th><th>yoya 0.6.3-perf</th><th>原生</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>yoya runtime（无编译）</th></tr></thead>
+  <tbody>
+<tr><td>01 创建 1000 行</td><td class="stack"><b>36.1 ms</b><span class="coef-ok">1.16×</span></td><td>31.1 ms</td><td class="stack"><b>37.5 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>40.2 ms</b><span class="coef-warn">1.29×</span></td><td class="stack"><b>44.0 ms</b><span class="coef-warn">1.41×</span></td></tr>
+<tr><td>02 替换 1000 行</td><td class="stack"><b>39.9 ms</b><span class="coef-ok">1.17×</span></td><td>34.1 ms</td><td class="stack"><b>43.0 ms</b><span class="coef-warn">1.26×</span></td><td class="stack"><b>43.8 ms</b><span class="coef-warn">1.28×</span></td><td class="stack"><b>47.1 ms</b><span class="coef-warn">1.38×</span></td></tr>
+<tr><td>03 每 10 行改文案</td><td class="stack"><b>20.8 ms</b><span class="coef-ok">1.09×</span></td><td>19.0 ms</td><td class="stack"><b>25.6 ms</b><span class="coef-warn">1.35×</span></td><td class="stack"><b>25.0 ms</b><span class="coef-warn">1.32×</span></td><td class="stack"><b>20.5 ms</b><span class="coef-ok">1.08×</span></td></tr>
+<tr><td>04 选中一行</td><td class="stack"><b>7.8 ms</b><span class="coef-ok">1.15×</span></td><td>6.8 ms</td><td class="stack"><b>7.5 ms</b><span class="coef-ok">1.10×</span></td><td class="stack"><b>9.9 ms</b><span class="coef-warn">1.46×</span></td><td class="stack"><b>7.7 ms</b><span class="coef-ok">1.13×</span></td></tr>
+<tr><td>05 交换两行</td><td class="stack"><b>26.8 ms</b><span class="coef-ok">1.15×</span></td><td>23.3 ms</td><td class="stack"><b>26.6 ms</b><span class="coef-ok">1.14×</span></td><td class="stack"><b>153.7 ms</b><span class="coef-bad">6.60×</span></td><td class="stack"><b>25.8 ms</b><span class="coef-ok">1.11×</span></td></tr>
+<tr><td>06 删除一行</td><td class="stack"><b>17.2 ms</b><span class="coef-ok">1.03×</span></td><td>16.7 ms</td><td class="stack"><b>20.2 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>19.4 ms</b><span class="coef-ok">1.16×</span></td><td class="stack"><b>18.2 ms</b><span class="coef-ok">1.09×</span></td></tr>
+<tr><td>07 创建 10000 行</td><td class="stack"><b>392.8 ms</b><span class="coef-ok">1.17×</span></td><td>336.8 ms</td><td class="stack"><b>409.0 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>580.6 ms</b><span class="coef-bad">1.72×</span></td><td class="stack"><b>507.5 ms</b><span class="coef-bad">1.51×</span></td></tr>
+<tr><td>08 追加 1000 行</td><td class="stack"><b>42.2 ms</b><span class="coef-good">1.00×</span></td><td>42.3 ms</td><td class="stack"><b>46.9 ms</b><span class="coef-ok">1.11×</span></td><td class="stack"><b>50.1 ms</b><span class="coef-ok">1.18×</span></td><td class="stack"><b>49.6 ms</b><span class="coef-ok">1.17×</span></td></tr>
+<tr><td>09 清空 ×8</td><td class="stack"><b>20.6 ms</b><span class="coef-warn">1.38×</span></td><td>14.9 ms</td><td class="stack"><b>21.0 ms</b><span class="coef-warn">1.41×</span></td><td class="stack"><b>27.5 ms</b><span class="coef-bad">1.85×</span></td><td class="stack"><b>24.9 ms</b><span class="coef-bad">1.67×</span></td></tr>
+  </tbody>
+</table>
+
+<h2>script / paint 分解（ms，中位数）</h2>
+<table>
+  <thead><tr><th>操作</th><th>yoya script</th><th>yoya paint</th><th>原生 script</th><th>原生 paint</th></tr></thead>
+  <tbody>
+<tr><td>01 创建 1000 行</td><td>6.1 ms</td><td>29.2 ms</td><td>2.3 ms</td><td>28.3 ms</td></tr>
+<tr><td>02 替换 1000 行</td><td>9.6 ms</td><td>29.4 ms</td><td>4.3 ms</td><td>29.3 ms</td></tr>
+<tr><td>03 每 10 行改文案</td><td>1.2 ms</td><td>17.7 ms</td><td>0.8 ms</td><td>16.5 ms</td></tr>
+<tr><td>04 选中一行</td><td>2.2 ms</td><td>4.3 ms</td><td>0.4 ms</td><td>5.0 ms</td></tr>
+<tr><td>05 交换两行</td><td>1.2 ms</td><td>23.4 ms</td><td>0.4 ms</td><td>19.9 ms</td></tr>
+<tr><td>06 删除一行</td><td>0.6 ms</td><td>15.6 ms</td><td>0.4 ms</td><td>15.2 ms</td></tr>
+<tr><td>07 创建 10000 行</td><td>62.4 ms</td><td>324.3 ms</td><td>24.1 ms</td><td>307.4 ms</td></tr>
+<tr><td>08 追加 1000 行</td><td>6.6 ms</td><td>34.5 ms</td><td>2.2 ms</td><td>36.0 ms</td></tr>
+<tr><td>09 清空 ×8</td><td>17.2 ms</td><td>2.0 ms</td><td>11.4 ms</td><td>1.8 ms</td></tr>
+  </tbody>
+</table>
+
+<h2>内存 / 体积 / 首屏</h2>
+<table>
+  <thead><tr><th>操作</th><th>yoya 0.6.3-perf</th><th>原生</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>yoya runtime（无编译）</th></tr></thead>
+  <tbody>
+<tr><td>21 就绪内存（MB）</td><td class="stack"><b>1.23 MB</b><span class="coef-ok">1.18×</span></td><td>1.05 MB</td><td class="stack"><b>1.29 MB</b><span class="coef-ok">1.23×</span></td><td class="stack"><b>1.57 MB</b><span class="coef-bad">1.50×</span></td><td class="stack"><b>1.28 MB</b><span class="coef-ok">1.22×</span></td></tr>
+<tr><td>22 建 1000 行后内存（MB）</td><td class="stack"><b>3.92 MB</b><span class="coef-bad">1.61×</span></td><td>2.43 MB</td><td class="stack"><b>4.60 MB</b><span class="coef-bad">1.89×</span></td><td class="stack"><b>5.09 MB</b><span class="coef-bad">2.09×</span></td><td class="stack"><b>5.52 MB</b><span class="coef-bad">2.27×</span></td></tr>
+<tr><td>25 建+清空后内存（MB）</td><td class="stack"><b>1.44 MB</b><span class="coef-ok">1.25×</span></td><td>1.16 MB</td><td class="stack"><b>1.71 MB</b><span class="coef-warn">1.48×</span></td><td class="stack"><b>2.43 MB</b><span class="coef-bad">2.10×</span></td><td class="stack"><b>1.67 MB</b><span class="coef-warn">1.45×</span></td></tr>
+<tr><td>41 体积未压缩（KB）</td><td class="stack"><b>83.8 KB</b><span class="coef-bad">7.16×</span></td><td>11.7 KB</td><td class="stack"><b>64.4 KB</b><span class="coef-bad">5.50×</span></td><td class="stack"><b>190.3 KB</b><span class="coef-bad">16.26×</span></td><td class="stack"><b>81.6 KB</b><span class="coef-bad">6.97×</span></td></tr>
+<tr><td>42 体积 brotli（KB）</td><td class="stack"><b>20.9 KB</b><span class="coef-bad">8.36×</span></td><td>2.5 KB</td><td class="stack"><b>23.3 KB</b><span class="coef-bad">9.32×</span></td><td class="stack"><b>51.4 KB</b><span class="coef-bad">20.56×</span></td><td class="stack"><b>20.2 KB</b><span class="coef-bad">8.08×</span></td></tr>
+<tr><td>43 首屏绘制（ms）</td><td class="stack"><b>339.5 ms</b><span class="coef-ok">1.20×</span></td><td>282.4 ms</td><td class="stack"><b>297.4 ms</b><span class="coef-ok">1.05×</span></td><td class="stack"><b>448.0 ms</b><span class="coef-bad">1.59×</span></td><td class="stack"><b>396.9 ms</b><span class="coef-warn">1.41×</span></td></tr>
+  </tbody>
+</table>
+
+<h2>怎么读</h2>
+<ul>
+  <li><b>归一系数只在同一轮内有效</b>：本页所有系数都除以本轮的原生读数。跨轮的原生基线会漂移
+    （同一份代码的单轮几何平均可差 0.06），不要拿本页系数与另一轮的数字相减。</li>
+  <li><b>script / paint 分开看</b>：yoya 的绘制桶已与原生同档，剩余差距在 JS（节点构造、登记、首次写 DOM）。</li>
+  <li><b>04 选中 / 03 改文案还反映条目的状态模型</b>：yoya 与 Vue 用「共享句柄 + 每行派生」，
+    React 用逐行 prop + <code>memo</code>，手写的原生基线只碰受影响的两行——同一格里的系数含义因此不同，
+    详见 <code>docs/performance{,.zh-CN}.md</code> 的「怎么读」与 <code>docs/component-authoring</code> §6.2/§6.3。</li>
+  <li><b>内存是最大量级差</b>：建 1000 行后仍是原生的两倍多；剩余部分主要是 DOM 对象与 V8 节点对象头。</li>
+  <li><b>体积 / 首屏是本机静态 vendor 形态</b>（页面直接加载 min chunk + 未打包的应用代码），
+    与打包口径不可比；时长与内存可比，且体积列在不同条目间也不完全同口径（各自的打包方式不同）。</li>
+  <li><b>内存 / 体积 / 首屏是单次采样</b>，不要当精确值；首屏尤其如此。</li>
+  
+</ul>
+
+<footer>
+  数据源 <code>benchmark/results.json</code>；本页由 <code>npm run report:bench:html:write</code> 生成，
+  <code>verify:dist</code> 会校验它与数据源一致。
+</footer>
+</main>
+</body>
+</html>

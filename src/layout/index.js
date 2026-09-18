@@ -1,4 +1,4 @@
-import { registerChildFactories } from '../core/node.js';
+import { elementHasClass, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { MenuOutlined } from '../svg/icons.js';
@@ -1049,9 +1049,8 @@ function syncMobileLayoutChild(layout, child) {
     return;
   }
 
-  const classes = target._classes;
   const drawerAside = Boolean(
-    classes?.has('yoya-vaside') && layout._mobile && layout._drawerEnabled
+    elementHasClass(target, 'yoya-vaside') && layout._mobile && layout._drawerEnabled
   );
 
   if (drawerAside) {
@@ -1092,7 +1091,7 @@ function syncMobileLayoutChild(layout, child) {
     return;
   }
 
-  if (classes?.has('yoya-vaside')) {
+  if (elementHasClass(target, 'yoya-vaside')) {
     if (target._mobileDrawerStylesApplied) {
       target._mobileDrawerStylesApplied = false;
       target.styles({
@@ -1125,7 +1124,7 @@ function syncMobileLayoutChild(layout, child) {
     return;
   }
 
-  if (classes?.has('yoya-vmain')) {
+  if (elementHasClass(target, 'yoya-vmain')) {
     target.styles({
       flex: '1 1 auto',
       minHeight: '0',
@@ -1191,14 +1190,13 @@ function syncMobileLayoutChrome(layout) {
 function layoutHasMobileAside(layout) {
   return layout.children().some((child) => {
     const target = child?._resolved ?? child?._resolve?.() ?? child;
-    return Boolean(target?._classes?.has('yoya-vaside'));
+    return elementHasClass(target, 'yoya-vaside');
   });
 }
 
 function layoutChildIsHeaderOrFooter(child) {
   const target = child?._resolved ?? child?._resolve?.() ?? child;
-  const classes = target?._classes;
-  return Boolean(classes?.has('yoya-vheader') || classes?.has('yoya-vfooter'));
+  return elementHasClass(target, 'yoya-vheader') || elementHasClass(target, 'yoya-vfooter');
 }
 
 function applyContainerLayoutOptions(node, options) {

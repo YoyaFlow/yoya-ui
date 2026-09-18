@@ -1,5 +1,6 @@
 import { VButton } from '../actions/button.js';
 import { componentClass } from '../components/shared.js';
+import { nodeChildren } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 
 const GLOW_DEFAULTS = {
@@ -146,7 +147,7 @@ export class VGlowButton extends VButton {
       ripple.on('animationend', () => {
         const index = this._children.indexOf(ripple);
         if (index >= 0) {
-          this._children.splice(index, 1);
+          nodeChildren(this).splice(index, 1);
         }
         ripple.destroy();
       });

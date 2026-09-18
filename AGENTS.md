@@ -27,7 +27,7 @@ set by directory modification time before answering. The current active set is
 
 ### A. 薄工厂：函数直接返回 ViewNode
 
-适用：无内部状态、纯配置化组合，代码量最小。
+适用：无内部状态、纯配置化组合，代码量最小。**确定没有额外行为要定义时就用它**——包括演示代码：只演示结构与交互、不需要对外命令方法时，函数直接返回 ViewNode，不要为了跟对象组件统一而白包一层 `render()`。
 
 ```js
 function ServiceTag(options) {
@@ -76,11 +76,12 @@ export function vTr(first = null, second = null, third = null) {
   - 形态 B：VPagination（render() + update/change 等状态 API）；
   - 形态 C：VButton/VCard/VTable/VTr/VTabs 等组件库主体。
 - child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
+- 形态 B 的快捷写法：`vNode((api) => 视图)` 定义即得到组件节点（ComponentNode），命令方法收到 api 上后由工厂挂到节点、重名报错；旧三形态与 child() 的对象形式不变。
 - 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
 
 ### Demo 演示组件
 
-- 演示代码（examples/demos）以形态 B 为主，通过完整组件包装展示状态操作空间；确需演示形态 A/C 时允许直接书写对应形态。
+- 演示代码（examples/demos）同样按形态判：**没有额外操作（无对外命令方法、无需持有组件句柄）时用形态 A 直接返回 ViewNode，不包 `render()`**；确有状态或命令方法才用形态 B 展示操作空间，确需演示形态 C 时允许直接书写对应形态。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
@@ -155,6 +156,7 @@ form.vFormItem((itemOfLabel) => {
 - 组件代码（含事件回调）不允许直接操作 `document`；`renderDom()` 内创建元素是节点引擎的唯一职责，组件一律走节点 DSL。
 - 需要监听文档级事件（外部点击、拖拽、Esc、滚动等）时，统一使用核心辅助 `bindDocumentEvent`，组件自身不直接 `addEventListener/removeEventListener`。
 - `window` 全局监听（scroll / resize / popstate 等）同样收敛到 `bindWindowEvent`。
+- 动画帧用节点方法 `bindAnimationFrame(cb)` / `bindAnimationFrameLoop(cb)`（显式归属节点，`destroy()` 自动取消；同节点只保留一条循环），不要自己存 frameId + cancelAnimationFrame。
 - 浏览器 API 一律加 `typeof xxx === 'undefined'` 守卫（集中在 `bindDocumentEvent` 等核心位置）。
 - 模块级可变状态（注册表、id 计数器）不跨请求共享；id 使用 `allocateId` 渲染上下文分配器。
 - 服务端渲染使用每请求 i18n 实例（`createI18n`），`.s()` 快捷方式用 `withI18nStringShortcut` 作用域化。

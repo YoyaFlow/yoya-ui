@@ -1,7 +1,8 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
-import { snapshotContext, withContext } from './context.js';
+import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
+import { isKeySet } from './key-set.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
@@ -105,50 +106,84 @@ function withRenderScope(spec, build) {
   }
 }
 
+/**
+ * 值绑定：字段只放构造期就能定的量，方法走原型。
+ * 绑定是「每行都有一两个」的对象，实例闭包（evaluate/activate/release 转发）
+ * 会让开销按行累加，这里全部收进原型方法。
+ */
+class NodeBinding {
+  constructor(owner, kind, key, commit, list) {
+    this.commit = commit;
+    this.committed = false;
+    this.key = key;
+    this.kind = kind;
+    this.last = undefined;
+    this.list = list;
+    this.owner = owner;
+    this.target = null;
+  }
+
+  evaluate() {
+    return this.target.evaluate();
+  }
+
+  activate() {
+    this.target.activate();
+  }
+
+  release() {
+    this.target.release();
+  }
+
+  /** 响应式目标的提交点：值变化时写回 DOM（值未变化时 commitBindingValue 会跳过）。 */
+  onValue(value) {
+    commitBindingValue(this, value);
+  }
+}
+
 // 值绑定的数据来源只有两种：signal 句柄（推荐）与零参闭包。闭包自己闭住外部数据，
 // 需要重新求值时用 flush() / flushAll()。带参函数只服务过节点级状态，已一并移除。
 function registerNodeBinding(owner, kind, key, read, commit) {
-  if (read.length > 0) {
+  if (typeof read === 'function' && read.length > 0) {
     throw new TypeError(parameterizedValueError(kind, key));
   }
 
+  // 归属：区域构建期登记的绑定归区域所有（重跑时统一释放），其余直接挂在节点自己的
+  // 绑定数组上——不再为每个有绑定的节点多建一层 { bindings: [] } 作用域对象。
   const scope = bindingScopeFor(owner);
-  let binding = null;
-  const target = createReactiveTarget({
-    run: () => read(),
-    onChange: (value) => commitBindingValue(binding, value)
-  });
-
-  binding = {
-    commit,
-    committed: false,
-    evaluate: () => target.evaluate(),
-    key,
-    kind,
-    last: undefined,
-    list: scope.bindings,
-    owner,
-    activate: () => target.activate(),
-    release: () => target.release()
-  };
-
+  const binding = new NodeBinding(owner, kind, key, commit, null);
+  binding.target = createReactiveTarget({ read, sink: binding });
   bindingSerial += 1;
-  scope.bindings.push(binding);
 
-  if (owner && Array.isArray(owner._bindings)) {
-    owner._bindings.push(binding);
+  // 名单首次写入走统一写入口（字面量数组，见 appendNodeEntry）。
+  if (scope) {
+    // 区域绑定除了区域名单，还要留在所属节点名下：区域按名单整体释放，
+    // 节点销毁 / 区域换子时按自身名单收集。
+    scope.bindings = appendNodeEntry(scope.bindings, binding);
+    binding.list = scope.bindings;
+    if (owner instanceof ViewNode) {
+      owner._bindings = appendNodeEntry(owner._bindings, binding);
+    }
+  } else {
+    owner._bindings = appendNodeEntry(owner._bindings, binding);
+    binding.list = owner._bindings;
   }
 
-  // 构建之外的登记（链式写法、挂载后追加）：立刻求值一次，让首屏与紧随其后的读取都有值；
-  // 构建期登记的绑定由构建结束时统一刷（见 setup()）。
+  afterRegisterBinding(owner);
+  return binding;
+}
+
+/** 构建之外的登记（链式写法、挂载后追加）立刻求值一次；构建期由 setup() 统一刷。 */
+function afterRegisterBinding(owner) {
   if (setupStack.length === 0 && regionBuildStack.length === 0) {
     flushBindingsIn(owner);
   }
 }
 
 /**
- * 绑定归属：区域构建期登记的绑定归区域所有（重跑时统一释放），
- * 其余挂到节点自己名下。零参闭包自带数据，只需要一个归属挂载点。
+ * 绑定归属：区域构建期登记的绑定归区域所有（重跑时统一释放）。
+ * 其余节点不需要额外的作用域对象——直接用自己的绑定数组，返回 null。
+ * 非节点 owner（组件对象）保留一个兜底名单，保证仍能被释放。
  */
 function bindingScopeFor(owner) {
   const region = activeRegion();
@@ -156,8 +191,12 @@ function bindingScopeFor(owner) {
     return region._regionScope;
   }
 
+  if (owner instanceof ViewNode) {
+    return null;
+  }
+
   if (!owner._ownBindingScope) {
-    owner._ownBindingScope = { bindings: [] };
+    owner._ownBindingScope = { bindings: null };
   }
 
   return owner._ownBindingScope;
@@ -168,18 +207,6 @@ function parameterizedValueError(kind, key) {
     `parameterized value is no longer supported (${kind}${key ? ` "${key}"` : ''}); ` +
     'pass a ref/computed handle or use a zero-argument closure'
   );
-}
-
-/**
- * 值位置既接受读函数，也接受 signal 句柄；统一归一成读函数。
- * 句柄自带数据来源，因此按零参绑定处理，不需要 scope()。
- */
-function toBindingRead(value) {
-  if (isSignal(value)) {
-    return () => value.value;
-  }
-
-  return value;
 }
 
 /**
@@ -264,7 +291,7 @@ function assertRegionChildAllowed(node) {
 
 /** 收集节点及其子树名下的绑定。 */
 function collectRegionBindings(node, out = []) {
-  node._bindings.forEach((binding) => out.push(binding));
+  node._bindings?.forEach((binding) => out.push(binding));
   childTraversalRoots(node).forEach((child) => collectRegionBindings(child, out));
   return out;
 }
@@ -278,28 +305,104 @@ export function childTraversalRoots(node) {
   return node._resolveList();
 }
 
-/** 解除给定绑定：从所属列表与 owner 名下同时移除。 */
+/** 摘掉名单里的一个绑定；列表顺序参与语义（刷新顺序）时用 splice，否则末位补位。 */
+function dropBinding(list, binding, keepOrder) {
+  const index = list.indexOf(binding);
+  if (index === -1) {
+    return;
+  }
+
+  if (keepOrder) {
+    list.splice(index, 1);
+    return;
+  }
+
+  const last = list.pop();
+  if (last !== binding) {
+    list[index] = last;
+  }
+}
+
+/** 解除给定绑定：从所属名单与 owner 名下同时移除。 */
 function releaseBindings(bindings) {
   bindings.forEach((binding) => {
-    if (typeof binding.release === 'function') {
-      binding.release();
-    }
-
-    if (binding.list) {
-      const index = binding.list.indexOf(binding);
-      if (index !== -1) {
-        binding.list.splice(index, 1);
-      }
-    }
+    binding.release();
 
     const owner = binding.owner;
-    if (owner && Array.isArray(owner._bindings)) {
-      const ownerIndex = owner._bindings.indexOf(binding);
-      if (ownerIndex !== -1) {
-        owner._bindings.splice(ownerIndex, 1);
+    const ownerBindings = owner instanceof ViewNode ? owner._bindings : null;
+    const list = binding.list;
+
+    if (list === ownerBindings) {
+      if (list) {
+        dropBinding(list, binding, true);
       }
+      return;
+    }
+
+    // 区域名单只用于释放（顺序不参与语义），节点自身名单保持登记顺序
+    if (list) {
+      dropBinding(list, binding, false);
+    }
+    if (ownerBindings) {
+      dropBinding(ownerBindings, binding, true);
     }
   });
+}
+
+/**
+ * 销毁路径专用：一次释放本节点名下的全部绑定。
+ * 节点名单整体丢弃（不再逐条 indexOf + splice），只有区域名单需要摘掉——
+ * 它的顺序不参与语义，用 O(1) 的末位补位。
+ */
+function releaseOwnBindings(node) {
+  const bindings = node._bindings;
+  if (!bindings || bindings.length === 0) {
+    return;
+  }
+
+  bindings.forEach((binding) => {
+    binding.release();
+    const list = binding.list;
+    if (list && list !== bindings) {
+      dropBinding(list, binding, false);
+    }
+    binding.list = null;
+  });
+  bindings.length = 0;
+}
+
+/**
+ * 整棵子树的 DOM 是否已经（或正在）随某个祖先元素离开文档。
+ * 大于 0 时逐节点的 removeChild 没有意义（元素不再可达），直接跳过。
+ */
+let detachedDestroyDepth = 0;
+
+/**
+ * 库自己发起的「整批摘除」（keyed 清空整表等）的深度。
+ * 大于 0 时子树内的元素级监听退订也可以整段跳过：元素随整批一起离开文档，
+ * 标签页里也没有任何引用能再派发事件给它。
+ * 只由库的批量路径进入——用户调用 destroy() 时仍逐条退订（既有契约与用例依赖它）。
+ */
+let batchDestroyDepth = 0;
+
+/** 在「DOM 已随祖先摘除」的语境里销毁一个节点：委托公开 destroy()，保留子类覆写。 */
+function destroyInDetached(node) {
+  detachedDestroyDepth += 1;
+  try {
+    node.destroy();
+  } finally {
+    detachedDestroyDepth -= 1;
+  }
+}
+
+/** 整批摘除的入口节点：DOM 与元素级监听都整段处理。 */
+function destroyDetached(node) {
+  batchDestroyDepth += 1;
+  try {
+    destroyInDetached(node);
+  } finally {
+    batchDestroyDepth -= 1;
+  }
 }
 
 /** 写回一次绑定值；值未变化时不触碰 DOM。 */
@@ -318,11 +421,16 @@ function commitBindingValue(binding, next) {
 
 /** 节点及其子树的绑定进入 DOM 后开始订阅依赖（服务端只求值不订阅）。 */
 function activateBindings(node) {
-  node._bindings.forEach((binding) => {
-    if (typeof binding.activate === 'function') {
-      binding.activate();
+  const bindings = node._bindings;
+  if (bindings) {
+    // 索引循环：绑定激活是每节点一次的热路径，不为它建闭包
+    for (let index = 0; index < bindings.length; index += 1) {
+      const binding = bindings[index];
+      if (typeof binding.activate === 'function') {
+        binding.activate();
+      }
     }
-  });
+  }
 
   activateRegion(node);
 }
@@ -394,8 +502,12 @@ function activateRegion(node) {
 }
 
 function releaseRegionSubscriptions(node) {
-  (node._regionSubs || []).forEach((entry) => entry.dispose());
-  node._regionSubs = [];
+  if (!node._regionSubs) {
+    return;
+  }
+
+  node._regionSubs.forEach((entry) => entry.dispose());
+  node._regionSubs = null;
 }
 
 /**
@@ -410,13 +522,13 @@ function subscribeRegion(node) {
 
   const adapter = node._regionAdapter;
   const pending = new Map((node._regionSubs || []).map((entry) => [entry.source, entry]));
-  const next = [];
+  let next = null;
 
   (node._regionSources || []).forEach((source) => {
     const existing = pending.get(source);
     if (existing) {
       pending.delete(source);
-      next.push(existing);
+      next = appendNodeEntry(next, existing);
       return;
     }
 
@@ -424,7 +536,7 @@ function subscribeRegion(node) {
       scheduleRegionRebuild(node)
     );
     const untrackOwner = trackRegionOwner(source, node);
-    next.push({
+    next = appendNodeEntry(next, {
       source,
       dispose: () => {
         untrackOwner();
@@ -439,6 +551,11 @@ function subscribeRegion(node) {
 
 /** 区域销毁 / 离开 DOM 时退订。 */
 function releaseRegion(node) {
+  // 绝大多数节点没碰过区域：直接返回，省掉每节点一次 Set.delete 与一次空数组分配
+  if (!node._regionActive && !node._regionScheduled && !node._regionSubs) {
+    return;
+  }
+
   node._regionActive = false;
   cancelScheduledRegionRebuild(node);
   releaseRegionSubscriptions(node);
@@ -446,7 +563,7 @@ function releaseRegion(node) {
 
 /** 求值并写回节点及其子树名下的绑定；值未变化时不触碰 DOM。 */
 function flushBindingsIn(node) {
-  node._bindings.forEach((binding) => {
+  node._bindings?.forEach((binding) => {
     commitBindingValue(binding, binding.evaluate());
   });
   childTraversalRoots(node).forEach((child) => flushBindingsIn(child));
@@ -466,16 +583,12 @@ export function registerRegionCleanup(cleanup) {
     return;
   }
 
-  if (!Array.isArray(region._regionRunCleanups)) {
-    region._regionRunCleanups = [];
-  }
-
-  region._regionRunCleanups.push(cleanup);
+  region._regionRunCleanups = appendNodeEntry(region._regionRunCleanups, cleanup);
 }
 
 /** 找最近边界并处理；无边界时原样重抛（fail fast）。返回降级替换节点或 null。 */
 function captureNodeError(node, error, phase) {
-  const boundary = node._errorHandler ? node : node._errorBoundary;
+  const boundary = findErrorBoundary(node);
   if (!boundary) {
     throw error;
   }
@@ -483,15 +596,420 @@ function captureNodeError(node, error, phase) {
   return boundary._handleError(error, node, phase);
 }
 
-/** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟元素；找不到返回 null（追加）。 */
+/**
+ * 沿父链上溯找最近的错误边界：本节点设了 whenFailed 就地处理，否则交给父节点继续上溯。
+ * 位置在出错时才解析，所以与声明顺序、子树深度、运行时插入无关；搬走的子树跟着新父走。
+ */
+function findErrorBoundary(node) {
+  let current = node;
+
+  while (current) {
+    if (current._errorHandler) {
+      return current;
+    }
+
+    current = current._parent;
+  }
+
+  return null;
+}
+
+const DOCUMENT_FRAGMENT_NODE = 11;
+
+/**
+ * 节点内部集合按需创建：空节点不该为 5 个 Map / Set 付固定开销
+ * （实测每个 Map/Set 约 150~200 B，1000 行 1 万个节点就是十几 MB）。
+ * 读取一律走 `?.`，写入走下面的取用函数。
+ */
+function nodeChildKeys(node) {
+  return node._childKeys ?? (node._childKeys = new Map());
+}
+
+/**
+ * 共享的只读空子节点列表：没有子节点的节点不为空数组付一份开销
+ * （V8 实测 `[]` 40 B/个；官方 keyed 条目一行 10 个节点里有 4 个是叶子）。
+ * 冻结是刻意的：漏掉一处「就地写入」会立刻抛错，而不是悄悄写进被所有节点共用的数组。
+ */
+export const EMPTY_CHILDREN = Object.freeze([]);
+
+/** 可写的子节点列表：首次写入时才把共享空数组换成真数组。 */
+export function nodeChildren(node) {
+  if (node._children === EMPTY_CHILDREN) {
+    const next = [];
+    node._children = next;
+    return next;
+  }
+
+  return node._children;
+}
+
+/**
+ * 节点级名单的统一写入口：名单还空着时一次字面量落地，之后才走 push。
+ * 引擎对空数组的首次 push 会按 16 个槽预分配（单元素数组 Node 约 182 B、浏览器约 96 B；
+ * 字面量分别是 64 B / 32 B），而「先字面量再 push」反而更贵（约 208 B / 104 B），
+ * 所以只吃首次写入这份收益，第 2 个元素起保持 push（多元素容量见票 22）。
+ * 空名单有两种表示：未创建（null / undefined）与共享的 EMPTY_CHILDREN 哨兵。
+ */
+function appendNodeEntry(list, value) {
+  if (list === undefined || list === null || list === EMPTY_CHILDREN) {
+    return [value];
+  }
+
+  list.push(value);
+  return list;
+}
+
+/** 子节点名单走同一写入口；供 node.js 之外的节点模块（tree 等）复用。 */
+export function appendNodeChild(node, child) {
+  node._children = appendNodeEntry(node._children, child);
+}
+
+/** 头插同样可能是一次首次写入（父节点还没有子节点）。 */
+function prependNodeChild(node, child) {
+  if (node._children === EMPTY_CHILDREN) {
+    node._children = [child];
+    return;
+  }
+
+  node._children.unshift(child);
+}
+
+function nodeEvents(node) {
+  return node._events ?? (node._events = new Map());
+}
+
+function nodeDomAdapters(node) {
+  return node._domAdapters ?? (node._domAdapters = new Map());
+}
+
+function nodeMountStates(node) {
+  return node._childMountStates ?? (node._childMountStates = new Map());
+}
+
+function nodePendingRemovals(node) {
+  return node._pendingRemovals ?? (node._pendingRemovals = new Set());
+}
+
+/**
+ * 记录本节点的构建闭包：**单槽**，只有同一节点被 setup 多次时才升级成数组。
+ *
+ * 原实现每次 setup 都建一个数组（`node._builders = []` 再 push），官方行里 8 个元素节点
+ * 就是每行 8 个数组——10k 行构建要分配约 8 万个数组（浏览器侧单个约 96 B），纯瞬态垃圾。
+ * 保留槽位（不用 delete、也不跳过建槽）以免隐藏类分叉，只把「数组」换成「一个闭包引用」。
+ */
+function addNodeBuilder(node, builder) {
+  const current = node._builders;
+  if (current === undefined || current === null) {
+    node._builders = builder;
+    return;
+  }
+
+  if (Array.isArray(current)) {
+    current.push(builder);
+    return;
+  }
+
+  node._builders = [current, builder];
+}
+
+/** 重跑构建闭包（区域专用）：单闭包直接调，多闭包按登记顺序。 */
+function runNodeBuilders(node) {
+  const builders = node._builders;
+  if (builders === undefined || builders === null) {
+    return;
+  }
+
+  if (Array.isArray(builders)) {
+    builders.forEach((builder) => builder(node));
+    return;
+  }
+
+  builders(node);
+}
+
+// ---- keyed 段内事件委托 ------------------------------------------------------
+/**
+ * keyed 行构建期注册的事件不再往每行元素上挂监听器：handler 存进节点的单个描述符槽，
+ * 元素登记到段根的 WeakMap，段根按事件类型挂一个监听器统一派发。省下的是每行
+ * 「一个 Map + 一个条目对象 + 一个真实 DOM 监听器」（实测约 387 B/行）。
+ *
+ * 只对「冒泡的标准事件 + 无 once/capture/passive + 元素节点 + 在行构建期注册」生效，
+ * 其余一律回落逐元素绑定；派发时逐事件伪造 currentTarget 与包装 stopPropagation，
+ * 使 .on() 的可观察语义与原来一致（差异见 docs/component-authoring）。
+ */
+const delegatedEventTypes = new Set([
+  'beforeinput',
+  'change',
+  'click',
+  'contextmenu',
+  'copy',
+  'cut',
+  'dblclick',
+  'dragend',
+  'dragenter',
+  'dragleave',
+  'dragover',
+  'dragstart',
+  'drop',
+  'input',
+  'keydown',
+  'keypress',
+  'keyup',
+  'mousedown',
+  'mousemove',
+  'mouseout',
+  'mouseover',
+  'mouseup',
+  'paste',
+  'pointercancel',
+  'pointerdown',
+  'pointermove',
+  'pointerout',
+  'pointerover',
+  'pointerup',
+  'reset',
+  'submit',
+  'touchend',
+  'touchmove',
+  'touchstart',
+  'wheel'
+]);
+
+const keyedBuildStack = [];
+
+/**
+ * 元素 → 行内节点的反查用展开属性，而不是 WeakMap：
+ * WeakMap 的键被回收后内部表不还堆（实测 200 万条残留 64 MB，约 32 B/条），
+ * 列表反复建/清会留下与峰值规模同量级的常驻；展开属性随元素一起回收，没有这份水位。
+ * 用 Symbol 键：不出现在 Object.keys / for…in / DOM 属性里，第三方也看不到。
+ */
+const delegateNodeKey = Symbol('yoyaDelegateNode');
+
+function activeKeyedBuild() {
+  return keyedBuildStack.length > 0 ? keyedBuildStack[keyedBuildStack.length - 1] : null;
+}
+
+function canDelegateEvent(eventName, options) {
+  if (!delegatedEventTypes.has(eventName)) {
+    return false;
+  }
+
+  if (!options) {
+    return true;
+  }
+
+  return options.once !== true && options.capture !== true && options.passive !== true;
+}
+
+/** 段根的委托状态：元素 → 节点的弱映射 + 已挂监听器的事件名。 */
+function delegateOwnerFor(parent) {
+  if (!parent._delegates) {
+    parent._delegates = {
+      boundElement: null,
+      events: null,
+      listeners: null,
+      parent
+    };
+  }
+
+  return parent._delegates;
+}
+
+function delegatedDescriptorFor(node, eventName) {
+  const current = node._delegate;
+  if (current === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(current)) {
+    return current.find((item) => item.event === eventName) ?? null;
+  }
+
+  return current.event === eventName ? current : null;
+}
+
+/** 注销一个委托事件；返回是否命中（未命中时调用方走原路径）。 */
+function removeDelegatedEvent(node, eventName) {
+  const current = node._delegate;
+  if (current === undefined) {
+    return false;
+  }
+
+  if (Array.isArray(current)) {
+    const index = current.findIndex((item) => item.event === eventName);
+    if (index === -1) {
+      return false;
+    }
+
+    const [removed] = current.splice(index, 1);
+    if (current.length === 1) {
+      node._delegate = current[0];
+    }
+    void removed;
+    return true;
+  }
+
+  if (current.event !== eventName) {
+    return false;
+  }
+
+  if (node._el) {
+    delete node._el[delegateNodeKey];
+  }
+  node._delegate = undefined;
+  return true;
+}
+
+/**
+ * 段根监听器：从事件目标沿 DOM 链走到段根，按内→外顺序调用行内 handler。
+ * currentTarget / stopPropagation 逐事件伪造，调用完删掉自有属性，
+ * 让事件对象回到原生语义（同一事件对象被重放时不会读到上一次的节点）。
+ */
+function dispatchDelegatedEvent(owner, eventName, event) {
+  const root = owner.parent._el;
+  if (!root) {
+    return;
+  }
+
+  const chain = [];
+  let element = event.target;
+  while (element && element !== root) {
+    if (element.nodeType === 1) {
+      const node = element[delegateNodeKey];
+      const descriptor = node ? delegatedDescriptorFor(node, eventName) : null;
+      if (descriptor) {
+        chain.push({ node, descriptor });
+      }
+    }
+    element = element.parentNode;
+  }
+
+  if (chain.length === 0) {
+    return;
+  }
+
+  const nativeStopPropagation = event.stopPropagation;
+  let stopped = false;
+  Object.defineProperty(event, 'stopPropagation', {
+    configurable: true,
+    value() {
+      stopped = true;
+      nativeStopPropagation.call(this);
+    }
+  });
+
+  try {
+    for (const { node, descriptor } of chain) {
+      Object.defineProperty(event, 'currentTarget', {
+        configurable: true,
+        get: () => node._el
+      });
+
+      try {
+        descriptor.handler.call(node, event);
+      } catch (error) {
+        captureNodeError(node, error, 'event');
+      }
+
+      if (descriptor.options?.once) {
+        node.off(eventName);
+      }
+
+      if (stopped) {
+        break;
+      }
+    }
+  } finally {
+    delete event.currentTarget;
+    delete event.stopPropagation;
+  }
+}
+
+/** 段根元素就绪后挂监听器；元素换了（重挂载）要重新挂。 */
+function bindDelegatedEvents(owner) {
+  const root = owner.parent._el;
+  if (!root || !owner.events) {
+    return;
+  }
+
+  if (owner.boundElement !== root) {
+    owner.boundElement = root;
+    owner.listeners = null;
+  }
+
+  if (!owner.listeners) {
+    owner.listeners = new Map();
+  }
+
+  owner.events.forEach((eventName) => {
+    if (owner.listeners.has(eventName)) {
+      return;
+    }
+
+    const listener = (event) => dispatchDelegatedEvent(owner, eventName, event);
+    root.addEventListener(eventName, listener);
+    owner.listeners.set(eventName, listener);
+  });
+}
+
+/** 行构建期的事件登记：同事件只留最新，元素就绪时登记进段根的弱映射。 */
+function registerDelegatedEvent(parent, node, eventName, handler, options) {
+  const owner = delegateOwnerFor(parent);
+  const descriptor = { event: eventName, handler, options, owner };
+  const current = node._delegate;
+
+  if (current === undefined) {
+    node._delegate = descriptor;
+  } else if (Array.isArray(current)) {
+    const existing = current.find((item) => item.event === eventName);
+    if (existing) {
+      existing.handler = handler;
+      existing.options = options;
+    } else {
+      current.push(descriptor);
+    }
+  } else if (current.event === eventName) {
+    current.handler = handler;
+    current.options = options;
+  } else {
+    node._delegate = [current, descriptor];
+  }
+
+  if (!owner.events) {
+    owner.events = new Set();
+  }
+  owner.events.add(eventName);
+
+  // 元素已经存在（挂载后再注册 / 区域重跑）就直接登记；否则等 renderDom 收口。
+  if (node._el) {
+    node._el[delegateNodeKey] = node;
+    bindDelegatedEvents(owner);
+  }
+}
+
+/** 子节点自己的 DOM 组：单根是 `[_el]`，多根组件是 `_fragmentDom`（文档顺序）。 */
+function nodeDomGroup(node) {
+  if (node?._fragmentDom?.length) {
+    return node._fragmentDom;
+  }
+
+  return node?._el ? [node._el] : [];
+}
+
+/** 子节点已经挂在给定父元素下的 DOM 组。 */
+function nodeAttachedGroup(parent, node) {
+  return nodeDomGroup(node).filter((element) => element.parentNode === parent._el);
+}
+
+/** 解析插入锚点：从 fromNode 起向后找第一个已挂载的兄弟；找不到返回 null（追加）。 */
 function resolveInsertAnchor(parent, fromNode) {
   if (!fromNode) {
     return null;
   }
 
   for (let i = parent._children.indexOf(fromNode) + 1; i < parent._children.length; i += 1) {
-    const element = parent._children[i]._el;
-    if (element?.parentNode === parent._el) {
+    const element = nodeAttachedGroup(parent, parent._children[i])[0];
+    if (element) {
       return element;
     }
   }
@@ -499,17 +1017,77 @@ function resolveInsertAnchor(parent, fromNode) {
   return null;
 }
 
+/**
+ * 把子节点插到锚点之前。
+ * 多根组件的渲染结果是一次性 fragment，直接插入即可；已在别处渲染好的多根子树按元素顺序补插。
+ * 挂载条件为假时不落地——节点已经渲染（状态保留），条件转真时由 `_syncChildMounted()` 插回槽位。
+ */
+function attachChildDom(parent, node, rendered, anchor) {
+  if (parent._childMountStates?.get(node) === false) {
+    return;
+  }
+
+  if (rendered && rendered.nodeType === DOCUMENT_FRAGMENT_NODE) {
+    parent._el.insertBefore(rendered, anchor ?? null);
+    return;
+  }
+
+  const elements = rendered ? [rendered] : nodeDomGroup(node);
+  elements.forEach((element) => {
+    if (element.parentNode !== parent._el) {
+      parent._el.insertBefore(element, anchor ?? null);
+    }
+  });
+}
+
 function describeKeyedRowKey(rawKey) {
   return typeof rawKey === 'string' ? rawKey : 'row reference';
 }
 
-function destroyKeyedMember(parent, entry) {
-  const index = parent._children.indexOf(entry.node);
-  if (index !== -1) {
-    parent._children.splice(index, 1);
+/**
+ * 一次交付整批移除：段内成员正好是父元素里剩下的全部子节点时（clear 的常见形态），
+ * 用一次 `replaceChildren()` 代替每行一次 removeChild——官方 09_clear 里后者占四成以上。
+ * 还有非成员子节点时返回 false，走原本的逐行摘除。
+ */
+function detachKeyedMembers(parent, nodes) {
+  const element = parent._el;
+  if (!element || element.childNodes.length === 0) {
+    return false;
   }
+
+  const doomed = new Set();
+  nodes.forEach((node) => {
+    nodeDomGroup(node).forEach((child) => {
+      if (child.parentNode === element) {
+        doomed.add(child);
+      }
+    });
+  });
+
+  if (doomed.size === 0 || doomed.size !== element.childNodes.length) {
+    return false;
+  }
+
+  element.replaceChildren();
+  return true;
+}
+
+/** 摘除 keyed 成员：整批 DOM 一起走时，销毁走「已摘除」路径。 */
+function removeKeyedMembers(parent, entries) {
+  const nodes = new Set(entries.map((entry) => entry.node));
+  const detached = detachKeyedMembers(parent, nodes);
+  // 一次对账视图树：逐行 indexOf + splice 在清空整表时是 O(n²)
+  parent._children = parent._children.filter((child) => !nodes.has(child));
+
+  entries.forEach((entry) => {
+    if (detached) {
+      destroyDetached(entry.node);
+    } else {
+      entry.node.destroy();
+    }
+  });
+
   parent._childrenDirty = true;
-  entry.node.destroy();
 }
 
 /** 段尾锚点：段内最后一个成员（或登记锚点）之后第一个非成员子节点；无则 null（追加）。 */
@@ -530,27 +1108,114 @@ function keyedSegmentTailNode(parent, segment, memberNodes) {
   return null;
 }
 
-function placeKeyedMember(parent, entry, beforeNode, tailNode) {
-  parent._pendingRemovals.delete(entry.node);
-  parent._inheritErrorBoundary(entry.node);
+/**
+ * 成员在父元素里的 DOM 组：单根是一元素，多根组件是一组元素。
+ * 不可见（惰性挂载 / 未渲染 / 元素不在本段）时返回空数组。
+ */
+function keyedMemberElements(parent, node) {
+  return nodeAttachedGroup(parent, node);
+}
+
+/** 段尾锚点元素：段内成员都排在它前面；段尾自己不可见时退回到它之后第一个可见兄弟。 */
+function keyedSegmentTailElement(parent, tailNode) {
+  if (!tailNode) {
+    return null;
+  }
+
+  return keyedMemberElements(parent, tailNode)[0] ?? resolveInsertAnchor(parent, tailNode);
+}
+
+/**
+ * 目标顺序里「原本就按旧顺序排列」的最长递增子序列——这些成员留在原地即可，
+ * 其余成员才需要挪到后继之前。交换两行因此只搬换位的行，而不是把后继之后的
+ * 每个兄弟逐个挪一遍（旧的相邻比较会退化成整表重排）。
+ * 新增成员不参与判定：插入路径一次就把它们放到正确位置。
+ */
+function collectKeyedMovedNodes(next, previousPosition) {
+  const tails = [];
+  const tailIndexes = [];
+  const previous = new Array(next.length).fill(-1);
+
+  next.forEach((item, index) => {
+    const position = previousPosition.get(item.node);
+    if (position === undefined) {
+      return;
+    }
+
+    let low = 0;
+    let high = tails.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (tails[middle] < position) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+
+    tails[low] = position;
+    tailIndexes[low] = index;
+    previous[index] = low > 0 ? tailIndexes[low - 1] : -1;
+  });
+
+  const stable = new Set();
+  for (
+    let cursor = tailIndexes[tailIndexes.length - 1] ?? -1;
+    cursor !== -1;
+    cursor = previous[cursor]
+  ) {
+    stable.add(next[cursor].node);
+  }
+
+  const moved = new Set();
+  next.forEach((item) => {
+    if (!stable.has(item.node)) {
+      moved.add(item.node);
+    }
+  });
+  return moved;
+}
+
+function placeKeyedMember(parent, entry, beforeNode, tailNode, anchorElement) {
+  parent._pendingRemovals?.delete(entry.node);
+  // 惰性挂载声明由父节点收养（与 child() 路径一致）：条件为假时本行不落地，
+  // 但节点照常渲染，条件转真时按槽位插回。
+  parent._adoptPendingMount(entry.node);
+  parent._linkChild(entry.node);
   const anchorNode = beforeNode ?? tailNode;
   const beforeIndex = anchorNode ? parent._children.indexOf(anchorNode) : -1;
   if (beforeIndex === -1) {
-    parent._children.push(entry.node);
+    parent._children = appendNodeEntry(parent._children, entry.node);
   } else {
-    parent._children.splice(beforeIndex, 0, entry.node);
+    nodeChildren(parent).splice(beforeIndex, 0, entry.node);
   }
   parent._childrenDirty = true;
 
   if (parent._el) {
-    const element = parent._renderChildForInsert(entry.node);
-    if (element && element.parentNode !== parent._el) {
-      const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
-      parent._el.insertBefore(element, anchor ?? resolveInsertAnchor(parent, anchorNode));
-    }
+    const rendered = parent._renderChildForInsert(entry.node);
+    const anchor = anchorElement ?? resolveInsertAnchor(parent, anchorNode);
+    attachChildDom(parent, entry.node, rendered, anchor);
     if (isDevtoolsEnabled() && !parent._devtoolsRendering) {
       notifyDevtoolsMutation(parent, 'child', { added: [ensureDevtoolsNodeId(entry.node)] });
     }
+  }
+}
+
+/** 需要换位的成员：视图树里挪到后继之前，DOM 里整组（多根组件是一组）搬到锚点之前。 */
+function reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement) {
+  const currentIndex = parent._children.indexOf(node);
+  if (currentIndex !== -1) {
+    nodeChildren(parent).splice(currentIndex, 1);
+  }
+
+  const anchorNode = beforeNode ?? tailNode;
+  const target = anchorNode ? parent._children.indexOf(anchorNode) : -1;
+  nodeChildren(parent).splice(target === -1 ? parent._children.length : target, 0, node);
+  parent._childrenDirty = true;
+
+  const elements = keyedMemberElements(parent, node);
+  if (elements.length > 0 && elements[elements.length - 1].nextSibling !== anchorElement) {
+    elements.forEach((element) => parent._el.insertBefore(element, anchorElement));
   }
 }
 
@@ -576,6 +1241,7 @@ function syncKeyedSegment(parent, segment, rows) {
 
   const desired = [];
   const seen = new Set();
+  const removedMembers = [];
   list.forEach((row, index) => {
     const rawKey = segment.keyFn ? segment.keyFn(row, index) : row;
     if (seen.has(rawKey)) {
@@ -583,51 +1249,71 @@ function syncKeyedSegment(parent, segment, rows) {
     }
     seen.add(rawKey);
     desired.push({ rawKey, row, index });
+
+    // 复用判定与目标名单生成合并成一趟（顺序不变：行引用没变 → equals → update），
+    // 这样「保留名单」不必再建一份 N 规模的集合，也不再产生 filter / map 两个临时数组。
+    const existing = members.get(rawKey);
+    if (!existing) {
+      return;
+    }
+
+    // keySet 源的元素是 KeyItem：元素对象按 key 复用（`item.data` 会被原地换成新引用），
+    // 所以成员表记的是**行数据**而不是元素；其它源记的就是行本身。
+    // equals / update 一律收「行」（keySet 源即 item.data）。
+    const nextRow = segment.itemSource ? row.data : row;
+    if (existing.row === nextRow) {
+      return;
+    }
+
+    // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
+    // 两者都没有时保持旧行为——销毁该行并原位换新。
+    if (segment.equals && segment.equals(existing.row, nextRow)) {
+      existing.row = nextRow;
+      return;
+    }
+
+    if (segment.update) {
+      segment.update(existing.node, existing.row, nextRow);
+      existing.row = nextRow;
+      return;
+    }
+
+    members.delete(rawKey);
+    removedMembers.push(existing);
   });
 
-  const keep = new Set(
-    desired
-      .filter((item) => {
-        const existing = members.get(item.rawKey);
-        if (!existing) {
-          return false;
-        }
-        if (existing.row === item.row) {
-          return true;
-        }
-
-        // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
-        // 两者都没有时保持旧行为——销毁该行并原位换新。
-        if (segment.equals && segment.equals(existing.row, item.row)) {
-          existing.row = item.row;
-          return true;
-        }
-
-        if (segment.update) {
-          segment.update(existing.node, existing.row, item.row);
-          existing.row = item.row;
-          return true;
-        }
-
-        return false;
-      })
-      .map((item) => item.rawKey)
-  );
+  // 目标名单里不再出现的成员：按 members 的既有顺序收口（与上一步合起来仍是同一批移除）。
   members.forEach((entry, rawKey) => {
-    if (!keep.has(rawKey)) {
-      destroyKeyedMember(parent, entry);
+    if (!seen.has(rawKey)) {
+      removedMembers.push(entry);
       members.delete(rawKey);
     }
   });
+  if (removedMembers.length > 0) {
+    removeKeyedMembers(parent, removedMembers);
+  }
 
-  const next = desired.map((item) => {
+  // 目标名单原地补 node：不再为每行建一份 `{...item, node}` 副本。
+  for (let index = 0; index < desired.length; index += 1) {
+    const item = desired[index];
     const existing = members.get(item.rawKey);
     if (existing) {
-      return { ...item, node: existing.node };
+      item.node = existing.node;
+      continue;
     }
 
-    const node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
-    const entry = { rawKey: item.rawKey, row: item.row, node };
+    let node;
+    keyedBuildStack.push(segment);
+    try {
+      node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
+    } finally {
+      keyedBuildStack.pop();
+    }
+    const entry = {
+      rawKey: item.rawKey,
+      row: segment.itemSource ? item.row.data : item.row,
+      node
+    };
     members.set(item.rawKey, entry);
     if (
       typeof node.attr === 'function' &&
@@ -635,37 +1321,60 @@ function syncKeyedSegment(parent, segment, rows) {
     ) {
       node.attr('data-row-key', String(item.rawKey));
     }
-    return { ...item, node };
-  });
+    item.node = node;
+  }
+  const next = desired;
+
+  const children = parent._children;
+
+  // 无移动快路径（票 30）：
+  // 1. 清空（next 为空）——成员已经全部移除，搬运判定与锚点计算都没有意义。
+  // 2. 目标顺序与现有子节点逐节点一致（含「重新赋值同一批行」）——没有新增成员、也没有成员需要
+  //    搬动：一般路径会算出 movedNodes 为空、placeKeyedMember / reorderKeyedMember 一次都不调用，
+  //    只剩 keyedMemberElements 的空转。逐节点比较是一趟 O(n) 读，省掉旧序 Map 与
+  //    最长递增子序列的 4 个集合/数组。
+  if (next.length === 0) {
+    return;
+  }
+
+  if (next.length === children.length) {
+    let aligned = true;
+    for (let index = 0; index < children.length; index += 1) {
+      if (children[index] !== next[index].node) {
+        aligned = false;
+        break;
+      }
+    }
+
+    if (aligned) {
+      return;
+    }
+  }
 
   const memberNodes = new Set();
   members.forEach((entry) => memberNodes.add(entry.node));
   const tailNode = keyedSegmentTailNode(parent, segment, memberNodes);
 
+  // 旧顺序快照 + 目标顺序：只搬不在最长递增子序列里的成员，
+  // 交换两行因此只动换位的两行，而不是把后续兄弟逐个挪一遍。
+  const previousPosition = new Map();
+  children.forEach((child, index) => previousPosition.set(child, index));
+  const movedNodes = collectKeyedMovedNodes(next, previousPosition);
+  let anchorElement = keyedSegmentTailElement(parent, tailNode);
+
   for (let i = next.length - 1; i >= 0; i -= 1) {
-    const node = next[i].node;
+    const { node, rawKey } = next[i];
     const beforeNode = i + 1 < next.length ? next[i + 1].node : null;
-    const currentIndex = parent._children.indexOf(node);
-    if (currentIndex === -1) {
-      placeKeyedMember(parent, members.get(next[i].rawKey), beforeNode, tailNode);
-      continue;
+
+    if (!previousPosition.has(node)) {
+      placeKeyedMember(parent, members.get(rawKey), beforeNode, tailNode, anchorElement);
+    } else if (movedNodes.has(node)) {
+      reorderKeyedMember(parent, node, beforeNode, tailNode, anchorElement);
     }
 
-    if (!beforeNode) {
-      continue;
-    }
-
-    const beforeIndex = parent._children.indexOf(beforeNode);
-    if (beforeIndex !== -1 && currentIndex >= beforeIndex) {
-      parent._children.splice(currentIndex, 1);
-      const anchorNode = beforeNode ?? tailNode;
-      const target = anchorNode ? parent._children.indexOf(anchorNode) : -1;
-      parent._children.splice(target === -1 ? parent._children.length : target, 0, node);
-      parent._childrenDirty = true;
-      if (parent._el && node._el) {
-        const anchor = anchorNode?._el?.parentNode === parent._el ? anchorNode._el : null;
-        parent._el.insertBefore(node._el, anchor ?? resolveInsertAnchor(parent, anchorNode));
-      }
+    const elements = keyedMemberElements(parent, node);
+    if (elements.length > 0) {
+      anchorElement = elements[0];
     }
   }
 }
@@ -773,10 +1482,18 @@ export function applyAttribute(element, name, value) {
  * 序列化 style 快照，保证 toHTML 和真实 DOM 渲染保持一致。
  */
 export function serializeStyles(styles) {
-  return Object.entries(styles)
+  // 按序列化后的属性名（kebab）排序：样式文本与写入顺序无关，编译器/SSR/客户端 DOM 三者
+  // 因此能产出同一份结果（票：编译产物不许手写片段的前提）。
+  return Object.entries(styles ?? {})
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
     .map(([name, value]) => `${toKebabStyleName(name)}:${escapeHtml(value)}`)
+    .sort()
     .join('; ');
+}
+
+/** 属性名排序：键序与写入顺序无关（同上，供 toHTML 与真实 DOM 首帧落盘共用）。 */
+function sortedKeys(snapshot) {
+  return snapshot ? Object.keys(snapshot).sort() : [];
 }
 
 export function toKebabStyleName(name) {
@@ -803,41 +1520,15 @@ function sameEventListenerOptions(a, b) {
  */
 export class ViewNode {
   constructor(setup = null) {
-    this._children = [];
-    this._childKeys = new Map();
-    this._events = new Map();
-    this._domAdapters = new Map();
-    this._cleanup = [];
-    this._pendingRemovals = new Set();
-    this._keyedSegments = [];
-    this._childMountStates = new Map();
-    this._mountCondition = null;
-    this._mountConditionRef = null; // 入树后由父节点收养：条件存这里，替换 = 写它
-    this._isMounted = true;
-    this._errorHandler = null;
-    this._errorBoundary = null;
-    this._childrenDirty = false;
-    this._deleted = false;
-    this._failed = false; // 渲染/构建失败标记：跳过重复尝试，重新挂载会清掉
-    this._access = null;
-    this._accessContext = currentAccess(); // 构建时捕获的权限上下文
-    this._builders = []; // 区域重建时按顺序重跑的构建函数
-    this._bindings = []; // 本节点登记的函数值绑定（owner 归属）
-    this._rebuildable = false;
-    this._regionScope = null; // 区域自持的绑定作用域
-    this._regionCaptureToken = null; // 区域内联捕获：rebuildable() 声明后开始收集依赖
-    this._regionSources = []; // 区域读到的 signal 依赖
-    this._regionAdapter = null; // 区域依赖所属引擎
-    this._regionActive = false; // 区域是否已进入 DOM 并订阅
-    this._regionSubs = [];
-    this._ownBindingScope = null; // 节点自己的绑定归属：零参闭包登记在这里
-    this._regionGuard = null;
-    this._rebuildPending = false;
-    this._regionScheduled = false; // 信号触发、等待补跑的重建（batch 合并 / 运行中排队）
-    this._regionRunning = false;
-    this._regionRequeueDepth = 0;
-    this._regionEnv = null; // 构建期环境快照：access / context / i18n
-    this._inheritedScope = null; // 最近一次渲染时继承到的权限声明
+    this._children = EMPTY_CHILDREN;
+    // 其余字段一律不预置：集合按需创建（见 nodeChildKeys 等），布尔 / 引用字段缺省即假值。
+    // 挂载条件与权限上下文也在写入时才产生——缺省值与原来的 null / true 在所有读取处等价
+    // （isMounted() 用 `!== false`，_adoptPendingMount() 用 `?? null`），
+    // 每个省下的字段槽在 1000 行（约 1 万节点）的表里就是 80 KB。
+    const access = currentAccess(); // 构建时捕获的权限上下文
+    if (access) {
+      this._accessContext = access;
+    }
 
     if (isDevtoolsEnabled()) {
       captureDevtoolsNodeScope(this);
@@ -853,15 +1544,22 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
-      this._builders.push(setup);
+      addNodeBuilder(this, setup);
       const serialBefore = bindingSerial;
       setupStack.push(this);
       try {
-        setup(this);
+        withProviderScope(this, () => setup(this));
       } finally {
         setupStack.pop();
         closeRegionCapture(this);
         reportPreRegionReads(this);
+        // 构建闭包到此为止：非区域节点不会再有第二次构建，就地清引用，让闭包连同它捕获的
+        // 环境在构建返回后一起可回收（官方条目一行 8 个 builder，常驻约 1.9 KB/行）。
+        // 只清值、保留字段槽位：不用 delete（会把对象打成字典模式，实测反涨），
+        // 也不跳过建槽（会分叉出两种隐藏类）。区域节点要重跑 builder，引用继续留着。
+        if (this._rebuildable !== true) {
+          this._builders = null;
+        }
       }
 
       // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
@@ -892,8 +1590,14 @@ export class ViewNode {
       throw new TypeError('rebuildable() predicate must be a function');
     }
 
-    if (this._builders.length === 0) {
-      throw new TypeError('rebuildable() requires a setup builder on this node');
+    // 契约：声明区域必须发生在该节点自己的 setup builder 内。非区域节点的构建闭包在构建
+    // 返回处即释放，出了 builder 再声明既拿不到 builder 重跑，也拿不到构建期信号捕获窗口。
+    // 已声明的区域仍可再次调用（此时 builder 仍在），用于替换谓词。
+    if (this._builders === undefined || this._builders === null) {
+      throw new TypeError(
+        'rebuildable() requires a setup builder on this node; declare the region inside its own ' +
+          'setup builder (non-region build closures are released when the build returns)'
+      );
     }
 
     this._rebuildable = true;
@@ -908,7 +1612,7 @@ export class ViewNode {
 
     if (!this._regionScope) {
       // 绑定作用域与构建期环境只捕获一次，重跑复用同一份，避免作用域被替换后失联。
-      this._regionScope = { bindings: [] };
+      this._regionScope = { bindings: null };
       this._regionEnv = {
         access: this._accessContext || currentAccess(),
         context: snapshotContext(),
@@ -921,7 +1625,7 @@ export class ViewNode {
 
   /** 区域是否有被谓词跳过、等待补齐的重建。 */
   rebuildPending() {
-    return this._rebuildPending;
+    return this._rebuildPending === true;
   }
 
   /** 区域是否有已排队、尚未执行的信号触发重建（batch 合并 / 运行中排队）。 */
@@ -970,18 +1674,22 @@ export class ViewNode {
     const previousKeys = this._childKeys;
     const previousBindings = new Set(collectRegionBindings(this));
     const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
-    this._regionRunCleanups = [];
+    this._regionRunCleanups = null;
 
-    this._children = [];
-    this._childKeys = new Map();
+    this._children = EMPTY_CHILDREN;
+    this._childKeys = null; // 新的一段用新的 key 表，按需创建
     this._childrenDirty = true;
-    previousChildren.forEach((child) => this._pendingRemovals.add(child));
+    previousChildren.forEach((child) => nodePendingRemovals(this).add(child));
 
     this._regionRunning = true;
     const regionToken = beginCollect();
     const previousSources = this._regionSources;
     try {
-      this._runInRegionEnvironment(() => this._builders.forEach((builder) => builder(this)));
+      this._runInRegionEnvironment(() =>
+        withProviderScope(this, () => runNodeBuilders(this), {
+          reset: true
+        })
+      );
     } catch (error) {
       endCollect(regionToken);
       this._regionSources = previousSources;
@@ -989,9 +1697,9 @@ export class ViewNode {
         collectRegionBindings(this).filter((binding) => !previousBindings.has(binding))
       );
       this._children.forEach((child) => child.destroy());
-      this._regionRunCleanups.forEach((cleanup) => cleanup());
+      this._regionRunCleanups?.forEach((cleanup) => cleanup());
       this._regionRunCleanups = previousCleanups;
-      previousChildren.forEach((child) => this._pendingRemovals.delete(child));
+      previousChildren.forEach((child) => this._pendingRemovals?.delete(child));
       this._children = previousChildren;
       this._childKeys = previousKeys;
       this._childrenDirty = false;
@@ -1015,7 +1723,7 @@ export class ViewNode {
     // 构建期间依赖又变化时补跑一次，而不是丢弃；batch 内留给作用域结束统一合并。
     if (this._regionScheduled && !this._deleted && !isSignalsBatchActive()) {
       this._regionScheduled = false;
-      this._regionRequeueDepth += 1;
+      this._regionRequeueDepth = (this._regionRequeueDepth ?? 0) + 1;
       if (this._regionRequeueDepth > 100) {
         throw new Error('Region rebuild cycle detected');
       }
@@ -1118,9 +1826,10 @@ export class ViewNode {
         : [];
     this._dropChildKeys(this._children);
     this._children.forEach((child) => {
-      this._pendingRemovals.add(child);
+      nodePendingRemovals(this).add(child);
+      child._parent = null; // 脱离视图树：不再把错误交给旧父
     });
-    this._children = [];
+    this._children = EMPTY_CHILDREN;
     this._childrenDirty = true;
     if (removedIds.length > 0 && !this._devtoolsRendering) {
       notifyDevtoolsMutation(this, 'child', { removed: removedIds });
@@ -1136,26 +1845,24 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
-    this._children.push(viewNode);
+    this._pendingRemovals?.delete(viewNode);
+    this._children = appendNodeEntry(this._children, viewNode);
     this._childrenDirty = true;
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        this._el.appendChild(childElement);
-      }
+      attachChildDom(this, viewNode, childElement, null);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1169,41 +1876,36 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const hasBefore = beforeKey !== null && beforeKey !== undefined;
-    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    const beforeNode = hasBefore ? (this._childKeys?.get(String(beforeKey)) ?? null) : null;
     if (hasBefore && !beforeNode) {
       throw new TypeError(`insertBefore() requires an existing beforeKey "${String(beforeKey)}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     const beforeIndex = beforeNode ? this._children.indexOf(beforeNode) : -1;
     if (beforeIndex === -1) {
-      this._children.push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
     } else {
-      this._children.splice(beforeIndex, 0, viewNode);
+      nodeChildren(this).splice(beforeIndex, 0, viewNode);
     }
     this._childrenDirty = true;
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        const beforeElement = beforeNode?._el;
-        const anchor =
-          beforeElement && beforeElement.parentNode === this._el ? beforeElement : null;
-        this._el.insertBefore(childElement, anchor);
-      }
+      attachChildDom(this, viewNode, childElement, nodeAttachedGroup(this, beforeNode)[0] ?? null);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1217,53 +1919,52 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    if (this._childKeys.has(rawKey)) {
+    if (this._childKeys?.has(rawKey)) {
       throw new TypeError(`duplicate key "${rawKey}"`);
     }
 
     const hasAfter = afterKey !== null && afterKey !== undefined;
-    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    const afterNode = hasAfter ? (this._childKeys?.get(String(afterKey)) ?? null) : null;
     if (hasAfter && !afterNode) {
       throw new TypeError(`insertAfter() requires an existing afterKey "${String(afterKey)}"`);
     }
 
     const viewNode = normalizeChildWithContext(this, child);
-    this._childKeys.set(rawKey, viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
     if (typeof viewNode.attr === 'function') {
       viewNode.attr('data-row-key', rawKey);
     }
-    this._pendingRemovals.delete(viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
 
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
-      this._children.unshift(viewNode);
+      prependNodeChild(this, viewNode);
     } else {
-      this._children.splice(afterIndex + 1, 0, viewNode);
+      nodeChildren(this).splice(afterIndex + 1, 0, viewNode);
     }
     this._childrenDirty = true;
 
     if (this._el) {
       const childElement = this._renderChildForInsert(viewNode);
-      if (childElement && childElement.parentNode !== this._el) {
-        let anchor = null;
-        if (afterNode) {
-          for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
-            const sibling = this._children[i];
-            if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
-              anchor = sibling._el;
-              break;
-            }
+      let anchor = null;
+      if (afterNode) {
+        for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
+          const sibling = this._children[i];
+          const element = sibling === viewNode ? null : nodeAttachedGroup(this, sibling)[0];
+          if (element) {
+            anchor = element;
+            break;
           }
-        } else {
-          const first = this._children.find(
-            (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
-          );
-          anchor = first?._el ?? null;
         }
-        this._el.insertBefore(childElement, anchor);
+      } else {
+        const first = this._children.find(
+          (sibling) => sibling !== viewNode && nodeAttachedGroup(this, sibling).length > 0
+        );
+        anchor = first ? nodeAttachedGroup(this, first)[0] : null;
       }
+      attachChildDom(this, viewNode, childElement, anchor);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
@@ -1277,13 +1978,13 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       throw new TypeError(`moveBefore() requires an existing key "${rawKey}"`);
     }
 
     const hasBefore = beforeKey !== null && beforeKey !== undefined;
-    const beforeNode = hasBefore ? this._childKeys.get(String(beforeKey)) : null;
+    const beforeNode = hasBefore ? (this._childKeys?.get(String(beforeKey)) ?? null) : null;
     if (hasBefore && !beforeNode) {
       throw new TypeError(`moveBefore() requires an existing beforeKey "${String(beforeKey)}"`);
     }
@@ -1293,15 +1994,21 @@ export class ViewNode {
 
     const currentIndex = this._children.indexOf(viewNode);
     if (currentIndex !== -1) {
-      this._children.splice(currentIndex, 1);
+      nodeChildren(this).splice(currentIndex, 1);
     }
     const targetIndex = beforeNode ? this._children.indexOf(beforeNode) : this._children.length;
-    this._children.splice(targetIndex === -1 ? this._children.length : targetIndex, 0, viewNode);
+    nodeChildren(this).splice(
+      targetIndex === -1 ? this._children.length : targetIndex,
+      0,
+      viewNode
+    );
     this._childrenDirty = true;
 
-    if (this._el && viewNode._el) {
-      const anchor = beforeNode?._el?.parentNode === this._el ? beforeNode._el : null;
-      this._el.insertBefore(viewNode._el, anchor);
+    if (this._el) {
+      const anchor = nodeAttachedGroup(this, beforeNode)[0] ?? null;
+      nodeAttachedGroup(this, viewNode).forEach((element) =>
+        this._el.insertBefore(element, anchor)
+      );
     }
 
     return this;
@@ -1312,13 +2019,13 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       throw new TypeError(`moveAfter() requires an existing key "${rawKey}"`);
     }
 
     const hasAfter = afterKey !== null && afterKey !== undefined;
-    const afterNode = hasAfter ? this._childKeys.get(String(afterKey)) : null;
+    const afterNode = hasAfter ? (this._childKeys?.get(String(afterKey)) ?? null) : null;
     if (hasAfter && !afterNode) {
       throw new TypeError(`moveAfter() requires an existing afterKey "${String(afterKey)}"`);
     }
@@ -1328,33 +2035,36 @@ export class ViewNode {
 
     const currentIndex = this._children.indexOf(viewNode);
     if (currentIndex !== -1) {
-      this._children.splice(currentIndex, 1);
+      nodeChildren(this).splice(currentIndex, 1);
     }
     const afterIndex = afterNode ? this._children.indexOf(afterNode) : -1;
     if (afterIndex === -1) {
-      this._children.unshift(viewNode);
+      prependNodeChild(this, viewNode);
     } else {
-      this._children.splice(afterIndex + 1, 0, viewNode);
+      nodeChildren(this).splice(afterIndex + 1, 0, viewNode);
     }
     this._childrenDirty = true;
 
-    if (this._el && viewNode._el) {
+    if (this._el) {
       let anchor = null;
       if (afterNode) {
         for (let i = this._children.indexOf(afterNode) + 1; i < this._children.length; i += 1) {
           const sibling = this._children[i];
-          if (sibling !== viewNode && sibling._el?.parentNode === this._el) {
-            anchor = sibling._el;
+          const element = sibling === viewNode ? null : nodeAttachedGroup(this, sibling)[0];
+          if (element) {
+            anchor = element;
             break;
           }
         }
       } else {
         const first = this._children.find(
-          (sibling) => sibling !== viewNode && sibling._el?.parentNode === this._el
+          (sibling) => sibling !== viewNode && nodeAttachedGroup(this, sibling).length > 0
         );
-        anchor = first?._el ?? null;
+        anchor = first ? nodeAttachedGroup(this, first)[0] : null;
       }
-      this._el.insertBefore(viewNode._el, anchor);
+      nodeAttachedGroup(this, viewNode).forEach((element) =>
+        this._el.insertBefore(element, anchor)
+      );
     }
 
     return this;
@@ -1365,7 +2075,7 @@ export class ViewNode {
     assertRegionChildAllowed(this);
 
     const rawKey = String(key);
-    const previous = this._childKeys.get(rawKey);
+    const previous = this._childKeys?.get(rawKey);
     if (!previous) {
       throw new TypeError(`replaceChild() requires an existing key "${rawKey}"`);
     }
@@ -1375,40 +2085,43 @@ export class ViewNode {
       viewNode.attr('data-row-key', rawKey);
     }
 
-    this._childKeys.set(rawKey, viewNode);
-    this._pendingRemovals.delete(viewNode);
+    nodeChildKeys(this).set(rawKey, viewNode);
+    this._pendingRemovals?.delete(viewNode);
     this._adoptPendingMount(viewNode);
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
     const index = this._children.indexOf(previous);
     if (index === -1) {
-      this._children.push(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
     } else {
-      this._children.splice(index, 1, viewNode);
+      nodeChildren(this).splice(index, 1, viewNode);
     }
     this._childrenDirty = true;
 
     if (this._el) {
       const newElement = this._renderChildForInsert(viewNode);
-      const oldElement = previous._el;
-      if (newElement && newElement.parentNode !== this._el) {
-        const anchor = oldElement?.parentNode === this._el ? oldElement : null;
-        this._el.insertBefore(newElement, anchor ?? resolveInsertAnchor(this, previous));
-      }
+      const anchor = nodeAttachedGroup(this, previous)[0] ?? resolveInsertAnchor(this, previous);
+      attachChildDom(this, viewNode, newElement, anchor);
       if (isDevtoolsEnabled() && !this._devtoolsRendering) {
         notifyDevtoolsMutation(this, 'child', { added: [ensureDevtoolsNodeId(viewNode)] });
       }
     }
 
-    this._childMountStates.delete(previous);
+    this._childMountStates?.delete(previous);
     previous.destroy();
 
     return this;
   }
 
   /**
-   * keyed 子项绑定：source 是 ref/computed 句柄。
+   * keyed 子项绑定：source 是 ref/computed 句柄，或 keySet 容器。
    * 同 key 且行引用未变时复用节点（build 不重跑）；行引用变化原位换新；
    * 顺序变化 insertBefore 保身份。keyFn 缺省时用行引用身份做 key。
+   *
+   * source 是 keySet 时（`isKeySet(source)`）：传给 build 的行是容器的**元素**
+   * （KeyItem `{ data, api }`，第二参数仍是下标），key 由容器自己的 `keyOf(item.data)` 得到；
+   * 元素按 key 复用，所以「同 key 同 api」，而内容是否变了看 `item.data` 的引用——
+   * `replace` / `merge` 换了数据引用就原位换新，重排只搬元素不动状态。
+   * equals / update 收的也是行数据（`item.data`），与 ref 源同口径。
    *
    * options 可声明行级更新协议（可选，不传就是上面的旧行为）：
    * - equals(prevRow, nextRow)：同 key 且引用变化时做内容等价比较，为真则复用节点（不重建）。
@@ -1416,13 +2129,19 @@ export class ViewNode {
    * 两者同时给出时 equals 优先；判定为「确实变了」的行仍然原位换新。
    */
   keyed(source, keyOrBuild, maybeBuild = null, maybeOptions = null) {
+    const sourceIsKeySet = isKeySet(source);
     const withKeyFn = typeof maybeBuild === 'function';
     const build = withKeyFn ? maybeBuild : keyOrBuild;
-    const keyFn = withKeyFn ? keyOrBuild : null;
+    // keySet 源缺省用容器自己的身份：元素是 KeyItem，键取自 item.data（不缓存 key，只有一个真源）。
+    const keyFn = withKeyFn
+      ? keyOrBuild
+      : sourceIsKeySet
+        ? (item) => source.keyOf(item.data)
+        : null;
     const options = withKeyFn ? maybeOptions : maybeBuild;
 
-    if (!isSignal(source)) {
-      throw new TypeError('keyed() requires a signal handle as its source');
+    if (!isSignal(source) && !sourceIsKeySet) {
+      throw new TypeError('keyed() requires a signal handle or a keySet as its source');
     }
     if (typeof build !== 'function') {
       throw new TypeError('keyed() requires a build function');
@@ -1440,12 +2159,16 @@ export class ViewNode {
     const segment = {
       anchorNode: this._children[this._children.length - 1] ?? null,
       equals: options?.equals ?? null,
+      itemSource: sourceIsKeySet,
       keyFn,
       build,
       members: new Map(),
+      parent: this,
       update: options?.update ?? null
     };
-    this._keyedSegments.push(segment);
+    // 段只在本次 keyed() 的绑定闭包里使用（syncKeyedSegment(this, segment, rows)）；此前的
+    // _keyedSegments 名单只写不读，还会在每次区域重跑时追加、从不清理，把上一轮的
+    // members（行与节点引用）一直留在树上。名单已删除。
     registerNodeBinding(
       this,
       'keyed',
@@ -1487,7 +2210,8 @@ export class ViewNode {
    * 元素此刻是否在文档里另查 _el?.isConnected——受祖先挂载与渲染时机影响。
    */
   isMounted() {
-    return this._isMounted;
+    // 缺省（字段未写入）即「已挂载」：父节点单向镜像写入 false 时才不挂载
+    return this._isMounted !== false;
   }
 
   /**
@@ -1504,12 +2228,18 @@ export class ViewNode {
   }
 
   /**
-   * 插入路径统一入口：向子节点传播最近边界引用。
+   * 插入路径统一入口：把子节点链接到当前父节点。
+   * 错误边界在出错时沿 _parent 上溯解析，这里只维护父子单向关系。
    * 重新挂载（插入 / 换新 / 区域重建）同时清掉上一次的失败标记，允许再试一次。
    */
-  _inheritErrorBoundary(viewNode) {
-    viewNode._errorBoundary = this._errorHandler ? this : this._errorBoundary;
-    viewNode._failed = false;
+  _linkChild(viewNode) {
+    viewNode._parent = this;
+    // 只有真的失败过的节点才清标记：读点全是真值判断，缺省（undefined）与 false 等价，
+    // 因此健康路径不再预写这个槽位（票 22 候选二：约 −80 B/行），
+    // 同时保留「失败过的节点重新链接后可以再试一次」的既有行为。
+    if (viewNode._failed === true) {
+      viewNode._failed = false;
+    }
   }
 
   /**
@@ -1565,18 +2295,27 @@ export class ViewNode {
       withRenderScope(this._access ?? currentInheritedScope(), () => viewNode.renderDom());
     }
 
-    this.clearChildren();
-    this.child(viewNode);
-    this._inheritErrorBoundary(viewNode);
-    if (this._el) {
-      this._commitChildren();
+    const swap = () => {
+      this.clearChildren();
+      this.child(viewNode);
+      if (this._el) {
+        this._commitChildren();
+      }
+    };
+
+    // 区域节点的子节点只能由区域构建产出：降级替换按一次区域构建执行
+    if (this._rebuildable) {
+      withRegionBuild(this, swap);
+    } else {
+      swap();
     }
+
     return viewNode;
   }
 
   /** 插入路径统一入口：子节点带惰性挂载条件时由本节点收养。 */
   _adoptPendingMount(viewNode) {
-    const declared = viewNode._mountCondition;
+    const declared = viewNode._mountCondition ?? null;
     if (declared === null && !viewNode._mountConditionRef) {
       return; // 没有声明条件 → 默认常挂
     }
@@ -1596,27 +2335,37 @@ export class ViewNode {
       node._mountConditionRef.value = condition;
     }
 
-    registerNodeBinding(
+    const binding = registerNodeBinding(
       this,
       'mount',
       node,
       () => resolveMountCondition(node),
       (next) => {
         const mounted = Boolean(next);
-        this._childMountStates.set(node, mounted);
+        nodeMountStates(this).set(node, mounted);
         node._isMounted = mounted; // 单向镜像：父写子读，isMounted() 无需父指针
         this._syncChildMounted(node, mounted);
       }
     );
 
+    // 子节点销毁时释放父节点为它登记的挂载绑定与挂载状态：列表容器通常长命，
+    // 残留绑定会把已经销毁的行一直钉在内存里（keyed 行增删频繁时尤其明显）。
+    if (typeof node._parentMountCleanup === 'function') {
+      node._parentMountCleanup();
+    }
+    node._parentMountCleanup = () => {
+      releaseBindings([binding]);
+      this._childMountStates?.delete(node);
+    };
+
     // 渲染后收养：登记时只求值未激活订阅，这里手动补上
     if (this._el && setupStack.length === 0 && regionBuildStack.length === 0) {
-      this._bindings[this._bindings.length - 1]?.activate();
+      binding.activate();
     }
   }
 
   _syncChildMounted(node, mounted) {
-    if (this._deleted || node._deleted || !this._el || !node._el) {
+    if (this._deleted || node._deleted || !this._el) {
       return;
     }
 
@@ -1627,34 +2376,40 @@ export class ViewNode {
     }
 
     if (mounted) {
-      if (node._el.parentNode !== this._el) {
-        this._el.insertBefore(node._el, resolveInsertAnchor(this, node));
-      }
+      const elements = nodeDomGroup(node);
+      const anchor = resolveInsertAnchor(this, node);
+      elements.forEach((element) => {
+        if (element.parentNode !== this._el) {
+          this._el.insertBefore(element, anchor);
+        }
+      });
       return;
     }
 
-    if (node._el.parentNode === this._el) {
-      this._el.removeChild(node._el);
-    }
+    nodeAttachedGroup(this, node).forEach((element) => {
+      if (element.parentNode === this._el) {
+        this._el.removeChild(element);
+      }
+    });
   }
 
   /** 按 key 读取子节点；不存在返回 null。 */
   getChild(key) {
-    return this._childKeys.get(String(key)) || null;
+    return this._childKeys?.get(String(key)) || null;
   }
 
   /** 按 key 移除并销毁子节点。 */
   removeChild(key) {
     const rawKey = String(key);
-    const viewNode = this._childKeys.get(rawKey);
+    const viewNode = this._childKeys?.get(rawKey);
     if (!viewNode) {
       return this;
     }
 
-    this._childKeys.delete(rawKey);
+    this._childKeys?.delete(rawKey);
     const index = this._children.indexOf(viewNode);
     if (index !== -1) {
-      this._children.splice(index, 1);
+      nodeChildren(this).splice(index, 1);
     }
     this._childrenDirty = true;
     const removedId =
@@ -1670,9 +2425,9 @@ export class ViewNode {
 
   _dropChildKeys(nodes) {
     const doomed = new Set(nodes);
-    this._childKeys.forEach((child, key) => {
+    this._childKeys?.forEach((child, key) => {
       if (doomed.has(child)) {
-        this._childKeys.delete(key);
+        this._childKeys?.delete(key);
       }
     });
   }
@@ -1690,41 +2445,44 @@ export class ViewNode {
       }
 
       const viewNode = normalizeChildWithContext(this, child);
-      this._pendingRemovals.delete(viewNode);
-      this._children.push(viewNode);
+      this._pendingRemovals?.delete(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
-      this._inheritErrorBoundary(viewNode);
-      this._inheritErrorBoundary(viewNode);
+      this._linkChild(viewNode);
     });
 
     return this;
   }
 
   /**
-   * 已移除：追加文本用 child(content)（字符串 / 数字 / 句柄 / 动态读函数都吃），
-   * 需要替换同一处文本时持有 vText() 句柄调 textContent(next)。
-   * 组件自己的 text()（badge / progress / menu / tabs / tree / …）与方法覆盖无关。
-   */
-  text() {
-    throw new TypeError(
-      'text() was removed: use child(content) to append text ' +
-        '(wrap a zero-argument reader as vText(fn)), or keep a vText() handle ' +
-        'and call textContent(next) to replace text'
-    );
-  }
-
-  /**
    * 注册事件。同一节点同一事件只保留最新 handler；
    * 真实 DOM 上每个事件最多挂一个转发 adapter。
+   *
+   * 在 keyed 行构建期注册的、可委托的事件（冒泡标准事件 + 无 once/capture/passive）
+   * 不收进节点自己的 _events，而是登记到段根由它统一派发；其余情况走下面的逐元素绑定。
    */
   on(eventName, handler, options) {
     if (typeof handler !== 'function') {
       throw new TypeError('ViewNode event handler must be a function');
     }
 
-    const previous = this._events.get(eventName);
-    this._events.set(eventName, { handler, options });
+    const segment = activeKeyedBuild();
+    if (
+      segment &&
+      this instanceof ElementNode &&
+      canDelegateEvent(eventName, options) &&
+      !this._events?.has(eventName)
+    ) {
+      registerDelegatedEvent(segment.parent, this, eventName, handler, options);
+      return this;
+    }
+
+    // 同一个事件从委托切回逐元素绑定（例如挂载后又注册了一次）：先把委托描述符摘掉，
+    // 否则派发时会拿着旧 handler 再调一次。
+    removeDelegatedEvent(this, eventName);
+    const previous = this._events?.get(eventName);
+    nodeEvents(this).set(eventName, { handler, options });
 
     if (this._el) {
       this._bindDomAdapter(eventName, previous?.options, options);
@@ -1734,12 +2492,13 @@ export class ViewNode {
   }
 
   off(eventName) {
-    this._events.delete(eventName);
-    const entry = this._domAdapters.get(eventName);
+    removeDelegatedEvent(this, eventName);
+    this._events?.delete(eventName);
+    const entry = this._domAdapters?.get(eventName);
     if (entry) {
       entry.cleanup();
       this._removeCleanup(entry.cleanup);
-      this._domAdapters.delete(eventName);
+      this._domAdapters?.delete(eventName);
     }
     return this;
   }
@@ -1754,7 +2513,7 @@ export class ViewNode {
       window.addEventListener(type, handler, options);
       const unbind = () => window.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      this._cleanup.push(unbind);
+      this._cleanup = appendNodeEntry(this._cleanup, unbind);
     }
 
     return this;
@@ -1766,25 +2525,103 @@ export class ViewNode {
       document.addEventListener(type, handler, options);
       const unbind = () => document.removeEventListener(type, handler, options);
       registerRegionCleanup(unbind);
-      this._cleanup.push(unbind);
+      this._cleanup = appendNodeEntry(this._cleanup, unbind);
     }
 
     return this;
   }
 
+  /**
+   * 下一个动画帧执行一次 callback；节点 destroy() 时若还没执行会自动取消。
+   * 需要多处调度就多次调用，每次独立登记、互不影响（SSR 下为空操作）。
+   */
+  bindAnimationFrame(callback) {
+    if (typeof callback !== 'function') {
+      throw new TypeError('bindAnimationFrame(callback) requires a function');
+    }
+
+    if (this._deleted || typeof requestAnimationFrame !== 'function') {
+      return this;
+    }
+
+    let frameId = requestAnimationFrame((time) => {
+      frameId = null;
+      callback(time);
+    });
+    const cancel = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+    };
+
+    this._cleanup = appendNodeEntry(this._cleanup, cancel);
+    return this;
+  }
+
+  /**
+   * 每帧执行 callback，直到节点 destroy() 或显式 stopAnimationFrameLoop()。
+   * 同一节点只保留一条循环：重复调用会先停掉上一条再启动新的。
+   */
+  bindAnimationFrameLoop(callback) {
+    if (typeof callback !== 'function') {
+      throw new TypeError('bindAnimationFrameLoop(callback) requires a function');
+    }
+
+    if (this._deleted || typeof requestAnimationFrame !== 'function') {
+      return this;
+    }
+
+    this.stopAnimationFrameLoop();
+
+    let frameId = null;
+    const step = (time) => {
+      frameId = null;
+      callback(time);
+
+      // 回调里停掉或重启过循环：这一轮不再续帧
+      if (this._frameLoopStop !== stop) {
+        return;
+      }
+
+      frameId = requestAnimationFrame(step);
+    };
+    const stop = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+
+      if (this._frameLoopStop === stop) {
+        this._frameLoopStop = null;
+      }
+    };
+
+    this._frameLoopStop = stop;
+    frameId = requestAnimationFrame(step);
+    this._cleanup = appendNodeEntry(this._cleanup, stop);
+    return this;
+  }
+
+  /** 停止 bindAnimationFrameLoop() 启动的循环；没有循环时为空操作。 */
+  stopAnimationFrameLoop() {
+    this._frameLoopStop?.();
+    return this;
+  }
+
   _bindDomAdapter(eventName, previousOptions, nextOptions) {
-    const existing = this._domAdapters.get(eventName);
+    const existing = this._domAdapters?.get(eventName);
     if (existing) {
       if (sameEventListenerOptions(previousOptions, nextOptions)) {
         return;
       }
       existing.cleanup();
       this._removeCleanup(existing.cleanup);
-      this._domAdapters.delete(eventName);
+      this._domAdapters?.delete(eventName);
     }
 
     const adapter = (event) => {
-      const current = this._events.get(eventName);
+      const current = this._events?.get(eventName);
       if (!current || typeof current.handler !== 'function') {
         return;
       }
@@ -1802,16 +2639,19 @@ export class ViewNode {
         this._el.removeEventListener(eventName, adapter, nextOptions);
       }
     };
+    // 标记为「元素级监听」：整棵子树离开文档时，逐条 removeEventListener 没有意义
+    // （元素不再可达），销毁路径据此整段跳过；文档 / window 级 cleanup 不做标记。
+    cleanup._domListener = true;
 
     this._el.addEventListener(eventName, adapter, nextOptions);
-    this._domAdapters.set(eventName, { cleanup });
-    this._cleanup.push(cleanup);
+    nodeDomAdapters(this).set(eventName, { cleanup });
+    this._cleanup = appendNodeEntry(this._cleanup, cleanup);
   }
 
   _removeCleanup(cleanup) {
-    const index = this._cleanup.indexOf(cleanup);
+    const index = this._cleanup?.indexOf(cleanup) ?? -1;
     if (index !== -1) {
-      this._cleanup.splice(index, 1);
+      this._cleanup?.splice(index, 1);
     }
   }
 
@@ -1834,8 +2674,14 @@ export class ViewNode {
   }
 
   _commitChildren() {
-    this._pendingRemovals.forEach((child) => child.destroy());
-    this._pendingRemovals.clear();
+    const pending = this._pendingRemovals;
+    if (pending) {
+      // for..of 迭代 Set：与 forEach 同为实时迭代语义，但不为每个待移除节点建闭包
+      for (const child of pending) {
+        child.destroy();
+      }
+    }
+    this._pendingRemovals = null;
     this._childrenDirty = false;
   }
 
@@ -1855,30 +2701,67 @@ export class ViewNode {
 
   /**
    * 销毁节点：清理事件、递归销毁子节点，并从 DOM 中移除自身。
+   *
+   * 单趟完成：本节点只释放自己名下的绑定，不再对整棵子树做一遍
+   * `collectRegionBindings()` 收集（子节点各自负责自己那一层，原先每个节点
+   * 都要把后代遍历一遍，是 O(节点数 × 深度)）。摘掉自己的元素后，子节点的
+   * 元素随它一起离开文档，因此子节点走「已摘除」路径：跳过逐条 removeChild
+   * 与元素级监听退订（清空整表时这两项占了七成以上）。
    */
   destroy() {
+    const inheritedDetached = detachedDestroyDepth > 0;
+    const element = this._el;
+    const parentNode = inheritedDetached ? null : (element?.parentNode ?? null);
+    const domGone = inheritedDetached || parentNode !== null;
+
     if (isDevtoolsEnabled()) {
       emitDevtools({ type: 'destroy', node: this });
       unregisterDevtoolsNode(this);
     }
+    if (typeof this._parentMountCleanup === 'function') {
+      const cleanup = this._parentMountCleanup;
+      this._parentMountCleanup = null;
+      cleanup(); // 释放父节点为它登记的挂载绑定，父节点可能远比它长命
+    }
     this._deleted = true;
-    releaseBindings(collectRegionBindings(this));
+    this._parent = null;
+    releaseOwnBindings(this);
     releaseRegion(this);
     if (Array.isArray(this._regionRunCleanups)) {
       this._regionRunCleanups.forEach((cleanup) => cleanup());
       this._regionRunCleanups = [];
     }
-    this._cleanup.forEach((cleanup) => cleanup());
-    this._cleanup = [];
-    this._childMountStates.clear();
-    this._children.forEach((child) => child.destroy());
-    this._pendingRemovals.forEach((child) => child.destroy());
-    this._pendingRemovals.clear();
-    this._children = [];
-    this._childKeys.clear();
+    if (batchDestroyDepth > 0) {
+      // 库自己发起的整批摘除：子树内元素级监听不再可达，整段跳过；
+      // 文档 / window 级 cleanup（bindDocumentEvent / bindWindowEvent / 动画帧）
+      // 与元素在不在文档里无关，仍然执行。
+      this._cleanup?.forEach((cleanup) => {
+        if (cleanup._domListener !== true) {
+          cleanup();
+        }
+      });
+    } else {
+      this._cleanup?.forEach((cleanup) => cleanup());
+    }
+    this._cleanup = null;
+    this._childMountStates = null;
 
-    if (this._el?.parentNode) {
-      this._el.parentNode.removeChild(this._el);
+    const children = this._children;
+    const pendingRemovals = this._pendingRemovals;
+    this._children = EMPTY_CHILDREN;
+    this._childKeys = null;
+    this._pendingRemovals = null;
+
+    if (parentNode) {
+      parentNode.removeChild(element);
+    }
+
+    if (domGone) {
+      children.forEach(destroyInDetached);
+      pendingRemovals?.forEach(destroyInDetached);
+    } else {
+      children.forEach((child) => child.destroy());
+      pendingRemovals?.forEach((child) => child.destroy());
     }
 
     return this;
@@ -1907,9 +2790,7 @@ export class VTextNode extends ViewNode {
     this._textNode = null;
 
     if (typeof content === 'function' || isSignal(content)) {
-      registerNodeBinding(this, 'text', null, toBindingRead(content), (next) =>
-        this.textContent(next)
-      );
+      registerNodeBinding(this, 'text', null, content, (next) => this.textContent(next));
       return;
     }
 
@@ -1922,9 +2803,7 @@ export class VTextNode extends ViewNode {
     }
 
     if (typeof value === 'function' || isSignal(value)) {
-      registerNodeBinding(this, 'text', null, toBindingRead(value), (next) =>
-        this.textContent(next)
-      );
+      registerNodeBinding(this, 'text', null, value, (next) => this.textContent(next));
       return this;
     }
 
@@ -1975,6 +2854,10 @@ export class ComponentNode extends ViewNode {
     this._resolvedList = null; // 全部根
     this._roots = null; // 多根模式时非 null
     this._fragmentDom = null; // 多根模式已落实的 DOM 节点
+    // render() 是懒解析：解析时刻可能已经离开构建作用域，所以在这里把
+    // 构建期环境存下来（与区域节点的 _regionEnv 同一套语义）。
+    this._contextSnapshot = snapshotContext();
+    this._i18nSnapshot = i18nScopeBridge ? i18nScopeBridge.current() : null;
   }
 
   _resolve() {
@@ -1983,12 +2866,18 @@ export class ComponentNode extends ViewNode {
     }
 
     const build = () =>
-      typeof this._component === 'function' ? this._component() : this._component.render();
-    const resolved = withAccess(this._accessContext || currentAccess(), build);
+      withProviderScope(this, () =>
+        typeof this._component === 'function' ? this._component() : this._component.render()
+      );
+    const withEnvironment = () =>
+      withContext(this._contextSnapshot, () =>
+        i18nScopeBridge ? i18nScopeBridge.runWith(this._i18nSnapshot, build) : build()
+      );
+    const resolved = withAccess(this._accessContext || currentAccess(), withEnvironment);
     const list = Array.isArray(resolved) ? resolved.slice() : [resolved];
     const componentInfo = describeComponent(this._component);
-    const ownerInfo = this._owner
-      ? ` It was added as a child of ${describeValue(this._owner)}.`
+    const ownerInfo = this._parent
+      ? ` It was added as a child of ${describeValue(this._parent)}.`
       : '';
     list.forEach((item) => {
       if (!(item instanceof ViewNode)) {
@@ -2005,7 +2894,7 @@ export class ComponentNode extends ViewNode {
     this._resolvedList = list;
     this._resolved = list[0] || null;
     this._roots = Array.isArray(resolved) ? list : null;
-    list.forEach((root) => this._inheritErrorBoundary(root));
+    list.forEach((root) => this._linkChild(root));
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -2054,6 +2943,7 @@ export class ComponentNode extends ViewNode {
     this._resolved = nextList[0] || null;
     this._roots = Array.isArray(nextView) ? nextList : null;
     this._fragmentDom = null;
+    nextList.forEach((root) => this._linkChild(root));
 
     if (oldNodes.length === 0) {
       previousList.forEach((root) => root.destroy());
@@ -2104,7 +2994,7 @@ export class ComponentNode extends ViewNode {
     this._resolved = viewNode;
     this._roots = null;
     this._fragmentDom = null;
-    this._inheritErrorBoundary(viewNode);
+    this._linkChild(viewNode);
     previousList.forEach((root) => root.destroy());
     return viewNode;
   }
@@ -2271,11 +3161,8 @@ function describeComponent(component) {
  */
 function normalizeChildWithContext(parent, child) {
   try {
-    const viewNode = normalizeChild(child);
-    if (viewNode._owner === undefined) {
-      viewNode._owner = parent;
-    }
-    return viewNode;
+    // 父链接由各插入路径的 _linkChild() 统一维护（含搬家覆盖与移除清理）
+    return normalizeChild(child);
   } catch (error) {
     if (error instanceof TypeError && String(error.message).startsWith('ViewNode child must')) {
       throw new TypeError(
@@ -2352,6 +3239,82 @@ export function applyElementOptions(node, options) {
 }
 
 /**
+ * 元素样式表按需创建。
+ * 空集合按元素累加：V8 实测 `{}` 64 B、`[]` 40 B、`new Set()` 160 B，
+ * 一行 8 个元素就是 1.8 KB——没写过样式的元素不该付这份固定开销。
+ */
+export function elementStyles(node) {
+  return node._styles ?? (node._styles = {});
+}
+
+/** 元素属性快照按需创建（同上：没写过属性的元素不建空对象）。 */
+export function elementAttrs(node) {
+  return node._attrs ?? (node._attrs = {});
+}
+
+/**
+ * 把类名同步进属性快照——只在快照已经存在时写。
+ * 不为了类名创建快照（那正是本票要省的内存），也不改变属性顺序：
+ * 快照里没有 class 时，序列化把类名排在其它属性之前，与「先 className() 后 attr()」一致。
+ */
+function storeClassName(node, className) {
+  if (!node._attrs) {
+    return;
+  }
+
+  if (className) {
+    node._attrs.class = className;
+  } else {
+    delete node._attrs.class;
+  }
+}
+
+/** 拆类名文本：兼容空格分隔与多参数写法。 */
+function splitClassNames(value) {
+  const text = String(value);
+  // 单个类名（绝大多数）不做 split，省一次数组与字符串分配
+  return /\s/.test(text) ? text.split(/\s+/).filter(Boolean) : [text];
+}
+
+/** 合并类名文本：保序去重。 */
+function mergeClassNames(current, names) {
+  if (!current) {
+    // 单个类名直接把入参文本存下来，不 join（join 会新建字符串）
+    return names.length === 1 ? names[0] : names.join(' ');
+  }
+
+  const merged = current.split(' ');
+  names.forEach((name) => {
+    if (!merged.includes(name)) {
+      merged.push(name);
+    }
+  });
+  return merged.join(' ');
+}
+
+/** 删除一个类名；删空后回到 undefined，不再持有字符串。 */
+function dropClassName(current, name) {
+  if (!current) {
+    return undefined;
+  }
+
+  const next = current.split(' ').filter((item) => item !== name);
+  return next.length > 0 ? next.join(' ') : undefined;
+}
+
+/** 元素当前的类名列表（只读口径，供布局 / devtools 这类外部读取）。 */
+export function elementClassNames(node) {
+  const text = node?._classText;
+  return text ? text.split(' ') : [];
+}
+
+/** 元素是否带某个类名。 */
+export function elementHasClass(node, name) {
+  const text = node?._classText;
+  return Boolean(text) && (text === name || text.split(' ').includes(name));
+}
+
+/**
  * ElementNode 表示可渲染成真实 DOM Element 的视图节点。
  * 它负责属性、类名、样式、事件和子节点到 DOM 的同步。
  */
@@ -2359,10 +3322,10 @@ export class ElementNode extends ViewNode {
   constructor(tagName, setup = null) {
     super(null);
     this._tagName = tagName;
-    this._attrs = {};
-    this._styles = {};
-    this._classes = new Set();
-    this._el = null;
+    // _attrs（属性快照）、_styles（样式表）、_classText（类名文本）都不预置：
+    // 空集合按元素累加开销很大（V8 实测 new Set() 160 B、{} 64 B/个，一行 8 个元素
+    // 就是 1.8 KB）。类名走 _classText，不再借道 _attrs.class——只有真的写过
+    // 属性的元素才建属性快照。
 
     if (setup !== null) {
       this.setup(setup);
@@ -2447,7 +3410,8 @@ export class ElementNode extends ViewNode {
    */
   attr(name, value) {
     if (value === undefined && typeof name === 'string') {
-      return this._attrs[name];
+      // 类名的真身在 _classText，不再借道 _attrs.class
+      return name === 'class' ? this._classText : this._attrs?.[name];
     }
 
     if (name && typeof name === 'object') {
@@ -2456,17 +3420,42 @@ export class ElementNode extends ViewNode {
     }
 
     if (typeof value === 'function' || isSignal(value)) {
-      registerNodeBinding(this, 'attr', name, toBindingRead(value), (next) =>
-        this.attr(name, next)
-      );
+      registerNodeBinding(this, 'attr', name, value, (next) => this.attr(name, next));
       return this;
     }
 
-    const previous = this._attrs[name];
+    // 类名写进 _classText 而不是属性快照：只有真的写过属性的元素才建 _attrs，
+    // 类名与 attr('class', …) / className() 共用同一份真身，读写不会互相打架。
+    if (name === 'class') {
+      const next =
+        value === null || value === undefined || value === false || value === ''
+          ? undefined
+          : String(value);
+      const previousClass = this._classText;
+      this._classText = next;
+      storeClassName(this, next);
+
+      if (this._el) {
+        applyAttribute(this._el, 'class', next);
+      }
+      if (
+        this._el &&
+        isDevtoolsEnabled() &&
+        !this._devtoolsRendering &&
+        !Object.is(previousClass, next)
+      ) {
+        notifyDevtoolsMutation(this, 'attr', { name: 'class', previous: previousClass, next });
+      }
+      return this;
+    }
+
+    const previous = this._attrs?.[name];
     if (value === null || value === undefined || value === false) {
-      delete this._attrs[name];
+      if (this._attrs) {
+        delete this._attrs[name];
+      }
     } else {
-      this._attrs[name] = value;
+      elementAttrs(this)[name] = value;
     }
 
     if (this._el) {
@@ -2497,19 +3486,13 @@ export class ElementNode extends ViewNode {
    */
   className(...classes) {
     if (classes.length === 0) {
-      return [...this._classes].join(' ');
+      return this._classText ?? '';
     }
 
-    classes.flat(Infinity).forEach((value) => {
-      if (!value) {
-        return;
-      }
-
-      String(value)
-        .split(/\s+/)
-        .filter(Boolean)
-        .forEach((className) => this._classes.add(className));
-    });
+    const names = classes.flat(Infinity).filter(Boolean).flatMap(splitClassNames);
+    if (names.length > 0) {
+      this._classText = mergeClassNames(this._classText, names);
+    }
 
     this._syncClassName();
     return this;
@@ -2527,11 +3510,11 @@ export class ElementNode extends ViewNode {
       return this;
     }
 
-    if (!this._classes.has(old)) {
+    if (!this._classText || !this._classText.split(' ').includes(old)) {
       return tolerate ? this.className(next) : this;
     }
 
-    this._classes.delete(old);
+    this._classText = dropClassName(this._classText, old);
     return this.className(next);
   }
 
@@ -2541,7 +3524,7 @@ export class ElementNode extends ViewNode {
    */
   toggleClass(name, value) {
     if (typeof value === 'function' || isSignal(value)) {
-      registerNodeBinding(this, 'class', name, toBindingRead(value), (next) =>
+      registerNodeBinding(this, 'class', name, value, (next) =>
         this.toggleClass(name, Boolean(next))
       );
       return this;
@@ -2551,7 +3534,7 @@ export class ElementNode extends ViewNode {
       return this.className(name);
     }
 
-    this._classes.delete(name);
+    this._classText = dropClassName(this._classText, name);
     this._syncClassName();
     return this;
   }
@@ -2561,7 +3544,7 @@ export class ElementNode extends ViewNode {
    */
   style(name, value) {
     if (value === undefined && typeof name === 'string') {
-      return this._styles[name];
+      return this._styles?.[name];
     }
 
     if (name && typeof name === 'object') {
@@ -2569,17 +3552,17 @@ export class ElementNode extends ViewNode {
     }
 
     if (typeof value === 'function' || isSignal(value)) {
-      registerNodeBinding(this, 'style', name, toBindingRead(value), (next) =>
-        this.style(name, next)
-      );
+      registerNodeBinding(this, 'style', name, value, (next) => this.style(name, next));
       return this;
     }
 
-    const previous = this._styles[name];
+    const previous = this._styles?.[name];
     if (value === null || value === undefined || value === '') {
-      delete this._styles[name];
+      if (this._styles) {
+        delete this._styles[name];
+      }
     } else {
-      this._styles[name] = value;
+      elementStyles(this)[name] = value;
     }
 
     if (this._el) {
@@ -2615,18 +3598,15 @@ export class ElementNode extends ViewNode {
       }
 
       const viewNode = normalizeChildWithContext(this, child);
-      this._pendingRemovals.delete(viewNode);
-      this._children.push(viewNode);
+      this._pendingRemovals?.delete(viewNode);
+      this._children = appendNodeEntry(this._children, viewNode);
       this._childrenDirty = true;
       this._adoptPendingMount(viewNode);
-      this._inheritErrorBoundary(viewNode);
-      this._inheritErrorBoundary(viewNode);
+      this._linkChild(viewNode);
 
       if (this._el) {
         const childElement = this._renderChildForInsert(viewNode);
-        if (childElement && childElement.parentNode !== this._el) {
-          this._el.appendChild(childElement);
-        }
+        attachChildDom(this, viewNode, childElement, null);
         if (addedIds) {
           addedIds.push(ensureDevtoolsNodeId(viewNode));
         }
@@ -2680,22 +3660,39 @@ export class ElementNode extends ViewNode {
 
     const inherited = this._access ?? currentInheritedScope();
     this._inheritedScope = inherited;
-    if (isDevtoolsEnabled()) {
+    // devtools 每节点只查一次（原来开头 / 收口 / finally 各一次）
+    const devtools = isDevtoolsEnabled();
+    if (devtools) {
       this._devtoolsRendering = true;
     }
     try {
       if (!this._el) {
         this._el = this._createElement();
-        withRenderScope(inherited, () => this._applySnapshotToElement());
+        // 新鲜元素的类名属性必为空——除非属性快照里显式写过 class（那时 DOM 类名来自 attr，
+        // 不能假定为空、必须回读）。有了这个前提，首次落盘可以省掉一次 className getter 读。
+        const freshClass = this._attrs?.class === undefined;
+        // 就地压栈：首次落盘不为一个闭包付钱
+        renderScopeStack.push(inherited);
+        try {
+          this._applyBindingsToElement(freshClass);
+        } finally {
+          renderScopeStack.pop();
+        }
       }
 
       this._applyAccessState(state);
       activateBindings(this);
       this._commitChildren();
-      this._children.forEach((child) => {
-        withRenderScope(inherited, () => {
+
+      // 子节点遍历：作用域整趟压栈（原来每个子节点两个闭包），索引循环不建闭包
+      const children = this._children;
+      const element = this._el;
+      renderScopeStack.push(inherited);
+      try {
+        for (let index = 0; index < children.length; index += 1) {
+          const child = children[index];
           if (child._failed) {
-            return;
+            continue;
           }
 
           let childElement;
@@ -2703,29 +3700,33 @@ export class ElementNode extends ViewNode {
             childElement = child.renderDom();
           } catch (error) {
             const replacement = captureNodeError(child, error, 'render');
-            if (replacement?._el && replacement._el.parentNode !== this._el) {
-              this._el.appendChild(replacement._el);
+            if (replacement?._el && replacement._el.parentNode !== element) {
+              element.appendChild(replacement._el);
             }
-            return;
+            continue;
           }
           if (
             childElement &&
-            childElement.parentNode !== this._el &&
-            this._childMountStates.get(child) !== false
+            childElement.parentNode !== element &&
+            this._childMountStates?.get(child) !== false
           ) {
-            this._el.appendChild(childElement);
-          } else if (!childElement && child._el && child._el.parentNode === this._el) {
-            this._el.removeChild(child._el);
+            element.appendChild(childElement);
+          } else if (!childElement && child._el && child._el.parentNode === element) {
+            element.removeChild(child._el);
           }
-        });
-      });
+        }
+      } finally {
+        renderScopeStack.pop();
+      }
 
-      if (isDevtoolsEnabled()) {
+      if (devtools) {
         commitDevtoolsNode(this);
       }
       return this._el;
     } finally {
-      this._devtoolsRendering = false;
+      if (devtools) {
+        this._devtoolsRendering = false;
+      }
     }
   }
 
@@ -2760,7 +3761,7 @@ export class ElementNode extends ViewNode {
       }
 
       const mountedChildren = this._children.filter(
-        (child) => this._childMountStates.get(child) !== false && !child._failed
+        (child) => this._childMountStates?.get(child) !== false && !child._failed
       );
 
       const childHTML = mountedChildren
@@ -2779,67 +3780,89 @@ export class ElementNode extends ViewNode {
 
   /**
    * DOM 首次创建时，把之前记录的属性、样式、事件和子节点一次性同步。
+   *
+   * 只做「本节点自己」的落盘：子节点由 renderDom 的遍历统一处理（原先这里再遍历一遍子节点，
+   * renderDom 又遍历一遍，整棵树被渲染两次——activateBindings / _commitChildren /
+   * 挂载条件判定都在第二遍里重跑）。freshClass 表示本元素是刚建出来的、类名必为空。
    */
-  _applyBindingsToElement() {
-    Object.entries(this._attrs).forEach(([name, value]) => applyAttribute(this._el, name, value));
-    this._syncClassName();
-    Object.entries(this._styles).forEach(([name, value]) => {
-      this._el.style[name] = value;
-    });
-    this._events.forEach((descriptor, eventName) => {
-      this._bindDomAdapter(eventName, undefined, descriptor.options);
-    });
-  }
+  _applyBindingsToElement(freshClass = false) {
+    const attrs = this._attrs;
+    if (attrs) {
+      // 首帧按属性名排序落盘：此后同名 setAttribute 只改值、保持位置，DOM 属性顺序因此
+      // 与 toHTML() 的序列化顺序一致（类名走 _syncClassName，不在快照里循环）。
+      const names = sortedKeys(attrs);
+      for (let index = 0; index < names.length; index += 1) {
+        const name = names[index];
+        applyAttribute(this._el, name, attrs[name]);
+      }
+    }
+    this._syncClassName(freshClass);
+    const styles = this._styles;
+    if (styles) {
+      const names = sortedKeys(styles);
+      for (let index = 0; index < names.length; index += 1) {
+        const name = names[index];
+        this._el.style[name] = styles[name];
+      }
+    }
 
-  _applySnapshotToElement() {
-    this._applyBindingsToElement();
-    this._children.forEach((child) => {
-      if (child._failed) {
-        return;
-      }
+    // 段根：委托监听器必须先于本节点自己的 adapter 挂上——DOM 同元素按注册顺序触发，
+    // 这样「行内 handler → 段根自己的 handler」与逐元素绑定时的冒泡顺序一致。
+    if (this._delegates) {
+      bindDelegatedEvents(this._delegates);
+    }
 
-      let childElement;
-      try {
-        childElement = child.renderDom();
-      } catch (error) {
-        const replacement = captureNodeError(child, error, 'render');
-        if (replacement?._el && replacement._el.parentNode !== this._el) {
-          this._el.appendChild(replacement._el);
-        }
-        return;
+    // 行内被委托的节点：把元素登记进段根的弱映射，派发时才能从 DOM 反查节点。
+    if (this._delegate) {
+      const descriptors = Array.isArray(this._delegate) ? this._delegate : [this._delegate];
+      for (let index = 0; index < descriptors.length; index += 1) {
+        bindDelegatedEvents(descriptors[index].owner);
       }
-      if (childElement && this._childMountStates.get(child) !== false) {
-        this._el.appendChild(childElement);
+      this._el[delegateNodeKey] = this;
+    }
+
+    const events = this._events;
+    if (events) {
+      for (const [eventName, descriptor] of events) {
+        this._bindDomAdapter(eventName, undefined, descriptor.options);
       }
-    });
+    }
   }
 
   /**
-   * 同步 class 集合到属性快照和真实 DOM。
+   * 同步类名文本到真实 DOM。
+   * 类名不再写进属性快照：`_classText` 是类名的真身，`toHTML` / `attr('class')`
+   * 都从它读，只有显式 `attr('class', …)` 的写法才落到 `_attrs`。
    */
-  _syncClassName() {
-    const previous = this._attrs.class;
-    const className = [...this._classes].join(' ');
+  _syncClassName(freshClass = false) {
+    const className = this._classText ?? '';
+    const element = this._el;
 
-    if (className) {
-      this._attrs.class = className;
-    } else {
-      delete this._attrs.class;
+    storeClassName(this, className || undefined);
+
+    if (!element) {
+      return;
     }
 
-    if (this._el) {
-      if (className) {
-        this._el.className = className;
-      } else {
-        this._el.removeAttribute('class');
-      }
-      if (isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, className)) {
-        notifyDevtoolsMutation(this, 'attr', {
-          name: 'class',
-          previous,
-          next: className || undefined
-        });
-      }
+    // 新鲜元素的类名必为空，省掉一次 getter 读；其余情况先读后写——
+    // 类名已经一致就不碰 DOM（重复 className() / 重渲是常见路径），
+    // 也让「外部改过 class」这种漂移仍然会被写回。
+    const previous = freshClass ? '' : element.className || '';
+    if (previous === className && (className !== '' || !element.hasAttribute('class'))) {
+      return;
+    }
+
+    if (className) {
+      element.className = className;
+    } else {
+      element.removeAttribute('class');
+    }
+    if (isDevtoolsEnabled() && !this._devtoolsRendering) {
+      notifyDevtoolsMutation(this, 'attr', {
+        name: 'class',
+        previous,
+        next: className || undefined
+      });
     }
   }
 
@@ -2847,15 +3870,26 @@ export class ElementNode extends ViewNode {
    * 序列化属性快照，供 toHTML 使用。
    */
   _serializeAttributes() {
-    const attrs = { ...this._attrs };
+    // 属性按名字排序输出：与写入顺序无关，因此 SSR、客户端首帧落盘与（将来的）编译期片段
+    // 三者能产出逐字节相同的 HTML——这是「编译产物不手写片段」的前提。
+    const attrs = new Map();
+    if (this._attrs) {
+      Object.entries(this._attrs).forEach(([name, value]) => attrs.set(name, value));
+    }
+    // 类名的真身在 _classText；快照里没有 class 时由它提供取值（有则沿用快照里的值）
+    if (this._classText && !attrs.has('class')) {
+      attrs.set('class', this._classText);
+    }
     const styleText = this._serializeStyles();
 
     if (styleText) {
-      attrs.style = attrs.style ? `${attrs.style}; ${styleText}` : styleText;
+      const inline = attrs.get('style');
+      attrs.set('style', inline ? `${inline}; ${styleText}` : styleText);
     }
 
-    return Object.entries(attrs)
+    return [...attrs.entries()]
       .filter(([, value]) => value !== null && value !== undefined && value !== false)
+      .sort(([first], [second]) => (first < second ? -1 : first > second ? 1 : 0))
       .map(([name, value]) => {
         if (value === true || isBooleanAttribute(name)) {
           return `${name}="${name}"`;

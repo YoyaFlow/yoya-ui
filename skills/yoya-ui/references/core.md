@@ -4,13 +4,16 @@
 
 ## 公共 API
 
-| 类别       | API                                                                                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                   |
-| 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态       | `ref` / `computed`（Signals）                                                                                                                  |
-| 更新与容错 | `keyed()`、`mountable()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                      |
-| 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
+| 类别         | API                                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                    |
+| 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`  |
+| 状态         | `ref` / `computed`（Signals）                                                                                                                   |
+| 更新与容错   | `keyed()`、`mountable()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                       |
+| 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（形态 C 组件专用） |
+| 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                           |
+
+形态 C 的类节点组件不要直接读写 `_children` / `_classText` / `_styles` / `_attrs`——它们是实现细节（空子节点列表是共享冻结哨兵，类名真身是文本，属性/样式快照按需创建）。追加子节点走 `child()` / `addChild()`；必须在自己的渲染路径里改名单时用 `nodeChildren()` / `appendNodeChild()`，读类名用 `elementHasClass()` / `elementClassNames()`，改样式/属性用 `elementStyles()` / `elementAttrs()`。
 
 ## vText 文本节点
 
@@ -51,7 +54,7 @@ const chart = svg((root) => {
 
 ## 三种组件形态
 
-**先定形态再写代码**：确认这个组件**没有额外行为**要定义（没有内部状态、没有对外命令方法、没有生命周期诉求）时，就用**形态 A 薄工厂**——函数直接返回节点，不要为了「以后可能要用」先包成对象组件。只有真出现下列诉求时才升级，一次只走一步：
+**先定形态再写代码**：确认这个组件**没有额外行为**要定义（没有内部状态、没有对外命令方法、没有生命周期诉求）时，就用**形态 A 薄工厂**——函数直接返回节点，不要为了「以后可能要用」先包成对象组件；**演示代码与业务组件同一条判据**，只演示结构或交互、不需要对外命令方法时同样直接返回节点，不要为了跟对象组件统一而补一层 `render()`。只有真出现下列诉求时才升级，一次只走一步：
 
 | 诉求                                                        | 形态                                                               |
 | ----------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -94,6 +97,32 @@ export function NameField() {
   };
 }
 ```
+
+**形态 B 的快捷工厂：`vNode((api) => 视图)`**（定义即节点）
+
+```js
+import { computed, ref, vNode, vstack, vText } from '@yoyaflow/yoya-ui';
+
+export function CounterCard() {
+  const count = ref(0);
+
+  return vNode((api) => {
+    api.bump = () => {
+      count.value += 1;
+      return api; // 等价于返回节点
+    };
+
+    return vstack((stack) => {
+      stack.output((out) => out.child(vText(computed(() => `计数 ${count.value}`))));
+      stack.vButton('+1', (button) => button.on('click', () => api.bump()));
+    });
+  });
+}
+```
+
+- **产物是组件节点本身**（`ComponentNode extends ViewNode`）：当根 `card.bindTo('#app')`、当子节点 `page.child(card)` 都行；不产生占位/包装元素，setup 返回数组即多根 fragment。
+- **命令方法收到 `api` 上**，工厂在返回前挂到节点本身；`api` 只收函数（非函数直接报错），**撞上节点已有成员（`child` / `destroy` / `renderDom` / `mountable` …）或 `render` / `_*` 直接抛错**，不静默覆盖。`api.whenFailed = (error, info) => 降级节点` 是例外：它声明组件自带的错误边界（等价 `node.whenFailed(fn)`，与组件对象协议成员同义）。其余节点级能力（`mountable()` / `rebuildable()`）直接链在返回的节点上。
+- **只多一个入口，不改旧写法**：形态 A/B/C、函数工厂、`child()` 接受的对象形式全部照旧；没有对外命令方法的展示组件仍用形态 A。
 
 **形态 C：类节点组件**（父子嵌套或重写生命周期，需导出成对 `vXxx` 工厂）
 
@@ -141,7 +170,7 @@ Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountab
 - `child(...)` 接受 ViewNode、组件对象（自动包 `ComponentNode` 缓存 render 结果）或字符串/数字
 - `on(event, handler)` 绑定真实 DOM 事件，`destroy()` 自动清理
 - 类组件遵循 `renderDom` / `bindTo` / `destroy` 生命周期
-- 组件自带降级：对象组件写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）
+- 组件自带降级：对象组件写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）；边界在出错时沿父链上溯解析（就近优先），与声明顺序 / 嵌套深度 / 运行时插入 / 搬家无关
 
 ## 注册父节点快捷方法
 

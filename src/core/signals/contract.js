@@ -1,7 +1,8 @@
 import { defaultAdapter } from './engine.js';
 
-// 引擎契约：只要求「值单元 + 通知 + 批量提交」五个方法，依赖收集、派生（computed）、
-// 调度与生命周期全部由 core 负责。契约越窄，换引擎的影响面越小（见 design.md §2.6、§5）。
+// 引擎契约：只要求「值单元 + 通知 + 批量提交」五个方法，依赖收集、调度与生命周期全部由 core
+// 负责；派生（computed）core 有自实现版本，引擎可选提供 createComputed 原生派生——原生派生
+// 自带「无观察者时惰性失效」，能让只读一次的派生不订阅依赖（见 design.md §2.6、§5）。
 const REQUIRED_METHODS = ['createSignal', 'read', 'subscribe', 'write', 'batch'];
 
 let installedAdapter = null;
@@ -18,6 +19,10 @@ export function assertSignalsAdapter(adapter) {
 
   if (missing.length > 0) {
     throw new TypeError(`signals adapter is missing required method(s): ${missing.join(', ')}`);
+  }
+
+  if (adapter.createComputed !== undefined && typeof adapter.createComputed !== 'function') {
+    throw new TypeError('signals adapter createComputed must be a function');
   }
 
   return adapter;

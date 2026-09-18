@@ -211,6 +211,25 @@ export function currentContext<T = unknown>(key: string, defaultValue?: T): T | 
 /** Returns a shallow merged snapshot of the active context. */
 export function snapshotContext(): ContextProviders;
 
+/**
+ * Declares a value for the subtree being built right now (the current setup
+ * callback or component render). Throws when called outside a build frame.
+ */
+export function provide(key: string | symbol, value: unknown): unknown;
+
+/**
+ * Reads the nearest provided value: lexical build frames, then the parent
+ * chain, then withContext layers / installContext, then fallback.
+ */
+export function inject<T = unknown>(key: string | symbol, fallback?: T): T | undefined;
+
+/**
+ * Builds a subtree that is attached under host later (async loaders, route
+ * views): the subtree can inject from host's position in the tree, while its
+ * own declarations scope to the produced subtree.
+ */
+export function buildInProviderScope<T>(host: unknown, build: () => T): T;
+
 // ---
 // Accessibility primitives
 // ---
@@ -273,7 +292,11 @@ export class ViewNode {
   /** Adds children; strings/numbers are wrapped into text nodes. */
   child(...children: ChildInput[]): this;
 
-  /** Marks this node as a region whose content can be rebuilt from its own setup. */
+  /**
+   * Marks this node as a region whose content can be rebuilt from its own setup.
+   * Declare it inside that setup builder: non-region build closures are released when the build
+   * returns, so a node whose builder has already returned can no longer be promoted to a region.
+   */
   rebuildable(predicate?: (() => boolean) | null): this;
 
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
@@ -344,6 +367,25 @@ export class ViewNode {
     build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
     options?: KeyedRowUpdate<TRow>
   ): this;
+  /**
+   * Signal-free keyed source: a `keySet` container. Build receives the element
+   * itself (`KeyItem` — read `item.data` / `item.api`), the second argument is the
+   * index, and keys come from the container's `keyOf(item.data)`. Elements are
+   * reused by key, so the same key always yields the same api; rows whose
+   * `item.data` reference changed are rebuilt in place (or handled through
+   * `equals` / `update`, which receive row data).
+   */
+  keyed<TRow>(
+    source: KeySet<TRow>,
+    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
+  ): this;
+  keyed<TRow>(
+    source: KeySet<TRow>,
+    keyFn: (item: KeyItem<TRow>, index: number) => string | number,
+    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
+  ): this;
 
   /**
    * Declares or replaces conditional attachment. The condition may be a signal
@@ -395,6 +437,21 @@ export class ViewNode {
     options?: AddEventListenerOptions | boolean
   ): this;
 
+  /**
+   * Runs callback once on the next animation frame; canceled automatically when
+   * the node is destroyed before it fires. No-op outside the browser.
+   */
+  bindAnimationFrame(callback: (time: number) => void): this;
+
+  /**
+   * Runs callback on every animation frame until destroy() or
+   * stopAnimationFrameLoop(); one loop per node (re-binding restarts it).
+   */
+  bindAnimationFrameLoop(callback: (time: number) => void): this;
+
+  /** Stops the loop started by bindAnimationFrameLoop(). */
+  stopAnimationFrameLoop(): this;
+
   /** Renders (or re-renders) the real DOM node. */
   renderDom(): Node | null;
 
@@ -438,6 +495,20 @@ export class ComponentNode extends ViewNode {
   toHTML(): string;
   destroy(): this;
 }
+
+/** Outward command methods collected on the api object of vNode's setup callback. */
+export type VNodeCommand = (...args: any[]) => any;
+export type VNodeApi = Record<string, VNodeCommand>;
+
+/**
+ * ComponentNode shortcut factory: build the view inside `setup(api)` and get the node
+ * back. Command methods collected on `api` are attached to the node itself; a name that
+ * collides with the node API (child / attr / whenFailed ...) throws instead of silently
+ * overwriting it. Returning `api` from a command is the same as returning the node.
+ */
+export function vNode<TApi extends VNodeApi = VNodeApi>(
+  setup: (api: TApi) => ViewNode | ViewNode[]
+): ComponentNode & TApi;
 
 /**
  * ElementNode renders a real DOM Element and synchronizes attrs, classes,
@@ -560,6 +631,42 @@ export function applyElementOptions(
 
 /** Minimal HTML escaping used by toHTML(). */
 export function escapeHtml(value: unknown): string;
+
+/**
+ * Shared frozen empty child list. Node child lists start out as this sentinel,
+ * so never write into it: go through `nodeChildren()` / `appendNodeChild()`.
+ */
+export const EMPTY_CHILDREN: readonly never[];
+
+/**
+ * Writable child list of a node, materialising a real array when the list is
+ * still the shared empty sentinel. Use it instead of touching `_children`.
+ */
+export function nodeChildren<T = ViewNode>(node: unknown): T[];
+
+/**
+ * Appends one child to a node's child list through the engine's own write path
+ * (keeps the literal-first allocation and the empty-list sentinel invariants).
+ */
+export function appendNodeChild(node: unknown, child: unknown): void;
+
+/**
+ * Writable style snapshot of an element node, created on demand. Preferred over
+ * reading `_styles` directly (which may be undefined when no style was set).
+ */
+export function elementStyles(node: unknown): Record<string, unknown>;
+
+/**
+ * Writable attribute snapshot of an element node, created on demand. Preferred
+ * over reading `_attrs` directly (it may be undefined until something is set).
+ */
+export function elementAttrs(node: unknown): Record<string, unknown>;
+
+/** Class names of an element node in declaration order. */
+export function elementClassNames(node: unknown): string[];
+
+/** Whether an element node carries the given class name (reads the class text). */
+export function elementHasClass(node: unknown, name: string): boolean;
 
 /** Normalizes any child input into a ViewNode. */
 export function normalizeChild(child: ViewNode | ComponentLike | string | number): ViewNode;
@@ -726,13 +833,88 @@ export function isSignal(value: unknown): value is SignalHandle<unknown>;
 export function batch<T>(run: () => T): T;
 
 /**
+ * A keySet element: the row's data and its behaviour api travel together, so
+ * sorting / inserting / moving elements can never desync one from the other.
+ * The key is not stored — identity is always `keySet.keyOf(item.data)`.
+ */
+export interface KeyItem<TRow = unknown> {
+  /** The row data currently stored under this key. */
+  data: TRow;
+  /** The application's state and commands for this row (same key → same api). */
+  api: Record<string, unknown> & {
+    /** Called by the container when this key leaves the list. */
+    dispose?(): void;
+  };
+}
+
+/**
+ * Ordered key-addressed container: a drop-in `ref([])` replacement that also
+ * owns per-key behaviour apis (same key → same api; leaving key → api released
+ * and element dropped). Data operations always produce a new array, so the
+ * container never mutates the array a caller passed in.
+ *
+ * Reading the handle yields the element table (`KeyItem[]`); writing it takes a
+ * data array and behaves like `replaceAll`. Keys come from `keyOf(data)`; a key
+ * is never cached, so there is a single source of truth for identity.
+ */
+export interface KeySet<TRow = unknown> {
+  /** Element table, in list order. */
+  value: KeyItem<TRow>[];
+  peek(): KeyItem<TRow>[];
+  subscribe(listener: (items: KeyItem<TRow>[]) => void): () => void;
+
+  replaceAll(datas: readonly TRow[]): KeySet<TRow>;
+  replace(key: unknown, data: TRow): KeySet<TRow>;
+  merge(key: unknown, patch: Record<string, unknown>): KeySet<TRow>;
+  add(data: TRow): KeySet<TRow>;
+  insertBefore(data: TRow, beforeKey?: unknown): KeySet<TRow>;
+  insertAfter(data: TRow, afterKey?: unknown): KeySet<TRow>;
+  moveBefore(key: unknown, targetKey?: unknown): KeySet<TRow>;
+  moveAfter(key: unknown, targetKey?: unknown): KeySet<TRow>;
+  remove(key: unknown): KeySet<TRow>;
+  clear(): KeySet<TRow>;
+  sort(compare: (left: KeyItem<TRow>, right: KeyItem<TRow>) => number): KeySet<TRow>;
+
+  /** The element for a key (undefined when the key is not in the list). */
+  item(key: unknown): KeyItem<TRow> | undefined;
+  /** The row data for a key (undefined when the key is not in the list). */
+  get(key: unknown): TRow | undefined;
+  has(key: unknown): boolean;
+  indexOf(key: unknown): number;
+  keys(): unknown[];
+  items(): KeyItem<TRow>[];
+  values(): TRow[];
+  keyOf(data: TRow): unknown;
+  readonly size: number;
+
+  batch<T>(run: () => T): T;
+}
+
+/**
+ * Creates a keySet. `keyOf(data)` is identity; `define(item)` is optional, must
+ * be pure and runs once per new key (element and api are always created together,
+ * so there is no lazy phase to materialise).
+ */
+export function keySet<TRow>(
+  initialValues: readonly TRow[],
+  keyOf: (data: TRow) => unknown,
+  define?: (item: KeyItem<TRow>) => void
+): KeySet<TRow>;
+
+/** True for keySet containers (recognised across copies of yoya-ui via Symbol.for). */
+export function isKeySet<TRow = unknown>(value: unknown): value is KeySet<TRow>;
+
+/**
  * State engine adapter contract: value cells and change notification only.
- * Dependency collection, derivation, scheduling and lifetimes stay in core,
- * so signals libraries and store-shaped libraries (e.g. zustand) both qualify.
+ * Dependency collection, scheduling and lifetimes stay in core, so signals
+ * libraries and store-shaped libraries (e.g. zustand) both qualify. Core owns
+ * `computed()`; an engine may optionally provide `createComputed` to derive
+ * natively, whose laziness keeps unobserved values from subscribing.
  */
 export interface SignalsAdapter {
   name?: string;
   createSignal<T>(initial: T): unknown;
+  createComputed?<T>(compute: () => T): unknown;
   read(source: unknown): any;
   write(source: unknown, value: unknown): void;
   subscribe(source: unknown, listener: (value: unknown) => void): () => void;

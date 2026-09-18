@@ -3,12 +3,16 @@
 // 2. 分类子入口 tree-shaking 隔离：仅打包目标类目，不夹带其他类目组件；
 // 3. 体积预算门禁：自包含 full 产物、核心入口、实际下载量与组件皮肤不得超过预算；
 // 4. README 体积表与产物一致：表格数字不再靠手工维护，漂移即失败。
+// 5. 基准文档表格与 benchmark/results.json 一致：官方基准的数字同样不许手写。
+// 6. 基准报告页 benchmark/report.html 由 benchmark/results.json 生成：手改数字即失败。
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
 import { collectBundleReport, compareReadmeSizes } from './bundle-metrics.mjs';
+import { compareBenchmarkTables, readBenchmarkResults } from './benchmark-report.mjs';
+import { compareHtmlReport, renderHtmlReport } from './benchmark-report-html.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = join(root, 'dist');
@@ -209,6 +213,29 @@ function verifyReadmeSizes() {
   }
 }
 
+async function verifyBenchmarkTables() {
+  const mismatches = await compareBenchmarkTables(readBenchmarkResults());
+  if (mismatches.length > 0) {
+    throw new Error(
+      `基准表格与 benchmark/results.json 不一致：${mismatches
+        .map((item) => item.file)
+        .join('、')}\n  提示：npm run report:bench:write 可重新生成`
+    );
+  }
+  console.log('基准表格与 benchmark/results.json 一致');
+}
+
+async function verifyBenchmarkHtml() {
+  const mismatches = compareHtmlReport(renderHtmlReport(readBenchmarkResults()));
+  if (mismatches.length > 0) {
+    throw new Error(
+      `${mismatches.join('、')}\n  提示：npm run report:bench:html:write 可重新生成` +
+        '（页面数字全部来自 benchmark/results.json）'
+    );
+  }
+  console.log('基准报告页与 benchmark/results.json 一致');
+}
+
 // 体积报表同时供预算与 README 校验使用（一次采集，避免重复打包）。
 const bundleReport = await collectBundleReport();
 
@@ -233,5 +260,8 @@ for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
 await verifyBudgets();
 
 verifyReadmeSizes();
+
+await verifyBenchmarkTables();
+await verifyBenchmarkHtml();
 
 console.log('verify-dist: 全部通过');

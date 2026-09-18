@@ -72,7 +72,8 @@ export default {
 - 导航字段（`menus` / `activeModuleKey` / `activePath`）是 `ref`：`router.subscribe → state.syncFromPath(path)` 只把路径写回信号
 - 顶栏 / 侧栏从状态**派生高亮**：菜单区先 `rebuildable()` 再读信号（模块 / 路径变化自动重建），组件不持有自己的激活状态
 - `AdminShell` 只做装配：布局组装，不直接操作 router，也不需要订阅回调转发
-- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口
+- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口；没有额外行为要定义（无内部状态、无对外命令方法）的组件直接返回 ViewNode 即可，不必包一层 `render()`
+- 组件需要对外命令方法时用 `vNode((api) => 视图)`：命令收到 `api` 上（`api.reload = () => { …; return api }`），工厂挂到返回的节点并校验重名；自带边界写 `api.whenFailed`，其余节点级能力（`mountable()` / `rebuildable()`）链在节点上
 
 ## 7. 页面规则
 
@@ -121,5 +122,6 @@ export default {
 ## 13. 节点写法（易错点）
 
 - **没有节点级 `text()`**：追加文本用 `child(content)`；反复替换同一处文本留一个 `vText()` 句柄用 `textContent(next)`；组件自带的 `text()` 与 SVG `<text>` 的 `text()` 不受影响
+- **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等对外命令方法）时才在 `render()` 外先建再 `child()` 挂载；纯结构节点在 `render()` 里就地组合，不要先存成中间变量再挂回去
 - **句柄进组件 props 要包节点**：`vTd(vText(handle))`、`cell.child(handle)` 建立绑定；`vTd(handle)` 会被当成无效 setup 丢掉
 - **值位置直接接句柄**：`attr('data-count', count)`、`vText(count)`；`count.value` 是快照，写完不再更新

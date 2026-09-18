@@ -6,7 +6,7 @@
     <title>yoya-ui SVG 打砖块</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.4/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -278,20 +278,21 @@
     <main id="app"></main>
     <script type="module">
       import {
-        bindWindowEvent,
         computed,
         div,
         ref,
         svg,
         svgs,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.0/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.4/dist/yoya.ui.full.min.js';
 
       /* 注意：不可证伪的怀疑是偏见，可证伪的怀疑才是风控， 本项目不是做一个游戏，而是为了验证 YoyaUI的能力和代码使用是否舒服
        * 分层与项目 features 模块同构，单文件演示把三层放在一起：
        * - BreakoutPageState：状态与动作（真实项目放 features/breakout/api/breakout.state.js，默认导出）
-       * - PaddleInput / PaddlePad / Paddle / Ball / BrickWall / Hud / Controls / Overlay / Playfield：
-       *   视图组件，都是形态 A 薄工厂（没有额外行为，直接返回 ViewNode），句柄直接传进值位置
+       * - 视图组件（都是形态 A 薄工厂：没有额外行为、直接返回 ViewNode、句柄传进值位置）：
+       *   PaddleInput / PaddlePad / Paddle / Ball / BrickWall / Hud / Controls / Overlay /
+       *   Playfield；BrickWall 用 keyed() 协调砖块：同 key 且行引用未变即复用节点，
+       *   打掉一块只销毁那一块 DOM
        * - BreakoutPage：页面组合与主循环，有 start() / destroy() 所以是形态 B 对象组件
        */
 
@@ -582,14 +583,11 @@
         }
 
         return {
-          bind() {
-            const unbinds = [
-              bindWindowEvent('keydown', handleKeyDown),
-              bindWindowEvent('keyup', handleKeyUp),
-              bindWindowEvent('blur', clear)
-            ];
-
-            return () => unbinds.forEach((unbind) => unbind());
+          /** 显式归属页面节点：window 监听随节点 destroy() 自动卸载。 */
+          bind(node) {
+            node.bindWindowEvent('keydown', handleKeyDown);
+            node.bindWindowEvent('keyup', handleKeyUp);
+            node.bindWindowEvent('blur', clear);
           },
 
           axis() {
@@ -613,10 +611,11 @@
 
       /** 底部手柄：按住 ◀ / ▶ 持续移动球拍，松手或移出按键即停。 */
       function PaddlePad({ input, state }) {
-        function key(direction, glyph, label) {
+        // 分块也走组件：PascalCase、描述 UI 单元、输入走参数
+        function PadKey({ direction, glyph, label }) {
           return div((cell) => {
             cell.className('pad-cell');
-            cell.button((button) => {
+            cell.button(glyph, (button) => {
               function start(event) {
                 event.preventDefault();
                 button.attr('data-held', 'true');
@@ -631,7 +630,6 @@
 
               button.className(`pad-key pad-key--${direction}`);
               button.attr({ type: 'button', 'aria-label': label });
-              button.child(glyph);
               button.on('pointerdown', start);
               button.on('pointerup', stop);
               button.on('pointercancel', stop);
@@ -642,8 +640,8 @@
 
         return div((pad) => {
           pad.className('pad');
-          pad.child(key('left', '◀', '球拍向左'));
-          pad.child(key('right', '▶', '球拍向右'));
+          pad.child(PadKey({ direction: 'left', glyph: '◀', label: '球拍向左' }));
+          pad.child(PadKey({ direction: 'right', glyph: '▶', label: '球拍向右' }));
         });
       }
 
@@ -675,12 +673,13 @@
       function BrickWall(bricks) {
         return svgs.g((wall) => {
           wall.className('brick-wall');
-          // 约定：先 rebuildable()，再读数据，区域内读到的信号才计入依赖
-          wall.rebuildable();
-
-          bricks.value.forEach((brick) => {
-            // 游离节点先建好，再挂进区域；区域重跑时整片按新数据重建
-            wall.child(
+          // keyed 协调：key 用行列稳定标识，行引用未变即复用节点；
+          // 打掉一块只销毁那一块，其余砖块的 DOM 身份不动
+          wall.keyed(
+            bricks,
+            (brick) => `${brick.row}-${brick.col}`,
+            // 本演示唯一一处参数对象写法，其余节点都走 setup 回调 + 链式
+            (brick) =>
               svgs.rect({
                 class: `brick brick--row-${brick.row}`,
                 x: brick.x,
@@ -690,8 +689,7 @@
                 rx: 5,
                 'data-brick': `${brick.row}-${brick.col}`
               })
-            );
-          });
+          );
         });
       }
 
@@ -700,13 +698,13 @@
         const levelText = computed(() => `第 ${state.level.value} 关`);
         const speedText = computed(() => state.ballSpeed.toFixed(1));
 
-        function item(key, label, value) {
+        function HudItem({ kind, label, valueText }) {
           return div((entry) => {
-            entry.className(`hud-item hud-item--${key}`);
-            entry.span((name) => name.className('hud-label').child(label));
+            entry.className(`hud-item hud-item--${kind}`);
+            entry.span(label, (name) => name.className('hud-label'));
             entry.strong((number) => {
               number.className('hud-value');
-              number.child(vText(value));
+              number.child(vText(valueText));
             });
           });
         }
@@ -714,32 +712,35 @@
         return div((hud) => {
           hud.className('hud');
           // 纯数字直接用句柄，值位置会自己转成文本
-          hud.child(item('score', '分数', state.score));
-          hud.child(item('best', '最高分', state.best));
-          hud.child(item('lives', '生命', livesText));
-          hud.child(item('level', '进度', levelText));
-          hud.child(item('speed', '球速', speedText));
+          hud.child(HudItem({ kind: 'score', label: '分数', valueText: state.score }));
+          hud.child(HudItem({ kind: 'best', label: '最高分', valueText: state.best }));
+          hud.child(HudItem({ kind: 'lives', label: '生命', valueText: livesText }));
+          hud.child(HudItem({ kind: 'level', label: '进度', valueText: levelText }));
+          hud.child(HudItem({ kind: 'speed', label: '球速', valueText: speedText }));
         });
       }
 
       function Controls(state) {
         const pauseLabel = computed(() => (state.phase.value === 'paused' ? '继续' : '暂停'));
 
-        function control(key, label, onClick) {
+        function ControlButton({ kind, label, onClick }) {
           return div((cell) => {
-            cell.button((button) => {
-              button.className(`control control--${key}`);
+            cell.button(label, (button) => {
+              button.className(`control control--${kind}`);
               button.attr('type', 'button');
               button.on('click', onClick);
-              button.child(label);
             });
           });
         }
 
         return div((bar) => {
           bar.className('controls');
-          bar.child(control('pause', pauseLabel, () => state.togglePause()));
-          bar.child(control('restart', '重新开始', () => state.restart()));
+          bar.child(
+            ControlButton({ kind: 'pause', label: pauseLabel, onClick: () => state.togglePause() })
+          );
+          bar.child(
+            ControlButton({ kind: 'restart', label: '重新开始', onClick: () => state.restart() })
+          );
         });
       }
 
@@ -777,13 +778,15 @@
           layer.style({ opacity, 'pointer-events': pointerEvents });
           layer.on('click', () => state.primaryAction());
 
-          layer.rect({
-            class: 'overlay-panel',
-            x: PLAY.left,
-            y: 180,
-            width: PLAY.right - PLAY.left,
-            height: 240,
-            rx: 16
+          layer.rect((panel) => {
+            panel.className('overlay-panel');
+            panel.attr({
+              x: PLAY.left,
+              y: 180,
+              width: PLAY.right - PLAY.left,
+              height: 240,
+              rx: 16
+            });
           });
           layer.text((line) => {
             line.className('overlay-title');
@@ -810,13 +813,15 @@
           field.on('pointerdown', onPointer);
           field.on('pointermove', onPointer);
 
-          field.rect({
-            class: 'wall-guide',
-            x: PLAY.left,
-            y: PLAY.top,
-            width: PLAY.right - PLAY.left,
-            height: VIEW.height - PLAY.top - 12,
-            rx: 10
+          field.rect((guide) => {
+            guide.className('wall-guide');
+            guide.attr({
+              x: PLAY.left,
+              y: PLAY.top,
+              width: PLAY.right - PLAY.left,
+              height: VIEW.height - PLAY.top - 12,
+              rx: 10
+            });
           });
 
           field.child(wall);
@@ -838,33 +843,17 @@
           }
         });
 
-        const field = Playfield({
-          wall: BrickWall(state.bricks),
-          paddle: Paddle(state.paddleX),
-          ball: Ball(state),
-          overlay: Overlay(state),
-          onPointer: (event) => {
-            const box = event.currentTarget.getBoundingClientRect();
-            if (!box.width) {
-              return;
-            }
-            state.movePaddle(((event.clientX - box.left) / box.width) * VIEW.width);
-          }
-        });
-
-        let frameId = null;
-        let unbindInput = null;
-        let host = null;
+        let hostElement = null;
+        let pageNode = null;
 
         function tick() {
           // 页面被卸载后停帧：脱离文档的演示不该在后台继续空转
-          if (host && !host.isConnected) {
-            frameId = null;
+          if (hostElement && !hostElement.isConnected) {
+            pageNode?.stopAnimationFrameLoop();
             return;
           }
 
           state.advance(input);
-          frameId = requestAnimationFrame(tick);
         }
 
         return {
@@ -878,7 +867,22 @@
                   bar.child(Hud(state));
                   bar.child(Controls(state));
                 });
-                card.child(field);
+                // 只在这里用一次：就地组合，不提前建到工厂作用域
+                card.child(
+                  Playfield({
+                    wall: BrickWall(state.bricks),
+                    paddle: Paddle(state.paddleX),
+                    ball: Ball(state),
+                    overlay: Overlay(state),
+                    onPointer: (event) => {
+                      const box = event.currentTarget.getBoundingClientRect();
+                      if (!box.width) {
+                        return;
+                      }
+                      state.movePaddle(((event.clientX - box.left) / box.width) * VIEW.width);
+                    }
+                  })
+                );
                 card.p(
                   '键盘用方向键 / WASD，手机两手分持 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
                 );
@@ -888,23 +892,24 @@
           },
 
           start(rootNode) {
-            host = rootNode.renderDom();
-            unbindInput = input.bind();
-            frameId = requestAnimationFrame(tick);
+            pageNode = rootNode;
+            hostElement = rootNode.renderDom();
+            input.bind(rootNode); // window 监听显式归属页面节点
+            rootNode.bindAnimationFrameLoop(tick); // 帧循环随节点 destroy() 自动停
           },
 
           destroy() {
-            cancelAnimationFrame(frameId);
-            unbindInput?.();
-            input.clear();
-            host = null;
+            // 页面对象销毁 = 销毁自己渲染出来的节点：帧循环与 window 监听随 _cleanup 自动清理
+            pageNode?.destroy();
+            input.clear(); // “按住”状态在输入对象上，节点清理管不到
+            hostElement = null;
+            pageNode = null;
           }
         };
       }
 
       const demo = BreakoutPage();
-      const root = demo.render();
-      root.bindTo('#app');
+      const root = demo.render().bindTo('#app');
       demo.start(root);
     </script>
   </body>
