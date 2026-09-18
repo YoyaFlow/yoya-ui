@@ -1,7 +1,7 @@
 # 官方基准数据（js-framework-benchmark）
 
 `results.json` 是唯一数据源：由 `npm run report:bench:import -- <官方 runner 的 results 目录>`（再加
-`--yoya` / `--anchor` / `--baseline` 三个标签与口径参数）
+`--yoya` / `--baseline` 两个必需标签（`--anchor` 可选，用于并列上一个发布版本）与口径参数）
 从官方 runner 的结果 JSON 导入（三个标签：本版本 / 上一发布版本 / 原生基线）。
 `docs/performance.md` 与 `docs/performance.zh-CN.md` 的表格块由它生成，
 `npm run verify:dist` 会校验两者一致——手工改文档里的数字会被拦下。
@@ -42,12 +42,12 @@ node scripts/benchmark-report-html.mjs --write \
 
 ```bash
 node scripts/benchmark-report.mjs --import <results 目录> \
-  --yoya yoya-ui-core-v0.6.3-perf-local-keyed --anchor yoya-ui-core-v0.6.2-keyed \
+  --yoya yoya-ui-core-v0.6.3-perf-local-keyed \
   --baseline vanillajs-keyed \
   --compare "vue-v3.5.39-keyed:Vue 3.5.39" \
   --compare "react-hooks-v19.2.0-keyed:React 19.2.0" \
   --runner playwright --mode headless --browser "Chrome for Testing 152.0.7977.64" \
-  --cpu-iterations 15 --commit <提交> --version 0.6.3-perf --anchor-version 0.6.2
+  --cpu-iterations 15 --commit <提交> --version 0.6.3-perf
 ```
 
 对照条目的数据落在 `results.json` 的 `compare` 段（提交进仓库），因此报告页在 CI 上照样能校验。

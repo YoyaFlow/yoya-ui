@@ -3,15 +3,10 @@
     "generatedAt": "2026-09-18",
     "commit": "d50f8ce",
     "packageVersion": "0.6.3-perf",
-    "anchorVersion": "0.6.2",
     "runner": "playwright",
     "mode": "headless",
     "browser": "Chrome for Testing 152.0.7977.64",
     "cpuIterations": 15
-  },
-  "anchor": {
-    "label": "yoya-ui-core-v0.6.2-keyed",
-    "version": "0.6.2"
   },
   "cpu": [
     {
@@ -20,11 +15,6 @@
         "total": 36.1,
         "script": 6.1,
         "paint": 29.2
-      },
-      "anchor": {
-        "total": 55.3,
-        "script": 26,
-        "paint": 28.7
       },
       "baseline": {
         "total": 31.1,
@@ -39,11 +29,6 @@
         "script": 9.6,
         "paint": 29.4
       },
-      "anchor": {
-        "total": 63.2,
-        "script": 32.9,
-        "paint": 29.7
-      },
       "baseline": {
         "total": 34.1,
         "script": 4.3,
@@ -56,11 +41,6 @@
         "total": 20.8,
         "script": 1.2,
         "paint": 17.7
-      },
-      "anchor": {
-        "total": 21.1,
-        "script": 2,
-        "paint": 17.5
       },
       "baseline": {
         "total": 19,
@@ -75,11 +55,6 @@
         "script": 2.2,
         "paint": 4.3
       },
-      "anchor": {
-        "total": 8.7,
-        "script": 2.9,
-        "paint": 4.4
-      },
       "baseline": {
         "total": 6.8,
         "script": 0.4,
@@ -92,11 +67,6 @@
         "total": 26.8,
         "script": 1.2,
         "paint": 23.4
-      },
-      "anchor": {
-        "total": 27,
-        "script": 3.4,
-        "paint": 20.7
       },
       "baseline": {
         "total": 23.3,
@@ -111,11 +81,6 @@
         "script": 0.6,
         "paint": 15.6
       },
-      "anchor": {
-        "total": 19,
-        "script": 1.8,
-        "paint": 16.3
-      },
       "baseline": {
         "total": 16.7,
         "script": 0.4,
@@ -128,11 +93,6 @@
         "total": 392.8,
         "script": 62.4,
         "paint": 324.3
-      },
-      "anchor": {
-        "total": 547.9,
-        "script": 231.2,
-        "paint": 307.2
       },
       "baseline": {
         "total": 336.8,
@@ -147,11 +107,6 @@
         "script": 6.6,
         "paint": 34.5
       },
-      "anchor": {
-        "total": 57.6,
-        "script": 22.9,
-        "paint": 34.1
-      },
       "baseline": {
         "total": 42.3,
         "script": 2.2,
@@ -165,11 +120,6 @@
         "script": 17.2,
         "paint": 2
       },
-      "anchor": {
-        "total": 58,
-        "script": 55.1,
-        "paint": 2
-      },
       "baseline": {
         "total": 14.9,
         "script": 11.4,
@@ -181,19 +131,16 @@
     {
       "id": "21_ready-memory",
       "yoya": 1.229966163635254,
-      "anchor": 1.2265434265136719,
       "baseline": 1.0452871322631836
     },
     {
       "id": "22_run-memory",
       "yoya": 3.923778533935547,
-      "anchor": 11.02556324005127,
       "baseline": 2.4300050735473633
     },
     {
       "id": "25_run-clear-memory",
       "yoya": 1.4430170059204102,
-      "anchor": 1.864924430847168,
       "baseline": 1.1569137573242188
     }
   ],
@@ -201,19 +148,16 @@
     {
       "id": "41_size-uncompressed",
       "yoya": 83.8,
-      "anchor": 59.1,
       "baseline": 11.7
     },
     {
       "id": "42_size-compressed",
       "yoya": 20.9,
-      "anchor": 16.2,
       "baseline": 2.5
     },
     {
       "id": "43_first-paint",
       "yoya": 339.5,
-      "anchor": 317.8,
       "baseline": 282.4
     }
   ],

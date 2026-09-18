@@ -15,17 +15,17 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 **Nine standard operations (ms, median)**
 
-| Operation                | yoya 0.6.2 | yoya now | vanillajs | now ÷ vanilla |
-| ------------------------ | ---------- | -------- | --------- | ------------- |
-| 01 create 1k rows        | 55.3       | 36.1     | 31.1      | 1.16×         |
-| 02 replace 1k rows       | 63.2       | 39.9     | 34.1      | 1.17×         |
-| 03 update every 10th row | 21.1       | 20.8     | 19.0      | 1.09×         |
-| 04 select row            | 8.7        | 7.8      | 6.8       | 1.15×         |
-| 05 swap rows             | 27.0       | 26.8     | 23.3      | 1.15×         |
-| 06 remove one row        | 19.0       | 17.2     | 16.7      | 1.03×         |
-| 07 create 10k rows       | 547.9      | 392.8    | 336.8     | 1.17×         |
-| 08 append 1k rows        | 57.6       | 42.2     | 42.3      | 1.00×         |
-| 09 clear x8              | 58.0       | 20.6     | 14.9      | 1.38×         |
+| Operation                | yoya now | vanillajs | now ÷ vanilla |
+| ------------------------ | -------- | --------- | ------------- |
+| 01 create 1k rows        | 36.1     | 31.1      | 1.16×         |
+| 02 replace 1k rows       | 39.9     | 34.1      | 1.17×         |
+| 03 update every 10th row | 20.8     | 19.0      | 1.09×         |
+| 04 select row            | 7.8      | 6.8       | 1.15×         |
+| 05 swap rows             | 26.8     | 23.3      | 1.15×         |
+| 06 remove one row        | 17.2     | 16.7      | 1.03×         |
+| 07 create 10k rows       | 392.8    | 336.8     | 1.17×         |
+| 08 append 1k rows        | 42.2     | 42.3      | 1.00×         |
+| 09 clear x8              | 20.6     | 14.9      | 1.38×         |
 
 **script / paint split (ms, median)**
 
@@ -43,14 +43,14 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 **Memory / size / first paint**
 
-| Metric                     | yoya 0.6.2 | yoya now | vanillajs | now ÷ vanilla |
-| -------------------------- | ---------- | -------- | --------- | ------------- |
-| 21 ready memory (MB)       | 1.23       | 1.23     | 1.05      | 1.18×         |
-| 22 run memory (MB)         | 11.03      | 3.92     | 2.43      | 1.61×         |
-| 25 run+clear memory (MB)   | 1.86       | 1.44     | 1.16      | 1.25×         |
-| 41 size, uncompressed (KB) | 59.1       | 83.8     | 11.7      | 7.16×         |
-| 42 size, brotli (KB)       | 16.2       | 20.9     | 2.5       | 8.36×         |
-| 43 first paint (ms)        | 317.8      | 339.5    | 282.4     | 1.20×         |
+| Metric                     | yoya now | vanillajs | now ÷ vanilla |
+| -------------------------- | -------- | --------- | ------------- |
+| 21 ready memory (MB)       | 1.23     | 1.05      | 1.18×         |
+| 22 run memory (MB)         | 3.92     | 2.43      | 1.61×         |
+| 25 run+clear memory (MB)   | 1.44     | 1.16      | 1.25×         |
+| 41 size, uncompressed (KB) | 83.8     | 11.7      | 7.16×         |
+| 42 size, brotli (KB)       | 20.9     | 2.5       | 8.36×         |
+| 43 first paint (ms)        | 339.5    | 282.4     | 1.20×         |
 
 <!-- benchmark:tables:end -->
 
@@ -70,14 +70,14 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
   flag and memoizes rows, and the hand-written vanilla baseline touches only the two affected rows. Read the
   `04` cell with that in mind; the O(1) alternative (selection state on the row) is documented in
   `docs/component-authoring.md` §6.2.
-- **Memory is still the biggest order-of-magnitude gap**: 6.15 MB vs vanilla's 2.45 MB (2.51×) after creating
-  1000 rows — 44% below 0.6.2's 11.03 MB. What remains is mostly DOM objects and V8 node headers.
-- **Size is a known cost**: the non-tree-shakeable core makes a page 5–7× vanilla's size
-  (62.7 KB / 17.1 KB brotli vs 11.7 KB / 2.5 KB brotli) — the gap between "a DSL plus a component library"
-  and hand-written DOM calls.
-- **first paint is a single sample**: the official runner samples it once; five local repeats span roughly
-  303–410 ms (median 306.8 ms), so do not read that cell as a precise value — and do not use it to judge a
-  KB-level size change.
+- **Memory is still the biggest order-of-magnitude gap**: 3.92 MB vs vanilla's 2.43 MB (1.61×) after creating
+  1000 rows. What remains is mostly DOM objects and V8 node headers.
+- **Size is a known cost**: 83.8 KB / 20.9 KB brotli vs vanilla's 11.7 KB / 2.5 KB brotli — the gap between
+  "a DSL plus a component library" and hand-written DOM calls (the compiled entry bundles its fragments and
+  runtime hooks into the artifact).
+- **first paint is a single sample**: the official runner samples it once; local repeats span roughly
+  300–430 ms (339.5 ms this round), so do not read that cell as a precise value — and do not use it to judge
+  a KB-level size change.
 
 ## Cross-harness numbers are not interchangeable
 
@@ -85,6 +85,5 @@ This repository also keeps a self-built harness (`.scratch/perf-1x/`, msedge hea
 per-1000-row MB increment). It exists for before/after comparisons on the same machine. **The absolute
 values of the two setups are not interchangeable**: the official runner uses Chrome for Testing 152 with
 playwright and times operations, while the harness reads
-`performance.measureUserAgentSpecificMemory()` increments. The same 0.6.2 code can differ by 1.5–3× between
-them (for example, the 1k-create script bucket: 26.0 ms official vs 14.6 ms in the harness), so comparisons
-only hold within one setup.
+`performance.measureUserAgentSpecificMemory()` increments. The same code can differ by 1.5–3× between them,
+so comparisons only hold within one setup.

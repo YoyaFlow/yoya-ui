@@ -53,7 +53,8 @@ describe('benchmark report wiring', () => {
           : results.size;
       const found = bucket.find((item) => item.id === row.id);
       expect(found, `benchmark/results.json 缺少 ${row.id}`).toBeTruthy();
-      for (const key of ['yoya', 'anchor', 'baseline']) {
+      const columns = results.anchor ? ['yoya', 'anchor', 'baseline'] : ['yoya', 'baseline'];
+      for (const key of columns) {
         expect(found[key], `${row.id} 缺少 ${key} 列`).toBeTruthy();
       }
     }

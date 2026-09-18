@@ -177,18 +177,15 @@ export function renderHtmlReport(results, projection = readProjection()) {
         })
       )
     : null;
-  const versions = [
-    meta.anchorVersion,
-    meta.packageVersion,
-    ...compares.map((column) => column.version)
-  ];
+  /** 锚点（上一个发布版本）是可选取：没有 `anchor` 段就不渲染该列。 */
+  const anchor = results.anchor ?? null;
   const headers = [
     '操作',
-    `yoya ${meta.anchorVersion}`,
+    ...(anchor ? [`yoya ${anchor.version}`] : []),
     `yoya ${meta.packageVersion}`,
     ...(projection ? [`yoya ${meta.packageVersion} + AST 预生成（投影）`] : []),
     '原生',
-    ...versions.slice(2)
+    ...compares.map((column) => column.version)
   ];
   const projectedCell = (unit, value, base) =>
     value === null || value === undefined || !Number.isFinite(value)
@@ -209,7 +206,7 @@ export function renderHtmlReport(results, projection = readProjection()) {
     return {
       cells: [
         `<td>${escapeHtml(titleOf(row.id))}</td>`,
-        valueCell(unit, row.anchor.total, base, { layered: false }),
+        ...(anchor ? [valueCell(unit, row.anchor?.total, base, { layered: false })] : []),
         valueCell(unit, row.yoya.total, base),
         ...(projection ? [projectedCell(unit, projected?.total, base)] : []),
         valueCell(unit, base, base, { layered: false }),
@@ -254,7 +251,7 @@ export function renderHtmlReport(results, projection = readProjection()) {
     return {
       cells: [
         `<td>${escapeHtml(titleOf(row.id))}</td>`,
-        valueCell(unit, row.anchor, base, { layered: false }),
+        ...(anchor ? [valueCell(unit, row.anchor, base, { layered: false })] : []),
         valueCell(unit, row.yoya, base),
         ...(projection ? [projectedCell(unit, projected, base)] : []),
         valueCell(unit, base, base, { layered: false }),

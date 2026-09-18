@@ -97,8 +97,12 @@ function table(head, rows) {
 /** 生成文档里的表格块（块内所有数字都来自 benchmark/results.json）。 */
 export function renderBenchmarkTables(results, lang = 'zh') {
   const text = TEXT[lang];
-  const anchorVersion = results.anchor.version;
-  const head = (key) => text[key].map((cell) => cell.replace('{version}', anchorVersion));
+  // 锚点（上一个发布版本）是可选列：没有 `anchor` 段时表格只呈现「本次 / 原生」
+  const anchorVersion = results.anchor?.version ?? null;
+  const head = (key) =>
+    text[key]
+      .filter((cell) => anchorVersion !== null || !cell.includes('{version}'))
+      .map((cell) => cell.replace('{version}', anchorVersion ?? ''));
   const cpuById = new Map(results.cpu.map((row) => [row.id, row]));
   const memoryById = new Map(results.memory.map((row) => [row.id, row]));
   const sizeById = new Map(results.size.map((row) => [row.id, row]));
@@ -109,7 +113,7 @@ export function renderBenchmarkTables(results, lang = 'zh') {
     const baseline = pick(cpuById, row, 'baseline');
     return [
       row[lang],
-      num(pick(cpuById, row, 'anchor')?.total, 1),
+      ...(anchorVersion ? [num(pick(cpuById, row, 'anchor')?.total, 1)] : []),
       num(yoya?.total, 1),
       num(baseline?.total, 1),
       ratio(yoya?.total, baseline?.total)
@@ -136,7 +140,7 @@ export function renderBenchmarkTables(results, lang = 'zh') {
     const baseline = pick(map, row, 'baseline');
     return [
       row[lang],
-      num(pick(map, row, 'anchor'), digits),
+      ...(anchorVersion ? [num(pick(map, row, 'anchor'), digits)] : []),
       num(yoya, digits),
       num(baseline, digits),
       ratio(yoya, baseline)
@@ -223,6 +227,8 @@ function readRunnerResults(dir, label, id) {
 const stat = (values) => values?.DEFAULT ?? values?.total ?? null;
 
 export function importBenchmarkResults({ dir, yoya, anchor, baseline, compares = [], meta }) {
+  /** 锚点（上一个发布版本）可选：不传就不产出 anchor 列，报告只呈现本次与对照。 */
+  const hasAnchor = typeof anchor === 'string' && anchor.length > 0;
   const median = (label, id) => {
     const values = readRunnerResults(dir, label, id);
     return stat(values)?.median ?? null;
@@ -238,23 +244,23 @@ export function importBenchmarkResults({ dir, yoya, anchor, baseline, compares =
 
   return {
     meta,
-    anchor: { label: anchor, version: meta.anchorVersion },
+    ...(hasAnchor ? { anchor: { label: anchor, version: meta.anchorVersion } } : {}),
     cpu: CPU_ROWS.map((row) => ({
       id: row.id,
       yoya: split(yoya, row.id),
-      anchor: split(anchor, row.id),
+      ...(hasAnchor ? { anchor: split(anchor, row.id) } : {}),
       baseline: split(baseline, row.id)
     })),
     memory: MEMORY_ROWS.map((row) => ({
       id: row.id,
       yoya: median(yoya, row.id),
-      anchor: median(anchor, row.id),
+      ...(hasAnchor ? { anchor: median(anchor, row.id) } : {}),
       baseline: median(baseline, row.id)
     })),
     size: SIZE_ROWS.map((row) => ({
       id: row.id,
       yoya: median(yoya, row.id),
-      anchor: median(anchor, row.id),
+      ...(hasAnchor ? { anchor: median(anchor, row.id) } : {}),
       baseline: median(baseline, row.id)
     })),
     // 对照条目（Vue / React 等）：必须与 yoya / baseline 同一轮，否则归一系数没有意义
@@ -314,7 +320,8 @@ async function main() {
         generatedAt: option('date', new Date().toISOString().slice(0, 10)),
         commit: option('commit'),
         packageVersion: option('version'),
-        anchorVersion: option('anchor-version'),
+        // 锚点版本只在并列上一个发布版本时才有值
+        ...(option('anchor-version') ? { anchorVersion: option('anchor-version') } : {}),
         runner: option('runner', 'playwright'),
         mode: option('mode', 'headless'),
         browser: option('browser'),
