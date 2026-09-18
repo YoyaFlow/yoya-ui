@@ -186,6 +186,16 @@ Contract and boundaries:
 - Every region subscribes to its own dependencies: a signal read inside it triggers a rebuild (reported by devtools as `trigger: 'signal'`); nested regions subscribe independently. Writing several signals inside `batch()` rebuilds a multi-source region once, synchronously at the end of the batch; use `rebuildScheduled()` to check whether a signal-triggered rebuild is queued. Writes outside a batch still rebuild synchronously, and a dependency that changes again during a rebuild re-runs it afterwards instead of being dropped.
 
 - To keep focus or third-party instances, leave that part outside the region or use value bindings, which update in place without rebuilding DOM.
+- **Event delegation inside `keyed()` segments**: bubbling standard events registered inside a row builder
+  (including its subtree) — `click`, `input`, and friends — no longer attach one DOM listener per row; they
+  are collected into a single listener on the segment root (10k rows: 20k listeners → one per segment).
+  `.on()` usage and observable behavior are unchanged (`this`, `event.target`, `event.currentTarget` and
+  `stopPropagation()` all behave as before, the last one also cutting native bubbling). Binding falls back to
+  per-element registration for `once` / `capture` / `passive: true`, non-bubbling events (`focus`,
+  `mouseenter`, …), custom events, non-element nodes, and any `.on()` added after mount. Two subtle
+  differences: `currentTarget` is emulated per event (same value, but an own property on the event object),
+  and listeners third parties attach directly on elements _between_ the row root and the segment root may see
+  a different relative order.
 - **Error boundary**: `node.whenFailed(handler)` declares a subtree boundary — returning a node replaces the subtree with a fallback, returning nothing only reports and keeps the current state; component objects may define a `whenFailed(error, info)` member next to `render()`, which ComponentNode mounts automatically. Captures are never silent: console.error always fires and a devtools 'error' event is emitted when enabled. The error walks up the parent chain to the nearest boundary at failure time, so it is independent of declaration order, nesting depth, runtime insertion and subtree moves; that boundary owns the capture and never forwards it further, and a throwing handler propagates outward. When nothing is returned during a render / build phase, the failing child is marked and skipped on later attempts (no repeated failures or logs); re-attaching it or rebuilding its region clears the mark so it gets one more chance. Without a boundary, errors propagate unchanged (fail fast). Degrading a region node runs as one region build, so it never trips the region guard.
 
 ## 7. Composition, events, and lifecycle

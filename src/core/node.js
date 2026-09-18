@@ -688,6 +688,266 @@ function nodeBuilders(node) {
   return node._builders ?? (node._builders = []);
 }
 
+// ---- keyed 段内事件委托 ------------------------------------------------------
+/**
+ * keyed 行构建期注册的事件不再往每行元素上挂监听器：handler 存进节点的单个描述符槽，
+ * 元素登记到段根的 WeakMap，段根按事件类型挂一个监听器统一派发。省下的是每行
+ * 「一个 Map + 一个条目对象 + 一个真实 DOM 监听器」（实测约 387 B/行）。
+ *
+ * 只对「冒泡的标准事件 + 无 once/capture/passive + 元素节点 + 在行构建期注册」生效，
+ * 其余一律回落逐元素绑定；派发时逐事件伪造 currentTarget 与包装 stopPropagation，
+ * 使 .on() 的可观察语义与原来一致（差异见 docs/component-authoring）。
+ */
+const delegatedEventTypes = new Set([
+  'beforeinput',
+  'change',
+  'click',
+  'contextmenu',
+  'copy',
+  'cut',
+  'dblclick',
+  'dragend',
+  'dragenter',
+  'dragleave',
+  'dragover',
+  'dragstart',
+  'drop',
+  'input',
+  'keydown',
+  'keypress',
+  'keyup',
+  'mousedown',
+  'mousemove',
+  'mouseout',
+  'mouseover',
+  'mouseup',
+  'paste',
+  'pointercancel',
+  'pointerdown',
+  'pointermove',
+  'pointerout',
+  'pointerover',
+  'pointerup',
+  'reset',
+  'submit',
+  'touchend',
+  'touchmove',
+  'touchstart',
+  'wheel'
+]);
+
+const keyedBuildStack = [];
+
+/**
+ * 元素 → 行内节点的反查用展开属性，而不是 WeakMap：
+ * WeakMap 的键被回收后内部表不还堆（实测 200 万条残留 64 MB，约 32 B/条），
+ * 列表反复建/清会留下与峰值规模同量级的常驻；展开属性随元素一起回收，没有这份水位。
+ * 用 Symbol 键：不出现在 Object.keys / for…in / DOM 属性里，第三方也看不到。
+ */
+const delegateNodeKey = Symbol('yoyaDelegateNode');
+
+function activeKeyedBuild() {
+  return keyedBuildStack.length > 0 ? keyedBuildStack[keyedBuildStack.length - 1] : null;
+}
+
+function canDelegateEvent(eventName, options) {
+  if (!delegatedEventTypes.has(eventName)) {
+    return false;
+  }
+
+  if (!options) {
+    return true;
+  }
+
+  return options.once !== true && options.capture !== true && options.passive !== true;
+}
+
+/** 段根的委托状态：元素 → 节点的弱映射 + 已挂监听器的事件名。 */
+function delegateOwnerFor(parent) {
+  if (!parent._delegates) {
+    parent._delegates = {
+      boundElement: null,
+      events: null,
+      listeners: null,
+      parent
+    };
+  }
+
+  return parent._delegates;
+}
+
+function delegatedDescriptorFor(node, eventName) {
+  const current = node._delegate;
+  if (current === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(current)) {
+    return current.find((item) => item.event === eventName) ?? null;
+  }
+
+  return current.event === eventName ? current : null;
+}
+
+/** 注销一个委托事件；返回是否命中（未命中时调用方走原路径）。 */
+function removeDelegatedEvent(node, eventName) {
+  const current = node._delegate;
+  if (current === undefined) {
+    return false;
+  }
+
+  if (Array.isArray(current)) {
+    const index = current.findIndex((item) => item.event === eventName);
+    if (index === -1) {
+      return false;
+    }
+
+    const [removed] = current.splice(index, 1);
+    if (current.length === 1) {
+      node._delegate = current[0];
+    }
+    void removed;
+    return true;
+  }
+
+  if (current.event !== eventName) {
+    return false;
+  }
+
+  if (node._el) {
+    delete node._el[delegateNodeKey];
+  }
+  node._delegate = undefined;
+  return true;
+}
+
+/**
+ * 段根监听器：从事件目标沿 DOM 链走到段根，按内→外顺序调用行内 handler。
+ * currentTarget / stopPropagation 逐事件伪造，调用完删掉自有属性，
+ * 让事件对象回到原生语义（同一事件对象被重放时不会读到上一次的节点）。
+ */
+function dispatchDelegatedEvent(owner, eventName, event) {
+  const root = owner.parent._el;
+  if (!root) {
+    return;
+  }
+
+  const chain = [];
+  let element = event.target;
+  while (element && element !== root) {
+    if (element.nodeType === 1) {
+      const node = element[delegateNodeKey];
+      const descriptor = node ? delegatedDescriptorFor(node, eventName) : null;
+      if (descriptor) {
+        chain.push({ node, descriptor });
+      }
+    }
+    element = element.parentNode;
+  }
+
+  if (chain.length === 0) {
+    return;
+  }
+
+  const nativeStopPropagation = event.stopPropagation;
+  let stopped = false;
+  Object.defineProperty(event, 'stopPropagation', {
+    configurable: true,
+    value() {
+      stopped = true;
+      nativeStopPropagation.call(this);
+    }
+  });
+
+  try {
+    for (const { node, descriptor } of chain) {
+      Object.defineProperty(event, 'currentTarget', {
+        configurable: true,
+        get: () => node._el
+      });
+
+      try {
+        descriptor.handler.call(node, event);
+      } catch (error) {
+        captureNodeError(node, error, 'event');
+      }
+
+      if (descriptor.options?.once) {
+        node.off(eventName);
+      }
+
+      if (stopped) {
+        break;
+      }
+    }
+  } finally {
+    delete event.currentTarget;
+    delete event.stopPropagation;
+  }
+}
+
+/** 段根元素就绪后挂监听器；元素换了（重挂载）要重新挂。 */
+function bindDelegatedEvents(owner) {
+  const root = owner.parent._el;
+  if (!root || !owner.events) {
+    return;
+  }
+
+  if (owner.boundElement !== root) {
+    owner.boundElement = root;
+    owner.listeners = null;
+  }
+
+  if (!owner.listeners) {
+    owner.listeners = new Map();
+  }
+
+  owner.events.forEach((eventName) => {
+    if (owner.listeners.has(eventName)) {
+      return;
+    }
+
+    const listener = (event) => dispatchDelegatedEvent(owner, eventName, event);
+    root.addEventListener(eventName, listener);
+    owner.listeners.set(eventName, listener);
+  });
+}
+
+/** 行构建期的事件登记：同事件只留最新，元素就绪时登记进段根的弱映射。 */
+function registerDelegatedEvent(parent, node, eventName, handler, options) {
+  const owner = delegateOwnerFor(parent);
+  const descriptor = { event: eventName, handler, options, owner };
+  const current = node._delegate;
+
+  if (current === undefined) {
+    node._delegate = descriptor;
+  } else if (Array.isArray(current)) {
+    const existing = current.find((item) => item.event === eventName);
+    if (existing) {
+      existing.handler = handler;
+      existing.options = options;
+    } else {
+      current.push(descriptor);
+    }
+  } else if (current.event === eventName) {
+    current.handler = handler;
+    current.options = options;
+  } else {
+    node._delegate = [current, descriptor];
+  }
+
+  if (!owner.events) {
+    owner.events = new Set();
+  }
+  owner.events.add(eventName);
+
+  // 元素已经存在（挂载后再注册 / 区域重跑）就直接登记；否则等 renderDom 收口。
+  if (node._el) {
+    node._el[delegateNodeKey] = node;
+    bindDelegatedEvents(owner);
+  }
+}
+
 /** 子节点自己的 DOM 组：单根是 `[_el]`，多根组件是 `_fragmentDom`（文档顺序）。 */
 function nodeDomGroup(node) {
   if (node?._fragmentDom?.length) {
@@ -996,7 +1256,13 @@ function syncKeyedSegment(parent, segment, rows) {
       return { ...item, node: existing.node };
     }
 
-    const node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
+    let node;
+    keyedBuildStack.push(segment);
+    try {
+      node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
+    } finally {
+      keyedBuildStack.pop();
+    }
     const entry = { rawKey: item.rawKey, row: item.row, node };
     members.set(item.rawKey, entry);
     if (
@@ -1799,6 +2065,7 @@ export class ViewNode {
       keyFn,
       build,
       members: new Map(),
+      parent: this,
       update: options?.update ?? null
     };
     // 段只在本次 keyed() 的绑定闭包里使用（syncKeyedSegment(this, segment, rows)）；此前的
@@ -2088,12 +2355,29 @@ export class ViewNode {
   /**
    * 注册事件。同一节点同一事件只保留最新 handler；
    * 真实 DOM 上每个事件最多挂一个转发 adapter。
+   *
+   * 在 keyed 行构建期注册的、可委托的事件（冒泡标准事件 + 无 once/capture/passive）
+   * 不收进节点自己的 _events，而是登记到段根由它统一派发；其余情况走下面的逐元素绑定。
    */
   on(eventName, handler, options) {
     if (typeof handler !== 'function') {
       throw new TypeError('ViewNode event handler must be a function');
     }
 
+    const segment = activeKeyedBuild();
+    if (
+      segment &&
+      this instanceof ElementNode &&
+      canDelegateEvent(eventName, options) &&
+      !this._events?.has(eventName)
+    ) {
+      registerDelegatedEvent(segment.parent, this, eventName, handler, options);
+      return this;
+    }
+
+    // 同一个事件从委托切回逐元素绑定（例如挂载后又注册了一次）：先把委托描述符摘掉，
+    // 否则派发时会拿着旧 handler 再调一次。
+    removeDelegatedEvent(this, eventName);
     const previous = this._events?.get(eventName);
     nodeEvents(this).set(eventName, { handler, options });
 
@@ -2105,6 +2389,7 @@ export class ViewNode {
   }
 
   off(eventName) {
+    removeDelegatedEvent(this, eventName);
     this._events?.delete(eventName);
     const entry = this._domAdapters?.get(eventName);
     if (entry) {
@@ -3376,6 +3661,22 @@ export class ElementNode extends ViewNode {
         this._el.style[name] = value;
       });
     }
+
+    // 段根：委托监听器必须先于本节点自己的 adapter 挂上——DOM 同元素按注册顺序触发，
+    // 这样「行内 handler → 段根自己的 handler」与逐元素绑定时的冒泡顺序一致。
+    if (this._delegates) {
+      bindDelegatedEvents(this._delegates);
+    }
+
+    // 行内被委托的节点：把元素登记进段根的弱映射，派发时才能从 DOM 反查节点。
+    if (this._delegate) {
+      const descriptors = Array.isArray(this._delegate) ? this._delegate : [this._delegate];
+      descriptors.forEach((descriptor) => {
+        bindDelegatedEvents(descriptor.owner);
+      });
+      this._el[delegateNodeKey] = this;
+    }
+
     this._events?.forEach((descriptor, eventName) => {
       this._bindDomAdapter(eventName, undefined, descriptor.options);
     });
