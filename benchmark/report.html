@@ -54,7 +54,7 @@
 </p>
 <section class="cards">
   <div class="card"><span>九项几何平均 ÷ 原生</span><b>1.39×</b></div>
-  <div class="card"><span>九项几何平均 ÷ 原生（含 AST 预生成，投影）</span><b>1.26×</b></div>
+  <div class="card"><span>九项几何平均 ÷ 原生（含 AST 预生成，投影）</span><b>1.17×</b></div>
   <div class="card"><span>22 建 1000 行后内存</span><b>5.68 MB → 3.60 MB（投影）</b></div>
   <div class="card"><span>42 体积（brotli）</span><b>26.6 KB</b></div>
   <div class="card"><span>09 清空 ×8</span><b>23.8 ms</b></div>
@@ -64,15 +64,15 @@
 <table>
   <thead><tr><th>操作</th><th>yoya 0.6.2</th><th>yoya 0.6.3-perf</th><th>yoya 0.6.3-perf + AST 预生成（投影）</th><th>原生</th><th>Vue 3.5.39</th><th>React 19.2.0</th></tr></thead>
   <tbody>
-<tr><td>01 创建 1000 行</td><td>55.3 ms</td><td class="stack"><b>47.6 ms</b><span class="coef-bad">1.56×</span></td><td class="stack projected"><b>37.3 ms</b><span class="coef-ok">1.22×</span></td><td>30.6 ms</td><td class="stack"><b>37.0 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>41.4 ms</b><span class="coef-warn">1.35×</span></td></tr>
-<tr><td>02 替换 1000 行</td><td>63.2 ms</td><td class="stack"><b>48.9 ms</b><span class="coef-warn">1.47×</span></td><td class="stack projected"><b>38.2 ms</b><span class="coef-ok">1.15×</span></td><td>33.3 ms</td><td class="stack"><b>40.6 ms</b><span class="coef-ok">1.22×</span></td><td class="stack"><b>47.3 ms</b><span class="coef-warn">1.42×</span></td></tr>
+<tr><td>01 创建 1000 行</td><td>55.3 ms</td><td class="stack"><b>47.6 ms</b><span class="coef-bad">1.56×</span></td><td class="stack projected"><b>37.4 ms</b><span class="coef-ok">1.22×</span></td><td>30.6 ms</td><td class="stack"><b>37.0 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>41.4 ms</b><span class="coef-warn">1.35×</span></td></tr>
+<tr><td>02 替换 1000 行</td><td>63.2 ms</td><td class="stack"><b>48.9 ms</b><span class="coef-warn">1.47×</span></td><td class="stack projected"><b>38.3 ms</b><span class="coef-ok">1.15×</span></td><td>33.3 ms</td><td class="stack"><b>40.6 ms</b><span class="coef-ok">1.22×</span></td><td class="stack"><b>47.3 ms</b><span class="coef-warn">1.42×</span></td></tr>
 <tr><td>03 每 10 行改文案</td><td>21.1 ms</td><td class="stack"><b>24.3 ms</b><span class="coef-ok">1.18×</span></td><td class="projected-none">—</td><td>20.6 ms</td><td class="stack"><b>26.6 ms</b><span class="coef-warn">1.29×</span></td><td class="stack"><b>27.1 ms</b><span class="coef-warn">1.32×</span></td></tr>
 <tr><td>04 选中一行</td><td>8.7 ms</td><td class="stack"><b>8.4 ms</b><span class="coef-ok">1.24×</span></td><td class="projected-none">—</td><td>6.8 ms</td><td class="stack"><b>7.7 ms</b><span class="coef-ok">1.13×</span></td><td class="stack"><b>10.4 ms</b><span class="coef-bad">1.53×</span></td></tr>
-<tr><td>05 交换两行</td><td>27.0 ms</td><td class="stack"><b>30.7 ms</b><span class="coef-warn">1.44×</span></td><td class="projected-none">—</td><td>21.3 ms</td><td class="stack"><b>25.8 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>155.4 ms</b><span class="coef-bad">7.30×</span></td></tr>
-<tr><td>06 删除一行</td><td>19.0 ms</td><td class="stack"><b>20.0 ms</b><span class="coef-ok">1.09×</span></td><td class="projected-none">—</td><td>18.3 ms</td><td class="stack"><b>19.8 ms</b><span class="coef-ok">1.08×</span></td><td class="stack"><b>18.1 ms</b><span class="coef-good">0.99×</span></td></tr>
-<tr><td>07 创建 10000 行</td><td>547.9 ms</td><td class="stack"><b>566.0 ms</b><span class="coef-bad">1.69×</span></td><td class="stack projected"><b>451.5 ms</b><span class="coef-warn">1.35×</span></td><td>335.5 ms</td><td class="stack"><b>413.3 ms</b><span class="coef-ok">1.23×</span></td><td class="stack"><b>579.1 ms</b><span class="coef-bad">1.73×</span></td></tr>
-<tr><td>08 追加 1000 行</td><td>57.6 ms</td><td class="stack"><b>54.0 ms</b><span class="coef-bad">1.57×</span></td><td class="stack projected"><b>44.5 ms</b><span class="coef-warn">1.29×</span></td><td>34.4 ms</td><td class="stack"><b>42.0 ms</b><span class="coef-ok">1.22×</span></td><td class="stack"><b>43.5 ms</b><span class="coef-warn">1.26×</span></td></tr>
-<tr><td>09 清空 ×8</td><td>58.0 ms</td><td class="stack"><b>23.8 ms</b><span class="coef-warn">1.38×</span></td><td class="projected-none">—</td><td>17.2 ms</td><td class="stack"><b>20.0 ms</b><span class="coef-ok">1.16×</span></td><td class="stack"><b>27.4 ms</b><span class="coef-bad">1.59×</span></td></tr>
+<tr><td>05 交换两行</td><td>27.0 ms</td><td class="stack"><b>30.7 ms</b><span class="coef-warn">1.44×</span></td><td class="stack projected"><b>29.0 ms</b><span class="coef-warn">1.36×</span></td><td>21.3 ms</td><td class="stack"><b>25.8 ms</b><span class="coef-ok">1.21×</span></td><td class="stack"><b>155.4 ms</b><span class="coef-bad">7.30×</span></td></tr>
+<tr><td>06 删除一行</td><td>19.0 ms</td><td class="stack"><b>20.0 ms</b><span class="coef-ok">1.09×</span></td><td class="stack projected"><b>19.8 ms</b><span class="coef-ok">1.08×</span></td><td>18.3 ms</td><td class="stack"><b>19.8 ms</b><span class="coef-ok">1.08×</span></td><td class="stack"><b>18.1 ms</b><span class="coef-good">0.99×</span></td></tr>
+<tr><td>07 创建 10000 行</td><td>547.9 ms</td><td class="stack"><b>566.0 ms</b><span class="coef-bad">1.69×</span></td><td class="stack projected"><b>450.5 ms</b><span class="coef-warn">1.34×</span></td><td>335.5 ms</td><td class="stack"><b>413.3 ms</b><span class="coef-ok">1.23×</span></td><td class="stack"><b>579.1 ms</b><span class="coef-bad">1.73×</span></td></tr>
+<tr><td>08 追加 1000 行</td><td>57.6 ms</td><td class="stack"><b>54.0 ms</b><span class="coef-bad">1.57×</span></td><td class="stack projected"><b>44.6 ms</b><span class="coef-warn">1.30×</span></td><td>34.4 ms</td><td class="stack"><b>42.0 ms</b><span class="coef-ok">1.22×</span></td><td class="stack"><b>43.5 ms</b><span class="coef-warn">1.26×</span></td></tr>
+<tr><td>09 清空 ×8</td><td>58.0 ms</td><td class="stack"><b>23.8 ms</b><span class="coef-warn">1.38×</span></td><td class="stack projected"><b>13.7 ms</b><span class="coef-good">0.80×</span></td><td>17.2 ms</td><td class="stack"><b>20.0 ms</b><span class="coef-ok">1.16×</span></td><td class="stack"><b>27.4 ms</b><span class="coef-bad">1.59×</span></td></tr>
   </tbody>
 </table>
 
@@ -80,15 +80,15 @@
 <table>
   <thead><tr><th>操作</th><th>yoya script</th><th>yoya script（投影）</th><th>yoya paint</th><th>原生 script</th><th>原生 paint</th></tr></thead>
   <tbody>
-<tr><td>01 创建 1000 行</td><td>18.1 ms</td><td class="projected">7.8 ms</td><td>29.1 ms</td><td>2.2 ms</td><td>28.1 ms</td></tr>
-<tr><td>02 替换 1000 行</td><td>18.8 ms</td><td class="projected">8.1 ms</td><td>29.6 ms</td><td>4.3 ms</td><td>28.3 ms</td></tr>
+<tr><td>01 创建 1000 行</td><td>18.1 ms</td><td class="projected">7.9 ms</td><td>29.1 ms</td><td>2.2 ms</td><td>28.1 ms</td></tr>
+<tr><td>02 替换 1000 行</td><td>18.8 ms</td><td class="projected">8.2 ms</td><td>29.6 ms</td><td>4.3 ms</td><td>28.3 ms</td></tr>
 <tr><td>03 每 10 行改文案</td><td>1.4 ms</td><td class="projected-none">—</td><td>19.5 ms</td><td>0.8 ms</td><td>17.8 ms</td></tr>
 <tr><td>04 选中一行</td><td>2.4 ms</td><td class="projected-none">—</td><td>4.6 ms</td><td>0.4 ms</td><td>5.3 ms</td></tr>
-<tr><td>05 交换两行</td><td>3.4 ms</td><td class="projected-none">—</td><td>23.3 ms</td><td>0.4 ms</td><td>18.5 ms</td></tr>
-<tr><td>06 删除一行</td><td>0.8 ms</td><td class="projected-none">—</td><td>18.2 ms</td><td>0.4 ms</td><td>16.7 ms</td></tr>
-<tr><td>07 创建 10000 行</td><td>207.4 ms</td><td class="projected">92.9 ms</td><td>340.8 ms</td><td>24.1 ms</td><td>306.5 ms</td></tr>
-<tr><td>08 追加 1000 行</td><td>16.7 ms</td><td class="projected">7.2 ms</td><td>34.5 ms</td><td>2.2 ms</td><td>31.4 ms</td></tr>
-<tr><td>09 清空 ×8</td><td>21.1 ms</td><td class="projected-none">—</td><td>2.0 ms</td><td>12.9 ms</td><td>2.0 ms</td></tr>
+<tr><td>05 交换两行</td><td>3.4 ms</td><td class="projected">1.7 ms</td><td>23.3 ms</td><td>0.4 ms</td><td>18.5 ms</td></tr>
+<tr><td>06 删除一行</td><td>0.8 ms</td><td class="projected">0.6 ms</td><td>18.2 ms</td><td>0.4 ms</td><td>16.7 ms</td></tr>
+<tr><td>07 创建 10000 行</td><td>207.4 ms</td><td class="projected">91.9 ms</td><td>340.8 ms</td><td>24.1 ms</td><td>306.5 ms</td></tr>
+<tr><td>08 追加 1000 行</td><td>16.7 ms</td><td class="projected">7.3 ms</td><td>34.5 ms</td><td>2.2 ms</td><td>31.4 ms</td></tr>
+<tr><td>09 清空 ×8</td><td>21.1 ms</td><td class="projected">11.0 ms</td><td>2.0 ms</td><td>12.9 ms</td><td>2.0 ms</td></tr>
   </tbody>
 </table>
 
@@ -118,10 +118,10 @@
     与打包口径不可比；时长与内存可比，且体积列在不同条目间也不完全同口径（各自的打包方式不同）。</li>
   <li><b>内存 / 体积 / 首屏是单次采样</b>，不要当精确值；首屏尤其如此。</li>
   <li><b>琥珀色那列是「投影」，不是实测</b>：数据来自
-    <code>benchmark/ast-precompile-projection.json</code>（原型 feat/ast-precompile · .scratch/compile-ast/ · issues/39-ast-precompile.md），按 原型同页交错 7 轮中位：dsl+keyed 对 element+编译版列表（写数据 → 对账 → 挂载）；按实测倍率折算 script 桶，paint 与其它桶保持不变；内存按 1k 行实测增量折算。
+    <code>benchmark/ast-precompile-projection.json</code>（原型 feat/ast-precompile · .scratch/compile-ast/ · issues/39-ast-precompile.md），按 原型同页交错 7 轮中位：dsl+keyed 对 element+编译版列表（写数据 → 对账 → 挂载；清空/交换/删除为「先建好 1000 行再计一次操作」，容器在文档中）；按实测倍率折算 script 桶，paint 与其它桶保持不变；内存按 1k 行实测增量折算。
     只覆盖建行路径（01 / 02 / 07 / 08）与 1k 行内存，<b>03 / 04 / 05 / 06 / 09 显示 — 表示不受影响</b>；
     未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口，主条目不引）。
-    投影，不是官方 runner 结果；只覆盖建行路径（01 / 02 / 07 / 08）与 1k 行内存；04 选中不动（唤醒成本由状态建模决定，见 keySet），未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口）</li>
+    投影，不是官方 runner 结果；覆盖建行路径与清空/交换/删除一行；04 选中不动（唤醒成本由状态建模决定，见 keySet）；官方 09 是 8 次清空之和（口径见票 39）；未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口）</li>
 </ul>
 
 <footer>

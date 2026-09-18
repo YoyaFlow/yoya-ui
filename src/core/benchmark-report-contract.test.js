@@ -122,9 +122,9 @@ describe('AST pre-compile projection column', () => {
     expect(html).toContain(`<b>${projected} ms</b>`);
     expect(projected).not.toBe(row.yoya.total.toFixed(1));
 
-    // 未覆盖的项在投影列里是「—」，不是复制的实测值
+    // 未覆盖的项在投影列里是「—」，不是复制的实测值（当前只剩 03 改文案与 04 选中）
     const uncovered = results.cpu.filter((item) => !projection.applies.cpu[item.id]);
-    expect(uncovered.length).toBe(5);
+    expect(uncovered.map((item) => item.id)).toEqual(['03_update10th1k_x16', '04_select1k']);
     expect(html.match(/projected-none">—/g).length).toBeGreaterThanOrEqual(uncovered.length);
   });
 
