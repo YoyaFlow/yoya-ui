@@ -52,7 +52,8 @@ const TEXT = {
   zh: {
     meta: (meta) =>
       `**运行口径**：官方 runner \`${meta.runner}\`（${meta.mode}）+ ${meta.browser}；` +
-      `CPU 项取 ${meta.cpuIterations} 次迭代的中位数，内存 / 体积 / 首屏各 1 次采样；` +
+      `CPU 项取 ${meta.cpuIterations} 个样本的中位数（单轮 15 次迭代；多轮合并后取中位），` +
+      '内存 / 体积 / 首屏各 1 次采样；' +
       `测量日期 ${meta.generatedAt}，yoya 版本 \`${meta.packageVersion}\`（\`${meta.commit}\`）。`,
     cpuTitle: '九项标准操作（ms，中位数）',
     cpuHead: ['操作', `yoya ${'{version}'}`, 'yoya 本次', '原生 vanillajs', '本次 ÷ 原生'],
@@ -64,7 +65,8 @@ const TEXT = {
   en: {
     meta: (meta) =>
       `**Run setup**: official runner \`${meta.runner}\` (${meta.mode}) + ${meta.browser}; ` +
-      `CPU rows are medians of ${meta.cpuIterations} iterations, memory / size / first paint are single samples; ` +
+      `CPU rows are medians of ${meta.cpuIterations} samples (15 iterations per round; multiple rounds merged), ` +
+      'memory / size / first paint are single samples; ' +
       `measured ${meta.generatedAt}, yoya version \`${meta.packageVersion}\` (\`${meta.commit}\`).`,
     cpuTitle: 'Nine standard operations (ms, median)',
     cpuHead: ['Operation', `yoya ${'{version}'}`, 'yoya now', 'vanillajs', 'now ÷ vanilla'],
