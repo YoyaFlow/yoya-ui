@@ -632,6 +632,42 @@ export function applyElementOptions(
 /** Minimal HTML escaping used by toHTML(). */
 export function escapeHtml(value: unknown): string;
 
+/**
+ * Shared frozen empty child list. Node child lists start out as this sentinel,
+ * so never write into it: go through `nodeChildren()` / `appendNodeChild()`.
+ */
+export const EMPTY_CHILDREN: readonly never[];
+
+/**
+ * Writable child list of a node, materialising a real array when the list is
+ * still the shared empty sentinel. Use it instead of touching `_children`.
+ */
+export function nodeChildren<T = ViewNode>(node: unknown): T[];
+
+/**
+ * Appends one child to a node's child list through the engine's own write path
+ * (keeps the literal-first allocation and the empty-list sentinel invariants).
+ */
+export function appendNodeChild(node: unknown, child: unknown): void;
+
+/**
+ * Writable style snapshot of an element node, created on demand. Preferred over
+ * reading `_styles` directly (which may be undefined when no style was set).
+ */
+export function elementStyles(node: unknown): Record<string, unknown>;
+
+/**
+ * Writable attribute snapshot of an element node, created on demand. Preferred
+ * over reading `_attrs` directly (it may be undefined until something is set).
+ */
+export function elementAttrs(node: unknown): Record<string, unknown>;
+
+/** Class names of an element node in declaration order. */
+export function elementClassNames(node: unknown): string[];
+
+/** Whether an element node carries the given class name (reads the class text). */
+export function elementHasClass(node: unknown, name: string): boolean;
+
 /** Normalizes any child input into a ViewNode. */
 export function normalizeChild(child: ViewNode | ComponentLike | string | number): ViewNode;
 

@@ -15,12 +15,13 @@ yoya-ui's core is a small, stable "component standard" rather than a large runti
 
 Component developers only need `yoya-ui/core` (zero third-party dependencies, smallest size):
 
-| Category                  | API                                                                                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                      |
-| Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget` |
-| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                            |
-| i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                          |
+| Category                  | API                                                                                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                                           |
+| Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget`                      |
+| Node internals            | `nodeChildren`, `appendNodeChild`, `EMPTY_CHILDREN`, `elementStyles`, `elementAttrs`, `elementClassNames`, `elementHasClass` (class-node components only, see §7.3) |
+| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                 |
+| i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                               |
 
 ## 3. The three component shapes
 
@@ -350,6 +351,27 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **Pass the handle when the source is a `ref`** (`rows: itemsRef`): blocks read it through value bindings or regions, so no getter is needed; keep getters for non-signal sources (request results, external objects).
 - **Split updates inside a block**: value changes use function-value bindings; structural changes use a region (the block declares `rebuildable()` on its own layer and calls the getter again).
 - Blocks use the same shapes as exported components (shape A returning a ViewNode, or shape B returning `{ render() }`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
+
+### 7.3 Field access in class-node components (0.6.3 onwards)
+
+The underscore fields `_children` / `_classText` / `_styles` / `_attrs` are **implementation details** (memory
+work changes how they are represented). Third-party or out-of-tree class-node components must not read or
+write them directly; use these helpers, which map one-to-one onto the old fields:
+
+| Before                                                      | After                                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `node._children.push(child)` / `this._children.splice(...)` | `appendNodeChild(node, child)`, `nodeChildren(node)`                           |
+| Comparing against an empty list                             | `EMPTY_CHILDREN` (a shared **frozen** array sentinel — writing into it throws) |
+| `node._classes` / `node._attrs.class`                       | `elementClassNames(node)`, `elementHasClass(node, name)`                       |
+| `node._styles.background = …`                               | `elementStyles(node).background = …`                                           |
+| `node._attrs['data-x'] = …`                                 | `elementAttrs(node)['data-x'] = …`                                             |
+
+Three things to keep in mind: the empty child list is a shared sentinel, so cache nothing and write nothing
+into it (`nodeChildren()` materialises a real array on the first write); class names live as text
+(`_classText` — the `_classes` Set no longer exists); `_styles` / `_attrs` are created on demand, so they are
+`undefined` on elements that never set a style or attribute and the helpers create them for you. Append
+children through `child()` / `addChild()` as usual — these helpers exist for class-node components that must
+touch the child list inside their own render path.
 
 ## 8. Registering parent shortcuts
 

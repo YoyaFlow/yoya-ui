@@ -15,12 +15,13 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 
 组件开发者只需要依赖 `yoya-ui/core`（零第三方依赖、体积最小）：
 
-| 类别       | API                                                                                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                     |
-| 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 信号       | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                   |
-| 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
+| 类别         | API                                                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                               |
+| 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`           |
+| 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（形态 C 组件专用，见 §7.3） |
+| 信号         | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                             |
+| 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                                    |
 
 ## 3. 三种组件形态
 
@@ -335,6 +336,24 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **上游用 `ref` 时直接传句柄**（`rows: itemsRef`）：块内用值绑定或区域读句柄即可，不需要 getter；getter 留给非信号来源（请求结果、外部对象）。
 - **块内的更新分工**：值变化用函数值绑定，结构变化用区域（块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter）。
 - 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
+
+### 7.3 形态 C 组件的字段访问（0.6.3 起）
+
+`_children` / `_classText` / `_styles` / `_attrs` 这些下划线字段是**实现细节**（内存优化会改它们的表示），
+第三方或库外形 C 组件不要直接读写；0.6.3 起改用下面这组 helper，语义与旧字段一一对应：
+
+| 旧写法                                                      | 新写法                                                   |
+| ----------------------------------------------------------- | -------------------------------------------------------- |
+| `node._children.push(child)` / `this._children.splice(...)` | `appendNodeChild(node, child)`、`nodeChildren(node)`     |
+| 比对空列表                                                  | `EMPTY_CHILDREN`（共享的**冻结**数组哨兵，就地写会抛错） |
+| `node._classes` / `node._attrs.class`                       | `elementClassNames(node)`、`elementHasClass(node, name)` |
+| `node._styles.background = …`                               | `elementStyles(node).background = …`                     |
+| `node._attrs['data-x'] = …`                                 | `elementAttrs(node)['data-x'] = …`                       |
+
+注意三点：空子节点列表是共享哨兵，`nodeChildren()` 首次写入时才换成真数组（所以别缓存它、也别写哨兵）；
+类名的真身是文本（`_classText`，`_classes` 这个 Set 已不存在）；`_styles` / `_attrs` 按需创建，
+没写过样式或属性的元素上它们是 `undefined`，helper 会替你建好。追加子节点请走 `child()` / `addChild()`，
+helper 只用于"必须在自己的渲染路径里直接改节点名单"的形态 C 场景。
 
 ## 8. 注册父节点快捷方法
 

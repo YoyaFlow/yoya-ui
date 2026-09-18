@@ -4,13 +4,16 @@
 
 ## 公共 API
 
-| 类别       | API                                                                                                                                            |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 节点类     | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                   |
-| 工厂与组合 | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget` |
-| 状态       | `ref` / `computed`（Signals）                                                                                                                  |
-| 更新与容错 | `keyed()`、`mountable()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                      |
-| 国际化     | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                          |
+| 类别         | API                                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`VTextNode`                                                    |
+| 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`  |
+| 状态         | `ref` / `computed`（Signals）                                                                                                                   |
+| 更新与容错   | `keyed()`、`mountable()` / `isMounted()`、`whenFailed()`（ViewNode 方法）                                                                       |
+| 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（形态 C 组件专用） |
+| 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                           |
+
+形态 C 的类节点组件不要直接读写 `_children` / `_classText` / `_styles` / `_attrs`——它们是实现细节（空子节点列表是共享冻结哨兵，类名真身是文本，属性/样式快照按需创建）。追加子节点走 `child()` / `addChild()`；必须在自己的渲染路径里改名单时用 `nodeChildren()` / `appendNodeChild()`，读类名用 `elementHasClass()` / `elementClassNames()`，改样式/属性用 `elementStyles()` / `elementAttrs()`。
 
 ## vText 文本节点
 
