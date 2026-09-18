@@ -420,11 +420,16 @@ function commitBindingValue(binding, next) {
 
 /** 节点及其子树的绑定进入 DOM 后开始订阅依赖（服务端只求值不订阅）。 */
 function activateBindings(node) {
-  node._bindings?.forEach((binding) => {
-    if (typeof binding.activate === 'function') {
-      binding.activate();
+  const bindings = node._bindings;
+  if (bindings) {
+    // 索引循环：绑定激活是每节点一次的热路径，不为它建闭包
+    for (let index = 0; index < bindings.length; index += 1) {
+      const binding = bindings[index];
+      if (typeof binding.activate === 'function') {
+        binding.activate();
+      }
     }
-  });
+  }
 
   activateRegion(node);
 }
@@ -2643,7 +2648,13 @@ export class ViewNode {
   }
 
   _commitChildren() {
-    this._pendingRemovals?.forEach((child) => child.destroy());
+    const pending = this._pendingRemovals;
+    if (pending) {
+      // for..of 迭代 Set：与 forEach 同为实时迭代语义，但不为每个待移除节点建闭包
+      for (const child of pending) {
+        child.destroy();
+      }
+    }
     this._pendingRemovals = null;
     this._childrenDirty = false;
   }
@@ -3623,7 +3634,9 @@ export class ElementNode extends ViewNode {
 
     const inherited = this._access ?? currentInheritedScope();
     this._inheritedScope = inherited;
-    if (isDevtoolsEnabled()) {
+    // devtools 每节点只查一次（原来开头 / 收口 / finally 各一次）
+    const devtools = isDevtoolsEnabled();
+    if (devtools) {
       this._devtoolsRendering = true;
     }
     try {
@@ -3632,16 +3645,28 @@ export class ElementNode extends ViewNode {
         // 新鲜元素的类名属性必为空——除非属性快照里显式写过 class（那时 DOM 类名来自 attr，
         // 不能假定为空、必须回读）。有了这个前提，首次落盘可以省掉一次 className getter 读。
         const freshClass = this._attrs?.class === undefined;
-        withRenderScope(inherited, () => this._applyBindingsToElement(freshClass));
+        // 就地压栈：首次落盘不为一个闭包付钱
+        renderScopeStack.push(inherited);
+        try {
+          this._applyBindingsToElement(freshClass);
+        } finally {
+          renderScopeStack.pop();
+        }
       }
 
       this._applyAccessState(state);
       activateBindings(this);
       this._commitChildren();
-      this._children.forEach((child) => {
-        withRenderScope(inherited, () => {
+
+      // 子节点遍历：作用域整趟压栈（原来每个子节点两个闭包），索引循环不建闭包
+      const children = this._children;
+      const element = this._el;
+      renderScopeStack.push(inherited);
+      try {
+        for (let index = 0; index < children.length; index += 1) {
+          const child = children[index];
           if (child._failed) {
-            return;
+            continue;
           }
 
           let childElement;
@@ -3649,29 +3674,33 @@ export class ElementNode extends ViewNode {
             childElement = child.renderDom();
           } catch (error) {
             const replacement = captureNodeError(child, error, 'render');
-            if (replacement?._el && replacement._el.parentNode !== this._el) {
-              this._el.appendChild(replacement._el);
+            if (replacement?._el && replacement._el.parentNode !== element) {
+              element.appendChild(replacement._el);
             }
-            return;
+            continue;
           }
           if (
             childElement &&
-            childElement.parentNode !== this._el &&
+            childElement.parentNode !== element &&
             this._childMountStates?.get(child) !== false
           ) {
-            this._el.appendChild(childElement);
-          } else if (!childElement && child._el && child._el.parentNode === this._el) {
-            this._el.removeChild(child._el);
+            element.appendChild(childElement);
+          } else if (!childElement && child._el && child._el.parentNode === element) {
+            element.removeChild(child._el);
           }
-        });
-      });
+        }
+      } finally {
+        renderScopeStack.pop();
+      }
 
-      if (isDevtoolsEnabled()) {
+      if (devtools) {
         commitDevtoolsNode(this);
       }
       return this._el;
     } finally {
-      this._devtoolsRendering = false;
+      if (devtools) {
+        this._devtoolsRendering = false;
+      }
     }
   }
 
@@ -3731,16 +3760,24 @@ export class ElementNode extends ViewNode {
    * 挂载条件判定都在第二遍里重跑）。freshClass 表示本元素是刚建出来的、类名必为空。
    */
   _applyBindingsToElement(freshClass = false) {
-    if (this._attrs) {
+    const attrs = this._attrs;
+    if (attrs) {
       // 首帧按属性名排序落盘：此后同名 setAttribute 只改值、保持位置，DOM 属性顺序因此
       // 与 toHTML() 的序列化顺序一致（类名走 _syncClassName，不在快照里循环）。
-      sortedKeys(this._attrs).forEach((name) => applyAttribute(this._el, name, this._attrs[name]));
+      const names = sortedKeys(attrs);
+      for (let index = 0; index < names.length; index += 1) {
+        const name = names[index];
+        applyAttribute(this._el, name, attrs[name]);
+      }
     }
     this._syncClassName(freshClass);
-    if (this._styles) {
-      sortedKeys(this._styles).forEach((name) => {
-        this._el.style[name] = this._styles[name];
-      });
+    const styles = this._styles;
+    if (styles) {
+      const names = sortedKeys(styles);
+      for (let index = 0; index < names.length; index += 1) {
+        const name = names[index];
+        this._el.style[name] = styles[name];
+      }
     }
 
     // 段根：委托监听器必须先于本节点自己的 adapter 挂上——DOM 同元素按注册顺序触发，
@@ -3752,15 +3789,18 @@ export class ElementNode extends ViewNode {
     // 行内被委托的节点：把元素登记进段根的弱映射，派发时才能从 DOM 反查节点。
     if (this._delegate) {
       const descriptors = Array.isArray(this._delegate) ? this._delegate : [this._delegate];
-      descriptors.forEach((descriptor) => {
-        bindDelegatedEvents(descriptor.owner);
-      });
+      for (let index = 0; index < descriptors.length; index += 1) {
+        bindDelegatedEvents(descriptors[index].owner);
+      }
       this._el[delegateNodeKey] = this;
     }
 
-    this._events?.forEach((descriptor, eventName) => {
-      this._bindDomAdapter(eventName, undefined, descriptor.options);
-    });
+    const events = this._events;
+    if (events) {
+      for (const [eventName, descriptor] of events) {
+        this._bindDomAdapter(eventName, undefined, descriptor.options);
+      }
+    }
   }
 
   /**
