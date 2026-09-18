@@ -14,8 +14,44 @@ import { CPU_ROWS, MEMORY_ROWS, SIZE_ROWS, readBenchmarkResults } from './benchm
 
 const root = resolve(import.meta.dirname, '..');
 const OUT_FILE = join(root, 'benchmark', 'report.html');
+const PROJECTION_FILE = join(root, 'benchmark', 'ast-precompile-projection.json');
 const BANNER =
   '<!-- 由 scripts/benchmark-report-html.mjs 从 benchmark/results.json 生成，请勿手改 -->';
+
+/**
+ * 可选投影列：`benchmark/ast-precompile-projection.json` 给出「实测倍率 + 作用范围」，
+ * 由本页折算成一条**标注为投影**的列（官方数字仍来自 results.json，不被改写）。
+ * 文件不存在时页面与只有实测列时完全一致。
+ */
+export function readProjection(file = PROJECTION_FILE) {
+  if (!existsSync(file)) {
+    return null;
+  }
+  const projection = JSON.parse(readFileSync(file, 'utf8'));
+  if (projection?.meta?.kind !== 'projection') {
+    throw new Error(`${file}: meta.kind 必须是 "projection"（投影列不许伪装成实测值）`);
+  }
+  return projection;
+}
+
+/** 投影值：cpu 只折算 script 桶（total 同步平移），内存按实测增量平移；未覆盖 → null。 */
+function projectedValue(projection, kind, row) {
+  if (!projection) {
+    return null;
+  }
+  const key = projection.applies?.[kind]?.[row.id];
+  const delta = key ? projection.deltas?.[key] : undefined;
+  if (typeof delta !== 'number') {
+    return null;
+  }
+  if (kind === 'cpu') {
+    return {
+      total: Number((row.yoya.total + row.yoya.script * delta).toFixed(1)),
+      script: Number((row.yoya.script * (1 + delta)).toFixed(1))
+    };
+  }
+  return row.yoya + delta;
+}
 
 const escapeHtml = (value) =>
   String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -116,6 +152,8 @@ const styles = `
     .coef-warn { color:var(--warn); }
     .coef-bad { color:var(--bad); }
     .coef-coef { color:var(--muted); }
+    td.projected, th.projected { background:#fffbeb; }
+    td.projected-none { background:#fffbeb; color:var(--muted); }
     ul { padding-left:20px; }
     footer { margin-top:36px; color:var(--muted); font-size:12px; }
     code { background:#f3f4f6; padding:1px 5px; border-radius:4px; }
@@ -127,10 +165,18 @@ function renderTable(headers, rows) {
   return `<table>\n  <thead><tr>${head}</tr></thead>\n  <tbody>\n${body}\n  </tbody>\n</table>`;
 }
 
-export function renderHtmlReport(results) {
+export function renderHtmlReport(results, projection = readProjection()) {
   const { meta, cpu, memory, size } = results;
   const compares = results.compare ?? [];
   const average = geometricMean(cpu);
+  const projectedAverage = projection
+    ? geometricMean(
+        cpu.map((row) => {
+          const projected = projectedValue(projection, 'cpu', row);
+          return { ...row, yoya: { ...row.yoya, total: projected?.total ?? row.yoya.total } };
+        })
+      )
+    : null;
   const versions = [
     meta.anchorVersion,
     meta.packageVersion,
@@ -140,9 +186,14 @@ export function renderHtmlReport(results) {
     '操作',
     `yoya ${meta.anchorVersion}`,
     `yoya ${meta.packageVersion}`,
+    ...(projection ? [`yoya ${meta.packageVersion} + AST 预生成（投影）`] : []),
     '原生',
     ...versions.slice(2)
   ];
+  const projectedCell = (unit, value, base) =>
+    value === null || value === undefined || !Number.isFinite(value)
+      ? '<td class="projected-none">—</td>'
+      : valueCell(unit, value, base).replace('<td class="stack"', '<td class="stack projected"');
 
   const cpuById = new Map(cpu.map((row) => [row.id, row]));
   const compareLookup = (column, id, kind) => {
@@ -154,35 +205,58 @@ export function renderHtmlReport(results) {
   const cpuRows = cpu.map((row) => {
     const unit = 'ms';
     const base = row.baseline.total;
+    const projected = projectedValue(projection, 'cpu', row);
     return {
       cells: [
         `<td>${escapeHtml(titleOf(row.id))}</td>`,
         valueCell(unit, row.anchor.total, base, { layered: false }),
         valueCell(unit, row.yoya.total, base),
+        ...(projection ? [projectedCell(unit, projected?.total, base)] : []),
         valueCell(unit, base, base, { layered: false }),
         ...compares.map((column) => valueCell(unit, compareLookup(column, row.id, 'cpu'), base))
       ]
     };
   });
 
-  const splitRows = cpu.map((row) => ({
-    cells: [
-      `<td>${escapeHtml(titleOf(row.id))}</td>`,
-      `<td>${formatValue('ms', row.yoya.script)}</td>`,
-      `<td>${formatValue('ms', row.yoya.paint)}</td>`,
-      `<td>${formatValue('ms', row.baseline.script)}</td>`,
-      `<td>${formatValue('ms', row.baseline.paint)}</td>`
-    ]
-  }));
+  const splitHeaders = [
+    '操作',
+    'yoya script',
+    ...(projection ? ['yoya script（投影）'] : []),
+    'yoya paint',
+    '原生 script',
+    '原生 paint'
+  ];
+  const splitRows = cpu.map((row) => {
+    const projected = projectedValue(projection, 'cpu', row);
+    return {
+      cells: [
+        `<td>${escapeHtml(titleOf(row.id))}</td>`,
+        `<td>${formatValue('ms', row.yoya.script)}</td>`,
+        ...(projection
+          ? [
+              `<td class="${projected ? 'projected' : 'projected-none'}">${formatValue(
+                'ms',
+                projected?.script
+              )}</td>`
+            ]
+          : []),
+        `<td>${formatValue('ms', row.yoya.paint)}</td>`,
+        `<td>${formatValue('ms', row.baseline.script)}</td>`,
+        `<td>${formatValue('ms', row.baseline.paint)}</td>`
+      ]
+    };
+  });
 
   const otherRows = [...memory, ...size].map((row) => {
     const unit = unitOf(row.id);
     const base = row.baseline;
+    const projected = projectedValue(projection, unit === 'MB' ? 'memory' : 'size', row);
     return {
       cells: [
         `<td>${escapeHtml(titleOf(row.id))}</td>`,
         valueCell(unit, row.anchor, base, { layered: false }),
         valueCell(unit, row.yoya, base),
+        ...(projection ? [projectedCell(unit, projected, base)] : []),
         valueCell(unit, base, base, { layered: false }),
         ...compares.map((column) =>
           valueCell(unit, compareLookup(column, row.id, unit === 'MB' ? 'memory' : 'size'), base)
@@ -218,10 +292,28 @@ ${BANNER}
 </p>
 <section class="cards">
   <div class="card"><span>九项几何平均 ÷ 原生</span><b>${average === null ? '—' : `${average.toFixed(2)}×`}</b></div>
+  ${
+    projection
+      ? `<div class="card"><span>九项几何平均 ÷ 原生（含 AST 预生成，投影）</span><b>${
+          projectedAverage === null ? '—' : `${projectedAverage.toFixed(2)}×`
+        }</b></div>`
+      : ''
+  }
   <div class="card"><span>22 建 1000 行后内存</span><b>${formatValue(
     'MB',
     memory.find((row) => row.id === '22_run-memory')?.yoya
-  )}</b></div>
+  )}${
+    projection
+      ? ` → ${formatValue(
+          'MB',
+          projectedValue(
+            projection,
+            'memory',
+            memory.find((row) => row.id === '22_run-memory')
+          )
+        )}（投影）`
+      : ''
+  }</b></div>
   <div class="card"><span>42 体积（brotli）</span><b>${formatValue(
     'KB',
     size.find((row) => row.id === '42_size-compressed')?.yoya
@@ -236,7 +328,7 @@ ${BANNER}
 ${renderTable(headers, cpuRows)}
 
 <h2>script / paint 分解（ms，中位数）</h2>
-${renderTable(['操作', 'yoya script', 'yoya paint', '原生 script', '原生 paint'], splitRows)}
+${renderTable(splitHeaders, splitRows)}
 
 <h2>内存 / 体积 / 首屏</h2>
 ${renderTable(headers, otherRows)}
@@ -253,10 +345,23 @@ ${renderTable(headers, otherRows)}
   <li><b>体积 / 首屏是本机静态 vendor 形态</b>（页面直接加载 min chunk + 未打包的应用代码），
     与打包口径不可比；时长与内存可比，且体积列在不同条目间也不完全同口径（各自的打包方式不同）。</li>
   <li><b>内存 / 体积 / 首屏是单次采样</b>，不要当精确值；首屏尤其如此。</li>
+  ${
+    projection
+      ? `<li><b>琥珀色那列是「投影」，不是实测</b>：数据来自
+    <code>benchmark/ast-precompile-projection.json</code>（原型 ${escapeHtml(
+      projection.meta.prototype
+    )}），按 ${escapeHtml(projection.meta.method)}。
+    只覆盖建行路径（01 / 02 / 07 / 08）与 1k 行内存，<b>03 / 04 / 05 / 06 / 09 显示 — 表示不受影响</b>；
+    未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口，主条目不引）。
+    ${escapeHtml(projection.meta.disclaimer)}</li>`
+      : ''
+  }
 </ul>
 
 <footer>
-  数据源 <code>benchmark/results.json</code>；本页由 <code>npm run report:bench:html:write</code> 生成，
+  数据源 <code>benchmark/results.json</code>${
+    projection ? ' + <code>benchmark/ast-precompile-projection.json</code>（投影列）' : ''
+  }；本页由 <code>npm run report:bench:html:write</code> 生成，
   <code>verify:dist</code> 会校验它与数据源一致。
 </footer>
 </main>

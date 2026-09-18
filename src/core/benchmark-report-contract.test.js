@@ -10,6 +10,7 @@ import {
   extractBenchmarkBlock,
   readBenchmarkResults
 } from '../../scripts/benchmark-report.mjs';
+import { readProjection, renderHtmlReport } from '../../scripts/benchmark-report-html.mjs';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const results = readBenchmarkResults();
@@ -80,6 +81,68 @@ describe('benchmark tables in docs', () => {
       expect(block).toContain(results.meta.packageVersion);
       expect(block).toContain(String(results.meta.cpuIterations));
       expect(block.startsWith(BLOCK_START)).toBe(false);
+    }
+  });
+});
+
+/**
+ * 投影列（AST 预生成）：它必须**明确标注为派生数据**，官方实测列不许被改写。
+ * 数据来源 `benchmark/ast-precompile-projection.json`，换算规则写在 meta.method 里。
+ */
+describe('AST pre-compile projection column', () => {
+  const projection = readProjection();
+  const html = renderHtmlReport(results);
+
+  it('labels the projection as derived data with its provenance', () => {
+    expect(projection.meta.kind).toBe('projection');
+    expect(projection.meta.variant).toContain('thin');
+    expect(projection.meta.prototype).toContain('.scratch/compile-ast/');
+    expect(projection.meta.source).toContain('results-both-rounds7.json');
+    expect(html).toContain('AST 预生成（投影）');
+    expect(html).toContain(projection.meta.disclaimer.slice(0, 20));
+    expect(html).toContain('benchmark/ast-precompile-projection.json');
+  });
+
+  it('only extrapolates covered rows and leaves the measured column intact', () => {
+    for (const [id, key] of Object.entries(projection.applies.cpu)) {
+      expect(
+        results.cpu.find((row) => row.id === id),
+        id
+      ).toBeTruthy();
+      expect(typeof projection.deltas[key], key).toBe('number');
+    }
+
+    const row = results.cpu.find((item) => item.id === '01_run1k');
+    const projected = (row.yoya.total + row.yoya.script * projection.deltas.create1kScript).toFixed(
+      1
+    );
+    // 实测格仍是 results.json 的原值，投影值出现在它自己的格里
+    expect(html).toContain(`<b>${row.yoya.total.toFixed(1)} ms</b>`);
+    expect(html).toContain(`<b>${projected} ms</b>`);
+    expect(projected).not.toBe(row.yoya.total.toFixed(1));
+
+    // 未覆盖的项在投影列里是「—」，不是复制的实测值
+    const uncovered = results.cpu.filter((item) => !projection.applies.cpu[item.id]);
+    expect(uncovered.length).toBe(5);
+    expect(html.match(/projected-none">—/g).length).toBeGreaterThanOrEqual(uncovered.length);
+  });
+
+  it('refuses a projection file that is not marked as derived', async () => {
+    const { mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const dir = mkdtempSync(join(tmpdir(), 'yoya-projection-'));
+
+    try {
+      const file = join(dir, 'not-a-projection.json');
+      writeFileSync(file, JSON.stringify({ meta: { kind: 'measured' }, deltas: {} }), 'utf8');
+      expect(() => readProjection(file)).toThrow(/projection/);
+
+      // 没有投影文件时页面退回纯实测视图
+      expect(readProjection(join(dir, 'missing.json'))).toBeNull();
+      expect(renderHtmlReport(results, null)).not.toContain('AST 预生成（投影）');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });
