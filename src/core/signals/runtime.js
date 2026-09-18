@@ -1,6 +1,11 @@
 import { currentSignals } from './contract.js';
 import { trackedSubscribe } from './observe.js';
-import { withCollect } from './deps.js';
+import {
+  acquireCollectorToken,
+  collectInto,
+  dedupeSourcesInPlace,
+  releaseCollectorToken
+} from './deps.js';
 
 /** 读取绑定值：零参闭包直接调用，signal 句柄取 .value。 */
 function readTargetValue() {
@@ -41,18 +46,33 @@ export class ReactiveTarget {
   }
 
   evaluate() {
-    const result = withCollect(readTargetValue, this);
-    const sources = result.sources;
-    this.value = result.value;
-    this.evaluated = true;
+    // 池化收集器：求值不再建 token / 依赖数组 / 结果对象（一次求值的分配 33 B → ~0）。
+    const token = acquireCollectorToken();
+    let value;
+    try {
+      value = collectInto(token, readTargetValue, this);
+      const sources = token.sources;
+      if (sources.length > 1) {
+        dedupeSourcesInPlace(sources);
+      }
 
-    // 单依赖不保留数组：绝大多数绑定（值绑定、句柄订阅）都只有一个依赖
-    if (sources.length === 1) {
-      this.onlySource = sources[0];
-      this.sources = null;
-    } else {
-      this.onlySource = null;
-      this.sources = sources;
+      this.value = value;
+      this.evaluated = true;
+
+      // 单依赖不保留数组：绝大多数绑定（值绑定、句柄订阅）都只有一个依赖
+      if (sources.length === 1) {
+        this.onlySource = sources[0];
+        this.sources = null;
+      } else if (sources.length === 0) {
+        this.onlySource = null;
+        this.sources = null;
+      } else {
+        // 多依赖是少数：拷一份留给订阅路径，池里的数组留给下一次求值
+        this.onlySource = null;
+        this.sources = sources.slice();
+      }
+    } finally {
+      releaseCollectorToken(token);
     }
 
     return this.value;

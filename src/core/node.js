@@ -2162,7 +2162,12 @@ export class ViewNode {
    */
   _linkChild(viewNode) {
     viewNode._parent = this;
-    viewNode._failed = false;
+    // 只有真的失败过的节点才清标记：读点全是真值判断，缺省（undefined）与 false 等价，
+    // 因此健康路径不再预写这个槽位（票 22 候选二：约 −80 B/行），
+    // 同时保留「失败过的节点重新链接后可以再试一次」的既有行为。
+    if (viewNode._failed === true) {
+      viewNode._failed = false;
+    }
   }
 
   /**
