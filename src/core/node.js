@@ -3557,7 +3557,10 @@ export class ElementNode extends ViewNode {
     try {
       if (!this._el) {
         this._el = this._createElement();
-        withRenderScope(inherited, () => this._applySnapshotToElement());
+        // 新鲜元素的类名属性必为空——除非属性快照里显式写过 class（那时 DOM 类名来自 attr，
+        // 不能假定为空、必须回读）。有了这个前提，首次落盘可以省掉一次 className getter 读。
+        const freshClass = this._attrs?.class === undefined;
+        withRenderScope(inherited, () => this._applyBindingsToElement(freshClass));
       }
 
       this._applyAccessState(state);
@@ -3650,12 +3653,16 @@ export class ElementNode extends ViewNode {
 
   /**
    * DOM 首次创建时，把之前记录的属性、样式、事件和子节点一次性同步。
+   *
+   * 只做「本节点自己」的落盘：子节点由 renderDom 的遍历统一处理（原先这里再遍历一遍子节点，
+   * renderDom 又遍历一遍，整棵树被渲染两次——activateBindings / _commitChildren /
+   * 挂载条件判定都在第二遍里重跑）。freshClass 表示本元素是刚建出来的、类名必为空。
    */
-  _applyBindingsToElement() {
+  _applyBindingsToElement(freshClass = false) {
     if (this._attrs) {
       Object.entries(this._attrs).forEach(([name, value]) => applyAttribute(this._el, name, value));
     }
-    this._syncClassName();
+    this._syncClassName(freshClass);
     if (this._styles) {
       Object.entries(this._styles).forEach(([name, value]) => {
         this._el.style[name] = value;
@@ -3682,42 +3689,26 @@ export class ElementNode extends ViewNode {
     });
   }
 
-  _applySnapshotToElement() {
-    this._applyBindingsToElement();
-    this._children.forEach((child) => {
-      if (child._failed) {
-        return;
-      }
-
-      let childElement;
-      try {
-        childElement = child.renderDom();
-      } catch (error) {
-        const replacement = captureNodeError(child, error, 'render');
-        if (replacement?._el && replacement._el.parentNode !== this._el) {
-          this._el.appendChild(replacement._el);
-        }
-        return;
-      }
-      if (childElement && this._childMountStates?.get(child) !== false) {
-        this._el.appendChild(childElement);
-      }
-    });
-  }
-
   /**
    * 同步类名文本到真实 DOM。
    * 类名不再写进属性快照：`_classText` 是类名的真身，`toHTML` / `attr('class')`
    * 都从它读，只有显式 `attr('class', …)` 的写法才落到 `_attrs`。
    */
-  _syncClassName() {
+  _syncClassName(freshClass = false) {
     const className = this._classText ?? '';
     const element = this._el;
-    const previous = element ? element.className || '' : undefined;
 
     storeClassName(this, className || undefined);
 
     if (!element) {
+      return;
+    }
+
+    // 新鲜元素的类名必为空，省掉一次 getter 读；其余情况先读后写——
+    // 类名已经一致就不碰 DOM（重复 className() / 重渲是常见路径），
+    // 也让「外部改过 class」这种漂移仍然会被写回。
+    const previous = freshClass ? '' : element.className || '';
+    if (previous === className && (className !== '' || !element.hasAttribute('class'))) {
       return;
     }
 
@@ -3726,7 +3717,7 @@ export class ElementNode extends ViewNode {
     } else {
       element.removeAttribute('class');
     }
-    if (isDevtoolsEnabled() && !this._devtoolsRendering && !Object.is(previous, className)) {
+    if (isDevtoolsEnabled() && !this._devtoolsRendering) {
       notifyDevtoolsMutation(this, 'attr', {
         name: 'class',
         previous,
