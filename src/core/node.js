@@ -1182,6 +1182,13 @@ export class ViewNode {
         setupStack.pop();
         closeRegionCapture(this);
         reportPreRegionReads(this);
+        // 构建闭包到此为止：非区域节点不会再有第二次构建，就地清引用，让闭包连同它捕获的
+        // 环境在构建返回后一起可回收（官方条目一行 8 个 builder，常驻约 1.9 KB/行）。
+        // 只清值、保留字段槽位：不用 delete（会把对象打成字典模式，实测反涨），
+        // 也不跳过建槽（会分叉出两种隐藏类）。区域节点要重跑 builder，引用继续留着。
+        if (this._rebuildable !== true) {
+          this._builders = null;
+        }
       }
 
       // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
@@ -1212,8 +1219,14 @@ export class ViewNode {
       throw new TypeError('rebuildable() predicate must be a function');
     }
 
+    // 契约：声明区域必须发生在该节点自己的 setup builder 内。非区域节点的构建闭包在构建
+    // 返回处即释放，出了 builder 再声明既拿不到 builder 重跑，也拿不到构建期信号捕获窗口。
+    // 已声明的区域仍可再次调用（此时 builder 仍在），用于替换谓词。
     if ((this._builders?.length ?? 0) === 0) {
-      throw new TypeError('rebuildable() requires a setup builder on this node');
+      throw new TypeError(
+        'rebuildable() requires a setup builder on this node; declare the region inside its own ' +
+          'setup builder (non-region build closures are released when the build returns)'
+      );
     }
 
     this._rebuildable = true;

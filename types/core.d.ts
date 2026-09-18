@@ -292,7 +292,11 @@ export class ViewNode {
   /** Adds children; strings/numbers are wrapped into text nodes. */
   child(...children: ChildInput[]): this;
 
-  /** Marks this node as a region whose content can be rebuilt from its own setup. */
+  /**
+   * Marks this node as a region whose content can be rebuilt from its own setup.
+   * Declare it inside that setup builder: non-region build closures are released when the build
+   * returns, so a node whose builder has already returned can no longer be promoted to a region.
+   */
   rebuildable(predicate?: (() => boolean) | null): this;
 
   /** Whether a rebuild was skipped by the region predicate and is still pending. */
