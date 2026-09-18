@@ -2,17 +2,17 @@
   "meta": {
     "label": "yoya 0.6.3 + AST 预生成",
     "kind": "projection",
-    "variant": "thin（只给直接带活内容的节点建包装对象；活结点的祖先不建）",
+    "variant": "第二档：行 = 原生元素 + 编译期生成的写操作（无 ViewNode）＋编译版列表对账",
     "measuredAt": "2026-09-18",
-    "source": ".scratch/compile-ast/results-both-rounds7.json",
+    "source": ".scratch/compile-ast/results-tier2-rounds7.json",
     "prototype": "feat/ast-precompile · .scratch/compile-ast/ · issues/39-ast-precompile.md",
-    "method": "原型同页三路径交错 7 轮中位（dsl / default / thin）；按 keyed 全路径实测倍率折算 script 桶，paint 与其它桶保持不变；内存按 1k 行实测增量折算",
-    "disclaimer": "投影，不是官方 runner 结果；只覆盖建行路径（01 / 02 / 07 / 08）与 1k 行内存，未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口）"
+    "method": "原型同页交错 7 轮中位：dsl+keyed 对 element+编译版列表（写数据 → 对账 → 挂载）；按实测倍率折算 script 桶，paint 与其它桶保持不变；内存按 1k 行实测增量折算",
+    "disclaimer": "投影，不是官方 runner 结果；只覆盖建行路径（01 / 02 / 07 / 08）与 1k 行内存；04 选中不动（唤醒成本由状态建模决定，见 keySet），未计入运行期钩子体积（约 +0.4~0.8 KB gzip，独立入口）"
   },
   "deltas": {
-    "create1kScript": -0.37,
-    "create10kScript": -0.357,
-    "runMemoryMb": -0.56
+    "create1kScript": -0.571,
+    "create10kScript": -0.552,
+    "runMemoryMb": -2.08
   },
   "applies": {
     "cpu": {

@@ -95,9 +95,10 @@ describe('AST pre-compile projection column', () => {
 
   it('labels the projection as derived data with its provenance', () => {
     expect(projection.meta.kind).toBe('projection');
-    expect(projection.meta.variant).toContain('thin');
+    expect(projection.meta.variant).toContain('元素');
     expect(projection.meta.prototype).toContain('.scratch/compile-ast/');
-    expect(projection.meta.source).toContain('results-both-rounds7.json');
+    expect(projection.meta.source).toContain('results-');
+    expect(projection.meta.disclaimer).toContain('投影');
     expect(html).toContain('AST 预生成（投影）');
     expect(html).toContain(projection.meta.disclaimer.slice(0, 20));
     expect(html).toContain('benchmark/ast-precompile-projection.json');
