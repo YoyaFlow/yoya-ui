@@ -114,7 +114,7 @@ export function getDevtoolsScope(id) {
 /** Returns the rendered DOM node (element or text) for a snapshot id. */
 export function getDevtoolsDom(id) {
   const node = liveNodes.get(id);
-  if (!node || node._deleted || !('_el' in node) || !node._el) {
+  if (!node || node._deleted || !node._el) {
     return null;
   }
   return node._el;
@@ -126,7 +126,7 @@ export function ensureDevtoolsNodeId(node) {
 }
 
 function devtoolsNodeKind(node) {
-  if (typeof node._tagName === 'string' && node._attrs) {
+  if (typeof node._tagName === 'string') {
     return 'element';
   }
   if (typeof node._content === 'string' && '_textNode' in node) {
@@ -145,10 +145,23 @@ function devtoolsNodeChildren(node, kind) {
   return Array.isArray(node._children) ? node._children : [];
 }
 
+/**
+ * 元素属性快照：类名的真身在 _classText（元素不再为空属性快照付固定开销），
+ * 调试面板里补回去，保证显示与真实 DOM 一致。
+ */
+function devtoolsAttrs(node) {
+  const attrs = { ...(node._attrs ?? {}) };
+  if (node._classText) {
+    attrs.class = node._classText;
+  }
+  return attrs;
+}
+
 function devtoolsNodeLabel(node) {
   const kind = devtoolsNodeKind(node);
   if (kind === 'element') {
-    const classes = node._classes ? [...node._classes].slice(0, 2) : [];
+    // 直接读字段：devtools 是独立入口，不 import 节点引擎（会把整份 core 拖进产物）
+    const classes = node._classText ? node._classText.split(' ').slice(0, 2) : [];
     const classText = classes
       .map((name) => String(name).replace(/\s+/g, ''))
       .filter(Boolean)
@@ -178,7 +191,7 @@ function serializeDevtoolsNode(node) {
     return {
       ...base,
       tagName: node._tagName,
-      attrs: { ...node._attrs },
+      attrs: devtoolsAttrs(node),
       children: devtoolsNodeChildren(node, kind).map((child) => serializeDevtoolsNode(child))
     };
   }
@@ -204,8 +217,8 @@ function devtoolsSignature(node) {
     return {
       kind,
       id: baseId,
-      attrs: { ...node._attrs },
-      styles: { ...node._styles },
+      attrs: devtoolsAttrs(node),
+      styles: { ...(node._styles ?? {}) },
       childIds: (node._children || []).map((child) => ensureDevtoolsNode(child))
     };
   }

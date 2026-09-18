@@ -50,11 +50,11 @@ export function endCollect(token) {
   return uniqueSources(token.sources);
 }
 
-/** 在收集器内求值，返回值与依赖。 */
-export function withCollect(run) {
+/** 在收集器内求值，返回值与依赖；receiver 交给 run 当 this（避免为每个绑定建一层闭包）。 */
+export function withCollect(run, receiver = undefined) {
   const token = beginCollect();
   try {
-    return { value: run(), sources: uniqueSources(token.sources) };
+    return { value: run.call(receiver), sources: uniqueSources(token.sources) };
   } finally {
     endCollect(token);
   }

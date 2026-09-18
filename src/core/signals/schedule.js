@@ -48,6 +48,12 @@ export function scheduleRegionsForSource(source) {
 
 /** 清除调度状态：真实重建、销毁或离开 DOM 时调用。 */
 export function cancelScheduledRegionRebuild(node) {
+  // 没排过队的节点不碰 Set：销毁整份列表时这里的 Set.delete 会按节点数累加
+  // （集合里只会有 _regionScheduled === true 的节点）
+  if (node._regionScheduled !== true) {
+    return;
+  }
+
   node._regionScheduled = false;
   scheduledRegions.delete(node);
 }

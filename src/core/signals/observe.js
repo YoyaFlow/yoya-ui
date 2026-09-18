@@ -1,6 +1,8 @@
 // 绑定订阅注册表：为 devtools 写入事件提供「依赖该信号的绑定数」。
 // 只登记 core 自己发起的订阅（值绑定与区域依赖），引擎内部派生不计入。
-const subscribers = new WeakMap();
+// 值用计数而不是 Set：Set 是每个 source 一份的对象，按行累加很贵；计数口径与
+// 原来的 `set.size` 完全一致，devtools 的 dependentCount 不受影响。
+const subscriberCounts = new WeakMap();
 const regionOwners = new WeakMap();
 
 // 观察者账本：派生信号（computed）用它知道「还有没有人在看」。
@@ -40,27 +42,48 @@ export function subscribeWithLedger(adapter, source, listener) {
 }
 
 /**
- * 经注册表订阅：与 adapter.subscribe 等价，额外维护 source → 监听器集合，
- * 返回的退订函数会同步清理注册表。
+ * 经注册表订阅：与 adapter.subscribe 等价，额外维护 source 上的依赖计数，
+ * 并在退订时同步清理。计数与账本记账合并在同一条路径里，
+ * 少一层退订闭包（绑定按行创建，这一层会按行累加）。
  */
 export function trackedSubscribe(adapter, source, listener) {
-  let set = subscribers.get(source);
-  if (!set) {
-    set = new Set();
-    subscribers.set(source, set);
+  const ledger = ledgers.get(source);
+  ledger?.add();
+  subscriberCounts.set(source, (subscriberCounts.get(source) ?? 0) + 1);
+  let dispose;
+  try {
+    dispose = adapter.subscribe(source, listener);
+  } catch (error) {
+    ledger?.remove();
+    decrementSubscriber(source);
+    throw error;
   }
 
-  set.add(listener);
-  const dispose = subscribeWithLedger(adapter, source, listener);
+  let released = false;
   return () => {
-    set.delete(listener);
+    if (released) {
+      return;
+    }
+
+    released = true;
+    ledger?.remove();
+    decrementSubscriber(source);
     dispose();
   };
 }
 
+function decrementSubscriber(source) {
+  const remaining = (subscriberCounts.get(source) ?? 0) - 1;
+  if (remaining > 0) {
+    subscriberCounts.set(source, remaining);
+  } else {
+    subscriberCounts.delete(source);
+  }
+}
+
 /** 依赖该信号的绑定数（值绑定 + 区域依赖）。 */
 export function dependentCount(source) {
-  return subscribers.get(source)?.size || 0;
+  return subscriberCounts.get(source) || 0;
 }
 
 /** 登记依赖该信号的区域节点；写入口据此在 batch 内提前标记调度。 */

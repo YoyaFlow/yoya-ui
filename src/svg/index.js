@@ -75,13 +75,7 @@ export class SvgElementNode extends ElementNode {
    * SVGElement.className 通常是 SVGAnimatedString，不能像 HTMLElement 一样直接赋值。
    */
   _syncClassName() {
-    const className = [...this._classes].join(' ');
-
-    if (className) {
-      this._attrs.class = className;
-    } else {
-      delete this._attrs.class;
-    }
+    const className = this._classText ?? '';
 
     if (this._el) {
       if (className) {
