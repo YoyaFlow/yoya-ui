@@ -41,7 +41,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
     <title>yoya-ui 计数器</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.2/dist/yoya.ui.css"
+      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -53,7 +53,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.3/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // 状态就是句柄：写入即更新绑定位置
 
@@ -187,7 +187,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 
 | 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                              |
 | ---------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.3 KB ~ **26.2 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
+| `yoya.core.js`                     | 2.4 KB ~ **26.3 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly         |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                   |
 | `yoya.ui.js`（全部分类）           | 5.6 KB ~ **97.3 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                     |
 | `yoya.router.js`                   | 10.3 KB ~ **28.3 KB**             | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`） |
@@ -198,9 +198,9 @@ npm run build   # 产出 dist/，末尾打印体积表
 
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 270.7 KB | 123.9 KB | 36.2 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 805.0 KB | 456.5 KB | 111.4 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 736.1 KB | 424.6 KB | 101.8 KB | core + 全部组件                |
+| `yoya.router.full.js`            | 271.4 KB | 124.3 KB | 36.4 KB  | core + router / SSR            |
+| `yoya.ui-router.full.js`（全量） | 805.3 KB | 456.7 KB | 111.4 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 736.4 KB | 424.8 KB | 101.8 KB | core + 全部组件                |
 
 组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。

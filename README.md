@@ -48,7 +48,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -60,7 +60,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.2/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.3/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 
@@ -199,7 +199,7 @@ small core is — budget against the download column. The last column says what 
 
 | Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                               |
 | ---------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.3 KB ~ **26.2 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly |
+| `yoya.core.js`                     | 2.4 KB ~ **26.3 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                   |
 | `yoya.ui.js` (all categories)      | 5.6 KB ~ **97.3 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                 |
 | `yoya.router.js`                   | 10.3 KB ~ **28.3 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                             |
@@ -210,9 +210,9 @@ Self-contained entries (core inlined, single file):
 
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 270.7 KB | 123.9 KB | 36.2 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 805.0 KB | 456.5 KB | 111.4 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 736.1 KB | 424.6 KB | 101.8 KB | core + all components                |
+| `yoya.router.full.js`                 | 271.4 KB | 124.3 KB | 36.4 KB  | core + router / SSR                  |
+| `yoya.ui-router.full.js` (everything) | 805.3 KB | 456.7 KB | 111.4 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 736.4 KB | 424.8 KB | 101.8 KB | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
