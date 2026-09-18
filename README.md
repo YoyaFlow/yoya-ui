@@ -227,6 +227,7 @@ tables here drift from the artifacts, and `npm run report:bundle:write` refreshe
 - [SSR guide](docs/ssr.md) · [Request helpers](docs/api.md) · [Theme spec](docs/theme.md) · [Access control](docs/access-control.md) · [DevTools](docs/devtools.md)
 - [Component authoring](docs/component-authoring.md) · [Third-party interop](docs/interop.md)
   (cross-library comparison: [component-comparison.zh-CN.md](docs/component-comparison.zh-CN.md), Chinese)
+- [Performance benchmark](docs/performance.md) (official js-framework-benchmark, numbers generated and gated)
 - [Roadmap](ROADMAP.zh-CN.md) (Chinese)
 
 Migration guides are written for **major** versions only, so there is deliberately no 0.4 → 0.5

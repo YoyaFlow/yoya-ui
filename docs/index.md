@@ -24,6 +24,7 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                       |
 | [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
 | [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators            | Moved from `README.md`        |
+| [`performance.md`](performance.md)                                             | Official js-framework-benchmark numbers vs `vanillajs`       | Generated tables + gate       |
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                           | New                           |
 | [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not      | New                           |
 

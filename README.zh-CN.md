@@ -214,6 +214,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 - [AI 代码助手阅读指南](docs/agents.zh-CN.md) · [Codex Skill](skills/yoya-ui/README.md)
 - [SSR 指南](docs/ssr.zh-CN.md) · [请求辅助](docs/api.zh-CN.md) · [主题规范](docs/theme.zh-CN.md) · [权限控制](docs/access-control.zh-CN.md) · [DevTools](docs/devtools.zh-CN.md)
 - [组件开发指南](docs/component-authoring.zh-CN.md) · [第三方库接入](docs/interop.zh-CN.md) · [跨库对照](docs/component-comparison.zh-CN.md)
+- [性能基准](docs/performance.zh-CN.md)（官方 js-framework-benchmark，数字由脚本生成并受门禁校验）
 - [路线图](ROADMAP.zh-CN.md)
 
 迁移指南只服务于**主版本**，所以刻意没有 0.4 → 0.5 的迁移文档：1.0 之前 API 仍在收敛，提交历史与
