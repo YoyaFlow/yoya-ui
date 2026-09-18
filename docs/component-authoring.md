@@ -249,44 +249,6 @@ const select = (next) => {
 - For short lists (tens to hundreds of rows) or lists that are fully refreshed on every change, the
   shared-handle derivative stays simpler; no need to change it.
 
-### 6.3 One key driving many rows: `createKeyedSet()`
-
-§6.2 describes the degeneration of "shared handle plus per-row derivative". The framework ships a
-**state-level** alternative: let a keyed set own "which key is selected / active / hovered / matched";
-writes only touch the **previous and the next key bucket**.
-
-```js
-const active = createKeyedSet();
-// per row: value positions keep working as usual (class / attr / style / text / props)
-line.toggleClass('danger', active.has(row.id));
-// switching selection: O(1), only two buckets wake up
-active.set(row.id);
-```
-
-Measured (`npm run perf:selection`, 1000 rows): the shared-handle derivative runs **1000 derivative
-evaluations / 0.62 ms** per switch, while `createKeyedSet()` runs **0 evaluations / 0.024 ms** (at 10k
-rows: 10000 / 1.68 ms versus 0 / 0.019 ms). Memory per row drops from 725 B to 530 B (browser
-measurement, 1000 instances).
-
-| Use                   | Writing                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| single selection      | `active.set(id)`                                                 |
-| multi-selection       | `active.add(id)` / `active.remove(id)` / `active.toggle(id)`     |
-| select-all / bulk     | `active.replace(ids)` (writes the difference only, stays linear) |
-| clear                 | `active.clear()`                                                 |
-| imperative / SSR test | `active.isActive(id)` (plain boolean, no subscription)           |
-
-- **Lifecycle**: the set lives as long as the data set it describes. Call `active.drop(id)` when a row
-  leaves the data, `active.dispose()` when the data set is replaced — buckets are held per observed key
-  (one thin signal each), which is what keeps the memory bounded.
-- **`has(id)` returns a read-only handle**: writes must go through the collection methods, otherwise its
-  membership table drifts from the values.
-- **When to keep using `computed`**: a row depending on several conditions ("selected and not disabled"),
-  string building, math, branches — anything that is not a key equality test should stay a derivative.
-- Relation to §6.2: the row-owned `ref` there is the hand-rolled, zero-new-API version; this primitive
-  lets the framework maintain it, which pays off when selection changes from several places (keyboard
-  navigation, select-all, data refreshes).
-
 ## 7. Composition, events, and lifecycle
 
 - `child(...)` accepts `ViewNode`s, component objects (wrapped in `ComponentNode` automatically with their `render()` cached), or strings/numbers.
