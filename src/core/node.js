@@ -1202,6 +1202,7 @@ function syncKeyedSegment(parent, segment, rows) {
 
   const desired = [];
   const seen = new Set();
+  const removedMembers = [];
   list.forEach((row, index) => {
     const rawKey = segment.keyFn ? segment.keyFn(row, index) : row;
     if (seen.has(rawKey)) {
@@ -1209,39 +1210,34 @@ function syncKeyedSegment(parent, segment, rows) {
     }
     seen.add(rawKey);
     desired.push({ rawKey, row, index });
+
+    // 复用判定与目标名单生成合并成一趟（顺序不变：行引用没变 → equals → update），
+    // 这样「保留名单」不必再建一份 N 规模的集合，也不再产生 filter / map 两个临时数组。
+    const existing = members.get(rawKey);
+    if (!existing || existing.row === row) {
+      return;
+    }
+
+    // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
+    // 两者都没有时保持旧行为——销毁该行并原位换新。
+    if (segment.equals && segment.equals(existing.row, row)) {
+      existing.row = row;
+      return;
+    }
+
+    if (segment.update) {
+      segment.update(existing.node, existing.row, row);
+      existing.row = row;
+      return;
+    }
+
+    members.delete(rawKey);
+    removedMembers.push(existing);
   });
 
-  const keep = new Set(
-    desired
-      .filter((item) => {
-        const existing = members.get(item.rawKey);
-        if (!existing) {
-          return false;
-        }
-        if (existing.row === item.row) {
-          return true;
-        }
-
-        // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
-        // 两者都没有时保持旧行为——销毁该行并原位换新。
-        if (segment.equals && segment.equals(existing.row, item.row)) {
-          existing.row = item.row;
-          return true;
-        }
-
-        if (segment.update) {
-          segment.update(existing.node, existing.row, item.row);
-          existing.row = item.row;
-          return true;
-        }
-
-        return false;
-      })
-      .map((item) => item.rawKey)
-  );
-  const removedMembers = [];
+  // 目标名单里不再出现的成员：按 members 的既有顺序收口（与上一步合起来仍是同一批移除）。
   members.forEach((entry, rawKey) => {
-    if (!keep.has(rawKey)) {
+    if (!seen.has(rawKey)) {
       removedMembers.push(entry);
       members.delete(rawKey);
     }
@@ -1250,10 +1246,13 @@ function syncKeyedSegment(parent, segment, rows) {
     removeKeyedMembers(parent, removedMembers);
   }
 
-  const next = desired.map((item) => {
+  // 目标名单原地补 node：不再为每行建一份 `{...item, node}` 副本。
+  for (let index = 0; index < desired.length; index += 1) {
+    const item = desired[index];
     const existing = members.get(item.rawKey);
     if (existing) {
-      return { ...item, node: existing.node };
+      item.node = existing.node;
+      continue;
     }
 
     let node;
@@ -1271,8 +1270,35 @@ function syncKeyedSegment(parent, segment, rows) {
     ) {
       node.attr('data-row-key', String(item.rawKey));
     }
-    return { ...item, node };
-  });
+    item.node = node;
+  }
+  const next = desired;
+
+  const children = parent._children;
+
+  // 无移动快路径（票 30）：
+  // 1. 清空（next 为空）——成员已经全部移除，搬运判定与锚点计算都没有意义。
+  // 2. 目标顺序与现有子节点逐节点一致（含「重新赋值同一批行」）——没有新增成员、也没有成员需要
+  //    搬动：一般路径会算出 movedNodes 为空、placeKeyedMember / reorderKeyedMember 一次都不调用，
+  //    只剩 keyedMemberElements 的空转。逐节点比较是一趟 O(n) 读，省掉旧序 Map 与
+  //    最长递增子序列的 4 个集合/数组。
+  if (next.length === 0) {
+    return;
+  }
+
+  if (next.length === children.length) {
+    let aligned = true;
+    for (let index = 0; index < children.length; index += 1) {
+      if (children[index] !== next[index].node) {
+        aligned = false;
+        break;
+      }
+    }
+
+    if (aligned) {
+      return;
+    }
+  }
 
   const memberNodes = new Set();
   members.forEach((entry) => memberNodes.add(entry.node));
@@ -1281,7 +1307,7 @@ function syncKeyedSegment(parent, segment, rows) {
   // 旧顺序快照 + 目标顺序：只搬不在最长递增子序列里的成员，
   // 交换两行因此只动换位的两行，而不是把后续兄弟逐个挪一遍。
   const previousPosition = new Map();
-  parent._children.forEach((child, index) => previousPosition.set(child, index));
+  children.forEach((child, index) => previousPosition.set(child, index));
   const movedNodes = collectKeyedMovedNodes(next, previousPosition);
   let anchorElement = keyedSegmentTailElement(parent, tailNode);
 
