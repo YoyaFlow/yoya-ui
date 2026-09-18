@@ -198,6 +198,57 @@ Contract and boundaries:
   a different relative order.
 - **Error boundary**: `node.whenFailed(handler)` declares a subtree boundary — returning a node replaces the subtree with a fallback, returning nothing only reports and keeps the current state; component objects may define a `whenFailed(error, info)` member next to `render()`, which ComponentNode mounts automatically. Captures are never silent: console.error always fires and a devtools 'error' event is emitted when enabled. The error walks up the parent chain to the nearest boundary at failure time, so it is independent of declaration order, nesting depth, runtime insertion and subtree moves; that boundary owns the capture and never forwards it further, and a throwing handler propagates outward. When nothing is returned during a render / build phase, the failing child is marked and skipped on later attempts (no repeated failures or logs); re-attaching it or rebuilding its region clears the mark so it gets one more chance. Without a boundary, errors propagate unchanged (fail fast). Degrading a region node runs as one region build, so it never trips the region guard.
 
+### 6.2 Selection in long lists: do not derive per row from a shared handle
+
+In a long list (1k+ rows), expressing "which row is selected" as **one shared handle plus a per-row
+derivative**:
+
+```js
+const selectedId = ref(null);
+// inside every row
+line.toggleClass(
+  'danger',
+  computed(() => selectedId.value === row.id)
+);
+```
+
+**wakes up every row** on each selection change — every row subscribes to the same signal, so all the
+framework sees is "N derivatives read this signal"; it cannot know that only two rows actually change.
+Measured (`npm run perf:selection`, 1000 rows):
+
+| Style                                             | Derivative evaluations per switch | Switch cost (the write itself) |
+| ------------------------------------------------- | --------------------------------- | ------------------------------ |
+| Shared handle, per-row derivative (above)         | **1000**                          | 0.47 ms                        |
+| Per-row derivative over the row's own handle      | 2                                 | 0.014 ms                       |
+| The row holds its own `ref` boolean (recommended) | **0**                             | 0.015 ms                       |
+
+The cost scales linearly: at 10k rows the first style runs 10000 derivatives per switch (1.5 ms).
+Memory-wise the first style holds one extra derivative object and subscription per row, roughly
+0.2 KB per row (about 0.2 MB per 1000 rows).
+
+The recommended shape keeps the selection state **on the row itself** and writes only two rows:
+
+```js
+const row = { id, label: ref(labelOf(id)), selected: ref(false) };
+// inside every row
+line.toggleClass('danger', row.selected);
+// switching: write two rows only
+const select = (next) => {
+  const list = rows.peek();
+  const previous = list.find((item) => item.selected.value);
+  if (previous) previous.selected.value = false;
+  next.selected.value = true;
+};
+```
+
+- Both styles are declarative; they differ only in whether the state lives on a shared handle or on the
+  row. The second is O(1).
+- The tradeoff is that paired writes are yours to maintain (keyboard navigation, select-all, data
+  refreshes must all go through one entry point). For multi-select sets / filters / hover + selection
+  combinations, keep your own `Map<id, row>` index — still no new framework API.
+- For short lists (tens to hundreds of rows) or lists that are fully refreshed on every change, the
+  shared-handle derivative stays simpler; no need to change it.
+
 ## 7. Composition, events, and lifecycle
 
 - `child(...)` accepts `ViewNode`s, component objects (wrapped in `ComponentNode` automatically with their `render()` cached), or strings/numbers.
