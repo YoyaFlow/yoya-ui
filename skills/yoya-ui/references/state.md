@@ -102,6 +102,42 @@ vInput({
 - 多选集合 / 过滤 / 悬浮 + 选中组合：自己维护 `Map<id, 行>` 索引，不要指望框架猜出「只有两行会变」。
 - 数字与复跑：`npm run perf:selection`；完整说明见 `docs/component-authoring(.zh-CN).md` 第 6.2 节。
 
+## 按键容器：keySet()（`ref([])` 的替代品）
+
+要把列表当 map 用（按 key 取/改/删行、行级状态、主从联动），用 `keySet` 代替 `ref([])`：
+元素是 `KeyItem { data, api }`，`keyed(list, (item) => …)` 直接渲染元素，第二个参数仍是下标。
+
+```js
+import { keySet, ref, tr, vText } from '@yoyaflow/yoya-ui';
+
+const list = keySet(
+  rows,
+  (row) => row.id,
+  (item) => {
+    item.api.selected = ref(false);
+    item.api.select = () => {
+      item.api.selected.value = true;
+    };
+  }
+);
+
+tbody((body) => {
+  body.keyed(list, (item) =>
+    tr((line) => {
+      line.child(vText(item.data.label));
+      line.toggleClass('danger', item.api.selected); // 行状态：同 key 同 api
+      line.on('click', item.api.select);
+    })
+  );
+});
+```
+
+- 同 key 同元素同 api；`item.data` 换引用 → 该行原位换新；key 变了 = 旧 key 离场（`item.api.dispose?.()`）+ 新 key 入场。
+- 数据操作（`add` / `insertBefore` / `replace` / `merge` / `remove` / `clear` / `replaceAll` / `moveBefore` / `moveAfter` / `sort`）各触发一次对账；写 `item.api` 上的信号**不触发**对账，只刷那一行——§6.2 里 O(1) 唤醒的容器版。
+- 排序比较器收元素：`list.sort((a, b) => a.api.rank - b.api.rank)`；多步写入用 `list.batch(() => …)` 合成一次对账。
+- 读：`item(key)` / `get(key)`（数据）/ `has` / `indexOf` / `keys()` / `items()` / `values()` / `size`；写句柄 `list.value = datas`，读句柄给元素表。
+- 写操作遇到不存在的 key 抛错，读返回 `undefined`/`false`；重复 key 抛错；小列表或每次全量刷新仍可用 `ref` + 派生。
+
 ## 可重建区域：结构随数据变化
 
 ```js

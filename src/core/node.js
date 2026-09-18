@@ -2,6 +2,7 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
+import { isKeySet } from './key-set.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
 import { createReactiveTarget } from './signals/runtime.js';
@@ -1252,20 +1253,28 @@ function syncKeyedSegment(parent, segment, rows) {
     // 复用判定与目标名单生成合并成一趟（顺序不变：行引用没变 → equals → update），
     // 这样「保留名单」不必再建一份 N 规模的集合，也不再产生 filter / map 两个临时数组。
     const existing = members.get(rawKey);
-    if (!existing || existing.row === row) {
+    if (!existing) {
+      return;
+    }
+
+    // keySet 源的元素是 KeyItem：元素对象按 key 复用（`item.data` 会被原地换成新引用），
+    // 所以成员表记的是**行数据**而不是元素；其它源记的就是行本身。
+    // equals / update 一律收「行」（keySet 源即 item.data）。
+    const nextRow = segment.itemSource ? row.data : row;
+    if (existing.row === nextRow) {
       return;
     }
 
     // 行引用变了：先问等价比较（内容等价就当没变），再问原地更新入口。
     // 两者都没有时保持旧行为——销毁该行并原位换新。
-    if (segment.equals && segment.equals(existing.row, row)) {
-      existing.row = row;
+    if (segment.equals && segment.equals(existing.row, nextRow)) {
+      existing.row = nextRow;
       return;
     }
 
     if (segment.update) {
-      segment.update(existing.node, existing.row, row);
-      existing.row = row;
+      segment.update(existing.node, existing.row, nextRow);
+      existing.row = nextRow;
       return;
     }
 
@@ -1300,7 +1309,11 @@ function syncKeyedSegment(parent, segment, rows) {
     } finally {
       keyedBuildStack.pop();
     }
-    const entry = { rawKey: item.rawKey, row: item.row, node };
+    const entry = {
+      rawKey: item.rawKey,
+      row: segment.itemSource ? item.row.data : item.row,
+      node
+    };
     members.set(item.rawKey, entry);
     if (
       typeof node.attr === 'function' &&
@@ -2100,9 +2113,15 @@ export class ViewNode {
   }
 
   /**
-   * keyed 子项绑定：source 是 ref/computed 句柄。
+   * keyed 子项绑定：source 是 ref/computed 句柄，或 keySet 容器。
    * 同 key 且行引用未变时复用节点（build 不重跑）；行引用变化原位换新；
    * 顺序变化 insertBefore 保身份。keyFn 缺省时用行引用身份做 key。
+   *
+   * source 是 keySet 时（`isKeySet(source)`）：传给 build 的行是容器的**元素**
+   * （KeyItem `{ data, api }`，第二参数仍是下标），key 由容器自己的 `keyOf(item.data)` 得到；
+   * 元素按 key 复用，所以「同 key 同 api」，而内容是否变了看 `item.data` 的引用——
+   * `replace` / `merge` 换了数据引用就原位换新，重排只搬元素不动状态。
+   * equals / update 收的也是行数据（`item.data`），与 ref 源同口径。
    *
    * options 可声明行级更新协议（可选，不传就是上面的旧行为）：
    * - equals(prevRow, nextRow)：同 key 且引用变化时做内容等价比较，为真则复用节点（不重建）。
@@ -2110,13 +2129,19 @@ export class ViewNode {
    * 两者同时给出时 equals 优先；判定为「确实变了」的行仍然原位换新。
    */
   keyed(source, keyOrBuild, maybeBuild = null, maybeOptions = null) {
+    const sourceIsKeySet = isKeySet(source);
     const withKeyFn = typeof maybeBuild === 'function';
     const build = withKeyFn ? maybeBuild : keyOrBuild;
-    const keyFn = withKeyFn ? keyOrBuild : null;
+    // keySet 源缺省用容器自己的身份：元素是 KeyItem，键取自 item.data（不缓存 key，只有一个真源）。
+    const keyFn = withKeyFn
+      ? keyOrBuild
+      : sourceIsKeySet
+        ? (item) => source.keyOf(item.data)
+        : null;
     const options = withKeyFn ? maybeOptions : maybeBuild;
 
-    if (!isSignal(source)) {
-      throw new TypeError('keyed() requires a signal handle as its source');
+    if (!isSignal(source) && !sourceIsKeySet) {
+      throw new TypeError('keyed() requires a signal handle or a keySet as its source');
     }
     if (typeof build !== 'function') {
       throw new TypeError('keyed() requires a build function');
@@ -2134,6 +2159,7 @@ export class ViewNode {
     const segment = {
       anchorNode: this._children[this._children.length - 1] ?? null,
       equals: options?.equals ?? null,
+      itemSource: sourceIsKeySet,
       keyFn,
       build,
       members: new Map(),

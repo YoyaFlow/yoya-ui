@@ -249,6 +249,63 @@ const select = (next) => {
 - For short lists (tens to hundreds of rows) or lists that are fully refreshed on every change, the
   shared-handle derivative stays simpler; no need to change it.
 
+### 6.4 Key-addressed container: `keySet` (a `ref([])` replacement)
+
+Lists are often used as maps: fetch/update/remove a row by key, hang per-row state on it (selected /
+expanded / dirty / loading), drive master-detail views or keyboard navigation. You can build that with
+your own `Map`, but keeping data and state in sync is on you. `keySet` folds it into one container whose
+**elements are `KeyItem`s — `data` and `api` live in the same object**, so sorting, inserting, moving and
+replacing all act on the element and can never desync the two.
+
+```js
+const list = keySet(
+  rows,
+  (row) => row.id,
+  (item) => {
+    item.api.selected = ref(false);
+    item.api.select = () => {
+      item.api.selected.value = true;
+    };
+  }
+);
+
+tbody((body) => {
+  body.keyed(list, (item) =>
+    // the row *is* the element; second arg is the index
+    tr((line) => {
+      line.attr('data-row-id', String(item.data.id));
+      line.toggleClass('danger', item.api.selected);
+      line.on('click', item.api.select);
+    })
+  );
+});
+```
+
+- `item.data` is your row; `item.api` is the state and commands you define for it — the third argument
+  runs once per new key.
+- **Same key, same api**: reordering, moving, or reassigning the same rows keeps element and api; when
+  `item.data` is swapped for a new reference the row is rebuilt in place (pass `keyed`'s `equals` /
+  `update`, which receive row data, to match or update instead).
+- A changed key means the old key left (element dropped, `item.api.dispose?.()` called) and a new key
+  entered (new element, new api). Identity is always `keyOf(item.data)`; the container caches no key.
+- Data operations run one keyed reconcile; writing a signal on `item.api` touches no data array and
+  triggers no reconcile — that is the O(1) wake-up from the table in §6.2, with the state owned by the
+  container per key.
+
+| Purpose                    | API                                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Trigger a refresh          | `list.value = datas` / `list.replaceAll(datas)`; `list.batch(() => …)` folds several steps into one reconcile                                            |
+| Add / change / drop by key | `add(data)` / `insertBefore(data, beforeKey?)` / `insertAfter(data, afterKey?)` / `replace(key, data)` / `merge(key, patch)` / `remove(key)` / `clear()` |
+| Sort and move              | `sort((itemA, itemB) => …)` (stable, comparator gets elements) / `moveBefore(key, targetKey?)` / `moveAfter(key, targetKey?)`                            |
+| Read                       | `item(key)` (element) / `get(key)` (data) / `has(key)` / `indexOf(key)` / `keys()` / `items()` / `values()` / `size` / `keyOf(data)`                     |
+| Use as a data handle       | `value` / `peek()` / `subscribe()`; writing means new data, reading yields the **element table** (`KeyItem[]`)                                           |
+
+Details: write operations throw when the target key is missing while reads return `undefined` / `false`;
+`moveBefore(k, k)` / `moveAfter(k, k)` are no-ops (`moveBefore(key)` moves to the end, `moveAfter(key)` to
+the start); duplicate keys in one dataset throw; `merge` only accepts object rows. `keySet` is optional —
+for short lists, or lists fully refreshed on every change, the `ref` + derivative style in §6.2 stays
+simpler.
+
 ## 7. Composition, events, and lifecycle
 
 - `child(...)` accepts `ViewNode`s, component objects (wrapped in `ComponentNode` automatically with their `render()` cached), or strings/numbers.

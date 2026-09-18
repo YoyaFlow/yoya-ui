@@ -239,6 +239,58 @@ const select = (next) => {
   悬浮 + 选中组合时，自己维护一个 `Map<id, 行>` 索引即可，不需要框架新 API。
 - 行数不大（几十~几百）、或本来就是"每次全量刷新"的列表，继续用共享句柄派生更简洁，不必改。
 
+### 6.4 按键容器：`keySet`（`ref([])` 的替代品）
+
+列表经常要当 map 用：按 key 取/改/删一行、给每行挂一点状态（选中 / 展开 / dirty / loading）、
+主从联动、键盘导航。这些都能自己用 `Map` 拼，但"数据换了状态还在不在"要靠人手守。`keySet` 把这件事
+收成一个容器：**元素是 `KeyItem`，`data` 与 `api` 在同一个对象里**，排序 / 插入 / 移动 / 整表替换
+作用在元素上，两者不可能脱钩。
+
+```js
+const list = keySet(
+  rows,
+  (row) => row.id,
+  (item) => {
+    item.api.selected = ref(false);
+    item.api.select = () => {
+      item.api.selected.value = true;
+    };
+  }
+);
+
+tbody((body) => {
+  body.keyed(list, (item) =>
+    // 行就是元素；第二参数仍是下标
+    tr((line) => {
+      line.attr('data-row-id', String(item.data.id));
+      line.toggleClass('danger', item.api.selected);
+      line.on('click', item.api.select);
+    })
+  );
+});
+```
+
+- `item.data` 是应用那一行数据；`item.api` 是应用给这一行定义的状态与命令，第三个参数每个新 key 只跑一次。
+- **同 key 同 api**：重排、移动、重新赋值同一批行，元素与 api 都原样续用；`item.data` 换成新引用时
+  该行原位换新（要"内容等价就复用 / 原地更新"，照旧传 `keyed` 的 `equals` / `update`，收的是行数据）。
+- key 变了 = 旧 key 离场（元素丢弃、`item.api.dispose?.()` 被调用）+ 新 key 入场（新元素、新 api）。
+  键的身份永远是 `keyOf(item.data)`，容器不缓存 key。
+- 数据操作触发一次 keyed 对账；写 `item.api` 上的信号**不碰数据数组、不触发对账**——这就是 §6.2
+  那张表里"行自己持 ref"的 O(1) 唤醒，只是状态由容器按 key 保管。
+
+| 用途          | API                                                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 刷新触发      | `list.value = datas` / `list.replaceAll(datas)`；`list.batch(() => …)` 把多步合成一次对账                                                                |
+| 按 key 增删改 | `add(data)` / `insertBefore(data, beforeKey?)` / `insertAfter(data, afterKey?)` / `replace(key, data)` / `merge(key, patch)` / `remove(key)` / `clear()` |
+| 排序与移动    | `sort((itemA, itemB) => …)`（稳定排序，比较器拿元素）/ `moveBefore(key, targetKey?)` / `moveAfter(key, targetKey?)`                                      |
+| 读            | `item(key)`（元素）/ `get(key)`（数据）/ `has(key)` / `indexOf(key)` / `keys()` / `items()` / `values()` / `size` / `keyOf(data)`                        |
+| 作数据句柄    | `value` / `peek()` / `subscribe()`；写句柄 = 换数据，读句柄给**元素表**（`KeyItem[]`）                                                                   |
+
+细则：目标 key 不存在时**写操作抛错**、读操作返回 `undefined` / `false`；`moveBefore(k, k)` /
+`moveAfter(k, k)` 是 no-op（`moveBefore(key)` 落到末尾、`moveAfter(key)` 落到开头）；同一份数据里
+出现重复 key 直接报错；`merge` 只接受对象行。`keySet` 是可选 API——小列表、每次全量刷新的列表，
+继续用 §6.2 的 `ref` + 派生写法更直接。
+
 ## 7. 组合、事件与生命周期
 
 - `child(...)` 接受 `ViewNode`、组件对象（自动包装为 `ComponentNode` 并缓存其 `render()` 结果）或字符串/数字。

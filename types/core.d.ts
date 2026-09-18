@@ -367,6 +367,25 @@ export class ViewNode {
     build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
     options?: KeyedRowUpdate<TRow>
   ): this;
+  /**
+   * Signal-free keyed source: a `keySet` container. Build receives the element
+   * itself (`KeyItem` — read `item.data` / `item.api`), the second argument is the
+   * index, and keys come from the container's `keyOf(item.data)`. Elements are
+   * reused by key, so the same key always yields the same api; rows whose
+   * `item.data` reference changed are rebuilt in place (or handled through
+   * `equals` / `update`, which receive row data).
+   */
+  keyed<TRow>(
+    source: KeySet<TRow>,
+    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
+  ): this;
+  keyed<TRow>(
+    source: KeySet<TRow>,
+    keyFn: (item: KeyItem<TRow>, index: number) => string | number,
+    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    options?: KeyedRowUpdate<TRow>
+  ): this;
 
   /**
    * Declares or replaces conditional attachment. The condition may be a signal
@@ -776,6 +795,78 @@ export function isSignal(value: unknown): value is SignalHandle<unknown>;
 
 /** Runs `run` with coalesced notification when the engine supports batching. */
 export function batch<T>(run: () => T): T;
+
+/**
+ * A keySet element: the row's data and its behaviour api travel together, so
+ * sorting / inserting / moving elements can never desync one from the other.
+ * The key is not stored — identity is always `keySet.keyOf(item.data)`.
+ */
+export interface KeyItem<TRow = unknown> {
+  /** The row data currently stored under this key. */
+  data: TRow;
+  /** The application's state and commands for this row (same key → same api). */
+  api: Record<string, unknown> & {
+    /** Called by the container when this key leaves the list. */
+    dispose?(): void;
+  };
+}
+
+/**
+ * Ordered key-addressed container: a drop-in `ref([])` replacement that also
+ * owns per-key behaviour apis (same key → same api; leaving key → api released
+ * and element dropped). Data operations always produce a new array, so the
+ * container never mutates the array a caller passed in.
+ *
+ * Reading the handle yields the element table (`KeyItem[]`); writing it takes a
+ * data array and behaves like `replaceAll`. Keys come from `keyOf(data)`; a key
+ * is never cached, so there is a single source of truth for identity.
+ */
+export interface KeySet<TRow = unknown> {
+  /** Element table, in list order. */
+  value: KeyItem<TRow>[];
+  peek(): KeyItem<TRow>[];
+  subscribe(listener: (items: KeyItem<TRow>[]) => void): () => void;
+
+  replaceAll(datas: readonly TRow[]): KeySet<TRow>;
+  replace(key: unknown, data: TRow): KeySet<TRow>;
+  merge(key: unknown, patch: Record<string, unknown>): KeySet<TRow>;
+  add(data: TRow): KeySet<TRow>;
+  insertBefore(data: TRow, beforeKey?: unknown): KeySet<TRow>;
+  insertAfter(data: TRow, afterKey?: unknown): KeySet<TRow>;
+  moveBefore(key: unknown, targetKey?: unknown): KeySet<TRow>;
+  moveAfter(key: unknown, targetKey?: unknown): KeySet<TRow>;
+  remove(key: unknown): KeySet<TRow>;
+  clear(): KeySet<TRow>;
+  sort(compare: (left: KeyItem<TRow>, right: KeyItem<TRow>) => number): KeySet<TRow>;
+
+  /** The element for a key (undefined when the key is not in the list). */
+  item(key: unknown): KeyItem<TRow> | undefined;
+  /** The row data for a key (undefined when the key is not in the list). */
+  get(key: unknown): TRow | undefined;
+  has(key: unknown): boolean;
+  indexOf(key: unknown): number;
+  keys(): unknown[];
+  items(): KeyItem<TRow>[];
+  values(): TRow[];
+  keyOf(data: TRow): unknown;
+  readonly size: number;
+
+  batch<T>(run: () => T): T;
+}
+
+/**
+ * Creates a keySet. `keyOf(data)` is identity; `define(item)` is optional, must
+ * be pure and runs once per new key (element and api are always created together,
+ * so there is no lazy phase to materialise).
+ */
+export function keySet<TRow>(
+  initialValues: readonly TRow[],
+  keyOf: (data: TRow) => unknown,
+  define?: (item: KeyItem<TRow>) => void
+): KeySet<TRow>;
+
+/** True for keySet containers (recognised across copies of yoya-ui via Symbol.for). */
+export function isKeySet<TRow = unknown>(value: unknown): value is KeySet<TRow>;
 
 /**
  * State engine adapter contract: value cells and change notification only.
