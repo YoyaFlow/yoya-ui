@@ -89,43 +89,15 @@ describe('benchmark tables in docs', () => {
  * 投影列（AST 预生成）：它必须**明确标注为派生数据**，官方实测列不许被改写。
  * 数据来源 `benchmark/ast-precompile-projection.json`，换算规则写在 meta.method 里。
  */
-describe('AST pre-compile projection column', () => {
-  const projection = readProjection();
-  const html = renderHtmlReport(results);
-
-  it('labels the projection as derived data with its provenance', () => {
-    expect(projection.meta.kind).toBe('projection');
-    expect(projection.meta.variant).toContain('元素');
-    expect(projection.meta.prototype).toContain('.scratch/compile-ast/');
-    expect(projection.meta.source).toContain('results-');
-    expect(projection.meta.disclaimer).toContain('投影');
-    expect(html).toContain('AST 预生成（投影）');
-    expect(html).toContain(projection.meta.disclaimer.slice(0, 20));
-    expect(html).toContain('benchmark/ast-precompile-projection.json');
-  });
-
-  it('only extrapolates covered rows and leaves the measured column intact', () => {
-    for (const [id, key] of Object.entries(projection.applies.cpu)) {
-      expect(
-        results.cpu.find((row) => row.id === id),
-        id
-      ).toBeTruthy();
-      expect(typeof projection.deltas[key], key).toBe('number');
-    }
-
-    const row = results.cpu.find((item) => item.id === '01_run1k');
-    const projected = (row.yoya.total + row.yoya.script * projection.deltas.create1kScript).toFixed(
-      1
-    );
-    // 实测格仍是 results.json 的原值，投影值出现在它自己的格里
-    expect(html).toContain(`<b>${row.yoya.total.toFixed(1)} ms</b>`);
-    expect(html).toContain(`<b>${projected} ms</b>`);
-    expect(projected).not.toBe(row.yoya.total.toFixed(1));
-
-    // 未覆盖的项在投影列里是「—」，不是复制的实测值（当前只剩 03 改文案与 04 选中）
-    const uncovered = results.cpu.filter((item) => !projection.applies.cpu[item.id]);
-    expect(uncovered.map((item) => item.id)).toEqual(['03_update10th1k_x16', '04_select1k']);
-    expect(html.match(/projected-none">—/g).length).toBeGreaterThanOrEqual(uncovered.length);
+describe('AST pre-compile projection column (dormant, fail-safe)', () => {
+  /**
+   * 编译版现在是**实测主列**（`keyed/yoya-ui-core` 条目），投影列因此下线：
+   * 没有 `benchmark/ast-precompile-projection.json` 时页面只有实测列。
+   * 生成器保留投影能力（将来要放 what-if 列，丢回一个文件即可），但必须标明是派生数据。
+   */
+  it('renders no projection column without a projection file', () => {
+    expect(readProjection()).toBeNull();
+    expect(renderHtmlReport(results)).not.toContain('AST 预生成（投影）');
   });
 
   it('refuses a projection file that is not marked as derived', async () => {
@@ -139,9 +111,7 @@ describe('AST pre-compile projection column', () => {
       writeFileSync(file, JSON.stringify({ meta: { kind: 'measured' }, deltas: {} }), 'utf8');
       expect(() => readProjection(file)).toThrow(/projection/);
 
-      // 没有投影文件时页面退回纯实测视图
       expect(readProjection(join(dir, 'missing.json'))).toBeNull();
-      expect(renderHtmlReport(results, null)).not.toContain('AST 预生成（投影）');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -11,46 +11,46 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-18, yoya version `0.6.3-perf` (`7ce7bf2`).
+**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-18, yoya version `0.6.3-perf` (`d50f8ce`).
 
 **Nine standard operations (ms, median)**
 
 | Operation                | yoya 0.6.2 | yoya now | vanillajs | now ÷ vanilla |
 | ------------------------ | ---------- | -------- | --------- | ------------- |
-| 01 create 1k rows        | 55.3       | 47.6     | 30.6      | 1.56×         |
-| 02 replace 1k rows       | 63.2       | 48.9     | 33.3      | 1.47×         |
-| 03 update every 10th row | 21.1       | 24.3     | 20.6      | 1.18×         |
-| 04 select row            | 8.7        | 8.4      | 6.8       | 1.24×         |
-| 05 swap rows             | 27.0       | 30.7     | 21.3      | 1.44×         |
-| 06 remove one row        | 19.0       | 20.0     | 18.3      | 1.09×         |
-| 07 create 10k rows       | 547.9      | 566.0    | 335.5     | 1.69×         |
-| 08 append 1k rows        | 57.6       | 54.0     | 34.4      | 1.57×         |
-| 09 clear x8              | 58.0       | 23.8     | 17.2      | 1.38×         |
+| 01 create 1k rows        | 55.3       | 36.1     | 31.1      | 1.16×         |
+| 02 replace 1k rows       | 63.2       | 39.9     | 34.1      | 1.17×         |
+| 03 update every 10th row | 21.1       | 20.8     | 19.0      | 1.09×         |
+| 04 select row            | 8.7        | 7.8      | 6.8       | 1.15×         |
+| 05 swap rows             | 27.0       | 26.8     | 23.3      | 1.15×         |
+| 06 remove one row        | 19.0       | 17.2     | 16.7      | 1.03×         |
+| 07 create 10k rows       | 547.9      | 392.8    | 336.8     | 1.17×         |
+| 08 append 1k rows        | 57.6       | 42.2     | 42.3      | 1.00×         |
+| 09 clear x8              | 58.0       | 20.6     | 14.9      | 1.38×         |
 
 **script / paint split (ms, median)**
 
 | Operation                | yoya script | yoya paint | vanilla script | vanilla paint |
 | ------------------------ | ----------- | ---------- | -------------- | ------------- |
-| 01 create 1k rows        | 18.1        | 29.1       | 2.2            | 28.1          |
-| 02 replace 1k rows       | 18.8        | 29.6       | 4.3            | 28.3          |
-| 03 update every 10th row | 1.4         | 19.5       | 0.8            | 17.8          |
-| 04 select row            | 2.4         | 4.6        | 0.4            | 5.3           |
-| 05 swap rows             | 3.4         | 23.3       | 0.4            | 18.5          |
-| 06 remove one row        | 0.8         | 18.2       | 0.4            | 16.7          |
-| 07 create 10k rows       | 207.4       | 340.8      | 24.1           | 306.5         |
-| 08 append 1k rows        | 16.7        | 34.5       | 2.2            | 31.4          |
-| 09 clear x8              | 21.1        | 2.0        | 12.9           | 2.0           |
+| 01 create 1k rows        | 6.1         | 29.2       | 2.3            | 28.3          |
+| 02 replace 1k rows       | 9.6         | 29.4       | 4.3            | 29.3          |
+| 03 update every 10th row | 1.2         | 17.7       | 0.8            | 16.5          |
+| 04 select row            | 2.2         | 4.3        | 0.4            | 5.0           |
+| 05 swap rows             | 1.2         | 23.4       | 0.4            | 19.9          |
+| 06 remove one row        | 0.6         | 15.6       | 0.4            | 15.2          |
+| 07 create 10k rows       | 62.4        | 324.3      | 24.1           | 307.4         |
+| 08 append 1k rows        | 6.6         | 34.5       | 2.2            | 36.0          |
+| 09 clear x8              | 17.2        | 2.0        | 11.4           | 1.8           |
 
 **Memory / size / first paint**
 
 | Metric                     | yoya 0.6.2 | yoya now | vanillajs | now ÷ vanilla |
 | -------------------------- | ---------- | -------- | --------- | ------------- |
-| 21 ready memory (MB)       | 1.23       | 1.41     | 1.05      | 1.34×         |
-| 22 run memory (MB)         | 11.03      | 5.68     | 2.45      | 2.32×         |
-| 25 run+clear memory (MB)   | 1.86       | 1.92     | 1.12      | 1.71×         |
-| 41 size, uncompressed (KB) | 59.1       | 99.5     | 11.7      | 8.50×         |
-| 42 size, brotli (KB)       | 16.2       | 26.6     | 2.5       | 10.64×        |
-| 43 first paint (ms)        | 317.8      | 435.9    | 384.2     | 1.13×         |
+| 21 ready memory (MB)       | 1.23       | 1.23     | 1.05      | 1.18×         |
+| 22 run memory (MB)         | 11.03      | 3.92     | 2.43      | 1.61×         |
+| 25 run+clear memory (MB)   | 1.86       | 1.44     | 1.16      | 1.25×         |
+| 41 size, uncompressed (KB) | 59.1       | 83.8     | 11.7      | 7.16×         |
+| 42 size, brotli (KB)       | 16.2       | 20.9     | 2.5       | 8.36×         |
+| 43 first paint (ms)        | 317.8      | 339.5    | 282.4     | 1.20×         |
 
 <!-- benchmark:tables:end -->
 
