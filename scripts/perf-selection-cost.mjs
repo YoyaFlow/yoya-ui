@@ -3,6 +3,7 @@
 //   shared    —— 每行 `computed(() => selectedId.value === row.id)`，切换时写 1 个共享句柄（会唤醒全部 N 行）
 //   ownDerive —— 同样是每行一个 computed，但派生读「行自己的」句柄，切换时写两行
 //   ownFlag   —— 行自己持一个 ref 布尔（不建派生），切换时写两行
+//   keyedSet  —— 框架原语 createKeyedSet()：集合按 key 维护桶，一次 set 只写「旧键 / 新键」
 //
 // shared 与 ownDerive 的每行对象图完全一样，差别只在「一次写入唤醒多少行」；
 // ownDerive 与 ownFlag 的差别是「每行多一个派生」本身的开销。
@@ -41,7 +42,7 @@ for (const key of Object.getOwnPropertyNames(dom.window)) {
   }
 }
 
-const { computed, ref, table, tr } = await import('../src/yoya.core.js');
+const { computed, createKeyedSet, ref, table, tr } = await import('../src/yoya.core.js');
 
 const { document, Element } = dom.window;
 let evaluations = 0;
@@ -67,7 +68,7 @@ Element.prototype.removeAttribute = function (...rest) {
 
 /**
  * @param {number} count 行数
- * @param {'shared'|'ownDerive'|'ownFlag'} style
+ * @param {'shared'|'ownDerive'|'ownFlag'|'keyedSet'} style
  */
 function build(count, style) {
   evaluations = 0;
@@ -75,6 +76,7 @@ function build(count, style) {
   const sharedId = ref(null);
   const list = Array.from({ length: count }, (_, index) => ({ id: index + 1 }));
   const flags = new Map();
+  const active = style === 'keyedSet' ? createKeyedSet() : null;
 
   const view = table((node) => {
     node.tbody((body) => {
@@ -96,6 +98,8 @@ function build(count, style) {
               evaluations += 1;
               return own.value;
             });
+          } else if (style === 'keyedSet') {
+            state = active.has(row.id);
           }
 
           return tr((line) => {
@@ -109,15 +113,15 @@ function build(count, style) {
 
   document.getElementById('host').replaceChildren(view.renderDom());
   rows.value = list;
-  return { list, flags, sharedId, view };
+  return { active, list, flags, sharedId, view };
 }
 
 const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 const report = [];
 
 for (const count of rowCounts) {
-  for (const style of ['shared', 'ownDerive', 'ownFlag']) {
-    const { list, flags, sharedId, view } = build(count, style);
+  for (const style of ['shared', 'ownDerive', 'ownFlag', 'keyedSet']) {
+    const { active, list, flags, sharedId, view } = build(count, style);
     const samples = { evaluations: [], ms: [], writes: [] };
     let previousId = null;
 
@@ -129,6 +133,8 @@ for (const count of rowCounts) {
       const start = performance.now();
       if (style === 'shared') {
         sharedId.value = target.id;
+      } else if (style === 'keyedSet') {
+        active.set(target.id);
       } else {
         if (previousId !== null) {
           flags.get(previousId).value = false;
@@ -164,7 +170,8 @@ for (const row of report) {
 }
 console.log(
   '\n说明：shared = 每行派生比较共享句柄（基准条目写法）；ownDerive = 每行派生读行自己的句柄；' +
-    'ownFlag = 行自己持 ref 布尔。切换成本只算写入本身（不含 flush 的子树遍历）。'
+    'ownFlag = 行自己持 ref 布尔；keyedSet = 框架原语 createKeyedSet()。' +
+    '切换成本只算写入本身（不含 flush 的子树遍历）。'
 );
 console.log(
   '内存侧：第一种写法每行多持一个派生对象与一条订阅，比第二种约多 0.2 KB/行（1000 行约 0.2 MB，' +

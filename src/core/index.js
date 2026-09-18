@@ -43,6 +43,7 @@ export {
   withAccess
 } from './access.js';
 export { computed, isSignal, ref, batch, SignalHandle } from './signals/handle.js';
+export { createKeyedSet } from './signals/keyed-set.js';
 export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {
   buildInProviderScope,

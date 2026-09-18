@@ -102,6 +102,12 @@ vInput({
 - 多选集合 / 过滤 / 悬浮 + 选中组合：自己维护 `Map<id, 行>` 索引，不要指望框架猜出「只有两行会变」。
 - 数字与复跑：`npm run perf:selection`；完整说明见 `docs/component-authoring(.zh-CN).md` 第 6.2 节。
 
+框架提供了对应的**状态层原语** `createKeyedSet()`（第 6.3 节）：`active.set(id)` + 
+`line.toggleClass('danger', active.has(id))`，写入只唤醒「旧键 / 新键」两个桶。实测 1000 行：
+共享句柄 + 每行派生 1000 次派生 / 0.62 ms，本原语 **0 次 / 0.024 ms**；每行内存 725 → 530 B。
+多选用 `add/remove/toggle/replace(ids)`；数据集删行时 `drop(id)`、换数据时 `dispose()`；
+`has(id)` 是只读句柄（写入只能走集合方法）。一行依赖多个条件时仍用 `computed`。
+
 ## 可重建区域：结构随数据变化
 
 ```js

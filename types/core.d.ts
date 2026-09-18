@@ -774,6 +774,39 @@ export function computed<T>(compute: () => T): Readonly<SignalHandle<T>>;
 /** True for yoya signal handles (plain `{ value }` objects are not signals). */
 export function isSignal(value: unknown): value is SignalHandle<unknown>;
 
+/**
+ * A keyed boolean state set: which key is selected / active / hovered / matched.
+ *
+ * `has(key)` returns a read-only value-position handle, so it can drive class,
+ * attribute, style, text and component props bindings directly. Writing goes
+ * through the collection methods, which only touch the affected key buckets —
+ * a `set()` wakes the previous and the next key instead of every row.
+ */
+export interface KeyedSet<K = unknown> {
+  /** Read-only value-position handle: `line.toggleClass('danger', active.has(row.id))`. */
+  has(key: K): Readonly<SignalHandle<boolean>>;
+  /** Plain boolean read (no subscription): for SSR output and imperative branches. */
+  isActive(key: K): boolean;
+  /** Snapshot of the currently active keys. */
+  keys(): K[];
+  readonly size: number;
+  /** Single-select: replace the active set with this key. */
+  set(key: K): KeyedSet<K>;
+  add(key: K): KeyedSet<K>;
+  remove(key: K): KeyedSet<K>;
+  toggle(key: K): KeyedSet<K>;
+  /** Bulk update; only the difference is written (select-all stays linear). */
+  replace(keys: Iterable<K>): KeyedSet<K>;
+  clear(): KeyedSet<K>;
+  /** Release one key's bucket (call when the key leaves the data set). */
+  drop(key: K): KeyedSet<K>;
+  /** Release every bucket (call when the data set is replaced). */
+  dispose(): KeyedSet<K>;
+}
+
+/** Creates a keyed boolean state set. Live alongside the data set it describes. */
+export function createKeyedSet<K = unknown>(): KeyedSet<K>;
+
 /** Runs `run` with coalesced notification when the engine supports batching. */
 export function batch<T>(run: () => T): T;
 
