@@ -684,8 +684,41 @@ function nodePendingRemovals(node) {
   return node._pendingRemovals ?? (node._pendingRemovals = new Set());
 }
 
-function nodeBuilders(node) {
-  return node._builders ?? (node._builders = []);
+/**
+ * 记录本节点的构建闭包：**单槽**，只有同一节点被 setup 多次时才升级成数组。
+ *
+ * 原实现每次 setup 都建一个数组（`node._builders = []` 再 push），官方行里 8 个元素节点
+ * 就是每行 8 个数组——10k 行构建要分配约 8 万个数组（浏览器侧单个约 96 B），纯瞬态垃圾。
+ * 保留槽位（不用 delete、也不跳过建槽）以免隐藏类分叉，只把「数组」换成「一个闭包引用」。
+ */
+function addNodeBuilder(node, builder) {
+  const current = node._builders;
+  if (current === undefined || current === null) {
+    node._builders = builder;
+    return;
+  }
+
+  if (Array.isArray(current)) {
+    current.push(builder);
+    return;
+  }
+
+  node._builders = [current, builder];
+}
+
+/** 重跑构建闭包（区域专用）：单闭包直接调，多闭包按登记顺序。 */
+function runNodeBuilders(node) {
+  const builders = node._builders;
+  if (builders === undefined || builders === null) {
+    return;
+  }
+
+  if (Array.isArray(builders)) {
+    builders.forEach((builder) => builder(node));
+    return;
+  }
+
+  builders(node);
 }
 
 // ---- keyed 段内事件委托 ------------------------------------------------------
@@ -1485,7 +1518,7 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
-      nodeBuilders(this).push(setup);
+      addNodeBuilder(this, setup);
       const serialBefore = bindingSerial;
       setupStack.push(this);
       try {
@@ -1534,7 +1567,7 @@ export class ViewNode {
     // 契约：声明区域必须发生在该节点自己的 setup builder 内。非区域节点的构建闭包在构建
     // 返回处即释放，出了 builder 再声明既拿不到 builder 重跑，也拿不到构建期信号捕获窗口。
     // 已声明的区域仍可再次调用（此时 builder 仍在），用于替换谓词。
-    if ((this._builders?.length ?? 0) === 0) {
+    if (this._builders === undefined || this._builders === null) {
       throw new TypeError(
         'rebuildable() requires a setup builder on this node; declare the region inside its own ' +
           'setup builder (non-region build closures are released when the build returns)'
@@ -1627,7 +1660,7 @@ export class ViewNode {
     const previousSources = this._regionSources;
     try {
       this._runInRegionEnvironment(() =>
-        withProviderScope(this, () => this._builders?.forEach((builder) => builder(this)), {
+        withProviderScope(this, () => runNodeBuilders(this), {
           reset: true
         })
       );
