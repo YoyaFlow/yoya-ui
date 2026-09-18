@@ -103,7 +103,8 @@ describe('ViewNode core', () => {
     });
 
     expect(root.toHTML()).toBe(
-      '<div id="profile" class="card"><h1>Profile</h1><input name="email" value="ada@example.com"></div>'
+      // 属性按名字排序输出（class < id；name < value），与写入顺序无关
+      '<div class="card" id="profile"><h1>Profile</h1><input name="email" value="ada@example.com"></div>'
     );
   });
 

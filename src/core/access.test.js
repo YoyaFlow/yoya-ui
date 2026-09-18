@@ -67,7 +67,7 @@ describe('access control (core)', () => {
       html = node.toHTML();
     });
     expect(el.disabled).toBe(true);
-    expect(html).toContain('disabled="disabled"');
+    expect(html).toMatch(/\sdisabled=/); // 属性位置上的 disabled（避免匹配到 aria-disabled）
   });
 
   it('bare grant gives the user full read-write access (editable)', () => {
@@ -91,7 +91,7 @@ describe('access control (core)', () => {
     });
     expect(el.disabled).toBe(true);
     expect(el.readOnly).toBe(true);
-    expect(html).toContain('disabled="disabled"');
+    expect(html).toMatch(/\sdisabled=/);
     expect(html).toContain('readonly="readonly"');
   });
 
@@ -115,7 +115,8 @@ describe('access control (core)', () => {
       html = node.toHTML();
     });
     expect(el.querySelector('button').disabled).toBe(true);
-    expect(html).toContain('<button disabled="disabled"');
+    // 属性按名字排序输出，断言只锁语义（button 上带 disabled）
+    expect(html).toMatch(/<button [^>]*\sdisabled=/);
   });
 
   it('disables inner control of composite vInput on write deny', () => {

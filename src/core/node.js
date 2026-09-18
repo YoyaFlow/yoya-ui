@@ -1464,10 +1464,18 @@ export function applyAttribute(element, name, value) {
  * 序列化 style 快照，保证 toHTML 和真实 DOM 渲染保持一致。
  */
 export function serializeStyles(styles) {
+  // 按序列化后的属性名（kebab）排序：样式文本与写入顺序无关，编译器/SSR/客户端 DOM 三者
+  // 因此能产出同一份结果（票：编译产物不许手写片段的前提）。
   return Object.entries(styles ?? {})
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
     .map(([name, value]) => `${toKebabStyleName(name)}:${escapeHtml(value)}`)
+    .sort()
     .join('; ');
+}
+
+/** 属性名排序：键序与写入顺序无关（同上，供 toHTML 与真实 DOM 首帧落盘共用）。 */
+function sortedKeys(snapshot) {
+  return snapshot ? Object.keys(snapshot).sort() : [];
 }
 
 export function toKebabStyleName(name) {
@@ -3724,12 +3732,14 @@ export class ElementNode extends ViewNode {
    */
   _applyBindingsToElement(freshClass = false) {
     if (this._attrs) {
-      Object.entries(this._attrs).forEach(([name, value]) => applyAttribute(this._el, name, value));
+      // 首帧按属性名排序落盘：此后同名 setAttribute 只改值、保持位置，DOM 属性顺序因此
+      // 与 toHTML() 的序列化顺序一致（类名走 _syncClassName，不在快照里循环）。
+      sortedKeys(this._attrs).forEach((name) => applyAttribute(this._el, name, this._attrs[name]));
     }
     this._syncClassName(freshClass);
     if (this._styles) {
-      Object.entries(this._styles).forEach(([name, value]) => {
-        this._el.style[name] = value;
+      sortedKeys(this._styles).forEach((name) => {
+        this._el.style[name] = this._styles[name];
       });
     }
 
@@ -3794,23 +3804,26 @@ export class ElementNode extends ViewNode {
    * 序列化属性快照，供 toHTML 使用。
    */
   _serializeAttributes() {
-    // 类名在 _classText 里单独存放；属性快照里没有 class 时把它排在其它属性之前，
-    // 与「先 className() 后 attr()」的写入顺序一致（有 class 键时按快照顺序即可）。
-    const attrs = {};
-    if (this._classText && this._attrs?.class === undefined) {
-      attrs.class = this._classText;
-    }
+    // 属性按名字排序输出：与写入顺序无关，因此 SSR、客户端首帧落盘与（将来的）编译期片段
+    // 三者能产出逐字节相同的 HTML——这是「编译产物不手写片段」的前提。
+    const attrs = new Map();
     if (this._attrs) {
-      Object.assign(attrs, this._attrs);
+      Object.entries(this._attrs).forEach(([name, value]) => attrs.set(name, value));
+    }
+    // 类名的真身在 _classText；快照里没有 class 时由它提供取值（有则沿用快照里的值）
+    if (this._classText && !attrs.has('class')) {
+      attrs.set('class', this._classText);
     }
     const styleText = this._serializeStyles();
 
     if (styleText) {
-      attrs.style = attrs.style ? `${attrs.style}; ${styleText}` : styleText;
+      const inline = attrs.get('style');
+      attrs.set('style', inline ? `${inline}; ${styleText}` : styleText);
     }
 
-    return Object.entries(attrs)
+    return [...attrs.entries()]
       .filter(([, value]) => value !== null && value !== undefined && value !== false)
+      .sort(([first], [second]) => (first < second ? -1 : first > second ? 1 : 0))
       .map(([name, value]) => {
         if (value === true || isBooleanAttribute(name)) {
           return `${name}="${name}"`;
