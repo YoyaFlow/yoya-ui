@@ -12,7 +12,8 @@
    跑 `npm run build-prod`，起 `server`（端口 8080）；
 2. `cd webdriver-ts && node dist/benchmarkRunner.js --framework keyed/yoya-ui-core --runner playwright
 --headless --chromeBinary <Chrome for Testing 路径>`（原生基线把 framework 换成 `keyed/vanillajs`）；
-3. 用 `npm run report:bench:import` 导入结果，`npm run report:bench:write` 刷新文档表格。
+3. 用 `npm run report:bench:import` 导入结果（对照条目用可重复的
+   `--compare <runner 标签>:<显示名>` 追加，见下），`npm run report:bench:write` 刷新文档表格。
 
 ## 报告页（`benchmark/report.html`）
 
@@ -34,5 +35,19 @@ node scripts/benchmark-report-html.mjs --write \
   --include vue-v3.5.39-keyed --include react-hooks-v19.2.0-keyed
 ```
 
-注意：提交进仓库的 `benchmark/report.html` 只含 `results.json` 的三列（锚点 / 本次 / 原生），
-这样 `--check` 在 CI 上不依赖本机路径；追加对照列的版本是本地用法。
+页面渲染多少栏由 `results.json` 决定：没有 `compare` 段时是四栏里的前两栏加锚点与原生，
+有 `compare` 段时按「锚点 / yoya 本次 / 原生 / 对照 1 / 对照 2…」渲染（与官网结果表同形），
+**每个非原生条目的单元格分两层：上值下归一系数（÷ 原生）**，与官网结果表的读法一致。
+对照条目的数据来自同一轮测量，导入时用可重复的 `--compare` 追加：
+
+```bash
+node scripts/benchmark-report.mjs --import <results 目录> \
+  --yoya yoya-ui-core-v0.6.3-perf-local-keyed --anchor yoya-ui-core-v0.6.2-keyed \
+  --baseline vanillajs-keyed \
+  --compare "vue-v3.5.39-keyed:Vue 3.5.39" \
+  --compare "react-hooks-v19.2.0-keyed:React 19.2.0" \
+  --runner playwright --mode headless --browser "Chrome for Testing 152.0.7977.64" \
+  --cpu-iterations 15 --commit <提交> --version 0.6.3-perf --anchor-version 0.6.2
+```
+
+对照条目的数据落在 `results.json` 的 `compare` 段（提交进仓库），因此报告页在 CI 上照样能校验。

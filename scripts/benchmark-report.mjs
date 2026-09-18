@@ -222,7 +222,7 @@ function readRunnerResults(dir, label, id) {
 
 const stat = (values) => values?.DEFAULT ?? values?.total ?? null;
 
-export function importBenchmarkResults({ dir, yoya, anchor, baseline, meta }) {
+export function importBenchmarkResults({ dir, yoya, anchor, baseline, compares = [], meta }) {
   const median = (label, id) => {
     const values = readRunnerResults(dir, label, id);
     return stat(values)?.median ?? null;
@@ -256,6 +256,14 @@ export function importBenchmarkResults({ dir, yoya, anchor, baseline, meta }) {
       yoya: median(yoya, row.id),
       anchor: median(anchor, row.id),
       baseline: median(baseline, row.id)
+    })),
+    // 对照条目（Vue / React 等）：必须与 yoya / baseline 同一轮，否则归一系数没有意义
+    compare: compares.map((entry) => ({
+      label: entry.label,
+      version: entry.name,
+      cpu: CPU_ROWS.map((row) => ({ id: row.id, ...split(entry.label, row.id) })),
+      memory: MEMORY_ROWS.map((row) => ({ id: row.id, value: median(entry.label, row.id) })),
+      size: SIZE_ROWS.map((row) => ({ id: row.id, value: median(entry.label, row.id) }))
     }))
   };
 }
@@ -271,6 +279,22 @@ function option(name, fallback = null) {
   return next === undefined || next.startsWith('--') ? fallback : next;
 }
 
+/** 可重复参数：`--compare <runner 标签>:<显示名>` 出现多次时全部收集。 */
+function options(name) {
+  const collected = [];
+  process.argv.forEach((item, index) => {
+    if (item === `--${name}`) {
+      const next = process.argv[index + 1];
+      if (next !== undefined && !next.startsWith('--')) {
+        collected.push(next);
+      }
+    } else if (item.startsWith(`--${name}=`)) {
+      collected.push(item.slice(name.length + 3));
+    }
+  });
+  return collected;
+}
+
 async function main() {
   const mode = process.argv[2];
 
@@ -280,6 +304,12 @@ async function main() {
       yoya: option('yoya'),
       anchor: option('anchor'),
       baseline: option('baseline'),
+      compares: options('compare').map((value) => {
+        const separator = value.indexOf(':');
+        return separator === -1
+          ? { label: value, name: value }
+          : { label: value.slice(0, separator), name: value.slice(separator + 1) };
+      }),
       meta: {
         generatedAt: option('date', new Date().toISOString().slice(0, 10)),
         commit: option('commit'),

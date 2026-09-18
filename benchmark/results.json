@@ -7,7 +7,7 @@
     "runner": "playwright",
     "mode": "headless",
     "browser": "Chrome for Testing 152.0.7977.64",
-    "cpuIterations": 30
+    "cpuIterations": 15
   },
   "anchor": {
     "label": "yoya-ui-core-v0.6.2-keyed",
@@ -17,9 +17,9 @@
     {
       "id": "01_run1k",
       "yoya": {
-        "total": 49.099999999999994,
-        "script": 18,
-        "paint": 30.2
+        "total": 47.6,
+        "script": 18.1,
+        "paint": 29.1
       },
       "anchor": {
         "total": 55.3,
@@ -27,17 +27,17 @@
         "paint": 28.7
       },
       "baseline": {
-        "total": 31,
+        "total": 30.6,
         "script": 2.2,
-        "paint": 28.25
+        "paint": 28.1
       }
     },
     {
       "id": "02_replace1k",
       "yoya": {
-        "total": 49.9,
-        "script": 19,
-        "paint": 30.2
+        "total": 48.9,
+        "script": 18.8,
+        "paint": 29.6
       },
       "anchor": {
         "total": 63.2,
@@ -45,17 +45,17 @@
         "paint": 29.7
       },
       "baseline": {
-        "total": 34.150000000000006,
-        "script": 4.4,
-        "paint": 29.25
+        "total": 33.3,
+        "script": 4.3,
+        "paint": 28.3
       }
     },
     {
       "id": "03_update10th1k_x16",
       "yoya": {
-        "total": 21.05,
+        "total": 24.3,
         "script": 1.4,
-        "paint": 17.2
+        "paint": 19.5
       },
       "anchor": {
         "total": 21.1,
@@ -63,17 +63,17 @@
         "paint": 17.5
       },
       "baseline": {
-        "total": 21.75,
+        "total": 20.6,
         "script": 0.8,
-        "paint": 17.75
+        "paint": 17.8
       }
     },
     {
       "id": "04_select1k",
       "yoya": {
-        "total": 7.85,
-        "script": 2.2,
-        "paint": 4.3
+        "total": 8.4,
+        "script": 2.4,
+        "paint": 4.6
       },
       "anchor": {
         "total": 8.7,
@@ -81,17 +81,17 @@
         "paint": 4.4
       },
       "baseline": {
-        "total": 6.95,
+        "total": 6.8,
         "script": 0.4,
-        "paint": 5.4
+        "paint": 5.3
       }
     },
     {
       "id": "05_swap1k",
       "yoya": {
-        "total": 27.75,
-        "script": 3,
-        "paint": 22.3
+        "total": 30.7,
+        "script": 3.4,
+        "paint": 23.3
       },
       "anchor": {
         "total": 27,
@@ -99,17 +99,17 @@
         "paint": 20.7
       },
       "baseline": {
-        "total": 22.75,
+        "total": 21.3,
         "script": 0.4,
-        "paint": 20.5
+        "paint": 18.5
       }
     },
     {
       "id": "06_remove-one-1k",
       "yoya": {
-        "total": 18.55,
+        "total": 20,
         "script": 0.8,
-        "paint": 16.65
+        "paint": 18.2
       },
       "anchor": {
         "total": 19,
@@ -117,17 +117,17 @@
         "paint": 16.3
       },
       "baseline": {
-        "total": 18,
+        "total": 18.3,
         "script": 0.4,
-        "paint": 16.35
+        "paint": 16.7
       }
     },
     {
       "id": "07_create10k",
       "yoya": {
-        "total": 505.85,
-        "script": 192.55,
-        "paint": 307.5
+        "total": 566,
+        "script": 207.4,
+        "paint": 340.8
       },
       "anchor": {
         "total": 547.9,
@@ -135,17 +135,17 @@
         "paint": 307.2
       },
       "baseline": {
-        "total": 343,
-        "script": 25.05,
-        "paint": 312.5
+        "total": 335.5,
+        "script": 24.1,
+        "paint": 306.5
       }
     },
     {
       "id": "08_create1k-after1k_x2",
       "yoya": {
-        "total": 50.900000000000006,
-        "script": 16.25,
-        "paint": 33.65
+        "total": 54,
+        "script": 16.7,
+        "paint": 34.5
       },
       "anchor": {
         "total": 57.6,
@@ -153,17 +153,17 @@
         "paint": 34.1
       },
       "baseline": {
-        "total": 34.95,
+        "total": 34.4,
         "script": 2.2,
-        "paint": 31.8
+        "paint": 31.4
       }
     },
     {
       "id": "09_clear1k_x8",
       "yoya": {
-        "total": 26.15,
-        "script": 22.450000000000003,
-        "paint": 2.2
+        "total": 23.8,
+        "script": 21.1,
+        "paint": 2
       },
       "anchor": {
         "total": 58,
@@ -171,30 +171,30 @@
         "paint": 2
       },
       "baseline": {
-        "total": 15,
-        "script": 11.350000000000001,
-        "paint": 1.95
+        "total": 17.2,
+        "script": 12.9,
+        "paint": 2
       }
     }
   ],
   "memory": [
     {
       "id": "21_ready-memory",
-      "yoya": 1.3705430030822754,
+      "yoya": 1.411717414855957,
       "anchor": 1.2265434265136719,
-      "baseline": 1.0504388809204102
+      "baseline": 1.050276756286621
     },
     {
       "id": "22_run-memory",
-      "yoya": 5.673037052154541,
+      "yoya": 5.6821184158325195,
       "anchor": 11.02556324005127,
-      "baseline": 2.401200771331787
+      "baseline": 2.4516725540161133
     },
     {
       "id": "25_run-clear-memory",
-      "yoya": 1.8385915756225586,
+      "yoya": 1.915863037109375,
       "anchor": 1.864924430847168,
-      "baseline": 1.1553778648376465
+      "baseline": 1.123392105102539
     }
   ],
   "size": [
@@ -212,9 +212,187 @@
     },
     {
       "id": "43_first-paint",
-      "yoya": 396.29999999999995,
+      "yoya": 435.9,
       "anchor": 317.8,
-      "baseline": 387.25
+      "baseline": 384.2
+    }
+  ],
+  "compare": [
+    {
+      "label": "vue-v3.5.39-keyed",
+      "version": "Vue 3.5.39",
+      "cpu": [
+        {
+          "id": "01_run1k",
+          "total": 37,
+          "script": 7.5,
+          "paint": 28.9
+        },
+        {
+          "id": "02_replace1k",
+          "total": 40.6,
+          "script": 10.5,
+          "paint": 29.2
+        },
+        {
+          "id": "03_update10th1k_x16",
+          "total": 26.6,
+          "script": 3.4,
+          "paint": 20.5
+        },
+        {
+          "id": "04_select1k",
+          "total": 7.7,
+          "script": 1.4,
+          "paint": 5.2
+        },
+        {
+          "id": "05_swap1k",
+          "total": 25.8,
+          "script": 1.6,
+          "paint": 21.8
+        },
+        {
+          "id": "06_remove-one-1k",
+          "total": 19.8,
+          "script": 2.2,
+          "paint": 16.5
+        },
+        {
+          "id": "07_create10k",
+          "total": 413.3,
+          "script": 73.1,
+          "paint": 332.3
+        },
+        {
+          "id": "08_create1k-after1k_x2",
+          "total": 42,
+          "script": 7.1,
+          "paint": 34.1
+        },
+        {
+          "id": "09_clear1k_x8",
+          "total": 20,
+          "script": 16.6,
+          "paint": 1.9
+        }
+      ],
+      "memory": [
+        {
+          "id": "21_ready-memory",
+          "value": 1.294785499572754
+        },
+        {
+          "id": "22_run-memory",
+          "value": 4.546872138977051
+        },
+        {
+          "id": "25_run-clear-memory",
+          "value": 1.6153898239135742
+        }
+      ],
+      "size": [
+        {
+          "id": "41_size-uncompressed",
+          "value": 64.4
+        },
+        {
+          "id": "42_size-compressed",
+          "value": 23.3
+        },
+        {
+          "id": "43_first-paint",
+          "value": 364.9
+        }
+      ]
+    },
+    {
+      "label": "react-hooks-v19.2.0-keyed",
+      "version": "React 19.2.0",
+      "cpu": [
+        {
+          "id": "01_run1k",
+          "total": 41.4,
+          "script": 9.5,
+          "paint": 32.2
+        },
+        {
+          "id": "02_replace1k",
+          "total": 47.3,
+          "script": 15.7,
+          "paint": 30.7
+        },
+        {
+          "id": "03_update10th1k_x16",
+          "total": 27.1,
+          "script": 5.8,
+          "paint": 18.1
+        },
+        {
+          "id": "04_select1k",
+          "total": 10.4,
+          "script": 3.6,
+          "paint": 5.7
+        },
+        {
+          "id": "05_swap1k",
+          "total": 155.4,
+          "script": 27.3,
+          "paint": 127.1
+        },
+        {
+          "id": "06_remove-one-1k",
+          "total": 18.1,
+          "script": 1.4,
+          "paint": 15.9
+        },
+        {
+          "id": "07_create10k",
+          "total": 579.1,
+          "script": 241.6,
+          "paint": 329.5
+        },
+        {
+          "id": "08_create1k-after1k_x2",
+          "total": 43.5,
+          "script": 9.1,
+          "paint": 32.9
+        },
+        {
+          "id": "09_clear1k_x8",
+          "total": 27.4,
+          "script": 23.5,
+          "paint": 1.8
+        }
+      ],
+      "memory": [
+        {
+          "id": "21_ready-memory",
+          "value": 1.6650199890136719
+        },
+        {
+          "id": "22_run-memory",
+          "value": 5.096155166625977
+        },
+        {
+          "id": "25_run-clear-memory",
+          "value": 2.365057945251465
+        }
+      ],
+      "size": [
+        {
+          "id": "41_size-uncompressed",
+          "value": 190.3
+        },
+        {
+          "id": "42_size-compressed",
+          "value": 51.4
+        },
+        {
+          "id": "43_first-paint",
+          "value": 416.7
+        }
+      ]
     }
   ]
 }
