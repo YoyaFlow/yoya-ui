@@ -224,15 +224,23 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     lang === 'zh'
       ? [
           '基准',
-          `yoya ${results.meta.packageVersion}`,
+          `yoya-**${results.meta.packageVersion}**（编译）`,
           '原生 vanillajs',
-          ...compares.map((column) => column.version)
+          ...compares.map((column) =>
+            column.label?.includes('yoya-ui-runtime')
+              ? `yoya-**${results.meta.packageVersion}**（无编译）`
+              : column.version
+          )
         ]
       : [
           'Benchmark',
-          `yoya ${results.meta.packageVersion}`,
+          `yoya-**${results.meta.packageVersion}** (compiled)`,
           'vanillajs',
-          ...compares.map((column) => column.version)
+          ...compares.map((column) =>
+            column.label?.includes('yoya-ui-runtime')
+              ? `yoya-**${results.meta.packageVersion}** (runtime)`
+              : column.version
+          )
         ];
 
   /** 单元格：`测量值（÷ 原生）`；原生列只写值（系数恒为 1.00×）。 */
@@ -268,7 +276,26 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     ];
   });
 
-  return [note, '', table(head, [...cpuRows, ...memoryRows])].join('\n');
+  /** 九项几何平均（综合指标）：每列自己的九项几何平均，括号里是 ÷ 原生。 */
+  const geometricMean = (values) => {
+    const usable = values.filter((value) => Number.isFinite(value) && value > 0);
+    return usable.length === CPU_ROWS.length
+      ? Math.exp(usable.reduce((sum, value) => sum + Math.log(value), 0) / usable.length)
+      : null;
+  };
+  const totalsOf = (pick) => CPU_ROWS.map((row) => pick(row));
+  const nativeMean = geometricMean(totalsOf((row) => cpuById.get(row.id)?.baseline?.total));
+  const summaryRow = [
+    lang === 'zh' ? '九项几何平均（综合指标）' : 'Nine-op geometric mean (overall)',
+    cell(geometricMean(totalsOf((row) => cpuById.get(row.id)?.yoya?.total)), nativeMean, 2),
+    num(nativeMean, 2),
+    ...compareCpu.map((map) =>
+      cell(geometricMean(totalsOf((row) => map.get(row.id))), nativeMean, 2)
+    )
+  ];
+
+  // 综合指标跟在九项后面，再接内存三项
+  return [note, '', table(head, [...cpuRows, summaryRow, ...memoryRows])].join('\n');
 }
 
 /** 取出文档里由标记包起来的表格块；缺标记直接报错（说明文档结构被改坏了）。 */
