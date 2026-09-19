@@ -205,6 +205,37 @@ shapeable. If you are evaluating it, evaluate the repository — tests, spec doc
 Web standards. Longer version, including the limitations we accept:
 [docs/why-yoya-ui.md](docs/why-yoya-ui.md).
 
+## Benchmark against other frameworks
+
+Execution (nine standard operations) and memory, read from the official
+[js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) runner — measured in a
+**local test environment** (see the note above the table), not on the official site:
+
+<!-- benchmark:readme:start 由 scripts/benchmark-report.mjs 生成 -->
+
+> **Local test environment**: one Windows machine + Chrome for Testing 152.0.7977.64 (headless) + the official
+> `playwright` runner, every entry measured **in the same round**; execution rows are medians
+> of 15 samples, memory is a single sample (units: ms / MB). **These are not the
+> official site numbers** — only compare within the same round; size, first paint and the ahead / behind
+> shading live in [`benchmark/report.html`](benchmark/report.html).
+
+| Benchmark                | yoya 0.6.5 | vanillajs | yoya ÷ vanilla | yoya runtime（无编译） | Vue 3.5.39 | React 19.2.0 | Solid 1.9.3 | Svelte 5.42.1 |
+| ------------------------ | ---------- | --------- | -------------- | ---------------------- | ---------- | ------------ | ----------- | ------------- |
+| 01 create 1k rows        | 34.5       | 30.6      | 1.13×          | 44.5                   | 37.2       | 38.9         | 33.9        | 33.9          |
+| 02 replace 1k rows       | 38.3       | 34.2      | 1.12×          | 46.3                   | 43.8       | 45.2         | 38.8        | 41.8          |
+| 03 update every 10th row | 21.4       | 21.6      | 0.99×          | 22.7                   | 25.4       | 26.8         | 20.7        | 22.0          |
+| 04 select row            | 6.4        | 7.0       | 0.91×          | 7.2                    | 9.1        | 10.0         | 7.8         | 9.9           |
+| 05 swap rows             | 24.2       | 23.1      | 1.05×          | 28.2                   | 27.8       | 159.1        | 24.1        | 24.8          |
+| 06 remove one row        | 18.1       | 17.5      | 1.03×          | 17.8                   | 20.9       | 18.1         | 17.6        | 18.1          |
+| 07 create 10k rows       | 388.7      | 345.4     | 1.13×          | 501.0                  | 413.9      | 593.8        | 428.1       | 388.9         |
+| 08 append 1k rows        | 40.8       | 34.6      | 1.18×          | 50.1                   | 40.6       | 42.6         | 36.2        | 37.3          |
+| 09 clear x8              | 25.2       | 16.7      | 1.51×          | 22.9                   | 24.8       | 27.2         | 21.8        | 16.7          |
+| 21 ready memory (MB)     | 1.30       | 1.06      | 1.23×          | 1.30                   | 1.27       | 1.67         | 1.08        | 1.16          |
+| 22 run memory (MB)       | 3.95       | 2.45      | 1.61×          | 5.37                   | 4.59       | 5.03         | 3.34        | 3.52          |
+| 25 run+clear memory (MB) | 1.58       | 1.13      | 1.40×          | 1.70                   | 1.71       | 2.38         | 1.29        | 1.36          |
+
+<!-- benchmark:readme:end -->
+
 ## Build output and size
 
 ```bash

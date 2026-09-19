@@ -18,9 +18,33 @@ const DATA_FILE = join(root, 'benchmark', 'results.json');
 export const BLOCK_START = '<!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->';
 export const BLOCK_END = '<!-- benchmark:tables:end -->';
 
+/** README 里是**同轮横向对比**表（和 docs 的「本次 / 原生」表不同），单独一对标记。 */
+export const README_BLOCK_START =
+  '<!-- benchmark:readme:start 由 scripts/benchmark-report.mjs 生成 -->';
+export const README_BLOCK_END = '<!-- benchmark:readme:end -->';
+
 export const DOC_FILES = [
   { file: 'docs/performance.md', lang: 'en' },
   { file: 'docs/performance.zh-CN.md', lang: 'zh' }
+];
+
+export const README_FILES = [
+  { file: 'README.md', lang: 'en' },
+  { file: 'README.zh-CN.md', lang: 'zh' }
+];
+
+/** 生成目标：docs 用「本次 / 原生」表，README 用同轮横向对比表，各有一对标记。 */
+const TARGETS = [
+  ...DOC_FILES.map((entry) => ({
+    ...entry,
+    render: renderBenchmarkTables,
+    markers: [BLOCK_START, BLOCK_END]
+  })),
+  ...README_FILES.map((entry) => ({
+    ...entry,
+    render: renderReadmeBenchmarkBlock,
+    markers: [README_BLOCK_START, README_BLOCK_END]
+  }))
 ];
 
 // 报表行清单：id 就是官方 runner 的 benchmark id，标题只用于文档展示。
@@ -164,24 +188,108 @@ export function renderBenchmarkTables(results, lang = 'zh') {
   ].join('\n');
 }
 
+/**
+ * README 里的表格块：**同轮横向对比**（yoya + 对照条目 + 原生），并显式标注本地测试环境。
+ * 与 docs 的「本次 / 原生」表不同——README 要的是一眼看清位置，所以对照条目并列。
+ */
+export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
+  const compares = results.compare ?? [];
+  const cpuById = new Map(results.cpu.map((row) => [row.id, row]));
+  const memoryById = new Map(results.memory.map((row) => [row.id, row]));
+  const compareCpu = compares.map(
+    (column) => new Map((column.cpu ?? []).map((item) => [item.id, item.total]))
+  );
+  const compareOther = compares.map((column) => ({
+    memory: new Map((column.memory ?? []).map((item) => [item.id, item.value]))
+  }));
+
+  const note =
+    lang === 'zh'
+      ? [
+          `> **本地测试环境**：单机 Windows + ${results.meta.browser}（headless）+ 官方 runner \`${results.meta.runner}\`，`,
+          `> 全部条目**同一轮**测出；执行项取 ${results.meta.cpuIterations} 个样本的中位数，内存 1 次采样（单位：ms / MB）。`,
+          '> **不是官方站点数字**，横向对比只在同一轮内有效；体积 / 首屏与逐项"领先 / 落后"底色见 ' +
+            '[`benchmark/report.html`](benchmark/report.html)。'
+        ].join('\n')
+      : [
+          `> **Local test environment**: one Windows machine + ${results.meta.browser} (headless) + the official`,
+          `> \`${results.meta.runner}\` runner, every entry measured **in the same round**; execution rows are medians`,
+          `> of ${results.meta.cpuIterations} samples, memory is a single sample (units: ms / MB). **These are not the`,
+          '> official site numbers** — only compare within the same round; size, first paint and the ahead / behind',
+          '> shading live in [`benchmark/report.html`](benchmark/report.html).'
+        ].join('\n');
+
+  const head =
+    lang === 'zh'
+      ? [
+          '基准',
+          `yoya ${results.meta.packageVersion}`,
+          '原生 vanillajs',
+          'yoya ÷ 原生',
+          ...compares.map((column) => column.version)
+        ]
+      : [
+          'Benchmark',
+          `yoya ${results.meta.packageVersion}`,
+          'vanillajs',
+          'yoya ÷ vanilla',
+          ...compares.map((column) => column.version)
+        ];
+
+  const cpuRows = CPU_ROWS.map((row) => {
+    const yoya = cpuById.get(row.id)?.yoya?.total ?? null;
+    const baseline = cpuById.get(row.id)?.baseline?.total ?? null;
+    return [
+      row[lang],
+      num(yoya, 1),
+      num(baseline, 1),
+      ratio(yoya, baseline),
+      ...compareCpu.map((map) => num(map.get(row.id), 1))
+    ];
+  });
+
+  // 一张表：执行九项 + 内存三项（体积 / 首屏留在报告页，避免 README 里堆好几张表）
+  const memoryRows = MEMORY_ROWS.map((row) => {
+    const yoya = memoryById.get(row.id)?.yoya ?? null;
+    const baseline = memoryById.get(row.id)?.baseline ?? null;
+    return [
+      row[lang],
+      num(yoya, 2),
+      num(baseline, 2),
+      ratio(yoya, baseline),
+      ...compareOther.map((column) => num(column.memory.get(row.id), 2))
+    ];
+  });
+
+  return [note, '', table(head, [...cpuRows, ...memoryRows])].join('\n');
+}
+
 /** 取出文档里由标记包起来的表格块；缺标记直接报错（说明文档结构被改坏了）。 */
-export function extractBenchmarkBlock(text, file = '文档') {
-  const start = text.indexOf(BLOCK_START);
-  const end = text.indexOf(BLOCK_END);
+export function extractBenchmarkBlock(
+  text,
+  file = '文档',
+  [startMarker, endMarker] = [BLOCK_START, BLOCK_END]
+) {
+  const start = text.indexOf(startMarker);
+  const end = text.indexOf(endMarker);
   if (start === -1 || end === -1 || end < start) {
     throw new Error(`${file} 缺少基准表格块标记（--write 会用脚本重新生成）`);
   }
-  return text.slice(start + BLOCK_START.length, end).trim();
+  return text.slice(start + startMarker.length, end).trim();
 }
 
 /** 用数据源重写表格块，标记之外的内容原样保留。 */
-export function patchBenchmarkBlock(text, block) {
-  const start = text.indexOf(BLOCK_START);
-  const end = text.indexOf(BLOCK_END);
+export function patchBenchmarkBlock(
+  text,
+  block,
+  [startMarker, endMarker] = [BLOCK_START, BLOCK_END]
+) {
+  const start = text.indexOf(startMarker);
+  const end = text.indexOf(endMarker);
   if (start === -1 || end === -1 || end < start) {
     throw new Error('目标文档缺少基准表格块标记');
   }
-  return `${text.slice(0, start + BLOCK_START.length)}\n${block}\n${text.slice(end)}`;
+  return `${text.slice(0, start + startMarker.length)}\n${block}\n${text.slice(end)}`;
 }
 
 // 生成的表格同样是 markdown 代码：列宽对齐交给项目 prettier 配置，否则 format:check 会失败。
@@ -197,7 +305,7 @@ export async function compareBenchmarkTables(
   readFile = (file) => readFileSync(file, 'utf8')
 ) {
   const mismatches = [];
-  for (const { file, lang } of DOC_FILES) {
+  for (const { file, lang, render, markers } of TARGETS) {
     let text;
     try {
       text = readFile(join(root, file));
@@ -207,7 +315,7 @@ export async function compareBenchmarkTables(
     }
     // 以「用数据源重新生成整篇」为准：标记之外的排版也由 prettier 归一，任何手改都会显现。
     const expected = await formatDocument(
-      patchBenchmarkBlock(text, renderBenchmarkTables(results, lang)),
+      patchBenchmarkBlock(text, render(results, lang), markers),
       join(root, file)
     );
     if (expected !== text) {
@@ -335,12 +443,12 @@ async function main() {
 
   const results = readBenchmarkResults();
   if (mode === '--write') {
-    for (const { file, lang } of DOC_FILES) {
+    for (const { file, lang, render, markers } of TARGETS) {
       const path = join(root, file);
       const text = readFileSync(path, 'utf8');
       writeFileSync(
         path,
-        await formatDocument(patchBenchmarkBlock(text, renderBenchmarkTables(results, lang)), path),
+        await formatDocument(patchBenchmarkBlock(text, render(results, lang), markers), path),
         'utf8'
       );
       console.log(`${file}: 基准表格块已按 benchmark/results.json 刷新`);
