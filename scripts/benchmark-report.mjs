@@ -224,8 +224,8 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     lang === 'zh'
       ? [
           '基准',
-          `yoya-**${results.meta.packageVersion}**（编译）`,
           '原生 vanillajs',
+          `yoya-**${results.meta.packageVersion}**（编译）`,
           ...compares.map((column) =>
             column.label?.includes('yoya-ui-runtime')
               ? `yoya-**${results.meta.packageVersion}**（无编译）`
@@ -234,8 +234,8 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
         ]
       : [
           'Benchmark',
-          `yoya-**${results.meta.packageVersion}** (compiled)`,
           'vanillajs',
+          `yoya-**${results.meta.packageVersion}** (compiled)`,
           ...compares.map((column) =>
             column.label?.includes('yoya-ui-runtime')
               ? `yoya-**${results.meta.packageVersion}** (runtime)`
@@ -258,8 +258,8 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     const baseline = cpuById.get(row.id)?.baseline?.total ?? null;
     return [
       row[lang],
-      cell(yoya, baseline, 1),
       num(baseline, 1),
+      cell(yoya, baseline, 1),
       ...compareCpu.map((map) => cell(map.get(row.id), baseline, 1))
     ];
   });
@@ -270,8 +270,8 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     const baseline = memoryById.get(row.id)?.baseline ?? null;
     return [
       row[lang],
-      cell(yoya, baseline, 2),
       num(baseline, 2),
+      cell(yoya, baseline, 2),
       ...compareOther.map((column) => cell(column.memory.get(row.id), baseline, 2))
     ];
   });
@@ -287,8 +287,8 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
   const nativeMean = geometricMean(totalsOf((row) => cpuById.get(row.id)?.baseline?.total));
   const summaryRow = [
     lang === 'zh' ? '九项几何平均（综合指标）' : 'Nine-op geometric mean (overall)',
-    cell(geometricMean(totalsOf((row) => cpuById.get(row.id)?.yoya?.total)), nativeMean, 2),
     num(nativeMean, 2),
+    cell(geometricMean(totalsOf((row) => cpuById.get(row.id)?.yoya?.total)), nativeMean, 2),
     ...compareCpu.map((map) =>
       cell(geometricMean(totalsOf((row) => map.get(row.id))), nativeMean, 2)
     )
