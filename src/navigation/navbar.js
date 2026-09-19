@@ -210,5 +210,5 @@ export class VNavbar extends HtmlElementNode {
 }
 
 export function vNavbar(first = null, second = null, third = null) {
-  return createComponentFactory(VNavbar, first, second, third);
+  return createComponentFactory(VNavbar, first, second, third, arguments);
 }

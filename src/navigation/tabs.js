@@ -644,11 +644,11 @@ export class VTabs extends HtmlElementNode {
 }
 
 export function vTabs(first = null, second = null, third = null) {
-  return createComponentFactory(VTabs, first, second, third);
+  return createComponentFactory(VTabs, first, second, third, arguments);
 }
 
 export function vTab(first = null, second = null, third = null) {
-  return createComponentFactory(VTab, first, second, third);
+  return createComponentFactory(VTab, first, second, third, arguments);
 }
 
 function normalizeTabItem(item) {

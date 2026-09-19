@@ -88,5 +88,5 @@ export class VSymbolButton extends HtmlElementNode {
 }
 
 export function vSymbolButton(first = null, second = null, third = null) {
-  return createComponentFactory(VSymbolButton, first, second, third);
+  return createComponentFactory(VSymbolButton, first, second, third, arguments);
 }

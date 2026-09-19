@@ -675,5 +675,5 @@ export class VScroll extends HtmlElementNode {
 }
 
 export function vScroll(first = null, second = null, third = null) {
-  return createComponentFactory(VScroll, first, second, third);
+  return createComponentFactory(VScroll, first, second, third, arguments);
 }

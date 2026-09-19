@@ -302,5 +302,5 @@ export class VImagePreview extends HtmlElementNode {
 }
 
 export function vImagePreview(first = null, second = null, third = null) {
-  return createComponentFactory(VImagePreview, first, second, third);
+  return createComponentFactory(VImagePreview, first, second, third, arguments);
 }

@@ -521,7 +521,7 @@ export class VThree extends HtmlElementNode {
 }
 
 export function vThree(first = null, second = null, third = null) {
-  return createComponentFactory(VThree, first, second, third);
+  return createComponentFactory(VThree, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vThree });

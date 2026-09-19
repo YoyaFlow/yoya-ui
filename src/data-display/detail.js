@@ -198,7 +198,7 @@ export class VDetailItem extends HtmlElementNode {
 }
 
 export function vDetail(first = null, second = null, third = null) {
-  return createComponentFactory(VDetail, first, second, third);
+  return createComponentFactory(VDetail, first, second, third, arguments);
 }
 
 export function vDetailItem(setup = null, value = undefined) {

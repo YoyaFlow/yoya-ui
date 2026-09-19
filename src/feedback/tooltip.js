@@ -288,7 +288,7 @@ export class VTooltip extends HtmlElementNode {
 }
 
 export function vTooltip(first = null, second = null, third = null) {
-  return createComponentFactory(VTooltip, first, second, third);
+  return createComponentFactory(VTooltip, first, second, third, arguments);
 }
 
 function getTooltipPlacementStyles(placement) {

@@ -561,7 +561,7 @@ export class VRate extends HtmlElementNode {
 }
 
 export function vRate(first = null, second = null, third = null) {
-  return createComponentFactory(VRate, first, second, third);
+  return createComponentFactory(VRate, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vRate });

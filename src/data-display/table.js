@@ -330,7 +330,7 @@ export class VTable extends HtmlElementNode {
 }
 
 export function vTable(first = null, second = null, third = null) {
-  return createComponentFactory(VTable, first, second, third);
+  return createComponentFactory(VTable, first, second, third, arguments);
 }
 
 export class VThead extends HtmlElementNode {
@@ -342,7 +342,7 @@ export class VThead extends HtmlElementNode {
 }
 
 export function vThead(first = null, second = null, third = null) {
-  return createComponentFactory(VThead, first, second, third);
+  return createComponentFactory(VThead, first, second, third, arguments);
 }
 
 export class VTbody extends HtmlElementNode {
@@ -354,7 +354,7 @@ export class VTbody extends HtmlElementNode {
 }
 
 export function vTbody(first = null, second = null, third = null) {
-  return createComponentFactory(VTbody, first, second, third);
+  return createComponentFactory(VTbody, first, second, third, arguments);
 }
 
 export class VTfoot extends HtmlElementNode {
@@ -366,7 +366,7 @@ export class VTfoot extends HtmlElementNode {
 }
 
 export function vTfoot(first = null, second = null, third = null) {
-  return createComponentFactory(VTfoot, first, second, third);
+  return createComponentFactory(VTfoot, first, second, third, arguments);
 }
 
 export class VTr extends HtmlElementNode {
@@ -387,7 +387,7 @@ export class VTr extends HtmlElementNode {
 }
 
 export function vTr(first = null, second = null, third = null) {
-  return createComponentFactory(VTr, first, second, third);
+  return createComponentFactory(VTr, first, second, third, arguments);
 }
 
 export class VTh extends HtmlElementNode {
@@ -401,7 +401,7 @@ export class VTh extends HtmlElementNode {
 }
 
 export function vTh(first = null, second = null, third = null) {
-  return createComponentFactory(VTh, first, second, third);
+  return createComponentFactory(VTh, first, second, third, arguments);
 }
 
 export class VTd extends HtmlElementNode {
@@ -414,7 +414,7 @@ export class VTd extends HtmlElementNode {
 }
 
 export function vTd(first = null, second = null, third = null) {
-  return createComponentFactory(VTd, first, second, third);
+  return createComponentFactory(VTd, first, second, third, arguments);
 }
 
 registerChildFactories(VThead, { vTr });

@@ -10,7 +10,7 @@ export class CodeBlock extends VCode {
 }
 
 export function codeBlock(first = null, second = null, third = null) {
-  return createComponentFactory(CodeBlock, first, second, third);
+  return createComponentFactory(CodeBlock, first, second, third, arguments);
 }
 
 registerChildFactories(ElementNode, { codeBlock });

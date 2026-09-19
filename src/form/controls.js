@@ -2959,55 +2959,55 @@ export class VForm extends HtmlElementNode {
 }
 
 export function vInput(first = null, second = null, third = null) {
-  return createComponentFactory(VInput, first, second, third);
+  return createComponentFactory(VInput, first, second, third, arguments);
 }
 
 export function vTimer(first = null, second = null, third = null) {
-  return createComponentFactory(VTimer, first, second, third);
+  return createComponentFactory(VTimer, first, second, third, arguments);
 }
 
 export function vTimerRange(first = null, second = null, third = null) {
-  return createComponentFactory(VTimerRange, first, second, third);
+  return createComponentFactory(VTimerRange, first, second, third, arguments);
 }
 
 export function vTextarea(first = null, second = null, third = null) {
-  return createComponentFactory(VTextarea, first, second, third);
+  return createComponentFactory(VTextarea, first, second, third, arguments);
 }
 
 export function vSelect(first = null, second = null, third = null) {
-  return createComponentFactory(VSelect, first, second, third);
+  return createComponentFactory(VSelect, first, second, third, arguments);
 }
 
 export function vCheckbox(first = null, second = null, third = null) {
-  return createComponentFactory(VCheckbox, first, second, third);
+  return createComponentFactory(VCheckbox, first, second, third, arguments);
 }
 
 export function vSwitch(first = null, second = null, third = null) {
-  return createComponentFactory(VSwitch, first, second, third);
+  return createComponentFactory(VSwitch, first, second, third, arguments);
 }
 
 export function vCheckboxes(first = null, second = null, third = null) {
-  return createComponentFactory(VCheckboxes, first, second, third);
+  return createComponentFactory(VCheckboxes, first, second, third, arguments);
 }
 
 export function vRadio(first = null, second = null, third = null) {
-  return createComponentFactory(VRadio, first, second, third);
+  return createComponentFactory(VRadio, first, second, third, arguments);
 }
 
 export function vRadios(first = null, second = null, third = null) {
-  return createComponentFactory(VRadios, first, second, third);
+  return createComponentFactory(VRadios, first, second, third, arguments);
 }
 
 export function vField(first = null, second = null, third = null) {
-  return createComponentFactory(VField, first, second, third);
+  return createComponentFactory(VField, first, second, third, arguments);
 }
 
 export function vFormItem(first = null, second = null, third = null) {
-  return createComponentFactory(VFormItem, first, second, third);
+  return createComponentFactory(VFormItem, first, second, third, arguments);
 }
 
 export function vForm(first = null, second = null, third = null) {
-  return createComponentFactory(VForm, first, second, third);
+  return createComponentFactory(VForm, first, second, third, arguments);
 }
 
 const formComponentFactories = {

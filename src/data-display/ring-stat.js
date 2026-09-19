@@ -153,5 +153,5 @@ export class VRingStat extends HtmlElementNode {
 }
 
 export function vRingStat(first = null, second = null, third = null) {
-  return createComponentFactory(VRingStat, first, second, third);
+  return createComponentFactory(VRingStat, first, second, third, arguments);
 }

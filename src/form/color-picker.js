@@ -561,7 +561,7 @@ export class VColorPicker extends HtmlElementNode {
 }
 
 export function vColorPicker(first = null, second = null, third = null) {
-  return createComponentFactory(VColorPicker, first, second, third);
+  return createComponentFactory(VColorPicker, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vColorPicker });

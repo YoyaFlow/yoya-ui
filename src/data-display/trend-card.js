@@ -140,5 +140,5 @@ export class VTrendCard extends HtmlElementNode {
 }
 
 export function vTrendCard(first = null, second = null, third = null) {
-  return createComponentFactory(VTrendCard, first, second, third);
+  return createComponentFactory(VTrendCard, first, second, third, arguments);
 }

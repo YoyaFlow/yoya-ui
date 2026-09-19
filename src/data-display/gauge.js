@@ -158,5 +158,5 @@ export class VGauge extends HtmlElementNode {
 }
 
 export function vGauge(first = null, second = null, third = null) {
-  return createComponentFactory(VGauge, first, second, third);
+  return createComponentFactory(VGauge, first, second, third, arguments);
 }

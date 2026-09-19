@@ -197,7 +197,7 @@ export class VChart extends HtmlElementNode {
 }
 
 export function vChart(first = null, second = null, third = null) {
-  return createComponentFactory(VChart, first, second, third);
+  return createComponentFactory(VChart, first, second, third, arguments);
 }
 
 function toCssSize(value) {

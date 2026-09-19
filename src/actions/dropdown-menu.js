@@ -259,5 +259,5 @@ export class VDropdownMenu extends HtmlElementNode {
 }
 
 export function vDropdownMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VDropdownMenu, first, second, third);
+  return createComponentFactory(VDropdownMenu, first, second, third, arguments);
 }

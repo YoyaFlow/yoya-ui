@@ -134,7 +134,7 @@ export class VThemeShell extends HtmlElementNode {
 }
 
 export function vThemeShell(first = null, second = null, third = null) {
-  return createComponentFactory(VThemeShell, first, second, third);
+  return createComponentFactory(VThemeShell, first, second, third, arguments);
 }
 
 registerChildFactories(ElementNode, { vThemeShell });

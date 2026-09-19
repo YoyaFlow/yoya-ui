@@ -194,7 +194,7 @@ export class VAvatar extends HtmlElementNode {
 }
 
 export function vAvatar(first = null, second = null, third = null) {
-  return createComponentFactory(VAvatar, first, second, third);
+  return createComponentFactory(VAvatar, first, second, third, arguments);
 }
 
 function resolveAvatarLabel(value, currentLabel) {

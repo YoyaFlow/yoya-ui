@@ -187,5 +187,5 @@ export class VContextMenu extends HtmlElementNode {
 }
 
 export function vContextMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VContextMenu, first, second, third);
+  return createComponentFactory(VContextMenu, first, second, third, arguments);
 }

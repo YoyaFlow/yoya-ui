@@ -462,5 +462,5 @@ export class VTreeTable extends HtmlElementNode {
 }
 
 export function vTreeTable(first = null, second = null, third = null) {
-  return createComponentFactory(VTreeTable, first, second, third);
+  return createComponentFactory(VTreeTable, first, second, third, arguments);
 }

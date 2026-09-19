@@ -3222,6 +3222,49 @@ export function normalizeSetupArguments(first = null, second = null, third = nul
   };
 }
 
+/**
+ * 值分派：所有工厂参数（首参之后、以及尾部的变参）共用这一条。
+ *
+ * - 函数 → 构建回调（`node.setup` 内部登记 builder，支持区域重建）；
+ * - 字符串 / 数字 / 节点 / 句柄 → `node.setup` 各自处理；
+ * - 数组 → 子节点列表（机位无关：`div(['a','b'])` 与 `div(null, ['a','b'])` 同义）；
+ * - 对象 → options 分派（`_setupObject`）；
+ * - null / undefined → 忽略（便于条件参数）。
+ */
+export function applySetupValue(node, value) {
+  if (value === null || value === undefined) {
+    return node;
+  }
+
+  // render-backed 组件 API（返回的是带 render() 的对象，不是节点）：语义与
+  // applyComponentArguments 的旧行为一致——对象选项落到 render() 的结果上，函数当作 builder。
+  if (typeof node.setup !== 'function') {
+    if (typeof value === 'function') {
+      value(node);
+      return node;
+    }
+    if (typeof value === 'object') {
+      applyElementOptions(typeof node.render === 'function' ? node.render() : node, value);
+    }
+    return node;
+  }
+
+  if (Array.isArray(value)) {
+    node.child(value);
+    return node;
+  }
+
+  node.setup(value);
+  return node;
+}
+
+/** 子工厂包装函数的标记：options 分派用它区分「子工厂」与「组件自有方法」。 */
+const CHILD_FACTORY = Symbol('yoya.childFactory');
+
+export function isChildFactoryMethod(fn) {
+  return typeof fn === 'function' && fn[CHILD_FACTORY] === true;
+}
+
 export function applyElementOptions(node, options) {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
     return node;
@@ -3367,6 +3410,14 @@ export class ElementNode extends ViewNode {
         (isSignal(value) || typeof value === 'function' || typeof value === 'boolean')
       ) {
         this._mountCondition = value;
+        return;
+      }
+
+      // 子工厂不参与 options 分派：同名键按属性写。
+      // `div({ slot: 't-head' })` 是 slot 属性，不是创建一个 <slot> 子元素；`div({ title: 't' })`
+      // 同理。要建子元素请用链式写法（`root.slot(...)` / `root.title(...)`）。
+      if (isChildFactoryMethod(this[key])) {
+        this.attr(key, value);
         return;
       }
 
@@ -3913,12 +3964,18 @@ export class ElementNode extends ViewNode {
  */
 export function createElementFactory(tagName, NodeClass = ElementNode) {
   return function elementFactory(first = null, second = null, third = null) {
-    const args = normalizeSetupArguments(first, second, third);
-    const node = new NodeClass(tagName, args.first);
-    applyElementOptions(node, args.options);
-    if (typeof args.callback === 'function') {
-      node.setup(args.callback);
+    const node = new NodeClass(tagName);
+    applySetupValue(node, first);
+    applySetupValue(node, second);
+    applySetupValue(node, third);
+
+    // 超过三个参数走慢路径：固定形参保证热路径（≤3 参）不分配参数数组。
+    if (arguments.length > 3) {
+      for (let index = 3; index < arguments.length; index += 1) {
+        applySetupValue(node, arguments[index]);
+      }
     }
+
     return node;
   };
 }
@@ -3934,8 +3991,10 @@ export function registerChildFactories(NodeClass, factories, options = {}) {
       return;
     }
 
-    NodeClass.prototype[name] = function childFactory(...args) {
+    const childFactory = function yoyaChildFactory(...args) {
       return this.child(factory(...args));
     };
+    childFactory[CHILD_FACTORY] = true;
+    NodeClass.prototype[name] = childFactory;
   });
 }

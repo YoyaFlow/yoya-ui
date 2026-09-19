@@ -438,7 +438,7 @@ export class VAutocomplete extends HtmlElementNode {
 }
 
 export function vAutocomplete(first = null, second = null, third = null) {
-  return createComponentFactory(VAutocomplete, first, second, third);
+  return createComponentFactory(VAutocomplete, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vAutocomplete });

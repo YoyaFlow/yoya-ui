@@ -174,5 +174,5 @@ export class VCode extends HtmlElementNode {
 }
 
 export function vCode(first = null, second = null, third = null) {
-  return createComponentFactory(VCode, first, second, third);
+  return createComponentFactory(VCode, first, second, third, arguments);
 }
