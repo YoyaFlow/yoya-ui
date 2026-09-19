@@ -109,6 +109,57 @@ describe('compileSource', () => {
     expect(noFunction.bails).toEqual([{ reason: '找不到目标函数 buildRow', at: null }]);
   });
 
+  // 票 12 / C1：形参解构会被当成"自由标识符"，把 data / api 编进 scope，
+  // 于是产物忽略自己的实参、运行期 TypeError。**整形状 bail**，不许静默编错。
+  it('bails out entirely when the builder parameter is destructured', () => {
+    const result = compileSource({
+      source:
+        'export function buildRow({ data, api }) {\n' +
+        '  return tr((line) => line.td((cell) => cell.child(String(data.id))));\n' +
+        '}\n',
+      file: 'probe.js',
+      fn: 'buildRow',
+      core
+    });
+
+    expect(result.compiled).toBe(false);
+    expect(result.module).toBeNull();
+    expect(result.scope).toEqual([]);
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('形参');
+  });
+
+  it('bails out for default values, rest and extra parameters', () => {
+    const shapes = ['item = null', '...items', 'item, extra', ''];
+
+    for (const param of shapes) {
+      const result = compileSource({
+        source: `export function buildRow(${param}) {\n  return tr((line) => line.td('x'));\n}\n`,
+        file: 'probe.js',
+        fn: 'buildRow',
+        core
+      });
+      expect(result.compiled, param || '(无参)').toBe(false);
+      expect(result.bails.map((bail) => bail.reason).join(' | '), param || '(无参)').toContain(
+        '形参'
+      );
+    }
+  });
+
+  it('keeps compiling the single-identifier parameter shape', () => {
+    const result = compileSource({
+      source:
+        'export function buildRow(item) {\n' +
+        '  return tr((line) => line.td((cell) => cell.child(String(item.data.id))));\n' +
+        '}\n',
+      file: 'probe.js',
+      fn: 'buildRow',
+      core
+    });
+
+    expect(result.compiled).toBe(true);
+    expect(result.scope).toEqual([]);
+  });
+
   it('keeps the bail list empty for a shape with only static and live values', () => {
     const result = compile(
       sourceOf(

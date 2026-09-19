@@ -68,15 +68,20 @@ export function renderModule(options) {
     paramsSource = '',
     hash = null,
     templatesOnly = false,
+    // 节点通道要给活结点建包装对象（tr / td / a …）：产物**自己 import**这些元素工厂，
+    // 不再让调用方塞进 scope（票 13 / R4：编译产物不是业务接口）。
+    coreSpecifier = '@yoyaflow/yoya-ui/core',
     contentGuard = false
   } = options;
 
   const scope = new Set();
+  const coreImportNames = new Set();
   const bound = new Set([entry.builderParam, entry.setupParam, 'node', 'event']);
   const addExpression = (expression) => {
     freeIdentifiers(expression, bound).forEach((name) => scope.add(name));
   };
   const addName = (name) => scope.add(name);
+  const addCoreName = (name) => coreImportNames.add(name);
   const scopeList = () => [...scope].sort().join(', ');
 
   if (mode === 'node' && hasComponentOp(entry.ops)) {
@@ -101,6 +106,7 @@ export function renderModule(options) {
     thin,
     addExpression,
     addName,
+    addCoreName,
     rootName: kind === 'component' ? 'root' : 'el'
   });
 
@@ -121,6 +127,12 @@ export function renderModule(options) {
   const runtimeImport = (names) =>
     `import { ${names.join(', ')} } from ${JSON.stringify(runtime)};\n`;
   const planExport = `\nexport const plan = ${JSON.stringify(plan, null, 2)};\n\n`;
+  const coreImport =
+    coreImportNames.size > 0
+      ? `import { ${[...coreImportNames].sort().join(', ')} } from ${JSON.stringify(
+          coreSpecifier
+        )};\n`
+      : '';
 
   // 组件产物：绑定函数写进已有的占位子树（调用方片段里嵌进来的那一棵），
   // scope 是组件原模块的命名空间（只允许 import 绑定的自由标识符）。
@@ -220,6 +232,7 @@ export function renderModule(options) {
       : header +
         '// 节点模式：静态节点只存在于片段里，活结点按位置接管既有 DOM。\n' +
         runtimeImport(['adopt', 'appendNodeChild', 'bindChild', 'cloneFragment']) +
+        coreImport +
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
         `  return function ${fn}(${entry.builderParam}) {\n` +
@@ -383,7 +396,7 @@ function hasOpKind(ops, kind) {
 const hasComponentOp = (ops) => hasOpKind(ops, 'component');
 
 /** 节点模式：只给「有活内容」的节点建包装对象，其余静态节点只存在于片段里。 */
-function emitNodeMode({ entry, thin, addExpression, addName }) {
+function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
   const lines = [];
   const slotLines = [];
   let liveCounter = 0;
@@ -406,16 +419,33 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
     return ops.some((op) => op.kind === 'element' && isLiveNode(op.ops));
   };
 
-  const collectSlotWrites = (op) => {
+  /**
+   * 纯静态节点的一次性写（`slotText`）。
+   * `skipLive` 表示"这段子树里的活结点已经由活祖先登记过"——只收静态部分，不再报错；
+   * 否则遇到任何活内容都必须抛错让调用方整体回落，不允许静默丢绑定。
+   */
+  const collectSlotWrites = (op, skipLive = false) => {
     for (const child of op.ops) {
       if (child.kind === 'slotText') {
         addExpression(child.expression);
         slotLines.push(`${pathExprOf(child.path)}.textContent = ${child.expression};`);
       } else if (child.kind === 'bindText') {
+        if (skipLive) {
+          continue;
+        }
         // 静态子节点里的活文本没有节点承载绑定：这一形状不编（调用方整体回落）
         throw new Error('静态子节点里的活文本（需要活祖先承载绑定）');
-      } else if (child.kind === 'element' && !isLiveNode(child.ops)) {
-        collectSlotWrites(child);
+      } else if (child.kind === 'element') {
+        // 活结点（或底下还有活结点的元素）同样不能靠一次性 slot 写：认不出承载它的活祖先就整体回落，
+        // 绝不静默丢掉绑定（票 14 附带发现：以前这一支会跳过，`--thin` 于是直接 `return element`）。
+        const hostsLive = isLiveNode(child.ops) || liveDescendants(child.ops).length > 0;
+        if (hostsLive && !skipLive) {
+          throw new Error('静态节点下挂着活结点（需要活祖先承载绑定）');
+        }
+        collectSlotWrites(child, skipLive || hostsLive);
+      } else if (DIRECT_LIVE.includes(child.kind) && !skipLive) {
+        // 其余活内容（动态属性 / 类 / 事件 …）同样需要活祖先承载
+        throw new Error(`静态节点下挂着 ${child.kind}（需要活祖先承载绑定）`);
       }
     }
   };
@@ -436,8 +466,10 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
     return found;
   };
 
-  const emitNode = (op, depth, ownerVar) => {
-    const live = isLiveNode(op.ops);
+  const emitNode = (op, depth, ownerVar, forceLive = false) => {
+    // `forceLive`：行根即使自己不带活内容，只要有活后代也得建包装对象（工厂要返回节点，
+    // 活结点也要有活祖先可挂）。祖先节点仍按 thin 口径保持静态。
+    const live = forceLive || isLiveNode(op.ops);
     if (!live) {
       collectSlotWrites(op);
       return;
@@ -506,8 +538,8 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
     }
 
     const varName = `n${++liveCounter}`;
-    // 物化节点要用元素工厂建包装对象：工厂名进 scope（元素模式不需要，行就是原生元素）。
-    addName(op.factory);
+    // 物化节点要用元素工厂建包装对象：工厂由产物自己 import（票 13 / R4），不进业务 scope。
+    addCoreName(op.factory);
     lines.push(
       `${indentOf(depth)}const ${varName} = ${op.factory}((node) => {`,
       ...inner,
@@ -527,13 +559,21 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
     }
     for (const child of op.ops) {
       if (child.kind === 'element' && !isLiveNode(child.ops)) {
-        collectSlotWrites(child);
+        // 活结点已经由上面的 liveDescendants 登记过：这里只补它所在静态子树的静态写。
+        collectSlotWrites(child, liveDescendants(child.ops).length > 0);
       }
     }
   };
 
-  emitNode(entry, 2, null);
-  const rootVar = isLiveNode(entry.ops) ? 'n1' : null;
+  // 行根只要有活内容（自己的或藏在下层静态节点里的），就必须建包装对象：工厂要返回节点，
+  // 活结点也得有个活祖先挂上去。纯静态行才直接返回片段元素。
+  const rootLive = isLiveNode(entry.ops) || liveDescendants(entry.ops).length > 0;
+  if (rootLive) {
+    emitNode(entry, 2, null, true);
+  } else {
+    collectSlotWrites(entry);
+  }
+  const rootVar = rootLive ? 'n1' : null;
 
   return { lines, slotLines, liveNodes: liveCounter, slots: slotLines.length, rootVar };
 }

@@ -172,6 +172,16 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
 
   const out = options.values.get('out');
   const componentsFile = options.values.get('components');
+  // `--core` 是包名时，产物就用它 import 元素工厂（票 13 / R4：产物自带工厂，不塞 scope）；
+  // 传的是文件路径 / 默认库自身 core 时，产物 import 包里的 core 入口。
+  const coreOption = options.values.get('core');
+  const coreSpecifier =
+    coreOption &&
+    !coreOption.startsWith('.') &&
+    !coreOption.startsWith('/') &&
+    !/^[A-Za-z]:[\\/]/.test(coreOption)
+      ? coreOption
+      : undefined;
   const result = compileFile({
     file,
     out,
@@ -179,6 +189,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
     mode,
     thin: options.flags.has('thin'),
     core,
+    coreSpecifier,
     runtime: options.values.get('runtime'),
     fragmentsOut: options.values.get('fragments'),
     templatesOnly: options.flags.has('templates-only'),

@@ -48,6 +48,21 @@ describe('cloneFragment', () => {
   it('fails loudly when a templates-only build has no page template', () => {
     expect(() => cloneFragment('', 'sig-missing')).toThrow(/fragment template/);
   });
+
+  // 票 17 / C7：未命中也要缓存。否则"片段内联在 JS、页面没有模板块"的用法每建一行查一次 DOM。
+  it('queries the page for a given signature only once, hit or miss', () => {
+    const signature = 'sig-c7-cached-miss';
+    const seen = () =>
+      spy.mock.calls.filter(([selector]) => String(selector).includes(signature)).length;
+    const spy = vi.spyOn(document, 'querySelector');
+
+    for (let index = 0; index < 5; index += 1) {
+      cloneFragment(`<tr><td>${signature}</td></tr>`, signature);
+    }
+
+    expect(seen()).toBe(1);
+    spy.mockRestore();
+  });
 });
 
 describe('bindText', () => {
@@ -287,12 +302,26 @@ describe('createElementList', () => {
     list.sync(rows, build);
     const elements = list.elements();
     expect(list.size).toBe(2);
-    expect(container.children[0].getAttribute('data-row-key')).toBe('1');
+    // 票 18 / C8：默认不写键镜像属性（行 DOM 与参考实现一致）；要定位行时显式打开。
+    expect(container.children[0].hasAttribute('data-row-key')).toBe(false);
 
     list.sync(rows, build);
     expect(list.elements()).toEqual(elements);
     expect(built[0].destroy).not.toHaveBeenCalled();
     expect(list.data()).toEqual(rows);
+  });
+
+  it('writes the key mirror attribute only when asked (ticket 18)', () => {
+    const container = document.createElement('ul');
+    const list = createElementList(container, (row) => row.id, {
+      keyAttribute: 'data-row-key'
+    });
+    const { build } = buildRows();
+
+    list.sync(data(1, 2), build);
+
+    expect(container.children[0].getAttribute('data-row-key')).toBe('1');
+    expect(container.children[1].getAttribute('data-row-key')).toBe('2');
   });
 
   it('rebuilds in place when the data reference for a key changes', () => {

@@ -1261,8 +1261,104 @@ function isKeyedOptions(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
+/**
+ * 元素行：编译产物 `element` 通道的行是 `{ el, destroy }`——只有 DOM，没有节点对象。
+ * 它不进视图树，`keyed` 直接拿它在父元素上对账（票 15 / R5-b，与 Svelte 的 keyed each 同构）。
+ */
+function isElementRow(value) {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    !(value instanceof ViewNode) &&
+    typeof value.destroy === 'function' &&
+    value.el &&
+    typeof value.el === 'object' &&
+    typeof value.el.nodeType === 'number'
+  );
+}
+
+/**
+ * 元素行对账：同 key 复用元素、同 key 换引用原位重建、离场销毁，按目标顺序最小搬动。
+ * 搬动用「反向锚点」：只在行的位置确实不对时才 `insertBefore`，换位两行只搬这两行。
+ */
+function syncElementRows(parent, segment, list, seed = null) {
+  const container = parent._el;
+  const members = segment.elementMembers;
+  const desired = [];
+  const seen = new Set();
+
+  list.forEach((row, index) => {
+    const rawKey = segment.keyFn ? segment.keyFn(row, index) : row;
+    if (seen.has(rawKey)) {
+      throw new TypeError(`keyed() duplicate row key: ${describeKeyedRowKey(rawKey)}`);
+    }
+    seen.add(rawKey);
+
+    const nextRow = segment.itemSource ? row.data : row;
+    let entry = members.get(rawKey);
+    if (entry && entry.row !== nextRow) {
+      if (segment.equals && segment.equals(entry.row, nextRow)) {
+        entry.row = nextRow;
+      } else if (segment.update) {
+        segment.update(entry.el, entry.row, nextRow);
+        entry.row = nextRow;
+      } else {
+        entry.el.remove();
+        entry.destroy?.();
+        members.delete(rawKey);
+        entry = null;
+      }
+    }
+
+    if (!entry) {
+      const product = seed && seed.rawKey === rawKey ? seed.product : segment.build(row, index);
+      if (!isElementRow(product)) {
+        // 段里一半元素行、一半节点行：明确报错，不许一半进树一半不进。
+        throw new TypeError('keyed() rows must be all elements or all nodes');
+      }
+      entry = {
+        el: product.el,
+        destroy: typeof product.destroy === 'function' ? product.destroy.bind(product) : null,
+        rawKey,
+        row: nextRow
+      };
+      members.set(rawKey, entry);
+    }
+
+    desired.push(entry);
+  });
+
+  members.forEach((entry, rawKey) => {
+    if (!seen.has(rawKey)) {
+      entry.el.remove();
+      entry.destroy?.();
+      members.delete(rawKey);
+    }
+  });
+
+  if (!container) {
+    return;
+  }
+
+  let anchor = null;
+  for (let index = desired.length - 1; index >= 0; index -= 1) {
+    const { el } = desired[index];
+    if (el.parentNode !== container || el.nextSibling !== anchor) {
+      container.insertBefore(el, anchor);
+    }
+    anchor = el;
+  }
+}
+
 function syncKeyedSegment(parent, segment, rows) {
   const list = Array.isArray(rows) ? rows : [];
+
+  // 本段是元素行（编译产物 element 通道）：不进视图树，直接在父元素上对账。
+  if (segment.mode === 'element') {
+    syncElementRows(parent, segment, list);
+    return;
+  }
+
   const members = segment.members;
 
   members.forEach((entry, rawKey) => {
@@ -1336,11 +1432,26 @@ function syncKeyedSegment(parent, segment, rows) {
 
     let node;
     keyedBuildStack.push(segment);
+    let product;
     try {
-      node = normalizeChildWithContext(parent, segment.build(item.row, item.index));
+      product = segment.build(item.row, item.index);
     } finally {
       keyedBuildStack.pop();
     }
+
+    // 行的产物是元素行 → 本段切到 element 通道（判定一次并固定）。混用节点行与元素行直接报错，
+    // 不许一半进树一半不进（票 15 / R5-b）。
+    if (isElementRow(product)) {
+      if (segment.mode === 'node') {
+        throw new TypeError('keyed() rows must be all elements or all nodes');
+      }
+      segment.mode = 'element';
+      parent._elementRows = segment.elementMembers;
+      syncElementRows(parent, segment, list, { product, rawKey: item.rawKey });
+      return;
+    }
+
+    node = normalizeChildWithContext(parent, product);
     const entry = {
       rawKey: item.rawKey,
       row: segment.itemSource ? item.row.data : item.row,
@@ -2195,6 +2306,9 @@ export class ViewNode {
     assertRegionChildAllowed(this);
     const segment = {
       anchorNode: this._children[this._children.length - 1] ?? null,
+      // 行通道：null = 还没建过行（首次对账时据产物判定），'node' = ViewNode 行，'element' = 元素行。
+      mode: null,
+      elementMembers: new Map(),
       equals: options?.equals ?? null,
       itemSource: sourceIsKeySet,
       keyFn,
@@ -3995,11 +4109,13 @@ export class ElementNode extends ViewNode {
             }
             continue;
           }
-          if (
-            childElement &&
-            childElement.parentNode !== element &&
-            this._childMountStates?.get(child) !== false
-          ) {
+          // 子节点的 DOM 已经在父元素子树里（编译产物收养了片段里的既有元素：`node --thin` 通道的
+          // 活节点藏在静态父节点 td 里）→ **原地留人**。appendChild 会把它搬到父元素末尾，
+          // 把 `<a>` 从 `<td>` 里掏出来（票 14 / C2）。
+          const placedInElement =
+            Boolean(childElement) &&
+            (childElement.parentNode === element || element?.contains(childElement) === true);
+          if (childElement && !placedInElement && this._childMountStates?.get(child) !== false) {
             element.appendChild(childElement);
             // 首屏单趟建树：这里才是子节点真正落地的位置（挂载条件为假时不会走到这支）
             if (child._whenHooks !== undefined) {
@@ -4035,6 +4151,15 @@ export class ElementNode extends ViewNode {
   toHTML() {
     if (this._deleted) {
       return '';
+    }
+
+    // 元素行（编译产物 element 通道）只有 DOM、不进视图树：序列化会静默少掉整张列表，
+    // 所以这里硬报错，让 SSR 明确走通用路径（票 15）。
+    if (this._elementRows?.size > 0) {
+      throw new TypeError(
+        'toHTML() cannot serialize element rows (compiled element-channel rows are DOM-only); ' +
+          'render this list through the generic path on the server'
+      );
     }
 
     const state = this._permissionState();

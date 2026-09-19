@@ -147,15 +147,16 @@ describe('compiled path equivalence', () => {
     writeFileSync(nodePath, nodeCompiled.module, 'utf8');
     const nodeModule = await import(pathToFileURL(nodePath).href);
 
-    // plan.scope 就是生成模块要求调用方提供的符号：应用值 + 物化节点要用的元素工厂
+    // plan.scope 只列**应用符号**：元素工厂由产物自己 import（票 13 / R4，产物不是业务接口）。
     const scope = Object.fromEntries(
       nodeCompiled.scope.map((name) => [
         name,
         { computed: core.computed, removeRow, selectedId, ...core }[name]
       ])
     );
-    // 静态节点（span：只有静态类名与属性）不建包装对象，工厂名因此不进 scope
-    expect(nodeCompiled.scope).toEqual(['a', 'computed', 'removeRow', 'selectedId', 'td', 'tr']);
+    // 静态节点（span：只有静态类名与属性）不建包装对象；物化节点的工厂由产物 import。
+    expect(nodeCompiled.scope).toEqual(['computed', 'removeRow', 'selectedId']);
+    expect(nodeCompiled.module).toContain('import { a, td, tr } from "@yoyaflow/yoya-ui/core";');
 
     const row = { id: 11, label: core.ref('label 11') };
     const dslElement = buildDslRow(row).renderDom();
@@ -169,6 +170,78 @@ describe('compiled path equivalence', () => {
 
     selectedId.value = row.id;
     expect(node._el.classList.contains('danger')).toBe(true);
+    node.destroy();
+  });
+
+  // 票 14 / C2：`--thin` 只给"直接带活内容"的节点建包装对象，静态父节点（td）没有节点对象。
+  // 这种形状下生成代码若仍把活节点 append 到祖先节点上，会把片段里已就位的元素搬走。
+  it('builds the same DOM with the thin node mode', async () => {
+    const thinPath = join(workDir, 'row.thin.generated.js');
+    const thinCompiled = compileSource({
+      source,
+      file: 'row-fixture.js',
+      fn: 'buildRow',
+      mode: 'node',
+      thin: true,
+      core,
+      runtime: runtimeUrl
+    });
+    writeFileSync(thinPath, thinCompiled.module, 'utf8');
+    const thinModule = await import(pathToFileURL(thinPath).href);
+
+    const scope = Object.fromEntries(
+      thinCompiled.scope.map((name) => [
+        name,
+        { computed: core.computed, removeRow, selectedId, ...core }[name]
+      ])
+    );
+
+    const row = { id: 12, label: core.ref('label 12') };
+    const dslElement = buildDslRow(row).renderDom();
+    const node = thinModule.createRowFactory(scope)({ ...row });
+
+    // 关键：挂到父节点上才会走「把子节点 DOM 落进父元素」那一趟。
+    // thin 模式的活节点躲在静态父节点（td）里，放置时必须原地留人，不能被搬到 <tr> 末尾。
+    const hostElement = core.tbody((body) => body.child(node)).renderDom();
+    expect(hostElement.innerHTML).toBe(dslElement.outerHTML);
+    node.destroy();
+  });
+
+  // 票 14 附带发现：行根没有直接活内容、活文本藏在静态父节点里时，`--thin` 曾直接 `return element`，
+  // 把 row.label 的绑定整个丢掉（静默丢活值）。行根因此必须建包装对象，活结点挂到它下面。
+  it('keeps live text alive in thin mode when the row root itself is static', async () => {
+    const thinPath = join(workDir, 'row.thin-static-root.generated.js');
+    const thinCompiled = compileSource({
+      source:
+        'export function buildRow(row) {\n' +
+        '  return tr((line) => {\n' +
+        "    line.td((cell) => {\n      cell.className('col-md-4');\n      cell.a((link) => link.child(vText(row.label)));\n    });\n" +
+        '  });\n' +
+        '}\n',
+      file: 'thin-static-root.js',
+      fn: 'buildRow',
+      mode: 'node',
+      thin: true,
+      core,
+      runtime: runtimeUrl
+    });
+
+    expect(thinCompiled.compiled).toBe(true);
+    writeFileSync(thinPath, thinCompiled.module, 'utf8');
+    const thinModule = await import(pathToFileURL(thinPath).href);
+    const scope = Object.fromEntries(
+      thinCompiled.scope.map((name) => [
+        name,
+        { computed: core.computed, removeRow, selectedId, ...core }[name]
+      ])
+    );
+
+    const label = core.ref('first');
+    const node = thinModule.createRowFactory(scope)({ id: 13, label });
+
+    expect(node._el.querySelector('a').textContent).toBe('first');
+    label.value = 'second';
+    expect(node._el.querySelector('a').textContent).toBe('second');
     node.destroy();
   });
 

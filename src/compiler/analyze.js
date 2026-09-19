@@ -392,6 +392,8 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
 export function analyzeSource(source, options = {}) {
   const fnName = options.fn ?? 'buildRow';
   const className = options.className ?? null;
+  // 编译单元种类：行的形参只能是单个标识符；组件的形参由调用点逐个解构，允许多个。
+  const kind = options.kind ?? 'row';
   const whitelist = options.whitelist ?? new Set();
   const resolveComponent = options.resolveComponent ?? null;
   const bails = [];
@@ -1021,6 +1023,23 @@ export function analyzeSource(source, options = {}) {
   }
 
   function analyzeBuilder(fn) {
+    // 票 12 / C1：构建函数的形参必须是**单个标识符**。形参解构、默认值、rest、多参都会让正文里
+    // 的 `data` / `api` 之类被当成自由标识符收进 scope——产物于是忽略自己的实参、运行期读到
+    // undefined。这个形状整体 bail，绝不静默编错。
+    //
+    // 例外：组件编译单元（`kind: 'component'`）的形参由调用点的 `bind(root, values)` 逐个解构，
+    // 所以允许多个标识符形参（夹具里的 `(props, children)`）；非标识符形参两种单元都不支持。
+    const params = fn.params;
+    const unnamedParam = params.find((param) => param.type !== 'Identifier');
+    const tooManyParams = kind !== 'component' && params.length !== 1;
+    if (params.length === 0 || unnamedParam || tooManyParams) {
+      recordBail(
+        '目标函数的形参必须是单个标识符（解构 / 默认值 / rest / 多参不支持）',
+        unnamedParam ?? params[0] ?? fn
+      );
+      return null;
+    }
+
     const statements = fn.body.type === 'BlockStatement' ? fn.body.body : [];
     const returned =
       fn.body.type === 'BlockStatement'

@@ -25,24 +25,25 @@ const templates = new Map();
  * 用签名（构建期对片段 HTML 取的哈希）对号，命中就从页面克隆 —— 片段字节走 HTML 通道，
  * 解析交给 HTML 解析器（首屏不再多付 JS 里的模板串解析）。命中不到则回落到 JS 字符串路径。
  */
+/**
+ * 页面模板块的缓存：命中存 `content`，**未命中也存 `null`**。
+ * 页面模板块是静态标记，运行期不会再变；不缓存未命中会让「片段内联在 JS、页面没有模板块」的用法
+ * 每建一行查一次 DOM（票 17：1k 行实测白付 6 ms）。
+ */
 const pageTemplates = new Map();
 
 function pageTemplate(signature) {
-  const cached = pageTemplates.get(signature);
-  if (cached) {
-    return cached;
+  if (pageTemplates.has(signature)) {
+    return pageTemplates.get(signature);
   }
   if (typeof document === 'undefined') {
     return null;
   }
 
   const found = document.querySelector(`template[data-yoya-fragment="${signature}"]`);
-  if (!found) {
-    return null;
-  }
-
-  pageTemplates.set(signature, found.content);
-  return found.content;
+  const content = found ? found.content : null;
+  pageTemplates.set(signature, content);
+  return content;
 }
 
 /** 每个形状一份 template；`firstElementChild` 是片段根。传签名时优先用页面里的模板块。 */
@@ -271,10 +272,14 @@ function longestIncreasingSubsequence(values) {
 
 /**
  * 元素模式的行对账：元素数组 + key → 位置索引，复用 / 原位重建 / 摘除 / 最小 `insertBefore`，
- * `data-row-key` 直接写在元素上。可观察行为对齐 `keyed`：同 key 同数据引用复用，
- * 同 key 换引用原位重建，离场 key 销毁并摘除。
+ * 默认**不往元素上写键镜像属性**（官方基准要求行 DOM 与参考实现逐字节一致，票 18 / C8）；
+ * 需要按 key 定位行时传 `{ keyAttribute: 'data-row-key' }`。其余可观察行为对齐 `keyed`：
+ * 同 key 同数据引用复用，同 key 换引用原位重建，离场 key 销毁并摘除。
  */
-export function createElementList(container, keyOf) {
+export function createElementList(container, keyOf, options = {}) {
+  // 键镜像属性默认**不写**：官方基准要求行 DOM 与参考实现一致（票 18 / C8），
+  // 需要按 key 定位行时（DevTools / 排查对账）显式传 `keyAttribute: 'data-row-key'` 打开。
+  const keyAttribute = options.keyAttribute ?? null;
   let rows = [];
   let indexes = new Map();
 
@@ -309,7 +314,9 @@ export function createElementList(container, keyOf) {
       current?.destroy?.();
       const row = build(data);
       row.data = data;
-      row.el.setAttribute('data-row-key', String(key));
+      if (keyAttribute !== null) {
+        row.el.setAttribute(keyAttribute, String(key));
+      }
       nextRows[index] = row;
     });
 

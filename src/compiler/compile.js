@@ -51,6 +51,7 @@ export function compileSource(options) {
     scopeSpecifier = null,
     paramsSource = '',
     hash = null,
+    coreSpecifier = undefined,
     templatesOnly = false
   } = options;
 
@@ -82,7 +83,13 @@ export function compileSource(options) {
           : null
     : null;
 
-  const analysis = analyzeSource(source, { fn, className, whitelist: registry, resolveComponent });
+  const analysis = analyzeSource(source, {
+    fn,
+    className,
+    kind,
+    whitelist: registry,
+    resolveComponent
+  });
   result.bails = analysis.bails;
   if (!analysis.entry || result.bails.length > 0) {
     return result;
@@ -104,6 +111,7 @@ export function compileSource(options) {
       scopeSpecifier,
       paramsSource,
       hash,
+      coreSpecifier,
       templatesOnly
     });
     result.compiled = true;

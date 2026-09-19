@@ -78,12 +78,14 @@ describe('build-time static values', () => {
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('动态样式');
   });
 
-  it('does not fold when a parameter shadows the imported helper', () => {
+  // 形参名遮蔽导入的助手 → 不折（只认从已知模块导入、且未被遮蔽的名字）。
+  // 票 12 之后形参只能是单个标识符，所以这里用**唯一那个形参**去遮蔽。
+  it('does not fold when the parameter shadows the imported helper', () => {
     const result = compileSource({
       source:
         "import { div } from '../../yoya.core.js';\n" +
         helpers +
-        'export function buildRow(row, themeValue) {\n' +
+        'export function buildRow(themeValue) {\n' +
         "  return div((node) => node.style('background', themeValue('a', 'b')));\n" +
         '}\n',
       file: 'row-fixture.js',
