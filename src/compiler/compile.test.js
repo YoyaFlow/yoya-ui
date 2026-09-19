@@ -167,11 +167,25 @@ describe('compileSource', () => {
 
   it('bails when an option value cannot be read statically', () => {
     const result = compile(
-      sourceOf("  return tr((line) => line.td({ attrs: { id: row.id } }, 'x'));")
+      sourceOf("  return tr((line) => line.td({ style: { color: row.tone } }, 'x'));")
     );
 
     expect(result.compiled).toBe(false);
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('字面量');
+  });
+
+  it('compiles dynamic option values into live attribute writes', () => {
+    const result = compile(
+      sourceOf(
+        "  return tr((line) => line.td({ attrs: { id: row.id }, 'data-tone': row.tone }, 'x'));"
+      )
+    );
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    expect(result.plan.html).toBe('<tr><td data-tone="" id="">x</td></tr>');
+    expect(result.module).toContain('setAttr(el.childNodes[0], "id", row.id)');
+    expect(result.module).toContain('setAttr(el.childNodes[0], "data-tone", row.tone)');
   });
 
   it('accepts the (options, setup) form on the entry factory too', () => {

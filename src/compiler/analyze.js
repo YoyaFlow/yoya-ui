@@ -481,12 +481,17 @@ export function analyzeSource(source, options = {}) {
       if (kind === 'attrs' && property.value.type === 'ObjectExpression') {
         for (const attr of property.value.properties) {
           const name = attr.key.name ?? attr.key.value;
-          const attrValue = literalOf(attr.value);
-          if (typeof name !== 'string' || !attrValue.literal) {
-            recordBail('attrs 里有非字面量键值', call);
+          if (typeof name !== 'string') {
+            recordBail('attrs 里有非字面量键', call);
             return false;
           }
-          elementOps.push({ kind: 'staticAttr', name, value: attrValue.value });
+          const attrValue = literalOf(attr.value);
+          if (attrValue.literal) {
+            elementOps.push({ kind: 'staticAttr', name, value: attrValue.value });
+          } else {
+            // 动态属性：值表达式交给运行期 setAttr（与手写 `attr(name, expr)` 同一条 op）
+            elementOps.push({ kind: 'dynamicAttr', name, expression: slice(attr.value) });
+          }
         }
         continue;
       } else if (kind === 'style' && property.value.type === 'ObjectExpression') {
@@ -503,7 +508,8 @@ export function analyzeSource(source, options = {}) {
       }
 
       const value = literalOf(property.value);
-      if (!value.literal) {
+
+      if ((kind === 'class' || kind === 'children') && !value.literal) {
         recordBail(`options 的 ${String(key)} 值不是字面量`, call);
         return false;
       }
@@ -519,8 +525,12 @@ export function analyzeSource(source, options = {}) {
           text: value.value === null ? '' : String(value.value)
         });
       } else if (kind === 'attribute' && typeof key === 'string' && !NODE_API.has(key)) {
-        // 子工厂不参与 options 分派 → 按属性写（`{ slot: 't-head' }` / `{ title: 't' }`）
-        elementOps.push({ kind: 'staticAttr', name: key, value: value.value });
+        // 子工厂不参与 options 分派 → 按属性写（`{ slot: 't-head' }`）；动态值走 setAttr
+        if (value.literal) {
+          elementOps.push({ kind: 'staticAttr', name: key, value: value.value });
+        } else {
+          elementOps.push({ kind: 'dynamicAttr', name: key, expression: slice(property.value) });
+        }
       } else {
         recordBail(`options 的键 ${String(key)} 需要动态分派`, call);
         return false;
