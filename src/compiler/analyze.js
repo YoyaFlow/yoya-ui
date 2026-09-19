@@ -428,6 +428,12 @@ export function analyzeSource(source, options = {}) {
       const argument = args[0];
       const literal = staticOf(argument);
       if (literal.literal) {
+        // 通用路径里 child(true / false) 直接抛 TypeError（只接受节点 / 字符串 / 数字 / 句柄），
+        // 编成文本就成了 `"true"` / `"false"` 的静默误编 → 认出来就回落，让错误照旧冒出来
+        if (typeof literal.value === 'boolean') {
+          recordBail('child() 收到布尔值：通用路径会直接报错', argument);
+          return;
+        }
         ops.push({ kind: 'staticText', text: literal.value === null ? '' : String(literal.value) });
         return;
       }

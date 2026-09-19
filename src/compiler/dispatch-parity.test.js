@@ -85,4 +85,28 @@ describe('compile / runtime dispatch parity', () => {
 
     expect(factory({ w: '10px' }).renderDom().outerHTML).toBe(dslNode.renderDom().outerHTML);
   });
+
+  // 节点模式会把静态属性当「快照」再写一遍，口径必须与片段一致：null / false 移除、true 写成同名
+  it('agrees on static attributes that remove or name themselves', async () => {
+    const cases = [
+      ['null', 'null', null],
+      ['false', 'false', false],
+      ['true', 'true', true],
+      ['""', 'empty', '']
+    ];
+
+    for (const [expression, name, value] of cases) {
+      const factory = await compileBuilder(
+        `div((node) => node.attr('data-x', ${expression}))`,
+        `static-attr-${name}`,
+        'node'
+      );
+      const dslNode = div((node) => node.attr('data-x', value));
+      // 只有静态属性的行在节点模式里没有活结点 → 产物直接返回片段元素
+      const built = factory({});
+      const compiled = typeof built.renderDom === 'function' ? built.renderDom() : built;
+
+      expect(compiled.outerHTML, expression).toBe(dslNode.renderDom().outerHTML);
+    }
+  });
 });

@@ -194,6 +194,35 @@ describe('compileSource', () => {
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('toggleClass');
   });
 
+  // 静态属性值走框架自己的 attr 口径：null / false 移除、true 写成同名（不能自己 String()）
+  it('keeps static attribute values on the framework path', () => {
+    const cases = [
+      ['null', null],
+      ['false', false],
+      ['true', true],
+      ['""', ''],
+      ['"x"', 'x'],
+      ['7', 7]
+    ];
+
+    for (const [expression, value] of cases) {
+      const result = compile(
+        sourceOf(`  return div((node) => node.attr('data-x', ${expression}));`)
+      );
+      const generic = core.div((node) => node.attr('data-x', value));
+
+      expect(result.compiled, expression).toBe(true);
+      expect(result.plan.html, expression).toBe(generic.toHTML());
+    }
+  });
+
+  it('bails on a boolean literal in a text position (the generic path throws there)', () => {
+    const result = compile(sourceOf('  return div((node) => node.child(false));'));
+
+    expect(result.compiled).toBe(false);
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('布尔值');
+  });
+
   // 覆盖度缺口 2：数组 / 对象在文本位置上编出来就是静默误编 → 编译期认出就回落
   it('bails on arrays and objects in a text position', () => {
     const array = compile(sourceOf('  return div((node) => node.child([row.a, row.b]));'));

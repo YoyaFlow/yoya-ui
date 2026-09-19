@@ -22,6 +22,9 @@ const FRAGMENT_ONLY = new Set(['staticAttr', 'staticClass', 'staticStyle', 'stat
 
 const indentOf = (depth) => '  '.repeat(depth);
 
+/** 静态值 → 生成代码里的字面量写法（`null` / `false` / `true` 原样，正是 attr 的口径）。 */
+const jsLiteral = (value) => (value === undefined ? 'undefined' : JSON.stringify(value));
+
 /**
  * 渲染一个形状。
  *
@@ -213,7 +216,9 @@ function buildSample(core, factoryName, ops) {
   return factory((element) => {
     for (const op of ops) {
       if (op.kind === 'staticAttr') {
-        element.attr(op.name, op.value === null || op.value === undefined ? '' : String(op.value));
+        // 原样交给框架的 attr：`null` / `false` 是「移除」、`true` 写成同名——都是 applyAttribute
+        // 的口径；这里若自己 String() / 填 ''，片段就会与通用路径静默不一致。
+        element.attr(op.name, op.value);
       } else if (op.kind === 'staticClass') {
         op.names.forEach((name) => element.className(name));
       } else if (op.kind === 'staticStyle') {
@@ -396,9 +401,10 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
     // 这些调用不产生 DOM 写：值本来就一致，先比后写。
     for (const child of op.ops) {
       if (child.kind === 'staticAttr') {
+        // 快照与片段同一口径：原样写（`null` / `false` 移除、`true` 写成同名）
         inner.push(
-          `${indentOf(depth + 1)}node.attr(${JSON.stringify(child.name)}, ${JSON.stringify(
-            child.value === null || child.value === undefined ? '' : String(child.value)
+          `${indentOf(depth + 1)}node.attr(${JSON.stringify(child.name)}, ${jsLiteral(
+            child.value
           )});`
         );
       } else if (child.kind === 'staticClass') {

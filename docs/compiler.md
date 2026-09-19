@@ -75,6 +75,11 @@ helpers `themeValue()` / `themeBorder()` (their arguments must be static too). F
 parameter, is left alone (it bails as before), because guessing a value is exactly how an unknown
 value would end up baked into a static fragment.
 
+A static attribute value is handed to the framework's `attr` semantics **unchanged**: `null` /
+`undefined` / `false` remove the attribute and `true` writes it as its own name (`data-x="data-x"`).
+The compiler does not `String()` it or substitute an empty string, which would desynchronise the
+fragment from the generic path.
+
 Falls back (records the reason, the whole shape uses the generic path):
 
 | Construct                                                        | Reason                                                                                                                                                                                     |
@@ -88,6 +93,7 @@ Falls back (records the reason, the whole shape uses the generic path):
 | A computed whole class name (`class: row.tone`)                  | Class order / de-duplication are semantics: use `toggleClass(name, value)` for state classes                                                                                               |
 | A dynamic style value in the `element` channel                   | Static styles stay in the fragment while dynamic ones can only go through CSSOM, which serializes differently from `toHTML()`; use a literal / `toggleClass`, or this row's `node` channel |
 | An array or object in a text position (`child([a, b])`)          | The generic path flattens arrays into several children and throws on objects, so neither is a piece of text; the runtime throws too instead of writing `String(x)`                         |
+| A boolean literal in a text position (`child(false)`)            | The generic path throws a TypeError from `child()`, so compiling `"false"` would be a silent miscompile                                                                                    |
 | Live text inside a static subtree                                | No live ancestor to carry the binding (`node` channel)                                                                                                                                     |
 
 The element whitelist is **derived from the factories the core actually registers** (`htmls` +
