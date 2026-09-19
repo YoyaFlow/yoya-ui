@@ -2757,6 +2757,9 @@ export class ViewNode {
     const parentNode = inheritedDetached ? null : (element?.parentNode ?? null);
     const domGone = inheritedDetached || parentNode !== null;
 
+    // 槽位元素（投影点）被销毁：先把投影的内容收回宿主登记表，别把外部内容一起销毁
+    this._slotHost?._reclaimSlot(this);
+
     // 组件级钩子：在子树销毁**之前**触发（此时自己的 DOM / 子节点还读得到）
     fireWhenDestroy(this);
 
@@ -3236,6 +3239,10 @@ export class ComponentNode extends ViewNode {
   destroy() {
     // 先触发组件钩子（子树销毁之前），再拆解析出来的根与内容侧
     fireWhenDestroy(this);
+
+    // 内容归宿主：随组件一起销毁（不能留在登记表里泄漏）
+    this._slotRegistry?.forEach((entry) => entry.carrier?.destroy?.());
+    this._slotRegistry = null;
 
     if (
       this._component &&

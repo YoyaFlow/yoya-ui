@@ -54,4 +54,38 @@ describe('slot projection (content owned by the host)', () => {
 
     expect(() => card.child(span({ slot: 't-head' }, 'second'))).toThrow(/already received/);
   });
+
+  it('keeps projected content when an ancestor region rebuilds', () => {
+    const card = vNode(() =>
+      div((root) => {
+        root.div((wrapper) => {
+          wrapper.rebuildable();
+          wrapper.span({ slot: 't-head' }, 'default-head');
+        });
+        root.span('body');
+      })
+    );
+    card.child(span({ slot: 't-head' }, 'user-head'));
+
+    const host = mountToHost(card);
+    expect(host.textContent).toContain('user-head');
+
+    const wrapper = card._resolved.children()[0];
+    wrapper.rebuild();
+
+    expect(host.textContent).toContain('user-head');
+    expect(host.textContent).not.toContain('default-head');
+    expect(host.textContent).toContain('body');
+  });
+
+  it('destroys projected content together with the host component', () => {
+    const card = cardWithRegionSlot();
+    const carrier = span({ slot: 't-head' }, 'user-head');
+    card.child(carrier);
+    mountToHost(card);
+
+    card.destroy();
+
+    expect(carrier._deleted).toBe(true);
+  });
 });

@@ -27,6 +27,7 @@ export function slotNameOf(node) {
  */
 export function collectSlots(root, host = null) {
   const slots = new Map();
+  const regionStack = [];
 
   const visit = (node) => {
     if (!node || typeof node.children !== 'function') {
@@ -44,10 +45,21 @@ export function collectSlots(root, host = null) {
       slots.set(name, node);
       node._slotHost = host;
       node._slotName = name;
+      // 含槽位的**区域祖先**也要记住宿主：祖先重建时同样要"收回 → 重建 → 重新投影"
+      regionStack.forEach((region) => {
+        region._slotHost = host;
+      });
     }
 
     // 嵌套组件是另一个作用域：不往下走（它的槽位归它自己解析）
     if (node._component !== undefined) {
+      return;
+    }
+
+    if (node._rebuildable) {
+      regionStack.push(node);
+      node.children().forEach(visit);
+      regionStack.pop();
       return;
     }
 
