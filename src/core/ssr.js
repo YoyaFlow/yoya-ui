@@ -277,7 +277,8 @@ export function renderPage(pageConfig, state = {}, options = {}) {
     i18n = null,
     maxNodes = Infinity,
     messages,
-    stateId = '__YOYA_DATA__'
+    stateId = '__YOYA_DATA__',
+    fragments = []
   } = options || {};
   const pageState = state || {};
 
@@ -312,6 +313,18 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         : `${appContainer}${bodyNode.toHTML()}</div>`;
       const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
 
+      // 票 45：编译产物的模板块（inert）放在 **app 容器之外** —— 运行期按签名克隆，
+      // hydrate 的根内收养因此不会把它当内容节点。
+      const fragmentsHtml = (Array.isArray(fragments) ? fragments : [])
+        .filter(
+          (item) => item && typeof item.signature === 'string' && typeof item.html === 'string'
+        )
+        .map(
+          (item) =>
+            `<template data-yoya-fragment="${escapeHtmlAttribute(item.signature)}">${item.html}</template>`
+        )
+        .join('\n');
+
       headNode.destroy();
       bodyNode.destroy();
 
@@ -321,7 +334,7 @@ ${headHtml}
 <body>
 ${bodyHtml}
 ${stateScript}
-</body>
+${fragmentsHtml ? `${fragmentsHtml}\n` : ''}</body>
 </html>`;
     })
   );
