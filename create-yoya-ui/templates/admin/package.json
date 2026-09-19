@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@yoyaflow/yoya-ui": "^0.6.4"
+    "@yoyaflow/yoya-ui": "^0.6.5"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
