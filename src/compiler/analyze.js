@@ -62,6 +62,23 @@ function literalOf(node) {
   return { literal: false };
 }
 
+/**
+ * 文本位置（`child(x)` / `vText(x)`）上「静态就认得出来不是一段文本」的形状。
+ *
+ * 数组在 DSL 里会摊平成多个子节点、对象会直接报错，两者都不是文本；编成位置写就是
+ * **静默误编**（`String([a, b])` 变成 `"a,b"`、`String({…})` 变成 `"[object Object]"`），
+ * 所以认出来就 bail，让整个形状回通用路径。
+ */
+function textPositionProblemOf(node) {
+  if (node.type === 'ArrayExpression') {
+    return '数组：数组在 DSL 里会摊平成多个子节点，不是一段文本';
+  }
+  if (node.type === 'ObjectExpression') {
+    return '对象：文本位置只接受字符串 / 数字 / 值句柄';
+  }
+  return null;
+}
+
 /** 把 `a.b(…).c(…)` 链摊平成「按执行顺序的调用 + 链首」。 */
 function flattenChain(expression) {
   const calls = [];
@@ -287,12 +304,22 @@ export function analyzeSource(source, options = {}) {
           recordBail('vText() 参数数量 != 1', call);
           return;
         }
+        const problem = textPositionProblemOf(argument.arguments[0]);
+        if (problem) {
+          recordBail(`vText() 收到${problem}`, argument.arguments[0]);
+          return;
+        }
         // vText(x) 的「值」是 x：句柄 → 绑定，零参 reader → 派生，普通值 → 写一次
         ops.push({ kind: 'bindText', expression: slice(argument.arguments[0]) });
         return;
       }
       if (argument.type === 'ArrowFunctionExpression') {
         recordBail('child(() => …) 组件槽', call);
+        return;
+      }
+      const problem = textPositionProblemOf(argument);
+      if (problem) {
+        recordBail(`child() 收到${problem}`, argument);
         return;
       }
       // 其余表达式：句柄还是普通值构建期看不出来 → 运行期二选一

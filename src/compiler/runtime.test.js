@@ -94,6 +94,20 @@ describe('bindText', () => {
 
     expect(() => bindText(element, span('body'))).toThrow(/received a node/);
   });
+
+  // 覆盖度缺口 2：数组 / 对象在编译期认不出来时（值来自数据），运行期也不能静默写 String(x)
+  it('rejects an array or object passed into a text position', () => {
+    const element = document.createElement('td');
+
+    expect(() => bindText(element, ['a', 'b'])).toThrow(/received an array/);
+    expect(() => bindText(element, { text: 'a' })).toThrow(/received an object/);
+    expect(element.textContent).toBe('');
+
+    // 句柄仍然与通用路径同口径（String(value)），不在这里拦
+    const rows = ref(['a', 'b']);
+    bindText(element, rows);
+    expect(element.textContent).toBe('a,b');
+  });
 });
 
 describe('bindClass', () => {

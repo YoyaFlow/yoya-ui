@@ -91,6 +91,33 @@ export function adopt(node, element, textNodes = []) {
   return node;
 }
 
+/**
+ * 一次性写（非句柄）的文本值守卫：节点 / 数组 / 对象在通用路径里都不是「一段文本」——
+ * 节点会被当文本写、数组会被摊平成多个子节点、对象直接报错——编成位置写就是**静默误编**，
+ * 所以宁可抛错。句柄不在这里拦：它走的是与通用路径同一条 `String(value)`。
+ */
+function assertTextValue(value) {
+  if (value instanceof ViewNode) {
+    throw new TypeError(
+      'compiled text position received a node: use child(<factory>(...)) or a slot marker ' +
+        'instead of passing a node variable into a text position.'
+    );
+  }
+  if (Array.isArray(value)) {
+    throw new TypeError(
+      'compiled text position received an array: the generic path flattens arrays into several ' +
+        'children, so writing String(value) would silently differ — use keyed(...) or one ' +
+        'child(...) per item.'
+    );
+  }
+  if (value !== null && typeof value === 'object') {
+    throw new TypeError(
+      'compiled text position received an object: pass a string / number / handle, or build a ' +
+        'node for it.'
+    );
+  }
+}
+
 /** 文本位置（节点模式）：句柄 → 建绑定并接管既有文本节点；普通值 → 直接写。 */
 export function bindChild(node, textNode, value) {
   if (isSignal(value)) {
@@ -101,6 +128,7 @@ export function bindChild(node, textNode, value) {
     return;
   }
 
+  assertTextValue(value);
   textNode.textContent = value === null || value === undefined ? '' : String(value);
 }
 
@@ -118,17 +146,9 @@ const writeText = (element, value) => {
 
 /** 文本位置（元素模式）：活值订阅后就地写，普通值写一次；返回退订函数（普通值返回 null）。 */
 export function bindText(element, value) {
-  // 文本位置收到节点对象 = 上游把"节点变量"当文本值编了（编译期看不出来），显式报错，
-  // 否则会写进 String(nodeObject) 的脏文本 —— 与 child(span(...)) 那类静默误编同源。
-  if (value instanceof ViewNode) {
-    throw new TypeError(
-      'compiled text position received a node: use child(<factory>(...)) or a slot marker ' +
-        'instead of passing a node variable into a text position.'
-    );
-  }
-
   const handle = liveHandle(value);
   if (!handle) {
+    assertTextValue(value);
     writeText(element, value);
     return null;
   }

@@ -194,6 +194,22 @@ describe('compileSource', () => {
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('toggleClass');
   });
 
+  // 覆盖度缺口 2：数组 / 对象在文本位置上编出来就是静默误编 → 编译期认出就回落
+  it('bails on arrays and objects in a text position', () => {
+    const array = compile(sourceOf('  return div((node) => node.child([row.a, row.b]));'));
+    expect(array.compiled).toBe(false);
+    expect(array.bails.map((bail) => bail.reason).join(' | ')).toContain('数组');
+    expect(array.bails[0].at).toContain('[');
+
+    const object = compile(sourceOf('  return div((node) => node.child({ text: row.a }));'));
+    expect(object.compiled).toBe(false);
+    expect(object.bails.map((bail) => bail.reason).join(' | ')).toContain('对象');
+
+    const text = compile(sourceOf('  return div((node) => node.child(vText([row.a])));'));
+    expect(text.compiled).toBe(false);
+    expect(text.bails.map((bail) => bail.reason).join(' | ')).toContain('vText() 收到数组');
+  });
+
   it('compiles dynamic option values into live attribute writes', () => {
     const result = compile(
       sourceOf(
