@@ -146,9 +146,30 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
 | Errors & performance   | `whenFailed()` subtree boundaries; `vScroll` auto-virtualization for long lists                                                  |
 | Extensions             | `vEchart`, `vThree` entries; any DOM-mountable library composes through the same lifecycle contract                              |
 | DevTools (beta)        | Separate `devtools` entry for signal writes, region rebuilds, hydration mismatches                                               |
+| Compile path (beta)    | Build-time compiler + `compiler-runtime` hooks: constant-structure rows / items become a static fragment plus positional writes  |
 
 Only `ref` and `computed` are needed for state; there is no deep proxy and no proxy store. Details
 per feature: [docs/highlights.md](docs/highlights.md).
+
+### Compile path (beta)
+
+A build-time tool for **repeated units** (table rows, list items, tree nodes): the compiler reads the
+builder at build time and emits a module that clones a static fragment and writes only the live values.
+Its hooks live in a separate subpath (`@yoyaflow/yoya-ui/compiler-runtime`); the main entry never includes
+the compiler.
+
+```bash
+npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+```
+
+```js
+import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
+```
+
+Anything it cannot classify falls back to the generic path for that whole shape. Status: **beta** —
+flags and artifact shapes may still change in a minor release, and not using it changes nothing.
+Full contract (two channels, component registry, page `<template>` fragments, `--report`):
+[docs/compiler.md](docs/compiler.md).
 
 ## Everything is real DOM, so third-party libraries just plug in
 

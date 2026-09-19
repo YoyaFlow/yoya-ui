@@ -7,6 +7,9 @@ path** is an optional accelerator — at build time it reads structurally consta
 - position-addressed writes", so the runtime only clones the fragment, subscribes to live values and
   reconciles by minimal moves.
 
+> **Status: beta.** Flags (`--mode` / `--thin` / `--report` / `--registry` / `--fragments`) and artifact
+> shapes may still change in a minor release; not using the compiler is unaffected.
+
 Two red lines shape it:
 
 - **Fragments are never hand-written**: the framework's own factories produce the static fragment and

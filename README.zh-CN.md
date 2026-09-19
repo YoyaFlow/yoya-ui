@@ -137,9 +137,28 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
 | 容错与性能       | `whenFailed()` 子树错误边界；`vScroll` 长列表自动虚拟化                                  |
 | 扩展             | `vEchart` / `vThree` 子入口；任何能挂进 DOM 的库都按同一份生命周期契约组合               |
 | DevTools（Beta） | 独立 `devtools` 入口：信号写入、区域重建、hydration 不一致                               |
+| 编译路径（Beta） | 构建期编译器 + `compiler-runtime` 钩子：结构恒定的行 / 项编成「静态片段 + 位置写」       |
 
 状态只需要 `ref` 与 `computed`：没有深层代理，也没有代理 store。各能力细节见
 [docs/highlights.zh-CN.md](docs/highlights.zh-CN.md)。
+
+### 编译路径（Beta）
+
+只针对**重复单元**（表格行、列表项、树节点）的构建期工具：编译器在构建期读懂行构建函数，产出
+"克隆静态片段 + 只写活值"的模块。它的钩子在独立子路径 `@yoyaflow/yoya-ui/compiler-runtime`，
+主入口不含编译器。
+
+```bash
+npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+```
+
+```js
+import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
+```
+
+认不出的构造会让**整个形状**回落通用路径（绝不半编译）。状态：**Beta**——参数与产物格式仍可能在
+小版本内调整；不用它不影响任何现有写法。完整契约（两条通道、组件注册表、页面 `<template>` 片段、
+`--report`）见 [docs/compiler.zh-CN.md](docs/compiler.zh-CN.md)。
 
 ## 一切是真实 DOM，第三方库直接接
 
