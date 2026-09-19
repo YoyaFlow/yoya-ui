@@ -4,7 +4,7 @@ import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
 import { optionKindOf } from './setup-keys.js';
 import {
-  RESERVED_HOOK_NAMES,
+  COMPONENT_HOOK_NAMES,
   fireWhenDestroy,
   fireWhenMount,
   rearmWhenMount,
@@ -3571,7 +3571,8 @@ export class ElementNode extends ViewNode {
       }
 
       // 协议钩子放错位置（options 对象）→ 直接报错：既不是事件简写，也不是普通属性
-      if (RESERVED_HOOK_NAMES.has(key)) {
+      // 只拦组件级钩子：whenFailed 是节点方法，options 里写它是既有合法用法
+      if (COMPONENT_HOOK_NAMES.has(key)) {
         throw new TypeError(
           `${key} is a component hook, not an option: declare it on the vNode api or on the ` +
             'component object returned by render(), not in an options object.'

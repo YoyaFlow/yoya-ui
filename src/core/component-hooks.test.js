@@ -6,7 +6,7 @@
  * 出现在 options 对象里 → 报错（不与 onClick 等事件简写混用）。
  */
 import { describe, expect, it } from 'vitest';
-import { div, ref, vNode } from '../index.js';
+import { div, ref, span, vNode } from '../index.js';
 
 const mountToHost = (node, host = null) => {
   const target = host ?? document.createElement('div');
@@ -93,7 +93,50 @@ describe('component hooks', () => {
   it('rejects hooks placed in an options object', () => {
     expect(() => div({ whenMount: () => {} })).toThrow(/component hook/);
     expect(() => div({ whenDestroy: () => {} })).toThrow(/component hook/);
-    expect(() => div({ whenFailed: () => {} })).toThrow(/component hook/);
+  });
+
+  it('keeps whenFailed working as an options key (a node method, not a hook)', () => {
+    const node = div({ whenFailed: () => null });
+    expect(typeof node.whenFailed).toBe('function');
+  });
+
+  it('reports a throwing whenMount without unmounting or falling back', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const card = vNode((api) => {
+      api.whenMount = () => {
+        throw new Error('mount boom');
+      };
+      return div('body');
+    });
+
+    document.body.innerHTML = '';
+    const host = mountToHost(card);
+
+    expect(host.innerHTML).toContain('body');
+    expect(card._el.parentNode).toBe(host);
+    expect(errorSpy.mock.calls.flat().join(' ')).toContain('whenMount');
+    errorSpy.mockRestore();
+  });
+
+  it('reports a throwing whenDestroy and still finishes the cleanup', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const child = span('child');
+    const card = vNode((api) => {
+      api.whenDestroy = () => {
+        throw new Error('destroy boom');
+      };
+      return div((root) => root.child(child));
+    });
+
+    document.body.innerHTML = '';
+    mountToHost(card);
+
+    card.destroy();
+    card.destroy();
+
+    expect(child._deleted).toBe(true);
+    expect(errorSpy.mock.calls.flat().join(' ')).toContain('whenDestroy');
+    errorSpy.mockRestore();
   });
 
   it('defers whenMount while mountable is false and fires on real landing', () => {

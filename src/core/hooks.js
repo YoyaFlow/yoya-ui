@@ -45,7 +45,13 @@ export function fireWhenMount(node) {
   }
 
   hooks.mounted = true;
-  hooks.whenMount.call(hooks.self);
+  try {
+    hooks.whenMount.call(hooks.self);
+  } catch (error) {
+    // 钩子抛错必须可见，但**不做渲染降级**：结构已经落地，没有"替换节点"的语义，
+    // 降级会引出"fallback 自己再抛错"的回环。是否降级由组件自己决定。
+    reportHookError('whenMount', error);
+  }
 }
 
 /** 挂载条件把节点摘下来：允许下次落地再次触发 whenMount。 */
@@ -69,6 +75,30 @@ export function fireWhenDestroy(node) {
   node._whenHooks = null;
 
   if (typeof handler === 'function') {
-    handler.call(self);
+    try {
+      handler.call(self);
+    } catch (error) {
+      // 销毁期抛错绝不能中断清理链（否则就是泄漏）；同样只上报、不降级。
+      reportHookError('whenDestroy', error);
+    }
+  }
+}
+
+/** 钩子错误的统一上报口径：console + devtools（走 globalThis 共享 bridge，未装 devtools 时 no-op）。 */
+function reportHookError(hookName, error) {
+  if (typeof console !== 'undefined') {
+    console.error(`[yoya] ${hookName} hook failed`, error);
+  }
+
+  const bridge =
+    typeof globalThis === 'undefined'
+      ? null
+      : globalThis[Symbol.for('yoya.devtools.bridge')] || null;
+  if (bridge && typeof bridge.emit === 'function' && bridge.enabled?.() !== false) {
+    try {
+      bridge.emit({ type: 'error', phase: hookName, source: null, error });
+    } catch {
+      // devtools 自身失败不影响运行
+    }
   }
 }

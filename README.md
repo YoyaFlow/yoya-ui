@@ -199,21 +199,21 @@ small core is — budget against the download column. The last column says what 
 
 | Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                                            |
 | ---------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.4 KB ~ **27.7 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly              |
+| `yoya.core.js`                     | 2.4 KB ~ **27.8 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly              |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                |
-| `yoya.ui.js` (all categories)      | 5.6 KB ~ **98.7 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
-| `yoya.router.js`                   | 10.3 KB ~ **29.6 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                          |
-| `yoya.compiler-runtime.js`         | 1.3 KB ~ **17.2 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`); the main entry never includes them |
+| `yoya.ui.js` (all categories)      | 5.6 KB ~ **98.8 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
+| `yoya.router.js`                   | 10.3 KB ~ **29.7 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                          |
+| `yoya.compiler-runtime.js`         | 1.3 KB ~ **17.3 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`); the main entry never includes them |
 | `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                              |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 18.8 / 19.2 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 18.8 / 19.3 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
 
 Self-contained entries (core inlined, single file):
 
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 284.2 KB | 128.6 KB | 37.7 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 819.3 KB | 461.8 KB | 112.8 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 750.4 KB | 429.9 KB | 103.2 KB | core + all components                |
+| `yoya.router.full.js`                 | 284.7 KB | 128.9 KB | 37.7 KB  | core + router / SSR                  |
+| `yoya.ui-router.full.js` (everything) | 819.8 KB | 462.1 KB | 112.9 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 750.9 KB | 430.2 KB | 103.3 KB | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
