@@ -2,6 +2,13 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
+import {
+  RESERVED_HOOK_NAMES,
+  fireWhenDestroy,
+  fireWhenMount,
+  rearmWhenMount,
+  registerComponentHooks
+} from './hooks.js';
 import { collectSlots, fillSlot, slotNameOf } from './slot.js';
 import { isKeySet } from './key-set.js';
 import { currentSignals } from './signals/contract.js';
@@ -1030,6 +1037,7 @@ function attachChildDom(parent, node, rendered, anchor) {
 
   if (rendered && rendered.nodeType === DOCUMENT_FRAGMENT_NODE) {
     parent._el.insertBefore(rendered, anchor ?? null);
+    fireWhenMount(node);
     return;
   }
 
@@ -1039,6 +1047,7 @@ function attachChildDom(parent, node, rendered, anchor) {
       parent._el.insertBefore(element, anchor ?? null);
     }
   });
+  fireWhenMount(node);
 }
 
 function describeKeyedRowKey(rawKey) {
@@ -2384,6 +2393,7 @@ export class ViewNode {
           this._el.insertBefore(element, anchor);
         }
       });
+      fireWhenMount(node);
       return;
     }
 
@@ -2392,6 +2402,7 @@ export class ViewNode {
         this._el.removeChild(element);
       }
     });
+    rearmWhenMount(node);
   }
 
   /** 按 key 读取子节点；不存在返回 null。 */
@@ -2695,6 +2706,10 @@ export class ViewNode {
 
     if (parent && element) {
       parent.appendChild(element);
+      // 根节点自己落地：组件钩子在这里触发（子节点由父级挂载路径负责）
+      if (this._whenHooks !== undefined) {
+        fireWhenMount(this);
+      }
     }
 
     return this;
@@ -2714,6 +2729,9 @@ export class ViewNode {
     const element = this._el;
     const parentNode = inheritedDetached ? null : (element?.parentNode ?? null);
     const domGone = inheritedDetached || parentNode !== null;
+
+    // 组件级钩子：在子树销毁**之前**触发（此时自己的 DOM / 子节点还读得到）
+    fireWhenDestroy(this);
 
     if (isDevtoolsEnabled()) {
       emitDevtools({ type: 'destroy', node: this });
@@ -2848,6 +2866,7 @@ export class ComponentNode extends ViewNode {
   constructor(component) {
     super(null);
     this._component = component;
+    registerComponentHooks(this, component);
     if (component && typeof component === 'object' && typeof component.whenFailed === 'function') {
       this.whenFailed(component.whenFailed.bind(component));
     }
@@ -3169,6 +3188,9 @@ export class ComponentNode extends ViewNode {
   }
 
   destroy() {
+    // 先触发组件钩子（子树销毁之前），再拆解析出来的根与内容侧
+    fireWhenDestroy(this);
+
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -3491,6 +3513,14 @@ export class ElementNode extends ViewNode {
       ) {
         this._mountCondition = value;
         return;
+      }
+
+      // 协议钩子放错位置（options 对象）→ 直接报错：既不是事件简写，也不是普通属性
+      if (RESERVED_HOOK_NAMES.has(key)) {
+        throw new TypeError(
+          `${key} is a component hook, not an option: declare it on the vNode api or on the ` +
+            'component object returned by render(), not in an options object.'
+        );
       }
 
       // 子工厂不参与 options 分派：同名键按属性写。
@@ -3842,6 +3872,10 @@ export class ElementNode extends ViewNode {
             this._childMountStates?.get(child) !== false
           ) {
             element.appendChild(childElement);
+            // 首屏单趟建树：这里才是子节点真正落地的位置（挂载条件为假时不会走到这支）
+            if (child._whenHooks !== undefined) {
+              fireWhenMount(child);
+            }
           } else if (!childElement && child._el && child._el.parentNode === element) {
             element.removeChild(child._el);
           }

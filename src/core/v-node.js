@@ -1,5 +1,6 @@
 import { ComponentNode, ViewNode } from './node.js';
 import { adoptProvides, createProviderFrame, withProviderScope } from './context.js';
+import { COMPONENT_HOOK_NAMES, registerComponentHooks } from './hooks.js';
 
 /** api 上不允许出现的键：与节点语义冲突，或属于内部实现（下划线前缀）。 */
 const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
@@ -33,6 +34,8 @@ export function vNode(setup) {
   });
 
   adoptProvides(frame, node);
+  // 钩子是协议成员，不挂成命令（与 api.whenFailed 同一族）
+  registerComponentHooks(node, api);
   attachCommands(node, api);
   return node;
 }
@@ -76,6 +79,11 @@ function attachCommands(node, api) {
     // whenFailed 是错误边界声明，不是命令：路由到节点方法，语义同组件协议成员
     if (key === 'whenFailed') {
       node.whenFailed(command);
+      return;
+    }
+
+    // whenMount / whenDestroy 已在 registerComponentHooks 里登记，不再当命令挂上去
+    if (COMPONENT_HOOK_NAMES.has(key)) {
       return;
     }
 
