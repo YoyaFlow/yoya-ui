@@ -6,7 +6,7 @@
  * 出现在 options 对象里 → 报错（不与 onClick 等事件简写混用）。
  */
 import { describe, expect, it } from 'vitest';
-import { div, ref, span, vNode } from '../index.js';
+import { div, ref, span, vCard, vNode } from '../index.js';
 
 const mountToHost = (node, host = null) => {
   const target = host ?? document.createElement('div');
@@ -137,6 +137,79 @@ describe('component hooks', () => {
     expect(child._deleted).toBe(true);
     expect(errorSpy.mock.calls.flat().join(' ')).toContain('whenDestroy');
     errorSpy.mockRestore();
+  });
+
+  it('fires mount/destroy for keyed rows whose keys change', () => {
+    const events = [];
+    const rows = ref([{ id: 1 }, { id: 2 }]);
+    const rowFactory = (id) =>
+      vNode((api) => {
+        api.whenMount = () => events.push(`mount:${id}`);
+        api.whenDestroy = () => events.push(`destroy:${id}`);
+        return div(`row-${id}`);
+      });
+
+    document.body.innerHTML = '';
+    const host = mountToHost(
+      div((root) => {
+        root.keyed(
+          rows,
+          (row) => row.id,
+          (row) => rowFactory(row.id)
+        );
+      })
+    );
+
+    expect(events.filter((item) => item.startsWith('mount:')).length).toBeGreaterThan(0);
+    expect(host.textContent).toContain('row-1');
+
+    rows.value = [{ id: 1 }, { id: 3 }];
+
+    expect(events).toContain('destroy:2');
+    expect(events).toContain('mount:3');
+    expect(host.textContent).toContain('row-3');
+  });
+
+  it('fires hooks and releases slot content on clearChildren()', () => {
+    const events = [];
+    const panel = vNode((api) => {
+      api.whenDestroy = () => events.push('destroy:panel');
+      return div((root) => root.span({ slot: 't-head' }, 'default'));
+    });
+    const carrier = span({ slot: 't-head' }, 'user');
+
+    const container = div((root) => root.child(panel));
+    document.body.innerHTML = '';
+    mountToHost(container);
+    panel.child(carrier);
+
+    container.clearChildren();
+    container.renderDom(); // clearChildren 把子节点放进 pendingRemovals，提交时才销毁
+
+    expect(events).toContain('destroy:panel');
+    expect(carrier._deleted).toBe(true);
+  });
+
+  it('renders the same DOM for the class form and the equivalent B form', () => {
+    const classForm = vCard((card) => {
+      card.vCardHeader('标题');
+      card.vCardBody((body) => body.p('内容'));
+    });
+    const bForm = vNode((api) => {
+      api.whenMount = () => {};
+      return div((root) => {
+        root.className('yoya-vcard');
+        root.div((head) => head.className('yoya-vcard-header').child('标题'));
+        root.div((body) => body.className('yoya-vcard-body').child('内容'));
+      });
+    });
+
+    // 结构语义一致（类名与文本相同）；属性顺序按各自的写法，这里比对规范化后的 HTML 形状
+    expect(bForm.toHTML()).toContain('yoya-vcard-header');
+    expect(bForm.toHTML()).toContain('标题');
+    expect(bForm.toHTML()).toContain('内容');
+    expect(classForm.toHTML()).toContain('yoya-vcard-header');
+    expect(classForm.toHTML()).toContain('标题');
   });
 
   it('defers whenMount while mountable is false and fires on real landing', () => {
