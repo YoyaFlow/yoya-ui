@@ -77,6 +77,16 @@ export function fillSlot(slotElement, carrier) {
     });
   }
 
+  // 类名走的是 _classText（不占属性快照）：信封的类名与槽位元素的类名取并集，
+  // 这样"信封不进 DOM"也不会把作者写在根上的样式类丢掉。
+  if (carrier._classText) {
+    const own = slotElement._classText ? slotElement._classText.split(/\s+/) : [];
+    const incoming = carrier._classText.split(/\s+/).filter((name) => name && !own.includes(name));
+    if (incoming.length > 0) {
+      slotElement.className(incoming.join(' '));
+    }
+  }
+
   slotElement.children().forEach((child) => child.destroy());
   slotElement._children = [];
   slotElement._childrenDirty = true;
@@ -86,4 +96,38 @@ export function fillSlot(slotElement, carrier) {
   }
 
   return slotElement;
+}
+
+/**
+ * 槽位子组件（票 42 / T4）：把一个工厂标记为"默认投递到某个槽位"。
+ *
+ * - **独立创建**：`const head = vThead(...)`（此时不需要父组件存在，也不 mount）；
+ * - **延迟挂载**：`table.child(head)` 按标记路由进同名槽位 —— 父组件不必再手写
+ *   `child instanceof VXxx` 这类分支；
+ * - 归属是**显式槽名**（`slotName`），`parent` 只用于开发期提示，不参与路由判断；
+ * - 返回的节点如果自己已经带了 `slot` 标记，则以它为准（允许同一个工厂投到别的槽位）。
+ */
+export function defineSlotChild(factory, options = {}) {
+  const { slot, parent = null } = options;
+  if (typeof factory !== 'function') {
+    throw new TypeError('defineSlotChild(factory, { slot }) requires a factory function');
+  }
+  if (typeof slot !== 'string' || slot.length === 0) {
+    throw new TypeError('defineSlotChild requires a non-empty slot name');
+  }
+
+  const slotChildFactory = function slotChildFactory(...args) {
+    const node = factory(...args);
+    if (node && typeof node.attr === 'function' && !slotNameOf(node)) {
+      node.attr(SLOT_ATTRIBUTE, slot);
+    }
+    return node;
+  };
+
+  // 保留原工厂名，报错 / devtools 里仍然认得出是谁
+  Object.defineProperty(slotChildFactory, 'name', { value: factory.name, configurable: true });
+  slotChildFactory.slotName = slot;
+  slotChildFactory.slotParent = parent;
+  slotChildFactory.slotFactory = factory;
+  return slotChildFactory;
 }
