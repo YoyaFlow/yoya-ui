@@ -162,7 +162,8 @@ export function summarizeCompile(result) {
     mode: result.mode,
     compiled: result.compiled,
     out: result.out ?? null,
-    htmlBytes: result.plan ? result.plan.html.length : 0,
+    // templates-only 时 plan 不带 html，片段字节数从 fragmentHtml 取
+    htmlBytes: result.fragmentHtml?.length ?? 0,
     liveNodes: result.plan ? result.plan.liveNodes : 0,
     slots: result.plan ? result.plan.slots : 0,
     scope: result.scope,
