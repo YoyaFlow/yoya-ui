@@ -2,8 +2,10 @@
 
 This page reports yoya-ui's numbers in the official
 [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) (`keyed` category):
-the `yoya-ui-core` implementation against the official `vanillajs` baseline, with the previous release
-as an anchor column so the movement of each change is visible.
+the **AST-compiled implementation (`yoya-ui-ast`)** against the official `vanillajs` baseline, with
+same-round comparison columns (the runtime build `yoya-ui-runtime`, Vue, React, Solid, Svelte) so both
+the movement of each change and the standing against other frameworks are visible. The report page
+shades the cells where yoya is faster (green) or slower (red); differences within ±5% stay unshaded.
 
 The numbers are not hand-written: the table block is generated from `benchmark/results.json`,
 refreshed by `npm run report:bench:write` and gated by `npm run verify:dist`, so editing a number by hand
@@ -11,7 +13,7 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-19, yoya version `0.6.4` (`5cdce76`).
+**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-19, yoya version `0.6.5` (`5cdce76`).
 
 **Nine standard operations (ms, median)**
 

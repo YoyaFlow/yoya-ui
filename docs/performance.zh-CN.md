@@ -1,8 +1,9 @@
 # 性能基准（官方 js-framework-benchmark）
 
 这一页放的是 yoya-ui 在官方 [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark)
-（`keyed` 分类）上的实测数字：`yoya-ui-core` 实现对比官方原生基线 `vanillajs`，同时给出上一发布版本的
-锚点列，便于看改动带来的位移。
+（`keyed` 分类）上的实测数字：**AST 编译版（`yoya-ui-ast`）**对比官方原生基线 `vanillajs`，
+同时并列对照条目（同轮测量：运行期版 `yoya-ui-runtime`、Vue、React、Solid、Svelte），
+便于看改动带来的位移与横向位置。报告页里 yoya 更快/更慢的格子有底色区分（±5% 内视作持平）。
 
 数字不是手写的：表格块由 `benchmark/results.json` 生成，
 `npm run report:bench:write` 刷新、`npm run verify:dist` 校验，手工改数字会直接失败。
@@ -10,7 +11,7 @@
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**运行口径**：官方 runner `playwright`（headless）+ Chrome for Testing 152.0.7977.64；CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位），内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-19，yoya 版本 `0.6.4`（`5cdce76`）。
+**运行口径**：官方 runner `playwright`（headless）+ Chrome for Testing 152.0.7977.64；CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位），内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-19，yoya 版本 `0.6.5`（`5cdce76`）。
 
 **九项标准操作（ms，中位数）**
 
