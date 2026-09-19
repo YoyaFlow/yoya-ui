@@ -161,6 +161,81 @@ export declare function resolveComponentKey(options: {
 }): string;
 export declare function normalizeModulePath(path: string): string;
 
+/**
+ * One row factory wired at build time: the module that holds it and the export it
+ * is exported as. `wireRowModule` locates it (a single declaration, a single
+ * identifier parameter) and rewrites the module in place, so the source keeps its
+ * original shape and the artifact stays a virtual module.
+ */
+export interface RowTarget {
+  file: string;
+  fn: string;
+  mode?: 'element' | 'node';
+  /** Node mode only: wrap live nodes and their ancestors. */
+  thin?: boolean;
+  /** Element mode only: emit fragments as page `<template>` blocks. */
+  templatesOnly?: boolean;
+}
+
+/** Result of `wireRowModule`: rewritten module, artifact module source, virtual module name. */
+export interface WiredRowModule {
+  code: string;
+  module: string;
+  virtual: string;
+}
+
+/**
+ * Pure half of the build-time transform: given the module source and one target
+ * declaration, returns the rewritten module plus the artifact module, or `null`
+ * when the target cannot be identified or the shape bails (leave the source alone).
+ */
+export declare function wireRowModule(options: {
+  source: string;
+  target: RowTarget;
+  core: unknown;
+  runtime?: string;
+  coreSpecifier?: string;
+  virtualId?: string;
+}): WiredRowModule | null;
+
+/** Minimal esbuild build API surface the plugin uses. */
+export interface EsbuildBuildLike {
+  onResolve(
+    options: { filter: RegExp },
+    callback: (args: { path: string }) => { path: string; namespace: string } | null
+  ): void;
+  onLoad(
+    options: { filter: RegExp; namespace?: string },
+    callback: (args: {
+      path: string;
+      namespace: string;
+    }) => { contents: string; loader: string; resolveDir: string } | null
+  ): void;
+}
+
+export interface YoyaCompilePluginOptions {
+  /** Core namespace (`import * as core from '@yoyaflow/yoya-ui/core'`). */
+  core: unknown;
+  /** Row factories to wire; modules that are not listed are left untouched. */
+  rows?: RowTarget[];
+  runtime?: string;
+  coreSpecifier?: string;
+}
+
+export interface YoyaCompilePlugin {
+  name: string;
+  /** Virtual artifact modules by name (tests / debugging). */
+  virtualModules: Map<string, string>;
+  setup(build: EsbuildBuildLike): void;
+}
+
+/**
+ * esbuild plugin: listed modules are rewritten at build time and the artifacts are
+ * served as virtual modules. Anything it cannot pin down is left as-is and runs on
+ * the generic path.
+ */
+export declare function yoyaCompilePlugin(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+
 export declare function reportCoverage(
   options: Omit<CompileOptions, 'source'> & { root: string; extensions?: string[] }
 ): CoverageReport;

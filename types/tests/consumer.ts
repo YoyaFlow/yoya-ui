@@ -286,6 +286,17 @@ const keyedHost = div((ele) => {
 });
 void keyedHost;
 
+// Element rows (`{ el, destroy }`): the compiler's element channel — DOM only, no
+// node objects, reconciled by keyed() itself.
+const elementChannelRows = ref([{ id: 1 }]);
+const elementChannelList = ul((ele) => {
+  ele.keyed(elementChannelRows, (row) => ({
+    el: document.createElement('li'),
+    destroy: () => void row.id
+  }));
+});
+void elementChannelList;
+
 // Row-level update protocol: keep the node when the row is content-equivalent,
 // or update it in place when it really changed.
 const keyedRows = ref([{ id: 1, title: 'A' }]);
@@ -469,10 +480,14 @@ import {
   elementWhitelistOf,
   reportCoverage,
   runCli,
+  wireRowModule,
+  yoyaCompilePlugin,
   type ComponentRegistry,
   type ComponentRegistryResult,
   type CompileResult,
-  type CoverageReport
+  type CoverageReport,
+  type WiredRowModule,
+  type YoyaCompilePlugin
 } from '@yoyaflow/yoya-ui/compiler';
 import {
   bindClass,
@@ -518,6 +533,42 @@ pushOff(offs, setAttr(element, 'data-x', 1));
 const list = createElementList<{ id: number }>(element, (row) => row.id);
 list.sync([{ id: 1 }], (row): CompiledRow => ({ el: element, data: row, destroy: () => {} }));
 const first: Element | undefined = list.elements()[0];
+
+// 键镜像按选项显式打开（默认不写，行 DOM 与参考实现逐字节一致）。
+const keyedList = createElementList<{ id: number }>(element, (row) => row.id, {
+  keyAttribute: 'data-row-key'
+});
+const keyedListSize: number = keyedList.size;
+void keyedListSize;
+
+// 构建期 transform：插件（esbuild 协议）+ 纯函数两半都要能用。
+const plugin: YoyaCompilePlugin = yoyaCompilePlugin({
+  core,
+  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+});
+plugin.setup({
+  onResolve: (options, callback) => {
+    const resolved = callback({ path: '\0yoya-row:buildRow' });
+    void options.filter;
+    void resolved;
+  },
+  onLoad: (options, callback) => {
+    const loaded = callback({ path: 'src/main.js', namespace: 'file' });
+    void options.filter;
+    void loaded;
+  }
+});
+const wired: WiredRowModule | null = wireRowModule({
+  source: 'export function buildRow(row) { return tr((line) => line.td(String(row.id))); }',
+  target: { file: 'src/main.js', fn: 'buildRow' },
+  core
+});
+if (wired) {
+  const wiredCode: string = wired.code;
+  const wiredModule: string = wired.module;
+  const virtual: string = wired.virtual;
+  void [wiredCode, wiredModule, virtual];
+}
 
 const componentResult: CompileResult = compileComponent({
   source: '',

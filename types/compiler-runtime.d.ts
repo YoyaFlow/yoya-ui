@@ -98,8 +98,13 @@ export declare function bindComponent(
 /**
  * Element-mode list reconciliation: element array plus a key → index map, reusing
  * rows, rebuilding in place, removing leavers and moving only what changed.
+ *
+ * `options.keyAttribute` writes a key mirror onto each row element when set; it
+ * stays off by default because the row DOM must match the reference
+ * implementation byte for byte (open it when you need to locate rows by key).
  */
 export declare function createElementList<Data>(
   container: Element,
-  keyOf: (item: Data) => unknown
+  keyOf: (item: Data) => unknown,
+  options?: { keyAttribute?: string }
 ): CompiledList<Data>;

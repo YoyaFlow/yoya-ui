@@ -100,6 +100,20 @@ export interface KeyedRowUpdate<TRow = unknown> {
 }
 
 /**
+ * Element row: DOM plus its own teardown, the shape the compiler's `element`
+ * channel emits (`{ el, destroy() }`). `keyed()` reconciles these rows directly on
+ * the parent element — they never enter the view tree, so one list may use either
+ * element rows or node rows, not both.
+ */
+export interface ElementRowProduct {
+  el: Element;
+  destroy?(): void;
+}
+
+/** What a `keyed()` row factory may return. */
+export type KeyedRowProduct = ViewNode | ComponentLike | string | number | ElementRowProduct;
+
+/**
  * Object-form setup accepted by every factory: class/className, attrs, style,
  * children, onXxx event handlers and arbitrary attribute keys.
  */
@@ -358,13 +372,13 @@ export class ViewNode {
    */
   keyed<TRow>(
     source: SignalHandle<TRow[]>,
-    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    build: (row: TRow, index: number) => KeyedRowProduct,
     options?: KeyedRowUpdate<TRow>
   ): this;
   keyed<TRow>(
     source: SignalHandle<TRow[]>,
     keyFn: (row: TRow, index: number) => string | number,
-    build: (row: TRow, index: number) => ViewNode | ComponentLike | string | number,
+    build: (row: TRow, index: number) => KeyedRowProduct,
     options?: KeyedRowUpdate<TRow>
   ): this;
   /**
@@ -377,13 +391,13 @@ export class ViewNode {
    */
   keyed<TRow>(
     source: KeySet<TRow>,
-    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    build: (item: KeyItem<TRow>, index: number) => KeyedRowProduct,
     options?: KeyedRowUpdate<TRow>
   ): this;
   keyed<TRow>(
     source: KeySet<TRow>,
     keyFn: (item: KeyItem<TRow>, index: number) => string | number,
-    build: (item: KeyItem<TRow>, index: number) => ViewNode | ComponentLike | string | number,
+    build: (item: KeyItem<TRow>, index: number) => KeyedRowProduct,
     options?: KeyedRowUpdate<TRow>
   ): this;
 
