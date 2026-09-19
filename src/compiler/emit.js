@@ -31,7 +31,12 @@ export function renderModule(options) {
     thin = false,
     file = '(inline)',
     fn = 'buildRow',
-    runtime = './compiler-runtime.js'
+    runtime = './compiler-runtime.js',
+    kind = 'row',
+    componentsSpecifier = './components.registry.js',
+    scopeSpecifier = null,
+    paramsSource = '',
+    hash = null
   } = options;
 
   const scope = new Set();
@@ -42,9 +47,20 @@ export function renderModule(options) {
   const addName = (name) => scope.add(name);
   const scopeList = () => [...scope].sort().join(', ');
 
+  if (mode === 'node' && hasComponentOp(entry.ops)) {
+    // 链接组件的实例化写进「已有的元素位置」，节点模式没有这种位置写 → 明确回落，不静默丢
+    throw new Error('链接组件只支持 element 模式（节点模式的行没有位置写）');
+  }
+
   const fragmentHtml = buildFragment(core, entry);
   const emit = mode === 'element' ? emitElementMode : emitNodeMode;
-  const emitted = emit({ entry, thin, addExpression, addName });
+  const emitted = emit({
+    entry,
+    thin,
+    addExpression,
+    addName,
+    rootName: kind === 'component' ? 'root' : 'el'
+  });
 
   const plan = {
     version: 1,
@@ -61,11 +77,61 @@ export function renderModule(options) {
     `import { ${names.join(', ')} } from ${JSON.stringify(runtime)};\n`;
   const planExport = `\nexport const plan = ${JSON.stringify(plan, null, 2)};\n\n`;
 
+  // 组件产物：绑定函数写进已有的占位子树（调用方片段里嵌进来的那一棵），
+  // scope 是组件原模块的命名空间（只允许 import 绑定的自由标识符）。
+  if (mode === 'element' && kind === 'component') {
+    const names = ['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr'];
+    if (emitted.usesComponents) {
+      names.splice(1, 0, 'bindComponent');
+    }
+    const body = emitted.lines.map((line) => line.replace(/^ {4}/, '  ')).join('\n');
+    const module =
+      header +
+      '// 组件片段链接产物：片段 + 位置写；`scope` 是组件原模块的命名空间。\n' +
+      (scopeSpecifier ? `import * as scope from ${JSON.stringify(scopeSpecifier)};\n` : '') +
+      (emitted.usesComponents
+        ? `import { components } from ${JSON.stringify(componentsSpecifier)};\n`
+        : '') +
+      runtimeImport(names) +
+      planExport +
+      `export const hash = ${JSON.stringify(hash)};\n\n` +
+      'export function bind(root, values) {\n' +
+      `  const [${paramsSource}] = values ?? [];\n` +
+      destructure +
+      `  if (!root || root.childNodes.length !== ${emitted.childCount}) {\n` +
+      '    return null; // 形状与片段不符：交给调用方走通用路径回落\n' +
+      '  }\n' +
+      '  const offs = [];\n' +
+      `${body}${emitted.lines.length > 0 ? '\n' : ''}` +
+      '  let disposed = false;\n' +
+      '  return () => {\n' +
+      '    if (disposed) {\n' +
+      '      return;\n' +
+      '    }\n' +
+      '    disposed = true;\n' +
+      '    offs.forEach((off) => off());\n' +
+      '  };\n' +
+      '}\n\n' +
+      '/** 通用路径回落：用原组件重建这一棵。 */\n' +
+      `export function render(...values) {\n  return scope[${JSON.stringify(fn)}](...values);\n}\n`;
+
+    return { plan, module, scope: [...scope].sort(), liveNodes: plan.liveNodes, slots: plan.slots };
+  }
+
+  const elementNames = ['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr'];
+  if (emitted.usesComponents) {
+    elementNames.splice(1, 0, 'bindComponent');
+  }
+  const componentImport = emitted.usesComponents
+    ? `import { components } from ${JSON.stringify(componentsSpecifier)};\n`
+    : '';
+
   const module =
     mode === 'element'
       ? header +
         '// 元素模式：行就是原生元素，值位置直接写 DOM，活值订阅后就地写。\n' +
-        runtimeImport(['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr']) +
+        runtimeImport(elementNames) +
+        componentImport +
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
         `  return function ${fn}(${entry.builderParam}) {\n` +
@@ -128,22 +194,37 @@ function buildSample(core, factoryName, ops) {
         element.child(TEXT_PLACEHOLDER);
       } else if (op.kind === 'element') {
         element.child(buildSample(core, op.factory, op.ops));
+      } else if (op.kind === 'component') {
+        // 链接进来的组件：它的片段来自注册表里的纯数据 ops，仍由框架工厂序列化产出
+        element.child(buildSample(core, op.entryFactory, op.entryOps));
       }
     }
   });
 }
 
 /** 元素模式：所有值位置都编成对既有 DOM 的直接写。 */
-function emitElementMode({ entry, addExpression }) {
+function emitElementMode({ entry, addExpression, rootName = 'el' }) {
   const lines = [];
   let liveCount = 0;
+  let usesComponents = false;
 
-  const domPath = (path) => `el${path.map((index) => `.childNodes[${index}]`).join('')}`;
+  const domPath = (path) => `${rootName}${path.map((index) => `.childNodes[${index}]`).join('')}`;
 
   const visit = (ops, ownerPath) => {
     for (const op of ops) {
       if (op.kind === 'element') {
         visit(op.ops, op.path);
+        continue;
+      }
+      if (op.kind === 'component') {
+        op.args.forEach(addExpression);
+        usesComponents = true;
+        lines.push(
+          `    pushOff(offs, bindComponent(components[${JSON.stringify(op.key)}], ${domPath(
+            op.path
+          )}, [${op.args.join(', ')}], ${JSON.stringify(op.hash ?? null)}));`
+        );
+        liveCount += 1;
         continue;
       }
       if (op.kind === 'dynamicAttr') {
@@ -180,7 +261,33 @@ function emitElementMode({ entry, addExpression }) {
   };
 
   visit(entry.ops, entry.path ?? []);
-  return { lines, slotLines: [], liveNodes: liveCount, slots: 0 };
+  return {
+    lines,
+    slotLines: [],
+    liveNodes: liveCount,
+    slots: 0,
+    usesComponents,
+    childCount: countChildren(entry.ops)
+  };
+}
+
+/** 片段根的直接子节点数（组件产物的形状校验用）。 */
+function countChildren(ops) {
+  return ops.filter(
+    (op) =>
+      op.kind === 'element' ||
+      op.kind === 'staticText' ||
+      op.kind === 'slotText' ||
+      op.kind === 'bindText' ||
+      op.kind === 'component'
+  ).length;
+}
+
+/** 是否含链接进来的组件（递归）。 */
+function hasComponentOp(ops) {
+  return ops.some(
+    (op) => op.kind === 'component' || (op.kind === 'element' && hasComponentOp(op.ops))
+  );
 }
 
 /** 节点模式：只给「有活内容」的节点建包装对象，其余静态节点只存在于片段里。 */

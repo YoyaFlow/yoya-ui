@@ -73,6 +73,28 @@ export declare function setAttr(
 /** Collect an unsubscribe function (ignores plain values). */
 export declare function pushOff<T>(offs: Array<() => void>, off: T): T;
 
+/** A registry entry produced by the component compiler. */
+export interface CompiledComponentEntry {
+  hash: string;
+  /** Positional writes onto the caller's embedded fragment; null means "shape mismatch, fall back". */
+  bind(root: Element, values: unknown[]): (() => void) | null;
+  /** Generic-path fallback: the original component factory. */
+  render(...values: unknown[]): unknown;
+  plan?: CompiledPlan;
+}
+
+/**
+ * Link a component call site: use the registered fragment writes when the entry hash matches and
+ * the shape check passes, otherwise fall back to the original component (and throw a descriptive
+ * error when the entry is missing entirely).
+ */
+export declare function bindComponent(
+  entry: CompiledComponentEntry | undefined,
+  slot: Element | null,
+  values?: unknown[],
+  expectedHash?: string | null
+): () => void;
+
 /**
  * Element-mode list reconciliation: element array plus a key → index map, reusing
  * rows, rebuilding in place, removing leavers and moving only what changed.

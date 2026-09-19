@@ -47,7 +47,9 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-describe('renderExamplesIndex', () => {
+// 每个用例都要在 jsdom 里渲染整站索引（100+ 用例），满载并行时贴近 vitest 默认 5s 超时，
+// 与 structure.test.js 同一处理：显式放宽（单跑仍在秒级）。
+describe('renderExamplesIndex', { timeout: 30000 }, () => {
   it('groups yoya-ui imports into one import statement in source panels', () => {
     const source = componentSource(() => null, ['div', 'vText']);
 

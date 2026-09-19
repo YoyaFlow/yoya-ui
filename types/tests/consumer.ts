@@ -461,16 +461,22 @@ void asyncVSkeleton;
 // ---------------------------------------------------------------------------
 
 import {
+  buildComponentRegistry,
+  compileComponent,
+  componentKeyOf,
   compileFile,
   compileSource,
   elementWhitelistOf,
   reportCoverage,
   runCli,
+  type ComponentRegistry,
+  type ComponentRegistryResult,
   type CompileResult,
   type CoverageReport
 } from '@yoyaflow/yoya-ui/compiler';
 import {
   bindClass,
+  bindComponent,
   bindText,
   cloneFragment,
   createElementList,
@@ -513,6 +519,26 @@ const list = createElementList<{ id: number }>(element, (row) => row.id);
 list.sync([{ id: 1 }], (row): CompiledRow => ({ el: element, data: row, destroy: () => {} }));
 const first: Element | undefined = list.elements()[0];
 
+const componentResult: CompileResult = compileComponent({
+  source: '',
+  file: 'src/components/status-dot.js',
+  export: 'StatusDot',
+  core
+});
+const registryResult: ComponentRegistryResult = buildComponentRegistry({
+  entries: [{ file: 'src/components/status-dot.js', export: 'StatusDot' }],
+  dir: '.yoya/components',
+  core
+});
+const componentRegistry: ComponentRegistry = registryResult.registry;
+const componentKey: string = componentKeyOf('src/components/status-dot.js', 'StatusDot');
+const linked: (() => void) | null = bindComponent(
+  { hash: 'h', bind: () => () => {}, render: () => null },
+  element,
+  [{}],
+  'h'
+);
+
 void written;
 void coverage;
 void exitCode;
@@ -520,3 +546,7 @@ void whitelist;
 void plan;
 void offs;
 void first;
+void componentResult;
+void componentRegistry;
+void componentKey;
+void linked;

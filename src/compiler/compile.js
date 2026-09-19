@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { analyzeSource } from './analyze.js';
 import { renderModule } from './emit.js';
+import { lookupComponent } from './component-key.js';
 
 /** 生成模块默认从同目录的运行期入口拿钩子（即 `yoya-ui/compiler-runtime` 的产物位置）。 */
 export const DEFAULT_RUNTIME = './compiler-runtime.js';
@@ -41,7 +42,13 @@ export function compileSource(options) {
     thin = false,
     core,
     runtime = DEFAULT_RUNTIME,
-    whitelist
+    whitelist,
+    components = null,
+    componentsSpecifier,
+    kind = 'row',
+    scopeSpecifier = null,
+    paramsSource = '',
+    hash = null
   } = options;
 
   const registry = whitelist ?? elementWhitelistOf(core);
@@ -53,21 +60,52 @@ export function compileSource(options) {
     plan: null,
     module: null,
     scope: [],
-    bails: []
+    bails: [],
+    factory: null,
+    ops: null,
+    hash: null
   };
 
-  const analysis = analyzeSource(source, { fn, whitelist: registry });
+  // 调用点链接：`child(Imported(...))` 命中注册表 → 生成链接代码；未命中 → 今天的通用路径
+  const resolveComponent = components
+    ? (name, importInfo) =>
+        importInfo
+          ? lookupComponent(components, {
+              file,
+              specifier: importInfo.specifier,
+              imported: importInfo.imported
+            })
+          : null
+    : null;
+
+  const analysis = analyzeSource(source, { fn, whitelist: registry, resolveComponent });
   result.bails = analysis.bails;
   if (!analysis.entry || result.bails.length > 0) {
     return result;
   }
 
   try {
-    const rendered = renderModule({ core, entry: analysis.entry, mode, thin, file, fn, runtime });
+    const rendered = renderModule({
+      core,
+      entry: analysis.entry,
+      mode,
+      thin,
+      file,
+      fn,
+      runtime,
+      kind,
+      componentsSpecifier,
+      scopeSpecifier,
+      paramsSource,
+      hash
+    });
     result.compiled = true;
     result.plan = rendered.plan;
     result.module = rendered.module;
     result.scope = rendered.scope;
+    result.factory = analysis.entry.factory;
+    result.ops = analysis.entry.ops;
+    result.hash = hash;
   } catch (error) {
     result.bails = [{ reason: `生成失败：${error.message}`, at: null }];
   }

@@ -165,7 +165,50 @@ export function createRowFactory(scope) {
 - **无构建环境**：不跑编译器就是今天的通用路径，行为与体积都不变。
 - **区域 / 行内 `keyed` / 组件槽**：属于动态结构，一律 bail，避免语义漂移。
 
-## 7. 相关文档
+## 7. 组件级片段链接（第一档：叶子组件）
+
+组件也可以当编译单元：把组件的**视图表达式**编成「片段 + 位置写」，登记进组件注册表；
+调用点只做**链接**——`cell.child(StatusDot(row.dot))` 命中注册表就生成「取片段 + 实例化」，
+未命中（动态取、跨包、未登记）照旧走今天的运行时构造。
+
+```js
+import { buildComponentRegistry } from '@yoyaflow/yoya-ui/compiler';
+
+buildComponentRegistry({
+  entries: [
+    { file: 'src/components/status-dot.js', export: 'StatusDot' },
+    { file: 'src/components/status-tag.js', export: 'StatusTag' }
+  ],
+  dir: 'src/generated/components',
+  core
+});
+```
+
+产物都是可提交、可缓存的普通文件：每个组件一个实例化模块（`bind(root, values)` + 通用路径回落的
+`render(...)`）、一个注册表模块（`components[<键>]`）、一份**纯数据**注册表 JSON
+（键 = 模块路径#导出名，含 `hash` / 片段 ops / 片段 HTML）。调用方编译时传
+`components: <注册表数据>`，生成的代码只 import 注册表模块。
+
+第一档能编什么（都是**叶子**、结构恒定）：
+
+| 形态       | 写法                                | 说明                                                          |
+| ---------- | ----------------------------------- | ------------------------------------------------------------- |
+| A 薄工厂   | `return span((dot) => …)`           | 视图表达式原样搬进编译单元                                    |
+| B 对象组件 | `return { render() { return …; } }` | 只允许 `render` 一个成员（要保留组件对象 / 命令方法的暂不编） |
+| vNode      | `return vNode(() => …)`             | setup 只 return 视图、不碰 api（命令方法同上）                |
+
+不编的（调用点因此照旧走通用路径）：收 children 的容器组件（下一档，与票 42 的槽一起做）、
+带状态 / 命令方法的组件、结构分支、用模块私有辅助（非 import 绑定）的组件、跨包组件。
+
+**回落是两层的**：构建期未命中 → 调用点根本不链接；运行期 `hash` 对不上（注册表与调用方不是
+同一次构建）或形状校验不通过 → 用组件原模块重建这一棵 DOM 替换占位子树，
+「片段与数据不符」不会静默发生。`hash` = 组件函数源码的内容哈希。
+
+一个已知口径差异：通用路径的 DOM 属性顺序跟随 builder 的**调用顺序**，编译路径是 `toHTML()`
+的**规范顺序**（属性按名字排序，见 [`ssr.md`](ssr.md) §8.1）；两者语义相同、`outerHTML` 可能不同——
+编译路径与框架的规范序列化逐字节一致，顺序差异记在票 41。
+
+## 8. 相关文档
 
 - [`component-authoring.md`](component-authoring.md)：组件三种形态与第三方组件契约；
 - [`ssr.md`](ssr.md)：序列化规范、hydrate 与收养既有 DOM；

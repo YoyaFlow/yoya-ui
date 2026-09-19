@@ -20,3 +20,15 @@ export { analyzeSource, freeIdentifiers } from './analyze.js';
 export { renderModule } from './emit.js';
 export { reportCoverage } from './report.js';
 export { runCli, runCliIfMain } from './cli.js';
+export {
+  componentKeyOf,
+  lookupComponent,
+  normalizeModulePath,
+  resolveComponentKey
+} from './component-key.js';
+export {
+  buildComponentRegistry,
+  compileComponent,
+  findViewExpression,
+  REGISTRY_VERSION
+} from './registry.js';

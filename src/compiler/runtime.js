@@ -122,6 +122,45 @@ export function pushOff(offs, off) {
 }
 
 /**
+ * 链接组件的运行期入口（生成代码调用它）。
+ *
+ * 注册表条目 `{ hash, bind(root, values) → destroy|null, render(...values) → ViewNode }`：
+ * - 版本哈希一致、且 `bind` 的形状校验通过 → 用嵌入的片段 + 位置写，返回退订函数；
+ * - 哈希不符、形状不符、条目缺失 → 走**通用路径回落**（`render` 用原组件重建 DOM 替换占位），
+ *   绝不留下「片段与数据不符」的静默错误；连原组件都拿不到时抛出可定位的错误。
+ */
+export function bindComponent(entry, slot, values = [], expectedHash = null) {
+  if (
+    entry &&
+    typeof entry.bind === 'function' &&
+    (expectedHash === null || entry.hash === expectedHash)
+  ) {
+    const dispose = entry.bind(slot, values);
+    if (typeof dispose === 'function') {
+      return dispose;
+    }
+  }
+
+  if (entry && typeof entry.render === 'function') {
+    let node = entry.render(...values);
+    // 形态 B 的组件对象：render() 才拿得到视图
+    if (node && typeof node.render === 'function' && typeof node.renderDom !== 'function') {
+      node = node.render();
+    }
+    const element = typeof node?.renderDom === 'function' ? node.renderDom() : node;
+    if (slot && element && slot.parentNode) {
+      slot.replaceWith(element);
+    }
+    return typeof node?.destroy === 'function' ? () => node.destroy() : () => {};
+  }
+
+  throw new Error(
+    'yoya-ui: the compiled component is missing from the component registry ' +
+      '(重新生成组件注册表，或让调用方回落通用路径)'
+  );
+}
+
+/**
  * 最长递增子序列（返回下标）：位置本来就单调的行原地不动，只搬真正换位的行。
  * 没有它，交换相隔很远的两行会把中间所有行重插一遍（票 39 实测 +247%~+561%）。
  */

@@ -78,7 +78,7 @@ function flattenChain(expression) {
 }
 
 /** 顶层找目标函数：函数声明或 `const fn = (…) => …` / `const fn = function () {}`。 */
-function findBuilderFunction(ast, name) {
+export function findBuilderFunction(ast, name) {
   for (const statement of ast.program.body) {
     // `export function buildRow(…)` / `export const buildRow = …`
     const node =
@@ -102,6 +102,32 @@ function findBuilderFunction(ast, name) {
     }
   }
   return null;
+}
+
+/**
+ * 收集 import 绑定：本地名 → `{ specifier, imported }`。
+ * 调用点链接靠它把 `StatusDot(...)` 解析成「模块路径#导出名」——解析不出就回落，不猜。
+ */
+export function collectImports(ast) {
+  const imports = new Map();
+
+  for (const statement of ast.program.body) {
+    if (statement.type !== 'ImportDeclaration') {
+      continue;
+    }
+    for (const item of statement.specifiers) {
+      if (item.type === 'ImportSpecifier') {
+        imports.set(item.local.name, {
+          specifier: statement.source.value,
+          imported: item.imported.name
+        });
+      } else if (item.type === 'ImportNamespaceSpecifier') {
+        imports.set(item.local.name, { specifier: statement.source.value, imported: '*' });
+      }
+    }
+  }
+
+  return imports;
 }
 
 /**
@@ -161,6 +187,7 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
 export function analyzeSource(source, options = {}) {
   const fnName = options.fn ?? 'buildRow';
   const whitelist = options.whitelist ?? new Set();
+  const resolveComponent = options.resolveComponent ?? null;
   const bails = [];
 
   let ast;
@@ -174,6 +201,7 @@ export function analyzeSource(source, options = {}) {
   const recordBail = (reason, node) => {
     bails.push({ reason, at: node ? slice(node).slice(0, 80) : null });
   };
+  const imports = collectImports(ast);
 
   /** 分析一条节点调用 → op（不认识就 bail 并跳过）。 */
   function classifyCall(call, ops) {
@@ -217,15 +245,44 @@ export function analyzeSource(source, options = {}) {
         return;
       }
       // 组件调用（形态 A/B/vNode 或未编译的工厂）：不猜，直接 bail
-      if (
-        argument.type === 'CallExpression' &&
-        argument.callee?.type === 'Identifier' &&
-        !whitelist.has(argument.callee.name) &&
-        argument.callee.name !== 'String' &&
-        argument.callee.name !== 'vText'
-      ) {
-        recordBail(`child() 里是组件调用（未编译）：${argument.callee.name}`, call);
-        return;
+      if (argument.type === 'CallExpression' && argument.callee?.type === 'Identifier') {
+        const callee = argument.callee.name;
+        const isComponentCallee =
+          !whitelist.has(callee) && callee !== 'String' && callee !== 'vText';
+        if (isComponentCallee) {
+          // 注册表命中 → 链接（片段就地嵌入 + 运行期实例化）；未命中 → 今天的通用路径
+          const linked = resolveComponent?.(callee, imports.get(callee), argument);
+          if (linked) {
+            ops.push({
+              kind: 'component',
+              key: linked.key,
+              hash: linked.hash,
+              entryFactory: linked.factory,
+              entryOps: linked.ops,
+              args: argument.arguments.map(slice)
+            });
+            return;
+          }
+          recordBail(`child() 里是组件调用（未编译）：${callee}`, call);
+          return;
+        }
+
+        // 白名单内的元素工厂当 child 参数（`cell.child(span((s) => …))`）：与前缀写法
+        // `cell.span(…)` 同义，编成子元素——当成文本写就是静默误编。
+        if (whitelist.has(callee)) {
+          const setup = argument.arguments[0];
+          if (setup?.type === 'ArrowFunctionExpression' || setup?.type === 'FunctionExpression') {
+            const param = setup.params[0]?.name;
+            if (!param) {
+              recordBail(`子工厂 ${callee} 的 setup 没有参数`, call);
+              return;
+            }
+            ops.push({ kind: 'element', factory: callee, ops: analyzeSetup(setup, param) });
+            return;
+          }
+          recordBail(`child() 里的元素工厂 ${callee} 不是 setup 回调形式`, call);
+          return;
+        }
       }
       if (argument.type === 'CallExpression' && argument.callee?.name === 'String') {
         ops.push({ kind: 'slotText', expression: slice(argument) });
@@ -416,7 +473,12 @@ function assignPaths(ops, basePath) {
       index += 1;
       continue;
     }
-    if (op.kind === 'staticText' || op.kind === 'slotText' || op.kind === 'bindText') {
+    if (
+      op.kind === 'staticText' ||
+      op.kind === 'slotText' ||
+      op.kind === 'bindText' ||
+      op.kind === 'component'
+    ) {
       op.path = [...basePath, index];
       index += 1;
     }

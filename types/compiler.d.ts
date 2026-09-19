@@ -28,6 +28,11 @@ export interface CompileResult {
   /** Identifiers the generated module expects on the scope object it is given. */
   scope: string[];
   bails: CompileBail[];
+  /** Registry entries: the view factory and its pure-data ops (null when the shape bailed). */
+  factory: string | null;
+  ops: unknown[] | null;
+  /** Component artifacts only: content hash of the component function (the caller pins it). */
+  hash: string | null;
 }
 
 export interface CompileOptions {
@@ -44,6 +49,53 @@ export interface CompileOptions {
   runtime?: string;
   /** Explicit element whitelist override (defaults to the core registry). */
   whitelist?: Set<string>;
+  /** Component registry data (`buildComponentRegistry().registry`) for call-site linking. */
+  components?: ComponentRegistry | null;
+  /** Specifier the generated caller imports the registry module from. */
+  componentsSpecifier?: string;
+}
+
+/** One component compile unit: where the component lives and which export it is. */
+export interface ComponentEntry {
+  file: string;
+  export: string;
+}
+
+export interface ComponentRegistryEntry {
+  file: string;
+  export: string;
+  hash: string;
+  factory: string;
+  /** Pure-data ops of the component subtree; the caller embeds them into its own fragment. */
+  ops: unknown[];
+  plan: { html: string; liveNodes: number; slots: number };
+  scope: string[];
+  /** The generated instantiation module, relative to the registry module. */
+  entry: string;
+}
+
+/** Pure-data component registry (serializable, cacheable, no instances). */
+export interface ComponentRegistry {
+  version: number;
+  runtime: string;
+  components: Record<string, ComponentRegistryEntry>;
+}
+
+export interface ComponentRegistryOptions {
+  entries: ComponentEntry[];
+  /** Output directory for the instantiation modules plus the registry module / data. */
+  dir: string;
+  core: unknown;
+  runtime?: string;
+  registryName?: string;
+  dataName?: string;
+  whitelist?: Set<string>;
+}
+
+export interface ComponentRegistryResult {
+  registry: ComponentRegistry;
+  written: string[];
+  skipped: Array<{ key: string; bails: CompileBail[] }>;
 }
 
 export type CompileFileOptions = CompileOptions & { file: string; out?: string };
@@ -89,6 +141,25 @@ export declare function analyzeSource(
 ): { entry: unknown | null; bails: CompileBail[] };
 
 export declare function freeIdentifiers(expressionSource: string, bound?: Set<string>): Set<string>;
+
+/** Compile one leaf component (shapes A / B / vNode without commands) into a link artifact. */
+export declare function compileComponent(
+  options: CompileOptions & { file: string; export: string; scopeSpecifier?: string | null }
+): CompileResult;
+
+/** Compile a set of leaf components and write the registry module + pure-data registry. */
+export declare function buildComponentRegistry(
+  options: ComponentRegistryOptions
+): ComponentRegistryResult;
+
+/** Registry key helpers: `<module path>#<export>` (call sites resolve relative specifiers). */
+export declare function componentKeyOf(file: string, exportName: string): string;
+export declare function resolveComponentKey(options: {
+  file: string;
+  specifier: string;
+  export: string;
+}): string;
+export declare function normalizeModulePath(path: string): string;
 
 export declare function reportCoverage(
   options: Omit<CompileOptions, 'source'> & { root: string; extensions?: string[] }

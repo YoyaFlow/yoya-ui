@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   bindClass,
+  bindComponent,
   bindText,
   cloneFragment,
   createElementList,
@@ -8,6 +9,7 @@ import {
   setAttr
 } from './runtime.js';
 import { applyAttribute } from '../core/node.js';
+import { span } from '../html/index.js';
 import { computed, ref } from '../core/signals/handle.js';
 
 describe('cloneFragment', () => {
@@ -138,6 +140,82 @@ describe('pushOff', () => {
     expect(pushOff(offs, off)).toBe(off);
     expect(pushOff(offs, null)).toBeNull();
     expect(offs).toEqual([off]);
+  });
+});
+
+describe('bindComponent', () => {
+  const mountSlot = (html) => {
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    return { host, slot: host.firstElementChild };
+  };
+
+  it('uses the registered binder when the version hash matches', () => {
+    const { slot } = mountSlot('<span class="dot"></span>');
+    const calls = [];
+    const off = () => {};
+    const entry = {
+      hash: 'h1',
+      bind: (root, values) => {
+        calls.push([root, values]);
+        return off;
+      }
+    };
+
+    expect(bindComponent(entry, slot, [{ tone: 'x' }], 'h1')).toBe(off);
+    expect(calls).toEqual([[slot, [{ tone: 'x' }]]]);
+  });
+
+  it('falls back to the generic component when the binder refuses the shape', () => {
+    const { host, slot } = mountSlot('<span class="stale"></span>');
+    const entry = {
+      hash: 'h1',
+      bind: () => null,
+      render: (props) => span((dot) => dot.className('dot').child(props.label))
+    };
+
+    const off = bindComponent(entry, slot, [{ label: 'x' }], 'h1');
+
+    expect(slot.isConnected).toBe(false);
+    expect(host.innerHTML).toBe('<span class="dot">x</span>');
+    expect(typeof off).toBe('function');
+  });
+
+  it('falls back when the registry entry is from another build', () => {
+    const { host, slot } = mountSlot('<span class="stale"></span>');
+    let usedBinder = false;
+    const entry = {
+      hash: 'next',
+      bind: () => {
+        usedBinder = true;
+        return () => {};
+      },
+      render: (props) => span((dot) => dot.child(props.label))
+    };
+
+    bindComponent(entry, slot, [{ label: 'v2' }], 'previous');
+
+    expect(usedBinder).toBe(false);
+    expect(host.innerHTML).toBe('<span>v2</span>');
+  });
+
+  it('renders shape B component objects on the fallback path', () => {
+    const { host, slot } = mountSlot('<span class="stale"></span>');
+    const entry = {
+      hash: 'h1',
+      bind: () => null,
+      render: (props) => ({ render: () => span((pill) => pill.child(props.label)) })
+    };
+
+    bindComponent(entry, slot, [{ label: 'pill' }], 'h1');
+
+    expect(host.innerHTML).toBe('<span>pill</span>');
+  });
+
+  it('throws a descriptive error when the entry cannot be resolved at all', () => {
+    const { slot } = mountSlot('<span></span>');
+
+    expect(() => bindComponent(undefined, slot, [], 'h1')).toThrow(/component registry/i);
   });
 });
 

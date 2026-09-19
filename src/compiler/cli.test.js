@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
 import { runCli } from './index.js';
@@ -61,5 +62,32 @@ describe('runCli', () => {
 
     const unknown = record();
     expect(await runCli(['--nope'], { ...unknown, core })).toBe(1);
+  });
+
+  it('builds a component registry from an entries file', async () => {
+    const registryDir = join(root, 'registry');
+    const entriesFile = join(root, 'entries.json');
+    const componentFile = join(import.meta.dirname, 'fixtures/status-dot.js');
+    const runtime = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
+    writeFileSync(
+      entriesFile,
+      JSON.stringify([
+        { file: componentFile, export: 'StatusDot' },
+        { file: componentFile, export: 'StatusBox' }
+      ])
+    );
+    const io = record();
+
+    const code = await runCli(
+      ['--registry', registryDir, '--entries', entriesFile, '--runtime', runtime, '--json'],
+      { ...io, core }
+    );
+
+    expect(code).toBe(0);
+    const summary = JSON.parse(io.lines.join('\n'));
+    expect(summary.keys).toHaveLength(1);
+    expect(summary.skipped.map((item) => item.key)).toHaveLength(1);
+    expect(existsSync(join(registryDir, 'components.registry.js'))).toBe(true);
+    expect(existsSync(join(registryDir, 'components.registry.json'))).toBe(true);
   });
 });

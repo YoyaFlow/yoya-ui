@@ -7,8 +7,10 @@
  * 退出码：0 = 成功；1 = 用法错误；2 = 该形状回落通用路径（不是错误，但构建脚本要能分辨）。
  */
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { compileFile, summarizeCompile } from './compile.js';
+import { buildComponentRegistry } from './registry.js';
 import { formatCoverage, reportCoverage } from './report.js';
 
 const VALUE_OPTIONS = new Set([
@@ -19,13 +21,18 @@ const VALUE_OPTIONS = new Set([
   'core',
   'runtime',
   'report',
-  'extensions'
+  'extensions',
+  'registry',
+  'entries',
+  'components',
+  'components-specifier'
 ]);
 
 const HELP = `yoya-ui 编译器（构建期）
 
 用法：
   yoya-compiler --file <源文件> [--fn buildRow] [--mode element|node] [--out <产物>]
+  yoya-compiler --registry <目录> --entries <组件清单.json>
   yoya-compiler --report <目录> [--fn buildRow] [--json]
 
 选项：
@@ -37,6 +44,10 @@ const HELP = `yoya-ui 编译器（构建期）
   --core <模块>        提供工厂与 htmls / svgs 的核心入口（默认库自身 core）
   --runtime <模块>     生成代码里 import 运行期钩子的路径
   --report <目录>      覆盖率扫描：输出可编 / 回落占比与 bail 原因直方图
+  --registry <目录>    构建组件注册表（编译清单里的叶子组件 + 写实例化模块）
+  --entries <清单>     组件清单 JSON：[{ "file": "src/components/x.js", "export": "StatusDot" }]
+  --components <JSON>  调用点链接用的注册表数据（buildComponentRegistry 产出的 *.json）
+  --components-specifier <模块>  生成代码里 import 注册表模块的写法（默认 ./components.registry.js）
   --extensions <.js,.mjs>  扫描的扩展名（逗号分隔）
   --json               以 JSON 输出摘要（脚本消费）
   --help               这份帮助
@@ -113,6 +124,29 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   const fn = options.values.get('fn') ?? 'buildRow';
   const mode = options.values.get('mode') ?? 'element';
 
+  const registryDir = options.values.get('registry');
+  if (registryDir) {
+    const entriesFile = options.values.get('entries');
+    if (!entriesFile) {
+      error('--registry 需要 --entries <清单 JSON>（[{ "file": …, "export": … }]）');
+      return 1;
+    }
+    const entries = JSON.parse(readFileSync(entriesFile, 'utf8'));
+    const built = buildComponentRegistry({
+      entries,
+      dir: registryDir,
+      core,
+      runtime: options.values.get('runtime')
+    });
+    const keys = Object.keys(built.registry.components);
+    log(
+      asJson
+        ? JSON.stringify({ dir: registryDir, keys, skipped: built.skipped }, null, 2)
+        : `组件注册表已生成：${keys.length} 个组件，跳过 ${built.skipped.length} 个 → ${registryDir}`
+    );
+    return 0;
+  }
+
   const reportDir = options.values.get('report');
   if (reportDir) {
     const extensions = options.values.get('extensions');
@@ -135,6 +169,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   }
 
   const out = options.values.get('out');
+  const componentsFile = options.values.get('components');
   const result = compileFile({
     file,
     out,
@@ -142,7 +177,9 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
     mode,
     thin: options.flags.has('thin'),
     core,
-    runtime: options.values.get('runtime')
+    runtime: options.values.get('runtime'),
+    components: componentsFile ? JSON.parse(readFileSync(componentsFile, 'utf8')) : null,
+    componentsSpecifier: options.values.get('components-specifier')
   });
   const summary = summarizeCompile(result);
 

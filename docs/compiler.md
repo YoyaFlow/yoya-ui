@@ -182,7 +182,56 @@ set of attribute rules.
 - **Regions / row-level `keyed` / component slots**: dynamic structure, always bails to avoid
   semantic drift.
 
-## 7. Related documents
+## 7. Component-level fragment linking (tier 1: leaf components)
+
+Components can be compile units too: a component's **view expression** is compiled into
+"fragment + positional writes" and registered in the component registry, while call sites only
+**link** — `cell.child(StatusDot(row.dot))` becomes "take fragment + instantiate" when the registry
+has it, and keeps today's runtime construction when it does not (dynamic lookups, cross-package,
+unregistered).
+
+```js
+import { buildComponentRegistry } from '@yoyaflow/yoya-ui/compiler';
+
+buildComponentRegistry({
+  entries: [
+    { file: 'src/components/status-dot.js', export: 'StatusDot' },
+    { file: 'src/components/status-tag.js', export: 'StatusTag' }
+  ],
+  dir: 'src/generated/components',
+  core
+});
+```
+
+The artifacts are ordinary committable files: one instantiation module per component
+(`bind(root, values)` plus a generic-path `render(...)` fallback), a registry module
+(`components[<key>]`), and a **pure-data** registry JSON (key = module path#export, carrying `hash`,
+the fragment ops and the fragment HTML). Caller compilation takes `components: <registry data>` and
+the generated module imports only the registry module.
+
+What tier 1 compiles (leaf only, constant structure):
+
+| Shape              | Source                              | Notes                                                                                                  |
+| ------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| A thin factory     | `return span((dot) => …)`           | The view expression is carried over verbatim                                                           |
+| B object component | `return { render() { return …; } }` | Only a single `render` member (components that must keep their object / commands are not compiled yet) |
+| vNode              | `return vNode(() => …)`             | setup only returns the view, never touches the api (commands as above)                                 |
+
+Not compiled (so call sites keep using the generic path): container components that take children
+(next tier, together with ticket 42's slots), components with state or command methods, structural
+branching, components using module-private helpers (non-import bindings), cross-package components.
+
+**Two layers of fallback**: a build-time miss means the call site is not linked at all; a runtime
+`hash` mismatch (registry and caller from different builds) or a failed shape check rebuilds that
+subtree from the original component module, so "fragment does not match the data" can never happen
+silently. `hash` is the content hash of the component function source.
+
+Known reporting difference: the generic path's DOM attribute order follows the builder's **call
+order**, while the compiled path uses `toHTML()`'s **canonical order** (attributes sorted by name,
+[`ssr.md`](ssr.md) §8.1). Same semantics, possibly different `outerHTML`; the compiled path is byte-identical to the
+framework's canonical serialization, and the ordering difference is recorded in ticket 41.
+
+## 8. Related documents
 
 - [`component-authoring.md`](component-authoring.md): the three component shapes and third-party contracts;
 - [`ssr.md`](ssr.md): serialization rules, hydrate and adopting existing DOM;
