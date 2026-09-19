@@ -33,6 +33,7 @@ const built = buildComponentRegistry({
 
 const DOT_KEY = `${componentFile}#StatusDot`;
 const TAG_KEY = `${componentFile}#StatusTag`;
+const themeFile = posix.join('src/compiler/fixtures/theme-tag.js');
 
 const compileCaller = (options) =>
   compileSource({
@@ -207,5 +208,38 @@ describe('call-site linking', () => {
     row.dot.label.value = '失效后仍活';
     expect(compiledRow.el.querySelector('.status-dot').textContent).toBe('失效后仍活');
     compiledRow.destroy();
+  });
+});
+
+describe('static values in linked components', () => {
+  it('folds library constants and theme helpers before linking the fragment', () => {
+    const registry = buildComponentRegistry({
+      entries: [{ file: themeFile, export: 'ThemeTag' }],
+      dir: join(workDir, 'theme'),
+      core,
+      runtime: runtimeUrl
+    }).registry;
+
+    const compiled = compileSource({
+      source:
+        "import { tr } from '../../yoya.core.js';\n" +
+        "import { ThemeTag } from './theme-tag.js';\n" +
+        'export function buildRow(row) {\n' +
+        '  return tr((line) => line.td((cell) => cell.child(ThemeTag(row.tag))));\n' +
+        '}\n',
+      file: callerFile,
+      fn: 'buildRow',
+      core,
+      runtime: runtimeUrl,
+      components: registry,
+      componentsSpecifier: './components.registry.js'
+    });
+
+    expect(compiled.bails).toEqual([]);
+    expect(compiled.compiled).toBe(true);
+    // 库内常量 / 主题助手折成字面量后才进得了片段（不折叠时这里既没有类名也没有样式）
+    expect(compiled.plan.html).toContain('class="yoya-component yoya-theme-tag"');
+    expect(compiled.plan.html).toContain('var(--yoya-color-surface, #ffffff)');
+    expect(compiled.module).toContain(`components[${JSON.stringify(`${themeFile}#ThemeTag`)}]`);
   });
 });

@@ -66,6 +66,15 @@ Compiles (constant structure, classifiable values):
 | `line.on('click', handler)`       | Plain `addEventListener`                                  |
 | `cell.span(...)` / `cell.td(...)` | Recursively compiled child elements (whitelist)           |
 
+**Build-time constant folding**: a static value is not limited to a literal. Three shapes that
+"compute to the same value at build time" also fold — a module-level `const X = 'literal'`
+(including template concatenation), the library constant `componentClass`, and the library theme
+helpers `themeValue()` / `themeBorder()` (their arguments must be static too). Folding calls the
+**same implementation**, it does not copy the formula; and only these names imported from
+`components/shared.js` fold — a local function of the same name, or an imported name shadowed by a
+parameter, is left alone (it bails as before), because guessing a value is exactly how an unknown
+value would end up baked into a static fragment.
+
 Falls back (records the reason, the whole shape uses the generic path):
 
 | Construct                                                        | Reason                                                                                                                                                                                     |
@@ -251,6 +260,12 @@ What tier 1 compiles (leaf only, constant structure):
 Not compiled (so call sites keep using the generic path): container components that take children
 (next tier, together with ticket 42's slots), components with state or command methods, structural
 branching, components using module-private helpers (non-import bindings), cross-package components.
+
+A component compile unit carries the original module's `import` declarations and module-level `const`
+declarations into the synthetic source: build-time constant folding (module literals,
+`componentClass`, `themeValue` / `themeBorder` — see §3) reads them, otherwise only hard-coded
+literals inside a component could ever compile. Functions and classes outside the view are not
+analysed.
 
 **Two layers of fallback**: a build-time miss means the call site is not linked at all; a runtime
 `hash` mismatch (registry and caller from different builds) or a failed shape check rebuilds that

@@ -6,6 +6,7 @@
  */
 import { parse, parseExpression } from '@babel/parser';
 import { optionKindOf } from '../core/setup-keys.js';
+import { STATIC_LIBRARY_EXPORTS, isStaticLibraryModule } from './static-values.js';
 
 /** 节点级 API：这些不是子工厂，而是对当前节点自身的操作。 */
 export const NODE_API = new Set([
@@ -77,6 +78,178 @@ function textPositionProblemOf(node) {
     return '对象：文本位置只接受字符串 / 数字 / 值句柄';
   }
   return null;
+}
+
+/**
+ * 收集「局部绑定」：函数形参 + 函数内的声明（模块级 `const` 不算——那是要折的常量）。
+ *
+ * 有同名局部绑定时一律不折：调用方可能是另一个函数，折错就是把不知道的值编成静态片段。
+ */
+function collectLocalBindings(ast) {
+  const names = new Set();
+
+  const addPattern = (pattern) => {
+    if (!pattern) {
+      return;
+    }
+    if (pattern.type === 'Identifier') {
+      names.add(pattern.name);
+      return;
+    }
+    if (pattern.type === 'ObjectPattern') {
+      pattern.properties.forEach((property) => addPattern(property.value ?? property.argument));
+      return;
+    }
+    if (pattern.type === 'ArrayPattern') {
+      pattern.elements.forEach(addPattern);
+      return;
+    }
+    if (pattern.type === 'AssignmentPattern') {
+      addPattern(pattern.left);
+      return;
+    }
+    if (pattern.type === 'RestElement') {
+      addPattern(pattern.argument);
+    }
+  };
+
+  const visit = (node, nested) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach((child) => visit(child, nested));
+      return;
+    }
+
+    if (
+      node.type === 'FunctionDeclaration' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'ArrowFunctionExpression'
+    ) {
+      node.params?.forEach(addPattern);
+      visit(node.body, true);
+      return;
+    }
+
+    if (node.type === 'VariableDeclaration') {
+      if (nested) {
+        node.declarations.forEach((declarator) => {
+          addPattern(declarator.id);
+          visit(declarator.init, true);
+        });
+      }
+      return;
+    }
+
+    Object.keys(node).forEach((key) => {
+      if (key === 'loc' || key === 'start' || key === 'end') {
+        return;
+      }
+      visit(node[key], nested);
+    });
+  };
+
+  visit(ast.program.body, false);
+  return names;
+}
+
+/** 折叠上下文：模块级字面量常量、导入绑定、局部绑定（同名不折）。 */
+function createStaticContext(ast, imports) {
+  const consts = new Map();
+
+  ast.program.body.forEach((statement) => {
+    if (statement.type !== 'VariableDeclaration' || statement.kind !== 'const') {
+      return;
+    }
+    statement.declarations.forEach((declarator) => {
+      if (declarator.id?.type === 'Identifier' && declarator.init) {
+        consts.set(declarator.id.name, declarator.init);
+      }
+    });
+  });
+
+  return { imports, consts, local: collectLocalBindings(ast), resolving: new Set() };
+}
+
+/** 名字是不是库内静态助手（且确实是从 `components/shared.js` 导入的）。 */
+function staticLibraryOf(name, context) {
+  const record = context.imports.get(name);
+  if (!record || !isStaticLibraryModule(record.specifier)) {
+    return null;
+  }
+  return STATIC_LIBRARY_EXPORTS.get(record.imported) ?? null;
+}
+
+/**
+ * 构建期静态值：字面量，外加**可折叠**的模块级字面量常量、库内常量与库内主题助手。
+ *
+ * 折出来的值与运行期那份实现同源（调用的是同一个函数 / 同一个常量），不是抄一份公式；
+ * 认不出的形状照旧返回「不是字面量」，由调用方的 bail 规则接管。
+ */
+function staticValueOf(node, context) {
+  const direct = literalOf(node);
+  if (direct.literal || !context) {
+    return direct;
+  }
+
+  if (node.type === 'Identifier') {
+    if (context.local.has(node.name)) {
+      return direct;
+    }
+    const helper = staticLibraryOf(node.name, context);
+    if (helper?.kind === 'value') {
+      return { literal: true, value: helper.value };
+    }
+    const init = context.consts.get(node.name);
+    if (!init || context.resolving.has(node.name)) {
+      return direct;
+    }
+    context.resolving.add(node.name);
+    try {
+      return staticValueOf(init, context);
+    } finally {
+      context.resolving.delete(node.name);
+    }
+  }
+
+  if (node.type === 'TemplateLiteral') {
+    let text = '';
+    for (let index = 0; index < node.quasis.length; index += 1) {
+      text += node.quasis[index].value.cooked ?? '';
+      const expression = node.expressions[index];
+      if (!expression) {
+        continue;
+      }
+      const folded = staticValueOf(expression, context);
+      if (!folded.literal) {
+        return direct;
+      }
+      text += folded.value === null || folded.value === undefined ? '' : String(folded.value);
+    }
+    return { literal: true, value: text };
+  }
+
+  if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
+    if (context.local.has(node.callee.name)) {
+      return direct;
+    }
+    const helper = staticLibraryOf(node.callee.name, context);
+    if (helper?.kind !== 'call' || node.arguments.some((arg) => arg.type === 'SpreadElement')) {
+      return direct;
+    }
+    const values = [];
+    for (const argument of node.arguments) {
+      const folded = staticValueOf(argument, context);
+      if (!folded.literal) {
+        return direct;
+      }
+      values.push(folded.value);
+    }
+    return { literal: true, value: helper.fn(...values) };
+  }
+
+  return direct;
 }
 
 /** 把 `a.b(…).c(…)` 链摊平成「按执行顺序的调用 + 链首」。 */
@@ -220,6 +393,9 @@ export function analyzeSource(source, options = {}) {
     bails.push({ reason, at: node ? slice(node).slice(0, 80) : null });
   };
   const imports = collectImports(ast);
+  // 静态值折叠：字面量之外，模块级字面量常量与库内主题助手也算「构建期就知道的值」
+  const staticContext = createStaticContext(ast, imports);
+  const staticOf = (node) => staticValueOf(node, staticContext);
 
   /** 分析一条节点调用 → op（不认识就 bail 并跳过）。 */
   function classifyCall(call, ops) {
@@ -250,7 +426,7 @@ export function analyzeSource(source, options = {}) {
         return;
       }
       const argument = args[0];
-      const literal = literalOf(argument);
+      const literal = staticOf(argument);
       if (literal.literal) {
         ops.push({ kind: 'staticText', text: literal.value === null ? '' : String(literal.value) });
         return;
@@ -332,12 +508,12 @@ export function analyzeSource(source, options = {}) {
         recordBail('attr() 只用「名字 + 值」两参形式', call);
         return;
       }
-      const name = literalOf(args[0]);
+      const name = staticOf(args[0]);
       if (!name.literal || typeof name.value !== 'string') {
         recordBail('attr() 属性名不是字符串字面量', call);
         return;
       }
-      const value = literalOf(args[1]);
+      const value = staticOf(args[1]);
       if (value.literal) {
         ops.push({ kind: 'staticAttr', name: name.value, value: value.value });
         return;
@@ -349,7 +525,7 @@ export function analyzeSource(source, options = {}) {
     if (method === 'className' || method === 'class') {
       const names = [];
       for (const argument of args) {
-        const literal = literalOf(argument);
+        const literal = staticOf(argument);
         if (!literal.literal || typeof literal.value !== 'string') {
           recordBail('className() 参数不是字符串字面量', call);
           return;
@@ -365,12 +541,12 @@ export function analyzeSource(source, options = {}) {
         recordBail('toggleClass() 参数数量 != 2', call);
         return;
       }
-      const name = literalOf(args[0]);
+      const name = staticOf(args[0]);
       if (!name.literal || typeof name.value !== 'string') {
         recordBail('toggleClass() 类名不是字符串字面量', call);
         return;
       }
-      const value = literalOf(args[1]);
+      const value = staticOf(args[1]);
       if (value.literal) {
         if (value.value) {
           ops.push({ kind: 'staticClass', names: [name.value] });
@@ -387,12 +563,12 @@ export function analyzeSource(source, options = {}) {
     }
 
     if (method === 'style') {
-      const name = literalOf(args[0]);
+      const name = staticOf(args[0]);
       if (args.length !== 2 || !name.literal || typeof name.value !== 'string') {
         recordBail('style() 只用「样式名 + 值」两参形式，样式名要是字符串字面量', call);
         return;
       }
-      const value = literalOf(args[1]);
+      const value = staticOf(args[1]);
       if (value.literal) {
         ops.push({ kind: 'staticStyle', name: name.value, value: value.value });
         return;
@@ -455,7 +631,7 @@ export function analyzeSource(source, options = {}) {
         continue;
       }
 
-      const literal = literalOf(argument);
+      const literal = staticOf(argument);
       if (literal.literal) {
         elementOps.push({
           kind: 'staticText',
@@ -513,7 +689,7 @@ export function analyzeSource(source, options = {}) {
             recordBail('attrs 里有非字面量键', call);
             return false;
           }
-          const attrValue = literalOf(attr.value);
+          const attrValue = staticOf(attr.value);
           if (attrValue.literal) {
             elementOps.push({ kind: 'staticAttr', name, value: attrValue.value });
           } else {
@@ -529,7 +705,7 @@ export function analyzeSource(source, options = {}) {
             recordBail('style 里有非字面量键', call);
             return false;
           }
-          const styleValue = literalOf(style.value);
+          const styleValue = staticOf(style.value);
           if (styleValue.literal) {
             elementOps.push({ kind: 'staticStyle', name, value: styleValue.value });
           } else {
@@ -540,7 +716,7 @@ export function analyzeSource(source, options = {}) {
         continue;
       }
 
-      const value = literalOf(property.value);
+      const value = staticOf(property.value);
 
       // 整体类名要能分类：动态类名没法编译（类名顺序 / 去重都是语义），状态类有专门写法
       if (kind === 'class' && !value.literal) {

@@ -151,7 +151,19 @@ export function compileComponent(options) {
     return failed(file, exportName, view.error);
   }
 
-  const synthetic = `export function ${exportName}(${view.paramsSource}) {\n  return ${view.callSource};\n}\n`;
+  // 视图表达式原样搬进合成源码，**模块级的 import 与 const 一并带上**：静态值折叠
+  //（库内常量 / `themeValue` 这类主题助手）靠它们把值在构建期算出来，否则组件里
+  // 只剩写死的字面量能编。其它声明不搬——分析只读目标函数。
+  const carried = ast.program.body
+    .filter(
+      (statement) =>
+        statement.type === 'ImportDeclaration' ||
+        (statement.type === 'VariableDeclaration' && statement.kind === 'const')
+    )
+    .map((statement) => source.slice(statement.start, statement.end));
+  const synthetic =
+    `${carried.join('\n')}\n` +
+    `export function ${exportName}(${view.paramsSource}) {\n  return ${view.callSource};\n}\n`;
   const result = compileSource({
     source: synthetic,
     file,
