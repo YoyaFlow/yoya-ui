@@ -295,9 +295,16 @@ constructor is read exactly like a setup callback — `super('<literal tag>')` p
 A constructor parameter appearing in `applyComponentSetup(this, setup)` (or `this.child(setup)`) is recorded
 as a **content position**:
 
-- the artifact only covers usages **without content** — `bind` carries a content guard and returns `null`
-  as soon as the caller passes content, so the call site falls back to the generic path (content is never
-  silently dropped, see §7's two fallback layers);
+- **statically readable content is inlined at build time**: literal text, a builder callback
+  (`vCard((card) => card.span('text'))`) and whitelisted element factories (`vCard(span('x'))`) land
+  _in place_ in the caller's fragment at the content position, with dynamic values written positionally;
+  the generated code passes `bindComponent(…, { contentInlined: true })` to tell the artifact that both
+  the content and the shape live in the caller's fragment;
+- **anything else is simply not inlined** (a soft fallback): dynamic values (`vCard(row.title)`), component
+  calls and unrecognised shapes are never half-inlined — the content arguments are still passed to
+  `bindComponent`, the artifact's content guard refuses them, and the call site rebuilds with the original
+  component (content is never silently dropped, see §7's two fallback layers; the generated module's scope
+  may therefore still need symbols from the content arguments);
 - class **fields**, non-straight-line statements (`if` / assignments / module-private helper calls),
   dynamic values and events all bail: they reference instance state (`this._x`) and the artifact has no `this`.
 

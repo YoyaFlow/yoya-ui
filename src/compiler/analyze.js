@@ -437,6 +437,83 @@ export function analyzeSource(source, options = {}) {
       : null;
   }
 
+  /**
+   * 调用点的组件内容（形态 C 骨架）：从内容位置起、往后的实参都是"接到组件根上的内容"。
+   *
+   * 能**全量**静态读懂的（构建回调 / 字面量文本 / 白名单元素工厂）就交给调用方内联：片段里就在
+   * 内容位置，动态值按位置写；只要有一个读不懂，就整体不内联（软回落：链接照旧，产物拒收 →
+   * 调用方用原组件重建）——绝不半内联，也绝不把调用方整行拖下水。
+   */
+  function inlineComponentContent(linked, args) {
+    const contentOp = linked.ops?.find((op) => op.kind === 'content');
+    if (!contentOp) {
+      return null;
+    }
+
+    const from = contentOp.index ?? 0;
+    const passed = args.slice(from);
+    if (passed.length === 0 || passed.every((argument) => argument.type === 'NullLiteral')) {
+      return null; // 没带内容 / 显式 null：产物守卫放行，直接走骨架
+    }
+
+    const outerBails = bails.length;
+    const contentOps = [];
+    for (const argument of passed) {
+      const ops = contentArgumentOps(argument);
+      if (!ops) {
+        bails.length = outerBails; // 内容读不懂只是"不内联"，不是这一行编不了
+        return null;
+      }
+      contentOps.push(...ops);
+    }
+    if (contentOps.some((op) => op.kind === 'dynamicStyle' || op.kind === 'content')) {
+      bails.length = outerBails;
+      return null;
+    }
+
+    assignPaths(contentOps, []);
+    return { index: from, ops: contentOps };
+  }
+
+  /** 一个内容实参 → ops；认不出返回 null（调用方据此整体不内联）。 */
+  function contentArgumentOps(argument) {
+    const literal = staticOf(argument);
+    if (literal.literal) {
+      if (typeof literal.value === 'boolean' || literal.value === null) {
+        return null;
+      }
+      return [{ kind: 'staticText', text: String(literal.value) }];
+    }
+
+    if (argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression') {
+      const param = argument.params[0]?.name;
+      if (!param) {
+        recordBail('内容回调没有参数（拿不到组件节点）', argument);
+        return null;
+      }
+      return analyzeSetup(argument, param);
+    }
+
+    // 白名单元素工厂当内容（`vCard(span('x'))`）：与 `child(<工厂>(…))` 走同一条参数分派
+    if (
+      argument.type === 'CallExpression' &&
+      argument.callee?.type === 'Identifier' &&
+      whitelist.has(argument.callee.name)
+    ) {
+      const elementOps = analyzeElementArguments(
+        argument.arguments,
+        argument.callee.name,
+        argument
+      );
+      if (!elementOps) {
+        return null;
+      }
+      return [{ kind: 'element', factory: argument.callee.name, ops: elementOps }];
+    }
+
+    return null;
+  }
+
   /** 分析一条节点调用 → op（不认识就 bail 并跳过）。 */
   function classifyCall(call, ops) {
     const method = call.callee.property.name;
@@ -499,13 +576,17 @@ export function analyzeSource(source, options = {}) {
           // 注册表命中 → 链接（片段就地嵌入 + 运行期实例化）；未命中 → 今天的通用路径
           const linked = resolveComponent?.(callee, imports.get(callee), argument);
           if (linked) {
+            // 形态 C 的骨架带内容位置：调用方内容能**构建期内联**就内联（片段 + 位置写），
+            // 内联不了（动态值 / 认不出的写法）就留给运行期——产物会拒收并回落通用路径。
+            const content = inlineComponentContent(linked, argument.arguments);
             ops.push({
               kind: 'component',
               key: linked.key,
               hash: linked.hash,
               entryFactory: linked.factory,
               entryOps: linked.ops,
-              args: argument.arguments.map(slice)
+              args: argument.arguments.map(slice),
+              ...(content ? { content } : {})
             });
             return;
           }
@@ -1028,6 +1109,10 @@ function assignPaths(ops, basePath) {
       op.kind === 'component'
     ) {
       op.path = [...basePath, index];
+      // 调用点内联的组件内容挂在组件根之下：路径从组件的元素位置接着往下算
+      if (op.kind === 'component' && op.content) {
+        assignPaths(op.content.ops, op.path);
+      }
       index += 1;
     }
   }

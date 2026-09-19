@@ -68,6 +68,56 @@ describe('form C skeletons', () => {
     expect(cell.bails.map((bail) => bail.reason).join(' | ')).toContain('裸调用');
   });
 
+  it('inlines statically readable content at build time', async () => {
+    const registryDir = join(workDir, 'inline');
+    buildComponentRegistry({
+      entries: [{ file: surfaceFile, export: 'vCard' }],
+      dir: registryDir,
+      core,
+      runtime: runtimeUrl
+    });
+    const registry = JSON.parse(
+      readFileSync(join(registryDir, 'components.registry.json'), 'utf8')
+    );
+
+    const cases = [
+      ["vCard('标题')", () => vCard('标题')],
+      ["vCard((card) => card.span('正文'))", () => vCard((card) => card.span('正文'))],
+      ["vCard(span('直接给节点'))", () => vCard(core.span('直接给节点'))]
+    ];
+
+    for (const [expression, generic] of cases) {
+      const compiled = compileSource({
+        source:
+          "import { tr, span } from '../../yoya.core.js';\n" +
+          "import { vCard } from '../../data-display/surface.js';\n" +
+          'export function buildRow(row) {\n' +
+          `  return tr((line) => line.td((cell) => cell.child(${expression})));\n` +
+          '}\n',
+        file: callerFile,
+        fn: 'buildRow',
+        core,
+        runtime: runtimeUrl,
+        components: registry,
+        componentsSpecifier: './components.registry.js'
+      });
+
+      expect(compiled.bails, expression).toEqual([]);
+      expect(compiled.compiled, expression).toBe(true);
+      // 内容在构建期内联：调用方片段与通用路径的规范序列化逐字节一致
+      expect(compiled.plan.html, expression).toBe(`<tr><td>${generic().toHTML()}</td></tr>`);
+      expect(compiled.module, expression).toContain('contentInlined: true');
+
+      const modulePath = join(registryDir, 'row.generated.js');
+      writeFileSync(modulePath, compiled.module, 'utf8');
+      const rowModule = await import(`${pathToFileURL(modulePath).href}?v=${expression.length}`);
+      // 内容实参仍然照原样传给 bindComponent（回落时用它重建），所以 scope 里要有 span
+      expect(rowModule.createRowFactory({ span: core.span })({}).el.outerHTML, expression).toBe(
+        `<tr><td>${generic().toHTML()}</td></tr>`
+      );
+    }
+  });
+
   it('links an empty skeleton and falls back when the caller passes content', async () => {
     const registryDir = join(workDir, 'components');
     buildComponentRegistry({

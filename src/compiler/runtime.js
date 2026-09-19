@@ -198,13 +198,13 @@ export function pushOff(offs, off) {
  * - 哈希不符、形状不符、条目缺失 → 走**通用路径回落**（`render` 用原组件重建 DOM 替换占位），
  *   绝不留下「片段与数据不符」的静默错误；连原组件都拿不到时抛出可定位的错误。
  */
-export function bindComponent(entry, slot, values = [], expectedHash = null) {
+export function bindComponent(entry, slot, values = [], expectedHash = null, options = null) {
   if (
     entry &&
     typeof entry.bind === 'function' &&
     (expectedHash === null || entry.hash === expectedHash)
   ) {
-    const dispose = entry.bind(slot, values);
+    const dispose = entry.bind(slot, values, options);
     if (typeof dispose === 'function') {
       return dispose;
     }

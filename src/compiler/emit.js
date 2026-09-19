@@ -31,6 +31,23 @@ const indentOf = (depth) => '  '.repeat(depth);
 /** 静态值 → 生成代码里的字面量写法（`null` / `false` / `true` 原样，正是 attr 的口径）。 */
 const jsLiteral = (value) => (value === undefined ? 'undefined' : JSON.stringify(value));
 
+/** 调用点内联的内容：把构件 ops 里的内容位置就地换成调用方编译出来的内容 ops（没有就原样）。 */
+function withInlinedContent(entryOps, content) {
+  if (!content) {
+    return entryOps;
+  }
+
+  const merged = [];
+  for (const op of entryOps) {
+    if (op.kind === 'content' && (op.index ?? 0) === content.index) {
+      merged.push(...content.ops);
+      continue;
+    }
+    merged.push(op);
+  }
+  return merged;
+}
+
 /**
  * 渲染一个形状。
  *
@@ -123,19 +140,26 @@ export function renderModule(options) {
       runtimeImport(names) +
       planExport +
       `export const hash = ${JSON.stringify(hash)};\n\n` +
-      'export function bind(root, values) {\n' +
+      'export function bind(root, values, options) {\n' +
       `  const [${paramsSource}] = values ?? [];\n` +
       destructure +
       (contentGuard
-        ? '  // 骨架只编"没有内容"的用法：调用方带了内容（setup / children）就走通用路径，\n' +
-          '  // 否则内容会被静默丢掉——片段里没有它的位置。\n' +
-          '  if ((values ?? []).some((value) => value !== null && value !== undefined)) {\n' +
+        ? '  // 骨架只编"没有内容"的用法。调用方自带内容时：\n' +
+          '  // - 内容已由调用方内联进片段（contentInlined）→ 守卫与形状校验都跳过；\n' +
+          '  // - 否则拒收，让调用方用原组件重建（内容不会被静默丢掉）。\n' +
+          '  if (\n' +
+          '    !options?.contentInlined &&\n' +
+          '    (values ?? []).some((value) => value !== null && value !== undefined)\n' +
+          '  ) {\n' +
           '    return null;\n' +
+          '  }\n' +
+          '  if (!options?.contentInlined && (!root || root.childNodes.length !== ' +
+          `${emitted.childCount})) {\n` +
+          '    return null; // 形状与片段不符：交给调用方走通用路径回落\n' +
           '  }\n'
-        : '') +
-      `  if (!root || root.childNodes.length !== ${emitted.childCount}) {\n` +
-      '    return null; // 形状与片段不符：交给调用方走通用路径回落\n' +
-      '  }\n' +
+        : `  if (!root || root.childNodes.length !== ${emitted.childCount}) {\n` +
+          '    return null; // 形状与片段不符：交给调用方走通用路径回落\n' +
+          '  }\n') +
       '  const offs = [];\n' +
       `${body}${emitted.lines.length > 0 ? '\n' : ''}` +
       '  let disposed = false;\n' +
@@ -250,8 +274,11 @@ function buildSample(core, factoryName, ops) {
       } else if (op.kind === 'element') {
         element.child(buildSample(core, op.factory, op.ops));
       } else if (op.kind === 'component') {
-        // 链接进来的组件：它的片段来自注册表里的纯数据 ops，仍由框架工厂序列化产出
-        element.child(buildSample(core, op.entryFactory, op.entryOps));
+        // 链接进来的组件：它的片段来自注册表里的纯数据 ops，仍由框架工厂序列化产出；
+        // 调用点内联的内容把构件 ops 里的内容位置就地换成调用方的内容 ops
+        element.child(
+          buildSample(core, op.entryFactory, withInlinedContent(op.entryOps, op.content))
+        );
       }
     }
   });
@@ -274,12 +301,18 @@ function emitElementMode({ entry, addExpression, rootName = 'el' }) {
       if (op.kind === 'component') {
         op.args.forEach(addExpression);
         usesComponents = true;
+        // 调用点内联了内容 → 告诉构件「内容和形状都在调用方片段里」，跳过它的内容守卫与形状校验
+        const options = op.content ? ', { contentInlined: true }' : '';
         lines.push(
           `    pushOff(offs, bindComponent(components[${JSON.stringify(op.key)}], ${domPath(
             op.path
-          )}, [${op.args.join(', ')}], ${JSON.stringify(op.hash ?? null)}));`
+          )}, [${op.args.join(', ')}], ${JSON.stringify(op.hash ?? null)}${options}));`
         );
         liveCount += 1;
+        if (op.content) {
+          // 内联内容自己的位置写（动态值 / 绑定）挂在组件根元素之下
+          visit(op.content.ops, op.path);
+        }
         continue;
       }
       if (op.kind === 'dynamicAttr') {
