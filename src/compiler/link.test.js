@@ -94,6 +94,28 @@ describe('component registry', () => {
     expect(built.skipped.map((item) => item.key)).toEqual([`${componentFile}#StatusBox`]);
     expect(built.skipped[0].bails[0].reason).toContain('子内容');
   });
+
+  it('never links container components (slot routing stays on the generic path)', () => {
+    const source =
+      "import { tr } from '../../yoya.core.js';\n" +
+      "import { StatusBox } from './status-dot.js';\n" +
+      'export function buildRow(row) {\n' +
+      '  return tr((line) => line.td((cell) => cell.child(StatusBox(row, row.body))));\n' +
+      '}\n';
+
+    const compiled = compileSource({
+      source,
+      file: callerFile,
+      fn: 'buildRow',
+      core,
+      runtime: runtimeUrl,
+      components: built.registry,
+      componentsSpecifier: './components.registry.js'
+    });
+
+    expect(compiled.compiled).toBe(false);
+    expect(compiled.bails.map((bail) => bail.reason).join(' | ')).toContain('组件调用（未编译）');
+  });
 });
 
 describe('call-site linking', () => {
