@@ -4,7 +4,8 @@
  * `compiled: false` 表示「这个形状走通用路径」——只要有任何 bail，就必须整体回落：
  * 片段里少一个节点是静默的语义错误，比不编危险得多。
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { analyzeSource } from './analyze.js';
 import { renderModule } from './emit.js';
 import { lookupComponent } from './component-key.js';
@@ -130,11 +131,14 @@ export function compileFile(options) {
   const result = compileSource({ ...rest, source: readFileSync(file, 'utf8'), file });
 
   if (result.compiled && out) {
+    // 新项目里 `--out src/generated/row.js` 直接用：目录不存在就建出来（别让用户先手建）
+    mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, result.module, 'utf8');
   }
 
   // 票 45：模板块由**编译器**顺手写出（片段仍来自框架序列化）——下游脚本不必从产物里抠 plan.html
   if (result.compiled && fragmentsOut) {
+    mkdirSync(dirname(fragmentsOut), { recursive: true });
     writeFileSync(
       fragmentsOut,
       `${fragmentBlockOf(result.fragmentHtml, result.plan.signature)}\n`,

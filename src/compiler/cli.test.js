@@ -55,6 +55,22 @@ describe('runCli', () => {
     expect(JSON.parse(io.lines.join('\n')).bails.length).toBe(1);
   });
 
+  // 文档里的 `--out src/generated/row.js` 在新项目上直接用：目录要自动建出来
+  it('creates the output directory when it does not exist yet', async () => {
+    const out = join(root, 'fresh', 'deep', 'row.js');
+    const fragments = join(root, 'fresh', 'deep', 'fragments.html');
+    const io = record();
+
+    const code = await runCli(
+      ['--file', fixture, '--fn', 'buildRow', '--out', out, '--fragments', fragments],
+      { ...io, core }
+    );
+
+    expect(code).toBe(0);
+    expect(existsSync(out)).toBe(true);
+    expect(readFileSync(fragments, 'utf8')).toContain('<template data-yoya-fragment=');
+  });
+
   it('prints help and rejects unknown flags', async () => {
     const help = record();
     expect(await runCli(['--help'], { ...help, core })).toBe(0);
