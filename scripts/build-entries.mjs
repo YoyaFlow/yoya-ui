@@ -12,6 +12,7 @@ const SHARED_INPUTS = {
   'data-display': 'src/yoya.data-display.js',
   async: 'src/yoya.async.js',
   router: 'src/yoya.router.js',
+  'compiler-runtime': 'src/yoya.compiler-runtime.js',
   echart: 'src/yoya.echart.js',
   three: 'src/yoya.three.js',
   devtools: 'src/yoya.devtools.js'
@@ -63,6 +64,18 @@ for (const [name, input] of FULL_INPUTS) {
   await buildSingle(input, entryFileName(name, false), false);
   await buildSingle(input, entryFileName(name, true), true);
 }
+
+// 构建期编译器：Node 平台、@babel/parser 外置（构建期依赖，不进浏览器产物）。
+const compilerBundle = await rolldown({
+  input: 'src/yoya.compiler.js',
+  platform: 'node',
+  external: ['@babel/parser']
+});
+await compilerBundle.write({
+  dir: 'dist',
+  format: 'es',
+  entryFileNames: 'yoya.compiler.js'
+});
 
 cpSync('src/chart/echarts.min.js', 'dist/echarts.min.js');
 cpSync('src/yoya.ui.css', 'dist/yoya.ui.css');

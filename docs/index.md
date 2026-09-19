@@ -25,6 +25,7 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
 | [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators            | Moved from `README.md`        |
 | [`performance.md`](performance.md)                                             | Official js-framework-benchmark numbers vs `vanillajs`       | Generated tables + gate       |
+| [`compiler.md`](compiler.md)                                                   | Optional build-time compile path: compiler + runtime hooks   | New                           |
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                           | New                           |
 | [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not      | New                           |
 
@@ -34,6 +35,8 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 2. Read `why-yoya-ui.md` for the long-form positioning and `highlights.md` for the feature overview.
    The component catalog is maintained in the examples site rather than a separate document.
 3. Pick the guide that matches your task: `access-control.md`, `ssr.md`, `theme.md`, or `devtools.md`.
+   When a list is long enough that per-row cost matters, read `compiler.md` for the optional
+   build-time compile path.
 4. Read `component-authoring.md` when you want to build components for the ecosystem, and `interop.md`
    when you are plugging an existing library in.
 5. Read `agents.md` before generating or evaluating code for this repository with an AI assistant.

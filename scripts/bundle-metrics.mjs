@@ -19,6 +19,7 @@ export const BUNDLE_ENTRIES = [
   'yoya.api.js',
   'yoya.ui.js',
   'yoya.router.js',
+  'yoya.compiler-runtime.js',
   'yoya.devtools.js',
   'yoya.echart.js',
   'yoya.three.js'
@@ -33,6 +34,8 @@ const CONTENTS = {
     '全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme',
   'yoya.router.js':
     'router（createRouter / vRouter / vLink / vRouterViews）+ SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount / serializeState / parseState）',
+  'yoya.compiler-runtime.js':
+    '编译产物的运行期钩子：cloneFragment / adopt / bindChild / bindText / bindClass / setAttr / pushOff / createElementList（构建期编译器 yoya.compiler 生成的模块只 import 这里；主入口不含）',
   'yoya.devtools.js':
     'enableDevtools / disableDevtools / subscribeDevtools / getDevtoolsSnapshot / getDevtoolsDom / getDevtoolsScope',
   'yoya.echart.js': 'vEchart（ECharts 封装）',
@@ -181,6 +184,7 @@ const README_ROWS = [
   incrementalRow('yoya.api.js'),
   incrementalRow('yoya.ui.js'),
   incrementalRow('yoya.router.js'),
+  incrementalRow('yoya.compiler-runtime.js'),
   incrementalRow('yoya.devtools.js'),
   PAIRED_ROW,
   selfContainedRow('yoya.router.full.js'),

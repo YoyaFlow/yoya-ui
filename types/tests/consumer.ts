@@ -455,3 +455,68 @@ void displayVTree;
 void asyncVDynamicLoader;
 void asyncVLazyImage;
 void asyncVSkeleton;
+
+// ---------------------------------------------------------------------------
+// Compile path: build-time compiler plus the runtime hooks it generates calls to
+// ---------------------------------------------------------------------------
+
+import {
+  compileFile,
+  compileSource,
+  elementWhitelistOf,
+  reportCoverage,
+  runCli,
+  type CompileResult,
+  type CoverageReport
+} from '@yoyaflow/yoya-ui/compiler';
+import {
+  bindClass,
+  bindText,
+  cloneFragment,
+  createElementList,
+  pushOff,
+  setAttr,
+  type CompiledPlan,
+  type CompiledRow
+} from '@yoyaflow/yoya-ui/compiler-runtime';
+
+declare const core: unknown;
+
+const compileResult: CompileResult = compileSource({
+  source: 'export function buildRow(row) { return tr((line) => line.td(String(row.id))); }',
+  file: 'row.js',
+  fn: 'buildRow',
+  mode: 'element',
+  core,
+  runtime: 'yoya-ui/compiler-runtime'
+});
+
+const written: CompileResult & { out: string | null } = compileFile({
+  source: '',
+  file: 'row.js',
+  out: 'row.generated.js',
+  core
+});
+
+const coverage: CoverageReport = reportCoverage({ root: 'src', fn: 'buildRow', core });
+const exitCode: Promise<number> = runCli(['--report', 'src', '--json'], { core });
+const whitelist: Set<string> = elementWhitelistOf(core);
+const plan: CompiledPlan | null = compileResult.plan;
+
+const element: Element = cloneFragment('<tr><td>0</td></tr>');
+const offs: Array<() => void> = [];
+pushOff(offs, bindText(element, 'plain'));
+pushOff(offs, bindClass(element, 'is-on', true));
+pushOff(offs, setAttr(element, 'data-x', 1));
+
+const list = createElementList<{ id: number }>(element, (row) => row.id);
+list.sync([{ id: 1 }], (row): CompiledRow => ({ el: element, data: row, destroy: () => {} }));
+const first: Element | undefined = list.elements()[0];
+
+void written;
+void coverage;
+void exitCode;
+void whitelist;
+void plan;
+void offs;
+void first;

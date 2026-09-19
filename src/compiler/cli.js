@@ -1,0 +1,187 @@
+/**
+ * 构建期编译器的命令行入口。
+ *
+ *   node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file src/row.js --out src/row.generated.js
+ *   node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --report src --json
+ *
+ * 退出码：0 = 成功；1 = 用法错误；2 = 该形状回落通用路径（不是错误，但构建脚本要能分辨）。
+ */
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { compileFile, summarizeCompile } from './compile.js';
+import { formatCoverage, reportCoverage } from './report.js';
+
+const VALUE_OPTIONS = new Set([
+  'file',
+  'fn',
+  'mode',
+  'out',
+  'core',
+  'runtime',
+  'report',
+  'extensions'
+]);
+
+const HELP = `yoya-ui 编译器（构建期）
+
+用法：
+  yoya-compiler --file <源文件> [--fn buildRow] [--mode element|node] [--out <产物>]
+  yoya-compiler --report <目录> [--fn buildRow] [--json]
+
+选项：
+  --file <路径>        要编译的源文件（必须）
+  --fn <名字>          目标构建函数名（默认 buildRow）
+  --mode <通道>        element（默认，行 = 原生元素）| node（行 = ViewNode）
+  --thin               节点模式下只给直接带活内容的节点建包装对象
+  --out <路径>         生成模块的落盘位置；省略时打印到标准输出
+  --core <模块>        提供工厂与 htmls / svgs 的核心入口（默认库自身 core）
+  --runtime <模块>     生成代码里 import 运行期钩子的路径
+  --report <目录>      覆盖率扫描：输出可编 / 回落占比与 bail 原因直方图
+  --extensions <.js,.mjs>  扫描的扩展名（逗号分隔）
+  --json               以 JSON 输出摘要（脚本消费）
+  --help               这份帮助
+
+说明：任何 bail 都会让该形状整体回落通用路径（退出码 2），不会产出半成品片段。
+`;
+
+function parseArgs(argv) {
+  const flags = new Set();
+  const values = new Map();
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const item = argv[index];
+    if (!item.startsWith('--')) {
+      continue;
+    }
+
+    const [name, inline] = item.slice(2).split('=');
+    if (inline !== undefined) {
+      values.set(name, inline);
+      continue;
+    }
+
+    const next = argv[index + 1];
+    if (VALUE_OPTIONS.has(name) && next !== undefined && !next.startsWith('--')) {
+      values.set(name, next);
+      index += 1;
+      continue;
+    }
+    flags.add(name);
+  }
+
+  return { flags, values };
+}
+
+/** 核心入口：程序化调用直接给命名空间；`--core` 支持包名或文件路径。 */
+async function resolveCore(options, provided) {
+  const specifier = options.values.get('core');
+  if (!specifier) {
+    return provided ?? null;
+  }
+  if (specifier.startsWith('.') || specifier.startsWith('/') || /^[A-Za-z]:[\\/]/.test(specifier)) {
+    return import(pathToFileURL(resolve(specifier)).href);
+  }
+  return import(specifier);
+}
+
+export async function runCli(argv = process.argv.slice(2), io = {}) {
+  const log = io.log ?? ((line) => console.log(line));
+  const error = io.error ?? ((line) => console.error(line));
+  const options = parseArgs(argv);
+  const knownFlags = new Set(['help', 'json', 'thin']);
+  const unknown = [
+    ...[...options.flags].filter((name) => !knownFlags.has(name)),
+    ...[...options.values.keys()].filter((name) => !VALUE_OPTIONS.has(name))
+  ];
+
+  if (options.flags.has('help') || argv.length === 0) {
+    log(HELP);
+    return 0;
+  }
+  if (unknown.length > 0) {
+    error(`未知参数：${unknown.map((name) => `--${name}`).join('、')}`);
+    return 1;
+  }
+
+  const core = await resolveCore(options, io.core);
+  if (!core) {
+    error('缺少 core：程序化调用请传 io.core，命令行请用 --core <模块>');
+    return 1;
+  }
+
+  const asJson = options.flags.has('json');
+  const fn = options.values.get('fn') ?? 'buildRow';
+  const mode = options.values.get('mode') ?? 'element';
+
+  const reportDir = options.values.get('report');
+  if (reportDir) {
+    const extensions = options.values.get('extensions');
+    const report = reportCoverage({
+      root: reportDir,
+      fn,
+      mode,
+      thin: options.flags.has('thin'),
+      core,
+      extensions: extensions ? extensions.split(',').map((item) => item.trim()) : undefined
+    });
+    log(asJson ? JSON.stringify(report, null, 2) : formatCoverage(report));
+    return 0;
+  }
+
+  const file = options.values.get('file');
+  if (!file) {
+    error('缺少 --file <源文件>（或用 --report <目录> 做覆盖率扫描）');
+    return 1;
+  }
+
+  const out = options.values.get('out');
+  const result = compileFile({
+    file,
+    out,
+    fn,
+    mode,
+    thin: options.flags.has('thin'),
+    core,
+    runtime: options.values.get('runtime')
+  });
+  const summary = summarizeCompile(result);
+
+  if (!result.compiled) {
+    log(asJson ? JSON.stringify(summary, null, 2) : `回落通用路径：${file}`);
+    return 2;
+  }
+
+  if (asJson) {
+    log(JSON.stringify(summary, null, 2));
+  } else if (!out) {
+    log(result.module);
+  } else {
+    log(`已生成 ${out}（活结点 ${summary.liveNodes}，片段 ${summary.htmlBytes} B）`);
+  }
+  return 0;
+}
+
+/**
+ * 以 CLI 方式被直接运行时才执行（`node dist/yoya.compiler.js …`）；被 import 时静默返回 null。
+ * 入口 shim 因此只剩「导出 + 调这一句」，编译逻辑全部留在本目录。
+ */
+export async function runCliIfMain(core, argv = process.argv.slice(2)) {
+  const entry = process.argv[1];
+  if (!entry) {
+    return null;
+  }
+
+  let isMain;
+  try {
+    isMain = pathToFileURL(entry).href === import.meta.url;
+  } catch {
+    isMain = false;
+  }
+  if (!isMain) {
+    return null;
+  }
+
+  const code = await runCli(argv, { core });
+  process.exitCode = code;
+  return code;
+}

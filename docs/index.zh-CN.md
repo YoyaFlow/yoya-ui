@@ -24,6 +24,7 @@
 | [`interop.zh-CN.md`](interop.zh-CN.md)                                                     | 第三方库接入：交出真实 DOM 元素（vEchart 参照实现与扩展开口）                          | 从 README 迁入  |
 | [`agents.zh-CN.md`](agents.zh-CN.md)                                                       | AI 代码助手阅读指南：如何阅读本仓库、如何生成与评估代码                                | 从 README 迁入  |
 | [`performance.zh-CN.md`](performance.zh-CN.md)                                             | 官方 js-framework-benchmark 实测：对比原生 `vanillajs`                                 | 表格生成 + 门禁 |
+| [`compiler.zh-CN.md`](compiler.zh-CN.md)                                                   | 可选的构建期编译路径：编译器 + 运行期钩子                                              | 新增            |
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建            |
 | [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建            |
 | [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建            |
@@ -33,7 +34,7 @@
 
 1. 先读根目录 `README.zh-CN.md` 了解定位、适用人群与快速上手；
 2. 定位长文看 `why-yoya-ui.zh-CN.md`；特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不维护独立清单文档，跨库对照（Ant Design / Element Plus ↔ yoya-ui、扩展库接入）见 `component-comparison.zh-CN.md`；
-3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；
+3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；列表长到「每行成本」开始显眼时，读 `compiler.zh-CN.md` 了解可选的构建期编译路径；
 4. 要扩展组件生态时读 `component-authoring.zh-CN.md`，接入现成第三方库时读 `interop.zh-CN.md`，常见第三方库的接入清单见 `component-comparison.zh-CN.md` 第二节。
 5. 用 AI 助手生成或评审本仓库代码前，先读 `agents.zh-CN.md`。
 6. 收到针对本库的安全评审时，先读 `feedback/security-review-feedback.zh-CN.md`；整理新手 / Vue / React 背景使用者的反馈或撰写 FAQ 时，先读 `feedback/beginner-feedback.zh-CN.md`；收到针对响应式引擎的生产评审时，先读 `feedback/reactive-engine-feedback.zh-CN.md`。

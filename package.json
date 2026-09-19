@@ -53,6 +53,14 @@
       "types": "./types/yoya.router.d.ts",
       "import": "./dist/yoya.router.js"
     },
+    "./compiler-runtime": {
+      "types": "./types/yoya.compiler-runtime.d.ts",
+      "import": "./dist/yoya.compiler-runtime.js"
+    },
+    "./compiler": {
+      "types": "./types/yoya.compiler.d.ts",
+      "import": "./dist/yoya.compiler.js"
+    },
     "./echart": {
       "types": "./types/yoya.echart.d.ts",
       "import": "./dist/yoya.echart.js"
@@ -127,7 +135,16 @@
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
+  "peerDependencies": {
+    "@babel/parser": "^7.29.0"
+  },
+  "peerDependenciesMeta": {
+    "@babel/parser": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@babel/parser": "^7.29.8",
     "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/state": "^6.7.4",
     "@codemirror/theme-one-dark": "^6.1.3",
