@@ -219,17 +219,10 @@ export function analyzeSource(source, options = {}) {
         recordBail(`不是元素工厂（组件或未知 API）：${method}`, call);
         return;
       }
-      const setup = args[0];
-      if (setup?.type === 'ArrowFunctionExpression' || setup?.type === 'FunctionExpression') {
-        const param = setup.params[0]?.name;
-        if (!param) {
-          recordBail(`子工厂 ${method} 的 setup 没有参数`, call);
-          return;
-        }
-        ops.push({ kind: 'element', factory: method, ops: analyzeSetup(setup, param) });
-        return;
+      const elementOps = analyzeElementArguments(args, method, call);
+      if (elementOps) {
+        ops.push({ kind: 'element', factory: method, ops: elementOps });
       }
-      recordBail(`子工厂 ${method} 不是 setup 回调形式`, call);
       return;
     }
 
@@ -407,6 +400,118 @@ export function analyzeSource(source, options = {}) {
     }
 
     return ops;
+  }
+
+  /**
+   * 元素工厂的参数：数量不定、严格按出现顺序，类型分派与运行期 `applySetupValue` 同一张表
+   * （`Factory(options, setup)` / 变参 / 多个回调都能认）。认不出来就 bail —— 编译期不猜。
+   */
+  function analyzeElementArguments(args, factoryName, call) {
+    const elementOps = [];
+    let hasSetup = false;
+
+    for (const argument of args) {
+      if (argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression') {
+        if (hasSetup) {
+          recordBail(`子工厂 ${factoryName} 有多个 setup 回调`, call);
+          return null;
+        }
+        const param = argument.params[0]?.name;
+        if (!param) {
+          recordBail(`子工厂 ${factoryName} 的 setup 没有参数`, call);
+          return null;
+        }
+        hasSetup = true;
+        elementOps.push(...analyzeSetup(argument, param));
+        continue;
+      }
+
+      const literal = literalOf(argument);
+      if (literal.literal) {
+        elementOps.push({
+          kind: 'staticText',
+          text: literal.value === null ? '' : String(literal.value)
+        });
+        continue;
+      }
+
+      if (
+        argument.type === 'ObjectExpression' &&
+        analyzeOptionsObject(argument, elementOps, call)
+      ) {
+        continue;
+      }
+
+      recordBail(`子工厂 ${factoryName} 的参数无法静态判定`, call);
+      return null;
+    }
+
+    return elementOps;
+  }
+
+  /**
+   * options 对象：与运行期同一张规则表 —— `attrs` / `style` / `class|className` / `children`
+   * 各自归位，其余键按**属性**写（子工厂不参与分派）；值必须是字面量，否则 bail。
+   */
+  function analyzeOptionsObject(objectNode, elementOps, call) {
+    for (const property of objectNode.properties) {
+      if (property.type !== 'ObjectProperty' || property.computed) {
+        recordBail('options 里有非静态键', call);
+        return false;
+      }
+
+      const key = property.key.name ?? property.key.value;
+
+      if (key === 'attrs' && property.value.type === 'ObjectExpression') {
+        for (const attr of property.value.properties) {
+          const name = attr.key.name ?? attr.key.value;
+          const attrValue = literalOf(attr.value);
+          if (typeof name !== 'string' || !attrValue.literal) {
+            recordBail('attrs 里有非字面量键值', call);
+            return false;
+          }
+          elementOps.push({ kind: 'staticAttr', name, value: attrValue.value });
+        }
+        continue;
+      } else if (key === 'style' && property.value.type === 'ObjectExpression') {
+        for (const style of property.value.properties) {
+          const name = style.key.name ?? style.key.value;
+          const styleValue = literalOf(style.value);
+          if (typeof name !== 'string' || !styleValue.literal) {
+            recordBail('style 里有非字面量键值', call);
+            return false;
+          }
+          elementOps.push({ kind: 'staticStyle', name, value: styleValue.value });
+        }
+        continue;
+      }
+
+      const value = literalOf(property.value);
+      if (!value.literal) {
+        recordBail(`options 的 ${String(key)} 值不是字面量`, call);
+        return false;
+      }
+
+      if (key === 'class' || key === 'className') {
+        elementOps.push({
+          kind: 'staticClass',
+          names: String(value.value).split(/\s+/).filter(Boolean)
+        });
+      } else if (key === 'children') {
+        elementOps.push({
+          kind: 'staticText',
+          text: value.value === null ? '' : String(value.value)
+        });
+      } else if (typeof key === 'string' && !NODE_API.has(key)) {
+        // 子工厂不参与 options 分派 → 按属性写（`{ slot: 't-head' }` / `{ title: 't' }`）
+        elementOps.push({ kind: 'staticAttr', name: key, value: value.value });
+      } else {
+        recordBail(`options 的键 ${String(key)} 需要动态分派`, call);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function analyzeBuilder(fn) {

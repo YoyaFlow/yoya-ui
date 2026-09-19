@@ -123,4 +123,53 @@ describe('compileSource', () => {
     expect(result.compiled).toBe(true);
     expect(result.scope).toEqual(['computed', 'selectedId']);
   });
+
+  it('accepts the (options, setup) form and variadic tails', () => {
+    const optionsFirst = compile(
+      sourceOf(
+        '  return tr((line) => {\n' +
+          "    line.td({ slot: 't-head', attrs: { id: 'c1' }, style: { color: 'red' } }, (cell) => {\n" +
+          '      cell.child(String(row.id));\n' +
+          '    });\n' +
+          '  });'
+      )
+    );
+
+    expect(optionsFirst.bails).toEqual([]);
+    expect(optionsFirst.compiled).toBe(true);
+    expect(optionsFirst.plan.html).toContain('<td id="c1" slot="t-head" style="color:red">0</td>');
+
+    const optionsLast = compile(
+      sourceOf(
+        '  return tr((line) => {\n' +
+          "    line.td((cell) => cell.child(String(row.id)), { attrs: { id: 'c2' } });\n" +
+          '  });'
+      )
+    );
+
+    expect(optionsLast.bails).toEqual([]);
+    expect(optionsLast.plan.html).toContain('<td id="c2">0</td>');
+  });
+
+  it('accepts more than three factory arguments', () => {
+    const result = compile(
+      sourceOf(
+        '  return tr((line) => {\n' +
+          "    line.td('a', { attrs: { id: 'c3' } }, (cell) => cell.span('s'), 'b');\n" +
+          '  });'
+      )
+    );
+
+    expect(result.bails).toEqual([]);
+    expect(result.plan.html).toBe('<tr><td id="c3">a<span>s</span>b</td></tr>');
+  });
+
+  it('bails when an option value cannot be read statically', () => {
+    const result = compile(
+      sourceOf("  return tr((line) => line.td({ attrs: { id: row.id } }, 'x'));")
+    );
+
+    expect(result.compiled).toBe(false);
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('字面量');
+  });
 });
