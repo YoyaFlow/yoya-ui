@@ -3513,6 +3513,79 @@ export function elementHasClass(node, name) {
 }
 
 /**
+ * 组件身份属性：组件**视图根**元素上写 `vn: 'VCard'`（值 = 组件导出名，空格分隔可多值）。
+ *
+ * 身份跟着视图根走，而不是跟着某个运行时标记，于是三种组件形态是同一条判定：
+ * 形态 A 的成员本身就是元素节点（读它自己），形态 B / vNode 的成员是 `child()` 包出来的
+ * `ComponentNode`（展开到视图根再读）。值走属性（快照优先、再回读 DOM），所以编译片段克隆、
+ * adopt / hydrate 进来的节点一样认；也支持直接传真实 DOM 元素（devtools / 调试）。
+ */
+export const COMPONENT_IDENTITY_ATTR = 'vn';
+
+/** 树成员（元素节点 / 组件节点 / 真实元素）的组件身份；没有就是 null，多值以空格分隔。 */
+export function componentNameOf(value) {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  // 快照优先（还没 mount），再回读真实 DOM（adopt / hydrate 进来的节点、传进来的真实元素）
+  const own =
+    value._attrs?.[COMPONENT_IDENTITY_ATTR] ??
+    value._el?.getAttribute?.(COMPONENT_IDENTITY_ATTR) ??
+    (value.nodeType === 1 ? value.getAttribute(COMPONENT_IDENTITY_ATTR) : undefined);
+
+  if (typeof own === 'string' && own !== '') {
+    return own;
+  }
+
+  if (!(value instanceof ComponentNode)) {
+    return null;
+  }
+
+  // 组件节点：展开到视图根（多根任一）。解析失败（组件自己出错）不算命中——判定不炸。
+  try {
+    const roots = value._resolvedList ?? (value._resolve(), value._resolvedList);
+    for (const root of roots ?? []) {
+      const name = componentNameOf(root);
+      if (name) {
+        return name;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+/** 成员是不是某个组件：`vn` 的值按空格拆，多个身份都算命中（包装型组件共用根）。 */
+export function hasComponentIdentity(value, name) {
+  const found = componentNameOf(value);
+  return Boolean(found) && found.split(/\s+/).includes(name);
+}
+
+/**
+ * 给组件定义装身份判定：`member instanceof definition` 先走身份（视图根上的 `vn`），
+ * 原型链判定作为兜底保留（形态 C 组件 / `new` 出来的实例照旧成立）。
+ */
+export function defineComponentIdentity(definition, name) {
+  if (typeof definition !== 'function' || typeof name !== 'string' || name === '') {
+    throw new TypeError(
+      'defineComponentIdentity(definition, name) requires a component factory function ' +
+        'and a non-empty component name.'
+    );
+  }
+
+  const prototypeHasInstance = Function.prototype[Symbol.hasInstance];
+  Object.defineProperty(definition, Symbol.hasInstance, {
+    value: (value) =>
+      hasComponentIdentity(value, name) || prototypeHasInstance.call(definition, value)
+  });
+
+  return definition;
+}
+
+/**
  * ElementNode 表示可渲染成真实 DOM Element 的视图节点。
  * 它负责属性、类名、样式、事件和子节点到 DOM 的同步。
  */

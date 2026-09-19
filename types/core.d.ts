@@ -668,6 +668,24 @@ export function elementClassNames(node: unknown): string[];
 /** Whether an element node carries the given class name (reads the class text). */
 export function elementHasClass(node: unknown, name: string): boolean;
 
+/** Attribute that carries a component's identity on its view root (`vn="VCard"`). */
+export const COMPONENT_IDENTITY_ATTR: string;
+
+/**
+ * Component identity of a tree member (element node / ComponentNode / real element):
+ * the `vn` value of itself, or of the view root a ComponentNode resolves to.
+ */
+export function componentNameOf(value: unknown): string | null;
+
+/** Whether a tree member carries the given component identity (`vn` may hold several names). */
+export function hasComponentIdentity(value: unknown, name: string): boolean;
+
+/**
+ * Installs identity-based `instanceof` on a component definition: members whose view root
+ * carries `vn: name` are instances, with the prototype check kept as a fallback.
+ */
+export function defineComponentIdentity<T>(definition: T, name: string): T;
+
 /** Normalizes any child input into a ViewNode. */
 export function normalizeChild(child: ViewNode | ComponentLike | string | number): ViewNode;
 

@@ -223,6 +223,23 @@ describe('compileSource', () => {
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('布尔值');
   });
 
+  // 组件身份（vn）就是普通静态属性：进片段、进节点快照，adopt / hydrate 后判定照样成立
+  it('bakes the component identity attribute into the fragment', () => {
+    const result = compile(
+      sourceOf("  return div({ vn: 'VCard' }, (node) => node.span(String(row.id)));")
+    );
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    expect(result.plan.html).toContain('<div vn="VCard"><span>0</span></div>');
+
+    const nodeMode = compile(
+      sourceOf("  return div({ vn: 'VCard' }, (node) => node.on('click', row.onPick));"),
+      { mode: 'node' }
+    );
+    expect(nodeMode.module).toContain('node.attr("vn", "VCard")');
+  });
+
   // 覆盖度缺口 2：数组 / 对象在文本位置上编出来就是静默误编 → 编译期认出就回落
   it('bails on arrays and objects in a text position', () => {
     const array = compile(sourceOf('  return div((node) => node.child([row.a, row.b]));'));

@@ -20,6 +20,7 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 | 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                               |
 | 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`           |
 | 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（形态 C 组件专用，见 §7.3） |
+| 组件身份     | 视图根上的 `vn: 'VCard'`、`defineComponentIdentity`、`componentNameOf`、`hasComponentIdentity`（三种形态同一条判定，见 §7.3）                            |
 | 信号         | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                             |
 | 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                                    |
 
@@ -421,7 +422,52 @@ const chart = vNode((api) => {
 - **内存**：没有钩子的组件零额外字段；框架不 `bind()`、不用数组收集，销毁后释放引用；
 - **不做 `onUpdate`**：库里"更新"有区域重建 / keyed 换 key / 组件主动换根三种不同场景，没有单一语义。
 
-## 7.3 迁移提示（这批改动带来的行为变化）
+## 7.3 组件身份：`vn` 与 `instanceof`
+
+组件的**视图根元素**上写 `vn: 'VCard'`（值 = 导出名），这个成员就是"一个 VCard"。三种形态写法完全一样：
+
+```js
+function ServiceTag() {
+  // 形态 A：薄工厂，成员就是元素节点
+  return span({ vn: 'ServiceTag', class: 'yoya-service-tag' }, 'tag');
+}
+
+function RateCard() {
+  // 形态 B：组件对象，成员是 child() 包出来的 ComponentNode
+  return { render: () => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate') };
+}
+
+function Chart() {
+  // vNode：同形态 B
+  return vNode(() => div({ vn: 'Chart' }, 'chart'));
+}
+
+// 模块底一行（与 registerChildFactories 并排），三种形态同一个调用
+defineComponentIdentity(ServiceTag, 'ServiceTag');
+defineComponentIdentity(RateCard, 'RateCard');
+defineComponentIdentity(Chart, 'Chart');
+```
+
+判定只有一种写法，与形态无关：
+
+```js
+page.children().filter((child) => child instanceof ServiceTag); // 元素节点：读自己
+page.children().filter((child) => child instanceof RateCard); // 组件节点：展开到视图根
+page.children().filter((child) => child instanceof Chart);
+```
+
+规则：
+
+- **一条判定**：成员是元素节点就看它自己，是组件节点就展开到它的视图根（多根任一命中）。判定读 `vn`
+  属性（快照优先、再回读真实 DOM），所以编译片段克隆、`adopt` / `hydrate` 进来的节点一样认；
+- **多值**：包装型组件共用根时写 `vn: 'VCard UserCard'`，两个身份都命中（空格分隔）；
+- **类名不参与判定**：`yoya-*` 是样式钩子；身份只认 `vn`，改样式不会改身份，手搓同名类名也不会误判；
+- **原型判定保留为兜底**：类组件（形态 C）与 `new` 出来的实例照旧 `instanceof` 成立，迁移期老组件不断；
+- **裸组件对象不算**：`RateCard()` 返回的对象还没进树；判定针对 `children()` 里的成员；
+- **代价**：每个组件实例的 DOM / SSR 输出多一份 ` vn="VCard"`（11 字节起），而且身份进了 DOM 就是公开
+  契约——**改组件名等于改身份语义**。
+
+## 7.4 迁移提示（这批改动带来的行为变化）
 
 - **options 里与子工厂同名的键按属性写**：`div({ slot: 't-head' })` / `div({ title: 't' })` 现在是**属性**；
   以前会创建 `<slot>` / `<title>` 子元素（静默错误）。要建子元素请用链式写法 `root.title(...)`。

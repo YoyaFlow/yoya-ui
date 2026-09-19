@@ -20,6 +20,7 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 | Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                                           |
 | Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget`                      |
 | Node internals            | `nodeChildren`, `appendNodeChild`, `EMPTY_CHILDREN`, `elementStyles`, `elementAttrs`, `elementClassNames`, `elementHasClass` (class-node components only, see §7.3) |
+| Component identity        | `vn: 'VCard'` on the view root, `defineComponentIdentity`, `componentNameOf`, `hasComponentIdentity` (one check for all three shapes, see §7.3)                     |
 | Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                 |
 | i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                               |
 
@@ -448,7 +449,58 @@ Rules:
 - **No `onUpdate`**: "update" means three different things here (region rebuild, keyed key change, a
   component replacing its own root), so there is no single semantic to attach.
 
-## 7.3 Migration notes (behaviour changes in this batch)
+## 7.3 Component identity: `vn` and `instanceof`
+
+Write `vn: 'VCard'` (the export name) on the component's **view root** and that member _is_ a VCard.
+All three shapes are spelled the same way:
+
+```js
+function ServiceTag() {
+  // shape A: thin factory, the member is the element node
+  return span({ vn: 'ServiceTag', class: 'yoya-service-tag' }, 'tag');
+}
+
+function RateCard() {
+  // shape B: the member is the ComponentNode that child() wraps around it
+  return { render: () => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate') };
+}
+
+function Chart() {
+  // vNode: same as shape B
+  return vNode(() => div({ vn: 'Chart' }, 'chart'));
+}
+
+// one line per module, next to registerChildFactories — the same call for every shape
+defineComponentIdentity(ServiceTag, 'ServiceTag');
+defineComponentIdentity(RateCard, 'RateCard');
+defineComponentIdentity(Chart, 'Chart');
+```
+
+The check has one spelling, independent of the shape:
+
+```js
+page.children().filter((child) => child instanceof ServiceTag); // element node: reads itself
+page.children().filter((child) => child instanceof RateCard); // component node: unwraps to its view root
+page.children().filter((child) => child instanceof Chart);
+```
+
+Rules:
+
+- **One check**: an element member is read directly, a component member is unwrapped to its view root
+  (any root of a multi-root view counts). It reads the `vn` attribute — snapshot first, then the real
+  DOM — so cloned fragments and `adopt` / `hydrate` nodes answer the same;
+- **Several names**: a wrapper sharing the root writes `vn: 'VCard UserCard'`; both identities match
+  (whitespace separated);
+- **Class names are not identity**: `yoya-*` stays a styling hook — restyling never changes identity,
+  and a hand-written class name cannot fake it;
+- **The prototype check stays as a fallback**: class-node components (shape C) and instances created
+  with `new` keep working, so nothing breaks during the migration;
+- **A bare component object is not a member**: the object `RateCard()` returns is not in the tree yet;
+  the check targets `children()` members;
+- **Cost**: every instance carries ` vn="VCard"` in the DOM / SSR output (11 bytes and up), and once
+  identity is in the DOM it is a public contract — **renaming a component changes identity semantics**.
+
+## 7.4 Migration notes (behaviour changes in this batch)
 
 - **Options keys that collide with child factories now write attributes**: `div({ slot: 't-head' })` /
   `div({ title: 't' })` set attributes; they used to create `<slot>` / `<title>` child elements (a silent
