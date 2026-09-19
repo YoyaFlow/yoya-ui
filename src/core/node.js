@@ -2,6 +2,7 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
+import { collectSlots, fillSlot, slotNameOf } from './slot.js';
 import { isKeySet } from './key-set.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
@@ -2895,6 +2896,10 @@ export class ComponentNode extends ViewNode {
     this._resolved = list[0] || null;
     this._roots = Array.isArray(resolved) ? list : null;
     list.forEach((root) => this._linkChild(root));
+    // 槽位表在解析时无条件建：同名重复声明即便没有内容也要立刻报错（就近作用域，不进嵌套组件）
+    if (!this._roots) {
+      this._slots = collectSlots(this._resolved);
+    }
     this._adoptContentIntoRoot();
     if (
       this._component &&
@@ -2926,7 +2931,33 @@ export class ComponentNode extends ViewNode {
     const content = this._children;
     this._children = EMPTY_CHILDREN;
     this._childrenDirty = true;
-    this._resolved.child(content);
+    this._slots = collectSlots(this._resolved);
+    content.forEach((child) => this._placeContent(child));
+  }
+
+  /**
+   * 内容投递：带 `slot="x"` 标记的内容进同名槽位（信封不进 DOM），未标记的进根元素
+   * （普通元素语义）；标记找不到槽位 → 不 mount + 开发期提示（HTML 语义）。
+   */
+  _placeContent(content) {
+    const name = slotNameOf(content);
+    if (!name) {
+      this._resolved.child(content);
+      return;
+    }
+
+    const slotElement = this._slots?.get(name);
+    if (!slotElement) {
+      if (typeof console !== 'undefined') {
+        console.warn(
+          `[yoya] <${this._resolved.tagName?.() ?? 'component'}> has no slot "${name}": ` +
+            'the content was not mounted (a slot only resolves on its direct parent component).'
+        );
+      }
+      return;
+    }
+
+    fillSlot(slotElement, content);
   }
 
   /**
@@ -2945,7 +2976,12 @@ export class ComponentNode extends ViewNode {
       );
     }
 
-    this._resolved.child(...children);
+    children.flat(Infinity).forEach((child) => {
+      if (child === null || child === undefined) {
+        return;
+      }
+      this._placeContent(normalizeChildWithContext(this, child));
+    });
     return this;
   }
 
