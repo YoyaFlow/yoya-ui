@@ -5,7 +5,7 @@
  * 这条用例是防漂移的双保险：同一份参数写法走编译产物与通用 DSL 两条路径，DOM 必须一致
  * （编译路径按框架的规范序列化口径，与 `toHTML()` 对比）。
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -13,7 +13,11 @@ import { div } from '../yoya.core.js';
 import * as core from '../yoya.core.js';
 import { compileSource } from './index.js';
 
-const workDir = mkdtempSync(join(process.cwd(), '.scratch', 'tmp-parity-'));
+// 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
+// 但 `.scratch/` 不进 git —— 干净检出里没有它，所以先建出来。
+const scratchRoot = join(process.cwd(), '.scratch');
+mkdirSync(scratchRoot, { recursive: true });
+const workDir = mkdtempSync(join(scratchRoot, 'tmp-parity-'));
 afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;

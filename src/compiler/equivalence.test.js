@@ -5,7 +5,7 @@
  * 这里刻意走「生成模块 → 落盘 → 真实 import」的消费者路径（不是把生成代码在测试里求值），
  * 这样导入形态、运行期钩子解析、模块边界都一起被验证。
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -13,7 +13,11 @@ import * as core from '../yoya.core.js';
 import { buildRow as buildDslRow, removed, removeRow, selectedId } from './fixtures/row-fixture.js';
 import { compileSource } from './index.js';
 
-const workDir = mkdtempSync(join(process.cwd(), '.scratch', 'tmp-compile-'));
+// 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
+// 但 `.scratch/` 不进 git —— 干净检出里没有它，所以先建出来。
+const scratchRoot = join(process.cwd(), '.scratch');
+mkdirSync(scratchRoot, { recursive: true });
+const workDir = mkdtempSync(join(scratchRoot, 'tmp-compile-'));
 const generatedPath = join(workDir, 'row.generated.js');
 const runtimePath = join(process.cwd(), 'src/compiler/runtime.js');
 const runtimeUrl = pathToFileURL(runtimePath).href;

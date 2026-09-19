@@ -13,7 +13,11 @@ import * as core from '../yoya.core.js';
 import { VCard, VCardBody, VCardFooter, VCardHeader, vCard } from '../data-display/surface.js';
 import { buildComponentRegistry, compileComponent, compileSource } from './index.js';
 
-const workDir = mkdtempSync(join(process.cwd(), '.scratch', 'tmp-class-'));
+// 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
+// 但 `.scratch/` 不进 git —— 干净检出里没有它，所以先建出来。
+const scratchRoot = join(process.cwd(), '.scratch');
+mkdirSync(scratchRoot, { recursive: true });
+const workDir = mkdtempSync(join(scratchRoot, 'tmp-class-'));
 afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
