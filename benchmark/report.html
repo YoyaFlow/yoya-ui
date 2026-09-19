@@ -55,7 +55,7 @@
   官方 runner <code>playwright</code>（headless）+ Chrome for Testing 152.0.7977.64；
   CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位）；
   内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-19，
-  yoya 版本 <code>0.6.5</code>（<code>5cdce76</code>）。
+  yoya 版本 <code>0.6.6</code>（<code>5cdce76</code>）。
   <br />非原生条目的单元格分两层：<b>上方是实测值，下方是「÷ 原生」的归一系数</b>
   （绿 ≤1.00×、灰 ≤1.25×、琥珀 ≤1.50×、红 &gt;1.50×）。
   对照条目 yoya runtime（无编译） / Vue 3.5.39 / React 19.2.0 / Solid 1.9.3 / Svelte 5.42.1 与 yoya / 原生取自**同一轮**测量。
@@ -75,7 +75,7 @@
 
 <h2>九项标准操作（ms，中位数；下行 = 归一系数）</h2>
 <table>
-  <thead><tr><th>操作</th><th>yoya 0.6.5</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
+  <thead><tr><th>操作</th><th>yoya 0.6.6</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
   <tbody>
 <tr><td>01 创建 1000 行</td><td class="stack"><b>34.5 ms</b><span class="coef-ok">1.13×</span></td><td>30.6 ms</td><td class="stack ahead"><b>44.5 ms</b><span class="coef-warn">1.45×</span></td><td class="stack ahead"><b>37.2 ms</b><span class="coef-ok">1.22×</span></td><td class="stack ahead"><b>38.9 ms</b><span class="coef-warn">1.27×</span></td><td class="stack tie"><b>33.9 ms</b><span class="coef-ok">1.11×</span></td><td class="stack tie"><b>33.9 ms</b><span class="coef-ok">1.11×</span></td></tr>
 <tr><td>02 替换 1000 行</td><td class="stack"><b>38.3 ms</b><span class="coef-ok">1.12×</span></td><td>34.2 ms</td><td class="stack ahead"><b>46.3 ms</b><span class="coef-warn">1.35×</span></td><td class="stack ahead"><b>43.8 ms</b><span class="coef-warn">1.28×</span></td><td class="stack ahead"><b>45.2 ms</b><span class="coef-warn">1.32×</span></td><td class="stack tie"><b>38.8 ms</b><span class="coef-ok">1.13×</span></td><td class="stack ahead"><b>41.8 ms</b><span class="coef-ok">1.22×</span></td></tr>
@@ -107,7 +107,7 @@
 
 <h2>内存 / 体积 / 首屏</h2>
 <table>
-  <thead><tr><th>操作</th><th>yoya 0.6.5</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
+  <thead><tr><th>操作</th><th>yoya 0.6.6</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
   <tbody>
 <tr><td>21 就绪内存（MB）</td><td class="stack"><b>1.30 MB</b><span class="coef-ok">1.23×</span></td><td>1.06 MB</td><td class="stack tie"><b>1.30 MB</b><span class="coef-ok">1.23×</span></td><td class="stack tie"><b>1.27 MB</b><span class="coef-ok">1.20×</span></td><td class="stack ahead"><b>1.67 MB</b><span class="coef-bad">1.58×</span></td><td class="stack behind"><b>1.08 MB</b><span class="coef-ok">1.02×</span></td><td class="stack behind"><b>1.16 MB</b><span class="coef-ok">1.10×</span></td></tr>
 <tr><td>22 建 1000 行后内存（MB）</td><td class="stack"><b>3.95 MB</b><span class="coef-bad">1.61×</span></td><td>2.45 MB</td><td class="stack ahead"><b>5.37 MB</b><span class="coef-bad">2.19×</span></td><td class="stack ahead"><b>4.59 MB</b><span class="coef-bad">1.87×</span></td><td class="stack ahead"><b>5.03 MB</b><span class="coef-bad">2.05×</span></td><td class="stack behind"><b>3.34 MB</b><span class="coef-warn">1.36×</span></td><td class="stack behind"><b>3.52 MB</b><span class="coef-warn">1.44×</span></td></tr>

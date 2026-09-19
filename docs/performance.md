@@ -13,7 +13,7 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-19, yoya version `0.6.5` (`5cdce76`).
+**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-19, yoya version `0.6.6` (`5cdce76`).
 
 **Nine standard operations (ms, median)**
 

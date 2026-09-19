@@ -41,7 +41,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
     <title>yoya-ui 计数器</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.5/dist/yoya.ui.css"
+      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -53,7 +53,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.5/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // 状态就是句柄：写入即更新绑定位置
 
@@ -215,7 +215,7 @@ Star 数说明关注度，不说明正确性，所以下面这些都可以直接
 > 单元格格式为 `测量值（÷ 原生）`，执行项单位 ms、内存项 MB。**不是官方站点数字**，
 > 横向对比只在同一轮内有效；体积、首屏与逐项明细（含 9 项 script / paint 分解）见 [`benchmark/report.html`](benchmark/report.html)。
 
-| 基准                      | 原生 vanillajs | yoya-**0.6.5**（编译） | yoya-**0.6.5**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| 基准                      | 原生 vanillajs | yoya-**0.6.6**（编译） | yoya-**0.6.6**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
 | ------------------------- | -------------- | ---------------------- | ------------------------ | ------------- | ------------- | ------------- | ------------- |
 | 01 创建 1000 行           | 30.6           | 34.5 (1.13×)           | 44.5 (1.45×)             | 37.2 (1.22×)  | 38.9 (1.27×)  | 33.9 (1.11×)  | 33.9 (1.11×)  |
 | 02 替换 1000 行           | 34.2           | 38.3 (1.12×)           | 46.3 (1.35×)             | 43.8 (1.28×)  | 45.2 (1.32×)  | 38.8 (1.13×)  | 41.8 (1.22×)  |

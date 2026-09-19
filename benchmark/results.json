@@ -2,7 +2,7 @@
   "meta": {
     "generatedAt": "2026-09-19",
     "commit": "5cdce76",
-    "packageVersion": "0.6.5",
+    "packageVersion": "0.6.6",
     "runner": "playwright",
     "mode": "headless",
     "browser": "Chrome for Testing 152.0.7977.64",

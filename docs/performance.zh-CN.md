@@ -11,7 +11,7 @@
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**运行口径**：官方 runner `playwright`（headless）+ Chrome for Testing 152.0.7977.64；CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位），内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-19，yoya 版本 `0.6.5`（`5cdce76`）。
+**运行口径**：官方 runner `playwright`（headless）+ Chrome for Testing 152.0.7977.64；CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位），内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-19，yoya 版本 `0.6.6`（`5cdce76`）。
 
 **九项标准操作（ms，中位数）**
 

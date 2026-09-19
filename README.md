@@ -48,7 +48,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.5/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -60,7 +60,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.5/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 
@@ -231,7 +231,7 @@ Execution (nine standard operations) and memory, read from the official
 > **These are not the official site numbers** — only compare within the same round; size, first paint and the
 > per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                        | vanillajs | yoya-**0.6.5** (compiled) | yoya-**0.6.5** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| Benchmark                        | vanillajs | yoya-**0.6.6** (compiled) | yoya-**0.6.6** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
 | -------------------------------- | --------- | ------------------------- | ------------------------ | ------------- | ------------- | ------------- | ------------- |
 | 01 create 1k rows                | 30.6      | 34.5 (1.13×)              | 44.5 (1.45×)             | 37.2 (1.22×)  | 38.9 (1.27×)  | 33.9 (1.11×)  | 33.9 (1.11×)  |
 | 02 replace 1k rows               | 34.2      | 38.3 (1.12×)              | 46.3 (1.35×)             | 43.8 (1.28×)  | 45.2 (1.32×)  | 38.8 (1.13×)  | 41.8 (1.22×)  |
