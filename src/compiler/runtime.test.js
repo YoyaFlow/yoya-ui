@@ -64,6 +64,12 @@ describe('bindText', () => {
     source.value = 'c';
     expect(element.textContent).toBe('b');
   });
+
+  it('rejects a node passed into a text position instead of writing garbage', () => {
+    const element = document.createElement('td');
+
+    expect(() => bindText(element, span('body'))).toThrow(/received a node/);
+  });
 });
 
 describe('bindClass', () => {

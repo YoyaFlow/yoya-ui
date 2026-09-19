@@ -13,7 +13,7 @@
  * SSR 纪律：本模块在服务端被导入是安全的——`<template>` 只在浏览器首次克隆时惰性创建，
  * 模块级缓存是「片段 → 模板」的纯派生缓存（键与值都与请求无关），不跨请求共享状态。
  */
-import { VTextNode, appendNodeChild, applyAttribute } from '../core/node.js';
+import { VTextNode, ViewNode, appendNodeChild, applyAttribute } from '../core/node.js';
 import { computed, isSignal } from '../core/signals/handle.js';
 
 export { appendNodeChild };
@@ -78,6 +78,15 @@ const writeText = (element, value) => {
 
 /** 文本位置（元素模式）：活值订阅后就地写，普通值写一次；返回退订函数（普通值返回 null）。 */
 export function bindText(element, value) {
+  // 文本位置收到节点对象 = 上游把"节点变量"当文本值编了（编译期看不出来），显式报错，
+  // 否则会写进 String(nodeObject) 的脏文本 —— 与 child(span(...)) 那类静默误编同源。
+  if (value instanceof ViewNode) {
+    throw new TypeError(
+      'compiled text position received a node: use child(<factory>(...)) or a slot marker ' +
+        'instead of passing a node variable into a text position.'
+    );
+  }
+
   const handle = liveHandle(value);
   if (!handle) {
     writeText(element, value);
