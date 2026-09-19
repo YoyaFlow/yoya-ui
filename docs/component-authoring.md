@@ -373,6 +373,94 @@ into it (`nodeChildren()` materialises a real array on the first write); class n
 children through `child()` / `addChild()` as usual — these helpers exist for class-node components that must
 touch the child list inside their own render path.
 
+## 7.1 Slots: where content goes
+
+Mark an element in a component's own structure with a `slot` attribute and it becomes a **slot** of that
+component. An element passed through `child()` that carries the same marker is an "envelope": its children,
+class names and same-named attributes merge into the slot element, and **the envelope itself never enters
+the DOM** (same fallback semantics as HTML's `<slot>`). Content without a marker follows plain-element
+semantics and is appended inside the component's root element.
+
+```js
+// Component author: declare the slot in the structure (its own content is the default)
+function Panel() {
+  return vNode(() =>
+    div((root) => {
+      root.span({ slot: 't-head' }, 'default title');
+      root.div('body');
+    })
+  );
+}
+
+// Consumer: both kinds of content work
+panel.child(span({ slot: 't-head' }, 'user title')); // into the slot, replacing the default
+panel.child(p('plain content')); // unmarked → appended inside the component root
+```
+
+Rules:
+
+- **Nearest scope**: a marker resolves only on the **direct parent component** — no bubbling, no
+  percolation; nested components keep their same-named slots independent;
+- **One slot accepts one carrier**: a second delivery to the same slot throws; two declarations of the
+  same slot in one component throw;
+- **No matching slot**: the content is not mounted (+ a development-time hint), matching HTML;
+- **Multi-root components** have no single container: unmarked content throws — declare a named slot;
+- Slots add no extra DOM; `slot` is a **marker**, not a `<slot>` element (`slot()` is the plain HTML tag
+  factory and has nothing to do with component slots).
+
+### When to use a slot, when to use `child`
+
+| Situation                                                       | Use                                                                                           |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| The component has a single place for content                    | `child(...)` (no marker, lands in the root)                                                   |
+| The component has several insertion points (head / body / foot) | Mark each position with `slot`, mark the content the same way                                 |
+| Content must land at a specific position inside                 | A slot                                                                                        |
+| Content is simply appended at the end                           | `child(...)` without a marker                                                                 |
+| Build the content first, attach it later                        | Have the factory produce the marker (`span({ slot: 't-head' }, …)`), then `panel.child(head)` |
+
+## 7.2 Component hooks: `whenMount` / `whenDestroy`
+
+Protocol members in the same family as `whenFailed`: a property holding a function, declared on a vNode's
+api or on the object a shape B component returns.
+
+```js
+const chart = vNode((api) => {
+  api.whenMount = function () {
+    this.instance = createChart(thisEl); // the element has landed: measure / init third-party code
+  };
+  api.whenDestroy = function () {
+    this.instance?.dispose(); // before the subtree is torn down; your DOM is still readable
+  };
+  return div((root) => root.span('chart'));
+});
+```
+
+Rules:
+
+- **Timing**: `whenMount` fires when the node really lands in the DOM (not while `mountable(false)`; it fires
+  when the condition turns true and the node lands); `whenDestroy` fires **before the subtree is torn down**
+  and is idempotent;
+- **Never inside an options object**: `div({ whenMount: fn })` throws — `onXxx` is the event shorthand
+  (`{ onClick: fn }`), while `whenMount` / `whenDestroy` / `whenFailed` are protocol members; a misplaced
+  hook fails loudly instead of being silently bound as an event;
+- **`this`** is the component object (shape B) or the api (vNode);
+- **Memory**: components without hooks add no fields; no `bind()`, no arrays, references released on destroy;
+- **No `onUpdate`**: "update" means three different things here (region rebuild, keyed key change, a
+  component replacing its own root), so there is no single semantic to attach.
+
+## 7.3 Migration notes (behaviour changes in this batch)
+
+- **Options keys that collide with child factories now write attributes**: `div({ slot: 't-head' })` /
+  `div({ title: 't' })` set attributes; they used to create `<slot>` / `<title>` child elements (a silent
+  bug). Build child elements with the chained form (`root.title(...)`).
+- **Setup arguments are variadic and strictly ordered**: function = builder, string/number = text,
+  node/handle = child, array = child list, object = options, same-class instance = reuse. Arguments that
+  used to be dropped silently (`div(null, { children: 'x' })`, `div(cb, 't')`) now take effect.
+- **Component content side**: `component.child(x)` now renders **inside the component root** (previously it
+  neither entered the DOM nor showed up in `children()`); multi-root components reject children.
+- **`whenMount` is under review**: it may be unnecessary (a `requestAnimationFrame` or lazy init covers many
+  cases); `whenDestroy` stays as the required cleanup hook.
+
 ## 8. Registering parent shortcuts
 
 Use `registerChildFactories` to register factories on a target node class, enabling `page.vButton(...)` syntax in pages. Existing methods are not overridden by default:

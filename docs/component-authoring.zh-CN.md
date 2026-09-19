@@ -355,6 +355,84 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 没写过样式或属性的元素上它们是 `undefined`，helper 会替你建好。追加子节点请走 `child()` / `addChild()`，
 helper 只用于"必须在自己的渲染路径里直接改节点名单"的形态 C 场景。
 
+## 7.1 槽位：内容往哪里去
+
+组件结构里给某个元素打上 `slot` 标记，它就是这个组件的**槽位**；`child()` 进来的、带同名标记的元素是
+"信封"——它的子节点、类名与同名属性合并进槽位元素，**信封本身不进 DOM**（与 HTML 的 `<slot>` fallback 一致）。
+不带标记的内容按**普通元素**语义落在组件根元素内部。
+
+```js
+// 组件作者：结构里声明槽位（元素自己的内容就是默认内容）
+function Panel() {
+  return vNode(() =>
+    div((root) => {
+      root.span({ slot: 't-head' }, '默认标题');
+      root.div('body');
+    })
+  );
+}
+
+// 消费者：两种内容都能进
+panel.child(span({ slot: 't-head' }, '来自用户的标题')); // 进槽位，默认内容被替换
+panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
+```
+
+规则：
+
+- **就近作用域**：标记只在**直接父组件**里解析，不冒泡、不穿透；嵌套组件里的同名槽互不影响；
+- **一个槽一份内容**：同名槽第二次投递 → 报错；同一个组件里同名槽声明两次 → 报错；
+- **找不到槽位**：不 mount + 开发期提示（HTML 语义：没有位置就不渲染）；
+- **多根组件**没有单一容器：未标记内容 → 报错，请声明命名槽；
+- 槽位不产生额外 DOM；`slot` 只是**标记**，不是 `<slot>` 元素（`slot()` 是 HTML 原生标签工厂，与组件槽位无关）。
+
+### 何时用槽、何时直接 `child`
+
+| 场景                             | 写法                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| 组件只有一个放内容的地方         | `child(...)`（不带标记，进根元素）                                                         |
+| 组件有多个插入点（头 / 体 / 尾） | 结构里给每个位置打 `slot` 标记，内容带同名标记                                             |
+| 内容要落在组件内部的指定位置     | 槽位                                                                                       |
+| 内容只是追加到组件末尾           | 不带标记的 `child(...)`                                                                    |
+| 独立创建、之后挂到某个组件的槽里 | 工厂产出就带标记（`span({ slot: 't-head' }, …)` 或自己的工厂封装），再 `panel.child(head)` |
+
+## 7.2 组件级钩子：`whenMount` / `whenDestroy`
+
+与 `whenFailed` 同族的**协议成员**：属性持函数，声明在 vNode 的 api 上或形态 B 的返回对象上。
+
+```js
+const chart = vNode((api) => {
+  api.whenMount = function () {
+    this.instance = createChart(thisEl); // 元素已经落地，可以测量 / 初始化第三方
+  };
+  api.whenDestroy = function () {
+    this.instance?.dispose(); // 子树销毁之前，自己的 DOM 与子节点还读得到
+  };
+  return div((root) => root.span('chart'));
+});
+```
+
+规则：
+
+- **时机**：`whenMount` 在节点真正落到 DOM 时触发（`mountable(false)` 期间不触发，条件转真、真正落地时才触发）；
+  `whenDestroy` 在**子树销毁之前**触发且幂等；
+- **不能写进 options 对象**：`div({ whenMount: fn })` 直接报错 —— `onXxx` 才是事件简写（`{ onClick: fn }`），
+  `whenMount` / `whenDestroy` / `whenFailed` 放错位置会报错，不会被静默绑成事件；
+- **`this`** 绑定到组件对象（形态 B）或 api（vNode）；
+- **内存**：没有钩子的组件零额外字段；框架不 `bind()`、不用数组收集，销毁后释放引用；
+- **不做 `onUpdate`**：库里"更新"有区域重建 / keyed 换 key / 组件主动换根三种不同场景，没有单一语义。
+
+## 7.3 迁移提示（这批改动带来的行为变化）
+
+- **options 里与子工厂同名的键按属性写**：`div({ slot: 't-head' })` / `div({ title: 't' })` 现在是**属性**；
+  以前会创建 `<slot>` / `<title>` 子元素（静默错误）。要建子元素请用链式写法 `root.title(...)`。
+- **setup 参数数量不定、严格按出现顺序**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
+  数组 = 子节点列表、对象 = options、同类实例 = 复用。`div(null, { children: 'x' })`、`div(cb, 't')`
+  这类以前被静默丢弃的参数现在生效。
+- **组件的内容侧**：`component.child(x)` 现在渲染在**组件根元素内部**（以前既不进 DOM、也不出现在
+  `children()` 里）；多根组件带内容会报错。
+- **`whenMount` 待评估**：它可能是多余的（很多场景可用 `requestAnimationFrame` 或首次交互惰性初始化替代），
+  `whenDestroy` 是必需的清理钩子。
+
 ## 8. 注册父节点快捷方法
 
 通过 `registerChildFactories` 将工厂注册到目标节点类，页面内即可使用 `page.vButton(...)` 写法；默认不覆盖既有方法：

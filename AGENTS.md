@@ -78,6 +78,16 @@ export function vTr(first = null, second = null, third = null) {
 - child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
 - 形态 B 的快捷写法：`vNode((api) => 视图)` 定义即得到组件节点（ComponentNode），命令方法收到 api 上后由工厂挂到节点、重名报错；旧三形态与 child() 的对象形式不变。
 - 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
+- **新增组件一律形态 B**（`vNode(setup)` / `{ render() }`）；形态 C（class 继承节点）停止新增，存量迁移见票 43。
+- **setup 参数数量不定、按出现顺序分派**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
+  数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
+- **options 里子工厂不参与分派**：与子工厂同名的键按**属性**写（`div({ slot: 't-head' })` 是属性，
+  不是创建 `<slot>` 子元素）；组件自有方法照旧调用（`vDialog({ title })` 是 props）；`attrs` / `style`
+  是显式通道。键分类的唯一真源是 `src/core/setup-keys.js`。
+- **内容与槽位**：未标记的 `child(...)` 进组件根元素内部（普通元素语义）；带 `slot` 标记的内容按
+  **就近作用域**进直接父组件的同名槽位，一个槽一份内容，找不到槽位不 mount；多根组件不接受未标记内容。
+- **组件级钩子**：`whenMount` / `whenDestroy`（与 `whenFailed` 同族的协议成员，属性持函数，写在 vNode
+  的 api 或形态 B 返回对象上）；写在 options 对象里会报错，不要与 `onXxx` 事件简写混用。
 
 ### Demo 演示组件
 
