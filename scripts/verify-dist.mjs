@@ -105,11 +105,26 @@ async function verifyCompilerRuntime() {
     assert(host.children.length === 2, 'compiled list 没有把行挂进容器');
     assert(host.children[0].textContent === '1', 'compiled list 没有写入行文本');
     assert(
-      host.children[0].getAttribute('data-row-key') === '1',
-      'compiled list 没有写 data-row-key'
+      host.children[0].getAttribute('data-row-key') === null,
+      'compiled list 默认写了 data-row-key（票 18 要求默认不写，键镜像按 keyAttribute 显式打开）'
     );
     list.destroy();
     assert(host.children.length === 0, 'compiled list 的 destroy 没有清空容器');
+
+    // 键镜像按选项显式打开：需要按 key 定位行（DevTools / 排查对账）时才有这个属性。
+    const keyedHost = document.createElement('tbody');
+    const keyedList = runtime.createElementList(keyedHost, (row) => row.id, {
+      keyAttribute: 'data-row-key'
+    });
+    keyedList.sync([{ id: 7 }], () => ({
+      el: runtime.cloneFragment('<tr></tr>'),
+      destroy: () => {}
+    }));
+    assert(
+      keyedHost.children[0].getAttribute('data-row-key') === '7',
+      'compiled list 开了 keyAttribute 却没有写键镜像'
+    );
+    keyedList.destroy();
     offs.forEach((off) => off());
   } finally {
     if (previousDocument === undefined) {

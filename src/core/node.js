@@ -148,6 +148,13 @@ class NodeBinding {
   }
 
   release() {
+    // 元素行段（keyed 吃编译产物的 { el, destroy } 行）随绑定一起收口：
+    // 行不在视图树里，销毁父节点 / 区域换子都带不走它们，只有绑定的释放点知道该收谁。
+    const elementRows = this.elementRows;
+    if (elementRows !== undefined) {
+      this.elementRows = undefined;
+      releaseElementRows(elementRows);
+    }
     this.target.release();
   }
 
@@ -1277,12 +1284,14 @@ function isElementRow(value) {
   );
 }
 
+/** 元素行段的成员集合（给段尾锚点查询用：元素行不进 `_children`，永远没有成员）。 */
+const EMPTY_KEYED_MEMBERS = new Set();
+
 /**
  * 元素行对账：同 key 复用元素、同 key 换引用原位重建、离场销毁，按目标顺序最小搬动。
  * 搬动用「反向锚点」：只在行的位置确实不对时才 `insertBefore`，换位两行只搬这两行。
  */
 function syncElementRows(parent, segment, list, seed = null) {
-  const container = parent._el;
   const members = segment.elementMembers;
   const desired = [];
   const seen = new Set();
@@ -1336,18 +1345,121 @@ function syncElementRows(parent, segment, list, seed = null) {
     }
   });
 
-  if (!container) {
+  // 目标顺序留在段上：容器还没建好时（挂载期补插）也要按这一份顺序摆。
+  segment.elementOrder = desired;
+  placeElementRows(parent, segment);
+}
+
+/**
+ * 元素行段落位：段内行按目标顺序排到段尾锚点之前。
+ * 首次挂载（行已建好但容器还不存在）与后续对账共用这一段，位置口径与节点行完全一致。
+ */
+function placeElementRows(parent, segment) {
+  const container = parent._el;
+  const order = segment.elementOrder;
+  if (!container || !order || order.length === 0) {
     return;
   }
 
-  let anchor = null;
-  for (let index = desired.length - 1; index >= 0; index -= 1) {
-    const { el } = desired[index];
+  let anchor = elementSegmentAnchor(parent, segment);
+  for (let index = order.length - 1; index >= 0; index -= 1) {
+    const { el } = order[index];
     if (el.parentNode !== container || el.nextSibling !== anchor) {
       container.insertBefore(el, anchor);
     }
     anchor = el;
   }
+}
+
+/**
+ * 元素行段的段尾锚点：段内所有行排在它前面。
+ * 两个候选：①「声明位置之后第一个非本段子节点」（与节点行同一套段尾口径：兄弟内容在
+ * keyed 之后时，行必须待在声明的那一段里，不能一律钉到容器末尾）；②声明在后、已经有行的
+ * 元素行段的第一行（同一容器里两段列表各自守位，不互相吞掉）。两者都在时取 DOM 更靠前的。
+ */
+function elementSegmentAnchor(parent, segment) {
+  const container = parent._el;
+  const tailNode = keyedSegmentTailNode(parent, segment, EMPTY_KEYED_MEMBERS);
+  const tail = tailNode
+    ? (keyedMemberElements(parent, tailNode)[0] ?? resolveInsertAnchor(parent, tailNode))
+    : null;
+  const segments = parent._elementSegments;
+  if (segments === undefined) {
+    return tail;
+  }
+
+  // 声明在后的段若已经有行在容器里，它的第一行也在本段之后：谁在 DOM 里更靠前就用谁当界，
+  // 这样「两段 element 行 + 后面的兄弟内容」三种顺序都守位。
+  // 段按声明顺序（`segment.order`）比，不看谁先建出行——先起来的那段不能把后声明的那段挤到前面。
+  let later = null;
+  let laterOrder = Infinity;
+  for (let index = 0; index < segments.length; index += 1) {
+    const other = segments[index];
+    if (other.order <= segment.order || other.order >= laterOrder) {
+      continue;
+    }
+    const first = other.elementOrder?.[0]?.el;
+    if (first && first.parentNode === container) {
+      later = first;
+      laterOrder = other.order;
+    }
+  }
+
+  if (later === null || tail === null) {
+    return later ?? tail;
+  }
+
+  // DOM 顺序更靠前的那一个是界。`later.compareDocumentPosition(tail)` 命中 4（FOLLOWING =
+  // tail 在 later 之后）即「later 在前」；用字面量而不是 `Node` 全局，这条路径以外不依赖 DOM 常量。
+  return (later.compareDocumentPosition(tail) & 4) !== 0 ? later : tail;
+}
+
+/** 元素行段登记：进入 element 通道的段按声明顺序进父节点的名单，供段尾锚点与释放使用。 */
+function registerElementSegment(parent, segment) {
+  if (segment.elementRegistered === true) {
+    return;
+  }
+
+  segment.elementRegistered = true;
+  parent._elementSegments = appendNodeEntry(parent._elementSegments, segment);
+  // 行随绑定走：父节点销毁 / 区域换子时释放的正是这条绑定。
+  segment.binding.elementRows = segment;
+}
+
+/** 元素行段落释放：行的 DOM 与 destroy 一起收口（父节点销毁 / 区域换子共用）。 */
+function releaseElementRows(segment) {
+  const members = segment.elementMembers;
+  if (members.size > 0) {
+    members.forEach((entry) => {
+      entry.el.remove();
+      entry.destroy?.();
+    });
+    members.clear();
+  }
+
+  segment.elementOrder = null;
+  const parent = segment.parent;
+  const segments = parent?._elementSegments;
+  const index = segments ? segments.indexOf(segment) : -1;
+  if (index !== -1) {
+    segments.splice(index, 1);
+  }
+}
+
+/** 本节点是否挂着还有行的元素行段（`toHTML()` 据此硬报错，不让序列化静默少掉整张列表）。 */
+function hasElementRows(parent) {
+  const segments = parent._elementSegments;
+  if (segments === undefined) {
+    return false;
+  }
+
+  for (let index = 0; index < segments.length; index += 1) {
+    if (segments[index].elementMembers.size > 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function syncKeyedSegment(parent, segment, rows) {
@@ -1446,7 +1558,7 @@ function syncKeyedSegment(parent, segment, rows) {
         throw new TypeError('keyed() rows must be all elements or all nodes');
       }
       segment.mode = 'element';
-      parent._elementRows = segment.elementMembers;
+      registerElementSegment(parent, segment);
       syncElementRows(parent, segment, list, { product, rawKey: item.rawKey });
       return;
     }
@@ -2320,7 +2432,7 @@ export class ViewNode {
     // 段只在本次 keyed() 的绑定闭包里使用（syncKeyedSegment(this, segment, rows)）；此前的
     // _keyedSegments 名单只写不读，还会在每次区域重跑时追加、从不清理，把上一轮的
     // members（行与节点引用）一直留在树上。名单已删除。
-    registerNodeBinding(
+    segment.binding = registerNodeBinding(
       this,
       'keyed',
       null,
@@ -2329,6 +2441,9 @@ export class ViewNode {
         syncKeyedSegment(this, segment, rows);
       }
     );
+    // 段的声明顺序（绑定登记号单调递增）：同一容器里的多段 element 行按它排队，
+    // 「谁先拿到数据」不影响各自的位置。
+    segment.order = bindingSerial;
 
     return this;
   }
@@ -4129,6 +4244,15 @@ export class ElementNode extends ViewNode {
         renderScopeStack.pop();
       }
 
+      // 元素行不是子节点：容器这一趟落地时把它们补插进段尾锚点（首次挂载前就有数据时，
+      // 对账发生在容器还不存在的时刻，不补插整张列表会静默消失）。非 element 用户没有这条名单。
+      const elementSegments = this._elementSegments;
+      if (elementSegments !== undefined) {
+        for (let index = 0; index < elementSegments.length; index += 1) {
+          placeElementRows(this, elementSegments[index]);
+        }
+      }
+
       if (devtools) {
         commitDevtoolsNode(this);
       }
@@ -4155,7 +4279,7 @@ export class ElementNode extends ViewNode {
 
     // 元素行（编译产物 element 通道）只有 DOM、不进视图树：序列化会静默少掉整张列表，
     // 所以这里硬报错，让 SSR 明确走通用路径（票 15）。
-    if (this._elementRows?.size > 0) {
+    if (hasElementRows(this)) {
       throw new TypeError(
         'toHTML() cannot serialize element rows (compiled element-channel rows are DOM-only); ' +
           'render this list through the generic path on the server'

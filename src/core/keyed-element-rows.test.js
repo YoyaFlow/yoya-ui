@@ -7,7 +7,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { keySet } from './key-set.js';
 import { ref } from './signals/handle.js';
-import { tbody, tr } from '../html/index.js';
+import { div, tbody, tr } from '../html/index.js';
 
 const elementRowFactory = (build) => (item) => {
   const data = item.data ?? item;
@@ -36,6 +36,10 @@ const mountKeyed = (rows, build, options) => {
 
 const idsOf = (element) =>
   [...element.querySelectorAll('tr')].map((tr) => tr.getAttribute('data-id'));
+
+/** 子元素形状：行（data-id）与静态兄弟（data-id="tail"）一次的扁平快照。 */
+const shapeOf = (element) =>
+  [...element.children].map((child) => child.getAttribute('data-id')).join(',');
 
 describe('keyed() with element rows (ticket 15)', () => {
   it('reuses the same element for the same key and data reference', () => {
@@ -152,5 +156,119 @@ describe('keyed() with element rows (ticket 15)', () => {
 
     rows.remove(1);
     expect(idsOf(element)).toEqual(['2']);
+  });
+
+  /**
+   * 位置口径：元素行与节点行共用「段尾锚点」——段内行排在 keyed() 声明位置之后、
+   * 该段之后第一个兄弟之前。原来的实现一律钉到容器末尾，`keyed` 后面还有内容时整段被搬到后面。
+   */
+  it('keeps element rows at the declared position when a sibling follows', () => {
+    const rows = ref([{ id: 1, label: 'a' }]);
+    const build = (row) => ({ el: rowElement(row.id, row.label), destroy: vi.fn() });
+    const host = tbody((body) => {
+      body.keyed(rows, build);
+      body.tr((line) => line.attr('data-id', 'tail'));
+    });
+    const element = host.renderDom();
+
+    rows.value = [
+      { id: 1, label: 'a' },
+      { id: 2, label: 'b' }
+    ];
+
+    expect(shapeOf(element)).toBe('1,2,tail');
+  });
+
+  it('keeps two element row segments in one parent from swallowing each other', () => {
+    const first = ref([{ id: 1, label: 'a' }]);
+    const second = ref([{ id: 2, label: 'b' }]);
+    const host = tbody((body) => {
+      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }));
+      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }));
+    });
+    const element = host.renderDom();
+
+    expect(shapeOf(element)).toBe('a1,b2');
+
+    first.value = [
+      { id: 1, label: 'a' },
+      { id: 3, label: 'c' }
+    ];
+    expect(shapeOf(element)).toBe('a1,a3,b2');
+  });
+
+  it('keeps two element row segments ordered when a sibling follows both', () => {
+    const first = ref([]);
+    const second = ref([]);
+    const host = tbody((body) => {
+      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }));
+      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }));
+      body.tr((line) => line.attr('data-id', 'tail'));
+    });
+    const element = host.renderDom();
+
+    // 后声明的段先拿到数据、先声明的段后拿到：两段各自的位置都不能被对方吞掉。
+    second.value = [{ id: 2, label: 'b' }];
+    first.value = [{ id: 1, label: 'a' }];
+
+    expect(shapeOf(element)).toBe('a1,b2,tail');
+
+    second.value = [
+      { id: 2, label: 'b' },
+      { id: 3, label: 'c' }
+    ];
+    expect(shapeOf(element)).toBe('a1,b2,b3,tail');
+  });
+
+  /** 挂载期补插：行在容器建好之前就建好时，首屏必须落地，而不是静默少掉整张列表。 */
+  it('renders rows that were built before the container existed', () => {
+    const rows = ref([
+      { id: 1, label: 'a' },
+      { id: 2, label: 'b' }
+    ]);
+    const host = tbody((body) => {
+      body.keyed(rows, (row) => ({ el: rowElement(row.id, row.label), destroy: vi.fn() }));
+    });
+    const element = host.renderDom();
+
+    expect(shapeOf(element)).toBe('1,2');
+  });
+
+  /** 行不在视图树里，父节点销毁 / 区域重建都带不走它们：释放点必须落在 keyed 绑定上。 */
+  it('destroys element rows when the owning node is destroyed', () => {
+    const destroyed = [];
+    const rows = ref([
+      { id: 1, label: 'a' },
+      { id: 2, label: 'b' }
+    ]);
+    const host = tbody((body) => {
+      body.keyed(rows, (row) => ({
+        el: rowElement(row.id, row.label),
+        destroy: () => destroyed.push(row.id)
+      }));
+    });
+    host.renderDom();
+
+    host.destroy();
+
+    expect(destroyed).toEqual([1, 2]);
+  });
+
+  it('destroys element rows of the previous run when a region rebuilds', () => {
+    const destroyed = [];
+    const rows = ref([{ id: 1, label: 'a' }]);
+    const host = div((page) => {
+      page.rebuildable();
+      page.keyed(rows, (row) => ({
+        el: rowElement(row.id, row.label),
+        destroy: () => destroyed.push(row.id)
+      }));
+    });
+    const element = host.renderDom();
+
+    host.rebuild();
+
+    expect(destroyed).toEqual([1]);
+    expect(shapeOf(element)).toBe('1');
   });
 });
