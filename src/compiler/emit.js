@@ -9,6 +9,7 @@
  * 「哪些值算静态」。生成的模块只 import 运行期钩子，不含编译器本身。
  */
 import { freeIdentifiers } from './analyze.js';
+import { createHash } from 'node:crypto';
 
 /** 动态值在片段里的占位文本；运行期改写它。 */
 const TEXT_PLACEHOLDER = '0';
@@ -67,6 +68,8 @@ export function renderModule(options) {
     mode,
     source: { file, fn },
     html: fragmentHtml,
+    // 片段签名：构建期写页面 <template data-yoya-fragment="签名"> 时用它对号（票 45）
+    signature: createHash('sha256').update(fragmentHtml).digest('hex').slice(0, 12),
     liveNodes: emitted.liveNodes,
     slots: emitted.slots
   };
@@ -135,7 +138,7 @@ export function renderModule(options) {
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
         `  return function ${fn}(${entry.builderParam}) {\n` +
-        `    const el = cloneFragment(plan.html);\n` +
+        `    const el = cloneFragment(plan.html, plan.signature);\n` +
         `    const offs = [];\n` +
         `${emitted.lines.join('\n')}${emitted.lines.length > 0 ? '\n' : ''}` +
         '    let disposed = false;\n' +
@@ -157,7 +160,7 @@ export function renderModule(options) {
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
         `  return function ${fn}(${entry.builderParam}) {\n` +
-        `    const element = cloneFragment(plan.html);\n` +
+        `    const element = cloneFragment(plan.html, plan.signature);\n` +
         `${emitted.lines.join('\n')}${emitted.lines.length > 0 ? '\n' : ''}` +
         `${emitted.slotLines.map((line) => `    ${line}`).join('\n')}` +
         `${emitted.slotLines.length > 0 ? '\n' : ''}` +

@@ -24,6 +24,26 @@ describe('cloneFragment', () => {
     expect(second).not.toBe(first);
     expect(second.outerHTML).toBe('<tr data-row-id="1"><td>0</td></tr>');
   });
+
+  // 票 45：片段可以来自页面里的 inert <template data-yoya-fragment="签名">
+  it('clones from the page template when the signature matches', () => {
+    const host = document.createElement('div');
+    host.innerHTML =
+      '<template data-yoya-fragment="sig-page"><tr data-row-id="1"><td>page</td></tr></template>';
+    document.body.appendChild(host);
+
+    try {
+      const element = cloneFragment('<tr data-row-id="1"><td>js</td></tr>', 'sig-page');
+      expect(element.outerHTML).toBe('<tr data-row-id="1"><td>page</td></tr>');
+    } finally {
+      host.remove();
+    }
+  });
+
+  it('falls back to the html string when the page template is missing', () => {
+    const element = cloneFragment('<tr data-row-id="1"><td>js</td></tr>', 'sig-missing');
+    expect(element.outerHTML).toBe('<tr data-row-id="1"><td>js</td></tr>');
+  });
 });
 
 describe('bindText', () => {

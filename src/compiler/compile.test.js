@@ -44,7 +44,7 @@ describe('compileSource', () => {
     expect(result.module).toContain('export const plan = ');
     expect(result.module).toContain('export function createRowFactory(scope)');
     expect(result.module).toContain('return function buildRow(row) {');
-    expect(result.module).toContain('cloneFragment(plan.html)');
+    expect(result.module).toContain('cloneFragment(plan.html, plan.signature)');
   });
 
   it('produces a node-mode module that adopts the fragment into wrapper nodes', () => {

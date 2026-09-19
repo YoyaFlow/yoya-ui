@@ -20,8 +20,41 @@ export { appendNodeChild };
 
 const templates = new Map();
 
-/** 每个形状一份 template；`firstElementChild` 是片段根。 */
-export function cloneFragment(html) {
+/**
+ * 页面里的模板块：`<template data-yoya-fragment="<签名>">片段</template>`。
+ * 用签名（构建期对片段 HTML 取的哈希）对号，命中就从页面克隆 —— 片段字节走 HTML 通道，
+ * 解析交给 HTML 解析器（首屏不再多付 JS 里的模板串解析）。命中不到则回落到 JS 字符串路径。
+ */
+const pageTemplates = new Map();
+
+function pageTemplate(signature) {
+  const cached = pageTemplates.get(signature);
+  if (cached) {
+    return cached;
+  }
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const found = document.querySelector(`template[data-yoya-fragment="${signature}"]`);
+  if (!found) {
+    return null;
+  }
+
+  pageTemplates.set(signature, found.content);
+  return found.content;
+}
+
+/** 每个形状一份 template；`firstElementChild` 是片段根。传签名时优先用页面里的模板块。 */
+export function cloneFragment(html, signature = null) {
+  if (signature) {
+    const content = pageTemplate(signature);
+    if (content) {
+      return content.firstElementChild.cloneNode(true);
+    }
+    // 模板缺失 / 形状不符：回落到 JS 字符串路径（不静默出错）
+  }
+
   let template = templates.get(html);
   if (!template) {
     template = document.createElement('template');
