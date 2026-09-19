@@ -187,4 +187,14 @@ describe('compileSource', () => {
     expect(result.plan.html).toBe('<div id="root"><span>0</span></div>');
     expect(result.scope).toEqual([]);
   });
+
+  it('can emit a templates-only plan without inlining the fragment html', () => {
+    const result = compile(fixture, { templatesOnly: true });
+
+    expect(result.compiled).toBe(true);
+    expect(result.plan.html).toBeUndefined();
+    expect(result.plan.signature).toMatch(/^[0-9a-f]{12}$/);
+    expect(result.fragmentHtml).toBe(ROW_HTML);
+    expect(result.module).toContain('cloneFragment(plan.html, plan.signature)');
+  });
 });

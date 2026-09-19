@@ -101,7 +101,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   const log = io.log ?? ((line) => console.log(line));
   const error = io.error ?? ((line) => console.error(line));
   const options = parseArgs(argv);
-  const knownFlags = new Set(['help', 'json', 'thin']);
+  const knownFlags = new Set(['help', 'json', 'thin', 'templates-only']);
   const unknown = [
     ...[...options.flags].filter((name) => !knownFlags.has(name)),
     ...[...options.values.keys()].filter((name) => !VALUE_OPTIONS.has(name))
@@ -181,6 +181,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
     core,
     runtime: options.values.get('runtime'),
     fragmentsOut: options.values.get('fragments'),
+    templatesOnly: options.flags.has('templates-only'),
     components: componentsFile ? JSON.parse(readFileSync(componentsFile, 'utf8')) : null,
     componentsSpecifier: options.values.get('components-specifier')
   });

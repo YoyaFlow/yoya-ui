@@ -48,7 +48,8 @@ export function compileSource(options) {
     kind = 'row',
     scopeSpecifier = null,
     paramsSource = '',
-    hash = null
+    hash = null,
+    templatesOnly = false
   } = options;
 
   const registry = whitelist ?? elementWhitelistOf(core);
@@ -98,7 +99,8 @@ export function compileSource(options) {
       componentsSpecifier,
       scopeSpecifier,
       paramsSource,
-      hash
+      hash,
+      templatesOnly
     });
     result.compiled = true;
     result.plan = rendered.plan;
@@ -107,8 +109,8 @@ export function compileSource(options) {
     result.factory = analysis.entry.factory;
     result.ops = analysis.entry.ops;
     result.hash = hash;
-    // 始终带片段 HTML 的字段：`plan` 将来可以按 `--templates-only` 省略 html，模板块从它写
-    result.fragmentHtml = rendered.plan.html;
+    // 始终带片段 HTML 的字段：`--templates-only` 时 plan 省略 html，模板块仍从它写
+    result.fragmentHtml = rendered.fragmentHtml;
   } catch (error) {
     result.bails = [{ reason: `生成失败：${error.message}`, at: null }];
   }

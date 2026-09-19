@@ -37,7 +37,8 @@ export function renderModule(options) {
     componentsSpecifier = './components.registry.js',
     scopeSpecifier = null,
     paramsSource = '',
-    hash = null
+    hash = null,
+    templatesOnly = false
   } = options;
 
   const scope = new Set();
@@ -67,7 +68,8 @@ export function renderModule(options) {
     version: 1,
     mode,
     source: { file, fn },
-    html: fragmentHtml,
+    // templates-only：片段由页面里的 <template> 提供，产物不再内联 html（运行期只按签名克隆）
+    ...(templatesOnly ? {} : { html: fragmentHtml }),
     // 片段签名：构建期写页面 <template data-yoya-fragment="签名"> 时用它对号（票 45）
     signature: createHash('sha256').update(fragmentHtml).digest('hex').slice(0, 12),
     liveNodes: emitted.liveNodes,
@@ -118,7 +120,14 @@ export function renderModule(options) {
       '/** 通用路径回落：用原组件重建这一棵。 */\n' +
       `export function render(...values) {\n  return scope[${JSON.stringify(fn)}](...values);\n}\n`;
 
-    return { plan, module, scope: [...scope].sort(), liveNodes: plan.liveNodes, slots: plan.slots };
+    return {
+      plan,
+      module,
+      fragmentHtml,
+      scope: [...scope].sort(),
+      liveNodes: plan.liveNodes,
+      slots: plan.slots
+    };
   }
 
   const elementNames = ['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr'];
@@ -168,7 +177,14 @@ export function renderModule(options) {
         '  };\n' +
         '}\n';
 
-  return { plan, module, scope: [...scope].sort(), liveNodes: plan.liveNodes, slots: plan.slots };
+  return {
+    plan,
+    module,
+    fragmentHtml,
+    scope: [...scope].sort(),
+    liveNodes: plan.liveNodes,
+    slots: plan.slots
+  };
 }
 
 /** 递归搭静态样板：动态值留占位，活绑定 / 事件不参与序列化。 */
