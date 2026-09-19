@@ -2895,6 +2895,7 @@ export class ComponentNode extends ViewNode {
     this._resolved = list[0] || null;
     this._roots = Array.isArray(resolved) ? list : null;
     list.forEach((root) => this._linkChild(root));
+    this._adoptContentIntoRoot();
     if (
       this._component &&
       typeof this._component === 'object' &&
@@ -2903,6 +2904,49 @@ export class ComponentNode extends ViewNode {
       this._component._attachHost(this);
     }
     return this._resolved;
+  }
+
+  /**
+   * 内容侧收编：`root.child(...)` 之前挂在这个组件节点上的孩子，在解析出根之后
+   * 搬进根元素内部（普通元素的语义：组件根的孩子就是孩子）。
+   * 多根组件没有单一容器 → 明确报错，不静默丢弃。
+   */
+  _adoptContentIntoRoot() {
+    if (this._children.length === 0) {
+      return;
+    }
+
+    if (this._roots) {
+      throw new TypeError(
+        'Component with multiple roots cannot take children: ' +
+          'declare a named slot for the content or return a single root.'
+      );
+    }
+
+    const content = this._children;
+    this._children = EMPTY_CHILDREN;
+    this._childrenDirty = true;
+    this._resolved.child(content);
+  }
+
+  /**
+   * 组件节点的 child() = 往根元素里加内容（普通元素语义）。
+   * 解析之前先攒着（保持 render() 的懒解析），解析后直接挂进根。
+   */
+  child(...children) {
+    if (!this._resolvedList) {
+      return super.child(...children);
+    }
+
+    if (this._roots) {
+      throw new TypeError(
+        'Component with multiple roots cannot take children: ' +
+          'declare a named slot for the content or return a single root.'
+      );
+    }
+
+    this._resolved.child(...children);
+    return this;
   }
 
   _resolveList() {
