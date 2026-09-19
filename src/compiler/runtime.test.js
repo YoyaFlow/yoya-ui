@@ -44,6 +44,10 @@ describe('cloneFragment', () => {
     const element = cloneFragment('<tr data-row-id="1"><td>js</td></tr>', 'sig-missing');
     expect(element.outerHTML).toBe('<tr data-row-id="1"><td>js</td></tr>');
   });
+
+  it('fails loudly when a templates-only build has no page template', () => {
+    expect(() => cloneFragment('', 'sig-missing')).toThrow(/fragment template/);
+  });
 });
 
 describe('bindText', () => {

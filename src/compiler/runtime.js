@@ -52,6 +52,13 @@ export function cloneFragment(html, signature = null) {
     if (content) {
       return content.firstElementChild.cloneNode(true);
     }
+    // templates-only 构建：不带 JS 回落字符串，模板缺失就是**硬错误**（不静默产出空节点）
+    if (!html) {
+      throw new Error(
+        `yoya-ui: fragment template "${signature}" is missing from the page ` +
+          '(templates-only build: write the <template data-yoya-fragment="…"> block or rebuild)'
+      );
+    }
     // 模板缺失 / 形状不符：回落到 JS 字符串路径（不静默出错）
   }
 
