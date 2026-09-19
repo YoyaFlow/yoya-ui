@@ -100,17 +100,37 @@ function coefficientClass(value, base) {
 }
 
 /** 双层单元格：上值下系数。native 列只有值（它的系数恒为 1.00×）。 */
-function valueCell(unit, value, base, { layered = true } = {}) {
+function valueCell(unit, value, base, { layered = true, className = '' } = {}) {
   const text = formatValue(unit, value);
+  const classes = className ? ` class="${className}"` : '';
   if (!layered || typeof base !== 'number' || base <= 0) {
-    return `<td>${escapeHtml(text)}</td>`;
+    return `<td${classes}>${escapeHtml(text)}</td>`;
   }
   const ratio = value / base;
   const display = Number.isFinite(ratio) ? `${ratio.toFixed(2)}×` : '—';
-  return `<td class="stack"><b>${escapeHtml(text)}</b><span class="${coefficientClass(
+  const stackClass = className ? `stack ${className}` : 'stack';
+  return `<td class="${stackClass}"><b>${escapeHtml(text)}</b><span class="${coefficientClass(
     value,
     base
   )}">${display}</span></td>`;
+}
+
+/**
+ * 领先 / 落后底色：以 yoya 的值为基准，和某个对照条目的值比。
+ * ±5% 视为持平（同轮噪声），更快 = `ahead`（绿），更慢 = `behind`（红）。
+ */
+function verdictClass(yoyaValue, otherValue) {
+  if (!Number.isFinite(yoyaValue) || !Number.isFinite(otherValue) || otherValue <= 0) {
+    return '';
+  }
+  const ratio = yoyaValue / otherValue;
+  if (ratio <= 0.95) {
+    return 'ahead';
+  }
+  if (ratio >= 1.05) {
+    return 'behind';
+  }
+  return 'tie';
 }
 
 /** 九项时长的几何平均倍率（口径与别处一致：只看倍率）。 */
@@ -154,6 +174,14 @@ const styles = `
     .coef-coef { color:var(--muted); }
     td.projected, th.projected { background:#fffbeb; }
     td.projected-none { background:#fffbeb; color:var(--muted); }
+    /* 领先 / 落后底色：绿 = yoya 领先该列，红 = 落后（±5% 内不涂色，视作持平） */
+    td.ahead { background:#e9f7ef; }
+    td.behind { background:#fdeceb; }
+    .card.ahead { background:#e9f7ef; }
+    .card.behind { background:#fdeceb; }
+    .card.tie { background:#fff; }
+    .legend { display:flex; align-items:center; gap:6px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
+    .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid var(--line); }
     ul { padding-left:20px; }
     footer { margin-top:36px; color:var(--muted); font-size:12px; }
     code { background:#f3f4f6; padding:1px 5px; border-radius:4px; }
@@ -168,6 +196,11 @@ function renderTable(headers, rows) {
 export function renderHtmlReport(results, projection = readProjection()) {
   const { meta, cpu, memory, size } = results;
   const compares = results.compare ?? [];
+  // 标题跟着本轮实际参与对照的条目走（新增/减少对照条目时不必改代码）
+  const title = [
+    'js-framework-benchmark：原生 / yoya-ui',
+    ...compares.map((column) => column.displayName ?? column.version)
+  ].join(' / ');
   const average = geometricMean(cpu);
   const projectedAverage = projection
     ? geometricMean(
@@ -210,7 +243,10 @@ export function renderHtmlReport(results, projection = readProjection()) {
         valueCell(unit, row.yoya.total, base),
         ...(projection ? [projectedCell(unit, projected?.total, base)] : []),
         valueCell(unit, base, base, { layered: false }),
-        ...compares.map((column) => valueCell(unit, compareLookup(column, row.id, 'cpu'), base))
+        ...compares.map((column) => {
+          const other = compareLookup(column, row.id, 'cpu');
+          return valueCell(unit, other, base, { className: verdictClass(row.yoya.total, other) });
+        })
       ]
     };
   });
@@ -255,9 +291,10 @@ export function renderHtmlReport(results, projection = readProjection()) {
         valueCell(unit, row.yoya, base),
         ...(projection ? [projectedCell(unit, projected, base)] : []),
         valueCell(unit, base, base, { layered: false }),
-        ...compares.map((column) =>
-          valueCell(unit, compareLookup(column, row.id, unit === 'MB' ? 'memory' : 'size'), base)
-        )
+        ...compares.map((column) => {
+          const other = compareLookup(column, row.id, unit === 'MB' ? 'memory' : 'size');
+          return valueCell(unit, other, base, { className: verdictClass(row.yoya, other) });
+        })
       ]
     };
   });
@@ -267,13 +304,13 @@ export function renderHtmlReport(results, projection = readProjection()) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>js-framework-benchmark：原生 / yoya-ui / Vue / React</title>
+<title>${escapeHtml(title)}</title>
 <style>${styles}</style>
 </head>
 <body>
 ${BANNER}
 <main>
-<h1>js-framework-benchmark：原生 / yoya-ui / Vue / React</h1>
+<h1>${escapeHtml(title)}</h1>
 <p class="meta">
   官方 runner <code>${escapeHtml(meta.runner)}</code>（${escapeHtml(meta.mode)}）+ ${escapeHtml(meta.browser)}；
   CPU 项取 ${meta.cpuIterations} 个样本的中位数（单轮 15 次迭代；多轮合并后取中位）；
@@ -286,9 +323,16 @@ ${BANNER}
       ? `对照条目 ${escapeHtml(compares.map((column) => column.version).join(' / '))} 与 yoya / 原生取自**同一轮**测量。`
       : ''
   }
+  <br /><span class="legend"
+    >底色区分（与每个对照条目逐一比）：
+    <i style="background:#e9f7ef"></i>绿 = yoya 领先
+    <i style="background:#fdeceb"></i>红 = yoya 落后；差值在 ±5% 内不涂色，视作持平。</span
+  >
 </p>
 <section class="cards">
-  <div class="card"><span>九项几何平均 ÷ 原生</span><b>${average === null ? '—' : `${average.toFixed(2)}×`}</b></div>
+  <div class="card ${average === null ? '' : verdictClass(average, 1)}"><span>九项几何平均 ÷ 原生</span><b>${
+    average === null ? '—' : `${average.toFixed(2)}×`
+  }</b></div>
   ${
     projection
       ? `<div class="card"><span>九项几何平均 ÷ 原生（含 AST 预生成，投影）</span><b>${
@@ -296,7 +340,10 @@ ${BANNER}
         }</b></div>`
       : ''
   }
-  <div class="card"><span>22 建 1000 行后内存</span><b>${formatValue(
+  <div class="card ${verdictClass(
+    memory.find((row) => row.id === '22_run-memory')?.yoya,
+    memory.find((row) => row.id === '22_run-memory')?.baseline
+  )}"><span>22 建 1000 行后内存</span><b>${formatValue(
     'MB',
     memory.find((row) => row.id === '22_run-memory')?.yoya
   )}${
@@ -311,11 +358,17 @@ ${BANNER}
         )}（投影）`
       : ''
   }</b></div>
-  <div class="card"><span>42 体积（brotli）</span><b>${formatValue(
+  <div class="card ${verdictClass(
+    size.find((row) => row.id === '42_size-compressed')?.yoya,
+    size.find((row) => row.id === '42_size-compressed')?.baseline
+  )}"><span>42 体积（brotli）</span><b>${formatValue(
     'KB',
     size.find((row) => row.id === '42_size-compressed')?.yoya
   )}</b></div>
-  <div class="card"><span>09 清空 ×8</span><b>${formatValue(
+  <div class="card ${verdictClass(
+    cpuById.get('09_clear1k_x8')?.yoya.total,
+    cpuById.get('09_clear1k_x8')?.baseline.total
+  )}"><span>09 清空 ×8</span><b>${formatValue(
     'ms',
     cpuById.get('09_clear1k_x8')?.yoya.total
   )}</b></div>
