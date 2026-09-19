@@ -1,9 +1,12 @@
 /**
  * 票 42 / T4：槽位子组件 —— 独立创建、延迟挂载、按显式槽名路由。
+ *
+ * 口径：**槽位子组件 = 自己带 `slot` 标记的普通组件**，不需要任何新 API。
+ * 组件作者可以在自己的工厂里把标记封起来（下面 StatusHead 就是这种写法），
+ * 也可以让调用方自己写 `{ slot: … }`。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { div, span, vNode } from '../index.js';
-import { defineSlotChild } from './slot.js';
 
 let warnSpy = null;
 
@@ -23,10 +26,9 @@ const mountToHost = (node) => {
   return host;
 };
 
-/** 槽位子组件：独立创建 → 带 t-head 归属标记。 */
-const StatusHead = defineSlotChild((label) => span((head) => head.className('head').child(label)), {
-  slot: 't-head'
-});
+/** 槽位子组件：工厂产出就带 t-head 归属标记（作者自己封，零框架 API）。 */
+const StatusHead = (label) =>
+  span({ slot: 't-head' }, (head) => head.className('head').child(label));
 
 const Panel = () =>
   vNode(() =>
@@ -54,11 +56,21 @@ describe('slot child components', () => {
     expect(host.innerHTML).toContain('<span>body</span>');
   });
 
-  it('keeps an explicit marker on the created node', () => {
-    const head = StatusHead('x');
-    head.attr('slot', 'other');
+  it('routes by the marker the node actually carries', () => {
+    const panel = vNode(() =>
+      div((root) => {
+        root.span({ slot: 'left' }, 'L-default');
+        root.span({ slot: 'right' }, 'R-default');
+      })
+    );
 
-    expect(head.attr('slot')).toBe('other');
+    panel.child(span({ slot: 'right' }, 'to-right'));
+
+    const host = mountToHost(panel);
+
+    expect(host.innerHTML).toContain('to-right');
+    expect(host.innerHTML).toContain('L-default');
+    expect(host.innerHTML).not.toContain('R-default');
   });
 
   it('does not mount when the parent has no such slot', () => {
