@@ -46,6 +46,7 @@ export function compileSource(options) {
     components = null,
     componentsSpecifier,
     kind = 'row',
+    className = null,
     scopeSpecifier = null,
     paramsSource = '',
     hash = null,
@@ -80,7 +81,7 @@ export function compileSource(options) {
           : null
     : null;
 
-  const analysis = analyzeSource(source, { fn, whitelist: registry, resolveComponent });
+  const analysis = analyzeSource(source, { fn, className, whitelist: registry, resolveComponent });
   result.bails = analysis.bails;
   if (!analysis.entry || result.bails.length > 0) {
     return result;
@@ -96,6 +97,8 @@ export function compileSource(options) {
       fn,
       runtime,
       kind,
+      // 形态 C 的骨架：调用方带内容时构件不写（bind 返回 null），由调用方回落通用路径
+      contentGuard: analysis.entry.hasContent === true,
       componentsSpecifier,
       scopeSpecifier,
       paramsSource,

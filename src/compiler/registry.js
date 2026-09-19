@@ -18,6 +18,7 @@ import { parse } from '@babel/parser';
 import { collectImports, findBuilderFunction } from './analyze.js';
 import { componentKeyOf, normalizeModulePath } from './component-key.js';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
+import { isStaticLibraryModule } from './static-values.js';
 
 export const REGISTRY_VERSION = 1;
 
@@ -29,10 +30,22 @@ const FUNCTION_TYPES = new Set(['ObjectMethod', 'FunctionExpression', 'ArrowFunc
 const withDotPrefix = (path) => (path.startsWith('.') ? path : `./${path}`);
 
 /**
+ * 形态 C 的工厂调用：`createComponentFactory(VCard, …)`，且这个名字确实是从库内
+ * `components/shared.js` 导入的（按导入来源认，业务里同名函数不参与）。
+ */
+function isComponentFactoryCall(imports, call) {
+  if (call.callee.type !== 'Identifier') {
+    return false;
+  }
+  const record = imports?.get(call.callee.name);
+  return Boolean(record) && isStaticLibraryModule(record.specifier);
+}
+
+/**
  * 找组件的「视图表达式」：返回 `{ callSource, paramsSource }` 或 `{ error }`。
  * 视图表达式原样来自源码切片——源码是唯一真源，生成器只搬运文本。
  */
-export function findViewExpression(source, fn) {
+export function findViewExpression(source, fn, imports = null) {
   const statements = fn.body.type === 'BlockStatement' ? fn.body.body : [];
   const returned =
     fn.body.type === 'BlockStatement'
@@ -46,6 +59,14 @@ export function findViewExpression(source, fn) {
 
   if (returned.type === 'CallExpression' && returned.callee.type === 'Identifier') {
     if (returned.callee.name !== 'vNode') {
+      // 形态 C：`return createComponentFactory(VCard, first, second, third, arguments)` ——
+      // 编译单元是 VCard 这个**类**的构造体（工厂只做参数转发），交给分析器的 className 通道。
+      if (
+        isComponentFactoryCall(imports, returned) &&
+        returned.arguments[0]?.type === 'Identifier'
+      ) {
+        return { componentClass: returned.arguments[0].name, paramsSource };
+      }
       return { callSource: source.slice(returned.start, returned.end), paramsSource };
     }
 
@@ -146,13 +167,15 @@ export function compileComponent(options) {
     return failed(file, exportName, `找不到组件函数 ${exportName}`);
   }
 
-  const view = findViewExpression(source, fn);
+  const view = findViewExpression(source, fn, collectImports(ast));
   if (view.error) {
     return failed(file, exportName, view.error);
   }
 
-  // 视图表达式原样搬进合成源码，**模块级的 import 与 const 一并带上**：静态值折叠
-  //（库内常量 / `themeValue` 这类主题助手）靠它们把值在构建期算出来，否则组件里
+  // 形态 C（类节点组件）：工厂只是把参数转发给类，编译单元是**类构造体** —— 直接在原模块上
+  // 分析（import / const 都在手边，不用合成源码），`className` 让分析器去读构造体。
+  // 形态 A / B / vNode：视图表达式原样搬进合成源码，**模块级的 import 与 const 一并带上**：
+  // 静态值折叠（库内常量 / `themeValue` 这类主题助手）靠它们把值在构建期算出来，否则组件里
   // 只剩写死的字面量能编。其它声明不搬——分析只读目标函数。
   const carried = ast.program.body
     .filter(
@@ -165,9 +188,10 @@ export function compileComponent(options) {
     `${carried.join('\n')}\n` +
     `export function ${exportName}(${view.paramsSource}) {\n  return ${view.callSource};\n}\n`;
   const result = compileSource({
-    source: synthetic,
+    source: view.componentClass ? source : synthetic,
     file,
     fn: exportName,
+    className: view.componentClass ?? null,
     mode: 'element',
     core,
     runtime,
@@ -184,13 +208,16 @@ export function compileComponent(options) {
     return { ...result, hash: null };
   }
 
-  // `child(<参数本身>)` = 把调用方的 children 当子内容：这是容器组件，本轮不编（票 42 的槽）
-  const paramNames = fn.params.map((param) => param.name).filter(Boolean);
-  const childrenLike = collectValueExpressions(result.ops).filter((expression) =>
-    paramNames.some((name) => expression.trim() === name)
-  );
-  if (childrenLike.length > 0) {
-    return failed(file, exportName, '组件把入参当子内容（收 children 的容器组件本轮不编）');
+  // 形态 A / B：`child(<参数本身>)` = 把调用方的 children 当子内容 → 容器组件，本轮不编（票 42 的槽）。
+  // 形态 C 的构造参数已经由分析器记成"内容位置"（骨架 + 运行期回落），不走这条。
+  if (!view.componentClass) {
+    const paramNames = fn.params.map((param) => param.name).filter(Boolean);
+    const childrenLike = collectValueExpressions(result.ops).filter((expression) =>
+      paramNames.some((name) => expression.trim() === name)
+    );
+    if (childrenLike.length > 0) {
+      return failed(file, exportName, '组件把入参当子内容（收 children 的容器组件本轮不编）');
+    }
   }
 
   // 运行期 scope 是组件原模块的命名空间：自由标识符必须来自 import，模块私有辅助不编

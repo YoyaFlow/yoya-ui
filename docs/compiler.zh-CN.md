@@ -43,20 +43,21 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 
 可编（结构恒定 + 值可分类）：
 
-| 写法                              | 编译结果                                     |
-| --------------------------------- | -------------------------------------------- |
-| `line.attr('name', 'literal')`    | 写进片段（静态）                             |
-| `line.attr('name', row.value)`    | 动态属性写 + 活值订阅                        |
-| `td({ attrs: { id: row.id } })`   | options 里的动态属性值（与手写 `attr` 同路） |
-| `line.className('a b')`           | 写进片段                                     |
-| `line.toggleClass('on', expr)`    | 类名绑定（`bindClass`）                      |
-| `line.style('color', 'red')`      | 写进片段                                     |
-| `line.style('color', row.tone)`   | 动态样式写（`node` 通道：`node.style`）      |
-| `cell.child('文本')`              | 写进片段                                     |
-| `cell.child(String(row.id))`      | 位置写文本                                   |
-| `cell.child(vText(handle))`       | 文本绑定（句柄 / 零参 reader / 普通值三态）  |
-| `line.on('click', handler)`       | 直接 `addEventListener`                      |
-| `cell.span(...)` / `cell.td(...)` | 递归编子元素（白名单内）                     |
+| 写法                                                  | 编译结果                                               |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| `line.attr('name', 'literal')`                        | 写进片段（静态）                                       |
+| `line.attr('name', row.value)`                        | 动态属性写 + 活值订阅                                  |
+| `td({ attrs: { id: row.id } })`                       | options 里的动态属性值（与手写 `attr` 同路）           |
+| `line.className('a b')`                               | 写进片段                                               |
+| `line.toggleClass('on', expr)`                        | 类名绑定（`bindClass`）                                |
+| `line.style('color', 'red')`                          | 写进片段                                               |
+| `line.style('color', row.tone)`                       | 动态样式写（`node` 通道：`node.style`）                |
+| 形态 C 骨架（`super('<标签>')` + 直线 `this.*` 调用） | 编成骨架片段；构造参数是内容位置（带内容时运行期回落） |
+| `cell.child('文本')`                                  | 写进片段                                               |
+| `cell.child(String(row.id))`                          | 位置写文本                                             |
+| `cell.child(vText(handle))`                           | 文本绑定（句柄 / 零参 reader / 普通值三态）            |
+| `line.on('click', handler)`                           | 直接 `addEventListener`                                |
+| `cell.span(...)` / `cell.td(...)`                     | 递归编子元素（白名单内）                               |
 
 **构建期常量折叠**：静态值不只认字面量，还认三类「构建期就能算出同一个值」的形状——同模块的
 `const X = '字面量'`（含模板串拼接）、库内常量 `componentClass`、库内主题助手 `themeValue()` /
@@ -245,6 +246,24 @@ buildComponentRegistry({
 一个已知口径差异：通用路径的 DOM 属性顺序跟随 builder 的**调用顺序**，编译路径是 `toHTML()`
 的**规范顺序**（属性按名字排序，见 [`ssr.md`](ssr.md) §8.1）；两者语义相同、`outerHTML` 可能不同——
 编译路径与框架的规范序列化逐字节一致，顺序差异记在票 41。
+
+### 7.1 形态 C 的骨架可编（第一档：没有内容的用法）
+
+类节点组件（形态 C）不用改源码也能进编译单元：工厂 `return createComponentFactory(VCard, …)`
+这类写法被解析成"编译单元 = `VCard` 的构造体"，构造体按 setup 回调那一套读——`super('<字面量标签>')`
+定标签，之后必须是**从 `this` 出发的直线节点调用**（`className` / `attr` / `style` / `styles` /
+`child` / `on` / `toggleClass`…），值要么字面量、要么可折叠（`themeValue` 这类主题助手）。
+
+构造参数出现在 `applyComponentSetup(this, setup)`（或 `this.child(setup)`）的位置时记为**内容位置**：
+
+- 构件只编**没带内容**的用法——`bind` 里带内容守卫，调用方一旦传了内容就返回 `null`，由调用方回落
+  通用路径（内容不会被静默丢掉，见 §7 的两层回落）；
+- 类里的**字段声明**、非直线语句（`if` / 赋值 / 模块私有助手调用）、动态值与事件一律 bail：
+  它们要引用实例状态（`this._x`），而构件里没有 `this`。
+
+落地样本（本仓库实测）：`vCard` / `vCardHeader` / `vCardBody` / `vCardFooter` / `vThead` / `vTbody` /
+`vTfoot` 骨架可编，片段与 `new VCard().toHTML()` **逐字节一致**；`vTh` / `vTd`（走模块私有助手
+`applyTableCellStyles`）、`vTr`、`vMenuDivider` / `vSymbolButton`（私有 `_xxx` 调用）回落并给出原因。
 
 ## 8. 相关文档
 

@@ -51,20 +51,21 @@ tree it holds, so it is "thinner" than the generic path.
 
 Compiles (constant structure, classifiable values):
 
-| Source                            | Result                                                    |
-| --------------------------------- | --------------------------------------------------------- |
-| `line.attr('name', 'literal')`    | Baked into the fragment (static)                          |
-| `line.attr('name', row.value)`    | Dynamic attribute write + live subscription               |
-| `td({ attrs: { id: row.id } })`   | Dynamic option value (same path as a hand-written `attr`) |
-| `line.className('a b')`           | Baked into the fragment                                   |
-| `line.toggleClass('on', expr)`    | Class binding (`bindClass`)                               |
-| `line.style('color', 'red')`      | Baked into the fragment                                   |
-| `line.style('color', row.tone)`   | Dynamic style write (`node` channel: `node.style`)        |
-| `cell.child('text')`              | Baked into the fragment                                   |
-| `cell.child(String(row.id))`      | Positional text write                                     |
-| `cell.child(vText(handle))`       | Text binding (handle / zero-arg reader / plain value)     |
-| `line.on('click', handler)`       | Plain `addEventListener`                                  |
-| `cell.span(...)` / `cell.td(...)` | Recursively compiled child elements (whitelist)           |
+| Source                                                          | Result                                                                                                               |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `line.attr('name', 'literal')`                                  | Baked into the fragment (static)                                                                                     |
+| `line.attr('name', row.value)`                                  | Dynamic attribute write + live subscription                                                                          |
+| `td({ attrs: { id: row.id } })`                                 | Dynamic option value (same path as a hand-written `attr`)                                                            |
+| `line.className('a b')`                                         | Baked into the fragment                                                                                              |
+| `line.toggleClass('on', expr)`                                  | Class binding (`bindClass`)                                                                                          |
+| `line.style('color', 'red')`                                    | Baked into the fragment                                                                                              |
+| `line.style('color', row.tone)`                                 | Dynamic style write (`node` channel: `node.style`)                                                                   |
+| Form C skeleton (`super('tag')` + straight-line `this.*` calls) | Compiles to a skeleton fragment; constructor params are content positions (usages with content fall back at runtime) |
+| `cell.child('text')`                                            | Baked into the fragment                                                                                              |
+| `cell.child(String(row.id))`                                    | Positional text write                                                                                                |
+| `cell.child(vText(handle))`                                     | Text binding (handle / zero-arg reader / plain value)                                                                |
+| `line.on('click', handler)`                                     | Plain `addEventListener`                                                                                             |
+| `cell.span(...)` / `cell.td(...)`                               | Recursively compiled child elements (whitelist)                                                                      |
 
 **Build-time constant folding**: a static value is not limited to a literal. Three shapes that
 "compute to the same value at build time" also fold — a module-level `const X = 'literal'`
@@ -282,6 +283,28 @@ Known reporting difference: the generic path's DOM attribute order follows the b
 order**, while the compiled path uses `toHTML()`'s **canonical order** (attributes sorted by name,
 [`ssr.md`](ssr.md) §8.1). Same semantics, possibly different `outerHTML`; the compiled path is byte-identical to the
 framework's canonical serialization, and the ordering difference is recorded in ticket 41.
+
+### 7.1 Form C skeletons (tier 1: usages without content)
+
+Class-node components (form C) can become compile units without touching their source: a factory written as
+`return createComponentFactory(VCard, …)` resolves to "the compile unit is `VCard`'s constructor", and the
+constructor is read exactly like a setup callback — `super('<literal tag>')` picks the tag, then only
+**straight-line node calls starting from `this`** are allowed (`className` / `attr` / `style` / `styles` /
+`child` / `on` / `toggleClass`…), with values that are literals or foldable (`themeValue` and friends).
+
+A constructor parameter appearing in `applyComponentSetup(this, setup)` (or `this.child(setup)`) is recorded
+as a **content position**:
+
+- the artifact only covers usages **without content** — `bind` carries a content guard and returns `null`
+  as soon as the caller passes content, so the call site falls back to the generic path (content is never
+  silently dropped, see §7's two fallback layers);
+- class **fields**, non-straight-line statements (`if` / assignments / module-private helper calls),
+  dynamic values and events all bail: they reference instance state (`this._x`) and the artifact has no `this`.
+
+Measured in this repo: `vCard` / `vCardHeader` / `vCardBody` / `vCardFooter` / `vThead` / `vTbody` /
+`vTfoot` skeletons compile, and their fragments are **byte-identical** to `new VCard().toHTML()`; `vTh` /
+`vTd` (module-private `applyTableCellStyles`), `vTr`, `vMenuDivider` / `vSymbolButton` fall back with a
+recorded reason.
 
 ## 8. Related documents
 

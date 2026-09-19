@@ -268,6 +268,20 @@ function flattenChain(expression) {
   return { calls, head: node };
 }
 
+/** 顶层找组件类：`export class VCard extends …`。 */
+export function findClassDeclaration(ast, name) {
+  for (const statement of ast.program.body) {
+    const node =
+      statement.type === 'ExportNamedDeclaration' && statement.declaration
+        ? statement.declaration
+        : statement;
+    if (node.type === 'ClassDeclaration' && node.id?.name === name) {
+      return node;
+    }
+  }
+  return null;
+}
+
 /** 顶层找目标函数：函数声明或 `const fn = (…) => …` / `const fn = function () {}`。 */
 export function findBuilderFunction(ast, name) {
   for (const statement of ast.program.body) {
@@ -377,6 +391,7 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
  */
 export function analyzeSource(source, options = {}) {
   const fnName = options.fn ?? 'buildRow';
+  const className = options.className ?? null;
   const whitelist = options.whitelist ?? new Set();
   const resolveComponent = options.resolveComponent ?? null;
   const bails = [];
@@ -396,6 +411,31 @@ export function analyzeSource(source, options = {}) {
   // 静态值折叠：字面量之外，模块级字面量常量与库内主题助手也算「构建期就知道的值」
   const staticContext = createStaticContext(ast, imports);
   const staticOf = (node) => staticValueOf(node, staticContext);
+  // 形态 C 的骨架：构造体里出现这些参数名的地方就是"调用方内容"（链接时走运行期回落）
+  const contentParams = new Set();
+  let hasContent = false;
+
+  /** 构造参数 = 调用方内容：`applyComponentSetup(this, setup)` / `this.child(setup)` 里的那个名字。 */
+  const isContentArg = (argument) =>
+    argument?.type === 'Identifier' && contentParams.has(argument.name);
+
+  /**
+   * 形态 C 的内容助手：库内 `components/shared.js` 的 `applyComponentSetup` /
+   * `applyComponentArguments`（按**导入来源**认，业务里的同名函数不参与）。
+   */
+  function contentHelperOf(call) {
+    if (call.callee.type !== 'Identifier') {
+      return null;
+    }
+    const record = imports.get(call.callee.name);
+    if (!record || !isStaticLibraryModule(record.specifier)) {
+      return null;
+    }
+    return record.imported === 'applyComponentSetup' ||
+      record.imported === 'applyComponentArguments'
+      ? record.imported
+      : null;
+  }
 
   /** 分析一条节点调用 → op（不认识就 bail 并跳过）。 */
   function classifyCall(call, ops) {
@@ -408,6 +448,13 @@ export function analyzeSource(source, options = {}) {
     }
 
     if (!NODE_API.has(method)) {
+      // 形态 C 的构造体里，组件助手把构造参数接到节点上——那是**调用方内容**的位置
+      if (contentHelperOf(call) && call.arguments.some((arg) => isContentArg(arg))) {
+        const param = call.arguments.find((arg) => isContentArg(arg));
+        ops.push({ kind: 'content', param: param.name });
+        hasContent = true;
+        return;
+      }
       // 只有白名单里的元素工厂才能编；组件 / 父快捷方法 / 未知 API 一律 bail
       if (!whitelist.has(method)) {
         recordBail(`不是元素工厂（组件或未知 API）：${method}`, call);
@@ -426,6 +473,12 @@ export function analyzeSource(source, options = {}) {
         return;
       }
       const argument = args[0];
+      // 形态 C 的构造体：`this.child(setup)` 里的构造参数是**调用方内容**，不是一段文本
+      if (argument.type === 'Identifier' && contentParams.has(argument.name)) {
+        ops.push({ kind: 'content', param: argument.name });
+        hasContent = true;
+        return;
+      }
       const literal = staticOf(argument);
       if (literal.literal) {
         // 通用路径里 child(true / false) 直接抛 TypeError（只接受节点 / 字符串 / 数字 / 句柄），
@@ -584,11 +637,36 @@ export function analyzeSource(source, options = {}) {
       return;
     }
 
+    if (method === 'styles') {
+      if (args.length !== 1 || args[0].type !== 'ObjectExpression') {
+        recordBail('styles() 只用对象字面量形式', call);
+        return;
+      }
+      for (const property of args[0].properties) {
+        if (property.type !== 'ObjectProperty' || property.computed) {
+          recordBail('styles() 里有非静态键', call);
+          return;
+        }
+        const name = property.key.name ?? property.key.value;
+        if (typeof name !== 'string') {
+          recordBail('styles() 里有非字面量键', call);
+          return;
+        }
+        const value = staticOf(property.value);
+        if (value.literal) {
+          ops.push({ kind: 'staticStyle', name, value: value.value });
+        } else {
+          ops.push({ kind: 'dynamicStyle', name, expression: slice(property.value) });
+        }
+      }
+      return;
+    }
+
     recordBail(`未知节点方法 ${method}`, call);
   }
 
   /** 分析一个 setup 回调：block 体或表达式体（链式调用）都支持。 */
-  function analyzeSetup(fn, paramName) {
+  function analyzeSetup(fn, paramName, { staticOnly = false } = {}) {
     const ops = [];
     const statements =
       fn.body.type === 'BlockStatement'
@@ -600,13 +678,52 @@ export function analyzeSource(source, options = {}) {
         recordBail(`${statement.type} 语句（只支持表达式调用）`, statement);
         continue;
       }
+      // 形态 C 的内容位置：`applyComponentSetup(this, setup)` / `applyComponentArguments(this, …)`
+      // 这种裸调用不是从节点出发的链，单独认——构造参数在这里就是"调用方内容"。
+      if (statement.expression.type === 'CallExpression' && contentHelperOf(statement.expression)) {
+        const contentArg = statement.expression.arguments.find(isContentArg);
+        if (!contentArg) {
+          recordBail('内容助手的参数不是构造参数（骨架只支持把内容交给调用方）', statement);
+          continue;
+        }
+        ops.push({ kind: 'content', param: contentArg.name });
+        hasContent = true;
+        continue;
+      }
       const { calls, head } = flattenChain(statement.expression);
-      if (head?.type !== 'Identifier' || head.name !== paramName) {
+      if (paramName === null && calls.length === 0 && statement.expression.callee?.name) {
+        recordBail(
+          `构造体里的裸调用 ${statement.expression.callee.name}（骨架只支持节点链式调用与内容位置）`,
+          statement
+        );
+        continue;
+      }
+      const fromNode =
+        paramName === null
+          ? head?.type === 'ThisExpression' // 形态 C 的构造体：`this` 就是节点
+          : head?.type === 'Identifier' && head.name === paramName;
+      if (!fromNode) {
         recordBail('调用链不是从 setup 参数出发', statement);
         continue;
       }
+      const before = ops.length;
       for (const call of calls) {
         classifyCall(call, ops);
+      }
+      // 形态 C 的骨架只吃静态值：动态值 / 事件都要引用实例状态（`this._x`），生成代码里没有 this
+      const produced = ops.slice(before);
+      if (
+        staticOnly &&
+        produced.some(
+          (op) =>
+            op.kind !== 'staticAttr' &&
+            op.kind !== 'staticClass' &&
+            op.kind !== 'staticStyle' &&
+            op.kind !== 'content'
+        )
+      ) {
+        recordBail('构造体里的动态值 / 事件（骨架只支持静态值与内容位置）', statement);
+        ops.length = before;
       }
     }
 
@@ -764,6 +881,64 @@ export function analyzeSource(source, options = {}) {
     return true;
   }
 
+  /**
+   * 形态 C 的"骨架可编"：构造体 = `super('<字面量标签>', …)` + 从 `this` 出发的直线调用。
+   *
+   * 与 setup 回调走同一张分派表 —— `this` 就是那个节点参数；构造参数出现在 `child(参数)` /
+   * `applyComponentSetup(this, 参数)` 的位置时记为**内容位置**（链接时调用方带内容就走运行期回落）。
+   * 字段声明、非直线语句、动态值 / 事件一律 bail（不逆向任意 JS，红线不变）。
+   */
+  function analyzeClassBuilder(klass) {
+    const constructor = klass.body.body.find((member) => member.kind === 'constructor');
+    if (!constructor) {
+      recordBail('组件类没有显式构造函数（骨架只在构造体里读）', klass);
+      return null;
+    }
+    if (
+      klass.body.body.some(
+        (member) => member.type === 'PropertyDefinition' || member.type === 'ClassPrivateProperty'
+      )
+    ) {
+      recordBail('组件类有字段声明（骨架只支持构造体里的直线调用）', klass);
+      return null;
+    }
+
+    const [first, ...rest] = constructor.body.body;
+    const superCall =
+      first?.type === 'ExpressionStatement' &&
+      first.expression.type === 'CallExpression' &&
+      first.expression.callee.type === 'Super'
+        ? first.expression
+        : null;
+    const tag = superCall?.arguments[0];
+    if (!superCall || tag?.type !== 'StringLiteral') {
+      recordBail('构造体起手不是 super("<标签>", …)', constructor);
+      return null;
+    }
+
+    for (const param of constructor.params) {
+      const name = param.type === 'Identifier' ? param.name : param.left?.name;
+      if (!name) {
+        recordBail('构造体参数不是简单形参', constructor);
+        return null;
+      }
+      contentParams.add(name);
+    }
+
+    const ops = analyzeSetup(
+      { body: { type: 'BlockStatement', body: rest, start: constructor.body.start } },
+      null,
+      { staticOnly: true }
+    );
+
+    return {
+      factory: tag.value,
+      builderParam: constructor.params[0]?.name ?? 'row',
+      setupParam: null,
+      ops
+    };
+  }
+
   function analyzeBuilder(fn) {
     const statements = fn.body.type === 'BlockStatement' ? fn.body.body : [];
     const returned =
@@ -794,6 +969,27 @@ export function analyzeSource(source, options = {}) {
       setupParam,
       ops
     };
+  }
+
+  // 形态 C：编译单元是**类构造体**（工厂只是把参数转发给类，见 registry.js 的解析）
+  if (className) {
+    const klass = findClassDeclaration(ast, className);
+    if (!klass) {
+      return { entry: null, bails: [{ reason: `找不到组件类 ${className}`, at: null }] };
+    }
+    const classEntry = analyzeClassBuilder(klass);
+    if (!classEntry) {
+      return { entry: null, bails };
+    }
+    if (!whitelist.has(classEntry.factory)) {
+      recordBail(`构造体起手不是白名单内的元素工厂：${classEntry.factory}`, klass);
+      return { entry: null, bails };
+    }
+
+    classEntry.path = [];
+    classEntry.hasContent = hasContent;
+    assignPaths(classEntry.ops, []);
+    return { entry: classEntry, bails };
   }
 
   const builderFn = findBuilderFunction(ast, fnName);

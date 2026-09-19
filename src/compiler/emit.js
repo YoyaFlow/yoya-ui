@@ -20,6 +20,12 @@ const DIRECT_LIVE = ['dynamicAttr', 'dynamicStyle', 'liveClass', 'liveEvent', 'b
 /** 只存在于片段里的 op（两条通道都不再写它们）；其余 op 认不出就必须抛错，不许静默丢。 */
 const FRAGMENT_ONLY = new Set(['staticAttr', 'staticClass', 'staticStyle', 'staticText']);
 
+/**
+ * 形态 C 骨架的内容位置（`applyComponentSetup(this, setup)`）：内容由**调用方**提供，
+ * 构件只编"没有内容"的用法（带内容时 `bind` 返回 null，走通用路径回落），产物里不写。
+ */
+const CALLER_CONTENT = new Set(['content']);
+
 const indentOf = (depth) => '  '.repeat(depth);
 
 /** 静态值 → 生成代码里的字面量写法（`null` / `false` / `true` 原样，正是 attr 的口径）。 */
@@ -44,7 +50,8 @@ export function renderModule(options) {
     scopeSpecifier = null,
     paramsSource = '',
     hash = null,
-    templatesOnly = false
+    templatesOnly = false,
+    contentGuard = false
   } = options;
 
   const scope = new Set();
@@ -119,6 +126,13 @@ export function renderModule(options) {
       'export function bind(root, values) {\n' +
       `  const [${paramsSource}] = values ?? [];\n` +
       destructure +
+      (contentGuard
+        ? '  // 骨架只编"没有内容"的用法：调用方带了内容（setup / children）就走通用路径，\n' +
+          '  // 否则内容会被静默丢掉——片段里没有它的位置。\n' +
+          '  if ((values ?? []).some((value) => value !== null && value !== undefined)) {\n' +
+          '    return null;\n' +
+          '  }\n'
+        : '') +
       `  if (!root || root.childNodes.length !== ${emitted.childCount}) {\n` +
       '    return null; // 形状与片段不符：交给调用方走通用路径回落\n' +
       '  }\n' +
@@ -229,6 +243,8 @@ function buildSample(core, factoryName, ops) {
         element.attr(op.name, '');
       } else if (op.kind === 'dynamicStyle') {
         // 动态样式不写占位：值由运行期写（节点模式的节点快照 / 绑定），片段里留空反而多一次对账
+      } else if (op.kind === 'content') {
+        // 调用方内容：片段里不留位置，带内容的用法由运行期回落通用路径
       } else if (op.kind === 'slotText' || op.kind === 'bindText') {
         element.child(TEXT_PLACEHOLDER);
       } else if (op.kind === 'element') {
@@ -294,7 +310,7 @@ function emitElementMode({ entry, addExpression, rootName = 'el' }) {
         op.args.forEach(addExpression);
         lines.push(`    ${domPath(ownerPath)}.addEventListener(${op.args.join(', ')});`);
         liveCount += 1;
-      } else if (!FRAGMENT_ONLY.has(op.kind)) {
+      } else if (!FRAGMENT_ONLY.has(op.kind) && !CALLER_CONTENT.has(op.kind)) {
         // 认不出的 op 绝不能静默丢掉（静默少一个值，比不编危险得多）
         throw new Error(`元素模式的产物里没有 ${op.kind} 的写法`);
       }
@@ -446,7 +462,11 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
       } else if (child.kind === 'slotText') {
         addExpression(child.expression);
         slotLines.push(`${pathExprOf(child.path)}.textContent = ${child.expression};`);
-      } else if (child.kind !== 'element' && !FRAGMENT_ONLY.has(child.kind)) {
+      } else if (
+        child.kind !== 'element' &&
+        !FRAGMENT_ONLY.has(child.kind) &&
+        !CALLER_CONTENT.has(child.kind)
+      ) {
         // 同上：认不出的 op 不许静默丢
         throw new Error(`节点模式的产物里没有 ${child.kind} 的写法`);
       }
