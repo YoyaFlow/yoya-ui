@@ -17,6 +17,12 @@ Two red lines shape it:
 
 ## 1. When it pays off
 
+**Positioning**: the compile path serves **benchmarks and visibility**, not the main path — it does not
+change how the library is used, and it may not add runtime complexity. Every API is defined by its
+"no compiler" usage and the compile path only _consumes_ those semantics; performance and size
+trade-offs stay on the compile side (the compiler itself, the `compiler-runtime` subpath, the generated
+modules), so the main entry's download path is untouched.
+
 The real win is in **repeated units**: the same structure built many times, where each row saves node
 objects, binding registration and attribute reconciliation.
 
