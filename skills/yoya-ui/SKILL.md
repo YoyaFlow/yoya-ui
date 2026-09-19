@@ -32,10 +32,12 @@ div((root) => {
 - **事件绑定铁律**：快捷方法返回父节点而非子元素，事件必须用回调参数：
   - 错误：`page.button('保存').on('click', fn)`（handler 挂到 page 容器）
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
-- **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`，注入样式用 `injectDocumentStyle`
+- **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`；**帧循环/单帧用节点方法** `node.bindAnimationFrameLoop(cb)` / `node.bindAnimationFrame(cb)`（`destroy()` 自动取消，`stopAnimationFrameLoop()` 提前停）；注入样式用 `injectDocumentStyle`
 - **挂载走 `bindTo`**：`node.bindTo('#app')` 渲染并挂到容器；SSR 用 `hydrate` / `mount`。不要在业务代码里 `document.querySelector('#app').appendChild(node.renderDom())`——绕开挂载约定，容器不存在时还会直接抛错
 - **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
-- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回节点，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法才写形态 B（`{ render(), ... }`），父子嵌套与生命周期重写才用形态 C。详见 references/core.md
+- **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等）时才在 `render()` 之外先建再挂载；纯结构就地组合（`stack.div((box) => …)`、`page.vCard((card) => …)`），不要先把节点存成中间变量再 `child()` 挂回去
+- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回 ViewNode，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法才写形态 B（`{ render(), ... }`），父子嵌套与生命周期重写才用形态 C。**演示代码用同一条判据**：只演示结构与交互、不需要对外命令方法时，函数直接 `return` 节点（`return vCard((card) => …)`），不要为了跟对象组件统一而白包一层 `render()`。详见 references/core.md
+- **`vNode` 是 ComponentNode 的快捷工厂**：`vNode((api) => 视图)` 定义即得到节点——可当根 `bindTo`、可当子节点、不产生占位元素，setup 返回数组即多根 fragment。对外命令方法收到 `api` 上（`api.reload = () => { …; return api }`），工厂把它们挂到节点本身，**撞上节点 API（`child` / `destroy` / `mountable` …）直接报错**，不静默覆盖；命令里 `return api` 等价于返回节点；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价于 `node.whenFailed(fn)`）。其余节点能力链在返回的节点上（`vNode(…).mountable(cond)`）。详见 references/core.md
 
 ## 文本与状态
 
@@ -75,9 +77,9 @@ div((root) => {
 
 结构变化的粒度不止「整片重建」，按代价选三档：
 
-- **列表协调**：`ul.keyed(rows, (row) => row.id, (row) => li(row.title))` 用信号驱动对账——同 key 且行引用未变复用节点（`build` 不重跑）、行引用变原位换新、排序 `insertBefore` 保身份；行引用变了但内容等价 / 只需改字段时，第四参数 `{ equals, update }` 让整行免于重建（`equals` 为真直接复用，否则 `update(node, prev, next)` 原地改写）；自定义策略用 `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` 五个 keyed 原语。
+- **列表协调**：`ul.keyed(rows, (row) => row.id, (row) => li(row.title))` 用信号驱动对账——同 key 且行引用未变复用节点（`build` 不重跑）、行引用变原位换新、排序 `insertBefore` 保身份且只搬真的换位的行（交换两行不重排整张表）；行引用变了但内容等价 / 只需改字段时，第四参数 `{ equals, update }` 让整行免于重建（`equals` 为真直接复用，否则 `update(node, prev, next)` 原地改写）；自定义策略用 `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` 五个 keyed 原语。
 - **条件挂载**：`panel.mountable(cond)`（句柄或零参闭包）——为假脱离文档、为真按子节点槽位回归，ViewNode 与控件状态保留；与 `display` 显隐（看不见但在）、`rebuildable()`（销毁重建）构成三档；`isMounted()` 查询条件状态。
-- **子树错误边界**：`box.whenFailed((error, info) => fallback)`——返回节点降级替换子树、返回 null 仅上报并保持现状；组件对象写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。
+- **子树错误边界**：`box.whenFailed((error, info) => fallback)`——返回节点降级替换子树、返回 null 仅上报并保持现状；错误在出错时**沿父链上溯**找最近的边界，所以与声明顺序、嵌套深度、运行时插入、子树搬家都无关。组件对象写与 `render()` 同层的 `whenFailed` 成员，`ComponentNode` 自动挂载；捕获永不静默（`console.error` 必发，devtools 开启时追加 error 事件）。
 
 `mountable()` 省略参数即默认常挂，入树后可随时再调来替换条件；绑定登记在父节点、条件存在子节点自己的值单元里。三者的细节与坑位见 references/state.md。
 
@@ -105,7 +107,7 @@ div((root) => {
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。通用数据注入用 `withContext(providers, build)` + `currentContext(key)`（构建期作用域，SSR 每请求隔离）。详见 references/access-context.md。
+组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。跨组件共享数据用 `provide(key, value)` + `inject(key, fallback)`（就近覆盖、随节点销毁，声明写在 setup / `render()` 里）；请求级注入用 `withContext(providers, build)` + `currentContext(key)`（SSR 每请求隔离）。详见 references/access-context.md。
 
 ## DevTools（Beta）
 
@@ -119,7 +121,7 @@ div((root) => {
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
 - [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、事件单槽
-- [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与通用 Context 注入、无障碍原语
+- [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与跨组件共享（provide/inject、withContext、installContext）、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
 - [references/modules.md](references/modules.md)：业务模块组织规则（目录结构、api 分层与命令范式、状态模块、业务/共享组件、应用外壳与导航、命名与结构分块、启动流程与新增菜单）

@@ -219,9 +219,9 @@ export class VDigitalBoardItem extends HtmlElementNode {
 }
 
 export function vDigitalBoard(first = null, second = null, third = null) {
-  return createComponentFactory(VDigitalBoard, first, second, third);
+  return createComponentFactory(VDigitalBoard, first, second, third, arguments);
 }
 
 export function vDigitalBoardItem(first = null, second = null, third = null) {
-  return createComponentFactory(VDigitalBoardItem, first, second, third);
+  return createComponentFactory(VDigitalBoardItem, first, second, third, arguments);
 }

@@ -1016,25 +1016,25 @@ function setSidebarVisuallyHidden(node, hidden) {
 }
 
 export function vMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VMenu, first, second, third);
+  return createComponentFactory(VMenu, first, second, third, arguments);
 }
 
 export function vMenuItem(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuItem, first, second, third);
+  return createComponentFactory(VMenuItem, first, second, third, arguments);
 }
 
 export function vMenuDivider(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuDivider, first, second, third);
+  return createComponentFactory(VMenuDivider, first, second, third, arguments);
 }
 
 export function vMenuGroup(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuGroup, first, second, third);
+  return createComponentFactory(VMenuGroup, first, second, third, arguments);
 }
 
 export function vSubMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VSubMenu, first, second, third);
+  return createComponentFactory(VSubMenu, first, second, third, arguments);
 }
 
 export function vSidebar(first = null, second = null, third = null) {
-  return createComponentFactory(VSidebar, first, second, third);
+  return createComponentFactory(VSidebar, first, second, third, arguments);
 }

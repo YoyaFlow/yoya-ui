@@ -117,5 +117,5 @@ export class VSparkline extends SvgElementNode {
 }
 
 export function vSparkline(first = null, second = null, third = null) {
-  return createComponentFactory(VSparkline, first, second, third);
+  return createComponentFactory(VSparkline, first, second, third, arguments);
 }

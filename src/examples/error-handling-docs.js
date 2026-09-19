@@ -8,16 +8,16 @@ const errorDemos = [
     description:
       'handler 返回 null：只上报不替换结构。每次捕获都会 console.error（含原始堆栈），业务侧可用信号统计或上报。',
     id: 'report',
-    imports: ['computed', 'div', 'ref', 'vstack'],
+    imports: ['computed', 'ref', 'vstack'],
     sourceTitle: '报告模式源码',
     title: '报告模式：返回 null 保现状'
   },
   {
     component: WhenFailedComponentExample,
     description:
-      '组件对象定义与 render() 同层的 whenFailed 成员，ComponentNode 自动挂载；返回节点则替换组件输出为降级 UI。',
+      'vNode 产物就是节点，可直接写在树里；边界写 api.whenFailed（等价 node.whenFailed）。触发/恢复按钮都在边界外：降级只替换组件自身输出，恢复靠父级区域重建拿到新实例，所以能反复观察。',
     id: 'component',
-    imports: ['div', 'ref', 'span', 'vstack'],
+    imports: ['div', 'ref', 'span', 'vNode', 'vstack'],
     sourceTitle: '组件协议降级源码',
     title: '组件协议：自带降级'
   }

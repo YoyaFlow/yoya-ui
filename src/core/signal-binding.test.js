@@ -1,9 +1,34 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { ViewNode, computed, div, input, installSignals, ref, vText } from '../index.js';
+import { ViewNode, computed, div, input, installSignals, li, ref, ul, vText } from '../index.js';
+import { defaultAdapter } from './signals/engine.js';
 
 afterEach(() => {
   installSignals(null);
 });
+
+/**
+ * 订阅计数适配器：按 source 统计活跃订阅数，用来验证绑定销毁后退订。
+ * 故意不带 createComputed——守的是「引擎没有原生派生」时 core 自实现派生那条路径。
+ */
+function installSubscriptionSpy() {
+  const active = new Map();
+
+  installSignals({
+    ...defaultAdapter,
+    createComputed: undefined,
+    subscribe(source, listener) {
+      active.set(source, (active.get(source) ?? 0) + 1);
+      const dispose = defaultAdapter.subscribe(source, listener);
+
+      return () => {
+        active.set(source, active.get(source) - 1);
+        dispose();
+      };
+    }
+  });
+
+  return (handle) => active.get(handle._source) ?? 0;
+}
 
 describe('signal value bindings', () => {
   it('renders the current signal value into SSR html', () => {
@@ -149,5 +174,58 @@ describe('signal value bindings', () => {
 
     expect(writes).toBe(1);
     expect(current).toBe('Grace');
+  });
+
+  it('releases row computeds once the keyed rows are gone (core fallback derivation)', () => {
+    const subscriptionsFor = installSubscriptionSpy();
+    const selected = ref(null);
+    const rows = ref([{ id: 1 }, { id: 2 }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) =>
+          li(String(row.id)).toggleClass(
+            'danger',
+            computed(() => selected.value === row.id)
+          )
+      );
+    });
+    list.renderDom();
+
+    expect(subscriptionsFor(selected)).toBe(2);
+
+    rows.value = [];
+
+    // 行销毁后行内派生对长命信号的订阅必须全部退掉，否则整行数据被一起留住
+    expect(subscriptionsFor(selected)).toBe(0);
+  });
+
+  it('does not keep row derivations alive after the keyed rows are gone', () => {
+    const selected = ref(null);
+    const rows = ref([{ id: 1 }, { id: 2 }]);
+    let runs = 0;
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) =>
+          li(String(row.id)).toggleClass(
+            'danger',
+            computed(() => {
+              runs += 1;
+              return selected.value === row.id;
+            })
+          )
+      );
+    });
+    list.renderDom();
+    const runsAfterBuild = runs;
+
+    rows.value = [];
+    selected.value = 1;
+
+    // 行销毁后写长命信号：历史派生既不该被唤醒，也不该被它钉住
+    expect(runs).toBe(runsAfterBuild);
   });
 });

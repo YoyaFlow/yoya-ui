@@ -390,11 +390,11 @@ export class VMessageContainer extends HtmlElementNode {
 }
 
 export function vMessage(first = null, second = null, third = null) {
-  return createComponentFactory(VMessage, first, second, third);
+  return createComponentFactory(VMessage, first, second, third, arguments);
 }
 
 export function vMessageContainer(first = null, second = null, third = null) {
-  return createComponentFactory(VMessageContainer, first, second, third);
+  return createComponentFactory(VMessageContainer, first, second, third, arguments);
 }
 
 export const toast = {

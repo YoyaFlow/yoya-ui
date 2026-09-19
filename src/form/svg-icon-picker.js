@@ -411,7 +411,7 @@ export class VSvgIconPicker extends HtmlElementNode {
 }
 
 export function vSvgIconPicker(first = null, second = null, third = null) {
-  return createComponentFactory(VSvgIconPicker, first, second, third);
+  return createComponentFactory(VSvgIconPicker, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vSvgIconPicker });

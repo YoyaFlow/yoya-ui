@@ -176,5 +176,5 @@ export class VTransition extends HtmlElementNode {
 }
 
 export function vTransition(first = null, second = null, third = null) {
-  return createComponentFactory(VTransition, first, second, third);
+  return createComponentFactory(VTransition, first, second, third, arguments);
 }

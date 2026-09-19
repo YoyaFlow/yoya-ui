@@ -391,7 +391,7 @@ export class VUpload extends HtmlElementNode {
 }
 
 export function vUpload(first = null, second = null, third = null) {
-  return createComponentFactory(VUpload, first, second, third);
+  return createComponentFactory(VUpload, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vUpload });

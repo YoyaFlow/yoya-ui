@@ -278,7 +278,7 @@ export class VSplitPanel extends HtmlElementNode {
 }
 
 export function vSplitPanel(first = null, second = null, third = null) {
-  return createComponentFactory(VSplitPanel, first, second, third);
+  return createComponentFactory(VSplitPanel, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vSplitPanel });

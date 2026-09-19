@@ -360,5 +360,5 @@ export class VProgress extends HtmlElementNode {
 }
 
 export function vProgress(first = null, second = null, third = null) {
-  return createComponentFactory(VProgress, first, second, third);
+  return createComponentFactory(VProgress, first, second, third, arguments);
 }

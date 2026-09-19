@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { div, ref, section } from '../index.js';
+import { div, li, ref, section, ul } from '../index.js';
+import { dependentCount } from './signals/observe.js';
 
 describe('mountable condition adoption', () => {
   it('omits server HTML and detached DOM when the condition is false', () => {
@@ -186,5 +187,58 @@ describe('mountable condition adoption', () => {
 
     expect(() => host.destroy()).not.toThrow();
     expect(() => host.destroy()).not.toThrow();
+  });
+
+  it('keeps an unmounted child out of the DOM when it is added after render', () => {
+    const visible = ref(false);
+    const host = div();
+    const element = host.renderDom();
+    const panel = div('panel');
+    panel.mountable(visible);
+
+    host.child(panel);
+
+    expect(element.textContent).toBe('');
+    expect(panel.isMounted()).toBe(false);
+    expect(panel._el).not.toBeNull();
+
+    visible.value = true;
+    expect(element.textContent).toBe('panel');
+  });
+
+  it('releases the mount binding when a keyed row is destroyed', () => {
+    const visible = ref(true);
+    const rows = ref([{ id: 1 }, { id: 2 }]);
+    const list = ul((node) => {
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => li(String(row.id)).mountable(visible)
+      );
+    });
+    list.renderDom();
+
+    expect(dependentCount(visible._source)).toBe(2);
+
+    rows.value = [];
+
+    // 列表容器长命：行销毁时必须同时释放父节点为它登记的挂载绑定，
+    // 否则已销毁的行会被绑定闭包一直钉在内存里
+    expect(dependentCount(visible._source)).toBe(0);
+  });
+
+  it('releases the mount binding when a plain child is destroyed', () => {
+    const visible = ref(true);
+    const host = div();
+    const panel = div('panel');
+    panel.mountable(visible);
+    host.child(panel);
+    host.renderDom();
+
+    expect(dependentCount(visible._source)).toBe(1);
+
+    panel.destroy();
+
+    expect(dependentCount(visible._source)).toBe(0);
   });
 });

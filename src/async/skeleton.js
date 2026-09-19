@@ -197,5 +197,5 @@ export class VSkeleton extends HtmlElementNode {
 }
 
 export function vSkeleton(first = null, second = null, third = null) {
-  return createComponentFactory(VSkeleton, first, second, third);
+  return createComponentFactory(VSkeleton, first, second, third, arguments);
 }

@@ -271,7 +271,7 @@ export class VSlider extends HtmlElementNode {
 }
 
 export function vSlider(first = null, second = null, third = null) {
-  return createComponentFactory(VSlider, first, second, third);
+  return createComponentFactory(VSlider, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vSlider });

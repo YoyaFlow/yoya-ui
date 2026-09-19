@@ -100,5 +100,5 @@ export class VMasonry extends HtmlElementNode {
 }
 
 export function vMasonry(first = null, second = null, third = null) {
-  return createComponentFactory(VMasonry, first, second, third);
+  return createComponentFactory(VMasonry, first, second, third, arguments);
 }

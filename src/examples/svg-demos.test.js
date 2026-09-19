@@ -133,7 +133,7 @@ describe('svg tower defense demo', () => {
 });
 
 describe('svg breakout demo', () => {
-  it('bounces the ball, moves the paddle with the keyboard and rebuilds broken bricks', async () => {
+  it('bounces the ball, moves the paddle with the keyboard and drops bricks by key', async () => {
     const app = bootDemo('svg-breakout.html');
     const paddle = app.querySelector('.paddle');
     const ball = app.querySelector('.ball');
@@ -209,7 +209,10 @@ describe('svg breakout demo', () => {
     pauseButton.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     expect(pauseButton.textContent).toBe('暂停');
 
-    // 打掉砖块：区域按新数组重建，砖块减少、分数写入 HUD
+    // 打掉砖块：keyed 按 key 对账，砖块减少、分数写入 HUD
+    const bricksBeforeBreak = new Map(
+      [...app.querySelectorAll('.brick')].map((el) => [el.getAttribute('data-brick'), el])
+    );
     const broken = await waitFor(() => app.querySelectorAll('.brick').length < bricksBefore, 8000);
     expect(broken).toBe(true);
     expect(Number(app.querySelector('.hud-item--score .hud-value').textContent)).toBeGreaterThan(
@@ -218,6 +221,13 @@ describe('svg breakout demo', () => {
     expect(Number(app.querySelector('.hud-item--speed .hud-value').textContent)).toBeGreaterThan(
       speedBefore
     );
+
+    // keyed 语义：只有被打掉的那一块销毁，其余砖块复用同一个 DOM 节点
+    const survivors = [...app.querySelectorAll('.brick')];
+    expect(survivors).toHaveLength(bricksBefore - 1);
+    survivors.forEach((element) => {
+      expect(element).toBe(bricksBeforeBreak.get(element.getAttribute('data-brick')));
+    });
 
     // 重新开始：分数清零、砖块恢复满场
     app.querySelector('.control--restart').click();

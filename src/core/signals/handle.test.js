@@ -7,6 +7,30 @@ afterEach(() => {
   installSignals(null);
 });
 
+/**
+ * 订阅计数适配器：统计当前活跃订阅数，用来验证观察者清零后依赖被退订。
+ * 故意不带 createComputed——这条用例守的是「引擎没有原生派生」时 core 自实现的那条路径。
+ */
+function installSubscriptionSpy() {
+  const spy = { active: 0 };
+
+  installSignals({
+    ...defaultAdapter,
+    createComputed: undefined,
+    subscribe(source, listener) {
+      spy.active += 1;
+      const dispose = defaultAdapter.subscribe(source, listener);
+
+      return () => {
+        spy.active -= 1;
+        dispose();
+      };
+    }
+  });
+
+  return spy;
+}
+
 describe('ref', () => {
   it('reads and writes through the handle', () => {
     const count = ref(0);
@@ -110,6 +134,62 @@ describe('computed', () => {
     const double = computed(() => count.value * 2);
 
     expect(double.peek()).toBe(4);
+  });
+
+  it('releases its dependencies when the last observer unsubscribes', () => {
+    const spy = installSubscriptionSpy();
+    const count = ref(1);
+    const double = computed(() => count.value * 2);
+    const seen = [];
+    const unsubscribe = double.subscribe((value) => seen.push(value));
+
+    // 承载信号 + 依赖各一条订阅
+    expect(spy.active).toBe(2);
+
+    unsubscribe();
+
+    // 观察者清零：依赖订阅一并退掉，长命依赖不会再持有派生闭包
+    expect(spy.active).toBe(0);
+
+    count.value = 5;
+    expect(seen).toEqual([]);
+
+    // 再被读取时重新求值并重建依赖订阅
+    expect(double.value).toBe(10);
+    expect(spy.active).toBe(1);
+  });
+
+  it('does not recompute an unobserved derived value on dependency writes', () => {
+    const count = ref(1);
+    let runs = 0;
+    const double = computed(() => {
+      runs += 1;
+      return count.value * 2;
+    });
+
+    expect(double.value).toBe(2);
+
+    count.value = 5;
+
+    // 没人观察：不订阅依赖、不重算，长命信号拿不到自己的闭包
+    expect(runs).toBe(1);
+    expect(double.value).toBe(10);
+    expect(runs).toBe(2);
+  });
+
+  it('keeps equality gating for observed derived values', () => {
+    const count = ref(1);
+    const isBig = computed(() => count.value > 3);
+    const seen = [];
+    const unsubscribe = isBig.subscribe((value) => seen.push(value));
+
+    count.value = 2;
+    expect(seen).toEqual([]);
+
+    count.value = 9;
+    expect(seen).toEqual([true]);
+
+    unsubscribe();
   });
 });
 

@@ -107,9 +107,9 @@
 ### 11. 跨了好几层的组件要共享状态怎么办？没有 `provide/inject`，没有 Context？
 
 - 分类：②（文档缺失）
-- 现状：对应物存在且已导出：`withContext(providers, build)` / `installContext` / `currentContext(key)`（`src/core/context.js`），权限作用域 `access()` 同样就近覆盖。缺的是面向使用者的文档。
-- 文档动作：新增 context 使用文档（当前只有 API 无文档）。
-- 优先级：P1 ☐
+- 现状：`provide(key, value)` / `inject(key, fallback)` 已落地（`src/core/context.js`）——声明写在构建这一帧（setup / 组件 `render()` / 页面工厂），挂在当前节点上，后代就近读取、随节点销毁；懒解析的组件沿父链上溯，异步加载的视图以 loader 节点为帧。请求级注入仍是 `withContext(providers, build)` / `installContext` + `currentContext(key)`，`inject()` 会回退到这两层，读侧可以统一用 `inject`。权限作用域 `access()` 同样就近覆盖。
+- 文档动作：`skills/yoya-ui/references/access-context.md` 已补「跨组件共享：provide / inject」与选型表。
+- 优先级：P1 ☑
 
 ### 12. 组件标签写法呢？DevTools 里看不到组件树，这还是组件化吗？
 
@@ -323,7 +323,7 @@
 ### 41. npm 周下载量多少？几个 stars？出 bug 提 issue 有人理吗？
 
 - 分类：③
-- 现状：早期项目、社交信号弱是事实。库里为此写了「Engineering signals」一节：0 运行时依赖、CI 徽章、测试规模、dist 门禁、公开 roadmap——用工程信号替代星数做采用判断；「冷启动」一节直接回应此问。
+- 现状：早期项目、社交信号弱是事实。库里为此写了「可复核的工程信号」一节：0 运行时依赖、CI 徽章、测试规模、dist 门禁、公开 roadmap——用工程信号替代星数做采用判断；冷启动的完整说明在 `docs/why-yoya-ui.zh-CN.md` 第五节。
 - 文档动作：README 已覆盖；FAQ 引用即可，不必回避。
 - 优先级：P1 ☐
 
@@ -331,7 +331,7 @@
 
 - 分类：③
 - 现状：真实风险。缓解：MIT 许可、零运行时依赖（接手无供应链）、spec 驱动（design / ROADMAP 公开）、三形态契约文档冻结、核心是可读的少量 JS——fork 自持成本低于围城框架。
-- 文档动作：README 冷启动一节已覆盖，FAQ 补「接手成本」具体口径。
+- 文档动作：`docs/why-yoya-ui.zh-CN.md` 第五节（冷启动）已覆盖，FAQ 补「接手成本」具体口径。
 - 优先级：P1 ☐
 
 ### 43. 有中文文档吗？视频教程呢？搜索能搜到答案吗？

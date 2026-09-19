@@ -65,17 +65,17 @@ export class VCardFooter extends HtmlElementNode {
 }
 
 export function vCard(first = null, second = null, third = null) {
-  return createComponentFactory(VCard, first, second, third);
+  return createComponentFactory(VCard, first, second, third, arguments);
 }
 
 export function vCardHeader(first = null, second = null, third = null) {
-  return createComponentFactory(VCardHeader, first, second, third);
+  return createComponentFactory(VCardHeader, first, second, third, arguments);
 }
 
 export function vCardBody(first = null, second = null, third = null) {
-  return createComponentFactory(VCardBody, first, second, third);
+  return createComponentFactory(VCardBody, first, second, third, arguments);
 }
 
 export function vCardFooter(first = null, second = null, third = null) {
-  return createComponentFactory(VCardFooter, first, second, third);
+  return createComponentFactory(VCardFooter, first, second, third, arguments);
 }

@@ -6,3 +6,5 @@ package-lock.json
 src/chart/echarts.min.js
 src/examples/demos/
 src/core/signals/vendor/
+# 生成物：benchmark/results.json → scripts/benchmark-report-html.mjs --write
+benchmark/report.html

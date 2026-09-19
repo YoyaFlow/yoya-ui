@@ -50,14 +50,77 @@ export function endCollect(token) {
   return uniqueSources(token.sources);
 }
 
-/** 在收集器内求值，返回值与依赖。 */
-export function withCollect(run) {
+/** 在收集器内求值，返回值与依赖；receiver 交给 run 当 this（避免为每个绑定建一层闭包）。 */
+export function withCollect(run, receiver = undefined) {
   const token = beginCollect();
   try {
-    return { value: run(), sources: uniqueSources(token.sources) };
+    return { value: run.call(receiver), sources: uniqueSources(token.sources) };
   } finally {
     endCollect(token);
   }
+}
+
+/**
+ * 绑定求值的热路径：收集器 token 池化复用。
+ *
+ * `withCollect` 每次求值要建 token 对象 + 依赖数组 + 去重后的结果对象（隔离微基准实测 33 B/次），
+ * 而绑定求值是按行累加的（一行一两条绑定，每次写入唤醒都要重算）。这里改成：
+ * 从池里取一个 token → 在收集器里求值 → 调用方读完依赖 / 拷走多依赖后归还。
+ * 池是模块级的空 token 列表（归还时清空依赖，不跨请求留引用），同步执行因而天然每请求隔离。
+ */
+const TOKEN_POOL_LIMIT = 32;
+const tokenPool = [];
+
+/** 取一个可复用的收集器 token（依赖列表已清空）。 */
+export function acquireCollectorToken() {
+  const token = tokenPool.pop();
+  if (token !== undefined) {
+    token.suppressed = false;
+    return token;
+  }
+
+  return { sources: [], suppressed: false };
+}
+
+/** 归还 token：清空依赖引用后放回池（池有上限，避免异常路径把它撑大）。 */
+export function releaseCollectorToken(token) {
+  token.sources.length = 0;
+  token.suppressed = false;
+  if (tokenPool.length < TOKEN_POOL_LIMIT) {
+    tokenPool.push(token);
+  }
+}
+
+/** 在给定 token 的收集器内求值；返回值，依赖留在 `token.sources`。 */
+export function collectInto(token, run, receiver = undefined) {
+  collectors.push(token);
+  try {
+    return run.call(receiver);
+  } finally {
+    collectors.pop();
+  }
+}
+
+/** 就地按首次出现去重（保序），不产生新数组。 */
+export function dedupeSourcesInPlace(sources) {
+  let write = 0;
+  for (let read = 0; read < sources.length; read += 1) {
+    const source = sources[read];
+    let seen = false;
+    for (let probe = 0; probe < write; probe += 1) {
+      if (sources[probe] === source) {
+        seen = true;
+        break;
+      }
+    }
+    if (!seen) {
+      sources[write] = source;
+      write += 1;
+    }
+  }
+
+  sources.length = write;
+  return sources;
 }
 
 /** 在抑制收集的上下文内求值（peek / untracked）。 */

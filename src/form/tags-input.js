@@ -249,7 +249,7 @@ export class VTagsInput extends HtmlElementNode {
 }
 
 export function vTagsInput(first = null, second = null, third = null) {
-  return createComponentFactory(VTagsInput, first, second, third);
+  return createComponentFactory(VTagsInput, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vTagsInput });

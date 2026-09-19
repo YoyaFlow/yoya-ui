@@ -398,11 +398,11 @@ export class VStep extends HtmlElementNode {
 }
 
 export function vSteps(first = null, second = null, third = null) {
-  return createComponentFactory(VSteps, first, second, third);
+  return createComponentFactory(VSteps, first, second, third, arguments);
 }
 
 export function vStep(first = null, second = null, third = null) {
-  return createComponentFactory(VStep, first, second, third);
+  return createComponentFactory(VStep, first, second, third, arguments);
 }
 
 function normalizeStepItem(item) {

@@ -3,12 +3,17 @@
 // 2. 分类子入口 tree-shaking 隔离：仅打包目标类目，不夹带其他类目组件；
 // 3. 体积预算门禁：自包含 full 产物、核心入口、实际下载量与组件皮肤不得超过预算；
 // 4. README 体积表与产物一致：表格数字不再靠手工维护，漂移即失败。
+// 5. 基准文档表格与 benchmark/results.json 一致：官方基准的数字同样不许手写。
+// 6. 基准报告页 benchmark/report.html 由 benchmark/results.json 生成：手改数字即失败。
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { rolldown } from 'rolldown';
 import { collectBundleReport, compareReadmeSizes } from './bundle-metrics.mjs';
+import { compareBenchmarkTables, readBenchmarkResults } from './benchmark-report.mjs';
+import { compareHtmlReport, renderHtmlReport } from './benchmark-report-html.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = join(root, 'dist');
@@ -69,6 +74,71 @@ async function verifySsrSingleCore() {
   const second = router.renderToString(buildPage).html;
   assert(first.length > 0, 'SSR 输出为空');
   assert(second === first, 'SSR 输出不确定');
+}
+
+// ---- 1b. 编译路径：运行期钩子冒烟 + 编译器与浏览器产物隔离 --------------------
+async function verifyCompilerRuntime() {
+  const { JSDOM } = await import('jsdom');
+  const dom = new JSDOM('<!doctype html><html><body></body></html>');
+  const runtime = await loadEntry('yoya.compiler-runtime.js');
+  const document = dom.window.document;
+  const previousDocument = globalThis.document;
+  globalThis.document = document;
+
+  try {
+    const html = '<tr data-row-id=""><td class="col">0</td></tr>';
+    const element = runtime.cloneFragment(html);
+    assert(element.tagName === 'TR', 'compiler-runtime 克隆出的片段不是行根元素');
+    assert(
+      runtime.cloneFragment(html) !== element,
+      'compiler-runtime 同一形状每次都应克隆出新实例'
+    );
+
+    const host = document.createElement('tbody');
+    const list = runtime.createElementList(host, (row) => row.id);
+    const offs = [];
+    list.sync([{ id: 1 }, { id: 2 }], (row) => {
+      const el = runtime.cloneFragment('<tr></tr>');
+      runtime.pushOff(offs, runtime.bindText(el, row.id));
+      return { el, destroy: () => runtime.setAttr(el, 'data-done', null) };
+    });
+    assert(host.children.length === 2, 'compiled list 没有把行挂进容器');
+    assert(host.children[0].textContent === '1', 'compiled list 没有写入行文本');
+    assert(
+      host.children[0].getAttribute('data-row-key') === '1',
+      'compiled list 没有写 data-row-key'
+    );
+    list.destroy();
+    assert(host.children.length === 0, 'compiled list 的 destroy 没有清空容器');
+    offs.forEach((off) => off());
+  } finally {
+    if (previousDocument === undefined) {
+      delete globalThis.document;
+    } else {
+      globalThis.document = previousDocument;
+    }
+  }
+}
+
+/** 编译器只在构建期出现：浏览器入口不许带它，CLI 入口必须能独立跑起来。 */
+async function verifyCompilerEntry() {
+  for (const entry of ['yoya.core.js', 'yoya.ui.js', 'yoya.compiler-runtime.js']) {
+    const code = readFileSync(join(dist, entry), 'utf8');
+    assert(!code.includes('compileSource'), `${entry} 夹带了构建期编译器`);
+    assert(!code.includes('@babel/parser'), `${entry} 引用了构建期依赖 @babel/parser`);
+  }
+
+  const compiler = readFileSync(join(dist, 'yoya.compiler.js'), 'utf8');
+  assert(
+    compiler.includes('@babel/parser'),
+    '构建期编译器入口没有把 @babel/parser 外置（会被打进产物）'
+  );
+
+  const help = spawnSync(process.execPath, [join(dist, 'yoya.compiler.js'), '--help'], {
+    encoding: 'utf8'
+  });
+  assert(help.status === 0, `yoya.compiler.js --help 退出码 ${help.status}`);
+  assert(help.stdout.includes('--report'), 'yoya.compiler.js --help 没有列出 --report');
 }
 
 // ---- 2. 分类子入口 tree-shaking 隔离 ---------------------------------------
@@ -146,7 +216,10 @@ const BUDGET_ARTIFACTS = {
   'yoya.api.min.js': 4 * 1024,
   'yoya.ui.min.js': 20 * 1024,
   'yoya.router.min.js': 40 * 1024,
+  'yoya.compiler-runtime.min.js': 6 * 1024,
   'devtools.min.js': 6 * 1024,
+  // 节点引擎与 HTML/SVG 工厂的公共 chunk（按当前分块口径）
+  'node.min.js': 96 * 1024,
   // 组件皮肤：core 层无皮肤，这里只盯组件样式本身的膨胀
   'yoya.ui.css': 96 * 1024
 };
@@ -154,7 +227,8 @@ const BUDGET_ARTIFACTS = {
 // 首屏真实成本是「入口 + 它引用的公共 chunk」，按实际下载量（min+gzip）单独设预算。
 const BUDGET_DOWNLOADS = {
   'yoya.core.js': 30 * 1024,
-  'yoya.ui.js': 130 * 1024
+  'yoya.ui.js': 130 * 1024,
+  'yoya.compiler-runtime.js': 24 * 1024
 };
 
 const BUDGET_CATEGORY_BUNDLE = 220 * 1024;
@@ -209,6 +283,29 @@ function verifyReadmeSizes() {
   }
 }
 
+async function verifyBenchmarkTables() {
+  const mismatches = await compareBenchmarkTables(readBenchmarkResults());
+  if (mismatches.length > 0) {
+    throw new Error(
+      `基准表格与 benchmark/results.json 不一致：${mismatches
+        .map((item) => item.file)
+        .join('、')}\n  提示：npm run report:bench:write 可重新生成`
+    );
+  }
+  console.log('基准表格与 benchmark/results.json 一致');
+}
+
+async function verifyBenchmarkHtml() {
+  const mismatches = compareHtmlReport(renderHtmlReport(readBenchmarkResults()));
+  if (mismatches.length > 0) {
+    throw new Error(
+      `${mismatches.join('、')}\n  提示：npm run report:bench:html:write 可重新生成` +
+        '（页面数字全部来自 benchmark/results.json）'
+    );
+  }
+  console.log('基准报告页与 benchmark/results.json 一致');
+}
+
 // 体积报表同时供预算与 README 校验使用（一次采集，避免重复打包）。
 const bundleReport = await collectBundleReport();
 
@@ -217,6 +314,14 @@ console.log('API 入口隔离通过：通讯符号只在 yoya.api.js 导出。')
 
 await verifySsrSingleCore();
 console.log('SSR 单 core 冒烟通过：core/ui/router 共享同一实例，官方组件可 SSR。');
+
+await verifyCompilerRuntime();
+console.log('编译运行期冒烟通过：compiler-runtime 可克隆片段、绑定文本、对账与销毁列表。');
+
+await verifyCompilerEntry();
+console.log(
+  '编译入口隔离通过：浏览器入口不含编译器，yoya.compiler.js 外置 @babel/parser 且 CLI 可跑。'
+);
 
 for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
   const code = await bundleConsumer(scenario.entry, scenario.imports, false);
@@ -233,5 +338,8 @@ for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
 await verifyBudgets();
 
 verifyReadmeSizes();
+
+await verifyBenchmarkTables();
+await verifyBenchmarkHtml();
 
 console.log('verify-dist: 全部通过');

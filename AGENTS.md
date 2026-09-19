@@ -21,13 +21,32 @@ git-ignored. When the user asks about “工作票” or remaining tasks, inspec
 set by directory modification time before answering. The current active set is
 `.scratch/post-0.6-followups/issues/`.
 
+## 编译路径的定位（准则，优先级最高）
+
+编译路径的存在意义是**打榜与曝光**：让更多人在基准与对比里看见 yoya-ui。它不是主战场，
+也不该改变主路径的形态。由此推出四条硬约束，任何改动都按它们验收：
+
+1. **运行期优先**：所有 API 以"不跑编译器时的使用方式"为准；编译路径只能**消费**运行期语义，
+   不能反过来定义 API、约束写法，或要求用户为了编而改代码。
+2. **不为编译牺牲运行期**：运行期指标（体积 / 内存 / 首屏 / 构建）已经够用，**不接受**为了编译产物
+   更好而让运行期变复杂、变大或变慢。运行期侧的新增字段 / 钩子 / 契约，必须先回答
+   "不跑编译器的人为什么需要它"。
+3. **编译不得引入运行期错误或复杂度**：编译产物与通用路径必须**逐字节等价**；认不出就整体回落，
+   绝不产出半成品；编译产物里不允许出现"只有编译路径才成立"的运行时行为。
+4. **编译器只懂形状、不懂组件**：不允许出现针对某个组件名的分支或清单。允许的"库内知识"只有三张
+   接口表——元素白名单（由 core 工厂推导）、库内纯值 / 助手（按导入来源识别）、内容助手（同）；
+   其它一律靠形状规则读，读不出就回落。表变大必须显式说明"为什么这是接口，不是组件"。
+
+反过来，**性能与体积的取舍只作用在编译侧**（编译器自身、`compiler-runtime` 子入口、生成的模块）——
+它们不进主入口的下载路径，可以放心为打榜服务。
+
 ## Component Definition Patterns
 
 组件定义支持多种形态，按场景选用；新组件应从下列三种形态中选择，避免在模板之外另起结构。
 
 ### A. 薄工厂：函数直接返回 ViewNode
 
-适用：无内部状态、纯配置化组合，代码量最小。
+适用：无内部状态、纯配置化组合，代码量最小。**确定没有额外行为要定义时就用它**——包括演示代码：只演示结构与交互、不需要对外命令方法时，函数直接返回 ViewNode，不要为了跟对象组件统一而白包一层 `render()`。
 
 ```js
 function ServiceTag(options) {
@@ -76,11 +95,25 @@ export function vTr(first = null, second = null, third = null) {
   - 形态 B：VPagination（render() + update/change 等状态 API）；
   - 形态 C：VButton/VCard/VTable/VTr/VTabs 等组件库主体。
 - child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
+- 形态 B 的快捷写法：`vNode((api) => 视图)` 定义即得到组件节点（ComponentNode），命令方法收到 api 上后由工厂挂到节点、重名报错；旧三形态与 child() 的对象形式不变。
 - 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
+- 组件身份：视图根写 `vn: 'VCard'`（值 = 导出名），模块底一行 `defineComponentIdentity(VCard, 'VCard')`；
+  `member instanceof VCard` 对形态 A / B / vNode 是同一条判定（元素节点读自己、组件节点展开到视图根），
+  详见 `docs/component-authoring.md` §7.3。
+- **新增组件一律形态 B**（`vNode(setup)` / `{ render() }`）；形态 C（class 继承节点）停止新增，存量迁移见票 43。
+- **setup 参数数量不定、按出现顺序分派**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
+  数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
+- **options 里子工厂不参与分派**：与子工厂同名的键按**属性**写（`div({ slot: 't-head' })` 是属性，
+  不是创建 `<slot>` 子元素）；组件自有方法照旧调用（`vDialog({ title })` 是 props）；`attrs` / `style`
+  是显式通道。键分类的唯一真源是 `src/core/setup-keys.js`。
+- **内容与槽位**：未标记的 `child(...)` 进组件根元素内部（普通元素语义）；带 `slot` 标记的内容按
+  **就近作用域**进直接父组件的同名槽位，一个槽一份内容，找不到槽位不 mount；多根组件不接受未标记内容。
+- **组件级钩子**：`whenMount` / `whenDestroy`（与 `whenFailed` 同族的协议成员，属性持函数，写在 vNode
+  的 api 或形态 B 返回对象上）；写在 options 对象里会报错，不要与 `onXxx` 事件简写混用。
 
 ### Demo 演示组件
 
-- 演示代码（examples/demos）以形态 B 为主，通过完整组件包装展示状态操作空间；确需演示形态 A/C 时允许直接书写对应形态。
+- 演示代码（examples/demos）同样按形态判：**没有额外操作（无对外命令方法、无需持有组件句柄）时用形态 A 直接返回 ViewNode，不包 `render()`**；确有状态或命令方法才用形态 B 展示操作空间，确需演示形态 C 时允许直接书写对应形态。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
@@ -155,6 +188,7 @@ form.vFormItem((itemOfLabel) => {
 - 组件代码（含事件回调）不允许直接操作 `document`；`renderDom()` 内创建元素是节点引擎的唯一职责，组件一律走节点 DSL。
 - 需要监听文档级事件（外部点击、拖拽、Esc、滚动等）时，统一使用核心辅助 `bindDocumentEvent`，组件自身不直接 `addEventListener/removeEventListener`。
 - `window` 全局监听（scroll / resize / popstate 等）同样收敛到 `bindWindowEvent`。
+- 动画帧用节点方法 `bindAnimationFrame(cb)` / `bindAnimationFrameLoop(cb)`（显式归属节点，`destroy()` 自动取消；同节点只保留一条循环），不要自己存 frameId + cancelAnimationFrame。
 - 浏览器 API 一律加 `typeof xxx === 'undefined'` 守卫（集中在 `bindDocumentEvent` 等核心位置）。
 - 模块级可变状态（注册表、id 计数器）不跨请求共享；id 使用 `allocateId` 渲染上下文分配器。
 - 服务端渲染使用每请求 i18n 实例（`createI18n`），`.s()` 快捷方式用 `withI18nStringShortcut` 作用域化。

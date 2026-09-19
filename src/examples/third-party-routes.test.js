@@ -199,7 +199,8 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-describe('third-party interop routes', () => {
+// 同 index.router.test.js：整站渲染在满载并行时贴近默认 5s 超时。
+describe('third-party interop routes', { timeout: 30000 }, () => {
   it('renders the interop overview with five demos and the integration policy', async () => {
     root = renderExamplesIndex('#app');
 

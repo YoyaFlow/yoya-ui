@@ -1,5 +1,6 @@
 import {
   ViewNode,
+  applySetupValue,
   applyElementOptions as applyCoreElementOptions,
   normalizeSetupArguments
 } from '../core/node.js';
@@ -72,19 +73,33 @@ function runBuilder(node, builder) {
 }
 
 export function applyComponentArguments(node, options = null, callback = null) {
-  applyElementOptions(node, options);
-
-  if (typeof callback === 'function') {
-    runBuilder(node, callback);
-  }
-
+  applySetupValue(node, options);
+  applySetupValue(node, callback);
   return node;
 }
 
-export function createComponentFactory(Component, first = null, second = null, third = null) {
-  const { first: setup, options, callback } = normalizeComponentArguments(first, second, third);
-  const node = setup instanceof Component ? setup : new Component(setup);
-  return applyComponentArguments(node, options, callback);
+/**
+ * 组件工厂：首个参数交给组件构造函数（组件自己的 setup / 特殊路由逻辑在这里），
+ * 其余参数按出现顺序走统一分派；超过三个参数由工厂把 `arguments` 透传进来（见第五参数）。
+ */
+export function createComponentFactory(
+  Component,
+  first = null,
+  second = null,
+  third = null,
+  args = null
+) {
+  const node = first instanceof Component ? first : new Component(first);
+  applySetupValue(node, second);
+  applySetupValue(node, third);
+
+  if (args && args.length > 3) {
+    for (let index = 3; index < args.length; index += 1) {
+      applySetupValue(node, args[index]);
+    }
+  }
+
+  return node;
 }
 
 export function applyComponentSetup(node, setup) {

@@ -101,7 +101,7 @@ vDOM 框架的问题，因为模板把「结构如何随数据变化」藏进了
 
 ```js
 const list = div();
-const row = div((line) => line.text('第一行')); // 预制节点：句柄在手
+const row = div((line) => line.child('第一行')); // 预制节点：句柄在手
 
 list.addChild('r1', row); // 挂载进主结构，身份由 ViewNode 句柄持有
 list.getChild('r1'); // 复用

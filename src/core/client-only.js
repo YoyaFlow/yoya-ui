@@ -15,6 +15,7 @@ export class ClientOnlyNode extends ViewNode {
   _resolve() {
     if (!this._resolved) {
       this._resolved = resolveClientOnly(this._loader);
+      this._resolved._parent = this; // 错误处理沿父链上溯到 ClientOnly 的父节点
     }
     return this._resolved;
   }

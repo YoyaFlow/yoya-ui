@@ -1,4 +1,4 @@
-import { ElementNode, registerChildFactories } from '../core/node.js';
+import { ElementNode, elementStyles, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { applyComponentSetup, createComponentFactory, themeValue } from '../components/shared.js';
 
@@ -41,14 +41,14 @@ export class VThemeShell extends HtmlElementNode {
       return;
     }
     target.styles({
-      background: this._styles.background,
-      border: this._styles.border,
-      borderColor: this._styles.borderColor,
-      borderRadius: this._styles.borderRadius,
-      boxSizing: this._styles.boxSizing,
-      color: this._styles.color,
-      minWidth: this._styles.minWidth,
-      overflow: this._styles.overflow
+      background: this._styles?.background,
+      border: this._styles?.border,
+      borderColor: this._styles?.borderColor,
+      borderRadius: this._styles?.borderRadius,
+      boxSizing: this._styles?.boxSizing,
+      color: this._styles?.color,
+      minWidth: this._styles?.minWidth,
+      overflow: this._styles?.overflow
     });
   }
 
@@ -86,12 +86,12 @@ export class VThemeShell extends HtmlElementNode {
 
   background(value) {
     if (value === undefined) {
-      return this._styles.background;
+      return this._styles?.background;
     }
     if (value === null) {
       return this;
     }
-    this._styles.background = String(value);
+    elementStyles(this).background = String(value);
     if (this._el) {
       this._el.style.background = String(value);
     }
@@ -109,21 +109,21 @@ export class VThemeShell extends HtmlElementNode {
 
   radius(value) {
     if (value === undefined) {
-      return this._styles.borderRadius;
+      return this._styles?.borderRadius;
     }
     return this.styles({ borderRadius: value === null ? undefined : String(value) });
   }
 
   border(value) {
     if (value === undefined) {
-      return this._styles.border;
+      return this._styles?.border;
     }
     return this.styles({ border: value === null ? undefined : String(value) });
   }
 
   borderColor(value) {
     if (value === undefined) {
-      return this._styles.borderColor;
+      return this._styles?.borderColor;
     }
     return this.styles({ borderColor: value === null ? undefined : String(value) });
   }
@@ -134,7 +134,7 @@ export class VThemeShell extends HtmlElementNode {
 }
 
 export function vThemeShell(first = null, second = null, third = null) {
-  return createComponentFactory(VThemeShell, first, second, third);
+  return createComponentFactory(VThemeShell, first, second, third, arguments);
 }
 
 registerChildFactories(ElementNode, { vThemeShell });

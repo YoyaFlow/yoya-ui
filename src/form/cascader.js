@@ -431,7 +431,7 @@ export class VCascader extends HtmlElementNode {
 }
 
 export function vCascader(first = null, second = null, third = null) {
-  return createComponentFactory(VCascader, first, second, third);
+  return createComponentFactory(VCascader, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vCascader });

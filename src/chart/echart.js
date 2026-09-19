@@ -364,7 +364,7 @@ export class VEchart extends HtmlElementNode {
 }
 
 export function vEchart(first = null, second = null, third = null) {
-  return createComponentFactory(VEchart, first, second, third);
+  return createComponentFactory(VEchart, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vEchart });

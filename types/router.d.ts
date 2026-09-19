@@ -23,6 +23,18 @@ export interface RouteConfig {
   view?: RouteView;
   component?: RouteView;
   beforeEnter?: (context: RouteContext) => boolean | void | Promise<boolean | void>;
+  /**
+   * Document route: the address this route navigates to as a real document
+   * (an internal HTML page or an external link) instead of rendering a view.
+   * `true` means the registered pattern is itself the address.
+   */
+  url?: string | true;
+  /** Where the document opens (`_blank`, …); `_blank` implies `rel="noopener"`. */
+  target?: string;
+  /** Link relation used when the route is rendered as a link. */
+  rel?: string;
+  /** Use `location.replace` instead of `location.assign` for this route. */
+  replace?: boolean;
   [key: string]: any;
 }
 
@@ -53,6 +65,12 @@ export class Router extends ElementNode {
   start(): Router;
   stop(): Router;
   navigate(path: string, options?: NavigateOptions): Router;
+  /**
+   * Full-page navigation outlet for document routes (internal HTML addresses and
+   * external links). Override it to plug in a custom navigation; it is a no-op
+   * where `window` is unavailable (server rendering).
+   */
+  navigateDocument(url: string, options?: NavigateOptions): Router;
   refresh(): Router;
   renderPath(path: string): Router;
   currentPath(): string;

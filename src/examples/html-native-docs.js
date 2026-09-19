@@ -198,7 +198,7 @@ statusText.textContent('状态：已跳过');`
       ],
       [
         'node.rebuildable(predicate?)',
-        '把节点声明为可重建区域，内容由它自己的 setup 产出。',
+        '把节点声明为可重建区域，内容由它自己的 setup 产出；必须在自身 setup 内声明。',
         'box.rebuildable(() => !locked)'
       ],
       [

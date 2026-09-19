@@ -257,7 +257,7 @@ export class VBreadcrumbItem extends HtmlElementNode {
 }
 
 export function vBreadcrumb(first = null, second = null, third = null) {
-  return createComponentFactory(VBreadcrumb, first, second, third);
+  return createComponentFactory(VBreadcrumb, first, second, third, arguments);
 }
 
 export function vBreadcrumbItem(setup = null, href = undefined) {

@@ -483,7 +483,7 @@ export class VAnchorItem extends HtmlElementNode {
 }
 
 export function vAnchor(first = null, second = null, third = null) {
-  return createComponentFactory(VAnchor, first, second, third);
+  return createComponentFactory(VAnchor, first, second, third, arguments);
 }
 
 export function vAnchorItem(setup = null, href = undefined) {

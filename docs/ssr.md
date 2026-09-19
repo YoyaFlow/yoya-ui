@@ -334,3 +334,15 @@ The server stays stateless: per-request render context + destroy the component t
 | `ECharts library not provided`                | `echarts.min.js` was not loaded with `<script>`, or echarts was wrapped as CommonJS by the bundler (use the script-tag approach)                                  |
 | Server ids differ every time                  | A module-level counter is shared across requests—the library uses a per-render id allocator; make sure components use `allocateId`                                |
 | Slow page load (dev mode)                     | Dev mode does not bundle; hundreds of ESM requests per page are normal. Production builds produce a few static chunks                                             |
+
+### 8.1 Serialized output is canonical: attributes and styles are sorted by name
+
+`toHTML()` (and therefore SSR) writes attributes and style declarations in **name order**, independent of
+the order your builder wrote them in. The first client render applies the attribute snapshot in the same
+sorted order, so a live element's attribute order matches the server HTML byte for byte (later writes to an
+existing attribute only replace its value and keep its position).
+
+That is deliberate: it makes the serialized form reproducible from the structure alone — a template or
+compiler can emit the same fragment without replaying your exact call order. Consequences to be aware of:
+HTML snapshots and `outerHTML` string comparisons that assumed the old write order need updating (the
+attributes and values themselves are unchanged), and `style` declarations now come out sorted as well.

@@ -183,5 +183,5 @@ export class VLazyImage extends HtmlElementNode {
 }
 
 export function vLazyImage(first = null, second = null, third = null) {
-  return createComponentFactory(VLazyImage, first, second, third);
+  return createComponentFactory(VLazyImage, first, second, third, arguments);
 }

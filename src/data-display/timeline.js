@@ -137,9 +137,9 @@ export class VTimelineItem extends HtmlElementNode {
 }
 
 export function vTimeline(first = null, second = null, third = null) {
-  return createComponentFactory(VTimeline, first, second, third);
+  return createComponentFactory(VTimeline, first, second, third, arguments);
 }
 
 export function vTimelineItem(first = null, second = null, third = null) {
-  return createComponentFactory(VTimelineItem, first, second, third);
+  return createComponentFactory(VTimelineItem, first, second, third, arguments);
 }

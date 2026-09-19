@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { div, p, ref, ul } from '../index.js';
+import { div, p, ref, ul, vClientOnly } from '../index.js';
 
 let errorSpy = null;
 
@@ -219,5 +219,185 @@ describe('whenFailed error boundary', () => {
 
     expect(element.textContent).toBe('组件降级：widget boom');
     expect(errorSpy).toHaveBeenCalled();
+  });
+});
+
+/** 边界 → 中间层 → 抛错按钮：出事点不是边界的直接子节点。 */
+function deepFailingBlock(label = '触发') {
+  return div((middle) => {
+    middle.div((leaf) => {
+      leaf.button(label, (button) => {
+        button.on('click', () => {
+          throw new Error(`${label} boom`);
+        });
+      });
+    });
+  });
+}
+
+function mountHost(node) {
+  document.body.innerHTML = '';
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  node.bindTo(host);
+  return host;
+}
+
+describe('whenFailed along the parent chain', () => {
+  it('covers a deep subtree built during setup', () => {
+    const box = div((node) => {
+      node.whenFailed(() => p('构建期降级'));
+      node.child(deepFailingBlock('构建期'));
+    });
+    const host = mountHost(box);
+
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('构建期降级');
+    expect(errorSpy.mock.calls[0][2].phase).toBe('event');
+  });
+
+  it('covers a deep subtree inserted at runtime', () => {
+    const box = div((node) => node.whenFailed(() => p('运行时降级')));
+    const host = mountHost(box);
+
+    box.child(deepFailingBlock('运行时'));
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('运行时降级');
+  });
+
+  it('covers children that already exist when the boundary is declared', () => {
+    const box = div((node) => node.child(deepFailingBlock('晚声明')));
+    const host = mountHost(box);
+
+    box.whenFailed(() => p('晚声明降级'));
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('晚声明降级');
+  });
+
+  it('covers deep render-phase failures', () => {
+    const box = div((node) => {
+      node.whenFailed(() => p('渲染降级'));
+      node.div((middle) => middle.child(failingNode('deep render boom')));
+    });
+    const element = box.renderDom();
+
+    expect(element.textContent).toBe('渲染降级');
+    expect(errorSpy.mock.calls[0][2].phase).toBe('render');
+  });
+
+  it('covers rows inserted into a keyed list at runtime', () => {
+    const rows = ref([{ id: 1 }]);
+    const list = ul((node) => {
+      node.whenFailed(() => p('列表降级'));
+      node.keyed(
+        rows,
+        (row) => row.id,
+        (row) => deepFailingBlock(`row-${row.id}`)
+      );
+    });
+    const host = mountHost(list);
+
+    rows.value = [{ id: 1 }, { id: 2 }];
+    host.querySelectorAll('button')[1].click();
+
+    expect(host.textContent).toContain('列表降级');
+  });
+
+  it('covers a child remounted through mountable()', () => {
+    const visible = ref(false);
+    const box = div((node) => {
+      node.whenFailed(() => p('重挂降级'));
+      node.child(deepFailingBlock('重挂').mountable(visible));
+    });
+    const host = mountHost(box);
+
+    visible.value = true;
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('重挂降级');
+  });
+
+  it('lets the nearest boundary win', () => {
+    const box = div((node) => {
+      node.whenFailed(() => p('外层降级'));
+      node.div((inner) => {
+        inner.whenFailed(() => p('内层降级'));
+        inner.child(deepFailingBlock('就近'));
+      });
+    });
+    const host = mountHost(box);
+
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('内层降级');
+  });
+
+  it('follows the current parent when a subtree moves', () => {
+    const block = deepFailingBlock('搬运');
+    const first = div((node) => {
+      node.whenFailed(() => p('旧边界降级'));
+      node.child(block);
+    });
+    mountHost(first);
+    expect(block._parent).toBe(first);
+
+    const second = div((node) => {
+      node.whenFailed(() => p('新边界降级'));
+      node.child(block);
+    });
+    const host = mountHost(second);
+    expect(block._parent).toBe(second);
+
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('新边界降级');
+  });
+
+  it('degrades a region node instead of tripping the region guard', () => {
+    const mode = ref('first');
+    const region = div((node) => {
+      node.whenFailed(() => p('区域降级'));
+      node.rebuildable();
+      node.child(deepFailingBlock(mode.value));
+    });
+    const host = mountHost(region);
+
+    mode.value = 'second';
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('区域降级');
+  });
+
+  it('clears the parent link when children are detached', () => {
+    const child = p('内容');
+    const box = div((node) => node.child(child));
+    mountHost(box);
+    expect(child._parent).toBe(box);
+
+    box.clearChildren();
+    expect(child._parent).toBeNull();
+
+    const other = p('另一个');
+    box.child(other);
+    expect(other._parent).toBe(box);
+
+    box.destroy();
+    expect(other._parent).toBeNull();
+    expect(box._parent).toBeNull();
+  });
+
+  it('covers nodes resolved behind vClientOnly', () => {
+    const box = div((node) => {
+      node.whenFailed(() => p('岛降级'));
+      node.child(vClientOnly(() => deepFailingBlock('岛')));
+    });
+    const host = mountHost(box);
+
+    host.querySelector('button').click();
+
+    expect(host.textContent).toContain('岛降级');
   });
 });

@@ -38,6 +38,13 @@ export default [
     }
   },
   {
+    // 构建期编译器只在 Node 里跑（读文件、走 CLI），不是浏览器代码。
+    files: ['src/compiler/**/*.js', 'src/yoya.compiler.js'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node }
+    }
+  },
+  {
     files: ['**/*.test.js'],
     languageOptions: {
       globals: {

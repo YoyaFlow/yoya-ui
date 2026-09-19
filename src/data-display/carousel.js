@@ -549,5 +549,5 @@ export class VCarousel extends HtmlElementNode {
 }
 
 export function vCarousel(first = null, second = null, third = null) {
-  return createComponentFactory(VCarousel, first, second, third);
+  return createComponentFactory(VCarousel, first, second, third, arguments);
 }

@@ -1,7 +1,7 @@
 import { ComponentNode, resolveTarget, ViewNode, VTextNode } from './node.js';
 import { createIdAllocator, withIdAllocator } from './id.js';
 import { createI18n, withI18nStringShortcut } from './i18n.js';
-import { withContext } from './context.js';
+import { adoptProvides, createProviderFrame, withContext, withProviderScope } from './context.js';
 import { withAccess } from './access.js';
 import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 import { HtmlElementNode } from '../html/index.js';
@@ -125,21 +125,29 @@ function scopeI18nBuild(i18n, state, build) {
  * 函数工厂（接收 initialState）、带 render() 的对象组件、ViewNode 实例。
  */
 function createRootNode(component, state = null) {
-  if (component instanceof ViewNode) {
-    return component;
-  }
+  const resolve = (target) => {
+    if (target instanceof ViewNode) {
+      return target;
+    }
 
-  if (typeof component === 'function') {
-    return createRootNode(component(state), state);
-  }
+    if (typeof target === 'function') {
+      return resolve(target(state));
+    }
 
-  if (component && typeof component.render === 'function') {
-    return createRootNode(component.render(), state);
-  }
+    if (target && typeof target.render === 'function') {
+      return resolve(target.render());
+    }
 
-  throw new TypeError(
-    'renderToString/mount requires a ViewNode, a component object with render(), or a factory function'
-  );
+    throw new TypeError(
+      'renderToString/mount requires a ViewNode, a component object with render(), or a factory function'
+    );
+  };
+
+  // 页面工厂里声明的 provide 归属根节点：整棵子树（含懒解析的组件）都能读到，
+  // 根节点自己的声明在内层，同名时覆盖工厂层。
+  const frame = createProviderFrame();
+  const node = withProviderScope(frame, () => resolve(component));
+  return adoptProvides(frame, node);
 }
 
 /**
@@ -269,7 +277,8 @@ export function renderPage(pageConfig, state = {}, options = {}) {
     i18n = null,
     maxNodes = Infinity,
     messages,
-    stateId = '__YOYA_DATA__'
+    stateId = '__YOYA_DATA__',
+    fragments = []
   } = options || {};
   const pageState = state || {};
 
@@ -304,6 +313,18 @@ export function renderPage(pageConfig, state = {}, options = {}) {
         : `${appContainer}${bodyNode.toHTML()}</div>`;
       const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
 
+      // 票 45：编译产物的模板块（inert）放在 **app 容器之外** —— 运行期按签名克隆，
+      // hydrate 的根内收养因此不会把它当内容节点。
+      const fragmentsHtml = (Array.isArray(fragments) ? fragments : [])
+        .filter(
+          (item) => item && typeof item.signature === 'string' && typeof item.html === 'string'
+        )
+        .map(
+          (item) =>
+            `<template data-yoya-fragment="${escapeHtmlAttribute(item.signature)}">${item.html}</template>`
+        )
+        .join('\n');
+
       headNode.destroy();
       bodyNode.destroy();
 
@@ -313,7 +334,7 @@ ${headHtml}
 <body>
 ${bodyHtml}
 ${stateScript}
-</body>
+${fragmentsHtml ? `${fragmentsHtml}\n` : ''}</body>
 </html>`;
     })
   );

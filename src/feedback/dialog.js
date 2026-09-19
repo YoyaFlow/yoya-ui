@@ -265,5 +265,5 @@ export class VDialog extends HtmlElementNode {
 }
 
 export function vDialog(first = null, second = null, third = null) {
-  return createComponentFactory(VDialog, first, second, third);
+  return createComponentFactory(VDialog, first, second, third, arguments);
 }

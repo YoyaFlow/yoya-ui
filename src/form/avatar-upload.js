@@ -332,7 +332,7 @@ export class VAvatarUpload extends HtmlElementNode {
 }
 
 export function vAvatarUpload(first = null, second = null, third = null) {
-  return createComponentFactory(VAvatarUpload, first, second, third);
+  return createComponentFactory(VAvatarUpload, first, second, third, arguments);
 }
 
 registerChildFactories(HtmlElementNode, { vAvatarUpload });

@@ -380,5 +380,5 @@ export class VBadge extends HtmlElementNode {
 }
 
 export function vBadge(first = null, second = null, third = null) {
-  return createComponentFactory(VBadge, first, second, third);
+  return createComponentFactory(VBadge, first, second, third, arguments);
 }
