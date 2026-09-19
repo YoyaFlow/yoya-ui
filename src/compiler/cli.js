@@ -20,6 +20,7 @@ const VALUE_OPTIONS = new Set([
   'out',
   'core',
   'runtime',
+  'fragments',
   'report',
   'extensions',
   'registry',
@@ -41,6 +42,7 @@ const HELP = `yoya-ui 编译器（构建期）
   --mode <通道>        element（默认，行 = 原生元素）| node（行 = ViewNode）
   --thin               节点模式下只给直接带活内容的节点建包装对象
   --out <路径>         生成模块的落盘位置；省略时打印到标准输出
+  --fragments <路径>   同时写出页面模板块（template data-yoya-fragment，票 45）
   --core <模块>        提供工厂与 htmls / svgs 的核心入口（默认库自身 core）
   --runtime <模块>     生成代码里 import 运行期钩子的路径
   --report <目录>      覆盖率扫描：输出可编 / 回落占比与 bail 原因直方图
@@ -178,6 +180,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
     thin: options.flags.has('thin'),
     core,
     runtime: options.values.get('runtime'),
+    fragmentsOut: options.values.get('fragments'),
     components: componentsFile ? JSON.parse(readFileSync(componentsFile, 'utf8')) : null,
     componentsSpecifier: options.values.get('components-specifier')
   });

@@ -118,14 +118,28 @@ export function compileSource(options) {
  * 返回结构与 `compileSource` 一致，`out` 为实际写入的路径（未写时为 null）。
  */
 export function compileFile(options) {
-  const { file, out, ...rest } = options;
+  const { file, out, fragmentsOut = null, ...rest } = options;
   const result = compileSource({ ...rest, source: readFileSync(file, 'utf8'), file });
 
   if (result.compiled && out) {
     writeFileSync(out, result.module, 'utf8');
   }
 
-  return { ...result, out: result.compiled ? (out ?? null) : null };
+  // 票 45：模板块由**编译器**顺手写出（片段仍来自框架序列化）——下游脚本不必从产物里抠 plan.html
+  if (result.compiled && fragmentsOut) {
+    writeFileSync(fragmentsOut, `${fragmentBlockOf(result.plan)}\n`, 'utf8');
+  }
+
+  return {
+    ...result,
+    out: result.compiled ? (out ?? null) : null,
+    fragmentsOut: result.compiled ? (fragmentsOut ?? null) : null
+  };
+}
+
+/** 页面里的 inert 模板块：`<template data-yoya-fragment="<签名>">片段</template>`。 */
+export function fragmentBlockOf(plan) {
+  return `<template data-yoya-fragment="${plan.signature}">${plan.html}</template>`;
 }
 
 /** CLI / 日志用的一行摘要（不含生成源码）。 */

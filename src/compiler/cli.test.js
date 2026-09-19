@@ -90,4 +90,33 @@ describe('runCli', () => {
     expect(existsSync(join(registryDir, 'components.registry.js'))).toBe(true);
     expect(existsSync(join(registryDir, 'components.registry.json'))).toBe(true);
   });
+
+  it('writes the page fragment block alongside the generated module', async () => {
+    const out = join(root, 'frag.generated.js');
+    const fragments = join(root, 'fragments.html');
+    const io = record();
+
+    const code = await runCli(
+      [
+        '--file',
+        fixture,
+        '--fn',
+        'buildRow',
+        '--mode',
+        'element',
+        '--out',
+        out,
+        '--fragments',
+        fragments,
+        '--json'
+      ],
+      { ...io, core }
+    );
+
+    expect(code).toBe(0);
+    const block = readFileSync(fragments, 'utf8');
+    expect(block).toMatch(/^<template data-yoya-fragment="[0-9a-f]{12}">/);
+    expect(block).toContain('data-row-id');
+    expect(JSON.parse(io.lines.join('\n')).compiled).toBe(true);
+  });
 });
