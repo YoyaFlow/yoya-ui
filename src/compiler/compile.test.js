@@ -39,6 +39,7 @@ describe('compileSource', () => {
     expect(result.plan.mode).toBe('element');
     expect(result.plan.source).toEqual({ file: 'row-fixture.js', fn: 'buildRow' });
     expect(result.plan.html).toBe(ROW_HTML);
+    expect(result.fragmentHtml).toBe(ROW_HTML); // 供 --fragments 写模板块（plan 将来可省略 html）
     expect(result.plan.liveNodes).toBe(6);
     expect(result.scope).toEqual(['computed', 'removeRow', 'selectedId']);
     expect(result.module).toContain('export const plan = ');

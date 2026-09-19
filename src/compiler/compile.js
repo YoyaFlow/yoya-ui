@@ -63,7 +63,8 @@ export function compileSource(options) {
     bails: [],
     factory: null,
     ops: null,
-    hash: null
+    hash: null,
+    fragmentHtml: null
   };
 
   // 调用点链接：`child(Imported(...))` 命中注册表 → 生成链接代码；未命中 → 今天的通用路径
@@ -106,6 +107,8 @@ export function compileSource(options) {
     result.factory = analysis.entry.factory;
     result.ops = analysis.entry.ops;
     result.hash = hash;
+    // 始终带片段 HTML 的字段：`plan` 将来可以按 `--templates-only` 省略 html，模板块从它写
+    result.fragmentHtml = rendered.plan.html;
   } catch (error) {
     result.bails = [{ reason: `生成失败：${error.message}`, at: null }];
   }
@@ -127,7 +130,11 @@ export function compileFile(options) {
 
   // 票 45：模板块由**编译器**顺手写出（片段仍来自框架序列化）——下游脚本不必从产物里抠 plan.html
   if (result.compiled && fragmentsOut) {
-    writeFileSync(fragmentsOut, `${fragmentBlockOf(result.plan)}\n`, 'utf8');
+    writeFileSync(
+      fragmentsOut,
+      `${fragmentBlockOf(result.fragmentHtml, result.plan.signature)}\n`,
+      'utf8'
+    );
   }
 
   return {
@@ -137,9 +144,12 @@ export function compileFile(options) {
   };
 }
 
-/** 页面里的 inert 模板块：`<template data-yoya-fragment="<签名>">片段</template>`。 */
-export function fragmentBlockOf(plan) {
-  return `<template data-yoya-fragment="${plan.signature}">${plan.html}</template>`;
+/**
+ * 页面里的 inert 模板块：`<template data-yoya-fragment="<签名>">片段</template>`。
+ * 片段与签名分开传：`--templates-only` 时 plan 不再内联 html，模板块仍要从 `fragmentHtml` 写出来。
+ */
+export function fragmentBlockOf(html, signature) {
+  return `<template data-yoya-fragment="${signature}">${html}</template>`;
 }
 
 /** CLI / 日志用的一行摘要（不含生成源码）。 */
