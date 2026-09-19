@@ -25,7 +25,7 @@ export function slotNameOf(node) {
 /**
  * 收集组件**自身结构**里的槽位：同名重复声明 → 报错；遇到嵌套组件即停（就近作用域）。
  */
-export function collectSlots(root) {
+export function collectSlots(root, host = null) {
   const slots = new Map();
 
   const visit = (node) => {
@@ -42,6 +42,8 @@ export function collectSlots(root) {
         );
       }
       slots.set(name, node);
+      node._slotHost = host;
+      node._slotName = name;
     }
 
     // 嵌套组件是另一个作用域：不往下走（它的槽位归它自己解析）
@@ -57,31 +59,47 @@ export function collectSlots(root) {
 }
 
 /**
- * 把内容"信封"合并进槽位元素：默认内容被替换、同名属性覆盖写入、子节点按顺序放入。
- * 一个槽位只接受一份内容，第二次投递 → 报错。
+ * 槽位登记表（挂在**组件实例**上）：槽名 → { carrier, nodes }。
+ * 内容归宿主所有，槽位元素只是**投影点**：区域重建 / 槽位替换只重造投影点，登记表与内容不受影响。
  */
-export function fillSlot(slotElement, carrier) {
-  if (slotElement._slotFilled === true) {
-    throw new TypeError(
-      `Slot "${slotNameOf(slotElement) ?? ''}" already received content: one slot accepts one carrier.`
-    );
-  }
-  slotElement._slotFilled = true;
+export function createSlotRegistry() {
+  return new Map();
+}
 
-  const attributes = carrier._attrs;
-  if (attributes) {
-    Object.entries(attributes).forEach(([name, value]) => {
-      if (name !== SLOT_ATTRIBUTE) {
-        slotElement.attr(name, value);
+/** 登记一份投递：一个槽位只接受一份内容（语义在实例上，重建后依然有效）。 */
+export function registerSlotContent(registry, name, carrier) {
+  if (registry.has(name)) {
+    throw new TypeError(`Slot "${name}" already received content: one slot accepts one carrier.`);
+  }
+  registry.set(name, { carrier, nodes: null });
+  return registry;
+}
+
+/** 把登记的内容投影进槽位元素：默认内容被替换、同名属性合并、子节点按顺序挂入。 */
+export function projectSlot(registry, name, slotElement, append = null) {
+  const entry = registry.get(name);
+  if (!entry) {
+    return null;
+  }
+
+  const nodes = entry.nodes ?? (entry.nodes = entry.carrier.children());
+  if (slotElement._projectedNodes === nodes) {
+    return nodes;
+  }
+
+  const carrier = entry.carrier;
+  if (carrier._attrs) {
+    Object.entries(carrier._attrs).forEach(([attrName, value]) => {
+      if (attrName !== SLOT_ATTRIBUTE) {
+        slotElement.attr(attrName, value);
       }
     });
   }
 
-  // 类名走的是 _classText（不占属性快照）：信封的类名与槽位元素的类名取并集，
-  // 这样"信封不进 DOM"也不会把作者写在根上的样式类丢掉。
+  // 类名走 _classText（不占属性快照）：信封的类名与槽位元素取并集
   if (carrier._classText) {
     const own = slotElement._classText ? slotElement._classText.split(/\s+/) : [];
-    const incoming = carrier._classText.split(/\s+/).filter((name) => name && !own.includes(name));
+    const incoming = carrier._classText.split(/\s+/).filter((item) => item && !own.includes(item));
     if (incoming.length > 0) {
       slotElement.className(incoming.join(' '));
     }
@@ -90,10 +108,30 @@ export function fillSlot(slotElement, carrier) {
   slotElement.children().forEach((child) => child.destroy());
   slotElement._children = [];
   slotElement._childrenDirty = true;
+  if (append) {
+    append(slotElement, nodes);
+  } else {
+    slotElement.child(nodes);
+  }
+  slotElement._projectedNodes = nodes;
+  return nodes;
+}
 
-  if (typeof carrier.children === 'function') {
-    slotElement.child(carrier.children());
+/**
+ * 收回投影：把内容从槽位元素里摘出来（**不销毁**），留给下一次投影。
+ * 区域重建 / 槽位元素销毁前调用，内容因此不会跟着投影点一起消失。
+ */
+export function reclaimSlot(slotElement) {
+  const nodes = slotElement?._projectedNodes;
+  if (!nodes) {
+    return null;
   }
 
-  return slotElement;
+  slotElement._projectedNodes = null;
+  if (Array.isArray(slotElement._children) && slotElement._children.length > 0) {
+    slotElement._children = slotElement._children.filter((child) => !nodes.includes(child));
+    slotElement._childrenDirty = true;
+  }
+  nodes.forEach((node) => node?._el?.remove?.());
+  return nodes;
 }

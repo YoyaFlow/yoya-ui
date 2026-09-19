@@ -10,7 +10,14 @@ import {
   rearmWhenMount,
   registerComponentHooks
 } from './hooks.js';
-import { collectSlots, fillSlot, slotNameOf } from './slot.js';
+import {
+  collectSlots,
+  createSlotRegistry,
+  projectSlot,
+  reclaimSlot,
+  registerSlotContent,
+  slotNameOf
+} from './slot.js';
 import { isKeySet } from './key-set.js';
 import { currentSignals } from './signals/contract.js';
 import { beginCollect, endCollect, setReadObserver } from './signals/deps.js';
@@ -291,10 +298,24 @@ function isBuildingRegion(region) {
 
 /** 区域节点的子节点只能由它自己的 builder 产出。 */
 function assertRegionChildAllowed(node) {
-  if (node._rebuildable && !isBuildingRegion(node)) {
+  // 槽位投影是例外：投影的内容归**宿主**所有，区域只是它的投影点（否则区域重建会把外部内容一起销毁）。
+  if (node._rebuildable && !isBuildingRegion(node) && slotProjectionDepth === 0) {
     throw new TypeError(
       'region children must come from the region builder; call rebuild() to rebuild the region'
     );
+  }
+}
+
+/** 槽位投影期间允许向区域节点挂入外部内容（见 assertRegionChildAllowed）。 */
+let slotProjectionDepth = 0;
+
+/** 把宿主登记的内容挂进槽位元素（区域也允许）。 */
+export function appendProjectedNodes(slotElement, nodes) {
+  slotProjectionDepth += 1;
+  try {
+    slotElement.child(nodes);
+  } finally {
+    slotProjectionDepth -= 1;
   }
 }
 
@@ -1687,6 +1708,9 @@ export class ViewNode {
     const previousCleanups = Array.isArray(this._regionRunCleanups) ? this._regionRunCleanups : [];
     this._regionRunCleanups = null;
 
+    // 槽位元素是投影点：先把投影进来的内容收回宿主登记表，避免被下面的销毁带走
+    this._slotHost?._reclaimSlot(this);
+
     this._children = EMPTY_CHILDREN;
     this._childKeys = null; // 新的一段用新的 key 表，按需创建
     this._childrenDirty = true;
@@ -1730,6 +1754,8 @@ export class ViewNode {
     if (this._el) {
       this._runInRegionEnvironment(() => this.renderDom());
     }
+    // 重建完成：把宿主寄存的内容重新投影回（全新的）槽位子节点
+    this._slotHost?._projectSlots();
 
     // 构建期间依赖又变化时补跑一次，而不是丢弃；batch 内留给作用域结束统一合并。
     if (this._regionScheduled && !this._deleted && !isSignalsBatchActive()) {
@@ -2951,7 +2977,7 @@ export class ComponentNode extends ViewNode {
     const content = this._children;
     this._children = EMPTY_CHILDREN;
     this._childrenDirty = true;
-    this._slots = collectSlots(this._resolved);
+    this._slots = collectSlots(this._resolved, this);
     content.forEach((child) => this._placeContent(child));
   }
 
@@ -2966,6 +2992,8 @@ export class ComponentNode extends ViewNode {
       return;
     }
 
+    registerSlotContent((this._slotRegistry ??= createSlotRegistry()), name, content);
+
     const slotElement = this._slots?.get(name);
     if (!slotElement) {
       if (typeof console !== 'undefined') {
@@ -2977,7 +3005,24 @@ export class ComponentNode extends ViewNode {
       return;
     }
 
-    fillSlot(slotElement, content);
+    projectSlot(this._slotRegistry, name, slotElement, appendProjectedNodes);
+  }
+
+  /** 重新收集槽位并重新投影（区域重建后会走这里）。 */
+  _projectSlots() {
+    if (!this._slotRegistry || !this._resolved || this._roots) {
+      return;
+    }
+
+    this._slots = collectSlots(this._resolved, this);
+    this._slots.forEach((element, name) =>
+      projectSlot(this._slotRegistry, name, element, appendProjectedNodes)
+    );
+  }
+
+  /** 槽位元素销毁 / 重建前把投影的内容收回登记表（不销毁内容）。 */
+  _reclaimSlot(slotElement) {
+    reclaimSlot(slotElement);
   }
 
   /**
