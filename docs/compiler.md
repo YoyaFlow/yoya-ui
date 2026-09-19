@@ -87,7 +87,8 @@ The table above comes from `--report`: in this repo `src` is 427 files / 2 candi
 the three benchmark row directories (`yoya-ui-core` / `-keyset` / `-runtime`) have 1 candidate each,
 100% compiled. The last two rows (dynamic styles, computed whole class names) hit **zero** rows in
 the current corpora — they cover "value comes from data" in application code: what cannot be
-classified falls back rather than being compiled into a static fragment.
+classified falls back rather than being compiled into a static fragment. The in-repo numbers are
+watched by the coverage baseline in §4.1 (a fallback fails the build).
 
 ## 4. Usage
 
@@ -104,6 +105,14 @@ node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js \
 # Coverage scan: see which shapes compile and where they get stuck
 node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --report src --json
 ```
+
+That is how the coverage baseline is wired in this repo: `npm run build` ends with
+`scripts/compiler-coverage.mjs`, which prints the candidate / compiled / bail histogram for `src` and
+`src/examples` into the build log and then compares it against
+`scripts/compiler-coverage.baseline.json`. The gate is **per file**: new candidates and newly
+compilable shapes are never blocked (coverage may only grow), while a file that compiled when the
+baseline was taken must not fall back — the bail reason is printed with it. When a shape changes on
+purpose, refresh with `npm run report:compile:write` and say why in the commit message.
 
 Exit codes: `0` success, `1` usage error, `2` **shape fell back to the generic path** (not an
 error, but build scripts should be able to tell — if you gate on "this shape must compile", fail
@@ -131,6 +140,11 @@ if (!result.compiled) {
 
 `result.plan` is the fragment plus its manifest (`html` / `liveNodes` / `slots` / source), and
 `result.scope` lists the symbols the generated module expects from its caller.
+
+Coverage can be measured programmatically too: `reportCoverage({ root, core })` scans a directory,
+`coverageBaselineOf(reports)` turns the result into a committed, diffable baseline, and
+`compareCoverageBaseline(baseline, reports)` calls only "compiled in the baseline, falls back now" a
+regression while listing newly compilable files — the repo's own gate (§4.1) is their caller.
 
 ### 4.3 The generated module and the scope contract
 
@@ -191,6 +205,8 @@ set of attribute rules.
   behaviour and size.
 - **Regions / row-level `keyed` / component slots**: dynamic structure, always bails to avoid
   semantic drift.
+- **Coverage baseline gate**: the `src` / `src/examples` baselines go into the build log and are
+  enforced per file (see §4.1).
 
 ## 7. Component-level fragment linking (tier 1: leaf components)
 

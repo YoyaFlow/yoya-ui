@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "targets": [
+    {
+      "root": "src",
+      "fn": "buildRow",
+      "mode": "element",
+      "files": 427,
+      "candidates": 2,
+      "compiled": 1,
+      "bailed": 1,
+      "skipped": 425,
+      "compiledFiles": ["compiler/fixtures/row-fixture.js"],
+      "bails": [
+        {
+          "reason": "child() 里是组件调用（未编译）：StatusDot",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：StatusTag",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "root": "src/examples",
+      "fn": "buildRow",
+      "mode": "element",
+      "files": 135,
+      "candidates": 0,
+      "compiled": 0,
+      "bailed": 0,
+      "skipped": 135,
+      "compiledFiles": [],
+      "bails": []
+    }
+  ]
+}

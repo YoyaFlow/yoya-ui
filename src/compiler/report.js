@@ -155,3 +155,71 @@ export function formatCoverage(report) {
 
   return lines.join('\n');
 }
+
+/**
+ * 覆盖率基线（可提交、可 diff）：计数用于看趋势，**编译能力用逐文件集合兜底**。
+ *
+ * 为什么不只存计数：删掉一个可编文件、加两个可编文件，计数可以持平甚至变好，但能力其实退了。
+ */
+export function coverageBaselineOf(reports) {
+  return {
+    version: 1,
+    targets: reports.map((report) => ({
+      root: report.root,
+      fn: report.fn,
+      mode: report.mode,
+      files: report.files,
+      candidates: report.candidates,
+      compiled: report.compiled,
+      bailed: report.bailed,
+      skipped: report.skipped,
+      compiledFiles: report.entries.filter((entry) => entry.compiled).map((entry) => entry.file),
+      bails: report.bails
+    }))
+  };
+}
+
+/**
+ * 与基线比对：**只有「基线里可编、现在回落」算回退**。
+ *
+ * 新增可编形状、新增候选都不拦——覆盖率只许涨；基线里可编的文件一旦回落，
+ * 那是编译器能力回退（或形状被改坏），拿得到原因才好定位。
+ */
+export function compareCoverageBaseline(baseline, reports) {
+  const regressions = [];
+  const added = [];
+
+  reports.forEach((report) => {
+    const base = baseline?.targets?.find(
+      (target) =>
+        target.root === report.root && target.fn === report.fn && target.mode === report.mode
+    );
+    if (!base) {
+      return; // 新目标：没有基线可比，先记数（首轮 --write 建基线）
+    }
+
+    const compiled = new Set(
+      report.entries.filter((entry) => entry.compiled).map((entry) => entry.file)
+    );
+
+    base.compiledFiles.forEach((file) => {
+      if (compiled.has(file)) {
+        return;
+      }
+      const entry = report.entries.find((item) => item.file === file);
+      regressions.push({
+        root: report.root,
+        file,
+        reason: entry ? entry.reasons.join(' | ') : '文件已不在扫描范围'
+      });
+    });
+
+    compiled.forEach((file) => {
+      if (!base.compiledFiles.includes(file)) {
+        added.push({ root: report.root, file });
+      }
+    });
+  });
+
+  return { ok: regressions.length === 0, regressions, added };
+}

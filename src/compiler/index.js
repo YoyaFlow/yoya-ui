@@ -18,7 +18,7 @@ export {
 } from './compile.js';
 export { analyzeSource, freeIdentifiers } from './analyze.js';
 export { renderModule } from './emit.js';
-export { reportCoverage } from './report.js';
+export { reportCoverage, coverageBaselineOf, compareCoverageBaseline } from './report.js';
 export { runCli, runCliIfMain } from './cli.js';
 export {
   componentKeyOf,

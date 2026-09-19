@@ -85,12 +85,14 @@
     "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs",
+    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs && node scripts/compiler-coverage.mjs",
     "build:entries": "node scripts/build-entries.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
     "report:bundle": "node scripts/bundle-report.mjs",
     "report:bundle:write": "node scripts/bundle-report.mjs --write",
+    "report:compile": "node scripts/compiler-coverage.mjs",
+    "report:compile:write": "node scripts/compiler-coverage.mjs --write",
     "report:bench": "node scripts/benchmark-report.mjs",
     "report:bench:write": "node scripts/benchmark-report.mjs --write",
     "report:bench:import": "node scripts/benchmark-report.mjs --import",

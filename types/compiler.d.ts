@@ -165,6 +165,42 @@ export declare function reportCoverage(
   options: Omit<CompileOptions, 'source'> & { root: string; extensions?: string[] }
 ): CoverageReport;
 
+/** One scanned target inside a committed coverage baseline. */
+export interface CoverageBaselineTarget {
+  root: string;
+  fn: string;
+  mode: 'element' | 'node';
+  files: number;
+  candidates: number;
+  compiled: number;
+  bailed: number;
+  skipped: number;
+  /** Files that compiled when the baseline was taken (the per-file, monotone gate). */
+  compiledFiles: string[];
+  bails: Array<{ reason: string; count: number }>;
+}
+
+/** `coverageBaselineOf(reports)`: serializable, committed and diffable. */
+export interface CoverageBaseline {
+  version: number;
+  targets: CoverageBaselineTarget[];
+}
+
+export interface CoverageComparison {
+  ok: boolean;
+  /** Baseline-compiled files that fell back (empty when `ok`). */
+  regressions: Array<{ root: string; file: string; reason: string }>;
+  /** Files that compile now but did not in the baseline (coverage only grows). */
+  added: Array<{ root: string; file: string }>;
+}
+
+export declare function coverageBaselineOf(reports: CoverageReport[]): CoverageBaseline;
+
+export declare function compareCoverageBaseline(
+  baseline: CoverageBaseline | null,
+  reports: CoverageReport[]
+): CoverageComparison;
+
 export declare function runCli(
   argv?: string[],
   io?: {

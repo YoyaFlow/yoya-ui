@@ -78,7 +78,7 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 上表的数据来源是 `--report`：库内 `src` 427 文件 / 候选 2 / 可编 1；三个基准行目录
 （`yoya-ui-core` / `-keyset` / `-runtime`）候选各 1、可编 100%。最后两条（动态样式、整体
 动态类名）在现有语料里 **0 命中**——它们兜的是业务侧「值来自数据」的写法：分类不出来就回落，
-绝不把不知道的值编成静态片段。
+绝不把不知道的值编成静态片段。库内那两条数字由 §4.1 的覆盖率基线持续看着（回落即失败）。
 
 ## 4. 用法
 
@@ -95,6 +95,12 @@ node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js \
 # 覆盖率扫描：看清一个目录里哪些形状能编、卡在哪
 node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --report src --json
 ```
+
+覆盖率基线在仓库里是这样落地的：`npm run build` 末尾跑 `scripts/compiler-coverage.mjs`，把
+`src` 与 `src/examples` 的候选 / 可编 / bail 直方图打进构建日志，再对照
+`scripts/compiler-coverage.baseline.json` **禁回退**——口径是逐文件的「可编」集合：新增候选、
+新增可编形状都不拦（覆盖率只许涨），基线里编得出来的文件一旦回落就失败（回落原因一起打出来）；
+形状是有意改的，就 `npm run report:compile:write` 刷新基线，并在提交信息里写清为什么。
 
 退出码：`0` 成功、`1` 用法错误、`2` **形状回落通用路径**（不是错误，但构建脚本要能分辨——
 如果你在按「这个形状必须可编」发版，就该在 `2` 上失败）。
@@ -121,6 +127,10 @@ if (!result.compiled) {
 
 `result.plan` 是片段与清单（`html` / `liveNodes` / `slots` / 来源），`result.scope` 是生成模块
 要求调用方提供的符号。
+
+覆盖率体检也能程序化：`reportCoverage({ root, core })` 扫一个目录，`coverageBaselineOf(reports)`
+把结果变成可提交、可 diff 的基线，`compareCoverageBaseline(baseline, reports)` 只把「基线里可编、
+现在回落」判成回退，并列出新增可编——仓库自己的门禁（§4.1）就是这两个函数的调用者。
 
 ### 4.3 生成的模块与 scope 契约
 
@@ -173,6 +183,7 @@ export function createRowFactory(scope) {
   [`ssr.md`](ssr.md) §8.1），服务端不需要编译器；`node` 通道接管既有 DOM 的路径与 hydrate 同源。
 - **无构建环境**：不跑编译器就是今天的通用路径，行为与体积都不变。
 - **区域 / 行内 `keyed` / 组件槽**：属于动态结构，一律 bail，避免语义漂移。
+- **覆盖率基线门禁**：`src` / `src/examples` 两条基线进构建日志，逐文件禁回退（见 §4.1）。
 
 ## 7. 组件级片段链接（第一档：叶子组件）
 
