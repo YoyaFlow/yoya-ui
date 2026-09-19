@@ -165,13 +165,33 @@ describe('compileSource', () => {
     expect(result.plan.html).toBe('<tr><td id="c3">a<span>s</span>b</td></tr>');
   });
 
-  it('bails when an option value cannot be read statically', () => {
+  it('compiles dynamic style values in node mode into node.style writes', () => {
     const result = compile(
-      sourceOf("  return tr((line) => line.td({ style: { color: row.tone } }, 'x'));")
+      sourceOf("  return tr((line) => line.td({ style: { color: row.tone } }, 'x'));"),
+      { mode: 'node' }
+    );
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    expect(result.module).toContain('node.style("color", row.tone)');
+    // 片段里不写占位：样式值由节点快照 / 运行期绑定写
+    expect(result.plan.html).toBe('<tr><td>x</td></tr>');
+  });
+
+  it('falls back in element mode, where a dynamic style cannot stay byte-identical', () => {
+    const result = compile(
+      sourceOf("  return tr((line) => line.td((cell) => cell.style('color', row.tone)));")
     );
 
     expect(result.compiled).toBe(false);
-    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('字面量');
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('动态样式');
+  });
+
+  it('bails on a computed whole class name with an actionable hint', () => {
+    const result = compile(sourceOf("  return tr((line) => line.td({ class: row.tone }, 'x'));"));
+
+    expect(result.compiled).toBe(false);
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('toggleClass');
   });
 
   it('compiles dynamic option values into live attribute writes', () => {

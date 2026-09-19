@@ -15,7 +15,10 @@ import { createHash } from 'node:crypto';
 const TEXT_PLACEHOLDER = '0';
 
 /** 直接带活内容（绑定 / 事件 / 活文本）的 op 种类。 */
-const DIRECT_LIVE = ['dynamicAttr', 'liveClass', 'liveEvent', 'bindText'];
+const DIRECT_LIVE = ['dynamicAttr', 'dynamicStyle', 'liveClass', 'liveEvent', 'bindText'];
+
+/** 只存在于片段里的 op（两条通道都不再写它们）；其余 op 认不出就必须抛错，不许静默丢。 */
+const FRAGMENT_ONLY = new Set(['staticAttr', 'staticClass', 'staticStyle', 'staticText']);
 
 const indentOf = (depth) => '  '.repeat(depth);
 
@@ -52,6 +55,16 @@ export function renderModule(options) {
   if (mode === 'node' && hasComponentOp(entry.ops)) {
     // 链接组件的实例化写进「已有的元素位置」，节点模式没有这种位置写 → 明确回落，不静默丢
     throw new Error('链接组件只支持 element 模式（节点模式的行没有位置写）');
+  }
+
+  if (mode === 'element' && hasOpKind(entry.ops, 'dynamicStyle')) {
+    // 元素模式把静态样式留在片段里（`toHTML()` 的紧凑格式），动态值只能走 CSSOM，
+    // 一旦写一个属性，整个 style 属性会被重新序列化 → 与通用路径不再逐字节相同。
+    throw new Error(
+      '动态样式只支持节点模式（node）：元素模式的动态样式会按 CSSOM 序列化，' +
+        '与片段里的紧凑格式不一致。可改用字面量、状态类用 toggleClass(name, 值)，' +
+        '或把这一行编成 --mode node'
+    );
   }
 
   const fragmentHtml = buildFragment(core, entry);
@@ -209,6 +222,8 @@ function buildSample(core, factoryName, ops) {
         element.child(op.text);
       } else if (op.kind === 'dynamicAttr') {
         element.attr(op.name, '');
+      } else if (op.kind === 'dynamicStyle') {
+        // 动态样式不写占位：值由运行期写（节点模式的节点快照 / 绑定），片段里留空反而多一次对账
       } else if (op.kind === 'slotText' || op.kind === 'bindText') {
         element.child(TEXT_PLACEHOLDER);
       } else if (op.kind === 'element') {
@@ -274,8 +289,11 @@ function emitElementMode({ entry, addExpression, rootName = 'el' }) {
         op.args.forEach(addExpression);
         lines.push(`    ${domPath(ownerPath)}.addEventListener(${op.args.join(', ')});`);
         liveCount += 1;
+      } else if (!FRAGMENT_ONLY.has(op.kind)) {
+        // 认不出的 op 绝不能静默丢掉（静默少一个值，比不编危险得多）
+        throw new Error(`元素模式的产物里没有 ${op.kind} 的写法`);
       }
-      // staticAttr / staticClass / staticStyle / staticText 已在片段里，不必再写
+      // FRAGMENT_ONLY 的几种已在片段里，不必再写
     }
   };
 
@@ -302,12 +320,13 @@ function countChildren(ops) {
   ).length;
 }
 
-/** 是否含链接进来的组件（递归）。 */
-function hasComponentOp(ops) {
-  return ops.some(
-    (op) => op.kind === 'component' || (op.kind === 'element' && hasComponentOp(op.ops))
-  );
+/** 是否含某种 op（递归，跨过嵌套元素）。 */
+function hasOpKind(ops, kind) {
+  return ops.some((op) => op.kind === kind || (op.kind === 'element' && hasOpKind(op.ops, kind)));
 }
+
+/** 是否含链接进来的组件（递归）。 */
+const hasComponentOp = (ops) => hasOpKind(ops, 'component');
 
 /** 节点模式：只给「有活内容」的节点建包装对象，其余静态节点只存在于片段里。 */
 function emitNodeMode({ entry, thin, addExpression, addName }) {
@@ -397,6 +416,11 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
         inner.push(
           `${indentOf(depth + 1)}node.attr(${JSON.stringify(child.name)}, ${child.expression});`
         );
+      } else if (child.kind === 'dynamicStyle') {
+        addExpression(child.expression);
+        inner.push(
+          `${indentOf(depth + 1)}node.style(${JSON.stringify(child.name)}, ${child.expression});`
+        );
       } else if (child.kind === 'liveClass') {
         addExpression(child.expression);
         inner.push(
@@ -416,6 +440,9 @@ function emitNodeMode({ entry, thin, addExpression, addName }) {
       } else if (child.kind === 'slotText') {
         addExpression(child.expression);
         slotLines.push(`${pathExprOf(child.path)}.textContent = ${child.expression};`);
+      } else if (child.kind !== 'element' && !FRAGMENT_ONLY.has(child.kind)) {
+        // 同上：认不出的 op 不许静默丢
+        throw new Error(`节点模式的产物里没有 ${child.kind} 的写法`);
       }
     }
 

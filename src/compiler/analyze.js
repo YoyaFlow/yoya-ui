@@ -361,16 +361,17 @@ export function analyzeSource(source, options = {}) {
 
     if (method === 'style') {
       const name = literalOf(args[0]);
-      const value = literalOf(args[1]);
-      if (args.length !== 2 || !name.literal || !value.literal) {
-        recordBail('style() 只用「名字 + 字面量值」形式', call);
+      if (args.length !== 2 || !name.literal || typeof name.value !== 'string') {
+        recordBail('style() 只用「样式名 + 值」两参形式，样式名要是字符串字面量', call);
         return;
       }
-      ops.push({
-        kind: 'staticStyle',
-        name: String(name.value),
-        value: value.value
-      });
+      const value = literalOf(args[1]);
+      if (value.literal) {
+        ops.push({ kind: 'staticStyle', name: name.value, value: value.value });
+        return;
+      }
+      // 动态样式值：与手写同一个语义——节点模式编成 `node.style(name, expr)`（值可以是句柄）
+      ops.push({ kind: 'dynamicStyle', name: name.value, expression: slice(args[1]) });
       return;
     }
 
@@ -497,20 +498,34 @@ export function analyzeSource(source, options = {}) {
       } else if (kind === 'style' && property.value.type === 'ObjectExpression') {
         for (const style of property.value.properties) {
           const name = style.key.name ?? style.key.value;
-          const styleValue = literalOf(style.value);
-          if (typeof name !== 'string' || !styleValue.literal) {
-            recordBail('style 里有非字面量键值', call);
+          if (typeof name !== 'string') {
+            recordBail('style 里有非字面量键', call);
             return false;
           }
-          elementOps.push({ kind: 'staticStyle', name, value: styleValue.value });
+          const styleValue = literalOf(style.value);
+          if (styleValue.literal) {
+            elementOps.push({ kind: 'staticStyle', name, value: styleValue.value });
+          } else {
+            // 动态样式值：与手写 `style(name, expr)` 同一条 op（节点模式编成活值写）
+            elementOps.push({ kind: 'dynamicStyle', name, expression: slice(style.value) });
+          }
         }
         continue;
       }
 
       const value = literalOf(property.value);
 
-      if ((kind === 'class' || kind === 'children') && !value.literal) {
-        recordBail(`options 的 ${String(key)} 值不是字面量`, call);
+      // 整体类名要能分类：动态类名没法编译（类名顺序 / 去重都是语义），状态类有专门写法
+      if (kind === 'class' && !value.literal) {
+        recordBail(
+          '整体类名不能由数据计算：状态类用 toggleClass(name, 值)，静态类名写成字面量',
+          call
+        );
+        return false;
+      }
+
+      if (kind === 'children' && !value.literal) {
+        recordBail('options 的 children 值不是字面量', call);
         return false;
       }
 

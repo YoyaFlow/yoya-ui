@@ -51,33 +51,43 @@ tree it holds, so it is "thinner" than the generic path.
 
 Compiles (constant structure, classifiable values):
 
-| Source                            | Result                                                |
-| --------------------------------- | ----------------------------------------------------- |
-| `line.attr('name', 'literal')`    | Baked into the fragment (static)                      |
-| `line.attr('name', row.value)`    | Dynamic attribute write + live subscription           |
-| `line.className('a b')`           | Baked into the fragment                               |
-| `line.toggleClass('on', expr)`    | Class binding (`bindClass`)                           |
-| `line.style('color', 'red')`      | Baked into the fragment                               |
-| `cell.child('text')`              | Baked into the fragment                               |
-| `cell.child(String(row.id))`      | Positional text write                                 |
-| `cell.child(vText(handle))`       | Text binding (handle / zero-arg reader / plain value) |
-| `line.on('click', handler)`       | Plain `addEventListener`                              |
-| `cell.span(...)` / `cell.td(...)` | Recursively compiled child elements (whitelist)       |
+| Source                            | Result                                                    |
+| --------------------------------- | --------------------------------------------------------- |
+| `line.attr('name', 'literal')`    | Baked into the fragment (static)                          |
+| `line.attr('name', row.value)`    | Dynamic attribute write + live subscription               |
+| `td({ attrs: { id: row.id } })`   | Dynamic option value (same path as a hand-written `attr`) |
+| `line.className('a b')`           | Baked into the fragment                                   |
+| `line.toggleClass('on', expr)`    | Class binding (`bindClass`)                               |
+| `line.style('color', 'red')`      | Baked into the fragment                                   |
+| `line.style('color', row.tone)`   | Dynamic style write (`node` channel: `node.style`)        |
+| `cell.child('text')`              | Baked into the fragment                                   |
+| `cell.child(String(row.id))`      | Positional text write                                     |
+| `cell.child(vText(handle))`       | Text binding (handle / zero-arg reader / plain value)     |
+| `line.on('click', handler)`       | Plain `addEventListener`                                  |
+| `cell.span(...)` / `cell.td(...)` | Recursively compiled child elements (whitelist)           |
 
 Falls back (records the reason, the whole shape uses the generic path):
 
-| Construct                                                               | Reason                                                                                                 |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `if` / `for` / `while` statements                                       | Structure is no longer constant                                                                        |
-| `...spread` arguments                                                   | Arity is unknown at build time                                                                         |
-| `child(vCard(...))` and other component calls                           | A component is another compilation unit (see `docs/component-authoring.md`); this round does not guess |
-| `child(() => …)`                                                        | Component slot / deferred content                                                                      |
-| Factories outside the whitelist (`vNode`, third-party factories)        | Not an element factory; compiling it as an element would be a silent semantic bug                      |
-| Dynamic attribute names, non-literal class names, multi-argument `attr` | Cannot be classified                                                                                   |
-| Live text inside a static subtree                                       | No live ancestor to carry the binding (`node` channel)                                                 |
+| Construct                                                        | Reason                                                                                                                                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `if` / `for` / `while` statements                                | Structure is no longer constant                                                                                                                                                            |
+| `...spread` arguments                                            | Arity is unknown at build time                                                                                                                                                             |
+| `child(vCard(...))` and other component calls                    | A component is another compilation unit (see `docs/component-authoring.md`); this round does not guess                                                                                     |
+| `child(() => …)`                                                 | Component slot / deferred content                                                                                                                                                          |
+| Factories outside the whitelist (`vNode`, third-party factories) | Not an element factory; compiling it as an element would be a silent semantic bug                                                                                                          |
+| Dynamic attribute names, multi-argument `attr`                   | Cannot be classified                                                                                                                                                                       |
+| A computed whole class name (`class: row.tone`)                  | Class order / de-duplication are semantics: use `toggleClass(name, value)` for state classes                                                                                               |
+| A dynamic style value in the `element` channel                   | Static styles stay in the fragment while dynamic ones can only go through CSSOM, which serializes differently from `toHTML()`; use a literal / `toggleClass`, or this row's `node` channel |
+| Live text inside a static subtree                                | No live ancestor to carry the binding (`node` channel)                                                                                                                                     |
 
 The element whitelist is **derived from the factories the core actually registers** (`htmls` +
 `svgs`): add a tag to the core and the whitelist follows; components are never mistaken for elements.
+
+The table above comes from `--report`: in this repo `src` is 427 files / 2 candidates / 1 compiled;
+the three benchmark row directories (`yoya-ui-core` / `-keyset` / `-runtime`) have 1 candidate each,
+100% compiled. The last two rows (dynamic styles, computed whole class names) hit **zero** rows in
+the current corpora — they cover "value comes from data" in application code: what cannot be
+classified falls back rather than being compiled into a static fragment.
 
 ## 4. Usage
 
