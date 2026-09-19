@@ -80,6 +80,20 @@ describe('wireRowModule (pure transform)', () => {
       })
     ).toBeNull();
   });
+
+  // R1：定位按 AST 符号身份——注释 / 字符串里的同名文本不算声明。
+  it('ignores the target name when it only appears in comments or strings', () => {
+    const source = [
+      '// function buildRow(item) { return tr(() => {}); }',
+      "const note = 'function buildRow(item) {}';",
+      businessSource
+    ].join('\n');
+    const wired = wireRowModule({ source, target, core, runtime: runtimeUrl });
+
+    expect(wired).not.toBeNull();
+    expect(wired.code).toContain("const note = 'function buildRow(item) {}';");
+    expect(wired.code).toContain('function buildRowSource(item) {');
+  });
 });
 
 describe('yoyaCompilePlugin (esbuild protocol)', () => {

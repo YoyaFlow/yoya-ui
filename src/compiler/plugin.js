@@ -24,6 +24,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { parse } from '@babel/parser';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 
 /** 虚拟产物模块的命名空间前缀（NUL 开头：普通的包名解析器不会碰它）。 */
@@ -46,20 +47,43 @@ export function wireRowModule({
   virtualId
 }) {
   const { fn, mode = 'element', thin = false, templatesOnly = false, file = target.file } = target;
-  const declaration = new RegExp(
-    `(^|\\n)([ \\t]*)(export\\s+)?function\\s+${fn}\\s*\\(([^)]*)\\)`,
-    'g'
-  );
-  const matches = [...source.matchAll(declaration)];
-  if (matches.length !== 1) {
-    // 找不到目标函数（0 次）或同名声明不止一处（≥2 次）都认不准：不动源码。
+  // 目标定位按 **AST 符号身份**（R1）：只认模块顶层的同名函数声明，注释 / 字符串里的同名文本
+  // 不算，声明 0 处或 ≥2 处都认不准 → 不动源码。
+  let ast;
+  try {
+    ast = parse(source, { sourceType: 'module' });
+  } catch {
+    return null;
+  }
+  const declarations = [];
+  ast.program.body.forEach((statement) => {
+    if (statement.type === 'FunctionDeclaration') {
+      if (statement.id?.name === fn) {
+        declarations.push({ exported: false, node: statement, start: statement.start });
+      }
+      return;
+    }
+    const inner = statement.type === 'ExportNamedDeclaration' ? statement.declaration : null;
+    if (inner?.type === 'FunctionDeclaration' && inner.id?.name === fn) {
+      // 从 `export` 起改名：真源不再导出（对外名字由追加的同名函数顶上）。
+      declarations.push({ exported: true, node: inner, start: statement.start });
+    }
+  });
+  if (declarations.length !== 1) {
     return null;
   }
 
-  const paramSource = matches[0][4].trim();
-  if (!/^[A-Za-z_$][\w$]*$/.test(paramSource)) {
+  const [{ exported: wasExported, node: declaration, start }] = declarations;
+  const param = declaration.params[0];
+  if (
+    declaration.async ||
+    declaration.generator ||
+    declaration.params.length !== 1 ||
+    param?.type !== 'Identifier'
+  ) {
     return null; // 形参不是单个标识符：和编译器同一口径，不动源码
   }
+  const paramSource = param.name;
 
   const result = compileSource({
     source,
@@ -76,13 +100,12 @@ export function wireRowModule({
     return null;
   }
 
-  const renamed = source.replace(
-    declaration,
-    (match, lead, indent, exported, params) =>
-      // 真源留在文件里（编译器读它），但不再导出：对外名字由下面追加的同名函数顶上。
-      `${lead}${indent}function ${fn}Source(${params})`
-  );
-  const wasExported = Boolean(matches[0][3]);
+  // 真源留在文件里（编译器读它），但不再导出：对外名字由下面追加的同名函数顶上。
+  const paramsStart = source.indexOf('(', declaration.start);
+  if (paramsStart === -1) {
+    return null;
+  }
+  const renamed = `${source.slice(0, start)}function ${fn}Source${source.slice(paramsStart)}`;
   const virtual = virtualId ?? `${VIRTUAL_PREFIX}${fn}-${result.plan.signature}`;
   const wiring = [
     '',
