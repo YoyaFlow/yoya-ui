@@ -207,16 +207,17 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     lang === 'zh'
       ? [
           `> **本地测试环境**：单机 Windows + ${results.meta.browser}（headless）+ 官方 runner \`${results.meta.runner}\`，`,
-          `> 全部条目**同一轮**测出；执行项取 ${results.meta.cpuIterations} 个样本的中位数，内存 1 次采样（单位：ms / MB）。`,
-          '> **不是官方站点数字**，横向对比只在同一轮内有效；体积 / 首屏与逐项"领先 / 落后"底色见 ' +
+          `> 全部条目**同一轮**测出；执行项取 ${results.meta.cpuIterations} 个样本的中位数，内存 1 次采样。`,
+          '> 单元格格式为 `测量值（÷ 原生）`，执行项单位 ms、内存项 MB。**不是官方站点数字**，',
+          '> 横向对比只在同一轮内有效；体积、首屏与逐项明细（含 9 项 script / paint 分解）见 ' +
             '[`benchmark/report.html`](benchmark/report.html)。'
         ].join('\n')
       : [
           `> **Local test environment**: one Windows machine + ${results.meta.browser} (headless) + the official`,
-          `> \`${results.meta.runner}\` runner, every entry measured **in the same round**; execution rows are medians`,
-          `> of ${results.meta.cpuIterations} samples, memory is a single sample (units: ms / MB). **These are not the`,
-          '> official site numbers** — only compare within the same round; size, first paint and the ahead / behind',
-          '> shading live in [`benchmark/report.html`](benchmark/report.html).'
+          `> \`${results.meta.runner}\` runner, every entry measured **in the same round**; execution rows are medians of`,
+          `> ${results.meta.cpuIterations} samples, memory is a single sample. Cells read \`measured (÷ vanilla)\`, in ms / MB.`,
+          '> **These are not the official site numbers** — only compare within the same round; size, first paint and the',
+          '> per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).'
         ].join('\n');
 
   const head =
@@ -225,26 +226,33 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
           '基准',
           `yoya ${results.meta.packageVersion}`,
           '原生 vanillajs',
-          'yoya ÷ 原生',
           ...compares.map((column) => column.version)
         ]
       : [
           'Benchmark',
           `yoya ${results.meta.packageVersion}`,
           'vanillajs',
-          'yoya ÷ vanilla',
           ...compares.map((column) => column.version)
         ];
+
+  /** 单元格：`测量值（÷ 原生）`；原生列只写值（系数恒为 1.00×）。 */
+  const cell = (value, baseline, digits) => {
+    const text = num(value, digits);
+    const coefficient = ratio(value, baseline);
+    if (text === '—') {
+      return text;
+    }
+    return coefficient === '—' ? text : `${text} (${coefficient})`;
+  };
 
   const cpuRows = CPU_ROWS.map((row) => {
     const yoya = cpuById.get(row.id)?.yoya?.total ?? null;
     const baseline = cpuById.get(row.id)?.baseline?.total ?? null;
     return [
       row[lang],
-      num(yoya, 1),
+      cell(yoya, baseline, 1),
       num(baseline, 1),
-      ratio(yoya, baseline),
-      ...compareCpu.map((map) => num(map.get(row.id), 1))
+      ...compareCpu.map((map) => cell(map.get(row.id), baseline, 1))
     ];
   });
 
@@ -254,10 +262,9 @@ export function renderReadmeBenchmarkBlock(results, lang = 'zh') {
     const baseline = memoryById.get(row.id)?.baseline ?? null;
     return [
       row[lang],
-      num(yoya, 2),
+      cell(yoya, baseline, 2),
       num(baseline, 2),
-      ratio(yoya, baseline),
-      ...compareOther.map((column) => num(column.memory.get(row.id), 2))
+      ...compareOther.map((column) => cell(column.memory.get(row.id), baseline, 2))
     ];
   });
 

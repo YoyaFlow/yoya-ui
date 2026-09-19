@@ -159,17 +159,29 @@ Its hooks live in a separate subpath (`@yoyaflow/yoya-ui/compiler-runtime`); the
 the compiler.
 
 ```bash
+# Install: the compiler ships inside the package; bring your own @babel/parser (optional peer, not auto-installed)
+npm i -D @yoyaflow/yoya-ui @babel/parser
+```
+
+```bash
 npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+# Equivalent without the bin:
+# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --fn buildRow --out …
 ```
 
 ```js
 import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 ```
 
-Anything it cannot classify falls back to the generic path for that whole shape. Status: **beta** —
-flags and artifact shapes may still change in a minor release, and not using it changes nothing.
-Full contract (two channels, component registry, page `<template>` fragments, `--report`):
-[docs/compiler.md](docs/compiler.md).
+**No configuration needed**: `--core` defaults to the core that ships with the package (pass it only to
+point at another copy) and `--runtime` defaults to `./compiler-runtime.js` (switch it to
+`@yoyaflow/yoya-ui/compiler-runtime` when a bundler resolves imports). The artifact is a plain ESM module
+and nothing on the runtime side changes. Anything it cannot classify falls back to the generic path for
+that whole shape.
+
+Status: **beta** — flags and artifact shapes may still change in a minor release, and not using it
+changes nothing. Full contract (two channels, component registry, page `<template>` fragments,
+`--report`): [docs/compiler.md](docs/compiler.md).
 
 ## Everything is real DOM, so third-party libraries just plug in
 
@@ -214,25 +226,25 @@ Execution (nine standard operations) and memory, read from the official
 <!-- benchmark:readme:start 由 scripts/benchmark-report.mjs 生成 -->
 
 > **Local test environment**: one Windows machine + Chrome for Testing 152.0.7977.64 (headless) + the official
-> `playwright` runner, every entry measured **in the same round**; execution rows are medians
-> of 15 samples, memory is a single sample (units: ms / MB). **These are not the
-> official site numbers** — only compare within the same round; size, first paint and the ahead / behind
-> shading live in [`benchmark/report.html`](benchmark/report.html).
+> `playwright` runner, every entry measured **in the same round**; execution rows are medians of
+> 15 samples, memory is a single sample. Cells read `measured (÷ vanilla)`, in ms / MB.
+> **These are not the official site numbers** — only compare within the same round; size, first paint and the
+> per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                | yoya 0.6.5 | vanillajs | yoya ÷ vanilla | yoya runtime（无编译） | Vue 3.5.39 | React 19.2.0 | Solid 1.9.3 | Svelte 5.42.1 |
-| ------------------------ | ---------- | --------- | -------------- | ---------------------- | ---------- | ------------ | ----------- | ------------- |
-| 01 create 1k rows        | 34.5       | 30.6      | 1.13×          | 44.5                   | 37.2       | 38.9         | 33.9        | 33.9          |
-| 02 replace 1k rows       | 38.3       | 34.2      | 1.12×          | 46.3                   | 43.8       | 45.2         | 38.8        | 41.8          |
-| 03 update every 10th row | 21.4       | 21.6      | 0.99×          | 22.7                   | 25.4       | 26.8         | 20.7        | 22.0          |
-| 04 select row            | 6.4        | 7.0       | 0.91×          | 7.2                    | 9.1        | 10.0         | 7.8         | 9.9           |
-| 05 swap rows             | 24.2       | 23.1      | 1.05×          | 28.2                   | 27.8       | 159.1        | 24.1        | 24.8          |
-| 06 remove one row        | 18.1       | 17.5      | 1.03×          | 17.8                   | 20.9       | 18.1         | 17.6        | 18.1          |
-| 07 create 10k rows       | 388.7      | 345.4     | 1.13×          | 501.0                  | 413.9      | 593.8        | 428.1       | 388.9         |
-| 08 append 1k rows        | 40.8       | 34.6      | 1.18×          | 50.1                   | 40.6       | 42.6         | 36.2        | 37.3          |
-| 09 clear x8              | 25.2       | 16.7      | 1.51×          | 22.9                   | 24.8       | 27.2         | 21.8        | 16.7          |
-| 21 ready memory (MB)     | 1.30       | 1.06      | 1.23×          | 1.30                   | 1.27       | 1.67         | 1.08        | 1.16          |
-| 22 run memory (MB)       | 3.95       | 2.45      | 1.61×          | 5.37                   | 4.59       | 5.03         | 3.34        | 3.52          |
-| 25 run+clear memory (MB) | 1.58       | 1.13      | 1.40×          | 1.70                   | 1.71       | 2.38         | 1.29        | 1.36          |
+| Benchmark                | yoya 0.6.5    | vanillajs | yoya runtime（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| ------------------------ | ------------- | --------- | ---------------------- | ------------- | ------------- | ------------- | ------------- |
+| 01 create 1k rows        | 34.5 (1.13×)  | 30.6      | 44.5 (1.45×)           | 37.2 (1.22×)  | 38.9 (1.27×)  | 33.9 (1.11×)  | 33.9 (1.11×)  |
+| 02 replace 1k rows       | 38.3 (1.12×)  | 34.2      | 46.3 (1.35×)           | 43.8 (1.28×)  | 45.2 (1.32×)  | 38.8 (1.13×)  | 41.8 (1.22×)  |
+| 03 update every 10th row | 21.4 (0.99×)  | 21.6      | 22.7 (1.05×)           | 25.4 (1.18×)  | 26.8 (1.24×)  | 20.7 (0.96×)  | 22.0 (1.02×)  |
+| 04 select row            | 6.4 (0.91×)   | 7.0       | 7.2 (1.03×)            | 9.1 (1.30×)   | 10.0 (1.43×)  | 7.8 (1.11×)   | 9.9 (1.41×)   |
+| 05 swap rows             | 24.2 (1.05×)  | 23.1      | 28.2 (1.22×)           | 27.8 (1.20×)  | 159.1 (6.89×) | 24.1 (1.04×)  | 24.8 (1.07×)  |
+| 06 remove one row        | 18.1 (1.03×)  | 17.5      | 17.8 (1.02×)           | 20.9 (1.19×)  | 18.1 (1.03×)  | 17.6 (1.01×)  | 18.1 (1.03×)  |
+| 07 create 10k rows       | 388.7 (1.13×) | 345.4     | 501.0 (1.45×)          | 413.9 (1.20×) | 593.8 (1.72×) | 428.1 (1.24×) | 388.9 (1.13×) |
+| 08 append 1k rows        | 40.8 (1.18×)  | 34.6      | 50.1 (1.45×)           | 40.6 (1.17×)  | 42.6 (1.23×)  | 36.2 (1.05×)  | 37.3 (1.08×)  |
+| 09 clear x8              | 25.2 (1.51×)  | 16.7      | 22.9 (1.37×)           | 24.8 (1.49×)  | 27.2 (1.63×)  | 21.8 (1.31×)  | 16.7 (1.00×)  |
+| 21 ready memory (MB)     | 1.30 (1.23×)  | 1.06      | 1.30 (1.23×)           | 1.27 (1.20×)  | 1.67 (1.58×)  | 1.08 (1.02×)  | 1.16 (1.10×)  |
+| 22 run memory (MB)       | 3.95 (1.61×)  | 2.45      | 5.37 (2.19×)           | 4.59 (1.87×)  | 5.03 (2.05×)  | 3.34 (1.36×)  | 3.52 (1.44×)  |
+| 25 run+clear memory (MB) | 1.58 (1.40×)  | 1.13      | 1.70 (1.50×)           | 1.71 (1.52×)  | 2.38 (2.11×)  | 1.29 (1.14×)  | 1.36 (1.21×)  |
 
 <!-- benchmark:readme:end -->
 

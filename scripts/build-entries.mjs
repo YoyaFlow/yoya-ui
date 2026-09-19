@@ -74,7 +74,9 @@ const compilerBundle = await rolldown({
 await compilerBundle.write({
   dir: 'dist',
   format: 'es',
-  entryFileNames: 'yoya.compiler.js'
+  entryFileNames: 'yoya.compiler.js',
+  // package.json 的 bin 指向这个文件：POSIX 的 npm shim 直接 exec，需要 shebang
+  banner: '#!/usr/bin/env node'
 });
 
 cpSync('src/chart/echarts.min.js', 'dist/echarts.min.js');

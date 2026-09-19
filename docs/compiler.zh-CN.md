@@ -103,9 +103,20 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 
 ### 4.1 命令行
 
+编译器就在 `@yoyaflow/yoya-ui` 包里（`yoya-compiler` bin + `yoya-ui/compiler` 子路径），**不用额外装库**；
+但它把构建期依赖 `@babel/parser` 外置了（浏览器产物不含它），而它是 **optional peer**、不会自动安装，
+所以本地要装一次：
+
+```bash
+npm i -D @yoyaflow/yoya-ui @babel/parser   # 报 Cannot find package '@babel/parser' 就是漏了这条
+```
+
+**不需要配置**：`--core` 默认就是包自带的 core；`--runtime` 默认写 `./compiler-runtime.js`（用打包器时
+指到 `@yoyaflow/yoya-ui/compiler-runtime`）。
+
 ```bash
 # 编译一个形状（落在 src/generated/row.js）
-node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js \
+npx yoya-compiler \
   --file src/rows/row.js --fn buildRow --mode element \
   --core ./vendor/yoya-ui/yoya.core.min.js \
   --runtime ../../vendor/yoya-ui/yoya.compiler-runtime.min.js \

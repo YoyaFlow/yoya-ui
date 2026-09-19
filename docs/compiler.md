@@ -120,16 +120,29 @@ watched by the coverage baseline in §4.1 (a fallback fails the build).
 
 ### 4.1 Command line
 
+The compiler ships inside `@yoyaflow/yoya-ui` (the `yoya-compiler` bin plus the `yoya-ui/compiler` subpath),
+so there is no extra library to install — but it keeps its build-time dependency `@babel/parser` external
+(browser artifacts never contain it) and that dependency is an **optional peer** that npm will not install
+for you:
+
+```bash
+npm i -D @yoyaflow/yoya-ui @babel/parser   # "Cannot find package '@babel/parser'" means this line is missing
+```
+
+**No configuration needed**: `--core` defaults to the core that ships with the package and `--runtime`
+defaults to `./compiler-runtime.js` (point it at `@yoyaflow/yoya-ui/compiler-runtime` when a bundler
+resolves imports).
+
 ```bash
 # Compile one shape (writes src/generated/row.js)
-node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js \
+npx yoya-compiler \
   --file src/rows/row.js --fn buildRow --mode element \
   --core ./vendor/yoya-ui/yoya.core.min.js \
   --runtime ../../vendor/yoya-ui/yoya.compiler-runtime.min.js \
   --out src/generated/row.js
 
 # Coverage scan: see which shapes compile and where they get stuck
-node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --report src --json
+npx yoya-compiler --report src --json
 ```
 
 That is how the coverage baseline is wired in this repo: `npm run build` ends with

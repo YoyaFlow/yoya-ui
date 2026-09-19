@@ -76,6 +76,9 @@
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"
   },
+  "bin": {
+    "yoya-compiler": "./dist/yoya.compiler.js"
+  },
   "files": [
     "dist",
     "types",
