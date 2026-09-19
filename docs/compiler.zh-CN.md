@@ -34,7 +34,7 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 
 | 通道              | 行是什么   | 生成代码返回        | 节点树                                                                  |
 | ----------------- | ---------- | ------------------- | ----------------------------------------------------------------------- |
-| `element`（默认） | 原生元素   | `{ el, destroy() }` | 没有节点对象（要配 `createElementList` 之类的自己的列表对账）           |
+| `element`（默认） | 原生元素   | `{ el, destroy() }` | 没有节点对象；`keyed()` 直接吃这种行（运行期按产出自选对账，见下）      |
 | `node`            | `ViewNode` | 节点本身            | **只含活结点及其祖先**：静态子树只存在于片段里，`children()` 看不到它们 |
 
 选哪条：
@@ -45,6 +45,41 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 
 **DOM 才是逐字节一致的那一份**：两条通道都把片段完整挂到 DOM 上，与通用路径的 `outerHTML`
 逐字节相同；`node` 通道的 `toHTML()` 只序列化它持有的节点树，因此比通用路径「薄」。
+
+### 2.1 接进列表：两条通道同一份业务代码
+
+`keyed()` 按行工厂的**产物**自选对账路径：`ViewNode` 行走节点树对账，`{ el, destroy }` 行走元素对账
+（同 key 复用 / 同 key 换引用原位重建 / 离场销毁 / 最小搬动）。所以业务侧不用为通道改写法：
+
+```js
+tbody((body) => {
+  body.attr('id', 'tbody');
+  body.keyed(rows, buildRow); // element / node 两条通道都这么写
+});
+```
+
+同一段列表里混用节点行与元素行会报错（不许一半进树一半不进）。元素行只有 DOM、不进视图树，因此
+`toHTML()` 对含元素行的容器**硬报错**（SSR 请让同一份源码走通用路径）。
+
+### 2.2 业务源码零改动：构建期插件
+
+编译器以 esbuild 插件协议接入（vite 可复用 `wireRowModule` 写适配）：
+
+```js
+import * as core from '@yoyaflow/yoya-ui/core';
+import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+
+plugins: [
+  yoyaCompilePlugin({
+    core,
+    rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+  })
+];
+```
+
+插件把源码里的 `buildRow` 改名为 `buildRowSource`（真源留给编译器），并追加同名函数转调编译产物；
+产物进虚拟模块，不落盘，业务代码不 import 任何生成物。目标定位按 **AST 符号身份**（模块顶层同名函数
+声明），认不准就不动：找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径。
 
 ## 3. 能编什么 / 什么时候回落
 
@@ -215,6 +250,14 @@ export function createRowFactory(scope) {
 - **SSR / hydrate**：片段与 `renderToString()` 同源（属性、样式按名字排序，见
   [`ssr.md`](ssr.md) §8.1），服务端不需要编译器；`node` 通道接管既有 DOM 的路径与 hydrate 同源。
 - **无构建环境**：不跑编译器就是今天的通用路径，行为与体积都不变。
+- **目标函数形参**：必须是**单个标识符**。解构 / 默认值 / rest / 多参一律整形状 bail——否则正文里的
+  `data` / `api` 会被当成自由标识符收进 scope，产物忽略自己的实参、运行期读到 undefined。
+- **产物不是业务接口**：`plan.scope` 只列应用符号（句柄 / 命令），元素工厂由产物自己 import；业务代码
+  不 import 生成物（构建期插件负责接线）。
+- **`data-row-key`**：element 通道的列表默认**不写**行上的键镜像属性；按 key 定位行时用
+  `createElementList(container, keyOf, { keyAttribute: 'data-row-key' })` 显式打开。
+- **产物确定性**：`plan.source.file` 写相对标签（绝对路径折算成相对 cwd，项目外只留文件名），
+  同一份源码在哪儿编都得到逐字节相同的产物。
 - **区域 / 行内 `keyed` / 组件槽**：属于动态结构，一律 bail，避免语义漂移。
 - **覆盖率基线门禁**：`src` / `src/examples` 两条基线进构建日志，逐文件禁回退（见 §4.1）。
 

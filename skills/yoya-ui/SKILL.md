@@ -113,6 +113,10 @@ div((root) => {
 
 开发期调试从独立子路径加载（主入口与 `core` 不导出）：`enableDevtools()` 开启后用 `subscribeDevtools(listener)` 订阅事件流，`getDevtoolsSnapshot(root)` 取视图树快照，`getDevtoolsDom(id)` / `getDevtoolsScope(id)` 定位真实 DOM 与作用域详情。事件含 `commit` / `destroy` / `attr` / `style` / `child` / `text` / `signal-write` / `region` / `error`。只在浏览器开发期使用，不在 SSR 或生产进程开启。详见 references/devtools.md。
 
+## 编译路径（Beta）
+
+重复单元（表格行、列表项、树节点）可以在**构建期**编成「静态片段 + 位置寻址的写操作」：业务源码零改动，只在构建配置里挂插件 `yoyaCompilePlugin({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })`；列表照旧写 `tbody((body) => body.keyed(rows, buildRow))`——`element` 通道的 `{el, destroy}` 行与 `node` 通道的 ViewNode 行 `keyed` 都直接吃。契约要点：形参必须是单个标识符（解构 / 多参一律整形状回落）、产物不 import 进业务代码、`plan.scope` 只列应用符号、element 行不进视图树所以 `toHTML()` 会硬报错（SSR 走通用路径）、element 列表默认不写 `data-row-key`。详见 references/compile.md。
+
 ## 参考文件（按需读取）
 
 - [references/quickstart.md](references/quickstart.md)：安装导入、语法与挂载、常用组件 API 速查
@@ -123,6 +127,7 @@ div((root) => {
 - [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、事件单槽
 - [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与跨组件共享（provide/inject、withContext、installContext）、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
+- [references/compile.md](references/compile.md)：编译路径（Beta）——构建期插件接入、两条通道、契约与边界
 - [references/core.md](references/core.md)：基于 `yoya-ui/core` 开发第三方组件（形态、契约、打包）
 - [references/modules.md](references/modules.md)：业务模块组织规则（目录结构、api 分层与命令范式、状态模块、业务/共享组件、应用外壳与导航、命名与结构分块、启动流程与新增菜单）
 

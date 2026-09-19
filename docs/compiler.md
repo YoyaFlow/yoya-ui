@@ -42,7 +42,7 @@ The artifact's shape follows `mode`:
 
 | Channel             | What a row is    | Generated factory returns | Node tree                                                                                                              |
 | ------------------- | ---------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `element` (default) | A native element | `{ el, destroy() }`       | No node objects (pair it with your own list reconciler such as `createElementList`)                                    |
+| `element` (default) | A native element | `{ el, destroy() }`       | No node objects; `keyed()` accepts these rows directly (the runtime picks the reconciler from the row product)         |
 | `node`              | A `ViewNode`     | The node itself           | **Only live nodes and their ancestors**: static subtrees exist only in the fragment, so `children()` does not see them |
 
 Which one:
@@ -55,6 +55,47 @@ Which one:
 **The DOM is the byte-identical part**: both channels attach the whole fragment, so `outerHTML`
 matches the generic path byte for byte. In the `node` channel `toHTML()` only serializes the node
 tree it holds, so it is "thinner" than the generic path.
+
+### 2.1 Wiring a list: one business snippet for both channels
+
+`keyed()` picks its reconciler from what the row factory returns: a `ViewNode` goes through the node
+tree, a `{ el, destroy }` element row is reconciled directly on the DOM (reuse per key, rebuild in
+place when the data reference changes, destroy on departure, minimal moves). Business code does not
+change per channel:
+
+```js
+tbody((body) => {
+  body.attr('id', 'tbody');
+  body.keyed(rows, buildRow); // same line for element and node rows
+});
+```
+
+Mixing node rows and element rows inside one list throws (no half-in-tree, half-DOM lists). Element
+rows are DOM-only and never enter the node tree, so `toHTML()` fails loudly for containers holding
+them (keep the server on the generic path for that source).
+
+### 2.2 Zero source changes: the build-time plugin
+
+The compiler plugs in through the esbuild plugin protocol (vite can reuse `wireRowModule`):
+
+```js
+import * as core from '@yoyaflow/yoya-ui/core';
+import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+
+plugins: [
+  yoyaCompilePlugin({
+    core,
+    rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+  })
+];
+```
+
+The plugin renames the source function to `buildRowSource` (kept as the compiler's single source of
+truth), appends a same-name wrapper that delegates to the compiled factory, and keeps the artifact in
+a virtual module — nothing is written next to your source, and business code imports no generated
+file. Targets are located by **AST symbol identity** (a top-level function declaration); anything
+unclear is left untouched: missing target, two same-name declarations, a parameter that is not a
+single identifier, or an unbuildable shape all fall back to the generic path.
 
 ## 3. What compiles / what falls back
 
@@ -246,6 +287,18 @@ writing `String(x)` would be silent semantic drift.
   channel adopts existing DOM the same way hydrate does.
 - **No build environment**: skip the compiler and today's generic path runs, with unchanged
   behaviour and size.
+- **Target function parameters**: exactly one identifier. Destructuring / defaults / rest / extra
+  parameters bail the whole shape — otherwise `data` / `api` would be collected as free identifiers
+  into `scope`, the artifact would ignore its own argument and read `undefined` at runtime.
+- **The artifact is not a business interface**: `plan.scope` lists app symbols only (handles /
+  commands); element factories are imported by the artifact itself, and business code imports no
+  generated file (the build-time plugin does the wiring).
+- **`data-row-key`**: element-channel lists do not write the key mirror attribute by default; opt in
+  with `createElementList(container, keyOf, { keyAttribute: 'data-row-key' })` when you need to
+  locate rows by key.
+- **Deterministic artifacts**: `plan.source.file` is a relative label (absolute paths are folded to
+  the working directory, files outside it keep their basename), so the same source compiles to
+  byte-identical output anywhere.
 - **Regions / row-level `keyed` / component slots**: dynamic structure, always bails to avoid
   semantic drift.
 - **Coverage baseline gate**: the `src` / `src/examples` baselines go into the build log and are

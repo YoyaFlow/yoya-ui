@@ -10,6 +10,7 @@
  */
 import { freeIdentifiers } from './analyze.js';
 import { createHash } from 'node:crypto';
+import { isAbsolute, relative } from 'node:path';
 
 /** 动态值在片段里的占位文本；运行期改写它。 */
 const TEXT_PLACEHOLDER = '0';
@@ -27,6 +28,22 @@ const FRAGMENT_ONLY = new Set(['staticAttr', 'staticClass', 'staticStyle', 'stat
 const CALLER_CONTENT = new Set(['content']);
 
 const indentOf = (depth) => '  '.repeat(depth);
+
+/**
+ * 产物里的源码标签（票 C6）：**绝不嵌机器绝对路径**，否则同一份源码在两台机器/两个目录编出来的
+ * 产物不逐字节相同，还会泄漏本地路径。绝对路径一律折算成相对 cwd 的写法；真在项目之外就只留文件名。
+ */
+function sourceLabelOf(file) {
+  if (typeof file !== 'string' || file.length === 0) {
+    return file;
+  }
+  if (!isAbsolute(file)) {
+    return file.replace(/\\/g, '/');
+  }
+
+  const rel = relative(process.cwd(), file).replace(/\\/g, '/');
+  return rel.startsWith('..') ? file.split(/[\\/]/).pop() : rel;
+}
 
 /** 静态值 → 生成代码里的字面量写法（`null` / `false` / `true` 原样，正是 attr 的口径）。 */
 const jsLiteral = (value) => (value === undefined ? 'undefined' : JSON.stringify(value));
@@ -113,7 +130,7 @@ export function renderModule(options) {
   const plan = {
     version: 1,
     mode,
-    source: { file, fn },
+    source: { file: sourceLabelOf(file), fn },
     // templates-only：片段由页面里的 <template> 提供，产物不再内联 html（运行期只按签名克隆）
     ...(templatesOnly ? {} : { html: fragmentHtml }),
     // 片段签名：构建期写页面 <template data-yoya-fragment="签名"> 时用它对号（票 45）

@@ -160,6 +160,44 @@ describe('compileSource', () => {
     expect(result.scope).toEqual([]);
   });
 
+  // C6：产物不嵌机器绝对路径——同一份源码换个目录/换台机器编出来必须逐字节相同。
+  it('keeps machine-specific absolute paths out of the artifact', () => {
+    const source =
+      'export function buildRow(item) {\n' +
+      '  return tr((line) => line.td((cell) => cell.child(String(item.data.id))));\n' +
+      '}\n';
+    const inside = compileSource({
+      source,
+      file: join(process.cwd(), 'src', 'rows', 'row.js'),
+      fn: 'buildRow',
+      core,
+      runtime: './compiler-runtime.js'
+    });
+    const outside = compileSource({
+      source,
+      file: join(process.cwd(), '..', 'elsewhere', 'row.js'),
+      fn: 'buildRow',
+      core,
+      runtime: './compiler-runtime.js'
+    });
+
+    expect(inside.plan.source.file).toBe('src/rows/row.js');
+    expect(outside.plan.source.file).toBe('row.js');
+    for (const result of [inside, outside]) {
+      expect(result.module).not.toMatch(/[A-Za-z]:[\\/]/);
+      expect(result.module).not.toContain(process.cwd());
+    }
+    // 相对标签相同 → 产物逐字节相同
+    const again = compileSource({
+      source,
+      file: 'src/rows/row.js',
+      fn: 'buildRow',
+      core,
+      runtime: './compiler-runtime.js'
+    });
+    expect(again.module).toBe(inside.module);
+  });
+
   it('keeps the bail list empty for a shape with only static and live values', () => {
     const result = compile(
       sourceOf(
