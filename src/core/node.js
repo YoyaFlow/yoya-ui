@@ -2,6 +2,7 @@
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
+import { optionKindOf } from './setup-keys.js';
 import {
   RESERVED_HOOK_NAMES,
   fireWhenDestroy,
@@ -3482,22 +3483,24 @@ export class ElementNode extends ViewNode {
    */
   _setupObject(config) {
     Object.entries(config).forEach(([key, value]) => {
-      if (key === 'class' || key === 'className') {
+      const optionKind = optionKindOf(key);
+
+      if (optionKind === 'class') {
         this.className(value);
         return;
       }
 
-      if (key === 'attrs') {
+      if (optionKind === 'attrs') {
         this.attr(value);
         return;
       }
 
-      if (key === 'style') {
+      if (optionKind === 'style') {
         this.styles(value);
         return;
       }
 
-      if (key === 'children') {
+      if (optionKind === 'children') {
         this.child(value);
         return;
       }

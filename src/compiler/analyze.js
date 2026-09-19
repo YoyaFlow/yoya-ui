@@ -5,6 +5,7 @@
  * 认不出的构造一律记进 `bails`：调用方据此让**整个形状**回落通用路径，绝不猜、不丢节点。
  */
 import { parse, parseExpression } from '@babel/parser';
+import { optionKindOf } from '../core/setup-keys.js';
 
 /** 节点级 API：这些不是子工厂，而是对当前节点自身的操作。 */
 export const NODE_API = new Set([
@@ -435,6 +436,20 @@ export function analyzeSource(source, options = {}) {
         continue;
       }
 
+      // 文本位置：`String(x)` 位置写、`vText(x)` 活值绑定（与 child() 分支同一套判定）
+      if (argument.type === 'CallExpression' && argument.callee?.name === 'String') {
+        elementOps.push({ kind: 'slotText', expression: slice(argument) });
+        continue;
+      }
+      if (argument.type === 'CallExpression' && argument.callee?.name === 'vText') {
+        if (argument.arguments.length !== 1) {
+          recordBail('vText() 参数数量 != 1', call);
+          return null;
+        }
+        elementOps.push({ kind: 'bindText', expression: slice(argument.arguments[0]) });
+        continue;
+      }
+
       if (
         argument.type === 'ObjectExpression' &&
         analyzeOptionsObject(argument, elementOps, call)
@@ -461,8 +476,9 @@ export function analyzeSource(source, options = {}) {
       }
 
       const key = property.key.name ?? property.key.value;
+      const kind = optionKindOf(key);
 
-      if (key === 'attrs' && property.value.type === 'ObjectExpression') {
+      if (kind === 'attrs' && property.value.type === 'ObjectExpression') {
         for (const attr of property.value.properties) {
           const name = attr.key.name ?? attr.key.value;
           const attrValue = literalOf(attr.value);
@@ -473,7 +489,7 @@ export function analyzeSource(source, options = {}) {
           elementOps.push({ kind: 'staticAttr', name, value: attrValue.value });
         }
         continue;
-      } else if (key === 'style' && property.value.type === 'ObjectExpression') {
+      } else if (kind === 'style' && property.value.type === 'ObjectExpression') {
         for (const style of property.value.properties) {
           const name = style.key.name ?? style.key.value;
           const styleValue = literalOf(style.value);
@@ -492,17 +508,17 @@ export function analyzeSource(source, options = {}) {
         return false;
       }
 
-      if (key === 'class' || key === 'className') {
+      if (kind === 'class') {
         elementOps.push({
           kind: 'staticClass',
           names: String(value.value).split(/\s+/).filter(Boolean)
         });
-      } else if (key === 'children') {
+      } else if (kind === 'children') {
         elementOps.push({
           kind: 'staticText',
           text: value.value === null ? '' : String(value.value)
         });
-      } else if (typeof key === 'string' && !NODE_API.has(key)) {
+      } else if (kind === 'attribute' && typeof key === 'string' && !NODE_API.has(key)) {
         // 子工厂不参与 options 分派 → 按属性写（`{ slot: 't-head' }` / `{ title: 't' }`）
         elementOps.push({ kind: 'staticAttr', name: key, value: value.value });
       } else {
@@ -525,19 +541,16 @@ export function analyzeSource(source, options = {}) {
       recordBail('函数体不是单个 return 工厂调用', fn);
       return null;
     }
-    const setup = returned.arguments[0];
-    if (
-      !setup ||
-      (setup.type !== 'ArrowFunctionExpression' && setup.type !== 'FunctionExpression')
-    ) {
-      recordBail('入口工厂不是 setup 回调形式', returned);
+    // 入口工厂与子工厂共用同一张参数分派表：`Factory(setup)` / `Factory(options, setup)` / 变参都认
+    const ops = analyzeElementArguments(returned.arguments, returned.callee.name, returned);
+    if (!ops) {
       return null;
     }
-    const setupParam = setup.params[0]?.name;
-    if (!setupParam) {
-      recordBail('入口 setup 没有参数', setup);
-      return null;
-    }
+    const setupArg = returned.arguments.find(
+      (argument) =>
+        argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression'
+    );
+    const setupParam = setupArg?.params[0]?.name ?? null;
     // 构建函数的形参（行数据，如 `row`）与 setup 形参（行根节点，如 `line`）都要绑定：
     // 前者出现在值表达式里，后者是调用链的起点。
     const builderParam = fn.params[0]?.name ?? 'row';
@@ -545,7 +558,7 @@ export function analyzeSource(source, options = {}) {
       factory: returned.callee.name,
       builderParam,
       setupParam,
-      ops: analyzeSetup(setup, setupParam)
+      ops
     };
   }
 

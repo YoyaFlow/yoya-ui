@@ -172,4 +172,18 @@ describe('compileSource', () => {
     expect(result.compiled).toBe(false);
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('字面量');
   });
+
+  it('accepts the (options, setup) form on the entry factory too', () => {
+    const result = compile(
+      "import { div } from '../../yoya.core.js';\n" +
+        'export function buildRow(row) {\n' +
+        "  return div({ attrs: { id: 'root' } }, (node) => node.span(String(row.id)));\n" +
+        '}\n'
+    );
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    expect(result.plan.html).toBe('<div id="root"><span>0</span></div>');
+    expect(result.scope).toEqual([]);
+  });
 });
