@@ -482,6 +482,7 @@ import {
   runCli,
   wireRowModule,
   yoyaCompilePlugin,
+  compiledModulesOf,
   type ComponentRegistry,
   type ComponentRegistryResult,
   type CompileResult,
@@ -569,6 +570,10 @@ if (wired) {
   const virtual: string = wired.virtual;
   void [wiredCode, wiredModule, virtual];
 }
+
+// 虚拟产物侧挂在 WeakMap 上（esbuild 会校验插件对象，只能有 name / setup）
+const pluginArtifacts: Map<string, string> | null = compiledModulesOf(plugin);
+void pluginArtifacts;
 
 const componentResult: CompileResult = compileComponent({
   source: '',

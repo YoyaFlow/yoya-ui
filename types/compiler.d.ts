@@ -224,8 +224,6 @@ export interface YoyaCompilePluginOptions {
 
 export interface YoyaCompilePlugin {
   name: string;
-  /** Virtual artifact modules by name (tests / debugging). */
-  virtualModules: Map<string, string>;
   setup(build: EsbuildBuildLike): void;
 }
 
@@ -235,6 +233,13 @@ export interface YoyaCompilePlugin {
  * the generic path.
  */
 export declare function yoyaCompilePlugin(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+
+/**
+ * Virtual artifact modules produced by a plugin instance, keyed by virtual module name.
+ * Kept off the plugin object on purpose: esbuild validates it and rejects extra properties
+ * (`Invalid option on plugin`). Returns null when the value is not a plugin from this module.
+ */
+export declare function compiledModulesOf(plugin: unknown): Map<string, string> | null;
 
 export declare function reportCoverage(
   options: Omit<CompileOptions, 'source'> & { root: string; extensions?: string[] }

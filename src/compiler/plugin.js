@@ -31,6 +31,13 @@ import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 const VIRTUAL_PREFIX = '\0yoya-row:';
 /** 虚拟产物模块在 esbuild 里的命名空间。 */
 const VIRTUAL_NAMESPACE = 'yoya-row';
+/** 打包器语境下的运行期钩子默认入口（`compileSource` / CLI 的 `./compiler-runtime.js` 是给手写模块用的）。 */
+const PACKAGE_RUNTIME = '@yoyaflow/yoya-ui/compiler-runtime';
+/**
+ * 插件对象 → 虚拟产物表。**不能挂在插件对象上**：esbuild 会校验收到的插件对象，
+ * 多一个属性就 `Invalid option on plugin`（0.6.7 实机踩到）。这里用 WeakMap 侧挂。
+ */
+const pluginVirtualModules = new WeakMap();
 
 const normalizePath = (path) => resolve(path).replace(/\\/g, '/');
 
@@ -127,7 +134,8 @@ export function wireRowModule({
  * 虚拟产物模块由插件自己的 `onResolve` / `onLoad` 提供。
  */
 export function yoyaCompilePlugin(options = {}) {
-  const { core, rows = [], runtime = DEFAULT_RUNTIME, coreSpecifier } = options;
+  // 插件只跑在打包器里，运行期钩子默认按**包子路径**解析（`compileSource` / CLI 保持相对默认）。
+  const { core, rows = [], runtime = PACKAGE_RUNTIME, coreSpecifier } = options;
   if (!core) {
     throw new TypeError('yoyaCompilePlugin() requires the core namespace (import * as core …)');
   }
@@ -141,10 +149,8 @@ export function yoyaCompilePlugin(options = {}) {
   });
   const virtualModules = new Map();
 
-  return {
+  const plugin = {
     name: 'yoya-ui-compile',
-    /** 供测试 / 调试查看虚拟产物（键是虚拟模块名）。 */
-    virtualModules,
     setup(build) {
       build.onResolve({ filter: /^\0yoya-row:/ }, (args) => ({
         path: args.path,
@@ -170,4 +176,11 @@ export function yoyaCompilePlugin(options = {}) {
       });
     }
   };
+  pluginVirtualModules.set(plugin, virtualModules);
+  return plugin;
+}
+
+/** 该插件实例编出来的虚拟产物（键是虚拟模块名）；不是本插件产物时返回 null。 */
+export function compiledModulesOf(plugin) {
+  return pluginVirtualModules.get(plugin) ?? null;
 }

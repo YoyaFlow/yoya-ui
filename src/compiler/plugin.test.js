@@ -8,7 +8,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
 import { tbody } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
-import { wireRowModule, yoyaCompilePlugin } from './plugin.js';
+import { compiledModulesOf, wireRowModule, yoyaCompilePlugin } from './plugin.js';
 
 const scratchRoot = join(process.cwd(), '.scratch');
 mkdirSync(scratchRoot, { recursive: true });
@@ -101,7 +101,6 @@ describe('yoyaCompilePlugin (esbuild protocol)', () => {
     const file = join(workDir, 'main.js');
     const plugin = yoyaCompilePlugin({
       core,
-      runtime: runtimeUrl,
       rows: [{ ...target, file }]
     });
     const loaders = [];
@@ -120,10 +119,14 @@ describe('yoyaCompilePlugin (esbuild protocol)', () => {
 
     expect(loaded.resolveDir).toBe(workDir);
     expect(loaded.contents).toContain('function buildRowSource(item) {');
-    expect(plugin.virtualModules.size).toBe(1);
+    // esbuild 会校验插件对象本身：只能有 name / setup（多一个属性就 Invalid option on plugin）
+    expect(Object.keys(plugin).sort()).toEqual(['name', 'setup']);
+    expect(compiledModulesOf(plugin).size).toBe(1);
 
-    const [virtualId, moduleSource] = [...plugin.virtualModules.entries()][0];
+    const [virtualId, moduleSource] = [...compiledModulesOf(plugin).entries()][0];
     expect(moduleSource).toContain('export function createRowFactory(scope)');
+    // 插件跑在打包器里：运行期钩子默认按包子路径解析（不是 ./compiler-runtime.js）
+    expect(moduleSource).toContain('from "@yoyaflow/yoya-ui/compiler-runtime"');
     expect(virtualId.startsWith('\0yoya-row:buildRow-')).toBe(true);
     // 产物里的 import 字面量把 NUL 转义成 \u0000（JSON.stringify 的口径）
     expect(loaded.contents).toContain(virtualId.replace('\0', '\\u0000'));
