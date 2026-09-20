@@ -312,6 +312,10 @@ writing `String(x)` would be silent semantic drift.
 - **Deterministic artifacts**: `plan.source.file` is a relative label (absolute paths are folded to
   the working directory, files outside it keep their basename), so the same source compiles to
   byte-identical output anywhere.
+- **No business code inside the tool**: the compiler, plugin, CLI and coverage script hardcode no
+  business function names, component names, table names, selectors or structure constants; any name
+  they carry comes from the module they read at build time (`plan.source`). The tool's own fixtures
+  use neutral shapes and live in the test tree only (never published — `files: [dist, types]`).
 - **Regions / row-level `keyed` / component slots**: dynamic structure, always bails to avoid
   semantic drift.
 - **Coverage baseline gate**: the `src` / `src/examples` baselines go into the build log and are

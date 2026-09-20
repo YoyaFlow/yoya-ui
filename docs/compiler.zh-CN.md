@@ -268,6 +268,9 @@ export function createRowFactory(scope) {
   `createElementList(container, keyOf, { keyAttribute: 'data-row-key' })` 显式打开。
 - **产物确定性**：`plan.source.file` 写相对标签（绝对路径折算成相对 cwd，项目外只留文件名），
   同一份源码在哪儿编都得到逐字节相同的产物。
+- **工具里没有业务代码**：编译器 / 插件 / CLI / 覆盖率脚本不内置任何业务函数名、组件名、表名、选择器或
+  结构常量；它们出现的名字只来自构建期读到的业务模块（`plan.source`）。工具自带的夹具只用中性形状，
+  而且只存在于测试目录、不随包发布（`files: [dist, types]`）。
 - **区域 / 行内 `keyed` / 组件槽**：属于动态结构，一律 bail，避免语义漂移。
 - **覆盖率基线门禁**：`src` / `src/examples` 两条基线进构建日志，逐文件禁回退（见 §4.1）。
 
