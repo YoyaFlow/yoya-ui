@@ -25,11 +25,11 @@ const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js'))
 const compileBuilder = async (body, name, mode = 'element') => {
   const source =
     "import { div } from '../../yoya.core.js';\n" +
-    `export function buildRow(row) {\n  return ${body};\n}\n`;
+    `export function Item(item) {\n  return ${body};\n}\n`;
   const compiled = compileSource({
     source,
     file: 'src/compiler/fixtures/parity.js',
-    fn: 'buildRow',
+    fn: 'Item',
     mode,
     core,
     runtime: runtimeUrl
@@ -62,15 +62,15 @@ describe('compile / runtime dispatch parity', () => {
       'variadic'
     );
     const dslNode = div('a', { slot: 't-head' }, (node) => node.span('s'), 'b');
-    const row = factory({});
+    const item = factory({});
 
-    expect(row.el.outerHTML).toBe(dslNode.toHTML());
-    expect(row.el.getAttribute('slot')).toBe('t-head');
+    expect(item.el.outerHTML).toBe(dslNode.toHTML());
+    expect(item.el.getAttribute('slot')).toBe('t-head');
   });
 
   it('agrees on a dynamic style value in node mode', async () => {
     const factory = await compileBuilder(
-      "div((node) => node.style('color', row.tone))",
+      "div((node) => node.style('color', item.tone))",
       'dynamic-style',
       'node'
     );
@@ -81,7 +81,7 @@ describe('compile / runtime dispatch parity', () => {
 
   it('agrees when a static style shares the element with a dynamic style', async () => {
     const factory = await compileBuilder(
-      "div({ style: { color: 'red', width: row.w } }, (node) => node.span('s'))",
+      "div({ style: { color: 'red', width: item.w } }, (node) => node.span('s'))",
       'mixed-style',
       'node'
     );

@@ -4,18 +4,18 @@ import { describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
 import { compileSource, elementWhitelistOf } from './index.js';
 
-const fixture = readFileSync(join(import.meta.dirname, 'fixtures/row-fixture.js'), 'utf8');
+const fixture = readFileSync(join(import.meta.dirname, 'fixtures/item-fixture.js'), 'utf8');
 
-/** 官方行形态的片段：静态值进片段，动态值留占位（片段只由框架自己的 toHTML() 产出）。 */
-const ROW_HTML =
-  '<tr data-row-id=""><td class="col-md-1">0</td><td class="col-md-4"><a>0</a></td>' +
-  '<td class="col-md-1"><a><span aria-hidden="true" class="glyphicon glyphicon-remove"></span></a></td>' +
-  '<td class="col-md-6"></td></tr>';
+/** 中性夹具的片段：静态值进片段，动态值留占位（片段只由框架自己的 toHTML() 产出）。 */
+const ITEM_HTML =
+  '<li data-item-id=""><span class="item-id">0</span><span class="item-label"><a>0</a></span>' +
+  '<span class="item-action"><a><i aria-hidden="true" class="icon icon-remove"></i></a></span>' +
+  '<span class="item-note"></span></li>';
 
 const compile = (source, options = {}) =>
-  compileSource({ source, file: 'row-fixture.js', fn: 'buildRow', core, ...options });
+  compileSource({ source, file: 'item-fixture.js', fn: 'Item', core, ...options });
 
-const sourceOf = (body) => `function buildRow(row) {\n${body}\n}\n`;
+const sourceOf = (body) => `function Item(item) {\n${body}\n}\n`;
 
 describe('element registry', () => {
   it('derives the element whitelist from the core factories', () => {
@@ -37,14 +37,14 @@ describe('compileSource', () => {
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
     expect(result.plan.mode).toBe('element');
-    expect(result.plan.source).toEqual({ file: 'row-fixture.js', fn: 'buildRow' });
-    expect(result.plan.html).toBe(ROW_HTML);
-    expect(result.fragmentHtml).toBe(ROW_HTML); // 供 --fragments 写模板块（plan 将来可省略 html）
+    expect(result.plan.source).toEqual({ file: 'item-fixture.js', fn: 'Item' });
+    expect(result.plan.html).toBe(ITEM_HTML);
+    expect(result.fragmentHtml).toBe(ITEM_HTML); // 供 --fragments 写模板块（plan 将来可省略 html）
     expect(result.plan.liveNodes).toBe(6);
-    expect(result.scope).toEqual(['computed', 'removeRow', 'selectedId']);
+    expect(result.scope).toEqual(['computed', 'removeItem', 'selectedId']);
     expect(result.module).toContain('export const plan = ');
     expect(result.module).toContain('export function createRowFactory(scope)');
-    expect(result.module).toContain('return function buildRow(row) {');
+    expect(result.module).toContain('return function Item(item) {');
     expect(result.module).toContain('cloneFragment(plan.html, plan.signature)');
   });
 
@@ -53,7 +53,7 @@ describe('compileSource', () => {
 
     expect(result.compiled).toBe(true);
     expect(result.plan.mode).toBe('node');
-    expect(result.plan.html).toBe(ROW_HTML);
+    expect(result.plan.html).toBe(ITEM_HTML);
     expect(result.module).toContain('adopt(');
     expect(result.module).toContain('bindChild(');
   });
@@ -64,7 +64,7 @@ describe('compileSource', () => {
     expect(result.scope).not.toContain('row');
 
     const simple = compile(
-      sourceOf("  return tr((line) => {\n    line.attr('data-x', String(row.id));\n  });")
+      sourceOf("  return tr((line) => {\n    line.attr('data-x', String(item.id));\n  });")
     );
     expect(simple.compiled).toBe(true);
     expect(simple.scope).toEqual([]);
@@ -83,13 +83,13 @@ describe('compileSource', () => {
 
   it('falls back for every unsupported construct', () => {
     const cases = [
-      ["if (row.id) {\n      line.attr('data-x', '1');\n    }", 'IfStatement'],
-      ['for (const item of row.items) {\n      line.child(item);\n    }', 'ForOfStatement'],
-      ['line.attr(...row.attrs);', 'spread'],
+      ["if (item.id) {\n      line.attr('data-x', '1');\n    }", 'IfStatement'],
+      ['for (const dataItem of item.items) {\n      line.child(item);\n    }', 'ForOfStatement'],
+      ['line.attr(...item.attrs);', 'spread'],
       ["line.whenFailed('x');", '不是元素工厂'],
-      ['line.td((cell) => cell.child(() => row.label));', '组件槽'],
-      ["line.attr(row.name, 'x');", '属性名不是字符串字面量'],
-      ['line.className(row.cls);', '不是字符串字面量']
+      ['line.td((cell) => cell.child(() => item.label));', '组件槽'],
+      ["line.attr(item.name, 'x');", '属性名不是字符串字面量'],
+      ['line.className(item.cls);', '不是字符串字面量']
     ];
 
     for (const [body, reason] of cases) {
@@ -104,9 +104,9 @@ describe('compileSource', () => {
     expect(missing.compiled).toBe(false);
     expect(missing.bails[0].reason).toContain('不是单个 return 工厂调用');
 
-    const noFunction = compileSource({ source: 'const other = 1;\n', fn: 'buildRow', core });
+    const noFunction = compileSource({ source: 'const other = 1;\n', fn: 'Item', core });
     expect(noFunction.compiled).toBe(false);
-    expect(noFunction.bails).toEqual([{ reason: '找不到目标函数 buildRow', at: null }]);
+    expect(noFunction.bails).toEqual([{ reason: '找不到目标函数 Item', at: null }]);
   });
 
   // 票 12 / C1：形参解构会被当成"自由标识符"，把 data / api 编进 scope，
@@ -114,11 +114,11 @@ describe('compileSource', () => {
   it('bails out entirely when the builder parameter is destructured', () => {
     const result = compileSource({
       source:
-        'export function buildRow({ data, api }) {\n' +
+        'export function Item({ data, api }) {\n' +
         '  return tr((line) => line.td((cell) => cell.child(String(data.id))));\n' +
         '}\n',
       file: 'probe.js',
-      fn: 'buildRow',
+      fn: 'Item',
       core
     });
 
@@ -133,9 +133,9 @@ describe('compileSource', () => {
 
     for (const param of shapes) {
       const result = compileSource({
-        source: `export function buildRow(${param}) {\n  return tr((line) => line.td('x'));\n}\n`,
+        source: `export function Item(${param}) {\n  return tr((line) => line.td('x'));\n}\n`,
         file: 'probe.js',
-        fn: 'buildRow',
+        fn: 'Item',
         core
       });
       expect(result.compiled, param || '(无参)').toBe(false);
@@ -148,11 +148,11 @@ describe('compileSource', () => {
   it('keeps compiling the single-identifier parameter shape', () => {
     const result = compileSource({
       source:
-        'export function buildRow(item) {\n' +
+        'export function Item(item) {\n' +
         '  return tr((line) => line.td((cell) => cell.child(String(item.data.id))));\n' +
         '}\n',
       file: 'probe.js',
-      fn: 'buildRow',
+      fn: 'Item',
       core
     });
 
@@ -163,26 +163,26 @@ describe('compileSource', () => {
   // C6：产物不嵌机器绝对路径——同一份源码换个目录/换台机器编出来必须逐字节相同。
   it('keeps machine-specific absolute paths out of the artifact', () => {
     const source =
-      'export function buildRow(item) {\n' +
+      'export function Item(item) {\n' +
       '  return tr((line) => line.td((cell) => cell.child(String(item.data.id))));\n' +
       '}\n';
     const inside = compileSource({
       source,
-      file: join(process.cwd(), 'src', 'rows', 'row.js'),
-      fn: 'buildRow',
+      file: join(process.cwd(), 'src', 'rows', 'item.js'),
+      fn: 'Item',
       core,
       runtime: './compiler-runtime.js'
     });
     const outside = compileSource({
       source,
-      file: join(process.cwd(), '..', 'elsewhere', 'row.js'),
-      fn: 'buildRow',
+      file: join(process.cwd(), '..', 'elsewhere', 'item.js'),
+      fn: 'Item',
       core,
       runtime: './compiler-runtime.js'
     });
 
-    expect(inside.plan.source.file).toBe('src/rows/row.js');
-    expect(outside.plan.source.file).toBe('row.js');
+    expect(inside.plan.source.file).toBe('src/rows/item.js');
+    expect(outside.plan.source.file).toBe('item.js');
     for (const result of [inside, outside]) {
       expect(result.module).not.toMatch(/[A-Za-z]:[\\/]/);
       expect(result.module).not.toContain(process.cwd());
@@ -190,8 +190,8 @@ describe('compileSource', () => {
     // 相对标签相同 → 产物逐字节相同
     const again = compileSource({
       source,
-      file: 'src/rows/row.js',
-      fn: 'buildRow',
+      file: 'src/rows/item.js',
+      fn: 'Item',
       core,
       runtime: './compiler-runtime.js'
     });
@@ -202,9 +202,9 @@ describe('compileSource', () => {
     const result = compile(
       sourceOf(
         '  return tr((line) => {\n' +
-          "    line.attr('data-row-id', String(row.id));\n" +
-          '    line.td((cell) => cell.child(vText(row.label)));\n' +
-          "    line.toggleClass('danger', computed(() => selectedId.value === row.id));\n" +
+          "    line.attr('data-item-id', String(item.id));\n" +
+          '    line.td((cell) => cell.child(vText(item.label)));\n' +
+          "    line.toggleClass('active', computed(() => selectedId.value === item.id));\n" +
           '  });'
       )
     );
@@ -219,7 +219,7 @@ describe('compileSource', () => {
       sourceOf(
         '  return tr((line) => {\n' +
           "    line.td({ slot: 't-head', attrs: { id: 'c1' }, style: { color: 'red' } }, (cell) => {\n" +
-          '      cell.child(String(row.id));\n' +
+          '      cell.child(String(item.id));\n' +
           '    });\n' +
           '  });'
       )
@@ -232,7 +232,7 @@ describe('compileSource', () => {
     const optionsLast = compile(
       sourceOf(
         '  return tr((line) => {\n' +
-          "    line.td((cell) => cell.child(String(row.id)), { attrs: { id: 'c2' } });\n" +
+          "    line.td((cell) => cell.child(String(item.id)), { attrs: { id: 'c2' } });\n" +
           '  });'
       )
     );
@@ -256,20 +256,20 @@ describe('compileSource', () => {
 
   it('compiles dynamic style values in node mode into node.style writes', () => {
     const result = compile(
-      sourceOf("  return tr((line) => line.td({ style: { color: row.tone } }, 'x'));"),
+      sourceOf("  return tr((line) => line.td({ style: { color: item.tone } }, 'x'));"),
       { mode: 'node' }
     );
 
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
-    expect(result.module).toContain('node.style("color", row.tone)');
+    expect(result.module).toContain('node.style("color", item.tone)');
     // 片段里不写占位：样式值由节点快照 / 运行期绑定写
     expect(result.plan.html).toBe('<tr><td>x</td></tr>');
   });
 
   it('falls back in element mode, where a dynamic style cannot stay byte-identical', () => {
     const result = compile(
-      sourceOf("  return tr((line) => line.td((cell) => cell.style('color', row.tone)));")
+      sourceOf("  return tr((line) => line.td((cell) => cell.style('color', item.tone)));")
     );
 
     expect(result.compiled).toBe(false);
@@ -277,7 +277,7 @@ describe('compileSource', () => {
   });
 
   it('bails on a computed whole class name with an actionable hint', () => {
-    const result = compile(sourceOf("  return tr((line) => line.td({ class: row.tone }, 'x'));"));
+    const result = compile(sourceOf("  return tr((line) => line.td({ class: item.tone }, 'x'));"));
 
     expect(result.compiled).toBe(false);
     expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('toggleClass');
@@ -315,7 +315,7 @@ describe('compileSource', () => {
   // 组件身份（vn）就是普通静态属性：进片段、进节点快照，adopt / hydrate 后判定照样成立
   it('bakes the component identity attribute into the fragment', () => {
     const result = compile(
-      sourceOf("  return div({ vn: 'VCard' }, (node) => node.span(String(row.id)));")
+      sourceOf("  return div({ vn: 'VCard' }, (node) => node.span(String(item.id)));")
     );
 
     expect(result.bails).toEqual([]);
@@ -323,7 +323,7 @@ describe('compileSource', () => {
     expect(result.plan.html).toContain('<div vn="VCard"><span>0</span></div>');
 
     const nodeMode = compile(
-      sourceOf("  return div({ vn: 'VCard' }, (node) => node.on('click', row.onPick));"),
+      sourceOf("  return div({ vn: 'VCard' }, (node) => node.on('click', item.onPick));"),
       { mode: 'node' }
     );
     expect(nodeMode.module).toContain('node.attr("vn", "VCard")');
@@ -331,16 +331,16 @@ describe('compileSource', () => {
 
   // 覆盖度缺口 2：数组 / 对象在文本位置上编出来就是静默误编 → 编译期认出就回落
   it('bails on arrays and objects in a text position', () => {
-    const array = compile(sourceOf('  return div((node) => node.child([row.a, row.b]));'));
+    const array = compile(sourceOf('  return div((node) => node.child([item.a, item.b]));'));
     expect(array.compiled).toBe(false);
     expect(array.bails.map((bail) => bail.reason).join(' | ')).toContain('数组');
     expect(array.bails[0].at).toContain('[');
 
-    const object = compile(sourceOf('  return div((node) => node.child({ text: row.a }));'));
+    const object = compile(sourceOf('  return div((node) => node.child({ text: item.a }));'));
     expect(object.compiled).toBe(false);
     expect(object.bails.map((bail) => bail.reason).join(' | ')).toContain('对象');
 
-    const text = compile(sourceOf('  return div((node) => node.child(vText([row.a])));'));
+    const text = compile(sourceOf('  return div((node) => node.child(vText([item.a])));'));
     expect(text.compiled).toBe(false);
     expect(text.bails.map((bail) => bail.reason).join(' | ')).toContain('vText() 收到数组');
   });
@@ -348,22 +348,22 @@ describe('compileSource', () => {
   it('compiles dynamic option values into live attribute writes', () => {
     const result = compile(
       sourceOf(
-        "  return tr((line) => line.td({ attrs: { id: row.id }, 'data-tone': row.tone }, 'x'));"
+        "  return tr((line) => line.td({ attrs: { id: item.id }, 'data-tone': item.tone }, 'x'));"
       )
     );
 
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
     expect(result.plan.html).toBe('<tr><td data-tone="" id="">x</td></tr>');
-    expect(result.module).toContain('setAttr(el.childNodes[0], "id", row.id)');
-    expect(result.module).toContain('setAttr(el.childNodes[0], "data-tone", row.tone)');
+    expect(result.module).toContain('setAttr(el.childNodes[0], "id", item.id)');
+    expect(result.module).toContain('setAttr(el.childNodes[0], "data-tone", item.tone)');
   });
 
   it('accepts the (options, setup) form on the entry factory too', () => {
     const result = compile(
       "import { div } from '../../yoya.core.js';\n" +
-        'export function buildRow(row) {\n' +
-        "  return div({ attrs: { id: 'root' } }, (node) => node.span(String(row.id)));\n" +
+        'export function Item(item) {\n' +
+        "  return div({ attrs: { id: 'root' } }, (node) => node.span(String(item.id)));\n" +
         '}\n'
     );
 
@@ -379,7 +379,7 @@ describe('compileSource', () => {
     expect(result.compiled).toBe(true);
     expect(result.plan.html).toBeUndefined();
     expect(result.plan.signature).toMatch(/^[0-9a-f]{12}$/);
-    expect(result.fragmentHtml).toBe(ROW_HTML);
+    expect(result.fragmentHtml).toBe(ITEM_HTML);
     expect(result.module).toContain('cloneFragment(plan.html, plan.signature)');
   });
 });

@@ -20,9 +20,9 @@ const helpers =
 
 const compileRow = (body, extra = '') =>
   compileSource({
-    source: `import { div } from '../../yoya.core.js';\n${extra}export function buildRow(row) {\n  return ${body};\n}\n`,
-    file: 'row-fixture.js',
-    fn: 'buildRow',
+    source: `import { div } from '../../yoya.core.js';\n${extra}export function Item(item) {\n  return ${body};\n}\n`,
+    file: 'item-fixture.js',
+    fn: 'Item',
     core
   });
 
@@ -85,11 +85,11 @@ describe('build-time static values', () => {
       source:
         "import { div } from '../../yoya.core.js';\n" +
         helpers +
-        'export function buildRow(themeValue) {\n' +
+        'export function Item(themeValue) {\n' +
         "  return div((node) => node.style('background', themeValue('a', 'b')));\n" +
         '}\n',
-      file: 'row-fixture.js',
-      fn: 'buildRow',
+      file: 'item-fixture.js',
+      fn: 'Item',
       core
     });
 

@@ -18,16 +18,16 @@ const record = () => {
   };
 };
 
-const fixture = join(import.meta.dirname, 'fixtures/row-fixture.js');
+const fixture = join(import.meta.dirname, 'fixtures/item-fixture.js');
 
 describe('runCli', () => {
   it('compiles a file and prints a summary that carries the bails', async () => {
-    const out = join(root, 'generated', 'row.js');
+    const out = join(root, 'generated', 'item.js');
     mkdirSync(join(root, 'generated'), { recursive: true });
     const io = record();
 
     const code = await runCli(
-      ['--file', fixture, '--fn', 'buildRow', '--mode', 'element', '--out', out, '--json'],
+      ['--file', fixture, '--fn', 'Item', '--mode', 'element', '--out', out, '--json'],
       { ...io, core }
     );
 
@@ -43,7 +43,7 @@ describe('runCli', () => {
     const source = join(root, 'fallback.js');
     writeFileSync(
       source,
-      'export function buildRow(row) { return tr((line) => line.child(vBadge())); }\n'
+      'export function Item(item) { return tr((line) => line.child(vBadge())); }\n'
     );
     const out = join(root, 'fallback.generated.js');
     const io = record();
@@ -55,14 +55,14 @@ describe('runCli', () => {
     expect(JSON.parse(io.lines.join('\n')).bails.length).toBe(1);
   });
 
-  // 文档里的 `--out src/generated/row.js` 在新项目上直接用：目录要自动建出来
+  // 文档里的 `--out src/generated/item.js` 在新项目上直接用：目录要自动建出来
   it('creates the output directory when it does not exist yet', async () => {
-    const out = join(root, 'fresh', 'deep', 'row.js');
+    const out = join(root, 'fresh', 'deep', 'item.js');
     const fragments = join(root, 'fresh', 'deep', 'fragments.html');
     const io = record();
 
     const code = await runCli(
-      ['--file', fixture, '--fn', 'buildRow', '--out', out, '--fragments', fragments],
+      ['--file', fixture, '--fn', 'Item', '--out', out, '--fragments', fragments],
       { ...io, core }
     );
 
@@ -117,7 +117,7 @@ describe('runCli', () => {
         '--file',
         fixture,
         '--fn',
-        'buildRow',
+        'Item',
         '--mode',
         'element',
         '--out',
@@ -132,7 +132,7 @@ describe('runCli', () => {
     expect(code).toBe(0);
     const block = readFileSync(fragments, 'utf8');
     expect(block).toMatch(/^<template data-yoya-fragment="[0-9a-f]{12}">/);
-    expect(block).toContain('data-row-id');
+    expect(block).toContain('data-item-id');
     expect(JSON.parse(io.lines.join('\n')).compiled).toBe(true);
   });
 });

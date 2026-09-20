@@ -10,7 +10,7 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
-import { buildRow as buildDslRow, removed, removeRow, selectedId } from './fixtures/row-fixture.js';
+import { Item as buildDslItem, removed, removeItem, selectedId } from './fixtures/item-fixture.js';
 import { compileSource } from './index.js';
 
 // 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
@@ -22,11 +22,11 @@ const generatedPath = join(workDir, 'row.generated.js');
 const runtimePath = join(process.cwd(), 'src/compiler/runtime.js');
 const runtimeUrl = pathToFileURL(runtimePath).href;
 
-const source = readFileSync(join(import.meta.dirname, 'fixtures/row-fixture.js'), 'utf8');
+const source = readFileSync(join(import.meta.dirname, 'fixtures/item-fixture.js'), 'utf8');
 const compiled = compileSource({
   source,
-  file: 'row-fixture.js',
-  fn: 'buildRow',
+  file: 'item-fixture.js',
+  fn: 'Item',
   core,
   runtime: runtimeUrl
 });
@@ -42,8 +42,8 @@ const clickOn = (element) => {
 
 /** 两条路径各建一行：DSL 路径把节点渲染成 DOM，编译路径克隆片段。 */
 const buildBoth = (row) => {
-  const dslElement = buildDslRow(row).renderDom();
-  const factory = generated.createRowFactory({ computed: core.computed, removeRow, selectedId });
+  const dslElement = buildDslItem(row).renderDom();
+  const factory = generated.createRowFactory({ computed: core.computed, removeItem, selectedId });
   const compiledRow = factory({ ...row });
 
   return { dslElement, compiledRow };
@@ -54,14 +54,14 @@ describe('compiled path equivalence', () => {
     expect(relative(process.cwd(), generatedPath)).toContain('.scratch');
     expect(compiled.compiled).toBe(true);
     expect(generated.plan.html).toBe(compiled.plan.html);
-    expect(generated.plan.source).toEqual({ file: 'row-fixture.js', fn: 'buildRow' });
+    expect(generated.plan.source).toEqual({ file: 'item-fixture.js', fn: 'Item' });
   });
 
   it('renders byte-identical DOM for the same row', () => {
     const row = { id: 7, label: core.ref('label 7') };
     const { dslElement, compiledRow } = buildBoth(row);
 
-    expect(compiledRow.el.tagName).toBe('TR');
+    expect(compiledRow.el.tagName).toBe('LI');
     expect(compiledRow.el.outerHTML).toBe(dslElement.outerHTML);
   });
 
@@ -73,14 +73,14 @@ describe('compiled path equivalence', () => {
     expect(compiledRow.el.innerHTML).toBe(dslElement.innerHTML);
 
     selectedId.value = row.id;
-    expect(compiledRow.el.classList.contains('danger')).toBe(true);
-    expect(dslElement.classList.contains('danger')).toBe(true);
+    expect(compiledRow.el.classList.contains('active')).toBe(true);
+    expect(dslElement.classList.contains('active')).toBe(true);
     expect(compiledRow.el.outerHTML).toBe(dslElement.outerHTML);
 
     selectedId.value = null;
-    expect(compiledRow.el.classList.contains('danger')).toBe(false);
-    expect(dslElement.classList.contains('danger')).toBe(false);
-    expect(compiledRow.el.getAttribute('data-row-id')).toBe('8');
+    expect(compiledRow.el.classList.contains('active')).toBe(false);
+    expect(dslElement.classList.contains('active')).toBe(false);
+    expect(compiledRow.el.getAttribute('data-item-id')).toBe('8');
   });
 
   it('fires row and remove events with the same observable effects', () => {
@@ -138,8 +138,8 @@ describe('compiled path equivalence', () => {
     const nodePath = join(workDir, 'row.node.generated.js');
     const nodeCompiled = compileSource({
       source,
-      file: 'row-fixture.js',
-      fn: 'buildRow',
+      file: 'item-fixture.js',
+      fn: 'Item',
       mode: 'node',
       core,
       runtime: runtimeUrl
@@ -151,15 +151,16 @@ describe('compiled path equivalence', () => {
     const scope = Object.fromEntries(
       nodeCompiled.scope.map((name) => [
         name,
-        { computed: core.computed, removeRow, selectedId, ...core }[name]
+        { computed: core.computed, removeItem, selectedId, ...core }[name]
       ])
     );
     // 静态节点（span：只有静态类名与属性）不建包装对象；物化节点的工厂由产物 import。
-    expect(nodeCompiled.scope).toEqual(['computed', 'removeRow', 'selectedId']);
-    expect(nodeCompiled.module).toContain('import { a, td, tr } from "@yoyaflow/yoya-ui/core";');
+    expect(nodeCompiled.scope).toEqual(['computed', 'removeItem', 'selectedId']);
+    // 中性夹具是 li + span + a + i：物化节点的工厂由产物自己 import（票 13 / R4）
+    expect(nodeCompiled.module).toContain('from "@yoyaflow/yoya-ui/core";');
 
     const row = { id: 11, label: core.ref('label 11') };
-    const dslElement = buildDslRow(row).renderDom();
+    const dslElement = buildDslItem(row).renderDom();
     const factory = nodeModule.createRowFactory(scope);
     const node = factory({ ...row });
 
@@ -169,7 +170,7 @@ describe('compiled path equivalence', () => {
     expect(node.children()).toHaveLength(2);
 
     selectedId.value = row.id;
-    expect(node._el.classList.contains('danger')).toBe(true);
+    expect(node._el.classList.contains('active')).toBe(true);
     node.destroy();
   });
 
@@ -179,8 +180,8 @@ describe('compiled path equivalence', () => {
     const thinPath = join(workDir, 'row.thin.generated.js');
     const thinCompiled = compileSource({
       source,
-      file: 'row-fixture.js',
-      fn: 'buildRow',
+      file: 'item-fixture.js',
+      fn: 'Item',
       mode: 'node',
       thin: true,
       core,
@@ -192,12 +193,12 @@ describe('compiled path equivalence', () => {
     const scope = Object.fromEntries(
       thinCompiled.scope.map((name) => [
         name,
-        { computed: core.computed, removeRow, selectedId, ...core }[name]
+        { computed: core.computed, removeItem, selectedId, ...core }[name]
       ])
     );
 
     const row = { id: 12, label: core.ref('label 12') };
-    const dslElement = buildDslRow(row).renderDom();
+    const dslElement = buildDslItem(row).renderDom();
     const node = thinModule.createRowFactory(scope)({ ...row });
 
     // 关键：挂到父节点上才会走「把子节点 DOM 落进父元素」那一趟。
@@ -213,13 +214,13 @@ describe('compiled path equivalence', () => {
     const thinPath = join(workDir, 'row.thin-static-root.generated.js');
     const thinCompiled = compileSource({
       source:
-        'export function buildRow(row) {\n' +
+        'export function Item(item) {\n' +
         '  return tr((line) => {\n' +
-        "    line.td((cell) => {\n      cell.className('col-md-4');\n      cell.a((link) => link.child(vText(row.label)));\n    });\n" +
+        "    line.td((cell) => {\n      cell.className('item-label');\n      cell.a((link) => link.child(vText(item.label)));\n    });\n" +
         '  });\n' +
         '}\n',
       file: 'thin-static-root.js',
-      fn: 'buildRow',
+      fn: 'Item',
       mode: 'node',
       thin: true,
       core,
@@ -232,7 +233,7 @@ describe('compiled path equivalence', () => {
     const scope = Object.fromEntries(
       thinCompiled.scope.map((name) => [
         name,
-        { computed: core.computed, removeRow, selectedId, ...core }[name]
+        { computed: core.computed, removeItem, selectedId, ...core }[name]
       ])
     );
 
@@ -249,14 +250,14 @@ describe('compiled path equivalence', () => {
     const partial = compileSource({
       source:
         "import { tr, vCard } from './x.js';\n" +
-        'export function buildRow(row) {\n' +
+        'export function Item(item) {\n' +
         '  return tr((line) => {\n' +
         "    line.td((cell) => cell.className('col').child(String(row.id)));\n" +
         '    line.td((cell) => cell.child(vCard(row)));\n' +
         '  });\n' +
         '}\n',
       file: 'partial.js',
-      fn: 'buildRow',
+      fn: 'Item',
       core,
       runtime: runtimeUrl
     });
@@ -271,13 +272,13 @@ describe('compiled list reuse', () => {
   it('keeps DOM order aligned with the data after a reorder', async () => {
     const { createElementList } = await import(runtimeUrl);
     const container = document.createElement('tbody');
-    const factory = generated.createRowFactory({ computed: core.computed, removeRow, selectedId });
+    const factory = generated.createRowFactory({ computed: core.computed, removeItem, selectedId });
     const list = createElementList(container, (row) => row.id);
     const rows = [1, 2, 3, 4].map((id) => ({ id, label: core.ref(`label ${id}`) }));
 
     list.sync(rows, factory);
     const first = list.elements()[0];
-    expect([...container.children].map((el) => el.getAttribute('data-row-id'))).toEqual([
+    expect([...container.children].map((el) => el.getAttribute('data-item-id'))).toEqual([
       '1',
       '2',
       '3',
@@ -286,7 +287,7 @@ describe('compiled list reuse', () => {
 
     const swapped = [rows[3], rows[1], rows[2], rows[0]];
     list.sync(swapped, factory);
-    expect([...container.children].map((el) => el.getAttribute('data-row-id'))).toEqual([
+    expect([...container.children].map((el) => el.getAttribute('data-item-id'))).toEqual([
       '4',
       '2',
       '3',

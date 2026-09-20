@@ -24,15 +24,15 @@ const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js'))
 const businessSource = [
   "import { div, keySet, ref, table, tr, vText } from '@yoyaflow/yoya-ui/core';",
   '',
-  'export function removeRow(id) {',
+  'export function removeItem(id) {',
   '  return id;',
   '}',
   '',
-  'export function buildRow(item) {',
+  'export function Card(item) {',
   '  return tr((line) => {',
-  "    line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));",
-  "    line.td((cell) => cell.className('col-md-4').a((link) => link.child(vText(item.data.label))));",
-  "    line.td((cell) => cell.className('col-md-1').a((link) => link.on('click', () => removeRow(item.data.id))));",
+  "    line.td((cell) => cell.className('item-id').child(String(item.data.id)));",
+  "    line.td((cell) => cell.className('item-label').a((link) => link.child(vText(item.data.label))));",
+  "    line.td((cell) => cell.className('item-id').a((link) => link.on('click', () => removeItem(item.data.id))));",
   '  });',
   '}',
   '',
@@ -40,12 +40,12 @@ const businessSource = [
   "  return div((pill) => pill.className('status-pill').child(String(props.label)));",
   '}',
   '',
-  'const rows = keySet([], (row) => row.id);',
+  'const items = keySet([], (row) => row.id);',
   '',
   'const tableView = table((node) => {',
   '  node.tbody((body) => {',
   "    body.attr('id', 'tbody');",
-  '    body.keyed(rows, buildRow);',
+  '    body.keyed(items, Card);',
   '  });',
   '});',
   '',
@@ -54,14 +54,14 @@ const businessSource = [
   ''
 ].join('\n');
 
-const target = { component: 'buildRow', file: 'src/main.js', mode: 'element' };
+const target = { component: 'Card', file: 'src/main.js', mode: 'element' };
 
 describe('componentUnits (component boundary discovery)', () => {
   it('takes view-returning top-level factories as units and infers the channel from usage', () => {
     const units = componentUnits(businessSource, { core, file: 'src/main.js' });
 
     expect(units.map((unit) => `${unit.component}:${unit.mode}`)).toEqual([
-      'buildRow:element', // 被当 keyed 的行工厂 → element（最快）
+      'Card:element', // 被当 keyed 的行工厂 → element（最快）
       'StatusPill:node' // 只被 child(...) 调用 → node（ViewNode 在 child / keyed 里都成立）
     ]);
   });
@@ -91,15 +91,15 @@ describe('wireComponentModule (pure transform)', () => {
     });
 
     expect(wired).not.toBeNull();
-    expect(wired.code.startsWith(businessSource.split('export function buildRow')[0])).toBe(true);
-    expect(wired.code).toContain('function buildRowSource(item) {');
-    expect(wired.code).toContain('export function buildRow(item) {');
-    expect(wired.code).not.toContain('export function buildRowSource(item) {');
-    expect(wired.code).toContain('__yoyaFactory_0 ??= createRowFactory({ removeRow });');
+    expect(wired.code.startsWith(businessSource.split('export function Card')[0])).toBe(true);
+    expect(wired.code).toContain('function CardSource(item) {');
+    expect(wired.code).toContain('export function Card(item) {');
+    expect(wired.code).not.toContain('export function CardSource(item) {');
+    expect(wired.code).toContain('__yoyaFactory_0 ??= createRowFactory({ removeItem });');
     // 业务语句逐行保留（除了那一处函数声明改名）
     const bodyLines = businessSource
       .split('\n')
-      .filter((line) => line.trim() !== '' && !line.includes('function buildRow'));
+      .filter((line) => line.trim() !== '' && !line.includes('function Card'));
     bodyLines.forEach((line) => expect(wired.code).toContain(line));
   });
 
@@ -113,7 +113,7 @@ describe('wireComponentModule (pure transform)', () => {
     });
 
     expect(wired.units).toHaveLength(2);
-    expect(wired.code).toContain('function buildRowSource(item) {');
+    expect(wired.code).toContain('function CardSource(item) {');
     expect(wired.code).toContain('function StatusPillSource(props) {');
     // 两个单元的产物不同：行工厂走 element，组件走 node
     expect(wired.units[0].module).toContain('"mode": "element"');
@@ -124,7 +124,7 @@ describe('wireComponentModule (pure transform)', () => {
     expect(wireComponentModule({ source: 'export const x = 1;\n', target, core })).toBeNull();
     expect(
       wireComponentModule({
-        source: `${businessSource}\nexport function buildRow(other) {\n  return tr((line) => line.td('x'));\n}\n`,
+        source: `${businessSource}\nexport function Card(other) {\n  return tr((line) => line.td('x'));\n}\n`,
         target,
         core
       })
@@ -141,7 +141,7 @@ describe('wireComponentModule (pure transform)', () => {
     expect(
       wireComponentModule({
         source: businessSource.replace(
-          "    line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));",
+          "    line.td((cell) => cell.className('item-id').child(String(item.data.id)));",
           '    if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
         ),
         target,
@@ -153,15 +153,15 @@ describe('wireComponentModule (pure transform)', () => {
   // R1：定位按 AST 符号身份——注释 / 字符串里的同名文本不算声明。
   it('ignores the target name when it only appears in comments or strings', () => {
     const source = [
-      '// function buildRow(item) { return tr(() => {}); }',
-      "const note = 'function buildRow(item) {}';",
+      '// function Card(item) { return tr(() => {}); }',
+      "const note = 'function Card(item) {}';",
       businessSource
     ].join('\n');
     const wired = wireComponentModule({ source, target, core, runtime: runtimeUrl });
 
     expect(wired).not.toBeNull();
-    expect(wired.code).toContain("const note = 'function buildRow(item) {}';");
-    expect(wired.code).toContain('function buildRowSource(item) {');
+    expect(wired.code).toContain("const note = 'function Card(item) {}';");
+    expect(wired.code).toContain('function CardSource(item) {');
   });
 });
 
@@ -178,7 +178,7 @@ describe('yoyaCompile (unplugin)', () => {
     writeFileSync(file, businessSource, 'utf8');
     const loaded = vite.transform(businessSource, file);
 
-    expect(loaded.code).toContain('function buildRowSource(item) {');
+    expect(loaded.code).toContain('function CardSource(item) {');
     expect(loaded.code).toContain('function StatusPillSource(props) {');
     // sourcemap：改写不能打断定位链（改写点之后的业务行仍映射回原文件的原行）
     expect(loaded.map).toBeTruthy();
@@ -189,14 +189,14 @@ describe('yoyaCompile (unplugin)', () => {
       const column = index - (before.lastIndexOf('\n') + 1);
       return originalPositionFor(new TraceMap(JSON.parse(String(loaded.map))), { line, column });
     };
-    expect(originalLineOf('col-md-4')).toMatchObject({ line: 10 });
-    expect(originalLineOf('col-md-4').source).toContain('main.js');
+    expect(originalLineOf('item-label')).toMatchObject({ line: 10 });
+    expect(originalLineOf('item-label').source).toContain('main.js');
     // 追加的接线代码是生成代码（没有原文对应）→ 不产生映射
     expect(originalLineOf('__yoyaFactory_0 ??=').source).toBeNull();
 
     expect(artifacts).toHaveLength(2);
     const [virtualId, moduleSource] = artifacts[0];
-    expect(virtualId.startsWith('\0yoya-row:buildRow-')).toBe(true);
+    expect(virtualId.startsWith('\0yoya-row:Card-')).toBe(true);
     expect(moduleSource).toContain('export function createRowFactory(scope)');
     // 插件跑在打包器里：运行期钩子默认按包子路径解析（不是 ./compiler-runtime.js）
     expect(moduleSource).toContain('from "@yoyaflow/yoya-ui/compiler-runtime"');
@@ -229,7 +229,7 @@ describe('yoyaCompile (unplugin)', () => {
       core,
       units: [{ component: 'internalRow', file: join(workDir, 'internal.js'), mode: 'element' }]
     });
-    const internal = businessSource.replace('buildRow', 'internalRow');
+    const internal = businessSource.replace('Card', 'internalRow');
     writeFileSync(join(workDir, 'internal.js'), internal, 'utf8');
     // 给了花名册就只认花名册：只编列表里写明的那个函数，文件里其它工厂原样不动
     const scopedResult = scoped.transform(internal, join(workDir, 'internal.js'));
@@ -243,7 +243,7 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
     const file = join(workDir, 'mount-main.js');
     writeFileSync(file, businessSource, 'utf8');
     const [unit] = componentUnits(businessSource, { core, file }).filter(
-      (candidate) => candidate.component === 'buildRow'
+      (candidate) => candidate.component === 'Card'
     );
     const wired = wireComponentModule({
       source: businessSource,
@@ -263,7 +263,7 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
 
     const wiredModule = await import(pathToFileURL(wiredPath).href);
     const rows = ref([]);
-    const host = tbody((body) => body.attr('id', 'tbody').keyed(rows, wiredModule.buildRow));
+    const host = tbody((body) => body.attr('id', 'tbody').keyed(rows, wiredModule.Card));
     const element = host.renderDom();
 
     rows.value = [

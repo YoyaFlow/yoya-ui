@@ -14,35 +14,35 @@ import { computed, ref } from '../core/signals/handle.js';
 
 describe('cloneFragment', () => {
   it('clones one template per shape and keeps clones independent', () => {
-    const first = cloneFragment('<tr data-row-id="1"><td>0</td></tr>');
-    expect(first.outerHTML).toBe('<tr data-row-id="1"><td>0</td></tr>');
+    const first = cloneFragment('<tr data-item-id="1"><td>0</td></tr>');
+    expect(first.outerHTML).toBe('<tr data-item-id="1"><td>0</td></tr>');
 
-    first.setAttribute('data-row-id', '2');
+    first.setAttribute('data-item-id', '2');
     first.firstElementChild.textContent = 'changed';
 
-    const second = cloneFragment('<tr data-row-id="1"><td>0</td></tr>');
+    const second = cloneFragment('<tr data-item-id="1"><td>0</td></tr>');
     expect(second).not.toBe(first);
-    expect(second.outerHTML).toBe('<tr data-row-id="1"><td>0</td></tr>');
+    expect(second.outerHTML).toBe('<tr data-item-id="1"><td>0</td></tr>');
   });
 
   // 票 45：片段可以来自页面里的 inert <template data-yoya-fragment="签名">
   it('clones from the page template when the signature matches', () => {
     const host = document.createElement('div');
     host.innerHTML =
-      '<template data-yoya-fragment="sig-page"><tr data-row-id="1"><td>page</td></tr></template>';
+      '<template data-yoya-fragment="sig-page"><tr data-item-id="1"><td>page</td></tr></template>';
     document.body.appendChild(host);
 
     try {
-      const element = cloneFragment('<tr data-row-id="1"><td>js</td></tr>', 'sig-page');
-      expect(element.outerHTML).toBe('<tr data-row-id="1"><td>page</td></tr>');
+      const element = cloneFragment('<tr data-item-id="1"><td>js</td></tr>', 'sig-page');
+      expect(element.outerHTML).toBe('<tr data-item-id="1"><td>page</td></tr>');
     } finally {
       host.remove();
     }
   });
 
   it('falls back to the html string when the page template is missing', () => {
-    const element = cloneFragment('<tr data-row-id="1"><td>js</td></tr>', 'sig-missing');
-    expect(element.outerHTML).toBe('<tr data-row-id="1"><td>js</td></tr>');
+    const element = cloneFragment('<tr data-item-id="1"><td>js</td></tr>', 'sig-missing');
+    expect(element.outerHTML).toBe('<tr data-item-id="1"><td>js</td></tr>');
   });
 
   it('fails loudly when a templates-only build has no page template', () => {
@@ -279,7 +279,7 @@ describe('bindComponent', () => {
 });
 
 describe('createElementList', () => {
-  const buildRows = () => {
+  const Cards = () => {
     const built = [];
     const build = (data) => {
       const el = document.createElement('li');
@@ -296,7 +296,7 @@ describe('createElementList', () => {
   it('reuses the element for the same key and data reference', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build, built } = buildRows();
+    const { build, built } = Cards();
     const rows = data(1, 2);
 
     list.sync(rows, build);
@@ -316,7 +316,7 @@ describe('createElementList', () => {
     const list = createElementList(container, (row) => row.id, {
       keyAttribute: 'data-row-key'
     });
-    const { build } = buildRows();
+    const { build } = Cards();
 
     list.sync(data(1, 2), build);
 
@@ -327,7 +327,7 @@ describe('createElementList', () => {
   it('rebuilds in place when the data reference for a key changes', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build, built } = buildRows();
+    const { build, built } = Cards();
 
     list.sync(data(1, 2), build);
     const previous = built[0];
@@ -343,7 +343,7 @@ describe('createElementList', () => {
   it('destroys and detaches rows whose key left', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build, built } = buildRows();
+    const { build, built } = Cards();
     const rows = data(1, 2, 3);
 
     list.sync(rows, build);
@@ -359,7 +359,7 @@ describe('createElementList', () => {
   it('moves only the rows that changed position', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build } = buildRows();
+    const { build } = Cards();
     const rows = data(1, 2, 3, 4, 5);
 
     list.sync(rows, build);
@@ -374,7 +374,7 @@ describe('createElementList', () => {
   it('rejects duplicate keys', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build } = buildRows();
+    const { build } = Cards();
 
     expect(() => list.sync(data(1, 1), build)).toThrow(TypeError);
   });
@@ -382,7 +382,7 @@ describe('createElementList', () => {
   it('clears the container on destroy and stays idempotent', () => {
     const container = document.createElement('ul');
     const list = createElementList(container, (row) => row.id);
-    const { build, built } = buildRows();
+    const { build, built } = Cards();
 
     list.sync(data(1, 2), build);
     list.destroy();

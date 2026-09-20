@@ -7,7 +7,7 @@ import { join, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
-import { buildRow as buildGenericRow } from './fixtures/row-with-component.js';
+import { Item as buildGenericItem } from './fixtures/item-with-component.js';
 import { buildComponentRegistry, compileSource } from './index.js';
 
 // 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
@@ -19,7 +19,7 @@ afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
 const componentFile = posix.join('src/compiler/fixtures/status-dot.js');
-const callerFile = posix.join('src/compiler/fixtures/row-with-component.js');
+const callerFile = posix.join('src/compiler/fixtures/item-with-component.js');
 const callerSource = readFileSync(callerFile, 'utf8');
 
 const registryDir = join(workDir, 'components');
@@ -43,7 +43,7 @@ const compileCaller = (options) =>
   compileSource({
     source: callerSource,
     file: callerFile,
-    fn: 'buildRow',
+    fn: 'Item',
     core,
     runtime: runtimeUrl,
     components: built.registry,
@@ -52,7 +52,7 @@ const compileCaller = (options) =>
   });
 
 const loadRow = (compiled, dir) => {
-  const path = join(dir, 'row.generated.js');
+  const path = join(dir, 'item.generated.js');
   writeFileSync(path, compiled.module, 'utf8');
   return import(pathToFileURL(path).href);
 };
@@ -104,14 +104,14 @@ describe('component registry', () => {
     const source =
       "import { tr } from '../../yoya.core.js';\n" +
       "import { StatusBox } from './status-dot.js';\n" +
-      'export function buildRow(row) {\n' +
-      '  return tr((line) => line.td((cell) => cell.child(StatusBox(row, row.body))));\n' +
+      'export function Item(item) {\n' +
+      '  return tr((line) => line.td((cell) => cell.child(StatusBox(row, item.body))));\n' +
       '}\n';
 
     const compiled = compileSource({
       source,
       file: callerFile,
-      fn: 'buildRow',
+      fn: 'Item',
       core,
       runtime: runtimeUrl,
       components: built.registry,
@@ -149,7 +149,7 @@ describe('call-site linking', () => {
     const rowModule = await loadRow(compiled, registryDir);
     const row = sampleRow();
 
-    const genericNode = buildGenericRow(row);
+    const genericNode = buildGenericItem(row);
     const generic = genericNode.renderDom();
     const compiledRow = rowModule.createRowFactory({})(row);
 
@@ -161,7 +161,7 @@ describe('call-site linking', () => {
     expect(compiledRow.el.outerHTML).toBe(genericNode.toHTML());
     expect(signature(compiledRow.el)).toBe(signature(generic));
     expect(compiledRow.el.querySelector('.status-dot').textContent).toBe('在线 !!!');
-    expect(compiledRow.el.getAttribute('data-row-id')).toBe('3');
+    expect(compiledRow.el.getAttribute('data-item-id')).toBe('3');
 
     compiledRow.destroy();
     compiledRow.destroy();
@@ -197,7 +197,7 @@ describe('call-site linking', () => {
     const compiled = compileCaller();
     const rowModule = await loadRow(compiled, staleDir);
     const row = sampleRow();
-    const genericNode = buildGenericRow(row);
+    const genericNode = buildGenericItem(row);
     const generic = genericNode.renderDom();
     const compiledRow = rowModule.createRowFactory({})(row);
 
@@ -228,11 +228,11 @@ describe('static values in linked components', () => {
       source:
         "import { tr } from '../../yoya.core.js';\n" +
         "import { ThemeTag } from './theme-tag.js';\n" +
-        'export function buildRow(row) {\n' +
-        '  return tr((line) => line.td((cell) => cell.child(ThemeTag(row.tag))));\n' +
+        'export function Item(item) {\n' +
+        '  return tr((line) => line.td((cell) => cell.child(ThemeTag(item.tag))));\n' +
         '}\n',
       file: callerFile,
-      fn: 'buildRow',
+      fn: 'Item',
       core,
       runtime: runtimeUrl,
       components: registry,

@@ -285,7 +285,7 @@ export function findClassDeclaration(ast, name) {
 /** 顶层找目标函数：函数声明或 `const fn = (…) => …` / `const fn = function () {}`。 */
 export function findBuilderFunction(ast, name) {
   for (const statement of ast.program.body) {
-    // `export function buildRow(…)` / `export const buildRow = …`
+    // `export function Card(…)` / `export const Card = …`
     const node =
       statement.type === 'ExportNamedDeclaration' && statement.declaration
         ? statement.declaration

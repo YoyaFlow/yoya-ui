@@ -23,12 +23,12 @@ afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
 const surfaceFile = posix.join('src/data-display/surface.js');
 const surfaceSource = readFileSync(surfaceFile, 'utf8');
-const callerFile = posix.join('src/compiler/fixtures/row-with-card.js');
+const callerFile = posix.join('src/compiler/fixtures/item-with-card.js');
 const callerSource =
   "import { tr } from '../../yoya.core.js';\n" +
   "import { vCard } from '../../data-display/surface.js';\n" +
-  'export function buildRow(row) {\n' +
-  '  return tr((line) => line.td((cell) => cell.child(vCard(row.title))));\n' +
+  'export function Item(item) {\n' +
+  '  return tr((line) => line.td((cell) => cell.child(vCard(item.title))));\n' +
   '}\n';
 
 const families = [
@@ -95,11 +95,11 @@ describe('form C skeletons', () => {
         source:
           "import { tr, span } from '../../yoya.core.js';\n" +
           "import { vCard } from '../../data-display/surface.js';\n" +
-          'export function buildRow(row) {\n' +
+          'export function Item(item) {\n' +
           `  return tr((line) => line.td((cell) => cell.child(${expression})));\n` +
           '}\n',
         file: callerFile,
-        fn: 'buildRow',
+        fn: 'Item',
         core,
         runtime: runtimeUrl,
         components: registry,
@@ -112,7 +112,7 @@ describe('form C skeletons', () => {
       expect(compiled.plan.html, expression).toBe(`<tr><td>${generic().toHTML()}</td></tr>`);
       expect(compiled.module, expression).toContain('contentInlined: true');
 
-      const modulePath = join(registryDir, 'row.generated.js');
+      const modulePath = join(registryDir, 'item.generated.js');
       writeFileSync(modulePath, compiled.module, 'utf8');
       const rowModule = await import(`${pathToFileURL(modulePath).href}?v=${expression.length}`);
       // 内容实参仍然照原样传给 bindComponent（回落时用它重建），所以 scope 里要有 span
@@ -156,7 +156,7 @@ describe('form C skeletons', () => {
     const compiled = compileSource({
       source: callerSource,
       file: callerFile,
-      fn: 'buildRow',
+      fn: 'Item',
       core,
       runtime: runtimeUrl,
       components: JSON.parse(readFileSync(join(registryDir, 'components.registry.json'), 'utf8')),
@@ -165,7 +165,7 @@ describe('form C skeletons', () => {
     expect(compiled.bails).toEqual([]);
     expect(compiled.compiled).toBe(true);
 
-    const modulePath = join(countingDir, 'row.generated.js');
+    const modulePath = join(countingDir, 'item.generated.js');
     writeFileSync(modulePath, compiled.module, 'utf8');
     const rowModule = await import(pathToFileURL(modulePath).href);
     const factory = rowModule.createRowFactory({});

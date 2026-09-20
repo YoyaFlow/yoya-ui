@@ -17,19 +17,19 @@ const write = (name, text) => {
 
 /** 可编：纯元素工厂 + 字面量。 */
 const compilable =
-  'export function buildRow(row) {\n' +
+  'export function Card(row) {\n' +
   "  return tr((line) => {\n    line.td((cell) => cell.className('col').child(String(row.id)));\n  });\n}\n";
 
 /** 不可编：child() 里是组件调用。 */
 const componentCall =
-  'export function buildRow(row) {\n' +
+  'export function Card(row) {\n' +
   '  return tr((line) => line.td((cell) => cell.child(vCard(row.label))));\n}\n';
 
-write('a/row.js', compilable);
-write('b/row.js', componentCall);
-write('b/deep/row.js', componentCall);
+write('a/item.js', compilable);
+write('b/item.js', componentCall);
+write('b/deep/item.js', componentCall);
 write('c/other.js', 'export const unrelated = 1;\n');
-write('c/mentions.js', '// buildRow is documented elsewhere\nexport const note = "buildRow";\n');
+write('c/mentions.js', '// Card is documented elsewhere\nexport const note = "Card";\n');
 
 describe('reportCoverage', () => {
   it('counts compilable, bailed and skipped files with a stable bail histogram', () => {
@@ -42,13 +42,13 @@ describe('reportCoverage', () => {
     expect(report.skipped).toBe(2);
     expect(report.bails).toEqual([{ reason: 'child() 里是组件调用（未编译）：vCard', count: 2 }]);
     expect(report.entries.map((entry) => entry.file).sort()).toEqual([
-      'a/row.js',
-      'b/deep/row.js',
-      'b/row.js',
+      'a/item.js',
+      'b/deep/item.js',
+      'b/item.js',
       'c/mentions.js',
       'c/other.js'
     ]);
-    expect(report.entries.find((entry) => entry.file === 'a/row.js').compiled).toBe(true);
+    expect(report.entries.find((entry) => entry.file === 'a/item.js').compiled).toBe(true);
     expect(report.entries.find((entry) => entry.file === 'c/other.js').skipped).toBe(true);
     expect(report.entries.find((entry) => entry.file === 'c/mentions.js').skipped).toBe(true);
   });
@@ -72,14 +72,14 @@ describe('coverage baseline', () => {
   };
 
   const compilable =
-    'export function buildRow(row) {\n' +
+    'export function Card(row) {\n' +
     '  return tr((line) => line.td((cell) => cell.child(String(row.id))));\n}\n';
 
   it('only fails when a file that used to compile falls back', () => {
-    write('a/row.js', compilable);
+    write('a/item.js', compilable);
     const baseline = coverageBaselineOf([reportCoverage({ root: baseRoot, core })]);
 
-    expect(baseline.targets[0].compiledFiles).toEqual(['a/row.js']);
+    expect(baseline.targets[0].compiledFiles).toEqual(['a/item.js']);
     expect(baseline.targets[0].compiled).toBe(1);
     expect(compareCoverageBaseline(baseline, [reportCoverage({ root: baseRoot, core })])).toEqual({
       ok: true,
@@ -88,24 +88,24 @@ describe('coverage baseline', () => {
     });
 
     // 新增可编形状不拦：覆盖率只许涨
-    write('b/row.js', compilable);
+    write('b/item.js', compilable);
     const grown = compareCoverageBaseline(baseline, [reportCoverage({ root: baseRoot, core })]);
     expect(grown.ok).toBe(true);
-    expect(grown.added).toEqual([{ root: baseRoot, file: 'b/row.js' }]);
+    expect(grown.added).toEqual([{ root: baseRoot, file: 'b/item.js' }]);
 
     // 基线里可编的文件回落 → 失败，并带上回落原因
-    write('a/row.js', 'export function buildRow(row) {\n  return tr((line) => line.td(row));\n}\n');
+    write('a/item.js', 'export function Card(row) {\n  return tr((line) => line.td(row));\n}\n');
     const regressed = compareCoverageBaseline(baseline, [reportCoverage({ root: baseRoot, core })]);
     expect(regressed.ok).toBe(false);
     expect(regressed.regressions).toHaveLength(1);
-    expect(regressed.regressions[0].file).toBe('a/row.js');
+    expect(regressed.regressions[0].file).toBe('a/item.js');
     expect(regressed.regressions[0].reason).not.toBe('');
 
     // 文件被删掉也算回退（"文件已不在扫描范围"），不会静默消失
-    rmSync(join(baseRoot, 'a/row.js'));
+    rmSync(join(baseRoot, 'a/item.js'));
     const removed = compareCoverageBaseline(baseline, [reportCoverage({ root: baseRoot, core })]);
     expect(removed.regressions).toEqual([
-      { root: baseRoot, file: 'a/row.js', reason: '文件已不在扫描范围' }
+      { root: baseRoot, file: 'a/item.js', reason: '文件已不在扫描范围' }
     ]);
   });
 
