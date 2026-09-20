@@ -86,11 +86,15 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [
-    yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
-  ]
+  plugins: [yoyaCompile.vite({ core })] // module-level buildRow is compiled by convention
 });
 ```
+
+The default rule needs **no roster**: any module handed to the plugin (with `node_modules` skipped)
+whose top level declares a function named `rowName` (default `buildRow`) becomes a compile unit — set
+`rowName` once if yours is named differently. Use the explicit `rows: [{ file, fn, mode, thin }]` list
+only for several units per file, per-unit modes, or narrow file scoping (when given, the roster is the
+only thing consulted).
 
 The plugin renames the source function to `buildRowSource` (kept as the compiler's single source of
 truth), appends a same-name wrapper that delegates to the compiled factory, and keeps the artifact in

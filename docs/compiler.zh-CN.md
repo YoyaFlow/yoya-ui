@@ -73,11 +73,13 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [
-    yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
-  ]
+  plugins: [yoyaCompile.vite({ core })] // 默认：模块顶层名为 buildRow 的函数自动编成 element 通道
 });
 ```
+
+默认规则**不需要花名册**：被打包器交进来的模块（`node_modules` 跳过）里，顶层名为 `rowName`
+（默认 `buildRow`）的函数声明就是编译单元；名字不同写一次 `rowName: 'renderRow'`。只有同一文件里要按
+不同模式编多个单元、或要精确限定文件时，才用显式 `rows: [{ file, fn, mode, thin }]`（给了列表就只认列表）。
 
 插件把源码里的 `buildRow` 改名为 `buildRowSource`（真源留给编译器），并追加同名函数转调编译产物；
 产物进虚拟模块，不落盘，业务代码不 import 任何生成物。目标定位按 **AST 符号身份**（模块顶层同名函数

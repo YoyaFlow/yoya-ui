@@ -207,8 +207,22 @@ export declare function wireRowModule(options: {
 export interface YoyaCompilePluginOptions {
   /** Core namespace (`import * as core from '@yoyaflow/yoya-ui/core'`). */
   core: unknown;
-  /** Row factories to wire; modules that are not listed are left untouched. */
+  /**
+   * Explicit roster of row factories. Optional: without it the **default rule** applies —
+   * every module handed to the plugin (node_modules skipped) whose top level declares a
+   * function named `rowName` becomes a compile unit. When given, only the roster is used.
+   */
   rows?: RowTarget[];
+  /** Function name the default rule looks for (default `buildRow`). */
+  rowName?: string;
+  /** Channel used by the default rule (default `element`). */
+  mode?: 'element' | 'node';
+  /** Node-mode `--thin` for the default rule. */
+  thin?: boolean;
+  /** Element-mode templates-only for the default rule. */
+  templatesOnly?: boolean;
+  /** Path patterns (string = substring, or RegExp) the default rule never touches. */
+  exclude?: Array<string | RegExp>;
   /** Runtime hook specifier; defaults to `@yoyaflow/yoya-ui/compiler-runtime` (bundler context). */
   runtime?: string;
   /** Module specifier the artifact imports its element factories from. */

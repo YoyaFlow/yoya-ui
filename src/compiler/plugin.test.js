@@ -153,6 +153,28 @@ describe('yoyaCompilePlugin (esbuild protocol)', () => {
     // 非目标文件：transform 返回 null（一律不碰）
     expect(vite.transform('export const x = 1;\n', join(workDir, 'other.js'))).toBeNull();
   });
+
+  // 默认规则：不传花名册时，模块顶层名为 buildRow 的函数自动成为编译单元（node_modules 跳过）
+  it('compiles buildRow by convention when no rows list is given', () => {
+    const vite = yoyaCompile.vite({ core });
+    const file = join(workDir, 'convention.js');
+
+    const transformed = vite.transform(businessSource, file);
+    expect(transformed.code).toContain('function buildRowSource(item) {');
+    expect(
+      vite.transform('export function other(item) {}\n', join(workDir, 'plain.js'))
+    ).toBeNull();
+    expect(
+      vite.transform(businessSource, join(workDir, 'node_modules', 'dep', 'index.js'))
+    ).toBeNull();
+
+    // 名字不叫 buildRow 时用 rowName 覆盖
+    const renamed = yoyaCompile.vite({ core, rowName: 'renderRow' });
+    expect(vite.transform(businessSource, file)).not.toBeNull();
+    expect(
+      renamed.transform(businessSource.replace(/buildRow/g, 'renderRow'), file)
+    )?.toMatchObject({ code: expect.stringContaining('function renderRowSource(item) {') });
+  });
 });
 
 describe('compiled row through keyed (ticket 15 + 16 together)', () => {

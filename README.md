@@ -180,9 +180,7 @@ the artifact in a virtual module; business code imports no generated file):
 import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
-plugins: [
-  yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
-];
+plugins: [yoyaCompile.vite({ core })]; // module-level buildRow is compiled by convention
 ```
 
 Lists keep their declarative form — `tbody((body) => body.keyed(rows, buildRow))` — because `keyed()`

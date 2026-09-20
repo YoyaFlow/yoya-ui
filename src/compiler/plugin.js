@@ -9,8 +9,12 @@
  *     import * as core from '@yoyaflow/yoya-ui/core';
  *
  *     export default defineConfig({                     // vite.config.js
- *       plugins: [yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow' }] })]
+ *       plugins: [yoyaCompile.vite({ core })]           // 默认：模块里名为 buildRow 的行工厂自动编
  *     });
+ *
+ * 默认规则**不需要花名册**：凡是被打包器交给插件的模块（`node_modules` 一律跳过），只要模块顶层有
+ * 名为 `rowName`（默认 `buildRow`）的函数声明，就按 `mode`（默认 `element`）编译它。名字不叫
+ * `buildRow`、或同一文件里有多份不同模式的编译单元时，才用显式 `rows: [{ file, fn, mode }]` 列表。
  *
  *     // rollup.config.js   → yoyaCompile.rollup({ … })
  *     // webpack.config.js  → yoyaCompile.webpack({ … })
@@ -152,7 +156,10 @@ function sourceMapForGenerated(generated, originalSnippet, file) {
   return magic.generateMap({ source: file, includeContent: true, hires: true });
 }
 
-/** 校验选项并把 `rows` 收成「模块 → 目标声明」表。 */
+/**
+ * 校验选项：显式 `rows` 列表优先；不传时退到**默认规则**——被打包器交进来的模块（排除
+ * `node_modules`）里名为 `rowName`（默认 `buildRow`）的顶层函数自动成为编译单元，不需要花名册。
+ */
 function normalizeOptions(options = {}) {
   const {
     core,
@@ -160,7 +167,12 @@ function normalizeOptions(options = {}) {
     // 插件只跑在打包器里：运行期钩子默认按包子路径解析。
     runtime = PACKAGE_RUNTIME,
     coreSpecifier,
-    onArtifact = null
+    onArtifact = null,
+    rowName = 'buildRow',
+    mode = 'element',
+    thin = false,
+    templatesOnly = false,
+    exclude = ['node_modules']
   } = options;
   if (!core) {
     throw new TypeError('yoyaCompile() requires the core namespace (import * as core …)');
@@ -172,7 +184,50 @@ function normalizeOptions(options = {}) {
     }
     targets.set(normalizePath(row.file), row);
   });
-  return { core, coreSpecifier, onArtifact, runtime, targets };
+  const skip = exclude.map((pattern) =>
+    pattern instanceof RegExp
+      ? pattern
+      : new RegExp(String(pattern).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'))
+  );
+  const excluded = (path) => skip.some((pattern) => pattern.test(path));
+  return {
+    core,
+    coreSpecifier,
+    onArtifact,
+    runtime,
+    targets,
+    /** 该模块要编的目标声明；没有就返回 undefined（源码原样透传）。 */
+    targetFor(id, source) {
+      const path = normalizePath(id);
+      const explicit = targets.get(path);
+      if (explicit) {
+        return explicit;
+      }
+      if (targets.size > 0 || excluded(path)) {
+        return undefined; // 给了花名册就只认花名册；node_modules 一律不碰
+      }
+      return hasTopLevelFunction(source, rowName)
+        ? { file: id, fn: rowName, mode, thin, templatesOnly }
+        : undefined;
+    }
+  };
+}
+
+/** 模块顶层有没有这个名字的函数声明（AST 判定，注释 / 字符串里的同名文本不算）。 */
+function hasTopLevelFunction(source, name) {
+  let ast;
+  try {
+    ast = parse(source, { sourceType: 'module' });
+  } catch {
+    return false;
+  }
+  return ast.program.body.some((statement) => {
+    if (statement.type === 'FunctionDeclaration') {
+      return statement.id?.name === name;
+    }
+    const inner = statement.type === 'ExportNamedDeclaration' ? statement.declaration : null;
+    return inner?.type === 'FunctionDeclaration' && inner.id?.name === name;
+  });
 }
 
 /**
@@ -181,17 +236,16 @@ function normalizeOptions(options = {}) {
  * 不挂在插件对象上，因为 esbuild 会校验收到的插件对象、多一个属性就报错（0.6.7 实机踩到）。
  */
 export const yoyaCompile = createUnplugin((options = {}) => {
-  const { core, coreSpecifier, onArtifact, runtime, targets } = normalizeOptions(options);
+  const { core, coreSpecifier, onArtifact, runtime, targetFor } = normalizeOptions(options);
   const virtualModules = new Map();
 
   const virtualOf = (id) => (typeof id === 'string' && id.startsWith(VIRTUAL_PREFIX) ? id : null);
-  const targetOf = (id) => (typeof id === 'string' ? targets.get(normalizePath(id)) : undefined);
 
   return {
     name: 'yoya-ui-compile',
     enforce: 'pre',
     transform(code, id) {
-      const target = targetOf(id);
+      const target = typeof id === 'string' ? targetFor(id, code) : undefined;
       if (!target) {
         return null;
       }

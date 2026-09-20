@@ -18,14 +18,14 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [
-    yoyaCompile.vite({
-      core, // 元素工厂的来源
-      rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
-    })
-  ]
+  plugins: [yoyaCompile.vite({ core })] // 默认：模块顶层名为 buildRow 的函数自动编成 element 通道
 });
 ```
+
+默认规则不需要「花名册」：凡是被打包器交给插件的模块（`node_modules` 一律跳过），只要顶层有名为
+`rowName`（默认 `buildRow`）的函数声明就编它；名字不同就写一次 `rowName: 'renderRow'`。只有同一文件里
+要按不同模式编多个单元、或要精确限定文件时，才用显式的
+`rows: [{ file, fn, mode, thin }]` 列表（给了列表就只认列表）。
 
 插件改写时会产出 **hires sourcemap**（`transform` 返回 `{ code, map }`，产物模块也带 map）——
 线上报错的栈仍然落在业务源码的正确行列上，不需要额外配置。
