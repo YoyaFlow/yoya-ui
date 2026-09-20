@@ -77,7 +77,7 @@ export function renderModule(options) {
     mode = 'element',
     thin = false,
     file = '(inline)',
-    fn = 'buildRow',
+    fn,
     runtime = './compiler-runtime.js',
     kind = 'row',
     componentsSpecifier = './components.registry.js',

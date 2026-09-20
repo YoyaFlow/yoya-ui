@@ -115,7 +115,7 @@ div((root) => {
 
 ## 编译路径（Beta）
 
-重复单元（表格行、列表项、树节点）可以在**构建期**编成「静态片段 + 位置寻址的写操作」：插件用 unplugin 写一遍，Vite / Rollup / Webpack / esbuild 等各自取入口（`yoyaCompile.vite({ core })`——**编译单元就是 yoya-ui 自己的组件边界**：顶层返回 UI 视图的工厂函数，大驼峰组件与小驼峰快捷工厂都算，不需要花名册；通道按用法推断，被 `keyed` 当行工厂的走 element，只被 `child(...)` 调用的走 node），只在自己已有的构建配置里加一行、业务源码零改动；列表照旧写 `tbody((body) => body.keyed(rows, buildRow))`——`element` 通道的 `{el, destroy}` 行与 `node` 通道的 ViewNode 行 `keyed` 都直接吃。契约要点：形参必须是单个标识符（解构 / 多参一律整形状回落）、产物不 import 进业务代码、`plan.scope` 只列应用符号、element 行不进视图树所以 `toHTML()` 会硬报错（SSR 走通用路径）、element 列表默认不写 `data-row-key`、改写保留 hires sourcemap（线上报错仍定位到源码）。详见 references/compile.md。
+重复单元（表格行、列表项、树节点）可以在**构建期**编成「静态片段 + 位置寻址的写操作」：插件用 unplugin 写一遍，Vite / Rollup / Webpack / esbuild 等各自取入口（`yoyaCompile.vite({ core })`——**编译单元就是 yoya-ui 自己的组件边界**：顶层返回 UI 视图的工厂函数，大驼峰组件与小驼峰快捷工厂都算，不需要花名册；通道按用法推断，被 `keyed` 当组件的走 element，只被 `child(...)` 调用的走 node），只在自己已有的构建配置里加一行、业务源码零改动；列表照旧写 `tbody((body) => body.keyed(rows, Row))`——`element` 通道的 `{el, destroy}` 行与 `node` 通道的 ViewNode 行 `keyed` 都直接吃。契约要点：形参必须是单个标识符（解构 / 多参一律整形状回落）、产物不 import 进业务代码、`plan.scope` 只列应用符号、element 行不进视图树所以 `toHTML()` 会硬报错（SSR 走通用路径）、element 列表默认不写 `data-row-key`、改写保留 hires sourcemap（线上报错仍定位到源码）。详见 references/compile.md。
 
 ## 参考文件（按需读取）
 

@@ -53,8 +53,8 @@ describe('reportCoverage', () => {
     expect(report.entries.find((entry) => entry.file === 'c/mentions.js').skipped).toBe(true);
   });
 
-  it('honours the function name filter', () => {
-    const report = reportCoverage({ root, core, fn: 'buildTable' });
+  it('honours the component filter (library-internal escape hatch)', () => {
+    const report = reportCoverage({ root, core, component: 'buildTable' });
     expect(report.candidates).toBe(0);
     expect(report.skipped).toBe(5);
   });

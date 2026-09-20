@@ -11,7 +11,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping';
 import * as core from '../yoya.core.js';
 import { tbody } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
-import { viewFactoryUnits, wireRowModule, yoyaCompile, yoyaCompilePlugin } from './plugin.js';
+import { componentUnits, wireComponentModule, yoyaCompile, yoyaCompilePlugin } from './plugin.js';
 
 const scratchRoot = join(process.cwd(), '.scratch');
 mkdirSync(scratchRoot, { recursive: true });
@@ -54,13 +54,13 @@ const businessSource = [
   ''
 ].join('\n');
 
-const target = { file: 'src/main.js', fn: 'buildRow', mode: 'element' };
+const target = { component: 'buildRow', file: 'src/main.js', mode: 'element' };
 
-describe('viewFactoryUnits (component boundary discovery)', () => {
+describe('componentUnits (component boundary discovery)', () => {
   it('takes view-returning top-level factories as units and infers the channel from usage', () => {
-    const units = viewFactoryUnits(businessSource, { core, file: 'src/main.js' });
+    const units = componentUnits(businessSource, { core, file: 'src/main.js' });
 
-    expect(units.map((unit) => `${unit.fn}:${unit.mode}`)).toEqual([
+    expect(units.map((unit) => `${unit.component}:${unit.mode}`)).toEqual([
       'buildRow:element', // 被当 keyed 的行工厂 → element（最快）
       'StatusPill:node' // 只被 child(...) 调用 → node（ViewNode 在 child / keyed 里都成立）
     ]);
@@ -75,15 +75,20 @@ describe('viewFactoryUnits (component boundary discovery)', () => {
       ''
     ].join('\n');
 
-    expect(viewFactoryUnits(source, { core, file: 'x.js' }).map((unit) => unit.fn)).toEqual([
+    expect(componentUnits(source, { core, file: 'x.js' }).map((unit) => unit.component)).toEqual([
       'Card'
     ]);
   });
 });
 
-describe('wireRowModule (pure transform)', () => {
+describe('wireComponentModule (pure transform)', () => {
   it('renames the source factory, appends a same-name wrapper and keeps the rest verbatim', () => {
-    const wired = wireRowModule({ source: businessSource, target, core, runtime: runtimeUrl });
+    const wired = wireComponentModule({
+      source: businessSource,
+      target,
+      core,
+      runtime: runtimeUrl
+    });
 
     expect(wired).not.toBeNull();
     expect(wired.code.startsWith(businessSource.split('export function buildRow')[0])).toBe(true);
@@ -99,8 +104,8 @@ describe('wireRowModule (pure transform)', () => {
   });
 
   it('wires several units of one module in one pass', () => {
-    const units = viewFactoryUnits(businessSource, { core, file: 'src/main.js' });
-    const wired = wireRowModule({
+    const units = componentUnits(businessSource, { core, file: 'src/main.js' });
+    const wired = wireComponentModule({
       source: businessSource,
       targets: units,
       core,
@@ -116,9 +121,9 @@ describe('wireRowModule (pure transform)', () => {
   });
 
   it('leaves the module alone when the target is missing, duplicated or unbuildable', () => {
-    expect(wireRowModule({ source: 'export const x = 1;\n', target, core })).toBeNull();
+    expect(wireComponentModule({ source: 'export const x = 1;\n', target, core })).toBeNull();
     expect(
-      wireRowModule({
+      wireComponentModule({
         source: `${businessSource}\nexport function buildRow(other) {\n  return tr((line) => line.td('x'));\n}\n`,
         target,
         core
@@ -126,11 +131,15 @@ describe('wireRowModule (pure transform)', () => {
     ).toBeNull();
     // 形参解构：编译器整形状 bail（票 12），插件也就不动它
     expect(
-      wireRowModule({ source: businessSource.replace('(item)', '({ data, api })'), target, core })
+      wireComponentModule({
+        source: businessSource.replace('(item)', '({ data, api })'),
+        target,
+        core
+      })
     ).toBeNull();
     // 结构不恒定（含 if）：同样整形状回落
     expect(
-      wireRowModule({
+      wireComponentModule({
         source: businessSource.replace(
           "    line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));",
           '    if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
@@ -148,7 +157,7 @@ describe('wireRowModule (pure transform)', () => {
       "const note = 'function buildRow(item) {}';",
       businessSource
     ].join('\n');
-    const wired = wireRowModule({ source, target, core, runtime: runtimeUrl });
+    const wired = wireComponentModule({ source, target, core, runtime: runtimeUrl });
 
     expect(wired).not.toBeNull();
     expect(wired.code).toContain("const note = 'function buildRow(item) {}';");
@@ -218,7 +227,7 @@ describe('yoyaCompile (unplugin)', () => {
 
     const scoped = yoyaCompile.vite({
       core,
-      rows: [{ file: join(workDir, 'internal.js'), fn: 'internalRow', mode: 'element' }]
+      units: [{ component: 'internalRow', file: join(workDir, 'internal.js'), mode: 'element' }]
     });
     const internal = businessSource.replace('buildRow', 'internalRow');
     writeFileSync(join(workDir, 'internal.js'), internal, 'utf8');
@@ -233,10 +242,10 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
   it('mounts compiled element rows declared with the untouched business source', async () => {
     const file = join(workDir, 'mount-main.js');
     writeFileSync(file, businessSource, 'utf8');
-    const [unit] = viewFactoryUnits(businessSource, { core, file }).filter(
-      (candidate) => candidate.fn === 'buildRow'
+    const [unit] = componentUnits(businessSource, { core, file }).filter(
+      (candidate) => candidate.component === 'buildRow'
     );
-    const wired = wireRowModule({
+    const wired = wireComponentModule({
       source: businessSource,
       targets: [unit],
       core,

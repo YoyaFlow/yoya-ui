@@ -7,12 +7,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { compileSource, elementWhitelistOf } from './compile.js';
+import { componentUnits } from './discover.js';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', '.scratch', '.cache']);
-
-/** 文件里没有定义目标函数（只是提到了名字）——按跳过计，不算候选形状。 */
-const isMissingTarget = (result, fn) =>
-  result.bails.length === 1 && result.bails[0].reason === `找不到目标函数 ${fn}`;
 
 function walk(root, extensions) {
   const files = [];
@@ -47,7 +44,7 @@ function walk(root, extensions) {
  *
  * @param {object} options
  * @param {string} options.root 目录
- * @param {string} [options.fn] 候选构建函数名（不含它的文件记为 skipped）
+ * @param {string} [options.component] 只统计这个组件（库内逃生口；不给就按组件边界发现全部）
  * @param {'element'|'node'} [options.mode] 产物通道
  * @param {object} options.core 核心入口命名空间
  * @param {string[]} [options.extensions] 参与扫描的扩展名
@@ -55,8 +52,8 @@ function walk(root, extensions) {
 export function reportCoverage(options) {
   const {
     root,
-    fn = 'buildRow',
-    mode = 'element',
+    component = null,
+    mode = null,
     thin = false,
     core,
     whitelist,
@@ -66,7 +63,6 @@ export function reportCoverage(options) {
 
   const registry = whitelist ?? elementWhitelistOf(core);
   const files = walk(root, extensions);
-  const marker = new RegExp(`\\b${fn}\\b`);
   const histogram = new Map();
   const entries = [];
   let candidates = 0;
@@ -80,42 +76,47 @@ export function reportCoverage(options) {
     const name = toRelative(file);
     const source = readFileSync(file, 'utf8');
 
-    if (!marker.test(source)) {
+    // 按**组件边界**发现（顶层返回 UI 视图的工厂）：编译器不认识任何具体函数名。
+    const discovered = componentUnits(source, { core, file: name, mode: mode ?? undefined, thin });
+    const units = component
+      ? discovered.filter((unit) => unit.component === component)
+      : discovered;
+    if (units.length === 0) {
       skipped += 1;
       entries.push({ file: name, skipped: true, compiled: false, reasons: [] });
       continue;
     }
 
     candidates += 1;
-    const result = compileSource({
-      source,
-      file: name,
-      fn,
-      mode,
-      thin,
-      core,
-      whitelist: registry,
-      runtime
+    const reasons = new Set();
+    let allCompiled = true;
+    units.forEach((unit) => {
+      const result = compileSource({
+        source,
+        file: name,
+        fn: unit.component,
+        mode: unit.mode,
+        thin: unit.thin,
+        core,
+        whitelist: registry,
+        runtime
+      });
+      if (!result.compiled) {
+        allCompiled = false;
+        result.bails.forEach((bail) => reasons.add(bail.reason));
+      }
     });
 
-    if (result.compiled) {
+    if (allCompiled) {
       compiled += 1;
       entries.push({ file: name, skipped: false, compiled: true, reasons: [] });
       continue;
     }
 
-    // 只是「提到了这个名字」（注释、字符串、测试）而没有定义目标函数：不算候选形状
-    if (isMissingTarget(result, fn)) {
-      candidates -= 1;
-      skipped += 1;
-      entries.push({ file: name, skipped: true, compiled: false, reasons: [] });
-      continue;
-    }
-
     bailed += 1;
-    const reasons = [...new Set(result.bails.map((bail) => bail.reason))].sort();
-    reasons.forEach((reason) => histogram.set(reason, (histogram.get(reason) ?? 0) + 1));
-    entries.push({ file: name, skipped: false, compiled: false, reasons });
+    const reasonList = [...reasons].sort();
+    reasonList.forEach((reason) => histogram.set(reason, (histogram.get(reason) ?? 0) + 1));
+    entries.push({ file: name, skipped: false, compiled: false, reasons: reasonList });
   }
 
   entries.sort((left, right) => left.file.localeCompare(right.file));
@@ -125,7 +126,8 @@ export function reportCoverage(options) {
 
   return {
     root,
-    fn,
+    component,
+    components: candidates,
     mode,
     files: files.length,
     candidates,
@@ -142,7 +144,7 @@ export function formatCoverage(report) {
   const share = (count) =>
     report.candidates === 0 ? '—' : `${Math.round((count / report.candidates) * 100)}%`;
   const lines = [
-    `扫描 ${report.root}（函数 ${report.fn}，模式 ${report.mode}）`,
+    `扫描 ${report.root}（按组件边界发现，模式 ${report.mode ?? '按用法推断'}）`,
     `  文件 ${report.files}：候选 ${report.candidates}（可编 ${report.compiled} / ${share(
       report.compiled
     )}，回落 ${report.bailed} / ${share(report.bailed)}），跳过 ${report.skipped}`
@@ -166,7 +168,7 @@ export function coverageBaselineOf(reports) {
     version: 1,
     targets: reports.map((report) => ({
       root: report.root,
-      fn: report.fn,
+      component: report.component,
       mode: report.mode,
       files: report.files,
       candidates: report.candidates,
@@ -192,7 +194,9 @@ export function compareCoverageBaseline(baseline, reports) {
   reports.forEach((report) => {
     const base = baseline?.targets?.find(
       (target) =>
-        target.root === report.root && target.fn === report.fn && target.mode === report.mode
+        target.root === report.root &&
+        target.component === report.component &&
+        target.mode === report.mode
     );
     if (!base) {
       return; // 新目标：没有基线可比，先记数（首轮 --write 建基线）

@@ -18,24 +18,24 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // 默认：模块顶层名为 buildRow 的函数自动编成 element 通道
+  plugins: [yoyaCompile.vite({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
 });
 ```
 
 **编译单元 = yoya-ui 自己的组件边界**，不需要「花名册」：凡是被打包器交给插件的模块（`node_modules`
 一律跳过），顶层**返回 UI 视图的工厂函数**就是编译单元——大驼峰（`Card` / `StatusPill`）＝组件，
-小驼峰里也是工厂函数的（`buildRow` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、
-命令、数据处理）原样保留。通道（`element` / `node`）**按用法定**：被当行工厂交给 `keyed` 的走
+小驼峰里也是工厂函数的（`Row` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、
+命令、数据处理）原样保留。通道（`element` / `node`）**按用法定**：被当组件交给 `keyed` 的走
 `element`（最快），只被 `child(...)` 当组件调用的走 `node`（ViewNode 在 `child` 与 `keyed` 里都成立）。
-显式 `rows: [{ file, fn, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
+显式 `units: [{ file, component, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
 
 插件改写时会产出 **hires sourcemap**（`transform` 返回 `{ code, map }`，产物模块也带 map）——
 线上报错的栈仍然落在业务源码的正确行列上，不需要额外配置。
 
-业务侧就是普通 DSL：`buildRow` 是**具名函数**（形参必须是单个标识符），列表照旧走 `keyed`：
+业务侧就是普通 DSL：`Row` 是**具名函数**（形参必须是单个标识符），列表照旧走 `keyed`：
 
 ```js
-function buildRow(item) {
+function Row(item) {
   return tr((line) => {
     line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));
     line.td((cell) => cell.className('col-md-4').a((link) => link.child(vText(item.data.label))));
@@ -44,10 +44,10 @@ function buildRow(item) {
   });
 }
 
-tbody((body) => body.keyed(rows, buildRow)); // 两条通道都这么写
+tbody((body) => body.keyed(rows, Row)); // 两条通道都这么写
 ```
 
-插件只做两件事：把 `buildRow` 改名为 `buildRowSource`（真源留在文件里供编译器读），并在文件末尾追加
+插件只做两件事：把 `Row` 改名为 `RowSource`（真源留在文件里供编译器读），并在文件末尾追加
 同名函数转调编译产物；产物进虚拟模块，不落盘。**认不准就不动**：找不到目标函数、同一文件里同名声明
 ≥2 处、形参不是单个标识符、形状编不了 → 源码原样交给打包器走通用路径。
 
@@ -55,7 +55,7 @@ tbody((body) => body.keyed(rows, buildRow)); // 两条通道都这么写
 
 | 通道              | 行是什么                 | 挂进列表                                                     |
 | ----------------- | ------------------------ | ------------------------------------------------------------ |
-| `element`（默认） | 原生元素 `{el, destroy}` | `body.keyed(rows, buildRow)`（运行期按产出自选）             |
+| `element`（默认） | 原生元素 `{el, destroy}` | `body.keyed(rows, Row)`（运行期按产出自选）                  |
 | `node`            | `ViewNode`               | 同上；需要节点语义（`getChild()` / 区域 / 行内 `keyed`）时用 |
 
 `element` 收益最大；`node` 换节点语义，加 `--thin` 只给直接带活内容的节点建包装对象。两条通道的产物与
@@ -78,7 +78,7 @@ tbody((body) => body.keyed(rows, buildRow)); // 两条通道都这么写
 命令行的最小用法（不用打包器插件时）：
 
 ```bash
-npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+npx yoya-compiler --file src/Row.js --component Row --mode element --out src/generated/row.js
 ```
 
 完整契约（能编什么 / 什么时候回落 / 组件级片段链接 / 覆盖率基线 / 运行期钩子清单）见仓库文档

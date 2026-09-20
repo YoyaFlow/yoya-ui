@@ -164,16 +164,16 @@ npm i -D @yoyaflow/yoya-ui @babel/parser
 ```
 
 ```bash
-npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+npx yoya-compiler --file src/Row.js --component Row --mode element --out src/generated/row.js
 # Equivalent without the bin:
-# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --fn buildRow --out …
+# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --component Row --out …
 ```
 
 The recommended wiring is the **build-time plugin** — written once with
 [unplugin](https://unplugin.unjs.io/), so Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm
 each get their entry (`yoyaCompile.vite(...)` / `.rollup(...)` / `.esbuild(...)` …) and you add one
-line to the build config you already have. Your source stays untouched (the plugin renames `buildRow`
-to `buildRowSource`, appends a same-name wrapper that delegates to the compiled factory, and keeps
+line to the build config you already have. Your source stays untouched (the plugin renames `Row`
+to `RowSource`, appends a same-name wrapper that delegates to the compiled factory, and keeps
 the artifact in a virtual module; business code imports no generated file):
 
 ```js
@@ -183,7 +183,7 @@ import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 plugins: [yoyaCompile.vite({ core })]; // compile units = component boundary (view-returning factories)
 ```
 
-Lists keep their declarative form — `tbody((body) => body.keyed(rows, buildRow))` — because `keyed()`
+Lists keep their declarative form — `tbody((body) => body.keyed(rows, Row))` — because `keyed()`
 accepts both element rows (`{ el, destroy }`) and node rows and picks the reconciler from the row
 product. Targets are located by **AST symbol identity**, and anything unclear leaves the source alone
 (no target, two same-name declarations, a parameter that is not a single identifier, or an

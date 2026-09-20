@@ -20,7 +20,15 @@ export { analyzeSource, freeIdentifiers } from './analyze.js';
 export { renderModule } from './emit.js';
 export { reportCoverage, coverageBaselineOf, compareCoverageBaseline } from './report.js';
 export { runCli, runCliIfMain } from './cli.js';
-export { yoyaCompile, yoyaCompilePlugin, wireRowModule } from './plugin.js';
+export {
+  componentUnits,
+  wireComponentModule,
+  yoyaCompile,
+  yoyaCompilePlugin,
+  // 兼容别名（0.6.11 及更早）
+  wireRowModule,
+  viewFactoryUnits
+} from './plugin.js';
 export {
   componentKeyOf,
   lookupComponent,

@@ -154,14 +154,14 @@ npm i -D @yoyaflow/yoya-ui @babel/parser
 ```
 
 ```bash
-npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/generated/row.js
+npx yoya-compiler --file src/Row.js --component Row --mode element --out src/generated/row.js
 # 不用 bin 的等价写法：
-# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --fn buildRow --out …
+# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --component Row --out …
 ```
 
 推荐接法是**构建期插件**——unplugin 写一遍，Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm
 都有入口（`yoyaCompile.vite(...)` / `.rollup(...)` / `.esbuild(...)` …）。业务源码零改动：插件把
-`buildRow` 改名为 `buildRowSource`、追加同名函数转调产物，产物进虚拟模块，业务代码不 import 任何生成物。
+`Row` 改名为 `RowSource`、追加同名函数转调产物，产物进虚拟模块，业务代码不 import 任何生成物。
 只在自己已有的构建配置里加一行：
 
 ```js
@@ -171,7 +171,7 @@ import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 plugins: [yoyaCompile.vite({ core })]; // 编译单元＝组件边界（返回 UI 视图的顶层工厂）
 ```
 
-列表照旧写 `tbody((body) => body.keyed(rows, buildRow))`：`element` 通道的 `{el, destroy}` 行与 `node`
+列表照旧写 `tbody((body) => body.keyed(rows, Row))`：`element` 通道的 `{el, destroy}` 行与 `node`
 通道的 ViewNode 行 `keyed()` 都直接吃（运行期按产出自选对账）。目标定位按 AST 符号身份，
 **认不准就不动**（找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径）。
 改写保留 hires sourcemap，线上报错仍定位到业务源码。

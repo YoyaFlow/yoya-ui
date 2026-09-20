@@ -162,14 +162,16 @@ export declare function resolveComponentKey(options: {
 export declare function normalizeModulePath(path: string): string;
 
 /**
- * One row factory wired at build time: the module that holds it and the export it
- * is exported as. `wireRowModule` locates it (a single declaration, a single
+ * One component wired at build time: the module that holds it and the component
+ * declaration name. `wireComponentModule` locates it (a single declaration, a single
  * identifier parameter) and rewrites the module in place, so the source keeps its
  * original shape and the artifact stays a virtual module.
  */
-export interface RowTarget {
+export interface ComponentUnit {
+  /** Absolute or cwd-relative module path. */
   file: string;
-  fn: string;
+  /** Component declaration name (a business-side name: the discovery rule reports it, nothing hardcodes it). */
+  component: string;
   mode?: 'element' | 'node';
   /** Node mode only: wrap live nodes and their ancestors. */
   thin?: boolean;
@@ -178,7 +180,7 @@ export interface RowTarget {
 }
 
 /**
- * Result of `wireRowModule`. `map` is the hires source map of the rewritten module
+ * Result of `wireComponentModule`. `map` is the hires source map of the rewritten module
  * (the rewrite must not break stack traces), `moduleMap` the approximate map of the
  * generated artifact back onto the row function it came from.
  */
@@ -190,27 +192,33 @@ export interface WiredRowModule {
   virtual: string;
 }
 
+/** Alias kept for the 0.6.11 name. */
+export type RowTarget = ComponentUnit;
+
 /**
- * Pure half of the build-time transform: given the module source and one target
- * declaration, returns the rewritten module plus the artifact module, or `null`
- * when the target cannot be identified or the shape bails (leave the source alone).
+ * Pure half of the build-time transform: given the module source and one or more component
+ * declarations, returns the rewritten module plus the artifact modules, or `null` when none
+ * of them can be identified or their shapes bail (the source is left alone).
  */
-export declare function wireRowModule(options: {
+export declare function wireComponentModule(options: {
   source: string;
-  target?: RowTarget | null;
-  targets?: RowTarget[] | null;
+  target?: ComponentUnit | null;
+  targets?: ComponentUnit[] | null;
   core: unknown;
   runtime?: string;
   coreSpecifier?: string;
   virtualId?: string;
 }): WiredRowModule | null;
 
+/** Alias kept for the 0.6.11 name. */
+export declare const wireRowModule: typeof wireComponentModule;
+
 /**
  * Default discovery rule: top-level factories that return a UI view are compile units
  * (PascalCase components and camelCase shortcut factories alike). The channel is inferred from
- * usage — a factory handed to the core `keyed` becomes an `element` unit, anything else a `node` one.
+ * usage — a component handed to the core `keyed` becomes an `element` unit, anything else a `node` one.
  */
-export declare function viewFactoryUnits(
+export declare function componentUnits(
   source: string,
   options: {
     core: unknown;
@@ -219,17 +227,20 @@ export declare function viewFactoryUnits(
     thin?: boolean;
     templatesOnly?: boolean;
   }
-): RowTarget[];
+): ComponentUnit[];
+
+/** Alias kept for the 0.6.11 name. */
+export declare const viewFactoryUnits: typeof componentUnits;
 
 export interface YoyaCompilePluginOptions {
   /** Core namespace (`import * as core from '@yoyaflow/yoya-ui/core'`). */
   core: unknown;
   /**
-   * Escape hatch: an explicit roster for internal / special functions. Optional — without it the
-   * default rule applies: every module handed to the plugin (node_modules skipped) contributes its
-   * top-level factories that return a UI view. When given, only the roster is used.
+   * Library-internal escape hatch: force specific components. Optional — without it the default
+   * rule applies: every module handed to the plugin (node_modules skipped) contributes its
+   * top-level factories that return a UI view. When given, only these units are used.
    */
-  rows?: RowTarget[];
+  units?: ComponentUnit[];
   /** Force one channel for every discovered unit (default: inferred from usage). */
   mode?: 'element' | 'node' | null;
   /** Node-mode `--thin` for the default rule. */

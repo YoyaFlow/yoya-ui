@@ -58,7 +58,7 @@ tree it holds, so it is "thinner" than the generic path.
 
 ### 2.1 Wiring a list: one business snippet for both channels
 
-`keyed()` picks its reconciler from what the row factory returns: a `ViewNode` goes through the node
+`keyed()` picks its reconciler from what the component returns: a `ViewNode` goes through the node
 tree, a `{ el, destroy }` element row is reconciled directly on the DOM (reuse per key, rebuild in
 place when the data reference changes, destroy on departure, minimal moves). Business code does not
 change per channel:
@@ -66,7 +66,7 @@ change per channel:
 ```js
 tbody((body) => {
   body.attr('id', 'tbody');
-  body.keyed(rows, buildRow); // same line for element and node rows
+  body.keyed(rows, Row); // same line for element and node rows
 });
 ```
 
@@ -86,20 +86,20 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // module-level buildRow is compiled by convention
+  plugins: [yoyaCompile.vite({ core })] // compile units = component boundary (view-returning factories)
 });
 ```
 
 The compile unit is **yoya-ui's own component boundary**, so no roster is needed: inside any module
 handed to the plugin (`node_modules` skipped), a top-level factory that returns a UI view is a compile
-unit — PascalCase components (`Card`, `StatusPill`) and camelCase shortcut factories (`buildRow`,
+unit — PascalCase components (`Card`, `StatusPill`) and camelCase shortcut factories (`Row`,
 `vBadge`) alike; helpers, commands and data helpers are left alone. The channel is inferred from
 **usage**: a factory handed to `keyed` becomes an `element` unit (fastest), a factory only called as a
 component (`child(Card())`) becomes a `node` unit (a ViewNode works in both places). The explicit
-`rows: [{ file, fn, mode, thin }]` list stays as an escape hatch for internal special functions (when
+`units: [{ file, component, mode, thin }]` list stays as an escape hatch for internal special functions (when
 given, only the roster is consulted).
 
-The plugin renames the source function to `buildRowSource` (kept as the compiler's single source of
+The plugin renames the source function to `RowSource` (kept as the compiler's single source of
 truth), appends a same-name wrapper that delegates to the compiled factory, and keeps the artifact in
 a virtual module — nothing is written next to your source, and business code imports no generated
 file. Targets are located by **AST symbol identity** (a top-level function declaration); anything
@@ -190,7 +190,7 @@ resolves imports).
 ```bash
 # Compile one shape (writes src/generated/row.js)
 npx yoya-compiler \
-  --file src/rows/row.js --fn buildRow --mode element \
+  --file src/Row.js --component Row --mode element \
   --core ./vendor/yoya-ui/yoya.core.min.js \
   --runtime ../../vendor/yoya-ui/yoya.compiler-runtime.min.js \
   --out src/generated/row.js
@@ -218,8 +218,8 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 import * as core from '@yoyaflow/yoya-ui/core';
 
 const result = compileFile({
-  file: 'src/rows/row.js',
-  fn: 'buildRow',
+  file: 'src/Row.js',
+  component: 'Row',
   mode: 'element',
   out: 'src/generated/row.js',
   core,
@@ -249,7 +249,7 @@ export const plan = { version: 1, mode: 'element', source: { file, fn }, html, l
 
 export function createRowFactory(scope) {
   const { computed, removeRow, selectedId } = scope;
-  return function buildRow(row) {
+  return function Row(row) {
     const el = cloneFragment(plan.html);
     const offs = [];
     // …positional live writes / event wiring…

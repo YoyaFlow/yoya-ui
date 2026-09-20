@@ -38,7 +38,8 @@ export function compileSource(options) {
   const {
     source,
     file = '(inline)',
-    fn = 'buildRow',
+    // 目标组件名由调用方给出（插件按组件边界自动发现后传进来）；编译器不认识任何业务函数名。
+    fn,
     mode = 'element',
     thin = false,
     core,

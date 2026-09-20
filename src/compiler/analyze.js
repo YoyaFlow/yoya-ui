@@ -390,7 +390,11 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
  * 整体回落——片段里少一个节点就是静默的语义错误。
  */
 export function analyzeSource(source, options = {}) {
-  const fnName = options.fn ?? 'buildRow';
+  // 目标组件名必须显式给出：编译器不认识任何具体的业务函数名（发现规则在插件侧，按组件边界走）。
+  const fnName = options.fn;
+  if (typeof fnName !== 'string' || fnName.length === 0) {
+    return { entry: null, bails: [{ reason: '缺少目标组件名（fn）', at: null }] };
+  }
   const className = options.className ?? null;
   // 编译单元种类：行的形参只能是单个标识符；组件的形参由调用点逐个解构，允许多个。
   const kind = options.kind ?? 'row';

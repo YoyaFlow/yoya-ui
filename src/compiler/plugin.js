@@ -19,269 +19,33 @@
  * - 小驼峰里也是工厂函数的（`buildRow` / `vBadge` 这类薄工厂、快捷工厂）＝同样算；
  * - 返回的不是视图（助手、命令、数据处理）→ 不是编译单元，原样保留。
  *
- * 通道（`element` / `node`）按**用法**推断，不靠人指定：该工厂在模块里被当行工厂交给 `keyed`
- * （`keyed(rows, Row)`，或 `body.keyed(rows, Row)` 且接收者是核心元素工厂产出的节点）→ 行语义，
- * 走 `element`（最快）；只被当组件调用（`child(Card())`）→ 走 `node`（ViewNode 在 `child` 与
- * `keyed` 里都成立，最安全）。显式 `rows: [{ file, fn, mode, thin }]` 只作为**内部特殊函数的逃生口**。
+ * 通道（`element` / `node`）按**用法**推断，不靠人指定：该组件在模块里被列表用（`keyed(items, Card)`，
+ * 或 `body.keyed(items, Card)` 且接收者是核心元素工厂产出的节点）→ 走 `element`（最快）；只被当组件
+ * 调用（`child(Card())`）→ 走 `node`（ViewNode 在 `child` 与 `keyed` 里都成立，最安全）。
+ * 显式 `units: [{ file, component, mode, thin }]` 只作为**库内特殊组件的逃生口**，业务侧不需要它。
  *
  * 业务源码零改动：插件只把函数改名（`Card` → `CardSource`，真源留给编译器）并在文件末尾追加同名函数
  * 转调产物；产物进虚拟模块、不落盘，业务代码不 import 任何生成物。改写用 `magic-string`，产出
  * **hires sourcemap**，线上报错的定位链不断。
  *
- * 认不准就不动（R6）：工厂形状编不了（bail）→ 该单元原样保留，走通用路径。
+ * 认不准就不动（R6）：组件形状编不了（bail）→ 该组件原样保留，走通用路径。
  */
-import { resolve } from 'node:path';
 import { parse } from '@babel/parser';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
-import { compileSource, DEFAULT_RUNTIME, elementWhitelistOf } from './compile.js';
+import { compileSource, DEFAULT_RUNTIME } from './compile.js';
+import { componentUnits, normalizePath, topLevelFunctions } from './discover.js';
 
 /** 虚拟产物模块的命名空间前缀（NUL 开头：普通的包名解析器不会碰它）。 */
 const VIRTUAL_PREFIX = '\0yoya-row:';
 /** 打包器语境下的运行期钩子默认入口（`compileSource` / CLI 的 `./compiler-runtime.js` 是给手写模块用的）。 */
 const PACKAGE_RUNTIME = '@yoyaflow/yoya-ui/compiler-runtime';
-/** 库 core 入口的默认说明符（导入来源判定用）。 */
-const PACKAGE_CORE = '@yoyaflow/yoya-ui/core';
-
-const normalizePath = (path) => resolve(path).replace(/\\/g, '/');
-
-/** 这个导入来源算不算「库的 core」：包路径、或仓库内的 yoya.core.js。 */
-function isCoreSpecifier(specifier) {
-  return (
-    typeof specifier === 'string' &&
-    (specifier === PACKAGE_CORE ||
-      specifier.endsWith('/yoya-ui/core') ||
-      specifier.endsWith('yoya.core.js'))
-  );
-}
-
-/** 收集模块里「从 core 导入的元素工厂 / `vNode`」等名字：判定「返回的是不是视图」用。 */
-function coreBindingsOf(ast, whitelist) {
-  const bindings = new Map();
-  ast.program.body.forEach((statement) => {
-    if (statement.type !== 'ImportDeclaration' || !isCoreSpecifier(statement.source.value)) {
-      return;
-    }
-    statement.specifiers.forEach((specifier) => {
-      if (specifier.type !== 'ImportSpecifier') {
-        return;
-      }
-      const imported = specifier.imported.name ?? specifier.imported.value;
-      const local = specifier.local.name;
-      if (whitelist.has(imported)) {
-        bindings.set(local, 'element');
-      } else if (imported === 'vNode') {
-        bindings.set(local, 'vNode');
-      } else if (imported === 'keyed') {
-        bindings.set(local, 'keyed');
-      } else if (imported === 'vText') {
-        bindings.set(local, 'text');
-      }
-    });
-  });
-  return bindings;
-}
-
-/** 顶层函数声明（含 `export function`），返回 `{ node, statement, name }`。 */
-function topLevelFunctions(ast) {
-  const found = [];
-  ast.program.body.forEach((statement) => {
-    const exported = statement.type === 'ExportNamedDeclaration';
-    const inner = exported ? statement.declaration : statement;
-    if (inner?.type === 'FunctionDeclaration' && inner.id?.name) {
-      found.push({ exported, name: inner.id.name, node: inner, start: statement.start });
-    }
-  });
-  return found;
-}
-
-/** 函数体是不是「单个 return 视图」：返回视图表达式本身或 null。 */
-function returnedView(fn) {
-  if (fn.body.type !== 'BlockStatement') {
-    return fn.body;
-  }
-  const returns = fn.body.body.filter((statement) => statement.type === 'ReturnStatement');
-  return returns.length === 1 && fn.body.body.length === 1 ? returns[0].argument : null;
-}
-
-/** 这个表达式是不是一个 UI 视图（元素工厂调用 / vNode / 带 render() 的对象）。 */
-function isViewExpression(expression, bindings) {
-  if (!expression) {
-    return false;
-  }
-  if (expression.type === 'ObjectExpression') {
-    return expression.properties.some(
-      (property) =>
-        property.type === 'ObjectMethod' && (property.key.name ?? property.key.value) === 'render'
-    );
-  }
-  if (expression.type !== 'CallExpression') {
-    return false;
-  }
-  if (expression.callee.type === 'Identifier') {
-    const kind = bindings.get(expression.callee.name);
-    return kind === 'element' || kind === 'vNode';
-  }
-  // 组件之间的薄工厂：`Card(options)` 直接转调另一个（已发现的）工厂
-  return expression.callee.type === 'Identifier';
-}
-
-/**
- * 收集模块里「接收者是核心元素工厂产出的节点」的标识符：`node.tbody((body) => …)` 的 `body`、
- * `const table = table(…)` 这类。用于判定 `.keyed(...)` 是不是核心 DSL 上的调用。
- */
-function coreNodeNames(ast, bindings, whitelist) {
-  const names = new Set();
-  const collectParams = (call) => {
-    call.arguments.forEach((argument) => {
-      if (
-        (argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression') &&
-        argument.params[0]?.type === 'Identifier'
-      ) {
-        names.add(argument.params[0].name);
-      }
-    });
-  };
-
-  /** 这次遍历里有没有新名字：链式 DSL（`node.tbody((body) => …)`）要迭代到不动点。 */
-  const walk = (node) => {
-    let added = false;
-    if (!node || typeof node !== 'object') {
-      return false;
-    }
-    if (Array.isArray(node)) {
-      node.forEach((child) => {
-        added = walk(child) || added;
-      });
-      return added;
-    }
-    if (node.type === 'CallExpression') {
-      const callee = node.callee;
-      // 核心元素工厂：`table((node) => …)`
-      if (callee.type === 'Identifier' && bindings.get(callee.name) === 'element') {
-        const before = names.size;
-        collectParams(node);
-        added = added || names.size > before;
-      }
-      // 链式子工厂：`body.tbody((tbody) => …)` / `node.td((cell) => …)`
-      if (
-        callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        callee.object.type === 'Identifier' &&
-        names.has(callee.object.name) &&
-        whitelist.has(callee.property.name ?? callee.property.value)
-      ) {
-        const before = names.size;
-        collectParams(node);
-        added = added || names.size > before;
-      }
-    }
-    if (
-      node.type === 'VariableDeclarator' &&
-      node.init?.type === 'Identifier' &&
-      node.id?.type === 'Identifier'
-    ) {
-      if (names.has(node.init.name) && !names.has(node.id.name)) {
-        names.add(node.id.name);
-        added = true;
-      }
-    }
-    for (const key of Object.keys(node)) {
-      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
-        continue;
-      }
-      if (node[key] && typeof node[key] === 'object') {
-        added = walk(node[key]) || added;
-      }
-    }
-    return added;
-  };
-  for (let pass = 0; pass < 8; pass += 1) {
-    if (!walk(ast.program)) {
-      break;
-    }
-  }
-  return names;
-}
-
-/** 该工厂在模块里被当**行工厂**交给了核心 `keyed`（决定要不要走 element 通道）。 */
-function usedAsKeyedRow(ast, name, bindings, nodeNames) {
-  const isRowFactoryArg = (call) => {
-    const candidates = [call.arguments[1], call.arguments[2]];
-    return candidates.some((argument) => argument?.type === 'Identifier' && argument.name === name);
-  };
-
-  let found = false;
-  const walk = (node) => {
-    if (found || !node || typeof node !== 'object') {
-      return;
-    }
-    if (Array.isArray(node)) {
-      node.forEach(walk);
-      return;
-    }
-    if (node.type === 'CallExpression') {
-      const callee = node.callee;
-      const direct = callee.type === 'Identifier' && bindings.get(callee.name) === 'keyed';
-      const member =
-        callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        (callee.property.name ?? callee.property.value) === 'keyed' &&
-        callee.object.type === 'Identifier' &&
-        nodeNames.has(callee.object.name);
-      if ((direct || member) && isRowFactoryArg(node)) {
-        found = true;
-        return;
-      }
-    }
-    for (const key of Object.keys(node)) {
-      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
-        continue;
-      }
-      if (node[key] && typeof node[key] === 'object') {
-        walk(node[key]);
-      }
-    }
-  };
-  walk(ast.program);
-  return found;
-}
-
-/**
- * 默认发现规则：模块顶层的**视图工厂**（大驼峰组件 / 小驼峰薄工厂）都是编译单元，
- * 通道按用法推断（`keyed` 的行工厂 → element，其余 → node）。
- */
-export function viewFactoryUnits(
-  source,
-  { core, mode = null, thin = false, templatesOnly = false, file }
-) {
-  let ast;
-  try {
-    ast = parse(source, { sourceType: 'module' });
-  } catch {
-    return [];
-  }
-  const whitelist = elementWhitelistOf(core);
-  const bindings = coreBindingsOf(ast, whitelist);
-  const nodeNames = coreNodeNames(ast, bindings, whitelist);
-  const units = [];
-
-  topLevelFunctions(ast).forEach((declaration) => {
-    if (!isViewExpression(returnedView(declaration.node), bindings)) {
-      return;
-    }
-    const channel =
-      mode ?? (usedAsKeyedRow(ast, declaration.name, bindings, nodeNames) ? 'element' : 'node');
-    units.push({ file, fn: declaration.name, mode: channel, thin, templatesOnly });
-  });
-  return units;
-}
 
 /**
  * 纯函数部分：给出模块源码与目标声明（一个或多个）→ 改写后的模块 + 各自的产物模块。
  * 不该编 / 编不了时返回 null（源码原样交给打包器走通用路径）。
  */
-export function wireRowModule({
+export function wireComponentModule({
   source,
   target = null,
   targets = null,
@@ -307,19 +71,20 @@ export function wireRowModule({
   let changed = false;
 
   list.forEach((unit) => {
-    const declaration = declarations.get(unit.fn);
+    const name = unit.component;
+    const declaration = declarations.get(name);
     const param = declaration?.node.params[0];
     if (!declaration || declaration.node.async || declaration.node.generator) {
       return;
     }
     if (declaration.node.params.length !== 1 || param?.type !== 'Identifier') {
-      return; // 形参不是单个标识符：和编译器同一口径，不动这个单元
+      return; // 形参不是单个标识符：和编译器同一口径，不动这个组件
     }
 
     const result = compileSource({
       source,
       file: unit.file ?? target?.file,
-      fn: unit.fn,
+      fn: name,
       mode: unit.mode ?? 'element',
       thin: unit.thin ?? false,
       templatesOnly: unit.templatesOnly ?? false,
@@ -328,20 +93,20 @@ export function wireRowModule({
       coreSpecifier
     });
     if (!result.compiled || !result.module) {
-      return; // bail：这个单元整形状回落
+      return; // bail：这个组件整形状回落
     }
 
     // 真源留在文件里（编译器读它），改名 + 不再导出；对外名字由追加的同名函数顶上。
     const paramsStart = source.indexOf('(', declaration.node.start);
-    magic.overwrite(declaration.start, paramsStart, `function ${unit.fn}Source`);
-    const virtual = `${VIRTUAL_PREFIX}${unit.fn}-${result.plan.signature}`;
+    magic.overwrite(declaration.start, paramsStart, `function ${name}Source`);
+    const virtual = `${VIRTUAL_PREFIX}${name}-${result.plan.signature}`;
     magic.append(
       [
         '',
-        `// 构建期由 @yoyaflow/yoya-ui/compiler 追加：同名函数转调编译产物（真源见上面的 ${unit.fn}Source）。`,
+        `// 构建期由 @yoyaflow/yoya-ui/compiler 追加：同名函数转调编译产物（真源见上面的 ${name}Source）。`,
         `import { createRowFactory } from ${JSON.stringify(virtual)};`,
         `let __yoyaFactory_${units.length} = null;`,
-        `${declaration.exported ? 'export ' : ''}function ${unit.fn}(${param.name}) {`,
+        `${declaration.exported ? 'export ' : ''}function ${name}(${param.name}) {`,
         `  __yoyaFactory_${units.length} ??= createRowFactory({ ${result.scope.join(', ')} });`,
         `  return __yoyaFactory_${units.length}(${param.name});`,
         '}',
@@ -353,7 +118,7 @@ export function wireRowModule({
       moduleMap: sourceMapForGenerated(
         result.module,
         source.slice(declaration.node.start, declaration.node.end),
-        unit.file ?? unit.fn
+        unit.file ?? name
       ),
       virtual
     });
@@ -391,11 +156,11 @@ function sourceMapForGenerated(generated, originalSnippet, file) {
   return magic.generateMap({ source: file, includeContent: true, hires: true });
 }
 
-/** 校验选项：显式 `rows` 是逃生口；不给就按组件边界自动发现。 */
+/** 校验选项：显式 `units` 是库内逃生口；不给就按组件边界自动发现。 */
 function normalizeOptions(options = {}) {
   const {
     core,
-    rows = [],
+    units = [],
     runtime = PACKAGE_RUNTIME,
     coreSpecifier,
     onArtifact = null,
@@ -410,11 +175,11 @@ function normalizeOptions(options = {}) {
   }
 
   const targets = new Map();
-  rows.forEach((row) => {
-    if (!row?.file || !row?.fn) {
-      throw new TypeError('yoyaCompile() rows need { file, fn }');
+  units.forEach((unit) => {
+    if (!unit?.file || !unit?.component) {
+      throw new TypeError('yoyaCompile() units need { file, component }（库内逃生口）');
     }
-    targets.set(normalizePath(row.file), row);
+    targets.set(normalizePath(unit.file), unit);
   });
   const skip = exclude.map((pattern) =>
     pattern instanceof RegExp
@@ -437,7 +202,7 @@ function normalizeOptions(options = {}) {
       if (skip.some((pattern) => pattern.test(path))) {
         return [];
       }
-      return viewFactoryUnits(source, { core, file: id, mode, templatesOnly, thin });
+      return componentUnits(source, { core, file: id, mode, templatesOnly, thin });
     }
   };
 }
@@ -461,7 +226,13 @@ export const yoyaCompile = createUnplugin((options = {}) => {
       if (units.length === 0) {
         return null;
       }
-      const wired = wireRowModule({ source: code, targets: units, core, runtime, coreSpecifier });
+      const wired = wireComponentModule({
+        source: code,
+        targets: units,
+        core,
+        runtime,
+        coreSpecifier
+      });
       if (!wired) {
         return null; // 全部单元都 bail：源码原样交给打包器
       }
@@ -488,3 +259,9 @@ export const yoyaCompile = createUnplugin((options = {}) => {
 export function yoyaCompilePlugin(options) {
   return yoyaCompile.esbuild(options);
 }
+
+/** 兼容别名（0.6.11 及更早的导出名）。 */
+export const wireRowModule = wireComponentModule;
+/** 兼容别名（0.6.11 及更早的导出名）。 */
+export const viewFactoryUnits = componentUnits;
+export { componentUnits };

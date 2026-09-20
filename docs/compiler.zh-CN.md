@@ -48,13 +48,13 @@ yoya-ui 不需要构建步骤也能跑：DSL、组件、SSR 都在运行期完�
 
 ### 2.1 接进列表：两条通道同一份业务代码
 
-`keyed()` 按行工厂的**产物**自选对账路径：`ViewNode` 行走节点树对账，`{ el, destroy }` 行走元素对账
+`keyed()` 按组件的**产物**自选对账路径：`ViewNode` 行走节点树对账，`{ el, destroy }` 行走元素对账
 （同 key 复用 / 同 key 换引用原位重建 / 离场销毁 / 最小搬动）。所以业务侧不用为通道改写法：
 
 ```js
 tbody((body) => {
   body.attr('id', 'tbody');
-  body.keyed(rows, buildRow); // element / node 两条通道都这么写
+  body.keyed(rows, Row); // element / node 两条通道都这么写
 });
 ```
 
@@ -73,18 +73,18 @@ import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // 默认：模块顶层名为 buildRow 的函数自动编成 element 通道
+  plugins: [yoyaCompile.vite({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
 });
 ```
 
 **编译单元 = yoya-ui 自己的组件边界**，不需要花名册：被打包器交进来的模块（`node_modules` 跳过）里，
 顶层**返回 UI 视图的工厂函数**就是编译单元——大驼峰（`Card` / `StatusPill`）＝组件，小驼峰里也是工厂
-函数的（`buildRow` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、命令、数据处理）
-原样保留。通道（`element` / `node`）按**用法**推断：被当行工厂交给 `keyed` 的走 `element`（最快），
+函数的（`Row` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、命令、数据处理）
+原样保留。通道（`element` / `node`）按**用法**推断：被当组件交给 `keyed` 的走 `element`（最快），
 只被 `child(...)` 当组件调用的走 `node`（ViewNode 在 `child` 与 `keyed` 里都成立）。显式
-`rows: [{ file, fn, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
+`units: [{ file, component, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
 
-插件把源码里的 `buildRow` 改名为 `buildRowSource`（真源留给编译器），并追加同名函数转调编译产物；
+插件把源码里的 `Row` 改名为 `RowSource`（真源留给编译器），并追加同名函数转调编译产物；
 产物进虚拟模块，不落盘，业务代码不 import 任何生成物。目标定位按 **AST 符号身份**（模块顶层同名函数
 声明），认不准就不动：找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径。
 
@@ -162,7 +162,7 @@ npm i -D @yoyaflow/yoya-ui @babel/parser   # 报 Cannot find package '@babel/par
 ```bash
 # 编译一个形状（落在 src/generated/row.js）
 npx yoya-compiler \
-  --file src/rows/row.js --fn buildRow --mode element \
+  --file src/Row.js --component Row --mode element \
   --core ./vendor/yoya-ui/yoya.core.min.js \
   --runtime ../../vendor/yoya-ui/yoya.compiler-runtime.min.js \
   --out src/generated/row.js
@@ -187,8 +187,8 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 import * as core from '@yoyaflow/yoya-ui/core';
 
 const result = compileFile({
-  file: 'src/rows/row.js',
-  fn: 'buildRow',
+  file: 'src/Row.js',
+  component: 'Row',
   mode: 'element',
   out: 'src/generated/row.js',
   core,
@@ -217,7 +217,7 @@ export const plan = { version: 1, mode: 'element', source: { file, fn }, html, l
 
 export function createRowFactory(scope) {
   const { computed, removeRow, selectedId } = scope;
-  return function buildRow(row) {
+  return function Row(row) {
     const el = cloneFragment(plan.html);
     const offs = [];
     // …按位置写活值 / 绑事件…

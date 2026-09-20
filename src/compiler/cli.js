@@ -14,8 +14,9 @@ import { buildComponentRegistry } from './registry.js';
 import { formatCoverage, reportCoverage } from './report.js';
 
 const VALUE_OPTIONS = new Set([
+  'component',
   'file',
-  'fn',
+  'fn', // 兼容旧写法
   'mode',
   'out',
   'core',
@@ -32,20 +33,20 @@ const VALUE_OPTIONS = new Set([
 const HELP = `yoya-ui 编译器（构建期）
 
 用法：
-  yoya-compiler --file <源文件> [--fn buildRow] [--mode element|node] [--out <产物>]
+  yoya-compiler --file <源文件> --component <组件名> [--mode element|node] [--out <产物>]
   yoya-compiler --registry <目录> --entries <组件清单.json>
-  yoya-compiler --report <目录> [--fn buildRow] [--json]
+  yoya-compiler --report <目录> [--json]
 
 选项：
   --file <路径>        要编译的源文件（必须）
-  --fn <名字>          目标构建函数名（默认 buildRow）
-  --mode <通道>        element（默认，行 = 原生元素）| node（行 = ViewNode）
+  --component <名字>   目标组件名（低层工具：一个组件一个产物；常规用法是挂构建期插件，按组件边界自动发现）
+  --mode <通道>        element（默认，组件 = 原生元素）| node（组件 = ViewNode）
   --thin               节点模式下只给直接带活内容的节点建包装对象
   --out <路径>         生成模块的落盘位置；省略时打印到标准输出
   --fragments <路径>   同时写出页面模板块（template data-yoya-fragment，票 45）
   --core <模块>        提供工厂与 htmls / svgs 的核心入口（默认库自身 core）
   --runtime <模块>     生成代码里 import 运行期钩子的路径
-  --report <目录>      覆盖率扫描：输出可编 / 回落占比与 bail 原因直方图
+  --report <目录>      覆盖率扫描（不需要组件名：按组件边界发现）：可编 / 回落占比与 bail 原因直方图
   --registry <目录>    构建组件注册表（编译清单里的叶子组件 + 写实例化模块）
   --entries <清单>     组件清单 JSON：[{ "file": "src/components/x.js", "export": "StatusDot" }]
   --components <JSON>  调用点链接用的注册表数据（buildComponentRegistry 产出的 *.json）
@@ -123,7 +124,8 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   }
 
   const asJson = options.flags.has('json');
-  const fn = options.values.get('fn') ?? 'buildRow';
+  // 低层工具口：组件名由调用方显式给出（`--fn` 是旧写法，保留兼容）；不设任何业务默认名。
+  const component = options.values.get('component') ?? options.values.get('fn') ?? null;
   const mode = options.values.get('mode') ?? 'element';
 
   const registryDir = options.values.get('registry');
@@ -154,7 +156,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
     const extensions = options.values.get('extensions');
     const report = reportCoverage({
       root: reportDir,
-      fn,
+      component,
       mode,
       thin: options.flags.has('thin'),
       core,
@@ -185,7 +187,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
   const result = compileFile({
     file,
     out,
-    fn,
+    fn: component,
     mode,
     thin: options.flags.has('thin'),
     core,

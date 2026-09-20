@@ -480,8 +480,8 @@ import {
   elementWhitelistOf,
   reportCoverage,
   runCli,
-  wireRowModule,
-  viewFactoryUnits,
+  wireComponentModule,
+  componentUnits,
   yoyaCompile,
   yoyaCompilePlugin,
   type ComponentRegistry,
@@ -551,20 +551,23 @@ const vitePlugin: YoyaCompilePlugin = yoyaCompile.vite({
   core,
   onArtifact: (name, source) => void [name, source]
 });
-// 逃生口：内部特殊函数才用花名册
+// 库内逃生口：明确点名某个组件（业务侧不需要）
 const rollupPlugin: YoyaCompilePlugin = yoyaCompile.rollup({
   core,
-  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+  units: [{ component: 'StatusPill', file: 'src/main.js', mode: 'element' }]
 });
 const webpackPlugin: YoyaCompilePlugin = yoyaCompile.webpack({ core, mode: 'node' });
 const legacyEsbuildPlugin: YoyaCompilePlugin = yoyaCompilePlugin({ core });
 void [plugin, vitePlugin, rollupPlugin, webpackPlugin, legacyEsbuildPlugin];
-const wired: WiredRowModule | null = wireRowModule({
-  source: 'export function buildRow(row) { return tr((line) => line.td(String(row.id))); }',
-  target: { file: 'src/main.js', fn: 'buildRow' },
+const wired: WiredRowModule | null = wireComponentModule({
+  source: 'export function Card(props) { return div((box) => box.child(String(props.label))); }',
+  target: { component: 'Card', file: 'src/main.js' },
   core
 });
-const discovered = viewFactoryUnits('export function Card() {}', { core, file: 'src/main.js' });
+const discovered = componentUnits('export function Card(props) { return div((box) => box); }', {
+  core,
+  file: 'src/main.js'
+});
 void discovered;
 if (wired) {
   const wiredCode: string = wired.code;
