@@ -169,16 +169,19 @@ npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/
 # node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --fn buildRow --out …
 ```
 
-The recommended wiring is the **build-time plugin** — your source stays untouched (the plugin renames
-`buildRow` to `buildRowSource`, appends a same-name wrapper that delegates to the compiled factory,
-and keeps the artifact in a virtual module; business code imports no generated file):
+The recommended wiring is the **build-time plugin** — written once with
+[unplugin](https://unplugin.unjs.io/), so Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm
+each get their entry (`yoyaCompile.vite(...)` / `.rollup(...)` / `.esbuild(...)` …) and you add one
+line to the build config you already have. Your source stays untouched (the plugin renames `buildRow`
+to `buildRowSource`, appends a same-name wrapper that delegates to the compiled factory, and keeps
+the artifact in a virtual module; business code imports no generated file):
 
 ```js
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 plugins: [
-  yoyaCompilePlugin({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
+  yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
 ];
 ```
 
@@ -186,7 +189,8 @@ Lists keep their declarative form — `tbody((body) => body.keyed(rows, buildRow
 accepts both element rows (`{ el, destroy }`) and node rows and picks the reconciler from the row
 product. Targets are located by **AST symbol identity**, and anything unclear leaves the source alone
 (no target, two same-name declarations, a parameter that is not a single identifier, or an
-unbuildable shape all fall back to the generic path). See
+unbuildable shape all fall back to the generic path). The rewrite keeps a hires source map, so stack
+traces still point at your source. See
 [skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md).
 
 ```js

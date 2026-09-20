@@ -1,48 +1,43 @@
 /**
- * 构建期 transform（票 16 / R1 / R2 / R4）：把业务模块里的行工厂**就地**换成编译产物。
+ * 构建期 transform（票 16 / R1 / R2 / R3 / R4）：把业务模块里的行工厂**就地**换成编译产物。
  *
- * 业务源码零改动：插件只做两件事——把源码里那个目标函数改名（`buildRow` → `buildRowSource`，
- * 真源留在文件里供编译器读），并在文件末尾追加一个同名函数，它懒建编译产物的行工厂再转调。
- * 其余语句逐行透传；产物（片段 + 位置写）作为虚拟模块交给打包器，不落盘。
+ * **写一次，到处运行**：插件用 [`unplugin`](https://unplugin.unjs.io/) 写一遍，自动导出
+ * Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm 各自的入口——使用者只在自己已有的
+ * 构建配置里加一行，不需要额外的脚本、也不需要认识编译产物：
  *
- * 认不准就不动（R6）：找不到目标函数、同一文件里出现多个同名声明、形参不是单个标识符、
- * 形状不可编（bail）→ 返回 null，源码原样交给打包器走通用路径。
- *
- * 用法（esbuild 插件协议；vite 可复用 `wireRowModule` 写自己的适配）：
- *
+ *     import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
  *     import * as core from '@yoyaflow/yoya-ui/core';
- *     import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
  *
- *     plugins: [
- *       yoyaCompilePlugin({
- *         core,
- *         rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
- *       })
- *     ]
+ *     export default defineConfig({                     // vite.config.js
+ *       plugins: [yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow' }] })]
+ *     });
  *
- * 库里不引入新的构建期依赖：插件对象只是按 esbuild 协议写的一个普通对象。
+ *     // rollup.config.js   → yoyaCompile.rollup({ … })
+ *     // webpack.config.js  → yoyaCompile.webpack({ … })
+ *     // esbuild 脚本 / CLI → yoyaCompile.esbuild({ … })
+ *
+ * 业务源码零改动：插件只做两件事——把源码里那个目标函数改名（`buildRow` → `buildRowSource`，真源留
+ * 在文件里供编译器读），并在文件末尾追加一个同名函数转调编译产物；产物本身进虚拟模块，不落盘，
+ * 业务代码不 import 任何生成物。
+ *
+ * 认不准就不动（R6）：找不到目标函数、同一文件里出现多个同名声明、形参不是单个标识符、形状不可编
+ * （bail）→ 原样返回 null，源码交给打包器走通用路径。
  */
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { parse } from '@babel/parser';
+import MagicString from 'magic-string';
+import { createUnplugin } from 'unplugin';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 
 /** 虚拟产物模块的命名空间前缀（NUL 开头：普通的包名解析器不会碰它）。 */
 const VIRTUAL_PREFIX = '\0yoya-row:';
-/** 虚拟产物模块在 esbuild 里的命名空间。 */
-const VIRTUAL_NAMESPACE = 'yoya-row';
 /** 打包器语境下的运行期钩子默认入口（`compileSource` / CLI 的 `./compiler-runtime.js` 是给手写模块用的）。 */
 const PACKAGE_RUNTIME = '@yoyaflow/yoya-ui/compiler-runtime';
-/**
- * 插件对象 → 虚拟产物表。**不能挂在插件对象上**：esbuild 会校验收到的插件对象，
- * 多一个属性就 `Invalid option on plugin`（0.6.7 实机踩到）。这里用 WeakMap 侧挂。
- */
-const pluginVirtualModules = new WeakMap();
 
 const normalizePath = (path) => resolve(path).replace(/\\/g, '/');
 
 /**
- * 纯函数部分：给出模块源码与目标声明 → `{ code, module }`；不该编 / 编不了时返回 null。
+ * 纯函数部分：给出模块源码与目标声明 → `{ code, module, virtual }`；不该编 / 编不了时返回 null。
  * `code` 是改写后的模块（业务其余部分逐行不变），`module` 是编译产物模块源码。
  */
 export function wireRowModule({
@@ -108,11 +103,14 @@ export function wireRowModule({
   }
 
   // 真源留在文件里（编译器读它），但不再导出：对外名字由下面追加的同名函数顶上。
+  // **用 MagicString 改写并产出 hires sourcemap**：改写只覆盖那一个声明头，其余位置逐字符保留映射，
+  // 线上报错的栈因此仍然落在业务源码的正确行列上（返回 `map: null` 会打断整条定位链）。
   const paramsStart = source.indexOf('(', declaration.start);
   if (paramsStart === -1) {
     return null;
   }
-  const renamed = `${source.slice(0, start)}function ${fn}Source${source.slice(paramsStart)}`;
+  const magic = new MagicString(source);
+  magic.overwrite(start, paramsStart, `function ${fn}Source`);
   const virtual = virtualId ?? `${VIRTUAL_PREFIX}${fn}-${result.plan.signature}`;
   const wiring = [
     '',
@@ -125,62 +123,103 @@ export function wireRowModule({
     '}',
     ''
   ].join('\n');
+  magic.append(wiring);
 
-  return { code: `${renamed}${wiring}`, module: result.module, virtual };
+  return {
+    code: magic.toString(),
+    map: magic.generateMap({ source: file, includeContent: true, hires: true }),
+    module: result.module,
+    // 产物是生成代码：整段映射回原行函数的起点（近似但可用——栈会落进业务文件，而不是虚拟模块名）
+    moduleMap: sourceMapForGenerated(
+      result.module,
+      source.slice(declaration.start, declaration.end),
+      file
+    ),
+    virtual
+  };
 }
 
 /**
- * esbuild 插件对象：命中登记的模块就走上面的 transform，其余一律不碰；
- * 虚拟产物模块由插件自己的 `onResolve` / `onLoad` 提供。
+ * 生成代码的近似 sourcemap：把整段生成代码映射回「原行函数」那一段源码。
+ * 不做逐语句对齐（生成代码与源码不同构），但保证栈里出现的是业务文件与行区间，而不是虚拟模块名。
  */
-export function yoyaCompilePlugin(options = {}) {
-  // 插件只跑在打包器里，运行期钩子默认按**包子路径**解析（`compileSource` / CLI 保持相对默认）。
-  const { core, rows = [], runtime = PACKAGE_RUNTIME, coreSpecifier } = options;
-  if (!core) {
-    throw new TypeError('yoyaCompilePlugin() requires the core namespace (import * as core …)');
+function sourceMapForGenerated(generated, originalSnippet, file) {
+  if (originalSnippet.length === 0) {
+    return null;
   }
+  const magic = new MagicString(originalSnippet);
+  magic.overwrite(0, originalSnippet.length, generated);
+  return magic.generateMap({ source: file, includeContent: true, hires: true });
+}
 
+/** 校验选项并把 `rows` 收成「模块 → 目标声明」表。 */
+function normalizeOptions(options = {}) {
+  const {
+    core,
+    rows = [],
+    // 插件只跑在打包器里：运行期钩子默认按包子路径解析。
+    runtime = PACKAGE_RUNTIME,
+    coreSpecifier,
+    onArtifact = null
+  } = options;
+  if (!core) {
+    throw new TypeError('yoyaCompile() requires the core namespace (import * as core …)');
+  }
   const targets = new Map();
   rows.forEach((row) => {
     if (!row?.file || !row?.fn) {
-      throw new TypeError('yoyaCompilePlugin() rows need { file, fn }');
+      throw new TypeError('yoyaCompile() rows need { file, fn }');
     }
     targets.set(normalizePath(row.file), row);
   });
-  const virtualModules = new Map();
-
-  const plugin = {
-    name: 'yoya-ui-compile',
-    setup(build) {
-      build.onResolve({ filter: /^\0yoya-row:/ }, (args) => ({
-        path: args.path,
-        namespace: VIRTUAL_NAMESPACE
-      }));
-      build.onLoad({ filter: /.*/, namespace: VIRTUAL_NAMESPACE }, (args) => ({
-        contents: virtualModules.get(args.path) ?? '',
-        loader: 'js',
-        resolveDir: process.cwd()
-      }));
-      build.onLoad({ filter: /\.(m?js|jsx|ts|tsx)$/ }, (args) => {
-        const target = targets.get(normalizePath(args.path));
-        if (!target) {
-          return null;
-        }
-        const source = readFileSync(args.path, 'utf8');
-        const wired = wireRowModule({ source, target, core, runtime, coreSpecifier });
-        if (!wired) {
-          return null; // bail：源码原样交给打包器（通用路径）
-        }
-        virtualModules.set(wired.virtual, wired.module);
-        return { contents: wired.code, loader: 'js', resolveDir: dirname(args.path) };
-      });
-    }
-  };
-  pluginVirtualModules.set(plugin, virtualModules);
-  return plugin;
+  return { core, coreSpecifier, onArtifact, runtime, targets };
 }
 
-/** 该插件实例编出来的虚拟产物（键是虚拟模块名）；不是本插件产物时返回 null。 */
-export function compiledModulesOf(plugin) {
-  return pluginVirtualModules.get(plugin) ?? null;
+/**
+ * unplugin 工厂：`yoyaCompile.vite() / .rollup() / .webpack() / .esbuild() / .rspack() /
+ * .rolldown() / .farm()`。虚拟产物通过 `onArtifact(name, source)` 可选回调暴露（测试 / 调试用）——
+ * 不挂在插件对象上，因为 esbuild 会校验收到的插件对象、多一个属性就报错（0.6.7 实机踩到）。
+ */
+export const yoyaCompile = createUnplugin((options = {}) => {
+  const { core, coreSpecifier, onArtifact, runtime, targets } = normalizeOptions(options);
+  const virtualModules = new Map();
+
+  const virtualOf = (id) => (typeof id === 'string' && id.startsWith(VIRTUAL_PREFIX) ? id : null);
+  const targetOf = (id) => (typeof id === 'string' ? targets.get(normalizePath(id)) : undefined);
+
+  return {
+    name: 'yoya-ui-compile',
+    enforce: 'pre',
+    transform(code, id) {
+      const target = targetOf(id);
+      if (!target) {
+        return null;
+      }
+      const wired = wireRowModule({ source: code, target, core, runtime, coreSpecifier });
+      if (!wired) {
+        return null; // bail：源码原样交给打包器（通用路径）
+      }
+      virtualModules.set(wired.virtual, { code: wired.module, map: wired.moduleMap });
+      onArtifact?.(wired.virtual, wired.module);
+      return { code: wired.code, map: wired.map };
+    },
+    resolveId(id) {
+      return virtualOf(id) ? { id, external: false } : null;
+    },
+    load(id) {
+      if (!virtualOf(id)) {
+        return null;
+      }
+      const artifact = virtualModules.get(id);
+      return artifact ? { code: artifact.code, map: artifact.map } : { code: '' };
+    }
+  };
+});
+
+/**
+ * esbuild 形态的快捷导出（等价于 `yoyaCompile.esbuild(options)`），保留给已有配置直接用；
+ * 新配置建议走 `yoyaCompile.<bundler>()`。
+ */
+export function yoyaCompilePlugin(options) {
+  return yoyaCompile.esbuild(options);
 }

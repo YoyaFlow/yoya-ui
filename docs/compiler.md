@@ -76,18 +76,20 @@ them (keep the server on the generic path for that source).
 
 ### 2.2 Zero source changes: the build-time plugin
 
-The compiler plugs in through the esbuild plugin protocol (vite can reuse `wireRowModule`):
+The compiler is written once with [unplugin](https://unplugin.unjs.io/) and exposes every bundler entry
+(`yoyaCompile.vite(...)` / `.rollup(...)` / `.webpack(...)` / `.esbuild(...)` / `.rspack(...)` /
+`.rolldown(...)` / `.farm(...)`), so it is one line in the build config you already have:
 
 ```js
+// vite.config.js
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
-plugins: [
-  yoyaCompilePlugin({
-    core,
-    rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
-  })
-];
+export default defineConfig({
+  plugins: [
+    yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
+  ]
+});
 ```
 
 The plugin renames the source function to `buildRowSource` (kept as the compiler's single source of
@@ -96,6 +98,10 @@ a virtual module — nothing is written next to your source, and business code i
 file. Targets are located by **AST symbol identity** (a top-level function declaration); anything
 unclear is left untouched: missing target, two same-name declarations, a parameter that is not a
 single identifier, or an unbuildable shape all fall back to the generic path.
+
+The rewrite goes through `magic-string` and returns a **hires source map** (`transform` resolves
+`{ code, map }`, the virtual artifact carries a map as well), so stack traces keep pointing at the
+right line and column in your source.
 
 ## 3. What compiles / what falls back
 

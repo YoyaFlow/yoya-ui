@@ -177,10 +177,16 @@ export interface RowTarget {
   templatesOnly?: boolean;
 }
 
-/** Result of `wireRowModule`: rewritten module, artifact module source, virtual module name. */
+/**
+ * Result of `wireRowModule`. `map` is the hires source map of the rewritten module
+ * (the rewrite must not break stack traces), `moduleMap` the approximate map of the
+ * generated artifact back onto the row function it came from.
+ */
 export interface WiredRowModule {
   code: string;
+  map: unknown;
   module: string;
+  moduleMap: unknown | null;
   virtual: string;
 }
 
@@ -198,48 +204,44 @@ export declare function wireRowModule(options: {
   virtualId?: string;
 }): WiredRowModule | null;
 
-/** Minimal esbuild build API surface the plugin uses. */
-export interface EsbuildBuildLike {
-  onResolve(
-    options: { filter: RegExp },
-    callback: (args: { path: string }) => { path: string; namespace: string } | null
-  ): void;
-  onLoad(
-    options: { filter: RegExp; namespace?: string },
-    callback: (args: {
-      path: string;
-      namespace: string;
-    }) => { contents: string; loader: string; resolveDir: string } | null
-  ): void;
-}
-
 export interface YoyaCompilePluginOptions {
   /** Core namespace (`import * as core from '@yoyaflow/yoya-ui/core'`). */
   core: unknown;
   /** Row factories to wire; modules that are not listed are left untouched. */
   rows?: RowTarget[];
+  /** Runtime hook specifier; defaults to `@yoyaflow/yoya-ui/compiler-runtime` (bundler context). */
   runtime?: string;
+  /** Module specifier the artifact imports its element factories from. */
   coreSpecifier?: string;
+  /** Optional callback per generated artifact (tests / debugging). */
+  onArtifact?: ((name: string, source: string) => void) | null;
 }
 
+/** Bundler plugin object produced by one of the `yoyaCompile` adapters. */
 export interface YoyaCompilePlugin {
   name: string;
-  setup(build: EsbuildBuildLike): void;
+  [hook: string]: unknown;
 }
 
 /**
- * esbuild plugin: listed modules are rewritten at build time and the artifacts are
- * served as virtual modules. Anything it cannot pin down is left as-is and runs on
- * the generic path.
+ * The unplugin instance: write the transform once, get every bundler's entry —
+ * `yoyaCompile.vite(options)` / `.rollup(…)` / `.webpack(…)` / `.esbuild(…)` /
+ * `.rspack(…)` / `.rolldown(…)` / `.farm(…)`. Listed modules are rewritten at build
+ * time (with source maps) and the artifacts are served as virtual modules; anything
+ * it cannot pin down is left as-is and runs on the generic path.
  */
-export declare function yoyaCompilePlugin(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+export declare const yoyaCompile: {
+  vite(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  rollup(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  webpack(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  esbuild(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  rspack(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  rolldown(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+  farm(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
+};
 
-/**
- * Virtual artifact modules produced by a plugin instance, keyed by virtual module name.
- * Kept off the plugin object on purpose: esbuild validates it and rejects extra properties
- * (`Invalid option on plugin`). Returns null when the value is not a plugin from this module.
- */
-export declare function compiledModulesOf(plugin: unknown): Map<string, string> | null;
+/** Convenience alias for `yoyaCompile.esbuild(options)` (kept for existing esbuild configs). */
+export declare function yoyaCompilePlugin(options: YoyaCompilePluginOptions): YoyaCompilePlugin;
 
 export declare function reportCoverage(
   options: Omit<CompileOptions, 'source'> & { root: string; extensions?: string[] }

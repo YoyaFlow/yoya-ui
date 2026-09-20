@@ -481,8 +481,8 @@ import {
   reportCoverage,
   runCli,
   wireRowModule,
+  yoyaCompile,
   yoyaCompilePlugin,
-  compiledModulesOf,
   type ComponentRegistry,
   type ComponentRegistryResult,
   type CompileResult,
@@ -542,23 +542,20 @@ const keyedList = createElementList<{ id: number }>(element, (row) => row.id, {
 const keyedListSize: number = keyedList.size;
 void keyedListSize;
 
-// 构建期 transform：插件（esbuild 协议）+ 纯函数两半都要能用。
-const plugin: YoyaCompilePlugin = yoyaCompilePlugin({
+// 构建期 transform：unplugin 各打包器入口 + 纯函数两半都要能用。
+const plugin: YoyaCompilePlugin = yoyaCompile.esbuild({
   core,
   rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
 });
-plugin.setup({
-  onResolve: (options, callback) => {
-    const resolved = callback({ path: '\0yoya-row:buildRow' });
-    void options.filter;
-    void resolved;
-  },
-  onLoad: (options, callback) => {
-    const loaded = callback({ path: 'src/main.js', namespace: 'file' });
-    void options.filter;
-    void loaded;
-  }
+const vitePlugin: YoyaCompilePlugin = yoyaCompile.vite({
+  core,
+  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }],
+  onArtifact: (name, source) => void [name, source]
 });
+const rollupPlugin: YoyaCompilePlugin = yoyaCompile.rollup({ core, rows: [] });
+const webpackPlugin: YoyaCompilePlugin = yoyaCompile.webpack({ core, rows: [] });
+const legacyEsbuildPlugin: YoyaCompilePlugin = yoyaCompilePlugin({ core, rows: [] });
+void [plugin, vitePlugin, rollupPlugin, webpackPlugin, legacyEsbuildPlugin];
 const wired: WiredRowModule | null = wireRowModule({
   source: 'export function buildRow(row) { return tr((line) => line.td(String(row.id))); }',
   target: { file: 'src/main.js', fn: 'buildRow' },
@@ -568,12 +565,10 @@ if (wired) {
   const wiredCode: string = wired.code;
   const wiredModule: string = wired.module;
   const virtual: string = wired.virtual;
-  void [wiredCode, wiredModule, virtual];
+  const wiredMap: unknown = wired.map;
+  const moduleMap: unknown = wired.moduleMap;
+  void [wiredCode, wiredModule, virtual, wiredMap, moduleMap];
 }
-
-// 虚拟产物侧挂在 WeakMap 上（esbuild 会校验插件对象，只能有 name / setup）
-const pluginArtifacts: Map<string, string> | null = compiledModulesOf(plugin);
-void pluginArtifacts;
 
 const componentResult: CompileResult = compileComponent({
   source: '',

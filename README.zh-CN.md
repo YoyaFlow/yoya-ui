@@ -159,21 +159,24 @@ npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/
 # node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --fn buildRow --out …
 ```
 
-推荐接法是**构建期插件**（业务源码零改动：插件把 `buildRow` 改名为 `buildRowSource`、追加同名函数转调
-产物，产物进虚拟模块，业务代码不 import 任何生成物）：
+推荐接法是**构建期插件**——unplugin 写一遍，Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm
+都有入口（`yoyaCompile.vite(...)` / `.rollup(...)` / `.esbuild(...)` …）。业务源码零改动：插件把
+`buildRow` 改名为 `buildRowSource`、追加同名函数转调产物，产物进虚拟模块，业务代码不 import 任何生成物。
+只在自己已有的构建配置里加一行：
 
 ```js
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
 plugins: [
-  yoyaCompilePlugin({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
+  yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
 ];
 ```
 
 列表照旧写 `tbody((body) => body.keyed(rows, buildRow))`：`element` 通道的 `{el, destroy}` 行与 `node`
 通道的 ViewNode 行 `keyed()` 都直接吃（运行期按产出自选对账）。目标定位按 AST 符号身份，
 **认不准就不动**（找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径）。
+改写保留 hires sourcemap，线上报错仍定位到业务源码。
 用法与契约见 [skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md)。
 
 ```js

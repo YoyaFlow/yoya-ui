@@ -8,26 +8,27 @@
 
 编译是**构建期的一次变换**，业务代码里不出现编译产物：
 
-```js
-// build.mjs —— 构建配置，不是业务代码
-import * as esbuild from 'esbuild';
-import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+插件用 [unplugin](https://unplugin.unjs.io/) 写一遍，Vite / Rollup / Webpack / esbuild / Rspack /
+Rolldown / Farm 各自取入口——只在自己已有的构建配置里加一行，**不需要额外脚本**：
 
-await esbuild.build({
-  entryPoints: ['src/main.js'],
-  bundle: true,
-  format: 'esm',
-  minify: true,
-  outfile: 'dist/main.js',
+```js
+// vite.config.js（rollup / webpack / esbuild 同理：yoyaCompile.rollup / .webpack / .esbuild）
+import { defineConfig } from 'vite';
+import * as core from '@yoyaflow/yoya-ui/core';
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
+
+export default defineConfig({
   plugins: [
-    yoyaCompilePlugin({
+    yoyaCompile.vite({
       core, // 元素工厂的来源
       rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
     })
   ]
 });
 ```
+
+插件改写时会产出 **hires sourcemap**（`transform` 返回 `{ code, map }`，产物模块也带 map）——
+线上报错的栈仍然落在业务源码的正确行列上，不需要额外配置。
 
 业务侧就是普通 DSL：`buildRow` 是**具名函数**（形参必须是单个标识符），列表照旧走 `keyed`：
 

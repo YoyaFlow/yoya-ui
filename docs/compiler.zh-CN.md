@@ -63,23 +63,28 @@ tbody((body) => {
 
 ### 2.2 业务源码零改动：构建期插件
 
-编译器以 esbuild 插件协议接入（vite 可复用 `wireRowModule` 写适配）：
+编译器用 [unplugin](https://unplugin.unjs.io/) 写一遍，自动导出 Vite / Rollup / Webpack / esbuild /
+Rspack / Rolldown / Farm 各自的入口（`yoyaCompile.vite(...)` / `.rollup(...)` / `.webpack(...)` /
+`.esbuild(...)` / `.rspack(...)` / `.rolldown(...)` / `.farm(...)`）——只在自己已有的构建配置里加一行：
 
 ```js
+// vite.config.js
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompilePlugin } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
-plugins: [
-  yoyaCompilePlugin({
-    core,
-    rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
-  })
-];
+export default defineConfig({
+  plugins: [
+    yoyaCompile.vite({ core, rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }] })
+  ]
+});
 ```
 
 插件把源码里的 `buildRow` 改名为 `buildRowSource`（真源留给编译器），并追加同名函数转调编译产物；
 产物进虚拟模块，不落盘，业务代码不 import 任何生成物。目标定位按 **AST 符号身份**（模块顶层同名函数
 声明），认不准就不动：找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径。
+
+改写用 `magic-string` 产出 **hires sourcemap**（`transform` 返回 `{ code, map }`，虚拟产物模块同样带 map），
+定位链不断：线上报错仍落在业务源码的正确行列上。
 
 ## 3. 能编什么 / 什么时候回落
 
