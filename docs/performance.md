@@ -13,46 +13,46 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 <!-- benchmark:tables:start 由 scripts/benchmark-report.mjs 生成 -->
 
-**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-20, yoya version `0.6.11` (`cc61971`).
+**Run setup**: official runner `playwright` (headless) + Chrome for Testing 152.0.7977.64; CPU rows are medians of 15 samples (15 iterations per round; multiple rounds merged), memory / size / first paint are single samples; measured 2026-09-20, yoya version `0.6.12` (`76c515b`).
 
 **Nine standard operations (ms, median)**
 
 | Operation                | yoya now | vanillajs | now ÷ vanilla |
 | ------------------------ | -------- | --------- | ------------- |
-| 01 create 1k rows        | 34.5     | 30.7      | 1.12×         |
-| 02 replace 1k rows       | 37.7     | 32.1      | 1.17×         |
-| 03 update every 10th row | 23.6     | 21.5      | 1.10×         |
-| 04 select row            | 5.9      | 7.4       | 0.80×         |
-| 05 swap rows             | 148.5    | 22.9      | 6.48×         |
-| 06 remove one row        | 17.7     | 17.1      | 1.04×         |
-| 07 create 10k rows       | 407.4    | 365.3     | 1.12×         |
-| 08 append 1k rows        | 38.9     | 35.1      | 1.11×         |
-| 09 clear x8              | 23.7     | 16.1      | 1.47×         |
+| 01 create 1k rows        | 35.0     | 30.5      | 1.15×         |
+| 02 replace 1k rows       | 37.0     | 33.4      | 1.11×         |
+| 03 update every 10th row | 21.9     | 23.0      | 0.95×         |
+| 04 select row            | 7.4      | 7.5       | 0.99×         |
+| 05 swap rows             | 27.4     | 24.1      | 1.14×         |
+| 06 remove one row        | 20.8     | 20.0      | 1.04×         |
+| 07 create 10k rows       | 393.5    | 337.1     | 1.17×         |
+| 08 append 1k rows        | 41.3     | 38.7      | 1.07×         |
+| 09 clear x8              | 22.1     | 15.5      | 1.43×         |
 
 **script / paint split (ms, median)**
 
 | Operation                | yoya script | yoya paint | vanilla script | vanilla paint |
 | ------------------------ | ----------- | ---------- | -------------- | ------------- |
-| 01 create 1k rows        | 5.2         | 28.5       | 2.1            | 28.1          |
-| 02 replace 1k rows       | 8.3         | 28.7       | 4.3            | 27.2          |
-| 03 update every 10th row | 1.6         | 19.6       | 0.8            | 17.5          |
-| 04 select row            | 0.8         | 4.2        | 0.4            | 5.9           |
-| 05 swap rows             | 19.7        | 125.6      | 0.4            | 20.6          |
-| 06 remove one row        | 0.8         | 15.8       | 0.4            | 16.0          |
-| 07 create 10k rows       | 55.9        | 339.4      | 24.9           | 332.2         |
-| 08 append 1k rows        | 5.2         | 32.7       | 2.2            | 32.1          |
-| 09 clear x8              | 19.9        | 2.2        | 11.9           | 2.0           |
+| 01 create 1k rows        | 5.1         | 29.6       | 2.2            | 27.8          |
+| 02 replace 1k rows       | 8.0         | 28.4       | 4.3            | 28.8          |
+| 03 update every 10th row | 1.6         | 18.1       | 0.8            | 20.2          |
+| 04 select row            | 1.0         | 5.2        | 0.4            | 5.9           |
+| 05 swap rows             | 3.2         | 21.5       | 0.4            | 21.0          |
+| 06 remove one row        | 1.4         | 17.1       | 0.4            | 18.5          |
+| 07 create 10k rows       | 57.7        | 332.1      | 24.1           | 308.1         |
+| 08 append 1k rows        | 5.6         | 34.6       | 2.3            | 35.6          |
+| 09 clear x8              | 17.5        | 2.2        | 11.9           | 2.0           |
 
 **Memory / size / first paint**
 
 | Metric                     | yoya now | vanillajs | now ÷ vanilla |
 | -------------------------- | -------- | --------- | ------------- |
-| 21 ready memory (MB)       | 1.34     | 1.05      | 1.28×         |
-| 22 run memory (MB)         | 3.99     | 2.44      | 1.64×         |
-| 25 run+clear memory (MB)   | 1.69     | 1.09      | 1.56×         |
-| 41 size, uncompressed (KB) | 78.2     | 11.7      | 6.68×         |
-| 42 size, brotli (KB)       | 21.1     | 2.5       | 8.44×         |
-| 43 first paint (ms)        | 381.9    | 269.2     | 1.42×         |
+| 21 ready memory (MB)       | 1.36     | 1.06      | 1.28×         |
+| 22 run memory (MB)         | 4.08     | 2.45      | 1.66×         |
+| 25 run+clear memory (MB)   | 1.69     | 1.09      | 1.55×         |
+| 41 size, uncompressed (KB) | 78.3     | 11.7      | 6.69×         |
+| 42 size, brotli (KB)       | 21.2     | 2.5       | 8.48×         |
+| 43 first paint (ms)        | 370.4    | 276.4     | 1.34×         |
 
 <!-- benchmark:tables:end -->
 
