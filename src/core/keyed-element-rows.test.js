@@ -113,6 +113,36 @@ describe('keyed() with element rows (ticket 15)', () => {
     expect(element.querySelectorAll('tr')).toHaveLength(0);
   });
 
+  // 票 20：搬动必须按「不在最长递增子序列里」的行算。反向锚点判位置在交换两行时会退化成整表重排。
+  it('keeps a two-row swap in a 1000-row list to two DOM moves', () => {
+    const rows = ref(
+      Array.from({ length: 1000 }, (_, index) => ({ id: index + 1, label: `label ${index + 1}` }))
+    );
+    const build = (row) => {
+      const el = document.createElement('tr');
+      el.setAttribute('data-id', String(row.id));
+      el.textContent = row.label;
+      return { el, destroy() {} };
+    };
+    const host = tbody((body) => body.keyed(rows, build));
+    const element = host.renderDom();
+    expect(element.children).toHaveLength(1000);
+
+    const spy = vi.spyOn(Element.prototype, 'insertBefore');
+    const current = rows.value;
+    const next = current.slice();
+    next[1] = current[998];
+    next[998] = current[1];
+    const before = spy.mock.calls.length;
+    rows.value = next;
+    const moves = spy.mock.calls.length - before;
+    spy.mockRestore();
+
+    expect(idsOf(element).slice(0, 2)).toEqual(['1', '999']);
+    expect(idsOf(element).slice(-2)).toEqual(['2', '1000']);
+    expect(moves).toBeLessThanOrEqual(4);
+  });
+
   it('rejects mixing element rows with node rows', () => {
     const rows = ref([]);
     const build = (row) =>

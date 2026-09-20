@@ -253,21 +253,21 @@ Execution (nine standard operations) and memory, read from the official
 > **These are not the official site numbers** — only compare within the same round; size, first paint and the
 > per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                        | vanillajs | yoya-**0.6.6** (compiled) | yoya-**0.6.6** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
-| -------------------------------- | --------- | ------------------------- | ------------------------ | ------------- | ------------- | ------------- | ------------- |
-| 01 create 1k rows                | 30.6      | 34.5 (1.13×)              | 44.5 (1.45×)             | 37.2 (1.22×)  | 38.9 (1.27×)  | 33.9 (1.11×)  | 33.9 (1.11×)  |
-| 02 replace 1k rows               | 34.2      | 38.3 (1.12×)              | 46.3 (1.35×)             | 43.8 (1.28×)  | 45.2 (1.32×)  | 38.8 (1.13×)  | 41.8 (1.22×)  |
-| 03 update every 10th row         | 21.6      | 21.4 (0.99×)              | 22.7 (1.05×)             | 25.4 (1.18×)  | 26.8 (1.24×)  | 20.7 (0.96×)  | 22.0 (1.02×)  |
-| 04 select row                    | 7.0       | 6.4 (0.91×)               | 7.2 (1.03×)              | 9.1 (1.30×)   | 10.0 (1.43×)  | 7.8 (1.11×)   | 9.9 (1.41×)   |
-| 05 swap rows                     | 23.1      | 24.2 (1.05×)              | 28.2 (1.22×)             | 27.8 (1.20×)  | 159.1 (6.89×) | 24.1 (1.04×)  | 24.8 (1.07×)  |
-| 06 remove one row                | 17.5      | 18.1 (1.03×)              | 17.8 (1.02×)             | 20.9 (1.19×)  | 18.1 (1.03×)  | 17.6 (1.01×)  | 18.1 (1.03×)  |
-| 07 create 10k rows               | 345.4     | 388.7 (1.13×)             | 501.0 (1.45×)            | 413.9 (1.20×) | 593.8 (1.72×) | 428.1 (1.24×) | 388.9 (1.13×) |
-| 08 append 1k rows                | 34.6      | 40.8 (1.18×)              | 50.1 (1.45×)             | 40.6 (1.17×)  | 42.6 (1.23×)  | 36.2 (1.05×)  | 37.3 (1.08×)  |
-| 09 clear x8                      | 16.7      | 25.2 (1.51×)              | 22.9 (1.37×)             | 24.8 (1.49×)  | 27.2 (1.63×)  | 21.8 (1.31×)  | 16.7 (1.00×)  |
-| Nine-op geometric mean (overall) | 28.59     | 31.63 (1.11×)             | 35.82 (1.25×)            | 35.57 (1.24×) | 46.06 (1.61×) | 31.49 (1.10×) | 31.83 (1.11×) |
-| 21 ready memory (MB)             | 1.06      | 1.30 (1.23×)              | 1.30 (1.23×)             | 1.27 (1.20×)  | 1.67 (1.58×)  | 1.08 (1.02×)  | 1.16 (1.10×)  |
-| 22 run memory (MB)               | 2.45      | 3.95 (1.61×)              | 5.37 (2.19×)             | 4.59 (1.87×)  | 5.03 (2.05×)  | 3.34 (1.36×)  | 3.52 (1.44×)  |
-| 25 run+clear memory (MB)         | 1.13      | 1.58 (1.40×)              | 1.70 (1.50×)             | 1.71 (1.52×)  | 2.38 (2.11×)  | 1.29 (1.14×)  | 1.36 (1.21×)  |
+| Benchmark                        | vanillajs | yoya-**0.6.11** (compiled) | yoya-**0.6.11** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| -------------------------------- | --------- | -------------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
+| 01 create 1k rows                | 30.7      | 34.5 (1.12×)               | 43.1 (1.40×)              | 37.5 (1.22×)  | 39.9 (1.30×)  | 33.3 (1.08×)  | 33.9 (1.10×)  |
+| 02 replace 1k rows               | 32.1      | 37.7 (1.17×)               | 50.1 (1.56×)              | 39.9 (1.24×)  | 42.9 (1.34×)  | 35.2 (1.10×)  | 36.5 (1.14×)  |
+| 03 update every 10th row         | 21.5      | 23.6 (1.10×)               | 22.9 (1.07×)              | 24.5 (1.14×)  | 28.9 (1.34×)  | 20.7 (0.96×)  | 22.7 (1.06×)  |
+| 04 select row                    | 7.4       | 5.9 (0.80×)                | 6.0 (0.81×)               | 7.7 (1.04×)   | 10.6 (1.43×)  | 7.5 (1.01×)   | 9.7 (1.31×)   |
+| 05 swap rows                     | 22.9      | 148.5 (6.48×)              | 27.9 (1.22×)              | 28.2 (1.23×)  | 165.7 (7.24×) | 22.4 (0.98×)  | 25.9 (1.13×)  |
+| 06 remove one row                | 17.1      | 17.7 (1.04×)               | 18.5 (1.08×)              | 19.8 (1.16×)  | 18.5 (1.08×)  | 17.1 (1.00×)  | 17.7 (1.04×)  |
+| 07 create 10k rows               | 365.3     | 407.4 (1.12×)              | 496.7 (1.36×)             | 432.0 (1.18×) | 590.4 (1.62×) | 359.2 (0.98×) | 361.1 (0.99×) |
+| 08 append 1k rows                | 35.1      | 38.9 (1.11×)               | 49.1 (1.40×)              | 41.7 (1.19×)  | 43.5 (1.24×)  | 35.8 (1.02×)  | 37.2 (1.06×)  |
+| 09 clear x8                      | 16.1      | 23.7 (1.47×)               | 25.8 (1.60×)              | 20.9 (1.30×)  | 27.4 (1.70×)  | 19.6 (1.22×)  | 17.3 (1.07×)  |
+| Nine-op geometric mean (overall) | 28.57     | 38.33 (1.34×)              | 35.79 (1.25×)             | 33.91 (1.19×) | 47.06 (1.65×) | 29.62 (1.04×) | 31.32 (1.10×) |
+| 21 ready memory (MB)             | 1.05      | 1.34 (1.28×)               | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.57 (1.50×)  | 1.02 (0.98×)  | 1.13 (1.08×)  |
+| 22 run memory (MB)               | 2.44      | 3.99 (1.64×)               | 5.46 (2.24×)              | 4.59 (1.88×)  | 5.05 (2.07×)  | 3.30 (1.35×)  | 3.44 (1.41×)  |
+| 25 run+clear memory (MB)         | 1.09      | 1.69 (1.56×)               | 1.79 (1.64×)              | 1.69 (1.55×)  | 2.40 (2.21×)  | 1.29 (1.19×)  | 1.50 (1.38×)  |
 
 <!-- benchmark:readme:end -->
 
@@ -288,19 +288,19 @@ small core is — budget against the download column. The last column says what 
 | ---------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `yoya.core.js`                     | 2.5 KB ~ **28.9 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly              |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                |
-| `yoya.ui.js` (all categories)      | 5.6 KB ~ **99.5 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
+| `yoya.ui.js` (all categories)      | 5.6 KB ~ **99.6 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
 | `yoya.router.js`                   | 10.4 KB ~ **30.6 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                          |
 | `yoya.compiler-runtime.js`         | 1.6 KB ~ **18.4 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`); the main entry never includes them |
 | `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                              |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 19.6 / 20.0 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 19.6 / 20.1 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
 
 Self-contained entries (core inlined, single file):
 
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 294.0 KB | 132.4 KB | 38.9 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 829.1 KB | 465.6 KB | 114.1 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 759.9 KB | 433.5 KB | 104.3 KB | core + all components                |
+| `yoya.router.full.js`                 | 294.3 KB | 132.5 KB | 38.9 KB  | core + router / SSR                  |
+| `yoya.ui-router.full.js` (everything) | 829.4 KB | 465.7 KB | 114.1 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 760.2 KB | 433.6 KB | 104.3 KB | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.

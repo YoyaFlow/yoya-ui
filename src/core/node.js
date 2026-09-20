@@ -1361,10 +1361,22 @@ function placeElementRows(parent, segment) {
     return;
   }
 
+  // 最小搬动：与节点行同一套口径——只搬「不在最长递增子序列里」的行（外加还没落地的行）。
+  // 只用反向锚点判断"位置对不对"是不够的：交换两行会把后面每一行都挤位，退化成整表重排
+  // （票 20 实测：1000 行交换 —— 反向锚点 997 次 insertBefore / paint 125ms；LIS 口径 2 次）。
+  const previousPosition = new Map();
+  for (let index = 0; index < container.children.length; index += 1) {
+    previousPosition.set(container.children[index], index);
+  }
+  const moved = collectKeyedMovedNodes(
+    order.map((entry) => ({ node: entry.el })),
+    previousPosition
+  );
+
   let anchor = elementSegmentAnchor(parent, segment);
   for (let index = order.length - 1; index >= 0; index -= 1) {
     const { el } = order[index];
-    if (el.parentNode !== container || el.nextSibling !== anchor) {
+    if (el.parentNode !== container || moved.has(el)) {
       container.insertBefore(el, anchor);
     }
     anchor = el;

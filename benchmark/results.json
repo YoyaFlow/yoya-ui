@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-09-19",
-    "commit": "5cdce76",
-    "packageVersion": "0.6.6",
+    "generatedAt": "2026-09-20",
+    "commit": "cc61971",
+    "packageVersion": "0.6.11",
     "runner": "playwright",
     "mode": "headless",
     "browser": "Chrome for Testing 152.0.7977.64",
@@ -13,76 +13,76 @@
       "id": "01_run1k",
       "yoya": {
         "total": 34.5,
-        "script": 5.4,
+        "script": 5.2,
         "paint": 28.5
       },
       "baseline": {
-        "total": 30.6,
-        "script": 2.2,
-        "paint": 27.9
+        "total": 30.7,
+        "script": 2.1,
+        "paint": 28.1
       }
     },
     {
       "id": "02_replace1k",
       "yoya": {
-        "total": 38.3,
-        "script": 8.4,
-        "paint": 28.8
+        "total": 37.7,
+        "script": 8.3,
+        "paint": 28.7
       },
       "baseline": {
-        "total": 34.2,
-        "script": 4.4,
-        "paint": 29.3
+        "total": 32.1,
+        "script": 4.3,
+        "paint": 27.2
       }
     },
     {
       "id": "03_update10th1k_x16",
       "yoya": {
-        "total": 21.4,
-        "script": 1.2,
-        "paint": 18
+        "total": 23.6,
+        "script": 1.6,
+        "paint": 19.6
       },
       "baseline": {
-        "total": 21.6,
-        "script": 1,
-        "paint": 18.3
+        "total": 21.5,
+        "script": 0.8,
+        "paint": 17.5
       }
     },
     {
       "id": "04_select1k",
       "yoya": {
-        "total": 6.4,
-        "script": 0.4,
-        "paint": 4.7
+        "total": 5.9,
+        "script": 0.8,
+        "paint": 4.2
       },
       "baseline": {
-        "total": 7,
+        "total": 7.4,
         "script": 0.4,
-        "paint": 5.4
+        "paint": 5.9
       }
     },
     {
       "id": "05_swap1k",
       "yoya": {
-        "total": 24.2,
-        "script": 1.8,
-        "paint": 20.4
+        "total": 148.5,
+        "script": 19.7,
+        "paint": 125.6
       },
       "baseline": {
-        "total": 23.1,
+        "total": 22.9,
         "script": 0.4,
-        "paint": 20.2
+        "paint": 20.6
       }
     },
     {
       "id": "06_remove-one-1k",
       "yoya": {
-        "total": 18.1,
-        "script": 0.7,
-        "paint": 16.1
+        "total": 17.7,
+        "script": 0.8,
+        "paint": 15.8
       },
       "baseline": {
-        "total": 17.5,
+        "total": 17.1,
         "script": 0.4,
         "paint": 16
       }
@@ -90,163 +90,163 @@
     {
       "id": "07_create10k",
       "yoya": {
-        "total": 388.7,
-        "script": 56.7,
-        "paint": 327.9
+        "total": 407.4,
+        "script": 55.9,
+        "paint": 339.4
       },
       "baseline": {
-        "total": 345.4,
-        "script": 24.2,
-        "paint": 316.5
+        "total": 365.3,
+        "script": 24.9,
+        "paint": 332.2
       }
     },
     {
       "id": "08_create1k-after1k_x2",
       "yoya": {
-        "total": 40.8,
-        "script": 5.8,
-        "paint": 34
+        "total": 38.9,
+        "script": 5.2,
+        "paint": 32.7
       },
       "baseline": {
-        "total": 34.6,
+        "total": 35.1,
         "script": 2.2,
-        "paint": 31.6
+        "paint": 32.1
       }
     },
     {
       "id": "09_clear1k_x8",
       "yoya": {
-        "total": 25.2,
-        "script": 21.4,
-        "paint": 2
+        "total": 23.7,
+        "script": 19.9,
+        "paint": 2.2
       },
       "baseline": {
-        "total": 16.7,
-        "script": 14,
-        "paint": 1.8
+        "total": 16.1,
+        "script": 11.9,
+        "paint": 2
       }
     }
   ],
   "memory": [
     {
       "id": "21_ready-memory",
-      "yoya": 1.3014354705810547,
-      "baseline": 1.0571908950805664
+      "yoya": 1.3436822891235352,
+      "baseline": 1.0459814071655273
     },
     {
       "id": "22_run-memory",
-      "yoya": 3.954127311706543,
-      "baseline": 2.450362205505371
+      "yoya": 3.994932174682617,
+      "baseline": 2.440108299255371
     },
     {
       "id": "25_run-clear-memory",
-      "yoya": 1.5826692581176758,
-      "baseline": 1.1277236938476562
+      "yoya": 1.689112663269043,
+      "baseline": 1.0856523513793945
     }
   ],
   "size": [
     {
       "id": "41_size-uncompressed",
-      "yoya": 92.7,
+      "yoya": 78.2,
       "baseline": 11.7
     },
     {
       "id": "42_size-compressed",
-      "yoya": 23.6,
+      "yoya": 21.1,
       "baseline": 2.5
     },
     {
       "id": "43_first-paint",
-      "yoya": 367.6,
-      "baseline": 293.6
+      "yoya": 381.9,
+      "baseline": 269.2
     }
   ],
   "compare": [
     {
-      "label": "yoya-ui-runtime-v0.6.5-runtime-keyed",
+      "label": "yoya-ui-runtime-v0.6.11-keyed",
       "version": "yoya runtime（无编译）",
       "cpu": [
         {
           "id": "01_run1k",
-          "total": 44.5,
-          "script": 14.7,
-          "paint": 29.2
+          "total": 43.1,
+          "script": 14.2,
+          "paint": 28.1
         },
         {
           "id": "02_replace1k",
-          "total": 46.3,
-          "script": 16.4,
-          "paint": 29
+          "total": 50.1,
+          "script": 17.3,
+          "paint": 31.3
         },
         {
           "id": "03_update10th1k_x16",
-          "total": 22.7,
+          "total": 22.9,
           "script": 1.6,
-          "paint": 18.5
+          "paint": 19.4
         },
         {
           "id": "04_select1k",
-          "total": 7.2,
-          "script": 1,
-          "paint": 4.8
+          "total": 6,
+          "script": 0.8,
+          "paint": 4.2
         },
         {
           "id": "05_swap1k",
-          "total": 28.2,
-          "script": 3.5,
-          "paint": 22.3
+          "total": 27.9,
+          "script": 3.4,
+          "paint": 21.6
         },
         {
           "id": "06_remove-one-1k",
-          "total": 17.8,
+          "total": 18.5,
           "script": 1,
-          "paint": 16.1
+          "paint": 16.4
         },
         {
           "id": "07_create10k",
-          "total": 501,
-          "script": 151.9,
-          "paint": 337.3
+          "total": 496.7,
+          "script": 155.4,
+          "paint": 333.7
         },
         {
           "id": "08_create1k-after1k_x2",
-          "total": 50.1,
-          "script": 14.6,
-          "paint": 35
+          "total": 49.1,
+          "script": 13.9,
+          "paint": 34.8
         },
         {
           "id": "09_clear1k_x8",
-          "total": 22.9,
-          "script": 20.1,
-          "paint": 2
+          "total": 25.8,
+          "script": 23.1,
+          "paint": 1.7
         }
       ],
       "memory": [
         {
           "id": "21_ready-memory",
-          "value": 1.299154281616211
+          "value": 1.2828750610351562
         },
         {
           "id": "22_run-memory",
-          "value": 5.37015438079834
+          "value": 5.464890480041504
         },
         {
           "id": "25_run-clear-memory",
-          "value": 1.695582389831543
+          "value": 1.7855396270751953
         }
       ],
       "size": [
         {
           "id": "41_size-uncompressed",
-          "value": 88.6
+          "value": 75.8
         },
         {
           "id": "42_size-compressed",
-          "value": 22.2
+          "value": 21.1
         },
         {
           "id": "43_first-paint",
-          "value": 384.4
+          "value": 376.6
         }
       ]
     },
@@ -256,71 +256,71 @@
       "cpu": [
         {
           "id": "01_run1k",
-          "total": 37.2,
-          "script": 7.3,
-          "paint": 29.1
+          "total": 37.5,
+          "script": 7.4,
+          "paint": 29.2
         },
         {
           "id": "02_replace1k",
-          "total": 43.8,
-          "script": 11.1,
-          "paint": 31.9
+          "total": 39.9,
+          "script": 10.8,
+          "paint": 28.4
         },
         {
           "id": "03_update10th1k_x16",
-          "total": 25.4,
-          "script": 3.2,
-          "paint": 19.5
+          "total": 24.5,
+          "script": 3.4,
+          "paint": 18.2
         },
         {
           "id": "04_select1k",
-          "total": 9.1,
-          "script": 1.4,
-          "paint": 5.6
+          "total": 7.7,
+          "script": 1.2,
+          "paint": 5.5
         },
         {
           "id": "05_swap1k",
-          "total": 27.8,
+          "total": 28.2,
           "script": 1.6,
-          "paint": 23
+          "paint": 24.6
         },
         {
           "id": "06_remove-one-1k",
-          "total": 20.9,
+          "total": 19.8,
           "script": 2.2,
-          "paint": 17.3
+          "paint": 16.4
         },
         {
           "id": "07_create10k",
-          "total": 413.9,
-          "script": 73.4,
-          "paint": 336.5
+          "total": 432,
+          "script": 74.6,
+          "paint": 350.8
         },
         {
           "id": "08_create1k-after1k_x2",
-          "total": 40.6,
-          "script": 7.1,
-          "paint": 32.7
+          "total": 41.7,
+          "script": 7.3,
+          "paint": 33.2
         },
         {
           "id": "09_clear1k_x8",
-          "total": 24.8,
-          "script": 20,
-          "paint": 2.2
+          "total": 20.9,
+          "script": 17.1,
+          "paint": 1.7
         }
       ],
       "memory": [
         {
           "id": "21_ready-memory",
-          "value": 1.2721366882324219
+          "value": 1.3270339965820312
         },
         {
           "id": "22_run-memory",
-          "value": 4.591869354248047
+          "value": 4.588111877441406
         },
         {
           "id": "25_run-clear-memory",
-          "value": 1.7091121673583984
+          "value": 1.6852741241455078
         }
       ],
       "size": [
@@ -334,7 +334,7 @@
         },
         {
           "id": "43_first-paint",
-          "value": 328.7
+          "value": 419.8
         }
       ]
     },
@@ -344,71 +344,71 @@
       "cpu": [
         {
           "id": "01_run1k",
-          "total": 38.9,
-          "script": 8.6,
-          "paint": 29
+          "total": 39.9,
+          "script": 9,
+          "paint": 30.6
         },
         {
           "id": "02_replace1k",
-          "total": 45.2,
-          "script": 14.3,
-          "paint": 30
+          "total": 42.9,
+          "script": 14.2,
+          "paint": 27.9
         },
         {
           "id": "03_update10th1k_x16",
-          "total": 26.8,
-          "script": 5.6,
-          "paint": 17.3
+          "total": 28.9,
+          "script": 6,
+          "paint": 20.6
         },
         {
           "id": "04_select1k",
-          "total": 10,
+          "total": 10.6,
           "script": 3.6,
-          "paint": 5.3
+          "paint": 5.1
         },
         {
           "id": "05_swap1k",
-          "total": 159.1,
-          "script": 27.8,
-          "paint": 128.3
+          "total": 165.7,
+          "script": 27.2,
+          "paint": 133.3
         },
         {
           "id": "06_remove-one-1k",
-          "total": 18.1,
+          "total": 18.5,
           "script": 1.4,
-          "paint": 15.6
+          "paint": 15.8
         },
         {
           "id": "07_create10k",
-          "total": 593.8,
-          "script": 235.8,
-          "paint": 340.4
+          "total": 590.4,
+          "script": 250.5,
+          "paint": 336.3
         },
         {
           "id": "08_create1k-after1k_x2",
-          "total": 42.6,
-          "script": 9.4,
-          "paint": 32.2
+          "total": 43.5,
+          "script": 9.6,
+          "paint": 33
         },
         {
           "id": "09_clear1k_x8",
-          "total": 27.2,
-          "script": 23.8,
-          "paint": 1.6
+          "total": 27.4,
+          "script": 24.2,
+          "paint": 2
         }
       ],
       "memory": [
         {
           "id": "21_ready-memory",
-          "value": 1.6676959991455078
+          "value": 1.568094253540039
         },
         {
           "id": "22_run-memory",
-          "value": 5.034811973571777
+          "value": 5.0529069900512695
         },
         {
           "id": "25_run-clear-memory",
-          "value": 2.3805980682373047
+          "value": 2.3961915969848633
         }
       ],
       "size": [
@@ -422,7 +422,7 @@
         },
         {
           "id": "43_first-paint",
-          "value": 1188.9
+          "value": 454.5
         }
       ]
     },
@@ -432,71 +432,71 @@
       "cpu": [
         {
           "id": "01_run1k",
-          "total": 33.9,
-          "script": 3.5,
-          "paint": 29.8
+          "total": 33.3,
+          "script": 3.4,
+          "paint": 29.3
         },
         {
           "id": "02_replace1k",
-          "total": 38.8,
-          "script": 6.7,
-          "paint": 30.2
+          "total": 35.2,
+          "script": 6.5,
+          "paint": 28
         },
         {
           "id": "03_update10th1k_x16",
           "total": 20.7,
           "script": 1.4,
-          "paint": 17.5
+          "paint": 17.3
         },
         {
           "id": "04_select1k",
-          "total": 7.8,
+          "total": 7.5,
           "script": 1.2,
-          "paint": 5.3
+          "paint": 5.4
         },
         {
           "id": "05_swap1k",
-          "total": 24.1,
+          "total": 22.4,
           "script": 1.2,
-          "paint": 20.8
+          "paint": 19.1
         },
         {
           "id": "06_remove-one-1k",
-          "total": 17.6,
+          "total": 17.1,
           "script": 0.4,
-          "paint": 16.2
+          "paint": 15.7
         },
         {
           "id": "07_create10k",
-          "total": 428.1,
-          "script": 35.2,
-          "paint": 379.4
+          "total": 359.2,
+          "script": 33.3,
+          "paint": 319.6
         },
         {
           "id": "08_create1k-after1k_x2",
-          "total": 36.2,
-          "script": 3.4,
-          "paint": 31.9
+          "total": 35.8,
+          "script": 3.5,
+          "paint": 31.6
         },
         {
           "id": "09_clear1k_x8",
-          "total": 21.8,
-          "script": 17.1,
-          "paint": 2.2
+          "total": 19.6,
+          "script": 15.8,
+          "paint": 1.9
         }
       ],
       "memory": [
         {
           "id": "21_ready-memory",
-          "value": 1.0784568786621094
+          "value": 1.0203819274902344
         },
         {
           "id": "22_run-memory",
-          "value": 3.3391618728637695
+          "value": 3.3023767471313477
         },
         {
           "id": "25_run-clear-memory",
-          "value": 1.2877511978149414
+          "value": 1.2877893447875977
         }
       ],
       "size": [
@@ -510,7 +510,7 @@
         },
         {
           "id": "43_first-paint",
-          "value": 348.8
+          "value": 264.3
         }
       ]
     },
@@ -521,54 +521,54 @@
         {
           "id": "01_run1k",
           "total": 33.9,
-          "script": 3.9,
-          "paint": 29.7
+          "script": 4,
+          "paint": 29.3
         },
         {
           "id": "02_replace1k",
-          "total": 41.8,
-          "script": 9,
-          "paint": 32.3
+          "total": 36.5,
+          "script": 7.9,
+          "paint": 27.9
         },
         {
           "id": "03_update10th1k_x16",
-          "total": 22,
-          "script": 2.2,
-          "paint": 18.2
+          "total": 22.7,
+          "script": 2,
+          "paint": 18.7
         },
         {
           "id": "04_select1k",
-          "total": 9.9,
+          "total": 9.7,
           "script": 3,
-          "paint": 5.4
+          "paint": 5.8
         },
         {
           "id": "05_swap1k",
-          "total": 24.8,
+          "total": 25.9,
           "script": 2,
-          "paint": 21.1
+          "paint": 21.4
         },
         {
           "id": "06_remove-one-1k",
-          "total": 18.1,
+          "total": 17.7,
           "script": 0.8,
-          "paint": 16.2
+          "paint": 16.1
         },
         {
           "id": "07_create10k",
-          "total": 388.9,
-          "script": 37.4,
-          "paint": 344.6
+          "total": 361.1,
+          "script": 37.1,
+          "paint": 319.1
         },
         {
           "id": "08_create1k-after1k_x2",
-          "total": 37.3,
-          "script": 4,
-          "paint": 32.5
+          "total": 37.2,
+          "script": 4.2,
+          "paint": 32.2
         },
         {
           "id": "09_clear1k_x8",
-          "total": 16.7,
+          "total": 17.3,
           "script": 13.9,
           "paint": 1.8
         }
@@ -576,15 +576,15 @@
       "memory": [
         {
           "id": "21_ready-memory",
-          "value": 1.1618499755859375
+          "value": 1.1284818649291992
         },
         {
           "id": "22_run-memory",
-          "value": 3.5165300369262695
+          "value": 3.4350204467773438
         },
         {
           "id": "25_run-clear-memory",
-          "value": 1.3614072799682617
+          "value": 1.4979944229125977
         }
       ],
       "size": [
@@ -598,7 +598,7 @@
         },
         {
           "id": "43_first-paint",
-          "value": 344.7
+          "value": 282.2
         }
       ]
     }
