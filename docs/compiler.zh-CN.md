@@ -77,9 +77,12 @@ export default defineConfig({
 });
 ```
 
-默认规则**不需要花名册**：被打包器交进来的模块（`node_modules` 跳过）里，顶层名为 `rowName`
-（默认 `buildRow`）的函数声明就是编译单元；名字不同写一次 `rowName: 'renderRow'`。只有同一文件里要按
-不同模式编多个单元、或要精确限定文件时，才用显式 `rows: [{ file, fn, mode, thin }]`（给了列表就只认列表）。
+**编译单元 = yoya-ui 自己的组件边界**，不需要花名册：被打包器交进来的模块（`node_modules` 跳过）里，
+顶层**返回 UI 视图的工厂函数**就是编译单元——大驼峰（`Card` / `StatusPill`）＝组件，小驼峰里也是工厂
+函数的（`buildRow` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、命令、数据处理）
+原样保留。通道（`element` / `node`）按**用法**推断：被当行工厂交给 `keyed` 的走 `element`（最快），
+只被 `child(...)` 当组件调用的走 `node`（ViewNode 在 `child` 与 `keyed` 里都成立）。显式
+`rows: [{ file, fn, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
 
 插件把源码里的 `buildRow` 改名为 `buildRowSource`（真源留给编译器），并追加同名函数转调编译产物；
 产物进虚拟模块，不落盘，业务代码不 import 任何生成物。目标定位按 **AST 符号身份**（模块顶层同名函数

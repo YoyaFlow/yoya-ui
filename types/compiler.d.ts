@@ -197,26 +197,41 @@ export interface WiredRowModule {
  */
 export declare function wireRowModule(options: {
   source: string;
-  target: RowTarget;
+  target?: RowTarget | null;
+  targets?: RowTarget[] | null;
   core: unknown;
   runtime?: string;
   coreSpecifier?: string;
   virtualId?: string;
 }): WiredRowModule | null;
 
+/**
+ * Default discovery rule: top-level factories that return a UI view are compile units
+ * (PascalCase components and camelCase shortcut factories alike). The channel is inferred from
+ * usage — a factory handed to the core `keyed` becomes an `element` unit, anything else a `node` one.
+ */
+export declare function viewFactoryUnits(
+  source: string,
+  options: {
+    core: unknown;
+    file?: string;
+    mode?: 'element' | 'node' | null;
+    thin?: boolean;
+    templatesOnly?: boolean;
+  }
+): RowTarget[];
+
 export interface YoyaCompilePluginOptions {
   /** Core namespace (`import * as core from '@yoyaflow/yoya-ui/core'`). */
   core: unknown;
   /**
-   * Explicit roster of row factories. Optional: without it the **default rule** applies —
-   * every module handed to the plugin (node_modules skipped) whose top level declares a
-   * function named `rowName` becomes a compile unit. When given, only the roster is used.
+   * Escape hatch: an explicit roster for internal / special functions. Optional — without it the
+   * default rule applies: every module handed to the plugin (node_modules skipped) contributes its
+   * top-level factories that return a UI view. When given, only the roster is used.
    */
   rows?: RowTarget[];
-  /** Function name the default rule looks for (default `buildRow`). */
-  rowName?: string;
-  /** Channel used by the default rule (default `element`). */
-  mode?: 'element' | 'node';
+  /** Force one channel for every discovered unit (default: inferred from usage). */
+  mode?: 'element' | 'node' | null;
   /** Node-mode `--thin` for the default rule. */
   thin?: boolean;
   /** Element-mode templates-only for the default rule. */

@@ -22,10 +22,12 @@ export default defineConfig({
 });
 ```
 
-默认规则不需要「花名册」：凡是被打包器交给插件的模块（`node_modules` 一律跳过），只要顶层有名为
-`rowName`（默认 `buildRow`）的函数声明就编它；名字不同就写一次 `rowName: 'renderRow'`。只有同一文件里
-要按不同模式编多个单元、或要精确限定文件时，才用显式的
-`rows: [{ file, fn, mode, thin }]` 列表（给了列表就只认列表）。
+**编译单元 = yoya-ui 自己的组件边界**，不需要「花名册」：凡是被打包器交给插件的模块（`node_modules`
+一律跳过），顶层**返回 UI 视图的工厂函数**就是编译单元——大驼峰（`Card` / `StatusPill`）＝组件，
+小驼峰里也是工厂函数的（`buildRow` / `vBadge` 这类薄工厂、快捷工厂）同样算；返回的不是视图（助手、
+命令、数据处理）原样保留。通道（`element` / `node`）**按用法定**：被当行工厂交给 `keyed` 的走
+`element`（最快），只被 `child(...)` 当组件调用的走 `node`（ViewNode 在 `child` 与 `keyed` 里都成立）。
+显式 `rows: [{ file, fn, mode, thin }]` 只作为**内部特殊函数的逃生口**（给了列表就只认列表）。
 
 插件改写时会产出 **hires sourcemap**（`transform` 返回 `{ code, map }`，产物模块也带 map）——
 线上报错的栈仍然落在业务源码的正确行列上，不需要额外配置。

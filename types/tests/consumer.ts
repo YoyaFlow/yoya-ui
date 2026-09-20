@@ -481,6 +481,7 @@ import {
   reportCoverage,
   runCli,
   wireRowModule,
+  viewFactoryUnits,
   yoyaCompile,
   yoyaCompilePlugin,
   type ComponentRegistry,
@@ -544,23 +545,27 @@ void keyedListSize;
 
 // 构建期 transform：unplugin 各打包器入口 + 纯函数两半都要能用。
 const plugin: YoyaCompilePlugin = yoyaCompile.esbuild({
-  core,
-  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+  core // 默认：按组件边界自动发现编译单元
 });
 const vitePlugin: YoyaCompilePlugin = yoyaCompile.vite({
   core,
-  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }],
   onArtifact: (name, source) => void [name, source]
 });
-const rollupPlugin: YoyaCompilePlugin = yoyaCompile.rollup({ core, rows: [] });
-const webpackPlugin: YoyaCompilePlugin = yoyaCompile.webpack({ core, rows: [] });
-const legacyEsbuildPlugin: YoyaCompilePlugin = yoyaCompilePlugin({ core, rows: [] });
+// 逃生口：内部特殊函数才用花名册
+const rollupPlugin: YoyaCompilePlugin = yoyaCompile.rollup({
+  core,
+  rows: [{ file: 'src/main.js', fn: 'buildRow', mode: 'element' }]
+});
+const webpackPlugin: YoyaCompilePlugin = yoyaCompile.webpack({ core, mode: 'node' });
+const legacyEsbuildPlugin: YoyaCompilePlugin = yoyaCompilePlugin({ core });
 void [plugin, vitePlugin, rollupPlugin, webpackPlugin, legacyEsbuildPlugin];
 const wired: WiredRowModule | null = wireRowModule({
   source: 'export function buildRow(row) { return tr((line) => line.td(String(row.id))); }',
   target: { file: 'src/main.js', fn: 'buildRow' },
   core
 });
+const discovered = viewFactoryUnits('export function Card() {}', { core, file: 'src/main.js' });
+void discovered;
 if (wired) {
   const wiredCode: string = wired.code;
   const wiredModule: string = wired.module;

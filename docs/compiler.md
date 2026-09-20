@@ -90,11 +90,14 @@ export default defineConfig({
 });
 ```
 
-The default rule needs **no roster**: any module handed to the plugin (with `node_modules` skipped)
-whose top level declares a function named `rowName` (default `buildRow`) becomes a compile unit — set
-`rowName` once if yours is named differently. Use the explicit `rows: [{ file, fn, mode, thin }]` list
-only for several units per file, per-unit modes, or narrow file scoping (when given, the roster is the
-only thing consulted).
+The compile unit is **yoya-ui's own component boundary**, so no roster is needed: inside any module
+handed to the plugin (`node_modules` skipped), a top-level factory that returns a UI view is a compile
+unit — PascalCase components (`Card`, `StatusPill`) and camelCase shortcut factories (`buildRow`,
+`vBadge`) alike; helpers, commands and data helpers are left alone. The channel is inferred from
+**usage**: a factory handed to `keyed` becomes an `element` unit (fastest), a factory only called as a
+component (`child(Card())`) becomes a `node` unit (a ViewNode works in both places). The explicit
+`rows: [{ file, fn, mode, thin }]` list stays as an escape hatch for internal special functions (when
+given, only the roster is consulted).
 
 The plugin renames the source function to `buildRowSource` (kept as the compiler's single source of
 truth), appends a same-name wrapper that delegates to the compiled factory, and keeps the artifact in

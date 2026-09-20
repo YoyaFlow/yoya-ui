@@ -168,7 +168,7 @@ npx yoya-compiler --file src/rows/row.js --fn buildRow --mode element --out src/
 import * as core from '@yoyaflow/yoya-ui/core';
 import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
 
-plugins: [yoyaCompile.vite({ core })]; // 模块顶层名为 buildRow 的函数按约定自动编译
+plugins: [yoyaCompile.vite({ core })]; // 编译单元＝组件边界（返回 UI 视图的顶层工厂）
 ```
 
 列表照旧写 `tbody((body) => body.keyed(rows, buildRow))`：`element` 通道的 `{el, destroy}` 行与 `node`

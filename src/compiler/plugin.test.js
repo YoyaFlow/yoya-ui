@@ -1,5 +1,6 @@
 /**
- * 票 16 / R1 / R2 / R4：构建期 transform——业务源码零改动，产物进虚拟模块，认不准就不动。
+ * 票 16 / R1 / R2 / R4：构建期 transform——按 yoya-ui 自己的组件边界发现编译单元，
+ * 业务源码零改动，产物进虚拟模块，认不准就不动，改写保留 hires sourcemap。
  */
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,7 +11,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping';
 import * as core from '../yoya.core.js';
 import { tbody } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
-import { wireRowModule, yoyaCompile, yoyaCompilePlugin } from './plugin.js';
+import { viewFactoryUnits, wireRowModule, yoyaCompile, yoyaCompilePlugin } from './plugin.js';
 
 const scratchRoot = join(process.cwd(), '.scratch');
 mkdirSync(scratchRoot, { recursive: true });
@@ -19,8 +20,9 @@ afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
 
+/** 一份普通业务源码：一个被当 keyed 行工厂的薄工厂 + 一个被 child() 调用的组件 + 一个助手。 */
 const businessSource = [
-  "import { keySet, ref, table, tr, vText } from '@yoyaflow/yoya-ui/core';",
+  "import { div, keySet, ref, table, tr, vText } from '@yoyaflow/yoya-ui/core';",
   '',
   'export function removeRow(id) {',
   '  return id;',
@@ -33,13 +35,54 @@ const businessSource = [
   "    line.td((cell) => cell.className('col-md-1').a((link) => link.on('click', () => removeRow(item.data.id))));",
   '  });',
   '}',
+  '',
+  'export function StatusPill(props) {',
+  "  return div((pill) => pill.className('status-pill').child(String(props.label)));",
+  '}',
+  '',
+  'const rows = keySet([], (row) => row.id);',
+  '',
+  'const tableView = table((node) => {',
+  '  node.tbody((body) => {',
+  "    body.attr('id', 'tbody');",
+  '    body.keyed(rows, buildRow);',
+  '  });',
+  '});',
+  '',
+  'const shell = div((root) => root.child(StatusPill({ label: 1 })));',
+  'void [tableView, shell];',
   ''
 ].join('\n');
 
 const target = { file: 'src/main.js', fn: 'buildRow', mode: 'element' };
 
+describe('viewFactoryUnits (component boundary discovery)', () => {
+  it('takes view-returning top-level factories as units and infers the channel from usage', () => {
+    const units = viewFactoryUnits(businessSource, { core, file: 'src/main.js' });
+
+    expect(units.map((unit) => `${unit.fn}:${unit.mode}`)).toEqual([
+      'buildRow:element', // 被当 keyed 的行工厂 → element（最快）
+      'StatusPill:node' // 只被 child(...) 调用 → node（ViewNode 在 child / keyed 里都成立）
+    ]);
+  });
+
+  it('ignores PascalCase functions that do not return a view and plain helpers', () => {
+    const source = [
+      "import { div } from '@yoyaflow/yoya-ui/core';",
+      'export function NotAView() { return 1; }',
+      'function helper(id) { return id; }',
+      'export function Card() { return div((box) => box); }',
+      ''
+    ].join('\n');
+
+    expect(viewFactoryUnits(source, { core, file: 'x.js' }).map((unit) => unit.fn)).toEqual([
+      'Card'
+    ]);
+  });
+});
+
 describe('wireRowModule (pure transform)', () => {
-  it('renames the source function, appends a same-name wrapper and keeps the rest verbatim', () => {
+  it('renames the source factory, appends a same-name wrapper and keeps the rest verbatim', () => {
     const wired = wireRowModule({ source: businessSource, target, core, runtime: runtimeUrl });
 
     expect(wired).not.toBeNull();
@@ -47,12 +90,29 @@ describe('wireRowModule (pure transform)', () => {
     expect(wired.code).toContain('function buildRowSource(item) {');
     expect(wired.code).toContain('export function buildRow(item) {');
     expect(wired.code).not.toContain('export function buildRowSource(item) {');
-    expect(wired.code).toContain('__yoyaRowFactory ??= createRowFactory({ removeRow });');
+    expect(wired.code).toContain('__yoyaFactory_0 ??= createRowFactory({ removeRow });');
     // 业务语句逐行保留（除了那一处函数声明改名）
     const bodyLines = businessSource
       .split('\n')
       .filter((line) => line.trim() !== '' && !line.includes('function buildRow'));
     bodyLines.forEach((line) => expect(wired.code).toContain(line));
+  });
+
+  it('wires several units of one module in one pass', () => {
+    const units = viewFactoryUnits(businessSource, { core, file: 'src/main.js' });
+    const wired = wireRowModule({
+      source: businessSource,
+      targets: units,
+      core,
+      runtime: runtimeUrl
+    });
+
+    expect(wired.units).toHaveLength(2);
+    expect(wired.code).toContain('function buildRowSource(item) {');
+    expect(wired.code).toContain('function StatusPillSource(props) {');
+    // 两个单元的产物不同：行工厂走 element，组件走 node
+    expect(wired.units[0].module).toContain('"mode": "element"');
+    expect(wired.units[1].module).toContain('"mode": "node"');
   });
 
   it('leaves the module alone when the target is missing, duplicated or unbuildable', () => {
@@ -64,18 +124,16 @@ describe('wireRowModule (pure transform)', () => {
         core
       })
     ).toBeNull();
+    // 形参解构：编译器整形状 bail（票 12），插件也就不动它
     expect(
-      wireRowModule({
-        source: businessSource.replace('(item)', '({ data, api })'),
-        target,
-        core
-      })
+      wireRowModule({ source: businessSource.replace('(item)', '({ data, api })'), target, core })
     ).toBeNull();
+    // 结构不恒定（含 if）：同样整形状回落
     expect(
       wireRowModule({
         source: businessSource.replace(
-          "line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));",
-          'if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
+          "    line.td((cell) => cell.className('col-md-1').child(String(item.data.id)));",
+          '    if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
         ),
         target,
         core
@@ -98,29 +156,21 @@ describe('wireRowModule (pure transform)', () => {
   });
 });
 
-describe('yoyaCompilePlugin (esbuild protocol)', () => {
-  it('registers the virtual artifact and returns transformed contents for the target file', () => {
+describe('yoyaCompile (unplugin)', () => {
+  it('wires discovered units with hires source maps and serves them as virtual modules', () => {
     const file = join(workDir, 'main.js');
-    const plugin = yoyaCompilePlugin({
-      core,
-      rows: [{ ...target, file }]
-    });
-    expect(plugin.name).toBe('yoya-ui-compile');
-    // esbuild 会校验插件对象：unplugin 生成的 esbuild 插件只能有 name / setup
-    expect(Object.keys(plugin).sort()).toEqual(['name', 'setup']);
-
     const artifacts = [];
     const vite = yoyaCompile.vite({
       core,
-      rows: [{ ...target, file }],
       onArtifact: (name, source) => artifacts.push([name, source])
     });
-    expect(vite.name).toBe('yoya-ui-compile');
 
+    expect(vite.name).toBe('yoya-ui-compile');
     writeFileSync(file, businessSource, 'utf8');
     const loaded = vite.transform(businessSource, file);
 
     expect(loaded.code).toContain('function buildRowSource(item) {');
+    expect(loaded.code).toContain('function StatusPillSource(props) {');
     // sourcemap：改写不能打断定位链（改写点之后的业务行仍映射回原文件的原行）
     expect(loaded.map).toBeTruthy();
     const originalLineOf = (needle) => {
@@ -130,50 +180,52 @@ describe('yoyaCompilePlugin (esbuild protocol)', () => {
       const column = index - (before.lastIndexOf('\n') + 1);
       return originalPositionFor(new TraceMap(JSON.parse(String(loaded.map))), { line, column });
     };
-    // 改写点之后的业务行逐字符保持映射：`col-md-4` 那一行在源码里是第 10 行
     expect(originalLineOf('col-md-4')).toMatchObject({ line: 10 });
     expect(originalLineOf('col-md-4').source).toContain('main.js');
     // 追加的接线代码是生成代码（没有原文对应）→ 不产生映射
-    expect(originalLineOf('__yoyaRowFactory ??=').source).toBeNull();
-    expect(artifacts).toHaveLength(1);
+    expect(originalLineOf('__yoyaFactory_0 ??=').source).toBeNull();
 
+    expect(artifacts).toHaveLength(2);
     const [virtualId, moduleSource] = artifacts[0];
+    expect(virtualId.startsWith('\0yoya-row:buildRow-')).toBe(true);
     expect(moduleSource).toContain('export function createRowFactory(scope)');
     // 插件跑在打包器里：运行期钩子默认按包子路径解析（不是 ./compiler-runtime.js）
     expect(moduleSource).toContain('from "@yoyaflow/yoya-ui/compiler-runtime"');
-    expect(virtualId.startsWith('\0yoya-row:buildRow-')).toBe(true);
     // 产物里的 import 字面量把 NUL 转义成 \u0000（JSON.stringify 的口径）
     expect(loaded.code).toContain(virtualId.replace('\0', '\\u0000'));
-    // 虚拟模块：resolveId 认出、load 取到产物
-    expect(vite.resolveId(virtualId)).toEqual({ id: virtualId, external: false });
-    const artifact = vite.load(virtualId);
-    expect(artifact.code).toBe(moduleSource);
-    expect(artifact.map).toBeTruthy();
-    expect(artifact.map.sources[0]).toContain('main.js');
-    // 非目标文件：transform 返回 null（一律不碰）
-    expect(vite.transform('export const x = 1;\n', join(workDir, 'other.js'))).toBeNull();
-  });
 
-  // 默认规则：不传花名册时，模块顶层名为 buildRow 的函数自动成为编译单元（node_modules 跳过）
-  it('compiles buildRow by convention when no rows list is given', () => {
-    const vite = yoyaCompile.vite({ core });
-    const file = join(workDir, 'convention.js');
-
-    const transformed = vite.transform(businessSource, file);
-    expect(transformed.code).toContain('function buildRowSource(item) {');
+    artifacts.forEach(([name, source]) => {
+      expect(vite.resolveId(name)).toEqual({ id: name, external: false });
+      const artifact = vite.load(name);
+      expect(artifact.code).toBe(source);
+      expect(artifact.map).toBeTruthy();
+      expect(artifact.map.sources[0]).toContain('main.js');
+    });
+    // 不认识的模块一律不碰
     expect(
-      vite.transform('export function other(item) {}\n', join(workDir, 'plain.js'))
+      vite.transform('export function helper(id) { return id; }\n', join(workDir, 'plain.js'))
     ).toBeNull();
     expect(
       vite.transform(businessSource, join(workDir, 'node_modules', 'dep', 'index.js'))
     ).toBeNull();
+  });
 
-    // 名字不叫 buildRow 时用 rowName 覆盖
-    const renamed = yoyaCompile.vite({ core, rowName: 'renderRow' });
-    expect(vite.transform(businessSource, file)).not.toBeNull();
-    expect(
-      renamed.transform(businessSource.replace(/buildRow/g, 'renderRow'), file)
-    )?.toMatchObject({ code: expect.stringContaining('function renderRowSource(item) {') });
+  it('keeps esbuild-plain plugin objects and the explicit escape-hatch roster', () => {
+    const plugin = yoyaCompilePlugin({ core });
+    expect(plugin.name).toBe('yoya-ui-compile');
+    // esbuild 会校验插件对象：unplugin 生成的 esbuild 插件只能有 name / setup
+    expect(Object.keys(plugin).sort()).toEqual(['name', 'setup']);
+
+    const scoped = yoyaCompile.vite({
+      core,
+      rows: [{ file: join(workDir, 'internal.js'), fn: 'internalRow', mode: 'element' }]
+    });
+    const internal = businessSource.replace('buildRow', 'internalRow');
+    writeFileSync(join(workDir, 'internal.js'), internal, 'utf8');
+    // 给了花名册就只认花名册：只编列表里写明的那个函数，文件里其它工厂原样不动
+    const scopedResult = scoped.transform(internal, join(workDir, 'internal.js'));
+    expect(scopedResult.code).toContain('function internalRowSource(item) {');
+    expect(scopedResult.code).not.toContain('StatusPillSource');
   });
 });
 
@@ -181,7 +233,15 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
   it('mounts compiled element rows declared with the untouched business source', async () => {
     const file = join(workDir, 'mount-main.js');
     writeFileSync(file, businessSource, 'utf8');
-    const wired = wireRowModule({ source: businessSource, target, core, runtime: runtimeUrl });
+    const [unit] = viewFactoryUnits(businessSource, { core, file }).filter(
+      (candidate) => candidate.fn === 'buildRow'
+    );
+    const wired = wireRowModule({
+      source: businessSource,
+      targets: [unit],
+      core,
+      runtime: runtimeUrl
+    });
     const modulePath = join(workDir, 'row.generated.js');
     writeFileSync(modulePath, wired.module, 'utf8');
     // 虚拟模块 → 落盘文件（打包器交给插件，这里直接指到文件）
@@ -206,7 +266,6 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
       '1label 1',
       '2label 2'
     ]);
-    await import(runtimeUrl); // 产物的 runtime 钩子已在模块里 import
     expect(readFileSync(file, 'utf8')).toBe(businessSource); // 业务源码文件没有被改
   });
 });
