@@ -282,6 +282,22 @@ const CASES = [
       rows: table.data().rows.length,
       emptyText: table.emptyText()
     })
+  },
+  {
+    name: 'vTabs / 两个页签 + 激活项',
+    build: () =>
+      api.vTabs({
+        items: [
+          { key: 'overview', label: '概览', content: '概览面板' },
+          { key: 'config', label: '配置', content: '配置面板' }
+        ]
+      }),
+    probe: (tabs) => ({
+      active: tabs.active(),
+      index: tabs.activeIndex(),
+      orientation: tabs.orientation(),
+      variant: tabs.variant()
+    })
   }
 ];
 

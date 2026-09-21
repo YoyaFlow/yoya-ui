@@ -1,6 +1,7 @@
-import { ViewNode } from '../core/node.js';
+import { defineComponentIdentity, ViewNode } from '../core/node.js';
 import { allocateNumber } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
   createComponentFactory,
@@ -217,9 +218,11 @@ export class VTab extends ViewNode {
   }
 }
 
-export class VTabs extends HtmlElementNode {
+/** 页签容器的节点类型（不导出）；公开组件 `vTabs` 是 vNode 外壳。 */
+export class TabsNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTabs';
     this._tabs = [];
     this._activeIndex = 0;
     this._orientation = 'horizontal';
@@ -644,9 +647,33 @@ export class VTabs extends HtmlElementNode {
 }
 
 export function vTabs(first = null, second = null, third = null) {
-  return createComponentFactory(VTabs, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTabs',
+    createNode: (setup) => new TabsNode(setup),
+    commands: [
+      'items',
+      'active',
+      'activeIndex',
+      'ariaLabel',
+      'orientation',
+      'variant',
+      'size',
+      'change',
+      'onChange',
+      'next',
+      'prev'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
+export const VTabs = vTabs;
+defineComponentIdentity(VTabs, 'VTabs');
+
+/**
+ * 页签项是**声明节点**（不是渲染出来的组件）：`VTabs` 从 `children()` 里读它、生成 trigger 与面板。
+ * 沿用原来的 `createComponentFactory` 语义（`vTab(existingTab)` 复用、其余按值分派）。
+ */
 export function vTab(first = null, second = null, third = null) {
   return createComponentFactory(VTab, first, second, third, arguments);
 }
