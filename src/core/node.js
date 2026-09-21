@@ -3817,6 +3817,29 @@ export function hasComponentIdentity(value, name) {
 }
 
 /**
+ * 视图根：组件节点展开到它的根（多根给第一个），其它节点返回自己，空值返回 null。
+ *
+ * 用途是**父组件对子组件写标记/朝向**这类协议（例如菜单把 `data-orientation` 写到子单元上）：
+ * 这些写发生在挂载前，必须落到根的属性快照上（挂载前改 `ref` 不会进首帧）。
+ * 解析失败（组件自己出错）返回 null，判定不炸。
+ */
+export function viewRootOf(value) {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  if (!(value instanceof ComponentNode)) {
+    return value;
+  }
+
+  try {
+    const roots = value._resolvedList ?? (value._resolve(), value._resolvedList);
+    return roots?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 给组件定义装身份判定：`member instanceof definition` 先走身份（视图根上的 `vn`），
  * 原型链判定作为兜底保留（形态 C 组件 / `new` 出来的实例照旧成立）。
  */

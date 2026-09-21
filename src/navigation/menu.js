@@ -1,7 +1,9 @@
-import { HtmlElementNode } from '../html/index.js';
+import { div, HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -347,22 +349,31 @@ export class VMenuItem extends HtmlElementNode {
   }
 }
 
-export class VMenuDivider extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this.className(componentClass, 'yoya-vmenu-divider');
-    this.attr('role', 'separator');
-    this._menuOrientation('vertical');
-    applyComponentSetup(this, setup);
-  }
-
-  _menuOrientation(orientation) {
-    const horizontal = orientation === 'horizontal';
-    this.attr('aria-orientation', horizontal ? 'vertical' : 'horizontal');
-    this.attr('data-orientation', orientation);
-    return this;
-  }
+/**
+ * 分隔线（vNode 迁移样板）：`aria-orientation` 与父菜单朝向**相反**（竖菜单里的横线）。
+ *
+ * 朝向不进 `ref` 绑定：菜单在**挂载前**就把朝向写到每个子单元的视图根上，而"挂载前改 ref
+ * 不会更新首帧"（绑定在构建期取值）——所以走 `applyMenuOrientation` 的直接属性写。
+ */
+export function vMenuDivider(setup = null) {
+  return vNode(() =>
+    div(
+      {
+        vn: 'VMenuDivider',
+        role: 'separator',
+        'data-orientation': 'vertical',
+        'aria-orientation': 'horizontal'
+      },
+      (root) => {
+        root.className(componentClass, 'yoya-vmenu-divider');
+        applyComponentSetup(root, setup);
+      }
+    )
+  );
 }
+
+export const VMenuDivider = vMenuDivider;
+defineComponentIdentity(VMenuDivider, 'VMenuDivider');
 
 export class VMenuGroup extends HtmlElementNode {
   constructor(setup = null) {
@@ -714,14 +725,33 @@ export class VSubMenu extends HtmlElementNode {
   }
 }
 
+/**
+ * 菜单单元的朝向契约：**父菜单把朝向写到子单元的视图根**。
+ *
+ * - 已迁移的 vNode 单元：根上带组件身份（`componentNameOf`），按表写属性——这些写发生在挂载前，
+ *   必须落到根的属性快照（挂载前改 `ref` 不会进首帧，实测踩过）；
+ * - 未迁移的类单元：仍走原来的 `_menuOrientation()`（迁移完成后这段可删）。
+ */
+const MENU_UNIT_ORIENTATION = {
+  VMenuItem: (orientation) => ({ 'data-orientation': orientation }),
+  // 分隔线：`aria-orientation` 与父菜单朝向相反（竖菜单里的横线）
+  VMenuDivider: (orientation) => ({
+    'data-orientation': orientation,
+    'aria-orientation': orientation === 'horizontal' ? 'vertical' : 'horizontal'
+  }),
+  VMenuGroup: (orientation) => ({ 'data-orientation': orientation }),
+  VSubMenu: (orientation) => ({ 'data-orientation': orientation })
+};
+
 function applyMenuOrientation(child, orientation) {
-  if (
-    child instanceof VMenuItem ||
-    child instanceof VMenuDivider ||
-    child instanceof VMenuGroup ||
-    child instanceof VSubMenu
-  ) {
-    child._menuOrientation(orientation);
+  const attrs = MENU_UNIT_ORIENTATION[componentNameOf(child)]?.(orientation);
+  if (attrs) {
+    viewRootOf(child)?.attr(attrs);
+    return;
+  }
+
+  if (child instanceof VMenuItem || child instanceof VMenuGroup || child instanceof VSubMenu) {
+    child._menuOrientation?.(orientation);
   }
 }
 
@@ -1021,10 +1051,6 @@ export function vMenu(first = null, second = null, third = null) {
 
 export function vMenuItem(first = null, second = null, third = null) {
   return createComponentFactory(VMenuItem, first, second, third, arguments);
-}
-
-export function vMenuDivider(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuDivider, first, second, third, arguments);
 }
 
 export function vMenuGroup(first = null, second = null, third = null) {

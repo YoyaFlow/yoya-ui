@@ -138,6 +138,46 @@ const CASES = [
       virtual: node.virtual(),
       itemHeight: node.itemHeight()
     })
+  },
+  {
+    name: 'vMenu / 分组 + 分隔线 + 项目',
+    build: () =>
+      api.vMenu((menu) => {
+        menu.vMenuGroup((group) => {
+          group.label('文件操作');
+          group.vMenuItem('新建');
+          group.vMenuItem({ disabled: true, text: '删除' });
+        });
+        menu.vMenuDivider();
+        menu.vMenuItem('退出');
+      }),
+    probe: (menu) => ({
+      children: menu.children().length,
+      orientation: menu.attr('data-orientation')
+    })
+  },
+  {
+    name: 'vSubMenu / 嵌套菜单',
+    build: () =>
+      api.vMenu((menu) => {
+        menu.vSubMenu((submenu) => {
+          submenu.label('更多操作');
+          submenu.menuContent((nested) => nested.vMenuItem('导出'));
+        });
+      }),
+    probe: (menu) => ({ children: menu.children().length })
+  },
+  {
+    name: 'vSidebar / 标题 + 菜单',
+    build: () =>
+      api.vSidebar({
+        ariaLabel: '后台主导航',
+        title: '运维中心',
+        menuContent(menu) {
+          menu.vMenuItem({ active: true, text: '概览' });
+        }
+      }),
+    probe: (sidebar) => ({ tag: sidebar.tagName() })
   }
 ];
 
