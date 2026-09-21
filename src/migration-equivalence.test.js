@@ -383,6 +383,130 @@ const CASES = [
         panel.second((second) => second.p('右'));
       }),
     probe: (panel) => ({ direction: panel.direction(), size: panel.size() })
+  },
+  {
+    name: 'vInput / 值 + 占位 + 禁用',
+    build: () =>
+      api.vInput({
+        disabled: true,
+        name: 'service',
+        placeholder: '请输入服务名',
+        value: '网关'
+      }),
+    probe: (input) => ({
+      disabled: input.isDisabled(),
+      placeholder: input.attr('placeholder') ?? null,
+      value: input.value()
+    })
+  },
+  {
+    name: 'vTextarea / 多行 + 行数',
+    build: () => api.vTextarea({ name: 'note', rows: 3, value: '第一行\n第二行' }),
+    probe: (node) => ({ rows: node.rows(), value: node.value() })
+  },
+  {
+    name: 'vSelect / 选项 + 选中值',
+    build: () =>
+      api.vSelect({
+        options: [
+          { label: '甲', value: 'a' },
+          { label: '乙', value: 'b' }
+        ],
+        value: 'b'
+      }),
+    probe: (node) => ({ options: node.options().length, value: node.value() })
+  },
+  {
+    name: 'vCheckbox / 标签 + 选中态',
+    build: () => api.vCheckbox({ checked: true, label: '启用自动部署', value: 'auto' }),
+    probe: (node) => ({ checked: node.checked(), value: node.value() })
+  },
+  {
+    name: 'vSwitch / 开关 + 选中态',
+    build: () => api.vSwitch({ checked: true, label: '自动发布' }),
+    probe: (node) => ({ checked: node.checked(), value: node.value() })
+  },
+  {
+    name: 'vRadio / 标签 + 说明 + 选中态',
+    build: () =>
+      api.vRadio({
+        checked: true,
+        description: '发布后自动执行',
+        label: '自动部署',
+        value: 'auto'
+      }),
+    probe: (node) => ({ checked: node.checked(), value: node.value() })
+  },
+  {
+    name: 'vRadios / 互斥单选组',
+    build: () =>
+      api.vRadios({
+        name: 'env',
+        options: [
+          { label: '开发', value: 'dev' },
+          { label: '生产', value: 'prod' }
+        ],
+        value: 'dev'
+      }),
+    probe: (node) => ({ value: node.value() })
+  },
+  {
+    name: 'vCheckboxes / 多选组',
+    build: () =>
+      api.vCheckboxes({
+        multiple: true,
+        name: 'targets',
+        options: [
+          { label: '甲', value: 'a' },
+          { label: '乙', value: 'b' }
+        ],
+        value: ['a']
+      }),
+    probe: (node) => ({ value: node.value() })
+  },
+  {
+    name: 'vField / 展示态 + 编辑器',
+    build: () =>
+      api.vField((field) => {
+        field.label('状态');
+        field.control((editor) => editor.vInput({ name: 'status', value: '运行中' }));
+        field.value('运行中');
+      }),
+    probe: (field) => ({ display: field.display(), mode: field.mode(), value: field.value() })
+  },
+  {
+    name: 'vFormItem / 必填 + 提示',
+    build: () =>
+      api.vFormItem({
+        hint: '用于接收通知',
+        label: '邮箱',
+        name: 'email',
+        required: '该项为必填'
+      }),
+    // `required()` 有默认值（写方法），读态走属性，避免探针把节点自己串进 JSON
+    probe: (item) => ({ name: item.name(), 'data-required': item.attr('data-required') ?? null })
+  },
+  {
+    name: 'vForm / 必填校验（空值报错）',
+    build: () =>
+      api.vForm((form) => {
+        form.vFormItem((item) => {
+          item.label('邮箱').name('email').required('该项为必填');
+          item.control((editor) => editor.vInput({ name: 'email' }));
+        });
+      }),
+    probe: (form) => ({ values: form.values(), valid: form.validate() })
+  },
+  {
+    name: 'vTimer / 日期时间模式',
+    build: () =>
+      api.vTimer({ mode: 'datetime-local', name: 'scheduledAt', value: '2026-08-19T14:30' }),
+    probe: (node) => ({ mode: node.mode(), value: node.value() })
+  },
+  {
+    name: 'vTimerRange / 起止值',
+    build: () => api.vTimerRange({ end: '2026-08-20', name: 'window', start: '2026-08-19' }),
+    probe: (node) => ({ mode: node.mode(), name: node.name(), value: node.value() })
   }
 ];
 

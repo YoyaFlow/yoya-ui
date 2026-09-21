@@ -1,7 +1,8 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -12,9 +13,10 @@ import {
 import { isEmptyFormValue } from './shared.js';
 import { applyControlValue, findFieldControl, readControlValue } from './form-values.js';
 
-export class VFormItem extends HtmlElementNode {
+class FormItemNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VFormItem';
     this._collectValue = null;
     this._fallbackMessage = '校验未通过';
     this._hintVisible = false;
@@ -228,7 +230,8 @@ export class VFormItem extends HtmlElementNode {
     }
 
     for (const validator of this._validators) {
-      const result = validator(value, formValues, this);
+      // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+      const result = validator(value, formValues, this._componentHandle ?? this);
       if (typeof result === 'string' && result) {
         this.error(result);
         return false;
@@ -321,5 +324,23 @@ export class VFormItem extends HtmlElementNode {
 }
 
 export function vFormItem(first = null, second = null, third = null) {
-  return createComponentFactory(VFormItem, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VFormItem',
+    createNode: (setup) => new FormItemNode(setup),
+    commands: [
+      'label',
+      'hint',
+      'error',
+      'control',
+      'editor',
+      'required',
+      'validate',
+      'rules',
+      'value'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VFormItem = vFormItem;
+defineComponentIdentity(VFormItem, 'VFormItem');

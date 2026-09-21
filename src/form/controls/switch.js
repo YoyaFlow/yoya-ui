@@ -1,10 +1,13 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import { createComponentFactory, themeBorder, themeValue } from '../../components/shared.js';
+import { themeBorder, themeValue } from '../../components/shared.js';
 import { VBooleanControl } from './shared.js';
 
-export class VSwitch extends VBooleanControl {
+class SwitchNode extends VBooleanControl {
   constructor(setup = null) {
     super('switch');
+    this._identity = 'VSwitch';
     this._thumbBox = new HtmlElementNode('span').className('yoya-vswitch-thumb');
     this._visualBox.styles({
       background: themeValue('color-border-strong', '#cbd5e1'),
@@ -46,5 +49,27 @@ export class VSwitch extends VBooleanControl {
 }
 
 export function vSwitch(first = null, second = null, third = null) {
-  return createComponentFactory(VSwitch, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSwitch',
+    createNode: (setup) => new SwitchNode(setup),
+    commands: [
+      'label',
+      'text',
+      'content',
+      'description',
+      'isDisabled',
+      'value',
+      'optionValue',
+      // 布尔控件的选中态：构造函数里以实例方法挂上（shared.js 的 booleanMethod）
+      'checked',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required',
+      'indeterminate'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VSwitch = vSwitch;
+defineComponentIdentity(VSwitch, 'VSwitch');

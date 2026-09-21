@@ -43,6 +43,7 @@ import {
   vSelect,
   vSwitch,
   vTextarea,
+  viewRootOf,
   vTable,
   VPagination,
   vTimer,
@@ -2122,7 +2123,8 @@ describe('compound components', () => {
     const element = timer.renderDom().querySelector('.yoya-vtimer');
 
     expect(timer).toBeInstanceOf(VTimer);
-    expect(timer).toBeInstanceOf(HtmlElementNode);
+    // 表单控件是 vNode 外壳：公开句柄是组件节点，元素机制在视图根（不导出的节点类型）上
+    expect(viewRootOf(timer)).toBeInstanceOf(HtmlElementNode);
     expect(element.classList.contains('yoya-vtimer')).toBe(true);
     expect(element.type).toBe('datetime-local');
     expect(element.name).toBe('scheduledAt');

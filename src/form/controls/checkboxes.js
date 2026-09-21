@@ -1,9 +1,10 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   resolveTextValue
@@ -11,9 +12,10 @@ import {
 import { VCheckbox, vCheckbox } from './checkbox.js';
 import { normalizeValueList } from './shared.js';
 
-export class VCheckboxes extends HtmlElementNode {
+class CheckboxesNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VCheckboxes';
     this._name = '';
     this._multiple = true;
     this._required = false;
@@ -234,8 +236,27 @@ export class VCheckboxes extends HtmlElementNode {
 }
 
 export function vCheckboxes(first = null, second = null, third = null) {
-  return createComponentFactory(VCheckboxes, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VCheckboxes',
+    createNode: (setup) => new CheckboxesNode(setup),
+    commands: [
+      'multiple',
+      'required',
+      'isDisabled',
+      'options',
+      'value',
+      'checkedValues',
+      'clear',
+      'columns',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VCheckboxes = vCheckboxes;
+defineComponentIdentity(VCheckboxes, 'VCheckboxes');
 
 function createCheckboxGroupItem(option, index) {
   if (option instanceof VCheckbox) {

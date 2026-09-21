@@ -1,4 +1,5 @@
 import { VRate } from '../rate.js';
+import { viewRootOf } from '../../core/node.js';
 import { VSlider } from '../slider.js';
 import { VCascader } from '../cascader.js';
 import { VTagsInput } from '../tags-input.js';
@@ -301,7 +302,9 @@ function validateFormControls(node, formValues = {}) {
     }
 
     if (current instanceof VFormItem) {
-      if (!current._validate(formValues)) {
+      // 子项可能是 vNode 组件（成员是 ComponentNode）：私有校验方法在视图根上
+      const unit = viewRootOf(current) ?? current;
+      if (!unit._validate(formValues)) {
         valid = false;
       }
       return;

@@ -1,8 +1,9 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -12,9 +13,10 @@ import {
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-export class VTextarea extends HtmlElementNode {
+class TextareaNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTextarea';
     this._value = '';
     this._clearable = true;
     this._clearButton = createClearButton('yoya-vtextarea-clear', {
@@ -321,5 +323,29 @@ export class VTextarea extends HtmlElementNode {
 }
 
 export function vTextarea(first = null, second = null, third = null) {
-  return createComponentFactory(VTextarea, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTextarea',
+    createNode: (setup) => new TextareaNode(setup),
+    commands: [
+      'value',
+      'text',
+      'content',
+      'placeholder',
+      'isDisabled',
+      'isReadonly',
+      'isError',
+      'rows',
+      'clearable',
+      'clear',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'required',
+      'disabled',
+      'readonly',
+      'error'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VTextarea = vTextarea;
+defineComponentIdentity(VTextarea, 'VTextarea');

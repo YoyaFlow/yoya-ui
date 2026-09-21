@@ -1,5 +1,6 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import {
-  createComponentFactory,
   normalizeChildren,
   replaceChildren,
   themeBorder,
@@ -7,9 +8,10 @@ import {
 } from '../../components/shared.js';
 import { VBooleanControl } from './shared.js';
 
-export class VCheckbox extends VBooleanControl {
+class CheckboxNode extends VBooleanControl {
   constructor(setup = null) {
     super('checkbox');
+    this._identity = 'VCheckbox';
     this._visualBox.styles({
       alignItems: 'center',
       background: themeValue('color-surface', '#ffffff'),
@@ -43,5 +45,27 @@ export class VCheckbox extends VBooleanControl {
 }
 
 export function vCheckbox(first = null, second = null, third = null) {
-  return createComponentFactory(VCheckbox, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VCheckbox',
+    createNode: (setup) => new CheckboxNode(setup),
+    commands: [
+      'label',
+      'text',
+      'content',
+      'description',
+      'isDisabled',
+      'value',
+      'optionValue',
+      // 布尔控件的选中态：构造函数里以实例方法挂上（shared.js 的 booleanMethod）
+      'checked',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required',
+      'indeterminate'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VCheckbox = vCheckbox;
+defineComponentIdentity(VCheckbox, 'VCheckbox');

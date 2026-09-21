@@ -1,9 +1,10 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -13,9 +14,10 @@ import {
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-export class VSelect extends HtmlElementNode {
+class SelectNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VSelect';
     this._options = [];
     this._placeholder = '';
     this._value = '';
@@ -343,8 +345,31 @@ export class VSelect extends HtmlElementNode {
 }
 
 export function vSelect(first = null, second = null, third = null) {
-  return createComponentFactory(VSelect, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSelect',
+    createNode: (setup) => new SelectNode(setup),
+    commands: [
+      'value',
+      'text',
+      'content',
+      'placeholder',
+      'options',
+      'isDisabled',
+      'isReadonly',
+      'isError',
+      'clearable',
+      'clear',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'required',
+      'disabled',
+      'error'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VSelect = vSelect;
+defineComponentIdentity(VSelect, 'VSelect');
 
 function createSelectOptionNode(option, selectedValue, index) {
   if (option instanceof HtmlElementNode && option.tagName?.() === 'option') {

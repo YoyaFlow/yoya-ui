@@ -3467,7 +3467,12 @@ export class ComponentNode extends ViewNode {
         const replacement = captureNodeError(resolved, error, 'render');
         element = replacement?._el ?? null;
       }
-      this._el = element;
+      // 根被权限挡住（hidden）时**保留影子 `_el`**：父节点的收尾判据是
+      // `!childElement && child._el` → 摘掉已挂载的 DOM。清成 null 会让被拒的子树留在页面里
+      // （迁移表单控件时踩到：access 热切换后 `[data-error]` 的输入框不消失）。
+      if (element) {
+        this._el = element;
+      }
       return element;
     });
   }

@@ -46,15 +46,19 @@ describe('form hydration', () => {
     const form = hydrate(page, '#app');
 
     expect(form.values()).toEqual({ email: 'user@example.com' });
-    expect(inputNode._value).toBe('user@example.com');
+    // 输入框迁成 vNode 后内部字段在视图根上；这里读公开命令
+    expect(inputNode.value()).toBe('user@example.com');
   });
 
   it('bakes server validation errors into the HTML and keeps them after hydration', () => {
     const page = () => {
-      const form = vForm();
-      const item = vFormItem({ label: '邮箱', name: 'email', required: true });
-      item.control(vInput({ name: 'email' }));
-      form.child(item);
+      // 组件化之后用声明式路径建表单：`child()` 加进去的内容要等组件解析（render）才落到根上，
+      // 而这里需要在 render 前 `validate()` 把服务端错误烤进 HTML
+      const form = vForm((formNode) => {
+        formNode.vFormItem({ label: '邮箱', name: 'email', required: true }, (item) => {
+          item.control((editor) => editor.vInput({ name: 'email' }));
+        });
+      });
       form.validate();
       return form;
     };

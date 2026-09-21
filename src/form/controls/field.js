@@ -1,8 +1,9 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity, viewRootOf } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import { VButton } from '../../actions/button.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -13,9 +14,10 @@ import {
 import { formatDisplayValue } from './shared.js';
 import { applyControlValue, findFieldControl, readControlValue } from './form-values.js';
 
-export class VField extends HtmlElementNode {
+class FieldNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VField';
     this._mode = 'view';
     this._control = null;
     this._hintVisible = false;
@@ -178,12 +180,14 @@ export class VField extends HtmlElementNode {
 
   _syncEditorSurface() {
     const control = this.control();
-    if (!control || !control._input || control._input._tagName !== 'textarea') {
+    // 控件可能是 vNode 组件（成员是 ComponentNode）：内部输入元素在视图根上
+    const unit = control ? (viewRootOf(control) ?? control) : null;
+    if (!unit?._input || unit._input._tagName !== 'textarea') {
       return this;
     }
-    control._input.style('border', '0');
-    control._input.style('boxShadow', null);
-    control._input.style('background', 'transparent');
+    unit._input.style('border', '0');
+    unit._input.style('boxShadow', null);
+    unit._input.style('background', 'transparent');
     return this;
   }
 
@@ -510,5 +514,28 @@ export class VField extends HtmlElementNode {
 }
 
 export function vField(first = null, second = null, third = null) {
-  return createComponentFactory(VField, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VField',
+    createNode: (setup) => new FieldNode(setup),
+    commands: [
+      'label',
+      'hint',
+      'error',
+      'display',
+      'formatter',
+      'displayClass',
+      'displayStyle',
+      'control',
+      'editor',
+      'value',
+      'mode',
+      'view',
+      'edit',
+      'cancel'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VField = vField;
+defineComponentIdentity(VField, 'VField');

@@ -1,18 +1,20 @@
-import { VTextNode } from '../../core/node.js';
+import { defineComponentIdentity, VTextNode } from '../../core/node.js';
+import { createComponentShell } from '../../components/component-shell.js';
 import { allocateId } from '../../core/id.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   resolveTextValue,
   themeValue
 } from '../../components/shared.js';
 import { vTimer } from './timer.js';
 
-export class VTimerRange extends HtmlElementNode {
+/** 时间范围输入框的节点类型（不导出）；公开组件 `vTimerRange` 是 vNode 外壳。 */
+class TimerRangeNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTimerRange';
     const errorId = allocateId('yoya-vtimer-range-error');
     this._name = '';
     this._startTimer = vTimer()
@@ -197,5 +199,13 @@ export class VTimerRange extends HtmlElementNode {
 }
 
 export function vTimerRange(first = null, second = null, third = null) {
-  return createComponentFactory(VTimerRange, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTimerRange',
+    createNode: (setup) => new TimerRangeNode(setup),
+    commands: ['mode', 'start', 'end', 'value', 'disabled', 'readonly', 'required'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VTimerRange = vTimerRange;
+defineComponentIdentity(VTimerRange, 'VTimerRange');

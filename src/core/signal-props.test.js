@@ -9,29 +9,29 @@ describe('signal props', () => {
   it('binds an input value to a signal', () => {
     const name = ref('Ada');
     const field = vInput({ value: name });
-    field.renderDom();
+    const input = field.renderDom().querySelector('input');
 
-    expect(field._input._el.value).toBe('Ada');
+    expect(input.value).toBe('Ada');
 
     name.value = 'Grace';
 
-    expect(field._input._el.value).toBe('Grace');
+    expect(input.value).toBe('Grace');
   });
 
   it('binds placeholder and disabled props', () => {
     const hint = ref('姓名');
     const locked = ref(false);
     const field = vInput({ placeholder: hint, disabled: locked });
-    field.renderDom();
+    const input = field.renderDom().querySelector('input');
 
-    expect(field._input._el.getAttribute('placeholder')).toBe('姓名');
-    expect(field._input._el.disabled).toBe(false);
+    expect(input.getAttribute('placeholder')).toBe('姓名');
+    expect(input.disabled).toBe(false);
 
     hint.value = '用户名';
     locked.value = true;
 
-    expect(field._input._el.getAttribute('placeholder')).toBe('用户名');
-    expect(field._input._el.disabled).toBe(true);
+    expect(input.getAttribute('placeholder')).toBe('用户名');
+    expect(input.disabled).toBe(true);
   });
 
   it('binds component props passed through the setup path', () => {
@@ -48,10 +48,10 @@ describe('signal props', () => {
 
   it('keeps plain prop values working', () => {
     const field = vInput({ value: 'plain', placeholder: 'p' });
-    field.renderDom();
+    const input = field.renderDom().querySelector('input');
 
-    expect(field._input._el.value).toBe('plain');
-    expect(field._input._el.getAttribute('placeholder')).toBe('p');
+    expect(input.value).toBe('plain');
+    expect(input.getAttribute('placeholder')).toBe('p');
   });
 
   it('renders the value during the build before the node is rendered', () => {

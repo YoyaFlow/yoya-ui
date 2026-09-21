@@ -1,15 +1,13 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import {
-  applyComponentSetup,
-  componentClass,
-  createComponentFactory,
-  isPlainObject
-} from '../../components/shared.js';
+import { applyComponentSetup, componentClass, isPlainObject } from '../../components/shared.js';
 import { applyFormValues, collectFormValues, validateFormControls } from './form-values.js';
 
-export class VForm extends HtmlElementNode {
+class FormNode extends HtmlElementNode {
   constructor(setup = null) {
     super('form', null);
+    this._identity = 'VForm';
 
     this.className(componentClass, 'yoya-vform');
     this.styles({
@@ -95,5 +93,13 @@ export class VForm extends HtmlElementNode {
 }
 
 export function vForm(first = null, second = null, third = null) {
-  return createComponentFactory(VForm, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VForm',
+    createNode: (setup) => new FormNode(setup),
+    commands: ['values', 'value', 'validate', 'reset', 'submit'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VForm = vForm;
+defineComponentIdentity(VForm, 'VForm');

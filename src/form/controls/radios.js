@@ -1,18 +1,20 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
 import { VRadio, vRadio } from './radio.js';
 
-export class VRadios extends HtmlElementNode {
+class RadiosNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VRadios';
     this._name = '';
     this._required = false;
     this._changeHandler = null;
@@ -132,7 +134,8 @@ export class VRadios extends HtmlElementNode {
     });
 
     if (typeof this._changeHandler === 'function') {
-      this._changeHandler(item.optionValue(), this);
+      // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+      this._changeHandler(item.optionValue(), this._componentHandle ?? this);
     }
   }
 
@@ -193,8 +196,26 @@ export class VRadios extends HtmlElementNode {
 }
 
 export function vRadios(first = null, second = null, third = null) {
-  return createComponentFactory(VRadios, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VRadios',
+    createNode: (setup) => new RadiosNode(setup),
+    commands: [
+      'required',
+      'isDisabled',
+      'change',
+      'options',
+      'value',
+      'checkedValue',
+      'clear',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VRadios = vRadios;
+defineComponentIdentity(VRadios, 'VRadios');
 
 function createRadioGroupItem(option, index) {
   if (option instanceof VRadio) {

@@ -1,9 +1,10 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { applyPropValue } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   resolveTextValue,
   themeBorder,
@@ -11,9 +12,10 @@ import {
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-export class VInput extends HtmlElementNode {
+export class InputNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VInput';
     this._value = '';
     this._clearable = true;
     this._clearButton = createClearButton('yoya-vinput-clear', {
@@ -330,5 +332,29 @@ export class VInput extends HtmlElementNode {
 }
 
 export function vInput(first = null, second = null, third = null) {
-  return createComponentFactory(VInput, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VInput',
+    createNode: (setup) => new InputNode(setup),
+    commands: [
+      'type',
+      'value',
+      'text',
+      'content',
+      'placeholder',
+      'isDisabled',
+      'isReadonly',
+      'isError',
+      'clearable',
+      'clear',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'readonly',
+      'required',
+      'error'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VInput = vInput;
+defineComponentIdentity(VInput, 'VInput');

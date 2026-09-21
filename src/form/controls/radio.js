@@ -1,15 +1,13 @@
+import { createComponentShell } from '../../components/component-shell.js';
+import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import {
-  createComponentFactory,
-  replaceChildren,
-  themeBorder,
-  themeValue
-} from '../../components/shared.js';
+import { replaceChildren, themeBorder, themeValue } from '../../components/shared.js';
 import { VBooleanControl } from './shared.js';
 
-export class VRadio extends VBooleanControl {
+class RadioNode extends VBooleanControl {
   constructor(setup = null) {
     super('radio');
+    this._identity = 'VRadio';
     this._input.attr('type', 'radio');
     this._visualBox.styles({
       alignItems: 'center',
@@ -108,7 +106,29 @@ function createRadioDot() {
 }
 
 export function vRadio(first = null, second = null, third = null) {
-  return createComponentFactory(VRadio, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VRadio',
+    createNode: (setup) => new RadioNode(setup),
+    commands: [
+      'label',
+      'text',
+      'content',
+      'description',
+      'isDisabled',
+      'value',
+      'optionValue',
+      // 布尔控件的选中态：构造函数里以实例方法挂上（shared.js 的 booleanMethod）
+      'checked',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required',
+      'indeterminate'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VRadio = vRadio;
+defineComponentIdentity(VRadio, 'VRadio');
 
 export { registerRadio, unregisterRadio, createRadioDot };
