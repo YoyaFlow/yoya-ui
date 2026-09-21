@@ -16,6 +16,10 @@ const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
  * - 命令里 `return api` 等价于返回节点，链式调用两头都通；
  * - `api.whenFailed = (error, info) => 降级节点` 声明组件自带的错误边界，等价于
  *   `card.whenFailed(fn)`（与组件对象协议成员同名同义），不按命令合并。
+ *
+ * 命令与钩子里的实例状态挂在 **api** 上（写成 `api.instance = …`，别写 `this`：api 在 setup 的
+ * 词法作用域里，而 `this` 只在函数表达式下才等于 api，箭头命令里不是）。结构与状态分开写——
+ * 视图表达式保持纯声明，需要真实元素时从钩子给的宿主上下文 `whenMount((host) => host.element())` 拿。
  */
 export function vNode(setup) {
   if (typeof setup !== 'function') {

@@ -29,6 +29,33 @@ describe('setup dispatch: options keys', () => {
       '<div data-x="1" style="color:red"></div>'
     );
   });
+
+  // options 里的键都是属性位置：活值来源是句柄或**零参闭包**（与链式 `.attr(名字, 值)` 同一条口径）。
+  // 以前函数值被静默丢掉 —— 同一个值走 options 与走链式行为不同，也和编译产物不同。
+  it('takes handles and zero-argument readers as live attribute values', () => {
+    const tone = ref('red');
+    const optionsNode = div({ 'data-tone': tone, 'data-reader': () => tone.value });
+    const chainedNode = div((node) => {
+      node.attr('data-tone', tone);
+      node.attr('data-reader', () => tone.value);
+    });
+
+    const optionsEl = optionsNode.renderDom();
+    const chainedEl = chainedNode.renderDom();
+    expect(optionsEl.outerHTML).toBe(chainedEl.outerHTML);
+    expect(optionsEl.getAttribute('data-reader')).toBe('red');
+
+    tone.value = 'blue';
+    optionsNode.flush();
+    expect(optionsEl.getAttribute('data-tone')).toBe('blue');
+    expect(optionsEl.getAttribute('data-reader')).toBe('blue');
+  });
+
+  // 带形参的函数不是活值来源（事件写 onXxx）→ 响亮报错，不再静默吞掉
+  it('rejects a parameter-taking function as an attribute option', () => {
+    expect(() => div({ 'data-x': (event) => event.key })).toThrow(/function with parameters/);
+    expect(div({ onClick: () => 'clicked' }).toHTML()).toBe('<div></div>');
+  });
 });
 
 describe('setup dispatch: order and count', () => {

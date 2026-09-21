@@ -299,3 +299,46 @@ describe('compiled list reuse', () => {
     expect(container.children).toHaveLength(0);
   });
 });
+
+describe('live attribute placeholders', () => {
+  it('removes the fragment placeholder when a live attribute resolves to nothing', async () => {
+    const source =
+      "import { computed, div, vText } from '../../src/yoya.core.js';\n" +
+      'export function Chip(props) {\n' +
+      '  return div((root) => {\n' +
+      "    root.className('chip');\n" +
+      "    root.attr('data-empty', computed(() => (props.total.value === 0 ? 'true' : null)));\n" +
+      '    root.child(vText(computed(() => String(props.total.value))));\n' +
+      '  });\n' +
+      '}\n';
+    const file = 'chip-live-attr.js';
+    const compiled = compileSource({
+      source,
+      file,
+      fn: 'Chip',
+      mode: 'node',
+      core,
+      runtime: runtimeUrl
+    });
+    expect(compiled.bails).toEqual([]);
+    const path = join(workDir, 'chip-live-attr.generated.js');
+    writeFileSync(path, compiled.module, 'utf8');
+    const generated = await import(pathToFileURL(path).href);
+    const sourcePath = join(workDir, file);
+    writeFileSync(sourcePath, source, 'utf8');
+    const generic = await import(pathToFileURL(sourcePath).href);
+
+    const props = { total: core.ref(5) };
+    const compiledEl = generated.createRowFactory({ computed: core.computed })(props).renderDom();
+    const genericEl = generic.Chip({ total: core.ref(5) }).renderDom();
+
+    // 通用路径的 DOM 里没有这个属性 → 片段里的空占位必须对账掉（节点通道）
+    expect(compiledEl.outerHTML).toBe('<div class="chip">5</div>');
+    expect(compiledEl.outerHTML).toBe(genericEl.outerHTML);
+
+    props.total.value = 0;
+    expect(compiledEl.outerHTML).toBe('<div class="chip" data-empty="true">0</div>');
+    props.total.value = 5;
+    expect(compiledEl.outerHTML).toBe('<div class="chip">5</div>');
+  });
+});

@@ -49,6 +49,62 @@ describe('component hooks', () => {
     expect(card.whenMount).toBeUndefined();
   });
 
+  it('hands the host element to both hooks, so state lives on the api', () => {
+    const calls = [];
+    const contexts = [];
+    const editor = vNode((api) => {
+      // 一律写 api：箭头命令里 `this` 不是组件（既有用例另行钉住 `this === api` 的绑定）
+      api.value = () => api.instance?.text ?? '';
+      api.whenMount = (host) => {
+        contexts.push(host);
+        const element = host.element();
+        calls.push(['mount', element]);
+        api.instance = {
+          element,
+          text: element.textContent,
+          destroy: () => calls.push(['dispose', element])
+        };
+      };
+      api.whenDestroy = (host) => {
+        contexts.push(host);
+        const element = host.element();
+        calls.push(['destroy', element]);
+        api.instance?.destroy();
+        api.instance = null;
+      };
+      return div({ class: 'editor-host' }, '内容');
+    });
+
+    document.body.innerHTML = '';
+    const target = mountToHost(editor);
+    const hostElement = target.firstElementChild;
+
+    expect(calls).toEqual([['mount', hostElement]]);
+    expect(hostElement.isConnected).toBe(true);
+    expect(editor.value()).toBe('内容');
+    expect(editor.setValue).toBeUndefined();
+
+    editor.destroy();
+    expect(calls[1]).toEqual(['destroy', hostElement]);
+    expect(calls[2]).toEqual(['dispose', hostElement]);
+    // 同一个上下文对象交给两个钩子；element() 现取，不是建时的快照
+    expect(contexts[0]).toBe(contexts[1]);
+    expect(contexts[0].element()).toBe(hostElement);
+  });
+
+  it('hands null to the hooks for a multi-root component', () => {
+    const seen = [];
+    const fragment = vNode((api) => {
+      api.whenMount = (host) => seen.push(host.element());
+      return [div('a'), div('b')];
+    });
+
+    document.body.innerHTML = '';
+    mountToHost(fragment);
+
+    expect(seen).toEqual([null]);
+  });
+
   it('supports shape B component objects (child(componentObject))', () => {
     const calls = [];
     const component = {

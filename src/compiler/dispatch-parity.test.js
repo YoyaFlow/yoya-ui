@@ -79,6 +79,20 @@ describe('compile / runtime dispatch parity', () => {
     expect(factory({ tone: 'red' }).renderDom().outerHTML).toBe(dslNode.renderDom().outerHTML);
   });
 
+  // options 对象里的活值（句柄 / 零参闭包）：运行期与编译期必须都写这条属性。
+  // 运行期曾经把函数值静默丢掉（只写句柄），编译产物却照写 → 通用路径少一个属性。
+  it('agrees on live values passed through the options object', async () => {
+    const factory = await compileBuilder(
+      "div({ 'data-tone': item.tone, 'data-reader': () => item.tone }, (node) => node.span('s'))",
+      'options-live'
+    );
+    const dslNode = div({ 'data-tone': 'red', 'data-reader': () => 'red' }, (node) =>
+      node.span('s')
+    );
+
+    expect(factory({ tone: 'red' }).el.outerHTML).toBe(dslNode.renderDom().outerHTML);
+  });
+
   it('agrees when a static style shares the element with a dynamic style', async () => {
     const factory = await compileBuilder(
       "div({ style: { color: 'red', width: item.w } }, (node) => node.span('s'))",

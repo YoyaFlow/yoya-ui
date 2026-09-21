@@ -335,12 +335,162 @@ export function collectImports(ast) {
   return imports;
 }
 
+/** AST 遍历时跳过的非语义键。 */
+const AST_SKIP_KEYS = new Set([
+  'type',
+  'loc',
+  'start',
+  'end',
+  'extra',
+  'leadingComments',
+  'trailingComments',
+  'innerComments'
+]);
+
+/** 自带作用域的节点：形参 / 方法名 / 体内声明都只在它们内部可见。 */
+const FUNCTION_NODE_TYPES = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  'ObjectMethod',
+  'ClassMethod',
+  'ClassPrivateMethod'
+]);
+
 /**
- * 收集表达式里引用的自由标识符（生成代码要它们出现在 scope 里）。
- * 参数名 / 局部箭头函数的形参算已绑定；`String` 等内建不算自由。
+ * 收集表达式里引用的**自由标识符**（生成代码要它们出现在 scope 里）。
+ *
+ * 只有"在这里读到的名字在当前词法作用域里找不到绑定"才算自由。踩过的坑（同一个族）：
+ * 属性名（含可选链 `a?.b`）、对象键（`{ x: 1 }`）、解构 / 默认值形参、嵌套回调里的局部量、
+ * catch 形参、嵌套函数名——它们都曾被当成自由标识符收进 scope，产物在**替换点**求值
+ * （`createRowFactory({ closest, x })`）时这些名字并不存在，组件一调用就 ReferenceError。
+ *
+ * 判定保守：函数体里**任何**声明（含嵌套块）都算该函数的绑定名，宁可少收也不误收。
  */
 export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node', 'event'])) {
   const names = new Set();
+
+  /** 形参模式里的**表达式**（默认值 / 计算键）在该函数作用域里求值。 */
+  const visitPatternExpressions = (pattern, scope) => {
+    if (!pattern || typeof pattern !== 'object') {
+      return;
+    }
+    switch (pattern.type) {
+      case 'AssignmentPattern':
+        visit(pattern.right, scope);
+        visitPatternExpressions(pattern.left, scope);
+        return;
+      case 'ObjectPattern':
+        pattern.properties.forEach((property) => {
+          if (property.type === 'RestElement') {
+            visitPatternExpressions(property.argument, scope);
+            return;
+          }
+          if (property.computed) {
+            visit(property.key, scope);
+          }
+          visitPatternExpressions(property.value, scope);
+        });
+        return;
+      case 'ArrayPattern':
+        pattern.elements.forEach((element) => visitPatternExpressions(element, scope));
+        return;
+      case 'RestElement':
+        visitPatternExpressions(pattern.argument, scope);
+        return;
+      case 'TSParameterProperty':
+        visitPatternExpressions(pattern.parameter, scope);
+        return;
+      default:
+        return;
+    }
+  };
+
+  /**
+   * 一个函数体里声明的所有名字（含嵌套块 / catch），**不深入**嵌套函数自己的作用域。
+   * 保守：名字一旦在函数里声明过，函数内的同名读取就不是作用域依赖。
+   */
+  const collectDeclaredNames = (node, out) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach((child) => collectDeclaredNames(child, out));
+      return;
+    }
+    if (FUNCTION_NODE_TYPES.has(node.type)) {
+      // 嵌套函数自己的局部量不外泄；它的名字（函数声明）由下面 FunctionDeclaration 分支收
+      if (node.type === 'FunctionDeclaration' && node.id?.name) {
+        out.add(node.id.name);
+      }
+      return;
+    }
+    if (node.type === 'ClassDeclaration') {
+      if (node.id?.name) {
+        out.add(node.id.name);
+      }
+      return;
+    }
+    if (node.type === 'VariableDeclarator') {
+      collectPatternNamesInto(node.id, out);
+      collectDeclaredNames(node.init, out);
+      return;
+    }
+    if (node.type === 'CatchClause') {
+      collectPatternNamesInto(node.param, out);
+      collectDeclaredNames(node.body, out);
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (AST_SKIP_KEYS.has(key)) {
+        continue;
+      }
+      const value = node[key];
+      if (value && typeof value === 'object') {
+        collectDeclaredNames(value, out);
+      }
+    }
+  };
+
+  /** 函数 / 方法：形参（含解构、默认值、rest）+ 体内声明构成新作用域。 */
+  const visitFunction = (node, scope) => {
+    const inner = new Set(scope);
+    (node.params ?? []).forEach((param) => collectPatternNamesInto(param, inner));
+    if (node.id?.name) {
+      inner.add(node.id.name);
+    }
+    collectDeclaredNames(node.body, inner);
+    (node.params ?? []).forEach((param) => visitPatternExpressions(param, inner));
+    visit(node.body, inner);
+  };
+
+  /** 类表达式：类名在类体里可见，继承表达式在外层作用域求值，方法走函数作用域。 */
+  const visitClass = (node, scope) => {
+    if (node.superClass) {
+      visit(node.superClass, scope);
+    }
+    const inner = new Set(scope);
+    if (node.id?.name) {
+      inner.add(node.id.name);
+    }
+    (node.body?.body ?? []).forEach((member) => {
+      if (member.computed) {
+        visit(member.key, inner);
+      }
+      if (member.type === 'StaticBlock') {
+        visit(member.body, inner);
+        return;
+      }
+      if (FUNCTION_NODE_TYPES.has(member.type)) {
+        visitFunction(member, inner);
+        return;
+      }
+      if (member.value && typeof member.value === 'object') {
+        visit(member.value, inner);
+      }
+    });
+  };
+
   const visit = (node, scope) => {
     if (!node || typeof node !== 'object') {
       return;
@@ -349,27 +499,56 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
       node.forEach((child) => visit(child, scope));
       return;
     }
-    if (node.type === 'Identifier') {
-      if (!scope.has(node.name) && !GLOBALS.has(node.name)) {
-        names.add(node.name);
-      }
+
+    switch (node.type) {
+      case 'Identifier':
+        if (!scope.has(node.name) && !GLOBALS.has(node.name)) {
+          names.add(node.name);
+        }
+        return;
+      case 'MetaProperty':
+        // `new.target` / `import.meta`：不是自由标识符（调用点另有守卫）
+        return;
+      case 'MemberExpression':
+      case 'OptionalMemberExpression':
+        visit(node.object, scope);
+        if (node.computed) {
+          visit(node.property, scope);
+        }
+        return;
+      case 'OptionalCallExpression':
+      case 'CallExpression':
+        visit(node.callee, scope);
+        node.arguments.forEach((argument) => visit(argument, scope));
+        return;
+      case 'ObjectProperty':
+        if (node.computed) {
+          visit(node.key, scope);
+        }
+        visit(node.value, scope);
+        return;
+      case 'ClassProperty':
+      case 'ClassPrivateProperty':
+        if (node.computed) {
+          visit(node.key, scope);
+        }
+        visit(node.value, scope);
+        return;
+      case 'ClassDeclaration':
+      case 'ClassExpression':
+        visitClass(node, scope);
+        return;
+      default:
+        break;
+    }
+
+    if (FUNCTION_NODE_TYPES.has(node.type)) {
+      visitFunction(node, scope);
       return;
     }
-    if (node.type === 'MemberExpression' && !node.computed) {
-      visit(node.object, scope);
-      return;
-    }
-    if (
-      (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') &&
-      node.params
-    ) {
-      const inner = new Set(scope);
-      node.params.forEach((param) => param.type === 'Identifier' && inner.add(param.name));
-      visit(node.body, inner);
-      return;
-    }
+
     for (const key of Object.keys(node)) {
-      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+      if (AST_SKIP_KEYS.has(key)) {
         continue;
       }
       const value = node[key];
@@ -381,6 +560,339 @@ export function freeIdentifiers(expressionSource, bound = new Set(['row', 'node'
 
   visit(parseExpression(expressionSource), new Set(bound));
   return names;
+}
+
+/**
+ * 形参的绑定名与「要在产物里求值的表达式」（票 21）。
+ *
+ * - 绑定名：解构（对象 / 数组 / 嵌套）、默认值左侧、rest 全部展开——它们**不是**自由标识符，
+ *   永远不进 scope（票 12 的 C1 就是这里漏了）；
+ * - 表达式：默认值右侧与计算键——它们在产物里照旧求值，里面的自由标识符要进 scope。
+ *
+ * @param {object} pattern 形参 AST 节点
+ * @param {Set<string>} bound 输出：绑定名
+ * @param {string[]} expressions 输出：表达式源码
+ * @param {(node: object) => string} slice 源码切片
+ */
+function collectParamBindings(pattern, bound, expressions, slice) {
+  if (!pattern || typeof pattern !== 'object') {
+    return;
+  }
+  switch (pattern.type) {
+    case 'Identifier':
+      bound.add(pattern.name);
+      return;
+    case 'ObjectPattern':
+      pattern.properties.forEach((property) => {
+        if (property.type === 'RestElement') {
+          collectParamBindings(property.argument, bound, expressions, slice);
+          return;
+        }
+        // 计算键（`{ [field]: value }`）里的名字是自由的：它要在产物里求值
+        if (property.computed && expressions) {
+          expressions.push(slice(property.key));
+        }
+        collectParamBindings(property.value, bound, expressions, slice);
+      });
+      return;
+    case 'ArrayPattern':
+      pattern.elements.forEach((element) =>
+        collectParamBindings(element, bound, expressions, slice)
+      );
+      return;
+    case 'AssignmentPattern':
+      if (expressions) {
+        expressions.push(slice(pattern.right));
+      }
+      collectParamBindings(pattern.left, bound, expressions, slice);
+      return;
+    case 'RestElement':
+      collectParamBindings(pattern.argument, bound, expressions, slice);
+      return;
+    default:
+      // 认不出的形参形状：整段当表达式收名字，宁可多进 scope 也不静默漏
+      if (expressions) {
+        expressions.push(slice(pattern));
+      }
+  }
+}
+
+/** 形参列表绑定的全部名字（注册表的「入参当子内容」判定要按它们看，票 21）。 */
+export function paramBoundNames(params) {
+  const bound = new Set();
+  params.forEach((param) => collectParamBindings(param, bound, null, null));
+  return bound;
+}
+
+/**
+ * 这个名字能不能作为绑定名：`arguments` / `eval`（严格模式）与关键字都不行，
+ * `new.target` / `import.meta` 这类元属性被拆出来的名字也在其中。
+ *
+ * 产物把自由标识符收进 `scope` 后再解构出来，所以非绑定名会让产物**语法错误**
+ * （`const { arguments } = scope;`）；而且 `arguments` / `new.target` 的语义依赖调用形态，
+ * 逐字复刻不了——两种都只能整形状回落（票 21 的边界）。
+ */
+export function isBindableName(name) {
+  if (typeof name !== 'string' || name.length === 0) {
+    return false;
+  }
+  try {
+    parse(`let ${name} = 0;`, { sourceType: 'module' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** 解构 / 默认值 / rest → 绑定名（声明与形参共用）。 */
+function collectPatternNamesInto(pattern, out) {
+  if (!pattern || typeof pattern !== 'object') {
+    return;
+  }
+  switch (pattern.type) {
+    case 'Identifier':
+      out.add(pattern.name);
+      return;
+    case 'ObjectPattern':
+      pattern.properties.forEach((property) =>
+        collectPatternNamesInto(
+          property.type === 'RestElement' ? property.argument : property.value,
+          out
+        )
+      );
+      return;
+    case 'ArrayPattern':
+      pattern.elements.forEach((element) => collectPatternNamesInto(element, out));
+      return;
+    case 'AssignmentPattern':
+      collectPatternNamesInto(pattern.left, out);
+      return;
+    case 'RestElement':
+      collectPatternNamesInto(pattern.argument, out);
+  }
+}
+
+/** 模式里有没有默认值（`{ a = F }` / `[a = F]`）——默认值要在产物里求值，逻辑帧本轮不收。 */
+function hasDefaultInPattern(pattern) {
+  if (!pattern || typeof pattern !== 'object') {
+    return false;
+  }
+  switch (pattern.type) {
+    case 'Identifier':
+      return false;
+    case 'AssignmentPattern':
+      return true;
+    case 'ObjectPattern':
+      return pattern.properties.some((property) =>
+        hasDefaultInPattern(property.type === 'RestElement' ? property.argument : property.value)
+      );
+    case 'ArrayPattern':
+      return pattern.elements.some(hasDefaultInPattern);
+    case 'RestElement':
+      return hasDefaultInPattern(pattern.argument);
+    default:
+      return true;
+  }
+}
+
+/** 简单模式：标识符，或只有标识符 / rest 的解构（计算键、嵌套默认值都不算）。 */
+function isPlainPattern(pattern) {
+  if (!pattern || typeof pattern !== 'object') {
+    return false;
+  }
+  switch (pattern.type) {
+    case 'Identifier':
+      return true;
+    case 'ObjectPattern':
+      return pattern.properties.every((property) => {
+        if (property.computed) {
+          return false;
+        }
+        return property.type === 'RestElement'
+          ? property.argument.type === 'Identifier'
+          : isPlainPattern(property.value);
+      });
+    case 'ArrayPattern':
+      return pattern.elements.every((element) => element === null || isPlainPattern(element));
+    case 'RestElement':
+      return pattern.argument.type === 'Identifier';
+    default:
+      return false;
+  }
+}
+
+/** 每处声明的计数（同名声明出现两次 → 逻辑帧提升会改语义）。 */
+function declarationCountMap(fn) {
+  const counts = new Map();
+  const bump = (name) => counts.set(name, (counts.get(name) ?? 0) + 1);
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (node.type === 'VariableDeclarator') {
+      const names = new Set();
+      collectPatternNamesInto(node.id, names);
+      names.forEach(bump);
+      visit(node.init);
+      return;
+    }
+    if (
+      node.type === 'FunctionDeclaration' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'ArrowFunctionExpression'
+    ) {
+      node.params?.forEach((param) => {
+        const names = new Set();
+        collectPatternNamesInto(param, names);
+        names.forEach(bump);
+      });
+    }
+    if (node.type === 'ClassDeclaration' || node.type === 'ClassExpression') {
+      if (node.id?.name) {
+        bump(node.id.name);
+      }
+      return;
+    }
+    Object.keys(node).forEach((key) => {
+      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+        return;
+      }
+      const value = node[key];
+      if (value && typeof value === 'object') {
+        visit(value);
+      }
+    });
+  };
+  visit(fn.body);
+  return counts;
+}
+
+/**
+ * 这个 import 来源算不算"库的入口"。
+ *
+ * 除了 core 子入口，也要认**包根 / 仓库内入口**（`@yoyaflow/yoya-ui`、`../index.js`、
+ * `yoya.ui.js` 这类）——仓库里的示例与业务就是这么导入元素工厂的；只有"别处模块的同名导入"
+ * （裸包名、或 `./my-utils.js` 这种非入口相对路径）才算遮蔽。
+ */
+function isCoreLikeSpecifier(specifier) {
+  if (typeof specifier !== 'string' || specifier.length === 0) {
+    return false;
+  }
+  if (specifier === '@yoyaflow/yoya-ui' || specifier.startsWith('@yoyaflow/yoya-ui/')) {
+    return true;
+  }
+  return /(^|\/)(index|yoya\.[\w.-]+)\.js$/.test(specifier);
+}
+
+/**
+ * 目标函数子树里的**局部声明名**（不含形参）：`const/let/var`、嵌套回调里的声明。
+ *
+ * 产物里不执行组件的函数体，所以这些名字**不能**被当成"运行期作用域依赖"——
+ * 也就是说它们既不能进 `scope`（会读出 undefined），也不能被当成自由标识符。
+ * 谁在值位置引用了它们，就整形状回落（见 emit 的 addExpression）。
+ */
+export function collectLocalDeclarations(fn) {
+  const names = new Set();
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (node.type === 'VariableDeclarator') {
+      collectPatternNamesInto(node.id, names);
+      visit(node.init);
+      return;
+    }
+    if (node.type === 'ClassDeclaration' || node.type === 'ClassExpression') {
+      if (node.id?.name) {
+        names.add(node.id.name);
+      }
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+        continue;
+      }
+      const value = node[key];
+      if (value && typeof value === 'object') {
+        visit(value);
+      }
+    }
+  };
+  visit(fn.body);
+  return names;
+}
+
+/**
+ * 文件 + 目标函数里"这个名字已经被本地绑定"的集合（用于**元素工厂身份确认**）。
+ *
+ * 规则与 R15 的 `keyed` 同源：名字命中白名单还不够，还得确认这个名字指向的是库的 core 工厂——
+ * 本地函数 / 变量 / 形参 / 非 core 模块的同名导入一律不算（否则 `function span(...)` 会被编成 `<span>`）。
+ */
+export function collectShadowedNames(ast, fn, imports) {
+  const shadowed = new Set();
+
+  ast.program.body.forEach((statement) => {
+    const inner = statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (inner?.type === 'VariableDeclaration') {
+      inner.declarations.forEach((declaration) =>
+        collectPatternNamesInto(declaration.id, shadowed)
+      );
+      return;
+    }
+    if (inner?.type === 'FunctionDeclaration' && inner.id) {
+      shadowed.add(inner.id.name);
+      return;
+    }
+    if (inner?.type === 'ClassDeclaration' && inner.id) {
+      shadowed.add(inner.id.name);
+    }
+  });
+
+  imports.forEach((record, local) => {
+    if (!isCoreLikeSpecifier(record.specifier)) {
+      shadowed.add(local);
+    }
+  });
+
+  fn.params.forEach((param) => collectPatternNamesInto(param, shadowed));
+  collectLocalDeclarations(fn).forEach((name) => shadowed.add(name));
+  // 嵌套回调的形参也算（`child(span => …)` 这类遮蔽）
+  const visitParams = (node) => {
+    if (!node || typeof node !== 'object') {
+      return;
+    }
+    if (Array.isArray(node)) {
+      node.forEach(visitParams);
+      return;
+    }
+    if (
+      node.type === 'ArrowFunctionExpression' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'FunctionDeclaration'
+    ) {
+      node.params?.forEach((param) => collectPatternNamesInto(param, shadowed));
+    }
+    Object.keys(node).forEach((key) => {
+      if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+        return;
+      }
+      const value = node[key];
+      if (value && typeof value === 'object') {
+        visitParams(value);
+      }
+    });
+  };
+  visitParams(fn.body);
+
+  return shadowed;
 }
 
 /**
@@ -396,11 +908,15 @@ export function analyzeSource(source, options = {}) {
     return { entry: null, bails: [{ reason: '缺少目标组件名（fn）', at: null }] };
   }
   const className = options.className ?? null;
-  // 编译单元种类：行的形参只能是单个标识符；组件的形参由调用点逐个解构，允许多个。
-  const kind = options.kind ?? 'row';
+  // `options.kind`（row / component）只影响产物形态，不再影响形参口径：两种单元的形参形状
+  // 都由「复刻源码参数表 + 绑定名集合」同一条规则处理（票 21）。
   const whitelist = options.whitelist ?? new Set();
   const resolveComponent = options.resolveComponent ?? null;
+  // 产物通道影响位置表：元素通道里 `child(<变量>)` 占一个文本位置，节点通道里它是运行期子节点
+  const mode = options.mode ?? 'element';
   const bails = [];
+  // `keyed(...)` 里的行工厂：作为**子单元**编译（合成源码由调用方落成模块）
+  const rows = [];
 
   let ast;
   try {
@@ -410,16 +926,46 @@ export function analyzeSource(source, options = {}) {
   }
 
   const slice = (node) => source.slice(node.start, node.end);
-  const recordBail = (reason, node) => {
-    bails.push({ reason, at: node ? slice(node).slice(0, 80) : null });
+  const recordBail = (reason, node, code = null) => {
+    bails.push({ reason, at: node ? slice(node).slice(0, 80) : null, ...(code ? { code } : {}) });
   };
   const imports = collectImports(ast);
+  // 「这个名字已经被本地绑定」集合：元素工厂身份确认靠它（本地函数 / 非 core 同名导入都不算工厂）
+  const shadowed = new Set();
+  const isFactory = (name) => whitelist.has(name) && !shadowed.has(name);
   // 静态值折叠：字面量之外，模块级字面量常量与库内主题助手也算「构建期就知道的值」
   const staticContext = createStaticContext(ast, imports);
   const staticOf = (node) => staticValueOf(node, staticContext);
   // 形态 C 的骨架：构造体里出现这些参数名的地方就是"调用方内容"（链接时走运行期回落）
   const contentParams = new Set();
   let hasContent = false;
+  /**
+   * 逻辑帧（票 04 的第一刀）：**根 setup** 里的局部声明提升到产物里按源码顺序执行。
+   *
+   * 只有根 builder 能提升：嵌套 setup 回调在产物里没有对应的闭包作用域（元素通道的嵌套写是
+   * 就地展开的），提升过去会静默改变作用域。名字进 `frameNames` 后：值位置引用它们不再当作
+   * 「局部变量」回落，同时算作已绑定名（**不进 scope**——产物自己声明了它们）。
+   */
+  const frameNames = new Set();
+  /**
+   * 嵌套 setup 回调的形参名（`root.span((cell) => …)` 里的 `cell`）：**节点对象**，不是值。
+   * 值位置引用它们就整形状回落——产物里没有这些对象（元素通道里嵌套 setup 是就地展开的）。
+   */
+  const nestedParams = new Set();
+  /**
+   * 节点变量（别名）名字：`const body = root.div(…)` 里的 `body`。DSL 里链式调用返回**父节点**，
+   * 所以别名指向的就是"当前节点"——它出现在链头时按当前节点分析，出现在值位置（`foo(body)`）时
+   * 是"把节点对象当值用"，产物承载不了 → 回落。
+   */
+  const nodeAliases = new Set();
+  /**
+   * 结构锚点（票 04 第一刀）：`if` / `for…of` 里的**结构语句**提升成子单元，父片段里什么都不留，
+   * 运行期按"片段里它后面的那个兄弟"当边界插回去。语句本身原样搬进产物，所以逻辑与位置写天然
+   * 按源码顺序交织。
+   */
+  const controls = [];
+  /** 逻辑帧判定用：被重新赋值的名字、同名声明计数（形参名由每层 setup 自带）。 */
+  let declarationCounts = new Map();
 
   /** 构造参数 = 调用方内容：`applyComponentSetup(this, setup)` / `this.child(setup)` 里的那个名字。 */
   const isContentArg = (argument) =>
@@ -466,7 +1012,9 @@ export function analyzeSource(source, options = {}) {
     const contentOps = [];
     for (const argument of passed) {
       const ops = contentArgumentOps(argument);
-      if (!ops) {
+      // 内容读不懂（返回 null）**或**内容自己的分析过程中记了 bail（例如回调里用了链式库内组件
+      // `card.vCardBody(…)`）→ 都只是"不内联"：把 bail 撤回到进这一支之前，交给运行期回落。
+      if (!ops || bails.length !== outerBails) {
         bails.length = outerBails; // 内容读不懂只是"不内联"，不是这一行编不了
         return null;
       }
@@ -504,7 +1052,7 @@ export function analyzeSource(source, options = {}) {
     if (
       argument.type === 'CallExpression' &&
       argument.callee?.type === 'Identifier' &&
-      whitelist.has(argument.callee.name)
+      isFactory(argument.callee.name)
     ) {
       const elementOps = analyzeElementArguments(
         argument.arguments,
@@ -530,6 +1078,92 @@ export function analyzeSource(source, options = {}) {
       return;
     }
 
+    // 核心节点能力 = **操作**（不是元素工厂）：`mountable` 只切换"在场 / 离场"，
+    // 元素本身仍在片段里，所以按 op 发射（元素通道走 mountableAt，节点通道调用节点自己的方法）。
+    if (method === 'mountable') {
+      if (args.length !== 1) {
+        recordBail(`mountable() 参数数量 ${args.length}`, call);
+        return;
+      }
+      ops.push({ kind: 'liveMountable', expression: slice(args[0]) });
+      return;
+    }
+
+    // `keyed(source, keyOf, rowFactory)` 也是操作：行工厂作为**子单元**编译（行结构走同一套行编译），
+    // 运行期由列表对账接管（复用 / 原位重建 / 离场销毁 / 最小搬动 + 行的条件挂载）。
+    if (method === 'keyed') {
+      // 三参 `(source, keyOf, rowFactory)` 与两参 `(source, rowFactory)` 都认。
+      // 两参的**键口径由核心决定**（`keyed(source, build)`）：keySet 源用容器自己的
+      // `keyOf(item.data)`，信号源按行身份（对象键，因此不写 `data-row-key`）——
+      // 运行期钩子照这条规则补出 keyFn，编译器不另立一套。
+      if (args.length !== 3 && args.length !== 2) {
+        recordBail(
+          `keyed() 只支持 (source, keyOf, rowFactory) / (source, rowFactory)（收到 ${args.length} 个）`,
+          call
+        );
+        return;
+      }
+      const twoArg = args.length === 2;
+      const sourceArg = args[0];
+      const keyArg = twoArg ? null : args[1];
+      const rowArg = twoArg ? args[1] : args[2];
+      const rowParams = rowArg?.params ?? [];
+      const rowParam = rowParams[0];
+      if (
+        (rowArg?.type !== 'ArrowFunctionExpression' && rowArg?.type !== 'FunctionExpression') ||
+        rowParam?.type !== 'Identifier' ||
+        rowParams.length !== 1
+      ) {
+        recordBail('keyed() 的行工厂只支持单个标识符形参（index 等其它形参走通用路径）', call);
+        return;
+      }
+      // 行工厂体只能是「一条 return」：块里还有别的语句时，合成源码会把它们丢掉——
+      // 那是静默的语义变化（局部量变成产物读不到的游离标识符），所以整形状回落。
+      let rowReturned = rowArg.body;
+      if (rowArg.body.type === 'BlockStatement') {
+        const body = rowArg.body.body;
+        const onlyReturn = body.length === 1 && body[0].type === 'ReturnStatement' ? body[0] : null;
+        if (!onlyReturn) {
+          recordBail('keyed() 的行工厂体只能是一条 return（有其它语句走通用路径）', call);
+          return;
+        }
+        rowReturned = onlyReturn.argument;
+      }
+      if (
+        !rowReturned ||
+        rowReturned.type !== 'CallExpression' ||
+        rowReturned.callee.type !== 'Identifier'
+      ) {
+        recordBail('keyed() 的行工厂体不是单一 return 工厂调用', call);
+        return;
+      }
+      const rowIndex = rows.length;
+      const rowName = `__yoyaRow${rowIndex}`;
+      // 合成一份"行构建函数"源码：带上模块级 import 与顶层 const（静态值折叠要用它们）
+      const carried = ast.program.body
+        .filter(
+          (statement) =>
+            statement.type === 'ImportDeclaration' ||
+            (statement.type === 'VariableDeclaration' && statement.kind === 'const')
+        )
+        .map((statement) => source.slice(statement.start, statement.end));
+      rows.push({
+        index: rowIndex,
+        fn: rowName,
+        paramsSource: rowParam.name,
+        source:
+          `${carried.join('\n')}\n` +
+          `export function ${rowName}(${rowParam.name}) {\n  return ${slice(rowReturned)};\n}\n`
+      });
+      ops.push({
+        kind: 'keyedRows',
+        source: slice(sourceArg),
+        keyOf: keyArg ? slice(keyArg) : null,
+        rowIndex
+      });
+      return;
+    }
+
     if (!NODE_API.has(method)) {
       // 形态 C 的构造体里，组件助手把构造参数接到节点上——那是**调用方内容**的位置
       if (contentHelperOf(call) && call.arguments.some((arg) => isContentArg(arg))) {
@@ -538,7 +1172,7 @@ export function analyzeSource(source, options = {}) {
         hasContent = true;
         return;
       }
-      // 只有白名单里的元素工厂才能编；组件 / 父快捷方法 / 未知 API 一律 bail
+      // 链式子工厂按**方法名**认（接收者是核心节点，与方法名是否被本地绑定无关）
       if (!whitelist.has(method)) {
         recordBail(`不是元素工厂（组件或未知 API）：${method}`, call);
         return;
@@ -576,33 +1210,47 @@ export function analyzeSource(source, options = {}) {
       // 组件调用（形态 A/B/vNode 或未编译的工厂）：不猜，直接 bail
       if (argument.type === 'CallExpression' && argument.callee?.type === 'Identifier') {
         const callee = argument.callee.name;
-        const isComponentCallee =
-          !whitelist.has(callee) && callee !== 'String' && callee !== 'vText';
+        const isComponentCallee = !isFactory(callee) && callee !== 'String' && callee !== 'vText';
         if (isComponentCallee) {
           // 注册表命中 → 链接（片段就地嵌入 + 运行期实例化）；未命中 → 今天的通用路径
           const linked = resolveComponent?.(callee, imports.get(callee), argument);
+          // 产物是**组件节点**（vNode / 形态 B）：命令、钩子、身份都挂在包装上，摊平成裸元素
+          // 就是静默丢语义（票 15）→ 调用点按"运行期子节点"处理：表达式原样进产物，组件符号走
+          // scope（它自己的视图表达式已被就地替换，结构照旧吃编译产物）。
+          if (linked?.product === 'node') {
+            ops.push({ kind: 'childValue', expression: slice(argument) });
+            return;
+          }
           if (linked) {
             // 形态 C 的骨架带内容位置：调用方内容能**构建期内联**就内联（片段 + 位置写），
-            // 内联不了（动态值 / 认不出的写法）就留给运行期——产物会拒收并回落通用路径。
+            // 内联不了（动态值 / 认不出的写法 / 内容里用了链式库内组件）就留给运行期——
+            // 产物里的**内容守卫**会让 `bind` 返回 null，调用方用原组件重建（DOM 仍逐字节一致，
+            // 见 class-skeleton.test.js 的回落计数）。
             const content = inlineComponentContent(linked, argument.arguments);
             ops.push({
               kind: 'component',
               key: linked.key,
               hash: linked.hash,
+              // 只有裸结构（`element`）能在发射期被摊平；`node` 是守卫用的第二道保险
+              product: linked.product ?? null,
               entryFactory: linked.factory,
               entryOps: linked.ops,
               args: argument.arguments.map(slice),
+              // 内联链接（插件路径）要按子组件的形参帧绑定实参：形参表原文 + 绑定名集合
+              params: linked.params ?? null,
+              paramNames: linked.paramNames ?? null,
               ...(content ? { content } : {})
             });
             return;
           }
-          recordBail(`child() 里是组件调用（未编译）：${callee}`, call);
+          // `code` 给构建期插件看：这是「注册表里还没有这个组件」——定点编译时值得再等一轮
+          recordBail(`child() 里是组件调用（未编译）：${callee}`, call, 'unlinked-component');
           return;
         }
 
         // 白名单内的元素工厂当 child 参数（`cell.child(span((s) => …))`）：与前缀写法
         // `cell.span(…)` 同义，编成子元素——当成文本写就是静默误编。
-        if (whitelist.has(callee)) {
+        if (isFactory(callee)) {
           const setup = argument.arguments[0];
           if (setup?.type === 'ArrowFunctionExpression' || setup?.type === 'FunctionExpression') {
             const param = setup.params[0]?.name;
@@ -639,17 +1287,42 @@ export function analyzeSource(source, options = {}) {
         recordBail('child(() => …) 组件槽', call);
         return;
       }
-      const problem = textPositionProblemOf(argument);
-      if (problem) {
-        recordBail(`child() 收到${problem}`, argument);
+      // 对象字面量：通用路径里 `child({…})` 直接抛 TypeError（只接受节点 / 字符串 / 数字 /
+      // 句柄 / 组件），编成位置写就是静默误编 → 认出来就回落，让错误照旧冒出来
+      if (argument.type === 'ObjectExpression') {
+        recordBail('child() 收到对象：文本位置只接受字符串 / 数字 / 值句柄', argument);
         return;
       }
-      // 其余表达式：句柄还是普通值构建期看不出来 → 运行期二选一
-      ops.push({ kind: 'bindText', expression: slice(argument) });
+      // 其余表达式：字符串 / 数字 / 句柄 / 节点 / 组件 / 数组构建期都认不出来 → **运行期子节点**
+      // （票 09：节点通道把值交给核心 `child()` 同一份分派，再按片段边界摆位；元素通道按
+      //   "位置 = 一段文本"落地，收到节点时响亮报错）。
+      ops.push({ kind: 'childValue', expression: slice(argument) });
       return;
     }
 
     if (method === 'attr') {
+      // 对象形式（`attr({ 'aria-hidden': 'true', fill: 'none' })`）：与核心同一条口径——
+      // 逐项走 `attr(名字, 值)`，顺序就是对象字面量的书写顺序。
+      if (args.length === 1 && args[0].type === 'ObjectExpression') {
+        for (const property of args[0].properties) {
+          if (property.type !== 'ObjectProperty' || property.computed) {
+            recordBail('attr() 对象形式里只有非计算键', call);
+            return;
+          }
+          const key = property.key.name ?? property.key.value;
+          if (typeof key !== 'string') {
+            recordBail('attr() 对象形式的键不是字符串字面量', call);
+            return;
+          }
+          const entryValue = staticOf(property.value);
+          if (entryValue.literal) {
+            ops.push({ kind: 'staticAttr', name: key, value: entryValue.value });
+          } else {
+            ops.push({ kind: 'dynamicAttr', name: key, expression: slice(property.value) });
+          }
+        }
+        return;
+      }
       if (args.length !== 2) {
         recordBail('attr() 只用「名字 + 值」两参形式', call);
         return;
@@ -669,16 +1342,29 @@ export function analyzeSource(source, options = {}) {
     }
 
     if (method === 'className' || method === 'class') {
+      // 参数按顺序摊成 op：字面量进片段，动态值走运行期**保序去重**的类名写
+      // （节点通道 `node.className(expr)`、元素通道 `addClassText`，都与核心同一口径）。
       const names = [];
+      const flushStatic = () => {
+        if (names.length > 0) {
+          ops.push({ kind: 'staticClass', names: [...names] });
+          names.length = 0;
+        }
+      };
       for (const argument of args) {
         const literal = staticOf(argument);
-        if (!literal.literal || typeof literal.value !== 'string') {
-          recordBail('className() 参数不是字符串字面量', call);
+        if (literal.literal) {
+          if (typeof literal.value === 'string') {
+            names.push(literal.value);
+            continue;
+          }
+          recordBail('className() 字面量参数不是字符串', call);
           return;
         }
-        names.push(literal.value);
+        flushStatic();
+        ops.push({ kind: 'dynamicClass', expression: slice(argument) });
       }
-      ops.push({ kind: 'staticClass', names });
+      flushStatic();
       return;
     }
 
@@ -709,6 +1395,10 @@ export function analyzeSource(source, options = {}) {
     }
 
     if (method === 'style') {
+      // 对象形式（`style({ height: '24px' })`）：核心里等价于 `styles(对象)` → 逐项 `style(名, 值)`
+      if (args.length === 1 && args[0].type === 'ObjectExpression') {
+        return classifyStylesObject(args[0], ops, call);
+      }
       const name = staticOf(args[0]);
       if (args.length !== 2 || !name.literal || typeof name.value !== 'string') {
         recordBail('style() 只用「样式名 + 值」两参形式，样式名要是字符串字面量', call);
@@ -729,31 +1419,472 @@ export function analyzeSource(source, options = {}) {
         recordBail('styles() 只用对象字面量形式', call);
         return;
       }
-      for (const property of args[0].properties) {
-        if (property.type !== 'ObjectProperty' || property.computed) {
-          recordBail('styles() 里有非静态键', call);
-          return;
-        }
-        const name = property.key.name ?? property.key.value;
-        if (typeof name !== 'string') {
-          recordBail('styles() 里有非字面量键', call);
-          return;
-        }
-        const value = staticOf(property.value);
-        if (value.literal) {
-          ops.push({ kind: 'staticStyle', name, value: value.value });
-        } else {
-          ops.push({ kind: 'dynamicStyle', name, expression: slice(property.value) });
-        }
-      }
+      classifyStylesObject(args[0], ops, call);
       return;
     }
 
     recordBail(`未知节点方法 ${method}`, call);
   }
 
+  /**
+   * 逻辑帧：`const a = <表达式>;` / `let { a, b } = <表达式>;` 提升到产物里按源码顺序执行。
+   *
+   * 认不准就回落（绝不把不知道的东西搬进产物）：`var`、没有初始化、带默认值的解构、被重新赋值、
+   * 初始化表达式里出现节点对象（setup 形参）或元素工厂（那是结构，不是值）、同名声明不止一处、
+   * 嵌套 setup 里的声明——一律 bail。
+   */
+  function analyzeFrame(statement, ops, allowed, paramName) {
+    /** 表达式里有没有"结构"：引用 setup 形参，或调用元素工厂（那都要走通用路径）。 */
+    const structureRefIn = (expressionSource, setupParam) => {
+      let expression;
+      try {
+        expression = parseExpression(expressionSource);
+      } catch {
+        return true; // 解析不了就不搬
+      }
+      let found = false;
+      const visit = (node) => {
+        if (found || !node || typeof node !== 'object') {
+          return;
+        }
+        if (Array.isArray(node)) {
+          node.forEach(visit);
+          return;
+        }
+        if (
+          node.type === 'Identifier' &&
+          (node.name === setupParam || nodeAliases.has(node.name) || isFactory(node.name))
+        ) {
+          found = true;
+          return;
+        }
+        Object.keys(node).forEach((key) => {
+          if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+            return;
+          }
+          const value = node[key];
+          if (value && typeof value === 'object') {
+            visit(value);
+          }
+        });
+      };
+      visit(expression);
+      return found;
+    };
+
+    if (!allowed) {
+      recordBail('嵌套 setup 里的局部声明（本轮不提升，走通用路径）', statement);
+      return;
+    }
+    if (statement.kind === 'var') {
+      recordBail('var 声明（提升语义与产物内的块级声明不同）', statement);
+      return;
+    }
+
+    const declared = new Set();
+    const expressions = [];
+    for (const declarator of statement.declarations) {
+      const hasDefault = hasDefaultInPattern(declarator.id);
+      if (hasDefault) {
+        recordBail('解构默认值（默认值要在产物里求值，本轮不提升）', statement);
+        return;
+      }
+      if (declarator.id.type !== 'Identifier' && !isPlainPattern(declarator.id)) {
+        recordBail('局部声明的模式不是简单标识符 / 解构', statement);
+        return;
+      }
+      if (!declarator.init) {
+        recordBail('局部声明没有初始化表达式', statement);
+        return;
+      }
+      collectPatternNamesInto(declarator.id, declared);
+      expressions.push(slice(declarator.init));
+    }
+
+    // 初始化表达式里出现节点对象（setup 形参）/ 元素工厂调用 = 那是结构（或对节点的操作），不是一段值。
+    // 注意只认**调用**：`label` / `span` 这类名字本身就是 HTML 标签名，光出现同名标识符不算结构
+    // （`const text = \`${label}\`` 里的 `label` 是上一行的局部量）。
+    if (expressions.some((source) => structureRefIn(source, paramName))) {
+      recordBail('局部声明的初始化表达式里出现节点对象 / 元素工厂', statement);
+      return;
+    }
+    // 同名声明不止一处：提升了就分不清读的是哪一份
+    if ([...declared].some((name) => declarationCounts.get(name) !== 1)) {
+      recordBail('局部名有不止一处声明（提升会改语义）', statement);
+      return;
+    }
+    declared.forEach((name) => frameNames.add(name));
+    ops.push({ kind: 'logic', source: slice(statement), declared: [...declared], expressions });
+  }
+
+  /**
+   * `style({ … })` / `styles({ … })` 的对象形式：与核心同一条口径——逐项走 `style(名, 值)`，
+   * 顺序就是对象字面量的书写顺序；键必须是字符串字面量，值静态就进片段、否则是动态样式。
+   */
+  function classifyStylesObject(objectExpression, ops, call) {
+    for (const property of objectExpression.properties) {
+      if (property.type !== 'ObjectProperty' || property.computed) {
+        recordBail('style() / styles() 里只有非计算键', call);
+        return;
+      }
+      const name = property.key.name ?? property.key.value;
+      if (typeof name !== 'string') {
+        recordBail('style() / styles() 里有非字面量键', call);
+        return;
+      }
+      const value = staticOf(property.value);
+      if (value.literal) {
+        ops.push({ kind: 'staticStyle', name, value: value.value });
+      } else {
+        ops.push({ kind: 'dynamicStyle', name, expression: slice(property.value) });
+      }
+    }
+  }
+
+  /**
+   * 逻辑语句（不是从节点出发的链）：声明 / 赋值 / 累加 / 普通调用 —— 原样搬进产物。
+   * 认不准就回落：引用节点对象（setup 形参）或元素工厂调用都是"结构"，不能当值搬。
+   */
+  function isLogicStatement(expression, setupParam) {
+    const check = expression.type === 'AssignmentExpression' ? expression.right : expression;
+    let found = false;
+    const visit = (node) => {
+      if (found || !node || typeof node !== 'object') {
+        return;
+      }
+      if (Array.isArray(node)) {
+        node.forEach(visit);
+        return;
+      }
+      // 节点对象（本层 setup 形参 / 任意嵌套 setup 形参）与元素工厂都算"结构"，不是一段值
+      if (
+        node.type === 'Identifier' &&
+        (node.name === setupParam ||
+          nestedParams.has(node.name) ||
+          nodeAliases.has(node.name) ||
+          isFactory(node.name))
+      ) {
+        found = true;
+        return;
+      }
+      Object.keys(node).forEach((key) => {
+        if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
+          return;
+        }
+        const value = node[key];
+        if (value && typeof value === 'object') {
+          visit(value);
+        }
+      });
+    };
+    visit(check);
+    return !found;
+  }
+
+  /**
+   * 一条语句是不是"从当前节点加结构"：返回描述（元素工厂 / 组件调用），否则 null。
+   *
+   * 组件形态 `node.child(<组件>(args))`：组件命中注册表时也能当锚点里的结构——运行期按注册表
+   * 实例化（片段克隆 + 位置写 / 节点渲染），父片段里同样什么都不留。
+   */
+  function structureStatementOf(item, paramName) {
+    if (item.type !== 'ExpressionStatement') {
+      return null;
+    }
+    const { calls, head } = flattenChain(item.expression);
+    if (head?.type !== 'Identifier' || head.name !== paramName || calls.length !== 1) {
+      return null;
+    }
+    const call = calls[0];
+    const method = call.callee.property?.name;
+    if (typeof method === 'string' && isFactory(method)) {
+      return { kind: 'factory', method, call };
+    }
+    const argument = method === 'child' && call.arguments.length === 1 ? call.arguments[0] : null;
+    if (
+      argument?.type === 'CallExpression' &&
+      argument.callee?.type === 'Identifier' &&
+      resolveComponent
+    ) {
+      const linked = resolveComponent(
+        argument.callee.name,
+        imports.get(argument.callee.name),
+        argument
+      );
+      // 只有**文件注册表条目**才能在锚点里实例化：它带 `plan.html` + `hash`，运行期注册表模块
+      // 对应地提供 `bind`（克隆片段 + 位置写）。插件内存里的同模块条目只有编译期数据、没有运行期
+      // 入口 → 不认，整形状回落，绝不产出"编得过、跑起来报错"的产物。
+      if (linked && linked.plan?.html && typeof linked.hash === 'string' && linked.hash) {
+        return { kind: 'component', linked, call: argument };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * `array.forEach((item, index) => { … })`：与控制流同一套（语句原样、结构提升成子单元、
+   * 按项插回锚点）。只认**块体**回调，且回调里必须有从当前节点出发的结构语句。
+   */
+  function isForEachStatement(statement, paramName) {
+    const expression = statement.expression;
+    if (
+      statement.type !== 'ExpressionStatement' ||
+      expression?.type !== 'CallExpression' ||
+      expression.callee?.type !== 'MemberExpression' ||
+      expression.callee.computed ||
+      expression.callee.property?.name !== 'forEach' ||
+      expression.arguments.length !== 1
+    ) {
+      return false;
+    }
+    const callback = expression.arguments[0];
+    if (callback.type !== 'ArrowFunctionExpression' && callback.type !== 'FunctionExpression') {
+      return false;
+    }
+    // 回调体：块体（一串语句）或表达式体（`(item) => root.li(…)`）都认——后者会被包成块
+    const statements =
+      callback.body.type === 'BlockStatement'
+        ? callback.body.body
+        : [{ type: 'ExpressionStatement', expression: callback.body }];
+    // 回调里至少有一条"从当前节点加结构"的语句，否则这只是一次普通遍历
+    return statements.some((item) => structureStatementOf(item, paramName) !== null);
+  }
+
+  /**
+   * 控制流语句（`if` / `for…of`）：语句**原样**搬进产物，里面的结构语句提升成子单元，
+   * 在锚点位置插回去。
+   *
+   * 第一刀的边界（认不准整形状回落）：
+   * - 只认根 builder 里的 `if` / `for…of`，块里不能再嵌控制流；
+   * - 块里的链式语句必须**只往当前节点加一个子元素**（`body.div(…)`），其余链式语句
+   *   （`body.className(…)` 这类条件写）本轮不编；
+   * - 非链式语句（声明 / 赋值 / 调用）留在源码里当逻辑帧。
+   */
+  function analyzeControl(statement, ops, paramName, allowed) {
+    if (!allowed) {
+      recordBail('嵌套 setup 里的控制流语句（本轮不编）', statement);
+      return;
+    }
+
+    const edits = [];
+    /** 表达体回调要包成块（`(item) => <结构>` → `(item) => { <实例化> }`），偏移相对语句起点。 */
+    let bodyWrap = null;
+    // 这段语句自己声明的名字（for-of 的循环变量 / 块里的声明）：它们在产物里是**局部量**，
+    // 既是子单元帧的来源，也不是本产物的作用域依赖。
+    const locals = new Set();
+    const collectLocals = (item) => {
+      if (item.type === 'VariableDeclaration') {
+        item.declarations.forEach((declarator) => collectPatternNamesInto(declarator.id, locals));
+        return;
+      }
+      if (item.type === 'ForOfStatement' || item.type === 'ForInStatement') {
+        if (item.left.type === 'VariableDeclaration') {
+          item.left.declarations.forEach((declarator) =>
+            collectPatternNamesInto(declarator.id, locals)
+          );
+        } else if (item.left.type === 'Identifier') {
+          locals.add(item.left.name);
+        }
+      }
+    };
+    let ok = true;
+    const carried = ast.program.body
+      .filter(
+        (entry) =>
+          entry.type === 'ImportDeclaration' ||
+          (entry.type === 'VariableDeclaration' && entry.kind === 'const')
+      )
+      .map((entry) => source.slice(entry.start, entry.end));
+
+    const analyzeStatements = (body) => {
+      body.forEach((item) => {
+        collectLocals(item);
+        if (!ok) {
+          return;
+        }
+        if (item.type !== 'ExpressionStatement') {
+          // 非链式语句 = 逻辑帧，留在源码里；但里面**不能**再有结构（`root.div(…)` 在产物里
+          // 没有 `root` 这个对象）——认出来就整形状回落
+          if (!isLogicStatement(item, paramName)) {
+            recordBail('条件 / 循环里的语句含结构（本轮不编）', item);
+            ok = false;
+          }
+          return;
+        }
+        const { calls, head } = flattenChain(item.expression);
+        const fromNode = head?.type === 'Identifier' && head.name === paramName;
+        if (!fromNode) {
+          if (!isLogicStatement(item.expression, paramName)) {
+            recordBail('条件 / 循环里的语句含结构（本轮不编）', item);
+            ok = false;
+          }
+          return; // 逻辑语句（赋值 / 非节点调用）：留在源码里
+        }
+        const structure = structureStatementOf(item, paramName);
+        if (!structure) {
+          const method = calls[0]?.callee.property?.name;
+          recordBail(
+            calls.length !== 1
+              ? '条件 / 循环里的链式语句不止一步（只认"加一个子元素"）'
+              : `条件 / 循环里只支持加结构（收到 ${String(method)}）`,
+            item
+          );
+          ok = false;
+          return;
+        }
+        const edit = {
+          start: item.start - statement.start,
+          end: item.end - statement.start
+        };
+        if (structure.kind === 'component') {
+          // 组件调用当结构：父片段里什么都不留，运行期按注册表实例化（片段克隆 + 位置写）
+          edit.component = {
+            key: structure.linked.key,
+            hash: structure.linked.hash ?? null,
+            args: structure.call.arguments.map(slice)
+          };
+          edits.push(edit);
+          return;
+        }
+        // 子单元 = 这一段结构本身：去掉父节点引用，换成独立工厂调用（`body.div(…)` → `div(…)`）
+        const unitIndex = controls.length;
+        const fn = `__yoyaCtl${unitIndex}`;
+        controls.push({
+          index: unitIndex,
+          fn,
+          factory: structure.method,
+          source:
+            `${carried.join('\n')}\n` +
+            `export function ${fn}(__frame) {\n` +
+            `  return ${source.slice(
+              structure.call.callee.property.start,
+              structure.call.end
+            )};\n` +
+            `}\n`
+        });
+        edit.unit = unitIndex;
+        edits.push(edit);
+      });
+    };
+    /** 块 / 单语句 → 语句列表（`if` 的分支可能是单语句）。 */
+    const analyzeBlock = (block) => {
+      if (!ok || !block) {
+        return;
+      }
+      analyzeStatements(block.type === 'BlockStatement' ? block.body : [block]);
+    };
+
+    if (statement.type === 'IfStatement') {
+      analyzeBlock(statement.consequent);
+      analyzeBlock(statement.alternate);
+    } else if (statement.type === 'ForOfStatement') {
+      // 循环变量属于循环语句本身（不在 body 块里）
+      collectLocals(statement);
+      analyzeBlock(statement.body);
+    } else {
+      // `array.forEach((item) => { <结构> })` / `(item) => <结构>`：与控制流同一套——
+      // 语句原样，结构按项实例化。表达式体要把回调体**包成块**（替换进去的是语句）。
+      const callback = statement.expression.arguments[0];
+      callback.params.forEach((param) => collectPatternNamesInto(param, locals));
+      if (callback.body.type === 'BlockStatement') {
+        analyzeBlock(callback.body);
+      } else {
+        // 偏移与 `edits` 同一条约定：相对**语句起点**（`source` 是整条语句的切片）
+        bodyWrap = {
+          start: callback.body.start - statement.start,
+          end: callback.body.end - statement.start
+        };
+        analyzeStatements([
+          {
+            type: 'ExpressionStatement',
+            expression: callback.body,
+            // 合成语句要带上原范围：edits 的偏移全靠它算
+            start: callback.body.start,
+            end: callback.body.end
+          }
+        ]);
+      }
+    }
+    if (!ok) {
+      return;
+    }
+    // 控制语句里的局部量：与逻辑帧的声明同一口径（已绑定、不进 scope）
+    locals.forEach((name) => frameNames.add(name));
+    ops.push({ kind: 'control', source: slice(statement), edits, bodyWrap });
+  }
+
+  /**
+   * 节点变量（别名）声明：`const body = root.div((d) => …)` / `const x = root.attr('a', 'b')`。
+   *
+   * **DSL 口径**：链式子工厂返回的是**父节点**（`registerChildFactories`：`this.child(factory(…))`），
+   * 节点自身的写也返回 `this`——所以别名永远等于"**当前节点**"，不是新建出来的那个子元素。
+   * 于是别名声明按普通链式语句处理（结构 / 写都留在原位），只是把名字登记进 `aliases`，
+   * 之后 `body.*` 的链照常分析（宿主就是当前节点）。
+   *
+   * 取回值的那几种调用（`className()` / `style('x')` / `attr('x')`）返回的不是节点 → 不当别名，
+   * 交给普通声明路径（值位置引用节点对象会回落）。
+   */
+  function analyzeAlias(statement, paramName, ops, aliases) {
+    if (statement.type !== 'VariableDeclaration' || statement.kind === 'var') {
+      return false;
+    }
+    if (statement.declarations.length !== 1) {
+      return false;
+    }
+    const declarator = statement.declarations[0];
+    if (declarator.id.type !== 'Identifier' || !declarator.init) {
+      return false;
+    }
+    if (declarator.init.type !== 'CallExpression') {
+      return false;
+    }
+    const { calls, head } = flattenChain(declarator.init);
+    if (
+      head?.type !== 'Identifier' ||
+      (head.name !== paramName && !nodeAliases.has(head.name)) ||
+      calls.length === 0
+    ) {
+      return false;
+    }
+
+    // 最后一跳必须"返回节点"：取回值的形式（`className()` / `style('x')` / `attr('x')`）不是别名
+    const last = calls[calls.length - 1];
+    const lastMethod = last.callee.property?.name;
+    const argCount = last.arguments.length;
+    const returnsNode =
+      isFactory(lastMethod) ||
+      lastMethod === 'styles' ||
+      lastMethod === 'toggleClass' ||
+      lastMethod === 'on' ||
+      lastMethod === 'mountable' ||
+      lastMethod === 'child' ||
+      lastMethod === 'keyed' ||
+      ((lastMethod === 'attr' || lastMethod === 'style') &&
+        (argCount === 2 || last.arguments[0]?.type === 'ObjectExpression')) ||
+      ((lastMethod === 'className' || lastMethod === 'class') && argCount > 0);
+    if (!returnsNode) {
+      return false;
+    }
+
+    let bad = false;
+    calls.forEach((call) => {
+      const method = call.callee.property?.name;
+      if (typeof method !== 'string' || (!isFactory(method) && !NODE_API.has(method))) {
+        recordBail(`节点变量声明里有不认识的调用：${String(method)}`, statement);
+        bad = true;
+        return;
+      }
+      classifyCall(call, ops);
+    });
+    if (bad) {
+      return true;
+    }
+    aliases.add(declarator.id.name);
+    return true;
+  }
+
   /** 分析一个 setup 回调：block 体或表达式体（链式调用）都支持。 */
-  function analyzeSetup(fn, paramName, { staticOnly = false } = {}) {
+  function analyzeSetup(fn, paramName, { staticOnly = false, frames = false } = {}) {
     const ops = [];
     const statements =
       fn.body.type === 'BlockStatement'
@@ -761,6 +1892,26 @@ export function analyzeSource(source, options = {}) {
         : [{ type: 'ExpressionStatement', expression: fn.body }];
 
     for (const statement of statements) {
+      if (!staticOnly && analyzeAlias(statement, paramName, ops, nodeAliases)) {
+        continue;
+      }
+      if (statement.type === 'VariableDeclaration') {
+        analyzeFrame(statement, ops, staticOnly ? false : frames, paramName);
+        continue;
+      }
+      if (statement.type === 'IfStatement' || statement.type === 'ForOfStatement') {
+        analyzeControl(statement, ops, paramName, staticOnly ? false : frames);
+        continue;
+      }
+      if (
+        !staticOnly &&
+        frames &&
+        statement.type === 'ExpressionStatement' &&
+        isForEachStatement(statement, paramName)
+      ) {
+        analyzeControl(statement, ops, paramName, true);
+        continue;
+      }
       if (statement.type !== 'ExpressionStatement') {
         recordBail(`${statement.type} 语句（只支持表达式调用）`, statement);
         continue;
@@ -788,8 +1939,20 @@ export function analyzeSource(source, options = {}) {
       const fromNode =
         paramName === null
           ? head?.type === 'ThisExpression' // 形态 C 的构造体：`this` 就是节点
-          : head?.type === 'Identifier' && head.name === paramName;
+          : head?.type === 'Identifier' &&
+            // 别名（`const body = root.div(…)`）指向的就是当前节点——DSL 里链式调用返回父节点
+            (head.name === paramName || nodeAliases.has(head.name));
       if (!fromNode) {
+        // 语句级逻辑帧（赋值 / 累加 / 非节点的调用）：原样搬进产物、按源码顺序执行
+        if (frames && !staticOnly && isLogicStatement(statement.expression, paramName)) {
+          ops.push({
+            kind: 'logic',
+            source: slice(statement),
+            declared: [],
+            expressions: [slice(statement.expression)]
+          });
+          continue;
+        }
         recordBail('调用链不是从 setup 参数出发', statement);
         continue;
       }
@@ -821,9 +1984,11 @@ export function analyzeSource(source, options = {}) {
    * 元素工厂的参数：数量不定、严格按出现顺序，类型分派与运行期 `applySetupValue` 同一张表
    * （`Factory(options, setup)` / 变参 / 多个回调都能认）。认不出来就 bail —— 编译期不猜。
    */
-  function analyzeElementArguments(args, factoryName, call) {
+  function analyzeElementArguments(args, factoryName, call, options = {}) {
     const elementOps = [];
     let hasSetup = false;
+    // 根 setup 之外的 setup 回调都是**嵌套**的：它的形参是节点对象，值位置引用即回落
+    const nested = options.frames !== true;
 
     for (const argument of args) {
       if (argument.type === 'ArrowFunctionExpression' || argument.type === 'FunctionExpression') {
@@ -837,7 +2002,11 @@ export function analyzeSource(source, options = {}) {
           return null;
         }
         hasSetup = true;
-        elementOps.push(...analyzeSetup(argument, param));
+        if (nested) {
+          nestedParams.add(param);
+        }
+        // 嵌套 setup 里同样允许逻辑帧（声明 / 控制流）——它们**就在那个嵌套结构里**执行
+        elementOps.push(...analyzeSetup(argument, param, { frames: true }));
         continue;
       }
 
@@ -871,8 +2040,15 @@ export function analyzeSource(source, options = {}) {
         continue;
       }
 
-      recordBail(`子工厂 ${factoryName} 的参数无法静态判定`, call);
-      return null;
+      // **动态实参**：认不出运行期类型（字符串 / 句柄 / 数组 / options / 回调……）。
+      // 只有它**是最后一个参数**时才收：先出现的静态子节点已经进片段，运行期追加在它们后面，
+      // 顺序与源码一致；若后面还有参数就会插错位 → 整形状回落。节点通道用核心的参数分派落地；
+      // 元素通道没有节点对象、认不出类型 → 由发射器明确回落。
+      if (args.indexOf(argument) !== args.length - 1) {
+        recordBail(`子工厂 ${factoryName} 的动态实参后面还有参数（顺序无法保证）`, call);
+        return null;
+      }
+      elementOps.push({ kind: 'dynamicArg', expression: slice(argument) });
     }
 
     return elementOps;
@@ -1027,36 +2203,120 @@ export function analyzeSource(source, options = {}) {
   }
 
   function analyzeBuilder(fn) {
-    // 票 12 / C1：构建函数的形参必须是**单个标识符**。形参解构、默认值、rest、多参都会让正文里
-    // 的 `data` / `api` 之类被当成自由标识符收进 scope——产物于是忽略自己的实参、运行期读到
-    // undefined。这个形状整体 bail，绝不静默编错。
+    // 函数级绑定并入"已被本地绑定"集合：形参、函数体声明、嵌套回调形参。
+    // 元素工厂身份确认据此拒绝"同名本地函数"，局部名也不会被当成运行期作用域依赖。
+    collectShadowedNames(ast, fn, imports).forEach((name) => shadowed.add(name));
+    const localNames = collectLocalDeclarations(fn);
+    // 票 21：形参形状不再限制，产物**逐字复刻源码的参数表**。调用口径没变（行工厂 / 组件按
+    // 一个实参调用），所以解构 / 默认值 / rest / 多参的语义与通用路径一致。
     //
-    // 例外：组件编译单元（`kind: 'component'`）的形参由调用点的 `bind(root, values)` 逐个解构，
-    // 所以允许多个标识符形参（夹具里的 `(props, children)`）；非标识符形参两种单元都不支持。
+    // 票 12 的 C1（`function buildRow({ data, api })` 把 data / api 收进 scope、运行期 undefined）
+    // 由**绑定名集合**根治：形参里出现的名字都是已绑定名，永远不进 scope；只有默认值 / 计算键里的
+    // 自由标识符才进（它们要在产物里求值）。
     const params = fn.params;
-    const unnamedParam = params.find((param) => param.type !== 'Identifier');
-    const tooManyParams = kind !== 'component' && params.length !== 1;
-    if (params.length === 0 || unnamedParam || tooManyParams) {
-      recordBail(
-        '目标函数的形参必须是单个标识符（解构 / 默认值 / rest / 多参不支持）',
-        unnamedParam ?? params[0] ?? fn
-      );
-      return null;
-    }
+    const boundParams = new Set();
+    const paramExpressions = [];
+    params.forEach((param) => collectParamBindings(param, boundParams, paramExpressions, slice));
+
+    // 逻辑帧（票 04 第一刀）的判定素材：形参名 / 被重新赋值的名字 / 每处声明的计数
+    declarationCounts = declarationCountMap(fn);
 
     const statements = fn.body.type === 'BlockStatement' ? fn.body.body : [];
-    const returned =
-      fn.body.type === 'BlockStatement'
-        ? statements.find((statement) => statement.type === 'ReturnStatement')?.argument
-        : fn.body;
+    let returned = fn.body;
+    if (fn.body.type === 'BlockStatement') {
+      // 组件体允许"声明 / 表达式语句 + 末尾一条 return 视图"（票 10：实例变量那类前置语句）。
+      // 与发现规则（discover.js 的 `returnedView`）同一条口径：控制流 / 多条 return 都不认，
+      // 早退会让"那条 return 的视图"变成运行期才知道的事。
+      const last = statements[statements.length - 1];
+      const plainLeading = statements
+        .slice(0, -1)
+        .every(
+          (statement) =>
+            statement.type === 'VariableDeclaration' || statement.type === 'ExpressionStatement'
+        );
+      if (last?.type !== 'ReturnStatement' || !plainLeading) {
+        recordBail('组件体只支持「声明 / 表达式语句 + 末尾一条 return 视图」', fn);
+        return null;
+      }
+      returned = last.argument;
+    }
+
+    // 结构表达式的源码区间 + 形状：插件按它**就地替换**视图（组件体 / 命令 / 状态一行不动）
+    let structure = null;
+
+    // 形态 B：`return { render() { return <工厂>(…) }, …命令 / 状态 }`
+    // 其余成员原样留在源码里（`this` 语义因此不变），不再要求"只有 render 一个成员"。
+    if (returned?.type === 'ObjectExpression') {
+      const members = returned.properties ?? [];
+      const render = members.find((member) => (member.key?.name ?? member.key?.value) === 'render');
+      const renderBody = render?.type === 'ObjectMethod' ? render.body : render?.value?.body;
+      const renderReturn =
+        renderBody?.type === 'BlockStatement'
+          ? renderBody.body.find((item) => item.type === 'ReturnStatement')?.argument
+          : renderBody;
+      if (!renderReturn) {
+        recordBail('组件对象的 render() 不是单一 return 视图', fn);
+        return null;
+      }
+      structure = { shape: 'render', start: renderReturn.start, end: renderReturn.end };
+      returned = renderReturn;
+    }
+
+    // vNode：`return vNode((api) => { …命令…; return <工厂>(…) })`
+    // setup 里的命令赋值原样留在源码里（组件节点仍由 `vNode` 建），只替换视图表达式。
+    else if (
+      returned?.type === 'CallExpression' &&
+      returned.callee.type === 'Identifier' &&
+      returned.callee.name === 'vNode' &&
+      !shadowed.has('vNode')
+    ) {
+      const setup = returned.arguments[0];
+      const setupBody = setup?.body;
+      const setupReturn =
+        setupBody?.type === 'BlockStatement'
+          ? setupBody.body.find((item) => item.type === 'ReturnStatement')?.argument
+          : setupBody;
+      if (!setupReturn) {
+        recordBail('vNode 组件的 setup 不是单一 return 视图', fn);
+        return null;
+      }
+      structure = { shape: 'vNode', start: setupReturn.start, end: setupReturn.end };
+      returned = setupReturn;
+    }
 
     if (!returned || returned.type !== 'CallExpression' || returned.callee.type !== 'Identifier') {
       recordBail('函数体不是单个 return 工厂调用', fn);
       return null;
     }
+    structure = structure ?? { shape: 'row', start: returned.start, end: returned.end };
     // 入口工厂与子工厂共用同一张参数分派表：`Factory(setup)` / `Factory(options, setup)` / 变参都认
-    const ops = analyzeElementArguments(returned.arguments, returned.callee.name, returned);
+    // 根 setup 的局部声明可以提升到产物（`frames: true`）；嵌套 setup 里不行（见 analyzeFrame）
+    const ops = analyzeElementArguments(returned.arguments, returned.callee.name, returned, {
+      frames: true
+    });
     if (!ops) {
+      return null;
+    }
+    // 提升到产物的名字：值位置引用它们不再算"引用局部变量"，也**不进 scope**（产物自己声明）
+    // 歧义守卫：这个名字如果在模块级也有绑定（import / 模块级 const），产物里就分不清读的是哪一份
+    // ——保守回落，绝不猜。
+    const moduleBindings = new Set(Object.keys(imports));
+    ast.program.body.forEach((statement) => {
+      if (statement.type === 'VariableDeclaration') {
+        statement.declarations.forEach((declarator) =>
+          collectPatternNamesInto(declarator.id, moduleBindings)
+        );
+      }
+    });
+    frameNames.forEach((name) => {
+      if (moduleBindings.has(name)) {
+        recordBail(`局部名 ${name} 与模块级绑定同名（提升会分不清读哪一份）`, fn);
+        return;
+      }
+      localNames.delete(name);
+      boundParams.add(name);
+    });
+    if (bails.length > 0) {
       return null;
     }
     const setupArg = returned.arguments.find(
@@ -1070,6 +2330,15 @@ export function analyzeSource(source, options = {}) {
     return {
       factory: returned.callee.name,
       builderParam,
+      // 参数表原文（产物按它复刻签名）与形参绑定名（决定哪些名字不是作用域依赖）
+      builderParams: params.map(slice).join(', '),
+      boundParams,
+      paramExpressions,
+      localNames,
+      structure,
+      rows,
+      controls,
+      nestedParams,
       setupParam,
       ops
     };
@@ -1085,14 +2354,14 @@ export function analyzeSource(source, options = {}) {
     if (!classEntry) {
       return { entry: null, bails };
     }
-    if (!whitelist.has(classEntry.factory)) {
+    if (!isFactory(classEntry.factory)) {
       recordBail(`构造体起手不是白名单内的元素工厂：${classEntry.factory}`, klass);
       return { entry: null, bails };
     }
 
     classEntry.path = [];
     classEntry.hasContent = hasContent;
-    assignPaths(classEntry.ops, []);
+    assignPaths(classEntry.ops, [], mode);
     return { entry: classEntry, bails };
   }
 
@@ -1105,23 +2374,23 @@ export function analyzeSource(source, options = {}) {
   if (!entry) {
     return { entry: null, bails };
   }
-  if (!whitelist.has(entry.factory)) {
+  if (!isFactory(entry.factory)) {
     recordBail(`入口工厂不是元素：${entry.factory}`, builderFn);
     return { entry: null, bails };
   }
 
   entry.path = []; // 片段根就是行根
-  assignPaths(entry.ops, []);
+  assignPaths(entry.ops, [], mode);
   return { entry, bails };
 }
 
 /** 按 document 顺序给每个子节点分配「父元素 childNodes 下标」路径。 */
-function assignPaths(ops, basePath) {
+function assignPaths(ops, basePath, mode = 'element') {
   let index = 0;
   for (const op of ops) {
     if (op.kind === 'element') {
       op.path = [...basePath, index];
-      assignPaths(op.ops, op.path);
+      assignPaths(op.ops, op.path, mode);
       index += 1;
       continue;
     }
@@ -1129,12 +2398,15 @@ function assignPaths(ops, basePath) {
       op.kind === 'staticText' ||
       op.kind === 'slotText' ||
       op.kind === 'bindText' ||
+      // `child(<变量>)`：元素通道里它是"一段文本"位置（片段里有占位），节点通道里是运行期子节点
+      // （片段里什么都不留）→ 位置表按通道算
+      (op.kind === 'childValue' && mode === 'element') ||
       op.kind === 'component'
     ) {
       op.path = [...basePath, index];
       // 调用点内联的组件内容挂在组件根之下：路径从组件的元素位置接着往下算
       if (op.kind === 'component' && op.content) {
-        assignPaths(op.content.ops, op.path);
+        assignPaths(op.content.ops, op.path, mode);
       }
       index += 1;
     }

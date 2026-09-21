@@ -71,9 +71,13 @@ function ServiceTag(options) {
 }
 ```
 
-### B. 对象组件：返回 { render(), ... }
+### B. 对象组件：返回 { render(), ... }（**已弃用**，仅存量）
 
-适用：常规独立组件（默认形态）。render() 返回 ViewNode（包括 vCard(...) 这类复合节点），状态保存在闭包或返回对象上，可暴露命令/状态方法。
+**弃用（2026-09-21，票 03）**：表达能力已被 vNode 完全覆盖，而它多出两个问题——对象是**一次性**的
+（同一对象挂两处会共用一份状态），编译器还要额外维护一条形状分支。新组件一律用 vNode（有行为）
+或形态 A（无行为）。devtools 开启时运行期会提示一次；存量迁移与删代码见票 03。
+
+（存量写法：render() 返回 ViewNode，状态保存在闭包或返回对象上，可暴露命令/状态方法。）
 
 ```js
 function RateCard() {
@@ -117,7 +121,7 @@ export function vTr(first = null, second = null, third = null) {
 - 组件身份：视图根写 `vn: 'VCard'`（值 = 导出名），模块底一行 `defineComponentIdentity(VCard, 'VCard')`；
   `member instanceof VCard` 对形态 A / B / vNode 是同一条判定（元素节点读自己、组件节点展开到视图根），
   详见 `docs/component-authoring.md` §7.3。
-- **新增组件一律形态 B**（`vNode(setup)` / `{ render() }`）；形态 C（class 继承节点）停止新增，存量迁移见票 43。
+- **新增组件一律 vNode**（`vNode((api) => 视图)`）；形态 B 已弃用（仅存量）、形态 C（class 继承节点）停止新增（存量迁移见票 43）。
 - **setup 参数数量不定、按出现顺序分派**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
   数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
 - **options 里子工厂不参与分派**：与子工厂同名的键按**属性**写（`div({ slot: 't-head' })` 是属性，
@@ -130,7 +134,7 @@ export function vTr(first = null, second = null, third = null) {
 
 ### Demo 演示组件
 
-- 演示代码（examples/demos）同样按形态判：**没有额外操作（无对外命令方法、无需持有组件句柄）时用形态 A 直接返回 ViewNode，不包 `render()`**；确有状态或命令方法才用形态 B 展示操作空间，确需演示形态 C 时允许直接书写对应形态。
+- 演示代码（examples/demos）同样按形态判：**没有额外操作（无对外命令方法、无需持有组件句柄）时用形态 A 直接返回 ViewNode，不包 `render()`**；确有状态或命令方法时用 vNode 展示操作空间（不要新写形态 B），确需演示形态 C 时允许直接书写对应形态。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。

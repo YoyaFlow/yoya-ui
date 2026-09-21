@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, posix, relative, resolve } from 'node:path';
 import { parse } from '@babel/parser';
-import { collectImports, findBuilderFunction } from './analyze.js';
+import { collectImports, findBuilderFunction, paramBoundNames } from './analyze.js';
 import { componentKeyOf, normalizeModulePath } from './component-key.js';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 import { isStaticLibraryModule } from './static-values.js';
@@ -211,7 +211,9 @@ export function compileComponent(options) {
   // 形态 A / B：`child(<参数本身>)` = 把调用方的 children 当子内容 → 容器组件，本轮不编（票 42 的槽）。
   // 形态 C 的构造参数已经由分析器记成"内容位置"（骨架 + 运行期回落），不走这条。
   if (!view.componentClass) {
-    const paramNames = fn.params.map((param) => param.name).filter(Boolean);
+    // 入参名按**绑定名**看（解构 / 默认值 / rest 展开），否则 `function Box({ body })` 这类
+    // 会把「入参当子内容」漏判成一段文本（票 21）
+    const paramNames = [...paramBoundNames(fn.params)];
     const childrenLike = collectValueExpressions(result.ops).filter((expression) =>
       paramNames.some((name) => expression.trim() === name)
     );
@@ -276,7 +278,11 @@ export function buildComponentRegistry(options) {
     runtime = DEFAULT_RUNTIME,
     registryName = 'components.registry.js',
     dataName = 'components.registry.json',
-    whitelist
+    whitelist,
+    // 覆盖钩子（随包发布时用）：键与 scope 模块的来源不再由"相对项目根的文件路径"决定，
+    // 而是由打包口径决定（例如按包名归键、scope 指向包内入口）。默认保持原口径。
+    keyOf = null,
+    scopeSpecifierOf = null
   } = options;
 
   mkdirSync(dir, { recursive: true });
@@ -292,7 +298,7 @@ export function buildComponentRegistry(options) {
 
   entries.forEach((entry, index) => {
     const file = normalizeModulePath(entry.file);
-    const key = componentKeyOf(file, entry.export);
+    const key = keyOf ? keyOf(entry) : componentKeyOf(file, entry.export);
     const slug = slugOf(file, entry.export);
     const entryFile = `${slug}.compiled.js`;
     const source = readFileSync(entry.file, 'utf8');
@@ -305,7 +311,9 @@ export function buildComponentRegistry(options) {
       runtime,
       whitelist,
       // 实例化模块里的 scope import 由**绝对路径**算相对（平台感知），避免相对基准不同算出怪路径
-      scopeSpecifier: withDotPrefix(relative(resolve(dir), resolve(entry.file)).replace(/\\/g, '/'))
+      scopeSpecifier: scopeSpecifierOf
+        ? scopeSpecifierOf(entry)
+        : withDotPrefix(relative(resolve(dir), resolve(entry.file)).replace(/\\/g, '/'))
     });
 
     if (!compiled.compiled) {

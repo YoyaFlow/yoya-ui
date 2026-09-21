@@ -20,6 +20,7 @@ export const BUNDLE_ENTRIES = [
   'yoya.ui.js',
   'yoya.router.js',
   'yoya.compiler-runtime.js',
+  'yoya.compiled-registry.js',
   'yoya.devtools.js',
   'yoya.echart.js',
   'yoya.three.js'
@@ -35,7 +36,9 @@ const CONTENTS = {
   'yoya.router.js':
     'router（createRouter / vRouter / vLink / vRouterViews）+ SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount / serializeState / parseState）',
   'yoya.compiler-runtime.js':
-    '编译产物的运行期钩子：cloneFragment / adopt / bindChild / bindText / bindClass / setAttr / pushOff / createElementList（构建期编译器 yoya.compiler 生成的模块只 import 这里；主入口不含）',
+    '编译产物的运行期钩子（导出面 = 发射器能写出的钩子全集）：cloneFragment / adopt / bindChild / bindChildText / mountRuntimeChildren / mountNodeAt / bindText / bindClass / setAttr / pushOff / keyedRows / createElementList …（构建期编译器 yoya.compiler 生成的模块只 import 这里；主入口不含）',
+  'yoya.compiled-registry.js':
+    '随包发布的**库内组件注册表**（按形状推导的可编子集：图标 / vCard 家族 / 表格部件）：条目 = 片段 plan + 位置写 bind + 原组件 render 回落；插件没拿到业务侧 components 时默认加载它。独立入口，core / ui / 主入口都不 import 它——只有**链接了库内组件**的构建才会引到',
   'yoya.devtools.js':
     'enableDevtools / disableDevtools / subscribeDevtools / getDevtoolsSnapshot / getDevtoolsDom / getDevtoolsScope',
   'yoya.echart.js': 'vEchart（ECharts 封装）',

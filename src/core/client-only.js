@@ -1,4 +1,5 @@
 import { ViewNode } from './node.js';
+import { warnDeprecatedComponentObject } from './deprecations.js';
 
 /**
  * ClientOnlyNode 标记"非服务端渲染"的组件模块（islands）：
@@ -74,6 +75,7 @@ function resolveClientOnly(value) {
   }
 
   if (value && typeof value.render === 'function') {
+    warnDeprecatedComponentObject(value, 'vClientOnly');
     return resolveClientOnly(value.render());
   }
 

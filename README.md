@@ -186,9 +186,8 @@ plugins: [yoyaCompile.vite({ core })]; // compile units = component boundary (vi
 Lists keep their declarative form — `tbody((body) => body.keyed(rows, Row))` — because `keyed()`
 accepts both element rows (`{ el, destroy }`) and node rows and picks the reconciler from the row
 product. Targets are located by **AST symbol identity**, and anything unclear leaves the source alone
-(no target, two same-name declarations, a parameter that is not a single identifier, or an
-unbuildable shape all fall back to the generic path). The rewrite keeps a hires source map, so stack
-traces still point at your source. See
+(no target, two same-name declarations, or an unbuildable shape all fall back to the generic path).
+The rewrite keeps a hires source map, so stack traces still point at your source. See
 [skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md).
 
 ```js
@@ -253,21 +252,21 @@ Execution (nine standard operations) and memory, read from the official
 > **These are not the official site numbers** — only compare within the same round; size, first paint and the
 > per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                        | vanillajs | yoya-**0.6.12** (compiled) | yoya-**0.6.12** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| Benchmark                        | vanillajs | yoya-**0.6.13** (compiled) | yoya-**0.6.13** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
 | -------------------------------- | --------- | -------------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
-| 01 create 1k rows                | 30.5      | 35.0 (1.15×)               | 49.7 (1.63×)              | 36.7 (1.20×)  | 37.3 (1.22×)  | 32.8 (1.08×)  | 33.4 (1.10×)  |
-| 02 replace 1k rows               | 33.4      | 37.0 (1.11×)               | 46.6 (1.40×)              | 39.7 (1.19×)  | 45.3 (1.36×)  | 36.0 (1.08×)  | 36.6 (1.10×)  |
-| 03 update every 10th row         | 23.0      | 21.9 (0.95×)               | 23.0 (1.00×)              | 25.8 (1.12×)  | 28.4 (1.23×)  | 23.1 (1.00×)  | 24.2 (1.05×)  |
-| 04 select row                    | 7.5       | 7.4 (0.99×)                | 6.4 (0.85×)               | 9.0 (1.20×)   | 9.8 (1.31×)   | 8.0 (1.07×)   | 9.7 (1.29×)   |
-| 05 swap rows                     | 24.1      | 27.4 (1.14×)               | 27.1 (1.12×)              | 25.9 (1.07×)  | 162.6 (6.75×) | 24.5 (1.02×)  | 25.5 (1.06×)  |
-| 06 remove one row                | 20.0      | 20.8 (1.04×)               | 18.3 (0.92×)              | 22.2 (1.11×)  | 20.1 (1.01×)  | 17.9 (0.89×)  | 18.0 (0.90×)  |
-| 07 create 10k rows               | 337.1     | 393.5 (1.17×)              | 504.4 (1.50×)             | 415.0 (1.23×) | 572.4 (1.70×) | 360.3 (1.07×) | 368.3 (1.09×) |
-| 08 append 1k rows                | 38.7      | 41.3 (1.07×)               | 49.3 (1.27×)              | 46.2 (1.19×)  | 42.6 (1.10×)  | 36.4 (0.94×)  | 36.2 (0.94×)  |
-| 09 clear x8                      | 15.5      | 22.1 (1.43×)               | 30.2 (1.95×)              | 20.6 (1.33×)  | 29.2 (1.88×)  | 22.9 (1.48×)  | 17.1 (1.10×)  |
-| Nine-op geometric mean (overall) | 29.54     | 32.72 (1.11×)              | 36.90 (1.25×)             | 34.90 (1.18×) | 46.88 (1.59×) | 31.29 (1.06×) | 31.44 (1.06×) |
-| 21 ready memory (MB)             | 1.06      | 1.36 (1.28×)               | 1.27 (1.20×)              | 1.33 (1.25×)  | 1.63 (1.54×)  | 1.09 (1.03×)  | 1.15 (1.09×)  |
-| 22 run memory (MB)               | 2.45      | 4.08 (1.66×)               | 5.47 (2.23×)              | 4.59 (1.87×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
-| 25 run+clear memory (MB)         | 1.09      | 1.69 (1.55×)               | 1.79 (1.64×)              | 1.60 (1.47×)  | 2.49 (2.29×)  | 1.28 (1.18×)  | 1.50 (1.38×)  |
+| 01 create 1k rows                | 31.2      | 34.6 (1.11×)               | 44.8 (1.44×)              | 37.4 (1.20×)  | 40.7 (1.30×)  | 33.1 (1.06×)  | 33.2 (1.06×)  |
+| 02 replace 1k rows               | 32.6      | 37.9 (1.16×)               | 47.1 (1.44×)              | 41.5 (1.27×)  | 43.8 (1.34×)  | 35.5 (1.09×)  | 37.1 (1.14×)  |
+| 03 update every 10th row         | 24.9      | 26.5 (1.06×)               | 26.5 (1.06×)              | 28.7 (1.15×)  | 29.5 (1.18×)  | 23.8 (0.96×)  | 26.7 (1.07×)  |
+| 04 select row                    | 8.5       | 7.5 (0.88×)                | 7.5 (0.88×)               | 10.1 (1.19×)  | 11.7 (1.38×)  | 9.5 (1.12×)   | 12.2 (1.44×)  |
+| 05 swap rows                     | 24.5      | 28.1 (1.15×)               | 30.3 (1.24×)              | 27.9 (1.14×)  | 186.3 (7.60×) | 26.3 (1.07×)  | 25.7 (1.05×)  |
+| 06 remove one row                | 20.4      | 21.9 (1.07×)               | 20.6 (1.01×)              | 23.4 (1.15×)  | 22.2 (1.09×)  | 21.6 (1.06×)  | 21.2 (1.04×)  |
+| 07 create 10k rows               | 356.0     | 400.4 (1.12×)              | 523.3 (1.47×)             | 426.8 (1.20×) | 604.6 (1.70×) | 379.9 (1.07×) | 381.2 (1.07×) |
+| 08 append 1k rows                | 38.0      | 43.3 (1.14×)               | 55.1 (1.45×)              | 45.0 (1.18×)  | 48.8 (1.28×)  | 41.2 (1.08×)  | 44.2 (1.16×)  |
+| 09 clear x8                      | 17.8      | 24.7 (1.39×)               | 27.9 (1.57×)              | 23.9 (1.34×)  | 31.6 (1.78×)  | 20.7 (1.16×)  | 20.4 (1.15×)  |
+| Nine-op geometric mean (overall) | 30.93     | 34.47 (1.11×)              | 39.04 (1.26×)             | 37.15 (1.20×) | 51.09 (1.65×) | 33.19 (1.07×) | 34.81 (1.13×) |
+| 21 ready memory (MB)             | 1.05      | 1.35 (1.29×)               | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.66 (1.59×)  | 1.08 (1.03×)  | 1.15 (1.10×)  |
+| 22 run memory (MB)               | 2.45      | 4.07 (1.67×)               | 5.46 (2.23×)              | 4.59 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
+| 25 run+clear memory (MB)         | 1.16      | 1.69 (1.45×)               | 1.79 (1.54×)              | 1.71 (1.48×)  | 2.49 (2.15×)  | 1.26 (1.09×)  | 1.44 (1.24×)  |
 
 <!-- benchmark:readme:end -->
 
@@ -284,23 +283,23 @@ Incremental entries report two numbers: **the entry file itself** and **what a p
 downloads** (entry plus the shared chunks it imports). Reading only the entry file overstates how
 small core is — budget against the download column. The last column says what each entry contains.
 
-| Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                                            |
-| ---------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.5 KB ~ **28.9 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly              |
-| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                |
-| `yoya.ui.js` (all categories)      | 5.6 KB ~ **99.6 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
-| `yoya.router.js`                   | 10.4 KB ~ **30.6 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                          |
-| `yoya.compiler-runtime.js`         | 1.6 KB ~ **18.4 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`); the main entry never includes them |
-| `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                              |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 19.6 / 20.1 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
+| Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                                                                                                                       |
+| ---------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `yoya.core.js`                     | 2.5 KB ~ **29.6 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly                                                                                         |
+| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                                                                                           |
+| `yoya.ui.js` (all categories)      | 5.6 KB ~ **100.1 KB**                   | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                                                                                                         |
+| `yoya.router.js`                   | 10.5 KB ~ **31.1 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                                                                                                     |
+| `yoya.compiler-runtime.js`         | 3.2 KB ~ **20.5 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …); the main entry never includes them |
+| `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                         |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 20.2 / 20.7 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                                                                                                  |
 
 Self-contained entries (core inlined, single file):
 
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 294.3 KB | 132.5 KB | 38.9 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 829.4 KB | 465.7 KB | 114.1 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 760.2 KB | 433.6 KB | 104.3 KB | core + all components                |
+| `yoya.router.full.js`                 | 299.9 KB | 133.9 KB | 39.3 KB  | core + router / SSR                  |
+| `yoya.ui-router.full.js` (everything) | 835.0 KB | 467.2 KB | 114.6 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 771.5 KB | 435.4 KB | 104.9 KB | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.

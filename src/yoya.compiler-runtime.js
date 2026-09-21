@@ -5,13 +5,26 @@
  * 不引子入口就等于没有编译路径、也没有额外体积。
  */
 export {
+  addClassText,
   adopt,
   appendNodeChild,
+  applyDynamicArg,
+  applyDynamicChild,
   bindChild,
+  bindChildText,
   bindClass,
   bindText,
+  bindComponent,
+  bindNodeCleanup,
   cloneFragment,
   createElementList,
+  instantiateComponent,
+  instantiateComponentNode,
+  keyedRows,
+  mountableAt,
+  mountNodeAt,
+  mountRuntimeChildren,
   pushOff,
-  setAttr
+  setAttr,
+  textAt
 } from './compiler/runtime.js';

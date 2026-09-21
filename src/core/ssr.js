@@ -5,6 +5,8 @@ import { adoptProvides, createProviderFrame, withContext, withProviderScope } fr
 import { withAccess } from './access.js';
 import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 import { HtmlElementNode } from '../html/index.js';
+import { beginLanding, endLanding, fireWhenMount } from './hooks.js';
+import { warnDeprecatedComponentObject } from './deprecations.js';
 
 /**
  * 从已取好的请求字段解析语言标识，优先级：cookie > query > Accept-Language > 默认值。
@@ -135,6 +137,7 @@ function createRootNode(component, state = null) {
     }
 
     if (target && typeof target.render === 'function') {
+      warnDeprecatedComponentObject(target, 'renderToString / mount / hydrate');
       return resolve(target.render());
     }
 
@@ -404,8 +407,15 @@ export function mount(component, target, state = null, options = {}) {
       const parent = resolveTarget(target);
 
       if (parent) {
-        parent.replaceChildren();
-        parent.appendChild(node.renderDom());
+        // 与 `bindTo` 同一条落地收口：整趟建树 + append 之后统一触发钩子（票 02 / 方案 A）
+        beginLanding();
+        try {
+          parent.replaceChildren();
+          parent.appendChild(node.renderDom());
+          fireWhenMount(node);
+        } finally {
+          endLanding();
+        }
       }
 
       return node;
@@ -426,14 +436,22 @@ export function hydrate(component, target, state = null, options = {}) {
       const parent = resolveTarget(target);
 
       if (parent) {
-        const rootElement = parent.firstElementChild;
-        if (rootElement) {
-          adoptElement(node, rootElement);
-          syncSnapshots(node);
-          bindElement(node);
-          node.renderDom();
-        } else {
-          parent.appendChild(node.renderDom());
+        // 收养路径同样收口：元素本来就在文档里，钩子统一在收口时触发
+        beginLanding();
+        try {
+          const rootElement = parent.firstElementChild;
+          if (rootElement) {
+            adoptElement(node, rootElement);
+            syncSnapshots(node);
+            bindElement(node);
+            node.renderDom();
+            fireHydratedHooks(node);
+          } else {
+            parent.appendChild(node.renderDom());
+            fireWhenMount(node);
+          }
+        } finally {
+          endLanding();
         }
       }
 
@@ -442,6 +460,30 @@ export function hydrate(component, target, state = null, options = {}) {
 
     return scopeBuild(options.access, options.context, options.i18n, state, build);
   });
+}
+
+/**
+ * hydrate 收口：收养路径不会走"新元素 append 到父元素"那条埋点（元素本来就在父元素里，
+ * 子节点循环里的 `placedInElement` 为真、直接跳过 `fireWhenMount`），组件钩子因此一次都不触发
+ * ——SSR 页面上的第三方集成（初始化写在 `whenMount` 里）会静默不工作（票 01）。
+ *
+ * 这里按**后序**补一次（子组件先、父组件后，与通用路径的落地顺序一致），只对"元素确实挂在
+ * 树上"的组件触发；`fireWhenMount` 自带幂等（`hooks.mounted`），别处触发过的不再重复。
+ */
+function fireHydratedHooks(node) {
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  if (node instanceof ComponentNode) {
+    node._resolveList().forEach(fireHydratedHooks);
+    node.children().forEach(fireHydratedHooks);
+    // 触发条件（"确实挂在树上"）由 `fireWhenMount` 自己把关，这里只负责按后序登记
+    fireWhenMount(node);
+    return;
+  }
+
+  node.children().forEach(fireHydratedHooks);
 }
 
 function adoptElement(node, existing) {

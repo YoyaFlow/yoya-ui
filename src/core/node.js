@@ -3,8 +3,11 @@ import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
 import { optionKindOf } from './setup-keys.js';
+import { warnDeprecatedComponentObject } from './deprecations.js';
 import {
   COMPONENT_HOOK_NAMES,
+  beginLanding,
+  endLanding,
   fireWhenDestroy,
   fireWhenMount,
   rearmWhenMount,
@@ -2970,14 +2973,21 @@ export class ViewNode {
    */
   bindTo(target) {
     const parent = resolveTarget(target);
-    const element = this.renderDom();
+    // 整趟落地（建树 + append）收口成一次：钩子登记到落地结束再触发，
+    // 于是嵌套组件拿到的元素已经连通（票 02 / 方案 A）。
+    beginLanding();
+    try {
+      const element = this.renderDom();
 
-    if (parent && element) {
-      parent.appendChild(element);
-      // 根节点自己落地：组件钩子在这里触发（子节点由父级挂载路径负责）
-      if (this._whenHooks !== undefined) {
-        fireWhenMount(this);
+      if (parent && element) {
+        parent.appendChild(element);
+        // 根节点自己落地：组件钩子在这里登记（子节点由父级挂载路径负责）
+        if (this._whenHooks !== undefined) {
+          fireWhenMount(this);
+        }
       }
+    } finally {
+      endLanding();
     }
 
     return this;
@@ -3590,6 +3600,10 @@ export function normalizeChild(child) {
     typeof child === 'function' ||
     (child && typeof child === 'object' && typeof child.render === 'function')
   ) {
+    if (typeof child === 'object') {
+      // 形态 B 退场提示（票 03 阶段 1）：只在 devtools 开启时报一次，按对象去重
+      warnDeprecatedComponentObject(child, 'child()');
+    }
     return new ComponentNode(child);
   }
 
@@ -3917,9 +3931,21 @@ export class ElementNode extends ViewNode {
         return;
       }
 
-      if (typeof value !== 'function') {
-        this.attr(key, value);
+      // 其余键按属性写（键分类表的 `attribute`：非显式键一律按属性）。
+      //
+      // 这里以前是 `if (typeof value !== 'function')` —— 函数值被**静默丢掉**，于是同一个值
+      // 「options 写法」与链式 `.attr(名字, 闭包)` 行为不同，也与编译产物不同（编译器一律按活值处理），
+      // 两边就此漂移（通用路径少写一个属性）。现在同一条口径：句柄 / 零参闭包 = 活值；
+      // 带形参的函数不是活值来源（事件写 onXxx）→ **响亮报错**，不再静默吞掉。
+      if (typeof value === 'function' && value.length > 0) {
+        throw new TypeError(
+          `option "${key}" received a function with parameters: an attribute takes a handle or a ` +
+            'zero-argument reader as its live value. Declare events as onXxx, and consume other ' +
+            'callbacks in your own component options.'
+        );
       }
+
+      this.attr(key, value);
     });
   }
 

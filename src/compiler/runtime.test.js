@@ -66,6 +66,23 @@ describe('cloneFragment', () => {
 });
 
 describe('bindText', () => {
+  // 票 13：片段里的文本位置是**注释锚点**（相邻文本会被 HTML 解析合并，注释不会）
+  it('turns a comment anchor into a real text node in place', () => {
+    const host = document.createElement('div');
+    host.innerHTML = 'a<!---->b';
+    const anchor = host.childNodes[1];
+    const label = ref('mid');
+
+    const off = bindText(anchor, label);
+    expect(host.childNodes).toHaveLength(3);
+    expect(host.childNodes[1].nodeType).toBe(3);
+    expect(host.textContent).toBe('amidb');
+
+    label.value = 'next';
+    expect(host.textContent).toBe('anextb');
+    off();
+  });
+
   it('writes the handle value and follows later writes until unsubscribed', () => {
     const label = ref('a');
     const element = document.createElement('td');

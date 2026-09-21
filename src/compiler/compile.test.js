@@ -6,9 +6,13 @@ import { compileSource, elementWhitelistOf } from './index.js';
 
 const fixture = readFileSync(join(import.meta.dirname, 'fixtures/item-fixture.js'), 'utf8');
 
-/** 中性夹具的片段：静态值进片段，动态值留占位（片段只由框架自己的 toHTML() 产出）。 */
+/**
+ * 中性夹具的片段：静态值进片段，动态值留**注释锚点**（`<!---->`，片段只由框架自己的 toHTML() 产出）。
+ * 文本位置用注释而不是文本占位：HTML 解析器会把相邻的两段文本并成一个文本节点，位置表会整体前移。
+ */
 const ITEM_HTML =
-  '<li data-item-id=""><span class="item-id">0</span><span class="item-label"><a>0</a></span>' +
+  '<li data-item-id=""><span class="item-id"><!----></span>' +
+  '<span class="item-label"><a><!----></a></span>' +
   '<span class="item-action"><a><i aria-hidden="true" class="icon icon-remove"></i></a></span>' +
   '<span class="item-note"></span></li>';
 
@@ -83,13 +87,15 @@ describe('compileSource', () => {
 
   it('falls back for every unsupported construct', () => {
     const cases = [
-      ["if (item.id) {\n      line.attr('data-x', '1');\n    }", 'IfStatement'],
-      ['for (const dataItem of item.items) {\n      line.child(item);\n    }', 'ForOfStatement'],
+      // 控制流本身现在能编（票 04 的结构锚点），但这两段里的"结构"不是加子元素 → 仍整形状回落
+      ["if (item.id) {\n      line.attr('data-x', '1');\n    }", '只支持加结构'],
+      ['for (const dataItem of item.items) {\n      line.child(item);\n    }', '只支持加结构'],
       ['line.attr(...item.attrs);', 'spread'],
       ["line.whenFailed('x');", '不是元素工厂'],
       ['line.td((cell) => cell.child(() => item.label));', '组件槽'],
       ["line.attr(item.name, 'x');", '属性名不是字符串字面量'],
-      ['line.className(item.cls);', '不是字符串字面量']
+      // 动态类名现在能编（`className(非字面量)` → 保序去重的运行期写）；字面量不是字符串才回落
+      ['line.className(1);', '字面量参数不是字符串']
     ];
 
     for (const [body, reason] of cases) {
@@ -109,9 +115,9 @@ describe('compileSource', () => {
     expect(noFunction.bails).toEqual([{ reason: '找不到目标函数 Item', at: null }]);
   });
 
-  // 票 12 / C1：形参解构会被当成"自由标识符"，把 data / api 编进 scope，
-  // 于是产物忽略自己的实参、运行期 TypeError。**整形状 bail**，不许静默编错。
-  it('bails out entirely when the builder parameter is destructured', () => {
+  // 票 21：形参里的名字是**已绑定名**（不是自由标识符），产物逐字复刻源码的参数表。
+  // 票 12 的静默编错（把 data / api 收进 scope）靠绑定名集合根治，不再靠 bail。
+  it('compiles a destructured builder parameter without leaking its names into scope', () => {
     const result = compileSource({
       source:
         'export function Item({ data, api }) {\n' +
@@ -122,14 +128,15 @@ describe('compileSource', () => {
       core
     });
 
-    expect(result.compiled).toBe(false);
-    expect(result.module).toBeNull();
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
     expect(result.scope).toEqual([]);
-    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('形参');
+    expect(result.module).toContain('return function Item({ data, api }) {');
+    expect(result.module).not.toContain('const { api, data } = scope;');
   });
 
-  it('bails out for default values, rest and extra parameters', () => {
-    const shapes = ['item = null', '...items', 'item, extra', ''];
+  it('reproduces every parameter shape the source declares', () => {
+    const shapes = ['item = null', '...items', 'item, extra', '{ data }', '[first]', ''];
 
     for (const param of shapes) {
       const result = compileSource({
@@ -138,10 +145,10 @@ describe('compileSource', () => {
         fn: 'Item',
         core
       });
-      expect(result.compiled, param || '(无参)').toBe(false);
-      expect(result.bails.map((bail) => bail.reason).join(' | '), param || '(无参)').toContain(
-        '形参'
-      );
+      const label = param || '(无参)';
+      expect(result.bails, label).toEqual([]);
+      expect(result.compiled, label).toBe(true);
+      expect(result.module, label).toContain(`return function Item(${param}) {`);
     }
   });
 
@@ -158,6 +165,62 @@ describe('compileSource', () => {
 
     expect(result.compiled).toBe(true);
     expect(result.scope).toEqual([]);
+  });
+
+  // 值位置引用**局部声明**：产物里不执行组件函数体，读到它会变成 undefined（曾经是静默错）
+  it('bails when a value position references a local declaration', () => {
+    const result = compileSource({
+      source:
+        'export function Item(item) {\n' +
+        '  const label = item.label;\n' +
+        '  return tr((line) => line.td((cell) => cell.child(vText(label))));\n' +
+        '}\n',
+      file: 'probe.js',
+      fn: 'Item',
+      core
+    });
+
+    expect(result.compiled).toBe(false);
+    expect(result.module).toBeNull();
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain('局部变量');
+  });
+
+  // 本地同名函数不是核心元素工厂：以前会被编成 `<span>`（通用路径会抛错）→ 静默误编
+  it('does not treat a locally bound name as a core element factory', () => {
+    const result = compileSource({
+      source:
+        'function span(setup) {\n  return { custom: setup };\n}\n' +
+        'export function Item(item) {\n' +
+        '  return tr((line) => line.td((cell) => cell.child(span((n) => n.className("x")))));\n' +
+        '}\n',
+      file: 'probe.js',
+      fn: 'Item',
+      core
+    });
+
+    expect(result.compiled).toBe(false);
+    expect(result.module).toBeNull();
+  });
+
+  // 形态 B：只有 render() 一个成员的组件对象可以直接编（结构 = render 的 return）
+  it('compiles a single-member render() component object', () => {
+    const result = compileSource({
+      source:
+        'export function Pill(props) {\n' +
+        '  return {\n' +
+        '    render() {\n' +
+        '      return span((node) => node.className("pill").child(vText(props.label)));\n' +
+        '    }\n' +
+        '  };\n' +
+        '}\n',
+      file: 'probe.js',
+      fn: 'Pill',
+      core
+    });
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    expect(result.plan.html).toContain('<span class="pill">');
   });
 
   // C6：产物不嵌机器绝对路径——同一份源码换个目录/换台机器编出来必须逐字节相同。
@@ -227,7 +290,9 @@ describe('compileSource', () => {
 
     expect(optionsFirst.bails).toEqual([]);
     expect(optionsFirst.compiled).toBe(true);
-    expect(optionsFirst.plan.html).toContain('<td id="c1" slot="t-head" style="color:red">0</td>');
+    expect(optionsFirst.plan.html).toContain(
+      '<td id="c1" slot="t-head" style="color:red"><!----></td>'
+    );
 
     const optionsLast = compile(
       sourceOf(
@@ -238,7 +303,7 @@ describe('compileSource', () => {
     );
 
     expect(optionsLast.bails).toEqual([]);
-    expect(optionsLast.plan.html).toContain('<td id="c2">0</td>');
+    expect(optionsLast.plan.html).toContain('<td id="c2"><!----></td>');
   });
 
   it('accepts more than three factory arguments', () => {
@@ -320,7 +385,7 @@ describe('compileSource', () => {
 
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
-    expect(result.plan.html).toContain('<div vn="VCard"><span>0</span></div>');
+    expect(result.plan.html).toContain('<div vn="VCard"><span><!----></span></div>');
 
     const nodeMode = compile(
       sourceOf("  return div({ vn: 'VCard' }, (node) => node.on('click', item.onPick));"),
@@ -329,13 +394,9 @@ describe('compileSource', () => {
     expect(nodeMode.module).toContain('node.attr("vn", "VCard")');
   });
 
-  // 覆盖度缺口 2：数组 / 对象在文本位置上编出来就是静默误编 → 编译期认出就回落
-  it('bails on arrays and objects in a text position', () => {
-    const array = compile(sourceOf('  return div((node) => node.child([item.a, item.b]));'));
-    expect(array.compiled).toBe(false);
-    expect(array.bails.map((bail) => bail.reason).join(' | ')).toContain('数组');
-    expect(array.bails[0].at).toContain('[');
-
+  // 覆盖度缺口 2：对象在文本位置上编出来就是静默误编 → 编译期认出就回落
+  // （数组不再是缺口：票 09 的运行期子节点按通用路径的口径摊平，见 runtime-children.test.js）
+  it('bails on objects in a text position', () => {
     const object = compile(sourceOf('  return div((node) => node.child({ text: item.a }));'));
     expect(object.compiled).toBe(false);
     expect(object.bails.map((bail) => bail.reason).join(' | ')).toContain('对象');
@@ -343,6 +404,15 @@ describe('compileSource', () => {
     const text = compile(sourceOf('  return div((node) => node.child(vText([item.a])));'));
     expect(text.compiled).toBe(false);
     expect(text.bails.map((bail) => bail.reason).join(' | ')).toContain('vText() 收到数组');
+  });
+
+  it('compiles an array in a child position into the runtime child dispatch', () => {
+    const result = compile(sourceOf('  return div((node) => node.child([item.a, item.b]));'));
+
+    expect(result.bails).toEqual([]);
+    expect(result.compiled).toBe(true);
+    // 元素通道：占位 + 运行期摊平（数组里的节点值会在运行期响亮报错，见 runtime-children.test.js）
+    expect(result.module).toContain('bindChildText(');
   });
 
   it('compiles dynamic option values into live attribute writes', () => {
@@ -355,8 +425,38 @@ describe('compileSource', () => {
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
     expect(result.plan.html).toBe('<tr><td data-tone="" id="">x</td></tr>');
-    expect(result.module).toContain('setAttr(el.childNodes[0], "id", item.id)');
-    expect(result.module).toContain('setAttr(el.childNodes[0], "data-tone", item.tone)');
+    // 位置在跑任何 op 之前一次性解析成变量（`mountable` 这类会摘节点的 op 靠它才对得上）
+    expect(result.module).toContain('const n0 = el.childNodes[0];');
+    expect(result.module.indexOf('const n0 =')).toBeLessThan(
+      result.module.indexOf('setAttr(n0, "id", item.id)')
+    );
+    expect(result.module).toContain('setAttr(n0, "id", item.id)');
+    expect(result.module).toContain('setAttr(n0, "data-tone", item.tone)');
+  });
+
+  // 票 01（compiler-landing）：运行期钩子按需 import，不是整张名单
+  it('imports only the runtime hooks the artifact actually uses', () => {
+    const runtimeImportsOf = (result) =>
+      result.module.split('\n').find((line) => line.startsWith('import {')) ?? '';
+
+    const staticRow = compile(sourceOf("  return tr((line) => line.td('x'));"));
+    expect(runtimeImportsOf(staticRow)).toContain('cloneFragment');
+    expect(runtimeImportsOf(staticRow)).not.toContain('bindText');
+    expect(runtimeImportsOf(staticRow)).not.toContain('setAttr');
+    expect(runtimeImportsOf(staticRow)).not.toContain('mountableAt');
+
+    const liveRow = compile(
+      sourceOf('  return tr((line) => line.td((cell) => cell.child(vText(item.label))));')
+    );
+    expect(runtimeImportsOf(liveRow)).toContain('bindText');
+    expect(runtimeImportsOf(liveRow)).toContain('pushOff');
+    expect(runtimeImportsOf(liveRow)).not.toContain('mountableAt');
+
+    const mountable = compile(
+      sourceOf('  return tr((line) => line.td((cell) => cell.mountable(item.visible)));')
+    );
+    expect(runtimeImportsOf(mountable)).toContain('mountableAt');
+    expect(runtimeImportsOf(mountable)).not.toContain('bindText');
   });
 
   it('accepts the (options, setup) form on the entry factory too', () => {
@@ -369,7 +469,7 @@ describe('compileSource', () => {
 
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
-    expect(result.plan.html).toBe('<div id="root"><span>0</span></div>');
+    expect(result.plan.html).toBe('<div id="root"><span><!----></span></div>');
     expect(result.scope).toEqual([]);
   });
 

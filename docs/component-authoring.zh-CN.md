@@ -40,7 +40,11 @@ export function ServiceTag(options) {
 }
 ```
 
-### 形态 B：对象组件（常规独立组件，默认形态）
+### 形态 B：对象组件（**已弃用**，仅存量）
+
+> **弃用（2026-09-21，票 03）**：新组件一律用 `vNode((api) => 视图)`（有行为）或直接返回 ViewNode（无行为）。
+> 形态 B 的表达能力已被 vNode 完全覆盖，而它多出两个问题：对象是**一次性**的（同一对象挂两处会共用一份状态），
+> 以及编译器要额外维护一条形状分支。devtools 开启时收到形态 B 会提示一次。
 
 ```js
 import { vRate } from '@yoyaflow/yoya-ui/ui';
@@ -402,20 +406,34 @@ panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
 
 ```js
 const chart = vNode((api) => {
-  api.whenMount = function () {
-    this.instance = createChart(thisEl); // 元素已经落地，可以测量 / 初始化第三方
+  api.whenMount = function (host) {
+    // 元素已经落地，可以测量 / 初始化第三方
+    api.instance = createChart(host.element());
   };
   api.whenDestroy = function () {
-    this.instance?.dispose(); // 子树销毁之前，自己的 DOM 与子节点还读得到
+    api.instance?.dispose(); // 子树销毁之前，自己的 DOM 与子节点还读得到
   };
-  return div((root) => root.span('chart'));
+  return div({ class: 'chart' }); // 结构保持纯声明
 });
 ```
 
 规则：
 
-- **时机**：`whenMount` 在节点真正落到 DOM 时触发（`mountable(false)` 期间不触发，条件转真、真正落地时才触发）；
-  `whenDestroy` 在**子树销毁之前**触发且幂等；
+- **vNode 里写 `api`，不写 `this`**：api 就是组件实例，且命令与钩子都在它的词法作用域里
+  （`api.instance = …` / 读回 `api.instance`）。`this` 恰好也是同一个对象（引擎以 api 调用命令与钩子），
+  但命令一旦写成箭头函数（`() => this`）就不是组件了——只留一种拼写，不留绑定陷阱。
+  形态 B 的对象组件是镜像关系：方法写在对象字面量里，那里的 `this` **就是**组件对象；
+- **两个钩子都收到宿主上下文对象**，元素从它上面读：`host.element()` 是单根组件的根元素
+  （还没落地的节点、以及没有"那一个元素"的多根组件都给 `null`）。它是**现取**而不是快照，
+  同一个上下文对象交给两个钩子，以后加成员不改签名。需要真实元素就在这里拿
+  ——不要在闭包变量里抓节点句柄，也不要让结构表达式承担写回，结构才是编译器读得懂的形状；
+- **实例状态挂在组件实例上**（vNode 是 api，形态 B 是那个对象），与用它的命令放在一起：
+  上面的 `api.instance` 在同组件的任何命令与钩子里都读得到；
+- **时机**：`whenMount` 在节点真正落到 DOM 时触发；一趟落地（`bindTo` / `mount` / `hydrate`）会**收集**
+  这趟里的钩子、在**收口时**统一触发——所以钩子跑起来时 `host.element()` 已经挂在树上（不是游离子树），
+  要测量的库可以直接用。落地之后才发生的插入（挂载后 `child()`、`mountable()` 转真、`keyed` 插行、
+  区域重建）在元素接上之后立刻触发。触发顺序就是落地顺序（子组件先于父组件）。
+  `mountable(false)` 期间不触发，条件转真、真正落地时才触发；`whenDestroy` 在**子树销毁之前**触发且幂等；
 - **不能写进 options 对象**：`div({ whenMount: fn })` 直接报错 —— `onXxx` 才是事件简写（`{ onClick: fn }`），
   `whenMount` / `whenDestroy` / `whenFailed` 放错位置会报错，不会被静默绑成事件；
 - **`this`** 绑定到组件对象（形态 B）或 api（vNode）；

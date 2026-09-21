@@ -57,6 +57,10 @@
       "types": "./types/yoya.compiler-runtime.d.ts",
       "import": "./dist/yoya.compiler-runtime.js"
     },
+    "./compiled-registry": {
+      "types": "./types/yoya.compiled-registry.d.ts",
+      "import": "./dist/yoya.compiled-registry.js"
+    },
     "./compiler": {
       "types": "./types/yoya.compiler.d.ts",
       "import": "./dist/yoya.compiler.js"
@@ -88,8 +92,9 @@
     "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs && node scripts/compiler-coverage.mjs",
+    "build": "node scripts/build-entries.mjs && node scripts/compiler-registry.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs && node scripts/compiler-coverage.mjs",
     "build:entries": "node scripts/build-entries.mjs",
+    "build:registry": "node scripts/compiler-registry.mjs",
     "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
     "report:bundle": "node scripts/bundle-report.mjs",

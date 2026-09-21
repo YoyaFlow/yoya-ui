@@ -3,15 +3,429 @@
   "targets": [
     {
       "root": "src",
-      "fn": "buildRow",
+      "component": null,
       "mode": "element",
-      "files": 427,
-      "candidates": 2,
-      "compiled": 1,
-      "bailed": 1,
-      "skipped": 425,
-      "compiledFiles": ["compiler/fixtures/row-fixture.js"],
+      "files": 452,
+      "candidates": 100,
+      "compiled": 13,
+      "bailed": 87,
+      "skipped": 352,
+      "compiledFiles": [
+        "client-only.test.js",
+        "compiler/fixtures/item-fixture.js",
+        "compiler/fixtures/panel-fixture.js",
+        "compiler/fixtures/status-dot.js",
+        "compiler/fixtures/theme-tag.js",
+        "core/key-set.test.js",
+        "core/node-commit-single-pass.test.js",
+        "core/skeleton-plan.test.js",
+        "examples/adapter-signals-usage.js",
+        "examples/async-router-user.js",
+        "examples/component-source.js",
+        "examples/interop-docs.js",
+        "svg/icons.js"
+      ],
       "bails": [
+        {
+          "reason": "调用链不是从 setup 参数出发",
+          "count": 35
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：hstack",
+          "count": 20
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardBody",
+          "count": 13
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardHeader",
+          "count": 13
+        },
+        {
+          "reason": "函数体不是单个 return 工厂调用",
+          "count": 13
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCard",
+          "count": 9
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vButton",
+          "count": 7
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vstack",
+          "count": 7
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：spacer",
+          "count": 6
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：rebuildable",
+          "count": 4
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardFooter",
+          "count": 4
+        },
+        {
+          "reason": "入口工厂不是元素：vstack",
+          "count": 4
+        },
+        {
+          "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
+          "count": 3
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 count：产物不执行组件函数体，这个形状走通用路径",
+          "count": 3
+        },
+        {
+          "reason": "条件 / 循环里只支持加结构（收到 child）",
+          "count": 3
+        },
+        {
+          "reason": "attr() 属性名不是字符串字面量",
+          "count": 3
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vDetail",
+          "count": 3
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：ariaLabel",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：menuContent",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCard",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vContainer",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vFormItem",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vHeader",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vInput",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vRouterView",
+          "count": 2
+        },
+        {
+          "reason": "条件 / 循环里的语句含结构（本轮不编）",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ComponentSource",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：DemoSection",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vBreadcrumb",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCarousel",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vPagination",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vProgress",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vScroll",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSteps",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTabs",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTimeline",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTooltip",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：actions",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：background",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：brand",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：container",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：divider",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：first",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：gap",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：grid",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：height",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：id",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：maxWidth",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：onFrame",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：onReady",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：padding",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：responsive",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：second",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：stack",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：threeLib",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：values",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vAside",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCheckboxes",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vFooter",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：viewport",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vLink",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMain",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMasonry",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMenu",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vNavbar",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vRow",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vSelect",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vSidebar",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTable",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTbody",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTextarea",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTreeTable",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：whenFailed",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vCode",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vInput",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vRate",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSelect",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSwitch",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTextarea",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimer",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimerRange",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vUpload",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 router：产物不执行组件函数体，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：不是元素工厂（组件或未知 API）：vSymbolButton",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：条件 / 循环里的语句含结构（本轮不编）",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：条件 / 循环里只支持加结构（收到 pre）",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里只支持加结构（收到 table）",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 button 的动态实参后面还有参数（顺序无法保证）",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 vNode 的 setup 没有参数",
+          "count": 1
+        },
+        {
+          "reason": "组件对象的 render() 不是单一 return 视图",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：codeBlock",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ComponentLifecycleDiagram",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：DataUpdateFlowDiagram",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：hstack",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：HtmlNativeApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：mobileLayout",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：renderThemeDemo",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：responsiveGrid",
+          "count": 1
+        },
         {
           "reason": "child() 里是组件调用（未编译）：StatusDot",
           "count": 1
@@ -19,20 +433,602 @@
         {
           "reason": "child() 里是组件调用（未编译）：StatusTag",
           "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：SvgProgressRingExample1",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vAnchor",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vAvatar",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vBadge",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vBody",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vButton",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCascader",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vChart",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCheckbox",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCol",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vColorPicker",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vContainer",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vContextMenu",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vDialog",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vDigitalBoard",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vDropdownMenu",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vField",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vFloatButton",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vForm",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vGauge",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vGlowButton",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vImagePreview",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vInput",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vLanguageSwitch",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vLazyImage",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vMasonry",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vMenu",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vMessageContainer",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vMessageManager",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vNavbar",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRadio",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRate",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRingStat",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRouter",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRouterViews",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vRow",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSelect",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSidebar",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSkeleton",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSlider",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSparkline",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSplitPanel",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSwitch",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTable",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTextarea",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTransition",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTree",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTreeRanger",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTrendCard",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vUpload",
+          "count": 1
+        },
+        {
+          "reason": "styles() 只用对象字面量形式",
+          "count": 1
         }
       ]
     },
     {
       "root": "src/examples",
-      "fn": "buildRow",
+      "component": null,
       "mode": "element",
       "files": 135,
-      "candidates": 0,
-      "compiled": 0,
-      "bailed": 0,
-      "skipped": 135,
-      "compiledFiles": [],
-      "bails": []
+      "candidates": 80,
+      "compiled": 4,
+      "bailed": 76,
+      "skipped": 55,
+      "compiledFiles": [
+        "adapter-signals-usage.js",
+        "async-router-user.js",
+        "component-source.js",
+        "interop-docs.js"
+      ],
+      "bails": [
+        {
+          "reason": "调用链不是从 setup 参数出发",
+          "count": 35
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：hstack",
+          "count": 20
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardBody",
+          "count": 13
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardHeader",
+          "count": 13
+        },
+        {
+          "reason": "函数体不是单个 return 工厂调用",
+          "count": 12
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCard",
+          "count": 8
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vstack",
+          "count": 7
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：spacer",
+          "count": 6
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vButton",
+          "count": 6
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCardFooter",
+          "count": 4
+        },
+        {
+          "reason": "入口工厂不是元素：vstack",
+          "count": 4
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：rebuildable",
+          "count": 3
+        },
+        {
+          "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
+          "count": 3
+        },
+        {
+          "reason": "条件 / 循环里只支持加结构（收到 child）",
+          "count": 3
+        },
+        {
+          "reason": "attr() 属性名不是字符串字面量",
+          "count": 3
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：ariaLabel",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：menuContent",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCard",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vContainer",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vFormItem",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vHeader",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vInput",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vRouterView",
+          "count": 2
+        },
+        {
+          "reason": "条件 / 循环里的语句含结构（本轮不编）",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ComponentSource",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：DemoSection",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vDetail",
+          "count": 2
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：actions",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：background",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：brand",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：container",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：divider",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：first",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：gap",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：grid",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：height",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：id",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：maxWidth",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：onFrame",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：onReady",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：padding",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：responsive",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：second",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：stack",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：threeLib",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：values",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vAside",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vCheckboxes",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vFooter",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：viewport",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vLink",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMain",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMasonry",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vMenu",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vNavbar",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vRow",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vSelect",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vSidebar",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTable",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTbody",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTextarea",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：vTreeTable",
+          "count": 1
+        },
+        {
+          "reason": "不是元素工厂（组件或未知 API）：whenFailed",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vCode",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vInput",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vRate",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSelect",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSwitch",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTextarea",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimer",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimerRange",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vUpload",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：不是元素工厂（组件或未知 API）：vSymbolButton",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：条件 / 循环里的语句含结构（本轮不编）",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：条件 / 循环里只支持加结构（收到 pre）",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里只支持加结构（收到 table）",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：ComponentLifecycleDiagram",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：DataUpdateFlowDiagram",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：HtmlNativeApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：renderThemeDemo",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：SvgProgressRingExample1",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vBreadcrumb",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vCarousel",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vLanguageSwitch",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vPagination",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vProgress",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vScroll",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSteps",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTabs",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTimeline",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vTooltip",
+          "count": 1
+        },
+        {
+          "reason": "styles() 只用对象字面量形式",
+          "count": 1
+        }
+      ]
     }
   ]
 }

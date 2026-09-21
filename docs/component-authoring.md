@@ -40,7 +40,13 @@ export function ServiceTag(options) {
 }
 ```
 
-### Shape B: object component (regular standalone component, the default)
+### Shape B: object component (**deprecated**, existing code only)
+
+> **Deprecated (2026-09-21, ticket 03)**: write new components as `vNode((api) => view)` when they have
+> behaviour, or return a ViewNode directly when they have none. Everything shape B can express is covered by
+> vNode, and it carries two extra problems: the object is **single-use** (using one object in two places
+> shares one piece of state), and the compiler has to maintain a second shape branch. With devtools enabled
+> the runtime warns once when it receives one.
 
 ```js
 import { vRate } from '@yoyaflow/yoya-ui/ui';
@@ -89,7 +95,8 @@ export function CounterCard() {
 - The result is the component node itself (`ComponentNode extends ViewNode`): mount it as a root, pass it as a child, or key it — no placeholder element, and an array return becomes a multi-root fragment.
 - `api` only collects command functions; the factory attaches them to the node, and a name hitting an existing node member (`child` / `destroy` / `mountable` …) or `render` / `_*` throws instead of silently overwriting.
 - `return api` inside a command is the same as returning the node; a component's own error boundary goes to `api.whenFailed = (error, info) => fallback` (same as `node.whenFailed(fn)`), and other node capabilities (`mountable()` / `rebuildable()`) chain on the returned node.
-- Existing shapes A/B/C and `child(componentObject)` keep working; presentation-only components stay on shape A.
+- Existing shapes A/B/C and `child(componentObject)` keep working (shape B is deprecated — see above);
+  presentation-only components stay on shape A.
 
 ### Shape C: class node component (parent/child nesting, child instance control, or lifecycle overrides)
 
@@ -426,21 +433,40 @@ api or on the object a shape B component returns.
 
 ```js
 const chart = vNode((api) => {
-  api.whenMount = function () {
-    this.instance = createChart(thisEl); // the element has landed: measure / init third-party code
+  api.whenMount = function (host) {
+    // the element has landed: measure / init third-party code
+    api.instance = createChart(host.element());
   };
   api.whenDestroy = function () {
-    this.instance?.dispose(); // before the subtree is torn down; your DOM is still readable
+    api.instance?.dispose(); // before the subtree is torn down; your DOM is still readable
   };
-  return div((root) => root.span('chart'));
+  return div({ class: 'chart' }); // structure stays a plain declaration
 });
 ```
 
 Rules:
 
-- **Timing**: `whenMount` fires when the node really lands in the DOM (not while `mountable(false)`; it fires
-  when the condition turns true and the node lands); `whenDestroy` fires **before the subtree is torn down**
-  and is idempotent;
+- **Spell it `api`, not `this`, inside a vNode**: the api object is the component instance, and it is
+  already in scope for both commands and hooks, so write `api.instance = …` / `read it back as api.instance`.
+  `this` happens to be the same object (the engine calls commands and hooks with the api bound), but it is
+  lexically wrong the moment a command is written as an arrow (`() => this` is not the component) — one
+  spelling, no binding to remember. Shape B object components are the mirror image: their methods live in
+  the object literal, so there `this` **is** the component object;
+- **Both hooks receive a host context object**; the element is read through it. `host.element()` is the root
+  element of a single-root component — `null` while the node has not landed, and for a multi-root component
+  (there is no single element to hand over). It is a **live read, not a snapshot**, and the same context
+  object goes to both hooks, so further members can be added later without changing the hook signature.
+  Read the element there — do not capture a node handle in a closure variable, and keep the view expression
+  free of writes, so the structure stays a declaration the compiler can read;
+- **Instance state lives on the component instance** (`api` for vNode, the object for shape B), next to the
+  commands that use it: `api.instance` above is readable from every command and hook of that component;
+- **Timing**: `whenMount` fires when the node really lands in the DOM, and a whole landing pass
+  (`bindTo` / `mount` / `hydrate`) collects its hooks and fires them **at the end of the pass** — so by the
+  time your hook runs, `host.element()` is already attached (not a detached subtree), which is what measuring
+  libraries need. Placements outside a pass (a `child()` added after the mount, `mountable()` turning true,
+  a `keyed` row inserted, a region re-rendering) fire right after the element is attached. The firing order
+  is the landing order (children before their parent). `mountable(false)` nodes never fire until the
+  condition turns true; `whenDestroy` fires **before the subtree is torn down** and is idempotent;
 - **Never inside an options object**: `div({ whenMount: fn })` throws — `onXxx` is the event shorthand
   (`{ onClick: fn }`), while `whenMount` / `whenDestroy` / `whenFailed` are protocol members; a misplaced
   hook fails loudly instead of being silently bound as an event;

@@ -93,8 +93,11 @@ describe('coverage baseline', () => {
     expect(grown.ok).toBe(true);
     expect(grown.added).toEqual([{ root: baseRoot, file: 'b/item.js' }]);
 
-    // 基线里可编的文件回落 → 失败，并带上回落原因
-    write('a/item.js', 'export function Card(row) {\n  return tr((line) => line.td(row));\n}\n');
+    // 基线里可编的文件回落 → 失败，并带上回落原因（动态属性名：分类不出来，明确回落）
+    write(
+      'a/item.js',
+      'export function Card(row) {\n  return tr((line) => line.attr(row.name, row.value));\n}\n'
+    );
     const regressed = compareCoverageBaseline(baseline, [reportCoverage({ root: baseRoot, core })]);
     expect(regressed.ok).toBe(false);
     expect(regressed.regressions).toHaveLength(1);

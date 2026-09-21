@@ -8,15 +8,35 @@
  * 片段永远由框架自己的工厂 + `toHTML()` 产出（不手写 HTML、不拼字符串），编译器只判断
  * 「哪些值算静态」。生成的模块只 import 运行期钩子，不含编译器本身。
  */
-import { freeIdentifiers } from './analyze.js';
+import { freeIdentifiers, isBindableName } from './analyze.js';
 import { createHash } from 'node:crypto';
 import { isAbsolute, relative } from 'node:path';
 
-/** 动态值在片段里的占位文本；运行期改写它。 */
-const TEXT_PLACEHOLDER = '0';
+/**
+ * 文本位置的**采样哨兵**与**片段锚点**。
+ *
+ * 片段是"框架序列化 → `innerHTML` 再解析"出来的，而 HTML 解析器会把**相邻的两段文本并成一个**
+ * 文本节点；位置表按 `childNodes` 下标寻址，于是 `child('a'); child(props.x)` 这种相邻写法会整体前移
+ * （读到 `undefined`，或把值写进隔壁元素）。所以片段里的文本位置必须是**不参与文本合并的注释锚点**：
+ * 采样时写一个控制字符（用户静态文本里几乎不可能出现），序列化后换成 `<!---->`——
+ * 解析后是一个注释节点，位置表照旧对齐；写入时由运行期把它换成真文本节点（`textAt`）。
+ */
+const TEXT_SENTINEL = '\u0001';
+const TEXT_ANCHOR = '<!---->';
 
 /** 直接带活内容（绑定 / 事件 / 活文本）的 op 种类。 */
-const DIRECT_LIVE = ['dynamicAttr', 'dynamicStyle', 'liveClass', 'liveEvent', 'bindText'];
+const DIRECT_LIVE = [
+  'dynamicAttr',
+  'dynamicClass',
+  'dynamicArg',
+  'childValue',
+  'dynamicStyle',
+  'liveClass',
+  'liveEvent',
+  'liveMountable',
+  'keyedRows',
+  'bindText'
+];
 
 /** 只存在于片段里的 op（两条通道都不再写它们）；其余 op 认不出就必须抛错，不许静默丢。 */
 const FRAGMENT_ONLY = new Set(['staticAttr', 'staticClass', 'staticStyle', 'staticText']);
@@ -30,10 +50,39 @@ const CALLER_CONTENT = new Set(['content']);
 const indentOf = (depth) => '  '.repeat(depth);
 
 /**
+ * 元素 / SVG 工厂的查找：**顶层导出 → `htmls` 表 → `svgs` 表**。
+ *
+ * SVG 子标签工厂（`path` / `circle` / `rect` …）不在 core 顶层导出，只注册在 `svgs` 表里
+ * （「只有 `<svg>` 是 HTML DSL 可见入口，SVG 子标签通过 svg 节点内部方法添加」），
+ * 但它们在白名单里是合法工厂——片段构建与节点物化都要能找到它们。
+ */
+function elementFactoryOf(core, name) {
+  return core?.[name] ?? core?.htmls?.[name] ?? core?.svgs?.[name] ?? null;
+}
+
+/** 生成代码里怎么写这个工厂：顶层导出直接写名字；只在 `svgs` 表里就写 `svgs.<名字>`。 */
+function factoryExpressionOf(core, name) {
+  if (typeof core?.[name] === 'function') {
+    return name;
+  }
+  if (typeof core?.svgs?.[name] === 'function') {
+    return `svgs.${name}`;
+  }
+  return null;
+}
+
+/** 把一段（可能多行的）源码按给定缩进铺进产物，保留原有换行。 */
+const indentBlock = (text, indent) =>
+  text
+    .split('\n')
+    .map((line) => (line.length > 0 ? `${indent}${line}` : line))
+    .join('\n');
+
+/**
  * 产物里的源码标签（票 C6）：**绝不嵌机器绝对路径**，否则同一份源码在两台机器/两个目录编出来的
  * 产物不逐字节相同，还会泄漏本地路径。绝对路径一律折算成相对 cwd 的写法；真在项目之外就只留文件名。
  */
-function sourceLabelOf(file) {
+export function sourceLabelOf(file) {
   if (typeof file !== 'string' || file.length === 0) {
     return file;
   }
@@ -66,6 +115,73 @@ function withInlinedContent(entryOps, content) {
 }
 
 /**
+ * 链接的组件**在调用点内联**（插件路径：同一次构建、同一个模块，没有"另一个构建的注册表"要对哈希）。
+ *
+ * 做法：把 `component` op 换成「组件根元素的 element op + 形参帧」——子组件的 ops 按调用点路径**重定基**
+ * （+ 调用方实参的值），发射器照普通元素递归，位置表 / 挂载锚点 / 局部绑定的口径全部复用。
+ * 内联不了（条目没带形参表 / 组件内部有 `keyed` 行子单元）就抛错，让整个形状回落，不产半成品。
+ */
+function inlineComponentOps(ops, label) {
+  return ops.map((op) => {
+    if (op.kind === 'element') {
+      return { ...op, ops: inlineComponentOps(op.ops, label) };
+    }
+    if (op.kind !== 'component') {
+      return op;
+    }
+    // 只有**同一个模块**里的组件才内联：跨模块条目的 scope 是它自己模块的命名空间，
+    // 业务模块里根本没有那些名字。跨模块走注册表 + `bindComponent`（票 07 第二档）。
+    if (label !== null && !op.key.startsWith(`${label}#`)) {
+      return op;
+    }
+    if (typeof op.params !== 'string' || op.params.length === 0) {
+      throw new Error(
+        `内联链接需要注册表条目提供 ${op.key} 的形参表（params）：这个形状走通用路径`
+      );
+    }
+    // 第二道保险：产物是**组件节点**（vNode / 形态 B）的条目一律不摊平——包装上挂着命令与钩子，
+    // 摊平后 DOM 一样、行为不一样（票 15 的静默半成品）。调用点应该走运行期子节点。
+    if (op.product === 'node') {
+      throw new Error(
+        `组件 ${op.key} 的产物是组件节点（命令 / 钩子挂在包装上）：调用点不内联，走通用路径`
+      );
+    }
+    const entryOps = rebaseOps(op.entryOps, op.path);
+    const content = op.content ? rebaseOps(op.content.ops, op.path) : null;
+    const merged = content
+      ? withInlinedContent(entryOps, { index: op.content.index ?? 0, ops: content })
+      : entryOps;
+    if (hasOpKind(merged, 'keyedRows')) {
+      throw new Error(
+        `组件 ${op.key} 内部有 keyed 行子单元：调用点内联需要把行子单元一起接线，本轮先回落通用路径`
+      );
+    }
+    return {
+      kind: 'element',
+      factory: op.entryFactory,
+      path: op.path,
+      ops: merged,
+      frame: {
+        paramsSource: op.params,
+        paramNames: op.paramNames ?? [],
+        values: op.args
+      }
+    };
+  });
+}
+
+/** 路径重定基：子单元的 op 路径是「相对子组件根」的，内联后要加上它在调用方的位置。 */
+function rebaseOps(ops, prefix) {
+  return ops.map((op) => {
+    const next = { ...op, path: [...prefix, ...(op.path ?? [])] };
+    if (next.kind === 'element') {
+      next.ops = rebaseOps(op.ops, prefix);
+    }
+    return next.kind === 'component' ? inlineComponentOps([next])[0] : next;
+  });
+}
+
+/**
  * 渲染一个形状。
  *
  * @returns {{ plan: object, module: string, scope: string[], liveNodes: number, slots: number }}
@@ -85,26 +201,95 @@ export function renderModule(options) {
     paramsSource = '',
     hash = null,
     templatesOnly = false,
+    // `keyed` 行子单元的模块路径（构建期插件给）：主模块 import 它们的 createRowFactory
+    rowSpecifiers = [],
+    // 结构锚点的子单元（`if` / `for…of` 里的结构）：同样按模块路径 import
+    controlSpecifiers = [],
+    // 每个锚点子单元需要的名字（父产物按帧把父这边的名字传进去）
+    controlFrames = [],
+    // 行单元需要的名字（父模块一并解构，再交给行工厂）
+    scopeExtras = [],
+    // 调用点链接的口径：`bind`（注册表 + bindComponent + 哈希回落，跨构建）或
+    // `inline`（同一次构建、同一个模块 → 直接内联，运行期零新增）
+    linking = 'bind',
+    // 节点模式：即使这根是纯静态也建包装对象（调用方要把它当 ViewNode 用，例如结构锚点的子单元）
+    nodeAlways = false,
     // 节点通道要给活结点建包装对象（tr / td / a …）：产物**自己 import**这些元素工厂，
     // 不再让调用方塞进 scope（票 13 / R4：编译产物不是业务接口）。
     coreSpecifier = '@yoyaflow/yoya-ui/core',
     contentGuard = false
   } = options;
 
+  // 内联链接：`component` op 就地换成「根元素 + 形参帧」，后面的发射照普通元素递归。
+  // 同模块（注册表键的文件部分 == 本模块标签）才内联；跨模块的 `component` op 留给 `bindComponent`。
+  if (linking === 'inline') {
+    entry.ops = inlineComponentOps(entry.ops, sourceLabelOf(file));
+  }
+
   const scope = new Set();
   const coreImportNames = new Set();
-  const bound = new Set([entry.builderParam, entry.setupParam, 'node', 'event']);
+  // 形参绑定的名字（解构 / 默认值 / rest 全展开）都算已绑定：它们出现在值表达式里也不进 scope。
+  const bound = new Set([
+    entry.builderParam,
+    entry.setupParam,
+    'node',
+    'event',
+    ...(entry.boundParams ?? [])
+  ]);
   const addExpression = (expression) => {
-    freeIdentifiers(expression, bound).forEach((name) => scope.add(name));
+    freeIdentifiers(expression, bound).forEach((name) => {
+      // 局部声明名：产物里不执行组件函数体，读到它就是 undefined → 整形状回落，绝不静默编错
+      // **例外**：结构表达式被**就地替换**的组件单元（形态 B / vNode）——替换后的代码在原函数体里，
+      // 同一层的局部量（`const liveDemo = demo.component()` 这类组件实例变量）闭包可见 → 可以进 scope。
+      const replacedInPlace = (entry.structure?.shape ?? 'row') !== 'row';
+      if (!replacedInPlace && entry.localNames?.has(name)) {
+        throw new Error(`值位置引用了局部变量 ${name}：产物不执行组件函数体，这个形状走通用路径`);
+      }
+      // `arguments` / `eval` / 关键字 / 元属性碎片都不是绑定名：收进 scope 的产物直接语法错误，
+      // 而且 `arguments` / `new.target` 的语义依赖调用形态、逐字复刻不了 → 整形状回落（票 21）
+      // 嵌套 setup 的形参是**节点对象**（产物里没有这些对象）：进 scope 就是运行期 TypeError
+      if (entry.nestedParams?.has(name)) {
+        throw new Error(
+          `值位置引用了嵌套 setup 的节点参数 ${name}：节点对象不是一段值，这个形状走通用路径`
+        );
+      }
+      if (!isBindableName(name)) {
+        throw new Error(
+          `产物无法承载 ${name}：它不是合法的绑定名（arguments / eval / 关键字 / 元属性），` +
+            '这个形状走通用路径'
+        );
+      }
+      scope.add(name);
+    });
   };
   const addName = (name) => scope.add(name);
   const addCoreName = (name) => coreImportNames.add(name);
   const scopeList = () => [...scope].sort().join(', ');
 
-  if (mode === 'node' && hasComponentOp(entry.ops)) {
-    // 链接组件的实例化写进「已有的元素位置」，节点模式没有这种位置写 → 明确回落，不静默丢
-    throw new Error('链接组件只支持 element 模式（节点模式的行没有位置写）');
-  }
+  /**
+   * 形参帧的绑定名：内联进来的子组件体在它的形参帧里求值——那些名字**不是**本产物的作用域依赖
+   * （由帧赋值），但同一个名字在外层仍可能是。所以按子树临时并入 / 退出，不做全局标记。
+   */
+  const withBound = (names, emit) => {
+    const added = [];
+    (names ?? []).forEach((name) => {
+      if (!bound.has(name)) {
+        bound.add(name);
+        added.push(name);
+      }
+    });
+    try {
+      return emit();
+    } finally {
+      added.forEach((name) => bound.delete(name));
+    }
+  };
+
+  // 行子单元用同一份 scope：父模块要把它们需要的名字也解构出来
+  scopeExtras.forEach((name) => scope.add(name));
+
+  // 形参的默认值 / 计算键要在产物里求值，里面的自由标识符照旧进 scope（票 21）。
+  (entry.paramExpressions ?? []).forEach(addExpression);
 
   if (mode === 'element' && hasOpKind(entry.ops, 'dynamicStyle')) {
     // 元素模式把静态样式留在片段里（`toHTML()` 的紧凑格式），动态值只能走 CSSOM，
@@ -116,7 +301,7 @@ export function renderModule(options) {
     );
   }
 
-  const fragmentHtml = buildFragment(core, entry);
+  const fragmentHtml = buildFragment(core, entry, mode);
   const emit = mode === 'element' ? emitElementMode : emitNodeMode;
   const emitted = emit({
     entry,
@@ -124,8 +309,20 @@ export function renderModule(options) {
     addExpression,
     addName,
     addCoreName,
+    withBound,
+    controlFrames,
+    nodeAlways,
+    core,
     rootName: kind === 'component' ? 'root' : 'el'
   });
+
+  /**
+   * 运行期 import 名单 = 通道基线（如 `cloneFragment`）+ **产物实际用到的钩子**。
+   * 钩子名由各条发射分支在自己那一行登记（见 `emitElementMode` / `emitNodeMode` 的 hooks），
+   * 所以加新 op 只改一处，产物也不会 import 用不到的东西。
+   */
+  const hookImports = (baseline = []) =>
+    [...new Set([...baseline, ...(emitted.hooks ?? [])])].sort();
 
   const plan = {
     version: 1,
@@ -154,10 +351,10 @@ export function renderModule(options) {
   // 组件产物：绑定函数写进已有的占位子树（调用方片段里嵌进来的那一棵），
   // scope 是组件原模块的命名空间（只允许 import 绑定的自由标识符）。
   if (mode === 'element' && kind === 'component') {
-    const names = ['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr'];
-    if (emitted.usesComponents) {
-      names.splice(1, 0, 'bindComponent');
-    }
+    // 组件产物写进调用方片段里的占位子树，自己不克隆 → 只 import 实际用到的钩子
+    const names = hookImports([]);
+    // 参数表以源码为准；`paramsSource` 是注册表从原模块切出来的同一份文本（合成源码的形参）
+    const componentParams = paramsSource || entry.builderParams || '';
     const body = emitted.lines.map((line) => line.replace(/^ {4}/, '  ')).join('\n');
     const module =
       header +
@@ -170,8 +367,9 @@ export function renderModule(options) {
       planExport +
       `export const hash = ${JSON.stringify(hash)};\n\n` +
       'export function bind(root, values, options) {\n' +
-      `  const [${paramsSource}] = values ?? [];\n` +
       destructure +
+      // scope 先解构：形参默认值可能引用 scope 里的名字，反过来会撞 TDZ（票 21）。
+      `  const [${componentParams}] = values ?? [];\n` +
       (contentGuard
         ? '  // 骨架只编"没有内容"的用法。调用方自带内容时：\n' +
           '  // - 内容已由调用方内联进片段（contentInlined）→ 守卫与形状校验都跳过；\n' +
@@ -213,29 +411,40 @@ export function renderModule(options) {
     };
   }
 
-  const elementNames = ['bindClass', 'bindText', 'cloneFragment', 'pushOff', 'setAttr'];
-  if (emitted.usesComponents) {
-    elementNames.splice(1, 0, 'bindComponent');
-  }
   const componentImport = emitted.usesComponents
     ? `import { components } from ${JSON.stringify(componentsSpecifier)};\n`
     : '';
+  const rowImport = rowSpecifiers
+    .map(
+      (specifier, index) =>
+        `import { createRowFactory as __yoyaRow${index} } from ${JSON.stringify(specifier)};\n`
+    )
+    .join('');
+  const controlImport = controlSpecifiers
+    .map(
+      (specifier, index) =>
+        `import { createRowFactory as __yoyaCtl${index} } from ${JSON.stringify(specifier)};\n`
+    )
+    .join('');
 
   const module =
     mode === 'element'
       ? header +
         '// 元素模式：行就是原生元素，值位置直接写 DOM，活值订阅后就地写。\n' +
-        runtimeImport(elementNames) +
+        runtimeImport(hookImports(['cloneFragment'])) +
         componentImport +
+        rowImport +
+        controlImport +
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
-        `  return function ${fn}(${entry.builderParam}) {\n` +
+        `  return function ${fn}(${entry.builderParams ?? entry.builderParam}) {\n` +
         `    const el = cloneFragment(plan.html, plan.signature);\n` +
         `    const offs = [];\n` +
         `${emitted.lines.join('\n')}${emitted.lines.length > 0 ? '\n' : ''}` +
         '    let disposed = false;\n' +
         '    return {\n' +
         '      el,\n' +
+        '      isMounted: () => el.__yoyaMounted !== false,\n' +
         '      destroy() {\n' +
         '        if (disposed) {\n' +
         '          return;\n' +
@@ -248,12 +457,19 @@ export function renderModule(options) {
         '}\n'
       : header +
         '// 节点模式：静态节点只存在于片段里，活结点按位置接管既有 DOM。\n' +
-        runtimeImport(['adopt', 'appendNodeChild', 'bindChild', 'cloneFragment']) +
+        runtimeImport(hookImports(['cloneFragment'])) +
         coreImport +
+        rowImport +
+        controlImport +
+        (emitted.usesComponents
+          ? `import { components } from ${JSON.stringify(componentsSpecifier)};\n`
+          : '') +
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
-        `  return function ${fn}(${entry.builderParam}) {\n` +
+        `  return function ${fn}(${entry.builderParams ?? entry.builderParam}) {\n` +
         `    const element = cloneFragment(plan.html, plan.signature);\n` +
+        `${emitted.positionLines.map((line) => `    ${line}`).join('\n')}` +
+        `${emitted.positionLines.length > 0 ? '\n' : ''}` +
         `${emitted.lines.join('\n')}${emitted.lines.length > 0 ? '\n' : ''}` +
         `${emitted.slotLines.map((line) => `    ${line}`).join('\n')}` +
         `${emitted.slotLines.length > 0 ? '\n' : ''}` +
@@ -271,13 +487,27 @@ export function renderModule(options) {
   };
 }
 
-/** 递归搭静态样板：动态值留占位，活绑定 / 事件不参与序列化。 */
-function buildFragment(core, entry) {
-  return buildSample(core, entry.factory, entry.ops).toHTML();
+/**
+ * 递归搭静态样板：动态值留**锚点**，活绑定 / 事件不参与序列化。
+ *
+ * 采样时计数器与占位写入点**同源**，序列化后按计数校验哨兵出现次数：不一致就抛错
+ * （`compileSource` 会把它记成 bail）——静态文本里混进哨兵字符这类情况绝不猜。
+ */
+function buildFragment(core, entry, mode = 'element') {
+  const counter = { text: 0 };
+  const html = buildSample(core, entry.factory, entry.ops, mode, counter).toHTML();
+  const found = html.split(TEXT_SENTINEL).length - 1;
+  if (found !== counter.text) {
+    throw new Error(
+      `片段里的文本锚点数量与位置数不一致（哨兵 ${found} / 位置 ${counter.text}）：` +
+        '静态文本里可能混进了哨兵字符，整形状回落'
+    );
+  }
+  return html.split(TEXT_SENTINEL).join(TEXT_ANCHOR);
 }
 
-function buildSample(core, factoryName, ops) {
-  const factory = core?.[factoryName];
+function buildSample(core, factoryName, ops, mode = 'element', counter = null) {
+  const factory = elementFactoryOf(core, factoryName);
   if (typeof factory !== 'function') {
     throw new Error(`入口模块里没有工厂 ${factoryName}`);
   }
@@ -299,15 +529,29 @@ function buildSample(core, factoryName, ops) {
         // 动态样式不写占位：值由运行期写（节点模式的节点快照 / 绑定），片段里留空反而多一次对账
       } else if (op.kind === 'content') {
         // 调用方内容：片段里不留位置，带内容的用法由运行期回落通用路径
-      } else if (op.kind === 'slotText' || op.kind === 'bindText') {
-        element.child(TEXT_PLACEHOLDER);
+      } else if (
+        op.kind === 'slotText' ||
+        op.kind === 'bindText' ||
+        // `child(<变量>)`：元素通道里按"一段文本"留占位；节点通道里是运行期子节点，片段里不留
+        (op.kind === 'childValue' && mode === 'element')
+      ) {
+        element.child(TEXT_SENTINEL);
+        if (counter) {
+          counter.text += 1;
+        }
       } else if (op.kind === 'element') {
-        element.child(buildSample(core, op.factory, op.ops));
+        element.child(buildSample(core, op.factory, op.ops, mode, counter));
       } else if (op.kind === 'component') {
         // 链接进来的组件：它的片段来自注册表里的纯数据 ops，仍由框架工厂序列化产出；
         // 调用点内联的内容把构件 ops 里的内容位置就地换成调用方的内容 ops
         element.child(
-          buildSample(core, op.entryFactory, withInlinedContent(op.entryOps, op.content))
+          buildSample(
+            core,
+            op.entryFactory,
+            withInlinedContent(op.entryOps, op.content),
+            mode,
+            counter
+          )
         );
       }
     }
@@ -315,26 +559,132 @@ function buildSample(core, factoryName, ops) {
 }
 
 /** 元素模式：所有值位置都编成对既有 DOM 的直接写。 */
-function emitElementMode({ entry, addExpression, rootName = 'el' }) {
-  const lines = [];
+function emitElementMode({ entry, addExpression, withBound, controlFrames = [], rootName = 'el' }) {
+  let lines = [];
   let liveCount = 0;
+  /** 内联形参帧的实参临时名：每次内联一个（同名会被帧自身的绑定遮蔽）。 */
+  let frameCounter = 0;
   let usesComponents = false;
+  // 产物实际用到的运行期钩子（唯一的"按 op 收集"入口，产物只 import 这些）
+  const hooks = new Set();
 
   const domPath = (path) => `${rootName}${path.map((index) => `.childNodes[${index}]`).join('')}`;
+  // 位置**一次性预解析**：所有 op 引用的元素在跑任何 op 之前取到变量。
+  // 否则前面的 op（`mountable` 摘节点 / 组件挂载）会让后面的 `childNodes[i]` 指错元素。
+  const nodeVars = new Map();
+  const nodeRef = (path) => {
+    const key = (path ?? []).join(',');
+    if (key === '') {
+      return rootName;
+    }
+    if (!nodeVars.has(key)) {
+      nodeVars.set(key, `n${nodeVars.size}`);
+    }
+    return nodeVars.get(key);
+  };
+  /** 这条写挂在谁身上：`op.owner` 是显式宿主（预留），否则就是当前递归到的宿主。 */
+  const hostRef = (op, ownerPath) => nodeRef(op.owner ?? ownerPath);
 
   const visit = (ops, ownerPath) => {
+    // 片段里已排到的子节点位：锚点的边界就是"它后面的那个片段子节点"（没有就是容器末尾）
+    let fragmentIndex = 0;
+    const fragmentTotal = countChildren(ops);
+    // 这一层有动态类名时：静态类名也改成运行期写（按源码顺序），否则"动态写在静态之前"的
+    // 类名顺序会和通用路径不同（片段里的静态类名总在前面）。先把片段里的类名清掉再按序写回。
+    const runtimeClasses = ops.some((op) => op.kind === 'dynamicClass');
+    if (runtimeClasses) {
+      lines.push(`    ${nodeRef(ownerPath)}.removeAttribute('class');`);
+    }
     for (const op of ops) {
+      if (countsAsFragmentChild(op, 'element')) {
+        fragmentIndex += 1;
+      }
       if (op.kind === 'element') {
+        if (op.frame) {
+          // 内联进来的子组件：调用方实参在外层求值，子组件的 ops 在**形参帧**里求值。
+          //
+          // 实参必须先落到外层的唯一临时变量里：帧里的 `const [props] = …` 会在整个块内遮蔽同名绑定，
+          // 直接写 `const [props] = [props]` 求值到的是**帧自己**（TDZ）——调用方也把参数叫 props 时必炸。
+          op.frame.values.forEach(addExpression);
+          const argsVar = `__yoyaFrameArgs${frameCounter}`;
+          frameCounter += 1;
+          lines.push(`    const ${argsVar} = [${op.frame.values.join(', ')}];`);
+          withBound(op.frame.paramNames, () => {
+            lines.push('    {');
+            lines.push(`      const [${op.frame.paramsSource}] = ${argsVar};`);
+            visit(op.ops, op.path);
+            lines.push('    }');
+          });
+          continue;
+        }
         visit(op.ops, op.path);
+        continue;
+      }
+      if (op.kind === 'logic') {
+        // 逻辑帧：源码原样搬进产物，按源码顺序执行（值位置引用的自由标识符照旧进 scope）
+        op.expressions.forEach(addExpression);
+        lines.push(`    ${op.source}`);
+        continue;
+      }
+      if (op.kind === 'staticClass' && (runtimeClasses || op.owner)) {
+        // 运行期按源码顺序写回静态类名（与动态类名同一份保序去重实现）
+        // 别名写（`body.className('x')`）同样走这里：片段里只有元素**自己**的类名，别名的类名在运行期加。
+        hooks.add('addClassText');
+        lines.push(
+          `    addClassText(${hostRef(op, ownerPath)}, ${JSON.stringify(op.names.join(' '))});`
+        );
+        continue;
+      }
+      if (op.kind === 'control') {
+        // 控制语句：语句原样，里面的结构换成"实例化子单元 + 插到边界之前"
+        const container = nodeRef(ownerPath);
+        const boundary =
+          fragmentIndex < fragmentTotal ? nodeRef([...ownerPath, fragmentIndex]) : 'null';
+        const text = spliceControlSource(op, (edit) => {
+          // 组件调用当结构：运行期按注册表实例化（片段克隆 + 位置写），父片段里不留
+          if (edit.component) {
+            edit.component.args.forEach(addExpression);
+            usesComponents = true;
+            hooks.add('pushOff');
+            hooks.add('instantiateComponent');
+            return (
+              `{\n` +
+              `      const unit = instantiateComponent(components[${JSON.stringify(
+                edit.component.key
+              )}], [${edit.component.args.join(', ')}]);\n` +
+              `      pushOff(offs, unit.destroy);\n` +
+              `      ${container}.insertBefore(unit.el, ${boundary});\n` +
+              `    }`
+            );
+          }
+          const unit = edit.unit;
+          const name = `__yoyaCtl${unit}`;
+          const frameNames = controlFrames[unit] ?? [];
+          // 帧里出现的名字：父产物自己的形参 / 局部量直接用；模块级名字（`computed` 这类）进 scope
+          frameNames.forEach(addExpression);
+          const frame = `{ ${frameNames.join(', ')} }`;
+          return (
+            `{\n` +
+            `      const ${name}Unit = ${name}(${frame})();\n` +
+            `      pushOff(offs, ${name}Unit.destroy);\n` +
+            `      ${container}.insertBefore(${name}Unit.el, ${boundary});\n` +
+            `    }`
+          );
+        });
+        hooks.add('pushOff');
+        lines.push(indentBlock(text, '    '));
+        liveCount += 1;
         continue;
       }
       if (op.kind === 'component') {
         op.args.forEach(addExpression);
         usesComponents = true;
+        hooks.add('pushOff');
+        hooks.add('bindComponent');
         // 调用点内联了内容 → 告诉构件「内容和形状都在调用方片段里」，跳过它的内容守卫与形状校验
         const options = op.content ? ', { contentInlined: true }' : '';
         lines.push(
-          `    pushOff(offs, bindComponent(components[${JSON.stringify(op.key)}], ${domPath(
+          `    pushOff(offs, bindComponent(components[${JSON.stringify(op.key)}], ${nodeRef(
             op.path
           )}, [${op.args.join(', ')}], ${JSON.stringify(op.hash ?? null)}${options}));`
         );
@@ -347,31 +697,85 @@ function emitElementMode({ entry, addExpression, rootName = 'el' }) {
       }
       if (op.kind === 'dynamicAttr') {
         addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('setAttr');
         lines.push(
-          `    pushOff(offs, setAttr(${domPath(ownerPath)}, ${JSON.stringify(op.name)}, ${
+          `    pushOff(offs, setAttr(${hostRef(op, ownerPath)}, ${JSON.stringify(op.name)}, ${
             op.expression
           }));`
         );
         liveCount += 1;
       } else if (op.kind === 'slotText') {
         addExpression(op.expression);
-        lines.push(`    ${domPath(op.path)}.textContent = ${op.expression};`);
+        // 片段里这个位置是注释锚点：先换成真文本节点再写
+        hooks.add('textAt');
+        lines.push(`    textAt(${nodeRef(op.path)}).textContent = ${op.expression};`);
         liveCount += 1;
       } else if (op.kind === 'bindText') {
         addExpression(op.expression);
-        lines.push(`    pushOff(offs, bindText(${domPath(op.path)}, ${op.expression}));`);
+        hooks.add('pushOff');
+        hooks.add('bindText');
+        lines.push(`    pushOff(offs, bindText(${nodeRef(op.path)}, ${op.expression}));`);
+        liveCount += 1;
+      } else if (op.kind === 'childValue') {
+        // 运行期子节点（元素通道）：没有节点对象，只能按"位置 = 一段文本"落地——
+        // 字符串 / 数字 / 句柄 / 零参 reader 写进占位，数组摊平成多段文本；
+        // 收到节点 / 组件这类要进视图树的值时响亮报错（要节点语义就把这个单元编节点通道）。
+        addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('bindChildText');
+        lines.push(`    pushOff(offs, bindChildText(${nodeRef(op.path)}, ${op.expression}));`);
         liveCount += 1;
       } else if (op.kind === 'liveClass') {
         addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('bindClass');
         lines.push(
-          `    pushOff(offs, bindClass(${domPath(ownerPath)}, ${JSON.stringify(op.name)}, ${
+          `    pushOff(offs, bindClass(${hostRef(op, ownerPath)}, ${JSON.stringify(op.name)}, ${
             op.expression
           }));`
         );
         liveCount += 1;
+      } else if (op.kind === 'dynamicClass') {
+        // 动态类名：元素通道没有节点对象，落到 classList（与核心的保序去重同口径）
+        addExpression(op.expression);
+        hooks.add('addClassText');
+        lines.push(`    addClassText(${hostRef(op, ownerPath)}, ${op.expression});`);
+        liveCount += 1;
+      } else if (op.kind === 'dynamicArg') {
+        // 动态实参：元素通道没有节点对象，按"位置 = 一段文本"落地（句柄订阅 / 普通值写一次；
+        // 收到节点或对象明确报错——与 `bindText` 同一条规矩）。节点通道走核心的参数分派。
+        addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('applyDynamicChild');
+        lines.push(
+          `    pushOff(offs, applyDynamicChild(${hostRef(op, ownerPath)}, ${op.expression}));`
+        );
+        liveCount += 1;
       } else if (op.kind === 'liveEvent') {
         op.args.forEach(addExpression);
-        lines.push(`    ${domPath(ownerPath)}.addEventListener(${op.args.join(', ')});`);
+        lines.push(`    ${hostRef(op, ownerPath)}.addEventListener(${op.args.join(', ')});`);
+        liveCount += 1;
+      } else if (op.kind === 'liveMountable') {
+        addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('mountableAt');
+        // 目标节点就是这条 op 的宿主（与 toggleClass / attr 同一口径）
+        lines.push(`    pushOff(offs, mountableAt(${hostRef(op, ownerPath)}, ${op.expression}));`);
+        liveCount += 1;
+      } else if (op.kind === 'keyedRows') {
+        // 行工厂是**子单元**（`__yoyaRow<n>`：与普通行单元同一套产物），列表对账交给运行期钩子
+        addExpression(op.source);
+        if (op.keyOf !== null) {
+          addExpression(op.keyOf);
+        }
+        hooks.add('pushOff');
+        hooks.add('keyedRows');
+        lines.push(
+          `    pushOff(offs, keyedRows(${hostRef(op, ownerPath)}, ${op.keyOf ?? 'null'}, ${
+            op.source
+          }, __yoyaRow${op.rowIndex}(scope)));`
+        );
         liveCount += 1;
       } else if (!FRAGMENT_ONLY.has(op.kind) && !CALLER_CONTENT.has(op.kind)) {
         // 认不出的 op 绝不能静默丢掉（静默少一个值，比不编危险得多）
@@ -382,12 +786,18 @@ function emitElementMode({ entry, addExpression, rootName = 'el' }) {
   };
 
   visit(entry.ops, entry.path ?? []);
+  // 位置表放在所有 op 之前（顺序：片段 → 位置 → op）
+  const declarationLines = [...nodeVars].map(
+    ([key, name]) => `    const ${name} = ${domPath(key.split(',').map(Number))};`
+  );
+  lines.unshift(...declarationLines);
   return {
     lines,
     slotLines: [],
     liveNodes: liveCount,
     slots: 0,
     usesComponents,
+    hooks,
     childCount: countChildren(entry.ops)
   };
 }
@@ -409,16 +819,89 @@ function hasOpKind(ops, kind) {
   return ops.some((op) => op.kind === kind || (op.kind === 'element' && hasOpKind(op.ops, kind)));
 }
 
-/** 是否含链接进来的组件（递归）。 */
-const hasComponentOp = (ops) => hasOpKind(ops, 'component');
+/** 这个 op 在片段里占一个子节点位（位置表 / 锚点边界都要按同一份口径数）。 */
+const countsAsFragmentChild = (op, mode = 'element') =>
+  op.kind === 'element' ||
+  op.kind === 'staticText' ||
+  op.kind === 'slotText' ||
+  op.kind === 'bindText' ||
+  // `child(<变量>)`：元素通道里是"一段文本"（片段里有占位），节点通道里是运行期子节点（不占位置）
+  (op.kind === 'childValue' && mode === 'element') ||
+  op.kind === 'component';
+
+/**
+ * 控制语句（`if` / `for…of`）：源码原样搬进产物，里面的结构语句按 `edits` 换成调用方给的代码。
+ * 位置写与逻辑帧因此天然按源码顺序交织——这正是票 04 要的那条语义。
+ */
+function spliceControlSource(op, replace) {
+  const edits = [...(op.edits ?? [])];
+  // 表达式体回调：先把回调体内部的替换做掉，再把它整体包成块（`(item) => <结构>` → 块体）
+  if (op.bodyWrap) {
+    const { start, end } = op.bodyWrap;
+    const bodyText = op.source.slice(start, end);
+    const inner = applyControlEdits(bodyText, edits, start, replace);
+    return `${op.source.slice(0, start)}{ ${inner} }${op.source.slice(end)}`;
+  }
+  return applyControlEdits(op.source, edits, 0, replace);
+}
+
+/** 把 `edits`（偏移相对语句起点）应用到 `text` 上；`base` = text 在语句里的起点。 */
+function applyControlEdits(text, edits, base, replace) {
+  const ordered = [...edits].sort((first, second) => first.start - second.start);
+  let cursor = 0;
+  let out = '';
+  ordered.forEach((edit) => {
+    out += text.slice(cursor, edit.start - base) + replace(edit);
+    cursor = edit.end - base;
+  });
+  return out + text.slice(cursor);
+}
 
 /** 节点模式：只给「有活内容」的节点建包装对象，其余静态节点只存在于片段里。 */
-function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
-  const lines = [];
+function emitNodeMode({
+  entry,
+  thin,
+  addExpression,
+  addCoreName,
+  withBound,
+  controlFrames = [],
+  nodeAlways = false,
+  core
+}) {
+  let lines = [];
   const slotLines = [];
   let liveCounter = 0;
+  /** 内联形参帧的实参临时名：每次内联一个，避免同名（同名会被帧自身的绑定遮蔽）。 */
+  let frameCounter = 0;
+  let usesComponents = false;
+  // 产物实际用到的节点接线钩子（按实际发射收集）
+  const hooks = new Set();
+  /** 把一段发射导向一个临时数组（下层节点的构建要搬进本节点的 setup 闭包时用）。 */
+  const withLines = (emit) => {
+    const outer = lines;
+    lines = [];
+    try {
+      emit();
+      return lines;
+    } finally {
+      lines = outer;
+    }
+  };
 
-  const pathExprOf = (path) => `element${path.map((index) => `.childNodes[${index}]`).join('')}`;
+  // 位置**一次性预解析**（与 element 通道同一条纪律）：所有 op 引用到的元素 / 文本节点在跑任何
+  // op 之前取到变量。否则前面的 op（挂载条件摘节点 / 组件挂载）会让后面的 `childNodes[i]` 指错元素，
+  // 甚至指到 undefined（`adopt(n, undefined)` → 凭空建一个空元素）。
+  const positions = new Map();
+  const pathExprOf = (path) => {
+    const key = (path ?? []).join(',');
+    if (key === '') {
+      return 'element';
+    }
+    if (!positions.has(key)) {
+      positions.set(key, `p${positions.size}`);
+    }
+    return positions.get(key);
+  };
 
   /**
    * 要不要为这个节点建包装对象。
@@ -426,12 +909,40 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
    * `children()` / `destroy()` / 区域语义一致；`thin` 只建直接带活内容的节点，
    * 活结点挂到最近的活祖先下（省包装对象，但节点树比 DOM 浅）。
    */
+  /**
+   * 这个节点的**直接子元素**里有没有挂载条件（`mountable` → `node.mountable`）。
+   * 挂载条件为假时元素要离场、转真时要回原位，而"原位"要靠视图树里的后续兄弟当锚点
+   * （核心的 `resolveInsertAnchor` 只看 `_children`）：所以带条件的子节点的父节点必须留在
+   * 视图树里（`thin` 下也要），紧跟其后的兄弟也要物化。
+   */
+  const hostsMount = (ops) => ops.some((op) => op.kind === 'liveMountable');
+  /** 逻辑帧（局部声明提升）只在本节点的 setup 闭包里有效 → 这个节点必须物化。 */
+  const hostsLogic = (ops) => ops.some((op) => op.kind === 'logic');
+  /** 控制流里的结构（锚点）也要在节点的 setup 闭包里执行 → 这个节点必须物化。 */
+  const hostsControl = (ops) => ops.some((op) => op.kind === 'control');
+  /** 链接组件（跨模块）的实例化写进宿主节点的 setup 闭包 → 这个节点必须物化。 */
+  const hostsComponent = (ops) => ops.some((op) => op.kind === 'component');
+
   const isLiveNode = (ops) => {
-    if (ops.some((op) => DIRECT_LIVE.includes(op.kind))) {
+    // 逻辑帧 / 锚点也要承载闭包（局部声明的可见范围、锚点的插入时机都在 setup 闭包里）→ 必须物化
+    if (
+      ops.some((op) => DIRECT_LIVE.includes(op.kind)) ||
+      hostsLogic(ops) ||
+      hostsControl(ops) ||
+      hostsComponent(ops)
+    ) {
       return true;
     }
+    // `thin` 只省「纯静态祖先」，不省挂载条件的父链：父链不在视图树里，回场就没有锚点。
     if (thin) {
-      return false;
+      return ops.some(
+        (op) =>
+          op.kind === 'element' &&
+          (hostsMount(op.ops) ||
+            hostsLogic(op.ops) ||
+            hostsControl(op.ops) ||
+            hostsComponent(op.ops))
+      );
     }
     return ops.some((op) => op.kind === 'element' && isLiveNode(op.ops));
   };
@@ -445,7 +956,8 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
     for (const child of op.ops) {
       if (child.kind === 'slotText') {
         addExpression(child.expression);
-        slotLines.push(`${pathExprOf(child.path)}.textContent = ${child.expression};`);
+        hooks.add('textAt');
+        slotLines.push(`textAt(${pathExprOf(child.path)}).textContent = ${child.expression};`);
       } else if (child.kind === 'bindText') {
         if (skipLive) {
           continue;
@@ -463,6 +975,16 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
       } else if (DIRECT_LIVE.includes(child.kind) && !skipLive) {
         // 其余活内容（动态属性 / 类 / 事件 …）同样需要活祖先承载
         throw new Error(`静态节点下挂着 ${child.kind}（需要活祖先承载绑定）`);
+      } else if (child.kind === 'logic') {
+        // 局部声明要有承载它的闭包（`hostsLogic` 已保证这种节点会物化）——走到这里就是漏了
+        throw new Error('静态节点下挂着逻辑帧（局部声明需要活祖先承载）');
+      } else if (child.kind === 'control') {
+        throw new Error('静态节点下挂着控制流里的结构（需要活祖先承载）');
+      } else if (child.kind === 'component') {
+        // 链接组件要在宿主节点的闭包里实例化——静态节点承载不了（静默丢掉 = 不产半成品）
+        throw new Error('静态节点下挂着链接组件（需要活祖先承载）');
+      } else if (child.kind === 'childValue') {
+        throw new Error('静态节点下挂着运行期子节点（需要活祖先承载）');
       }
     }
   };
@@ -484,20 +1006,67 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
   };
 
   const emitNode = (op, depth, ownerVar, forceLive = false) => {
+    // 内联进来的子组件：形参帧挂在**节点 setup 闭包**里，整个子树的写都在帧的作用域内求值。
+    if (op.frame) {
+      return withBound(op.frame.paramNames, () => emitNodeBody(op, depth, ownerVar, forceLive));
+    }
+    return emitNodeBody(op, depth, ownerVar, forceLive);
+  };
+
+  const emitNodeBody = (op, depth, ownerVar, forceLive = false) => {
     // `forceLive`：行根即使自己不带活内容，只要有活后代也得建包装对象（工厂要返回节点，
     // 活结点也要有活祖先可挂）。祖先节点仍按 thin 口径保持静态。
-    const live = forceLive || isLiveNode(op.ops);
+    // 形参帧同样要求包装对象：帧要有个闭包承载（`thin` 下纯静态的帧节点也要建）。
+    const live =
+      forceLive ||
+      Boolean(op.frame) ||
+      hostsLogic(op.ops) ||
+      hostsControl(op.ops) ||
+      isLiveNode(op.ops);
     if (!live) {
       collectSlotWrites(op);
       return;
     }
 
     const inner = [];
-    const textPaths = [];
+    // 控制流里的结构（锚点）：元素已经在片段里由核心的渲染负责追加，位置要等 adopt 之后按边界摆回来
+    const placeLines = [];
+    let placeArray = null;
+    let fragmentIndex = 0;
+    const fragmentTotal = countChildren(op.ops);
+    /**
+     * 接管之后按边界摆位的数组：控制流里的结构（锚点）与运行期子节点共用一条——
+     * 两者都在 setup 闭包里登记 `[节点, 它后面的那个片段兄弟]`，`adopt()` 之后统一插回去。
+     */
+    const ensurePlaces = (owner) => {
+      if (placeArray === null) {
+        placeArray = `__yoyaPlaces${liveCounter + 1}`;
+        lines.push(`${indentOf(depth)}const ${placeArray} = [];`);
+        placeLines.push(
+          `${indentOf(depth)}${placeArray}.forEach(([unit, before]) => mountNodeAt(unit, ${pathExprOf(
+            owner.path
+          )}, before));`
+        );
+        hooks.add('mountNodeAt');
+      }
+      return placeArray;
+    };
+    if (op.frame) {
+      // 实参在外层（本闭包可见的外层作用域）求值，子组件的 ops 在帧里。
+      // 同元素通道：实参先落到外层临时变量，避免帧绑定遮蔽自己的初始化器（TDZ）。
+      op.frame.values.forEach(addExpression);
+      const argsVar = `__yoyaFrameArgs${frameCounter}`;
+      frameCounter += 1;
+      lines.push(`${indentOf(depth)}const ${argsVar} = [${op.frame.values.join(', ')}];`);
+      inner.push(`${indentOf(depth + 1)}const [${op.frame.paramsSource}] = ${argsVar};`);
+    }
     // 物化节点的 setup 必须把它自己的**静态快照**也登记上：接管时引擎会拿节点快照
     // 与既有 DOM 对账，快照空着就会把片段里的静态类名 / 属性抹掉（票 39 实测踩到）。
     // 这些调用不产生 DOM 写：值本来就一致，先比后写。
     for (const child of op.ops) {
+      if (countsAsFragmentChild(child, 'node')) {
+        fragmentIndex += 1;
+      }
       if (child.kind === 'staticAttr') {
         // 快照与片段同一口径：原样写（`null` / `false` 移除、`true` 写成同名）
         inner.push(
@@ -532,18 +1101,122 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
             child.expression
           });`
         );
+      } else if (child.kind === 'dynamicClass') {
+        // 动态类名：节点通道直接复用核心的 `className`（保序去重，与通用路径同一份实现）
+        addExpression(child.expression);
+        inner.push(`${indentOf(depth + 1)}node.className(${child.expression});`);
+      } else if (child.kind === 'dynamicArg') {
+        // 动态实参：复用核心的参数分派（字符串 / 句柄 / 数组 / options / 回调）
+        addExpression(child.expression);
+        hooks.add('applyDynamicArg');
+        inner.push(`${indentOf(depth + 1)}applyDynamicArg(node, ${child.expression});`);
       } else if (child.kind === 'liveEvent') {
         child.args.forEach(addExpression);
         inner.push(`${indentOf(depth + 1)}node.on(${child.args.join(', ')});`);
+      } else if (child.kind === 'liveMountable') {
+        // 节点通道复用节点自己的 `mountable`：包装对象在**入树之前**就地声明条件，
+        // 由父节点在收养时建绑定——与通用路径同一条时序（元素通道走 `mountableAt`）。
+        addExpression(child.expression);
+        inner.push(`${indentOf(depth + 1)}node.mountable(${child.expression});`);
+      } else if (child.kind === 'keyedRows') {
+        // 节点通道：复用节点自己的 keyed，行工厂是 node 模式的子单元（返回 ViewNode 的行）。
+        // 两参形式要照原样发两参调用——核心自己按"keySet 用容器 keyOf / 信号源按行身份"补 keyFn。
+        addExpression(child.source);
+        if (child.keyOf !== null) {
+          addExpression(child.keyOf);
+        }
+        inner.push(
+          child.keyOf === null
+            ? `${indentOf(depth + 1)}node.keyed(${child.source}, __yoyaRow${
+                child.rowIndex
+              }(scope));`
+            : `${indentOf(depth + 1)}node.keyed(${child.source}, ${child.keyOf}, __yoyaRow${
+                child.rowIndex
+              }(scope));`
+        );
       } else if (child.kind === 'bindText') {
         addExpression(child.expression);
+        hooks.add('bindChild');
         inner.push(
           `${indentOf(depth + 1)}bindChild(node, ${pathExprOf(child.path)}, ${child.expression});`
         );
-        textPaths.push(child.path);
+      } else if (child.kind === 'childValue') {
+        // 运行期子节点（节点通道）：值分派**不复制第二套**，直接交给核心 `child()`（字符串 /
+        // 数字 / 句柄 / 零参 reader / 节点 / 组件对象 / 数组 / 认不出的值报错都是它自己的口径）。
+        // 位置要等接管（adopt → renderDom）之后按"片段里它后面的那个兄弟"摆回来：静态兄弟不在
+        // 视图树里，核心自己的插入锚点看不到它们；子节点句柄也不能用 `child()` 的返回值
+        // （它返回父节点——拿它当子节点就会把本片段元素当子节点，DOM 出现嵌套 / 重复片段）。
+        const places = ensurePlaces(child);
+        const boundary =
+          fragmentIndex < fragmentTotal ? pathExprOf([...op.path, fragmentIndex]) : 'null';
+        addExpression(child.expression);
+        hooks.add('mountRuntimeChildren');
+        inner.push(
+          `${indentOf(depth + 1)}mountRuntimeChildren(node, ${child.expression}, ${places}, ${boundary});`
+        );
+      } else if (child.kind === 'component') {
+        // 跨模块组件：调用点只做链接（片段已嵌进本片段，运行期按注册表实例化 + 哈希回落）。
+        // 节点通道里退订函数挂到节点自己的清理名单上——节点销毁即释放（与核心的 `_cleanup` 同源）。
+        child.args.forEach(addExpression);
+        usesComponents = true;
+        hooks.add('bindComponent');
+        hooks.add('bindNodeCleanup');
+        const options = child.content ? ', { contentInlined: true }' : '';
+        inner.push(
+          `${indentOf(depth + 1)}bindNodeCleanup(node, bindComponent(components[${JSON.stringify(
+            child.key
+          )}], ${pathExprOf(child.path)}, [${child.args.join(', ')}], ${JSON.stringify(
+            child.hash ?? null
+          )}${options}));`
+        );
+        if (child.content) {
+          // 形态 C 的内容位置在节点通道里没有对应的写法（内容是调用方结构，已在片段里）
+          throw new Error('链接组件的调用方内容在节点通道里本轮不编');
+        }
+      } else if (child.kind === 'logic') {
+        // 逻辑帧：源码原样搬进节点 setup 闭包（局部声明的可见范围就是它所在的 builder）
+        child.expressions.forEach(addExpression);
+        inner.push(`${indentOf(depth + 1)}${child.source}`);
+      } else if (child.kind === 'control') {
+        // 控制流里的结构：进节点树（销毁 / `toHTML()` 都对），位置在 adopt 之后按边界摆回来
+        ensurePlaces(child);
+        const boundary =
+          fragmentIndex < fragmentTotal ? pathExprOf([...op.path, fragmentIndex]) : 'null';
+        const text = spliceControlSource(child, (edit) => {
+          // 组件调用当结构（节点通道）：注册表条目的 `render` 就是原组件 → 拿到 ViewNode 收养
+          if (edit.component) {
+            edit.component.args.forEach(addExpression);
+            usesComponents = true;
+            hooks.add('instantiateComponentNode');
+            return (
+              `{\n` +
+              `        const unit = instantiateComponentNode(components[${JSON.stringify(
+                edit.component.key
+              )}], [${edit.component.args.join(', ')}]);\n` +
+              `        node.child(unit);\n` +
+              `        ${placeArray}.push([unit, ${boundary}]);\n` +
+              `      }`
+            );
+          }
+          const unit = edit.unit;
+          const name = `__yoyaCtl${unit}`;
+          const frameNames = controlFrames[unit] ?? [];
+          frameNames.forEach(addExpression);
+          const frame = `{ ${frameNames.join(', ')} }`;
+          return (
+            `{\n` +
+            `        const ${name}Unit = ${name}(${frame})();\n` +
+            `        node.child(${name}Unit);\n` +
+            `        ${placeArray}.push([${name}Unit, ${boundary}]);\n` +
+            `      }`
+          );
+        });
+        hooks.add('mountNodeAt');
+        inner.push(indentBlock(text, indentOf(depth + 1)));
       } else if (child.kind === 'slotText') {
         addExpression(child.expression);
-        slotLines.push(`${pathExprOf(child.path)}.textContent = ${child.expression};`);
+        hooks.add('textAt');
+        slotLines.push(`textAt(${pathExprOf(child.path)}).textContent = ${child.expression};`);
       } else if (
         child.kind !== 'element' &&
         !FRAGMENT_ONLY.has(child.kind) &&
@@ -556,35 +1229,93 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
 
     const varName = `n${++liveCounter}`;
     // 物化节点要用元素工厂建包装对象：工厂由产物自己 import（票 13 / R4），不进业务 scope。
-    addCoreName(op.factory);
+    // SVG 子标签只在 `svgs` 表里：产物 import `svgs` 命名空间，写成 `svgs.path(...)`。
+    const factoryExpr = factoryExpressionOf(core, op.factory);
+    if (factoryExpr === null) {
+      throw new Error(`入口模块里没有工厂 ${op.factory}`);
+    }
+    addCoreName(factoryExpr.includes('.') ? 'svgs' : op.factory);
+    const openIndex = lines.length;
     lines.push(
-      `${indentOf(depth)}const ${varName} = ${op.factory}((node) => {`,
+      `${indentOf(depth)}const ${varName} = ${factoryExpr}((node) => {`,
       ...inner,
       `${indentOf(depth)}});`
     );
-    lines.push(
-      `${indentOf(depth)}adopt(${varName}, ${pathExprOf(op.path)}${
-        textPaths.length > 0 ? `, [${textPaths.map((path) => pathExprOf(path)).join(', ')}]` : ''
-      });`
-    );
+    const closeIndex = openIndex + inner.length + 1;
+    // 片段里的活属性占位要跟着节点快照对账：值为 null / undefined / false 时快照里没有这一项，
+    // 占位必须删掉（通用路径的 DOM 也没有这个属性）——所以把活属性名一并交给 `adopt`。
+    const liveAttrNames = op.ops
+      .filter((child) => child.kind === 'dynamicAttr')
+      .map((child) => child.name);
+    const adoptArgs = [varName, pathExprOf(op.path)];
+    if (liveAttrNames.length > 0) {
+      adoptArgs.push(`[${liveAttrNames.map((name) => JSON.stringify(name)).join(', ')}]`);
+    }
+    lines.push(`${indentOf(depth)}adopt(${adoptArgs.join(', ')});`);
+    hooks.add('adopt');
+    placeLines.forEach((line) => lines.push(line));
     if (ownerVar) {
       lines.push(`${indentOf(depth)}appendNodeChild(${ownerVar}, ${varName});`);
+      hooks.add('appendNodeChild');
     }
 
-    for (const child of liveDescendants(op.ops)) {
-      emitNode(child, depth, varName);
+    const emitted = new Set(liveDescendants(op.ops));
+    // 本节点声明的逻辑帧只在**它的 setup 闭包**里可见。下层节点的闭包若是平级的就看不见它们，
+    // 所以本节点一有逻辑帧 / 锚点，就把下层节点的构建**搬进本节点的 setup 闭包**（闭包套闭包），
+    // 局部量的可见性与源码一致；没逻辑帧时保持原样（产物更扁、更小）。
+    const ownFrames = op.ops
+      .filter((child) => child.kind === 'logic')
+      .flatMap((child) => child.declared ?? []);
+    const nestDescendants = ownFrames.length > 0 || hostsControl(op.ops) || Boolean(op.frame);
+    const emitDescendants = () => {
+      const childDepth = nestDescendants ? depth + 1 : depth;
+      const childOwner = nestDescendants ? 'node' : varName;
+      for (const child of emitted) {
+        emitNode(child, childDepth, childOwner);
+      }
+      // 挂载条件的锚点：带条件的子元素**后面的第一个元素兄弟**进视图树——它离场 / 回场时
+      // 核心按 `_children` 找插入锚点，静态兄弟不物化就会「回场追加到末尾」。
+      emitAnchorOps(op.ops).forEach((anchor) => {
+        if (emitted.has(anchor)) {
+          return;
+        }
+        emitted.add(anchor);
+        emitNode(anchor, childDepth, childOwner, true);
+      });
+    };
+    if (nestDescendants) {
+      // 下层节点的构建行搬进本闭包：重新缩进一层（闭合括号在 `const nX = …` 那几行里）
+      const nestedLines = withLines(emitDescendants);
+      lines.splice(closeIndex, 0, ...nestedLines.map((line) => `  ${line}`));
+    } else {
+      emitDescendants();
     }
     for (const child of op.ops) {
-      if (child.kind === 'element' && !isLiveNode(child.ops)) {
+      if (child.kind === 'element' && !emitted.has(child)) {
         // 活结点已经由上面的 liveDescendants 登记过：这里只补它所在静态子树的静态写。
         collectSlotWrites(child, liveDescendants(child.ops).length > 0);
       }
     }
   };
 
+  /** 带挂载条件的直接子元素 → 紧随其后的第一个元素兄弟（锚点）。 */
+  const emitAnchorOps = (ops) => {
+    const anchors = new Set();
+    ops.forEach((child, index) => {
+      if (child.kind !== 'element' || !hostsMount(child.ops)) {
+        return;
+      }
+      const next = ops.slice(index + 1).find((sibling) => sibling.kind === 'element');
+      if (next) {
+        anchors.add(next);
+      }
+    });
+    return anchors;
+  };
+
   // 行根只要有活内容（自己的或藏在下层静态节点里的），就必须建包装对象：工厂要返回节点，
   // 活结点也得有个活祖先挂上去。纯静态行才直接返回片段元素。
-  const rootLive = isLiveNode(entry.ops) || liveDescendants(entry.ops).length > 0;
+  const rootLive = nodeAlways || isLiveNode(entry.ops) || liveDescendants(entry.ops).length > 0;
   if (rootLive) {
     emitNode(entry, 2, null, true);
   } else {
@@ -592,5 +1323,20 @@ function emitNodeMode({ entry, thin, addExpression, addCoreName }) {
   }
   const rootVar = rootLive ? 'n1' : null;
 
-  return { lines, slotLines, liveNodes: liveCounter, slots: slotLines.length, rootVar };
+  // 位置声明放在所有节点构建之前（顺序：片段 → 位置 → 节点 / 写操作）
+  const positionLines = [...positions].map(([key, name]) => {
+    const path = key.split(',').map(Number);
+    return `const ${name} = element${path.map((index) => `.childNodes[${index}]`).join('')};`;
+  });
+
+  return {
+    lines,
+    slotLines,
+    positionLines,
+    liveNodes: liveCounter,
+    slots: slotLines.length,
+    rootVar,
+    usesComponents,
+    hooks
+  };
 }

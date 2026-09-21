@@ -156,6 +156,41 @@ async function verifyCompilerEntry() {
   assert(help.stdout.includes('--report'), 'yoya.compiler.js --help 没有列出 --report');
 }
 
+/**
+ * 随包发布的库内组件注册表（票 11）：**独立入口 + 单向依赖**。
+ *
+ * 隔离口径：core / UI / 主入口都不许 import 注册表（不跑编译器、不链接库内组件的人零成本）；
+ * 注册表自己只 import 包内入口（`/core` `/ui` `/<分类>` `/compiler-runtime`），既不带构建期编译器、
+ * 也不引 `src` 路径；插件默认加载它，读不到就照旧回落通用路径。
+ */
+async function verifyCompiledRegistry() {
+  const { loadPackagedRegistry } = await import('../src/compiler/plugin.js');
+  const registrySource = readFileSync(join(dist, 'yoya.compiled-registry.js'), 'utf8');
+
+  for (const entry of ['yoya.core.js', 'yoya.ui.js', 'yoya.ui-router.full.js']) {
+    const code = readFileSync(join(dist, entry), 'utf8');
+    assert(!code.includes('compiled-registry'), `${entry} 引用了库内组件注册表（应当单向隔离）`);
+  }
+  assert(
+    !registrySource.includes('yoya-ui/compiler"'),
+    '注册表入口引用了构建期编译器（应当只 import 运行期入口）'
+  );
+  [...registrySource.matchAll(/from\s+"([^"]+)"/g)].forEach(([, specifier]) => {
+    assert(
+      specifier.startsWith('@yoyaflow/yoya-ui/'),
+      `注册表 import 了包外路径：${specifier}（应当只走包内入口）`
+    );
+  });
+
+  const loaded = await loadPackagedRegistry();
+  assert(loaded !== null, '插件默认加载拿不到随包注册表（入口模块 + 同目录 JSON）');
+  assert(Object.keys(loaded.components.components).length > 0, '随包注册表里没有任何可链接的组件');
+  assert(
+    (await loadPackagedRegistry({ coreSpecifier: '/custom/core.js' })) === null,
+    '调用方换了 core 入口仍然用了随包注册表（会变成两份核心实例）'
+  );
+}
+
 // ---- 2. 分类子入口 tree-shaking 隔离 ---------------------------------------
 const CATEGORY_SCENARIOS = {
   actions: {
@@ -231,7 +266,13 @@ const BUDGET_ARTIFACTS = {
   'yoya.api.min.js': 4 * 1024,
   'yoya.ui.min.js': 20 * 1024,
   'yoya.router.min.js': 40 * 1024,
-  'yoya.compiler-runtime.min.js': 6 * 1024,
+  // 编译子入口按"导出面 = 发射器能写出的钩子全集"来定：任一钩子漏掉，用户的构建就是一条
+  // import 链接错误（见 src/compiler/runtime-exports.test.js）。它不进主入口下载路径，
+  // 真正的用户成本看 BUDGET_DOWNLOADS 里的 min+gzip。
+  'yoya.compiler-runtime.min.js': 8 * 1024,
+  // 库内组件注册表：按形状扫出来的可编子集（图标 + vCard 家族 + 表格部件）打进一个入口。
+  // 它不在任何默认下载路径上，只有**链接了库内组件**的构建才会引到它。
+  'yoya.compiled-registry.min.js': 40 * 1024,
   'devtools.min.js': 6 * 1024,
   // 节点引擎与 HTML/SVG 工厂的公共 chunk（按当前分块口径）
   'node.min.js': 96 * 1024,
@@ -337,6 +378,9 @@ await verifyCompilerEntry();
 console.log(
   '编译入口隔离通过：浏览器入口不含编译器，yoya.compiler.js 外置 @babel/parser 且 CLI 可跑。'
 );
+
+await verifyCompiledRegistry();
+console.log('库内组件注册表通过：独立入口、只依赖包内运行期入口，插件能默认加载它。');
 
 for (const [category, scenario] of Object.entries(CATEGORY_SCENARIOS)) {
   const code = await bundleConsumer(scenario.entry, scenario.imports, false);

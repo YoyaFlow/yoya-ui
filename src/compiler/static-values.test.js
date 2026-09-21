@@ -62,8 +62,9 @@ describe('build-time static values', () => {
 
     expect(result.bails).toEqual([]);
     expect(result.compiled).toBe(true);
-    // 折出来的值 = 运行期同一份实现；占位符（空属性值 / '0'）也对得上，所以能逐字节比
-    expect(result.plan.html).toBe(ThemeTag({ tone: '', label: 0 }).toHTML());
+    // 折出来的值 = 运行期同一份实现（空属性值也对得上）；只有文本位置换成**注释锚点**（票 13）
+    const genericHtml = ThemeTag({ tone: '', label: 0 }).toHTML();
+    expect(result.plan.html).toBe(genericHtml.replace('>0<', '><!----><'));
     // 库内私有标识符（TAG_CLASS / themeValue）折没了，scope 里不会夹带模块私有名
     expect(result.scope).toEqual([]);
   });
@@ -79,7 +80,6 @@ describe('build-time static values', () => {
   });
 
   // 形参名遮蔽导入的助手 → 不折（只认从已知模块导入、且未被遮蔽的名字）。
-  // 票 12 之后形参只能是单个标识符，所以这里用**唯一那个形参**去遮蔽。
   it('does not fold when the parameter shadows the imported helper', () => {
     const result = compileSource({
       source:

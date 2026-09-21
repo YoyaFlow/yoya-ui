@@ -163,9 +163,9 @@ export declare function normalizeModulePath(path: string): string;
 
 /**
  * One component wired at build time: the module that holds it and the component
- * declaration name. `wireComponentModule` locates it (a single declaration, a single
- * identifier parameter) and rewrites the module in place, so the source keeps its
- * original shape and the artifact stays a virtual module.
+ * declaration name. `wireComponentModule` locates it (a single declaration; any parameter
+ * shape — destructuring, defaults, rest, extra parameters) and rewrites the module in place,
+ * so the source keeps its original shape and the artifact stays a virtual module.
  */
 export interface ComponentUnit {
   /** Absolute or cwd-relative module path. */

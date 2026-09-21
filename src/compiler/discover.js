@@ -66,13 +66,30 @@ export function topLevelFunctions(ast) {
   return found;
 }
 
-/** 函数体是不是「单个 return 视图」：返回视图表达式本身或 null。 */
+/**
+ * 函数体是不是「return 视图」：返回视图表达式本身或 null。
+ *
+ * 允许 return 之前有**声明 / 表达式语句**——组件体里先把组件实例存进变量（
+ * `const liveDemo = demo.component()`）再在 render 里当子节点用，是文档页那批的主流形状；
+ * 视图本身仍要求是**单一条 return 的工厂调用**（多语句 / 分支的结构留给通用路径）。
+ * 控制流 / 嵌套函数声明一概不认：它们能让"那条 return 是不是唯一出口"变成运行期问题。
+ */
 function returnedView(fn) {
   if (fn.body.type !== 'BlockStatement') {
     return fn.body;
   }
-  const returns = fn.body.body.filter((statement) => statement.type === 'ReturnStatement');
-  return returns.length === 1 && fn.body.body.length === 1 ? returns[0].argument : null;
+  const statements = fn.body.body;
+  const last = statements[statements.length - 1];
+  if (last?.type !== 'ReturnStatement') {
+    return null;
+  }
+  const plainLeading = statements
+    .slice(0, -1)
+    .every(
+      (statement) =>
+        statement.type === 'VariableDeclaration' || statement.type === 'ExpressionStatement'
+    );
+  return plainLeading ? last.argument : null;
 }
 
 /**
@@ -185,35 +202,79 @@ function coreNodeNames(ast, bindings, whitelist) {
   return names;
 }
 
-/** 该组件在模块里被列表使用（交给了核心 `keyed`）→ 决定要不要走 element 通道。 */
-function usedInKeyedList(ast, name, bindings, nodeNames) {
-  const isRowFactoryArg = (call) => {
-    const candidates = [call.arguments[1], call.arguments[2]];
-    return candidates.some((argument) => argument?.type === 'Identifier' && argument.name === name);
+/**
+ * 模块里每个顶层组件的**用法**：`keyed(rows, Card)` 的行工厂槽位，以及其它位置的引用。
+ *
+ * 通道靠它推断：**只有"进了 keyed 列表、别处没引用"的组件才走 element**。element 行的产物是
+ * `{ el, destroy }`——同一个组件只要还被当值用（`const chip = Card(…)` / `child(Card(…))` /
+ * 传给别的函数），element 产物就不再是 `ViewNode`，通用路径会抛错而编译路径必须同口径。
+ * 数引用时**只排除声明名本身、对象键与成员属性名**；多余计数只会让它更保守地走 node，不会漏。
+ */
+function componentUsages(ast, bindings, nodeNames, names) {
+  const counts = new Map(names.map((name) => [name, 0]));
+  const keyedSlots = new Map(names.map((name) => [name, 0]));
+
+  const isKeyedCall = (callee) => {
+    const direct = callee.type === 'Identifier' && bindings.get(callee.name) === 'keyed';
+    const member =
+      callee.type === 'MemberExpression' &&
+      !callee.computed &&
+      (callee.property.name ?? callee.property.value) === 'keyed' &&
+      callee.object.type === 'Identifier' &&
+      nodeNames.has(callee.object.name);
+    return direct || member;
   };
 
-  let found = false;
   const walk = (node) => {
-    if (found || !node || typeof node !== 'object') {
+    if (!node || typeof node !== 'object') {
       return;
     }
     if (Array.isArray(node)) {
       node.forEach(walk);
       return;
     }
-    if (node.type === 'CallExpression') {
-      const callee = node.callee;
-      const direct = callee.type === 'Identifier' && bindings.get(callee.name) === 'keyed';
-      const member =
-        callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        (callee.property.name ?? callee.property.value) === 'keyed' &&
-        callee.object.type === 'Identifier' &&
-        nodeNames.has(callee.object.name);
-      if ((direct || member) && isRowFactoryArg(node)) {
-        found = true;
+    switch (node.type) {
+      case 'FunctionDeclaration':
+      case 'FunctionExpression':
+      case 'ClassDeclaration':
+      case 'ClassExpression':
+        if (node.id?.name && counts.has(node.id.name)) {
+          // 声明名本身不是引用；函数体照旧走
+          node.params.forEach(walk);
+          walk(node.body);
+          return;
+        }
+        break;
+      case 'ObjectProperty':
+        // 非计算键是属性名，不是引用
+        if (!node.computed) {
+          walk(node.value);
+          return;
+        }
+        break;
+      case 'MemberExpression':
+        walk(node.object);
+        if (node.computed) {
+          walk(node.property);
+        }
         return;
+      case 'CallExpression': {
+        if (isKeyedCall(node.callee)) {
+          [node.arguments[1], node.arguments[2]].forEach((argument) => {
+            if (argument?.type === 'Identifier' && keyedSlots.has(argument.name)) {
+              keyedSlots.set(argument.name, keyedSlots.get(argument.name) + 1);
+            }
+          });
+        }
+        break;
       }
+      case 'Identifier':
+        if (counts.has(node.name)) {
+          counts.set(node.name, counts.get(node.name) + 1);
+        }
+        return;
+      default:
+        break;
     }
     for (const key of Object.keys(node)) {
       if (key === 'type' || key === 'loc' || key === 'start' || key === 'end') {
@@ -224,8 +285,9 @@ function usedInKeyedList(ast, name, bindings, nodeNames) {
       }
     }
   };
+
   walk(ast.program);
-  return found;
+  return { counts, keyedSlots };
 }
 
 /**
@@ -246,13 +308,24 @@ export function componentUnits(
   const bindings = coreBindingsOf(ast, whitelist);
   const nodeNames = coreNodeNames(ast, bindings, whitelist);
   const units = [];
+  const functions = topLevelFunctions(ast);
+  const usages = componentUsages(
+    ast,
+    bindings,
+    nodeNames,
+    functions.map((declaration) => declaration.name)
+  );
 
-  topLevelFunctions(ast).forEach((declaration) => {
+  functions.forEach((declaration) => {
     if (!isViewExpression(returnedView(declaration.node), bindings, whitelist)) {
       return;
     }
-    const channel =
-      mode ?? (usedInKeyedList(ast, declaration.name, bindings, nodeNames) ? 'element' : 'node');
+    const { counts, keyedSlots } = usages;
+    const references = counts.get(declaration.name);
+    const slots = keyedSlots.get(declaration.name);
+    // 只有"引用全在 keyed 的行工厂槽位上"才走 element：别处引用过（当值用）就必须是 ViewNode
+    const listOnly = slots > 0 && references === slots;
+    const channel = mode ?? (listOnly ? 'element' : 'node');
     units.push({ component: declaration.name, file, mode: channel, thin, templatesOnly });
   });
   return units;

@@ -89,7 +89,7 @@ describe('component registry', () => {
     expect(keys).toEqual([`${componentFile}#StatusDot`, `${componentFile}#StatusPill`, TAG_KEY]);
     expect(built.registry.components[DOT_KEY].hash).toMatch(/^[0-9a-f]{12}$/);
     expect(built.registry.components[DOT_KEY].plan.html).toBe(
-      '<span class="status-dot" data-tone="">0</span>'
+      '<span class="status-dot" data-tone=""><!----></span>'
     );
     // 纯数据：可序列化、可缓存、不钉实例
     expect(JSON.parse(JSON.stringify(built.registry))).toEqual(built.registry);
@@ -129,8 +129,8 @@ describe('call-site linking', () => {
 
     expect(compiled.bails).toEqual([]);
     expect(compiled.compiled).toBe(true);
-    expect(compiled.plan.html).toContain('<span class="status-dot" data-tone="">0</span>');
-    expect(compiled.plan.html).toContain('<span class="status-tag">0</span>');
+    expect(compiled.plan.html).toContain('<span class="status-dot" data-tone=""><!----></span>');
+    expect(compiled.plan.html).toContain('<span class="status-tag"><!----></span>');
     expect(compiled.module).toContain(`components[${JSON.stringify(DOT_KEY)}]`);
     expect(compiled.module).toContain('bindComponent(');
   });

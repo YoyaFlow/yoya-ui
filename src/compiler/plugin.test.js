@@ -95,7 +95,7 @@ describe('wireComponentModule (pure transform)', () => {
     expect(wired.code).toContain('function CardSource(item) {');
     expect(wired.code).toContain('export function Card(item) {');
     expect(wired.code).not.toContain('export function CardSource(item) {');
-    expect(wired.code).toContain('__yoyaFactory_0 ??= createRowFactory({ removeItem });');
+    expect(wired.code).toContain('__yoyaFactory_0 ??= __yoyaCreateRowFactory_0({ removeItem });');
     // 业务语句逐行保留（除了那一处函数声明改名）
     const bodyLines = businessSource
       .split('\n')
@@ -115,6 +115,11 @@ describe('wireComponentModule (pure transform)', () => {
     expect(wired.units).toHaveLength(2);
     expect(wired.code).toContain('function CardSource(item) {');
     expect(wired.code).toContain('function StatusPillSource(props) {');
+    // 每个单元一个**独立的 import 绑定名**：`import { createRowFactory }` 写两次同名绑定
+    // 是 ESM 的语法错误（业务模块会被打包器直接拒收）
+    expect(wired.code).toContain('as __yoyaCreateRowFactory_0');
+    expect(wired.code).toContain('as __yoyaCreateRowFactory_1');
+    expect(wired.code).not.toContain('import { createRowFactory } from');
     // 两个单元的产物不同：行工厂走 element，组件走 node
     expect(wired.units[0].module).toContain('"mode": "element"');
     expect(wired.units[1].module).toContain('"mode": "node"');
@@ -129,25 +134,69 @@ describe('wireComponentModule (pure transform)', () => {
         core
       })
     ).toBeNull();
-    // 形参解构：编译器整形状 bail（票 12），插件也就不动它
-    expect(
-      wireComponentModule({
-        source: businessSource.replace('(item)', '({ data, api })'),
-        target,
-        core
-      })
-    ).toBeNull();
-    // 结构不恒定（含 if）：同样整形状回落
-    expect(
-      wireComponentModule({
-        source: businessSource.replace(
-          "    line.td((cell) => cell.className('item-id').child(String(item.data.id)));",
-          '    if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
-        ),
-        target,
-        core
-      })
-    ).toBeNull();
+    // 根 builder 里的 `if` 现在能编（票 04 的结构锚点）：那段结构进子单元，不是整形状回落
+    const conditional = wireComponentModule({
+      source: businessSource.replace(
+        "    line.td((cell) => cell.className('item-id').child(String(item.data.id)));",
+        '    if (item.data.id) {\n      line.td((cell) => cell.child(String(item.data.id)));\n    }'
+      ),
+      target,
+      core
+    });
+    expect(conditional).not.toBeNull();
+    expect(conditional.units.some((unit) => unit.virtual.includes('-ctl'))).toBe(true);
+  });
+
+  // 票 21：形参解构不再整形状 bail；包装函数按 rest 转发，编译产物复刻源码的参数表。
+  it('wires a row factory whose parameter is destructured', () => {
+    const source = [
+      "import { keySet, ref, table, tr } from '@yoyaflow/yoya-ui/core';",
+      '',
+      'export function Row({ data }) {',
+      "  return tr((line) => line.td((cell) => cell.className('item-id').child(String(data.id))));",
+      '}',
+      '',
+      'const rows = keySet([], (row) => row.id);',
+      'const tableView = table((node) => node.tbody((body) => body.keyed(rows, Row)));',
+      'void [rows, tableView];',
+      ''
+    ].join('\n');
+    const [unit] = componentUnits(source, { core, file: 'src/rows.js' });
+    const wired = wireComponentModule({
+      source,
+      targets: [unit],
+      core,
+      runtime: runtimeUrl
+    });
+
+    expect(wired).not.toBeNull();
+    expect(wired.code).toContain('function RowSource({ data }) {');
+    expect(wired.code).toContain('export function Row(...__yoyaArgs) {');
+    expect(wired.code).toContain('return __yoyaFactory_0(...__yoyaArgs);');
+    expect(wired.units[0].module).toContain('return function Row({ data }) {');
+    expect(wired.units[0].module).not.toContain('const { data } = scope;');
+  });
+
+  // 全是标识符的形参照旧原样转发：函数签名与 `length` 不变（rest 转发会把它变成 0）
+  it('keeps the source signature when every parameter is an identifier', () => {
+    const source = [
+      "import { keySet, ref, table, tr } from '@yoyaflow/yoya-ui/core';",
+      '',
+      'export function Row(item, index) {',
+      '  return tr((line) => line.td((cell) => cell.child(String(item.id) + String(index))));',
+      '}',
+      '',
+      'const rows = keySet([], (row) => row.id);',
+      'const tableView = table((node) => node.tbody((body) => body.keyed(rows, Row)));',
+      'void [rows, tableView];',
+      ''
+    ].join('\n');
+    const [unit] = componentUnits(source, { core, file: 'src/rows.js' });
+    const wired = wireComponentModule({ source, targets: [unit], core, runtime: runtimeUrl });
+
+    expect(wired.code).toContain('export function Row(item, index) {');
+    expect(wired.code).toContain('return __yoyaFactory_0(item, index);');
+    expect(wired.code).not.toContain('...__yoyaArgs');
   });
 
   // R1：定位按 AST 符号身份——注释 / 字符串里的同名文本不算声明。
@@ -166,7 +215,7 @@ describe('wireComponentModule (pure transform)', () => {
 });
 
 describe('yoyaCompile (unplugin)', () => {
-  it('wires discovered units with hires source maps and serves them as virtual modules', () => {
+  it('wires discovered units with hires source maps and serves them as virtual modules', async () => {
     const file = join(workDir, 'main.js');
     const artifacts = [];
     const vite = yoyaCompile.vite({
@@ -176,7 +225,8 @@ describe('yoyaCompile (unplugin)', () => {
 
     expect(vite.name).toBe('yoya-ui-compile');
     writeFileSync(file, businessSource, 'utf8');
-    const loaded = vite.transform(businessSource, file);
+    // transform 是异步的：默认会先尝试加载**随包发布**的库内组件注册表（票 11），找不到就照旧
+    const loaded = await vite.transform(businessSource, file);
 
     expect(loaded.code).toContain('function CardSource(item) {');
     expect(loaded.code).toContain('function StatusPillSource(props) {');
@@ -212,14 +262,14 @@ describe('yoyaCompile (unplugin)', () => {
     });
     // 不认识的模块一律不碰
     expect(
-      vite.transform('export function helper(id) { return id; }\n', join(workDir, 'plain.js'))
+      await vite.transform('export function helper(id) { return id; }\n', join(workDir, 'plain.js'))
     ).toBeNull();
     expect(
-      vite.transform(businessSource, join(workDir, 'node_modules', 'dep', 'index.js'))
+      await vite.transform(businessSource, join(workDir, 'node_modules', 'dep', 'index.js'))
     ).toBeNull();
   });
 
-  it('keeps esbuild-plain plugin objects and the explicit escape-hatch roster', () => {
+  it('keeps esbuild-plain plugin objects and the explicit escape-hatch roster', async () => {
     const plugin = yoyaCompilePlugin({ core });
     expect(plugin.name).toBe('yoya-ui-compile');
     // esbuild 会校验插件对象：unplugin 生成的 esbuild 插件只能有 name / setup
@@ -232,7 +282,7 @@ describe('yoyaCompile (unplugin)', () => {
     const internal = businessSource.replace('Card', 'internalRow');
     writeFileSync(join(workDir, 'internal.js'), internal, 'utf8');
     // 给了花名册就只认花名册：只编列表里写明的那个函数，文件里其它工厂原样不动
-    const scopedResult = scoped.transform(internal, join(workDir, 'internal.js'));
+    const scopedResult = await scoped.transform(internal, join(workDir, 'internal.js'));
     expect(scopedResult.code).toContain('function internalRowSource(item) {');
     expect(scopedResult.code).not.toContain('StatusPillSource');
   });
@@ -276,5 +326,57 @@ describe('compiled row through keyed (ticket 15 + 16 together)', () => {
       '2label 2'
     ]);
     expect(readFileSync(file, 'utf8')).toBe(businessSource); // 业务源码文件没有被改
+  });
+
+  // 票 21：形参解构（`({ data })`）的行工厂经插件改写后，DOM 与活值行为照旧。
+  it('mounts compiled rows whose parameter is destructured', async () => {
+    const source = [
+      "import { keySet, ref, table, tr } from '@yoyaflow/yoya-ui/core';",
+      '',
+      'export function Row({ data }) {',
+      '  return tr((line) => {',
+      "    line.td((cell) => cell.className('item-id').child(String(data.id)));",
+      "    line.td((cell) => cell.className('item-label').child(data.label));",
+      '  });',
+      '}',
+      '',
+      'const rows = keySet([], (row) => row.id);',
+      'const tableView = table((node) => node.tbody((body) => body.keyed(rows, Row)));',
+      'void [rows, tableView];',
+      ''
+    ].join('\n');
+    const file = join(workDir, 'destructured-main.js');
+    writeFileSync(file, source, 'utf8');
+    const [unit] = componentUnits(source, { core, file }).filter(
+      (candidate) => candidate.component === 'Row'
+    );
+    const wired = wireComponentModule({ source, targets: [unit], core, runtime: runtimeUrl });
+    const modulePath = join(workDir, 'destructured-row.generated.js');
+    writeFileSync(modulePath, wired.module, 'utf8');
+    const wiredPath = join(workDir, 'destructured-main.wired.js');
+    writeFileSync(
+      wiredPath,
+      wired.code.replace(
+        /from "\\u0000yoya-row:[^"]*"/,
+        `from ${JSON.stringify(pathToFileURL(modulePath).href)}`
+      ),
+      'utf8'
+    );
+
+    const wiredModule = await import(pathToFileURL(wiredPath).href);
+    const rows = ref([]);
+    const host = tbody((body) => body.attr('id', 'tbody').keyed(rows, wiredModule.Row));
+    const element = host.renderDom();
+    const label = ref('label 1');
+
+    rows.value = [{ data: { id: 1, label } }];
+    expect([...element.querySelectorAll('td')].map((td) => td.textContent)).toEqual([
+      '1',
+      'label 1'
+    ]);
+
+    label.value = 'label 1 !!!';
+    expect(element.querySelector('.item-label').textContent).toBe('label 1 !!!');
+    expect(readFileSync(file, 'utf8')).toBe(source); // 业务源码文件没有被改
   });
 });

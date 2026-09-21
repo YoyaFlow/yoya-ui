@@ -6,8 +6,11 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { parse } from '@babel/parser';
 import { compileSource, elementWhitelistOf } from './compile.js';
 import { componentUnits } from './discover.js';
+import { compileModuleRegistry } from './plugin.js';
+import { topLevelFunctions } from './discover.js';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', '.scratch', '.cache']);
 
@@ -90,6 +93,18 @@ export function reportCoverage(options) {
     candidates += 1;
     const reasons = new Set();
     let allCompiled = true;
+    // 同模块组件注册表：**与插件同一份实现**——扫描要测"插件那条路能不能编"，
+    // 所以同模块的 `child(<组件>(…))` 链接也要在扫描里生效（覆盖 scan 的 `componentsSpecifier` 用占位）。
+    const ast = parse(source, { sourceType: 'module' });
+    const { registryData } = compileModuleRegistry({
+      ast,
+      source,
+      list: units,
+      declarations: new Map(topLevelFunctions(ast).map((entry) => [entry.name, entry])),
+      core,
+      runtime,
+      fileLabelOf: () => name
+    });
     units.forEach((unit) => {
       const result = compileSource({
         source,
@@ -99,7 +114,13 @@ export function reportCoverage(options) {
         thin: unit.thin,
         core,
         whitelist: registry,
-        runtime
+        runtime,
+        // 扫描测的是**形状能不能编**：`keyed` 行工厂 / 条件锚点的子单元路径由构建期插件提供
+        // （CLI 目前不落子单元文件），所以这里给占位路径，别把"接线缺失"记成"形状编不了"。
+        rowSpecifier: (index) => `\0yoya-scan:${name}#row${index}`,
+        controlSpecifier: (index) => `\0yoya-scan:${name}#ctl${index}`,
+        components: registryData(),
+        componentsSpecifier: `\0yoya-scan:${name}#registry`
       });
       if (!result.compiled) {
         allCompiled = false;
