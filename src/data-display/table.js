@@ -227,6 +227,67 @@ export function VTd() {
 
 export const vTd = createComponentShortcut(VTd);
 
+/**
+ * 滚动外壳（形态 A：局部结构，没有行为就只声明结构 + 身份）。
+ * 供 `VTable` 组合；用户一般不直接用。
+ */
+export function VTableScroll() {
+  return div({
+    style: {
+      background: themeValue('color-surface', '#ffffff'),
+      border: themeBorder('color-border', '#d8dee8'),
+      borderRadius: '8px',
+      overflowX: 'auto'
+    },
+    vn: 'VTableScroll'
+  });
+}
+
+export const vTableScroll = createComponentShortcut(VTableScroll);
+
+/** 表格本体（形态 A）。 */
+export function VTableGrid() {
+  return table({
+    style: {
+      borderCollapse: 'collapse',
+      color: themeValue('color-text', '#172033'),
+      width: '100%'
+    },
+    vn: 'VTableGrid'
+  });
+}
+
+export const vTableGrid = createComponentShortcut(VTableGrid);
+
+/** 标题（形态 B：文本与显隐是它自己的行为）。 */
+export function VTableCaption() {
+  return vNode((api, self) => {
+    api.text = (content) => {
+      if (content === undefined) {
+        return self.node().textContent();
+      }
+
+      const hasContent = content !== null && content !== undefined && content !== '';
+      self.node().style('display', hasContent ? null : 'none');
+      replaceChildren(self.node(), hasContent ? normalizeChildren(content) : []);
+      return api;
+    };
+
+    return caption({
+      style: {
+        captionSide: 'top',
+        color: themeValue('color-text-strong', '#111827'),
+        fontWeight: '700',
+        padding: '0 0 12px',
+        textAlign: 'left'
+      },
+      vn: 'VTableCaption'
+    }).style('display', 'none');
+  });
+}
+
+export const vTableCaption = createComponentShortcut(VTableCaption);
+
 /** 表格：外壳结构 + 数据驱动渲染 + 声明式段 / 行投递。 */
 export function VTable() {
   return vNode((api) => {
