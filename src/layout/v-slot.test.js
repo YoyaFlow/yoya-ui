@@ -33,6 +33,7 @@ describe('vSlot（零布局占位）', () => {
     });
     const hostElement = host.renderDom();
 
+    expect(vSlotOf(host, 'header')).not.toBeNull();
     expect(vSlotInsert(host, 'header', vText('标题'))).not.toBeNull();
     expect(hostElement.textContent).toBe('标题');
     // 外部插入只认 vn-slot：公开槽位名单里没有它
