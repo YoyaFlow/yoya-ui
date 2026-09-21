@@ -41,7 +41,7 @@ import {
   vSwitch,
   vTextarea,
   viewRootOf,
-  vTable,
+  vTableWrapper,
   VPagination,
   vTimer,
   vTimerRange,
@@ -1881,7 +1881,7 @@ describe('compound components', () => {
 
   it('renders tables with row actions and empty states', () => {
     const clicked = vi.fn();
-    const table = vTable({
+    const table = vTableWrapper({
       caption: '服务列表',
       columns: [
         { key: 'name', label: '名称' },
@@ -1899,8 +1899,8 @@ describe('compound components', () => {
       ],
       emptyText: '暂无服务',
       rows: [
-        { name: 'api-gateway', status: '运行中' },
-        { name: 'worker', status: '停止' }
+        { id: 'api-gateway', name: 'api-gateway', status: '运行中' },
+        { id: 'worker', name: 'worker', status: '停止' }
       ]
     });
 

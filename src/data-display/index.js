@@ -68,6 +68,7 @@ const dataDisplayFactories = {
   vProgress,
   vScroll,
   vTable,
+  vTableWrapper,
   vTree,
   vTreeRanger,
   vTreeTable

@@ -262,24 +262,28 @@ const CASES = [
         table.vTbody((body) => body.vTr((row) => row.vTd('甲').vTd('乙')));
         table.vTfoot((foot) => foot.vTr((row) => row.vTd('合计').vTd('2')));
       }),
-    probe: (table) => ({ caption: table.caption(), rows: table.data().rows.length })
+    // 声明式表格不装数据：行数只能从 DOM 读（数据驱动那层在 vTableWrapper）
+    probe: (table, host) => ({
+      caption: table.caption(),
+      bodyRows: host.querySelectorAll('tbody tr').length
+    })
   },
   {
-    name: 'vTable / 数据驱动列 + 行',
+    name: 'vTableWrapper / 数据驱动列 + 行',
     build: () =>
-      api.vTable({
+      api.vTableWrapper({
         columns: [
           { key: 'name', title: '名称' },
           { key: 'value', title: '数值' }
         ],
         rows: [
-          { name: '甲', value: 1 },
-          { name: '乙', value: 2 }
+          { id: '甲', name: '甲', value: 1 },
+          { id: '乙', name: '乙', value: 2 }
         ]
       }),
     probe: (table) => ({
-      columns: table.data().columns.length,
-      rows: table.data().rows.length,
+      columns: table.columns().length,
+      rows: table.rows().length,
       emptyText: table.emptyText()
     })
   },

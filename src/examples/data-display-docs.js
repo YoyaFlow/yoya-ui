@@ -13,7 +13,7 @@ import {
   vPagination,
   vProgress,
   vScroll,
-  vTable,
+  vTableWrapper,
   vText,
   vTree,
   vstack
@@ -273,21 +273,31 @@ const dataDisplayDocsDefinitions = Object.freeze({
   }),
   table: createDataDisplayDocsDefinition({
     apiIntro:
-      'vTable 既可以用 columns / rows 描述数据，也可以用 vThead / vTbody / vTfoot / vTr / vTh / vTd 逐层声明内部结构。空状态、行操作和分页都可以在同一个表格实例上更新。',
+      '数据驱动用 vTableWrapper：columns / rows / emptyText 和行状态都归它管，空状态、行操作与分页在同一个实例上更新。要自己摆结构时用 vTable，按 vThead / vTbody / vTfoot / vTr / vTh / vTd 逐层声明。',
     apiRows: [
       [
-        'vTable({ caption, columns, rows, emptyText })',
-        '创建表格并填充数据。',
-        'vTable({ columns, rows })'
+        'vTableWrapper({ caption, columns, rows, emptyText })',
+        '创建数据驱动表格并填充数据。',
+        'vTableWrapper({ columns, rows })'
       ],
-      ['table.caption(content)', '设置表格标题。', "table.caption('服务列表')"],
+      ['wrapper.caption(content)', '设置表格标题。', "wrapper.caption('服务列表')"],
       [
-        'table.columns(columns)',
+        'wrapper.columns(columns)',
         '设置列定义，支持 key、label、align、width、render。',
-        "table.columns([{ key: 'name', label: '名称' }])"
+        "wrapper.columns([{ key: 'name', label: '名称' }])"
       ],
-      ['table.rows(rows)', '替换当前行数据。', 'table.rows(nextRows)'],
-      ['table.emptyText(content)', '设置空数据提示。', "table.emptyText('暂无匹配服务')"],
+      ['wrapper.rows(rows)', '替换当前行数据。', 'wrapper.rows(nextRows)'],
+      ['wrapper.emptyText(content)', '设置空数据提示。', "wrapper.emptyText('暂无匹配服务')"],
+      [
+        'wrapper.addRow / updateRow / removeRow / clearRows',
+        '按行键增删改（行数据自带 id，或用 rowKey 指定行键）。',
+        "wrapper.updateRow('gateway', { status: '停止' })"
+      ],
+      [
+        'wrapper.item(key)',
+        '取这一行的行行为 api（例如 item.api.selected）。',
+        "wrapper.item('gateway').api.select()"
+      ],
       [
         'column.render(row, index)',
         '渲染自定义单元格，适合状态标签和行操作。',
@@ -296,7 +306,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
       ['column.align / width / minWidth', '控制单元格对齐和列宽。', "align: 'right', width: 120"],
       [
         'table.vThead / vTbody / vTfoot(setup)',
-        '用回调声明式构建表头、主体和表尾。',
+        'vTable 只做结构：用回调声明式构建表头、主体和表尾。',
         'table.vTbody((body) => body.vTr(...))'
       ],
       [
@@ -305,7 +315,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         'row.vTd("运行中")'
       ]
     ],
-    apiSignature: `vTable({
+    apiSignature: `vTableWrapper({
   caption: '服务列表',
   columns: [
     { key: 'name', label: '名称' },
@@ -319,7 +329,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableBasicExample1,
         description: '用 column.render 放入行操作按钮，点击后把当前行写回状态区。',
         id: 'basic',
-        imports: ['vButton', 'vTable', 'vText', 'vstack'],
+        imports: ['vButton', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '基础表格核心源码',
         title: '基础表格'
       },
@@ -327,7 +337,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableEmptyExample1,
         description: '空数据时显示 emptyText，数据返回后直接 rows(nextRows) 替换内容。',
         id: 'empty',
-        imports: ['vButton', 'vTable', 'vText', 'vstack'],
+        imports: ['vButton', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '空状态核心源码',
         title: '空状态'
       },
@@ -335,7 +345,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TablePaginationExample1,
         description: '分页器只负责页码状态，表格根据 page 和 pageSize 切换当前页数据。',
         id: 'pagination',
-        imports: ['vPagination', 'vTable', 'vText', 'vstack'],
+        imports: ['vPagination', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '分页表格核心源码',
         title: '分页联动'
       },
@@ -352,14 +362,15 @@ const dataDisplayDocsDefinitions = Object.freeze({
     examplesIntro: '下面四个示例分别展示基础表格、空状态、分页联动和声明式内部结构。',
     heading: 'vTable 表格',
     intro:
-      '表格用于展示结构化列表数据。vTable 把列定义、行数据、空状态和自定义单元格统一起来，适合后台列表、服务清单和审批队列。',
+      '表格用于展示结构化列表数据。vTableWrapper 归口列定义、行数据、空状态与行状态，适合后台列表、服务清单和审批队列；需要自己控制分区结构时用 vTable 逐层声明。',
     key: 'table',
     routeItem: 'data-display:table',
     title: '表格',
     usageItems: [
-      '需要按列扫描一组同构数据时，用 vTable。',
+      '需要按列扫描一组同构数据时，用 vTableWrapper 描述 columns / rows。',
       '需要在最后一列放查看、重启、删除等操作时，用 column.render 返回按钮组件。',
-      '接口返回空数组时，设置 emptyText，而不是在外层额外拼一个空状态。'
+      '接口返回空数组时，设置 emptyText，而不是在外层额外拼一个空状态。',
+      '要自己控制表头 / 表尾结构（合并单元格、自定义分区）时，用 vTable 逐层声明。'
     ]
   }),
   tree: createDataDisplayDocsDefinition({
@@ -1426,7 +1437,7 @@ function TableBasicExample1() {
     render() {
       return vstack((content) => {
         content.style('gap', '14px');
-        content.vTable({
+        content.vTableWrapper({
           caption: '服务列表',
           columns: [
             { key: 'name', label: '服务名称', minWidth: 160 },
@@ -1465,7 +1476,7 @@ function TableBasicExample1() {
 
 function TableEmptyExample1() {
   const status = vText('当前为空');
-  const table = vTable({
+  const table = vTableWrapper({
     caption: '告警记录',
     columns: [
       { key: 'name', label: '告警项', minWidth: 180 },
@@ -1493,8 +1504,8 @@ function TableEmptyExample1() {
             button.variant('primary');
             button.on('click', () => {
               table.rows([
-                { name: 'CPU 使用率', level: 'warning', time: '刚刚' },
-                { name: '队列堆积', level: 'info', time: '3 分钟前' }
+                { id: 'cpu', name: 'CPU 使用率', level: 'warning', time: '刚刚' },
+                { id: 'queue', name: '队列堆积', level: 'info', time: '3 分钟前' }
               ]);
               status.textContent('已加载 2 条');
             });
@@ -1514,14 +1525,14 @@ function TableEmptyExample1() {
 
 function TablePaginationExample1() {
   const allRows = [
-    { name: 'api-gateway', status: '运行中', owner: 'SRE' },
-    { name: 'worker', status: '排队中', owner: 'Data' },
-    { name: 'web', status: '维护中', owner: 'Web' },
-    { name: 'scheduler', status: '运行中', owner: 'Ops' },
-    { name: 'billing', status: '停止', owner: 'Finance' }
+    { id: 'api-gateway', name: 'api-gateway', status: '运行中', owner: 'SRE' },
+    { id: 'worker', name: 'worker', status: '排队中', owner: 'Data' },
+    { id: 'web', name: 'web', status: '维护中', owner: 'Web' },
+    { id: 'scheduler', name: 'scheduler', status: '运行中', owner: 'Ops' },
+    { id: 'billing', name: 'billing', status: '停止', owner: 'Finance' }
   ];
   const pageState = vText('第 1 页');
-  const table = vTable({
+  const table = vTableWrapper({
     caption: '分页服务列表',
     columns: [
       { key: 'name', label: '服务名称', minWidth: 160 },

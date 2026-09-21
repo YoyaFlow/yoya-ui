@@ -18,6 +18,7 @@ import {
   vPagination,
   vSelect,
   vTable,
+  vTableWrapper,
   vTabs,
   vTree,
   vText,
@@ -80,9 +81,11 @@ import {
 import {
   VBadge as DisplayVBadge,
   VTable as DisplayVTable,
+  VTableWrapper as DisplayVTableWrapper,
   vBadge as displayVBadge,
   vPagination as displayVPagination,
   vTable as displayVTable,
+  vTableWrapper as displayVTableWrapper,
   vTree as displayVTree
 } from 'yoya-ui/data-display';
 import {
@@ -195,15 +198,33 @@ void keySetList;
 
 // Data display components.
 vTable((table) => {
-  table.columns([
-    { key: 'name', title: '名称', dataIndex: 'name' },
-    { key: 'status', title: '状态', render: (value) => vBadge(String(value)) }
-  ]);
-  table.rows([
-    { name: 'gateway', status: 'running' },
-    { name: 'worker', status: 'idle' }
-  ]);
+  table.vThead((head) => head.vTr((row) => row.vTh('名称')));
+  table.vTbody((body) => body.keyed(keySetRows, (item) => li(item.data.label)));
+  table.vTr((row) => row.vTd('值'));
+  table.caption('服务列表');
 });
+
+const tableWrapper = vTableWrapper({
+  caption: '服务列表',
+  columns: [
+    { key: 'name', title: '名称', width: 120 },
+    { key: 'status', title: '状态', render: (row) => vBadge(String(row.status)) }
+  ],
+  emptyText: '暂无服务',
+  rowKey: (row) => row.id,
+  rows: [
+    { id: 'gateway', name: 'gateway', status: 'running' },
+    { id: 'worker', name: 'worker', status: 'idle' }
+  ]
+});
+tableWrapper.columns([{ key: 'name', label: '名称' }]);
+tableWrapper.rows([{ id: 'gateway', name: 'gateway' }]);
+tableWrapper.emptyText('暂无服务').caption('服务列表');
+tableWrapper.addRow({ id: 'web', name: 'web' });
+tableWrapper.updateRow('gateway', { status: 'idle' });
+tableWrapper.removeRow('web');
+tableWrapper.clearRows();
+tableWrapper.item('gateway')?.api.select();
 
 vTabs((tabs) => {
   tabs.items([
@@ -459,9 +480,11 @@ void formVSelect;
 void formVUpload;
 void DisplayVBadge;
 void DisplayVTable;
+void DisplayVTableWrapper;
 void displayVBadge;
 void displayVPagination;
 void displayVTable;
+void displayVTableWrapper;
 void displayVTree;
 void asyncVDynamicLoader;
 void asyncVLazyImage;

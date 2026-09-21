@@ -2,6 +2,8 @@ import type {
   ChildInput,
   ElementFactory,
   ElementOptions,
+  KeyItem,
+  SignalHandle,
   SetupCallback,
   SetupInput,
   ViewNode
@@ -356,31 +358,92 @@ export function vTreeRangerColumn(setup?: unknown): unknown;
 
 export interface TableColumn {
   key?: string;
+  field?: string;
+  label?: ChildInput;
   title?: ChildInput;
   dataIndex?: string;
-  render?: (value: unknown, row: Record<string, unknown>, index: number) => ChildInput;
+  align?: 'left' | 'center' | 'right';
   width?: string | number;
+  minWidth?: string | number;
+  maxWidth?: string | number;
+  wrap?: boolean;
+  className?: string;
+  style?: Record<string, unknown>;
+  render?: (row: any, index: number, column: TableColumn) => ChildInput;
   [key: string]: any;
 }
 
-export class VTable extends HtmlElementNode {
-  caption(content?: ChildInput): this;
-  columns(value: Array<TableColumn>): VTable;
-  rows(value: Array<Record<string, unknown>>): VTable;
-  empty(value: ChildInput): VTable;
-  emptyText(value: ChildInput): VTable;
-  data(value?: { columns?: Array<TableColumn>; rows?: Array<Record<string, unknown>> }): this;
-  child(...children: ChildInput[]): this;
-  vThead(setup: SetupInput<HtmlElementNode>): VTable;
-  vTbody(setup: SetupInput<HtmlElementNode>): VTable;
-  vTfoot(setup: SetupInput<HtmlElementNode>): VTable;
-  vTr(setup: SetupInput<HtmlElementNode>): VTable;
+/** Column input accepted by vTableWrapper: shorthand strings/tuples or a full definition. */
+export type TableColumnInput = string | number | [string, ChildInput] | TableColumn;
+
+/** Row input: any object, or a primitive value when no columns are declared. */
+export type TableRowInput = any;
+
+/** Row identity: `row.id` / `row.key` by default, or whatever `rowKey` returns. */
+export type TableRowKey = (row: TableRowInput) => unknown;
+
+/** Per-row state and commands exposed as `wrapper.item(key).api`. */
+export interface TableRowApi {
+  /** Row-level selection state; writing it touches no data array. */
+  selected: SignalHandle<boolean>;
+  select(): void;
+  [key: string]: unknown;
 }
 
-export class VThead extends HtmlElementNode {}
-export class VTbody extends HtmlElementNode {}
-export class VTfoot extends HtmlElementNode {}
-export class VTr extends HtmlElementNode {}
+/** A keySet element of a data-driven table. */
+export type TableRowItem = KeyItem<TableRowInput> & { api: TableRowApi };
+
+/** Options accepted by vTableWrapper(). */
+export interface TableWrapperOptions {
+  caption?: ChildInput;
+  columns?: Array<TableColumnInput>;
+  rows?: Array<TableRowInput>;
+  emptyText?: ChildInput;
+  rowKey?: TableRowKey;
+}
+
+/** Structure-only table shell: sections and rows are declared by the caller. */
+export class VTable extends HtmlElementNode {
+  caption(content?: ChildInput): this;
+  child(...children: ChildInput[]): this;
+  vThead(setup?: SetupInput<VThead>): VTable;
+  vTbody(setup?: SetupInput<VTbody>): VTable;
+  vTfoot(setup?: SetupInput<VTfoot>): VTable;
+  vTr(setup?: SetupInput<VTr>): VTable;
+}
+
+/** Data-driven table: owns columns / rows / emptyText and per-row state. */
+export class VTableWrapper extends HtmlElementNode {
+  caption(): ChildInput;
+  caption(content: ChildInput): VTableWrapper;
+  columns(): TableColumn[];
+  columns(value: Array<TableColumnInput>): VTableWrapper;
+  rows(): Array<TableRowInput>;
+  rows(value: Array<TableRowInput>): VTableWrapper;
+  emptyText(): ChildInput;
+  emptyText(content: ChildInput): VTableWrapper;
+  rowKey(): TableRowKey | null;
+  rowKey(handler: TableRowKey | null): VTableWrapper;
+  item(key: unknown): TableRowItem | undefined;
+  addRow(row: TableRowInput): VTableWrapper;
+  updateRow(key: unknown, patch: Record<string, unknown>): VTableWrapper;
+  removeRow(key: unknown): VTableWrapper;
+  clearRows(): VTableWrapper;
+}
+
+export class VThead extends HtmlElementNode {
+  vTr(setup?: SetupInput<VTr>): VThead;
+}
+export class VTbody extends HtmlElementNode {
+  vTr(setup?: SetupInput<VTr>): VTbody;
+}
+export class VTfoot extends HtmlElementNode {
+  vTr(setup?: SetupInput<VTr>): VTfoot;
+}
+export class VTr extends HtmlElementNode {
+  vTh(setup?: SetupInput<VTh>): VTr;
+  vTd(setup?: SetupInput<VTd>): VTr;
+}
 export class VTh extends HtmlElementNode {}
 export class VTd extends HtmlElementNode {}
 
@@ -554,6 +617,12 @@ export class VTreeTable extends HtmlElementNode {
 
 export const vTreeTable: ElementFactory<VTreeTable>;
 export const vTable: ElementFactory<VTable>;
+export const vTableWrapper: {
+  (
+    first?: TableWrapperOptions | SetupCallback<VTableWrapper> | null,
+    callback?: SetupCallback<VTableWrapper>
+  ): VTableWrapper;
+} & ElementFactory<VTableWrapper>;
 export const vTbody: ElementFactory<VTbody>;
 export const vTd: ElementFactory<VTd>;
 export const vTfoot: ElementFactory<VTfoot>;
@@ -644,6 +713,10 @@ export interface DataDisplayParentShortcuts {
     callback?: SetupCallback<VTreeTable>
   ): VTreeTable;
   vTable(first?: SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
+  vTableWrapper(
+    first?: TableWrapperOptions | SetupInput<VTableWrapper> | null,
+    callback?: SetupCallback<VTableWrapper>
+  ): VTableWrapper;
   vTimeline(first?: SetupInput<VTimeline> | null, callback?: SetupCallback<VTimeline>): VTimeline;
   vTimelineItem(
     first?: SetupInput<VTimelineItem> | null,

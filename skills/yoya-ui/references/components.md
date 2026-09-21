@@ -290,12 +290,26 @@ vDetail((detail) => {
 
 代码块：`content()/language()/copyable()`，内置复制按钮。
 
-### vTable / vThead / vTbody / vTr / vTh / vTd
+### vTableWrapper（数据驱动）/ vTable / vThead / vTbody / vTr / vTh / vTd
 
-表格：声明式 `<thead>/<tbody>/<tr>/<th>/<td>` 结构或 `columns()/rows()` 数据模式，`emptyText()` 空态。
+表格分两层：**数据驱动**用 `vTableWrapper`（自己管 `columns()` / `rows()` / `caption()` / `emptyText()`，
+行动作 `addRow()/updateRow()/removeRow()/clearRows()`，行状态挂在 `item(key).api` 上）；**结构**
+用 `vTable` 逐层声明 `vThead / vTbody / vTfoot / vTr / vTh / vTd`。行数据自带 `id`（或用 `rowKey()`），
+列定义支持 `key / label / align / width / render`。
 
 ```js
-vTable({ columns: ['名称', '状态'], rows: [['api-gateway', '运行中']] });
+vTableWrapper({
+  caption: '服务列表',
+  columns: [
+    { key: 'name', label: '名称' },
+    { key: 'status', label: '状态' }
+  ],
+  emptyText: '暂无服务',
+  rows: [
+    { id: 'api-gateway', name: 'api-gateway', status: '运行中' },
+    { id: 'worker', name: 'worker', status: '停止' }
+  ]
+});
 ```
 
 ### vTree

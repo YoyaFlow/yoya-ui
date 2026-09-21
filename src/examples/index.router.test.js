@@ -1547,7 +1547,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       'vTable 表格',
       'basic',
       'TableBasicExample1',
-      'vTable({',
+      'vTableWrapper({',
       4
     ],
     [
@@ -2214,7 +2214,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(status.textContent).toBe('已选择 worker');
     expect(tableDemo.querySelector('[vn="VTableCaption"]').textContent).toBe('服务列表');
-    expect(tableDemo.querySelectorAll('[vn="VTr"]')).toHaveLength(3);
+    // 表体三行（表头行也是 VTr，所以按 tbody 收口）
+    expect(tableDemo.querySelectorAll('tbody [vn="VTr"]')).toHaveLength(3);
   });
 
   it('shows declarative table sections in the table documentation demo', async () => {

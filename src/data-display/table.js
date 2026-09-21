@@ -1,6 +1,5 @@
-import { viewRootOf } from '../core/node.js';
 import { keySet } from '../core/key-set.js';
-import { ref } from '../core/signals/handle.js';
+import { computed, isSignal, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
 import {
@@ -17,9 +16,21 @@ import {
  *
  * - 结构用 DSL 声明：`div[VTable] > div[VTableScroll] > table[VTableGrid] > caption + thead + tbody`；
  * - 声明式 section / 行由命令投递（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`），
- *   匿名槽位 `table.child(...)` 由根元素实例上的 `child()` 分流，保持"section 进表格、行进表体"的旧语义；
- * - 数据驱动渲染（列头行 / 数据行 / 空态行）在命令内部重建，DOM 与迁移前逐字节一致。
+ *   匿名 `table.child(section)` 走默认占位（内容落进 `<table>`）；
+ * - **数据驱动（列 / 行 / 空态）在 `VTableWrapper` 上**：表格壳只认结构，数据层只消费它。
  */
+
+/** 没声明列、也推断不出列时的兜底列：整行当一格显示（`column.key === '__value'`）。 */
+const VALUE_COLUMN = { key: '__value', label: '' };
+
+/** 列 key：归一后的列一定有 key，拿不到时用下标兜底（对账只认 key）。 */
+const columnKeyOf = (column, index) => column?.key ?? index;
+
+/**
+ * 数据层的键（票 15）：`VTable` 只认结构，`columns` / `rows` / `emptyText` 归 `VTableWrapper`。
+ * 写在 `vTable` 的 options 里要**报错**——不报错就会当成同名 DOM 属性静默写下去。
+ */
+const TABLE_DATA_KEYS = new Set(['columns', 'rows', 'data', 'empty', 'emptyText']);
 
 /** 单元格预设样式（列头 / 正文两套，与迁移前 applyTableCellStyles 同口径）。 */
 function applyCellStyles(node, column = {}, section) {
@@ -76,43 +87,73 @@ function appendCellContent(node, content) {
   return node;
 }
 
+/**
+ * 列定义归一（与迁移前的数据层同口径）：字符串 / `[key, label]` / 对象都收，
+ * 结果一定有 `key` 与 `label`。
+ *
+ * 列头与单元格都按键对账，所以 key 必须唯一：同一份列定义里重名时按出现顺序补 `#n` 后缀。
+ */
 function normalizeTableColumns(columns) {
   if (!Array.isArray(columns)) {
     return [];
   }
 
+  const usedKeys = new Set();
+
   return columns.map((column, index) => {
-    if (typeof column === 'string' || typeof column === 'number') {
-      const key = String(column);
-      return { key, label: key };
-    }
-
-    if (Array.isArray(column) && column.length > 0) {
-      const [key, label = key] = column;
-      return {
-        key: key === undefined || key === null ? `column-${index}` : key,
-        label: label ?? key ?? ''
-      };
-    }
-
-    if (isPlainObject(column)) {
-      const key =
-        column.key ??
-        column.field ??
-        column.name ??
-        column.label ??
-        column.title ??
-        `column-${index}`;
-      return {
-        ...column,
-        key,
-        label: column.label ?? column.title ?? column.name ?? key
-      };
-    }
-
-    const key = `column-${index}`;
-    return { key, label: String(column ?? '') };
+    const normalized = normalizeTableColumn(column, index);
+    const key = uniqueColumnKey(normalized.key, usedKeys);
+    return key === normalized.key ? normalized : { ...normalized, key };
   });
+}
+
+/** 单列归一：结果一定有 `key` / `label`，其余键（render / align / width / …）原样保留。 */
+function normalizeTableColumn(column, index) {
+  if (typeof column === 'string' || typeof column === 'number') {
+    const key = String(column);
+    return { key, label: key };
+  }
+
+  if (Array.isArray(column) && column.length > 0) {
+    const [key, label = key] = column;
+    return {
+      key: key === undefined || key === null ? `column-${index}` : key,
+      label: label ?? key ?? ''
+    };
+  }
+
+  if (isPlainObject(column)) {
+    const key =
+      column.key ??
+      column.field ??
+      column.name ??
+      column.label ??
+      column.title ??
+      `column-${index}`;
+    return {
+      ...column,
+      key,
+      label: column.label ?? column.title ?? column.name ?? key
+    };
+  }
+
+  const key = `column-${index}`;
+  return { key, label: String(column ?? '') };
+}
+
+/** 列 key 去重：`name` / `name#1` / `name#2`（重名列在 DOM 上仍然可分辨）。 */
+function uniqueColumnKey(key, usedKeys) {
+  const text = String(key);
+  let next = text;
+  let serial = 1;
+
+  while (usedKeys.has(next)) {
+    next = `${text}#${serial}`;
+    serial += 1;
+  }
+
+  usedKeys.add(next);
+  return next;
 }
 
 function inferTableColumns(rows) {
@@ -263,6 +304,12 @@ export function VTableGrid() {
 
 export const vTableGrid = createComponentShortcut(VTableGrid);
 
+/** 标题内容是否算「有」（空字符串 / null 都算没有 → 整条标题隐藏）。 */
+function hasCaptionText(content) {
+  const value = isSignal(content) ? content.value : content;
+  return value !== null && value !== undefined && value !== '';
+}
+
 /** 标题（形态 B：文本与显隐是它自己的行为）。 */
 export function VTableCaption() {
   return vNode((api, self) => {
@@ -271,7 +318,15 @@ export function VTableCaption() {
         return self.node().textContent();
       }
 
-      const hasContent = content !== null && content !== undefined && content !== '';
+      // 活值（句柄 / 零参闭包）：文本与「空则隐藏」一起跟着值走——
+      // 只绑文本的话，先空后有的标题会一直带着建时的 hidden 态。
+      if (typeof content === 'function' || isSignal(content)) {
+        self.node().style('display', () => (hasCaptionText(content) ? null : 'none'));
+        replaceChildren(self.node(), [content]);
+        return api;
+      }
+
+      const hasContent = hasCaptionText(content);
       self.node().style('display', hasContent ? null : 'none');
       replaceChildren(self.node(), hasContent ? normalizeChildren(content) : []);
       return api;
@@ -298,14 +353,13 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
  * - 用户按顺序添加：`table.caption('…')` / `table.vThead(…)` / `table.vTbody(…)` / `table.vTfoot(…)`，
- *   命令一律 `self.node().child(part)`；段的内容通过段自己的 `vTr` 投递；
+ *   段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
+ *   活值对账，都挂在真表体上；
  * - 没有预建节点、没有 `find`、不碰 `_el` / `_children`；
- * - 数据驱动（`columns` / `rows` / `emptyText` / `data`）是在这套 API 之上的一层：
- *   段按需创建（首次用到才建，之后复用），行写进表体自己的 `vTr` 通道。
+ * - **壳不装数据**：`columns` / `rows` / `emptyText` 那层在 `VTableWrapper` 上（壳只被它消费）。
  */
 export function VTable() {
   return vNode((api, self) => {
-    const state = { columns: [], emptyText: '暂无数据', rows: [] };
     let captionPart = null;
     let headPart = null;
     let bodyPart = null;
@@ -348,76 +402,6 @@ export function VTable() {
       return footPart;
     };
 
-    /** 段的内容：用户声明的段只取它的行，交给同名段的 `vTr` 通道。 */
-    const deliverRows = (section, target) => {
-      viewRootOf(section)
-        .children()
-        .forEach((row) => target.vTr(row));
-      return target;
-    };
-
-    /** 数据驱动：列头行 / 数据行 / 空态行写进段自己的行通道。 */
-    const renderTable = () => {
-      captionOf();
-      const head = headOf();
-      const body = bodyOf();
-      const resolvedColumns =
-        state.columns.length > 0 ? state.columns : inferTableColumns(state.rows);
-      const bodyColumns =
-        resolvedColumns.length > 0 ? resolvedColumns : [{ key: '__value', label: '' }];
-
-      replaceChildren(viewRootOf(head), []);
-      replaceChildren(viewRootOf(body), []);
-
-      if (resolvedColumns.length > 0) {
-        head.child(
-          vTr((headRow) =>
-            resolvedColumns.forEach((column, columnIndex) => {
-              headRow.vTh((cell) => {
-                cell.attr('scope', 'col');
-                cell.attr('data-key', column.key ?? `column-${columnIndex}`);
-                applyCellStyles(cell, column, 'head');
-                appendCellContent(cell, column.label ?? column.title ?? column.key ?? '');
-              });
-            })
-          )
-        );
-      }
-
-      if (state.rows.length > 0) {
-        state.rows.forEach((row, rowIndex) => {
-          body.child(
-            vTr((bodyRow) => {
-              bodyRow.attr('data-row-index', String(rowIndex));
-              bodyColumns.forEach((column, columnIndex) => {
-                bodyRow.vTd((cell) => {
-                  cell.attr('data-key', column.key ?? `column-${columnIndex}`);
-                  applyCellStyles(cell, column, 'body');
-                  appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
-                });
-              });
-            })
-          );
-        });
-
-        return;
-      }
-
-      body.child(
-        vTr((emptyRow) =>
-          emptyRow.vTd((cell) => {
-            cell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
-            cell.styles({
-              color: themeValue('color-text-muted', '#64748b'),
-              padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
-              textAlign: 'center'
-            });
-            cell.child(state.emptyText);
-          })
-        )
-      );
-    };
-
     api.caption = (content) => {
       const box = captionOf();
 
@@ -430,108 +414,31 @@ export function VTable() {
     };
 
     api.vThead = (setup) => {
-      const head = headOf();
-
       if (setup !== undefined) {
-        deliverRows(vThead(setup), head);
+        headOf().setup(setup);
       }
 
       return api;
     };
 
     api.vTbody = (setup) => {
-      const body = bodyOf();
-
       if (setup !== undefined) {
-        deliverRows(vTbody(setup), body);
+        bodyOf().setup(setup);
       }
 
       return api;
     };
 
     api.vTfoot = (setup) => {
-      const foot = footOf();
-
       if (setup !== undefined) {
-        deliverRows(vTfoot(setup), foot);
+        footOf().setup(setup);
       }
 
       return api;
     };
 
     api.vTr = (setup) => {
-      deliverRows(vTr(setup), bodyOf());
-      return api;
-    };
-
-    api.columns = (value) => {
-      if (value === undefined) {
-        return state.columns.slice();
-      }
-
-      state.columns = normalizeTableColumns(value);
-      renderTable();
-      return api;
-    };
-
-    api.rows = (value) => {
-      if (value === undefined) {
-        return state.rows.slice();
-      }
-
-      state.rows = Array.isArray(value) ? value.slice() : [];
-      renderTable();
-      return api;
-    };
-
-    api.empty = (value) => {
-      if (value === undefined) {
-        return state.emptyText;
-      }
-
-      state.emptyText = value;
-      renderTable();
-      return api;
-    };
-
-    api.emptyText = (value) => (value === undefined ? state.emptyText : api.empty(value));
-
-    api.data = (value) => {
-      if (value === undefined) {
-        return {
-          caption: api.caption(),
-          columns: api.columns(),
-          emptyText: api.emptyText(),
-          rows: api.rows()
-        };
-      }
-
-      if (Array.isArray(value)) {
-        return api.rows(value);
-      }
-
-      if (isPlainObject(value)) {
-        const { caption: nextCaption, columns, empty, emptyText, rows } = value;
-
-        if (nextCaption !== undefined) {
-          api.caption(nextCaption);
-        }
-
-        if (columns !== undefined) {
-          api.columns(columns);
-        }
-
-        if (rows !== undefined) {
-          api.rows(rows);
-        }
-
-        if (emptyText !== undefined) {
-          api.emptyText(emptyText);
-        } else if (empty !== undefined) {
-          api.emptyText(empty);
-        }
-      }
-
+      bodyOf().vTr(setup);
       return api;
     };
 
@@ -540,6 +447,13 @@ export function VTable() {
       const elementConfig = {};
 
       Object.entries(config).forEach(([key, value]) => {
+        if (TABLE_DATA_KEYS.has(key)) {
+          throw new TypeError(
+            `vTable() does not take "${key}": the data-driven table is vTableWrapper(...) ` +
+              '(columns / rows / emptyText). vTable only takes structure.'
+          );
+        }
+
         if (typeof api[key] === 'function') {
           api[key](value);
           return;
@@ -567,36 +481,95 @@ export function VTable() {
 export const vTable = createComponentShortcut(VTable);
 
 /**
-/**
- * 数据驱动包装（`VTable` 之上的一层）：自己管 `columns` / `rows` / `emptyText`。
+ * 数据驱动表格（`VTable` 之上的一层）：`caption` / `columns` / `rows` / `emptyText` 都归它管。
  *
- * 数据用 `keySet` 按键保管「数据 + 行行为 api」（同 key 同 api，行状态写在 item.api 的信号上，
- * 改它不触发对账）；列头与行都走 `keyed`；视图内部用 `vTable` 组合——基础件不掺数据驱动。
+ * - **列**是纯数据（没有自己的状态）：`ref` 持有 + `keyed` 按 key 对账，改一列只重建那一格；
+ *   没声明列时按行数据推断（与迁移前的数据层同口径），一列都没有就兜底成「整行一格」；
+ * - **行**是 `keySet`：数据与行状态同住一个元素，**同 key 同 api**—— `item.api.selected`
+ *   这类行状态写在 `item.api` 的信号上，改它不触发对账；数据操作走
+ *   `rows / addRow / updateRow / removeRow / clearRows`；
+ * - 视图用 `vTable` 组合：自己不造 `<thead>` / `<tbody>`，也不碰 `_el` / `_children`。
+ *
+ * 行键：`row.id` / `row.key` 优先，其次 `rowKey(...)`（可传函数换口径），都没有就按对象身份发
+ * 内部键（同一个对象反复写入保持同一个键，换新对象算新行）。行键由 `keyed` 镜像成
+ * `data-row-key`（引擎口径，编译路径同样写），所以行数据最好自带 `id` / `key`——没有身份的行
+ * 只能按内部键对账，按 key 的行操作（`updateRow` / `item`）也就无从下手。
  * 命令名避开节点 / 命令保留字（data / text / child / attr / id / name / render）。
  */
 export function VTableWrapper() {
   return vNode((api) => {
     const captionText = ref('');
     const emptyText = ref('暂无数据');
+    const columns = ref([]);
+    let view = null;
 
-    const columns = keySet(
-      [],
-      (column) => column?.key ?? column?.field ?? column?.title,
-      (item) => {
-        item.api.title = ref(item.data?.label ?? item.data?.title ?? item.data?.key ?? '');
+    /**
+     * 数据写入收口：**首屏之前**绑定只求值不订阅（服务端同理），这一窗里写进来的数据要靠
+     * `flush()` 手动刷成快照——`vTableWrapper({ columns, rows })` 的 options 正好落在这个窗里。
+     * 渲染之后订阅已经接上，写入自己就会到 DOM，不必再整树重扫。
+     * 判据是视图根元素有没有落地（库内组件读 `_el` 的既有用法，如 svg / menu / chart）。
+     */
+    const syncView = () => {
+      if (view !== null && !view._el) {
+        view.flush();
       }
+
+      return api;
+    };
+
+    /** 没有身份的行：按对象身份发内部键（DOM 上只会看到 `keyed` 镜像的 `data-row-key`）。 */
+    let autoRowKeys = new WeakMap();
+    let autoRowSerial = 0;
+    let rowKeyHandler = null;
+
+    const declaredRowKey = (row) => (rowKeyHandler ? rowKeyHandler(row) : (row?.id ?? row?.key));
+
+    const rowKeyOf = (row) => {
+      const declared = declaredRowKey(row);
+
+      if (declared !== undefined && declared !== null) {
+        return declared;
+      }
+
+      if (row === null || typeof row !== 'object') {
+        return `row:${String(row)}`;
+      }
+
+      let key = autoRowKeys.get(row);
+
+      if (key === undefined) {
+        key = `row:auto-${autoRowSerial}`;
+        autoRowSerial += 1;
+        autoRowKeys.set(row, key);
+      }
+
+      return key;
+    };
+
+    const rows = keySet([], rowKeyOf, (item) => {
+      /** 行行为 api：这一行的状态与命令都在这里（不在数据上）。 */
+      item.api.selected = ref(false);
+      item.api.select = () => {
+        item.api.selected.value = true;
+      };
+    });
+
+    /** 真正渲染的列：声明优先，其次按第一行对象推断（推断不出就是空）。 */
+    const resolvedColumns = computed(() => {
+      const declared = columns.value;
+      return declared.length > 0
+        ? declared
+        : inferTableColumns(rows.value.map((item) => item.data));
+    });
+
+    /** 正文列：一列都没有时兜底成「整行一格」，与迁移前的数据层同口径。 */
+    const bodyColumns = computed(() =>
+      resolvedColumns.value.length > 0 ? resolvedColumns.value : [VALUE_COLUMN]
     );
 
-    const rows = keySet(
-      [],
-      (row) => row?.id,
-      (item) => {
-        item.api.selected = ref(false);
-        item.api.select = () => {
-          item.api.selected.value = true;
-        };
-      }
-    );
+    const hasColumns = computed(() => resolvedColumns.value.length > 0);
+    const isEmpty = computed(() => rows.value.length === 0);
+    const emptySpan = computed(() => String(Math.max(resolvedColumns.value.length, 1)));
 
     api.caption = (value) => {
       if (value === undefined) {
@@ -604,16 +577,16 @@ export function VTableWrapper() {
       }
 
       captionText.value = value;
-      return api;
+      return syncView();
     };
 
     api.columns = (value) => {
       if (value === undefined) {
-        return columns.values();
+        return columns.value;
       }
 
-      columns.replaceAll(Array.isArray(value) ? value : []);
-      return api;
+      columns.value = normalizeTableColumns(value);
+      return syncView();
     };
 
     api.rows = (value) => {
@@ -622,7 +595,7 @@ export function VTableWrapper() {
       }
 
       rows.replaceAll(Array.isArray(value) ? value : []);
-      return api;
+      return syncView();
     };
 
     api.emptyText = (value) => {
@@ -631,75 +604,118 @@ export function VTableWrapper() {
       }
 
       emptyText.value = value;
-      return api;
+      return syncView();
     };
 
-    /** 行行为 api：这一行的状态与命令都在这里（不在数据上）。 */
+    /** 换行键口径（行没有 id / key 时最常用）：换完按新键重认一遍现有行。 */
+    api.rowKey = (handler) => {
+      if (handler === undefined) {
+        return rowKeyHandler;
+      }
+
+      const next = typeof handler === 'function' ? handler : null;
+
+      if (next === rowKeyHandler) {
+        return api;
+      }
+
+      rowKeyHandler = next;
+      autoRowKeys = new WeakMap();
+      autoRowSerial = 0;
+      rows.replaceAll(rows.values());
+      return syncView();
+    };
+
+    /** 行行为 api：`item.api` 上是这一行的状态与命令，`item.data` 是行数据。 */
     api.item = (key) => rows.item(key);
 
     api.addRow = (row) => {
       rows.add(row);
-      return api;
+      return syncView();
     };
 
     api.updateRow = (key, patch) => {
       rows.merge(key, patch);
-      return api;
+      return syncView();
     };
 
     api.removeRow = (key) => {
       rows.remove(key);
-      return api;
+      return syncView();
     };
 
     api.clearRows = () => {
       rows.clear();
-      return api;
+      return syncView();
     };
 
+    /** props：键必须是自己的命令——写错的键直接报错，不静默写进 DOM 属性。 */
     api.setupObject = (config) => {
       Object.entries(config).forEach(([key, value]) => {
-        if (typeof api[key] === 'function') {
-          api[key](value);
+        if (typeof api[key] !== 'function') {
+          throw new TypeError(
+            `vTableWrapper() does not take "${key}": it takes caption / columns / rows / ` +
+              'emptyText / rowKey.'
+          );
         }
+
+        api[key](value);
       });
 
       return api;
     };
 
-    return vTable((table) => {
+    /** 字符串 / 数字 = 表格标题。 */
+    api.setupString = (value) => api.caption(value);
+
+    view = vTable((table) => {
       table.caption(captionText);
 
       table.vThead((head) => {
         head.vTr((headRow) => {
-          head.keyed(columns, (item) =>
-            headRow.vTh((cell) => {
-              cell.attr('data-key', String(item.data?.key ?? item.data?.field ?? ''));
-              cell.child(item.api.title);
+          headRow.mountable(hasColumns);
+          headRow.keyed(resolvedColumns, columnKeyOf, (column) =>
+            vTh((cell) => {
+              cell.attr('data-key', String(column.key));
+              applyCellStyles(cell, column, 'head');
+              appendCellContent(cell, column.label ?? column.key ?? '');
             })
           );
         });
       });
 
       table.vTbody((body) => {
-        body.keyed(rows, (item) =>
+        body.keyed(rows, (item, rowIndex) =>
           vTr((bodyRow) => {
-            bodyRow.attr('data-row-id', String(item.data?.id ?? ''));
-            bodyRow.toggleClass('is-selected', item.api.selected);
-            bodyRow.on('click', item.api.select);
+            const row = item.data;
 
-            const list = columns.values();
-            (list.length > 0 ? list : [null]).forEach((column) => {
-              bodyRow.vTd((cell) => {
-                const key = column ? (column.key ?? column.field) : '__value';
-                cell.attr('data-key', String(key));
-                cell.child(String((column ? item.data?.[key] : item.data) ?? ''));
-              });
-            });
+            bodyRow.toggleClass('is-selected', item.api.selected);
+            bodyRow.keyed(bodyColumns, columnKeyOf, (column) =>
+              vTd((cell) => {
+                cell.attr('data-key', String(column.key));
+                applyCellStyles(cell, column, 'body');
+                appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
+              })
+            );
           })
         );
+
+        body.vTr((emptyRow) => {
+          emptyRow.mountable(isEmpty);
+          emptyRow.vTd((cell) => {
+            cell.attr('colspan', emptySpan);
+            cell.styles({
+              color: themeValue('color-text-muted', '#64748b'),
+              padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
+              textAlign: 'center'
+            });
+            cell.child(emptyText);
+          });
+        });
       });
     });
+
+    return view;
   });
 }
 

@@ -10,7 +10,7 @@ import {
   vMessageManager,
   vNavbar,
   vScroll,
-  vTable,
+  vTableWrapper,
   vTooltip,
   vUpload
 } from './index.js';
@@ -58,7 +58,7 @@ describe('browser-only components server render', () => {
       label: `行 ${index}`
     }));
     const page = () =>
-      vTable({
+      vTableWrapper({
         columns: [
           { key: 'id', title: 'ID' },
           { key: 'label', title: '标签' }

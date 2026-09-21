@@ -76,28 +76,28 @@
 
 ### 数据展示
 
-| 功能         | Ant Design       | Element Plus   | yoya-ui                                             |
-| ------------ | ---------------- | -------------- | --------------------------------------------------- |
-| 表格         | Table            | ElTable        | vTable / vThead / vTbody / vTfoot / vTr / vTh / vTd |
-| 虚拟滚动表格 | Table（virtual） | ElTableV2      | —                                                   |
-| 树控件       | Tree             | ElTree         | vTree / vTreeNode                                   |
-| 树表格       | —                | —              | vTreeTable（行常驻，展开不丢 DOM 状态）             |
-| 多列层级浏览 | —                | —              | vTreeRanger（ranger 式三窗口）                      |
-| 时间线       | Timeline         | ElTimeline     | vTimeline / vTimelineItem                           |
-| 分页         | Pagination       | ElPagination   | vPagination                                         |
-| 徽标数       | Badge            | ElBadge        | vBadge                                              |
-| 标签         | Tag              | ElTag          | —                                                   |
-| 头像         | Avatar           | ElAvatar       | vAvatar                                             |
-| 轮播         | Carousel         | ElCarousel     | vCarousel                                           |
-| 描述列表     | Descriptions     | ElDescriptions | vDetail / vDetailItem                               |
-| 列表         | List             | —              | —                                                   |
-| 折叠面板     | Collapse         | ElCollapse     | —                                                   |
-| 空状态       | Empty            | ElEmpty        | —                                                   |
-| 日历         | Calendar         | ElCalendar     | —                                                   |
-| 图片         | Image            | ElImage        | vLazyImage                                          |
-| 图片预览     | Image（preview） | ElImageViewer  | vImagePreview                                       |
-| 统计数值     | Statistic        | ElStatistic    | vTrendCard、vDigitalBoard / vDigitalBoardItem       |
-| 轻量图表     | —                | —              | vChart（库无关宿主）、vSparkline、vGauge、vRingStat |
+| 功能         | Ant Design       | Element Plus   | yoya-ui                                                            |
+| ------------ | ---------------- | -------------- | ------------------------------------------------------------------ |
+| 表格         | Table            | ElTable        | vTableWrapper（columns / rows）/ vTable（vThead / vTbody / vTr …） |
+| 虚拟滚动表格 | Table（virtual） | ElTableV2      | —                                                                  |
+| 树控件       | Tree             | ElTree         | vTree / vTreeNode                                                  |
+| 树表格       | —                | —              | vTreeTable（行常驻，展开不丢 DOM 状态）                            |
+| 多列层级浏览 | —                | —              | vTreeRanger（ranger 式三窗口）                                     |
+| 时间线       | Timeline         | ElTimeline     | vTimeline / vTimelineItem                                          |
+| 分页         | Pagination       | ElPagination   | vPagination                                                        |
+| 徽标数       | Badge            | ElBadge        | vBadge                                                             |
+| 标签         | Tag              | ElTag          | —                                                                  |
+| 头像         | Avatar           | ElAvatar       | vAvatar                                                            |
+| 轮播         | Carousel         | ElCarousel     | vCarousel                                                          |
+| 描述列表     | Descriptions     | ElDescriptions | vDetail / vDetailItem                                              |
+| 列表         | List             | —              | —                                                                  |
+| 折叠面板     | Collapse         | ElCollapse     | —                                                                  |
+| 空状态       | Empty            | ElEmpty        | —                                                                  |
+| 日历         | Calendar         | ElCalendar     | —                                                                  |
+| 图片         | Image            | ElImage        | vLazyImage                                                         |
+| 图片预览     | Image（preview） | ElImageViewer  | vImagePreview                                                      |
+| 统计数值     | Statistic        | ElStatistic    | vTrendCard、vDigitalBoard / vDigitalBoardItem                      |
+| 轻量图表     | —                | —              | vChart（库无关宿主）、vSparkline、vGauge、vRingStat                |
 
 ### 反馈
 
