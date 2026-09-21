@@ -253,30 +253,32 @@ async function bundleConsumer(entryName, importedNames, minify) {
 }
 
 // ---- 3. 体积预算 -------------------------------------------------------------
-// 预算为当前基线保留约 60% 余量；后续允许小幅上涨，但不能无限膨胀。
+// 门限口径（2026-09-21 放宽，用户决定：先放宽门限，瘦身留到后续再做）：
+// 每个条目 = 当前实测 + 约 25% 余量，取整到整数 KB —— 它只当**防无限制膨胀的兜底**，
+// 不再当"每刀都必须抠出字节"的门槛。后续瘦身（开发者文案、图标集、chunk 归并）完成后再逐个收紧。
 // 说明：分块不再按目录强判，公共 chunk 由 bundler 按「被多个入口共享」自动生成
 // （html / svg / core / shared 等），因此预算改为盯住这些公共 chunk 与各入口产物。
 const BUDGET_ARTIFACTS = {
   'yoya.ui-router.full.min.js': 700 * 1024,
   'yoya.ui.full.min.js': 650 * 1024,
-  'yoya.router.full.min.js': 150 * 1024,
+  'yoya.router.full.min.js': 170 * 1024,
   // 公共 chunk（引擎、HTML 工厂、SVG 与图标、i18n/a11y 等）
   'html.min.js': 60 * 1024,
   'svg.min.js': 24 * 1024,
-  'core.min.js': 12 * 1024,
+  'core.min.js': 13 * 1024,
   // 入口产物
   'yoya.core.min.js': 9 * 1024,
   'yoya.api.min.js': 4 * 1024,
   'yoya.ui.min.js': 20 * 1024,
-  'yoya.router.min.js': 40 * 1024,
+  'yoya.router.min.js': 42 * 1024,
   // 编译子入口按"导出面 = 发射器能写出的钩子全集"来定：任一钩子漏掉，用户的构建就是一条
   // import 链接错误（见 src/compiler/runtime-exports.test.js）。它不进主入口下载路径，
   // 真正的用户成本看 BUDGET_DOWNLOADS 里的 min+gzip。
-  'yoya.compiler-runtime.min.js': 8 * 1024,
+  'yoya.compiler-runtime.min.js': 10 * 1024,
   // 库内组件注册表：按形状扫出来的可编子集（图标 + vCard 家族 + 表格部件）打进一个入口。
   // 它不在任何默认下载路径上，只有**链接了库内组件**的构建才会引到它。
-  'yoya.compiled-registry.min.js': 40 * 1024,
-  'devtools.min.js': 6 * 1024,
+  'yoya.compiled-registry.min.js': 42 * 1024,
+  'devtools.min.js': 8 * 1024,
   // 节点引擎与 HTML/SVG 工厂的公共 chunk（按当前分块口径）
   'node.min.js': 96 * 1024,
   // 组件皮肤：core 层无皮肤，这里只盯组件样式本身的膨胀
@@ -285,12 +287,12 @@ const BUDGET_ARTIFACTS = {
 
 // 首屏真实成本是「入口 + 它引用的公共 chunk」，按实际下载量（min+gzip）单独设预算。
 const BUDGET_DOWNLOADS = {
-  'yoya.core.js': 30 * 1024,
-  'yoya.ui.js': 130 * 1024,
-  'yoya.compiler-runtime.js': 24 * 1024
+  'yoya.core.js': 38 * 1024,
+  'yoya.ui.js': 135 * 1024,
+  'yoya.compiler-runtime.js': 27 * 1024
 };
 
-const BUDGET_CATEGORY_BUNDLE = 220 * 1024;
+const BUDGET_CATEGORY_BUNDLE = 250 * 1024;
 
 async function verifyBudgets() {
   const report = [];
