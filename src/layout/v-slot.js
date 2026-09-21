@@ -1,7 +1,13 @@
 import { HtmlElementNode } from '../html/index.js';
 import { applySetupValue } from '../core/node.js';
 import { registerChildFactories } from '../core/node.js';
-import { componentClass, isPlainObject, resolveTextValue } from '../components/shared.js';
+import {
+  componentClass,
+  isPlainObject,
+  normalizeChildren,
+  replaceChildren,
+  resolveTextValue
+} from '../components/shared.js';
 
 /**
  * VSlot —— **零布局占位**（形态 A 薄工厂）：给组件在自己的结构里留一个"位置标记"，
@@ -31,13 +37,13 @@ export function VSlot(options = null) {
   }
 
   if (typeof options === 'string' || typeof options === 'number') {
-    return node.attr('data-slot', resolveTextValue(options) || null);
+    return node.attr('vn-slot', resolveTextValue(options) || null);
   }
 
   if (isPlainObject(options)) {
     const { name, ...rest } = options;
     if (name !== undefined) {
-      node.attr('data-slot', resolveTextValue(name) || null);
+      node.attr('vn-slot', resolveTextValue(name) || null);
     }
     if (Object.keys(rest).length > 0) {
       applySetupValue(node, rest);
@@ -58,8 +64,22 @@ export function vSlotOf(root, name) {
   }
 
   return (
-    root.children().find((child) => child?.attr?.('data-slot') === resolveTextValue(name)) ?? null
+    root.children().find((child) => child?.attr?.('vn-slot') === resolveTextValue(name)) ?? null
   );
+}
+
+/**
+ * 外部插入：把内容放进同名 `vn-slot` 占位（内容作为占位的子节点，占位自身不生成盒子）。
+ * 只认 `vn-slot` 属性——公开的 `slot="x"` 内容投影机制完全不受影响。
+ */
+export function vSlotInsert(root, name, content) {
+  const slot = vSlotOf(root, name);
+  if (!slot) {
+    return null;
+  }
+
+  replaceChildren(slot, normalizeChildren(content));
+  return slot;
 }
 
 // 父节点快捷方法：`page.vSlot({ name: 'header' })`（与其它布局工厂同一口径）

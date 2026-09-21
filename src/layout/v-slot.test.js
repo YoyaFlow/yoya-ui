@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vCard, vSlot, vSlotOf, vText } from '../index.js';
+import { div, vCard, vSlot, vSlotInsert, vSlotOf, vText } from '../index.js';
 import { componentNameOf } from '../core/node.js';
 
 describe('vSlot（零布局占位）', () => {
@@ -8,17 +8,17 @@ describe('vSlot（零布局占位）', () => {
 
     expect(element.tagName).toBe('SPAN');
     expect(element.style.display).toBe('contents');
-    expect(element.getAttribute('data-slot')).toBe('header');
+    expect(element.getAttribute('vn-slot')).toBe('header');
     expect(element.classList.contains('yoya-vslot')).toBe(true);
     expect(componentNameOf(vSlot())).toBe('VSlot');
   });
 
   it('accepts a bare name and keeps normal element options working', () => {
     const named = vSlot('footer');
-    expect(named.attr('data-slot')).toBe('footer');
+    expect(named.attr('vn-slot')).toBe('footer');
 
     const styled = vSlot({ attrs: { 'data-test': 'x' }, name: 'body', style: { gap: '4px' } });
-    expect(styled.attr('data-slot')).toBe('body');
+    expect(styled.attr('vn-slot')).toBe('body');
     expect(styled.attr('data-test')).toBe('x');
     expect(styled.renderDom().style.gap).toBe('4px');
   });
@@ -33,8 +33,10 @@ describe('vSlot（零布局占位）', () => {
     });
     const hostElement = host.renderDom();
 
-    vSlotOf(host, 'header').child(vText('标题'));
+    expect(vSlotInsert(host, 'header', vText('标题'))).not.toBeNull();
     expect(hostElement.textContent).toBe('标题');
+    // 外部插入只认 vn-slot：公开槽位名单里没有它
+    expect(hostElement.querySelector('[slot]')).toBeNull();
   });
 
   it('works as a parent shortcut on containers', () => {
@@ -43,7 +45,7 @@ describe('vSlot（零布局占位）', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('[data-slot="body"]')).not.toBeNull();
+    expect(element.querySelector('[vn-slot="body"]')).not.toBeNull();
   });
 
   it('keeps card parts out of the public slot namespace', () => {
