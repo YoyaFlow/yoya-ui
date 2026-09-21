@@ -89,6 +89,18 @@ describe('vTable declarative sections', () => {
     expect(element.querySelector(`${GRID} > tbody td`).textContent).toBe('api-gateway');
   });
 
+  it('keeps rows handed to child() in the anonymous table slot', () => {
+    const table = vTable((table) => {
+      table.child(vTr((row) => row.vTd('api-gateway')));
+    });
+    const element = table.renderDom();
+    const grid = element.querySelector(GRID);
+
+    // 匿名占位就是 <table>：行落在它里面（与段命令混用不是这套写法）
+    expect(grid.querySelectorAll(':scope > [vn="VTr"]')).toHaveLength(1);
+    expect(grid.querySelector(':scope > [vn="VTr"] td').textContent).toBe('api-gateway');
+  });
+
   it('rejects the data-driven keys instead of writing them as attributes', () => {
     expect(() => vTable({ columns: [{ key: 'name' }], rows: [{ name: 'api-gateway' }] })).toThrow(
       /vTableWrapper/

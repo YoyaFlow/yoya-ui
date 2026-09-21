@@ -15,9 +15,9 @@ import {
  * 表格族（票 15 §4：**组件定义 = 结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
  * - 结构用 DSL 声明：`div[VTable] > div[VTableScroll] > table[VTableGrid] > caption + thead + tbody`；
- * - 声明式 section / 行由命令投递（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`）：
- *   行只有两条通道——`table.vTr(…)`（进表体）与 `section.vTr(…)`（进该段），不在别处；
- * - 匿名占位**就是 `<table>`**：`table.child(section)` 的内容落进 `<table>`，行不走这条通道。
+ * - 匿名占位**就是 `<table>`**：`table.child(section)` / `table.child(vTr(…))` 的内容都落进 `<table>`；
+ * - 段与行各有命令通道（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`）：
+ *   `table.vTr(…)` 进表体、`section.vTr(…)` 进该段——同一张表里**不要和匿名 `child()` 混用**。
  * - **数据驱动（列 / 行 / 空态）在 `VTableWrapper` 上**：表格壳只认结构，数据层只消费它。
  */
 
