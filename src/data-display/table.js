@@ -1,4 +1,5 @@
 import { viewRootOf } from '../core/node.js';
+import { keySet } from '../core/key-set.js';
 import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
@@ -566,23 +567,36 @@ export function VTable() {
 export const vTable = createComponentShortcut(VTable);
 
 /**
- * 数据驱动包装（`VTable` 之上的一层，**自己**管 `columns` / `rows` / `emptyText`）。
+/**
+ * 数据驱动包装（`VTable` 之上的一层）：自己管 `columns` / `rows` / `emptyText`。
  *
- * 和别的表格框架一样：数据用句柄（`ref`）持有，写入即对账——列头 / 行都走 `keyed`，
- * 行能复用的不重建；`addRow / updateRow / removeRow / clearRows` 是它自己的行动作；
- * 视图内部用 `vTable` 组合（基础件不掺数据驱动）。
- *
- * 命名避开节点 / 命令保留字（`data` / `text` / `child` / `attr` / `id` / `name` / `render`）。
+ * 数据用 `keySet` 按键保管「数据 + 行行为 api」（同 key 同 api，行状态写在 item.api 的信号上，
+ * 改它不触发对账）；列头与行都走 `keyed`；视图内部用 `vTable` 组合——基础件不掺数据驱动。
+ * 命令名避开节点 / 命令保留字（data / text / child / attr / id / name / render）。
  */
 export function VTableWrapper() {
   return vNode((api) => {
     const captionText = ref('');
-    const columns = ref([]);
     const emptyText = ref('暂无数据');
-    const rows = ref([]);
 
-    const rowKeyOf = (row, index) => (row && row.id !== undefined ? row.id : index);
-    const columnKeyOf = (column, index) => column?.key ?? column?.field ?? index;
+    const columns = keySet(
+      [],
+      (column) => column?.key ?? column?.field ?? column?.title,
+      (item) => {
+        item.api.title = ref(item.data?.label ?? item.data?.title ?? item.data?.key ?? '');
+      }
+    );
+
+    const rows = keySet(
+      [],
+      (row) => row?.id,
+      (item) => {
+        item.api.selected = ref(false);
+        item.api.select = () => {
+          item.api.selected.value = true;
+        };
+      }
+    );
 
     api.caption = (value) => {
       if (value === undefined) {
@@ -595,19 +609,19 @@ export function VTableWrapper() {
 
     api.columns = (value) => {
       if (value === undefined) {
-        return columns.value;
+        return columns.values();
       }
 
-      columns.value = Array.isArray(value) ? value.slice() : [];
+      columns.replaceAll(Array.isArray(value) ? value : []);
       return api;
     };
 
     api.rows = (value) => {
       if (value === undefined) {
-        return rows.value;
+        return rows.values();
       }
 
-      rows.value = Array.isArray(value) ? value.slice() : [];
+      rows.replaceAll(Array.isArray(value) ? value : []);
       return api;
     };
 
@@ -620,29 +634,29 @@ export function VTableWrapper() {
       return api;
     };
 
+    /** 行行为 api：这一行的状态与命令都在这里（不在数据上）。 */
+    api.item = (key) => rows.item(key);
+
     api.addRow = (row) => {
-      rows.value = [...rows.value, row];
+      rows.add(row);
       return api;
     };
 
     api.updateRow = (key, patch) => {
-      rows.value = rows.value.map((row, index) =>
-        rowKeyOf(row, index) === key ? { ...row, ...patch } : row
-      );
+      rows.merge(key, patch);
       return api;
     };
 
     api.removeRow = (key) => {
-      rows.value = rows.value.filter((row, index) => rowKeyOf(row, index) !== key);
+      rows.remove(key);
       return api;
     };
 
     api.clearRows = () => {
-      rows.value = [];
+      rows.clear();
       return api;
     };
 
-    /** props：`columns` / `rows` / `emptyText` / `caption` / `attrs` / `style` … */
     api.setupObject = (config) => {
       Object.entries(config).forEach(([key, value]) => {
         if (typeof api[key] === 'function') {
@@ -658,33 +672,31 @@ export function VTableWrapper() {
 
       table.vThead((head) => {
         head.vTr((headRow) => {
-          head.keyed(
-            columns,
-            columnKeyOf,
-            (column, index) => () =>
-              headRow.vTh((cell) => {
-                cell.attr('data-key', String(columnKeyOf(column, index)));
-                cell.child(column?.label ?? column?.title ?? column?.key ?? '');
-              })
+          head.keyed(columns, (item) =>
+            headRow.vTh((cell) => {
+              cell.attr('data-key', String(item.data?.key ?? item.data?.field ?? ''));
+              cell.child(item.api.title);
+            })
           );
         });
       });
 
       table.vTbody((body) => {
-        body.keyed(
-          rows,
-          rowKeyOf,
-          (row, rowIndex) => () =>
-            vTr((bodyRow) => {
-              bodyRow.attr('data-row-index', String(rowIndex));
-              (columns.value.length > 0 ? columns.value : [null]).forEach((column, columnIndex) => {
-                bodyRow.vTd((cell) => {
-                  const key = column ? columnKeyOf(column, columnIndex) : '__value';
-                  cell.attr('data-key', String(key));
-                  cell.child(String((column ? row?.[key] : row) ?? ''));
-                });
+        body.keyed(rows, (item) =>
+          vTr((bodyRow) => {
+            bodyRow.attr('data-row-id', String(item.data?.id ?? ''));
+            bodyRow.toggleClass('is-selected', item.api.selected);
+            bodyRow.on('click', item.api.select);
+
+            const list = columns.values();
+            (list.length > 0 ? list : [null]).forEach((column) => {
+              bodyRow.vTd((cell) => {
+                const key = column ? (column.key ?? column.field) : '__value';
+                cell.attr('data-key', String(key));
+                cell.child(String((column ? item.data?.[key] : item.data) ?? ''));
               });
-            })
+            });
+          })
         );
       });
     });
