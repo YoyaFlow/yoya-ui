@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { VAnchor, VAnchorItem, div, vAnchor } from '../index.js';
+import { div, hasComponentIdentity, vAnchor } from '../index.js';
+
+const ITEM = '[vn~="VAnchorItem"]';
+const LINK = '[vn~="VAnchorLink"]';
+const CHILDREN = '[vn~="VAnchorChildren"]';
 
 describe('vAnchor', () => {
   beforeEach(() => {
@@ -21,14 +25,14 @@ describe('vAnchor', () => {
       offset: 24
     });
     const element = anchor.renderDom();
-    const items = element.querySelectorAll('.yoya-vanchor-item');
+    const items = element.querySelectorAll(ITEM);
 
-    expect(anchor).toBeInstanceOf(VAnchor);
+    expect(hasComponentIdentity(anchor, 'VAnchor')).toBe(true);
     expect(element.tagName).toBe('NAV');
     expect(element.getAttribute('aria-label')).toBe('文档目录');
     expect(element.dataset.offset).toBe('24');
     expect(items).toHaveLength(2);
-    expect(anchor.items()[0]).toBeInstanceOf(VAnchorItem);
+    expect(hasComponentIdentity(anchor.items()[0], 'VAnchorItem')).toBe(true);
     expect(items[0].querySelector('a').textContent).toBe('开始');
     expect(items[0].querySelector('a').getAttribute('href')).toBe('#start');
 
@@ -50,15 +54,13 @@ describe('vAnchor', () => {
       root.vAnchorItem(['自定义', '#custom']);
     });
     const element = anchor.renderDom();
-    const visibleChildren = [...element.querySelectorAll('.yoya-vanchor-children')].filter(
+    const visibleChildren = [...element.querySelectorAll(CHILDREN)].filter(
       (node) => node.style.display !== 'none'
     );
 
-    expect(element.querySelectorAll('.yoya-vanchor-item')).toHaveLength(4);
+    expect(element.querySelectorAll(ITEM)).toHaveLength(4);
     expect(visibleChildren).toHaveLength(1);
-    expect(element.querySelector('.yoya-vanchor-children .yoya-vanchor-link').textContent).toBe(
-      'API'
-    );
+    expect(element.querySelector(`${CHILDREN} ${LINK}`).textContent).toBe('API');
 
     anchor.destroy();
   });
@@ -72,7 +74,7 @@ describe('vAnchor', () => {
     });
     anchor.active('#b');
     const element = anchor.renderDom();
-    const items = element.querySelectorAll('.yoya-vanchor-item');
+    const items = element.querySelectorAll(ITEM);
 
     expect(anchor.active()).toBe('#b');
     expect(items[1].dataset.active).toBe('true');
@@ -104,12 +106,12 @@ describe('vAnchor', () => {
         anchor.vAnchorItem({ href: '#section-b', title: 'B' });
       });
     });
-    const anchor = page.children().find((child) => child instanceof VAnchor);
+    const anchor = page.children().find((child) => hasComponentIdentity(child, 'VAnchor'));
     const element = page.renderDom();
     document.body.appendChild(element);
     Object.defineProperty(window, 'scrollTo', { configurable: true, value: scrollTo });
 
-    element.querySelectorAll('.yoya-vanchor-link')[1].click();
+    element.querySelectorAll(LINK)[1].click();
 
     expect(anchor.active()).toBe('#section-b');
     expect(scrollTo).toHaveBeenCalledWith({ behavior: 'smooth', top: expect.any(Number) });
@@ -126,14 +128,14 @@ describe('vAnchor', () => {
     });
     const anchor = page.children()[0];
 
-    expect(anchor).toBeInstanceOf(VAnchor);
+    expect(hasComponentIdentity(anchor, 'VAnchor')).toBe(true);
     anchor.items([
       { href: '#x', title: 'X' },
       { href: '#y', title: 'Y' }
     ]);
     const element = page.renderDom();
 
-    expect(element.querySelectorAll('.yoya-vanchor-item')).toHaveLength(2);
+    expect(element.querySelectorAll(ITEM)).toHaveLength(2);
     expect(element.textContent).toContain('X');
     expect(element.textContent).toContain('Y');
 
@@ -156,7 +158,7 @@ describe('vAnchor', () => {
         anchor.vAnchorItem({ href: '#section-b', title: 'B' });
       });
     });
-    const anchor = page.children().find((child) => child instanceof VAnchor);
+    const anchor = page.children().find((child) => hasComponentIdentity(child, 'VAnchor'));
     const element = page.renderDom();
     document.body.appendChild(element);
     const sections = element.querySelectorAll('section');
