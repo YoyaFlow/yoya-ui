@@ -21,7 +21,7 @@ describe('vTree server-side rendering', () => {
       ]
     });
 
-    const html = tree.render().toHTML();
+    const html = tree.toHTML();
 
     expect(html).toContain('role="tree"');
     expect(html).toContain('data-node-id="leaf-b"');
@@ -44,7 +44,7 @@ describe('vTree server-side rendering', () => {
       ]
     });
 
-    const html = tree.render().toHTML();
+    const html = tree.toHTML();
 
     expect(html).toContain('aria-checked="mixed"');
     expect(html).toContain('aria-checked="true"');

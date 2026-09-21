@@ -212,6 +212,46 @@ const CASES = [
       virtual: scroll.virtual(),
       page: scroll.page()
     })
+  },
+  {
+    // 注意：带自增 id 的用例一律追加在末尾——插在中间会让后面用例的 id 计数漂移
+    name: 'vTree / 多级节点（可勾选）',
+    build: () =>
+      api.vTree({
+        checkable: true,
+        nodes: [
+          {
+            id: 'group-a',
+            label: '分组一',
+            children: [
+              { id: 'leaf-a1', label: '叶子一' },
+              { id: 'leaf-a2', label: '叶子二' }
+            ]
+          },
+          { id: 'group-b', label: '分组二', children: [{ id: 'leaf-b1', label: '叶子三' }] }
+        ]
+      }),
+    probe: (tree) => ({
+      nodes: tree.nodes().length,
+      checked: tree.checkedKeys().length,
+      expanded: tree.expandedKeys().length,
+      selected: tree.selectedKeys().length
+    })
+  },
+  {
+    name: 'vTree / 展开全部 + 选中叶子',
+    build: () => {
+      const tree = api.vTree({
+        nodes: [{ id: 'p', label: '父节点', children: [{ id: 'c', label: '子节点' }] }]
+      });
+      tree.expandAll();
+      tree.select('c');
+      return tree;
+    },
+    probe: (tree) => ({
+      expanded: tree.expandedKeys(),
+      selected: tree.selectedKeys()
+    })
   }
 ];
 

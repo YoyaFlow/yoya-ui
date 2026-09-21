@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
-import { ViewNode, appendNodeChild } from '../core/node.js';
+import { appendNodeChild, defineComponentIdentity, ViewNode } from '../core/node.js';
 import { allocateId } from '../core/id.js';
+import { vNode } from '../core/v-node.js';
 import {
   applyComponentArguments,
   componentClass,
@@ -248,8 +249,8 @@ export class VTreeNode {
   }
 }
 
-export function VTree(first = null, second = null, third = null) {
-  const args = normalizeComponentArguments(first, second, third);
+/** 树组件的内部运行时：状态、根/列表/空态节点、行重建与键盘交互都在这里（不导出）。 */
+function createTreeRuntime(first = null) {
   const state = {
     ariaLabel: '树形控件',
     building: true,
@@ -521,10 +522,6 @@ export function VTree(first = null, second = null, third = null) {
       toggleHandler = typeof handler === 'function' ? handler : null;
       return api;
     },
-    render() {
-      sync();
-      return root;
-    },
     select(id, value = undefined) {
       const node = findNode(state.nodes, id);
       if (!node || node.disabled) {
@@ -620,11 +617,10 @@ export function VTree(first = null, second = null, third = null) {
     }
   };
 
-  applyTreeSetup(args.first);
+  applyTreeSetup(first);
   state.building = false;
   sync();
-  applyComponentArguments(api, args.options, args.callback);
-  return api;
+  return { api, root };
 
   function requestSync() {
     if (!state.building) {
@@ -1325,11 +1321,58 @@ export function vTree(first = null, second = null, third = null) {
     typeof args.first.render === 'function' &&
     typeof args.first.nodes === 'function'
   ) {
+    // 复用同类实例（旧写法 `vTree(existingTree)`）：把 options / callback 补上就返回
     return applyComponentArguments(args.first, args.options, args.callback);
   }
 
-  return VTree(first, second, third);
+  const node = vNode((api) => {
+    const tree = createTreeRuntime(args.first);
+    TREE_COMMANDS.forEach((name) => {
+      api[name] = tree.api[name];
+    });
+    return tree.root;
+  });
+
+  applyComponentArguments(node, args.options, args.callback);
+  return node;
 }
+
+export const VTree = vTree;
+defineComponentIdentity(VTree, 'VTree');
+
+/** 树的对外命令面：内部 `render` / `destroy` 不对外——视图就是根节点，销毁交给框架。 */
+const TREE_COMMANDS = [
+  'ariaLabel',
+  'change',
+  'onChange',
+  'checked',
+  'checkedKeys',
+  'check',
+  'checkable',
+  'checkAll',
+  'collapseAll',
+  'collapseNode',
+  'data',
+  'emptyText',
+  'expandAll',
+  'expandedKeys',
+  'expandNode',
+  'multiple',
+  'nodes',
+  'vTreeNode',
+  'node',
+  'addNode',
+  'onCheck',
+  'onSelect',
+  'onToggle',
+  'select',
+  'selectable',
+  'selected',
+  'selectedKeys',
+  'toggleNode',
+  'toggleIcon',
+  'update'
+];
 
 export function vTreeNode(setup = null) {
   return setup instanceof VTreeNode ? setup : new VTreeNode(setup);

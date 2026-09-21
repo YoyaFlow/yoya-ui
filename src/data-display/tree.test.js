@@ -21,7 +21,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rows = element.querySelectorAll('.yoya-vtree-node');
 
     expect(element.getAttribute('role')).toBe('tree');
@@ -43,7 +43,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rootRow = element.querySelector('[data-node-id="root"]');
 
     expect(rootRow.getAttribute('aria-expanded')).toBe('false');
@@ -65,7 +65,7 @@ describe('vTree', () => {
     const tree = vTree({
       nodes: [{ id: 'folder', icon, label: '目录' }]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
 
     expect(icon).toHaveBeenCalled();
     expect(element.querySelector('.yoya-vtree-icon').textContent).toBe('F');
@@ -83,7 +83,7 @@ describe('vTree', () => {
       ],
       toggleIcon
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
 
     expect(rootToggle.textContent).toBe('关');
@@ -108,7 +108,7 @@ describe('vTree', () => {
       ]
     });
     tree.toggleIcon(div('关'), div('开'));
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
 
     expect(rootToggle.textContent).toBe('关');
@@ -130,7 +130,7 @@ describe('vTree', () => {
       ],
       toggleIcon: '<b>▸</b>'
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
 
     // 字符串按 ChildInput 语义当文本：标签会被转义显示，不会解析成元素
@@ -142,7 +142,7 @@ describe('vTree', () => {
     const tree = vTree({
       nodes: [{ expandable: true, id: 'empty', label: '空文件夹' }]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const toggle = element.querySelector('[data-node-id="empty"] .yoya-vtree-toggle');
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
@@ -170,7 +170,7 @@ describe('vTree', () => {
         });
       });
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
 
     expect(tree.nodes()).toHaveLength(1);
     expect(tree.nodes()[0].id).toBe('root');
@@ -197,7 +197,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const actionButton = element.querySelector(
       '[data-node-id="node"] .yoya-vtree-node-actions button'
     );
@@ -217,7 +217,7 @@ describe('vTree', () => {
         { id: 'worker', label: 'Worker' }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
 
     element.querySelector('[data-node-id="api"]').click();
 
@@ -249,7 +249,7 @@ describe('vTree', () => {
         { id: 'web', label: 'Web' }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
 
     element.querySelector('[data-node-id="api"]').click();
     element.querySelector('[data-node-id="web"]').click();
@@ -273,7 +273,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const leafInput = element.querySelector('[data-node-id="leaf-a"] input');
 
     leafInput.checked = true;
@@ -305,7 +305,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
 
     tree.expandAll();
     expect(tree.expandedKeys()).toEqual(['root']);
@@ -335,7 +335,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     document.body.appendChild(element);
 
     element.querySelector('[data-node-id="disabled"]').click();
@@ -428,7 +428,7 @@ describe('vTree', () => {
         { id: 'b', label: 'B' }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rowA = element.querySelector('[data-node-id="a"]');
 
     rowA.click();
@@ -452,7 +452,7 @@ describe('vTree', () => {
         }
       ]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const rootInput = element.querySelector('[data-node-id="root"] input');
     const leafInput = element.querySelector('[data-node-id="leaf-a"] input');
 
@@ -482,7 +482,7 @@ describe('vTree', () => {
     const tree = vTree({
       nodes: [{ id: 'a', label: 'A' }]
     });
-    const element = tree.render().renderDom();
+    const element = tree.renderDom();
     const row = element.querySelector('[data-node-id="a"]');
 
     expect(row.getAttribute('aria-selected')).toBe('false');
