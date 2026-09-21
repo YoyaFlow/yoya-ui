@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HtmlElementNode, div, vGlowButton } from '../index.js';
+import { HtmlElementNode, VButton, div, vGlowButton, viewRootOf } from '../index.js';
 
 describe('vGlowButton', () => {
   afterEach(() => {
@@ -10,7 +10,10 @@ describe('vGlowButton', () => {
     const button = vGlowButton('立即部署');
     const element = button.renderDom();
 
-    expect(button).toBeInstanceOf(HtmlElementNode);
+    // 按钮是 vNode 外壳：公开句柄是组件节点，元素机制在视图根（不导出的节点类型）上
+    expect(viewRootOf(button)).toBeInstanceOf(HtmlElementNode);
+    // 多值身份：流光按钮同时**是** VButton（旧类继承的语义）
+    expect(button).toBeInstanceOf(VButton);
     expect(element.tagName).toBe('BUTTON');
     expect(element.classList.contains('yoya-vbutton')).toBe(true);
     expect(element.classList.contains('yoya-vglow-button')).toBe(true);

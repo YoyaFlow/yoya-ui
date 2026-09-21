@@ -1,22 +1,20 @@
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
-import { applyPropValue } from '../core/node.js';
+import { applyPropValue, defineComponentIdentity } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
-  applyComponentArguments,
   applyElementOptions,
   isPlainObject,
-  normalizeComponentArguments,
   normalizeChildren,
   replaceChildren
 } from '../components/shared.js';
 
-/**
- * vButton 是复合按钮组件；button() 仍然保留为原生 HTML button 工厂。
- */
-export class VButton extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+/** 复合按钮的节点类型（不导出到包入口）；公开组件 `vButton` 是 vNode 外壳。 */
+export class ButtonNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('button', null);
+    this._identity = 'VButton';
     this._variant = 'secondary';
     this._size = 'medium';
     this._focused = false;
@@ -36,9 +34,7 @@ export class VButton extends HtmlElementNode {
     this.type(this._variant);
     this.size(this._size);
 
-    const args = normalizeComponentArguments(setup, options, callback);
-    this._setupButton(args.first);
-    applyComponentArguments(this, args.options, args.callback);
+    this._setupButton(setup);
   }
 
   label(content) {
@@ -253,6 +249,17 @@ export class VButton extends HtmlElementNode {
   }
 }
 
-export function vButton(setup = null, options = null, callback = null) {
-  return new VButton(setup, options, callback);
+/**
+ * vButton 是复合按钮组件；button() 仍然保留为原生 HTML button 工厂。
+ */
+export function vButton(first = null, second = null, third = null) {
+  return createComponentShell({
+    identity: 'VButton',
+    createNode: (setup) => new ButtonNode(setup),
+    commands: ['label', 'content', 'type', 'variant', 'formType', 'size', 'disabled', 'loading'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VButton = vButton;
+defineComponentIdentity(VButton, 'VButton');

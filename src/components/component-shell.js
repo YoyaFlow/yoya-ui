@@ -13,12 +13,17 @@
  *    `disabled()` / `error()`）不在原型上，手工清单漏一个就会静默失效（迁移表单控件时踩到：
  *    `vTimer().disabled()` 直接不存在）。清单仍是文档口径，自动补齐是兜底。
  */
-import { ComponentNode, applySetupValue, componentNameOf } from '../core/node.js';
+import { ComponentNode, applySetupValue, hasComponentIdentity } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
 
-/** 复用同类组件实例（旧 `createComponentFactory` 的语义）：`vMenu(existingMenu)` 返回它自己。 */
+/**
+ * 复用同类组件实例（旧 `createComponentFactory` 的语义）：`vMenu(existingMenu)` 返回它自己。
+ *
+ * 判定用**身份命中**而不是名字相等：多值身份（`'VTimer VInput'`、`'VGlowButton VButton'`）
+ * 里任一名命中都算——旧类继承关系（子类 `instanceof` 父组件）正是这个语义。
+ */
 export function reuseComponent(value, name) {
-  return componentNameOf(value) === name ? value : null;
+  return hasComponentIdentity(value, name) ? value : null;
 }
 
 /** 命令委托：把节点上的同名方法挂到 api 上；节点返回自己时映射成 `api`。 */

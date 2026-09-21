@@ -1,6 +1,7 @@
-import { VButton } from '../actions/button.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { ButtonNode } from '../actions/button.js';
 import { componentClass } from '../components/shared.js';
-import { nodeChildren } from '../core/node.js';
+import { defineComponentIdentity, nodeChildren } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 
 const GLOW_DEFAULTS = {
@@ -26,9 +27,11 @@ const GLOW_OPTIONS = {
  * motion 控制动画策略：auto 遵循系统 reduced-motion（无动画时保留静态光影），
  * always 强制流光动画（用于特效演示等需要恒定动效的场景）。
  */
-export class VGlowButton extends VButton {
-  constructor(setup = null, options = null, callback = null) {
-    super(setup, options, callback);
+export class GlowButtonNode extends ButtonNode {
+  constructor(setup = null) {
+    super(setup);
+    // 多值身份：`VGlowButton` 同时**是** `VButton`（旧类继承的语义）
+    this._identity = 'VGlowButton VButton';
     this.className(componentClass, 'yoya-vglow-button');
 
     Object.entries(GLOW_DEFAULTS).forEach(([key, value]) => {
@@ -157,6 +160,31 @@ export class VGlowButton extends VButton {
   }
 }
 
-export function vGlowButton(setup = null, options = null, callback = null) {
-  return new VGlowButton(setup, options, callback);
+export function vGlowButton(first = null, second = null, third = null) {
+  return createComponentShell({
+    identity: 'VGlowButton',
+    createNode: (setup) => new GlowButtonNode(setup),
+    commands: [
+      'glow',
+      'play',
+      'speed',
+      'direction',
+      'strength',
+      'motion',
+      'ripple',
+      // 继承自按钮的命令面
+      'label',
+      'content',
+      'type',
+      'variant',
+      'formType',
+      'size',
+      'disabled',
+      'loading'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VGlowButton = vGlowButton;
+defineComponentIdentity(VGlowButton, 'VGlowButton');

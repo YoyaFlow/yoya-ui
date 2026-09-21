@@ -1,8 +1,8 @@
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
 import {
-  applyComponentArguments,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -13,9 +13,10 @@ import {
  * vSymbolButton 是只显示符号/图标的轻量按钮：无边框、无轮廓、
  * 透明背景，hover 时给出细微底色。适合工具栏、源码/复制等场景。
  */
-export class VSymbolButton extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+export class SymbolButtonNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('button', null);
+    this._identity = 'VSymbolButton';
     this.className(componentClass, 'yoya-vsymbol-button');
     this.attr('type', 'button');
     this.styles({
@@ -42,7 +43,6 @@ export class VSymbolButton extends HtmlElementNode {
       this.style('background', null);
     });
     this._setupSymbolButton(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   /** 设置按钮内显示的符号/图标内容。 */
@@ -88,5 +88,13 @@ export class VSymbolButton extends HtmlElementNode {
 }
 
 export function vSymbolButton(first = null, second = null, third = null) {
-  return createComponentFactory(VSymbolButton, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSymbolButton',
+    createNode: (setup) => new SymbolButtonNode(setup),
+    commands: ['icon', 'ariaLabel'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VSymbolButton = vSymbolButton;
+defineComponentIdentity(VSymbolButton, 'VSymbolButton');

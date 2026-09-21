@@ -2,7 +2,8 @@ import {
   ViewNode,
   applySetupValue,
   applyElementOptions as applyCoreElementOptions,
-  normalizeSetupArguments
+  normalizeSetupArguments,
+  viewRootOf
 } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
 
@@ -168,7 +169,8 @@ export function setupButtonSlot(button, setup) {
   }
 
   if (isPlainObject(setup)) {
-    button._setupButton(setup);
+    // 按钮可能是 vNode 组件（成员是 ComponentNode）：私有构造入口在**视图根**（节点类型）上
+    (viewRootOf(button) ?? button)._setupButton(setup);
     return button;
   }
 

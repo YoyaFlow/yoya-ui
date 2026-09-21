@@ -507,6 +507,47 @@ const CASES = [
     name: 'vTimerRange / 起止值',
     build: () => api.vTimerRange({ end: '2026-08-20', name: 'window', start: '2026-08-19' }),
     probe: (node) => ({ mode: node.mode(), name: node.name(), value: node.value() })
+  },
+  {
+    name: 'vButtons / 选项 + 单选联动',
+    build: () =>
+      api.vButtons({
+        options: [
+          { label: '全部', value: 'all' },
+          { label: '运行中', value: 'running' }
+        ],
+        selectable: true,
+        value: 'running',
+        variant: 'secondary'
+      }),
+    probe: (group) => ({ count: group.options().length, value: group.value() })
+  },
+  {
+    name: 'vFloatButton / 图标 + 标签 + 固定定位',
+    build: () =>
+      api.vFloatButton({
+        fixed: true,
+        icon: '＋',
+        label: '新建',
+        position: 'bottom-right',
+        size: 'large',
+        variant: 'primary'
+      }),
+    probe: (node) => ({ position: node.position(), size: node.size(), variant: node.variant() })
+  },
+  {
+    name: 'vSymbolButton / 图标 + 无障碍标签',
+    build: () => api.vSymbolButton({ ariaLabel: '复制', icon: '⧉', title: '复制内容' }),
+    probe: (node) => ({ ariaLabel: node.ariaLabel() })
+  },
+  {
+    name: 'vGlowButton / 流光参数 + 继承按钮态',
+    build: () =>
+      api.vGlowButton('立即部署', (button) => {
+        button.glow({ direction: 'rtl', motion: 'always', play: 'hover', ripple: 'off' });
+        button.size('small');
+      }),
+    probe: (button) => ({ glow: button.glow(), size: button.size() })
   }
 ];
 

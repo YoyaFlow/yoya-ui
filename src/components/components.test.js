@@ -72,7 +72,8 @@ describe('compound components', () => {
 
     expect(nativeElement.className).toBe('');
     expect(nativeElement.textContent).toBe('保存');
-    expect(action).toBeInstanceOf(HtmlElementNode);
+    // 按钮是 vNode 外壳：公开句柄是组件节点，元素机制在视图根（不导出的节点类型）上
+    expect(viewRootOf(action)).toBeInstanceOf(HtmlElementNode);
     expect(actionElement.tagName).toBe('BUTTON');
     expect(actionElement.type).toBe('button');
     expect(actionElement.dataset.variant).toBe('primary');

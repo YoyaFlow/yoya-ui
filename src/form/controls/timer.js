@@ -7,7 +7,8 @@ import { InputNode } from './input.js';
 class TimerNode extends InputNode {
   constructor(setup = null) {
     super(null);
-    this._identity = 'VTimer';
+    // 多值身份：`VTimer` 同时**是** `VInput`（旧类继承 `class VTimer extends VInput` 的语义）
+    this._identity = 'VTimer VInput';
     this.className('yoya-vtimer');
     this._clearButton.className('yoya-vtimer-clear');
     this._addRootClass('yoya-vtimer-wrap');

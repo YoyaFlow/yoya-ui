@@ -1,10 +1,10 @@
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
 import {
-  applyComponentArguments,
   applyElementOptions,
   componentClass,
   isPlainObject,
-  normalizeComponentArguments,
   normalizeChildren,
   themeBorder,
   themeValue
@@ -26,9 +26,10 @@ const sizePresets = {
 /**
  * vFloatButton 悬浮按钮：圆形操作入口，支持图标、扩展标签和固定定位。
  */
-export class VFloatButton extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+export class FloatButtonNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('button', null);
+    this._identity = 'VFloatButton';
     this._variant = 'primary';
     this._size = 'medium';
     this._fixed = false;
@@ -69,9 +70,7 @@ export class VFloatButton extends HtmlElementNode {
     this.variant(this._variant);
     this.size(this._size);
 
-    const args = normalizeComponentArguments(setup, options, callback);
-    this._setupFloatButton(args.first);
-    applyComponentArguments(this, args.options, args.callback);
+    this._setupFloatButton(setup);
   }
 
   icon(content) {
@@ -260,5 +259,24 @@ export class VFloatButton extends HtmlElementNode {
 }
 
 export function vFloatButton(first = null, second = null, third = null) {
-  return new VFloatButton(first, second, third);
+  return createComponentShell({
+    identity: 'VFloatButton',
+    createNode: (setup) => new FloatButtonNode(setup),
+    commands: [
+      'icon',
+      'label',
+      'content',
+      'text',
+      'variant',
+      'type',
+      'size',
+      'disabled',
+      'fixed',
+      'position'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VFloatButton = vFloatButton;
+defineComponentIdentity(VFloatButton, 'VFloatButton');

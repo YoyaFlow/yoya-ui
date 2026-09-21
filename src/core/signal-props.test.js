@@ -37,13 +37,13 @@ describe('signal props', () => {
   it('binds component props passed through the setup path', () => {
     const locked = ref(false);
     const button = vButton({ label: '保存', disabled: locked });
-    button.renderDom();
+    const element = button.renderDom();
 
-    expect(button._el.disabled).toBe(false);
+    expect(element.disabled).toBe(false);
 
     locked.value = true;
 
-    expect(button._el.disabled).toBe(true);
+    expect(element.disabled).toBe(true);
   });
 
   it('keeps plain prop values working', () => {

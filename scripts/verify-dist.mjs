@@ -58,8 +58,11 @@ async function verifySsrSingleCore() {
   const router = await loadEntry('yoya.router.js');
 
   const button = ui.vButton('启动');
+  // 组件工厂可能返回 vNode 组件节点（元素机制在视图根上）：单 core 的判据是
+  // "ui 产出的节点/根都来自 core 那一份类"，不是"工厂返回值一定是元素节点"。
+  const buttonRoot = core.viewRootOf(button);
   assert(
-    button instanceof core.HtmlElementNode,
+    buttonRoot instanceof core.HtmlElementNode,
     'ui 节点不是 core 的 HtmlElementNode 实例（core 重复实例化）'
   );
 

@@ -1,12 +1,11 @@
-import { normalizeChild } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { defineComponentIdentity, normalizeChild, viewRootOf } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
-import { VButton } from './button.js';
+import { ButtonNode } from './button.js';
 import {
-  applyComponentArguments,
   applyElementOptions,
   componentClass,
   isPlainObject,
-  normalizeComponentArguments,
   replaceChildren,
   resolveTextValue
 } from '../components/shared.js';
@@ -16,9 +15,10 @@ const baseVariants = new WeakMap();
 /**
  * vButtons 按钮组：把多个按钮收敛到同一容器，支持配置式创建和单选联动。
  */
-export class VButtons extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+export class ButtonsNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VButtons';
     this._variant = 'secondary';
     this._size = 'medium';
     this._selectable = false;
@@ -36,9 +36,7 @@ export class VButtons extends HtmlElementNode {
       verticalAlign: 'middle'
     });
 
-    const args = normalizeComponentArguments(setup, options, callback);
-    this._setupButtons(args.first);
-    applyComponentArguments(this, args.options, args.callback);
+    this._setupButtons(setup);
   }
 
   child(...children) {
@@ -48,8 +46,10 @@ export class VButtons extends HtmlElementNode {
       }
 
       const node = normalizeChild(child);
-      if (node instanceof VButton) {
-        this._registerButton(node);
+      // 子单元可能是 vNode 组件（成员是 ComponentNode）：判定与操作都落到**视图根**（节点类型）上
+      const unit = viewRootOf(node) ?? node;
+      if (unit instanceof ButtonNode) {
+        this._registerButton(unit);
       }
 
       super.child(node);
@@ -137,11 +137,12 @@ export class VButtons extends HtmlElementNode {
   }
 
   _createButton(entry) {
-    if (entry instanceof VButton) {
-      return entry;
+    const unit = viewRootOf(entry) ?? entry;
+    if (unit instanceof ButtonNode) {
+      return unit;
     }
 
-    const button = new VButton();
+    const button = new ButtonNode();
     button.variant(this._variant);
     button.size(this._size);
 
@@ -212,7 +213,8 @@ export class VButtons extends HtmlElementNode {
 
       this.value(next);
       if (typeof this._changeHandler === 'function') {
-        this._changeHandler(next, this);
+        // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+        this._changeHandler(next, this._componentHandle ?? this);
       }
     });
 
@@ -358,5 +360,13 @@ export class VButtons extends HtmlElementNode {
 }
 
 export function vButtons(first = null, second = null, third = null) {
-  return new VButtons(first, second, third);
+  return createComponentShell({
+    identity: 'VButtons',
+    createNode: (setup) => new ButtonsNode(setup),
+    commands: ['variant', 'size', 'selectable', 'value', 'change', 'joined', 'disabled', 'options'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VButtons = vButtons;
+defineComponentIdentity(VButtons, 'VButtons');

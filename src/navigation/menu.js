@@ -1,5 +1,5 @@
 import { div, HtmlElementNode } from '../html/index.js';
-import { VButton } from '../actions/button.js';
+import { ButtonNode } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
@@ -796,7 +796,7 @@ class SidebarNode extends HtmlElementNode {
     // 内部状态用 ref 持有（票 01 约定）；collapsed 是「默认真」写方法，无参不是读
     this._collapsed = ref(false);
     this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
-    this._toggle = new VButton('‹')
+    this._toggle = new ButtonNode('‹')
       .className('yoya-vsidebar-toggle')
       .attr({
         'aria-controls': menuId,

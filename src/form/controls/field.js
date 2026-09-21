@@ -1,7 +1,7 @@
 import { createComponentShell } from '../../components/component-shell.js';
 import { defineComponentIdentity, viewRootOf } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import { VButton } from '../../actions/button.js';
+import { ButtonNode } from '../../actions/button.js';
 import {
   componentClass,
   isPlainObject,
@@ -34,7 +34,7 @@ class FieldNode extends HtmlElementNode {
     this._errorBox = new HtmlElementNode('div')
       .className('yoya-vfield-error')
       .style('display', 'none');
-    this._actionButton = new VButton('✎')
+    this._actionButton = new ButtonNode('✎')
       .className('yoya-vfield-action')
       .size('small')
       .variant('secondary')

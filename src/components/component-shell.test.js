@@ -43,12 +43,16 @@ function publicMethodNames(element) {
 }
 
 const SHELL_FACTORIES = {
+  vButton: (value) => value.vButton(),
+  vButtons: (value) => value.vButtons(),
   vCheckbox: (value) => value.vCheckbox(),
   vCheckboxes: (value) => value.vCheckboxes(),
   vDialog: (value) => value.vDialog(),
   vField: (value) => value.vField(),
+  vFloatButton: (value) => value.vFloatButton(),
   vForm: (value) => value.vForm(),
   vFormItem: (value) => value.vFormItem(),
+  vGlowButton: (value) => value.vGlowButton(),
   vInput: (value) => value.vInput(),
   vMenu: (value) => value.vMenu(),
   vRadios: (value) => value.vRadios(),
@@ -56,6 +60,7 @@ const SHELL_FACTORIES = {
   vScroll: (value) => value.vScroll(),
   vSelect: (value) => value.vSelect(),
   vSwitch: (value) => value.vSwitch(),
+  vSymbolButton: (value) => value.vSymbolButton(),
   vTable: (value) => value.vTable(),
   vTabs: (value) => value.vTabs(),
   vTextarea: (value) => value.vTextarea(),
@@ -86,6 +91,20 @@ describe('component shell', () => {
     });
 
     expect(missing, '外壳漏接了节点类型上的公开方法').toEqual({});
+  });
+
+  it('keeps the identity of the node type it inherits from', () => {
+    // 旧类继承关系在身份上是"多值命中"：VTimer 同时是 VInput、VGlowButton 同时是 VButton
+    const timer = api.vTimer();
+    expect(timer).toBeInstanceOf(api.VTimer);
+    expect(timer).toBeInstanceOf(api.VInput);
+
+    const glow = api.vGlowButton('部署');
+    expect(glow).toBeInstanceOf(api.VGlowButton);
+    expect(glow).toBeInstanceOf(api.VButton);
+
+    // 复用同类实例的语义也按身份命中走：`vTimer(已有计时器)` 返回它自己
+    expect(api.vTimer(timer)).toBe(timer);
   });
 
   it('hands the component handle (not the internal node type) to callbacks', () => {
