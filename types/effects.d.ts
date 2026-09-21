@@ -33,7 +33,7 @@ export const vGlowButton: ElementFactory<VGlowButton> & {
 export type TransitionMotion = 'auto' | 'always';
 
 /** Generic enter / leave transition wrapper driven by CSS or Web Animations API. */
-export class VTransition extends HtmlElementNode {
+export interface VTransition extends HtmlElementNode {
   show(): boolean;
   show(value: boolean): VTransition;
   enter(): VTransition;
@@ -44,6 +44,16 @@ export class VTransition extends HtmlElementNode {
   duration(): number;
   duration(value: number): VTransition;
 }
+
+/**
+ * Component identity factory: the runtime value is the factory function registered through
+ * `defineComponentIdentity` (no `new`-able class any more). The construct signature exists only so
+ * `member instanceof VTransition` keeps type-checking.
+ */
+export const VTransition: {
+  new (first?: SetupInput<VTransition> | null): VTransition;
+  (first?: SetupInput<VTransition> | null, callback?: SetupCallback<VTransition>): VTransition;
+};
 
 export const vTransition: ElementFactory<VTransition> & {
   (first?: SetupInput<VTransition> | null, callback?: SetupCallback<VTransition>): VTransition;

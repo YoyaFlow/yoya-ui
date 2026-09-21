@@ -15,8 +15,12 @@ describe('vTransition', () => {
   });
 
   it('moves to leave state and hides after animation ends', () => {
+    // 监听器在**落地**时挂（whenMount）：先把元素挂进容器，事件才有归属
+    const host = document.createElement('div');
+    document.body.appendChild(host);
     const transition = vTransition({ children: '内容' });
-    const element = transition.renderDom();
+    transition.bindTo(host);
+    const element = host.firstElementChild;
 
     transition.show(false);
     expect(element.dataset.state).toBe('leave');
@@ -28,6 +32,9 @@ describe('vTransition', () => {
     transition.show(true);
     expect(element.dataset.state).toBe('enter');
     expect(element.style.display).not.toBe('none');
+
+    transition.destroy();
+    host.remove();
   });
 
   it('exposes motion policy on the element', () => {
