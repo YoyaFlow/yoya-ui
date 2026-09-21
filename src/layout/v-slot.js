@@ -39,7 +39,11 @@ export function VSlot() {
     .setup({ vn: 'VSlot', vn_slot: '' });
 
   // 字符串 / 数字 = 占位名（占位名是构建期事实，不是活值：取当前文本值即可）
-  node.setupString = (value) => node.attr(PART_ATTRIBUTE, resolveTextValue(value) || null);
+  // 空字符串保留（`vSlot('')` = 匿名占位，与 `vSlot()` 等价），不做成 null
+  node.setupString = (value) => {
+    const name = resolveTextValue(value);
+    node.attr(PART_ATTRIBUTE, name ?? null);
+  };
   // 对象 = `name` 收成占位名，其余键原样交给 options 分派（class / style / attrs / 属性 / 事件）
   node.setupObject = (config) => {
     const { name, ...rest } = config;
