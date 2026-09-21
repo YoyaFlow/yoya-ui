@@ -46,7 +46,10 @@ function syncClearButton(control, inputNode, clearButton) {
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== '' && value !== null && value !== undefined;
-  const visible = control._clearable && hasValue && !control.isDisabled() && !control.isReadonly();
+  // 能力判定优先：组件暴露 clearable() 就用它（不再依赖内部字段 `_clearable`）
+  const clearable =
+    typeof control.clearable === 'function' ? control.clearable() : control._clearable;
+  const visible = clearable && hasValue && !control.isDisabled() && !control.isReadonly();
 
   clearButton.style('display', visible ? null : 'none');
 }

@@ -1,8 +1,6 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { HtmlElementNode } from '../../html/index.js';
 import {
-  booleanMethod,
   componentClass,
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -10,23 +8,33 @@ import {
   themeBorder,
   themeValue
 } from '../../components/shared.js';
+import { applyPropValue } from '../../core/node.js';
+import { optionKindOf } from '../../core/setup-keys.js';
+import { vNode } from '../../core/v-node.js';
+import { div, textarea as textareaTag } from '../../html/index.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-class TextareaNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    // 身份：对象事实 + 真 DOM 标记（根是外壳 div；attr 被重写到内层 textarea，所以显式写根）
-    this._identity = 'VTextarea';
-    super.attr('vn', 'VTextarea');
-    this._value = '';
-    this._clearable = true;
-    this._clearButton = createClearButton('yoya-vtextarea-clear', {
-      right: '6px',
-      top: '6px'
-    });
-    this._input = new HtmlElementNode('textarea')
-      .className(componentClass, 'yoya-vtextarea')
-      .styles({
+/**
+ * VTextarea —— 有行为（值 / 行数 / 开关 / 清空）→ **形态 B**：定义函数只描述组件
+ * （结构 + 命令 + 身份），位置参数分派交给快捷方法 `vTextarea`。
+ *
+ * 元素机制（内层 textarea 的属性 / 样式 / 事件、SSR 回读、权限落位）住在闭包的局部节点上；
+ * 参数分派按 `setupFunction / setupString / setupObject`（api 覆盖优先、否则回落视图根）。
+ */
+export function VTextarea() {
+  return vNode((api) => {
+    const state = {
+      clearable: true,
+      disabled: false,
+      error: false,
+      readonly: false,
+      required: false,
+      value: ''
+    };
+
+    const field = textareaTag({
+      class: `${componentClass} yoya-vtextarea`,
+      style: {
         background: themeValue('color-surface', '#ffffff'),
         border: themeBorder('color-border-strong', '#cbd5e1'),
         borderRadius: '6px',
@@ -38,230 +46,199 @@ class TextareaNode extends HtmlElementNode {
         padding: '10px 12px',
         resize: 'vertical',
         width: '100%'
-      });
+      }
+    });
+    const clearButton = createClearButton('yoya-vtextarea-clear', { right: '6px', top: '6px' });
+    const root = div({
+      class: `${componentClass} yoya-vtextarea-wrap`,
+      style: { minWidth: '0', position: 'relative', width: '100%' },
+      vn: 'VTextarea'
+    });
 
-    this._addRootClass(componentClass, 'yoya-vtextarea-wrap');
-    this.styles({
-      minWidth: '0',
-      position: 'relative',
-      width: '100%'
-    });
-    this._clearButton.on('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      this.clear();
-      this._input._el?.focus();
-    });
-    this._input.on('input', () => this._syncClear());
-    this._input.on('change', () => this._syncClear());
-    this.child(this._input, this._clearButton);
+    // 清空按钮的判定读 api：_clearable / isDisabled() / isReadonly() / value()
+    const syncClear = () => syncClearButton(api, field, clearButton);
+    const syncClearPadding = () => {
+      field.style('paddingRight', state.clearable ? '34px' : '12px');
+    };
 
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this._input.attr('required', enabled ? true : null);
-    });
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this._input.attr('disabled', enabled ? true : null);
-      this._input.style('cursor', enabled ? 'not-allowed' : 'text');
-      this._input.style('opacity', enabled ? '0.64' : '1');
-      this._syncClear();
-    });
-    this.readonly = booleanMethod(this, 'readonly', false, (enabled) => {
-      this._input.attr('readonly', enabled ? true : null);
-      this._syncClear();
-    });
-    this.error = booleanMethod(this, 'error', false, (enabled) => {
-      this._input.attr('data-error', enabled ? 'true' : null);
-      this._input.style(
+    api.value = (value) => {
+      if (value === undefined) {
+        return field._el?.value ?? state.value ?? field.textContent();
+      }
+
+      const next = resolveTextValue(value);
+      state.value = next;
+      replaceChildren(field, next ? normalizeChildren(next) : []);
+
+      if (field._el) {
+        field._el.value = next;
+      }
+
+      syncClear();
+      return api;
+    };
+    api.text = (value) => api.value(value);
+    api.content = (value) => api.value(value);
+
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return field.attr('placeholder');
+      }
+
+      field.attr('placeholder', resolveTextValue(value) || null);
+      return api;
+    };
+
+    api.rows = (value) => {
+      if (value === undefined) {
+        return field.attr('rows');
+      }
+
+      field.attr('rows', value);
+      return api;
+    };
+
+    api.attr = (name, value) => {
+      if (name && typeof name === 'object') {
+        Object.entries(name).forEach(([key, nextValue]) => api.attr(key, nextValue));
+        return api;
+      }
+
+      if (name === 'value') {
+        return value === undefined ? api.value() : api.value(value);
+      }
+
+      if (value === undefined) {
+        return field.attr(name);
+      }
+
+      field.attr(name, value);
+      return api;
+    };
+
+    api.className = (...classes) => {
+      if (classes.length === 0) {
+        return field.className();
+      }
+
+      field.className(...classes);
+      return api;
+    };
+
+    api.id = (value) => {
+      if (value === undefined) {
+        return field.id();
+      }
+
+      field.id(value);
+      return api;
+    };
+
+    api.name = (value) => {
+      if (value === undefined) {
+        return field.name();
+      }
+
+      field.name(value);
+      return api;
+    };
+
+    api.textContent = () => field.textContent();
+
+    // 读写分离：跨组件只读判断走这三个（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+    api.isReadonly = () => state.readonly;
+    api.isError = () => state.error;
+
+    api.disabled = (value) => {
+      if (value === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(value);
+      field.attr('disabled', state.disabled ? true : null);
+      field.style('cursor', state.disabled ? 'not-allowed' : 'text');
+      field.style('opacity', state.disabled ? '0.64' : '1');
+      syncClear();
+      return api;
+    };
+
+    api.readonly = (value) => {
+      if (value === undefined) {
+        return state.readonly;
+      }
+
+      state.readonly = Boolean(value);
+      field.attr('readonly', state.readonly ? true : null);
+      syncClear();
+      return api;
+    };
+
+    api.required = (value) => {
+      if (value === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(value);
+      field.attr('required', state.required ? true : null);
+      return api;
+    };
+
+    api.error = (value) => {
+      if (value === undefined) {
+        return state.error;
+      }
+
+      state.error = Boolean(value);
+      field.attr('data-error', state.error ? 'true' : null);
+      field.style(
         'borderColor',
-        enabled
+        state.error
           ? themeValue('color-danger', '#dc2626')
           : themeValue('color-border-strong', '#cbd5e1')
       );
-      this._input.style(
+      field.style(
         'boxShadow',
-        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+        state.error
+          ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
+          : null
       );
-    });
+      return api;
+    };
 
-    this._setupTextarea(setup);
-    this._syncClearPadding();
-    this._syncClear();
-  }
+    api.clearable = (value) => {
+      if (value === undefined) {
+        return state.clearable;
+      }
 
-  _addRootClass(...classes) {
-    super.className(...classes);
-    return this;
-  }
+      state.clearable = Boolean(value);
+      field.attr('data-clearable', state.clearable ? 'true' : null);
+      syncClearPadding();
+      syncClear();
+      return api;
+    };
 
-  className(...classes) {
-    if (classes.length === 0) {
-      return this._input.className();
-    }
+    api.clear = () => {
+      api.value('');
 
-    this._input.className(...classes);
-    return this;
-  }
+      if (field._el) {
+        field._el.dispatchEvent(new Event('input', { bubbles: true }));
+        field._el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
 
-  attr(name, value) {
-    if (name && typeof name === 'object') {
-      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
-      return this;
-    }
+      return api;
+    };
 
-    if (name === 'value') {
-      return value === undefined ? this.value() : this.value(value);
-    }
+    // 参数分派：字符串 = 值；对象 = 逐键（class / attrs 落内层，style 落外壳，其余走同名命令）
+    api.setupString = (value) => api.value(value);
+    api.setupObject = (options) => {
+      if (!isPlainObject(options)) {
+        return api;
+      }
 
-    if (value === undefined) {
-      return this._input.attr(name);
-    }
-
-    this._input.attr(name, value);
-    return this;
-  }
-
-  on(eventName, handler, options) {
-    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
-      this._input.on(eventName, handler, options);
-      return this;
-    }
-
-    return super.on(eventName, handler, options);
-  }
-
-  id(value) {
-    if (value === undefined) {
-      return this._input.id();
-    }
-
-    this._input.id(value);
-    return this;
-  }
-
-  name(value) {
-    if (value === undefined) {
-      return this._input.name();
-    }
-
-    this._input.name(value);
-    return this;
-  }
-
-  textContent() {
-    return this._input.textContent();
-  }
-
-  value(value) {
-    if (value === undefined) {
-      return this._input._el?.value ?? this._value ?? this._input.textContent();
-    }
-
-    const next = resolveTextValue(value);
-    this._value = next;
-    replaceChildren(this._input, next ? normalizeChildren(next) : []);
-
-    if (this._input._el) {
-      this._input._el.value = next;
-    }
-
-    this._syncClear();
-    return this;
-  }
-
-  hydrateSnapshot() {
-    if (this._input._el) {
-      this.value(this._input._el.value);
-    }
-    return this;
-  }
-
-  text(value) {
-    return this.value(value);
-  }
-
-  content(value) {
-    return this.value(value);
-  }
-
-  placeholder(value) {
-    if (value === undefined) {
-      return this._input.attr('placeholder');
-    }
-
-    const next = resolveTextValue(value);
-    this._input.attr('placeholder', next || null);
-    return this;
-  }
-
-  // 读写分离：跨组件只读判断走这两个方法（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
-
-  isReadonly() {
-    return this._readonly.value;
-  }
-
-  isError() {
-    return this._error.value;
-  }
-
-  rows(value) {
-    if (value === undefined) {
-      return this._input.attr('rows');
-    }
-
-    this._input.attr('rows', value);
-    return this;
-  }
-
-  clearable(value) {
-    if (value === undefined) {
-      return this._clearable;
-    }
-
-    this._clearable = Boolean(value);
-    this._input.attr('data-clearable', this._clearable ? 'true' : null);
-    this._syncClearPadding();
-    this._syncClear();
-    return this;
-  }
-
-  clear() {
-    this.value('');
-
-    if (this._input._el) {
-      this._input._el.dispatchEvent(new Event('input', { bubbles: true }));
-      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    return this;
-  }
-
-  _syncClear() {
-    syncClearButton(this, this._input, this._clearButton);
-    return this;
-  }
-
-  _syncClearPadding() {
-    this._input.style('paddingRight', this._clearable ? '34px' : '12px');
-    return this;
-  }
-
-  _setupTextarea(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
       const {
-        clearable,
         children,
+        clearable,
         content,
         disabled,
         error,
@@ -272,80 +249,102 @@ class TextareaNode extends HtmlElementNode {
         text,
         value,
         ...elementConfig
-      } = setup;
+      } = options;
 
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
+      Object.entries(elementConfig).forEach(([key, optionValue]) => {
+        const kind = optionKindOf(key);
+        if (kind === 'class') {
+          applyPropValue(root, optionValue, (next) => api.className(next));
+          return;
+        }
+        if (kind === 'attrs') {
+          api.attr(optionValue);
+          return;
+        }
+        if (kind === 'style') {
+          root.styles(optionValue);
+          return;
+        }
+        if (key.startsWith('on') && typeof optionValue === 'function') {
+          root.on(key.slice(2).toLowerCase(), optionValue);
+          return;
+        }
+        if (typeof api[key] === 'function') {
+          applyPropValue(root, optionValue, (next) => api[key](next));
+          return;
+        }
+        api.attr(key, optionValue);
+      });
 
       if (rows !== undefined) {
-        this.rows(rows);
+        applyPropValue(root, rows, (next) => api.rows(next));
       }
-
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        applyPropValue(root, placeholder, (next) => api.placeholder(next));
       }
-
       if (value !== undefined) {
-        this.value(value);
+        applyPropValue(root, value, (next) => api.value(next));
       } else if (text !== undefined) {
-        this.value(text);
+        applyPropValue(root, text, (next) => api.value(next));
       } else if (content !== undefined) {
-        this.value(content);
+        applyPropValue(root, content, (next) => api.value(next));
       } else if (children !== undefined) {
-        this.value(children);
+        applyPropValue(root, children, (next) => api.value(next));
       }
-
       if (required !== undefined) {
-        this.required(required);
+        applyPropValue(root, required, (next) => api.required(next));
       }
-
       if (readonly !== undefined) {
-        this.readonly(readonly);
+        applyPropValue(root, readonly, (next) => api.readonly(next));
       }
-
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        applyPropValue(root, disabled, (next) => api.disabled(next));
       }
-
       if (error !== undefined) {
-        this.error(error);
+        applyPropValue(root, error, (next) => api.error(next));
       }
-
       if (clearable !== undefined) {
-        this.clearable(clearable);
+        applyPropValue(root, clearable, (next) => api.clearable(next));
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.value(setup);
-  }
-}
+    // 元素机制挂到局部节点：SSR 回读走内层节点，权限落位走视图根（渲染路径按节点调用）
+    field.hydrateSnapshot = () => {
+      if (field._el) {
+        api.value(field._el.value);
+      }
+      return field;
+    };
+    let accessDisabled = false;
+    root._applyAccessState = (accessState) => {
+      if (accessState === 'readonly') {
+        accessDisabled = true;
+        api.disabled(true);
+      } else if (accessDisabled) {
+        accessDisabled = false;
+        api.disabled(false);
+      }
+    };
 
-export function vTextarea(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTextarea',
-    createNode: (setup) => new TextareaNode(setup),
-    commands: [
-      'value',
-      'text',
-      'content',
-      'placeholder',
-      'isDisabled',
-      'isReadonly',
-      'isError',
-      'rows',
-      'clearable',
-      'clear',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'required',
-      'disabled',
-      'readonly',
-      'error'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    field.on('input', syncClear);
+    field.on('change', syncClear);
+    clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      api.clear();
+      field._el?.focus();
+    });
+
+    root.child(field, clearButton);
+    // 编辑面暴露给 vField（浮动编辑撤内层边框等）：与旧节点类型的 `_input` 对齐；
+    // 后续可收敛成显式能力（editorSurface()），属于表单族后续一刀。
+    root._input = field;
+    syncClearPadding();
+    syncClear();
+    return root;
   });
 }
 
-export const VTextarea = vTextarea;
+export const vTextarea = createComponentShortcut(VTextarea);
