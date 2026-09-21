@@ -1,5 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { vButton, vTable, vTableWrapper, vTbody, vTd, vTfoot, vTh, vThead, vTr } from '../index.js';
+import {
+  tr,
+  vButton,
+  vTable,
+  vTableWrapper,
+  vTbody,
+  vTd,
+  vTfoot,
+  vTh,
+  vThead,
+  vTr
+} from '../index.js';
 
 /** 身份走 `vn` 属性（票 15：组件类名退场）。 */
 const GRID = '[vn="VTableGrid"]';
@@ -87,6 +98,35 @@ describe('vTable declarative sections', () => {
 
     expect(element.querySelector(`${GRID} > thead th`).textContent).toBe('名称');
     expect(element.querySelector(`${GRID} > tbody td`).textContent).toBe('api-gateway');
+  });
+
+  it('forwards anonymous rows into the body instead of the table element', () => {
+    const table = vTable((table) => {
+      table.child(vTr((row) => row.vTd('api-gateway')));
+      table.child(tr((row) => row.td('worker')));
+    });
+    const element = table.renderDom();
+    const grid = element.querySelector(GRID);
+
+    // 行进表体：`<tr>` 直接挂在 `<table>` 下不成表格结构
+    expect(grid.querySelectorAll(':scope > tr')).toHaveLength(0);
+    expect(
+      [...grid.querySelectorAll(':scope > tbody > tr td')].map((cell) => cell.textContent)
+    ).toEqual(['api-gateway', 'worker']);
+  });
+
+  it('keeps sections in the table element when rows arrive through child()', () => {
+    const table = vTable((table) => {
+      table.child(vThead((head) => head.vTr((row) => row.vTh('名称'))));
+      table.child(vTr((row) => row.vTd('api-gateway')));
+    });
+    const element = table.renderDom();
+    const grid = element.querySelector(GRID);
+
+    expect(grid.querySelector(':scope > thead th').textContent).toBe('名称');
+    expect(grid.querySelectorAll(':scope > tbody')).toHaveLength(1);
+    expect(grid.querySelectorAll(':scope > tr')).toHaveLength(0);
+    expect(grid.querySelector(`${BODY} td`).textContent).toBe('api-gateway');
   });
 
   it('rejects the data-driven keys instead of writing them as attributes', () => {
