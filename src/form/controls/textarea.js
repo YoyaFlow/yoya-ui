@@ -1,5 +1,4 @@
 import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
@@ -16,7 +15,9 @@ import { createClearButton, syncClearButton } from './shared.js';
 class TextareaNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    // 身份：对象事实 + 真 DOM 标记（根是外壳 div；attr 被重写到内层 textarea，所以显式写根）
     this._identity = 'VTextarea';
+    super.attr('vn', 'VTextarea');
     this._value = '';
     this._clearable = true;
     this._clearButton = createClearButton('yoya-vtextarea-clear', {
@@ -348,4 +349,3 @@ export function vTextarea(first = null, second = null, third = null) {
 }
 
 export const VTextarea = vTextarea;
-defineComponentIdentity(VTextarea, 'VTextarea');
