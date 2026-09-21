@@ -1,5 +1,4 @@
 import { div } from '../html/index.js';
-import { defineComponentIdentity } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
 import {
   componentClass,
@@ -34,7 +33,6 @@ export function VCard() {
 }
 
 export const vCard = createComponentShortcut(VCard);
-defineComponentIdentity(VCard, 'VCard');
 
 export function VCardHeader() {
   return vNode(() => {
@@ -51,7 +49,6 @@ export function VCardHeader() {
 }
 
 export const vCardHeader = createComponentShortcut(VCardHeader);
-defineComponentIdentity(VCardHeader, 'VCardHeader');
 
 export function VCardBody() {
   return vNode(() => {
@@ -60,7 +57,6 @@ export function VCardBody() {
 }
 
 export const vCardBody = createComponentShortcut(VCardBody);
-defineComponentIdentity(VCardBody, 'VCardBody');
 
 export function VCardFooter() {
   return vNode(() => {
@@ -81,4 +77,3 @@ export function VCardFooter() {
 }
 
 export const vCardFooter = createComponentShortcut(VCardFooter);
-defineComponentIdentity(VCardFooter, 'VCardFooter');

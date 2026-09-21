@@ -135,13 +135,13 @@ describe('vTransition', () => {
     expect(transition.motion()).toBe('auto');
   });
 
-  it('身份是对象事实：instanceof 成立、DOM 不带 vn', () => {
+  it('身份是对象事实且落到真 DOM：instanceof 成立、DOM 带 vn', () => {
     const transition = vTransition('内容');
 
     expect(transition).toBeInstanceOf(VTransition);
     expect(componentNameOf(transition)).toBe('VTransition');
-    expect(transition.renderDom().getAttribute('vn')).toBeNull();
-    expect(transition.toHTML()).not.toContain('vn=');
+    expect(transition.renderDom().getAttribute('vn')).toBe('VTransition');
+    expect(transition.toHTML()).toContain('vn="VTransition"');
   });
 
   it('serializes deterministically for SSR', () => {

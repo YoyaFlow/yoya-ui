@@ -97,17 +97,17 @@ describe('component identity (vn)', () => {
     expect(hasComponentIdentity(legacy, 'LegacyBadge')).toBe(false);
   });
 
-  it('身份是对象事实：不写 DOM，也不从 DOM 回读', () => {
+  it('身份是对象事实，同时落到真 DOM（GenUI 可扫）', () => {
     const marked = div({ vn: 'VCard', class: 'yoya-vcard' }, 'x');
 
     // 对象上认得到
     expect(componentNameOf(marked)).toBe('VCard');
     expect(hasComponentIdentity(marked, 'VCard')).toBe(true);
 
-    // DOM 上没有这个属性：SSR 输出与真实元素都不带
+    // 身份同时落到真 DOM：元素属性与 SSR 输出都带 `vn`（GenUI 可扫）
     const element = marked.renderDom();
-    expect(element.getAttribute('vn')).toBeNull();
-    expect(marked.toHTML()).not.toContain('vn=');
+    expect(element.getAttribute('vn')).toBe('VCard');
+    expect(marked.toHTML()).toContain('vn="VCard"');
 
     // 反过来：只手写 DOM 属性不再是身份
     const raw = document.createElement('div');
@@ -120,7 +120,7 @@ describe('component identity (vn)', () => {
     const page = () => div((root) => root.child(Chart()));
 
     const { html } = renderToString(page);
-    expect(html).not.toContain('vn=');
+    expect(html).toContain('vn="Chart"');
 
     document.body.innerHTML = `<div id="app">${html}</div>`;
     const tree = hydrate(page, '#app');

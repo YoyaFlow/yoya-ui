@@ -4029,7 +4029,10 @@ export class ElementNode extends ViewNode {
     Object.entries(config).forEach(([key, value]) => {
       // 组件身份标记：只记成**对象事实**，不写 DOM、不进属性快照（票 07）。
       if (key === COMPONENT_IDENTITY_ATTR) {
-        this._identity = value === null || value === undefined ? null : String(value);
+        const name = value === null || value === undefined ? null : String(value);
+        this._identity = name;
+        // GenUI：身份同时落到**真 DOM**（可扫属性），与对象事实保持一致
+        this.attr(COMPONENT_IDENTITY_ATTR, name);
         return;
       }
 
