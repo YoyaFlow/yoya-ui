@@ -1,22 +1,12 @@
 import { VRate } from '../rate.js';
 import { viewRootOf } from '../../core/node.js';
-import { VSlider } from '../slider.js';
-import { VCascader } from '../cascader.js';
-import { VTagsInput } from '../tags-input.js';
-import { VAutocomplete } from '../autocomplete.js';
 import {
   isPlainObject,
   normalizeChildren,
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
-import { VInput } from './input.js';
-import { VTextarea } from './textarea.js';
-import { VSelect } from './select.js';
-import { VCheckbox } from './checkbox.js';
-import { VSwitch } from './switch.js';
 import { VCheckboxes } from './checkboxes.js';
-import { VRadio } from './radio.js';
 import { VRadios } from './radios.js';
 import { VField } from './field.js';
 import { VFormItem } from './form-item.js';
@@ -299,21 +289,7 @@ function findFieldControl(node) {
     return null;
   }
 
-  if (
-    node instanceof VInput ||
-    node instanceof VSelect ||
-    node instanceof VTextarea ||
-    node instanceof VCheckboxes ||
-    node instanceof VRadios ||
-    node instanceof VCheckbox ||
-    node instanceof VRadio ||
-    node instanceof VSwitch ||
-    node instanceof VRate ||
-    node instanceof VSlider ||
-    node instanceof VCascader ||
-    node instanceof VTagsInput ||
-    node instanceof VAutocomplete
-  ) {
+  if (isControlCapable(node)) {
     return node;
   }
 

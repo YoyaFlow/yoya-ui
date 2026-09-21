@@ -6,6 +6,7 @@
  * 这里逐个走一遍：工厂产出配对的类实例、barrel 的导出面与拆分前一致。
  */
 import { describe, expect, it } from 'vitest';
+import { hasComponentIdentity } from '../../core/node.js';
 import * as barrel from '../controls.js';
 import { ref } from '../../core/signals/handle.js';
 import { radioGroups } from './radio.js';
@@ -32,12 +33,13 @@ describe('form controls 拆分后的导出面（波 0）', () => {
     expect(Object.keys(barrel).sort()).toEqual(expected);
   });
 
-  it('每个工厂产出配对类的实例（内部符号不会指错文件）', () => {
+  it('每个工厂产出的节点带对应组件身份（内部符号不会指错文件）', () => {
     PAIRS.forEach(([className, factoryName]) => {
-      const Klass = barrel[className];
       const factory = barrel[factoryName];
       expect(typeof factory, factoryName).toBe('function');
-      expect(factory(), factoryName).toBeInstanceOf(Klass);
+      // 身份 = 对象事实（vn）：组件不再依赖 defineComponentIdentity / Symbol.hasInstance
+      // 多值身份（'VTimer VInput'）也命中：按空格拆名判定
+      expect(hasComponentIdentity(factory(), className), factoryName).toBe(true);
     });
   });
 

@@ -1,5 +1,4 @@
 import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
 import { applyPropValue } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
@@ -15,7 +14,9 @@ import { createClearButton, syncClearButton } from './shared.js';
 export class InputNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    // 身份：对象事实 + 真 DOM 标记（根是外壳 div；attr 被重写到内层 input，所以显式写根）
     this._identity = 'VInput';
+    super.attr('vn', 'VInput');
     this._value = '';
     this._clearable = true;
     this._clearButton = createClearButton('yoya-vinput-clear', {
@@ -357,4 +358,3 @@ export function vInput(first = null, second = null, third = null) {
 }
 
 export const VInput = vInput;
-defineComponentIdentity(VInput, 'VInput');

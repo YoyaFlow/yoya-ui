@@ -113,12 +113,13 @@ describe('component shell', () => {
   it('keeps the identity of the node type it inherits from', () => {
     // 旧类继承关系在身份上是"多值命中"：VTimer 同时是 VInput、VGlowButton 同时是 VButton
     const timer = api.vTimer();
-    expect(timer).toBeInstanceOf(api.VTimer);
-    expect(timer).toBeInstanceOf(api.VInput);
+    // 身份 = 对象事实（vn）；多值身份 'VTimer VInput' 两条都命中
+    expect(api.componentNameOf(timer)).toContain('VTimer');
+    expect(api.hasComponentIdentity(timer, 'VInput')).toBe(true);
 
     const glow = api.vGlowButton('部署');
-    expect(glow).toBeInstanceOf(api.VGlowButton);
-    expect(glow).toBeInstanceOf(api.VButton);
+    expect(api.hasComponentIdentity(glow, 'VGlowButton')).toBe(true);
+    expect(api.hasComponentIdentity(glow, 'VButton')).toBe(true);
 
     // 复用同类实例的语义也按身份命中走：`vTimer(已有计时器)` 返回它自己
     expect(api.vTimer(timer)).toBe(timer);
