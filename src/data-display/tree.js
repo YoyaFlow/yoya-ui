@@ -3,10 +3,9 @@ import { appendNodeChild, ViewNode } from '../core/node.js';
 import { allocateId } from '../core/id.js';
 import { vNode } from '../core/v-node.js';
 import {
-  applyComponentArguments,
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
-  normalizeComponentArguments,
   replaceChildren,
   resolveTextValue,
   themeBorder,
@@ -615,7 +614,7 @@ function createTreeRuntime(first = null) {
   applyTreeSetup(first);
   state.building = false;
   sync();
-  return { api, root };
+  return { api, applySetup: applyTreeSetup, root };
 
   function requestSync() {
     if (!state.building) {
@@ -1308,31 +1307,26 @@ function createTreeRuntime(first = null) {
   }
 }
 
-export function vTree(first = null, second = null, third = null) {
-  const args = normalizeComponentArguments(first, second, third);
-
-  if (
-    args.first &&
-    typeof args.first.render === 'function' &&
-    typeof args.first.nodes === 'function'
-  ) {
-    // 复用同类实例（旧写法 `vTree(existingTree)`）：把 options / callback 补上就返回
-    return applyComponentArguments(args.first, args.options, args.callback);
-  }
-
-  const node = vNode((api) => {
-    const tree = createTreeRuntime(args.first);
+/**
+ * 定义：结构（VTree 视图根 + 身份）+ 命令；调用方参数由快捷方法按标准分派。
+ * 对象 = props（`createTreeRuntime` 的既有口径），字符串 / 数字 = 文本子节点，
+ * 函数 = 构建回调（默认 setupFunction = 组件节点，回调里 `tree.nodes(…)` 照旧）。
+ */
+export function VTree() {
+  return vNode((api) => {
+    const tree = createTreeRuntime(null);
     TREE_COMMANDS.forEach((name) => {
       api[name] = tree.api[name];
     });
+    api.setupObject = (config) => {
+      tree.applySetup(config);
+      return api;
+    };
     return tree.root;
   });
-
-  applyComponentArguments(node, args.options, args.callback);
-  return node;
 }
 
-export const VTree = vTree;
+export const vTree = createComponentShortcut(VTree);
 
 /** 树的对外命令面：内部 `render` / `destroy` 不对外——视图就是根节点，销毁交给框架。 */
 const TREE_COMMANDS = [
