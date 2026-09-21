@@ -14,8 +14,11 @@ import {
   registerComponentHooks
 } from './hooks.js';
 import {
+  PART_ATTRIBUTE,
   collectSlots,
   createSlotRegistry,
+  partNameOf,
+  projectPart,
   projectSlot,
   reclaimSlot,
   registerSlotContent,
@@ -3224,6 +3227,7 @@ export class ComponentNode extends ViewNode {
     // 槽位表在解析时无条件建：同名重复声明即便没有内容也要立刻报错（就近作用域，不进嵌套组件）
     if (!this._roots) {
       this._slots = collectSlots(this._resolved);
+      this._parts = collectSlots(this._resolved, null, PART_ATTRIBUTE);
     }
     this._adoptContentIntoRoot();
     if (
@@ -3257,6 +3261,7 @@ export class ComponentNode extends ViewNode {
     this._children = EMPTY_CHILDREN;
     this._childrenDirty = true;
     this._slots = collectSlots(this._resolved, this);
+    this._parts = collectSlots(this._resolved, this, PART_ATTRIBUTE);
     content.forEach((child) => this._placeContent(child));
   }
 
@@ -3265,6 +3270,18 @@ export class ComponentNode extends ViewNode {
    * （普通元素语义）；标记找不到槽位 → 不 mount + 开发期提示（HTML 语义）。
    */
   _placeContent(content) {
+    // part 通道（vn_slot）：自动落进同名占位，part 作为子节点保留自己的类与样式
+    const part = partNameOf(content);
+    if (part) {
+      const partElement = this._parts?.get(part);
+      if (partElement) {
+        (this._partContent ??= new Map()).set(part, content);
+        projectPart(partElement, content);
+        return;
+      }
+      // 没有对应占位 → 退回普通内容（挂进根），不静默丢弃
+    }
+
     const name = slotNameOf(content);
     if (!name) {
       this._resolved.child(content);
@@ -3294,9 +3311,16 @@ export class ComponentNode extends ViewNode {
     }
 
     this._slots = collectSlots(this._resolved, this);
+    this._parts = collectSlots(this._resolved, this, PART_ATTRIBUTE);
     this._slots.forEach((element, name) =>
       projectSlot(this._slotRegistry, name, element, appendProjectedNodes)
     );
+    this._partContent?.forEach((content, name) => {
+      const element = this._parts.get(name);
+      if (element && content) {
+        projectPart(element, content);
+      }
+    });
   }
 
   /** 槽位元素销毁 / 重建前把投影的内容收回登记表（不销毁内容）。 */

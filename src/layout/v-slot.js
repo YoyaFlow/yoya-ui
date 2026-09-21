@@ -1,6 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { applySetupValue } from '../core/node.js';
 import { registerChildFactories } from '../core/node.js';
+import { PART_ATTRIBUTE } from '../core/slot.js';
 import {
   componentClass,
   isPlainObject,
@@ -37,13 +38,13 @@ export function VSlot(options = null) {
   }
 
   if (typeof options === 'string' || typeof options === 'number') {
-    return node.attr('vn-slot', resolveTextValue(options) || null);
+    return node.attr('vn_slot', resolveTextValue(options) || null);
   }
 
   if (isPlainObject(options)) {
     const { name, ...rest } = options;
     if (name !== undefined) {
-      node.attr('vn-slot', resolveTextValue(name) || null);
+      node.attr('vn_slot', resolveTextValue(name) || null);
     }
     if (Object.keys(rest).length > 0) {
       applySetupValue(node, rest);
@@ -64,13 +65,13 @@ export function vSlotOf(root, name) {
   }
 
   return (
-    root.children().find((child) => child?.attr?.('vn-slot') === resolveTextValue(name)) ?? null
+    root.children().find((child) => child?.attr?.('vn_slot') === resolveTextValue(name)) ?? null
   );
 }
 
 /**
- * 外部插入：把内容放进同名 `vn-slot` 占位（内容作为占位的子节点，占位自身不生成盒子）。
- * 只认 `vn-slot` 属性——公开的 `slot="x"` 内容投影机制完全不受影响。
+ * 外部插入：把内容放进同名 `vn_slot` 占位（内容作为占位的子节点，占位自身不生成盒子）。
+ * 只认 `vn_slot` 属性——公开的 `slot="x"` 内容投影机制完全不受影响。
  */
 export function vSlotInsert(root, name, content) {
   const slot = vSlotOf(root, name);
@@ -78,7 +79,10 @@ export function vSlotInsert(root, name, content) {
     return null;
   }
 
-  replaceChildren(slot, normalizeChildren(content));
+  const nodes = normalizeChildren(content);
+  // 标记只是路由指令：进占位后就摘掉（否则占位与内容会同名重复）
+  nodes.forEach((node) => node?.attr?.(PART_ATTRIBUTE, null));
+  replaceChildren(slot, nodes);
   return slot;
 }
 

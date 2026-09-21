@@ -12,20 +12,32 @@
 
 export const SLOT_ATTRIBUTE = 'slot';
 
-/** 读节点自己的槽位标记（空字符串 = 未标记）。 */
-export function slotNameOf(node) {
+/**
+ * part 占位标记（与公开槽位分名空间）：`vn_slot="header"`。
+ * 结构侧的占位与内容侧的 part 都用它 → 自动投影，且不碰 `slot="x"` 那套。
+ */
+export const PART_ATTRIBUTE = 'vn_slot';
+
+/** 读节点自己的槽位标记（空字符串 = 未标记）；`attribute` 可换成 part 标记。 */
+export function slotNameOf(node, attribute = SLOT_ATTRIBUTE) {
   if (!node || typeof node.attr !== 'function') {
     return null;
   }
 
-  const name = node.attr(SLOT_ATTRIBUTE);
+  const name = node.attr(attribute);
   return typeof name === 'string' && name.length > 0 ? name : null;
+}
+
+/** 读节点自己的 part 标记。 */
+export function partNameOf(node) {
+  return slotNameOf(node, PART_ATTRIBUTE);
 }
 
 /**
  * 收集组件**自身结构**里的槽位：同名重复声明 → 报错；遇到嵌套组件即停（就近作用域）。
+ * `attribute` 决定收哪一套标记（公开槽位 `slot` / part 占位 `vn_slot`），两套各收各的。
  */
-export function collectSlots(root, host = null) {
+export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
   const slots = new Map();
   const regionStack = [];
 
@@ -34,7 +46,7 @@ export function collectSlots(root, host = null) {
       return;
     }
 
-    const name = slotNameOf(node);
+    const name = slotNameOf(node, attribute);
     if (name) {
       const existing = slots.get(name);
       if (existing && existing !== node) {
@@ -68,6 +80,22 @@ export function collectSlots(root, host = null) {
 
   visit(root);
   return slots;
+}
+
+/**
+ * 把 part 内容放进 `vn_slot` 占位：part **作为子节点**保留自己的类与样式
+ * （占位是 `display: contents`，不生成盒子，所以不能把 part 的类/样式合并到占位上）。
+ */
+export function projectPart(partElement, content) {
+  if (!partElement || !content || typeof partElement.child !== 'function') {
+    return null;
+  }
+
+  // 标记只是路由指令：进了占位就从 part 上摘掉（DOM 里只留占位自己的标记）
+  content.attr?.(PART_ATTRIBUTE, null);
+  partElement.clearChildren();
+  partElement.child(content);
+  return content;
 }
 
 /**

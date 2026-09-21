@@ -8,17 +8,17 @@ describe('vSlot（零布局占位）', () => {
 
     expect(element.tagName).toBe('SPAN');
     expect(element.style.display).toBe('contents');
-    expect(element.getAttribute('vn-slot')).toBe('header');
+    expect(element.getAttribute('vn_slot')).toBe('header');
     expect(element.classList.contains('yoya-vslot')).toBe(true);
     expect(componentNameOf(vSlot())).toBe('VSlot');
   });
 
   it('accepts a bare name and keeps normal element options working', () => {
     const named = vSlot('footer');
-    expect(named.attr('vn-slot')).toBe('footer');
+    expect(named.attr('vn_slot')).toBe('footer');
 
     const styled = vSlot({ attrs: { 'data-test': 'x' }, name: 'body', style: { gap: '4px' } });
-    expect(styled.attr('vn-slot')).toBe('body');
+    expect(styled.attr('vn_slot')).toBe('body');
     expect(styled.attr('data-test')).toBe('x');
     expect(styled.renderDom().style.gap).toBe('4px');
   });
@@ -36,7 +36,7 @@ describe('vSlot（零布局占位）', () => {
     expect(vSlotOf(host, 'header')).not.toBeNull();
     expect(vSlotInsert(host, 'header', vText('标题'))).not.toBeNull();
     expect(hostElement.textContent).toBe('标题');
-    // 外部插入只认 vn-slot：公开槽位名单里没有它
+    // 外部插入只认 vn_slot：公开槽位名单里没有它
     expect(hostElement.querySelector('[slot]')).toBeNull();
   });
 
@@ -46,7 +46,7 @@ describe('vSlot（零布局占位）', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('[vn-slot="body"]')).not.toBeNull();
+    expect(element.querySelector('[vn_slot="body"]')).not.toBeNull();
   });
 
   it('keeps card parts out of the public slot namespace', () => {
