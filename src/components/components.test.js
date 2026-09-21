@@ -1918,7 +1918,7 @@ describe('compound components', () => {
 
     table.rows([]);
 
-    expect(element.querySelector('[vn="VTableEmpty"]').textContent).toBe('暂无服务');
+    expect(element.querySelector('[vn="VTd"]').textContent).toBe('暂无服务');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 

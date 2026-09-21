@@ -368,7 +368,7 @@ export function VTable() {
       replaceChildren(viewRootOf(body), []);
 
       if (resolvedColumns.length > 0) {
-        const headRow = tr({ vn: 'VTheadRow' });
+        const headRow = tr({ vn: 'VTr' });
 
         resolvedColumns.forEach((column, columnIndex) => {
           const columnKey = column.key ?? `column-${columnIndex}`;
@@ -405,8 +405,8 @@ export function VTable() {
         return;
       }
 
-      const emptyRow = tr({ vn: 'VTableEmptyRow' });
-      const emptyCell = td({ vn: 'VTableEmpty' });
+      const emptyRow = tr({ vn: 'VTr' });
+      const emptyCell = td({ vn: 'VTd' });
 
       emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
       emptyCell.styles({
