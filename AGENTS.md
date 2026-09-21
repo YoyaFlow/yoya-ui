@@ -138,6 +138,10 @@ B 形态里需要元素级行为的组件，视图根就是这样一个节点类
   是显式通道。键分类的唯一真源是 `src/core/setup-keys.js`。
 - **内容与槽位**：未标记的 `child(...)` 进组件根元素内部（普通元素语义）；带 `slot` 标记的内容按
   **就近作用域**进直接父组件的同名槽位，一个槽一份内容，找不到槽位不 mount；多根组件不接受未标记内容。
+- **部件（part）**：位置归组件自己的多处插入点（卡片头 / 体 / 尾等）用 `VSlot({ name })` 零布局占位声明，
+  part 自带 `vn_slot: 'name'` 标记，`child()` 进组件即自动落位（**不要写插入辅助函数**：没有 `vSlotInsert`）；
+  命令里写 `self.node().child(part)`——setup 的第二个参数 `self` 是组件自己的句柄（节点在 setup 返回后才建，
+  提前读 `self.node()` 直接报错）。`vn_slot` 与公开 `slot` 是两个名空间，互不干扰。
 - **组件级钩子**：`whenMount` / `whenDestroy` / `whenFailed`（同族协议成员，属性持函数，写在 vNode 的 `api` 上）；
   写在 options 对象里会报错，不要与 `onXxx` 事件简写混用。
 

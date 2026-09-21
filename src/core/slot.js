@@ -50,9 +50,7 @@ export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
     if (name) {
       const existing = slots.get(name);
       if (existing && existing !== node) {
-        throw new TypeError(
-          `Duplicate slot "${name}" in one component: a slot name may only be declared once.`
-        );
+        throw new TypeError(`Duplicate slot "${name}": one declaration per component.`);
       }
       slots.set(name, node);
       node._slotHost = host;
@@ -109,7 +107,7 @@ export function createSlotRegistry() {
 /** 登记一份投递：一个槽位只接受一份内容（语义在实例上，重建后依然有效）。 */
 export function registerSlotContent(registry, name, carrier) {
   if (registry.has(name)) {
-    throw new TypeError(`Slot "${name}" already received content: one slot accepts one carrier.`);
+    throw new TypeError(`Slot "${name}" already received content.`);
   }
   registry.set(name, { carrier, nodes: null });
   return registry;

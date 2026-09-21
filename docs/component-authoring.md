@@ -72,6 +72,12 @@ export function CounterCard() {
 
 - The result is the component node itself (`ComponentNode extends ViewNode`): mount it as a root, pass it as a child, or key it — no placeholder element, and an array return becomes a multi-root fragment.
 - `api` only collects command functions; the factory attaches them to the node, and a name hitting an existing node member (`child` / `destroy` / `mountable` …) or `render` / `_*` throws instead of silently overwriting.
+- The **second parameter `self`** is the component's own handle (the same family as the `host` the hooks
+  receive): `self.node()` returns the component node itself, which is what a command needs in order to add
+  content (`self.node().child(part)`). The node is built after setup returns, so reading it _during_ setup
+  throws with a timing error instead of handing out `null`. The handle lives in the setup signature, not on
+  `api`: api keys belong to the component's own commands (VTree has `api.node`), so an internal handle there
+  would collide with real commands.
 - `return api` inside a command is the same as returning the node; a component's own error boundary goes to `api.whenFailed = (error, info) => fallback` (same as `node.whenFailed(fn)`), and other node capabilities (`mountable()` / `rebuildable()`) chain on the returned node.
 - **State and commands go on `api`, not `this`** (`api` is in the setup's lexical scope); lifecycle hooks are
   `api.whenMount` / `api.whenDestroy`, the error boundary is `api.whenFailed`.
@@ -411,6 +417,40 @@ Rules:
 | Content must land at a specific position inside                 | A slot                                                                                        |
 | Content is simply appended at the end                           | `child(...)` without a marker                                                                 |
 | Build the content first, attach it later                        | Have the factory produce the marker (`span({ slot: 't-head' }, …)`), then `panel.child(head)` |
+
+### Parts: positions the component owns (`VSlot` + `vn_slot`)
+
+A slot is the **public** channel: the consumer names the position and delivers the content. When the
+_component itself_ owns the insertion points — a card header / body / footer — use a **part**: the structure
+declares the position, and the content carries a marker saying where it belongs. Delivery is plain
+`child()`; **no insert helper**.
+
+```js
+// Component author: the position comes from the structure, not from the call order
+export function VCardHeader() {
+  return div({ vn: 'VCardHeader', vn_slot: 'header' }); // the marker = where this content lands
+}
+
+export function VCard() {
+  return vNode((api, self) => {
+    api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
+
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot({ name: 'header' })));
+  });
+}
+
+// Consumer: the part command (sugar) or a marked node through child() — same route
+vCard((card) => card.vCardHeader('Title'));
+vCard((card) => card.child(vCardHeader('Title')));
+```
+
+- `vSlot({ name })` renders a **zero-layout placeholder** (`display: contents`), so the part keeps its own
+  element, class names and styles; the marker on the delivered content is a routing instruction and is
+  dropped once it has landed (the DOM keeps only the placeholder's marker);
+- the marker is `vn_slot`, **not** `slot`: parts and public slots are separate namespaces and never
+  interfere; one part placeholder holds one piece of content (delivering again replaces it);
+- a part command is only sugar for `self.node().child(part)` — if the marker has no matching placeholder, the
+  content behaves as ordinary unmarked content (it is appended to the component root, not dropped).
 
 ## 7.2 Component hooks: `whenMount` / `whenDestroy`
 

@@ -69,6 +69,10 @@ export function CounterCard() {
 
 - 返回的是组件节点（`ComponentNode extends ViewNode`）：当根挂载、当子节点、进 keyed 列表都用节点语义；不产生占位元素，setup 返回数组即多根 fragment。
 - `api` 只收命令函数；工厂把命令挂到节点本身，撞上节点已有成员（`child` / `destroy` / `mountable` …）或 `render` / `_*` 直接抛错，不静默覆盖。
+- **第二个参数 `self`** 是组件自己的句柄（与钩子收到的 `host` 同族）：`self.node()` 给出**组件节点本身**，
+  命令要往组件里加内容就写 `self.node().child(part)`。节点要等 setup 返回后才建，所以在 setup 里提前读它会**直接报错**
+  （时机不对就说时机不对，不给 `null`）。句柄放在 setup 签名而不是 `api` 上：api 的键归组件自己的命令所有
+  （VTree 就有 `api.node`），内部句柄占 api 的名会和真实命令撞。
 - 命令里 `return api` 等于 `return 节点`；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），其余节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
 - **状态与命令写 `api`，不写 `this`**（`api` 在 setup 的词法作用域里）；生命周期钩子 `api.whenMount` / `api.whenDestroy`，错误边界 `api.whenFailed`。
 - 身份：模块底一行 `defineComponentIdentity(VXxx, 'VXxx')`；`member instanceof VXxx` 对 A / B 是同一条判定（元素节点读自己、组件节点展开到视图根）。
@@ -381,6 +385,35 @@ panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
 | 内容要落在组件内部的指定位置     | 槽位                                                                                       |
 | 内容只是追加到组件末尾           | 不带标记的 `child(...)`                                                                    |
 | 独立创建、之后挂到某个组件的槽里 | 工厂产出就带标记（`span({ slot: 't-head' }, …)` 或自己的工厂封装），再 `panel.child(head)` |
+
+### 部件（part）：组件自己拥有的位置（`VSlot` + `vn_slot`）
+
+槽位是**公开**通道：位置由使用方命名、内容由使用方投递。位置归**组件自己**所有时（卡片头 / 体 / 尾这类），
+用**部件**：结构声明位置，内容自带"我属于哪个位置"的标记，投递就是普通的 `child()`——**没有插入辅助函数**。
+
+```js
+// 组件作者：位置由结构决定，与调用顺序无关
+export function VCardHeader() {
+  return div({ vn: 'VCardHeader', vn_slot: 'header' }); // 标记 = 这份内容落哪里
+}
+
+export function VCard() {
+  return vNode((api, self) => {
+    api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
+
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot({ name: 'header' })));
+  });
+}
+
+// 使用方：part 命令（语法糖）或直接 child() 带标记的节点 —— 同一条路径
+vCard((card) => card.vCardHeader('标题'));
+vCard((card) => card.child(vCardHeader('标题')));
+```
+
+- `vSlot({ name })` 是**零布局占位**（`display: contents`），part 保留自己的元素、类名与样式；
+  投递时 part 自己的标记只是路由指令，落位后会被摘掉（DOM 里只留占位的标记）；
+- 标记是 `vn_slot` 而**不是** `slot`：部件与公开槽位两个名空间，互不干扰；一个占位一份内容（重复投递即替换）；
+- part 命令只是 `self.node().child(part)` 的语法糖——标记找不到对应占位时，内容按普通未标记内容处理（追加进组件根，不丢弃）。
 
 ## 7.2 组件级钩子：`whenMount` / `whenDestroy`
 

@@ -1,7 +1,7 @@
 import { createComponentShortcut, themeBorder, themeValue } from '../components/shared.js';
 import { vNode } from '../core/v-node.js';
 import { div } from '../html/index.js';
-import { vSlot, vSlotInsert } from '../layout/v-slot.js';
+import { vSlot } from '../layout/v-slot.js';
 
 /**
  * VCard 家族：**身份 = `vn`**（不再有 `yoya-component` / `yoya-vcard*` 类名），
@@ -52,22 +52,12 @@ export const vCardBody = createComponentShortcut(VCardBody);
 export const vCardFooter = createComponentShortcut(VCardFooter);
 
 export function VCard() {
-  let root = null;
-
-  return vNode((api) => {
-    // part 命令：把 part 放进对应占位（一个占位一份内容 → 重复调用即替换）
-    api.vCardHeader = (setup) => {
-      vSlotInsert(root, 'header', vCardHeader(setup));
-      return api;
-    };
-    api.vCardBody = (setup) => {
-      vSlotInsert(root, 'body', vCardBody(setup));
-      return api;
-    };
-    api.vCardFooter = (setup) => {
-      vSlotInsert(root, 'footer', vCardFooter(setup));
-      return api;
-    };
+  return vNode((api, self) => {
+    // part 命令：part 自带 `vn_slot` 标记，child() 进来后由引擎放进同名占位（一占位一份，重复调用即替换）。
+    // 命令里不找占位、不存 `let root`——位置由结构里的 VSlot 占位与 part 自己的标记共同决定。
+    api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
+    api.vCardBody = (setup) => self.node().child(vCardBody(setup));
+    api.vCardFooter = (setup) => self.node().child(vCardFooter(setup));
 
     // 结构 + 槽位：三个零布局占位，位置由结构决定（与调用顺序无关）
     return div(
@@ -83,7 +73,6 @@ export function VCard() {
         vn: 'VCard'
       },
       (element) => {
-        root = element;
         element.child(
           vSlot({ name: 'header' }),
           vSlot({ name: 'body' }),

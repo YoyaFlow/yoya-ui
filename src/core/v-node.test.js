@@ -73,6 +73,35 @@ describe('vNode component factory', () => {
     expect(card.bump().read()).toBe(2);
   });
 
+  it('hands the component node to commands through the self handle', () => {
+    const card = vNode((api, self) => {
+      api.add = () => self.node().child(p('追加'));
+      api.self = () => self.node();
+      return div((box) => box.child(p('本体')));
+    });
+
+    // 命令里的 self.node() 就是组件节点本身，所以 child() 走的是组件的内容通道
+    expect(card.self()).toBe(card);
+    card.add();
+    expect(mount(card).textContent).toBe('本体追加');
+  });
+
+  it('throws when self.node() is read before the node exists (during setup)', () => {
+    expect(() => vNode((api, self) => ((api.read = () => self.node()), self.node()))).toThrow(
+      /self\.node\(\) is for commands/
+    );
+  });
+
+  it('leaves the api namespace to the component, so a command may be named node', () => {
+    const tree = vNode((api, self) => {
+      api.node = (text) => self.node().child(p(text));
+      return div((box) => box.child(p('根')));
+    });
+
+    tree.node('子');
+    expect(mount(tree).textContent).toBe('根子');
+  });
+
   it('rejects command names that collide with the node API', () => {
     expect(() => vNode((api) => ((api.child = () => {}), p('x')))).toThrow(/collides/);
     expect(() => vNode((api) => ((api.render = () => {}), p('x')))).toThrow(/collides/);

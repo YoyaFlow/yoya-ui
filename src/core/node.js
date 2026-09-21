@@ -529,7 +529,7 @@ function reportPreRegionReads(node) {
 
   console.warn(
     `[yoya] rebuildable() 之前的 ${record.count} 次读取不会成为区域依赖：` +
-      '把 rebuildable() 提到 builder 第一行，或改用 handle.peek() 表示「只读不订阅」。' +
+      '把 rebuildable() 提到 builder 第一行，或改用 handle.peek()。' +
       (record.stack ? `\n${record.stack}` : '')
   );
 }
@@ -3294,8 +3294,8 @@ export class ComponentNode extends ViewNode {
     if (!slotElement) {
       if (typeof console !== 'undefined') {
         console.warn(
-          `[yoya] <${this._resolved.tagName?.() ?? 'component'}> has no slot "${name}": ` +
-            'the content was not mounted (a slot only resolves on its direct parent component).'
+          `[yoya] no slot "${name}": content not mounted ` +
+            '(slots resolve on the direct parent component).'
         );
       }
       return;
@@ -4136,9 +4136,8 @@ export class ElementNode extends ViewNode {
       // 带形参的函数不是活值来源（事件写 onXxx）→ **响亮报错**，不再静默吞掉。
       if (typeof value === 'function' && value.length > 0) {
         throw new TypeError(
-          `option "${key}" received a function with parameters: an attribute takes a handle or a ` +
-            'zero-argument reader as its live value. Declare events as onXxx, and consume other ' +
-            'callbacks in your own component options.'
+          `option "${key}" received a function with parameters: an attribute takes a handle ` +
+            'or a zero-argument reader; write events as onXxx.'
         );
       }
 

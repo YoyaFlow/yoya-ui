@@ -22,8 +22,8 @@ export function warnDeprecatedComponentObject(value, where) {
   warned.add(value);
   if (typeof console !== 'undefined') {
     console.warn(
-      `[yoya] ${where} received a shape B component (an object with render()). Shape B is deprecated and ` +
-        'single-use: write it as vNode((api) => view) when it has behaviour, or return a ViewNode directly.'
+      `[yoya] ${where} received a shape B component. Shape B is deprecated: write it as ` +
+        'vNode((api) => view) when it has behaviour, or return a ViewNode directly.'
     );
   }
 }
