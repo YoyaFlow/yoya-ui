@@ -332,18 +332,20 @@ describe('ElementNode class replacement', () => {
     expect(node.className()).toBe('same');
   });
 
-  it('detaches preset part styles from the subtree when the root class is replaced', () => {
+  it('keeps identity-scoped markers on the subtree when a custom class is replaced', () => {
     const card = vCard((instance) => instance.vCardHeader('标题'));
     const element = card.renderDom();
-    const header = element.querySelector('.yoya-vcard-header');
+    const header = element.querySelector('[vn="VCardHeader"]');
 
-    expect(header.matches('.yoya-vcard .yoya-vcard-header')).toBe(true);
+    // 组件/part 的标记是身份（vn），不再依赖类名
+    expect(header.matches('[vn="VCard"] [vn="VCardHeader"]')).toBe(true);
 
-    card.replaceClassName('yoya-vcard', 'acme-card');
+    // 换掉自定义类不影响身份标记与结构
+    card.className('acme-card');
+    card.replaceClassName('acme-card', 'acme-card-alt');
 
-    expect(card.className()).not.toContain('yoya-vcard');
-    expect(header.matches('.yoya-vcard .yoya-vcard-header')).toBe(false);
-    expect(header.matches('.acme-card .yoya-vcard-header')).toBe(true);
+    expect(card.className()).toBe('acme-card-alt');
+    expect(header.matches('[vn="VCard"] [vn="VCardHeader"]')).toBe(true);
   });
 
   it('is chainable', () => {

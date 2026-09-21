@@ -254,17 +254,17 @@ describe('component hooks', () => {
     const bForm = vNode((api) => {
       api.whenMount = () => {};
       return div((root) => {
-        root.className('yoya-vcard');
-        root.div((head) => head.className('yoya-vcard-header').child('标题'));
-        root.div((body) => body.className('yoya-vcard-body').child('内容'));
+        root.className('VCard');
+        root.div((head) => head.className('VCardHeader').child('标题'));
+        root.div((body) => body.className('VCardBody').child('内容'));
       });
     });
 
     // 结构语义一致（类名与文本相同）；属性顺序按各自的写法，这里比对规范化后的 HTML 形状
-    expect(bForm.toHTML()).toContain('yoya-vcard-header');
+    expect(bForm.toHTML()).toContain('VCardHeader');
     expect(bForm.toHTML()).toContain('标题');
     expect(bForm.toHTML()).toContain('内容');
-    expect(classForm.toHTML()).toContain('yoya-vcard-header');
+    expect(classForm.toHTML()).toContain('VCardHeader');
     expect(classForm.toHTML()).toContain('标题');
   });
 

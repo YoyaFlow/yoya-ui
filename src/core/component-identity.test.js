@@ -98,7 +98,7 @@ describe('component identity (vn)', () => {
   });
 
   it('身份是对象事实，同时落到真 DOM（GenUI 可扫）', () => {
-    const marked = div({ vn: 'VCard', class: 'yoya-vcard' }, 'x');
+    const marked = div({ vn: 'VCard', class: 'VCard' }, 'x');
 
     // 对象上认得到
     expect(componentNameOf(marked)).toBe('VCard');

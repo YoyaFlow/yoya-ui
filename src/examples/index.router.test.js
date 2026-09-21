@@ -288,7 +288,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     sourceTrigger.click();
     const dialog = page.querySelector('[data-icon-source-dialog]');
     expect(dialog.getAttribute('open')).not.toBeNull();
-    expect(dialog.querySelector('.yoya-vcard')).not.toBeNull();
+    expect(dialog.querySelector('[vn="VCard"]')).not.toBeNull();
     expect(dialog.querySelector('.components-icon-source-dialog-title strong').textContent).toBe(
       '图标源码'
     );
@@ -806,7 +806,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     const page = document.querySelector('[data-echarts-page]');
     expect(page.querySelector('h1').textContent).toBe('ECharts 图表');
-    expect(page.querySelectorAll('.components-echarts-grid .yoya-vcard')).toHaveLength(3);
+    expect(page.querySelectorAll('.components-echarts-grid [vn="VCard"]')).toHaveLength(3);
     expect(page.querySelectorAll('.yoya-vechart')).toHaveLength(3);
     expect(page.querySelectorAll('[data-echarts-demo]')).toHaveLength(3);
     expect(page.querySelectorAll('[data-echarts-demo] [data-source-example]')).toHaveLength(3);

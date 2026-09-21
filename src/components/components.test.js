@@ -586,9 +586,9 @@ describe('compound components', () => {
     const element = page.renderDom();
     element.querySelector('.yoya-vbutton').click();
 
-    expect(element.querySelector('.yoya-vcard-header').textContent).toBe('账户');
-    expect(element.querySelector('.yoya-vcard-body').textContent).toBe('余额');
-    expect(element.querySelector('.yoya-vcard-footer .yoya-vbutton-label').textContent).toBe(
+    expect(element.querySelector('[vn="VCardHeader"]').textContent).toBe('账户');
+    expect(element.querySelector('[vn="VCardBody"]').textContent).toBe('余额');
+    expect(element.querySelector('[vn="VCardFooter"] .yoya-vbutton-label').textContent).toBe(
       '刷新'
     );
     expect(clicked).toHaveBeenCalledTimes(1);
@@ -597,10 +597,11 @@ describe('compound components', () => {
   it('creates card slots through top-level factories', () => {
     const card = vCard([vCardHeader('标题'), vCardBody('内容'), vCardFooter(vButton('确认'))]);
 
-    expect(card.toHTML()).toContain('class="yoya-component yoya-vcard"');
-    expect(card.toHTML()).toContain('class="yoya-vcard-header"');
-    expect(card.toHTML()).toContain('class="yoya-vcard-body"');
-    expect(card.toHTML()).toContain('class="yoya-vcard-footer"');
+    // 身份即标记：不再有 yoya-component / yoya-vcard* 类名
+    expect(card.toHTML()).toContain('vn="VCard"');
+    expect(card.toHTML()).toContain('vn="VCardHeader"');
+    expect(card.toHTML()).toContain('vn="VCardBody"');
+    expect(card.toHTML()).toContain('vn="VCardFooter"');
     expect(card.textContent()).toBe('标题内容确认');
   });
 

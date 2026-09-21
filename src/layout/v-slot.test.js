@@ -55,6 +55,6 @@ describe('vSlot（零布局占位）', () => {
     });
     const element = card.renderDom();
 
-    expect(element.querySelector('.yoya-vcard-header').textContent).toBe('由 part 投递');
+    expect(element.querySelector('[vn="VCardHeader"]').textContent).toBe('由 part 投递');
   });
 });

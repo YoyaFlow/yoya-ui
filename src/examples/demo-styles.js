@@ -680,7 +680,7 @@ const iconExtraRules = [
     }
   ],
   [
-    '.components-icon-source-dialog .yoya-vcard',
+    '.components-icon-source-dialog [vn="VCard"]',
     { border: '0', borderRadius: '8px', boxShadow: 'none' }
   ],
   [
@@ -750,14 +750,14 @@ const svgExtraRules = [
   ],
   ['.components-svg-demo > p', { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0' }],
   [
-    '.components-svg-demo-live .yoya-vcard',
+    '.components-svg-demo-live [vn="VCard"]',
     {
       maxWidth: '640px',
       width: '100%'
     }
   ],
   [
-    '.components-svg-demo-live .yoya-vcard-footer',
+    '.components-svg-demo-live [vn="VCardFooter"]',
     {
       display: 'flex',
       flexWrap: 'wrap',
@@ -957,14 +957,14 @@ const definitionExtraRules = [
 
 const i18nExtraRules = [
   [
-    '.components-i18n-demo-live .yoya-vcard',
+    '.components-i18n-demo-live [vn="VCard"]',
     {
       maxWidth: '640px',
       width: '100%'
     }
   ],
   [
-    '.components-i18n-demo-live .yoya-vcard-footer',
+    '.components-i18n-demo-live [vn="VCardFooter"]',
     {
       display: 'flex',
       flexWrap: 'wrap',
@@ -975,14 +975,14 @@ const i18nExtraRules = [
 
 const stateExtraRules = [
   [
-    '.components-state-demo-live .yoya-vcard',
+    '.components-state-demo-live [vn="VCard"]',
     {
       maxWidth: '640px',
       width: '100%'
     }
   ],
   [
-    '.components-state-demo-live .yoya-vcard-footer',
+    '.components-state-demo-live [vn="VCardFooter"]',
     {
       display: 'flex',
       flexWrap: 'wrap',
@@ -993,14 +993,14 @@ const stateExtraRules = [
 
 const provideInjectExtraRules = [
   [
-    '.components-provide-inject-demo-live .yoya-vcard',
+    '.components-provide-inject-demo-live [vn="VCard"]',
     {
       maxWidth: '640px',
       width: '100%'
     }
   ],
   [
-    '.components-provide-inject-demo-live .yoya-vcard-footer',
+    '.components-provide-inject-demo-live [vn="VCardFooter"]',
     {
       display: 'flex',
       flexWrap: 'wrap',
