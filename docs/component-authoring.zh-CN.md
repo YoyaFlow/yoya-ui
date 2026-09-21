@@ -112,19 +112,22 @@ export function CounterCard() {
 
 - 基础 HTML 元素保持原生标签名：`button()`、`div()`、`input()`。
 - 复合组件工厂统一 `v` 前缀（PascalCase）：`vButton`、`vCard`、`vStatusBadge`。
-- **类名契约**（内置组件，由 `className-contract.test.js` 自动校验）：
-  - 共享标记：所有组件根节点带 `yoya-component`。
-  - 组件与部件类：`yoya-v<name>`（根，如 `yoya-vcard`）、`yoya-v<name>-<part>`（部件，如 `yoya-vcard-header`）、`yoya-v<name>--<modifier>`（修饰符，如 `yoya-vcarousel-arrow--prev`）。
-  - 共享/工具类：`yoya-<feature>-<part>`（如 `yoya-layout`、`yoya-icon`、`yoya-control-clear`），仅用于不属于单一组件的能力。
-  - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），类名不承载状态。
-  - 动态类名仅允许 `yoya-v${name}-<part>` 与 `yoya-${kind}` 两种模板形态。
-  - 组件预设规则必须从根类作用域书写（禁止孤儿部件选择器），保证替换根类后整棵子树与预设样式脱钩。
-- 第三方组件建议使用自己的类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
+- **属性契约**（属性化迁移，票 15；门禁 `src/attribute-migration-baseline.test.js` 只减不增）：
+  - **身份**：组件视图根写 `vn: 'VXxx'`（值 = 导出名），内部块各写自己的 `vn: 'VXxxPart'`；
+    包装型共用同一根时写多值（`vn: 'VTimer VInput'`，空格分隔，任一名字命中即命中）。
+    身份既是**对象事实**（判定读它），也**落到真 DOM**（`vn="VXxx"`，GenUI 扫描与 CSS 作用域读它）。
+  - **部件（part）**：结构侧 `vSlot('name')` 零布局占位、内容侧 `vn_slot: 'name'` 标记，`child()` 进组件自动落位。
+  - **公开槽位**：`slot: 't-head'`（结构侧声明 + 内容侧信封），信封本身不进 DOM。`slot` 与 `vn_slot` 是两个名空间。
+  - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），属性不承载身份之外的语义。
+  - **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）删除，预设样式选择器写 `[vn="VXxx"]`；
+    跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
+  - 组件预设规则必须从身份作用域书写（`[vn="VXxx"] …`，禁止孤儿部件选择器），保证换掉身份后整棵子树与预设样式脱钩。
+- 第三方组件建议使用自己的身份名与类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
 - 颜色、间距等样式优先使用主题变量 `var(--yoya-<token>, fallback)`，主题根为 `:root, [data-yoya-theme]`（见 `yoya.ui.css`）。
 
 ## 4.1 样式定制与主题
 
-- 组件预设样式必须从根类作用域书写（`.yoya-v<name> ...`），并让用户可以通过 `replaceClassName('yoya-v<name>', 'my-class')` 剥离预设、用自定义 CSS 接管。
+- 组件预设样式必须从身份作用域书写（`[vn="VXxx"] ...`），并让用户可以通过**换掉身份**（不写该 `vn` / 写自己的身份）或在自定义 CSS 层覆盖来接管样式；`replaceClassName` 作为通用类名工具的去留见票 15 §3-Q8。
 - 实例级定制应通过组件 API 或行内 `styles()` 提供；全局定制通过覆盖 `--yoya-*` token 或多个维度开关实现。
 - 库组件自身运行在 `@layer yoya` 内且基础规则低特异度，用户规则天然优先；第三方组件建议遵循相同约定。
 - 主题变量体系、换肤维度、明暗/密度模式与定制阶梯详见 [主题样式规范](theme.zh-CN.md)。
@@ -383,6 +386,9 @@ panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
 - **一个槽一份内容**：同名槽第二次投递 → 报错；同一个组件里同名槽声明两次 → 报错；
 - **找不到槽位**：不 mount + 开发期提示（HTML 语义：没有位置就不渲染）；
 - **多根组件**没有单一容器：未标记内容 → 报错，请声明命名槽；
+- **匿名槽位（未标记的 `child(...)`）就是"组件根内部"这个默认位置**：组件内部把内容转投到内层容器
+  （锚点转进内层 `<ul>`、表格行转进 `<tbody>`）时，匿名内容走的仍是这条 `child()` 转发路径——
+  迁移到 vNode 外壳后必须保持同一条落位路径，不得静默丢弃或改落到包装层；
 - 槽位不产生额外 DOM；`slot` 只是**标记**，不是 `<slot>` 元素（`slot()` 是 HTML 原生标签工厂，与组件槽位无关）。
 
 ### 何时用槽、何时直接 `child`
@@ -466,52 +472,50 @@ const chart = vNode((api) => {
 - **内存**：没有钩子的组件零额外字段；框架不 `bind()`、不用数组收集，销毁后释放引用；
 - **不做 `onUpdate`**：库里"更新"有区域重建 / keyed 换 key / 组件主动换根三种不同场景，没有单一语义。
 
-## 7.3 组件身份：`vn` 与 `instanceof`
+## 7.3 组件身份：`vn`
 
-组件的**视图根元素**上写 `vn: 'VCard'`（值 = 导出名），这个成员就是"一个 VCard"。三种形态写法完全一样：
+组件的**视图根元素**上写 `vn: 'VCard'`（值 = 导出名），这个成员就是"一个 VCard"。两种形态写法完全一样：
 
 ```js
 function ServiceTag() {
   // 形态 A：薄工厂，成员就是元素节点
-  return span({ vn: 'ServiceTag', class: 'yoya-service-tag' }, 'tag');
+  return span({ vn: 'ServiceTag' }, 'tag');
 }
 
 function RateCard() {
   // 形态 B（vNode）：成员是组件节点
-  return vNode(() => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate'));
+  return vNode(() => div({ vn: 'RateCard' }, 'rate'));
 }
 
 function Chart() {
   // 同上（vNode）
   return vNode(() => div({ vn: 'Chart' }, 'chart'));
 }
-
-// 模块底一行（与 registerChildFactories 并排），三种形态同一个调用
-defineComponentIdentity(ServiceTag, 'ServiceTag');
-defineComponentIdentity(RateCard, 'RateCard');
-defineComponentIdentity(Chart, 'Chart');
 ```
 
-判定只有一种写法，与形态无关：
+判定走核心导出的**身份读取**，与形态无关（`instanceof VXxx` 不再是承诺的用法）：
 
 ```js
-page.children().filter((child) => child instanceof ServiceTag); // 元素节点：读自己
-page.children().filter((child) => child instanceof RateCard); // 组件节点：展开到视图根
-page.children().filter((child) => child instanceof Chart);
+import { componentNameOf, hasComponentIdentity } from '@yoyaflow/yoya-ui/core';
+
+page.children().filter((child) => hasComponentIdentity(child, 'ServiceTag')); // 元素节点：读自己
+page.children().filter((child) => hasComponentIdentity(child, 'RateCard')); // 组件节点：展开到视图根
+page.children().map((child) => componentNameOf(child)); // 多值原样返回（'VTimer VInput'）
 ```
 
 规则：
 
 - **一条判定**：成员是元素节点就看它自己，是组件节点就展开到它的视图根（多根任一命中）。
-  **身份是对象事实**（票 07）：`vn` 只是视图根 options 上的**标记**，写进节点的身份字段，
-  **不落 DOM**——`outerHTML` / SSR 输出里都没有它，CSS 选择器也拿不到；判定跟着客户端那棵树的
-  对象走，所以 `adopt` / `hydrate` / 克隆片段一样认，不需要回读 DOM；
+  **身份是对象事实 + 真 DOM 属性**：`vn` 写进节点的身份字段（判定读它），同时落成真属性
+  `vn="VCard"`（GenUI 扫描 / CSS 作用域读它）；判定跟着客户端那棵树的**对象**走，
+  `adopt` / `hydrate` / 克隆片段一样认，不需要回读 DOM；
 - **多值**：包装型组件共用根时写 `vn: 'VCard UserCard'`，两个身份都命中（空格分隔）；
-- **类名不参与判定**：`yoya-*` 是样式钩子；身份只认 `vn`，改样式不会改身份，手搓同名类名也不会误判；
-- **原型判定保留为兜底**：节点类型与 `new` 出来的实例照旧 `instanceof` 成立；
+- **类名不参与判定**：身份只认 `vn`；预设样式也从 `[vn="VXxx"]` 作用域书写，手搓同名类名不会误判；
+- **`instanceof VXxx` 不再承诺**：`defineComponentIdentity` 已退场，跨模块识别改**能力约定**
+  （控件 = 有 `value()` / `_collectValue()`）或 `hasComponentIdentity`；模块内判定自己的子实例时
+  用模块内标记（不导出类型）；
 - **裸组件对象不算**：`RateCard()` 返回的对象还没进树；判定针对 `children()` 里的成员；
-- **代价**：零 DOM 字节（身份不进 DOM / SSR 输出）；改名仍然等于改身份语义（`instanceof` 认的是名字）；
-  手写 `attr('vn', …)` 只是普通属性，不再被当成身份。
+- **代价**：每个组件根多一个 `vn` 属性（属性化迁移接受的字节）；改名等于改身份语义（判定与 CSS 认的都是名字）。
 
 ## 7.4 迁移提示（这批改动带来的行为变化）
 

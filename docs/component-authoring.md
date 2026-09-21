@@ -121,19 +121,27 @@ For the field-access rules see §7.3.
 
 - Keep native names for basic HTML elements: `button()`, `div()`, `input()`.
 - Compound component factories use the `v` prefix with PascalCase names: `vButton`, `vCard`, `vStatusBadge`.
-- **Class name contract** (built-in components, enforced by `className-contract.test.js`):
-  - Shared marker: every component root carries `yoya-component`.
-  - Component and part classes: `yoya-v<name>` (root, e.g. `yoya-vcard`), `yoya-v<name>-<part>` (part, e.g. `yoya-vcard-header`), `yoya-v<name>--<modifier>` (modifier, e.g. `yoya-vcarousel-arrow--prev`).
-  - Shared/utility classes: `yoya-<feature>-<part>` (e.g. `yoya-layout`, `yoya-icon`, `yoya-control-clear`) only for capabilities that do not belong to one component.
-  - State always uses kebab-case `data-*` attributes (`data-variant`, `data-open`); class names do not carry state.
-  - Dynamic class names only use two templates: `yoya-v${name}-<part>` and `yoya-${kind}`.
-  - Preset rules must be scoped from the root class (no orphan part selectors), so replacing the root class detaches the whole subtree from preset styles.
-- Third-party components should use their own class prefix (e.g. `acme-status-badge`) to avoid conflicts with built-in styles.
+- **Attribute contract** (the attribute migration; enforced as a shrink-only baseline by `src/attribute-migration-baseline.test.js`):
+  - **Identity**: the component's view root writes `vn: 'VXxx'` (the export name); internal blocks write their
+    own `vn: 'VXxxPart'`. A wrapper sharing one root writes several names (`vn: 'VTimer VInput'`, whitespace
+    separated — any name matches). Identity is an **object fact** (the check reads it) that also **reaches the
+    real DOM** (`vn="VXxx"` — read by the GenUI scan and by CSS scoping).
+  - **Parts**: `vSlot('name')` declares the zero-layout position in the structure, `vn_slot: 'name'` marks the
+    content, and `child()` into the component projects it into position automatically.
+  - **Public slots**: `slot: 't-head'` (declaration on the structure side, envelope on the content side); the
+    envelope never enters the DOM. `slot` and `vn_slot` are separate namespaces.
+  - State always uses kebab-case `data-*` attributes (`data-variant`, `data-open`).
+  - **Class names retire**: `yoya-component` and `yoya-v*` (component and part) are removed; preset rules are
+    written as `[vn="VXxx"]`. Cross-component capability classes `yoya-<feature>` (`yoya-layout`, `yoya-icon`,
+    `yoya-control-clear`) stay.
+  - Preset rules must be scoped from the identity (`[vn="VXxx"] …`, no orphan part selectors), so swapping the
+    identity detaches the whole subtree from preset styles.
+- Third-party components should use their own identity names and class prefix (e.g. `acme-status-badge`) to avoid conflicts with built-in styles.
 - Prefer theme variables for colors and spacing: `var(--yoya-<token>, fallback)`. The theme root is `:root, [data-yoya-theme]` (see `yoya.ui.css`).
 
 ## 4.1 Style customization and theming
 
-- Preset styles must be written from the root class scope (`.yoya-v<name> ...`) so users can call `replaceClassName('yoya-v<name>', 'my-class')` to strip presets and take over with custom CSS.
+- Preset styles must be written from the identity scope (`[vn="VXxx"] ...`) so users take over by **swapping the identity** (omit that `vn` / use their own) or overriding rules in their own CSS layer; whether `replaceClassName` stays as a generic class utility is still open (ticket 15 §3-Q8).
 - Instance-level customization should go through component APIs or inline `styles()`; global customization happens by overriding `--yoya-*` tokens or the dimensional switches.
 - Library components run inside `@layer yoya` with low-specificity base rules, so user rules win naturally; third-party components should follow the same convention.
 - See the [Theme and Styling Spec](theme.md) for the token system, theming dimensions, light/dark and density modes, and the customization ladder.
@@ -414,6 +422,10 @@ Rules:
   same slot in one component throw;
 - **No matching slot**: the content is not mounted (+ a development-time hint), matching HTML;
 - **Multi-root components** have no single container: unmarked content throws — declare a named slot;
+- **The anonymous slot (unmarked `child(...)`) is the "inside the component root" default position**: when a
+  component forwards content to an inner container (anchor content into its inner `<ul>`, table rows into
+  `<tbody>`), unmarked content still travels that same `child()` path — a migration to a vNode shell must keep
+  the same landing path, never silently dropping it or parking it on the wrapper;
 - Slots add no extra DOM; `slot` is a **marker**, not a `<slot>` element (`slot()` is the plain HTML tag
   factory and has nothing to do with component slots).
 
@@ -512,59 +524,57 @@ Rules:
 - **No `onUpdate`**: "update" means three different things here (region rebuild, keyed key change, a
   component replacing its own root), so there is no single semantic to attach.
 
-## 7.3 Component identity: `vn` and `instanceof`
+## 7.3 Component identity: `vn`
 
 Write `vn: 'VCard'` (the export name) on the component's **view root** and that member _is_ a VCard.
-All three shapes are spelled the same way:
+Both shapes are spelled the same way:
 
 ```js
 function ServiceTag() {
   // shape A: thin factory, the member is the element node
-  return span({ vn: 'ServiceTag', class: 'yoya-service-tag' }, 'tag');
+  return span({ vn: 'ServiceTag' }, 'tag');
 }
 
 function RateCard() {
   // shape B (vNode): the member is the ComponentNode
-  return vNode(() => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate'));
+  return vNode(() => div({ vn: 'RateCard' }, 'rate'));
 }
 
 function Chart() {
   // same shape as above (vNode)
   return vNode(() => div({ vn: 'Chart' }, 'chart'));
 }
-
-// one line per module, next to registerChildFactories — the same call for every shape
-defineComponentIdentity(ServiceTag, 'ServiceTag');
-defineComponentIdentity(RateCard, 'RateCard');
-defineComponentIdentity(Chart, 'Chart');
 ```
 
-The check has one spelling, independent of the shape:
+The check goes through the core identity readers, independent of the shape (`instanceof VXxx` is no longer promised):
 
 ```js
-page.children().filter((child) => child instanceof ServiceTag); // element node: reads itself
-page.children().filter((child) => child instanceof RateCard); // component node: unwraps to its view root
-page.children().filter((child) => child instanceof Chart);
+import { componentNameOf, hasComponentIdentity } from '@yoyaflow/yoya-ui/core';
+
+page.children().filter((child) => hasComponentIdentity(child, 'ServiceTag')); // element node: reads itself
+page.children().filter((child) => hasComponentIdentity(child, 'RateCard')); // component node: unwraps to its view root
+page.children().map((child) => componentNameOf(child)); // several names come back as written ('VTimer VInput')
 ```
 
 Rules:
 
 - **One check**: an element member is read directly, a component member is unwrapped to its view root
-  (any root of a multi-root view counts). **Identity is an object fact** (ticket 07): `vn` is only a
-  **marker** in the view root's options, stored on the node's identity field and **never written to the
-  DOM** — it is absent from `outerHTML` / SSR output, invisible to CSS selectors, and the check follows
-  the client tree's objects, so cloned fragments and `adopt` / `hydrate` nodes answer the same without
-  reading the DOM back;
+  (any root of a multi-root view counts). **Identity is an object fact plus a real DOM attribute**: `vn` is
+  stored on the node's identity field (the check reads it) and written as the `vn="VCard"` attribute
+  (the GenUI scan and CSS scoping read that). The check follows the client tree's **objects**, so cloned
+  fragments and `adopt` / `hydrate` nodes answer the same without reading the DOM back;
 - **Several names**: a wrapper sharing the root writes `vn: 'VCard UserCard'`; both identities match
   (whitespace separated);
-- **Class names are not identity**: `yoya-*` stays a styling hook — restyling never changes identity,
-  and a hand-written class name cannot fake it;
-- **The prototype check stays as a fallback**: node types and instances created with `new` keep working;
+- **Class names are not identity**: identity only reads `vn`, and preset styles are scoped by `[vn="VXxx"]`
+  too — a hand-written class name cannot fake it;
+- **`instanceof VXxx` is no longer promised**: `defineComponentIdentity` has retired; cross-module
+  recognition goes through **capability conventions** (a control has `value()` / `_collectValue()`) or
+  `hasComponentIdentity`. A module checking its own sub-instances uses a module-local marker instead of
+  exporting the type;
 - **Only tree members count**: a factory result is not a member until it is attached (`child()` / `keyed()`);
   the check targets `children()` members;
-- **Cost**: zero DOM bytes (identity never reaches the DOM or SSR output); renaming a component still
-  changes identity semantics (`instanceof` matches the name), and a hand-written `attr('vn', …)` is just
-  a plain attribute now, no longer an identity.
+- **Cost**: one extra `vn` attribute per component root (the byte cost the attribute migration accepts);
+  renaming a component changes identity semantics, because both the check and the CSS match the name.
 
 ## 7.4 Migration notes (behaviour changes in this batch)
 

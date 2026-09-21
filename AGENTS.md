@@ -116,6 +116,37 @@ function RateCard() {
   把定义当成快捷名（那样定义被迫兼管调用方参数）。无分派需求的转发型薄工厂才直接成立一个名字
   （`ServiceTag(options) { return vBadge(options); }`）。参考实现：`VSlot` / `vSlot`。
 
+### 属性契约：`vn` / `vn_slot`（属性化迁移，票 15）
+
+组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名退场（存量逐组件迁移，只减不增）。
+方案与分波、单组件 DoD 见 `.scratch/vnode-convergence/issues/15-attribute-and-identity-migration-plan.md`。
+
+1. **身份 = `vn` 对象事实 + 真 DOM 属性**：视图根写 `vn: 'VXxx'`（值 = 导出名；包装型多值空格分隔，
+   如 `'VTimer VInput'`）。`defineComponentIdentity`（`Symbol.hasInstance` 注册）与
+   `member instanceof VXxx` **不再对外承诺**；判定用 `componentNameOf` / `hasComponentIdentity`。
+   模块内的自有子实例判定留在模块内（不导出类型时用模块内标记，如 `_isTreeRow`）。
+2. **跨模块识别用能力约定**：控件 = 有 `value()` / `_collectValue()`（`isControlCapable`）、
+   可清空 = `clearable()`；**不按组件名分支**。
+3. **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）都删，预设样式选择器改 `[vn="VXxx"]`；
+   跨组件能力类 `yoya-<feature>`（`yoya-icon` / `yoya-layout` / `yoya-control-clear`）保留。
+   **同一刀里 JS 与 CSS 一起改**（组件没写 `vn` 就切 CSS = 掉样式），旧规则只减不增。
+4. **组件只有两种写法**：A 薄工厂 / B `vNode((api) => 视图)`；`class XxxNode extends HtmlElementNode`
+   只作为**节点类型扩展（视图根）**存在于引擎与组件内部，不导出成组件写法。
+5. **定义与快捷名分开**：`VXxx` 只负责定义（自己的 props / 结构 / 状态 / 命令），
+   `vXxx = createComponentShortcut(VXxx)` 负责"建 + 应用调用方 setup 分派"；不写 `const vXxx = VXxx` 别名。
+6. **命令里要碰节点用 `self.node()`**（setup 第二参句柄）；不写 `let root` 捕获、不把句柄塞进 `api`。
+7. **匿名槽位 = 未标记的 `child(...)`**：它就是普通元素语义，内容进**组件根内部**。
+   节点类型覆盖过 `child()` 的组件（锚点转发进内层 `<ul>`、表格转发进 `tbody`、徽标进内容框）
+   迁移后必须保持**同一条落位路径**：匿名内容不得被静默丢弃、不得改落到包装层或组件节点上。
+   多根组件不接受未标记内容（直接报错，不静默丢弃）。
+8. **部件（part）**：位置由结构里的 `vSlot('name')` 零布局占位声明，内容自带 `vn_slot: 'name'` 标记，
+   `child()` 进组件即自动落位（一个占位一份内容，重复投递即替换）；**没有 `vSlotInsert` 这类辅助函数**。
+   `vn_slot`（部件）与 `slot`（公开槽位）是两个名空间，永不复用。
+
+CSS 迁移对照：`.yoya-component` → `[vn]`（收口时一次切）、`.yoya-vcard` → `[vn="VCard"]`、
+`.yoya-vcard-header` → `[vn="VCardHeader"]`、`.yoya-vcarousel-arrow--prev` → `[vn="VCarouselArrow"][data-dir="prev"]`。
+过渡期 `.yoya-v*` 与 `[vn=…]` 并存不算违规，门禁在 `src/attribute-migration-baseline.test.js`（只减不增）。
+
 ### 节点类型扩展（引擎内部，不是第三种组件形态）
 
 `class XxxNode extends HtmlElementNode` 仍然存在，但它是**组件的视图根 / 自定义元素种类**——
@@ -123,7 +154,8 @@ function RateCard() {
 库内组件都是这个结构：对外只有一个句柄（vNode 组件节点），节点类型**不进包入口**，第三方不需要继承。
 B 形态里需要元素级行为的组件，视图根就是这样一个节点类型；这不是给业务/第三方的第三种写法。
 
-- 命名：组件名 PascalCase 描述 UI 单元（ServiceTableCard / VButton）；工厂 `vXxx`、身份导出 `VXxx`、CSS 类 `yoya-vxxx`。
+- 命名：组件名 PascalCase 描述 UI 单元（ServiceTableCard / VButton）；工厂 `vXxx`、身份导出 `VXxx`、
+  身份属性 `vn: 'VXxx'`（CSS 类 `yoya-vxxx` 已退场，见上文「属性契约」）。
 - 自定义元素种类（第三方要造非 HTML 宿主 / 自绘渲染目标）是引擎扩展点，票集里叫 `CustomNode`（planned）；
   业务组件不需要它 —— 有行为就把行为写成 B 形态的命令与钩子。
 - 库内参考实现：
@@ -131,9 +163,8 @@ B 形态里需要元素级行为的组件，视图根就是这样一个节点类
   - 形态 B：`vInput` / `vBadge` / `vDialog` / `vPagination` / `vTable` —— 组件库主体全部是 vNode。
 - `child(...)` 接受 ViewNode、vNode 组件（自动包装为 ComponentNode）或字符串 / 数字；两种形态都能当子节点传入页面组合。
 - 低层元素与 `v*` 工厂在组件内部继续有效；本规则约束可复用组件边界。
-- 组件身份：模块底一行 `defineComponentIdentity(VXxx, 'VXxx')`（值 = 导出名）；元素节点也可在 options 里写 `vn: 'VXxx'`。
-  身份是**对象事实、不落 DOM**（票 07）：SSR / `outerHTML` / 编译片段里都没有它。
-  `member instanceof VXxx` 对 A / B 是同一条判定（元素节点读自己、组件节点展开到视图根），详见 `docs/component-authoring.md` §7.3。
+- 组件身份：视图根结构里写 `vn: 'VXxx'`（值 = 导出名）——身份既是**对象事实**（判定读它），
+  也**落到真 DOM**（`vn="VXxx"`，GenUI 扫描与 CSS 作用域读它）。详见 `docs/component-authoring.md` §7.3。
 - **新增组件只有两个选择**：没有行为 → A；有行为 → B（`vNode((api) => 视图)`）。
 - **setup 参数数量不定、按出现顺序分派**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
   数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
