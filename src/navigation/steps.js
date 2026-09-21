@@ -1,15 +1,18 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity, viewRootOf } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren
 } from '../components/shared.js';
 
-export class VSteps extends HtmlElementNode {
+/** 步骤条容器的节点类型（不导出）；公开组件 `vSteps` 是 vNode 外壳。 */
+class StepsNode extends HtmlElementNode {
   constructor(setup = null) {
     super('ol', null);
+    this._identity = 'VSteps';
     this._current = 0;
     this._status = 'process';
     this._direction = 'horizontal';
@@ -73,7 +76,7 @@ export class VSteps extends HtmlElementNode {
 
   items(value) {
     if (value === undefined) {
-      return this.children().filter((child) => child instanceof VStep);
+      return this.children().filter((child) => viewRootOf(child) instanceof StepNode);
     }
 
     replaceChildren(this, []);
@@ -162,25 +165,29 @@ export class VSteps extends HtmlElementNode {
   }
 
   _syncSteps() {
-    const steps = this.children().filter((child) => child instanceof VStep);
+    const steps = this.children().filter((child) => viewRootOf(child) instanceof StepNode);
 
     this.attr('data-step-count', String(steps.length));
     steps.forEach((step, index) => {
-      step._index = index;
-      step._total = steps.length;
-      step._stepsCurrent = this._current;
-      step._stepsStatus = this._status;
-      step._stepsDirection = this._direction;
-      step._stepsSize = this._size;
-      step._syncStepState();
+      // 子项可能是 vNode 组件（成员是 ComponentNode）：内部状态与同步都落到视图根（节点类型）上
+      const unit = viewRootOf(step) ?? step;
+      unit._index = index;
+      unit._total = steps.length;
+      unit._stepsCurrent = this._current;
+      unit._stepsStatus = this._status;
+      unit._stepsDirection = this._direction;
+      unit._stepsSize = this._size;
+      unit._syncStepState();
     });
     return this;
   }
 }
 
-export class VStep extends HtmlElementNode {
+/** 步骤项的节点类型（不导出）；公开组件 `vStep` 是 vNode 外壳。 */
+class StepNode extends HtmlElementNode {
   constructor(setup = null) {
     super('li', null);
+    this._identity = 'VStep';
     this._title = '';
     this._description = '';
     // 未设置与显式设为空串要区分：前者不产出子节点，后者保留空内容盒（与原实现一致）。
@@ -398,15 +405,30 @@ export class VStep extends HtmlElementNode {
 }
 
 export function vSteps(first = null, second = null, third = null) {
-  return createComponentFactory(VSteps, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSteps',
+    createNode: (setup) => new StepsNode(setup),
+    commands: ['current', 'status', 'direction', 'size', 'items', 'next', 'prev'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vStep(first = null, second = null, third = null) {
-  return createComponentFactory(VStep, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VStep',
+    createNode: (setup) => new StepNode(setup),
+    commands: ['title', 'text', 'description', 'desc', 'icon', 'status'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
+export const VSteps = vSteps;
+export const VStep = vStep;
+defineComponentIdentity(VSteps, 'VSteps');
+defineComponentIdentity(VStep, 'VStep');
+
 function normalizeStepItem(item) {
-  if (item instanceof VStep) {
+  if (viewRootOf(item) instanceof StepNode) {
     return item;
   }
 

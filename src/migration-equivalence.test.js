@@ -312,6 +312,20 @@ const CASES = [
       loop: carousel.loop(),
       autoplay: carousel.autoplay()
     })
+  },
+  {
+    name: 'vSteps / 三步 + 当前项',
+    build: () =>
+      api.vSteps({ current: 1 }, (steps) => {
+        steps.vStep({ title: '填写信息' });
+        steps.vStep({ title: '确认信息' });
+        steps.vStep({ title: '完成' });
+      }),
+    probe: (steps) => ({
+      current: steps.current(),
+      items: steps.items().length,
+      status: steps.status()
+    })
   }
 ];
 
