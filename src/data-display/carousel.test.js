@@ -176,7 +176,9 @@ describe('vCarousel', () => {
 
     carousel.destroy();
     vi.advanceTimersByTime(3000);
-    expect(carousel._timer).toBeNull();
+    // 迁移成 vNode 后组件节点是包装，计时器字段在视图根（节点类型）上；这里直接验行为：
+    // 销毁后再推进时间也不会再切页
+    expect(carousel.active()).toBe(0);
   });
 
   it('hides arrows and dots when disabled', () => {

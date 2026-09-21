@@ -1,18 +1,17 @@
 import { HtmlElementNode } from '../html/index.js';
 import { ArrowLeftOutlined, ArrowRightOutlined } from '../svg/icons.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import {
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  replaceChildren
-} from '../components/shared.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { componentClass, isPlainObject, replaceChildren } from '../components/shared.js';
 
 const SWIPE_THRESHOLD = 40;
 
-export class VCarousel extends HtmlElementNode {
+/** 轮播的节点类型（不导出）；公开组件 `vCarousel` 是 vNode 外壳。 */
+class CarouselNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VCarousel';
     this._activeIndex = 0;
     this._itemsData = [];
     this._renderItem = null;
@@ -549,5 +548,29 @@ export class VCarousel extends HtmlElementNode {
 }
 
 export function vCarousel(first = null, second = null, third = null) {
-  return createComponentFactory(VCarousel, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VCarousel',
+    createNode: (setup) => new CarouselNode(setup),
+    commands: [
+      'slides',
+      'items',
+      'renderItem',
+      'active',
+      'goTo',
+      'next',
+      'prev',
+      'loop',
+      'autoplay',
+      'start',
+      'stop',
+      'interval',
+      'arrows',
+      'dots',
+      'height'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VCarousel = vCarousel;
+defineComponentIdentity(VCarousel, 'VCarousel');

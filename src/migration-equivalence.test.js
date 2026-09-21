@@ -298,6 +298,20 @@ const CASES = [
       orientation: tabs.orientation(),
       variant: tabs.variant()
     })
+  },
+  {
+    name: 'vCarousel / 三张幻灯片',
+    build: () =>
+      api.vCarousel({
+        slides: ['甲', '乙', '丙'],
+        renderItem: (item) => api.div((slide) => slide.span(String(item)))
+      }),
+    probe: (carousel) => ({
+      active: carousel.active(),
+      slides: carousel.slides().length,
+      loop: carousel.loop(),
+      autoplay: carousel.autoplay()
+    })
   }
 ];
 
