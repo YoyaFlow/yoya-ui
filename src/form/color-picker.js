@@ -1,10 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories, vText } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
-  applyComponentArguments,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -65,9 +64,10 @@ const DEFAULT_PALETTE = [
  * vColorPicker 是带自定义弹窗的颜色选择器：触发器打开弹窗，
  * 弹窗内包含已选颜色（右键清除）、预设色板、透明度调节与已选颜色效果预览。
  */
-export class VColorPicker extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class ColorPickerNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VColorPicker';
     this.className(componentClass, 'yoya-vcolor-picker');
     this.styles({ position: 'relative' });
 
@@ -81,7 +81,6 @@ export class VColorPicker extends HtmlElementNode {
 
     this._buildStructure();
     this._setupColorPicker(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   _buildStructure() {
@@ -486,7 +485,10 @@ export class VColorPicker extends HtmlElementNode {
   }
 
   _notifyChange() {
-    this._changeHandlers.forEach((handler) => handler(this._value, this._alpha, this));
+    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+    this._changeHandlers.forEach((handler) =>
+      handler(this._value, this._alpha, this._componentHandle ?? this)
+    );
   }
 
   _renderPalette() {
@@ -561,8 +563,27 @@ export class VColorPicker extends HtmlElementNode {
 }
 
 export function vColorPicker(first = null, second = null, third = null) {
-  return createComponentFactory(VColorPicker, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VColorPicker',
+    createNode: (setup) => new ColorPickerNode(setup),
+    commands: [
+      'value',
+      'alpha',
+      'rgba',
+      'clearValue',
+      'open',
+      'close',
+      'toggle',
+      'palette',
+      'change',
+      'onChange'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VColorPicker = vColorPicker;
+defineComponentIdentity(VColorPicker, 'VColorPicker');
 
 registerChildFactories(HtmlElementNode, { vColorPicker });
 

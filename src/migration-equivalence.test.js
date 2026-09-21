@@ -617,6 +617,37 @@ const CASES = [
     name: 'vAvatarUpload / 禁用 + 自定义 accept',
     build: () => api.vAvatarUpload({ accept: '.png', disabled: true, name: 'avatar' }),
     probe: (upload) => ({ accept: upload.accept(), disabled: upload.disabled() })
+  },
+  {
+    name: 'vSvgIconPicker / 触发器 + 自选图标',
+    build: () =>
+      api.vSvgIconPicker({
+        icons: ['BellOutlined', 'CalendarOutlined'],
+        name: 'icon',
+        value: 'BellOutlined'
+      }),
+    probe: (picker) => ({ icons: picker.icons(), name: picker.name(), value: picker.value() })
+  },
+  {
+    name: 'vSvgIconPicker / 打开弹窗',
+    build: () =>
+      api.vSvgIconPicker((picker) => {
+        picker.icons(['BellOutlined']).open(true);
+      }),
+    probe: (picker) => ({ expanded: picker.attr('aria-expanded') ?? null })
+  },
+  {
+    name: 'vColorPicker / 色板 + 透明度',
+    build: () => api.vColorPicker({ alpha: 40, palette: ['#123456', '#abcdef'], value: '#123456' }),
+    probe: (picker) => ({ alpha: picker.alpha(), rgba: picker.rgba(), value: picker.value() })
+  },
+  {
+    name: 'vColorPicker / 未选择 + 打开弹窗',
+    build: () =>
+      api.vColorPicker((picker) => {
+        picker.open(true);
+      }),
+    probe: (picker) => ({ expanded: picker.attr('aria-expanded') ?? null, value: picker.value() })
   }
 ];
 

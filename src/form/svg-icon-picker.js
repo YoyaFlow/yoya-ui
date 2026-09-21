@@ -1,10 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories, vText } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
-  applyComponentArguments,
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -28,9 +27,10 @@ function collectBuiltinIcons() {
  * vSvgIconPicker 是带弹窗的 SVG 图标选择器：触发器展示当前选中图标，
  * 点击打开相对较大的弹窗，弹窗内提供图标方阵，点击某个图标即选中并关闭。
  */
-export class VSvgIconPicker extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class SvgIconPickerNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VSvgIconPicker';
     this.className(componentClass, 'yoya-vsvg-icon-picker');
     this.styles({ position: 'relative' });
 
@@ -58,7 +58,6 @@ export class VSvgIconPicker extends HtmlElementNode {
     });
 
     this._setupSvgIconPicker(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   _buildStructure() {
@@ -364,7 +363,8 @@ export class VSvgIconPicker extends HtmlElementNode {
   }
 
   _notifyChange() {
-    this._changeHandlers.forEach((handler) => handler(this._value, this));
+    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+    this._changeHandlers.forEach((handler) => handler(this._value, this._componentHandle ?? this));
   }
 
   _setupSvgIconPicker(setup) {
@@ -411,7 +411,29 @@ export class VSvgIconPicker extends HtmlElementNode {
 }
 
 export function vSvgIconPicker(first = null, second = null, third = null) {
-  return createComponentFactory(VSvgIconPicker, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSvgIconPicker',
+    createNode: (setup) => new SvgIconPickerNode(setup),
+    commands: [
+      'value',
+      'clearValue',
+      'isDisabled',
+      'name',
+      'icons',
+      'open',
+      'close',
+      'toggle',
+      'change',
+      'onChange',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VSvgIconPicker = vSvgIconPicker;
+defineComponentIdentity(VSvgIconPicker, 'VSvgIconPicker');
 
 registerChildFactories(HtmlElementNode, { vSvgIconPicker });
