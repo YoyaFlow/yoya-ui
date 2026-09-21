@@ -73,14 +73,15 @@ describe('VMessageManager', () => {
   it('participates in its parent ViewNode lifecycle', () => {
     vi.useFakeTimers();
     const manager = vMessageManager();
-    const close = vi.spyOn(manager.container(), 'close');
     const root = div((page) => page.child(manager)).bindTo(document.body);
     manager.show('随页面销毁', { id: 'page-message', duration: 1000 });
 
     root.destroy();
     vi.advanceTimersByTime(1000);
 
-    expect(close).toHaveBeenCalledTimes(1);
+    // 容器迁成 vNode 后 `close` 是组件节点上的命令包装、内部自调用落在视图根上，
+    // 这里改成验行为：销毁后消息与容器都不在了
+    expect(document.querySelector('.yoya-vmessage')).toBeNull();
     expect(manager.show('已销毁', { duration: 0 })).toBe(null);
     expect(document.querySelector('.yoya-vmessage-container')).toBeNull();
   });
@@ -88,7 +89,6 @@ describe('VMessageManager', () => {
   it('destroys an injected container with its messages, timer, events, and DOM', () => {
     vi.useFakeTimers();
     const container = vMessageContainer();
-    const close = vi.spyOn(container, 'close');
     const manager = new VMessageManager({ container }).bindTo(document.body);
     manager.show('稍后关闭', { id: 'later', duration: 1000 });
     const closeButton = document.querySelector('.yoya-vmessage-close');
@@ -99,7 +99,6 @@ describe('VMessageManager', () => {
     expect(manager.destroy()).toBe(manager);
     vi.advanceTimersByTime(1000);
 
-    expect(close).toHaveBeenCalledTimes(1);
     expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function), undefined);
     expect(document.querySelector('.yoya-vmessage-container')).toBeNull();
     expect(manager.show('已销毁', { duration: 0 })).toBe(null);

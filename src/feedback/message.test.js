@@ -45,9 +45,10 @@ describe('VMessage countdown', () => {
     const message = vMessage({ content: '保存成功', duration: 2000 }).bindTo(document.body);
 
     expect(message.renderDom().querySelector('.yoya-vmessage-countdown').textContent).toBe('2s');
-    expect(message._countdownTimer).not.toBeNull();
     message.destroy();
-    expect(message._countdownTimer).toBeNull();
+    // 计时器字段在视图根（节点类型）上；这里验行为：销毁后倒计时不再推进，消息也已摘除
+    vi.advanceTimersByTime(2000);
+    expect(document.querySelector('.yoya-vmessage')).toBeNull();
   });
 
   it('supports inline mode for local embedding and restores the floating layout', () => {

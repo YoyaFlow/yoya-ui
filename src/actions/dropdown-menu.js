@@ -1,3 +1,5 @@
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { MenuNode } from '../navigation/menu.js';
 import { VButton } from './button.js';
@@ -5,7 +7,6 @@ import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import { allocateId } from '../core/id.js';
 import {
-  createComponentFactory,
   componentClass,
   dropdownPlacementStyles,
   isPlainObject,
@@ -13,9 +14,11 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
-export class VDropdownMenu extends HtmlElementNode {
+/** VDropdownMenu 的节点类型（不导出）；公开组件 `vDropdownMenu` 是 vNode 外壳。 */
+class DropdownMenuNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VDropdownMenu';
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vdropdown-panel');
@@ -259,5 +262,13 @@ export class VDropdownMenu extends HtmlElementNode {
 }
 
 export function vDropdownMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VDropdownMenu, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VDropdownMenu',
+    createNode: (setup) => new DropdownMenuNode(setup),
+    commands: ['trigger', 'menuContent', 'placement', 'closeOnSelect', 'open', 'close', 'toggle'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VDropdownMenu = vDropdownMenu;
+defineComponentIdentity(VDropdownMenu, 'VDropdownMenu');

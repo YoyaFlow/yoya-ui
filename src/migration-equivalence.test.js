@@ -357,6 +357,32 @@ const CASES = [
       visible: treeTable.visibleRowCount(),
       expanded: treeTable.expandedKeys()
     })
+  },
+  {
+    name: 'vTooltip / 内容 + 位置',
+    build: () => api.vTooltip({ content: '提示文字', placement: 'top' }),
+    // 只读属性：`content()` / `placement()` 是链式写方法（无参不返回文本）
+    probe: (tooltip) => ({
+      role: tooltip.attr('role') ?? null,
+      'data-placement': tooltip.attr('data-placement') ?? null
+    })
+  },
+  {
+    name: 'vMessageContainer / 空容器',
+    build: () => api.vMessageContainer({ placement: 'top-right' }),
+    probe: (container) => ({
+      'data-placement': container.attr('data-placement') ?? null,
+      'data-inline': container.attr('data-inline') ?? null
+    })
+  },
+  {
+    name: 'vSplitPanel / 两块面板',
+    build: () =>
+      api.vSplitPanel((panel) => {
+        panel.first((first) => first.p('左'));
+        panel.second((second) => second.p('右'));
+      }),
+    probe: (panel) => ({ direction: panel.direction(), size: panel.size() })
   }
 ];
 

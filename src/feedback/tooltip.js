@@ -1,13 +1,10 @@
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import { allocateId } from '../core/id.js';
-import {
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  setupContentSlot
-} from '../components/shared.js';
+import { componentClass, isPlainObject, setupContentSlot } from '../components/shared.js';
 
 const tooltipPlacementStyles = {
   bottom: { left: '50%', top: 'calc(100% + 8px)', transform: 'translateX(-50%)' },
@@ -53,9 +50,11 @@ const tooltipPlacementAliases = {
 
 const tooltipTriggers = ['click', 'focus', 'manual'];
 
-export class VTooltip extends HtmlElementNode {
+/** VTooltip 的节点类型（不导出）；公开组件 `vTooltip` 是 vNode 外壳。 */
+class TooltipNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTooltip';
     this._triggerMode = 'hover';
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vtooltip-panel');
@@ -288,7 +287,12 @@ export class VTooltip extends HtmlElementNode {
 }
 
 export function vTooltip(first = null, second = null, third = null) {
-  return createComponentFactory(VTooltip, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTooltip',
+    createNode: (setup) => new TooltipNode(setup),
+    commands: ['target', 'content', 'placement', 'trigger', 'open', 'close', 'toggle'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 function getTooltipPlacementStyles(placement) {
@@ -297,3 +301,6 @@ function getTooltipPlacementStyles(placement) {
     ...(tooltipPlacementStyles[placement] || tooltipPlacementStyles.top)
   };
 }
+
+export const VTooltip = vTooltip;
+defineComponentIdentity(VTooltip, 'VTooltip');

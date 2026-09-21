@@ -1,9 +1,10 @@
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { vText } from '../core/index.js';
 import { CloseOutlined } from '../svg/icons.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   messageTypeStyles,
   normalizeChildren,
@@ -17,9 +18,11 @@ import {
 
 const messageTypes = ['success', 'error', 'warning', 'info'];
 
-export class VMessage extends HtmlElementNode {
+/** VMessage 的节点类型（不导出）；公开组件 `vMessage` 是 vNode 外壳。 */
+class MessageNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VMessage';
     this._closeHandlers = [];
     this._countdownDuration = 0;
     this._countdownTimer = null;
@@ -226,9 +229,11 @@ export class VMessage extends HtmlElementNode {
   }
 }
 
-export class VMessageContainer extends HtmlElementNode {
+/** VMessageContainer 的节点类型（不导出）；公开组件 `vMessageContainer` 是 vNode 外壳。 */
+class MessageContainerNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VMessageContainer';
     this._nextId = 1;
     this._messages = new Map();
     this._inline = false;
@@ -390,11 +395,31 @@ export class VMessageContainer extends HtmlElementNode {
 }
 
 export function vMessage(first = null, second = null, third = null) {
-  return createComponentFactory(VMessage, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VMessage',
+    createNode: (setup) => new MessageNode(setup),
+    commands: ['content', 'type', 'closable', 'countdown', 'onClose', 'close'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vMessageContainer(first = null, second = null, third = null) {
-  return createComponentFactory(VMessageContainer, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VMessageContainer',
+    createNode: (setup) => new MessageContainerNode(setup),
+    commands: [
+      'placement',
+      'inline',
+      'show',
+      'success',
+      'error',
+      'warning',
+      'info',
+      'close',
+      'clear'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export const toast = {
@@ -444,3 +469,8 @@ export const toast = {
     return this.container().clear();
   }
 };
+
+export const VMessage = vMessage;
+defineComponentIdentity(VMessage, 'VMessage');
+export const VMessageContainer = vMessageContainer;
+defineComponentIdentity(VMessageContainer, 'VMessageContainer');

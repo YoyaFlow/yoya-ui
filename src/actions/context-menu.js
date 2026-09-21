@@ -1,18 +1,21 @@
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { MenuNode } from '../navigation/menu.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import {
-  createComponentFactory,
   componentClass,
   isPlainObject,
   normalizePoint,
   setupContentSlot
 } from '../components/shared.js';
 
-export class VContextMenu extends HtmlElementNode {
+/** VContextMenu 的节点类型（不导出）；公开组件 `vContextMenu` 是 vNode 外壳。 */
+class ContextMenuNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VContextMenu';
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
@@ -187,5 +190,13 @@ export class VContextMenu extends HtmlElementNode {
 }
 
 export function vContextMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VContextMenu, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VContextMenu',
+    createNode: (setup) => new ContextMenuNode(setup),
+    commands: ['target', 'menuContent', 'closeOnSelect', 'openAt', 'open', 'close'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VContextMenu = vContextMenu;
+defineComponentIdentity(VContextMenu, 'VContextMenu');

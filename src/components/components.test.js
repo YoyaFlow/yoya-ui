@@ -674,15 +674,15 @@ describe('compound components', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '';
     const container = vMessageContainer().bindTo(document.body);
-    const closeSpy = vi.spyOn(container, 'close');
 
     container.show('稍后关闭', { id: 'later', duration: 1000 });
     container.destroy();
-    expect(closeSpy).toHaveBeenCalledTimes(1);
+    // 容器迁成 vNode 后 `close` 是组件节点上的命令包装、内部销毁走视图根，
+    // 这里改成验行为：销毁即关闭消息，随后推进计时器不会再有副作用
+    expect(document.body.querySelector('.yoya-vmessage')).toBeNull();
 
     vi.advanceTimersByTime(1000);
 
-    expect(closeSpy).toHaveBeenCalledTimes(1);
     expect(document.body.querySelector('.yoya-vmessage-container')).toBeNull();
   });
 

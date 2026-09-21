@@ -1,17 +1,20 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
   themeValue
 } from '../components/shared.js';
 
-export class VDialog extends HtmlElementNode {
+/** 对话框的节点类型（不导出）；公开组件 `vDialog` 是 vNode 外壳。 */
+class DialogNode extends HtmlElementNode {
   constructor(setup = null) {
     super('dialog', null);
+    this._identity = 'VDialog';
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
     this.className(componentClass, 'yoya-vdialog');
@@ -265,5 +268,13 @@ export class VDialog extends HtmlElementNode {
 }
 
 export function vDialog(first = null, second = null, third = null) {
-  return createComponentFactory(VDialog, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VDialog',
+    createNode: (setup) => new DialogNode(setup),
+    commands: ['content', 'open', 'close', 'isOpen', 'onClose', 'closable'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VDialog = vDialog;
+defineComponentIdentity(VDialog, 'VDialog');

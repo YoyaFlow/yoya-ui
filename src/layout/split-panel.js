@@ -1,10 +1,10 @@
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories } from '../core/node.js';
+import { registerChildFactories, defineComponentIdentity } from '../core/node.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import {
   applyComponentArguments,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -15,9 +15,11 @@ import {
  * vSplitPanel 是可拖拽分隔条的面板：两块面板 + 中间分隔条，
  * 支持横向/纵向、拖拽与键盘调整首面板尺寸，双击分隔条恢复 50%。
  */
-export class VSplitPanel extends HtmlElementNode {
+/** VSplitPanel 的节点类型（不导出）；公开组件 `vSplitPanel` 是 vNode 外壳。 */
+class SplitPanelNode extends HtmlElementNode {
   constructor(setup = null, options = null, callback = null) {
     super('div', null);
+    this._identity = 'VSplitPanel';
     this.className(componentClass, 'yoya-vsplit-panel');
     this.styles({
       boxSizing: 'border-box',
@@ -278,7 +280,12 @@ export class VSplitPanel extends HtmlElementNode {
 }
 
 export function vSplitPanel(first = null, second = null, third = null) {
-  return createComponentFactory(VSplitPanel, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSplitPanel',
+    createNode: (setup) => new SplitPanelNode(setup),
+    commands: ['direction', 'size', 'minSize', 'reset', 'first', 'second'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 registerChildFactories(HtmlElementNode, { vSplitPanel });
@@ -293,3 +300,6 @@ function clampSize(value, min, max) {
   }
   return Math.min(Math.max(value, min), Math.max(max, min));
 }
+
+export const VSplitPanel = vSplitPanel;
+defineComponentIdentity(VSplitPanel, 'VSplitPanel');
