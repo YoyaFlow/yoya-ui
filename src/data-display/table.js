@@ -368,55 +368,52 @@ export function VTable() {
       replaceChildren(viewRootOf(body), []);
 
       if (resolvedColumns.length > 0) {
-        const headRow = tr({ vn: 'VTr' });
-
-        resolvedColumns.forEach((column, columnIndex) => {
-          const columnKey = column.key ?? `column-${columnIndex}`;
-          const headerCell = th({ vn: 'VTh' });
-
-          headerCell.attr('scope', 'col');
-          headerCell.attr('data-key', columnKey);
-          applyCellStyles(headerCell, column, 'head');
-          appendCellContent(headerCell, column.label ?? column.title ?? column.key ?? '');
-          headRow.child(headerCell);
-        });
-
-        head.child(headRow);
+        head.child(
+          vTr((headRow) =>
+            resolvedColumns.forEach((column, columnIndex) => {
+              headRow.vTh((cell) => {
+                cell.attr('scope', 'col');
+                cell.attr('data-key', column.key ?? `column-${columnIndex}`);
+                applyCellStyles(cell, column, 'head');
+                appendCellContent(cell, column.label ?? column.title ?? column.key ?? '');
+              });
+            })
+          )
+        );
       }
 
       if (state.rows.length > 0) {
         state.rows.forEach((row, rowIndex) => {
-          const bodyRow = tr({ vn: 'VTr' });
-          bodyRow.attr('data-row-index', String(rowIndex));
-
-          bodyColumns.forEach((column, columnIndex) => {
-            const columnKey = column.key ?? `column-${columnIndex}`;
-            const cell = td({ vn: 'VTd' });
-
-            cell.attr('data-key', columnKey);
-            applyCellStyles(cell, column, 'body');
-            appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
-            bodyRow.child(cell);
-          });
-
-          body.child(bodyRow);
+          body.child(
+            vTr((bodyRow) => {
+              bodyRow.attr('data-row-index', String(rowIndex));
+              bodyColumns.forEach((column, columnIndex) => {
+                bodyRow.vTd((cell) => {
+                  cell.attr('data-key', column.key ?? `column-${columnIndex}`);
+                  applyCellStyles(cell, column, 'body');
+                  appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
+                });
+              });
+            })
+          );
         });
 
         return;
       }
 
-      const emptyRow = tr({ vn: 'VTr' });
-      const emptyCell = td({ vn: 'VTd' });
-
-      emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
-      emptyCell.styles({
-        color: themeValue('color-text-muted', '#64748b'),
-        padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
-        textAlign: 'center'
-      });
-      appendCellContent(emptyCell, state.emptyText);
-      emptyRow.child(emptyCell);
-      body.child(emptyRow);
+      body.child(
+        vTr((emptyRow) =>
+          emptyRow.vTd((cell) => {
+            cell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
+            cell.styles({
+              color: themeValue('color-text-muted', '#64748b'),
+              padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
+              textAlign: 'center'
+            });
+            cell.child(state.emptyText);
+          })
+        )
+      );
     };
 
     api.caption = (content) => {
