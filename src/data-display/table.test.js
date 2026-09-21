@@ -53,7 +53,7 @@ describe('vTable declarative sections', () => {
         row.vTh('状态');
       })
     );
-    const body = vTbody((body) => body.vTr(['api-gateway', '运行中']));
+    const body = vTbody((body) => body.vTr((row) => row.vTd('api-gateway').vTd('运行中')));
     const foot = vTfoot((foot) => foot.vTr((row) => row.vTd('合计')));
 
     expect(head.tagName()).toBe('thead');

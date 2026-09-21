@@ -1,8 +1,11 @@
 import { registerChildFactories, viewRootOf, ViewNode } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
+import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
+  createComponentShortcut,
+  delegateChildFactories,
+  delegateCommands,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -318,30 +321,8 @@ class TableNode extends HtmlElementNode {
       return;
     }
 
-    if (
-      viewRootOf(setup) instanceof TheadNode ||
-      viewRootOf(setup) instanceof TbodyNode ||
-      viewRootOf(setup) instanceof TfootNode
-    ) {
-      this._addDeclarativeSection(setup);
-      return;
-    }
-
-    if (viewRootOf(setup) instanceof TrNode) {
-      this.vTr(setup);
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (Array.isArray(setup)) {
-      this.rows(setup);
-      return;
-    }
-
+    // 只有三个 setup 入口（票 15 §4）：对象 = props、字符串 / 数字 = 标题；
+    // 节点 / 数组不在这里——它们是**固定分派**（子节点 / 子节点列表），走 `child()`。
     if (isPlainObject(setup)) {
       this.setup(setup);
       return;
@@ -351,11 +332,11 @@ class TableNode extends HtmlElementNode {
   }
 }
 
-export function vTable(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTable',
-    createNode: (setup) => new TableNode(setup),
-    commands: [
+/** 定义：结构（TableNode 视图根 + 身份）+ 命令；调用方参数由快捷方法按标准分派。 */
+export function VTable() {
+  return vNode((api) => {
+    const element = new TableNode();
+    delegateCommands(api, element, [
       'caption',
       'columns',
       'rows',
@@ -366,10 +347,20 @@ export function vTable(first = null, second = null, third = null) {
       'vTbody',
       'vTfoot',
       'vTr'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    ]);
+    api.setupObject = (config) => {
+      element._setupTable(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupTable(value);
+      return api;
+    };
+    return element;
   });
 }
+
+export const vTable = createComponentShortcut(VTable);
 
 /** VThead 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TheadNode extends HtmlElementNode {
@@ -379,14 +370,15 @@ class TheadNode extends HtmlElementNode {
   }
 }
 
-export function vThead(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VThead',
-    createNode: (setup) => new TheadNode(setup),
-    childFactories: ['vTr'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+export function VThead() {
+  return vNode((api) => {
+    const element = new TheadNode();
+    delegateChildFactories(api, element, ['vTr']);
+    return element;
   });
 }
+
+export const vThead = createComponentShortcut(VThead);
 
 /** VTbody 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TbodyNode extends HtmlElementNode {
@@ -396,14 +388,15 @@ class TbodyNode extends HtmlElementNode {
   }
 }
 
-export function vTbody(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTbody',
-    createNode: (setup) => new TbodyNode(setup),
-    childFactories: ['vTr'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+export function VTbody() {
+  return vNode((api) => {
+    const element = new TbodyNode();
+    delegateChildFactories(api, element, ['vTr']);
+    return element;
   });
 }
+
+export const vTbody = createComponentShortcut(VTbody);
 
 /** VTfoot 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TfootNode extends HtmlElementNode {
@@ -413,40 +406,32 @@ class TfootNode extends HtmlElementNode {
   }
 }
 
-export function vTfoot(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTfoot',
-    createNode: (setup) => new TfootNode(setup),
-    childFactories: ['vTr'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+export function VTfoot() {
+  return vNode((api) => {
+    const element = new TfootNode();
+    delegateChildFactories(api, element, ['vTr']);
+    return element;
   });
 }
+
+export const vTfoot = createComponentShortcut(VTfoot);
 
 /** VTr 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TrNode extends HtmlElementNode {
-  constructor(setup = null) {
+  constructor() {
     super('tr', { vn: 'VTr' });
-    this._setupTr(setup);
-  }
-
-  _setupTr(setup) {
-    if (Array.isArray(setup)) {
-      setup.forEach((cell) => this.child(vTd(cell)));
-      return;
-    }
-
-    applyComponentSetup(this, setup);
   }
 }
 
-export function vTr(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTr',
-    createNode: (setup) => new TrNode(setup),
-    childFactories: ['vTh', 'vTd'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+export function VTr() {
+  return vNode((api) => {
+    const element = new TrNode();
+    delegateChildFactories(api, element, ['vTh', 'vTd']);
+    return element;
   });
 }
+
+export const vTr = createComponentShortcut(VTr);
 
 /** VTh 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class ThNode extends HtmlElementNode {
@@ -458,13 +443,11 @@ class ThNode extends HtmlElementNode {
   }
 }
 
-export function vTh(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTh',
-    createNode: (setup) => new ThNode(setup),
-    args: [first, second, third, ...[...arguments].slice(3)]
-  });
+export function VTh() {
+  return vNode(() => new ThNode());
 }
+
+export const vTh = createComponentShortcut(VTh);
 
 /** VTd 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TdNode extends HtmlElementNode {
@@ -475,13 +458,11 @@ class TdNode extends HtmlElementNode {
   }
 }
 
-export function vTd(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTd',
-    createNode: (setup) => new TdNode(setup),
-    args: [first, second, third, ...[...arguments].slice(3)]
-  });
+export function VTd() {
+  return vNode(() => new TdNode());
 }
+
+export const vTd = createComponentShortcut(VTd);
 
 registerChildFactories(TheadNode, { vTr });
 registerChildFactories(TbodyNode, { vTr });
@@ -620,11 +601,3 @@ function applyTableCellStyles(node, column, section) {
     );
   }
 }
-
-export const VTable = vTable;
-export const VThead = vThead;
-export const VTbody = vTbody;
-export const VTfoot = vTfoot;
-export const VTr = vTr;
-export const VTh = vTh;
-export const VTd = vTd;
