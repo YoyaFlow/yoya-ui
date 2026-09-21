@@ -9,7 +9,8 @@ describe('vSlot（零布局占位）', () => {
     expect(element.tagName).toBe('SPAN');
     expect(element.style.display).toBe('contents');
     expect(element.getAttribute('vn_slot')).toBe('header');
-    expect(element.classList.contains('yoya-vslot')).toBe(true);
+    // 占位只有属性、没有类名（票 15 属性化口径）
+    expect(element.getAttribute('class')).toBe(null);
     expect(componentNameOf(vSlot())).toBe('VSlot');
   });
 

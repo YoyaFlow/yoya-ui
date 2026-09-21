@@ -1,7 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { registerChildFactories } from '../core/node.js';
 import { PART_ATTRIBUTE } from '../core/slot.js';
-import { componentClass, createComponentShortcut, resolveTextValue } from '../components/shared.js';
+import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
 /**
  * VSlot —— **零布局占位**（形态 A 薄工厂）：给组件在自己的结构里留一个"位置标记"，
@@ -9,6 +9,9 @@ import { componentClass, createComponentShortcut, resolveTextValue } from '../co
  *
  * 它**不是**公开的槽位机制（那是 `slot="x"` 属性 + `child()` 投影）：VSlot 不带 `slot`
  * 属性，因此不进 `collectSlots` 的槽位名单，两者互不干扰。
+ *
+ * 占位**只有属性、没有类名**（`yoya-component` / `yoya-vslot` 都不要）：零布局是内联样式，
+ * 身份与样式钩子都走 `vn` / `vn_slot`（属性化迁移口径见票 15）。
  *
  * 落位只认标记：结构侧的占位与内容侧的 part 都写 `vn_slot`，把带标记的内容 `child()` 进组件，
  * 引擎就放进同名占位（ComponentNode 的 part 通道）——**没有手工插入的辅助函数**。
@@ -29,10 +32,7 @@ import { componentClass, createComponentShortcut, resolveTextValue } from '../co
  * ```
  */
 export function VSlot() {
-  const node = new HtmlElementNode('span')
-    .className(componentClass, 'yoya-vslot')
-    .style('display', 'contents')
-    .setup({ vn: 'VSlot' });
+  const node = new HtmlElementNode('span').style('display', 'contents').setup({ vn: 'VSlot' });
 
   // 字符串 / 数字 = 占位名（占位名是构建期事实，不是活值：取当前文本值即可）
   node.setupString = (value) => node.attr(PART_ATTRIBUTE, resolveTextValue(value) || null);
