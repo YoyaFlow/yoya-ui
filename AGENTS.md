@@ -59,11 +59,14 @@ set by directory modification time before answering. The current active set is
 
 ## Component Definition Patterns
 
-组件定义支持多种形态，按场景选用；新组件应从下列三种形态中选择，避免在模板之外另起结构。
+**组件只有两种形态**（2026-09-21 收敛）：**A 薄工厂**（没有行为）与 **B vNode**（有行为）。
+对象组件（`return { render(), … }`）已退场（存量见票 03），class 继承节点**不再是组件写法**——
+它只作为**引擎内部的节点类型扩展**存在（见文末「节点类型扩展」）。
 
 ### A. 薄工厂：函数直接返回 ViewNode
 
-适用：无内部状态、纯配置化组合，代码量最小。**确定没有额外行为要定义时就用它**——包括演示代码：只演示结构与交互、不需要对外命令方法时，函数直接返回 ViewNode，不要为了跟对象组件统一而白包一层 `render()`。
+适用：无内部状态、无对外命令方法、无生命周期诉求——只做结构 / 配置组合，代码量最小。
+**确定没有额外行为要定义时就用它**（包括演示代码），不要为「以后可能要用」先包一层。
 
 ```js
 function ServiceTag(options) {
@@ -71,58 +74,63 @@ function ServiceTag(options) {
 }
 ```
 
-### B. 对象组件：返回 { render(), ... }（**已弃用**，仅存量）
+### B. vNode：有行为就用它
 
-**弃用（2026-09-21，票 03）**：表达能力已被 vNode 完全覆盖，而它多出两个问题——对象是**一次性**的
-（同一对象挂两处会共用一份状态），编译器还要额外维护一条形状分支。新组件一律用 vNode（有行为）
-或形态 A（无行为）。devtools 开启时运行期会提示一次；存量迁移与删代码见票 03。
-
-（存量写法：render() 返回 ViewNode，状态保存在闭包或返回对象上，可暴露命令/状态方法。）
+适用：有内部状态、对外命令方法，或需要 `whenMount` / `whenDestroy` / `whenFailed` 的组件。
+定义即得到组件节点（ComponentNode）：状态放在闭包，命令写在 `api` 上，视图由 setup 返回。
 
 ```js
 function RateCard() {
   const state = { value: 0 };
-  return {
-    render() {
-      return vRate((rate) => {
-        rate.value(state.value);
-      });
-    },
-    value(next) {
+  return vNode((api) => {
+    api.value = (next) => {
+      if (next === undefined) {
+        return state.value;
+      }
       state.value = next;
-      return this;
-    }
-  };
+      return api; // 等价于返回节点：链式两端都通
+    };
+    return vRate((rate) => rate.value(state.value));
+  });
 }
 ```
 
-### C. 类节点组件：class VXxx extends HtmlElementNode
+- **状态与命令写 `api`，不写 `this`**（`api` 在 setup 的词法作用域里；`this` 只在函数表达式下才等于 api）。
+- 命令名与节点 API 冲突（`child` / `attr` / `destroy` / `renderDom` …）**直接报错**，不静默覆盖。
 
-适用：VTable↔VTr 这类父子嵌套关系、需要操作子实例或重写节点生命周期（renderDom/destroy/child）的细粒度场景；必须同时导出成对 vXxx 工厂，并在分类 index.js 通过 registerChildFactories 注册进嵌套 DSL。
+### 组件定义 vs 快捷方法（口径）
 
-```js
-export class VTr extends HtmlElementNode {
-  // 嵌套关系与细粒度操作
-}
-export function vTr(first = null, second = null, third = null) {
-  return createComponentFactory(VTr, first, second, third);
-}
-```
+- **`VXxx` 是组件定义函数**（PascalCase，名字 = 身份 = 导出名）：描述结构 / 状态 / 命令 / 身份。
+  它的参数是**组件自己的东西**（props / 无参），**不负责调用方的 setup 语义**。
+- **`vXxx` 是快捷方法**（小写）：建组件，再把调用方参数按 setup 分派落到组件上；
+  `page.vXxx(…)` 是同一个方法的父节点形态（由 `registerChildFactories` 注册）。
+  所以要"直接调用"或"当快捷方法用"的都是 `vXxx`，`VXxx` 只负责定义。
+- **setup 分派有三个可覆盖入口**：`setupFunction`（函数 = 构建回调）、`setupString`（字符串 / 数字）、
+  `setupObject`（对象）。组件在 `api` 上定义它们就用自己的；**没定义就回落到根元素的同名实现**
+  （`setupFunction` 的回落是组件节点自己的构建帧——回调句柄必须等于工厂返回值）。
+  其余分派固定：节点 / 句柄 = 子节点、数组 = 子节点列表。
+- 与元素侧对称：`createElementFactory('div', Node)` = 元素种类 + setup 分派；
+  组件侧的对应物就是"**定义函数 + 快捷方法**"这一对（`VXxx` / `vXxx`）。
 
-- 组件名 PascalCase 并描述 UI 单元，例如 ServiceTableCard、VButton；形态 C 使用 VXxx 类 + vXxx 工厂、yoya-vxxx CSS 类。
-- CustomNode 统一基类为未实现特性（planned），暂不提供；当前形态 C 使用 HtmlElementNode / ViewNode / SvgElementNode 作为基类，业务用户可在业务代码中用形态 C 自定义类组件。
+### 节点类型扩展（引擎内部，不是第三种组件形态）
+
+`class XxxNode extends HtmlElementNode` 仍然存在，但它是**组件的视图根 / 自定义元素种类**——
+元素机制（`renderDom` / `toHTML` / `child` 语义 / DOM 测量 / 事件绑定 / 生命周期）必须住在节点上。
+库内组件都是这个结构：对外只有一个句柄（vNode 组件节点），节点类型**不进包入口**，第三方不需要继承。
+B 形态里需要元素级行为的组件，视图根就是这样一个节点类型；这不是给业务/第三方的第三种写法。
+
+- 命名：组件名 PascalCase 描述 UI 单元（ServiceTableCard / VButton）；工厂 `vXxx`、身份导出 `VXxx`、CSS 类 `yoya-vxxx`。
+- 自定义元素种类（第三方要造非 HTML 宿主 / 自绘渲染目标）是引擎扩展点，票集里叫 `CustomNode`（planned）；
+  业务组件不需要它 —— 有行为就把行为写成 B 形态的命令与钩子。
 - 库内参考实现：
-  - 形态 A：layout 的 flex/stack/grid/container/spacer/divider、vDynamicLoader；
-  - 形态 B：VPagination（render() + update/change 等状态 API）；
-  - 形态 C：VButton/VCard/VTable/VTr/VTabs 等组件库主体。
-- child(...) 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存其 render() 结果）或字符串/数字；三种形态均可作为子节点传入页面组合。
-- 形态 B 的快捷写法：`vNode((api) => 视图)` 定义即得到组件节点（ComponentNode），命令方法收到 api 上后由工厂挂到节点、重名报错；旧三形态与 child() 的对象形式不变。
-- 低层元素与 v* 工厂在 render() 内继续有效；本规则约束可复用组件边界。
-- 组件身份：视图根的 options 写 `vn: 'VCard'`（值 = 导出名，**对象事实、不落 DOM**，SSR / `outerHTML` 里没有它），
-  模块底一行 `defineComponentIdentity(VCard, 'VCard')`；
-  `member instanceof VCard` 对形态 A / B / vNode 是同一条判定（元素节点读自己、组件节点展开到视图根），
-  详见 `docs/component-authoring.md` §7.3。
-- **新增组件一律 vNode**（`vNode((api) => 视图)`）；形态 B 已弃用（仅存量）、形态 C（class 继承节点）停止新增（存量迁移见票 43）。
+  - 形态 A：layout 的 flex / stack / grid / container / spacer / divider、`vDynamicLoader`；
+  - 形态 B：`vInput` / `vBadge` / `vDialog` / `vPagination` / `vTable` —— 组件库主体全部是 vNode。
+- `child(...)` 接受 ViewNode、vNode 组件（自动包装为 ComponentNode）或字符串 / 数字；两种形态都能当子节点传入页面组合。
+- 低层元素与 `v*` 工厂在组件内部继续有效；本规则约束可复用组件边界。
+- 组件身份：模块底一行 `defineComponentIdentity(VXxx, 'VXxx')`（值 = 导出名）；元素节点也可在 options 里写 `vn: 'VXxx'`。
+  身份是**对象事实、不落 DOM**（票 07）：SSR / `outerHTML` / 编译片段里都没有它。
+  `member instanceof VXxx` 对 A / B 是同一条判定（元素节点读自己、组件节点展开到视图根），详见 `docs/component-authoring.md` §7.3。
+- **新增组件只有两个选择**：没有行为 → A；有行为 → B（`vNode((api) => 视图)`）。
 - **setup 参数数量不定、按出现顺序分派**：函数 = 构建回调、字符串/数字 = 文本、节点/句柄 = 子节点、
   数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
 - **options 里子工厂不参与分派**：与子工厂同名的键按**属性**写（`div({ slot: 't-head' })` 是属性，
@@ -130,12 +138,12 @@ export function vTr(first = null, second = null, third = null) {
   是显式通道。键分类的唯一真源是 `src/core/setup-keys.js`。
 - **内容与槽位**：未标记的 `child(...)` 进组件根元素内部（普通元素语义）；带 `slot` 标记的内容按
   **就近作用域**进直接父组件的同名槽位，一个槽一份内容，找不到槽位不 mount；多根组件不接受未标记内容。
-- **组件级钩子**：`whenMount` / `whenDestroy`（与 `whenFailed` 同族的协议成员，属性持函数，写在 vNode
-  的 api 或形态 B 返回对象上）；写在 options 对象里会报错，不要与 `onXxx` 事件简写混用。
+- **组件级钩子**：`whenMount` / `whenDestroy` / `whenFailed`（同族协议成员，属性持函数，写在 vNode 的 `api` 上）；
+  写在 options 对象里会报错，不要与 `onXxx` 事件简写混用。
 
 ### Demo 演示组件
 
-- 演示代码（examples/demos）同样按形态判：**没有额外操作（无对外命令方法、无需持有组件句柄）时用形态 A 直接返回 ViewNode，不包 `render()`**；确有状态或命令方法时用 vNode 展示操作空间（不要新写形态 B），确需演示形态 C 时允许直接书写对应形态。
+- 演示代码（examples/demos）同样只有 A / B 两种：**没有额外操作（无对外命令方法、无需持有组件句柄）时用 A 直接返回 ViewNode**；确有状态或命令方法时用 B（`vNode`）展示操作空间。不再书写对象组件（`{ render() }`）与 class 组件。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
@@ -147,19 +155,15 @@ export function vTr(first = null, second = null, third = null) {
 
 ```js
 function ServiceDetailCard() {
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('服务详情');
-        card.vCardBody((body) => {
-          body.vDetail((detail) => {
-            detail.vDetailItem('服务名称', 'api-gateway');
-            detail.vDetailItem('状态', '运行中');
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('服务详情');
+    card.vCardBody((body) => {
+      body.vDetail((detail) => {
+        detail.vDetailItem('服务名称', 'api-gateway');
+        detail.vDetailItem('状态', '运行中');
       });
-    }
-  };
+    });
+  });
 }
 ```
 

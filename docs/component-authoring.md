@@ -24,13 +24,18 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 | Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                 |
 | i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                               |
 
-## 3. The three component shapes
+## 3. The two component shapes
 
-Choose one of these shapes for a new component; do not introduce a structure outside the templates.
+**A component has exactly two shapes** (converged 2026-09-21): **A, the thin factory** (no behaviour) and
+**B, `vNode`** (behaviour). The object component (`return { render(), … }`) is retired (existing code only,
+ticket 03), and `class Xxx extends HtmlElementNode` is **not a component shape** — it is the engine's
+**node-type extension** (a component's view root / a custom element kind); see §7.3.
 
-### Shape A: thin factory (no internal state, purely configured composition)
+### Shape A: thin factory — no behaviour
 
-Use it whenever the component has no extra behaviour to define — **demo code follows the same rule**: when a demo only shows structure or interaction and exposes no command methods, return the ViewNode directly instead of wrapping it in `render()` just for uniformity.
+Use it whenever the component has no extra behaviour to define (no internal state, no outward command methods,
+no lifecycle needs) — **demo code follows the same rule**: when a demo only shows structure or interaction and
+exposes no command methods, return the ViewNode directly instead of wrapping it just for uniformity.
 
 ```js
 import { vBadge } from '@yoyaflow/yoya-ui/ui';
@@ -40,37 +45,10 @@ export function ServiceTag(options) {
 }
 ```
 
-### Shape B: object component (**deprecated**, existing code only)
+### Shape B: `vNode((api) => view)` — use it when there is behaviour
 
-> **Deprecated (2026-09-21, ticket 03)**: write new components as `vNode((api) => view)` when they have
-> behaviour, or return a ViewNode directly when they have none. Everything shape B can express is covered by
-> vNode, and it carries two extra problems: the object is **single-use** (using one object in two places
-> shares one piece of state), and the compiler has to maintain a second shape branch. With devtools enabled
-> the runtime warns once when it receives one.
-
-```js
-import { vRate } from '@yoyaflow/yoya-ui/ui';
-
-export function RateCard() {
-  const state = { value: 0 };
-
-  return {
-    render() {
-      return vRate((rate) => {
-        rate.value(state.value);
-      });
-    },
-    value(next) {
-      state.value = next;
-      return this;
-    }
-  };
-}
-```
-
-### Shape B shortcut factory: `vNode((api) => view)`
-
-Use `vNode` when a component needs outward command methods — defining it gives you the node:
+State lives in the closure, commands and hooks are written on `api`, and the setup returns the view — defining
+it gives you the component node:
 
 ```js
 import { computed, ref, vNode, vstack, vText } from '@yoyaflow/yoya-ui';
@@ -95,26 +73,34 @@ export function CounterCard() {
 - The result is the component node itself (`ComponentNode extends ViewNode`): mount it as a root, pass it as a child, or key it — no placeholder element, and an array return becomes a multi-root fragment.
 - `api` only collects command functions; the factory attaches them to the node, and a name hitting an existing node member (`child` / `destroy` / `mountable` …) or `render` / `_*` throws instead of silently overwriting.
 - `return api` inside a command is the same as returning the node; a component's own error boundary goes to `api.whenFailed = (error, info) => fallback` (same as `node.whenFailed(fn)`), and other node capabilities (`mountable()` / `rebuildable()`) chain on the returned node.
-- Existing shapes A/B/C and `child(componentObject)` keep working (shape B is deprecated — see above);
-  presentation-only components stay on shape A.
+- **State and commands go on `api`, not `this`** (`api` is in the setup's lexical scope); lifecycle hooks are
+  `api.whenMount` / `api.whenDestroy`, the error boundary is `api.whenFailed`.
+- Identity: one line at the bottom of the module, `defineComponentIdentity(VXxx, 'VXxx')`; `member instanceof VXxx`
+  is the same check for shape A and shape B (an element node reads itself, a component node unfolds to its view root).
 
-### Shape C: class node component (parent/child nesting, child instance control, or lifecycle overrides)
+### Component definition vs shortcut method
 
-Class node components must export a paired `vXxx` factory and use `createElementFactory`:
+- **`VXxx` is the component definition function** (PascalCase; name = identity = export name): it describes
+  structure / state / commands / identity. Its parameters are the **component's own** (props, or none) —
+  it does **not** own the caller's setup semantics.
+- **`vXxx` is the shortcut method** (lowercase): it builds the component and applies the caller's arguments
+  through the setup dispatch. `page.vXxx(…)` is the same method in its parent-node form (registered through
+  `registerChildFactories`). Call sites use `vXxx`; `VXxx` only defines.
+- **The setup dispatch has three overridable entries**: `setupFunction` (function = builder callback),
+  `setupString` (string / number) and `setupObject` (object). When the component defines them on its `api`,
+  they win; **otherwise the root element's implementations are used** (for `setupFunction` the fallback is the
+  component node's own build frame, because the callback handle must equal the factory's return value).
+  The remaining branches are fixed: node / handle = child, array = child list.
+- This mirrors the element side: `createElementFactory('div', Node)` = element kind + setup dispatch; the
+  component counterpart is the **definition + shortcut** pair (`VXxx` / `vXxx`).
 
-```js
-import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
+### Node-type extension (engine internals — not a third component shape)
 
-export class VStatusDot extends HtmlElementNode {
-  // nested relationships and fine-grained operations
-}
-
-export function vStatusDot(first = null, second = null, third = null) {
-  return createElementFactory('span', VStatusDot)(first, second, third);
-}
-```
-
-> Note: the standard helpers `createComponentFactory` / `applyComponentArguments` / `themeValue` currently live in the library's `src/components/shared.js`; they will be exported from a public entry later. Until then, implement against the `core` public API as shown above.
+`class XxxNode extends HtmlElementNode` still exists, but it is the **view root of a component / a custom element
+kind**: the element machinery (`renderDom` / `toHTML` / `child` semantics / DOM measurement / event binding /
+lifecycle) has to live on a node. Every built-in component is built this way — one outward handle (the vNode
+component node), with the node type kept out of the package entries. Third parties never subclass for components.
+For the field-access rules see §7.3.
 
 ## 4. Naming and style conventions
 
@@ -205,7 +191,7 @@ Contract and boundaries:
   differences: `currentTarget` is emulated per event (same value, but an own property on the event object),
   and listeners third parties attach directly on elements _between_ the row root and the segment root may see
   a different relative order.
-- **Error boundary**: `node.whenFailed(handler)` declares a subtree boundary — returning a node replaces the subtree with a fallback, returning nothing only reports and keeps the current state; component objects may define a `whenFailed(error, info)` member next to `render()`, which ComponentNode mounts automatically. Captures are never silent: console.error always fires and a devtools 'error' event is emitted when enabled. The error walks up the parent chain to the nearest boundary at failure time, so it is independent of declaration order, nesting depth, runtime insertion and subtree moves; that boundary owns the capture and never forwards it further, and a throwing handler propagates outward. When nothing is returned during a render / build phase, the failing child is marked and skipped on later attempts (no repeated failures or logs); re-attaching it or rebuilding its region clears the mark so it gets one more chance. Without a boundary, errors propagate unchanged (fail fast). Degrading a region node runs as one region build, so it never trips the region guard.
+- **Error boundary**: `node.whenFailed(handler)` declares a subtree boundary — returning a node replaces the subtree with a fallback, returning nothing only reports and keeps the current state; a vNode component may declare `api.whenFailed = (error, info) => fallback`, which ComponentNode mounts automatically. Captures are never silent: console.error always fires and a devtools 'error' event is emitted when enabled. The error walks up the parent chain to the nearest boundary at failure time, so it is independent of declaration order, nesting depth, runtime insertion and subtree moves; that boundary owns the capture and never forwards it further, and a throwing handler propagates outward. When nothing is returned during a render / build phase, the failing child is marked and skipped on later attempts (no repeated failures or logs); re-attaching it or rebuilding its region clears the mark so it gets one more chance. Without a boundary, errors propagate unchanged (fail fast). Degrading a region node runs as one region build, so it never trips the region guard.
 
 ### 6.2 Selection in long lists: do not derive per row from a shared handle
 
@@ -317,13 +303,13 @@ simpler.
 
 ## 7. Composition, events, and lifecycle
 
-- `child(...)` accepts `ViewNode`s, component objects (wrapped in `ComponentNode` automatically with their `render()` cached), or strings/numbers.
+- `child(...)` accepts `ViewNode`s, vNode components (wrapped in `ComponentNode` automatically), or strings/numbers.
 - `on(eventName, handler, options)` binds real DOM events and cleans them up automatically in `destroy()`.
-- A component object only needs a `render()` returning a `ViewNode` to be used by `child()`; class components follow the `renderDom` / `bindTo` / `destroy` lifecycle.
+- A vNode component can be passed to `child()` as-is; node types (view roots) follow the `renderDom` / `bindTo` / `destroy` lifecycle.
 
 ### 7.1 Lifecycle
 
-1. **Declare (build time)**: a factory call creates the node; `attr` / `style` / `on` / `child` inside `setup` only write snapshots and never touch the DOM. Component objects are wrapped in a `ComponentNode` that resolves and caches `render()` on first render. Build-time scopes (`access`, `context`, `i18n`) are captured here.
+1. **Declare (build time)**: a factory call creates the node; `attr` / `style` / `on` / `child` inside `setup` only write snapshots and never touch the DOM. vNode components are wrapped in a `ComponentNode` that resolves and caches their view on first render. Build-time scopes (`access`, `context`, `i18n`) are captured here.
 2. **Mount**: `renderDom()` creates or reuses real DOM, binds event adapters, recurses into children and applies attribute snapshots; `bindTo(target)` is `renderDom` plus append; `commit()` applies permission state and settles pending child removals.
 3. **Update (state change)**: by increasing cost — function-value bindings write values back (no DOM rebuild) → `update()` patches locally → a region `rebuild()` (clear children and re-run its setup) → a component `rebuild()` (destroy the old roots and render again).
 4. **Destroy**: remove event adapters and run cleanups, destroy children recursively, clear the keyed-child registry, detach from the DOM; repeated `destroy()` calls are idempotent.
@@ -358,7 +344,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **Pass live data as getters** (`rows: () => state.members`): array/object references go stale after a state update, and a region rebuild would otherwise re-read old values. Write-backs always go through callbacks.
 - **Pass the handle when the source is a `ref`** (`rows: itemsRef`): blocks read it through value bindings or regions, so no getter is needed; keep getters for non-signal sources (request results, external objects).
 - **Split updates inside a block**: value changes use function-value bindings; structural changes use a region (the block declares `rebuildable()` on its own layer and calls the getter again).
-- Blocks use the same shapes as exported components (shape A returning a ViewNode, or shape B returning `{ render() }`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
+- Blocks use the same two shapes as exported components (shape A returning a ViewNode, or shape B `vNode((api) => view)`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
 
 ### 7.3 Field access in class-node components (0.6.3 onwards)
 
@@ -429,7 +415,7 @@ Rules:
 ## 7.2 Component hooks: `whenMount` / `whenDestroy`
 
 Protocol members in the same family as `whenFailed`: a property holding a function, declared on a vNode's
-api or on the object a shape B component returns.
+api.
 
 ```js
 const chart = vNode((api) => {
@@ -450,15 +436,14 @@ Rules:
   already in scope for both commands and hooks, so write `api.instance = …` / `read it back as api.instance`.
   `this` happens to be the same object (the engine calls commands and hooks with the api bound), but it is
   lexically wrong the moment a command is written as an arrow (`() => this` is not the component) — one
-  spelling, no binding to remember. Shape B object components are the mirror image: their methods live in
-  the object literal, so there `this` **is** the component object;
+  spelling, no binding to remember. The retired object shape was the mirror image: its methods lived in the object literal, so there `this` was the component object;
 - **Both hooks receive a host context object**; the element is read through it. `host.element()` is the root
   element of a single-root component — `null` while the node has not landed, and for a multi-root component
   (there is no single element to hand over). It is a **live read, not a snapshot**, and the same context
   object goes to both hooks, so further members can be added later without changing the hook signature.
   Read the element there — do not capture a node handle in a closure variable, and keep the view expression
   free of writes, so the structure stays a declaration the compiler can read;
-- **Instance state lives on the component instance** (`api` for vNode, the object for shape B), next to the
+- **Instance state lives on the component instance** (the vNode `api`), next to the
   commands that use it: `api.instance` above is readable from every command and hook of that component;
 - **Timing**: `whenMount` fires when the node really lands in the DOM, and a whole landing pass
   (`bindTo` / `mount` / `hydrate`) collects its hooks and fires them **at the end of the pass** — so by the
@@ -470,7 +455,7 @@ Rules:
 - **Never inside an options object**: `div({ whenMount: fn })` throws — `onXxx` is the event shorthand
   (`{ onClick: fn }`), while `whenMount` / `whenDestroy` / `whenFailed` are protocol members; a misplaced
   hook fails loudly instead of being silently bound as an event;
-- **`this`** is the component object (shape B) or the api (vNode);
+- **`this`** is the api for a vNode component (write `api`, not `this`);
 - **Memory**: components without hooks add no fields; no `bind()`, no arrays, references released on destroy;
 - **No `onUpdate`**: "update" means three different things here (region rebuild, keyed key change, a
   component replacing its own root), so there is no single semantic to attach.
@@ -487,12 +472,12 @@ function ServiceTag() {
 }
 
 function RateCard() {
-  // shape B: the member is the ComponentNode that child() wraps around it
-  return { render: () => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate') };
+  // shape B (vNode): the member is the ComponentNode
+  return vNode(() => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate'));
 }
 
 function Chart() {
-  // vNode: same as shape B
+  // same shape as above (vNode)
   return vNode(() => div({ vn: 'Chart' }, 'chart'));
 }
 
@@ -522,9 +507,8 @@ Rules:
   (whitespace separated);
 - **Class names are not identity**: `yoya-*` stays a styling hook — restyling never changes identity,
   and a hand-written class name cannot fake it;
-- **The prototype check stays as a fallback**: class-node components (shape C) and instances created
-  with `new` keep working, so nothing breaks during the migration;
-- **A bare component object is not a member**: the object `RateCard()` returns is not in the tree yet;
+- **The prototype check stays as a fallback**: node types and instances created with `new` keep working;
+- **Only tree members count**: a factory result is not a member until it is attached (`child()` / `keyed()`);
   the check targets `children()` members;
 - **Cost**: zero DOM bytes (identity never reaches the DOM or SSR output); renaming a component still
   changes identity semantics (`instanceof` matches the name), and a hand-written `attr('vn', …)` is just

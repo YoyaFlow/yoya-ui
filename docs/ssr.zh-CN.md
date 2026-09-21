@@ -311,7 +311,7 @@ SSR 的纪律可以归纳成一句：**渲染路径必须 DOM-free 且确定性�
 
 | 避免                                                                                 | 应该                                                                                                                | 原因                                                   |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `render()` / `toHTML()` 里读 `document` / `window`                                   | 只在事件回调或 `renderDom()` 里访问；浏览器 API 加 `typeof xxx === 'undefined'` 守卫                                | 服务端没有 DOM，渲染路径必须 DOM-free                  |
+| 视图构建 / `toHTML()` 里读 `document` / `window`                                     | 只在事件回调或 `renderDom()` 里访问；浏览器 API 加 `typeof xxx === 'undefined'` 守卫                                | 服务端没有 DOM，渲染路径必须 DOM-free                  |
 | 用 `Date.now()` / `Math.random()` 影响输出（含 key、id）                             | 结构只依赖请求输入；id 用 `allocateId` 由渲染上下文分配                                                             | 两端产出的树不一致会导致 hydrate 错位                  |
 | 组件里直接 `document.addEventListener` / `window.addEventListener`                   | `bindDocumentEvent` / `bindWindowEvent`，`destroy()` 时执行返回的 unbind                                            | 服务端无 DOM；客户端要能随节点销毁解绑                 |
 | 请求相关状态、视图树或组件实例放模块级（当前用户、语言、计数器、区域节点、组件实例） | 每请求创建：`createAccess` / `createI18n` / `withContext` 经入口 `options` 注入，区域节点与组件实例在页面工厂内创建 | 模块级状态与视图树会在并发请求之间串数据、复用同一棵树 |

@@ -359,7 +359,7 @@ dispatch table), and only the position comes from the artifact.
   declared inside it (`const label = …`) are not runtime scope dependencies; a value position referencing one
   falls the whole shape back (previously it compiled to `const { label } = scope` and read `undefined`).
 - **Structure entry of a component unit**: `return <factory>(…)`, component objects
-  (`{ render() { return <factory>(…) }, …commands }`), and `vNode((api) => { …commands…; return <factory>(…) })`
+  (`{ render() { return <factory>(…) } }` — retired, compat only), and `vNode((api) => { …commands…; return <factory>(…) })`
   all compile. For the latter two the plugin **replaces the view expression in place**: the component body,
   commands, state and hooks stay verbatim, so commands, `instanceof` and lifecycle semantics survive
   untouched. Component units must produce a `ViewNode`, so their channel is fixed to `node`; a structure that
@@ -473,11 +473,11 @@ the generated module imports only the registry module.
 
 What tier 1 compiles (leaf only, constant structure):
 
-| Shape              | Source                              | Notes                                                                                                  |
-| ------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| A thin factory     | `return span((dot) => …)`           | The view expression is carried over verbatim                                                           |
-| B object component | `return { render() { return …; } }` | Only a single `render` member (components that must keep their object / commands are not compiled yet) |
-| vNode              | `return vNode(() => …)`             | setup only returns the view, never touches the api (commands as above)                                 |
+| Shape                                   | Source                              | Notes                                                                                                  |
+| --------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| A thin factory                          | `return span((dot) => …)`           | The view expression is carried over verbatim                                                           |
+| Object component (retired, compat only) | `return { render() { return …; } }` | Only a single `render` member (components that must keep their object / commands are not compiled yet) |
+| vNode                                   | `return vNode(() => …)`             | setup only returns the view, never touches the api (commands as above)                                 |
 
 Not compiled (so call sites keep using the generic path): container components that take children
 (next tier, together with ticket 42's slots), components with state or command methods, structural

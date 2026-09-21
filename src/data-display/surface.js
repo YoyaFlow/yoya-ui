@@ -1,81 +1,84 @@
-import { HtmlElementNode } from '../html/index.js';
+import { div } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import {
-  applyComponentSetup,
   componentClass,
-  createComponentFactory,
+  createComponentShortcut,
   themeBorder,
   themeValue
 } from '../components/shared.js';
 
-export class VCard extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this.className(componentClass, 'yoya-vcard');
-    this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '8px',
-      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
-      color: themeValue('color-text-strong', '#111827'),
-      overflow: 'hidden'
+/**
+ * `VCard` 是**组件定义函数**（名字 = 身份 = 导出名），`vCard` 是它的**快捷方法**
+ * （`page.vCard(…)` / 直接调用都走它，由 registerChildFactories 注册到父节点上）。
+ *
+ * 参数分派：api 上可以覆盖 `setupString` / `setupObject`；**不覆盖时用根元素的同名实现**——
+ * 这里没有覆盖，所以 `first / second / third` 直接交给根元素（字符串/数字 = 文本、对象 = options、节点 = 子节点）。
+ */
+export function VCard() {
+  return vNode(() => {
+    // 需要自定义参数语义时在这里覆盖：api.setupString / api.setupObject
+    return div({
+      class: `${componentClass} yoya-vcard`,
+      style: {
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border', '#d8dee8'),
+        borderRadius: '8px',
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
+        color: themeValue('color-text-strong', '#111827'),
+        overflow: 'hidden'
+      },
+      vn: 'VCard'
     });
-    applyComponentSetup(this, setup);
-  }
+  });
 }
 
-export class VCardHeader extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this.className('yoya-vcard-header');
-    this.styles({
-      borderBottom: themeBorder('color-border-faint', '#e5e7eb'),
-      fontWeight: '700',
-      padding: '12px 16px'
+export const vCard = createComponentShortcut(VCard);
+defineComponentIdentity(VCard, 'VCard');
+
+export function VCardHeader() {
+  return vNode(() => {
+    return div({
+      class: 'yoya-vcard-header',
+      style: {
+        borderBottom: themeBorder('color-border-faint', '#e5e7eb'),
+        fontWeight: '700',
+        padding: '12px 16px'
+      },
+      vn: 'VCardHeader'
     });
-    applyComponentSetup(this, setup);
-  }
+  });
 }
 
-export class VCardBody extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this.className('yoya-vcard-body');
-    this.styles({
-      padding: '16px'
+export const vCardHeader = createComponentShortcut(VCardHeader);
+defineComponentIdentity(VCardHeader, 'VCardHeader');
+
+export function VCardBody() {
+  return vNode(() => {
+    return div({ class: 'yoya-vcard-body', style: { padding: '16px' }, vn: 'VCardBody' });
+  });
+}
+
+export const vCardBody = createComponentShortcut(VCardBody);
+defineComponentIdentity(VCardBody, 'VCardBody');
+
+export function VCardFooter() {
+  return vNode(() => {
+    return div({
+      class: 'yoya-vcard-footer',
+      style: {
+        alignItems: 'center',
+        background: themeValue('color-surface-hover', '#f8fafc'),
+        borderTop: themeBorder('color-border-faint', '#e5e7eb'),
+        display: 'flex',
+        gap: '8px',
+        justifyContent: 'flex-end',
+        padding: '12px 16px'
+      },
+      vn: 'VCardFooter'
     });
-    applyComponentSetup(this, setup);
-  }
+  });
 }
 
-export class VCardFooter extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this.className('yoya-vcard-footer');
-    this.styles({
-      alignItems: 'center',
-      background: themeValue('color-surface-hover', '#f8fafc'),
-      borderTop: themeBorder('color-border-faint', '#e5e7eb'),
-      display: 'flex',
-      gap: '8px',
-      justifyContent: 'flex-end',
-      padding: '12px 16px'
-    });
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function vCard(first = null, second = null, third = null) {
-  return createComponentFactory(VCard, first, second, third, arguments);
-}
-
-export function vCardHeader(first = null, second = null, third = null) {
-  return createComponentFactory(VCardHeader, first, second, third, arguments);
-}
-
-export function vCardBody(first = null, second = null, third = null) {
-  return createComponentFactory(VCardBody, first, second, third, arguments);
-}
-
-export function vCardFooter(first = null, second = null, third = null) {
-  return createComponentFactory(VCardFooter, first, second, third, arguments);
-}
+export const vCardFooter = createComponentShortcut(VCardFooter);
+defineComponentIdentity(VCardFooter, 'VCardFooter');

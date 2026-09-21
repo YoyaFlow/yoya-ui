@@ -15,22 +15,25 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 
 组件开发者只需要依赖 `yoya-ui/core`（零第三方依赖、体积最小）：
 
-| 类别         | API                                                                                                                                                      |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                               |
-| 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`           |
-| 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（形态 C 组件专用，见 §7.3） |
-| 组件身份     | 视图根上的 `vn: 'VCard'`、`defineComponentIdentity`、`componentNameOf`、`hasComponentIdentity`（三种形态同一条判定，见 §7.3）                            |
-| 信号         | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                             |
-| 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                                    |
+| 类别         | API                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                            |
+| 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`        |
+| 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（节点类型专用，见 §7.3） |
+| 组件身份     | 视图根上的 `vn: 'VCard'`、`defineComponentIdentity`、`componentNameOf`、`hasComponentIdentity`（三种形态同一条判定，见 §7.3）                         |
+| 信号         | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                          |
+| 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                                 |
 
-## 3. 三种组件形态
+## 3. 两种组件形态
 
-新组件应从下列三种形态中选择，避免在模板之外另起结构。
+**组件只有两种形态**（2026-09-21 收敛）：**形态 A 薄工厂**（没有行为）与**形态 B `vNode`**（有行为）。
+对象组件（`return { render(), … }`）已退场（仅存量，票 03）；`class Xxx extends HtmlElementNode`
+**不是组件形态**——它是引擎的**节点类型扩展**（组件的视图根 / 自定义元素种类），见 §7.3。
 
-### 形态 A：薄工厂（无内部状态、纯配置化组合）
+### 形态 A：薄工厂（没有行为）
 
-确定这个组件没有额外行为要定义时就用它——**演示代码同样按此判据**：只演示结构与交互、没有对外命令方法时，函数直接返回 ViewNode，不要为了统一而包一层 `render()`。
+确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）时就用它——
+**演示代码同样按此判据**：只演示结构与交互、没有对外命令方法时，函数直接返回 ViewNode，不要为了统一而包一层。
 
 ```js
 import { vBadge } from '@yoyaflow/yoya-ui/ui';
@@ -40,35 +43,9 @@ export function ServiceTag(options) {
 }
 ```
 
-### 形态 B：对象组件（**已弃用**，仅存量）
+### 形态 B：`vNode((api) => 视图)`（有行为就用它）
 
-> **弃用（2026-09-21，票 03）**：新组件一律用 `vNode((api) => 视图)`（有行为）或直接返回 ViewNode（无行为）。
-> 形态 B 的表达能力已被 vNode 完全覆盖，而它多出两个问题：对象是**一次性**的（同一对象挂两处会共用一份状态），
-> 以及编译器要额外维护一条形状分支。devtools 开启时收到形态 B 会提示一次。
-
-```js
-import { vRate } from '@yoyaflow/yoya-ui/ui';
-
-export function RateCard() {
-  const state = { value: 0 };
-
-  return {
-    render() {
-      return vRate((rate) => {
-        rate.value(state.value);
-      });
-    },
-    value(next) {
-      state.value = next;
-      return this;
-    }
-  };
-}
-```
-
-### 形态 B 的快捷工厂：`vNode((api) => 视图)`
-
-需要对外命令方法时，用 `vNode` 定义即得到组件节点：
+状态放闭包，命令与钩子写在 `api` 上，视图由 setup 返回 —— 定义即得到组件节点：
 
 ```js
 import { computed, ref, vNode, vstack, vText } from '@yoyaflow/yoya-ui';
@@ -93,23 +70,28 @@ export function CounterCard() {
 - 返回的是组件节点（`ComponentNode extends ViewNode`）：当根挂载、当子节点、进 keyed 列表都用节点语义；不产生占位元素，setup 返回数组即多根 fragment。
 - `api` 只收命令函数；工厂把命令挂到节点本身，撞上节点已有成员（`child` / `destroy` / `mountable` …）或 `render` / `_*` 直接抛错，不静默覆盖。
 - 命令里 `return api` 等于 `return 节点`；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），其余节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
-- 旧写法不受影响：形态 A/B/C 与 `child(componentObject)` 全部照旧，没有对外命令方法的展示组件仍用形态 A。
+- **状态与命令写 `api`，不写 `this`**（`api` 在 setup 的词法作用域里）；生命周期钩子 `api.whenMount` / `api.whenDestroy`，错误边界 `api.whenFailed`。
+- 身份：模块底一行 `defineComponentIdentity(VXxx, 'VXxx')`；`member instanceof VXxx` 对 A / B 是同一条判定（元素节点读自己、组件节点展开到视图根）。
 
-### 形态 C：类节点组件（父子嵌套、操作子实例或重写生命周期）
+### 组件定义 vs 快捷方法
 
-类节点组件必须同时导出成对 `vXxx` 工厂，并使用 `createElementFactory`：
+- **`VXxx` 是组件定义函数**（PascalCase，名字 = 身份 = 导出名）：描述结构 / 状态 / 命令 / 身份。
+  它的参数是**组件自己的东西**（props / 无参），**不负责调用方的 setup 语义**。
+- **`vXxx` 是快捷方法**（小写）：建组件，再把调用方参数按 setup 分派落到组件上。
+  `page.vXxx(…)` 是同一个方法的父节点形态（由 `registerChildFactories` 注册）；调用点写 `vXxx`，`VXxx` 只负责定义。
+- **setup 分派有三个可覆盖入口**：`setupFunction`（函数 = 构建回调）、`setupString`（字符串 / 数字）、`setupObject`（对象）。
+  组件在 `api` 上定义它们就用自己的；**没定义就回落到根元素的同名实现**
+  （`setupFunction` 的回落是组件节点自己的构建帧——回调句柄必须等于工厂返回值）。
+  其余分派固定：节点 / 句柄 = 子节点、数组 = 子节点列表。
+- 与元素侧对称：`createElementFactory('div', Node)` = 元素种类 + setup 分派；组件侧的对应物就是
+  "**定义函数 + 快捷方法**"这一对（`VXxx` / `vXxx`）。
 
-```js
-import { HtmlElementNode, createElementFactory } from '@yoyaflow/yoya-ui/core';
+### 节点类型扩展（引擎内部，不是第三种组件形态）
 
-export class VStatusDot extends HtmlElementNode {
-  // 嵌套关系与细粒度操作
-}
-
-export function vStatusDot(first = null, second = null, third = null) {
-  return createElementFactory('span', VStatusDot)(first, second, third);
-}
-```
+`class XxxNode extends HtmlElementNode` 仍然存在，但它是**组件的视图根 / 自定义元素种类**：
+元素机制（`renderDom` / `toHTML` / `child` 语义 / DOM 测量 / 事件绑定 / 生命周期）必须住在节点上。
+库内组件都是这个结构——对外只有一个句柄（vNode 组件节点），节点类型不进包入口，第三方不需要继承。
+字段访问规则见 §7.3。
 
 > 注：标准工具包 `createComponentFactory` / `applyComponentArguments` / `themeValue` 目前位于库内 `src/components/shared.js`，后续将由公开入口导出；在此之前可按上述写法基于 `core` 公共 API 实现。
 
@@ -198,7 +180,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
   事件不冒泡（`focus` / `mouseenter` 等）、自定义事件、非元素节点，以及挂载之后才补的 `.on()`。
   两条细微差异：`currentTarget` 由引擎逐事件伪造（值一致，但它是事件对象上的自有属性）；第三方直接挂在
   「行根到段根之间」元素上的监听器，相对顺序可能与逐元素绑定时不同。
-- **错误边界**：`node.whenFailed(handler)` 声明子树边界——handler 返回节点则替换子树降级、返回空仅上报并保持现状；组件对象可写与 `render()` 同层的 `whenFailed(error, info)` 成员，`ComponentNode` 自动挂载。捕获永不静默：`console.error` 必发，devtools 开启时追加 `error` 事件。错误在出错时**沿父链上溯**找最近的边界，由它独占捕获、捕获后不再向外，因此与声明顺序、嵌套深度、运行时插入、子树搬家都无关；handler 自身抛错则向外抛出。render / build 阶段返回空时，失败子节点会被标记并跳过后续重试（避免反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。区域节点上的降级替换按一次区域构建执行，不会撞区域守卫。
+- **错误边界**：`node.whenFailed(handler)` 声明子树边界——handler 返回节点则替换子树降级、返回空仅上报并保持现状；vNode 组件可写 `api.whenFailed = (error, info) => 降级节点`，`ComponentNode` 自动挂载。捕获永不静默：`console.error` 必发，devtools 开启时追加 `error` 事件。错误在出错时**沿父链上溯**找最近的边界，由它独占捕获、捕获后不再向外，因此与声明顺序、嵌套深度、运行时插入、子树搬家都无关；handler 自身抛错则向外抛出。render / build 阶段返回空时，失败子节点会被标记并跳过后续重试（避免反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。区域节点上的降级替换按一次区域构建执行，不会撞区域守卫。
 
 ### 6.2 大列表里的选中态：别用共享句柄逐行派生
 
@@ -299,13 +281,13 @@ tbody((body) => {
 
 ## 7. 组合、事件与生命周期
 
-- `child(...)` 接受 `ViewNode`、组件对象（自动包装为 `ComponentNode` 并缓存其 `render()` 结果）或字符串/数字。
+- `child(...)` 接受 `ViewNode`、vNode 组件（自动包装为 `ComponentNode`）或字符串/数字。
 - `on(eventName, handler, options)` 绑定真实 DOM 事件，`destroy()` 时自动清理。
-- 组件对象只要提供 `render()`（返回 `ViewNode`）即可被 `child()` 使用；类组件遵循 `renderDom` / `bindTo` / `destroy` 生命周期。
+- vNode 组件可直接传给 `child()`；节点类型（视图根）遵循 `renderDom` / `bindTo` / `destroy` 生命周期。
 
 ### 7.1 生命周期
 
-1. **声明（构建期）**：工厂调用建节点，`setup` 里的 `attr` / `style` / `on` / `child` 只写快照，不创建 DOM；组件对象被包成 `ComponentNode`，首次渲染才解析并缓存 `render()` 结果；`access` / `context` / `i18n` 三类构建期作用域在此捕获。
+1. **声明（构建期）**：工厂调用建节点，`setup` 里的 `attr` / `style` / `on` / `child` 只写快照，不创建 DOM；vNode 组件被包成 `ComponentNode`，首次渲染才解析并缓存视图；`access` / `context` / `i18n` 三类构建期作用域在此捕获。
 2. **挂载**：`renderDom()` 创建或复用真实 DOM、绑定事件适配器、递归子节点并应用属性快照；`bindTo(target)` 等于 `renderDom` + append；`commit()` 落地权限态与待移除子节点。
 3. **更新（状态变化）**：按代价从低到高——函数值绑定只写回（DOM 不重建）→ `update()` 局部 patch → 区域 `rebuild()`（清空子节点 + 重跑 setup）→ 组件 `rebuild()`（销毁旧根重新 render）。
 4. **销毁**：解除事件适配器与 cleanup、递归销毁子节点、清空 keyed 子节点注册表、从 DOM 摘除；重复 `destroy()` 幂等。
@@ -340,7 +322,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **活数据用 getter 传**（`rows: () => state.members`）：数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的仍是旧值；回写一律走回调。
 - **上游用 `ref` 时直接传句柄**（`rows: itemsRef`）：块内用值绑定或区域读句柄即可，不需要 getter；getter 留给非信号来源（请求结果、外部对象）。
 - **块内的更新分工**：值变化用函数值绑定，结构变化用区域（块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter）。
-- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
+- 块组件用与导出组件同一套形态（无行为用形态 A 直接返回 ViewNode，有行为用形态 B `vNode((api) => 视图)`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
 
 ### 7.3 形态 C 组件的字段访问（0.6.3 起）
 
@@ -402,7 +384,7 @@ panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
 
 ## 7.2 组件级钩子：`whenMount` / `whenDestroy`
 
-与 `whenFailed` 同族的**协议成员**：属性持函数，声明在 vNode 的 api 上或形态 B 的返回对象上。
+与 `whenFailed` 同族的**协议成员**：属性持函数，声明在 vNode 的 api 上。
 
 ```js
 const chart = vNode((api) => {
@@ -422,12 +404,12 @@ const chart = vNode((api) => {
 - **vNode 里写 `api`，不写 `this`**：api 就是组件实例，且命令与钩子都在它的词法作用域里
   （`api.instance = …` / 读回 `api.instance`）。`this` 恰好也是同一个对象（引擎以 api 调用命令与钩子），
   但命令一旦写成箭头函数（`() => this`）就不是组件了——只留一种拼写，不留绑定陷阱。
-  形态 B 的对象组件是镜像关系：方法写在对象字面量里，那里的 `this` **就是**组件对象；
+  （已退场的）对象组件是镜像关系：方法写在对象字面量里，`this` 就是组件对象；
 - **两个钩子都收到宿主上下文对象**，元素从它上面读：`host.element()` 是单根组件的根元素
   （还没落地的节点、以及没有"那一个元素"的多根组件都给 `null`）。它是**现取**而不是快照，
   同一个上下文对象交给两个钩子，以后加成员不改签名。需要真实元素就在这里拿
   ——不要在闭包变量里抓节点句柄，也不要让结构表达式承担写回，结构才是编译器读得懂的形状；
-- **实例状态挂在组件实例上**（vNode 是 api，形态 B 是那个对象），与用它的命令放在一起：
+- **实例状态挂在组件实例上**（vNode 是 api），与用它的命令放在一起：
   上面的 `api.instance` 在同组件的任何命令与钩子里都读得到；
 - **时机**：`whenMount` 在节点真正落到 DOM 时触发；一趟落地（`bindTo` / `mount` / `hydrate`）会**收集**
   这趟里的钩子、在**收口时**统一触发——所以钩子跑起来时 `host.element()` 已经挂在树上（不是游离子树），
@@ -436,7 +418,7 @@ const chart = vNode((api) => {
   `mountable(false)` 期间不触发，条件转真、真正落地时才触发；`whenDestroy` 在**子树销毁之前**触发且幂等；
 - **不能写进 options 对象**：`div({ whenMount: fn })` 直接报错 —— `onXxx` 才是事件简写（`{ onClick: fn }`），
   `whenMount` / `whenDestroy` / `whenFailed` 放错位置会报错，不会被静默绑成事件；
-- **`this`** 绑定到组件对象（形态 B）或 api（vNode）；
+- **`this`** 在 vNode 里是 api（照旧写 `api`，不写 `this`）；
 - **内存**：没有钩子的组件零额外字段；框架不 `bind()`、不用数组收集，销毁后释放引用；
 - **不做 `onUpdate`**：库里"更新"有区域重建 / keyed 换 key / 组件主动换根三种不同场景，没有单一语义。
 
@@ -451,12 +433,12 @@ function ServiceTag() {
 }
 
 function RateCard() {
-  // 形态 B：组件对象，成员是 child() 包出来的 ComponentNode
-  return { render: () => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate') };
+  // 形态 B（vNode）：成员是组件节点
+  return vNode(() => div({ vn: 'RateCard', class: 'yoya-rate' }, 'rate'));
 }
 
 function Chart() {
-  // vNode：同形态 B
+  // 同上（vNode）
   return vNode(() => div({ vn: 'Chart' }, 'chart'));
 }
 
@@ -482,7 +464,7 @@ page.children().filter((child) => child instanceof Chart);
   对象走，所以 `adopt` / `hydrate` / 克隆片段一样认，不需要回读 DOM；
 - **多值**：包装型组件共用根时写 `vn: 'VCard UserCard'`，两个身份都命中（空格分隔）；
 - **类名不参与判定**：`yoya-*` 是样式钩子；身份只认 `vn`，改样式不会改身份，手搓同名类名也不会误判；
-- **原型判定保留为兜底**：类组件（形态 C）与 `new` 出来的实例照旧 `instanceof` 成立，迁移期老组件不断；
+- **原型判定保留为兜底**：节点类型与 `new` 出来的实例照旧 `instanceof` 成立；
 - **裸组件对象不算**：`RateCard()` 返回的对象还没进树；判定针对 `children()` 里的成员；
 - **代价**：零 DOM 字节（身份不进 DOM / SSR 输出）；改名仍然等于改身份语义（`instanceof` 认的是名字）；
   手写 `attr('vn', …)` 只是普通属性，不再被当成身份。

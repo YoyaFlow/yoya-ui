@@ -1814,40 +1814,65 @@ export class ViewNode {
    */
   setup(setup) {
     if (typeof setup === 'function') {
-      addNodeBuilder(this, setup);
-      const serialBefore = bindingSerial;
-      setupStack.push(this);
-      try {
-        withProviderScope(this, () => setup(this));
-      } finally {
-        setupStack.pop();
-        closeRegionCapture(this);
-        reportPreRegionReads(this);
-        // 构建闭包到此为止：非区域节点不会再有第二次构建，就地清引用，让闭包连同它捕获的
-        // 环境在构建返回后一起可回收（官方条目一行 8 个 builder，常驻约 1.9 KB/行）。
-        // 只清值、保留字段槽位：不用 delete（会把对象打成字典模式，实测反涨），
-        // 也不跳过建槽（会分叉出两种隐藏类）。区域节点要重跑 builder，引用继续留着。
-        if (this._rebuildable !== true) {
-          this._builders = null;
-        }
-      }
-
-      // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
-      // 避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
-      if (setupStack.length === 0 && bindingSerial !== serialBefore) {
-        flushBindingsIn(this);
-      }
+      this.setupFunction(setup);
     } else if (setup instanceof ViewNode) {
       this.child(setup);
     } else if (isSignal(setup)) {
       // 值位置传句柄：等价 child(vText(handle))，写入即原地刷文本
       this.child(setup);
     } else if (typeof setup === 'string' || typeof setup === 'number') {
-      this.child(setup);
+      this.setupString(setup);
     } else if (setup && typeof setup === 'object') {
-      this._setupObject(setup);
+      this.setupObject(setup);
     }
 
+    return this;
+  }
+
+  /**
+   * 函数参数的落位（默认 = 构建回调：登记 builder、在构建帧里执行、首屏刷一次绑定）。
+   * 组件可以在 **api 上覆盖同名方法**（`api.setupFunction = …`），不覆盖就用视图根的实现。
+   */
+  setupFunction(builder) {
+    addNodeBuilder(this, builder);
+    const serialBefore = bindingSerial;
+    setupStack.push(this);
+    try {
+      withProviderScope(this, () => builder(this));
+    } finally {
+      setupStack.pop();
+      closeRegionCapture(this);
+      reportPreRegionReads(this);
+      // 构建闭包到此为止：非区域节点不会再有第二次构建，就地清引用，让闭包连同它捕获的
+      // 环境在构建返回后一起可回收（官方条目一行 8 个 builder，常驻约 1.9 KB/行）。
+      // 只清值、保留字段槽位：不用 delete（会把对象打成字典模式，实测反涨），
+      // 也不跳过建槽（会分叉出两种隐藏类）。区域节点要重跑 builder，引用继续留着。
+      if (this._rebuildable !== true) {
+        this._builders = null;
+      }
+    }
+
+    // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
+    // 避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
+    if (setupStack.length === 0 && bindingSerial !== serialBefore) {
+      flushBindingsIn(this);
+    }
+
+    return this;
+  }
+
+  /**
+   * 字符串 / 数字参数的落位（默认 = 文本子节点）。
+   * 组件可以在 **api 上覆盖同名方法**（`api.setupString = …`），不覆盖就用视图根的实现。
+   */
+  setupString(value) {
+    this.child(value);
+    return this;
+  }
+
+  /** 对象参数的落位（默认 = options 分派，见 `_setupObject`）；同样可被 api 覆盖。 */
+  setupObject(config) {
+    this._setupObject(config);
     return this;
   }
 
@@ -3410,6 +3435,26 @@ export class ComponentNode extends ViewNode {
     return this._resolvedList.flatMap((root) => root.children());
   }
 
+  /**
+   * 组件参数分派：**api 没覆盖就用视图根的同名实现**（票：组件定义 vs 快捷方法）。
+   * api 覆盖时，命令挂在节点上是自有属性，会先于这里命中。
+   */
+  setupString(value) {
+    const root = viewRootOf(this);
+    return root ? root.setupString(value) : super.setupString(value);
+  }
+
+  setupFunction(builder) {
+    // 构建回调的句柄契约 = 工厂返回值（组件节点本身），所以不把回调转交给根元素；
+    // api 覆盖 `setupFunction` 时走覆盖实现，其余情况就是组件节点自己的构建帧。
+    return super.setupFunction(builder);
+  }
+
+  setupObject(config) {
+    const root = viewRootOf(this);
+    return root ? root.setupObject(config) : super.setupObject(config);
+  }
+
   textContent() {
     return this._resolveList()
       .map((root) => (typeof root.textContent === 'function' ? root.textContent() : ''))
@@ -3544,6 +3589,12 @@ const DELEGATED_ELEMENT_METHODS = [
  * 事件与绑定类（`on` / `off` / `bindWindowEvent`…）不在此列——它们必须保持节点语义。
  */
 export const SHADOWABLE_DEFERRED_METHOD_NAMES = new Set(DELEGATED_ELEMENT_METHODS);
+
+// 参数分派入口同样允许被命令遮蔽：`api.setupFunction` / `api.setupString` / `api.setupObject`
+// 是组件覆盖分派的正式入口
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupFunction');
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupString');
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupObject');
 
 DELEGATED_ELEMENT_METHODS.forEach((method) => {
   // 已有同名实现（例如 `textContent`）保持原样：它本来就是组件语义

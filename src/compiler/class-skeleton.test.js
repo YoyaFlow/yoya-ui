@@ -10,7 +10,7 @@ import { join, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '../yoya.core.js';
-import { VCard, VCardBody, VCardFooter, VCardHeader, vCard } from '../data-display/surface.js';
+import { CardSkeleton, cardSkeleton } from './fixtures/card-skeleton.js';
 import { buildComponentRegistry, compileComponent, compileSource } from './index.js';
 
 // 临时产物留在仓库内（vitest 不允许 import 项目根之外的模块），
@@ -21,22 +21,17 @@ const workDir = mkdtempSync(join(scratchRoot, 'tmp-class-'));
 afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
-const surfaceFile = posix.join('src/data-display/surface.js');
+const surfaceFile = posix.join('src/compiler/fixtures/card-skeleton.js');
 const surfaceSource = readFileSync(surfaceFile, 'utf8');
 const callerFile = posix.join('src/compiler/fixtures/item-with-card.js');
 const callerSource =
   "import { tr } from '../../yoya.core.js';\n" +
-  "import { vCard } from '../../data-display/surface.js';\n" +
+  "import { cardSkeleton } from './card-skeleton.js';\n" +
   'export function Item(item) {\n' +
-  '  return tr((line) => line.td((cell) => cell.child(vCard(item.title))));\n' +
+  '  return tr((line) => line.td((cell) => cell.child(cardSkeleton(item.title))));\n' +
   '}\n';
 
-const families = [
-  ['vCard', VCard],
-  ['vCardHeader', VCardHeader],
-  ['vCardBody', VCardBody],
-  ['vCardFooter', VCardFooter]
-];
+const families = [['cardSkeleton', CardSkeleton]];
 
 describe('form C skeletons', () => {
   it('reads the class constructor as the view and matches the class DOM byte for byte', () => {
@@ -77,7 +72,7 @@ describe('form C skeletons', () => {
   it('inlines statically readable content at build time', async () => {
     const registryDir = join(workDir, 'inline');
     buildComponentRegistry({
-      entries: [{ file: surfaceFile, export: 'vCard' }],
+      entries: [{ file: surfaceFile, export: 'cardSkeleton' }],
       dir: registryDir,
       core,
       runtime: runtimeUrl
@@ -87,16 +82,19 @@ describe('form C skeletons', () => {
     );
 
     const cases = [
-      ["vCard('标题')", () => vCard('标题')],
-      ["vCard((card) => card.span('正文'))", () => vCard((card) => card.span('正文'))],
-      ["vCard(span('直接给节点'))", () => vCard(core.span('直接给节点'))]
+      ["cardSkeleton('标题')", () => cardSkeleton('标题')],
+      [
+        "cardSkeleton((card) => card.span('正文'))",
+        () => cardSkeleton((card) => card.span('正文'))
+      ],
+      ["cardSkeleton(span('直接给节点'))", () => cardSkeleton(core.span('直接给节点'))]
     ];
 
     for (const [expression, generic] of cases) {
       const compiled = compileSource({
         source:
           "import { tr, span } from '../../yoya.core.js';\n" +
-          "import { vCard } from '../../data-display/surface.js';\n" +
+          "import { cardSkeleton } from './card-skeleton.js';\n" +
           'export function Item(item) {\n' +
           `  return tr((line) => line.td((cell) => cell.child(${expression})));\n` +
           '}\n',
@@ -127,7 +125,7 @@ describe('form C skeletons', () => {
   it('links an empty skeleton and falls back when the caller passes content', async () => {
     const registryDir = join(workDir, 'components');
     buildComponentRegistry({
-      entries: [{ file: surfaceFile, export: 'vCard' }],
+      entries: [{ file: surfaceFile, export: 'cardSkeleton' }],
       dir: registryDir,
       core,
       runtime: runtimeUrl
@@ -174,11 +172,13 @@ describe('form C skeletons', () => {
 
     // 不带内容 → 走骨架（片段 + 位置写）
     const empty = factory({ title: null });
-    expect(empty.el.outerHTML).toBe(`<tr><td>${vCard().toHTML()}</td></tr>`);
+    expect(empty.el.outerHTML).toBe(`<tr><td>${cardSkeleton().toHTML()}</td></tr>`);
 
     // 带内容 → 内容守卫让 bind 返回 null，调用方用原组件重建（DOM 仍逐字节一致）
     const filled = factory({ title: '标题' });
-    expect(filled.el.outerHTML).toBe(`<tr><td>${vCard('标题').renderDom().outerHTML}</td></tr>`);
+    expect(filled.el.outerHTML).toBe(
+      `<tr><td>${cardSkeleton('标题').renderDom().outerHTML}</td></tr>`
+    );
 
     const counting = await import(pathToFileURL(join(countingDir, 'components.registry.js')).href);
     expect(counting.fallbacks).toHaveLength(1); // 只有带内容那次回落

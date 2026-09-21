@@ -34,7 +34,7 @@ const LONG_DEMO_BUDGET = Object.freeze({
   'form:form :: FormExample1': 75,
   'form:form :: FormExample3': 67,
   'general:svg :: SvgProgressRingExample1': 89,
-  'guides:component :: InteractiveComposeExample1': 100,
+  'guides:component :: InteractiveComposeExample1': 94,
   'guides:devtools :: DevtoolsInspectorDemo': 552,
   'guides:i18n :: I18nExtendExample1': 77,
   'guides:i18n :: I18nParamsExample1': 72,

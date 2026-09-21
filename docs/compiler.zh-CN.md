@@ -101,36 +101,36 @@ export default defineConfig({
 
 可编（结构恒定 + 值可分类）：
 
-| 写法                                                  | 编译结果                                                                                                             |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `line.attr('name', 'literal')`                        | 写进片段（静态）                                                                                                     |
-| `line.attr('name', row.value)`                        | 动态属性写 + 活值订阅                                                                                                |
-| `line.attr({ id: 'x', tone: row.tone })`              | 对象形式：逐项走 `attr(名字, 值)`（与核心同一条口径、同一顺序）                                                      |
-| `root.path({ d: 'M12 5v14' })`                        | SVG 子标签工厂（白名单来自 `svgs` 表；节点通道产物 import `svgs` 命名空间，写成 `svgs.path(…)`）                     |
-| `line.className(props.tone)`                          | **动态类名**：`String(值)` 按空白切分、与已有类名**保序去重**（节点通道复用 `node.className`）                       |
-| `line.style({ height: row.h })`                       | 对象形式：等价于 `styles(对象)` → 逐项 `style(名, 值)`                                                               |
-| `root.h1(props.heading)`                              | **动态实参**：运行期类型分派（复用核心 `applySetupValue`）；`node` 通道全类型，`element` 通道按"位置 = 一段文本"落地 |
-| `const body = root.div(…)` 之后 `body.attr(…)`        | **节点变量（别名）**：DSL 里链式工厂返回**父节点**，所以别名 = 当前节点；写法照常分析、按源码顺序发射                |
-| `td({ attrs: { id: row.id } })`                       | options 里的动态属性值（与手写 `attr` 同路）                                                                         |
-| `line.className('a b')`                               | 写进片段                                                                                                             |
-| `line.toggleClass('on', expr)`                        | 类名绑定（`bindClass`）                                                                                              |
-| `line.mountable(condition)`                           | 条件挂载（`element` 通道走 `mountableAt`，`node` 通道用节点自己的 `mountable`）                                      |
-| `list.keyed(rows, keyOf, rowFactory)`                 | 组件内部的列表：行工厂是**子单元**，`element` 通道走 `keyedRows`，`node` 通道用节点自己的 `keyed`                    |
-| `list.keyed(rows, rowFactory)`（两参）                | 同上；键口径照抄核心：keySet 源用容器的 `keyOf(item.data)`，信号源按**行身份**（对象键 → 不写 `data-row-key`）       |
-| `const a = <表达式>;`（根或嵌套 setup）               | **逻辑帧**：声明原样搬进产物、按源码顺序执行；值位置引用它不再回落，名字也不进 `scope`                               |
-| `if (…) { <加一个子元素> }`                           | **结构锚点**：语句原样搬进产物，那段结构提升成**子单元**，按"片段里它后面的那个兄弟"当边界插回去                     |
-| `for (const x of …) { <加一个子元素> }`               | 同上（`for…of`：迭代语义照抄语句本身，空列表就是一次都不建）                                                         |
-| `list.forEach((item) => { <加一个子元素> })`          | 同上（`forEach` 与控制流同一条路：语句原样，结构按项实例化到锚点）                                                   |
-| `[…].forEach(([a, b]) => <加一个子元素>)`             | 同上：接收者任意（数组字面量也行），回调的**表达式体**会被包成块体                                                   |
-| 锚点里的 `child(<组件>(…))`                           | 结构也可以是**组件调用**：条目带 `plan` + `hash`（文件注册表）时按注册表实例化（克隆片段 + 位置写 / 节点渲染）       |
-| `line.style('color', 'red')`                          | 写进片段                                                                                                             |
-| `line.style('color', row.tone)`                       | 动态样式写（`node` 通道：`node.style`）                                                                              |
-| 形态 C 骨架（`super('<标签>')` + 直线 `this.*` 调用） | 编成骨架片段；构造参数是内容位置（带内容时运行期回落）                                                               |
-| `cell.child('文本')`                                  | 写进片段                                                                                                             |
-| `cell.child(String(row.id))`                          | 位置写文本                                                                                                           |
-| `cell.child(vText(handle))`                           | 文本绑定（句柄 / 零参 reader / 普通值三态）                                                                          |
-| `line.on('click', handler)`                           | 直接 `addEventListener`                                                                                              |
-| `cell.span(...)` / `cell.td(...)`                     | 递归编子元素（白名单内）                                                                                             |
+| 写法                                                   | 编译结果                                                                                                             |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `line.attr('name', 'literal')`                         | 写进片段（静态）                                                                                                     |
+| `line.attr('name', row.value)`                         | 动态属性写 + 活值订阅                                                                                                |
+| `line.attr({ id: 'x', tone: row.tone })`               | 对象形式：逐项走 `attr(名字, 值)`（与核心同一条口径、同一顺序）                                                      |
+| `root.path({ d: 'M12 5v14' })`                         | SVG 子标签工厂（白名单来自 `svgs` 表；节点通道产物 import `svgs` 命名空间，写成 `svgs.path(…)`）                     |
+| `line.className(props.tone)`                           | **动态类名**：`String(值)` 按空白切分、与已有类名**保序去重**（节点通道复用 `node.className`）                       |
+| `line.style({ height: row.h })`                        | 对象形式：等价于 `styles(对象)` → 逐项 `style(名, 值)`                                                               |
+| `root.h1(props.heading)`                               | **动态实参**：运行期类型分派（复用核心 `applySetupValue`）；`node` 通道全类型，`element` 通道按"位置 = 一段文本"落地 |
+| `const body = root.div(…)` 之后 `body.attr(…)`         | **节点变量（别名）**：DSL 里链式工厂返回**父节点**，所以别名 = 当前节点；写法照常分析、按源码顺序发射                |
+| `td({ attrs: { id: row.id } })`                        | options 里的动态属性值（与手写 `attr` 同路）                                                                         |
+| `line.className('a b')`                                | 写进片段                                                                                                             |
+| `line.toggleClass('on', expr)`                         | 类名绑定（`bindClass`）                                                                                              |
+| `line.mountable(condition)`                            | 条件挂载（`element` 通道走 `mountableAt`，`node` 通道用节点自己的 `mountable`）                                      |
+| `list.keyed(rows, keyOf, rowFactory)`                  | 组件内部的列表：行工厂是**子单元**，`element` 通道走 `keyedRows`，`node` 通道用节点自己的 `keyed`                    |
+| `list.keyed(rows, rowFactory)`（两参）                 | 同上；键口径照抄核心：keySet 源用容器的 `keyOf(item.data)`，信号源按**行身份**（对象键 → 不写 `data-row-key`）       |
+| `const a = <表达式>;`（根或嵌套 setup）                | **逻辑帧**：声明原样搬进产物、按源码顺序执行；值位置引用它不再回落，名字也不进 `scope`                               |
+| `if (…) { <加一个子元素> }`                            | **结构锚点**：语句原样搬进产物，那段结构提升成**子单元**，按"片段里它后面的那个兄弟"当边界插回去                     |
+| `for (const x of …) { <加一个子元素> }`                | 同上（`for…of`：迭代语义照抄语句本身，空列表就是一次都不建）                                                         |
+| `list.forEach((item) => { <加一个子元素> })`           | 同上（`forEach` 与控制流同一条路：语句原样，结构按项实例化到锚点）                                                   |
+| `[…].forEach(([a, b]) => <加一个子元素>)`              | 同上：接收者任意（数组字面量也行），回调的**表达式体**会被包成块体                                                   |
+| 锚点里的 `child(<组件>(…))`                            | 结构也可以是**组件调用**：条目带 `plan` + `hash`（文件注册表）时按注册表实例化（克隆片段 + 位置写 / 节点渲染）       |
+| `line.style('color', 'red')`                           | 写进片段                                                                                                             |
+| `line.style('color', row.tone)`                        | 动态样式写（`node` 通道：`node.style`）                                                                              |
+| 节点类型骨架（`super('<标签>')` + 直线 `this.*` 调用） | 编成骨架片段；构造参数是内容位置（带内容时运行期回落）                                                               |
+| `cell.child('文本')`                                   | 写进片段                                                                                                             |
+| `cell.child(String(row.id))`                           | 位置写文本                                                                                                           |
+| `cell.child(vText(handle))`                            | 文本绑定（句柄 / 零参 reader / 普通值三态）                                                                          |
+| `line.on('click', handler)`                            | 直接 `addEventListener`                                                                                              |
+| `cell.span(...)` / `cell.td(...)`                      | 递归编子元素（白名单内）                                                                                             |
 
 **构建期常量折叠**：静态值不只认字面量，还认三类「构建期就能算出同一个值」的形状——同模块的
 `const X = '字面量'`（含模板串拼接）、库内常量 `componentClass`、库内主题助手 `themeValue()` /
@@ -309,7 +309,7 @@ export function createRowFactory(scope) {
   `@yoyaflow/yoya-ui`、`/core` 子入口，以及仓库内的 `index.js` / `yoya.*.js`。
 - **局部声明不进产物**：产物不执行组件函数体，所以函数体里声明的局部名（`const label = …`）**不是**运行期
   作用域依赖；值位置引用了它们就整形状回落（以前会被编成 `const { label } = scope`，运行期读到 undefined）。
-- **组件单元的结构入口**：`return <工厂>(…)`、组件对象（`{ render() { return <工厂>(…) }, …命令 }`）、
+- **组件单元的结构入口**：`return <工厂>(…)`、vNode（`return vNode((api) => { …命令…; return <工厂>(…) })`）、
   `vNode((api) => { …命令…; return <工厂>(…) })` 三种都编。插件对后两种做**就地替换**：组件体、命令、状态、
   钩子一行不动，只把视图表达式换成编译产物——所以命令 / `instanceof` / 生命周期天然保留。组件单元的产物要能
   当 `ViewNode` 用，通道固定为 `node`；结构不是单一表达式（多语句 / 分支）时源码原样透传。
@@ -401,11 +401,11 @@ buildComponentRegistry({
 
 第一档能编什么（都是**叶子**、结构恒定）：
 
-| 形态       | 写法                                | 说明                                                          |
-| ---------- | ----------------------------------- | ------------------------------------------------------------- |
-| A 薄工厂   | `return span((dot) => …)`           | 视图表达式原样搬进编译单元                                    |
-| B 对象组件 | `return { render() { return …; } }` | 只允许 `render` 一个成员（要保留组件对象 / 命令方法的暂不编） |
-| vNode      | `return vNode(() => …)`             | setup 只 return 视图、不碰 api（命令方法同上）                |
+| 形态                       | 写法                                | 说明                                                          |
+| -------------------------- | ----------------------------------- | ------------------------------------------------------------- |
+| A 薄工厂                   | `return span((dot) => …)`           | 视图表达式原样搬进编译单元                                    |
+| 对象组件（已退场，仅兼容） | `return { render() { return …; } }` | 只允许 `render` 一个成员（要保留组件对象 / 命令方法的暂不编） |
+| vNode                      | `return vNode(() => …)`             | setup 只 return 视图、不碰 api（命令方法同上）                |
 
 不编的（调用点因此照旧走通用路径）：收 children 的容器组件（下一档，与票 42 的槽一起做）、
 带状态 / 命令方法的组件、结构分支、用模块私有辅助（非 import 绑定）的组件、跨包组件。
@@ -448,9 +448,9 @@ buildComponentRegistry({
 `node` 通道同样吃这套：容器组件（只被 `child(...)` 调用 → node 通道）引用子组件时，子组件的
 活结点按位置物化、形参帧挂在节点 setup 闭包里——所以「页面组件 → 若干子组件」整条链都能编。
 
-### 7.2 形态 C 的骨架可编（第一档：没有内容的用法）
+### 7.2 节点类型骨架可编（第一档：没有内容的用法）
 
-类节点组件（形态 C）不用改源码也能进编译单元：工厂 `return createComponentFactory(VCard, …)`
+节点类型组件不用改源码也能进编译单元：工厂 `return createComponentFactory(VCard, …)`
 这类写法被解析成"编译单元 = `VCard` 的构造体"，构造体按 setup 回调那一套读——`super('<字面量标签>')`
 定标签，之后必须是**从 `this` 出发的直线节点调用**（`className` / `attr` / `style` / `styles` /
 `child` / `on` / `toggleClass`…），值要么字面量、要么可折叠（`themeValue` 这类主题助手）。

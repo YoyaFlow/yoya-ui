@@ -478,3 +478,46 @@ export function resolveTextValue(value) {
 
   return String(value);
 }
+
+/**
+ * 组件快捷方法：createElementFactory 的组件侧对应物。
+ *
+ * 定义函数（VXxx）只描述组件（结构 / 状态 / 命令 / 身份，参数是组件自己的）；
+ * 快捷方法（vXxx）建组件并把调用方参数按 setupFunction / setupString / setupObject 分派实现，
+ * 组件在 api 上覆盖同名方法就用覆盖的，没覆盖就回落视图根（元素）的实现。
+ */
+export function createComponentShortcut(Definition) {
+  return function componentShortcut(first = null, second = null, third = null) {
+    // 复用同类实例（旧 `createComponentFactory` 的语义）：`vCard(已有卡片)` 返回它自己，
+    // 其余参数继续按 setup 分派补上。
+    if (first && typeof first === 'object' && first instanceof Definition) {
+      applySetupValue(first, second);
+      applySetupValue(first, third);
+
+      for (let index = 3; index < arguments.length; index += 1) {
+        applySetupValue(first, arguments[index]);
+      }
+
+      return first;
+    }
+
+    const node = Definition();
+
+    if (!node || typeof node.setup !== 'function') {
+      throw new TypeError(
+        'createComponentShortcut(Definition) requires Definition() to return a ViewNode ' +
+          '(the component definition owns the view; the shortcut only applies setup arguments).'
+      );
+    }
+
+    applySetupValue(node, first);
+    applySetupValue(node, second);
+    applySetupValue(node, third);
+
+    for (let index = 3; index < arguments.length; index += 1) {
+      applySetupValue(node, arguments[index]);
+    }
+
+    return node;
+  };
+}
