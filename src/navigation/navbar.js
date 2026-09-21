@@ -1,5 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
-import { VMenu } from './menu.js';
+import { MenuNode } from './menu.js';
 import {
   applyComponentSetup,
   componentClass,
@@ -29,7 +29,7 @@ export class VNavbar extends HtmlElementNode {
       .className('yoya-vnavbar-brand')
       .child(this._brandDefault, this._brandCustom);
 
-    this._menu = new VMenu()
+    this._menu = new MenuNode()
       .id(menuId)
       .className('yoya-vnavbar-menu')
       .attr('aria-label', '导航菜单');

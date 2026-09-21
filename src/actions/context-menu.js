@@ -1,5 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
-import { VMenu } from '../navigation/menu.js';
+import { MenuNode } from '../navigation/menu.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import {
@@ -23,7 +23,7 @@ export class VContextMenu extends HtmlElementNode {
         event.preventDefault();
         this.openAt(event);
       });
-    this._menu = new VMenu().className('yoya-vcontext-content');
+    this._menu = new MenuNode().className('yoya-vcontext-content');
     this._panel = new HtmlElementNode('div').className('yoya-vcontext-panel').child(this._menu);
 
     this.className(componentClass, 'yoya-vcontext-menu');

@@ -1,4 +1,4 @@
-import { ComponentNode, ViewNode } from './node.js';
+import { ComponentNode, SHADOWABLE_DEFERRED_METHOD_NAMES, ViewNode } from './node.js';
 import { adoptProvides, createProviderFrame, withProviderScope } from './context.js';
 import { COMPONENT_HOOK_NAMES, registerComponentHooks } from './hooks.js';
 
@@ -91,7 +91,10 @@ function attachCommands(node, api) {
       return;
     }
 
-    if (RESERVED_COMMAND_KEYS.has(key) || key.startsWith('_') || key in node) {
+    // 委托到视图根的元素级方法（`attr` / `id` / `name` / `style`…）允许被命令**遮蔽**：
+    // `api.name = () => …` 这类命名是合法用法，命令挂到组件节点上就是同名覆盖。
+    const collides = key in node && !SHADOWABLE_DEFERRED_METHOD_NAMES.has(key);
+    if (RESERVED_COMMAND_KEYS.has(key) || key.startsWith('_') || collides) {
       throw new TypeError(
         `vNode command "${key}" collides with the node API. Rename it ` +
           '(for example "reloadAction" / "onReload"); node members such as child / attr / ' +

@@ -1,5 +1,5 @@
 import { HtmlElementNode } from '../html/index.js';
-import { VMenu } from '../navigation/menu.js';
+import { MenuNode } from '../navigation/menu.js';
 import { VButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
@@ -36,7 +36,7 @@ export class VDropdownMenu extends HtmlElementNode {
         }
       });
     this._trigger.on('keydown', (event) => this._handleTriggerKeydown(event));
-    this._menu = new VMenu().className('yoya-vdropdown-content');
+    this._menu = new MenuNode().className('yoya-vdropdown-content');
     this._panel = new HtmlElementNode('div')
       .id(this._panelId)
       .className('yoya-vdropdown-panel')

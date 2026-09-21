@@ -3511,6 +3511,91 @@ export class ComponentNode extends ViewNode {
 }
 
 /**
+ * 组件节点上的**元素级方法**：委托给视图根（多根取第一个），返回根时映射回组件以保持链式。
+ *
+ * 为什么需要：vNode 组件的成员是 `ComponentNode`，而结构性配置（`attr` / `id` / `className` /
+ * `style`…）历史上写在元素节点上。没有这层委托，迁移后的组件就不能再被"当元素继续配置"
+ * （族内 `VSubMenu` 里 `new VMenuItem().className(…)` 这类写法、以及回调里 `item.id(…)`）。
+ * 命令面（`text()` / `horizontal()`…）仍由 `vNode` 的 `attachCommands` 挂在组件节点上；`child()` /
+ * `children()` 保持组件语义（内容侧），不在这张表里。
+ */
+const DELEGATED_ELEMENT_METHODS = [
+  'attr',
+  'id',
+  'name',
+  'className',
+  'class',
+  'toggleClass',
+  'replaceClassName',
+  'style',
+  'styles',
+  'tagName',
+  'textContent'
+];
+
+/**
+ * 允许被组件命令**遮蔽**的委托方法名：`vNode` 的 api 上写 `api.name = …` 这类命名时，
+ * 命令挂到组件节点上会遮住同名委托（原型方法），而不是报"命令撞节点 API"。
+ * 事件与绑定类（`on` / `off` / `bindWindowEvent`…）不在此列——它们必须保持节点语义。
+ */
+export const SHADOWABLE_DEFERRED_METHOD_NAMES = new Set(DELEGATED_ELEMENT_METHODS);
+
+DELEGATED_ELEMENT_METHODS.forEach((method) => {
+  // 已有同名实现（例如 `textContent`）保持原样：它本来就是组件语义
+  if (method in ComponentNode.prototype) {
+    return;
+  }
+  Object.defineProperty(ComponentNode.prototype, method, {
+    configurable: true,
+    value(...args) {
+      const root = viewRootOf(this);
+      if (!root || typeof root[method] !== 'function') {
+        throw new TypeError(
+          `Component node has no view root to delegate ${method}() to (the component is empty or broken)`
+        );
+      }
+      const result = root[method](...args);
+      return result === root ? this : result;
+    },
+    writable: true
+  });
+});
+
+/**
+ * 组件节点上的**事件与绑定类方法**：同样委托给视图根。
+ *
+ * 这些方法原本只服务元素节点（`ViewNode.on()` 把适配器挂到自己的 `_el`）；组件节点自己是懒解析的
+ * 包装，`_el` 是根的影子，它的 `_events` 不会被任何人绑定——不委托的话 `component.on('click', fn)`
+ * 会**静默失效**（迁移菜单项时踩到：`item.on('click', …)` 挂不上）。
+ */
+const DELEGATED_NODE_METHODS = [
+  'on',
+  'off',
+  'bindWindowEvent',
+  'bindDocumentEvent',
+  'bindAnimationFrame',
+  'bindAnimationFrameLoop',
+  'stopAnimationFrameLoop'
+];
+
+DELEGATED_NODE_METHODS.forEach((method) => {
+  Object.defineProperty(ComponentNode.prototype, method, {
+    configurable: true,
+    value(...args) {
+      const root = viewRootOf(this);
+      if (!root || typeof root[method] !== 'function') {
+        throw new TypeError(
+          `Component node has no view root to delegate ${method}() to (the component is empty or broken)`
+        );
+      }
+      const result = root[method](...args);
+      return result === root ? this : result;
+    },
+    writable: true
+  });
+});
+
+/**
  * 创建文本节点的工厂函数。
  */
 export function vText(content = '') {

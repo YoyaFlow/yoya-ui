@@ -1,13 +1,17 @@
 import { div, HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
+import {
+  applySetupValue,
+  componentNameOf,
+  defineComponentIdentity,
+  viewRootOf
+} from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -17,9 +21,14 @@ import {
 
 import { allocateId } from '../core/id.js';
 
-export class VMenu extends HtmlElementNode {
+/**
+ * 菜单容器的**节点类型**（不导出）：朝向落盘、tab 序维护、子节点加入时的朝向同步都在这里，
+ * 公开组件 `vMenu` 是 vNode 外壳。族内 `VSubMenu` 的内容区也直接 `new` 它。
+ */
+export class MenuNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VMenu';
     this.className(componentClass, 'yoya-vmenu');
     this.orientation('vertical');
     this.on('focusin', (event) => this._handleFocusin(event));
@@ -183,9 +192,15 @@ export class VMenu extends HtmlElementNode {
   }
 }
 
-export class VMenuItem extends HtmlElementNode {
+/**
+ * 菜单项的**节点类型**（不导出）：元素级机制（三个槽位盒、hover、槽位替换、朝向）留在这里，
+ * 公开组件 `vMenuItem` 是 vNode 外壳（身份 + 命令委托给它）。族内 `VSubMenu` 也直接 `new` 它，
+ * 所以 DOM 形状只有这一份真源。
+ */
+export class MenuItemNode extends HtmlElementNode {
   constructor(setup = null) {
     super('button', null);
+    this._identity = 'VMenuItem';
     // 内部状态用 ref 持有（票 01 约定）；active/danger/disabled 是「默认真」写方法，无参不是读
     this._active = ref(false);
     this._danger = ref(false);
@@ -375,9 +390,11 @@ export function vMenuDivider(setup = null) {
 export const VMenuDivider = vMenuDivider;
 defineComponentIdentity(VMenuDivider, 'VMenuDivider');
 
-export class VMenuGroup extends HtmlElementNode {
+/** 菜单分组的节点类型（不导出）；公开组件 `vMenuGroup` 是 vNode 外壳。 */
+class MenuGroupNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VMenuGroup';
     const labelId = allocateId('yoya-vmenu-group-label');
     this._orientation = 'vertical';
     this._labelBox = new HtmlElementNode('div').className('yoya-vmenu-group-label').id(labelId);
@@ -438,15 +455,17 @@ export class VMenuGroup extends HtmlElementNode {
   }
 }
 
-export class VSubMenu extends HtmlElementNode {
+/** 子菜单的节点类型（不导出）；公开组件 `vSubMenu` 是 vNode 外壳。 */
+class SubMenuNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VSubMenu';
     const panelId = allocateId('yoya-vsubmenu-panel');
     this._globalCloseCleanup = null;
     // 内部状态用 ref 持有（票 01 约定）；open/disabled 是「默认真」写方法，无参不是读
     this._open = ref(false);
     this._disabled = ref(false);
-    this._trigger = new VMenuItem()
+    this._trigger = new MenuItemNode()
       .className('yoya-vsubmenu-trigger')
       .attr({
         'aria-controls': panelId,
@@ -460,7 +479,7 @@ export class VSubMenu extends HtmlElementNode {
           this.toggle();
         }
       });
-    this._menu = new VMenu().className('yoya-vsubmenu-content');
+    this._menu = new MenuNode().className('yoya-vsubmenu-content');
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('.yoya-vmenu-item');
       if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
@@ -635,8 +654,10 @@ export class VSubMenu extends HtmlElementNode {
   _closeDescendantSubMenus() {
     const visit = (node) => {
       node.children().forEach((child) => {
-        if (child instanceof VSubMenu) {
-          child.close();
+        // 子级可能是 vNode 组件（成员是 ComponentNode）：用身份判定并在视图根上调用
+        const unit = viewRootOf(child) ?? child;
+        if (unit instanceof SubMenuNode) {
+          unit.close();
         } else if (typeof child.children === 'function') {
           visit(child);
         }
@@ -744,20 +765,25 @@ const MENU_UNIT_ORIENTATION = {
 };
 
 function applyMenuOrientation(child, orientation) {
-  const attrs = MENU_UNIT_ORIENTATION[componentNameOf(child)]?.(orientation);
-  if (attrs) {
-    viewRootOf(child)?.attr(attrs);
+  // 组件成员先展开到视图根（节点类型），朝向的各类型口径都写在节点类型上：
+  // 分组要往下继续传、分隔线要反过来写 aria-orientation、子菜单还要同步它的 trigger
+  const unit = viewRootOf(child) ?? child;
+  if (typeof unit?._menuOrientation === 'function') {
+    unit._menuOrientation(orientation);
     return;
   }
 
-  if (child instanceof VMenuItem || child instanceof VMenuGroup || child instanceof VSubMenu) {
-    child._menuOrientation?.(orientation);
+  const attrs = MENU_UNIT_ORIENTATION[componentNameOf(child)]?.(orientation);
+  if (attrs) {
+    viewRootOf(child)?.attr(attrs);
   }
 }
 
-export class VSidebar extends HtmlElementNode {
+/** 侧栏的节点类型（不导出）；公开组件 `vSidebar` 是 vNode 外壳。 */
+class SidebarNode extends HtmlElementNode {
   constructor(setup = null) {
     super('aside', null);
+    this._identity = 'VSidebar';
     const menuId = allocateId('yoya-vsidebar-menu');
     this._responsiveCleanup = null;
     this._collapsible = true;
@@ -775,7 +801,7 @@ export class VSidebar extends HtmlElementNode {
     this._header = new HtmlElementNode('div')
       .className('yoya-vsidebar-header')
       .child(this._titleBox, this._toggle);
-    this._menu = new VMenu()
+    this._menu = new MenuNode()
       .id(menuId)
       .className('yoya-vsidebar-menu')
       .attr('aria-label', '侧边导航菜单');
@@ -953,32 +979,35 @@ export class VSidebar extends HtmlElementNode {
 function setSidebarContentCollapsed(root, collapsed, sidebar) {
   const contentChangeCallback = sidebar?._menu._sidebarContentChangeCallback;
   const visit = (node, { preserveShortcut = false } = {}) => {
-    if ((node instanceof VMenu || node instanceof VMenuGroup) && contentChangeCallback) {
-      node._sidebarContentChangeCallback = contentChangeCallback;
+    // 子单元可能是 vNode 组件（成员是 ComponentNode）：判定与取值都落到**视图根**（节点类型）上
+    const unit = viewRootOf(node) ?? node;
+
+    if ((unit instanceof MenuNode || unit instanceof MenuGroupNode) && contentChangeCallback) {
+      unit._sidebarContentChangeCallback = contentChangeCallback;
     }
 
-    if (node instanceof VMenuItem) {
-      setSidebarVisuallyHidden(node._labelBox, collapsed);
-      setSidebarVisuallyHidden(node._shortcutBox, collapsed && !preserveShortcut);
+    if (unit instanceof MenuItemNode) {
+      setSidebarVisuallyHidden(unit._labelBox, collapsed);
+      setSidebarVisuallyHidden(unit._shortcutBox, collapsed && !preserveShortcut);
       return;
     }
 
-    if (node instanceof VSubMenu) {
-      bindSidebarSubMenuExpansion(node, sidebar);
+    if (unit instanceof SubMenuNode) {
+      bindSidebarSubMenuExpansion(unit, sidebar);
       if (collapsed) {
-        const activeElement = node._panel._el?.ownerDocument.activeElement;
-        if (activeElement && node._panel._el.contains(activeElement)) {
-          node._trigger._el?.focus();
+        const activeElement = unit._panel._el?.ownerDocument.activeElement;
+        if (activeElement && unit._panel._el.contains(activeElement)) {
+          unit._trigger._el?.focus();
         }
-        node.close();
+        unit.close();
       }
-      visit(node._trigger, { preserveShortcut: true });
-      visit(node._menu);
+      visit(unit._trigger, { preserveShortcut: true });
+      visit(unit._menu);
       return;
     }
 
-    if (node instanceof VMenuGroup) {
-      setSidebarVisuallyHidden(node._labelBox, collapsed);
+    if (unit instanceof MenuGroupNode) {
+      setSidebarVisuallyHidden(unit._labelBox, collapsed);
     }
 
     if (typeof node.children === 'function') {
@@ -1045,22 +1074,169 @@ function setSidebarVisuallyHidden(node, hidden) {
   }
 }
 
+/**
+ * 命令委托：把节点类型上的同名方法挂到 api 上（公开组件因此是 vNode 外壳，节点类型只管元素机制）。
+ * 节点返回自己时映射成 `api`——`vNode` 的 `attachCommands` 随后会把 `api` 再映射回节点，链式不断。
+ */
+function delegateCommands(api, node, names) {
+  names.forEach((name) => {
+    api[name] = (...args) => {
+      const result = node[name](...args);
+      return result === node ? api : result;
+    };
+  });
+}
+
+/** 复用同类组件实例（旧 `createComponentFactory` 的语义）：`vMenu(existingMenu)` 返回它自己。 */
+function reuseComponent(value, name) {
+  return componentNameOf(value) === name ? value : null;
+}
+
+/**
+ * 容器组件上的子工厂调用（`menu.vMenuItem(…)`）：转发给根节点并返回 `api`。
+ * 旧类组件本身就是元素节点，所以这种写法一直可用；vNode 外壳要把它们补回组件的命令面上
+ * （只转发菜单族自己的子工厂，避免把整套 DSL 都复制到每个实例上）。
+ */
+function delegateChildFactories(api, node, names) {
+  names.forEach((name) => {
+    const factory = node[name];
+    if (typeof factory !== 'function' || name in api) {
+      return;
+    }
+    api[name] = (...args) => {
+      factory.apply(node, args);
+      return api;
+    };
+  });
+}
+
+/** 菜单族的子工厂名：容器组件补到命令面上用。 */
+const MENU_CHILD_FACTORIES = [
+  'vMenu',
+  'vMenuItem',
+  'vMenuGroup',
+  'vMenuDivider',
+  'vSubMenu',
+  'vSidebar'
+];
+
+/**
+ * 菜单族的组件外壳：节点类型负责元素机制，组件节点是 vNode（身份 + 命令 + 子工厂）。
+ *
+ * 回调时机：首个参数是函数时**推迟到组件节点建好之后**再调用（其余参数照旧按值分派），
+ * 这样回调拿到的句柄与工厂返回值是**同一个组件节点**（与旧的类组件契约一致），
+ * 并且它能同时用命令（`text()`）、子工厂（`vMenuItem()`）与元素级方法（`id()`，由核心委托到视图根）。
+ */
+function createMenuComponent({ identity, createNode, commands = [], childFactories = [], args }) {
+  const [first = null, second = null, third = null, ...rest] = args;
+  const reused = reuseComponent(first, identity);
+  if (reused) {
+    return reused;
+  }
+
+  const deferredCallback = typeof first === 'function' ? first : null;
+  const node = vNode((api) => {
+    const element = createNode(deferredCallback ? null : first);
+    delegateCommands(api, element, commands);
+    if (childFactories.length > 0) {
+      delegateChildFactories(api, element, childFactories);
+    }
+    return element;
+  });
+
+  if (deferredCallback) {
+    applySetupValue(node, deferredCallback);
+  }
+  applySetupValue(node, second);
+  applySetupValue(node, third);
+  rest.forEach((value) => applySetupValue(node, value));
+  return node;
+}
+
 export function vMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VMenu, first, second, third, arguments);
+  return createMenuComponent({
+    identity: 'VMenu',
+    createNode: (setup) => new MenuNode(setup),
+    commands: ['orientation', 'horizontal', 'vertical'],
+    childFactories: MENU_CHILD_FACTORIES,
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vMenuItem(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuItem, first, second, third, arguments);
+  return createMenuComponent({
+    identity: 'VMenuItem',
+    createNode: (setup) => new MenuItemNode(setup),
+    commands: [
+      'text',
+      'label',
+      'content',
+      'icon',
+      'shortcut',
+      'active',
+      'danger',
+      'disabled',
+      'hoverable'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vMenuGroup(first = null, second = null, third = null) {
-  return createComponentFactory(VMenuGroup, first, second, third, arguments);
+  return createMenuComponent({
+    identity: 'VMenuGroup',
+    createNode: (setup) => new MenuGroupNode(setup),
+    commands: ['label', 'title'],
+    childFactories: MENU_CHILD_FACTORIES,
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
+export const VMenu = vMenu;
+export const VMenuItem = vMenuItem;
+export const VMenuGroup = vMenuGroup;
+export const VSubMenu = vSubMenu;
+export const VSidebar = vSidebar;
+defineComponentIdentity(VMenu, 'VMenu');
+defineComponentIdentity(VMenuItem, 'VMenuItem');
+defineComponentIdentity(VMenuGroup, 'VMenuGroup');
+defineComponentIdentity(VSubMenu, 'VSubMenu');
+defineComponentIdentity(VSidebar, 'VSidebar');
+
 export function vSubMenu(first = null, second = null, third = null) {
-  return createComponentFactory(VSubMenu, first, second, third, arguments);
+  return createMenuComponent({
+    identity: 'VSubMenu',
+    createNode: (setup) => new SubMenuNode(setup),
+    commands: [
+      'trigger',
+      'label',
+      'text',
+      'menuContent',
+      'inline',
+      'disabled',
+      'open',
+      'close',
+      'toggle'
+    ],
+    childFactories: MENU_CHILD_FACTORIES,
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vSidebar(first = null, second = null, third = null) {
-  return createComponentFactory(VSidebar, first, second, third, arguments);
+  return createMenuComponent({
+    identity: 'VSidebar',
+    createNode: (setup) => new SidebarNode(setup),
+    commands: [
+      'title',
+      'ariaLabel',
+      'menuContent',
+      'collapsed',
+      'collapsible',
+      'toggle',
+      'responsive'
+    ],
+    childFactories: MENU_CHILD_FACTORIES,
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
