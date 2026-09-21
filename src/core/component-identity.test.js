@@ -2,7 +2,8 @@
  * 组件身份（`vn`）：三种组件形态共用同一条判定。
  *
  * 形态 A 的成员是元素节点、形态 B / vNode 的成员是 `child()` 包出来的 ComponentNode，
- * 判定统一落到**视图根上的 `vn` 属性**：`x instanceof VCard` 与形态无关。
+ * 判定统一落到**视图根上的身份标记**——票 07 之后它是**对象事实**（节点字段），不落 DOM：
+ * `x instanceof VCard` 与形态无关，但 `outerHTML` / SSR 输出里没有 `vn`。
  */
 import { describe, expect, it } from 'vitest';
 import { div, span } from '../html/index.js';
@@ -96,17 +97,37 @@ describe('component identity (vn)', () => {
     expect(hasComponentIdentity(legacy, 'LegacyBadge')).toBe(false);
   });
 
-  it('reads identity from the DOM too (cloned / adopted nodes, raw elements)', () => {
-    const host = document.createElement('div');
-    host.innerHTML = '<div vn="VCard"><span>片段</span></div>';
-    const element = host.firstElementChild;
+  it('身份是对象事实：不写 DOM，也不从 DOM 回读', () => {
+    const marked = div({ vn: 'VCard', class: 'yoya-vcard' }, 'x');
 
-    expect(componentNameOf(element)).toBe('VCard');
+    // 对象上认得到
+    expect(componentNameOf(marked)).toBe('VCard');
+    expect(hasComponentIdentity(marked, 'VCard')).toBe(true);
 
-    // 节点自己没写过属性、DOM 上有 → 回读命中
-    const adopted = div();
-    adopted._el = element;
-    expect(componentNameOf(adopted)).toBe('VCard');
+    // DOM 上没有这个属性：SSR 输出与真实元素都不带
+    const element = marked.renderDom();
+    expect(element.getAttribute('vn')).toBeNull();
+    expect(marked.toHTML()).not.toContain('vn=');
+
+    // 反过来：只手写 DOM 属性不再是身份
+    const raw = document.createElement('div');
+    raw.setAttribute('vn', 'VCard');
+    expect(componentNameOf(raw)).toBeNull();
+  });
+
+  it('adopt / hydrate 之后仍然认（身份跟着客户端那棵树的节点走）', async () => {
+    const { renderToString, hydrate } = await import('./ssr.js');
+    const page = () => div((root) => root.child(Chart()));
+
+    const { html } = renderToString(page);
+    expect(html).not.toContain('vn=');
+
+    document.body.innerHTML = `<div id="app">${html}</div>`;
+    const tree = hydrate(page, '#app');
+    expect(tree.children()[0] instanceof Chart).toBe(true);
+
+    tree.destroy();
+    document.body.innerHTML = '';
   });
 
   it('matches every name listed in a multi-value identity', () => {

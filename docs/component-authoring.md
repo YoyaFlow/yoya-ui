@@ -513,8 +513,11 @@ page.children().filter((child) => child instanceof Chart);
 Rules:
 
 - **One check**: an element member is read directly, a component member is unwrapped to its view root
-  (any root of a multi-root view counts). It reads the `vn` attribute — snapshot first, then the real
-  DOM — so cloned fragments and `adopt` / `hydrate` nodes answer the same;
+  (any root of a multi-root view counts). **Identity is an object fact** (ticket 07): `vn` is only a
+  **marker** in the view root's options, stored on the node's identity field and **never written to the
+  DOM** — it is absent from `outerHTML` / SSR output, invisible to CSS selectors, and the check follows
+  the client tree's objects, so cloned fragments and `adopt` / `hydrate` nodes answer the same without
+  reading the DOM back;
 - **Several names**: a wrapper sharing the root writes `vn: 'VCard UserCard'`; both identities match
   (whitespace separated);
 - **Class names are not identity**: `yoya-*` stays a styling hook — restyling never changes identity,
@@ -523,8 +526,9 @@ Rules:
   with `new` keep working, so nothing breaks during the migration;
 - **A bare component object is not a member**: the object `RateCard()` returns is not in the tree yet;
   the check targets `children()` members;
-- **Cost**: every instance carries ` vn="VCard"` in the DOM / SSR output (11 bytes and up), and once
-  identity is in the DOM it is a public contract — **renaming a component changes identity semantics**.
+- **Cost**: zero DOM bytes (identity never reaches the DOM or SSR output); renaming a component still
+  changes identity semantics (`instanceof` matches the name), and a hand-written `attr('vn', …)` is just
+  a plain attribute now, no longer an identity.
 
 ## 7.4 Migration notes (behaviour changes in this batch)
 

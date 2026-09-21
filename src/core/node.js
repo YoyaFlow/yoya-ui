@@ -3768,26 +3768,23 @@ export function elementHasClass(node, name) {
 }
 
 /**
- * 组件身份属性：组件**视图根**元素上写 `vn: 'VCard'`（值 = 组件导出名，空格分隔可多值）。
+ * 组件身份标记：组件**视图根**的 options 上写 `vn: 'VCard'`（值 = 组件导出名，空格分隔可多值）。
  *
- * 身份跟着视图根走，而不是跟着某个运行时标记，于是三种组件形态是同一条判定：
- * 形态 A 的成员本身就是元素节点（读它自己），形态 B / vNode 的成员是 `child()` 包出来的
- * `ComponentNode`（展开到视图根再读）。值走属性（快照优先、再回读 DOM），所以编译片段克隆、
- * adopt / hydrate 进来的节点一样认；也支持直接传真实 DOM 元素（devtools / 调试）。
+ * 身份是**对象事实**（票 07），不落 DOM：标记只写进节点的身份字段，SSR 输出、`outerHTML`、
+ * 编译片段里都没有它，页面样式与选择器也拿不到它。判定因此跟着视图根**对象**走：
+ * 形态 A 读元素节点自己，形态 B / vNode 的成员是 `child()` 包出来的 `ComponentNode`
+ * （展开到视图根再读）；adopt / hydrate / 克隆片段都走同一条——客户端那棵树是 JS 建的，
+ * 身份跟着对象走，不需要回读 DOM。
  */
 export const COMPONENT_IDENTITY_ATTR = 'vn';
 
-/** 树成员（元素节点 / 组件节点 / 真实元素）的组件身份；没有就是 null，多值以空格分隔。 */
+/** 树成员（元素节点 / 组件节点）的组件身份；没有就是 null，多值以空格分隔。 */
 export function componentNameOf(value) {
   if (!value || typeof value !== 'object') {
     return null;
   }
 
-  // 快照优先（还没 mount），再回读真实 DOM（adopt / hydrate 进来的节点、传进来的真实元素）
-  const own =
-    value._attrs?.[COMPONENT_IDENTITY_ATTR] ??
-    value._el?.getAttribute?.(COMPONENT_IDENTITY_ATTR) ??
-    (value.nodeType === 1 ? value.getAttribute(COMPONENT_IDENTITY_ATTR) : undefined);
+  const own = value._identity;
 
   if (typeof own === 'string' && own !== '') {
     return own;
@@ -3863,6 +3860,12 @@ export class ElementNode extends ViewNode {
    */
   _setupObject(config) {
     Object.entries(config).forEach(([key, value]) => {
+      // 组件身份标记：只记成**对象事实**，不写 DOM、不进属性快照（票 07）。
+      if (key === COMPONENT_IDENTITY_ATTR) {
+        this._identity = value === null || value === undefined ? null : String(value);
+        return;
+      }
+
       const optionKind = optionKindOf(key);
 
       if (optionKind === 'class') {

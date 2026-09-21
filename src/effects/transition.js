@@ -132,8 +132,8 @@ export function vTransition(first = null, second = null, third = null) {
     const options = isPlainObject(first) && !(first instanceof ViewNode) ? first : null;
     const extras = [second, third, ...rest];
 
-    return div((root) => {
-      root.attr('vn', 'VTransition');
+    // 身份标记走 options（对象事实，不落 DOM；票 07）
+    return div({ vn: 'VTransition' }, (root) => {
       root.className(componentClass, 'yoya-vtransition');
       root.attr('data-motion', () => motion.value);
       root.attr('data-state', () => (shown.value ? 'enter' : 'leave'));
