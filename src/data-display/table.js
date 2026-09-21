@@ -1,473 +1,79 @@
-import { registerChildFactories, viewRootOf, ViewNode } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
+import { componentNameOf } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
+import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
 import {
-  applyComponentSetup,
   createComponentShortcut,
-  delegateChildFactories,
-  delegateCommands,
   isPlainObject,
   normalizeChildren,
+  removeChild,
   replaceChildren,
   themeBorder,
   themeValue
 } from '../components/shared.js';
 
 /**
- * VTable 的节点类型（不导出）；公开组件是 vNode 外壳。
+ * 表格族（票 15 §4：**组件定义 = 结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
- * 身份走 `vn` 属性（票 15）：根 `VTable`，内部块各写自己的身份（`VTableScroll` / `VTableGrid`
- * / `VTableCaption` / `VTheadRow` / `VTableEmptyRow` / `VTableEmpty`），
- * 与导出组件同角色的元素共用同一个身份（自动 thead = `VThead`、数据行 = `VTr`、单元格 = `VTd`）。
+ * - 结构用 DSL 声明：`div[VTable] > div[VTableScroll] > table[VTableGrid] > caption + thead + tbody`；
+ * - 声明式 section / 行由命令投递（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`），
+ *   匿名槽位 `table.child(...)` 由根元素实例上的 `child()` 分流，保持"section 进表格、行进表体"的旧语义；
+ * - 数据驱动渲染（列头行 / 数据行 / 空态行）在命令内部重建，DOM 与迁移前逐字节一致。
  */
-class TableNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', { vn: 'VTable' });
-    this._columns = [];
-    this._rows = [];
-    this._emptyContent = '暂无数据';
-    this._hasDeclarativeSections = false;
-    this._captionBox = new HtmlElementNode('caption', { vn: 'VTableCaption' });
-    this._head = new HtmlElementNode('thead', { vn: 'VThead' });
-    this._body = new HtmlElementNode('tbody', { vn: 'VTbody' });
-    this._table = new HtmlElementNode('table', { vn: 'VTableGrid' });
-    this._scroll = new HtmlElementNode('div', { vn: 'VTableScroll' });
 
-    this.styles({
-      display: 'block',
-      minWidth: '0'
-    });
-    this._scroll.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '8px',
-      overflowX: 'auto'
-    });
-    this._table.styles({
-      borderCollapse: 'collapse',
-      color: themeValue('color-text', '#172033'),
-      width: '100%'
-    });
-    this._captionBox.styles({
-      captionSide: 'top',
-      color: themeValue('color-text-strong', '#111827'),
-      fontWeight: '700',
-      padding: '0 0 12px',
-      textAlign: 'left'
-    });
-    this._captionBox.style('display', 'none');
-    this._scroll.child(this._table);
-    this._table.child(this._captionBox, this._head, this._body);
-    this.child(this._scroll);
-    this._setupTable(setup);
+/** 单元格预设样式（列头 / 正文两套，与迁移前 applyTableCellStyles 同口径）。 */
+function applyCellStyles(node, column = {}, section) {
+  const isHead = section === 'head';
+
+  node.styles({
+    borderBottom: themeBorder('color-border-faint', '#e2e8f0'),
+    fontWeight: isHead ? '700' : '400',
+    padding: 'var(--yoya-space-3, 12px) var(--yoya-space-3, 12px)',
+    textAlign: column.align || 'left',
+    verticalAlign: 'top',
+    whiteSpace: column.wrap === false ? 'nowrap' : 'normal'
+  });
+
+  if (isHead) {
+    node.style('background', themeValue('color-surface-hover', '#f8fafc'));
+    node.style('color', themeValue('color-text-secondary', '#334155'));
+  } else {
+    node.style('color', themeValue('color-text', '#172033'));
   }
 
-  caption(content) {
-    if (content === undefined) {
-      return this._captionBox.textContent();
-    }
-
-    const hasContent = content !== null && content !== undefined && content !== '';
-    this._captionBox.style('display', hasContent ? null : 'none');
-    replaceChildren(this._captionBox, hasContent ? normalizeChildren(content) : []);
-    return this;
+  if (column.className !== undefined) {
+    node.className(column.className);
   }
 
-  columns(value) {
-    if (value === undefined) {
-      return this._columns.slice();
-    }
-
-    this._columns = normalizeTableColumns(value);
-    this._renderTable();
-    return this;
+  if (column.style !== undefined) {
+    node.styles(column.style);
   }
 
-  rows(value) {
-    if (value === undefined) {
-      return this._rows.slice();
-    }
-
-    this._rows = Array.isArray(value) ? value.slice() : [];
-    this._renderTable();
-    return this;
+  if (column.width !== undefined) {
+    node.style('width', typeof column.width === 'number' ? `${column.width}px` : column.width);
   }
 
-  empty(value) {
-    if (value === undefined) {
-      return this._emptyContent;
-    }
-
-    this._emptyContent = value;
-    this._renderTable();
-    return this;
-  }
-
-  emptyText(value) {
-    if (value === undefined) {
-      return this._emptyContent;
-    }
-
-    return this.empty(value);
-  }
-
-  data(value) {
-    if (value === undefined) {
-      return {
-        caption: this.caption(),
-        columns: this.columns(),
-        emptyText: this.emptyText(),
-        rows: this.rows()
-      };
-    }
-
-    if (Array.isArray(value)) {
-      this.rows(value);
-      return this;
-    }
-
-    if (isPlainObject(value)) {
-      const { caption, columns, empty, emptyText, rows } = value;
-
-      if (caption !== undefined) {
-        this.caption(caption);
-      }
-
-      if (columns !== undefined) {
-        this.columns(columns);
-      }
-
-      if (rows !== undefined) {
-        this.rows(rows);
-      }
-
-      if (emptyText !== undefined) {
-        this.emptyText(emptyText);
-      } else if (empty !== undefined) {
-        this.emptyText(empty);
-      }
-    }
-
-    return this;
-  }
-
-  child(...children) {
-    children.flat(Infinity).forEach((child) => {
-      if (
-        viewRootOf(child) instanceof TheadNode ||
-        viewRootOf(child) instanceof TbodyNode ||
-        viewRootOf(child) instanceof TfootNode
-      ) {
-        this._addDeclarativeSection(child);
-        return;
-      }
-
-      if (viewRootOf(child) instanceof TrNode) {
-        this.vTr(child);
-        return;
-      }
-
-      super.child(child);
-    });
-
-    return this;
-  }
-
-  vThead(setup) {
-    return this._addDeclarativeSection(
-      viewRootOf(setup) instanceof TheadNode ? setup : vThead(setup)
+  if (column.minWidth !== undefined) {
+    node.style(
+      'minWidth',
+      typeof column.minWidth === 'number' ? `${column.minWidth}px` : column.minWidth
     );
   }
 
-  vTbody(setup) {
-    return this._addDeclarativeSection(
-      viewRootOf(setup) instanceof TbodyNode ? setup : vTbody(setup)
+  if (column.maxWidth !== undefined) {
+    node.style(
+      'maxWidth',
+      typeof column.maxWidth === 'number' ? `${column.maxWidth}px` : column.maxWidth
     );
   }
+}
 
-  vTfoot(setup) {
-    return this._addDeclarativeSection(
-      viewRootOf(setup) instanceof TfootNode ? setup : vTfoot(setup)
-    );
+function appendCellContent(node, content) {
+  if (content !== null && content !== undefined) {
+    node.child(content);
   }
 
-  vTr(setup) {
-    const row = viewRootOf(setup) instanceof TrNode ? setup : vTr(setup);
-
-    if (this._hasDeclarativeSections) {
-      const body = this._table.children().find((child) => viewRootOf(child) instanceof TbodyNode);
-
-      if (body) {
-        body.child(row);
-      } else {
-        this.vTbody((section) => section.child(row));
-      }
-
-      return this;
-    }
-
-    this._body.child(row);
-    return this;
-  }
-
-  _addDeclarativeSection(section) {
-    if (!this._hasDeclarativeSections) {
-      this._hasDeclarativeSections = true;
-      this._detachAutoSections();
-    }
-
-    this._table.child(section);
-    return this;
-  }
-
-  _detachAutoSections() {
-    this._table._children = this._table._children.filter(
-      (child) => child !== this._head && child !== this._body
-    );
-    this._table._childrenDirty = true;
-
-    if (this._table._el) {
-      this._head._el?.remove();
-      this._body._el?.remove();
-    }
-  }
-
-  _resetTableShell() {
-    const customSections = this._table._children.filter(
-      (child) =>
-        viewRootOf(child) instanceof TheadNode ||
-        viewRootOf(child) instanceof TbodyNode ||
-        viewRootOf(child) instanceof TfootNode
-    );
-
-    customSections.forEach((section) => section.destroy());
-    this._table._children = [this._captionBox, this._head, this._body];
-    this._table._childrenDirty = true;
-
-    if (this._table._el) {
-      this._table._el.replaceChildren(
-        this._captionBox.renderDom(),
-        this._head.renderDom(),
-        this._body.renderDom()
-      );
-    }
-
-    this._hasDeclarativeSections = false;
-  }
-
-  _renderTable() {
-    this._resetTableShell();
-
-    const resolvedColumns =
-      this._columns.length > 0 ? this._columns : inferTableColumns(this._rows);
-    const bodyColumns =
-      resolvedColumns.length > 0 ? resolvedColumns : [{ key: '__value', label: '' }];
-
-    replaceChildren(this._head, []);
-    replaceChildren(this._body, []);
-
-    if (resolvedColumns.length > 0) {
-      const headRow = new HtmlElementNode('tr', { vn: 'VTheadRow' });
-
-      resolvedColumns.forEach((column, columnIndex) => {
-        const headerCell = new HtmlElementNode('th', { vn: 'VTh' });
-        const columnKey = column.key ?? `column-${columnIndex}`;
-
-        headerCell.attr('scope', 'col');
-        headerCell.attr('data-key', columnKey);
-        applyTableCellStyles(headerCell, column, 'head');
-        appendTableCellContent(headerCell, column.label ?? column.title ?? column.key ?? '');
-        headRow.child(headerCell);
-      });
-
-      this._head.child(headRow);
-    }
-
-    if (this._rows.length > 0) {
-      this._rows.forEach((row, rowIndex) => {
-        const bodyRow = new HtmlElementNode('tr', { vn: 'VTr' });
-        bodyRow.attr('data-row-index', String(rowIndex));
-
-        bodyColumns.forEach((column, columnIndex) => {
-          const cell = new HtmlElementNode('td', { vn: 'VTd' });
-          const columnKey = column.key ?? `column-${columnIndex}`;
-
-          cell.attr('data-key', columnKey);
-          applyTableCellStyles(cell, column, 'body');
-          appendTableCellContent(cell, resolveTableCellContent(column, row, rowIndex));
-          bodyRow.child(cell);
-        });
-
-        this._body.child(bodyRow);
-      });
-    } else {
-      const emptyRow = new HtmlElementNode('tr', { vn: 'VTableEmptyRow' });
-      const emptyCell = new HtmlElementNode('td', { vn: 'VTableEmpty' });
-
-      emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
-      emptyCell.styles({
-        color: themeValue('color-text-muted', '#64748b'),
-        padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
-        textAlign: 'center'
-      });
-      appendTableCellContent(emptyCell, this._emptyContent);
-      emptyRow.child(emptyCell);
-      this._body.child(emptyRow);
-    }
-  }
-
-  _setupTable(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    // 只有三个 setup 入口（票 15 §4）：对象 = props、字符串 / 数字 = 标题；
-    // 节点 / 数组不在这里——它们是**固定分派**（子节点 / 子节点列表），走 `child()`。
-    if (isPlainObject(setup)) {
-      this.setup(setup);
-      return;
-    }
-
-    this.caption(setup);
-  }
+  return node;
 }
-
-/** 定义：结构（TableNode 视图根 + 身份）+ 命令；调用方参数由快捷方法按标准分派。 */
-export function VTable() {
-  return vNode((api) => {
-    const element = new TableNode();
-    delegateCommands(api, element, [
-      'caption',
-      'columns',
-      'rows',
-      'empty',
-      'emptyText',
-      'data',
-      'vThead',
-      'vTbody',
-      'vTfoot',
-      'vTr'
-    ]);
-    api.setupObject = (config) => {
-      element._setupTable(config);
-      return api;
-    };
-    api.setupString = (value) => {
-      element._setupTable(value);
-      return api;
-    };
-    return element;
-  });
-}
-
-export const vTable = createComponentShortcut(VTable);
-
-/** VThead 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class TheadNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('thead', { vn: 'VThead' });
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function VThead() {
-  return vNode((api) => {
-    const element = new TheadNode();
-    delegateChildFactories(api, element, ['vTr']);
-    return element;
-  });
-}
-
-export const vThead = createComponentShortcut(VThead);
-
-/** VTbody 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class TbodyNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('tbody', { vn: 'VTbody' });
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function VTbody() {
-  return vNode((api) => {
-    const element = new TbodyNode();
-    delegateChildFactories(api, element, ['vTr']);
-    return element;
-  });
-}
-
-export const vTbody = createComponentShortcut(VTbody);
-
-/** VTfoot 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class TfootNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('tfoot', { vn: 'VTfoot' });
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function VTfoot() {
-  return vNode((api) => {
-    const element = new TfootNode();
-    delegateChildFactories(api, element, ['vTr']);
-    return element;
-  });
-}
-
-export const vTfoot = createComponentShortcut(VTfoot);
-
-/** VTr 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class TrNode extends HtmlElementNode {
-  constructor() {
-    super('tr', { vn: 'VTr' });
-  }
-}
-
-export function VTr() {
-  return vNode((api) => {
-    const element = new TrNode();
-    delegateChildFactories(api, element, ['vTh', 'vTd']);
-    return element;
-  });
-}
-
-export const vTr = createComponentShortcut(VTr);
-
-/** VTh 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class ThNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('th', { vn: 'VTh' });
-    this.attr('scope', 'col');
-    applyTableCellStyles(this, {}, 'head');
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function VTh() {
-  return vNode(() => new ThNode());
-}
-
-export const vTh = createComponentShortcut(VTh);
-
-/** VTd 的节点类型（不导出）；公开组件是 vNode 外壳。 */
-class TdNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('td', { vn: 'VTd' });
-    applyTableCellStyles(this, {}, 'body');
-    applyComponentSetup(this, setup);
-  }
-}
-
-export function VTd() {
-  return vNode(() => new TdNode());
-}
-
-export const vTd = createComponentShortcut(VTd);
-
-registerChildFactories(TheadNode, { vTr });
-registerChildFactories(TbodyNode, { vTr });
-registerChildFactories(TfootNode, { vTr });
-registerChildFactories(TrNode, { vTh, vTd });
 
 function normalizeTableColumns(columns) {
   if (!Array.isArray(columns)) {
@@ -514,7 +120,7 @@ function inferTableColumns(rows) {
   }
 
   const sampleRow = rows.find(
-    (row) => row && typeof row === 'object' && !Array.isArray(row) && !(row instanceof ViewNode)
+    (row) => row && typeof row === 'object' && !Array.isArray(row) && !row.tagName
   );
 
   if (!sampleRow) {
@@ -548,56 +154,375 @@ function resolveTableCellContent(column, row, rowIndex) {
   return row;
 }
 
-function appendTableCellContent(node, content) {
-  if (content !== null && content !== undefined) {
-    node.child(content);
-  }
-
-  return node;
+/** 表格段（thead / tbody / tfoot）：结构 + 身份，行由 `vTr` 投递。 */
+function createSection(tagName, identity) {
+  return function Section() {
+    return vNode((api) => {
+      const element = tagName({ vn: identity });
+      api.vTr = (setup) => {
+        element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+        return api;
+      };
+      return element;
+    });
+  };
 }
 
-function applyTableCellStyles(node, column, section) {
-  const isHead = section === 'head';
+export const VThead = createSection(thead, 'VThead');
+export const VTbody = createSection(tbody, 'VTbody');
+export const VTfoot = createSection(tfoot, 'VTfoot');
 
-  node.styles({
-    borderBottom: themeBorder('color-border-faint', '#e2e8f0'),
-    fontWeight: isHead ? '700' : '400',
-    padding: 'var(--yoya-space-3, 12px) var(--yoya-space-3, 12px)',
-    textAlign: column.align || 'left',
-    verticalAlign: 'top',
-    whiteSpace: column.wrap === false ? 'nowrap' : 'normal'
+export const vThead = createComponentShortcut(VThead);
+export const vTbody = createComponentShortcut(VTbody);
+export const vTfoot = createComponentShortcut(VTfoot);
+
+/** 行：结构 + 身份，单元格由 `vTh` / `vTd` 投递。 */
+export function VTr() {
+  return vNode((api) => {
+    const element = tr({ vn: 'VTr' });
+    api.vTh = (setup) => {
+      element.child(componentNameOf(setup) === 'VTh' ? setup : vTh(setup));
+      return api;
+    };
+    api.vTd = (setup) => {
+      element.child(componentNameOf(setup) === 'VTd' ? setup : vTd(setup));
+      return api;
+    };
+    return element;
   });
-
-  if (isHead) {
-    node.style('background', themeValue('color-surface-hover', '#f8fafc'));
-    node.style('color', themeValue('color-text-secondary', '#334155'));
-  } else {
-    node.style('color', themeValue('color-text', '#172033'));
-  }
-
-  if (column.className !== undefined) {
-    node.className(column.className);
-  }
-
-  if (column.style !== undefined) {
-    node.styles(column.style);
-  }
-
-  if (column.width !== undefined) {
-    node.style('width', typeof column.width === 'number' ? `${column.width}px` : column.width);
-  }
-
-  if (column.minWidth !== undefined) {
-    node.style(
-      'minWidth',
-      typeof column.minWidth === 'number' ? `${column.minWidth}px` : column.minWidth
-    );
-  }
-
-  if (column.maxWidth !== undefined) {
-    node.style(
-      'maxWidth',
-      typeof column.maxWidth === 'number' ? `${column.maxWidth}px` : column.maxWidth
-    );
-  }
 }
+
+export const vTr = createComponentShortcut(VTr);
+
+/** 列头单元格（形态 A 薄工厂）。 */
+export function VTh() {
+  const element = th({ vn: 'VTh' });
+  element.attr('scope', 'col');
+  applyCellStyles(element, {}, 'head');
+  return element;
+}
+
+export const vTh = createComponentShortcut(VTh);
+
+/** 正文单元格（形态 A 薄工厂）。 */
+export function VTd() {
+  const element = td({ vn: 'VTd' });
+  applyCellStyles(element, {}, 'body');
+  return element;
+}
+
+export const vTd = createComponentShortcut(VTd);
+
+/** 表格：外壳结构 + 数据驱动渲染 + 声明式段 / 行投递。 */
+export function VTable() {
+  return vNode((api) => {
+    const state = { columns: [], declarative: false, emptyText: '暂无数据', rows: [] };
+
+    const captionBox = caption({
+      style: {
+        captionSide: 'top',
+        color: themeValue('color-text-strong', '#111827'),
+        fontWeight: '700',
+        padding: '0 0 12px',
+        textAlign: 'left'
+      },
+      vn: 'VTableCaption'
+    }).style('display', 'none');
+    const headBox = thead({ vn: 'VThead' });
+    const bodyBox = tbody({ vn: 'VTbody' });
+    const grid = table(
+      {
+        style: {
+          borderCollapse: 'collapse',
+          color: themeValue('color-text', '#172033'),
+          width: '100%'
+        },
+        vn: 'VTableGrid'
+      },
+      (view) => view.child(captionBox, headBox, bodyBox)
+    );
+    const scroll = div(
+      {
+        style: {
+          background: themeValue('color-surface', '#ffffff'),
+          border: themeBorder('color-border', '#d8dee8'),
+          borderRadius: '8px',
+          overflowX: 'auto'
+        },
+        vn: 'VTableScroll'
+      },
+      (view) => view.child(grid)
+    );
+    const root = div({ style: { display: 'block', minWidth: '0' }, vn: 'VTable' }, (view) =>
+      view.child(scroll)
+    );
+    const baseChild = root.child.bind(root);
+
+    /** 声明式段出现时摘掉自动 thead / tbody（旧 _detachAutoSections 语义）。 */
+    const detachAutoSections = () => {
+      removeChild(grid, headBox);
+      removeChild(grid, bodyBox);
+
+      if (grid._el) {
+        headBox._el?.remove();
+        bodyBox._el?.remove();
+      }
+    };
+
+    const addSection = (section) => {
+      if (!state.declarative) {
+        state.declarative = true;
+        detachAutoSections();
+      }
+
+      grid.child(section);
+      return api;
+    };
+
+    const findSection = (identity) =>
+      grid.children().find((child) => componentNameOf(child) === identity);
+
+    const addRow = (row) => {
+      if (state.declarative) {
+        const body = findSection('VTbody');
+
+        if (body) {
+          body.child(row);
+        } else {
+          addSection(vTbody((section) => section.child(row)));
+        }
+
+        return api;
+      }
+
+      bodyBox.child(row);
+      return api;
+    };
+
+    /** 数据驱动渲染前的复位：销毁声明式段，恢复 caption + thead + tbody 三件套。 */
+    const resetShell = () => {
+      grid.children().forEach((child) => {
+        if (child === captionBox || child === headBox || child === bodyBox) {
+          return;
+        }
+
+        const identity = componentNameOf(child);
+
+        if (identity === 'VThead' || identity === 'VTbody' || identity === 'VTfoot') {
+          child.destroy();
+        }
+      });
+
+      grid._children = [captionBox, headBox, bodyBox];
+      grid._childrenDirty = true;
+
+      if (grid._el) {
+        grid._el.replaceChildren(captionBox.renderDom(), headBox.renderDom(), bodyBox.renderDom());
+      }
+
+      state.declarative = false;
+    };
+
+    const renderTable = () => {
+      resetShell();
+
+      const resolvedColumns =
+        state.columns.length > 0 ? state.columns : inferTableColumns(state.rows);
+      const bodyColumns =
+        resolvedColumns.length > 0 ? resolvedColumns : [{ key: '__value', label: '' }];
+
+      replaceChildren(headBox, []);
+      replaceChildren(bodyBox, []);
+
+      if (resolvedColumns.length > 0) {
+        const headRow = tr({ vn: 'VTheadRow' });
+
+        resolvedColumns.forEach((column, columnIndex) => {
+          const headerCell = th({ vn: 'VTh' });
+          const columnKey = column.key ?? `column-${columnIndex}`;
+
+          headerCell.attr('scope', 'col');
+          headerCell.attr('data-key', columnKey);
+          applyCellStyles(headerCell, column, 'head');
+          appendCellContent(headerCell, column.label ?? column.title ?? column.key ?? '');
+          headRow.child(headerCell);
+        });
+
+        headBox.child(headRow);
+      }
+
+      if (state.rows.length > 0) {
+        state.rows.forEach((row, rowIndex) => {
+          const bodyRow = tr({ vn: 'VTr' });
+          bodyRow.attr('data-row-index', String(rowIndex));
+
+          bodyColumns.forEach((column, columnIndex) => {
+            const cell = td({ vn: 'VTd' });
+            const columnKey = column.key ?? `column-${columnIndex}`;
+
+            cell.attr('data-key', columnKey);
+            applyCellStyles(cell, column, 'body');
+            appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
+            bodyRow.child(cell);
+          });
+
+          bodyBox.child(bodyRow);
+        });
+      } else {
+        const emptyRow = tr({ vn: 'VTableEmptyRow' });
+        const emptyCell = td({ vn: 'VTableEmpty' });
+
+        emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
+        emptyCell.styles({
+          color: themeValue('color-text-muted', '#64748b'),
+          padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
+          textAlign: 'center'
+        });
+        appendCellContent(emptyCell, state.emptyText);
+        emptyRow.child(emptyCell);
+        bodyBox.child(emptyRow);
+      }
+    };
+
+    /**
+     * 匿名槽位分流（旧 TableNode.child 语义）：段进 `VTableGrid`、行进表体、其余进组件根。
+     * 结构自身的构建走 `baseChild`，不受分流影响。
+     */
+    root.child = (...children) => {
+      children.flat(Infinity).forEach((child) => {
+        const identity = componentNameOf(child);
+
+        if (identity === 'VThead' || identity === 'VTbody' || identity === 'VTfoot') {
+          addSection(child);
+          return;
+        }
+
+        if (identity === 'VTr') {
+          addRow(child);
+          return;
+        }
+
+        baseChild(child);
+      });
+
+      return root;
+    };
+
+    api.caption = (content) => {
+      if (content === undefined) {
+        return captionBox.textContent();
+      }
+
+      const hasContent = content !== null && content !== undefined && content !== '';
+      captionBox.style('display', hasContent ? null : 'none');
+      replaceChildren(captionBox, hasContent ? normalizeChildren(content) : []);
+      return api;
+    };
+
+    api.columns = (value) => {
+      if (value === undefined) {
+        return state.columns.slice();
+      }
+
+      state.columns = normalizeTableColumns(value);
+      renderTable();
+      return api;
+    };
+
+    api.rows = (value) => {
+      if (value === undefined) {
+        return state.rows.slice();
+      }
+
+      state.rows = Array.isArray(value) ? value.slice() : [];
+      renderTable();
+      return api;
+    };
+
+    api.empty = (value) => {
+      if (value === undefined) {
+        return state.emptyText;
+      }
+
+      state.emptyText = value;
+      renderTable();
+      return api;
+    };
+
+    api.emptyText = (value) => (value === undefined ? state.emptyText : api.empty(value));
+
+    api.data = (value) => {
+      if (value === undefined) {
+        return {
+          caption: api.caption(),
+          columns: api.columns(),
+          emptyText: api.emptyText(),
+          rows: api.rows()
+        };
+      }
+
+      if (Array.isArray(value)) {
+        return api.rows(value);
+      }
+
+      if (isPlainObject(value)) {
+        const { caption: nextCaption, columns, empty, emptyText, rows } = value;
+
+        if (nextCaption !== undefined) {
+          api.caption(nextCaption);
+        }
+
+        if (columns !== undefined) {
+          api.columns(columns);
+        }
+
+        if (rows !== undefined) {
+          api.rows(rows);
+        }
+
+        if (emptyText !== undefined) {
+          api.emptyText(emptyText);
+        } else if (empty !== undefined) {
+          api.emptyText(empty);
+        }
+      }
+
+      return api;
+    };
+
+    api.vThead = (setup) => addSection(componentNameOf(setup) === 'VThead' ? setup : vThead(setup));
+    api.vTbody = (setup) => addSection(componentNameOf(setup) === 'VTbody' ? setup : vTbody(setup));
+    api.vTfoot = (setup) => addSection(componentNameOf(setup) === 'VTfoot' ? setup : vTfoot(setup));
+    api.vTr = (setup) => addRow(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+
+    /**
+     * props：键在组件上有同名命令就调命令（`columns` / `rows` / `caption` / `emptyText` / `data`…），
+     * 其余键按元素 options 写（`attrs` / `style` / `class` / 属性 / 事件）——与元素侧
+     * `_setupObject` 的"有同名方法就调方法"口径一致。
+     */
+    api.setupObject = (config) => {
+      const elementConfig = {};
+
+      Object.entries(config).forEach(([key, value]) => {
+        if (typeof api[key] === 'function') {
+          api[key](value);
+          return;
+        }
+
+        elementConfig[key] = value;
+      });
+
+      if (Object.keys(elementConfig).length > 0) {
+        root.setup(elementConfig);
+      }
+
+      return api;
+    };
+
+    api.setupString = (value) => api.caption(value);
+
+    return root;
+  });
+}
+
+export const vTable = createComponentShortcut(VTable);
