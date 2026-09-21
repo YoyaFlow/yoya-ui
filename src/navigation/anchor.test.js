@@ -51,7 +51,7 @@ describe('vAnchor', () => {
           sub.vAnchorItem({ href: '#base-events', title: '事件' });
         });
       });
-      root.vAnchorItem(['自定义', '#custom']);
+      root.vAnchorItem({ href: '#custom', title: '自定义' });
     });
     const element = anchor.renderDom();
     const visibleChildren = [...element.querySelectorAll(CHILDREN)].filter(
@@ -61,6 +61,7 @@ describe('vAnchor', () => {
     expect(element.querySelectorAll(ITEM)).toHaveLength(4);
     expect(visibleChildren).toHaveLength(1);
     expect(element.querySelector(`${CHILDREN} ${LINK}`).textContent).toBe('API');
+    expect(element.querySelector(`${LINK}[href="#custom"]`).textContent).toBe('自定义');
 
     anchor.destroy();
   });

@@ -89,8 +89,8 @@ probe:    {"tag":"aside"}
 residue:  (空)
 
 ### vAnchor / 三条锚点
-dom:      <nav aria-label=页面锚点 data-item-count=2 data-offset=64 vn=VAnchor><ul vn=VAnchorList><li vn=VAnchorItem><a href=#intro vn=VAnchorLink>#text:介绍<ul style=display: none; vn=VAnchorChildren><li vn=VAnchorItem><a href=#usage vn=VAnchorLink>#text:用法<ul style=display: none; vn=VAnchorChildren>
-toHTML:   <nav aria-label="页面锚点" data-item-count="2" data-offset="64" vn="VAnchor"><ul vn="VAnchorList"><li vn="VAnchorItem"><a href="#intro" vn="VAnchorLink">介绍</a><ul style="display:none" vn="VAnchorChildren"></ul></li><li vn="VAnchorItem"><a href="#usage" vn="VAnchorLink">用法</a><ul style="display:none" vn="VAnchorChildren"></ul></li></ul></nav>
+dom:      <nav aria-label=页面锚点 data-item-count=2 data-offset=64 vn=VAnchor><ul vn=VAnchorList vn_slot=><li vn=VAnchorItem><a href=#intro vn=VAnchorLink>#text:介绍<ul style=display: none; vn=VAnchorChildren><li vn=VAnchorItem><a href=#usage vn=VAnchorLink>#text:用法<ul style=display: none; vn=VAnchorChildren>
+toHTML:   <nav aria-label="页面锚点" data-item-count="2" data-offset="64" vn="VAnchor"><ul vn="VAnchorList" vn_slot=""><li vn="VAnchorItem"><a href="#intro" vn="VAnchorLink">介绍</a><ul style="display:none" vn="VAnchorChildren"></ul></li><li vn="VAnchorItem"><a href="#usage" vn="VAnchorLink">用法</a><ul style="display:none" vn="VAnchorChildren"></ul></li></ul></nav>
 probe:    {"offset":64,"active":null,"count":2}
 residue:  (空)
 

@@ -1,436 +1,150 @@
-import { HtmlElementNode } from '../html/index.js';
-import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
 import { componentNameOf, viewRootOf } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { vNode } from '../core/v-node.js';
+import { a, li, nav, ul } from '../html/index.js';
 import {
-  isPlainObject,
+  createComponentShortcut,
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
   setupContentSlot
 } from '../components/shared.js';
 
-/** 锚点导航的节点类型（不导出）；公开组件 `vAnchor` 是 vNode 外壳。 */
-class AnchorNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('nav', { vn: 'VAnchor' });
-    this._activeHref = null;
-    this._offset = 80;
-    this._target = null;
-    this._trackingBound = false;
-    this._list = new HtmlElementNode('ul', { vn: 'VAnchorList' });
+/**
+ * 锚点导航（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
+ *
+ * - 结构：`nav[VAnchor] > ul[VAnchorList] > li[VAnchorItem] > a[VAnchorLink] + ul[VAnchorChildren]`；
+ * - **匿名占位就是列表**（`vn_slot: ''`）：`anchor.child(item)` 与命令投递的内容都落进那张 `<ul>`，
+ *   子项进列表的语义与旧节点类型的 `child()` 分流一致（§11.17：分流改成槽位，语义不变）；
+ * - 全局只绑 `window` / `document` 的滚动（`whenMount` 里按落地收口绑，`destroy()` 自动卸），
+ *   点击走元素自己的 `on('click')` 委托；
+ * - 结构里的块（列表 / 链接 / 子列表）**按身份现取**（`findInView`），命令不存节点句柄。
+ */
 
-    this.attr({
-      'aria-label': '页面锚点',
-      'data-offset': '80'
-    });
-    this.on('click', (event) => this._handleAnchorClick(event));
-    super.child(this._list);
-    this._setupAnchor(setup);
-    this._syncItems();
-  }
+/** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
+const ANCHOR_ITEM = Symbol('yoya.anchorItem');
 
-  ariaLabel(content) {
-    const label = resolveTextValue(content) || '页面锚点';
-    this.attr('aria-label', label);
-    return this;
-  }
+const SCROLL_OPTIONS = { capture: true, passive: true };
+const DEFAULT_LABEL = '页面锚点';
+const DEFAULT_OFFSET = 80;
 
-  offset(value) {
-    if (value === undefined) {
-      return this._offset;
-    }
-
-    this._offset = Math.max(0, Number(resolveTextValue(value)) || 0);
-    this.attr('data-offset', String(this._offset));
-    return this;
-  }
-
-  target(value) {
-    if (value === undefined) {
-      return this._target;
-    }
-
-    this._target = value || null;
-    return this;
-  }
-
-  items(value) {
-    if (value === undefined) {
-      return this._list.children();
-    }
-
-    replaceChildren(this._list, []);
-
-    if (Array.isArray(value)) {
-      value.forEach((item) => {
-        this._list.child(normalizeAnchorItem(item));
-      });
-    }
-
-    this._syncItems();
-    return this;
-  }
-
-  child(...children) {
-    this._list.child(...children);
-    this._syncItems();
-    return this;
-  }
-
-  active(value) {
-    if (value === undefined) {
-      return this._activeHref;
-    }
-
-    this._activeHref = value || null;
-    this._syncActiveState();
-    return this;
-  }
-
-  activeHref(value) {
-    return this.active(value);
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    this._bindScrollTracking();
-    return element;
-  }
-
-  destroy() {
-    this._trackingBound = false;
-    return super.destroy();
-  }
-
-  _syncItems() {
-    // 子项可能是 vNode 组件（成员是 ComponentNode）：判定落到视图根（节点类型）
-    const items = this._list
-      .children()
-      .filter((child) => viewRootOf(child) instanceof AnchorItemNode);
-
-    this.attr('data-item-count', String(items.length));
-    this._syncActiveState();
-    return this;
-  }
-
-  _syncActiveState() {
-    const activeHref = this._activeHref;
-
-    this.attr('data-active-href', activeHref || null);
-    const visit = (children) => {
-      children.forEach((child) => {
-        const unit = viewRootOf(child) ?? child;
-        if (unit instanceof AnchorItemNode) {
-          unit.active(unit.href() === activeHref);
-          visit(unit._childrenBox.children());
-        }
-      });
-    };
-    visit(this._list.children());
-    return this;
-  }
-
-  _handleAnchorClick(event) {
-    const link = event.target.closest?.('[vn~="VAnchorLink"]');
-    if (!link || !this._list.renderDom().contains(link)) {
-      return;
-    }
-
-    const href = link.getAttribute('href');
-    if (!href || !href.startsWith('#')) {
-      return;
-    }
-
-    event.preventDefault();
-    this._scrollToTarget(href);
-  }
-
-  _scrollToTarget(href) {
-    const targetElement = this._resolveTargetElement(href);
-
-    if (targetElement) {
-      this._scrollElementIntoView(targetElement);
-    }
-
-    if (typeof history !== 'undefined' && typeof history.replaceState === 'function') {
-      history.replaceState(null, '', href);
-    }
-
-    this.active(href);
-  }
-
-  _scrollElementIntoView(targetElement) {
-    const container = this._resolveScrollContainer();
-    const top = this._targetTop(targetElement);
-
-    if (container === window || container === null) {
-      if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-        window.scrollTo({ behavior: 'smooth', top });
-      }
-      return;
-    }
-
-    if (typeof container.scrollTo === 'function') {
-      container.scrollTo({ behavior: 'smooth', top });
-    } else {
-      container.scrollTop = top;
-    }
-  }
-
-  _resolveScrollContainer() {
-    if (!this._target) {
-      return typeof window === 'undefined' ? null : window;
-    }
-
-    return resolveTargetElement(this._target) || (typeof window === 'undefined' ? null : window);
-  }
-
-  _resolveTargetElement(href) {
-    const id = String(href).replace(/^#/, '');
-    if (!id) {
-      return null;
-    }
-
-    const scope = this._target ? resolveTargetElement(this._target) : document;
-    if (!scope) {
-      return null;
-    }
-
-    if (typeof scope.getElementById === 'function') {
-      return scope.getElementById(id);
-    }
-
-    return scope.querySelector(`#${cssEscape(id)}`);
-  }
-
-  _targetTop(targetElement) {
-    const container = this._resolveScrollContainer();
-    const offset = this._offset || 0;
-
-    if (!container || container === window) {
-      const scrollTop =
-        typeof window !== 'undefined'
-          ? window.scrollY || document.documentElement?.scrollTop || 0
-          : 0;
-      return scrollTop + targetElement.getBoundingClientRect().top - offset;
-    }
-
-    const containerRect = container.getBoundingClientRect();
-    return (
-      container.scrollTop + targetElement.getBoundingClientRect().top - containerRect.top - offset
-    );
-  }
-
-  _syncActiveFromScroll() {
-    const container = this._resolveScrollContainer();
-    const containerRect =
-      container && container !== window && typeof container.getBoundingClientRect === 'function'
-        ? container.getBoundingClientRect()
-        : null;
-    const threshold = this._offset || 0;
-    const items = [];
-    const collect = (children) => {
-      children.forEach((child) => {
-        const unit = viewRootOf(child) ?? child;
-        if (unit instanceof AnchorItemNode) {
-          items.push(unit);
-          collect(unit._childrenBox.children());
-        }
-      });
-    };
-    collect(this._list.children());
-
-    let activeHref = null;
-    let foundTarget = false;
-    items.forEach((item) => {
-      const href = item.href();
-      if (!href) {
-        return;
-      }
-
-      const targetElement = this._resolveTargetElement(href);
-      if (!targetElement) {
-        return;
-      }
-
-      foundTarget = true;
-      const rect = targetElement.getBoundingClientRect();
-      const top = containerRect ? rect.top - containerRect.top : rect.top;
-      if (top - threshold <= 0) {
-        activeHref = href;
-      }
-    });
-
-    if (foundTarget && activeHref !== this._activeHref) {
-      this.active(activeHref);
-    }
-  }
-
-  _bindScrollTracking() {
-    if (this._trackingBound) {
-      return;
-    }
-
-    this._trackingBound = true;
-    const handler = () => this._syncActiveFromScroll();
-    const options = { capture: true, passive: true };
-
-    const unbindWindow = bindWindowEvent('scroll', handler, options);
-    const unbindDocument = bindDocumentEvent('scroll', handler, options);
-    this._cleanup.push(() => {
-      unbindWindow();
-      unbindDocument();
-    });
-    this._syncActiveFromScroll();
-  }
-
-  _setupAnchor(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (Array.isArray(setup)) {
-      this.items(setup);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const { activeHref, ariaLabel, children, items, offset, target, ...elementConfig } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (ariaLabel !== undefined) {
-        this.ariaLabel(ariaLabel);
-      }
-
-      if (offset !== undefined) {
-        this.offset(offset);
-      }
-
-      if (target !== undefined) {
-        this.target(target);
-      }
-
-      if (items !== undefined) {
-        this.items(items);
-      } else if (children !== undefined) {
-        this.items(children);
-      }
-
-      if (activeHref !== undefined) {
-        this.active(activeHref);
-      }
-
-      return;
-    }
-
-    this.items([setup]);
-  }
+/** 列表（形态 A）：身份 + 匿名占位——匿名内容（子项）落进这张 `<ul>`。 */
+function AnchorList() {
+  return ul({ vn: 'VAnchorList', vn_slot: '' });
 }
 
-/** 锚点项的节点类型（不导出）；公开组件 `vAnchorItem` 是 vNode 外壳。 */
-class AnchorItemNode extends HtmlElementNode {
-  constructor(setup = null, href = undefined) {
-    super('li', { vn: 'VAnchorItem' });
-    this._href = null;
-    this._title = '';
-    this._active = false;
-    this._linkBox = new HtmlElementNode('a', { vn: 'VAnchorLink' });
-    this._childrenBox = new HtmlElementNode('ul', { vn: 'VAnchorChildren' });
+/** 链接（形态 A）。 */
+function AnchorLink() {
+  return a({ vn: 'VAnchorLink' });
+}
 
-    this.child(this._linkBox, this._childrenBox);
-    this._setupAnchorItem(setup);
+/** 子列表（形态 A）：没有子项时隐藏，显隐由项自己的命令收口。 */
+function AnchorChildren() {
+  return ul({ vn: 'VAnchorChildren' }).style('display', 'none');
+}
 
-    if (href !== undefined) {
-      this.href(href);
+/**
+ * 结构里按身份现取：组件的命令在 setup 之后才跑，那时视图已经建好（起手节点是视图根）。
+ * 组件节点展开到视图根再往下走；找不到返回 null。
+ */
+function findInView(node, name) {
+  const root = viewRootOf(node) ?? node;
+  const children = typeof root?.children === 'function' ? root.children() : [];
+
+  for (const child of children) {
+    const unit = viewRootOf(child) ?? child;
+
+    if (componentNameOf(unit) === name) {
+      return unit;
     }
 
-    this._syncAnchorItem();
-  }
+    const nested = findInView(unit, name);
 
-  title(content) {
-    if (content === undefined) {
-      return this._title;
+    if (nested) {
+      return nested;
     }
-
-    this._title = content;
-    replaceChildren(this._linkBox, normalizeChildren(content ?? ''));
-    return this;
   }
 
-  text(content) {
-    return this.title(content);
-  }
+  return null;
+}
 
-  label(content) {
-    return this.title(content);
-  }
+/**
+ * 锚点项：结构（`li > a + ul`）+ 命令（标题 / 地址 / 子项 / 当前态）。
+ * 字符串 = 标题；对象 = props；子项数组走 `nested`。
+ */
+export function VAnchorItem() {
+  return vNode((api, self) => {
+    const state = { active: false, href: null, title: '' };
 
-  href(value) {
-    if (value === undefined) {
-      return this._href;
-    }
+    const itemOf = () => viewRootOf(self.node());
+    const linkOf = () => findInView(itemOf(), 'VAnchorLink');
+    const childrenOf = () => findInView(itemOf(), 'VAnchorChildren');
 
-    this._href = value === null || value === undefined ? null : String(resolveTextValue(value));
-    this._syncAnchorItem();
-    return this;
-  }
+    /** 地址 / 子列表显隐 / 有子项标记：改一处收口一次。 */
+    const syncItem = () => {
+      const children = childrenOf();
+      const hasChildren = Boolean(children) && children.children().length > 0;
 
-  nested(setup) {
-    if (setup === undefined) {
-      return this._childrenBox.children();
-    }
+      linkOf()?.attr('href', state.href || null);
+      children?.style('display', hasChildren ? null : 'none');
+      itemOf().attr('data-has-children', hasChildren ? 'true' : null);
+      return api;
+    };
 
-    if (Array.isArray(setup)) {
-      replaceChildren(this._childrenBox, []);
-      setup.forEach((item) => {
-        this._childrenBox.child(normalizeAnchorItem(item));
-      });
-    } else {
-      setupContentSlot(this._childrenBox, setup);
-    }
+    api.title = (content) => {
+      if (content === undefined) {
+        return state.title;
+      }
 
-    this._syncAnchorItem();
-    return this;
-  }
+      state.title = content;
+      const link = linkOf();
 
-  subItems(setup) {
-    return this.nested(setup);
-  }
+      if (link) {
+        replaceChildren(link, normalizeChildren(content ?? ''));
+      }
 
-  active(value = true) {
-    this._active = Boolean(value);
-    this.attr('data-active', this._active ? 'true' : null);
-    this.attr('aria-current', this._active ? 'true' : null);
-    this._syncAnchorItem();
-    return this;
-  }
+      return api;
+    };
 
-  _setupAnchorItem(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.text = (content) => (content === undefined ? state.title : api.title(content));
+    api.label = api.text;
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+    api.href = (value) => {
+      if (value === undefined) {
+        return state.href;
+      }
 
-    if (Array.isArray(setup) && setup.length >= 2) {
-      this.title(setup[0]);
-      this.href(setup[1]);
-      return;
-    }
+      state.href = value === null || value === undefined ? null : String(resolveTextValue(value));
+      return syncItem();
+    };
 
-    if (isPlainObject(setup)) {
+    api.nested = (setup) => {
+      const children = childrenOf();
+
+      if (setup === undefined) {
+        return children ? children.children() : [];
+      }
+
+      if (Array.isArray(setup)) {
+        replaceChildren(children, []);
+        setup.forEach((item) => children.child(normalizeAnchorItem(item)));
+      } else {
+        setupContentSlot(children, setup);
+      }
+
+      return syncItem();
+    };
+
+    api.subItems = (setup) => (setup === undefined ? api.nested() : api.nested(setup));
+
+    api.active = (value = true) => {
+      state.active = Boolean(value);
+      itemOf().attr('data-active', state.active ? 'true' : null);
+      itemOf().attr('aria-current', state.active ? 'true' : null);
+      return syncItem();
+    };
+
+    /** props：`title / text / label / content / href / nested / items / children / active` + 其余元素配置。 */
+    api.setupObject = (config) => {
       const {
         active,
         children,
@@ -442,100 +156,378 @@ class AnchorItemNode extends HtmlElementNode {
         text,
         title,
         ...elementConfig
-      } = setup;
+      } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        itemOf().setup(elementConfig);
       }
 
       if (title !== undefined) {
-        this.title(title);
+        api.title(title);
       } else if (label !== undefined) {
-        this.label(label);
+        api.label(label);
       } else if (text !== undefined) {
-        this.text(text);
+        api.text(text);
       } else if (content !== undefined) {
-        this.text(content);
+        api.text(content);
       }
 
       if (href !== undefined) {
-        this.href(href);
+        api.href(href);
       }
 
       const nestedSetup = nested ?? items ?? children;
+
       if (nestedSetup !== undefined) {
-        this.nested(nestedSetup);
+        api.nested(nestedSetup);
       }
 
       if (active !== undefined) {
-        this.active(active);
+        api.active(active);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.title(setup);
-  }
+    /** 字符串 / 数字 = 标题。 */
+    api.setupString = (value) => api.title(value);
 
-  _syncAnchorItem() {
-    const hasChildren = this._childrenBox.children().length > 0;
-
-    this._linkBox.attr('href', this._href || null);
-    this._childrenBox.style('display', hasChildren ? null : 'none');
-    this.attr('data-has-children', hasChildren ? 'true' : null);
-    return this;
-  }
-}
-
-export function vAnchor(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VAnchor',
-    createNode: (setup) => new AnchorNode(setup),
-    commands: ['ariaLabel', 'offset', 'target', 'items', 'active', 'activeHref'],
-    childFactories: ['vAnchor', 'vAnchorItem'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    return li({ vn: 'VAnchorItem' }, (element) => {
+      element.child(AnchorLink(), AnchorChildren());
+    });
   });
 }
 
-export const VAnchor = vAnchor;
+const anchorItemShortcut = createComponentShortcut(VAnchorItem);
 
-export function vAnchorItem(setup = null, href = undefined) {
-  if (componentNameOf(setup) === 'VAnchorItem' && href === undefined) {
-    return setup;
-  }
+/** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+export function vAnchorItem(...args) {
+  const node = anchorItemShortcut(...args);
+  // 标在节点上而不是查组件名：本模块自己认自己的子项（含嵌套层）
+  node[ANCHOR_ITEM] = true;
+  return node;
+}
 
-  return createComponentShell({
-    identity: 'VAnchorItem',
-    createNode: () => new AnchorItemNode(setup, href),
-    commands: ['title', 'text', 'label', 'href', 'nested', 'subItems', 'active'],
-    args: []
+/**
+ * 锚点导航：`nav > ul[VAnchorList]`；全局滚动跟当前项、点击滚动到目标并高亮。
+ * 对象 = props，字符串 / 数字 = 一条锚点项，函数 = 构建回调（默认落组件节点构建帧）。
+ */
+export function VAnchor() {
+  return vNode((api, self) => {
+    const state = { activeHref: null, offset: DEFAULT_OFFSET, target: null };
+
+    const rootOf = () => viewRootOf(self.node());
+    const listOf = () => findInView(self.node(), 'VAnchorList');
+
+    /** 本模块的项按列表顺序摊平（含嵌套层）；其它内容（用户自造节点）不参与对账。 */
+    const collectItems = (nodes, out = []) => {
+      nodes.forEach((node) => {
+        const item = node?.[ANCHOR_ITEM] ? node : null;
+
+        if (!item) {
+          return;
+        }
+
+        out.push(item);
+        collectItems(item.nested(), out);
+      });
+
+      return out;
+    };
+
+    const itemsOf = () => {
+      const list = listOf();
+      return list ? collectItems(list.children()) : [];
+    };
+
+    /** 当前项标记：`data-active-href` 落在导航上，项自己的激活态由项收口。 */
+    const syncActive = () => {
+      const activeHref = state.activeHref;
+
+      rootOf().attr('data-active-href', activeHref || null);
+      itemsOf().forEach((item) => item.active(item.href() === activeHref));
+      return api;
+    };
+
+    /** 子项数 + 当前项标记：内容一变就收口一次。 */
+    const syncItems = () => {
+      rootOf().attr('data-item-count', String(itemsOf().length));
+      return syncActive();
+    };
+
+    const resolveTargetElement = (target) => {
+      if (typeof Element !== 'undefined' && target instanceof Element) {
+        return target;
+      }
+
+      if (typeof target === 'string' && typeof document !== 'undefined') {
+        return document.querySelector(target);
+      }
+
+      return target || null;
+    };
+
+    const resolveScrollContainer = () => {
+      if (!state.target) {
+        return typeof window === 'undefined' ? null : window;
+      }
+
+      return resolveTargetElement(state.target) || (typeof window === 'undefined' ? null : window);
+    };
+
+    const resolveAnchorTarget = (href) => {
+      const id = String(href).replace(/^#/, '');
+
+      if (!id || typeof document === 'undefined') {
+        return null;
+      }
+
+      const scope = state.target ? resolveTargetElement(state.target) : document;
+
+      if (!scope) {
+        return null;
+      }
+
+      if (typeof scope.getElementById === 'function') {
+        return scope.getElementById(id);
+      }
+
+      return scope.querySelector(`#${cssEscape(id)}`);
+    };
+
+    const targetTop = (targetElement) => {
+      const container = resolveScrollContainer();
+      const offset = state.offset || 0;
+
+      if (!container || container === window) {
+        const scrollTop =
+          typeof window !== 'undefined'
+            ? window.scrollY || document.documentElement?.scrollTop || 0
+            : 0;
+        return scrollTop + targetElement.getBoundingClientRect().top - offset;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      return (
+        container.scrollTop + targetElement.getBoundingClientRect().top - containerRect.top - offset
+      );
+    };
+
+    const scrollElementIntoView = (targetElement) => {
+      const container = resolveScrollContainer();
+      const top = targetTop(targetElement);
+
+      if (container === window || container === null) {
+        if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+          window.scrollTo({ behavior: 'smooth', top });
+        }
+        return;
+      }
+
+      if (typeof container.scrollTo === 'function') {
+        container.scrollTo({ behavior: 'smooth', top });
+      } else {
+        container.scrollTop = top;
+      }
+    };
+
+    const scrollToTarget = (href) => {
+      const targetElement = resolveAnchorTarget(href);
+
+      if (targetElement) {
+        scrollElementIntoView(targetElement);
+      }
+
+      if (typeof history !== 'undefined' && typeof history.replaceState === 'function') {
+        history.replaceState(null, '', href);
+      }
+
+      api.active(href);
+    };
+
+    /** 滚动位置 → 当前项：目标过了阈值（偏移量）就算到它。 */
+    const syncActiveFromScroll = () => {
+      const container = resolveScrollContainer();
+      const containerRect =
+        container && container !== window && typeof container.getBoundingClientRect === 'function'
+          ? container.getBoundingClientRect()
+          : null;
+      const threshold = state.offset || 0;
+      let activeHref = null;
+      let foundTarget = false;
+
+      itemsOf().forEach((item) => {
+        const href = item.href();
+
+        if (!href) {
+          return;
+        }
+
+        const targetElement = resolveAnchorTarget(href);
+
+        if (!targetElement) {
+          return;
+        }
+
+        foundTarget = true;
+        const rect = targetElement.getBoundingClientRect();
+        const top = containerRect ? rect.top - containerRect.top : rect.top;
+
+        if (top - threshold <= 0) {
+          activeHref = href;
+        }
+      });
+
+      if (foundTarget && activeHref !== state.activeHref) {
+        api.active(activeHref);
+      }
+    };
+
+    const handleClick = (event) => {
+      const link = event.target.closest?.('[vn~="VAnchorLink"]');
+      const list = listOf()?.renderDom();
+
+      if (!link || !list?.contains(link)) {
+        return;
+      }
+
+      const href = link.getAttribute('href');
+
+      if (!href || !href.startsWith('#')) {
+        return;
+      }
+
+      event.preventDefault();
+      scrollToTarget(href);
+    };
+
+    api.ariaLabel = (content) => {
+      rootOf().attr('aria-label', resolveTextValue(content) || DEFAULT_LABEL);
+      return api;
+    };
+
+    api.offset = (value) => {
+      if (value === undefined) {
+        return state.offset;
+      }
+
+      state.offset = Math.max(0, Number(resolveTextValue(value)) || 0);
+      rootOf().attr('data-offset', String(state.offset));
+      return api;
+    };
+
+    api.target = (value) => {
+      if (value === undefined) {
+        return state.target;
+      }
+
+      state.target = value || null;
+      return api;
+    };
+
+    api.items = (value) => {
+      const list = listOf();
+
+      if (!list) {
+        return value === undefined ? [] : api;
+      }
+
+      if (value === undefined) {
+        return list.children();
+      }
+
+      replaceChildren(list, []);
+      value.forEach((item) => list.child(normalizeAnchorItem(item)));
+      return syncItems();
+    };
+
+    /** 段命令：项进列表（与 `table.vTr(…)` 同一口径——自己的结构自己收）。 */
+    api.vAnchorItem = (setup) => {
+      listOf()?.child(normalizeAnchorItem(setup));
+      return syncItems();
+    };
+
+    api.active = (value) => {
+      if (value === undefined) {
+        return state.activeHref;
+      }
+
+      state.activeHref = value || null;
+      return syncActive();
+    };
+
+    api.activeHref = (value) => api.active(value);
+
+    /** props：`ariaLabel / offset / target / items / children / activeHref / active` + 其余元素配置。 */
+    api.setupObject = (config) => {
+      const { activeHref, ariaLabel, children, items, offset, target, ...elementConfig } = config;
+
+      if (Object.keys(elementConfig).length > 0) {
+        rootOf().setup(elementConfig);
+      }
+
+      if (ariaLabel !== undefined) {
+        api.ariaLabel(ariaLabel);
+      }
+
+      if (offset !== undefined) {
+        api.offset(offset);
+      }
+
+      if (target !== undefined) {
+        api.target(target);
+      }
+
+      const itemSetup = items ?? children;
+
+      if (itemSetup !== undefined) {
+        api.items(Array.isArray(itemSetup) ? itemSetup : [itemSetup]);
+      }
+
+      if (activeHref !== undefined) {
+        api.active(activeHref);
+      }
+
+      return api;
+    };
+
+    /** 字符串 / 数字 = 一条锚点项（标题作项名，没有地址）。 */
+    api.setupString = (value) => {
+      api.items([value]);
+      return api;
+    };
+
+    /** 落地才绑全局滚动（`whenMount` 按落地收口触发，绑定后再跟一次当前位置）；destroy 自动卸。 */
+    api.whenMount = () => {
+      const root = rootOf();
+
+      if (!root) {
+        return;
+      }
+
+      root.bindWindowEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
+      root.bindDocumentEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
+      syncActiveFromScroll();
+    };
+
+    return nav(
+      { 'aria-label': DEFAULT_LABEL, 'data-offset': String(DEFAULT_OFFSET), vn: 'VAnchor' },
+      (element) => {
+        element.on('click', handleClick);
+        element.child(AnchorList());
+      }
+    );
   });
 }
 
-export const VAnchorItem = vAnchorItem;
+export const vAnchor = createComponentShortcut(VAnchor);
 
 function normalizeAnchorItem(item) {
-  if (viewRootOf(item) instanceof AnchorItemNode) {
+  if (item?.[ANCHOR_ITEM]) {
     return item;
   }
 
-  if (Array.isArray(item) && item.length >= 2) {
-    return vAnchorItem(item[0], item[1]);
-  }
-
   return vAnchorItem(item);
-}
-
-function resolveTargetElement(target) {
-  if (typeof Element !== 'undefined' && target instanceof Element) {
-    return target;
-  }
-
-  if (typeof target === 'string' && typeof document !== 'undefined') {
-    return document.querySelector(target);
-  }
-
-  return target || null;
 }
 
 function cssEscape(value) {
