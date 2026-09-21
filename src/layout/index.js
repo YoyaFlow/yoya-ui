@@ -1335,3 +1335,5 @@ function isPlainObject(value) {
 }
 
 export * from './theme-shell.js';
+
+export { VSlot, vSlot, vSlotOf } from './v-slot.js';

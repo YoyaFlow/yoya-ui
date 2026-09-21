@@ -1,0 +1,57 @@
+import { describe, expect, it } from 'vitest';
+import { div, vCard, vSlot, vSlotOf, vText } from '../index.js';
+import { componentNameOf } from '../core/node.js';
+
+describe('vSlot（零布局占位）', () => {
+  it('renders a contents-display placeholder with its own identity', () => {
+    const element = vSlot({ name: 'header' }).renderDom();
+
+    expect(element.tagName).toBe('SPAN');
+    expect(element.style.display).toBe('contents');
+    expect(element.getAttribute('data-slot')).toBe('header');
+    expect(element.classList.contains('yoya-vslot')).toBe(true);
+    expect(componentNameOf(vSlot())).toBe('VSlot');
+  });
+
+  it('accepts a bare name and keeps normal element options working', () => {
+    const named = vSlot('footer');
+    expect(named.attr('data-slot')).toBe('footer');
+
+    const styled = vSlot({ attrs: { 'data-test': 'x' }, name: 'body', style: { gap: '4px' } });
+    expect(styled.attr('data-slot')).toBe('body');
+    expect(styled.attr('data-test')).toBe('x');
+    expect(styled.renderDom().style.gap).toBe('4px');
+  });
+
+  it('does not join the public slot mechanism (no slot attribute)', () => {
+    const element = vSlot({ name: 'header' }).renderDom();
+
+    expect(element.getAttribute('slot')).toBeNull();
+    // 内容作为子节点插入：占位自身不生成盒子，part 照常渲染
+    const host = div((root) => {
+      root.child(vSlot({ name: 'header' }));
+    });
+    const hostElement = host.renderDom();
+
+    vSlotOf(host, 'header').child(vText('标题'));
+    expect(hostElement.textContent).toBe('标题');
+  });
+
+  it('works as a parent shortcut on containers', () => {
+    const page = div((root) => {
+      root.vSlot({ name: 'body' });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('[data-slot="body"]')).not.toBeNull();
+  });
+
+  it('keeps card parts out of the public slot namespace', () => {
+    const card = vCard((node) => {
+      node.vCardHeader('由 part 投递');
+    });
+    const element = card.renderDom();
+
+    expect(element.querySelector('.yoya-vcard-header').textContent).toBe('由 part 投递');
+  });
+});
