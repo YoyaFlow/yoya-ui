@@ -15,6 +15,11 @@
  */
 import { ComponentNode, applySetupValue, hasComponentIdentity } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
+import { delegateChildFactories, delegateCommands } from './shared.js';
+
+// 命令 / 子工厂委托与 §4 形态（VXxx 定义 + createComponentShortcut）共用一份实现，
+// 这里重新导出，供未迁完的组件继续按外壳写（收口时随外壳一起删）。
+export { delegateChildFactories, delegateCommands };
 
 /**
  * 复用同类组件实例（旧 `createComponentFactory` 的语义）：`vMenu(existingMenu)` 返回它自己。
@@ -24,33 +29,6 @@ import { vNode } from '../core/v-node.js';
  */
 export function reuseComponent(value, name) {
   return hasComponentIdentity(value, name) ? value : null;
-}
-
-/** 命令委托：把节点上的同名方法挂到 api 上；节点返回自己时映射成 `api`。 */
-export function delegateCommands(api, node, names) {
-  names.forEach((name) => {
-    api[name] = (...args) => {
-      const result = node[name](...args);
-      return result === node ? api : result;
-    };
-  });
-}
-
-/**
- * 容器组件上的子工厂调用（`menu.vMenuItem(…)`）：转发给根节点并返回 `api`。
- * 只转发该族自己的子工厂，避免把整套 DSL 复制到每个实例上。
- */
-export function delegateChildFactories(api, node, names) {
-  names.forEach((name) => {
-    const factory = node[name];
-    if (typeof factory !== 'function' || name in api) {
-      return;
-    }
-    api[name] = (...args) => {
-      factory.apply(node, args);
-      return api;
-    };
-  });
 }
 
 /** 节点类型上有、组件节点上还没有的公开方法名（内部 `_xxx` 与节点既有 API 之外）。 */

@@ -49,6 +49,37 @@ export function elementHasIdentity(element, name) {
   return typeof value === 'string' && value.split(/\s+/).includes(name);
 }
 
+/**
+ * 命令委托：把**节点类型（视图根）**上的同名方法挂到组件 `api` 上（返回节点时映射回 `api`，
+ * 链式两端都通）。vNode 定义里写 `delegateCommands(api, element, ['open', 'close'])`，
+ * 命令面就固定成这份清单；`component-shell.test.js` 按"节点类型上的公开方法"逐条兜底。
+ */
+export function delegateCommands(api, node, names) {
+  names.forEach((name) => {
+    api[name] = (...args) => {
+      const result = node[name](...args);
+      return result === node ? api : result;
+    };
+  });
+}
+
+/**
+ * 容器组件上的子工厂调用（`menu.vMenuItem(…)`）：转发到视图根，只转发该族自己的子工厂，
+ * 不把整套 DSL 复制到每个实例上。
+ */
+export function delegateChildFactories(api, node, names) {
+  names.forEach((name) => {
+    const factory = node[name];
+    if (typeof factory !== 'function' || name in api) {
+      return;
+    }
+    api[name] = (...args) => {
+      factory.apply(node, args);
+      return api;
+    };
+  });
+}
+
 export function themeValue(token, fallback) {
   return `var(--yoya-${token}, ${fallback})`;
 }

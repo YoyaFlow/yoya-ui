@@ -2837,7 +2837,7 @@ export function SampleCard() {
 
     expect(frame).not.toBeNull();
     expect(frame.getAttribute('src')).toContain('anchor.html');
-    expect(page.querySelector('.yoya-vanchor')).toBeNull();
+    expect(page.querySelector('[vn~="VAnchor"]')).toBeNull();
     expect(window.location.hash).toContain('/components/navigation/anchor');
   });
 

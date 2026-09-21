@@ -3,10 +3,12 @@ import { ButtonNode } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { componentNameOf, viewRootOf } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
+  createComponentShortcut,
+  delegateChildFactories,
+  delegateCommands,
   elementHasIdentity,
   isPlainObject,
   normalizeChildren,
@@ -217,10 +219,20 @@ export class MenuItemNode extends HtmlElementNode {
       .style('display', 'none');
 
     this.attr({ role: 'menuitem', type: 'button' });
-    this.child(this._iconBox, this._labelBox, this._shortcutBox);
+    super.child(this._iconBox, this._labelBox, this._shortcutBox);
     this.on('mouseenter', () => this._setHover(true));
     this.on('mouseleave', () => this._setHover(false));
     this._setupMenuItem(setup);
+  }
+
+  /**
+   * 匿名槽位：菜单项的内容位就是**标签盒**（与 `text()` 同一落点）。
+   * `vMenuItem(i18n 文本节点)` 这类"节点参数"因此与字符串写法表现一致；
+   * 三个槽位盒本身由构造函数用 `super.child()` 直接挂上。
+   */
+  child(...children) {
+    this._labelBox.child(...children);
+    return this;
   }
 
   text(content) {
@@ -1069,21 +1081,36 @@ function setSidebarVisuallyHidden(node, hidden) {
   }
 }
 
-export function vMenu(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VMenu',
-    createNode: (setup) => new MenuNode(setup),
-    commands: ['orientation', 'horizontal', 'vertical'],
-    childFactories: MENU_CHILD_FACTORIES,
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 定义：**结构（视图根 + 身份）+ 命令**，调用方参数由快捷方法按标准分派落到这里（票 15 §4）。
+ *
+ * 三种 setup 入口：函数 = 构建回调（收到组件节点，可继续 `menu.vMenuItem(…)`）；
+ * 对象 / 字符串 = 菜单 props（`MenuNode._setupMenu` 的既有口径）；节点 / 数组 = 子内容。
+ * 同类实例复用（`vMenu(已有菜单)`）由 `createComponentShortcut` 判定。
+ */
+export function VMenu() {
+  return vNode((api) => {
+    const element = new MenuNode();
+    delegateCommands(api, element, ['orientation', 'horizontal', 'vertical']);
+    delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
+    api.setupObject = (config) => {
+      element._setupMenu(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupMenu(value);
+      return api;
+    };
+    return element;
   });
 }
 
-export function vMenuItem(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VMenuItem',
-    createNode: (setup) => new MenuItemNode(setup),
-    commands: [
+export const vMenu = createComponentShortcut(VMenu);
+
+export function VMenuItem() {
+  return vNode((api) => {
+    const element = new MenuItemNode();
+    delegateCommands(api, element, [
       'text',
       'label',
       'content',
@@ -1093,32 +1120,44 @@ export function vMenuItem(first = null, second = null, third = null) {
       'danger',
       'disabled',
       'hoverable'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    ]);
+    api.setupObject = (config) => {
+      element._setupMenuItem(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupMenuItem(value);
+      return api;
+    };
+    return element;
   });
 }
 
-export function vMenuGroup(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VMenuGroup',
-    createNode: (setup) => new MenuGroupNode(setup),
-    commands: ['label', 'title'],
-    childFactories: MENU_CHILD_FACTORIES,
-    args: [first, second, third, ...[...arguments].slice(3)]
+export const vMenuItem = createComponentShortcut(VMenuItem);
+
+export function VMenuGroup() {
+  return vNode((api) => {
+    const element = new MenuGroupNode();
+    delegateCommands(api, element, ['label', 'title']);
+    delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
+    api.setupObject = (config) => {
+      element._setupMenuGroup(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupMenuGroup(value);
+      return api;
+    };
+    return element;
   });
 }
 
-export const VMenu = vMenu;
-export const VMenuItem = vMenuItem;
-export const VMenuGroup = vMenuGroup;
-export const VSubMenu = vSubMenu;
-export const VSidebar = vSidebar;
+export const vMenuGroup = createComponentShortcut(VMenuGroup);
 
-export function vSubMenu(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSubMenu',
-    createNode: (setup) => new SubMenuNode(setup),
-    commands: [
+export function VSubMenu() {
+  return vNode((api) => {
+    const element = new SubMenuNode();
+    delegateCommands(api, element, [
       'trigger',
       'label',
       'text',
@@ -1128,17 +1167,26 @@ export function vSubMenu(first = null, second = null, third = null) {
       'open',
       'close',
       'toggle'
-    ],
-    childFactories: MENU_CHILD_FACTORIES,
-    args: [first, second, third, ...[...arguments].slice(3)]
+    ]);
+    delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
+    api.setupObject = (config) => {
+      element._setupSubMenu(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupSubMenu(value);
+      return api;
+    };
+    return element;
   });
 }
 
-export function vSidebar(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSidebar',
-    createNode: (setup) => new SidebarNode(setup),
-    commands: [
+export const vSubMenu = createComponentShortcut(VSubMenu);
+
+export function VSidebar() {
+  return vNode((api) => {
+    const element = new SidebarNode();
+    delegateCommands(api, element, [
       'title',
       'ariaLabel',
       'menuContent',
@@ -1146,8 +1194,18 @@ export function vSidebar(first = null, second = null, third = null) {
       'collapsible',
       'toggle',
       'responsive'
-    ],
-    childFactories: MENU_CHILD_FACTORIES,
-    args: [first, second, third, ...[...arguments].slice(3)]
+    ]);
+    delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
+    api.setupObject = (config) => {
+      element._setupSidebar(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      element._setupSidebar(value);
+      return api;
+    };
+    return element;
   });
 }
+
+export const vSidebar = createComponentShortcut(VSidebar);
