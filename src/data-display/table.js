@@ -1,8 +1,7 @@
-import { viewRootOf } from '../core/node.js';
 import { keySet } from '../core/key-set.js';
 import { computed, isSignal, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
-import { HtmlElementNode, caption, div, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
+import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
 import {
   createComponentShortcut,
   isPlainObject,
@@ -16,8 +15,9 @@ import {
  * 表格族（票 15 §4：**组件定义 = 结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
  * - 结构用 DSL 声明：`div[VTable] > div[VTableScroll] > table[VTableGrid] > caption + thead + tbody`；
- * - 声明式 section / 行由命令投递（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`），
- *   匿名 `table.child(section)` 走默认占位（内容落进 `<table>`）；
+ * - 声明式 section / 行由命令投递（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`）：
+ *   行只有两条通道——`table.vTr(…)`（进表体）与 `section.vTr(…)`（进该段），不在别处；
+ * - 匿名占位**就是 `<table>`**：`table.child(section)` 的内容落进 `<table>`，行不走这条通道。
  * - **数据驱动（列 / 行 / 空态）在 `VTableWrapper` 上**：表格壳只认结构，数据层只消费它。
  */
 
@@ -289,54 +289,18 @@ export function VTableScroll() {
 export const vTableScroll = createComponentShortcut(VTableScroll);
 
 /**
- * 表格本体的视图根（**节点类型扩展**，不进包入口）：结构 + 身份，外加一条"行落位"规则。
- *
- * 表格壳把这张 `<table>` 声明成匿名占位（`vn_slot: ''`，在使用处指定——定义侧不预设槽位），
- * 于是 `table.child(...)` 的内容先落到它身上：**段**（`vThead` / `vTbody` / `vTfoot` / 标题）是
- * `<table>` 的直接子元素，就地留下；**行**转发进表体——`<tr>` 直接挂在 `<table>` 下不成表格结构，
- * 浏览器与表布局都不认（与"锚点项进内层 `<ul>`"同一条落位规则：匿名内容不得改落到包装层）。
- *
- * 落点由组合方接上（`rowTarget`，`VTable` 接的是按需建的表体）；独立用 `vTableGrid` 时没有落点，
- * 行按普通内容处理。判据是**形状**（视图根是不是 `<tr>`），不认组件名。
+ * 表格本体（形态 A）：只声明结构 + 身份。
+ * 谁要用它当插槽，就在**使用处**指定（`vTableGrid({ vn_slot: '' })`）——定义侧不预设槽位。
  */
-class TableGridNode extends HtmlElementNode {
-  constructor() {
-    super('table');
-    this._identity = 'VTableGrid';
-    this.attr('vn', 'VTableGrid');
-    this.styles({
+export function VTableGrid() {
+  return table({
+    style: {
       borderCollapse: 'collapse',
       color: themeValue('color-text', '#172033'),
       width: '100%'
-    });
-  }
-
-  /** 行落点：组合方接上表体（行总进 `<tbody>`）；不接就是普通内容。 */
-  rowTarget(handler) {
-    this._rowTarget = typeof handler === 'function' ? handler : null;
-    return this;
-  }
-
-  child(...children) {
-    children.flat(Infinity).forEach((child) => {
-      if (child === null || child === undefined) {
-        return;
-      }
-
-      if (this._rowTarget && viewRootOf(child)?.tagName?.() === 'tr') {
-        this._rowTarget().child(child);
-        return;
-      }
-
-      super.child(child);
-    });
-
-    return this;
-  }
-}
-
-export function VTableGrid() {
-  return new TableGridNode();
+    },
+    vn: 'VTableGrid'
+  });
 }
 
 export const vTableGrid = createComponentShortcut(VTableGrid);
@@ -510,12 +474,7 @@ export function VTable() {
     api.setupString = (value) => api.caption(value);
 
     return div({ style: { display: 'block', minWidth: '0' }, vn: 'VTable' }, (root) =>
-      root.child(
-        vTableScroll((scroll) =>
-          // 匿名内容先到 `<table>`：段就地留下，行转发进按需建的表体（见 TableGridNode）
-          scroll.child(vTableGrid({ vn_slot: '' }).rowTarget(bodyOf))
-        )
-      )
+      root.child(vTableScroll((scroll) => scroll.child(vTableGrid({ vn_slot: '' }))))
     );
   });
 }
