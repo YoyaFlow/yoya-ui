@@ -66,17 +66,38 @@ function classNameBlocks(source) {
   return blocks;
 }
 
+/**
+ * options 对象里的类名键：`class` / `className`（含带引号的写法），值可以是字符串或模板字面量。
+ *
+ * 核心的键分派表把 `class` 与 `className` 归为同一类（`src/core/setup-keys.js`），
+ * 所以 `div({ class: 'yoya-x' })` 与 `div((root) => root.className('yoya-x'))` 等价——
+ * 根类扫描必须两种写法都认，否则函数式写法会被误判成"孤儿 part 选择器"。
+ */
+function classOptionLiterals(source) {
+  const out = [];
+  const re = /(?:^|[\s{,{])(?:class|className|['"`]class(?:Name)?['"`])\s*:\s*(['"`])([\s\S]*?)\1/g;
+  let match;
+  while ((match = re.exec(source)) !== null) {
+    out.push(match[2]);
+  }
+  return out;
+}
+
 // Root inventory: yoya- class literals co-located with componentClass
 const roots = new Set(['yoya-component']);
 for (const dir of libraryDirs) {
   for (const file of listJsFiles(resolve(dir))) {
-    for (const block of classNameBlocks(readFileSync(file, 'utf8'))) {
-      if (block.includes('componentClass')) {
-        for (const literal of quoted(block)) {
-          for (const part of literal.split(/\s+/)) {
-            if (part.startsWith('yoya-')) roots.add(part);
-          }
-        }
+    const source = readFileSync(file, 'utf8');
+    const literals = [
+      ...classNameBlocks(source)
+        .filter((block) => block.includes('componentClass'))
+        .flatMap(quoted),
+      ...classOptionLiterals(source).filter((literal) => literal.includes('componentClass'))
+    ];
+
+    for (const literal of literals) {
+      for (const part of literal.split(/\s+/)) {
+        if (part.startsWith('yoya-')) roots.add(part);
       }
     }
   }
