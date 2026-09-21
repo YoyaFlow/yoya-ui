@@ -1,13 +1,13 @@
 import { div, HtmlElementNode } from '../html/index.js';
 import { ButtonNode } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
+import { componentNameOf, viewRootOf } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
 import { createComponentShell } from '../components/component-shell.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
-  componentClass,
+  elementHasIdentity,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -33,9 +33,7 @@ const MENU_CHILD_FACTORIES = [
  */
 export class MenuNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VMenu';
-    this.className(componentClass, 'yoya-vmenu');
+    super('div', { vn: 'VMenu' });
     this.orientation('vertical');
     this.on('focusin', (event) => this._handleFocusin(event));
     this.on('keydown', (event) => this._handleKeydown(event));
@@ -97,8 +95,8 @@ export class MenuNode extends HtmlElementNode {
       return [];
     }
 
-    return Array.from(this._el.querySelectorAll('.yoya-vmenu-item')).filter(
-      (item) => item.closest('.yoya-vmenu') === this._el
+    return Array.from(this._el.querySelectorAll('[vn~="VMenuItem"]')).filter(
+      (item) => item.closest('[vn~="VMenu"]') === this._el
     );
   }
 
@@ -120,7 +118,7 @@ export class MenuNode extends HtmlElementNode {
   }
 
   _handleKeydown(event) {
-    if (event.target.closest?.('.yoya-vmenu') !== this._el) {
+    if (event.target.closest?.('[vn~="VMenu"]') !== this._el) {
       return;
     }
 
@@ -128,7 +126,7 @@ export class MenuNode extends HtmlElementNode {
     const keyStep =
       orientation === 'vertical' ? { ArrowDown: 1, ArrowUp: -1 } : { ArrowLeft: -1, ArrowRight: 1 };
     const items = this._enabledMenuItems();
-    const currentItem = event.target.closest?.('.yoya-vmenu-item');
+    const currentItem = event.target.closest?.('[vn~="VMenuItem"]');
 
     if (
       items.length === 0 ||
@@ -154,11 +152,11 @@ export class MenuNode extends HtmlElementNode {
   }
 
   _handleFocusin(event) {
-    if (event.target.closest?.('.yoya-vmenu') !== this._el) {
+    if (event.target.closest?.('[vn~="VMenu"]') !== this._el) {
       return;
     }
 
-    const item = event.target.closest?.('.yoya-vmenu-item');
+    const item = event.target.closest?.('[vn~="VMenuItem"]');
     if (item && !item.disabled) {
       this._syncTabStops(item);
     }
@@ -205,23 +203,19 @@ export class MenuNode extends HtmlElementNode {
  */
 export class MenuItemNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('button', null);
-    this._identity = 'VMenuItem';
+    super('button', { vn: 'VMenuItem' });
     // 内部状态用 ref 持有（票 01 约定）；active/danger/disabled 是「默认真」写方法，无参不是读
     this._active = ref(false);
     this._danger = ref(false);
     this._disabled = ref(false);
-    this._iconBox = new HtmlElementNode('span')
-      .className('yoya-vmenu-item-icon')
+    this._iconBox = new HtmlElementNode('span', { vn: 'VMenuItemIcon' })
       .attr('aria-hidden', 'true')
       .style('display', 'none');
-    this._labelBox = new HtmlElementNode('span').className('yoya-vmenu-item-label');
-    this._shortcutBox = new HtmlElementNode('span')
-      .className('yoya-vmenu-item-shortcut')
+    this._labelBox = new HtmlElementNode('span', { vn: 'VMenuItemLabel' });
+    this._shortcutBox = new HtmlElementNode('span', { vn: 'VMenuItemShortcut' })
       .attr('aria-hidden', 'true')
       .style('display', 'none');
 
-    this.className(componentClass, 'yoya-vmenu-item');
     this.attr({ role: 'menuitem', type: 'button' });
     this.child(this._iconBox, this._labelBox, this._shortcutBox);
     this.on('mouseenter', () => this._setHover(true));
@@ -386,7 +380,6 @@ export function vMenuDivider(setup = null) {
         'aria-orientation': 'horizontal'
       },
       (root) => {
-        root.className(componentClass, 'yoya-vmenu-divider');
         applyComponentSetup(root, setup);
       }
     )
@@ -394,18 +387,15 @@ export function vMenuDivider(setup = null) {
 }
 
 export const VMenuDivider = vMenuDivider;
-defineComponentIdentity(VMenuDivider, 'VMenuDivider');
 
 /** 菜单分组的节点类型（不导出）；公开组件 `vMenuGroup` 是 vNode 外壳。 */
 class MenuGroupNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VMenuGroup';
-    const labelId = allocateId('yoya-vmenu-group-label');
+    super('div', { vn: 'VMenuGroup' });
+    const labelId = allocateId('yoya-menu-group-label');
     this._orientation = 'vertical';
-    this._labelBox = new HtmlElementNode('div').className('yoya-vmenu-group-label').id(labelId);
+    this._labelBox = new HtmlElementNode('div', { vn: 'VMenuGroupLabel' }).id(labelId);
 
-    this.className(componentClass, 'yoya-vmenu-group');
     this.attr({ 'aria-labelledby': labelId, role: 'group' });
     super.child(this._labelBox);
     this._setupMenuGroup(setup);
@@ -464,15 +454,15 @@ class MenuGroupNode extends HtmlElementNode {
 /** 子菜单的节点类型（不导出）；公开组件 `vSubMenu` 是 vNode 外壳。 */
 class SubMenuNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VSubMenu';
-    const panelId = allocateId('yoya-vsubmenu-panel');
+    super('div', { vn: 'VSubMenu' });
+    const panelId = allocateId('yoya-submenu-panel');
     this._globalCloseCleanup = null;
     // 内部状态用 ref 持有（票 01 约定）；open/disabled 是「默认真」写方法，无参不是读
     this._open = ref(false);
     this._disabled = ref(false);
-    this._trigger = new MenuItemNode()
-      .className('yoya-vsubmenu-trigger')
+    // 触发器是"一个菜单项 + 子菜单的 trigger"：多值身份（票 15 §1），父菜单的键盘漫游
+    // 靠 `[vn~="VMenuItem"]` 把它算进来，点击处理靠 `VSubMenuTrigger` 把它排除。
+    this._trigger = new MenuItemNode({ vn: 'VSubMenuTrigger VMenuItem' })
       .attr({
         'aria-controls': panelId,
         'aria-expanded': 'false',
@@ -485,10 +475,12 @@ class SubMenuNode extends HtmlElementNode {
           this.toggle();
         }
       });
-    this._menu = new MenuNode().className('yoya-vsubmenu-content');
+    // 内容区既是子菜单的一部分（`VSubMenuContent`），也仍然是一个菜单（`VMenu`）：多值身份，
+    // 于是键盘漫游 / `[vn~="VMenu"]` 的就近作用域判定照旧成立。
+    this._menu = new MenuNode().setup({ vn: 'VSubMenuContent VMenu' });
     this._menu.on('click', (event) => {
-      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
-      if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
+      const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
+      if (menuItem && !menuItem.disabled && !elementHasIdentity(menuItem, 'VSubMenuTrigger')) {
         if (this._inline) {
           this._selectInlineItem(menuItem);
         } else {
@@ -498,10 +490,9 @@ class SubMenuNode extends HtmlElementNode {
     });
     this._panel = new HtmlElementNode('div')
       .id(panelId)
-      .className('yoya-vsubmenu-panel')
+      .setup({ vn: 'VSubMenuPanel' })
       .child(this._menu);
 
-    this.className(componentClass, 'yoya-vsubmenu');
     this.on('keydown', (event) => this._handleKeydown(event));
     this.child(this._trigger, this._panel);
     this._setupSubMenu(setup);
@@ -585,7 +576,7 @@ class SubMenuNode extends HtmlElementNode {
   _selectInlineItem(element) {
     const visit = (children) => {
       children.forEach((child) => {
-        if (child instanceof VMenuItem) {
+        if (viewRootOf(child) instanceof MenuItemNode) {
           child.active(child.renderDom() === element);
         } else if (typeof child.children === 'function') {
           visit(child.children());
@@ -608,8 +599,8 @@ class SubMenuNode extends HtmlElementNode {
   }
 
   _handleKeydown(event) {
-    const owningSubMenu = event.target.closest?.('.yoya-vsubmenu');
-    const trigger = event.target.closest?.('.yoya-vsubmenu-trigger');
+    const owningSubMenu = event.target.closest?.('[vn~="VSubMenu"]');
+    const trigger = event.target.closest?.('[vn~="VSubMenuTrigger"]');
     const enterKeys = ['ArrowRight', 'Enter', ' ', 'Spacebar'];
     const exitKey = event.key === 'ArrowLeft' || event.key === 'Escape';
 
@@ -788,16 +779,15 @@ function applyMenuOrientation(child, orientation) {
 /** 侧栏的节点类型（不导出）；公开组件 `vSidebar` 是 vNode 外壳。 */
 class SidebarNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('aside', null);
-    this._identity = 'VSidebar';
-    const menuId = allocateId('yoya-vsidebar-menu');
+    super('aside', { vn: 'VSidebar' });
+    const menuId = allocateId('yoya-sidebar-menu');
     this._responsiveCleanup = null;
     this._collapsible = true;
     // 内部状态用 ref 持有（票 01 约定）；collapsed 是「默认真」写方法，无参不是读
     this._collapsed = ref(false);
-    this._titleBox = new HtmlElementNode('strong').className('yoya-vsidebar-title');
+    this._titleBox = new HtmlElementNode('strong', { vn: 'VSidebarTitle' });
     this._toggle = new ButtonNode('‹')
-      .className('yoya-vsidebar-toggle')
+      .setup({ vn: 'VSidebarToggle VButton' })
       .attr({
         'aria-controls': menuId,
         'aria-expanded': 'true',
@@ -805,23 +795,22 @@ class SidebarNode extends HtmlElementNode {
       })
       .on('click', () => this.toggle());
     this._header = new HtmlElementNode('div')
-      .className('yoya-vsidebar-header')
+      .setup({ vn: 'VSidebarHeader' })
       .child(this._titleBox, this._toggle);
     this._menu = new MenuNode()
       .id(menuId)
-      .className('yoya-vsidebar-menu')
+      .setup({ vn: 'VSidebarMenu VMenu' })
       .attr('aria-label', '侧边导航菜单');
     this._menu._sidebarContentChangeCallback = () =>
       setSidebarContentCollapsed(this._menu, this._collapsed.value, this);
     this._menu.on('yoya:menuitem-statechange', this._menu._sidebarContentChangeCallback);
     this._menu.on('click', (event) => {
-      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
-      if (menuItem && !menuItem.disabled && !menuItem.classList.contains('yoya-vsubmenu-trigger')) {
+      const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
+      if (menuItem && !menuItem.disabled && !elementHasIdentity(menuItem, 'VSubMenuTrigger')) {
         this._activateMenuItem(menuItem);
       }
     });
 
-    this.className(componentClass, 'yoya-vsidebar');
     this.attr('aria-label', '侧边导航');
     this.on('keydown', (event) => {
       if (
@@ -845,7 +834,7 @@ class SidebarNode extends HtmlElementNode {
   _activateMenuItem(element) {
     const visit = (children) => {
       children.forEach((child) => {
-        if (child instanceof VMenuItem) {
+        if (viewRootOf(child) instanceof MenuItemNode) {
           child.active(child.renderDom() === element);
         } else if (typeof child.children === 'function') {
           visit(child.children());
@@ -1124,11 +1113,6 @@ export const VMenuItem = vMenuItem;
 export const VMenuGroup = vMenuGroup;
 export const VSubMenu = vSubMenu;
 export const VSidebar = vSidebar;
-defineComponentIdentity(VMenu, 'VMenu');
-defineComponentIdentity(VMenuItem, 'VMenuItem');
-defineComponentIdentity(VMenuGroup, 'VMenuGroup');
-defineComponentIdentity(VSubMenu, 'VSubMenu');
-defineComponentIdentity(VSidebar, 'VSidebar');
 
 export function vSubMenu(first = null, second = null, third = null) {
   return createComponentShell({

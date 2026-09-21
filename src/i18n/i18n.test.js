@@ -19,10 +19,10 @@ describe('vLanguageSwitch', () => {
     });
     const element = component.renderDom();
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
-    const englishItem = element.querySelector('.yoya-vmenu-item[data-language="en"]');
+    const englishItem = element.querySelector('[vn~="VMenuItem"][data-language="en"]');
 
     expect(element.classList.contains('yoya-vlanguage-switch')).toBe(true);
-    expect(element.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(2);
     expect(trigger.textContent).toContain('中文');
 
     trigger.click();
@@ -36,7 +36,7 @@ describe('vLanguageSwitch', () => {
     expect(locale.getLanguage()).toBe('en');
     expect(trigger.textContent).toContain('English');
     expect(
-      element.querySelector('.yoya-vmenu-item[data-language="en"]').getAttribute('aria-current')
+      element.querySelector('[vn~="VMenuItem"][data-language="en"]').getAttribute('aria-current')
     ).toBe('page');
   });
 
@@ -68,10 +68,10 @@ describe('vLanguageSwitch', () => {
 
     expect(trigger.textContent).toContain('English');
     expect(
-      element.querySelector('.yoya-vmenu-item[data-language="en"]').getAttribute('aria-current')
+      element.querySelector('[vn~="VMenuItem"][data-language="en"]').getAttribute('aria-current')
     ).toBe('page');
     expect(
-      element.querySelector('.yoya-vmenu-item[data-language="zh-CN"]').getAttribute('aria-current')
+      element.querySelector('[vn~="VMenuItem"][data-language="zh-CN"]').getAttribute('aria-current')
     ).toBeNull();
   });
 
@@ -89,7 +89,7 @@ describe('vLanguageSwitch', () => {
       style: { maxWidth: '180px' }
     });
     const element = component.renderDom();
-    const englishItem = element.querySelector('.yoya-vmenu-item[data-language="en"]');
+    const englishItem = element.querySelector('[vn~="VMenuItem"][data-language="en"]');
 
     expect(englishItem.textContent).toBe('English');
     expect(element.dataset.demoSwitch).toBe('true');
@@ -112,16 +112,16 @@ describe('vLanguageSwitch', () => {
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
 
     expect(element.querySelectorAll('.yoya-vlanguage-switch')).toHaveLength(1);
-    expect(element.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(2);
     expect(component.languages().map((item) => item.value)).toEqual(['zh-CN', 'en']);
 
-    element.querySelector('.yoya-vmenu-item[data-language="en"]').click();
+    element.querySelector('[vn~="VMenuItem"][data-language="en"]').click();
 
     expect(locale.getLanguage()).toBe('en');
     expect(component.languages().map((item) => item.value)).toEqual(['zh-CN', 'en']);
     expect(trigger.textContent).toContain('English');
     expect(
-      element.querySelector('.yoya-vmenu-item[data-language="en"]').getAttribute('aria-current')
+      element.querySelector('[vn~="VMenuItem"][data-language="en"]').getAttribute('aria-current')
     ).toBe('page');
   });
 });

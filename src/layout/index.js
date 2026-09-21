@@ -4,6 +4,7 @@ import { bindWindowEvent } from '../core/document-events.js';
 import { MenuOutlined } from '../svg/icons.js';
 import {
   applyComponentArguments,
+  elementHasIdentity,
   normalizeComponentArguments,
   themeValue
 } from '../components/shared.js';
@@ -1081,8 +1082,8 @@ function syncMobileLayoutChild(layout, child) {
       target._mobileDrawerClickBound = true;
       target.on('click', (event) => {
         if (
-          event.target?.closest?.('.yoya-vmenu-item') &&
-          !event.target.closest?.('.yoya-vsubmenu-trigger')
+          event.target?.closest?.('[vn~="VMenuItem"]') &&
+          !elementHasIdentity(event.target.closest?.('[vn~="VSubMenuTrigger"]'), 'VSubMenuTrigger')
         ) {
           layout.closeAside();
         }

@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
-  VMenuDivider,
-  VMenuGroup,
-  VSidebar,
-  VSubMenu,
   VTimer,
   VTimerRange,
   button,
   createI18n,
   div,
+  hasComponentIdentity,
   toast,
   vChart,
   vCode,
@@ -709,15 +706,15 @@ describe('compound components', () => {
     });
 
     const element = menu.renderDom();
-    const items = element.querySelectorAll('.yoya-vmenu-item');
+    const items = element.querySelectorAll('[vn~="VMenuItem"]');
 
     expect(element.getAttribute('role')).toBe('menu');
     expect(element.dataset.orientation).toBe('vertical');
     expect(items).toHaveLength(2);
     expect(items[0].getAttribute('role')).toBe('menuitem');
-    expect(items[0].querySelector('.yoya-vmenu-item-icon').textContent).toBe('N');
-    expect(items[0].querySelector('.yoya-vmenu-item-label').textContent).toBe('新建');
-    expect(items[0].querySelector('.yoya-vmenu-item-shortcut').textContent).toBe('Ctrl+N');
+    expect(items[0].querySelector('[vn~="VMenuItemIcon"]').textContent).toBe('N');
+    expect(items[0].querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('新建');
+    expect(items[0].querySelector('[vn~="VMenuItemShortcut"]').textContent).toBe('Ctrl+N');
     expect(items[0].getAttribute('aria-current')).toBe('page');
     expect(items[1].dataset.danger).toBe('true');
     expect(items[1].disabled).toBe(true);
@@ -745,14 +742,14 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vmenu').dataset.orientation).toBe('horizontal');
-    expect(element.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menubar');
-    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('控制台');
+    expect(element.querySelector('[vn~="VMenu"]').dataset.orientation).toBe('horizontal');
+    expect(element.querySelector('[vn~="VMenu"]').getAttribute('role')).toBe('menubar');
+    expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('控制台');
 
     locale.setLanguage('en');
 
-    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('Dashboard');
-    expect(vMenuItem('独立项').toHTML()).toContain('yoya-vmenu-item-label');
+    expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('Dashboard');
+    expect(vMenuItem('独立项').toHTML()).toContain('vn="VMenuItemLabel"');
   });
 
   it('creates accessible menu groups and dividers', () => {
@@ -766,13 +763,13 @@ describe('compound components', () => {
       commands.vMenuItem('退出');
     });
     const element = menu.renderDom();
-    const group = element.querySelector('.yoya-vmenu-group');
-    const heading = group.querySelector('.yoya-vmenu-group-label');
-    const divider = element.querySelector('.yoya-vmenu-divider');
+    const group = element.querySelector('[vn~="VMenuGroup"]');
+    const heading = group.querySelector('[vn~="VMenuGroupLabel"]');
+    const divider = element.querySelector('[vn~="VMenuDivider"]');
     const disabledItem = group.querySelector('[disabled]');
 
-    expect(menu.children()[0]).toBeInstanceOf(VMenuGroup);
-    expect(menu.children()[1]).toBeInstanceOf(VMenuDivider);
+    expect(hasComponentIdentity(menu.children()[0], 'VMenuGroup')).toBe(true);
+    expect(hasComponentIdentity(menu.children()[1], 'VMenuDivider')).toBe(true);
     expect(group.getAttribute('role')).toBe('group');
     expect(heading.id).not.toBe('');
     expect(group.getAttribute('aria-labelledby')).toBe(heading.id);
@@ -789,10 +786,10 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
 
-    expect(vMenuGroup('分组')).toBeInstanceOf(VMenuGroup);
-    expect(vMenuDivider()).toBeInstanceOf(VMenuDivider);
-    expect(element.querySelector('.yoya-vmenu-group-label').textContent).toBe('快捷操作');
-    expect(element.querySelector('.yoya-vmenu-divider').getAttribute('role')).toBe('separator');
+    expect(hasComponentIdentity(vMenuGroup('分组'), 'VMenuGroup')).toBe(true);
+    expect(hasComponentIdentity(vMenuDivider(), 'VMenuDivider')).toBe(true);
+    expect(element.querySelector('[vn~="VMenuGroupLabel"]').textContent).toBe('快捷操作');
+    expect(element.querySelector('[vn~="VMenuDivider"]').getAttribute('role')).toBe('separator');
   });
 
   it('creates an accessible nested submenu through public factories', () => {
@@ -804,20 +801,20 @@ describe('compound components', () => {
     });
     const element = menu.renderDom();
     const submenu = menu.children()[0];
-    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
-    const panel = element.querySelector('.yoya-vsubmenu-panel');
+    const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
+    const panel = element.querySelector('[vn~="VSubMenuPanel"]');
 
-    expect(submenu).toBeInstanceOf(VSubMenu);
-    expect(vSubMenu('独立子菜单')).toBeInstanceOf(VSubMenu);
+    expect(hasComponentIdentity(submenu, 'VSubMenu')).toBe(true);
+    expect(hasComponentIdentity(vSubMenu('独立子菜单'), 'VSubMenu')).toBe(true);
     expect(trigger.getAttribute('role')).toBe('menuitem');
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     expect(trigger.getAttribute('aria-controls')).toBe(panel.id);
     expect(trigger.textContent).toContain('更多操作');
-    expect(element.querySelector('.yoya-vsubmenu').dataset.open).toBeUndefined();
-    expect(panel.classList.contains('yoya-vsubmenu-panel')).toBe(true);
-    expect(panel.querySelector('.yoya-vmenu').getAttribute('role')).toBe('menu');
-    expect(panel.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
+    expect(element.querySelector('[vn~="VSubMenu"]').dataset.open).toBeUndefined();
+    expect(panel.getAttribute('vn').includes('VSubMenuPanel')).toBe(true);
+    expect(panel.querySelector('[vn~="VMenu"]').getAttribute('role')).toBe('menu');
+    expect(panel.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('导出');
   });
 
   it('creates an accessible sidebar from existing navigation compounds', () => {
@@ -836,20 +833,20 @@ describe('compound components', () => {
       }
     });
     const element = sidebar.renderDom();
-    const toggle = element.querySelector('.yoya-vsidebar-toggle');
-    const menu = element.querySelector('.yoya-vmenu');
+    const toggle = element.querySelector('[vn~="VSidebarToggle"]');
+    const menu = element.querySelector('[vn~="VMenu"]');
 
-    expect(sidebar).toBeInstanceOf(VSidebar);
+    expect(hasComponentIdentity(sidebar, 'VSidebar')).toBe(true);
     expect(vSidebar(sidebar)).toBe(sidebar);
     expect(element.tagName).toBe('ASIDE');
     expect(element.getAttribute('aria-label')).toBe('后台主导航');
-    expect(element.querySelector('.yoya-vsidebar-title').textContent).toBe('运维中心');
+    expect(element.querySelector('[vn~="VSidebarTitle"]').textContent).toBe('运维中心');
     expect(toggle.getAttribute('aria-controls')).toBe(menu.id);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(menu.getAttribute('aria-label')).toBe('后台主导航菜单');
-    expect(element.querySelector('.yoya-vmenu-group').getAttribute('role')).toBe('group');
+    expect(element.querySelector('[vn~="VMenuGroup"]').getAttribute('role')).toBe('group');
     expect(element.querySelector('[aria-current="page"]').textContent).toContain('概览');
-    expect(element.querySelector('.yoya-vsubmenu-trigger').textContent).toContain('系统设置');
+    expect(element.querySelector('[vn~="VSubMenuTrigger"]').textContent).toContain('系统设置');
 
     const configured = vSidebar({ collapsed: true, responsive: false }).renderDom();
     expect(configured.dataset.collapsed).toBe('true');
@@ -867,9 +864,9 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = sidebar.renderDom();
-    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
 
-    expect(element.classList.contains('yoya-vsidebar')).toBe(true);
+    expect(element.getAttribute('vn').includes('VSidebar')).toBe(true);
     trigger.click();
     expect(element.style.overflow).toBe('visible');
     trigger.click();
@@ -890,14 +887,14 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = sidebar.renderDom();
-    const submenu = element.querySelector('.yoya-vsubmenu');
-    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
-    const panel = element.querySelector('.yoya-vsubmenu-panel');
-    const shortcut = trigger.querySelector('.yoya-vmenu-item-shortcut');
-    const item = panel.querySelector('.yoya-vmenu-item');
+    const submenu = element.querySelector('[vn~="VSubMenu"]');
+    const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
+    const panel = element.querySelector('[vn~="VSubMenuPanel"]');
+    const shortcut = trigger.querySelector('[vn~="VMenuItemShortcut"]');
+    const item = panel.querySelector('[vn~="VMenuItem"]');
 
     expect(submenu.dataset.inline).toBe('true');
-    expect(panel.classList.contains('yoya-vsubmenu-panel')).toBe(true);
+    expect(panel.getAttribute('vn').includes('VSubMenuPanel')).toBe(true);
     expect(submenu.dataset.open).toBeUndefined();
     expect(shortcut.textContent).toBe('▸');
 
@@ -948,7 +945,7 @@ describe('compound components', () => {
     expect(overview.getAttribute('aria-current')).toBeNull();
     expect(todo.getAttribute('aria-current')).toBe('page');
 
-    element.querySelector('.yoya-vsubmenu-trigger').click();
+    element.querySelector('[vn~="VSubMenuTrigger"]').click();
     param.click();
     expect(todo.getAttribute('aria-current')).toBeNull();
     expect(param.getAttribute('aria-current')).toBe('page');
@@ -969,11 +966,11 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = sidebar.renderDom();
-    const toggle = element.querySelector('.yoya-vsidebar-toggle');
-    const label = element.querySelector('.yoya-vmenu-item-label');
-    const submenu = element.querySelector('.yoya-vsubmenu');
-    const submenuTrigger = element.querySelector('.yoya-vsubmenu-trigger');
-    const submenuShortcut = submenuTrigger.querySelector('.yoya-vmenu-item-shortcut');
+    const toggle = element.querySelector('[vn~="VSidebarToggle"]');
+    const label = element.querySelector('[vn~="VMenuItemLabel"]');
+    const submenu = element.querySelector('[vn~="VSubMenu"]');
+    const submenuTrigger = element.querySelector('[vn~="VSubMenuTrigger"]');
+    const submenuShortcut = submenuTrigger.querySelector('[vn~="VMenuItemShortcut"]');
 
     toggle.click();
 
@@ -1012,7 +1009,7 @@ describe('compound components', () => {
     const element = sidebar.renderDom();
     const overview = element.querySelector('#sidebar-overview');
     const services = element.querySelector('#sidebar-services');
-    const toggle = element.querySelector('.yoya-vsidebar-toggle');
+    const toggle = element.querySelector('[vn~="VSidebarToggle"]');
 
     overview.focus();
     overview.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
@@ -1052,7 +1049,7 @@ describe('compound components', () => {
         navigation.responsive('(max-width: 720px)');
       }).bindTo(document.body);
       const element = sidebar.renderDom();
-      const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+      const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
       const nestedItem = element.querySelector('#sidebar-responsive-member');
 
       expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 720px)');
@@ -1110,24 +1107,24 @@ describe('compound components', () => {
       submenu.menuContent((nested) => nested.vMenuItem('渲染前嵌套项目'));
       const element = sidebar.renderDom();
 
-      let labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      let labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(4);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
 
       group.vMenuItem('渲染后分组项目');
       submenu.menuContent().vMenuItem('渲染后嵌套项目');
-      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(6);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
 
       sidebar.menuContent((menu) => menu.vMenuItem('审计日志'));
-      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(1);
       expect(labels[0].textContent).toBe('审计日志');
       expect(labels[0].style.position).toBe('absolute');
 
       sidebar.menuContent().vMenuItem('告警中心');
-      labels = element.querySelectorAll('.yoya-vmenu-item-label');
+      labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(2);
       labels.forEach((label) => expect(label.style.position).toBe('absolute'));
 
@@ -1143,7 +1140,7 @@ describe('compound components', () => {
       menu.menuContent((nested) => nested.vMenuItem('导出'));
     });
     const element = submenu.renderDom();
-    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
 
     trigger.click();
     expect(element.dataset.open).toBe('true');
@@ -1171,8 +1168,8 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = menu.renderDom();
-    const submenu = element.querySelector('.yoya-vsubmenu');
-    const trigger = element.querySelector('.yoya-vsubmenu-trigger');
+    const submenu = element.querySelector('[vn~="VSubMenu"]');
+    const trigger = element.querySelector('[vn~="VSubMenuTrigger"]');
     const first = element.querySelector('#nested-first');
     const second = element.querySelector('#nested-second');
 
@@ -1218,8 +1215,8 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = menu.renderDom();
-    const submenus = element.querySelectorAll('.yoya-vsubmenu');
-    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+    const submenus = element.querySelectorAll('[vn~="VSubMenu"]');
+    const triggers = element.querySelectorAll('[vn~="VSubMenuTrigger"]');
 
     triggers[0].click();
     expect(submenus[0].dataset.open).toBe('true');
@@ -1248,8 +1245,8 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = menu.renderDom();
-    const submenus = element.querySelectorAll('.yoya-vsubmenu');
-    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+    const submenus = element.querySelectorAll('[vn~="VSubMenu"]');
+    const triggers = element.querySelectorAll('[vn~="VSubMenuTrigger"]');
 
     triggers[0].click();
     triggers[1].click();
@@ -1271,8 +1268,8 @@ describe('compound components', () => {
       });
     }).bindTo(document.body);
     const element = menu.renderDom();
-    const submenus = element.querySelectorAll('.yoya-vsubmenu');
-    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+    const submenus = element.querySelectorAll('[vn~="VSubMenu"]');
+    const triggers = element.querySelectorAll('[vn~="VSubMenuTrigger"]');
 
     triggers[0].click();
     triggers[1].click();
@@ -1318,8 +1315,8 @@ describe('compound components', () => {
       });
     });
     const element = menu.renderDom();
-    const submenus = element.querySelectorAll('.yoya-vsubmenu');
-    const triggers = element.querySelectorAll('.yoya-vsubmenu-trigger');
+    const submenus = element.querySelectorAll('[vn~="VSubMenu"]');
+    const triggers = element.querySelectorAll('[vn~="VSubMenuTrigger"]');
 
     parentSubMenu.open();
     childSubMenu.open();
@@ -1388,7 +1385,7 @@ describe('compound components', () => {
     const element = menu.renderDom();
     const first = element.querySelector('#horizontal-first');
     const second = element.querySelector('#horizontal-second');
-    const divider = element.querySelector('.yoya-vmenu-divider');
+    const divider = element.querySelector('[vn~="VMenuDivider"]');
 
     expect(divider.getAttribute('aria-orientation')).toBe('vertical');
 
@@ -1510,7 +1507,7 @@ describe('compound components', () => {
 
     expect(element.dataset.danger).toBe('true');
     expect(element.dataset.active).toBeUndefined();
-    expect(element.classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(element.getAttribute('vn').includes('VMenuItem')).toBe(true);
   });
 
   it('uses content-width menu items in horizontal menus', () => {
@@ -1520,11 +1517,11 @@ describe('compound components', () => {
       commands.vMenuItem('配置');
     });
     const element = menu.renderDom();
-    const items = element.querySelectorAll('.yoya-vmenu-item');
+    const items = element.querySelectorAll('[vn~="VMenuItem"]');
 
     expect(element.dataset.orientation).toBe('horizontal');
-    expect(items[0].classList.contains('yoya-vmenu-item')).toBe(true);
-    expect(items[1].classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(items[0].getAttribute('vn').includes('VMenuItem')).toBe(true);
+    expect(items[1].getAttribute('vn').includes('VMenuItem')).toBe(true);
   });
 
   it('creates vDropdownMenu with trigger, menu content and open state', () => {
@@ -1654,9 +1651,9 @@ describe('compound components', () => {
     const dropdownElement = dropdown.renderDom();
 
     dropdownElement.querySelector('#submenu-dropdown-trigger').click();
-    dropdownElement.querySelector('.yoya-vsubmenu-trigger').click();
+    dropdownElement.querySelector('[vn~="VSubMenuTrigger"]').click();
     expect(dropdownElement.dataset.open).toBe('true');
-    expect(dropdownElement.querySelector('.yoya-vsubmenu').dataset.open).toBe('true');
+    expect(dropdownElement.querySelector('[vn~="VSubMenu"]').dataset.open).toBe('true');
 
     dropdownElement.querySelector('#submenu-dropdown-leaf').click();
     expect(dropdownElement.dataset.open).toBeUndefined();
@@ -1677,7 +1674,7 @@ describe('compound components', () => {
     contextElement
       .querySelector('#submenu-context-target')
       .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
-    contextElement.querySelector('.yoya-vsubmenu-trigger').click();
+    contextElement.querySelector('[vn~="VSubMenuTrigger"]').click();
     expect(contextElement.dataset.open).toBe('true');
 
     contextElement.querySelector('#submenu-context-leaf').click();
@@ -1697,7 +1694,7 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vdropdown-menu')).not.toBeNull();
     expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('操作');
-    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('导出');
+    expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('导出');
   });
 
   it('creates vContextMenu and opens from a contextmenu event', () => {
@@ -1787,7 +1784,7 @@ describe('compound components', () => {
 
     expect(element.querySelector('.yoya-vcontext-menu')).not.toBeNull();
     expect(element.querySelector('.yoya-vcontext-target').textContent).toBe('右键区域');
-    expect(element.querySelector('.yoya-vmenu-item-label').textContent).toBe('查看详情');
+    expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('查看详情');
   });
 
   it('creates detail components with label and value pairs', () => {

@@ -6,6 +6,7 @@ import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import {
   componentClass,
+  elementHasIdentity,
   isPlainObject,
   normalizePoint,
   setupContentSlot
@@ -31,12 +32,12 @@ class ContextMenuNode extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vcontext-menu');
     this._menu.on('click', (event) => {
-      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
       if (
         this._closeOnSelect &&
         menuItem &&
         !menuItem.disabled &&
-        !menuItem.classList.contains('yoya-vsubmenu-trigger')
+        !elementHasIdentity(menuItem, 'VSubMenuTrigger')
       ) {
         this.close();
       }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VMenu, VNavbar, div, vNavbar } from '../index.js';
+import { VNavbar, div, hasComponentIdentity, vNavbar } from '../index.js';
 
 describe('vNavbar', () => {
   it('renders a horizontal navigation bar with brand, menu, and actions', () => {
@@ -27,10 +27,10 @@ describe('vNavbar', () => {
 
     const element = navbar.renderDom();
     const menu = element.querySelector('.yoya-vnavbar-menu');
-    const items = element.querySelectorAll('.yoya-vmenu-item');
+    const items = element.querySelectorAll('[vn~="VMenuItem"]');
 
     expect(navbar).toBeInstanceOf(VNavbar);
-    expect(navbar.menuContent()).toBeInstanceOf(VMenu);
+    expect(hasComponentIdentity(navbar.menuContent(), 'VMenu')).toBe(true);
     expect(element.tagName).toBe('NAV');
     expect(element.getAttribute('role')).toBe('navigation');
     expect(element.getAttribute('aria-label')).toBe('产品主导航');
@@ -39,7 +39,7 @@ describe('vNavbar', () => {
     expect(menu.dataset.orientation).toBe('horizontal');
     expect(items).toHaveLength(2);
     expect(items[0].getAttribute('aria-current')).toBe('page');
-    expect(items[0].classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(items[0].getAttribute('vn').includes('VMenuItem')).toBe(true);
     expect(element.querySelector('.yoya-vnavbar-actions .yoya-vbutton-label').textContent).toBe(
       '登录'
     );
@@ -71,7 +71,7 @@ describe('vNavbar', () => {
     expect(element.querySelector('.yoya-vnavbar-brand').textContent).toBe('控制台Workspace');
     expect(element.querySelector('.yoya-vnavbar-menu').dataset.orientation).toBe('horizontal');
     expect(element.querySelector('.yoya-vnavbar-menu').getAttribute('role')).toBe('menubar');
-    expect(element.querySelector('.yoya-vmenu-divider').getAttribute('aria-orientation')).toBe(
+    expect(element.querySelector('[vn~="VMenuDivider"]').getAttribute('aria-orientation')).toBe(
       'vertical'
     );
   });
@@ -86,9 +86,9 @@ describe('vNavbar', () => {
     });
 
     const element = navbar.renderDom();
-    const item = element.querySelector('.yoya-vnavbar-menu .yoya-vmenu-item');
+    const item = element.querySelector('.yoya-vnavbar-menu [vn~="VMenuItem"]');
 
-    expect(item.classList.contains('yoya-vmenu-item')).toBe(true);
+    expect(item.getAttribute('vn').includes('VMenuItem')).toBe(true);
     expect(element.querySelector('.yoya-vnavbar-menu').dataset.orientation).toBe('horizontal');
   });
 

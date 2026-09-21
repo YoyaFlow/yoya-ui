@@ -9,6 +9,7 @@ import { allocateId } from '../core/id.js';
 import {
   componentClass,
   dropdownPlacementStyles,
+  elementHasIdentity,
   isPlainObject,
   setupButtonSlot,
   setupContentSlot
@@ -48,12 +49,12 @@ class DropdownMenuNode extends HtmlElementNode {
 
     this.className(componentClass, 'yoya-vdropdown-menu');
     this._menu.on('click', (event) => {
-      const menuItem = event.target?.closest?.('.yoya-vmenu-item');
+      const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
       if (
         this._closeOnSelect &&
         menuItem &&
         !menuItem.disabled &&
-        !menuItem.classList.contains('yoya-vsubmenu-trigger')
+        !elementHasIdentity(menuItem, 'VSubMenuTrigger')
       ) {
         this.close();
         this._focusTrigger();

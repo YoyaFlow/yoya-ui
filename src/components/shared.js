@@ -37,6 +37,18 @@ export function booleanMethod(target, key, initial, apply) {
 
 export const componentClass = 'yoya-component';
 
+/**
+ * **DOM 元素**（不是视图节点）上的身份判定：读 `vn` 属性、按空格拆名，多值任一命中。
+ *
+ * 用途：事件回调里 `event.target.closest(...)` 拿到的是真 DOM，视图节点侧的
+ * `componentNameOf` / `hasComponentIdentity` 读不到它。身份类名退场后（票 15），
+ * "这个元素是不是某个部件" 就靠这条判定。
+ */
+export function elementHasIdentity(element, name) {
+  const value = element?.getAttribute?.('vn');
+  return typeof value === 'string' && value.split(/\s+/).includes(name);
+}
+
 export function themeValue(token, fallback) {
   return `var(--yoya-${token}, ${fallback})`;
 }

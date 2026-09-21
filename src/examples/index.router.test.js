@@ -219,7 +219,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const activeTopItems = document.querySelectorAll(
-      '[data-components-top-nav] .yoya-vmenu-item[data-active="true"]'
+      '[data-components-top-nav] [vn~="VMenuItem"][data-active="true"]'
     );
     const activeMenuItems = document.querySelectorAll(
       '[data-components-menu] .yoya-vtree-node[aria-selected="true"]'
@@ -1744,13 +1744,13 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(reactive.querySelector('.yoya-vlanguage-switch')).not.toBeNull();
 
     reactive.querySelector('.yoya-vdropdown-trigger').click();
-    const reactiveEnglish = reactive.querySelector('.yoya-vmenu-item[data-language="en"]');
+    const reactiveEnglish = reactive.querySelector('[vn~="VMenuItem"][data-language="en"]');
     reactiveEnglish.click();
 
     expect(reactive.textContent).toContain('Service Console');
     expect(reactive.textContent).toContain('Hello, Ada');
     expect(localStorage.getItem('yoya-ui:i18n-demo-language')).toBe('en');
-    expect(reactive.querySelector('.yoya-vmenu-item[data-language="en"]').dataset.active).toBe(
+    expect(reactive.querySelector('[vn~="VMenuItem"][data-language="en"]').dataset.active).toBe(
       'true'
     );
 
@@ -1819,16 +1819,16 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(globalDemo.textContent).toContain('你好，Ada');
 
     const extend = page.querySelector('[data-i18n-demo="extend"] .components-i18n-demo-live');
-    expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(2);
+    expect(extend.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(2);
 
     const addJapanese = [...extend.querySelectorAll('button')].find((button) =>
       button.textContent.includes('添加日语')
     );
     addJapanese.click();
 
-    expect(extend.querySelectorAll('.yoya-vmenu-item')).toHaveLength(3);
+    expect(extend.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(3);
 
-    const japaneseItem = extend.querySelector('.yoya-vmenu-item[data-language="ja"]');
+    const japaneseItem = extend.querySelector('[vn~="VMenuItem"][data-language="ja"]');
     expect(japaneseItem).not.toBeNull();
     japaneseItem.click();
 
@@ -1996,7 +1996,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(shellDemo).not.toBeNull();
 
     const status = shellDemo.querySelector('[data-navbar-demo-status]');
-    const items = shellDemo.querySelectorAll('.yoya-vnavbar-menu .yoya-vmenu-item');
+    const items = shellDemo.querySelectorAll('.yoya-vnavbar-menu [vn~="VMenuItem"]');
 
     expect(status.textContent).toBe('当前：概览');
     expect(items[0].getAttribute('aria-current')).toBe('page');
@@ -2227,13 +2227,9 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(declarativeDemo).not.toBeNull();
     const tableElement = declarativeDemo.querySelector('[vn="VTableGrid"]');
-    expect(tableElement.querySelector('[vn="VThead"] th:nth-child(2)').textContent).toBe(
-      '状态'
-    );
+    expect(tableElement.querySelector('[vn="VThead"] th:nth-child(2)').textContent).toBe('状态');
     expect(tableElement.querySelectorAll('[vn="VTableGrid"] > tbody tr')).toHaveLength(2);
-    expect(tableElement.querySelector('[vn="VTfoot"] td').textContent).toBe(
-      '表尾单元格可以跨列'
-    );
+    expect(tableElement.querySelector('[vn="VTfoot"] td').textContent).toBe('表尾单元格可以跨列');
   });
 
   it('updates value and status in the progress docs demo', async () => {
