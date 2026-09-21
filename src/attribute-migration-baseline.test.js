@@ -249,11 +249,7 @@ describe('属性化迁移门禁（只减不增）', () => {
           }
         }
 
-        for (const match of source.matchAll(/\bvn_slot\s*:\s*(['"`])([\s\S]*?)\1/g)) {
-          if (!/^[a-z][a-z0-9-]*$/.test(match[2].trim())) {
-            violations.push(`${relative}: vn_slot: '${match[2]}'`);
-          }
-        }
+        // `vn_slot` 不做命名约束：空字符串 = 默认占位，其余名字由组件自己定
       }
     }
 

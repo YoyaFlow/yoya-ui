@@ -156,37 +156,34 @@ function resolveTableCellContent(column, row, rowIndex) {
 
 /** 列头段：结构 + 身份，行由 `vTr` 投递。 */
 export function VThead() {
-  return vNode((api) => {
-    const element = thead({ vn: 'VThead' });
+  return vNode((api, self) => {
     api.vTr = (setup) => {
-      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      self.node().child(vTr(setup));
       return api;
     };
-    return element;
+    return thead({ vn: 'VThead' });
   });
 }
 
 /** 表体段：结构 + 身份，行由 `vTr` 投递。 */
 export function VTbody() {
-  return vNode((api) => {
-    const element = tbody({ vn: 'VTbody' });
+  return vNode((api, self) => {
     api.vTr = (setup) => {
-      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      self.node().child(vTr(setup));
       return api;
     };
-    return element;
+    return tbody({ vn: 'VTbody' });
   });
 }
 
 /** 表尾段：结构 + 身份，行由 `vTr` 投递。 */
 export function VTfoot() {
-  return vNode((api) => {
-    const element = tfoot({ vn: 'VTfoot' });
+  return vNode((api, self) => {
     api.vTr = (setup) => {
-      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      self.node().child(vTr(setup));
       return api;
     };
-    return element;
+    return tfoot({ vn: 'VTfoot' });
   });
 }
 
@@ -196,17 +193,16 @@ export const vTfoot = createComponentShortcut(VTfoot);
 
 /** 行：结构 + 身份，单元格由 `vTh` / `vTd` 投递。 */
 export function VTr() {
-  return vNode((api) => {
-    const element = tr({ vn: 'VTr' });
+  return vNode((api, self) => {
     api.vTh = (setup) => {
-      element.child(componentNameOf(setup) === 'VTh' ? setup : vTh(setup));
+      self.node().child(vTh(setup));
       return api;
     };
     api.vTd = (setup) => {
-      element.child(componentNameOf(setup) === 'VTd' ? setup : vTd(setup));
+      self.node().child(vTd(setup));
       return api;
     };
-    return element;
+    return tr({ vn: 'VTr' });
   });
 }
 
@@ -508,10 +504,10 @@ export function VTable() {
       return api;
     };
 
-    api.vThead = (setup) => addSection(componentNameOf(setup) === 'VThead' ? setup : vThead(setup));
-    api.vTbody = (setup) => addSection(componentNameOf(setup) === 'VTbody' ? setup : vTbody(setup));
-    api.vTfoot = (setup) => addSection(componentNameOf(setup) === 'VTfoot' ? setup : vTfoot(setup));
-    api.vTr = (setup) => addRow(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+    api.vThead = (setup) => addSection(vThead(setup));
+    api.vTbody = (setup) => addSection(vTbody(setup));
+    api.vTfoot = (setup) => addSection(vTfoot(setup));
+    api.vTr = (setup) => addRow(vTr(setup));
 
     /**
      * props：键在组件上有同名命令就调命令（`columns` / `rows` / `caption` / `emptyText` / `data`…），

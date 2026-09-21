@@ -17,7 +17,8 @@ describe('vSlot（零布局占位）', () => {
   it('takes the placeholder name through the standard setup entries', () => {
     // 定义 / 快捷方法分开：VSlot() 只建结构，占位名由 vSlot 的 setup 分派落位
     expect(vSlot).not.toBe(VSlot);
-    expect(VSlot().attr('vn_slot')).toBeUndefined();
+    // 不带名字 = **默认占位**：`vn_slot=""`（匿名内容落这里），带名字时被覆写成占位名
+    expect(VSlot().attr('vn_slot')).toBe('');
     // 裸值 = 占位名：由 setupString 解释，和工厂首参同一条路
     const named = vSlot('footer');
     expect(named.attr('vn_slot')).toBe('footer');

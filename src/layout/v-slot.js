@@ -32,7 +32,11 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
  * ```
  */
 export function VSlot() {
-  const node = new HtmlElementNode('span').style('display', 'contents').setup({ vn: 'VSlot' });
+  // `vn_slot=""` 是**默认占位**的标记：匿名内容（未标记 part 的 child）落进这个位置；
+  // 具名占位由下面的 setupString / setupObject 覆写成占位名。
+  const node = new HtmlElementNode('span')
+    .style('display', 'contents')
+    .setup({ vn: 'VSlot', vn_slot: '' });
 
   // 字符串 / 数字 = 占位名（占位名是构建期事实，不是活值：取当前文本值即可）
   node.setupString = (value) => node.attr(PART_ATTRIBUTE, resolveTextValue(value) || null);

@@ -28,9 +28,22 @@ export function slotNameOf(node, attribute = SLOT_ATTRIBUTE) {
   return typeof name === 'string' && name.length > 0 ? name : null;
 }
 
-/** 读节点自己的 part 标记。 */
+/** 读节点自己的 part 标记（空字符串 = **默认 part 占位**，见下）。 */
 export function partNameOf(node) {
   return slotNameOf(node, PART_ATTRIBUTE);
+}
+
+/**
+ * 读节点上的 part 标记原文：`null` = 没写；`''` = 写了空值 = **默认占位**（匿名内容落这里）。
+ * `partNameOf` 只认具名占位（与公开槽位共用"空 = 未标记"的口径），默认占位走这一条。
+ */
+export function rawPartNameOf(node) {
+  if (!node || typeof node.attr !== 'function') {
+    return null;
+  }
+
+  const value = node.attr(PART_ATTRIBUTE);
+  return typeof value === 'string' ? value : null;
 }
 
 /**
@@ -47,6 +60,19 @@ export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
     }
 
     const name = slotNameOf(node, attribute);
+    // 默认 part 占位：`vn_slot=""`（`vSlot()` 不带名字）——匿名内容落这里，只有一个
+    if (attribute === PART_ATTRIBUTE && !name && rawPartNameOf(node) === '') {
+      if (slots.has('') && slots.get('') !== node) {
+        throw new TypeError('Duplicate default slot: one default slot per component.');
+      }
+      slots.set('', node);
+      node._slotHost = host;
+      node._slotName = '';
+      regionStack.forEach((region) => {
+        region._slotHost = host;
+      });
+    }
+
     if (name) {
       const existing = slots.get(name);
       if (existing && existing !== node) {

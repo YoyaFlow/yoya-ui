@@ -3284,6 +3284,13 @@ export class ComponentNode extends ViewNode {
 
     const name = slotNameOf(content);
     if (!name) {
+      // 默认 part 占位（结构里 `vSlot()` 不带名字）：匿名内容落进这个位置，**追加**不替换
+      const defaultPart = this._parts?.get('');
+      if (defaultPart) {
+        defaultPart.child(content);
+        return;
+      }
+
       this._resolved.child(content);
       return;
     }
