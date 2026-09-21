@@ -157,14 +157,21 @@ function createRootNode(component, state = null) {
  * 统计视图树节点数，供服务端输出上限策略使用。
  */
 function countNodes(node) {
+  // 组件节点先展开到视图根：包装本身不是 DOM 节点，预算算的是**渲染出来的节点数**
+  // （迁移成 vNode 的组件若在这里只数到包装，`maxNodes` 这道安全阀会静默失效）
+  if (node instanceof ComponentNode) {
+    let total = 0;
+    (node._resolveList() ?? []).forEach((root) => {
+      total += countNodes(root);
+    });
+    return total;
+  }
+
   let count = 1;
 
   if (typeof node.children === 'function') {
     node.children().forEach((child) => {
-      const roots = child instanceof ComponentNode ? child._resolveList() : [child];
-      roots.forEach((root) => {
-        count += countNodes(root);
-      });
+      count += countNodes(child);
     });
   }
 

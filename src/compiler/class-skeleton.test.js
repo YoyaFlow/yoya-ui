@@ -58,18 +58,19 @@ describe('form C skeletons', () => {
   });
 
   it('records an actionable reason for a constructor it cannot read', () => {
-    // 表头 / 表体 / 表尾同形状 → 能编；单元格走模块私有助手 → 回落并给出原因
-    const tableFile = posix.join('src/data-display/table.js');
-    const tableSource = readFileSync(tableFile, 'utf8');
+    // 形态 C 的构造体读不懂时要有可定位的原因（表格族已迁到 vNode，这里换成仍在形态 C 的组件）
+    const file = posix.join('src/data-display/progress.js');
+    const result = compileComponent({
+      source: readFileSync(file, 'utf8'),
+      file,
+      export: 'vProgress',
+      core
+    });
 
-    for (const name of ['vThead', 'vTbody', 'vTfoot']) {
-      const result = compileComponent({ source: tableSource, file: tableFile, export: name, core });
-      expect(result.compiled, name).toBe(true);
-    }
-
-    const cell = compileComponent({ source: tableSource, file: tableFile, export: 'vTd', core });
-    expect(cell.compiled).toBe(false);
-    expect(cell.bails.map((bail) => bail.reason).join(' | ')).toContain('裸调用');
+    expect(result.compiled).toBe(false);
+    expect(result.bails.map((bail) => bail.reason).join(' | ')).toContain(
+      '调用链不是从 setup 参数出发'
+    );
   });
 
   it('inlines statically readable content at build time', async () => {

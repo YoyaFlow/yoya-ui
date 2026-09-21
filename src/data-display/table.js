@@ -1,9 +1,14 @@
-import { ViewNode, registerChildFactories } from '../core/node.js';
+import {
+  defineComponentIdentity,
+  registerChildFactories,
+  viewRootOf,
+  ViewNode
+} from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
   applyComponentSetup,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -11,9 +16,11 @@ import {
   themeValue
 } from '../components/shared.js';
 
-export class VTable extends HtmlElementNode {
+/** VTable 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TableNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTable';
     this._columns = [];
     this._rows = [];
     this._emptyContent = '暂无数据';
@@ -145,12 +152,16 @@ export class VTable extends HtmlElementNode {
 
   child(...children) {
     children.flat(Infinity).forEach((child) => {
-      if (child instanceof VThead || child instanceof VTbody || child instanceof VTfoot) {
+      if (
+        viewRootOf(child) instanceof TheadNode ||
+        viewRootOf(child) instanceof TbodyNode ||
+        viewRootOf(child) instanceof TfootNode
+      ) {
         this._addDeclarativeSection(child);
         return;
       }
 
-      if (child instanceof VTr) {
+      if (viewRootOf(child) instanceof TrNode) {
         this.vTr(child);
         return;
       }
@@ -177,7 +188,7 @@ export class VTable extends HtmlElementNode {
     const row = setup instanceof VTr ? setup : vTr(setup);
 
     if (this._hasDeclarativeSections) {
-      const body = this._table.children().find((child) => child instanceof VTbody);
+      const body = this._table.children().find((child) => viewRootOf(child) instanceof TbodyNode);
 
       if (body) {
         body.child(row);
@@ -216,7 +227,10 @@ export class VTable extends HtmlElementNode {
 
   _resetTableShell() {
     const customSections = this._table._children.filter(
-      (child) => child instanceof VThead || child instanceof VTbody || child instanceof VTfoot
+      (child) =>
+        viewRootOf(child) instanceof TheadNode ||
+        viewRootOf(child) instanceof TbodyNode ||
+        viewRootOf(child) instanceof TfootNode
     );
 
     customSections.forEach((section) => section.destroy());
@@ -330,48 +344,87 @@ export class VTable extends HtmlElementNode {
 }
 
 export function vTable(first = null, second = null, third = null) {
-  return createComponentFactory(VTable, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTable',
+    createNode: (setup) => new TableNode(setup),
+    commands: [
+      'caption',
+      'columns',
+      'rows',
+      'empty',
+      'emptyText',
+      'data',
+      'vThead',
+      'vTbody',
+      'vTfoot',
+      'vTr'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VThead extends HtmlElementNode {
+/** VThead 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TheadNode extends HtmlElementNode {
   constructor(setup = null) {
     super('thead', null);
+    this._identity = 'VThead';
     this.className('yoya-vtable-head');
     applyComponentSetup(this, setup);
   }
 }
 
 export function vThead(first = null, second = null, third = null) {
-  return createComponentFactory(VThead, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VThead',
+    createNode: (setup) => new TheadNode(setup),
+    childFactories: ['vTr'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VTbody extends HtmlElementNode {
+/** VTbody 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TbodyNode extends HtmlElementNode {
   constructor(setup = null) {
     super('tbody', null);
+    this._identity = 'VTbody';
     this.className('yoya-vtable-body');
     applyComponentSetup(this, setup);
   }
 }
 
 export function vTbody(first = null, second = null, third = null) {
-  return createComponentFactory(VTbody, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTbody',
+    createNode: (setup) => new TbodyNode(setup),
+    childFactories: ['vTr'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VTfoot extends HtmlElementNode {
+/** VTfoot 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TfootNode extends HtmlElementNode {
   constructor(setup = null) {
     super('tfoot', null);
+    this._identity = 'VTfoot';
     this.className('yoya-vtable-foot');
     applyComponentSetup(this, setup);
   }
 }
 
 export function vTfoot(first = null, second = null, third = null) {
-  return createComponentFactory(VTfoot, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTfoot',
+    createNode: (setup) => new TfootNode(setup),
+    childFactories: ['vTr'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VTr extends HtmlElementNode {
+/** VTr 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TrNode extends HtmlElementNode {
   constructor(setup = null) {
     super('tr', null);
+    this._identity = 'VTr';
     this.className('yoya-vtable-row');
     this._setupTr(setup);
   }
@@ -387,12 +440,19 @@ export class VTr extends HtmlElementNode {
 }
 
 export function vTr(first = null, second = null, third = null) {
-  return createComponentFactory(VTr, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTr',
+    createNode: (setup) => new TrNode(setup),
+    childFactories: ['vTh', 'vTd'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VTh extends HtmlElementNode {
+/** VTh 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class ThNode extends HtmlElementNode {
   constructor(setup = null) {
     super('th', null);
+    this._identity = 'VTh';
     this.className('yoya-vtable-head-cell');
     this.attr('scope', 'col');
     applyTableCellStyles(this, {}, 'head');
@@ -401,12 +461,18 @@ export class VTh extends HtmlElementNode {
 }
 
 export function vTh(first = null, second = null, third = null) {
-  return createComponentFactory(VTh, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTh',
+    createNode: (setup) => new ThNode(setup),
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-export class VTd extends HtmlElementNode {
+/** VTd 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+class TdNode extends HtmlElementNode {
   constructor(setup = null) {
     super('td', null);
+    this._identity = 'VTd';
     this.className('yoya-vtable-cell');
     applyTableCellStyles(this, {}, 'body');
     applyComponentSetup(this, setup);
@@ -414,13 +480,17 @@ export class VTd extends HtmlElementNode {
 }
 
 export function vTd(first = null, second = null, third = null) {
-  return createComponentFactory(VTd, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTd',
+    createNode: (setup) => new TdNode(setup),
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
-registerChildFactories(VThead, { vTr });
-registerChildFactories(VTbody, { vTr });
-registerChildFactories(VTfoot, { vTr });
-registerChildFactories(VTr, { vTh, vTd });
+registerChildFactories(TheadNode, { vTr });
+registerChildFactories(TbodyNode, { vTr });
+registerChildFactories(TfootNode, { vTr });
+registerChildFactories(TrNode, { vTh, vTd });
 
 function normalizeTableColumns(columns) {
   if (!Array.isArray(columns)) {
@@ -554,3 +624,18 @@ function applyTableCellStyles(node, column, section) {
     );
   }
 }
+
+export const VTable = vTable;
+export const VThead = vThead;
+export const VTbody = vTbody;
+export const VTfoot = vTfoot;
+export const VTr = vTr;
+export const VTh = vTh;
+export const VTd = vTd;
+defineComponentIdentity(VTable, 'VTable');
+defineComponentIdentity(VThead, 'VThead');
+defineComponentIdentity(VTbody, 'VTbody');
+defineComponentIdentity(VTfoot, 'VTfoot');
+defineComponentIdentity(VTr, 'VTr');
+defineComponentIdentity(VTh, 'VTh');
+defineComponentIdentity(VTd, 'VTd');

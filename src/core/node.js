@@ -3571,6 +3571,9 @@ DELEGATED_ELEMENT_METHODS.forEach((method) => {
 const DELEGATED_NODE_METHODS = [
   'on',
   'off',
+  // `keyed` 同样要落到视图根：组件节点上的行段不进根的渲染循环，行会静默不渲染
+  // （迁移表格族时踩到：`tbody.keyed(rows, …)` 在组件节点上调用时 tbody 是空的）。
+  'keyed',
   'bindWindowEvent',
   'bindDocumentEvent',
   'bindAnimationFrame',
@@ -4637,5 +4640,39 @@ export function registerChildFactories(NodeClass, factories, options = {}) {
     };
     childFactory[CHILD_FACTORY] = true;
     NodeClass.prototype[name] = childFactory;
+    registerComponentChildFactory(name);
+  });
+}
+
+/**
+ * 顺带把同一个子工厂名挂到**组件节点**上：转发给视图根并映射回组件（链式不断）。
+ *
+ * 为什么需要：vNode 组件的成员是 `ComponentNode`，而 DSL 子工厂（`hstack` / `vMenuItem` / `vTd`…）
+ * 注册在元素节点原型上。组件里的回调（`row.vTd((cell) => cell.hstack(…))`）拿到的若是组件节点，
+ * 没有这层委托就会 `cell.hstack is not a function`（迁移表格族时踩到）。
+ * 名字集合由 `registerChildFactories` 决定，不额外维护清单。
+ */
+function registerComponentChildFactory(name) {
+  // 与元素级委托同一口径：组件自己的命令可以**遮蔽**同名子工厂
+  // （例如表格的 `caption()` 命令 vs HTML 的 `caption` 子工厂）
+  SHADOWABLE_DEFERRED_METHOD_NAMES.add(name);
+
+  if (name in ComponentNode.prototype) {
+    return;
+  }
+
+  Object.defineProperty(ComponentNode.prototype, name, {
+    configurable: true,
+    value(...args) {
+      const root = viewRootOf(this);
+      if (!root || typeof root[name] !== 'function') {
+        throw new TypeError(
+          `Component node has no view root to delegate ${name}() to (the component is empty or broken)`
+        );
+      }
+      const result = root[name](...args);
+      return result === root ? this : result;
+    },
+    writable: true
   });
 }

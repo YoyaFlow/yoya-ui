@@ -252,6 +252,36 @@ const CASES = [
       expanded: tree.expandedKeys(),
       selected: tree.selectedKeys()
     })
+  },
+  {
+    name: 'vTable / 声明式 thead + tbody + tfoot',
+    build: () =>
+      api.vTable((table) => {
+        table.caption('季度报表');
+        table.vThead((head) => head.vTr((row) => row.vTh('列一').vTh('列二')));
+        table.vTbody((body) => body.vTr((row) => row.vTd('甲').vTd('乙')));
+        table.vTfoot((foot) => foot.vTr((row) => row.vTd('合计').vTd('2')));
+      }),
+    probe: (table) => ({ caption: table.caption(), rows: table.data().rows.length })
+  },
+  {
+    name: 'vTable / 数据驱动列 + 行',
+    build: () =>
+      api.vTable({
+        columns: [
+          { key: 'name', title: '名称' },
+          { key: 'value', title: '数值' }
+        ],
+        rows: [
+          { name: '甲', value: 1 },
+          { name: '乙', value: 2 }
+        ]
+      }),
+    probe: (table) => ({
+      columns: table.data().columns.length,
+      rows: table.data().rows.length,
+      emptyText: table.emptyText()
+    })
   }
 ];
 
