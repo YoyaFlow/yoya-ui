@@ -1,22 +1,17 @@
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
-import {
-  applyComponentArguments,
-  booleanMethod,
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  themeValue
-} from '../components/shared.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { booleanMethod, componentClass, isPlainObject, themeValue } from '../components/shared.js';
 
 /**
  * vAutocomplete 是自动完成输入：输入时从 source（数组或函数）过滤建议，
  * 支持键盘上下/回车选择与鼠标点选。
  */
-export class VAutocomplete extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class AutocompleteNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VAutocomplete';
     this.className(componentClass, 'yoya-vautocomplete');
     this.styles({ position: 'relative', width: '100%' });
 
@@ -103,7 +98,6 @@ export class VAutocomplete extends HtmlElementNode {
     });
 
     this._setupAutocomplete(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   /** 读写当前输入值。 */
@@ -113,7 +107,8 @@ export class VAutocomplete extends HtmlElementNode {
     }
     this._value = String(next ?? '');
     this._input.attr('value', this._value);
-    this._changeHandlers.forEach((handler) => handler(this._value, this));
+    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+    this._changeHandlers.forEach((handler) => handler(this._value, this._componentHandle ?? this));
     return this;
   }
 
@@ -438,8 +433,30 @@ export class VAutocomplete extends HtmlElementNode {
 }
 
 export function vAutocomplete(first = null, second = null, third = null) {
-  return createComponentFactory(VAutocomplete, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VAutocomplete',
+    createNode: (setup) => new AutocompleteNode(setup),
+    commands: [
+      'value',
+      'source',
+      'options',
+      'limit',
+      'isDisabled',
+      'name',
+      'placeholder',
+      'change',
+      'onChange',
+      'close',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VAutocomplete = vAutocomplete;
+defineComponentIdentity(VAutocomplete, 'VAutocomplete');
 
 registerChildFactories(HtmlElementNode, { vAutocomplete });
 

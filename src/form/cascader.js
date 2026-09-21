@@ -1,11 +1,10 @@
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories, vText } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
-  applyComponentArguments,
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -15,9 +14,10 @@ import {
  * vCascader 是级联选择控件：按层级从 options 树中逐级选择，
  * 选中路径以数组形式取值（value 为各级 value 组成的数组）。
  */
-export class VCascader extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class CascaderNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VCascader';
     this.className(componentClass, 'yoya-vcascader');
     this.styles({ position: 'relative' });
 
@@ -102,7 +102,6 @@ export class VCascader extends HtmlElementNode {
     });
 
     this._setupCascader(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   /** 读写级联选项树（{ label, value, children }[]）。 */
@@ -292,15 +291,22 @@ export class VCascader extends HtmlElementNode {
     if (option.children.length > 0) {
       this._value = path.map((entry) => entry.value);
       this._syncTrigger();
-      this._changeHandlers.forEach((handler) => handler([...this._value], this));
+      this._notifyChange();
       this._renderColumns();
       return;
     }
 
     this._value = path.map((entry) => entry.value);
     this._syncTrigger();
-    this._changeHandlers.forEach((handler) => handler([...this._value], this));
+    this._notifyChange();
     this.close();
+  }
+
+  /** 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型 */
+  _notifyChange() {
+    this._changeHandlers.forEach((handler) =>
+      handler([...this._value], this._componentHandle ?? this)
+    );
   }
 
   _syncTrigger() {
@@ -431,8 +437,30 @@ export class VCascader extends HtmlElementNode {
 }
 
 export function vCascader(first = null, second = null, third = null) {
-  return createComponentFactory(VCascader, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VCascader',
+    createNode: (setup) => new CascaderNode(setup),
+    commands: [
+      'options',
+      'value',
+      'isDisabled',
+      'name',
+      'placeholder',
+      'open',
+      'close',
+      'toggle',
+      'change',
+      'onChange',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VCascader = vCascader;
+defineComponentIdentity(VCascader, 'VCascader');
 
 registerChildFactories(HtmlElementNode, { vCascader });
 

@@ -44,8 +44,10 @@ function publicMethodNames(element) {
 
 const SHELL_FACTORIES = {
   vAvatarUpload: (value) => value.vAvatarUpload(),
+  vAutocomplete: (value) => value.vAutocomplete(),
   vButton: (value) => value.vButton(),
   vButtons: (value) => value.vButtons(),
+  vCascader: (value) => value.vCascader(),
   vCheckbox: (value) => value.vCheckbox(),
   vCheckboxes: (value) => value.vCheckboxes(),
   vColorPicker: (value) => value.vColorPicker(),

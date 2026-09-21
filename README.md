@@ -298,8 +298,8 @@ Self-contained entries (core inlined, single file):
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
 | `yoya.router.full.js`                 | 304.2 KB | 135.3 KB | 39.7 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 870.4 KB | 481.2 KB | 119.0 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 806.8 KB | 449.4 KB | 109.3 KB | core + all components                |
+| `yoya.ui-router.full.js` (everything) | 871.2 KB | 481.7 KB | 119.0 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 807.7 KB | 449.9 KB | 109.3 KB | core + all components                |
 
 Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.

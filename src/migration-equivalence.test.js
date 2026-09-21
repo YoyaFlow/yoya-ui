@@ -648,6 +648,58 @@ const CASES = [
         picker.open(true);
       }),
     probe: (picker) => ({ expanded: picker.attr('aria-expanded') ?? null, value: picker.value() })
+  },
+  {
+    name: 'vCascader / 两级选项 + 选中路径',
+    build: () =>
+      api.vCascader({
+        options: [
+          { children: [{ label: '杭州', value: 'hz' }], label: '华东', value: 'east' },
+          { children: [{ label: '北京', value: 'bj' }], label: '华北', value: 'north' }
+        ],
+        placeholder: '选择区域',
+        value: ['east', 'hz']
+      }),
+    probe: (cascader) => ({
+      levels: cascader.options().length,
+      placeholder: cascader.placeholder(),
+      value: cascader.value()
+    })
+  },
+  {
+    name: 'vCascader / 打开面板',
+    build: () =>
+      api.vCascader((cascader) => {
+        cascader
+          .options([{ children: [{ label: '甲一', value: 'a1' }], label: '甲', value: 'a' }])
+          .open(true);
+      }),
+    probe: (cascader) => ({ expanded: cascader.attr('aria-expanded') ?? null })
+  },
+  {
+    name: 'vAutocomplete / 建议来源 + 限制条数',
+    build: () =>
+      api.vAutocomplete({
+        limit: 2,
+        name: 'stack',
+        placeholder: '搜索技术栈',
+        source: ['JavaScript', 'TypeScript', 'Vue'],
+        value: 's'
+      }),
+    probe: (ac) => ({
+      limit: ac.limit(),
+      name: ac.name(),
+      placeholder: ac.placeholder(),
+      value: ac.value()
+    })
+  },
+  {
+    name: 'vAutocomplete / 回调写法',
+    build: () =>
+      api.vAutocomplete((ac) => {
+        ac.source(['Vue', 'React']).value('v').limit(5);
+      }),
+    probe: (ac) => ({ source: ac.source().length, value: ac.value() })
   }
 ];
 

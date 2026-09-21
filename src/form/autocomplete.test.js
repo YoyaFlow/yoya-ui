@@ -145,7 +145,8 @@ describe('vAutocomplete', () => {
     });
     const element = autocomplete.renderDom();
 
-    autocomplete._openSuggestions();
+    // 走真实入口（输入框 focus）打开建议列表，不直接调内部方法
+    element.querySelector('[data-vautocomplete-input]').dispatchEvent(new Event('focus'));
     await flushSuggestions();
 
     const list = element.querySelector('[data-vautocomplete-list]');
