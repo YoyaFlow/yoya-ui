@@ -9,7 +9,8 @@
  *   组件自有方法仍照旧（`vDialog({ title })` 是 props）。
  */
 import { describe, expect, it } from 'vitest';
-import { div, ref, span, vButton, vCard, vDialog, vText } from '../index.js';
+import { div, ref, span, vButton, vCard, vDialog, vNode, vText } from '../index.js';
+import { createComponentShortcut } from '../components/shared.js';
 
 describe('setup dispatch: options keys', () => {
   it('writes attributes for keys that collide with child factories', () => {
@@ -121,5 +122,62 @@ describe('setup dispatch: component factories', () => {
 
     expect(card.toHTML()).toContain('data-card="1"');
     expect(card.toHTML()).toContain('a<span>s</span>b');
+  });
+
+  it('runs setupFunction on the component itself, never by re-running the root setup', () => {
+    let rootBuilds = 0;
+
+    const Counter = () =>
+      vNode((api) => {
+        api.bump = () => api;
+        return div((root) => {
+          rootBuilds += 1;
+          root.className('counter');
+        });
+      });
+
+    const counter = createComponentShortcut(Counter);
+    let handle = null;
+    const node = counter((component) => {
+      handle = component;
+    });
+
+    // 根节点的构建帧只在定义里跑过一次；组件的 setupFunction 是组件自己的构建帧
+    expect(rootBuilds).toBe(1);
+    // 回调句柄 = 工厂返回值，命令挂在同一个节点上
+    expect(handle).toBe(node);
+    expect(typeof node.bump).toBe('function');
+    expect(node.toHTML()).toBe('<div class="counter"></div>');
+  });
+
+  it('lets api setupFunction / setupString / setupObject override the dispatch', () => {
+    const seen = [];
+
+    const Widget = () =>
+      vNode((api) => {
+        api.setupFunction = (builder) => {
+          // 覆盖入口拿到的是「值」（构建回调本身），由覆盖实现决定怎么用
+          seen.push(typeof builder === 'function' ? 'function' : 'not-function');
+          return api;
+        };
+        api.setupString = (value) => {
+          seen.push(`string:${value}`);
+          return api;
+        };
+        api.setupObject = (value) => {
+          seen.push(`object:${value.kind}`);
+          return api;
+        };
+        return div('widget');
+      });
+
+    const widget = createComponentShortcut(Widget);
+    widget((component) => component.attr('data-x', '1'));
+    widget('文本');
+    widget({ kind: 'a' });
+
+    expect(seen).toEqual(['function', 'string:文本', 'object:a']);
+    // 覆盖时不落到根元素：字符串没有被当成文本子节点追加
+    expect(widget('文本').toHTML()).toBe('<div>widget</div>');
   });
 });

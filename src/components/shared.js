@@ -486,11 +486,20 @@ export function resolveTextValue(value) {
  * 快捷方法（vXxx）建组件并把调用方参数按 setupFunction / setupString / setupObject 分派实现，
  * 组件在 api 上覆盖同名方法就用覆盖的，没覆盖就回落视图根（元素）的实现。
  */
+/** `instanceof` 对箭头函数（无 prototype）会抛错，这里统一吞掉并返回 false。 */
+function isSameDefinition(value, Definition) {
+  try {
+    return value instanceof Definition;
+  } catch {
+    return false;
+  }
+}
+
 export function createComponentShortcut(Definition) {
   return function componentShortcut(first = null, second = null, third = null) {
     // 复用同类实例（旧 `createComponentFactory` 的语义）：`vCard(已有卡片)` 返回它自己，
     // 其余参数继续按 setup 分派补上。
-    if (first && typeof first === 'object' && first instanceof Definition) {
+    if (first && typeof first === 'object' && isSameDefinition(first, Definition)) {
       applySetupValue(first, second);
       applySetupValue(first, third);
 
