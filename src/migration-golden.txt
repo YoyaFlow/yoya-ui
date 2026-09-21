@@ -87,3 +87,15 @@ dom:      <aside aria-label=后台主导航 class=yoya-component yoya-vsidebar><
 toHTML:   <aside aria-label="后台主导航" class="yoya-component yoya-vsidebar"><div class="yoya-vsidebar-header"><strong class="yoya-vsidebar-title">运维中心</strong><button aria-controls="yoya-vsidebar-menu-6" aria-expanded="true" aria-label="收起侧边导航" class="yoya-component yoya-vbutton yoya-vsidebar-toggle" data-size="medium" data-variant="secondary" type="button"><span aria-hidden="true" class="yoya-vbutton-spinner"></span><span class="yoya-vbutton-label">‹</span></button></div><div aria-label="后台主导航菜单" aria-orientation="vertical" class="yoya-component yoya-vmenu yoya-vsidebar-menu" data-orientation="vertical" id="yoya-vsidebar-menu-6" role="menu"><button aria-current="page" class="yoya-component yoya-vmenu-item" data-active="true" data-orientation="vertical" role="menuitem" type="button"><span aria-hidden="true" class="yoya-vmenu-item-icon" style="display:none"></span><span class="yoya-vmenu-item-label">概览</span><span aria-hidden="true" class="yoya-vmenu-item-shortcut" style="display:none"></span></button></div></aside>
 probe:    {"tag":"aside"}
 residue:  (空)
+
+### vAnchor / 三条锚点
+dom:      <nav aria-label=页面锚点 class=yoya-component yoya-vanchor data-item-count=2 data-offset=64><ul class=yoya-vanchor-list><li class=yoya-vanchor-item><a class=yoya-vanchor-link href=#intro>#text:介绍<ul class=yoya-vanchor-children style=display: none;><li class=yoya-vanchor-item><a class=yoya-vanchor-link href=#usage>#text:用法<ul class=yoya-vanchor-children style=display: none;>
+toHTML:   <nav aria-label="页面锚点" class="yoya-component yoya-vanchor" data-item-count="2" data-offset="64"><ul class="yoya-vanchor-list"><li class="yoya-vanchor-item"><a class="yoya-vanchor-link" href="#intro">介绍</a><ul class="yoya-vanchor-children" style="display:none"></ul></li><li class="yoya-vanchor-item"><a class="yoya-vanchor-link" href="#usage">用法</a><ul class="yoya-vanchor-children" style="display:none"></ul></li></ul></nav>
+probe:    {"offset":64,"active":null,"count":2}
+residue:  (空)
+
+### vAnchorItem / 独立项
+dom:      <li class=yoya-vanchor-item><a class=yoya-vanchor-link href=#alone>#text:独立项<ul class=yoya-vanchor-children style=display: none;>
+toHTML:   <li class="yoya-vanchor-item"><a class="yoya-vanchor-link" href="#alone">独立项</a><ul class="yoya-vanchor-children" style="display:none"></ul></li>
+probe:    {"href":"#alone","active":null}
+residue:  (空)

@@ -1,8 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
+import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -10,9 +11,11 @@ import {
   setupContentSlot
 } from '../components/shared.js';
 
-export class VAnchor extends HtmlElementNode {
+/** 锚点导航的节点类型（不导出）；公开组件 `vAnchor` 是 vNode 外壳。 */
+class AnchorNode extends HtmlElementNode {
   constructor(setup = null) {
     super('nav', null);
+    this._identity = 'VAnchor';
     this._activeHref = null;
     this._offset = 80;
     this._target = null;
@@ -104,7 +107,10 @@ export class VAnchor extends HtmlElementNode {
   }
 
   _syncItems() {
-    const items = this._list.children().filter((child) => child instanceof VAnchorItem);
+    // 子项可能是 vNode 组件（成员是 ComponentNode）：判定落到视图根（节点类型）
+    const items = this._list
+      .children()
+      .filter((child) => viewRootOf(child) instanceof AnchorItemNode);
 
     this.attr('data-item-count', String(items.length));
     this._syncActiveState();
@@ -117,9 +123,10 @@ export class VAnchor extends HtmlElementNode {
     this.attr('data-active-href', activeHref || null);
     const visit = (children) => {
       children.forEach((child) => {
-        if (child instanceof VAnchorItem) {
-          child.active(child.href() === activeHref);
-          visit(child._childrenBox.children());
+        const unit = viewRootOf(child) ?? child;
+        if (unit instanceof AnchorItemNode) {
+          unit.active(unit.href() === activeHref);
+          visit(unit._childrenBox.children());
         }
       });
     };
@@ -228,9 +235,10 @@ export class VAnchor extends HtmlElementNode {
     const items = [];
     const collect = (children) => {
       children.forEach((child) => {
-        if (child instanceof VAnchorItem) {
-          items.push(child);
-          collect(child._childrenBox.children());
+        const unit = viewRootOf(child) ?? child;
+        if (unit instanceof AnchorItemNode) {
+          items.push(unit);
+          collect(unit._childrenBox.children());
         }
       });
     };
@@ -331,9 +339,11 @@ export class VAnchor extends HtmlElementNode {
   }
 }
 
-export class VAnchorItem extends HtmlElementNode {
+/** 锚点项的节点类型（不导出）；公开组件 `vAnchorItem` 是 vNode 外壳。 */
+class AnchorItemNode extends HtmlElementNode {
   constructor(setup = null, href = undefined) {
     super('li', null);
+    this._identity = 'VAnchorItem';
     this._href = null;
     this._title = '';
     this._active = false;
@@ -483,16 +493,33 @@ export class VAnchorItem extends HtmlElementNode {
 }
 
 export function vAnchor(first = null, second = null, third = null) {
-  return createComponentFactory(VAnchor, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VAnchor',
+    createNode: (setup) => new AnchorNode(setup),
+    commands: ['ariaLabel', 'offset', 'target', 'items', 'active', 'activeHref'],
+    childFactories: ['vAnchor', 'vAnchorItem'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
+export const VAnchor = vAnchor;
+defineComponentIdentity(VAnchor, 'VAnchor');
+
 export function vAnchorItem(setup = null, href = undefined) {
-  if (setup instanceof VAnchorItem && href === undefined) {
+  if (componentNameOf(setup) === 'VAnchorItem' && href === undefined) {
     return setup;
   }
 
-  return new VAnchorItem(setup, href);
+  return createComponentShell({
+    identity: 'VAnchorItem',
+    createNode: () => new AnchorItemNode(setup, href),
+    commands: ['title', 'text', 'label', 'href', 'nested', 'subItems', 'active'],
+    args: []
+  });
 }
+
+export const VAnchorItem = vAnchorItem;
+defineComponentIdentity(VAnchorItem, 'VAnchorItem');
 
 function normalizeAnchorItem(item) {
   if (item instanceof VAnchorItem) {

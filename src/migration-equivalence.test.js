@@ -178,6 +178,24 @@ const CASES = [
         }
       }),
     probe: (sidebar) => ({ tag: sidebar.tagName() })
+  },
+  {
+    name: 'vAnchor / 三条锚点',
+    build: () =>
+      api.vAnchor({ ariaLabel: '页面锚点', offset: 64 }, (anchor) => {
+        anchor.vAnchorItem({ href: '#intro', title: '介绍' });
+        anchor.vAnchorItem({ href: '#usage', title: '用法' });
+      }),
+    probe: (anchor) => ({
+      offset: anchor.offset(),
+      active: anchor.active(),
+      count: anchor.items().length
+    })
+  },
+  {
+    name: 'vAnchorItem / 独立项',
+    build: () => api.vAnchorItem({ href: '#alone', title: '独立项' }),
+    probe: (item) => ({ href: item.href(), active: item.attr('data-active') ?? null })
   }
 ];
 

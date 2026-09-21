@@ -1,13 +1,9 @@
 import { div, HtmlElementNode } from '../html/index.js';
 import { VButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import {
-  applySetupValue,
-  componentNameOf,
-  defineComponentIdentity,
-  viewRootOf
-} from '../core/node.js';
+import { componentNameOf, defineComponentIdentity, viewRootOf } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
+import { createComponentShell } from '../components/component-shell.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
@@ -20,6 +16,16 @@ import {
 } from '../components/shared.js';
 
 import { allocateId } from '../core/id.js';
+
+/** 菜单族的子工厂名：容器组件把它们补到命令面上（`menu.vMenuItem(…)` 这类组件级 DSL 调用）。 */
+const MENU_CHILD_FACTORIES = [
+  'vMenu',
+  'vMenuItem',
+  'vMenuGroup',
+  'vMenuDivider',
+  'vSubMenu',
+  'vSidebar'
+];
 
 /**
  * 菜单容器的**节点类型**（不导出）：朝向落盘、tab 序维护、子节点加入时的朝向同步都在这里，
@@ -1074,87 +1080,8 @@ function setSidebarVisuallyHidden(node, hidden) {
   }
 }
 
-/**
- * 命令委托：把节点类型上的同名方法挂到 api 上（公开组件因此是 vNode 外壳，节点类型只管元素机制）。
- * 节点返回自己时映射成 `api`——`vNode` 的 `attachCommands` 随后会把 `api` 再映射回节点，链式不断。
- */
-function delegateCommands(api, node, names) {
-  names.forEach((name) => {
-    api[name] = (...args) => {
-      const result = node[name](...args);
-      return result === node ? api : result;
-    };
-  });
-}
-
-/** 复用同类组件实例（旧 `createComponentFactory` 的语义）：`vMenu(existingMenu)` 返回它自己。 */
-function reuseComponent(value, name) {
-  return componentNameOf(value) === name ? value : null;
-}
-
-/**
- * 容器组件上的子工厂调用（`menu.vMenuItem(…)`）：转发给根节点并返回 `api`。
- * 旧类组件本身就是元素节点，所以这种写法一直可用；vNode 外壳要把它们补回组件的命令面上
- * （只转发菜单族自己的子工厂，避免把整套 DSL 都复制到每个实例上）。
- */
-function delegateChildFactories(api, node, names) {
-  names.forEach((name) => {
-    const factory = node[name];
-    if (typeof factory !== 'function' || name in api) {
-      return;
-    }
-    api[name] = (...args) => {
-      factory.apply(node, args);
-      return api;
-    };
-  });
-}
-
-/** 菜单族的子工厂名：容器组件补到命令面上用。 */
-const MENU_CHILD_FACTORIES = [
-  'vMenu',
-  'vMenuItem',
-  'vMenuGroup',
-  'vMenuDivider',
-  'vSubMenu',
-  'vSidebar'
-];
-
-/**
- * 菜单族的组件外壳：节点类型负责元素机制，组件节点是 vNode（身份 + 命令 + 子工厂）。
- *
- * 回调时机：首个参数是函数时**推迟到组件节点建好之后**再调用（其余参数照旧按值分派），
- * 这样回调拿到的句柄与工厂返回值是**同一个组件节点**（与旧的类组件契约一致），
- * 并且它能同时用命令（`text()`）、子工厂（`vMenuItem()`）与元素级方法（`id()`，由核心委托到视图根）。
- */
-function createMenuComponent({ identity, createNode, commands = [], childFactories = [], args }) {
-  const [first = null, second = null, third = null, ...rest] = args;
-  const reused = reuseComponent(first, identity);
-  if (reused) {
-    return reused;
-  }
-
-  const deferredCallback = typeof first === 'function' ? first : null;
-  const node = vNode((api) => {
-    const element = createNode(deferredCallback ? null : first);
-    delegateCommands(api, element, commands);
-    if (childFactories.length > 0) {
-      delegateChildFactories(api, element, childFactories);
-    }
-    return element;
-  });
-
-  if (deferredCallback) {
-    applySetupValue(node, deferredCallback);
-  }
-  applySetupValue(node, second);
-  applySetupValue(node, third);
-  rest.forEach((value) => applySetupValue(node, value));
-  return node;
-}
-
 export function vMenu(first = null, second = null, third = null) {
-  return createMenuComponent({
+  return createComponentShell({
     identity: 'VMenu',
     createNode: (setup) => new MenuNode(setup),
     commands: ['orientation', 'horizontal', 'vertical'],
@@ -1164,7 +1091,7 @@ export function vMenu(first = null, second = null, third = null) {
 }
 
 export function vMenuItem(first = null, second = null, third = null) {
-  return createMenuComponent({
+  return createComponentShell({
     identity: 'VMenuItem',
     createNode: (setup) => new MenuItemNode(setup),
     commands: [
@@ -1183,7 +1110,7 @@ export function vMenuItem(first = null, second = null, third = null) {
 }
 
 export function vMenuGroup(first = null, second = null, third = null) {
-  return createMenuComponent({
+  return createComponentShell({
     identity: 'VMenuGroup',
     createNode: (setup) => new MenuGroupNode(setup),
     commands: ['label', 'title'],
@@ -1204,7 +1131,7 @@ defineComponentIdentity(VSubMenu, 'VSubMenu');
 defineComponentIdentity(VSidebar, 'VSidebar');
 
 export function vSubMenu(first = null, second = null, third = null) {
-  return createMenuComponent({
+  return createComponentShell({
     identity: 'VSubMenu',
     createNode: (setup) => new SubMenuNode(setup),
     commands: [
@@ -1224,7 +1151,7 @@ export function vSubMenu(first = null, second = null, third = null) {
 }
 
 export function vSidebar(first = null, second = null, third = null) {
-  return createMenuComponent({
+  return createComponentShell({
     identity: 'VSidebar',
     createNode: (setup) => new SidebarNode(setup),
     commands: [
