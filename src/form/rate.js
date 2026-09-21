@@ -1,17 +1,18 @@
-import { registerChildFactories } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   resolveTextValue,
   themeValue
 } from '../components/shared.js';
 
-export class VRate extends HtmlElementNode {
+class RateNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VRate';
     this._allowClear = true;
     this._allowHalf = false;
     this._character = '★';
@@ -211,8 +212,6 @@ export class VRate extends HtmlElementNode {
 
     if (!this._stars || this._stars.length !== this._count) {
       this._renderStars();
-    } else {
-      this._syncStars();
     }
     return this;
   }
@@ -250,6 +249,12 @@ export class VRate extends HtmlElementNode {
           ? `0 0 0 3px ${themeValue('color-primary-ring', 'rgba(37, 99, 235, 0.22)')}`
           : null
     );
+
+    // 星标状态（指针、aria-checked、填充比例）跟着 disabled / readonly / error 一起走：
+    // 挂载后再改状态时旧指针不会留在星标上（迁移期金标对比暴露的既有不一致）。
+    if (this._stars) {
+      this._syncStars();
+    }
     return this;
   }
 
@@ -561,7 +566,30 @@ export class VRate extends HtmlElementNode {
 }
 
 export function vRate(first = null, second = null, third = null) {
-  return createComponentFactory(VRate, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VRate',
+    createNode: (setup) => new RateNode(setup),
+    commands: [
+      'value',
+      'count',
+      'max',
+      'allowHalf',
+      'allowClear',
+      'clearable',
+      'character',
+      'size',
+      'name',
+      'disabled',
+      'readonly',
+      'required',
+      'error',
+      'clear'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VRate = vRate;
+defineComponentIdentity(VRate, 'VRate');
 
 registerChildFactories(HtmlElementNode, { vRate });

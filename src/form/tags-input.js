@@ -1,10 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
-  applyComponentArguments,
   booleanMethod,
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -14,9 +13,10 @@ import {
  * vTagsInput 是标签输入控件：回车/逗号添加标签，退格删除，
  * 标签可点 × 移除，值以字符串数组收集。
  */
-export class VTagsInput extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class TagsInputNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTagsInput';
     this.className(componentClass, 'yoya-vtags-input');
     this.styles({
       alignItems: 'center',
@@ -73,7 +73,6 @@ export class VTagsInput extends HtmlElementNode {
     });
 
     this._setupTagsInput(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   /** 读写标签数组。 */
@@ -84,7 +83,7 @@ export class VTagsInput extends HtmlElementNode {
 
     this._value = (Array.isArray(next) ? next : []).map((item) => String(item)).filter(Boolean);
     this._renderChips();
-    this._changeHandlers.forEach((handler) => handler([...this._value], this));
+    this._notifyChange();
     return this;
   }
 
@@ -126,6 +125,13 @@ export class VTagsInput extends HtmlElementNode {
     return [...this._value];
   }
 
+  /** 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型 */
+  _notifyChange() {
+    this._changeHandlers.forEach((handler) =>
+      handler([...this._value], this._componentHandle ?? this)
+    );
+  }
+
   _addTag(raw) {
     const tag = String(raw).trim();
     if (!tag || this._value.includes(tag)) {
@@ -133,7 +139,7 @@ export class VTagsInput extends HtmlElementNode {
     }
     this._value.push(tag);
     this._renderChips();
-    this._changeHandlers.forEach((handler) => handler([...this._value], this));
+    this._notifyChange();
   }
 
   _removeTag(index) {
@@ -142,7 +148,7 @@ export class VTagsInput extends HtmlElementNode {
     }
     this._value.splice(index, 1);
     this._renderChips();
-    this._changeHandlers.forEach((handler) => handler([...this._value], this));
+    this._notifyChange();
   }
 
   _handleKeydown(event) {
@@ -249,7 +255,25 @@ export class VTagsInput extends HtmlElementNode {
 }
 
 export function vTagsInput(first = null, second = null, third = null) {
-  return createComponentFactory(VTagsInput, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTagsInput',
+    createNode: (setup) => new TagsInputNode(setup),
+    commands: [
+      'value',
+      'isDisabled',
+      'name',
+      'placeholder',
+      'change',
+      'onChange',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VTagsInput = vTagsInput;
+defineComponentIdentity(VTagsInput, 'VTagsInput');
 
 registerChildFactories(HtmlElementNode, { vTagsInput });

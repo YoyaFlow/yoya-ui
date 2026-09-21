@@ -1,21 +1,16 @@
+import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories, vText } from '../core/node.js';
-import {
-  applyComponentArguments,
-  booleanMethod,
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  themeValue
-} from '../components/shared.js';
+import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
+import { booleanMethod, componentClass, isPlainObject, themeValue } from '../components/shared.js';
 
 /**
  * vSlider 是滑动条输入控件：min/max/step 约束取值，支持数值显示、
  * 禁用状态与 change 回调，可放入 vFormItem 参与表单收集。
  */
-export class VSlider extends HtmlElementNode {
-  constructor(setup = null, options = null, callback = null) {
+class SliderNode extends HtmlElementNode {
+  constructor(setup = null) {
     super('div', null);
+    this._identity = 'VSlider';
     this.className(componentClass, 'yoya-vslider');
     this.styles({
       alignItems: 'center',
@@ -73,7 +68,6 @@ export class VSlider extends HtmlElementNode {
     });
 
     this._setupSlider(setup);
-    applyComponentArguments(this, options, callback);
   }
 
   /** 读写当前数值（自动收敛到 min/max/step 范围内）。 */
@@ -198,7 +192,10 @@ export class VSlider extends HtmlElementNode {
       : this._min;
     this._sync();
     if (emit) {
-      this._changeHandlers.forEach((handler) => handler(this._value, this));
+      // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+      this._changeHandlers.forEach((handler) =>
+        handler(this._value, this._componentHandle ?? this)
+      );
     }
     return this;
   }
@@ -271,8 +268,30 @@ export class VSlider extends HtmlElementNode {
 }
 
 export function vSlider(first = null, second = null, third = null) {
-  return createComponentFactory(VSlider, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VSlider',
+    createNode: (setup) => new SliderNode(setup),
+    commands: [
+      'value',
+      'min',
+      'max',
+      'step',
+      'showValue',
+      'vertical',
+      'isDisabled',
+      'name',
+      'change',
+      'onChange',
+      // 构造函数里用 booleanMethod 挂的开关方法
+      'disabled',
+      'required'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VSlider = vSlider;
+defineComponentIdentity(VSlider, 'VSlider');
 
 registerChildFactories(HtmlElementNode, { vSlider });
 

@@ -548,6 +548,33 @@ const CASES = [
         button.size('small');
       }),
     probe: (button) => ({ glow: button.glow(), size: button.size() })
+  },
+  {
+    name: 'vSlider / 范围 + 当前值',
+    build: () =>
+      api.vSlider({ max: 10, min: 0, name: 'weight', step: 2, value: 6, vertical: true }),
+    probe: (slider) => ({
+      max: slider.max(),
+      min: slider.min(),
+      step: slider.step(),
+      value: slider.value(),
+      vertical: slider.vertical()
+    })
+  },
+  {
+    name: 'vRate / 半星 + 只读',
+    build: () =>
+      api.vRate((rate) => {
+        rate.count(5).allowHalf(true).value(3.5);
+        rate.name('score').readonly(true);
+      }),
+    probe: (rate) => ({ count: rate.count(), readonly: rate.readonly(), value: rate.value() })
+  },
+  {
+    name: 'vTagsInput / 标签 + 占位',
+    build: () =>
+      api.vTagsInput({ name: 'labels', placeholder: '输入后回车添加', value: ['甲', '乙'] }),
+    probe: (node) => ({ name: node.name(), placeholder: node.placeholder(), value: node.value() })
   }
 ];
 
