@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { vTable, vTbody, vTd, vTfoot, vTh, vThead, vTr } from '../index.js';
 
+/** 身份走 `vn` 属性（票 15：组件类名退场）。 */
+const GRID = '[vn="VTableGrid"]';
+const HEAD = '[vn="VThead"]';
+const BODY = '[vn="VTbody"]';
+const FOOT = '[vn="VTfoot"]';
+const CAPTION = '[vn="VTableCaption"]';
+
 describe('vTable declarative sections', () => {
   it('builds thead, tbody and tfoot through vTable child shortcuts', () => {
     const table = vTable((table) => {
@@ -28,19 +35,15 @@ describe('vTable declarative sections', () => {
     });
 
     const element = table.renderDom();
-    const tableElement = element.querySelector('.yoya-vtable-table');
+    const tableElement = element.querySelector(GRID);
 
     expect(tableElement.querySelectorAll(':scope > thead')).toHaveLength(1);
     expect(tableElement.querySelectorAll(':scope > tbody')).toHaveLength(1);
     expect(tableElement.querySelectorAll(':scope > tfoot')).toHaveLength(1);
-    expect(tableElement.querySelector('.yoya-vtable-head th:nth-child(1)').textContent).toBe(
-      '名称'
-    );
-    expect(tableElement.querySelector('.yoya-vtable-body td:nth-child(2)').textContent).toBe(
-      '运行中'
-    );
-    expect(tableElement.querySelector('.yoya-vtable-foot td').getAttribute('colspan')).toBe('2');
-    expect(tableElement.querySelector('.yoya-vtable-caption').textContent).toBe('服务列表');
+    expect(tableElement.querySelector(`${HEAD} th:nth-child(1)`).textContent).toBe('名称');
+    expect(tableElement.querySelector(`${BODY} td:nth-child(2)`).textContent).toBe('运行中');
+    expect(tableElement.querySelector(`${FOOT} td`).getAttribute('colspan')).toBe('2');
+    expect(tableElement.querySelector(CAPTION).textContent).toBe('服务列表');
   });
 
   it('exposes standalone section, row and cell factories', () => {
@@ -58,7 +61,8 @@ describe('vTable declarative sections', () => {
     expect(body.renderDom().querySelector('td:nth-child(1)').textContent).toBe('api-gateway');
     expect(foot.renderDom().querySelector('td').textContent).toBe('合计');
     expect(vTh('名称').textContent()).toBe('名称');
-    expect(vTd('值').className()).toContain('yoya-vtable-cell');
+    expect(vTd('值').attr('vn')).toBe('VTd');
+    expect(vTh('名称').attr('vn')).toBe('VTh');
     expect(vTr('一行').tagName()).toBe('tr');
   });
 
@@ -70,8 +74,8 @@ describe('vTable declarative sections', () => {
 
     const element = table.renderDom();
 
-    expect(element.querySelector('.yoya-vtable-body td').textContent).toBe('api-gateway');
-    expect(element.querySelectorAll('.yoya-vtable-table > tbody')).toHaveLength(1);
+    expect(element.querySelector(`${BODY} td`).textContent).toBe('api-gateway');
+    expect(element.querySelectorAll(`${GRID} > tbody`)).toHaveLength(1);
   });
 
   it('routes child sections into the internal table element', () => {
@@ -81,8 +85,8 @@ describe('vTable declarative sections', () => {
     });
     const element = table.renderDom();
 
-    expect(element.querySelector('.yoya-vtable-table > thead th').textContent).toBe('名称');
-    expect(element.querySelector('.yoya-vtable-table > tbody td').textContent).toBe('api-gateway');
+    expect(element.querySelector(`${GRID} > thead th`).textContent).toBe('名称');
+    expect(element.querySelector(`${GRID} > tbody td`).textContent).toBe('api-gateway');
   });
 
   it('switches back to data-driven columns and rows after declarative sections', () => {
@@ -94,9 +98,9 @@ describe('vTable declarative sections', () => {
 
     table.rows([{ name: 'api-gateway' }]);
 
-    expect(element.querySelector('.yoya-vtable-head th').textContent).toBe('name');
-    expect(element.querySelector('.yoya-vtable-body td').textContent).toBe('api-gateway');
-    expect(element.querySelectorAll('.yoya-vtable-table > thead')).toHaveLength(1);
-    expect(element.querySelectorAll('.yoya-vtable-table > tbody')).toHaveLength(1);
+    expect(element.querySelector(`${HEAD} th`).textContent).toBe('name');
+    expect(element.querySelector(`${BODY} td`).textContent).toBe('api-gateway');
+    expect(element.querySelectorAll(`${GRID} > thead`)).toHaveLength(1);
+    expect(element.querySelectorAll(`${GRID} > tbody`)).toHaveLength(1);
   });
 });

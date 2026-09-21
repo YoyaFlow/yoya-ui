@@ -2211,8 +2211,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     tableDemo.querySelector('[data-table-row-action="worker"]').click();
 
     expect(status.textContent).toBe('已选择 worker');
-    expect(tableDemo.querySelector('.yoya-vtable-caption').textContent).toBe('服务列表');
-    expect(tableDemo.querySelectorAll('.yoya-vtable-row')).toHaveLength(3);
+    expect(tableDemo.querySelector('[vn="VTableCaption"]').textContent).toBe('服务列表');
+    expect(tableDemo.querySelectorAll('[vn="VTr"]')).toHaveLength(3);
   });
 
   it('shows declarative table sections in the table documentation demo', async () => {
@@ -2226,12 +2226,12 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const declarativeDemo = document.querySelector('[data-data-display-demo="declarative"]');
 
     expect(declarativeDemo).not.toBeNull();
-    const tableElement = declarativeDemo.querySelector('.yoya-vtable-table');
-    expect(tableElement.querySelector('.yoya-vtable-head th:nth-child(2)').textContent).toBe(
+    const tableElement = declarativeDemo.querySelector('[vn="VTableGrid"]');
+    expect(tableElement.querySelector('[vn="VThead"] th:nth-child(2)').textContent).toBe(
       '状态'
     );
-    expect(tableElement.querySelectorAll('.yoya-vtable-table > tbody tr')).toHaveLength(2);
-    expect(tableElement.querySelector('.yoya-vtable-foot td').textContent).toBe(
+    expect(tableElement.querySelectorAll('[vn="VTableGrid"] > tbody tr')).toHaveLength(2);
+    expect(tableElement.querySelector('[vn="VTfoot"] td').textContent).toBe(
       '表尾单元格可以跨列'
     );
   });

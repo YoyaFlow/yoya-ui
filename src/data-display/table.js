@@ -1,14 +1,8 @@
-import {
-  defineComponentIdentity,
-  registerChildFactories,
-  viewRootOf,
-  ViewNode
-} from '../core/node.js';
+import { registerChildFactories, viewRootOf, ViewNode } from '../core/node.js';
 import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
   applyComponentSetup,
-  componentClass,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -16,22 +10,26 @@ import {
   themeValue
 } from '../components/shared.js';
 
-/** VTable 的节点类型（不导出）；公开组件是 vNode 外壳。 */
+/**
+ * VTable 的节点类型（不导出）；公开组件是 vNode 外壳。
+ *
+ * 身份走 `vn` 属性（票 15）：根 `VTable`，内部块各写自己的身份（`VTableScroll` / `VTableGrid`
+ * / `VTableCaption` / `VTheadRow` / `VTableEmptyRow` / `VTableEmpty`），
+ * 与导出组件同角色的元素共用同一个身份（自动 thead = `VThead`、数据行 = `VTr`、单元格 = `VTd`）。
+ */
 class TableNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VTable';
+    super('div', { vn: 'VTable' });
     this._columns = [];
     this._rows = [];
     this._emptyContent = '暂无数据';
     this._hasDeclarativeSections = false;
-    this._captionBox = new HtmlElementNode('caption').className('yoya-vtable-caption');
-    this._head = new HtmlElementNode('thead').className('yoya-vtable-head');
-    this._body = new HtmlElementNode('tbody').className('yoya-vtable-body');
-    this._table = new HtmlElementNode('table').className('yoya-vtable-table');
-    this._scroll = new HtmlElementNode('div').className('yoya-vtable-scroll');
+    this._captionBox = new HtmlElementNode('caption', { vn: 'VTableCaption' });
+    this._head = new HtmlElementNode('thead', { vn: 'VThead' });
+    this._body = new HtmlElementNode('tbody', { vn: 'VTbody' });
+    this._table = new HtmlElementNode('table', { vn: 'VTableGrid' });
+    this._scroll = new HtmlElementNode('div', { vn: 'VTableScroll' });
 
-    this.className(componentClass, 'yoya-vtable');
     this.styles({
       display: 'block',
       minWidth: '0'
@@ -173,19 +171,25 @@ class TableNode extends HtmlElementNode {
   }
 
   vThead(setup) {
-    return this._addDeclarativeSection(setup instanceof VThead ? setup : vThead(setup));
+    return this._addDeclarativeSection(
+      viewRootOf(setup) instanceof TheadNode ? setup : vThead(setup)
+    );
   }
 
   vTbody(setup) {
-    return this._addDeclarativeSection(setup instanceof VTbody ? setup : vTbody(setup));
+    return this._addDeclarativeSection(
+      viewRootOf(setup) instanceof TbodyNode ? setup : vTbody(setup)
+    );
   }
 
   vTfoot(setup) {
-    return this._addDeclarativeSection(setup instanceof VTfoot ? setup : vTfoot(setup));
+    return this._addDeclarativeSection(
+      viewRootOf(setup) instanceof TfootNode ? setup : vTfoot(setup)
+    );
   }
 
   vTr(setup) {
-    const row = setup instanceof VTr ? setup : vTr(setup);
+    const row = viewRootOf(setup) instanceof TrNode ? setup : vTr(setup);
 
     if (this._hasDeclarativeSections) {
       const body = this._table.children().find((child) => viewRootOf(child) instanceof TbodyNode);
@@ -260,10 +264,10 @@ class TableNode extends HtmlElementNode {
     replaceChildren(this._body, []);
 
     if (resolvedColumns.length > 0) {
-      const headRow = new HtmlElementNode('tr').className('yoya-vtable-head-row');
+      const headRow = new HtmlElementNode('tr', { vn: 'VTheadRow' });
 
       resolvedColumns.forEach((column, columnIndex) => {
-        const headerCell = new HtmlElementNode('th').className('yoya-vtable-head-cell');
+        const headerCell = new HtmlElementNode('th', { vn: 'VTh' });
         const columnKey = column.key ?? `column-${columnIndex}`;
 
         headerCell.attr('scope', 'col');
@@ -278,11 +282,11 @@ class TableNode extends HtmlElementNode {
 
     if (this._rows.length > 0) {
       this._rows.forEach((row, rowIndex) => {
-        const bodyRow = new HtmlElementNode('tr').className('yoya-vtable-row');
+        const bodyRow = new HtmlElementNode('tr', { vn: 'VTr' });
         bodyRow.attr('data-row-index', String(rowIndex));
 
         bodyColumns.forEach((column, columnIndex) => {
-          const cell = new HtmlElementNode('td').className('yoya-vtable-cell');
+          const cell = new HtmlElementNode('td', { vn: 'VTd' });
           const columnKey = column.key ?? `column-${columnIndex}`;
 
           cell.attr('data-key', columnKey);
@@ -294,8 +298,8 @@ class TableNode extends HtmlElementNode {
         this._body.child(bodyRow);
       });
     } else {
-      const emptyRow = new HtmlElementNode('tr').className('yoya-vtable-empty-row');
-      const emptyCell = new HtmlElementNode('td').className('yoya-vtable-empty');
+      const emptyRow = new HtmlElementNode('tr', { vn: 'VTableEmptyRow' });
+      const emptyCell = new HtmlElementNode('td', { vn: 'VTableEmpty' });
 
       emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
       emptyCell.styles({
@@ -314,12 +318,16 @@ class TableNode extends HtmlElementNode {
       return;
     }
 
-    if (setup instanceof VThead || setup instanceof VTbody || setup instanceof VTfoot) {
+    if (
+      viewRootOf(setup) instanceof TheadNode ||
+      viewRootOf(setup) instanceof TbodyNode ||
+      viewRootOf(setup) instanceof TfootNode
+    ) {
       this._addDeclarativeSection(setup);
       return;
     }
 
-    if (setup instanceof VTr) {
+    if (viewRootOf(setup) instanceof TrNode) {
       this.vTr(setup);
       return;
     }
@@ -366,9 +374,7 @@ export function vTable(first = null, second = null, third = null) {
 /** VThead 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TheadNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('thead', null);
-    this._identity = 'VThead';
-    this.className('yoya-vtable-head');
+    super('thead', { vn: 'VThead' });
     applyComponentSetup(this, setup);
   }
 }
@@ -385,9 +391,7 @@ export function vThead(first = null, second = null, third = null) {
 /** VTbody 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TbodyNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('tbody', null);
-    this._identity = 'VTbody';
-    this.className('yoya-vtable-body');
+    super('tbody', { vn: 'VTbody' });
     applyComponentSetup(this, setup);
   }
 }
@@ -404,9 +408,7 @@ export function vTbody(first = null, second = null, third = null) {
 /** VTfoot 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TfootNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('tfoot', null);
-    this._identity = 'VTfoot';
-    this.className('yoya-vtable-foot');
+    super('tfoot', { vn: 'VTfoot' });
     applyComponentSetup(this, setup);
   }
 }
@@ -423,9 +425,7 @@ export function vTfoot(first = null, second = null, third = null) {
 /** VTr 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TrNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('tr', null);
-    this._identity = 'VTr';
-    this.className('yoya-vtable-row');
+    super('tr', { vn: 'VTr' });
     this._setupTr(setup);
   }
 
@@ -451,9 +451,7 @@ export function vTr(first = null, second = null, third = null) {
 /** VTh 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class ThNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('th', null);
-    this._identity = 'VTh';
-    this.className('yoya-vtable-head-cell');
+    super('th', { vn: 'VTh' });
     this.attr('scope', 'col');
     applyTableCellStyles(this, {}, 'head');
     applyComponentSetup(this, setup);
@@ -471,9 +469,7 @@ export function vTh(first = null, second = null, third = null) {
 /** VTd 的节点类型（不导出）；公开组件是 vNode 外壳。 */
 class TdNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('td', null);
-    this._identity = 'VTd';
-    this.className('yoya-vtable-cell');
+    super('td', { vn: 'VTd' });
     applyTableCellStyles(this, {}, 'body');
     applyComponentSetup(this, setup);
   }
@@ -632,10 +628,3 @@ export const VTfoot = vTfoot;
 export const VTr = vTr;
 export const VTh = vTh;
 export const VTd = vTd;
-defineComponentIdentity(VTable, 'VTable');
-defineComponentIdentity(VThead, 'VThead');
-defineComponentIdentity(VTbody, 'VTbody');
-defineComponentIdentity(VTfoot, 'VTfoot');
-defineComponentIdentity(VTr, 'VTr');
-defineComponentIdentity(VTh, 'VTh');
-defineComponentIdentity(VTd, 'VTd');

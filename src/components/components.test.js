@@ -1910,7 +1910,7 @@ describe('compound components', () => {
     const element = table.renderDom();
     const rows = element.querySelectorAll('tbody tr');
 
-    expect(element.classList.contains('yoya-vtable')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VTable');
     expect(element.querySelector('caption').textContent).toBe('服务列表');
     expect(element.querySelectorAll('thead th')).toHaveLength(3);
     expect(rows).toHaveLength(2);
@@ -1921,7 +1921,7 @@ describe('compound components', () => {
 
     table.rows([]);
 
-    expect(element.querySelector('.yoya-vtable-empty').textContent).toBe('暂无服务');
+    expect(element.querySelector('[vn="VTableEmpty"]').textContent).toBe('暂无服务');
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 
