@@ -146,7 +146,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(document.querySelectorAll('[data-overview-category]')).toHaveLength(13);
     expect(document.querySelectorAll('[data-overview-guide]')).toHaveLength(9);
     expect(document.querySelector('[data-components-menu] .components-menu-tree')).not.toBeNull();
-    expect(document.querySelector('[data-components-menu] .yoya-vtree')).not.toBeNull();
+    expect(document.querySelector('[data-components-menu] [vn~="VTree"]')).not.toBeNull();
     expect(document.querySelector('[data-components-menu] [data-node-id="guides"]')).not.toBeNull();
     expect(
       document.querySelector('[data-components-menu] [data-node-id="guides"]').textContent
@@ -222,7 +222,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       '[data-components-top-nav] [vn~="VMenuItem"][data-active="true"]'
     );
     const activeMenuItems = document.querySelectorAll(
-      '[data-components-menu] .yoya-vtree-node[aria-selected="true"]'
+      '[data-components-menu] [vn~="VTreeRow"][aria-selected="true"]'
     );
 
     expect(activeTopItems).toHaveLength(1);
@@ -2117,7 +2117,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(fileManagerDemo.querySelector('[data-tree-file-type]').textContent).toBe('JavaScript');
 
     const emptyToggle = fileManagerDemo.querySelector(
-      '[data-node-id="components"] .yoya-vtree-toggle'
+      '[data-node-id="components"] [vn~="VTreeToggle"]'
     );
     expect(emptyToggle.getAttribute('aria-expanded')).toBe('false');
 
@@ -2125,25 +2125,27 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(
       fileManagerDemo
-        .querySelector('[data-node-id="components"] .yoya-vtree-toggle')
+        .querySelector('[data-node-id="components"] [vn~="VTreeToggle"]')
         .getAttribute('aria-expanded')
     ).toBe('true');
 
-    const srcToggle = fileManagerDemo.querySelector('[data-node-id="src"] .yoya-vtree-toggle');
+    const srcToggle = fileManagerDemo.querySelector('[data-node-id="src"] [vn~="VTreeToggle"]');
     expect(srcToggle.getAttribute('aria-expanded')).toBe('true');
     expect(srcToggle.querySelector('svg')).not.toBeNull();
 
     srcToggle.click();
 
     const collapsedToggle = fileManagerDemo.querySelector(
-      '[data-node-id="src"] .yoya-vtree-toggle'
+      '[data-node-id="src"] [vn~="VTreeToggle"]'
     );
     expect(collapsedToggle.getAttribute('aria-expanded')).toBe('false');
     expect(collapsedToggle.querySelector('svg path').getAttribute('d')).toContain('M20 20a2');
 
     collapsedToggle.click();
 
-    const expandedToggle = fileManagerDemo.querySelector('[data-node-id="src"] .yoya-vtree-toggle');
+    const expandedToggle = fileManagerDemo.querySelector(
+      '[data-node-id="src"] [vn~="VTreeToggle"]'
+    );
     expect(expandedToggle.getAttribute('aria-expanded')).toBe('true');
     expect(expandedToggle.querySelector('svg path').getAttribute('d')).toContain('m6 14 1.45-2.9');
 

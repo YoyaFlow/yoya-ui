@@ -22,14 +22,14 @@ describe('vTree', () => {
       ]
     });
     const element = tree.renderDom();
-    const rows = element.querySelectorAll('.yoya-vtree-node');
+    const rows = element.querySelectorAll('[vn~="VTreeRow"]');
 
     expect(element.getAttribute('role')).toBe('tree');
     expect(element.getAttribute('aria-label')).toBe('树形控件');
     expect(rows).toHaveLength(4);
     expect(rows[0].getAttribute('aria-expanded')).toBe('true');
     expect(rows[1].getAttribute('aria-level')).toBe('2');
-    expect(rows[1].querySelector('.yoya-vtree-label').textContent).toBe('API 网关');
+    expect(rows[1].querySelector('[vn~="VTreeLabel"]').textContent).toBe('API 网关');
     expect(rows[3].getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -47,17 +47,17 @@ describe('vTree', () => {
     const rootRow = element.querySelector('[data-node-id="root"]');
 
     expect(rootRow.getAttribute('aria-expanded')).toBe('false');
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(1);
 
-    rootRow.querySelector('.yoya-vtree-toggle').click();
+    rootRow.querySelector('[vn~="VTreeToggle"]').click();
 
     expect(tree.expandedKeys()).toEqual(['root']);
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(2);
 
-    element.querySelector('[data-node-id="root"] .yoya-vtree-toggle').click();
+    element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]').click();
 
     expect(tree.expandedKeys()).toEqual([]);
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(1);
   });
 
   it('renders custom left icons from node icon callbacks', () => {
@@ -68,7 +68,7 @@ describe('vTree', () => {
     const element = tree.renderDom();
 
     expect(icon).toHaveBeenCalled();
-    expect(element.querySelector('.yoya-vtree-icon').textContent).toBe('F');
+    expect(element.querySelector('[vn~="VTreeIcon"]').textContent).toBe('F');
   });
 
   it('supports custom expand and collapse toggle icons', () => {
@@ -84,14 +84,14 @@ describe('vTree', () => {
       toggleIcon
     });
     const element = tree.renderDom();
-    const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    const rootToggle = element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]');
 
     expect(rootToggle.textContent).toBe('关');
     expect(rootToggle.getAttribute('aria-expanded')).toBe('false');
 
     rootToggle.click();
 
-    const expandedToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    const expandedToggle = element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]');
     expect(expandedToggle.textContent).toBe('开');
     expect(expandedToggle.getAttribute('aria-expanded')).toBe('true');
     expect(toggleIcon).toHaveBeenCalledWith(expect.anything(), true);
@@ -109,13 +109,13 @@ describe('vTree', () => {
     });
     tree.toggleIcon(div('关'), div('开'));
     const element = tree.renderDom();
-    const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    const rootToggle = element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]');
 
     expect(rootToggle.textContent).toBe('关');
 
     rootToggle.click();
 
-    const expandedToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    const expandedToggle = element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]');
     expect(expandedToggle.textContent).toBe('开');
   });
 
@@ -131,7 +131,7 @@ describe('vTree', () => {
       toggleIcon: '<b>▸</b>'
     });
     const element = tree.renderDom();
-    const rootToggle = element.querySelector('[data-node-id="root"] .yoya-vtree-toggle');
+    const rootToggle = element.querySelector('[data-node-id="root"] [vn~="VTreeToggle"]');
 
     // 字符串按 ChildInput 语义当文本：标签会被转义显示，不会解析成元素
     expect(rootToggle.querySelector('b')).toBeNull();
@@ -143,17 +143,17 @@ describe('vTree', () => {
       nodes: [{ expandable: true, id: 'empty', label: '空文件夹' }]
     });
     const element = tree.renderDom();
-    const toggle = element.querySelector('[data-node-id="empty"] .yoya-vtree-toggle');
+    const toggle = element.querySelector('[data-node-id="empty"] [vn~="VTreeToggle"]');
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(1);
 
     toggle.click();
 
-    const expandedToggle = element.querySelector('[data-node-id="empty"] .yoya-vtree-toggle');
+    const expandedToggle = element.querySelector('[data-node-id="empty"] [vn~="VTreeToggle"]');
     expect(tree.expandedKeys()).toEqual(['empty']);
     expect(expandedToggle.getAttribute('aria-expanded')).toBe('true');
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(1);
   });
 
   it('builds nested tree nodes through vTree callbacks and vTreeNode', () => {
@@ -174,7 +174,7 @@ describe('vTree', () => {
 
     expect(tree.nodes()).toHaveLength(1);
     expect(tree.nodes()[0].id).toBe('root');
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(2);
     expect(element.querySelector('[data-node-id="child"]').getAttribute('aria-selected')).toBe(
       'true'
     );
@@ -199,7 +199,7 @@ describe('vTree', () => {
     });
     const element = tree.renderDom();
     const actionButton = element.querySelector(
-      '[data-node-id="node"] .yoya-vtree-node-actions button'
+      '[data-node-id="node"] [vn~="VTreeNodeActions"] button'
     );
 
     actionButton.click();
@@ -309,16 +309,16 @@ describe('vTree', () => {
 
     tree.expandAll();
     expect(tree.expandedKeys()).toEqual(['root']);
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(2);
 
     tree.collapseAll();
     expect(tree.expandedKeys()).toEqual([]);
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(1);
 
     tree.nodes([]);
 
-    expect(element.querySelector('.yoya-vtree-empty').textContent).toBe('暂无节点');
-    expect(element.querySelectorAll('.yoya-vtree-node')).toHaveLength(0);
+    expect(element.querySelector('[vn~="VTreeEmpty"]').textContent).toBe('暂无节点');
+    expect(element.querySelectorAll('[vn~="VTreeRow"]')).toHaveLength(0);
   });
 
   it('skips disabled nodes when clicking and supports arrow-key navigation', () => {
@@ -500,7 +500,7 @@ describe('vTree', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vtree')).not.toBeNull();
-    expect(element.querySelector('.yoya-vtree-label').textContent).toBe('目录项');
+    expect(element.querySelector('[vn~="VTree"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VTreeLabel"]').textContent).toBe('目录项');
   });
 });

@@ -1,10 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
-import { appendNodeChild, defineComponentIdentity, ViewNode } from '../core/node.js';
+import { appendNodeChild, ViewNode } from '../core/node.js';
 import { allocateId } from '../core/id.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentArguments,
-  componentClass,
   isPlainObject,
   normalizeChildren,
   normalizeComponentArguments,
@@ -273,12 +272,11 @@ function createTreeRuntime(first = null) {
   let selectHandler = null;
   let toggleHandler = null;
 
-  const root = new HtmlElementNode('div')
-    .className(componentClass, 'yoya-vtree')
+  const root = new HtmlElementNode('div', { vn: 'VTree' })
     .attr({
       'aria-label': state.ariaLabel,
       'data-tree': 'true',
-      id: allocateId('yoya-vtree'),
+      id: allocateId('yoya-tree'),
       role: 'tree'
     })
     .styles({
@@ -290,21 +288,18 @@ function createTreeRuntime(first = null) {
       padding: '6px',
       width: '100%'
     });
-  const list = new HtmlElementNode('div').className('yoya-vtree-list').styles({
+  const list = new HtmlElementNode('div', { vn: 'VTreeList' }).styles({
     display: 'grid',
     gap: '2px',
     minWidth: '0'
   });
-  const emptyBox = new HtmlElementNode('div')
-    .className('yoya-vtree-empty')
-    .attr('role', 'status')
-    .styles({
-      color: themeValue('color-text-muted', '#64748b'),
-      display: 'none',
-      fontSize: '0.88rem',
-      padding: '18px 10px',
-      textAlign: 'center'
-    });
+  const emptyBox = new HtmlElementNode('div', { vn: 'VTreeEmpty' }).attr('role', 'status').styles({
+    color: themeValue('color-text-muted', '#64748b'),
+    display: 'none',
+    fontSize: '0.88rem',
+    padding: '18px 10px',
+    textAlign: 'center'
+  });
 
   root.child(list, emptyBox);
   root.on('keydown', handleTreeKeydown);
@@ -903,8 +898,7 @@ function createTreeRuntime(first = null) {
 
   function createTreeNodeRow(node, level, expanded) {
     const selected = state.selectedKeys.has(node.id);
-    const row = new HtmlElementNode('div')
-      .className('yoya-vtree-node')
+    const row = new HtmlElementNode('div', { vn: 'VTreeRow' })
       .attr({
         'aria-disabled': node.disabled ? 'true' : null,
         'aria-expanded': isBranchNode(node) ? String(state.expandedKeys.has(node.id)) : null,
@@ -955,9 +949,11 @@ function createTreeRuntime(first = null) {
       row.child(toggle);
     } else {
       row.child(
-        new HtmlElementNode('span')
-          .className('yoya-vtree-indent')
-          .styles({ display: 'inline-block', flex: '0 0 auto', width: '20px' })
+        new HtmlElementNode('span', { vn: 'VTreeIndent' }).styles({
+          display: 'inline-block',
+          flex: '0 0 auto',
+          width: '20px'
+        })
       );
     }
 
@@ -970,7 +966,7 @@ function createTreeRuntime(first = null) {
       row.child(createTreeNodeIcon(node.icon));
     }
 
-    const labelBox = new HtmlElementNode('span').className('yoya-vtree-label').styles({
+    const labelBox = new HtmlElementNode('span', { vn: 'VTreeLabel' }).styles({
       flex: '1 1 auto',
       minWidth: '0',
       overflow: 'hidden',
@@ -1012,8 +1008,7 @@ function createTreeRuntime(first = null) {
 
   function createToggle(node, expanded) {
     const labelText = resolveTextValue(node.label) || node.id;
-    const toggle = new HtmlElementNode('button')
-      .className('yoya-vtree-toggle')
+    const toggle = new HtmlElementNode('button', { vn: 'VTreeToggle' })
       .attr({
         'aria-expanded': String(expanded),
         'aria-label': expanded ? `收起 ${labelText}` : `展开 ${labelText}`,
@@ -1039,7 +1034,7 @@ function createTreeRuntime(first = null) {
     let iconBox = null;
 
     if (state.toggleIcon) {
-      iconBox = new HtmlElementNode('span').className('yoya-vtree-toggle-icon').styles({
+      iconBox = new HtmlElementNode('span', { vn: 'VTreeToggleIcon' }).styles({
         alignItems: 'center',
         display: 'inline-flex',
         justifyContent: 'center',
@@ -1082,7 +1077,7 @@ function createTreeRuntime(first = null) {
     const checked = state.checkedKeys.has(node.id);
     const indeterminate = isIndeterminate(node);
     const input = new TreeCheckboxInput(indeterminate)
-      .className('yoya-vtree-checkbox')
+      .setup({ vn: 'VTreeCheckbox' })
       .attr({
         'aria-checked': indeterminate ? 'mixed' : checked ? 'true' : 'false',
         'aria-label': `选择 ${resolveTextValue(node.label) || node.id}`,
@@ -1106,7 +1101,7 @@ function createTreeRuntime(first = null) {
   }
 
   function createTreeNodeIcon(content) {
-    const iconBox = new HtmlElementNode('span').className('yoya-vtree-icon').styles({
+    const iconBox = new HtmlElementNode('span', { vn: 'VTreeIcon' }).styles({
       alignItems: 'center',
       color: themeValue('color-text-muted', '#64748b'),
       display: 'inline-flex',
@@ -1129,7 +1124,7 @@ function createTreeRuntime(first = null) {
   }
 
   function createNodeActions(node) {
-    const actionsBox = new HtmlElementNode('span').className('yoya-vtree-node-actions').styles({
+    const actionsBox = new HtmlElementNode('span', { vn: 'VTreeNodeActions' }).styles({
       alignItems: 'center',
       display: 'inline-flex',
       flex: '0 0 auto',
@@ -1187,8 +1182,8 @@ function createTreeRuntime(first = null) {
   }
 
   function handleTreeKeydown(event) {
-    const row = event.target.closest?.('.yoya-vtree-node');
-    if (!row || row.closest('.yoya-vtree') !== root._el) {
+    const row = event.target.closest?.('[vn~="VTreeRow"]');
+    if (!row || row.closest('[vn~="VTree"]') !== root._el) {
       return;
     }
 
@@ -1338,7 +1333,6 @@ export function vTree(first = null, second = null, third = null) {
 }
 
 export const VTree = vTree;
-defineComponentIdentity(VTree, 'VTree');
 
 /** 树的对外命令面：内部 `render` / `destroy` 不对外——视图就是根节点，销毁交给框架。 */
 const TREE_COMMANDS = [
