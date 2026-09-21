@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { div, vCard, vCardHeader, vNode, vSlot, vText } from '../index.js';
-import { componentNameOf } from '../core/node.js';
+import { applySetupValue, componentNameOf } from '../core/node.js';
 
 describe('vSlot（零布局占位）', () => {
   it('renders a contents-display placeholder with its own identity', () => {
@@ -13,10 +13,17 @@ describe('vSlot（零布局占位）', () => {
     expect(componentNameOf(vSlot())).toBe('VSlot');
   });
 
-  it('accepts a bare name and keeps normal element options working', () => {
+  it('takes the placeholder name through the standard setup entries', () => {
+    // 裸值 = 占位名：由 setupString 解释，和工厂首参同一条路
     const named = vSlot('footer');
     expect(named.attr('vn_slot')).toBe('footer');
+    expect(vSlot(7).attr('vn_slot')).toBe('7');
 
+    const viaSetup = vSlot();
+    applySetupValue(viaSetup, 'header');
+    expect(viaSetup.attr('vn_slot')).toBe('header');
+
+    // 对象形式：`name` 收成占位名，其余键继续走 options 分派
     const styled = vSlot({ attrs: { 'data-test': 'x' }, name: 'body', style: { gap: '4px' } });
     expect(styled.attr('vn_slot')).toBe('body');
     expect(styled.attr('data-test')).toBe('x');
@@ -59,7 +66,7 @@ describe('vSlot（零布局占位）', () => {
 
   it('works as a parent shortcut on containers', () => {
     const page = div((root) => {
-      root.vSlot({ name: 'body' });
+      root.vSlot('body');
     });
     const element = page.renderDom();
 

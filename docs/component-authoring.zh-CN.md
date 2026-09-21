@@ -401,7 +401,7 @@ export function VCard() {
   return vNode((api, self) => {
     api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
 
-    return div({ vn: 'VCard' }, (root) => root.child(vSlot({ name: 'header' })));
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header')));
   });
 }
 
@@ -410,8 +410,10 @@ vCard((card) => card.vCardHeader('标题'));
 vCard((card) => card.child(vCardHeader('标题')));
 ```
 
-- `vSlot({ name })` 是**零布局占位**（`display: contents`），part 保留自己的元素、类名与样式；
-  投递时 part 自己的标记只是路由指令，落位后会被摘掉（DOM 里只留占位的标记）；
+- `vSlot('name')` 是**零布局占位**（`display: contents`），part 保留自己的元素、类名与样式；
+  投递时 part 自己的标记只是路由指令，落位后会被摘掉（DOM 里只留占位的标记）。裸值走标准
+  `setupString` 入口——这个位置"裸值怎么解释"就由它决定；`vSlot({ name, … })` 只额外收 `name`，
+  其余键照旧走 options 分派（`class` / `style` / `attrs` / 属性 / 事件）。占位名是构建期事实，不是活值；
 - 标记是 `vn_slot` 而**不是** `slot`：部件与公开槽位两个名空间，互不干扰；一个占位一份内容（重复投递即替换）；
 - part 命令只是 `self.node().child(part)` 的语法糖——标记找不到对应占位时，内容按普通未标记内容处理（追加进组件根，不丢弃）。
 

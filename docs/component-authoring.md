@@ -435,7 +435,7 @@ export function VCard() {
   return vNode((api, self) => {
     api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
 
-    return div({ vn: 'VCard' }, (root) => root.child(vSlot({ name: 'header' })));
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header')));
   });
 }
 
@@ -444,9 +444,12 @@ vCard((card) => card.vCardHeader('Title'));
 vCard((card) => card.child(vCardHeader('Title')));
 ```
 
-- `vSlot({ name })` renders a **zero-layout placeholder** (`display: contents`), so the part keeps its own
+- `vSlot('name')` renders a **zero-layout placeholder** (`display: contents`), so the part keeps its own
   element, class names and styles; the marker on the delivered content is a routing instruction and is
-  dropped once it has landed (the DOM keeps only the placeholder's marker);
+  dropped once it has landed (the DOM keeps only the placeholder's marker). The bare value goes through the
+  standard `setupString` entry — the place where a position decides how to read a naked value — and
+  `vSlot({ name, … })` only extracts the name, so every other key keeps the ordinary options dispatch
+  (`class` / `style` / `attrs` / attributes / events). Part names are build-time facts, not live values;
 - the marker is `vn_slot`, **not** `slot`: parts and public slots are separate namespaces and never
   interfere; one part placeholder holds one piece of content (delivering again replaces it);
 - a part command is only sugar for `self.node().child(part)` — if the marker has no matching placeholder, the
