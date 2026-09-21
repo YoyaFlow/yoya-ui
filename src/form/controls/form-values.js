@@ -23,6 +23,15 @@ import { VFormItem } from './form-item.js';
 import { VForm } from './form.js';
 import { assignFormValue, isControlDisabled, isControlRequired } from './shared.js';
 
+/**
+ * 控件能力判定：暴露 value() / _collectValue() 的节点就是控件——**身份不再参与**（vn 事实只做展示 / 判定用）。
+ */
+function isControlCapable(node) {
+  return (
+    Boolean(node) && (typeof node.value === 'function' || typeof node._collectValue === 'function')
+  );
+}
+
 function readControlValue(control) {
   if (!control) {
     return undefined;
@@ -32,32 +41,8 @@ function readControlValue(control) {
     return control._collectValue();
   }
 
-  if (control instanceof VCheckboxes) {
-    return control.value();
-  }
-
-  if (control instanceof VRadios) {
-    return control.value();
-  }
-
-  if (control instanceof VRate) {
-    return control.value();
-  }
-
-  if (
-    control instanceof VSlider ||
-    control instanceof VCascader ||
-    control instanceof VTagsInput ||
-    control instanceof VAutocomplete
-  ) {
-    return control.value();
-  }
-
-  if (control instanceof VCheckbox || control instanceof VSwitch || control instanceof VRadio) {
-    return control.value();
-  }
-
-  if (control instanceof VInput || control instanceof VSelect || control instanceof VTextarea) {
+  // 能力约定：控件暴露 value() 就直接读（组件身份不参与判定）
+  if (typeof control.value === 'function') {
     return control.value();
   }
 
@@ -105,37 +90,8 @@ function applyControlValue(control, value) {
     return;
   }
 
-  if (control instanceof VCheckboxes) {
-    control.value(value);
-    return;
-  }
-
-  if (control instanceof VRadios) {
-    control.value(value);
-    return;
-  }
-
-  if (control instanceof VRate) {
-    control.value(value);
-    return;
-  }
-
-  if (
-    control instanceof VSlider ||
-    control instanceof VCascader ||
-    control instanceof VTagsInput ||
-    control instanceof VAutocomplete
-  ) {
-    control.value(value);
-    return;
-  }
-
-  if (control instanceof VCheckbox || control instanceof VSwitch || control instanceof VRadio) {
-    control.value(value);
-    return;
-  }
-
-  if (control instanceof VInput || control instanceof VSelect || control instanceof VTextarea) {
+  // 能力约定：控件暴露 value() 就直接写（组件身份不参与判定）
+  if (typeof control.value === 'function') {
     control.value(value);
     return;
   }
@@ -218,19 +174,7 @@ function collectFormValues(node, result) {
     return result;
   }
 
-  if (
-    node instanceof VInput ||
-    node instanceof VSelect ||
-    node instanceof VTextarea ||
-    node instanceof VCheckbox ||
-    node instanceof VRadio ||
-    node instanceof VSwitch ||
-    node instanceof VRate ||
-    node instanceof VSlider ||
-    node instanceof VCascader ||
-    node instanceof VTagsInput ||
-    node instanceof VAutocomplete
-  ) {
+  if (isControlCapable(node)) {
     const name = node.name();
     if (name) {
       assignFormValue(result, name, readControlValue(node));
@@ -318,17 +262,7 @@ function validateFormControls(node, formValues = {}) {
     const isControl =
       current instanceof VCheckboxes ||
       current instanceof VRadios ||
-      current instanceof VInput ||
-      current instanceof VSelect ||
-      current instanceof VTextarea ||
-      current instanceof VCheckbox ||
-      current instanceof VRadio ||
-      current instanceof VSwitch ||
-      current instanceof VRate ||
-      current instanceof VSlider ||
-      current instanceof VCascader ||
-      current instanceof VTagsInput ||
-      current instanceof VAutocomplete ||
+      isControlCapable(current) ||
       (typeof current.tagName === 'function' &&
         ['input', 'select', 'textarea'].includes(current.tagName()));
 
