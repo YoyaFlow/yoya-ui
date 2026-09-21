@@ -154,23 +154,41 @@ function resolveTableCellContent(column, row, rowIndex) {
   return row;
 }
 
-/** 表格段（thead / tbody / tfoot）：结构 + 身份，行由 `vTr` 投递。 */
-function createSection(tagName, identity) {
-  return function Section() {
-    return vNode((api) => {
-      const element = tagName({ vn: identity });
-      api.vTr = (setup) => {
-        element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
-        return api;
-      };
-      return element;
-    });
-  };
+/** 列头段：结构 + 身份，行由 `vTr` 投递。 */
+export function VThead() {
+  return vNode((api) => {
+    const element = thead({ vn: 'VThead' });
+    api.vTr = (setup) => {
+      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      return api;
+    };
+    return element;
+  });
 }
 
-export const VThead = createSection(thead, 'VThead');
-export const VTbody = createSection(tbody, 'VTbody');
-export const VTfoot = createSection(tfoot, 'VTfoot');
+/** 表体段：结构 + 身份，行由 `vTr` 投递。 */
+export function VTbody() {
+  return vNode((api) => {
+    const element = tbody({ vn: 'VTbody' });
+    api.vTr = (setup) => {
+      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      return api;
+    };
+    return element;
+  });
+}
+
+/** 表尾段：结构 + 身份，行由 `vTr` 投递。 */
+export function VTfoot() {
+  return vNode((api) => {
+    const element = tfoot({ vn: 'VTfoot' });
+    api.vTr = (setup) => {
+      element.child(componentNameOf(setup) === 'VTr' ? setup : vTr(setup));
+      return api;
+    };
+    return element;
+  });
+}
 
 export const vThead = createComponentShortcut(VThead);
 export const vTbody = createComponentShortcut(VTbody);
