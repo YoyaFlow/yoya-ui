@@ -1,7 +1,8 @@
+import { createComponentShell } from '../components/component-shell.js';
+import { defineComponentIdentity } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -12,9 +13,11 @@ const VIRTUAL_GAP = 8;
 const VIRTUAL_PADDING = 12;
 const AUTO_VIRTUAL_THRESHOLD = 100;
 
-export class VScroll extends HtmlElementNode {
+/** 滚动容器的节点类型（不导出）；公开组件 `vScroll` 是 vNode 外壳。 */
+class ScrollNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VScroll';
     this._blocked = false;
     this._loading = false;
     this._loop = false;
@@ -675,5 +678,36 @@ export class VScroll extends HtmlElementNode {
 }
 
 export function vScroll(first = null, second = null, third = null) {
-  return createComponentFactory(VScroll, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VScroll',
+    createNode: (setup) => new ScrollNode(setup),
+    commands: [
+      'content',
+      'items',
+      'append',
+      'renderItem',
+      'loadMore',
+      'onLoadMore',
+      'loop',
+      'block',
+      'blocked',
+      'loading',
+      'threshold',
+      'virtual',
+      'virtualize',
+      'itemHeight',
+      'overscan',
+      'page',
+      'loadingText',
+      'endText',
+      'reset',
+      'clear',
+      'load',
+      'check'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VScroll = vScroll;
+defineComponentIdentity(VScroll, 'VScroll');

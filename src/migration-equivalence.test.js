@@ -196,6 +196,22 @@ const CASES = [
     name: 'vAnchorItem / 独立项',
     build: () => api.vAnchorItem({ href: '#alone', title: '独立项' }),
     probe: (item) => ({ href: item.href(), active: item.attr('data-active') ?? null })
+  },
+  {
+    name: 'vScroll / 静态列表',
+    build: () =>
+      api.vScroll((scroll) => {
+        scroll.items([1, 2, 3]);
+        scroll.renderItem((item) => api.div((row) => row.span(`第 ${item} 行`)));
+        scroll.itemHeight(40);
+        scroll.threshold(120);
+      }),
+    probe: (scroll) => ({
+      itemHeight: scroll.itemHeight(),
+      threshold: scroll.threshold(),
+      virtual: scroll.virtual(),
+      page: scroll.page()
+    })
   }
 ];
 
