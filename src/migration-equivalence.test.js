@@ -766,6 +766,34 @@ const CASES = [
       size: control.size(),
       variant: control.variant()
     })
+  },
+  {
+    name: 'vAvatar / 文本 + 形状尺寸',
+    build: () => api.vAvatar({ color: '#2563eb', shape: 'square', size: 'large', text: '张' }),
+    probe: (avatar) => ({ color: avatar.color(), shape: avatar.shape(), size: avatar.size() })
+  },
+  {
+    name: 'vAvatar / 图标 + 状态',
+    build: () => api.vAvatar({ icon: '★', status: 'success', text: '服务' }),
+    // `text()` 只有写路径（无参返回节点），读态走 aria-label
+    probe: (avatar) => ({ label: avatar.attr('aria-label'), status: avatar.status() })
+  },
+  {
+    name: 'vDetail / 三列 + 两条',
+    build: () =>
+      api.vDetail({
+        column: 3,
+        items: [
+          { label: '服务名称', value: 'api-gateway' },
+          { label: '状态', value: '运行中' }
+        ]
+      }),
+    probe: (detail) => ({ columns: detail.columns(), items: detail.items().length })
+  },
+  {
+    name: 'vDetailItem / 标签 + 值（两参写法）',
+    build: () => api.vDetailItem('版本', '0.6.13'),
+    probe: (item) => ({ label: item.label(), value: item.value() })
   }
 ];
 

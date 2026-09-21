@@ -44,7 +44,9 @@ function publicMethodNames(element) {
 
 const SHELL_FACTORIES = {
   vAvatarUpload: (value) => value.vAvatarUpload(),
+  vAvatar: (value) => value.vAvatar(),
   vAutocomplete: (value) => value.vAutocomplete(),
+  vBadge: (value) => value.vBadge(),
   vButton: (value) => value.vButton(),
   vButtons: (value) => value.vButtons(),
   vCascader: (value) => value.vCascader(),
@@ -53,6 +55,8 @@ const SHELL_FACTORIES = {
   vChart: (value) => value.vChart(),
   vColorPicker: (value) => value.vColorPicker(),
   vDialog: (value) => value.vDialog(),
+  vDetail: (value) => value.vDetail(),
+  vDetailItem: (value) => value.vDetailItem(),
   vField: (value) => value.vField(),
   vFloatButton: (value) => value.vFloatButton(),
   vForm: (value) => value.vForm(),
@@ -64,6 +68,7 @@ const SHELL_FACTORIES = {
   vRadios: (value) => value.vRadios(),
   vRadio: (value) => value.vRadio(),
   vRate: (value) => value.vRate(),
+  vProgress: (value) => value.vProgress(),
   vScroll: (value) => value.vScroll(),
   vSelect: (value) => value.vSelect(),
   vSlider: (value) => value.vSlider(),

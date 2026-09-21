@@ -1,15 +1,18 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren
 } from '../components/shared.js';
 
-export class VAvatar extends HtmlElementNode {
+/** 头像的节点类型（不导出到包入口）；公开组件 `vAvatar` 是 vNode 外壳。 */
+class AvatarNode extends HtmlElementNode {
   constructor(setup = null) {
     super('span', null);
+    this._identity = 'VAvatar';
     this._color = null;
     this._status = null;
 
@@ -194,8 +197,16 @@ export class VAvatar extends HtmlElementNode {
 }
 
 export function vAvatar(first = null, second = null, third = null) {
-  return createComponentFactory(VAvatar, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VAvatar',
+    createNode: (setup) => new AvatarNode(setup),
+    commands: ['text', 'content', 'icon', 'src', 'alt', 'size', 'shape', 'color', 'status'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VAvatar = vAvatar;
+defineComponentIdentity(VAvatar, 'VAvatar');
 
 function resolveAvatarLabel(value, currentLabel) {
   if (value === null || value === undefined || value === '') {

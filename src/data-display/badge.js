@@ -1,7 +1,8 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -16,9 +17,11 @@ const statusColors = {
   warning: themeValue('color-warning', '#faad14')
 };
 
-export class VBadge extends HtmlElementNode {
+/** 角标的节点类型（不导出到包入口）；公开组件 `vBadge` 是 vNode 外壳。 */
+class BadgeNode extends HtmlElementNode {
   constructor(setup = null) {
     super('span', null);
+    this._identity = 'VBadge';
     this._count = null;
     this._overflowCount = 99;
     this._showZero = false;
@@ -380,5 +383,25 @@ export class VBadge extends HtmlElementNode {
 }
 
 export function vBadge(first = null, second = null, third = null) {
-  return createComponentFactory(VBadge, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VBadge',
+    createNode: (setup) => new BadgeNode(setup),
+    commands: [
+      'content',
+      'count',
+      'overflowCount',
+      'showZero',
+      'dot',
+      'status',
+      'color',
+      'text',
+      'label',
+      'title',
+      'offset'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VBadge = vBadge;
+defineComponentIdentity(VBadge, 'VBadge');

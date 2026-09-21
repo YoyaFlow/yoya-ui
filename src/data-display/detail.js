@@ -1,8 +1,8 @@
-import { ViewNode } from '../core/node.js';
+import { ViewNode, defineComponentIdentity } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -10,9 +10,11 @@ import {
   themeValue
 } from '../components/shared.js';
 
-export class VDetail extends HtmlElementNode {
+/** 详情列表的节点类型（不导出到包入口）；公开组件 `vDetail` 是 vNode 外壳。 */
+class DetailNode extends HtmlElementNode {
   constructor(setup = null) {
     super('dl', null);
+    this._identity = 'VDetail';
     this._columns = 3;
     this.className(componentClass, 'yoya-vdetail');
     this.styles({
@@ -82,9 +84,11 @@ export class VDetail extends HtmlElementNode {
   }
 }
 
-export class VDetailItem extends HtmlElementNode {
+/** 详情项的节点类型（不导出到包入口）；公开组件 `vDetailItem` 是 vNode 外壳。 */
+class DetailItemNode extends HtmlElementNode {
   constructor(setup = null, value = undefined) {
     super('div', null);
+    this._identity = 'VDetailItem';
     this._labelBox = new HtmlElementNode('dt').className('yoya-vdetail-label');
     this._valueBox = new HtmlElementNode('dd').className('yoya-vdetail-value');
 
@@ -198,14 +202,32 @@ export class VDetailItem extends HtmlElementNode {
 }
 
 export function vDetail(first = null, second = null, third = null) {
-  return createComponentFactory(VDetail, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VDetail',
+    createNode: (setup) => new DetailNode(setup),
+    commands: ['columns', 'column', 'items'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
+export const VDetail = vDetail;
+defineComponentIdentity(VDetail, 'VDetail');
+
+/**
+ * 详情项：第二参是该条的值（不是子节点），所以外壳不做额外参数分派——
+ * 第二个参数在 `createNode` 里直接交给节点类型的构造器。
+ */
 export function vDetailItem(setup = null, value = undefined) {
-  return setup instanceof VDetailItem && value === undefined
-    ? setup
-    : new VDetailItem(setup, value);
+  return createComponentShell({
+    identity: 'VDetailItem',
+    createNode: (first) => new DetailItemNode(first, value),
+    commands: ['label', 'value', 'content'],
+    args: [setup]
+  });
 }
+
+export const VDetailItem = vDetailItem;
+defineComponentIdentity(VDetailItem, 'VDetailItem');
 
 function normalizeDetailItem(item) {
   if (item instanceof VDetailItem) {

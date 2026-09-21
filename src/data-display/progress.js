@@ -1,7 +1,8 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   normalizeChildren,
   themeValue
@@ -15,9 +16,11 @@ const progressStatusColors = {
   warning: themeValue('color-warning', '#f59e0b')
 };
 
-export class VProgress extends HtmlElementNode {
+/** 进度条的节点类型（不导出到包入口）；公开组件 `vProgress` 是 vNode 外壳。 */
+class ProgressNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VProgress';
     this._value = 0;
     this._max = 100;
     this._percent = 0;
@@ -360,5 +363,27 @@ export class VProgress extends HtmlElementNode {
 }
 
 export function vProgress(first = null, second = null, third = null) {
-  return createComponentFactory(VProgress, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VProgress',
+    createNode: (setup) => new ProgressNode(setup),
+    commands: [
+      'value',
+      'max',
+      'percent',
+      'showText',
+      'label',
+      'text',
+      'format',
+      'status',
+      'size',
+      'strokeColor',
+      'indeterminate',
+      'active',
+      'ariaLabel'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VProgress = vProgress;
+defineComponentIdentity(VProgress, 'VProgress');
