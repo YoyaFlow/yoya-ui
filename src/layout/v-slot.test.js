@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { div, vCard, vCardHeader, vNode, vSlot, vText } from '../index.js';
+import { div, VSlot, vCard, vCardHeader, vNode, vSlot, vText } from '../index.js';
 import { applySetupValue, componentNameOf } from '../core/node.js';
 
 describe('vSlot（零布局占位）', () => {
@@ -14,6 +14,9 @@ describe('vSlot（零布局占位）', () => {
   });
 
   it('takes the placeholder name through the standard setup entries', () => {
+    // 定义 / 快捷方法分开：VSlot() 只建结构，占位名由 vSlot 的 setup 分派落位
+    expect(vSlot).not.toBe(VSlot);
+    expect(VSlot().attr('vn_slot')).toBeUndefined();
     // 裸值 = 占位名：由 setupString 解释，和工厂首参同一条路
     const named = vSlot('footer');
     expect(named.attr('vn_slot')).toBe('footer');

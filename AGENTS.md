@@ -111,6 +111,10 @@ function RateCard() {
   其余分派固定：节点 / 句柄 = 子节点、数组 = 子节点列表。
 - 与元素侧对称：`createElementFactory('div', Node)` = 元素种类 + setup 分派；
   组件侧的对应物就是"**定义函数 + 快捷方法**"这一对（`VXxx` / `vXxx`）。
+- **形态 A 也按这一对写，不要别名**：需要调用方 setup 分派时，定义 `VXxx()` 只建结构，
+  快捷名写 `export const vXxx = createComponentShortcut(VXxx)`，**不要写 `const vXxx = VXxx`**
+  把定义当成快捷名（那样定义被迫兼管调用方参数）。无分派需求的转发型薄工厂才直接成立一个名字
+  （`ServiceTag(options) { return vBadge(options); }`）。参考实现：`VSlot` / `vSlot`。
 
 ### 节点类型扩展（引擎内部，不是第三种组件形态）
 

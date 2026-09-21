@@ -43,6 +43,15 @@ export function ServiceTag(options) {
 }
 ```
 
+形态 A 有两种都合法的落地方式，但要显式选：
+
+- **转发型**（上面的 `ServiceTag(options)`）：定义本身就是调用点写法——参数确实是组件自己的 props、
+  没有"调用方 setup 分派"要兑现时用它；
+- **定义 + 快捷成对**（`VXxx` / `vXxx`）：`VXxx()` 只建结构（自己的 props），
+  `export const vXxx = createComponentShortcut(VXxx)` 负责"建 + 应用调用方 setup 分派"——与所有形态 B
+  组件同一套机制。**不要写 `const vXxx = VXxx` 别名**：那样定义被迫兼管调用方参数。
+  参考实现：`VSlot` / `vSlot`。
+
 ### 形态 B：`vNode((api) => 视图)`（有行为就用它）
 
 状态放闭包，命令与钩子写在 `api` 上，视图由 setup 返回 —— 定义即得到组件节点：

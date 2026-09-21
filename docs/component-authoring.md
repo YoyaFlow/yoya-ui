@@ -45,6 +45,15 @@ export function ServiceTag(options) {
 }
 ```
 
+Two flavours are fine for shape A, but pick deliberately:
+
+- **Forwarding definition** (`ServiceTag(options)` above): the definition _is_ what call sites write — use it when
+  the parameters really are the component's own and there is no caller-setup dispatch to honour;
+- **Paired definition + shortcut** (`VXxx` / `vXxx`): `VXxx()` only builds the structure (its own props), and
+  `export const vXxx = createComponentShortcut(VXxx)` owns "build + apply the caller's setup dispatch" —
+  the same machinery every shape B component uses. Do **not** alias the definition (`const vXxx = VXxx`): the
+  definition would be forced to own the caller's parameters too. `VSlot` / `vSlot` is the reference for this.
+
 ### Shape B: `vNode((api) => view)` — use it when there is behaviour
 
 State lives in the closure, commands and hooks are written on `api`, and the setup returns the view — defining

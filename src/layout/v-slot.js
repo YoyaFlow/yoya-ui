@@ -1,8 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
-import { applySetupValue } from '../core/node.js';
 import { registerChildFactories } from '../core/node.js';
 import { PART_ATTRIBUTE } from '../core/slot.js';
-import { componentClass, resolveTextValue } from '../components/shared.js';
+import { componentClass, createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
 /**
  * VSlot —— **零布局占位**（形态 A 薄工厂）：给组件在自己的结构里留一个"位置标记"，
@@ -14,9 +13,10 @@ import { componentClass, resolveTextValue } from '../components/shared.js';
  * 落位只认标记：结构侧的占位与内容侧的 part 都写 `vn_slot`，把带标记的内容 `child()` 进组件，
  * 引擎就放进同名占位（ComponentNode 的 part 通道）——**没有手工插入的辅助函数**。
  *
- * 参数分派走**标准入口**（与其它组件同一口径，任意 `applySetupValue(slot, 值)` 也认）：
- * `vSlot('header')` 的裸值由 `setupString` 解释成占位名（`setupString` 就是这个位置
- * "裸值怎么解释"的入口），对象形式只额外收 `name`，其余键继续走 options 分派。
+ * 定义 / 快捷方法按统一口径分开：`VSlot()` 只建结构（span + `display: contents` + `vn`），
+ * 调用方参数由快捷方法 `vSlot = createComponentShortcut(VSlot)` 按标准 setup 分派落位——
+ * 裸值走 `setupString`（这个位置"裸值怎么解释"的入口 = 占位名），对象形式只额外收 `name`，
+ * 其余键继续走 options 分派（class / style / attrs / 属性 / 事件）。
  *
  * ```js
  * // 结构侧：留三个位置标记
@@ -28,7 +28,7 @@ import { componentClass, resolveTextValue } from '../components/shared.js';
  * api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
  * ```
  */
-export function VSlot(first = null) {
+export function VSlot() {
   const node = new HtmlElementNode('span')
     .className(componentClass, 'yoya-vslot')
     .style('display', 'contents')
@@ -46,12 +46,11 @@ export function VSlot(first = null) {
     return node;
   };
 
-  applySetupValue(node, first);
   return node;
 }
 
-/** 快捷名（形态 A：同一个函数）。 */
-export const vSlot = VSlot;
+/** 快捷方法：建 VSlot 节点 + 应用调用方参数（与其它组件同一套分派）。 */
+export const vSlot = createComponentShortcut(VSlot);
 
 // 父节点快捷方法：`root.vSlot('header')` / `page.vSlot({ name: 'header' })`（与其它布局工厂同一口径）
 registerChildFactories(HtmlElementNode, { vSlot });
