@@ -371,3 +371,27 @@ dom:      <div class=yoya-component yoya-vautocomplete style=position: relative;
 toHTML:   <div class="yoya-component yoya-vautocomplete" style="position:relative;width:100%"><input autocomplete="off" class="yoya-vautocomplete-input" data-vautocomplete-input="true" placeholder="输入以搜索" style="background:var(--yoya-color-surface, #ffffff);border-radius:6px;border:1px solid var(--yoya-color-border, #d8dee8);box-sizing:border-box;color:inherit;font:inherit;min-height:var(--yoya-control-height-md, 34px);outline:none;padding:0 10px;width:100%" type="text" value="v"><div class="yoya-vautocomplete-list" data-vautocomplete-list="true" style="background:var(--yoya-color-surface, #ffffff);border-radius:8px;border:1px solid var(--yoya-color-border, #d8dee8);box-shadow:var(--yoya-shadow-md, 0 8px 18px rgba(15, 23, 42, 0.1));box-sizing:border-box;display:none;max-height:240px;overflow:auto;padding:4px;position:fixed;z-index:110"></div></div>
 probe:    {"source":2,"value":"v"}
 residue:  (空)
+
+### vChart / 适配器 + 尺寸
+dom:      <div class=yoya-vchart style=display: block; height: 180px; width: 320px;>
+toHTML:   <div class="yoya-vchart" style="display:block;height:180px;width:320px"></div>
+probe:    {"data":[1,2,3],"height":180,"options":{"theme":"light"},"width":320}
+residue:  (空)
+
+### vLazyImage / 延迟加载
+dom:      <div aria-label=缩略图 class=yoya-component yoya-vlazyimage data-state=loading role=img style=box-sizing: border-box; display: inline-block; max-width: 100%; min-height: 48px; min-width: 48px; overflow: hidden; position: relative;><span class=yoya-vlazyimage-placeholder><img alt=缩略图 loading=lazy src=/img/a.png style=opacity: 0;><button class=yoya-vlazyimage-retry style=display: none; type=button>#text:加载失败，点击重试
+toHTML:   <div aria-label="缩略图" class="yoya-component yoya-vlazyimage" data-state="loading" role="img" style="box-sizing:border-box;display:inline-block;max-width:100%;min-height:48px;min-width:48px;overflow:hidden;position:relative"><span class="yoya-vlazyimage-placeholder"></span><img alt="缩略图" loading="lazy" src="/img/a.png" style="opacity:0"><button class="yoya-vlazyimage-retry" style="display:none" type="button">加载失败，点击重试</button></div>
+probe:    {"alt":"缩略图","defer":true,"state":"loading"}
+residue:  (空)
+
+### vThemeShell / 常规容器
+dom:      <div class=yoya-component yoya-vtheme-shell style=background: rgb(15, 23, 42); border: 1px solid var(--yoya-color-border, #d8dee8); border-radius: 10px; box-sizing: border-box; color: var(--yoya-color-text, #172033); min-width: 0px; overflow: auto;><p >#text:内容
+toHTML:   <div class="yoya-component yoya-vtheme-shell" style="background:#0f172a;border-radius:10px;border:1px solid var(--yoya-color-border, #d8dee8);box-sizing:border-box;color:var(--yoya-color-text, #172033);min-width:0;overflow:auto"><p>内容</p></div>
+probe:    {"background":"#0f172a","radius":"10px"}
+residue:  (空)
+
+### vThemeShell / 虚拟节点模式
+dom:      <div style=background: rgb(255, 255, 255); border: 1px solid var(--yoya-color-border, #d8dee8); border-radius: var(--yoya-radius-md, 6px); box-sizing: border-box; color: var(--yoya-color-text, #172033); min-width: 0px;><p >#text:子节点
+toHTML:   <div style="background:#ffffff;border-radius:var(--yoya-radius-md, 6px);border:1px solid var(--yoya-color-border, #d8dee8);box-sizing:border-box;color:var(--yoya-color-text, #172033);min-width:0"><p>子节点</p></div>
+probe:    {"background":"#ffffff","virtual":true}
+residue:  (空)

@@ -1,7 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
-import { VLazyImage } from '../async/lazy-image.js';
+import { LazyImageNode } from '../async/lazy-image.js';
 
 const MAX_ZOOM = 5;
 
@@ -157,7 +157,7 @@ export class VImagePreview extends HtmlElementNode {
   }
 
   _buildOverlay() {
-    const lazy = new VLazyImage().src(this._src).alt(this._alt);
+    const lazy = new LazyImageNode().src(this._src).alt(this._alt);
     this._lazy = lazy;
 
     const stage = new HtmlElementNode('div')

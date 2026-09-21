@@ -1,12 +1,14 @@
 import { HtmlElementNode } from '../html/index.js';
-import { createComponentFactory } from '../components/shared.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 
 /**
  * Library-agnostic chart host. Adapters own the actual chart implementation.
  */
-export class VChart extends HtmlElementNode {
+class ChartNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div');
+    this._identity = 'VChart';
     this._adapter = null;
     this._instance = null;
     this._initialized = false;
@@ -142,7 +144,8 @@ export class VChart extends HtmlElementNode {
 
   _context() {
     return {
-      chart: this,
+      // 句柄交给适配器的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
+      chart: this._componentHandle ?? this,
       data: this._data,
       height: this._height,
       host: this._el,
@@ -197,8 +200,16 @@ export class VChart extends HtmlElementNode {
 }
 
 export function vChart(first = null, second = null, third = null) {
-  return createComponentFactory(VChart, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VChart',
+    createNode: (setup) => new ChartNode(setup),
+    commands: ['adapter', 'data', 'options', 'width', 'height', 'resize'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VChart = vChart;
+defineComponentIdentity(VChart, 'VChart');
 
 function toCssSize(value) {
   return typeof value === 'number' ? `${value}px` : value;

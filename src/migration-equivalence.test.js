@@ -700,6 +700,46 @@ const CASES = [
         ac.source(['Vue', 'React']).value('v').limit(5);
       }),
     probe: (ac) => ({ source: ac.source().length, value: ac.value() })
+  },
+  {
+    name: 'vChart / 适配器 + 尺寸',
+    build: () =>
+      api.vChart({
+        adapter: { init: () => ({ ready: true }) },
+        data: [1, 2, 3],
+        height: 180,
+        options: { theme: 'light' },
+        width: 320
+      }),
+    probe: (chart) => ({
+      data: chart.data(),
+      height: chart.height(),
+      options: chart.options(),
+      width: chart.width()
+    })
+  },
+  {
+    name: 'vLazyImage / 延迟加载',
+    build: () => api.vLazyImage({ alt: '缩略图', defer: true, src: '/img/a.png' }),
+    probe: (image) => ({ alt: image.alt(), defer: image.defer(), state: image.loadState() })
+  },
+  {
+    name: 'vThemeShell / 常规容器',
+    build: () =>
+      api.vThemeShell((shell) => {
+        shell.background('#0f172a').radius('10px').scrollable();
+        shell.child(api.p('内容'));
+      }),
+    probe: (shell) => ({ background: shell.background(), radius: shell.radius() })
+  },
+  {
+    name: 'vThemeShell / 虚拟节点模式',
+    build: () =>
+      api.vThemeShell((shell) => {
+        shell.virtual().background('#ffffff');
+        shell.child(api.div((inner) => inner.p('子节点')));
+      }),
+    probe: (shell) => ({ background: shell.background(), virtual: true })
   }
 ];
 

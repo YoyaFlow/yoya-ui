@@ -1,15 +1,22 @@
-import { ElementNode, elementStyles, registerChildFactories } from '../core/node.js';
+import {
+  ElementNode,
+  defineComponentIdentity,
+  elementStyles,
+  registerChildFactories
+} from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
-import { applyComponentSetup, createComponentFactory, themeValue } from '../components/shared.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { applyComponentSetup, themeValue } from '../components/shared.js';
 
 /**
  * VThemeShell 是主题化的通用容器：默认提供背景、边框、圆角与文字色
  * （全部由 --yoya-* token 驱动，跟随明暗/品牌/密度模式），并支持
  * 滚动条与背景透明度控制。其他容器类组件可基于它收敛外观定义。
  */
-export class VThemeShell extends HtmlElementNode {
+class ThemeShellNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VThemeShell';
     this.className('yoya-component', 'yoya-vtheme-shell');
     this.styles({
       background: themeValue('color-surface', '#ffffff'),
@@ -134,7 +141,23 @@ export class VThemeShell extends HtmlElementNode {
 }
 
 export function vThemeShell(first = null, second = null, third = null) {
-  return createComponentFactory(VThemeShell, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VThemeShell',
+    createNode: (setup) => new ThemeShellNode(setup),
+    commands: [
+      'virtual',
+      'background',
+      'backgroundOpacity',
+      'radius',
+      'border',
+      'borderColor',
+      'scrollable'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VThemeShell = vThemeShell;
+defineComponentIdentity(VThemeShell, 'VThemeShell');
 
 registerChildFactories(ElementNode, { vThemeShell });

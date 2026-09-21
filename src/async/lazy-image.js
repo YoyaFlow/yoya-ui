@@ -1,10 +1,14 @@
 import { HtmlElementNode } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
-import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { componentClass, isPlainObject } from '../components/shared.js';
 
-export class VLazyImage extends HtmlElementNode {
+/** 懒加载图片的节点类型（不导出到包入口）；公开组件 `vLazyImage` 是 vNode 外壳。 */
+export class LazyImageNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VLazyImage';
     this._src = null;
     this._alt = '';
     this._defer = false;
@@ -183,5 +187,13 @@ export class VLazyImage extends HtmlElementNode {
 }
 
 export function vLazyImage(first = null, second = null, third = null) {
-  return createComponentFactory(VLazyImage, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VLazyImage',
+    createNode: (setup) => new LazyImageNode(setup),
+    commands: ['src', 'alt', 'defer', 'loadState', 'retry'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VLazyImage = vLazyImage;
+defineComponentIdentity(VLazyImage, 'VLazyImage');
