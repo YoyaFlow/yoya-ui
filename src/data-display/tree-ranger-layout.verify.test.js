@@ -20,7 +20,7 @@ function makeBrowser() {
 describe('vTreeRanger layout verify', () => {
   it('keeps both split dividers and nested columns independent', async () => {
     const browser = makeBrowser();
-    const element = browser.render().renderDom();
+    const element = browser.renderDom();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     const panels = element.querySelectorAll('.yoya-vsplit-panel');

@@ -114,7 +114,7 @@ const CASES = [
     probe: (node) => ({ values: node.values(), valid: node.validate() })
   },
   {
-    name: 'vPagination / 分页（形态 B）',
+    name: 'vPagination / 分页（命令 + update）',
     build: () => api.vPagination({ page: 2, pageSize: 10, total: 95 }),
     probe: (node) => ({
       page: node.page(),
@@ -740,6 +740,32 @@ const CASES = [
         shell.child(api.div((inner) => inner.p('子节点')));
       }),
     probe: (shell) => ({ background: shell.background(), virtual: true })
+  },
+  {
+    name: 'vTreeRanger / 两列（未加载）',
+    build: () =>
+      api.vTreeRanger({
+        ariaLabel: '数据字典',
+        columns: [{ title: '第一列' }, { title: '第二列' }],
+        minSize: 200
+      }),
+    probe: (browser) => ({ current: browser.current(), selected: browser.selectedKeys() })
+  },
+  {
+    name: 'vLanguageSwitch / 两种语言',
+    build: () =>
+      api.vLanguageSwitch({
+        languages: [
+          { label: '中文', value: 'zh-CN' },
+          { label: 'English', value: 'en' }
+        ],
+        locale: api.createI18n({ language: 'zh-CN' })
+      }),
+    probe: (control) => ({
+      active: control.activeLanguage(),
+      size: control.size(),
+      variant: control.variant()
+    })
   }
 ];
 

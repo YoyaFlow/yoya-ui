@@ -527,7 +527,7 @@ describe('compound components', () => {
     expect(codeElement.dataset.copyable).toBeUndefined();
   });
 
-  it('applies element options to render-backed component APIs', () => {
+  it('applies element options to component handles', () => {
     let paginationCallback = null;
     const pagination = vPagination(
       { total: 12 },
@@ -537,7 +537,7 @@ describe('compound components', () => {
         api.page(1);
       }
     );
-    const element = pagination.render().renderDom();
+    const element = pagination.renderDom();
 
     expect(paginationCallback).toBe(pagination);
     expect(element.dataset.pagination).toBe('demo');
@@ -1952,11 +1952,12 @@ describe('compound components', () => {
     const pageSize = paginationRoot.querySelector('[data-role="page-size"]');
 
     expect(pagination).toBeInstanceOf(Object);
-    expect(typeof pagination.render).toBe('function');
+    // vNode 组件：句柄就是组件节点（视图由 setup 返回，不再有 render() 方法）
+    expect(typeof pagination.renderDom).toBe('function');
     expect(typeof pagination.update).toBe('function');
     expect(typeof pagination.change).toBe('function');
     expect(paginationRoot.getAttribute('aria-label')).toBe('分页');
-    expect(typeof direct.render).toBe('function');
+    expect(typeof direct.renderDom).toBe('function');
     expect(typeof direct.update).toBe('function');
     expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
       '共 35 条'
@@ -2001,7 +2002,7 @@ describe('compound components', () => {
       pageSize: 2,
       total: 5
     });
-    const element = pagination.render().renderDom();
+    const element = pagination.renderDom();
     const next = element.querySelector('[data-action="next"]');
     const last = element.querySelector('[data-action="last"]');
 

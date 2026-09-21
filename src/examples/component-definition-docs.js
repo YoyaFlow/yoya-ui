@@ -214,7 +214,9 @@ const componentPatterns = [
     }
   };
 }`,
-    references: ['库内参考：VPagination（render() + update/change 等状态 API）。']
+    references: [
+      '库内已无形态 B：有行为的组件一律 vNode（见下一节），形态 B 只在存量示例里还看得到。'
+    ]
   },
   {
     title: '形态 B 快捷工厂：vNode —— 定义即节点',

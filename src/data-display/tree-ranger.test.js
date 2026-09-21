@@ -34,7 +34,7 @@ describe('vTreeRanger', () => {
       columns: makeColumns(),
       columnWidth: 200
     });
-    const element = browser.render().renderDom();
+    const element = browser.renderDom();
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(element.querySelectorAll('.yoya-vtreeranger-column')).toHaveLength(3);
@@ -55,7 +55,7 @@ describe('vTreeRanger', () => {
       change: (payload) => changed.push(payload.type),
       columns: makeColumns()
     });
-    const element = browser.render().renderDom();
+    const element = browser.renderDom();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     element.querySelector('[data-index="1"]').click();
@@ -87,7 +87,7 @@ describe('vTreeRanger', () => {
         }
       ]
     });
-    const element = browser.render().renderDom();
+    const element = browser.renderDom();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(requests).toEqual([1]);
 
@@ -129,7 +129,7 @@ describe('vTreeRanger', () => {
         }
       ]
     });
-    const element = browser.render().renderDom();
+    const element = browser.renderDom();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     element.querySelector('[data-index="0"]').click();

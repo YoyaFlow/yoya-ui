@@ -17,7 +17,7 @@ describe('vLanguageSwitch', () => {
         { label: 'English', value: 'en' }
       ]
     });
-    const element = component.render().renderDom();
+    const element = component.renderDom();
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
     const englishItem = element.querySelector('.yoya-vmenu-item[data-language="en"]');
 
@@ -61,7 +61,7 @@ describe('vLanguageSwitch', () => {
         { label: 'English', value: 'en' }
       ]
     });
-    const element = component.render().renderDom();
+    const element = component.renderDom();
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
 
     locale.setLanguage('en');
@@ -88,7 +88,7 @@ describe('vLanguageSwitch', () => {
       onChange,
       style: { maxWidth: '180px' }
     });
-    const element = component.render().renderDom();
+    const element = component.renderDom();
     const englishItem = element.querySelector('.yoya-vmenu-item[data-language="en"]');
 
     expect(englishItem.textContent).toBe('English');
