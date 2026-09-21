@@ -1,18 +1,20 @@
-import { registerChildFactories } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { CloseOutlined, UserOutlined } from '../svg/icons.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   resolveTextValue,
   themeValue
 } from '../components/shared.js';
 
-export class VAvatarUpload extends HtmlElementNode {
+/** 头像上传的节点类型（不导出到包入口）；公开组件 `vAvatarUpload` 是 vNode 外壳。 */
+class AvatarUploadNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VAvatarUpload';
     this._accept = 'image/*';
     this._disabled = false;
     this._name = '';
@@ -332,7 +334,27 @@ export class VAvatarUpload extends HtmlElementNode {
 }
 
 export function vAvatarUpload(first = null, second = null, third = null) {
-  return createComponentFactory(VAvatarUpload, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VAvatarUpload',
+    createNode: (setup) => new AvatarUploadNode(setup),
+    commands: [
+      'name',
+      'accept',
+      'shape',
+      'size',
+      'disabled',
+      'value',
+      'files',
+      'items',
+      'addFiles',
+      'remove',
+      'clear'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VAvatarUpload = vAvatarUpload;
+defineComponentIdentity(VAvatarUpload, 'VAvatarUpload');
 
 registerChildFactories(HtmlElementNode, { vAvatarUpload });

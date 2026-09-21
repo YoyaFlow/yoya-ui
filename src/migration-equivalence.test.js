@@ -575,6 +575,48 @@ const CASES = [
     build: () =>
       api.vTagsInput({ name: 'labels', placeholder: '输入后回车添加', value: ['甲', '乙'] }),
     probe: (node) => ({ name: node.name(), placeholder: node.placeholder(), value: node.value() })
+  },
+  {
+    name: 'vUpload / 拖拽区 + 文件列表',
+    build: () =>
+      api.vUpload({
+        accept: '.txt,.png',
+        files: [new File(['content'], 'a.txt', { type: 'text/plain' })],
+        multiple: true,
+        name: 'attachments'
+      }),
+    probe: (upload) => ({
+      accept: upload.accept(),
+      multiple: upload.multiple(),
+      names: upload.files().map((file) => file.name)
+    })
+  },
+  {
+    name: 'vUpload / 回调写法（multiple 提示跟上）',
+    build: () =>
+      api.vUpload((upload) => {
+        upload.multiple(true).accept('.txt');
+      }),
+    probe: (upload) => ({
+      accept: upload.accept(),
+      hint: upload.attr('data-multiple') ?? null,
+      multiple: upload.multiple()
+    })
+  },
+  {
+    name: 'vAvatarUpload / 空态 + 方形尺寸',
+    build: () => api.vAvatarUpload({ name: 'avatar', shape: 'square', size: 72 }),
+    probe: (upload) => ({
+      accept: upload.accept(),
+      shape: upload.shape(),
+      size: upload.size(),
+      value: upload.value()
+    })
+  },
+  {
+    name: 'vAvatarUpload / 禁用 + 自定义 accept',
+    build: () => api.vAvatarUpload({ accept: '.png', disabled: true, name: 'avatar' }),
+    probe: (upload) => ({ accept: upload.accept(), disabled: upload.disabled() })
   }
 ];
 

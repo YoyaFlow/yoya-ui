@@ -43,6 +43,7 @@ function publicMethodNames(element) {
 }
 
 const SHELL_FACTORIES = {
+  vAvatarUpload: (value) => value.vAvatarUpload(),
   vButton: (value) => value.vButton(),
   vButtons: (value) => value.vButtons(),
   vCheckbox: (value) => value.vCheckbox(),
@@ -69,7 +70,8 @@ const SHELL_FACTORIES = {
   vTextarea: (value) => value.vTextarea(),
   vTimer: (value) => value.vTimer(),
   vTimerRange: (value) => value.vTimerRange(),
-  vTooltip: (value) => value.vTooltip()
+  vTooltip: (value) => value.vTooltip(),
+  vUpload: (value) => value.vUpload()
 };
 
 describe('component shell', () => {

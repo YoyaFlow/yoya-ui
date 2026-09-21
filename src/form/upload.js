@@ -1,9 +1,9 @@
-import { registerChildFactories } from '../core/node.js';
+import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { CloseOutlined, UploadOutlined } from '../svg/icons.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   componentClass,
-  createComponentFactory,
   isPlainObject,
   replaceChildren,
   resolveTextValue,
@@ -11,9 +11,11 @@ import {
   themeValue
 } from '../components/shared.js';
 
-export class VUpload extends HtmlElementNode {
+/** 上传控件的节点类型（不导出到包入口）；公开组件 `vUpload` 是 vNode 外壳。 */
+class UploadNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VUpload';
     this._accept = '';
     this._disabled = false;
     this._multiple = false;
@@ -88,6 +90,8 @@ export class VUpload extends HtmlElementNode {
     this._multiple = enabled;
     this._input.attr('multiple', enabled ? true : null);
     this.attr('data-multiple', enabled ? 'true' : null);
+    // 提示文案是 multiple 的派生态：挂载后再改也要跟着走（原先只写一次，会停在旧态）
+    this._syncHint();
     return this;
   }
 
@@ -272,6 +276,9 @@ export class VUpload extends HtmlElementNode {
     this._dropZone.attr('data-disabled', this._disabled ? 'true' : null);
 
     if (this._dropZone.children().length === 0) {
+      this._hintNode = new HtmlElementNode('span')
+        .className('yoya-vupload-dropzone-hint')
+        .child(this._multiple ? '支持选择多个文件' : '支持选择单个文件');
       this._dropZone.child(
         UploadOutlined().styles({
           color: themeValue('color-primary', '#2563eb'),
@@ -281,9 +288,7 @@ export class VUpload extends HtmlElementNode {
         new HtmlElementNode('span')
           .className('yoya-vupload-dropzone-title')
           .child('点击或拖拽文件到此处'),
-        new HtmlElementNode('span')
-          .className('yoya-vupload-dropzone-hint')
-          .child(this._multiple ? '支持选择多个文件' : '支持选择单个文件')
+        this._hintNode
       );
     }
 
@@ -291,6 +296,13 @@ export class VUpload extends HtmlElementNode {
       this._list,
       this._files.map((entry, index) => this._createItem(entry, index))
     );
+    return this;
+  }
+
+  _syncHint() {
+    if (this._hintNode) {
+      replaceChildren(this._hintNode, [this._multiple ? '支持选择多个文件' : '支持选择单个文件']);
+    }
     return this;
   }
 
@@ -391,8 +403,30 @@ export class VUpload extends HtmlElementNode {
 }
 
 export function vUpload(first = null, second = null, third = null) {
-  return createComponentFactory(VUpload, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VUpload',
+    createNode: (setup) => new UploadNode(setup),
+    commands: [
+      'name',
+      'accept',
+      'multiple',
+      'disabled',
+      'files',
+      'items',
+      'value',
+      'addFiles',
+      'remove',
+      'clear',
+      'status',
+      'progress',
+      'dropZone'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VUpload = vUpload;
+defineComponentIdentity(VUpload, 'VUpload');
 
 registerChildFactories(HtmlElementNode, { vUpload });
 
