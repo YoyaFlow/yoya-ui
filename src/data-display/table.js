@@ -1,11 +1,10 @@
-import { componentNameOf } from '../core/node.js';
+import { componentNameOf, viewRootOf } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
 import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
 import {
   createComponentShortcut,
   isPlainObject,
   normalizeChildren,
-  removeChild,
   replaceChildren,
   themeBorder,
   themeValue
@@ -288,133 +287,61 @@ export function VTableCaption() {
 
 export const vTableCaption = createComponentShortcut(VTableCaption);
 
-/** 表格：外壳结构 + 数据驱动渲染 + 声明式段 / 行投递。 */
+/**
+ * 表格：**只做组合 + 用户侧受控 API**（票 15 §11）。
+ *
+ * - 结构在返回的视图里内联声明；局部结构各有定义（scroll / grid / caption / sections）；
+ * - 用户侧 API：`caption` / `vThead` / `vTbody` / `vTfoot` / `vTr` + 内容通道 `child`
+ *   （段进表格、行进表体），单元格级回调用 `vTh` / `vTd` 的 setup 拿到；
+ * - 组件不碰 `_el` / `_children`：清空与追加都走节点 API（`replaceChildren` / `child`）；
+ * - 数据驱动（`columns` / `rows` / `emptyText` / `data`）是这套 API 之上的一层，接口保持不变。
+ */
 export function VTable() {
-  return vNode((api) => {
-    const state = { columns: [], declarative: false, emptyText: '暂无数据', rows: [] };
+  return vNode((api, self) => {
+    const state = { columns: [], emptyText: '暂无数据', rows: [] };
 
-    const captionBox = caption({
-      style: {
-        captionSide: 'top',
-        color: themeValue('color-text-strong', '#111827'),
-        fontWeight: '700',
-        padding: '0 0 12px',
-        textAlign: 'left'
-      },
-      vn: 'VTableCaption'
-    }).style('display', 'none');
-    const headBox = thead({ vn: 'VThead' });
-    const bodyBox = tbody({ vn: 'VTbody' });
-    const grid = table(
-      {
-        style: {
-          borderCollapse: 'collapse',
-          color: themeValue('color-text', '#172033'),
-          width: '100%'
-        },
-        vn: 'VTableGrid'
-      },
-      (view) => view.child(captionBox, headBox, bodyBox)
-    );
-    const scroll = div(
-      {
-        style: {
-          background: themeValue('color-surface', '#ffffff'),
-          border: themeBorder('color-border', '#d8dee8'),
-          borderRadius: '8px',
-          overflowX: 'auto'
-        },
-        vn: 'VTableScroll'
-      },
-      (view) => view.child(grid)
-    );
-    const root = div({ style: { display: 'block', minWidth: '0' }, vn: 'VTable' }, (view) =>
-      view.child(scroll)
-    );
-    const baseChild = root.child.bind(root);
+    /** 按身份在本组件自己的结构里**现取**位置（起点先解析视图根，setup 阶段的命令才看得到结构）。 */
+    const find = (identity) => {
+      const queue = [...(viewRootOf(self.node()).children() ?? [])];
 
-    /** 声明式段出现时摘掉自动 thead / tbody（旧 _detachAutoSections 语义）。 */
-    const detachAutoSections = () => {
-      removeChild(grid, headBox);
-      removeChild(grid, bodyBox);
+      while (queue.length > 0) {
+        const node = queue.shift();
 
-      if (grid._el) {
-        headBox._el?.remove();
-        bodyBox._el?.remove();
-      }
-    };
-
-    const addSection = (section) => {
-      if (!state.declarative) {
-        state.declarative = true;
-        detachAutoSections();
-      }
-
-      grid.child(section);
-      return api;
-    };
-
-    const findSection = (identity) =>
-      grid.children().find((child) => componentNameOf(child) === identity);
-
-    const addRow = (row) => {
-      if (state.declarative) {
-        const body = findSection('VTbody');
-
-        if (body) {
-          body.child(row);
-        } else {
-          addSection(vTbody((section) => section.child(row)));
+        if (componentNameOf(node) === identity) {
+          return node;
         }
 
-        return api;
+        if (typeof node.children === 'function') {
+          queue.push(...node.children());
+        }
       }
 
-      bodyBox.child(row);
-      return api;
+      return null;
     };
 
-    /** 数据驱动渲染前的复位：销毁声明式段，恢复 caption + thead + tbody 三件套。 */
-    const resetShell = () => {
-      grid.children().forEach((child) => {
-        if (child === captionBox || child === headBox || child === bodyBox) {
-          return;
-        }
+    const captionBox = () => find('VTableCaption');
+    const headBox = () => find('VThead');
+    const bodyBox = () => find('VTbody');
+    const gridBox = () => find('VTableGrid');
 
-        const identity = componentNameOf(child);
-
-        if (identity === 'VThead' || identity === 'VTbody' || identity === 'VTfoot') {
-          child.destroy();
-        }
-      });
-
-      grid._children = [captionBox, headBox, bodyBox];
-      grid._childrenDirty = true;
-
-      if (grid._el) {
-        grid._el.replaceChildren(captionBox.renderDom(), headBox.renderDom(), bodyBox.renderDom());
-      }
-
-      state.declarative = false;
-    };
-
+    /** 数据驱动：列头行 / 数据行 / 空态行写进自动段。 */
     const renderTable = () => {
-      resetShell();
-
+      const head = headBox();
+      const body = bodyBox();
       const resolvedColumns =
         state.columns.length > 0 ? state.columns : inferTableColumns(state.rows);
       const bodyColumns =
         resolvedColumns.length > 0 ? resolvedColumns : [{ key: '__value', label: '' }];
 
-      replaceChildren(headBox, []);
-      replaceChildren(bodyBox, []);
+      replaceChildren(head, []);
+      replaceChildren(body, []);
 
       if (resolvedColumns.length > 0) {
         const headRow = tr({ vn: 'VTheadRow' });
 
         resolvedColumns.forEach((column, columnIndex) => {
-          const headerCell = th({ vn: 'VTh' });
           const columnKey = column.key ?? `column-${columnIndex}`;
+          const headerCell = th({ vn: 'VTh' });
 
           headerCell.attr('scope', 'col');
           headerCell.attr('data-key', columnKey);
@@ -423,7 +350,7 @@ export function VTable() {
           headRow.child(headerCell);
         });
 
-        headBox.child(headRow);
+        head.child(headRow);
       }
 
       if (state.rows.length > 0) {
@@ -432,8 +359,8 @@ export function VTable() {
           bodyRow.attr('data-row-index', String(rowIndex));
 
           bodyColumns.forEach((column, columnIndex) => {
-            const cell = td({ vn: 'VTd' });
             const columnKey = column.key ?? `column-${columnIndex}`;
+            const cell = td({ vn: 'VTd' });
 
             cell.attr('data-key', columnKey);
             applyCellStyles(cell, column, 'body');
@@ -441,56 +368,58 @@ export function VTable() {
             bodyRow.child(cell);
           });
 
-          bodyBox.child(bodyRow);
+          body.child(bodyRow);
         });
-      } else {
-        const emptyRow = tr({ vn: 'VTableEmptyRow' });
-        const emptyCell = td({ vn: 'VTableEmpty' });
 
-        emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
-        emptyCell.styles({
-          color: themeValue('color-text-muted', '#64748b'),
-          padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
-          textAlign: 'center'
-        });
-        appendCellContent(emptyCell, state.emptyText);
-        emptyRow.child(emptyCell);
-        bodyBox.child(emptyRow);
+        return;
       }
+
+      const emptyRow = tr({ vn: 'VTableEmptyRow' });
+      const emptyCell = td({ vn: 'VTableEmpty' });
+
+      emptyCell.attr('colspan', String(Math.max(resolvedColumns.length, 1)));
+      emptyCell.styles({
+        color: themeValue('color-text-muted', '#64748b'),
+        padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
+        textAlign: 'center'
+      });
+      appendCellContent(emptyCell, state.emptyText);
+      emptyRow.child(emptyCell);
+      body.child(emptyRow);
     };
 
-    /**
-     * 匿名槽位分流（旧 TableNode.child 语义）：段进 `VTableGrid`、行进表体、其余进组件根。
-     * 结构自身的构建走 `baseChild`，不受分流影响。
-     */
-    root.child = (...children) => {
-      children.flat(Infinity).forEach((child) => {
-        const identity = componentNameOf(child);
+    /** 段投递：把用户声明的段折进同角色的自动段（自动段始终在结构里，不摘不拼）。 */
+    const deliverSection = (identity, section) => {
+      const box = find(identity);
 
-        if (identity === 'VThead' || identity === 'VTbody' || identity === 'VTfoot') {
-          addSection(child);
-          return;
-        }
+      if (!box) {
+        gridBox().child(section);
+        return api;
+      }
 
-        if (identity === 'VTr') {
-          addRow(child);
-          return;
-        }
-
-        baseChild(child);
-      });
-
-      return root;
+      replaceChildren(box, viewRootOf(section).children());
+      return api;
     };
 
     api.caption = (content) => {
+      const box = captionBox();
+
       if (content === undefined) {
-        return captionBox.textContent();
+        return box.text();
       }
 
-      const hasContent = content !== null && content !== undefined && content !== '';
-      captionBox.style('display', hasContent ? null : 'none');
-      replaceChildren(captionBox, hasContent ? normalizeChildren(content) : []);
+      box.text(content);
+      return api;
+    };
+
+    api.vThead = (setup) => deliverSection('VThead', vThead(setup));
+    api.vTbody = (setup) => deliverSection('VTbody', vTbody(setup));
+    api.vTfoot = (setup) => {
+      gridBox().child(vTfoot(setup));
+      return api;
+    };
+    api.vTr = (setup) => {
+      bodyBox().child(vTr(setup));
       return api;
     };
 
@@ -565,16 +494,7 @@ export function VTable() {
       return api;
     };
 
-    api.vThead = (setup) => addSection(vThead(setup));
-    api.vTbody = (setup) => addSection(vTbody(setup));
-    api.vTfoot = (setup) => addSection(vTfoot(setup));
-    api.vTr = (setup) => addRow(vTr(setup));
-
-    /**
-     * props：键在组件上有同名命令就调命令（`columns` / `rows` / `caption` / `emptyText` / `data`…），
-     * 其余键按元素 options 写（`attrs` / `style` / `class` / 属性 / 事件）——与元素侧
-     * `_setupObject` 的"有同名方法就调方法"口径一致。
-     */
+    /** props：键在组件上有同名命令就调命令，其余键按元素 options 写。 */
     api.setupObject = (config) => {
       const elementConfig = {};
 
@@ -588,15 +508,59 @@ export function VTable() {
       });
 
       if (Object.keys(elementConfig).length > 0) {
-        root.setup(elementConfig);
+        self.node().setup(elementConfig);
       }
 
       return api;
     };
 
+    /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
-    return root;
+    return div({ style: { display: 'block', minWidth: '0' }, vn: 'VTable' }, (root) => {
+      const baseChild = root.child.bind(root);
+
+      root.child(
+        vTableScroll((scroll) =>
+          scroll.child(
+            vTableGrid((grid) =>
+              grid.child(vTableCaption(), thead({ vn: 'VThead' }), tbody({ vn: 'VTbody' }))
+            )
+          )
+        )
+      );
+
+      // 内容通道：段 → 对应命令，行 → 表体，其余 → 组件根（普通元素语义）
+      root.child = (...children) => {
+        children.flat(Infinity).forEach((child) => {
+          const identity = componentNameOf(child);
+
+          if (identity === 'VThead') {
+            api.vThead(child);
+            return;
+          }
+
+          if (identity === 'VTbody') {
+            api.vTbody(child);
+            return;
+          }
+
+          if (identity === 'VTfoot') {
+            api.vTfoot(child);
+            return;
+          }
+
+          if (identity === 'VTr') {
+            api.vTr(child);
+            return;
+          }
+
+          baseChild(child);
+        });
+
+        return root;
+      };
+    });
   });
 }
 
