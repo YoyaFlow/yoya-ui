@@ -1,4 +1,5 @@
 import { viewRootOf } from '../core/node.js';
+import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { caption, div, table, tbody, td, tfoot, th, thead, tr } from '../html/index.js';
 import {
@@ -563,3 +564,131 @@ export function VTable() {
 }
 
 export const vTable = createComponentShortcut(VTable);
+
+/**
+ * 数据驱动包装（`VTable` 之上的一层，**自己**管 `columns` / `rows` / `emptyText`）。
+ *
+ * 和别的表格框架一样：数据用句柄（`ref`）持有，写入即对账——列头 / 行都走 `keyed`，
+ * 行能复用的不重建；`addRow / updateRow / removeRow / clearRows` 是它自己的行动作；
+ * 视图内部用 `vTable` 组合（基础件不掺数据驱动）。
+ *
+ * 命名避开节点 / 命令保留字（`data` / `text` / `child` / `attr` / `id` / `name` / `render`）。
+ */
+export function VTableWrapper() {
+  return vNode((api) => {
+    const captionText = ref('');
+    const columns = ref([]);
+    const emptyText = ref('暂无数据');
+    const rows = ref([]);
+
+    const rowKeyOf = (row, index) => (row && row.id !== undefined ? row.id : index);
+    const columnKeyOf = (column, index) => column?.key ?? column?.field ?? index;
+
+    api.caption = (value) => {
+      if (value === undefined) {
+        return captionText.value;
+      }
+
+      captionText.value = value;
+      return api;
+    };
+
+    api.columns = (value) => {
+      if (value === undefined) {
+        return columns.value;
+      }
+
+      columns.value = Array.isArray(value) ? value.slice() : [];
+      return api;
+    };
+
+    api.rows = (value) => {
+      if (value === undefined) {
+        return rows.value;
+      }
+
+      rows.value = Array.isArray(value) ? value.slice() : [];
+      return api;
+    };
+
+    api.emptyText = (value) => {
+      if (value === undefined) {
+        return emptyText.value;
+      }
+
+      emptyText.value = value;
+      return api;
+    };
+
+    api.addRow = (row) => {
+      rows.value = [...rows.value, row];
+      return api;
+    };
+
+    api.updateRow = (key, patch) => {
+      rows.value = rows.value.map((row, index) =>
+        rowKeyOf(row, index) === key ? { ...row, ...patch } : row
+      );
+      return api;
+    };
+
+    api.removeRow = (key) => {
+      rows.value = rows.value.filter((row, index) => rowKeyOf(row, index) !== key);
+      return api;
+    };
+
+    api.clearRows = () => {
+      rows.value = [];
+      return api;
+    };
+
+    /** props：`columns` / `rows` / `emptyText` / `caption` / `attrs` / `style` … */
+    api.setupObject = (config) => {
+      Object.entries(config).forEach(([key, value]) => {
+        if (typeof api[key] === 'function') {
+          api[key](value);
+        }
+      });
+
+      return api;
+    };
+
+    return vTable((table) => {
+      table.caption(captionText);
+
+      table.vThead((head) => {
+        head.vTr((headRow) => {
+          head.keyed(
+            columns,
+            columnKeyOf,
+            (column, index) => () =>
+              headRow.vTh((cell) => {
+                cell.attr('data-key', String(columnKeyOf(column, index)));
+                cell.child(column?.label ?? column?.title ?? column?.key ?? '');
+              })
+          );
+        });
+      });
+
+      table.vTbody((body) => {
+        body.keyed(
+          rows,
+          rowKeyOf,
+          (row, rowIndex) => () =>
+            vTr((bodyRow) => {
+              bodyRow.attr('data-row-index', String(rowIndex));
+              (columns.value.length > 0 ? columns.value : [null]).forEach((column, columnIndex) => {
+                bodyRow.vTd((cell) => {
+                  const key = column ? columnKeyOf(column, columnIndex) : '__value';
+                  cell.attr('data-key', String(key));
+                  cell.child(String((column ? row?.[key] : row) ?? ''));
+                });
+              });
+            })
+        );
+      });
+    });
+  });
+}
+
+export const vTableWrapper = createComponentShortcut(VTableWrapper);
