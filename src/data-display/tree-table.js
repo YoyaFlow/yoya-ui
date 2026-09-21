@@ -1,11 +1,7 @@
 import { HtmlElementNode } from '../html/index.js';
-import { VTextNode } from '../core/node.js';
-import {
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  replaceChildren
-} from '../components/shared.js';
+import { defineComponentIdentity, VTextNode } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
+import { componentClass, isPlainObject, replaceChildren } from '../components/shared.js';
 
 function normalizeColumn(value, index) {
   if (typeof value === 'string' || typeof value === 'number') {
@@ -29,9 +25,11 @@ function defaultRowKey(node, index) {
  * 行常驻：所有节点都会渲染成 `<tr>`，展开/折叠只切换行的可见性（`hidden` 属性），
  * 不重建表格——因此 DOM 身份、焦点、表内滚动位置都不会丢。
  */
-export class VTreeTable extends HtmlElementNode {
+/** 树形表格的节点类型（不导出）；公开组件 `vTreeTable` 是 vNode 外壳。 */
+class TreeTableNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTreeTable';
     this.className(componentClass, 'yoya-vtreetable');
 
     this._columns = [];
@@ -462,5 +460,25 @@ export class VTreeTable extends HtmlElementNode {
 }
 
 export function vTreeTable(first = null, second = null, third = null) {
-  return createComponentFactory(VTreeTable, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTreeTable',
+    createNode: (setup) => new TreeTableNode(setup),
+    commands: [
+      'columns',
+      'nodes',
+      'rowKey',
+      'rowSelection',
+      'lazyLoad',
+      'expandedKeys',
+      'expandKeys',
+      'checkedKeys',
+      'expandAll',
+      'collapseAll',
+      'visibleRowCount'
+    ],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VTreeTable = vTreeTable;
+defineComponentIdentity(VTreeTable, 'VTreeTable');

@@ -326,6 +326,37 @@ const CASES = [
       items: steps.items().length,
       status: steps.status()
     })
+  },
+  {
+    name: 'vTimeline / 两条记录',
+    build: () =>
+      api.vTimeline((timeline) => {
+        timeline.vTimelineItem({ status: 'success', title: '已创建', time: '09:00' });
+        timeline.vTimelineItem({ status: 'processing', title: '部署中', time: '09:30' });
+      }),
+    probe: (timeline) => ({ children: timeline.children().length })
+  },
+  {
+    name: 'vTreeTable / 两层节点',
+    build: () =>
+      api.vTreeTable({
+        columns: [
+          { key: 'name', title: '名称' },
+          { key: 'count', title: '数量' }
+        ],
+        nodes: [
+          {
+            id: 'root',
+            name: '根节点',
+            count: 2,
+            children: [{ id: 'child', name: '子节点', count: 2 }]
+          }
+        ]
+      }),
+    probe: (treeTable) => ({
+      visible: treeTable.visibleRowCount(),
+      expanded: treeTable.expandedKeys()
+    })
   }
 ];
 

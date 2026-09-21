@@ -1,8 +1,9 @@
 import { HtmlElementNode } from '../html/index.js';
+import { defineComponentIdentity } from '../core/node.js';
+import { createComponentShell } from '../components/component-shell.js';
 import {
   applyComponentSetup,
   componentClass,
-  createComponentFactory,
   setupContentSlot,
   themeValue
 } from '../components/shared.js';
@@ -21,9 +22,11 @@ const statusNames = new Set(Object.keys(timelineStatusColors));
 /**
  * 时间线：竖向事件流，节点状态色区分成功/失败/进行中。
  */
-export class VTimeline extends HtmlElementNode {
+/** 时间轴的节点类型（不导出）；公开组件 `vTimeline` 是 vNode 外壳。 */
+class TimelineNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTimeline';
     this.className(componentClass, 'yoya-vtimeline');
     this.styles({ position: 'relative' });
     this._line = new HtmlElementNode('div').className('yoya-vtimeline-line').styles({
@@ -43,9 +46,11 @@ export class VTimeline extends HtmlElementNode {
 /**
  * 时间线节点：指示点 + 标题 + 时间 + 内容。
  */
-export class VTimelineItem extends HtmlElementNode {
+/** 时间轴条目的节点类型（不导出）；公开组件 `vTimelineItem` 是 vNode 外壳。 */
+class TimelineItemNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', null);
+    this._identity = 'VTimelineItem';
     this._status = 'default';
     this._titleNode = vText('');
     this._timeNode = vText('');
@@ -137,9 +142,23 @@ export class VTimelineItem extends HtmlElementNode {
 }
 
 export function vTimeline(first = null, second = null, third = null) {
-  return createComponentFactory(VTimeline, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTimeline',
+    createNode: (setup) => new TimelineNode(setup),
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
 
 export function vTimelineItem(first = null, second = null, third = null) {
-  return createComponentFactory(VTimelineItem, first, second, third, arguments);
+  return createComponentShell({
+    identity: 'VTimelineItem',
+    createNode: (setup) => new TimelineItemNode(setup),
+    commands: ['status', 'title', 'time', 'content'],
+    args: [first, second, third, ...[...arguments].slice(3)]
+  });
 }
+
+export const VTimeline = vTimeline;
+export const VTimelineItem = vTimelineItem;
+defineComponentIdentity(VTimeline, 'VTimeline');
+defineComponentIdentity(VTimelineItem, 'VTimelineItem');
