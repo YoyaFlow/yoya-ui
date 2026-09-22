@@ -1,12 +1,14 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
 import {
+  createComponentShortcut,
+  delegateCommands,
+  delegateNodeCommands,
   normalizeChildren,
   replaceChildren,
   themeBorder,
   themeValue
 } from '../../components/shared.js';
-import { VBooleanControl } from './shared.js';
+import { BOOLEAN_CONTROL_COMMANDS, VBooleanControl } from './shared.js';
 
 class CheckboxNode extends VBooleanControl {
   constructor(setup = null) {
@@ -50,28 +52,25 @@ class CheckboxNode extends VBooleanControl {
   }
 }
 
-export function vCheckbox(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VCheckbox',
-    createNode: (setup) => new CheckboxNode(setup),
-    commands: [
-      'label',
-      'text',
-      'content',
-      'description',
-      'isDisabled',
-      'value',
-      'optionValue',
-      // 布尔控件的选中态：构造函数里以实例方法挂上（shared.js 的 booleanMethod）
-      'checked',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required',
-      'indeterminate'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 复选框（形态 B）：视图根是节点类型 `CheckboxNode`（元素机制住在节点上），命令挂到 `api`。
+ * 定义收 props、快捷方法 `vCheckbox` 负责调用方参数的 setup 分派。
+ */
+export function VCheckbox(props = {}) {
+  return vNode((api) => {
+    const root = new CheckboxNode(props);
+
+    delegateCommands(api, root, BOOLEAN_CONTROL_COMMANDS);
+    delegateNodeCommands(api, root);
+
+    /** 位置参数：字符串 / 数字 / 节点 / 数组 = 标签（迁移前 `_setupBoolean` 的兜底分支同口径）。 */
+    api.setupString = (value) => {
+      root.label(value);
+      return api;
+    };
+
+    return root;
   });
 }
 
-export const VCheckbox = vCheckbox;
-defineComponentIdentity(VCheckbox, 'VCheckbox');
+export const vCheckbox = createComponentShortcut(VCheckbox, { props: true });

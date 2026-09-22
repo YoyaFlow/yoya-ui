@@ -1,15 +1,30 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
-import { ViewNode } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
+import { ViewNode, hasComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
+  createComponentShortcut,
+  delegateCommands,
+  delegateNodeCommands,
   isPlainObject,
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
 import { VCheckbox, vCheckbox } from './checkbox.js';
 import { normalizeValueList } from './shared.js';
+
+/** 复选组的命令面（节点类型上的公开方法）。 */
+const CHECKBOXES_COMMANDS = [
+  'checkedValues',
+  'clear',
+  'columns',
+  'disabled',
+  'isDisabled',
+  'multiple',
+  'options',
+  'required',
+  'value'
+];
 
 class CheckboxesNode extends HtmlElementNode {
   constructor(setup = null) {
@@ -234,31 +249,39 @@ class CheckboxesNode extends HtmlElementNode {
   }
 }
 
-export function vCheckboxes(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VCheckboxes',
-    createNode: (setup) => new CheckboxesNode(setup),
-    commands: [
-      'multiple',
-      'required',
-      'isDisabled',
-      'options',
-      'value',
-      'checkedValues',
-      'clear',
-      'columns',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 复选组（形态 B）：视图根是节点类型 `CheckboxesNode`（元素机制住在节点上），命令挂到 `api`。
+ */
+export function VCheckboxes(props = {}) {
+  return vNode((api) => {
+    const root = new CheckboxesNode(props);
+
+    delegateCommands(api, root, CHECKBOXES_COMMANDS);
+    delegateNodeCommands(api, root);
+
+    /** 位置参数：字符串 = 一个选项；数组 = 一组选项（迁移前 `_setupCheckboxes` 的兜底分支同口径）。 */
+    api.setupObject = (config) => {
+      if (Array.isArray(config)) {
+        api.options(config);
+        return api;
+      }
+
+      root.setup(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      api.options([value]);
+      return api;
+    };
+
+    return root;
   });
 }
 
-export const VCheckboxes = vCheckboxes;
-defineComponentIdentity(VCheckboxes, 'VCheckboxes');
+export const vCheckboxes = createComponentShortcut(VCheckboxes, { props: true });
 
 function createCheckboxGroupItem(option, index) {
-  if (option instanceof VCheckbox) {
+  if (hasComponentIdentity(option, 'VCheckbox')) {
     return option;
   }
 
@@ -268,7 +291,7 @@ function createCheckboxGroupItem(option, index) {
 
   const normalized = normalizeCheckboxGroupOption(option, index);
 
-  return new VCheckbox({
+  return VCheckbox({
     checked: normalized.checked,
     description: normalized.description,
     disabled: normalized.disabled,
@@ -295,7 +318,7 @@ function normalizeCheckboxGroupOption(option, index) {
     };
   }
 
-  if (option instanceof VCheckbox) {
+  if (hasComponentIdentity(option, 'VCheckbox')) {
     return {
       checked: option.checked(),
       description: option.description(),

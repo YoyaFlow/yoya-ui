@@ -1,8 +1,14 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import { replaceChildren, themeBorder, themeValue } from '../../components/shared.js';
-import { VBooleanControl } from './shared.js';
+import {
+  createComponentShortcut,
+  delegateCommands,
+  delegateNodeCommands,
+  replaceChildren,
+  themeBorder,
+  themeValue
+} from '../../components/shared.js';
+import { BOOLEAN_CONTROL_COMMANDS, VBooleanControl } from './shared.js';
 
 class RadioNode extends VBooleanControl {
   constructor(setup = null) {
@@ -111,30 +117,26 @@ function createRadioDot() {
   });
 }
 
-export function vRadio(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VRadio',
-    createNode: (setup) => new RadioNode(setup),
-    commands: [
-      'label',
-      'text',
-      'content',
-      'description',
-      'isDisabled',
-      'value',
-      'optionValue',
-      // 布尔控件的选中态：构造函数里以实例方法挂上（shared.js 的 booleanMethod）
-      'checked',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required',
-      'indeterminate'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 单选框（形态 B）：视图根是节点类型 `RadioNode`（元素机制住在节点上），命令挂到 `api`。
+ */
+export function VRadio(props = {}) {
+  return vNode((api) => {
+    const root = new RadioNode(props);
+
+    delegateCommands(api, root, BOOLEAN_CONTROL_COMMANDS);
+    delegateNodeCommands(api, root);
+
+    /** 位置参数：字符串 / 数字 / 节点 / 数组 = 标签（迁移前 `_setupBoolean` 的兜底分支同口径）。 */
+    api.setupString = (value) => {
+      root.label(value);
+      return api;
+    };
+
+    return root;
   });
 }
 
-export const VRadio = vRadio;
-defineComponentIdentity(VRadio, 'VRadio');
+export const vRadio = createComponentShortcut(VRadio, { props: true });
 
 export { registerRadio, unregisterRadio, createRadioDot };

@@ -9,6 +9,24 @@ import {
   themeValue
 } from '../../components/shared.js';
 
+/**
+ * 布尔控件的命令面（节点类型上的公开方法）：三个控件的 `vNode` 定义用它把命令挂到 `api` 上，
+ * `delegateNodeCommands` 再兜底补齐构造函数里挂的开关。
+ */
+const BOOLEAN_CONTROL_COMMANDS = [
+  'checked',
+  'content',
+  'description',
+  'disabled',
+  'indeterminate',
+  'isDisabled',
+  'label',
+  'optionValue',
+  'required',
+  'text',
+  'value'
+];
+
 /** 清空按钮：身份走 `vn`（各控件一份），能力类 `yoya-control-clear` 保留（跨组件能力类不退场）。 */
 function createClearButton(identity, position = {}) {
   return new HtmlElementNode('button')
@@ -54,6 +72,11 @@ function syncClearButton(control, inputNode, clearButton) {
   clearButton.style('display', visible ? null : 'none');
 }
 
+/**
+ * 布尔控件的**节点类型**（视图根，不导出到包入口）：`checkbox` / `switch` / `radio`
+ * 三个组件各自的定义函数里 `new` 它、返回它当视图根（元素机制住在节点上），
+ * 身份（`vn`）由各子类自己用字面量写。
+ */
 class VBooleanControl extends HtmlElementNode {
   constructor(tagName) {
     super('label', null);
@@ -377,6 +400,7 @@ function assignFormValue(result, name, value) {
 }
 
 export {
+  BOOLEAN_CONTROL_COMMANDS,
   createClearButton,
   syncClearButton,
   VBooleanControl,

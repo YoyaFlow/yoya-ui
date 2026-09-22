@@ -1,14 +1,28 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
-import { ViewNode } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
+import { ViewNode, hasComponentIdentity } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
+  createComponentShortcut,
+  delegateCommands,
+  delegateNodeCommands,
   isPlainObject,
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
 import { VRadio, vRadio } from './radio.js';
+
+/** 单选组的命令面（节点类型上的公开方法）。 */
+const RADIOS_COMMANDS = [
+  'change',
+  'checkedValue',
+  'clear',
+  'disabled',
+  'isDisabled',
+  'options',
+  'required',
+  'value'
+];
 
 class RadiosNode extends HtmlElementNode {
   constructor(setup = null) {
@@ -133,8 +147,8 @@ class RadiosNode extends HtmlElementNode {
     });
 
     if (typeof this._changeHandler === 'function') {
-      // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-      this._changeHandler(item.optionValue(), this._componentHandle ?? this);
+      // 句柄交给使用方的是**组件节点**（定义函数把取用方法挂成 `_handleOf`），不是内部节点类型
+      this._changeHandler(item.optionValue(), this._handleOf?.() ?? this);
     }
   }
 
@@ -194,30 +208,41 @@ class RadiosNode extends HtmlElementNode {
   }
 }
 
-export function vRadios(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VRadios',
-    createNode: (setup) => new RadiosNode(setup),
-    commands: [
-      'required',
-      'isDisabled',
-      'change',
-      'options',
-      'value',
-      'checkedValue',
-      'clear',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 单选组（形态 B）：视图根是节点类型 `RadiosNode`（元素机制住在节点上），命令挂到 `api`。
+ */
+export function VRadios(props = {}) {
+  return vNode((api, self) => {
+    const root = new RadiosNode(props);
+
+    delegateCommands(api, root, RADIOS_COMMANDS);
+    delegateNodeCommands(api, root);
+    // `change` 回调的第二参 = 组件句柄（句柄要等 setup 返回后才取得到，所以按取用方法挂）
+    root._handleOf = () => self.node();
+
+    /** 位置参数：字符串 = 一个选项；数组 = 一组选项（迁移前 `_setupRadios` 的兜底分支同口径）。 */
+    api.setupObject = (config) => {
+      if (Array.isArray(config)) {
+        api.options(config);
+        return api;
+      }
+
+      root.setup(config);
+      return api;
+    };
+    api.setupString = (value) => {
+      api.options([value]);
+      return api;
+    };
+
+    return root;
   });
 }
 
-export const VRadios = vRadios;
-defineComponentIdentity(VRadios, 'VRadios');
+export const vRadios = createComponentShortcut(VRadios, { props: true });
 
 function createRadioGroupItem(option, index) {
-  if (option instanceof VRadio) {
+  if (hasComponentIdentity(option, 'VRadio')) {
     return option;
   }
 
@@ -227,7 +252,7 @@ function createRadioGroupItem(option, index) {
 
   const normalized = normalizeRadioGroupOption(option, index);
 
-  return new VRadio({
+  return VRadio({
     checked: normalized.checked,
     description: normalized.description,
     disabled: normalized.disabled,
@@ -254,7 +279,7 @@ function normalizeRadioGroupOption(option, index) {
     };
   }
 
-  if (option instanceof VRadio) {
+  if (hasComponentIdentity(option, 'VRadio')) {
     return {
       checked: option.checked(),
       description: option.description(),

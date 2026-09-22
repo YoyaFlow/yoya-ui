@@ -1,4 +1,5 @@
 import {
+  ComponentNode,
   ViewNode,
   applySetupValue,
   applyElementOptions as applyCoreElementOptions,
@@ -78,6 +79,47 @@ export function delegateChildFactories(api, node, names) {
       return api;
     };
   });
+}
+
+/**
+ * 节点类型上有、组件 `api` 上还没有的**公开方法**：补进命令面。
+ *
+ * 视图根是节点类型的组件（布尔控件族走 `class XxxNode extends VBooleanControl`）用它兜底：
+ * 构造函数里用 `booleanMethod` 挂的开关（`disabled()` / `checked()` …）不在原型上，
+ * 手工清单漏一个就会静默失效（迁移表单控件时踩到：`vTimer().disabled()` 直接不存在）。
+ * 口径与旧的 `createComponentShell` 一致，只是不再需要外壳。
+ */
+export function delegateNodeCommands(api, node) {
+  const names = [];
+  const seen = new Set();
+
+  const collect = (source) => {
+    if (!source) {
+      return;
+    }
+
+    Object.getOwnPropertyNames(source).forEach((name) => {
+      if (seen.has(name) || name === 'constructor' || name.startsWith('_')) {
+        return;
+      }
+
+      seen.add(name);
+      if (name in api || name in ComponentNode.prototype || typeof node[name] !== 'function') {
+        return;
+      }
+
+      names.push(name);
+    });
+  };
+
+  collect(node);
+  let prototype = Object.getPrototypeOf(node);
+  while (prototype && prototype !== Object.prototype) {
+    collect(prototype);
+    prototype = Object.getPrototypeOf(prototype);
+  }
+
+  return delegateCommands(api, node, names);
 }
 
 export function themeValue(token, fallback) {
