@@ -6,8 +6,8 @@ describe('vCheckboxes layout demo', () => {
     const demo = CheckboxColumnsExample();
     const el = demo.render().renderDom();
 
-    const boxes = el.querySelector('.yoya-vcheckboxes');
-    expect(el.querySelectorAll('.yoya-vcheckboxes input[type="checkbox"]')).toHaveLength(6);
+    const boxes = el.querySelector('[vn~="VCheckboxes"]');
+    expect(el.querySelectorAll('[vn~="VCheckboxes"] input[type="checkbox"]')).toHaveLength(6);
     expect(boxes.style.gridTemplateColumns).toContain('repeat(2');
 
     const three = Array.from(el.querySelectorAll('button')).find(

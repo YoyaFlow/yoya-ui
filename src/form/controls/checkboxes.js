@@ -4,7 +4,6 @@ import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
-  componentClass,
   isPlainObject,
   replaceChildren,
   resolveTextValue
@@ -23,7 +22,7 @@ class CheckboxesNode extends HtmlElementNode {
     this._options = [];
 
     this._columns = null;
-    this.className(componentClass, 'yoya-vcheckboxes');
+    this.setup({ vn: 'VCheckboxes' });
     this.styles({
       display: 'grid',
       gap: '8px',

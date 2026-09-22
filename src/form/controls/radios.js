@@ -4,7 +4,6 @@ import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
 import {
   booleanMethod,
-  componentClass,
   isPlainObject,
   replaceChildren,
   resolveTextValue
@@ -21,7 +20,7 @@ class RadiosNode extends HtmlElementNode {
     this._items = [];
     this._options = [];
 
-    this.className(componentClass, 'yoya-vradios');
+    this.setup({ vn: 'VRadios' });
     this.styles({
       display: 'grid',
       gap: '8px',
