@@ -22,7 +22,7 @@ class SelectNode extends HtmlElementNode {
     this._placeholder = '';
     this._value = '';
     this._clearable = true;
-    this._clearButton = createClearButton('yoya-vselect-clear', {
+    this._clearButton = createClearButton('VSelectClear', {
       right: '30px',
       top: '50%',
       transform: 'translateY(-50%)'

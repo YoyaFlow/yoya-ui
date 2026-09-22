@@ -2491,7 +2491,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const page = document.querySelector('[data-component-route-item="form:input"]');
-    const input = page.querySelector('.yoya-vinput');
+    const input = page.querySelector('[vn~="VInputField"]');
 
     expect(input.value).toBe('yoya-ui');
     input.value = 'service-gateway';

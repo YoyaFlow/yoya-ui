@@ -2,7 +2,7 @@ import {
   ViewNode,
   applySetupValue,
   applyElementOptions as applyCoreElementOptions,
-  componentNameOf,
+  hasComponentIdentity,
   normalizeSetupArguments,
   viewRootOf
 } from '../core/node.js';
@@ -531,12 +531,14 @@ export function resolveTextValue(value) {
  * 组件在 api 上覆盖同名方法就用覆盖的，没覆盖就回落视图根（元素）的实现。
  */
 /**
- * 同类实例判定：优先看**身份事实**（`vn` → componentNameOf），退回原型判定。
+ * 同类实例判定：优先看**身份事实**（多值 `vn` 任一名命中），退回原型判定。
  * 不再依赖 `Symbol.hasInstance`（defineComponentIdentity 已退场），箭头函数也没有 prototype。
  */
 function isSameComponent(value, Definition) {
   const name = Definition?.name;
-  if (name && componentNameOf(value) === name) {
+  // 身份 = 多值 `vn` 事实：包装型（`VTimer` = `VInput`）任一名命中即同类
+  // （与 component-shell 的 reuseComponent 同一口径）。
+  if (name && hasComponentIdentity(value, name)) {
     return true;
   }
   try {

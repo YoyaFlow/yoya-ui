@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
-  VTimer,
   VTimerRange,
   button,
   createI18n,
@@ -427,7 +426,7 @@ describe('compound components', () => {
       }
     );
     const inputRoot = input.renderDom();
-    const inputElement = inputRoot.querySelector('.yoya-vinput');
+    const inputElement = inputRoot.querySelector('[vn~="VInputField"]');
 
     expect(inputCallback).toBe(input);
     expect(inputElement.placeholder).toBe('请输入服务名');
@@ -2033,9 +2032,9 @@ describe('compound components', () => {
 
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vinput').name).toBe('serviceName');
-    expect(element.querySelector('.yoya-vinput').placeholder).toBe('服务名');
-    expect(element.querySelector('.yoya-vinput').value).toBe('api-gateway');
+    expect(element.querySelector('[vn~="VInputField"]').name).toBe('serviceName');
+    expect(element.querySelector('[vn~="VInputField"]').placeholder).toBe('服务名');
+    expect(element.querySelector('[vn~="VInputField"]').value).toBe('api-gateway');
     expect(element.querySelector('.yoya-vselect').value).toBe('运行中');
     expect(element.querySelector('.yoya-vselect option[selected]').textContent).toBe('运行中');
     expect(element.querySelector('.yoya-vtextarea').value).toBe('初始说明');
@@ -2081,16 +2080,17 @@ describe('compound components', () => {
       expect(button.style.display).not.toBe('none');
     });
 
-    const inputClear = element.querySelector('.yoya-vinput-clear');
+    const inputClear = element.querySelector('[vn~="VInputClear"]');
     inputClear.click();
 
     expect(input.value()).toBe('');
     expect(inputClear.style.display).toBe('none');
     expect(changed).toHaveBeenCalledTimes(1);
 
-    element.querySelector('.yoya-vselect-clear').click();
-    element.querySelector('.yoya-vtextarea-clear').click();
-    element.querySelector('.yoya-vtimer-clear').click();
+    element.querySelector('[vn~="VSelectClear"]').click();
+    element.querySelector('[vn~="VTextareaClear"]').click();
+    // vTimer 就是 vInput（多值身份），清空按钮的身份沿用 VInputClear——按它自己的子树取
+    timer.renderDom().querySelector('[vn~="VInputClear"]').click();
 
     expect(select.value()).toBe('');
     expect(textarea.value()).toBe('');
@@ -2106,7 +2106,7 @@ describe('compound components', () => {
       root.child(disabled, fixed, readonly);
     });
     const element = page.renderDom();
-    const clearButtons = element.querySelectorAll('.yoya-vinput-clear');
+    const clearButtons = element.querySelectorAll('[vn~="VInputClear"]');
 
     expect(clearButtons).toHaveLength(3);
     clearButtons.forEach((button) => {
@@ -2120,12 +2120,10 @@ describe('compound components', () => {
       name: 'scheduledAt',
       value: '2026-08-19T14:30'
     });
-    const element = timer.renderDom().querySelector('.yoya-vtimer');
+    const element = timer.renderDom().querySelector('[vn~="VInputField"]');
 
-    expect(timer).toBeInstanceOf(VTimer);
-    // 表单控件是 vNode 外壳：公开句柄是组件节点，元素机制在视图根（不导出的节点类型）上
-    expect(viewRootOf(timer)).toBeInstanceOf(HtmlElementNode);
-    expect(element.classList.contains('yoya-vtimer')).toBe(true);
+    // VTimer 就是 VInput（多值身份写在同一个元素上），公开句柄直接路由到内层 input
+    expect(timer.renderDom().getAttribute('vn')).toBe('VTimer VInput');
     expect(element.type).toBe('datetime-local');
     expect(element.name).toBe('scheduledAt');
     expect(timer.value()).toBe('2026-08-19T14:30');
@@ -2151,7 +2149,7 @@ describe('compound components', () => {
       control.required(true);
       control.on('change', changed);
     });
-    const element = timer.renderDom().querySelector('.yoya-vtimer');
+    const element = timer.renderDom().querySelector('[vn~="VInputField"]');
 
     expect(element.disabled).toBe(true);
     expect(element.readOnly).toBe(true);
@@ -2172,8 +2170,8 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vtimer').type).toBe('time');
-    expect(element.querySelector('.yoya-vtimer').value).toBe('08:30');
+    expect(element.querySelector('[vn~="VInputField"]').type).toBe('time');
+    expect(element.querySelector('[vn~="VInputField"]').value).toBe('08:30');
   });
 
   it('reads and writes vTimerRange start, end and unified values', () => {
@@ -2184,7 +2182,7 @@ describe('compound components', () => {
       start: '2026-08-19'
     });
     const element = range.renderDom();
-    const controls = element.querySelectorAll('.yoya-vtimer');
+    const controls = element.querySelectorAll('[vn~="VInputField"]');
 
     expect(range).toBeInstanceOf(VTimerRange);
     expect(controls).toHaveLength(2);
@@ -2333,7 +2331,7 @@ describe('compound components', () => {
 
     field.value('worker');
 
-    expect(element.querySelector('.yoya-vinput').value).toBe('worker');
+    expect(element.querySelector('[vn~="VInputField"]').value).toBe('worker');
 
     field.mode('view');
 
@@ -2374,7 +2372,7 @@ describe('compound components', () => {
     expect(action.getAttribute('aria-label')).toBe('编辑');
     expect(action.style.opacity).toBe('0');
     expect(element.querySelector('[vn~="VFieldEditor"]').style.display).toBe('');
-    expect(element.querySelector('.yoya-vinput').value).toBe('SRE Team');
+    expect(element.querySelector('[vn~="VInputField"]').value).toBe('SRE Team');
   });
 
   it('collects and applies values through vForm', () => {
@@ -2445,7 +2443,7 @@ describe('compound components', () => {
       serviceName: 'worker',
       status: '停止'
     });
-    expect(element.querySelector('.yoya-vinput').value).toBe('worker');
+    expect(element.querySelector('[vn~="VInputField"]').value).toBe('worker');
     expect(element.querySelector('.yoya-vselect').value).toBe('停止');
 
     form.values({

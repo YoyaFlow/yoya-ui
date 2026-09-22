@@ -96,7 +96,11 @@ describe('component shell', () => {
         return; // 还没迁到外壳的类组件：跳过
       }
 
-      const root = viewRootOf(component);
+      // 包装型（`VTimer` = `VInput`）的视图根本身还是组件：再往下取一层，拿到真元素
+      let root = viewRootOf(component);
+      while (root instanceof ComponentNode) {
+        root = viewRootOf(root);
+      }
       expect(root, `${name} 的视图根应存在`).toBeInstanceOf(HtmlElementNode);
 
       const absent = publicMethodNames(root).filter(

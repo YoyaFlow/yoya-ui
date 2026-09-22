@@ -1,81 +1,87 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
 import { isPlainObject } from '../../components/shared.js';
-import { InputNode } from './input.js';
+import { vNode } from '../../core/v-node.js';
+import { createComponentShortcut } from '../../components/shared.js';
+import { vInput } from './input.js';
 
-/** 时间输入框的节点类型（不导出）；公开组件 `vTimer` 是 vNode 外壳（继承输入框的节点类型）。 */
-class TimerNode extends InputNode {
-  constructor(setup = null) {
-    super(null);
-    // 多值身份：`VTimer` 同时**是** `VInput`（旧类继承 `class VTimer extends VInput` 的语义）
-    this._identity = 'VTimer VInput';
-    this.className('yoya-vtimer');
-    this._clearButton.className('yoya-vtimer-clear');
-    this._addRootClass('yoya-vtimer-wrap');
-    this.mode('date');
-    this._setupTimer(setup);
-  }
+const SUPPORTED_MODES = new Set(['date', 'datetime-local', 'time']);
 
-  mode(value) {
-    if (value === undefined) {
-      return this.attr('type');
-    }
+/** VTimer = VInput 的透传命令（模式相关的命令另写下面）。 */
+const INPUT_COMMANDS = [
+  'attr',
+  'className',
+  'id',
+  'name',
+  'textContent',
+  'inputUnit',
+  'value',
+  'text',
+  'content',
+  'placeholder',
+  'disabled',
+  'readonly',
+  'required',
+  'error',
+  'isDisabled',
+  'isReadonly',
+  'isError',
+  'clearable',
+  'clear'
+];
 
-    const supportedModes = new Set(['date', 'datetime-local', 'time']);
-    this.attr('type', supportedModes.has(value) ? value : 'date');
-    return this;
-  }
+/**
+ * 时间输入（形态 B，包装型）：**它就是一个 `VInput`**——旧 `class VTimer extends VInput` 的语义
+ * 改成身份多值 `vn: 'VTimer VInput'`（同一个元素，不另起包装层），再加 `mode` / `type` 两个命令。
+ */
+export function VTimer() {
+  return vNode((api) => {
+    const node = vInput();
 
-  type(value) {
-    return value === undefined ? this.mode() : this.mode(value);
-  }
+    // 多值身份：既是 VTimer 也是 VInput（按空格拆名判定）
+    node.setup({ vn: 'VTimer VInput' });
 
-  _setupTimer(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    INPUT_COMMANDS.forEach((key) => {
+      api[key] = (...args) => {
+        const result = node[key](...args);
+        return result === node ? api : result;
+      };
+    });
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const { mode, type, ...inputSetup } = setup;
-
-      this._setupInput(inputSetup);
-      if (mode !== undefined) {
-        this.mode(mode);
-      } else if (type !== undefined) {
-        this.mode(type);
+    api.mode = (value) => {
+      if (value === undefined) {
+        return node.type();
       }
-      return;
-    }
 
-    this.value(setup);
-  }
-}
+      node.type(SUPPORTED_MODES.has(value) ? value : 'date');
+      return api;
+    };
 
-export function vTimer(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTimer',
-    createNode: (setup) => new TimerNode(setup),
-    commands: [
-      'type',
-      'value',
-      'text',
-      'content',
-      'placeholder',
-      'isDisabled',
-      'isReadonly',
-      'isError',
-      'clearable',
-      'clear',
-      'mode'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    api.type = (value) => api.mode(value);
+
+    /** 字符串 / 数字 = 值（旧 `_setupTimer` 的兜底分支）。 */
+    api.setupString = (value) => api.value(value);
+
+    /** props：`mode` / `type` 归时间输入，其余按输入框的 props 分派（与旧 `_setupTimer` 同口径）。 */
+    api.setupObject = (options) => {
+      if (!isPlainObject(options)) {
+        return api;
+      }
+
+      const { mode, type, ...inputSetup } = options;
+
+      node.setup(inputSetup);
+
+      if (mode !== undefined) {
+        api.mode(mode);
+      } else if (type !== undefined) {
+        api.mode(type);
+      }
+
+      return api;
+    };
+
+    api.mode('date');
+    return node;
   });
 }
 
-export const VTimer = vTimer;
-defineComponentIdentity(VTimer, 'VTimer');
+export const vTimer = createComponentShortcut(VTimer);

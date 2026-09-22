@@ -48,7 +48,7 @@ export function VTextarea() {
         width: '100%'
       }
     });
-    const clearButton = createClearButton('yoya-vtextarea-clear', { right: '6px', top: '6px' });
+    const clearButton = createClearButton('VTextareaClear', { right: '6px', top: '6px' });
     const root = div({
       class: `${componentClass} yoya-vtextarea-wrap`,
       style: { minWidth: '0', position: 'relative', width: '100%' },

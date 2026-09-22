@@ -11,9 +11,11 @@ import {
   themeValue
 } from '../../components/shared.js';
 
-function createClearButton(className, position = {}) {
+/** 清空按钮：身份走 `vn`（各控件一份），能力类 `yoya-control-clear` 保留（跨组件能力类不退场）。 */
+function createClearButton(identity, position = {}) {
   return new HtmlElementNode('button')
-    .className(className, 'yoya-control-clear')
+    .setup({ vn: identity })
+    .className('yoya-control-clear')
     .attr({ type: 'button', 'aria-label': '清空', title: '清空' })
     .styles({
       alignItems: 'center',

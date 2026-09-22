@@ -173,7 +173,7 @@ describe('access control (core)', () => {
         .renderDom();
     });
     expect(el.querySelector('input').disabled).toBe(true);
-    expect(el.querySelector('input.yoya-vinput').disabled).toBe(true);
+    expect(el.querySelector('input[vn~="VInputField"]').disabled).toBe(true);
   });
 
   it('child declaration overrides inherited scope (nearest wins)', () => {

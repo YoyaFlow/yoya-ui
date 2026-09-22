@@ -1,9 +1,9 @@
-import { createComponentShell } from '../../components/component-shell.js';
 import { applyPropValue } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { optionKindOf } from '../../core/setup-keys.js';
+import { vNode } from '../../core/v-node.js';
+import { div, input as inputTag } from '../../html/index.js';
 import {
-  booleanMethod,
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   resolveTextValue,
   themeBorder,
@@ -11,23 +11,30 @@ import {
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-export class InputNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    // 身份：对象事实 + 真 DOM 标记（根是外壳 div；attr 被重写到内层 input，所以显式写根）
-    this._identity = 'VInput';
-    super.attr('vn', 'VInput');
-    this._value = '';
-    this._clearable = true;
-    this._clearButton = createClearButton('yoya-vinput-clear', {
-      right: '6px',
-      top: '50%',
-      transform: 'translateY(-50%)'
-    });
-    this._input = new HtmlElementNode('input')
-      .className(componentClass, 'yoya-vinput')
-      .attr('type', 'text')
-      .styles({
+/**
+ * 文本输入（形态 B）：视图根是外壳 `div` + 内层 `input` + 清空按钮。
+ *
+ * - 身份写在结构里：根 `vn: 'VInput'`、内层 `vn: 'VInputField'`、清空按钮 `vn: 'VInputClear'`
+ *   （能力类 `yoya-control-clear` 保留——跨组件能力类不退场）；
+ * - 元素级方法按控件语义**路由到内层 input**（`attr` / `className` / `id` / `name` / `type` /
+ *   `value` / `placeholder` / `textContent`）：命令写在 api 上，调用方拿组件句柄直接调；
+ * - 两个元素机制挂在局部节点上（渲染路径按节点调用）：SSR 回读 `hydrateSnapshot` 走内层 input，
+ *   权限落位 `_applyAccessState` 走视图根（与 `VTextarea` 同一写法，见 16 号清单第 27 条）；
+ * - 内层输入元素的取用方法 `inputUnit()`：族内（vField 浮动编辑面等）需要它时不用解包视图根。
+ */
+export function VInput() {
+  return vNode((api) => {
+    const state = {
+      clearable: true,
+      disabled: false,
+      error: false,
+      readonly: false,
+      required: false,
+      value: ''
+    };
+
+    const field = inputTag({
+      style: {
         background: themeValue('color-surface', '#ffffff'),
         border: themeBorder('color-border-strong', '#cbd5e1'),
         borderRadius: '6px',
@@ -38,244 +45,198 @@ export class InputNode extends HtmlElementNode {
         outline: 'none',
         padding: '0 12px',
         width: '100%'
-      });
+      },
+      type: 'text',
+      vn: 'VInputField'
+    });
+    const clearButton = createClearButton('VInputClear', {
+      right: '6px',
+      top: '50%',
+      transform: 'translateY(-50%)'
+    });
+    const node = div(
+      {
+        style: { minWidth: '0', position: 'relative', width: '100%' },
+        vn: 'VInput'
+      },
+      (root) => root.child(field, clearButton)
+    );
 
-    this._addRootClass(componentClass, 'yoya-vinput-wrap');
-    this.styles({
-      minWidth: '0',
-      position: 'relative',
-      width: '100%'
-    });
-    this._clearButton.on('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      this.clear();
-      this._input._el?.focus();
-    });
-    this._input.on('input', () => this._syncClear());
-    this._input.on('change', () => this._syncClear());
-    this.child(this._input, this._clearButton);
+    // 清空按钮的判定读 api：clearable() / isDisabled() / isReadonly() / value()
+    const syncClear = () => syncClearButton(api, field, clearButton);
+    const syncClearPadding = () => field.style('paddingRight', state.clearable ? '34px' : '12px');
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this._input.attr('disabled', enabled ? true : null);
-      this._input.style('cursor', enabled ? 'not-allowed' : 'text');
-      this._input.style('opacity', enabled ? '0.64' : '1');
-      this._syncClear();
-    });
-    this.readonly = booleanMethod(this, 'readonly', false, (enabled) => {
-      this._input.attr('readonly', enabled ? true : null);
-      this._syncClear();
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this._input.attr('required', enabled ? true : null);
-    });
-    this.error = booleanMethod(this, 'error', false, (enabled) => {
-      this._input.attr('data-error', enabled ? 'true' : null);
-      this._input.style(
+    const applyDisabled = () => {
+      field.attr('disabled', state.disabled ? true : null);
+      field.style('cursor', state.disabled ? 'not-allowed' : 'text');
+      field.style('opacity', state.disabled ? '0.64' : '1');
+      syncClear();
+    };
+    const applyReadonly = () => {
+      field.attr('readonly', state.readonly ? true : null);
+      syncClear();
+    };
+    const applyRequired = () => field.attr('required', state.required ? true : null);
+    const applyError = () => {
+      field.attr('data-error', state.error ? 'true' : null);
+      field.style(
         'borderColor',
-        enabled
+        state.error
           ? themeValue('color-danger', '#dc2626')
           : themeValue('color-border-strong', '#cbd5e1')
       );
-      this._input.style(
+      field.style(
         'boxShadow',
-        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+        state.error
+          ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
+          : null
       );
-    });
+    };
+    const booleanCommand = (key, apply) => (value) => {
+      if (value === undefined) {
+        return state[key];
+      }
 
-    this._setupInput(setup);
-    this._syncClearPadding();
-    this._syncClear();
-  }
+      state[key] = Boolean(value);
+      apply();
+      return api;
+    };
 
-  _addRootClass(...classes) {
-    super.className(...classes);
-    return this;
-  }
+    api.attr = (name, value) => {
+      if (name && typeof name === 'object') {
+        Object.entries(name).forEach(([key, nextValue]) => api.attr(key, nextValue));
+        return api;
+      }
 
-  className(...classes) {
-    if (classes.length === 0) {
-      return this._input.className();
-    }
+      if (name === 'value') {
+        return value === undefined ? api.value() : api.value(value);
+      }
 
-    this._input.className(...classes);
-    return this;
-  }
+      if (value === undefined) {
+        return field.attr(name);
+      }
 
-  attr(name, value) {
-    if (name && typeof name === 'object') {
-      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
-      return this;
-    }
+      field.attr(name, value);
+      return api;
+    };
 
-    if (name === 'value') {
-      return value === undefined ? this.value() : this.value(value);
-    }
+    api.className = (...classes) => {
+      if (classes.length === 0) {
+        return field.className();
+      }
 
-    if (value === undefined) {
-      return this._input.attr(name);
-    }
+      field.className(...classes);
+      return api;
+    };
 
-    this._input.attr(name, value);
-    return this;
-  }
+    api.id = (value) => {
+      if (value === undefined) {
+        return field.id();
+      }
 
-  on(eventName, handler, options) {
-    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
-      this._input.on(eventName, handler, options);
-      return this;
-    }
+      field.id(value);
+      return api;
+    };
 
-    return super.on(eventName, handler, options);
-  }
+    api.name = (value) => {
+      if (value === undefined) {
+        return field.name();
+      }
 
-  id(value) {
-    if (value === undefined) {
-      return this._input.id();
-    }
+      field.name(value);
+      return api;
+    };
 
-    this._input.id(value);
-    return this;
-  }
+    api.textContent = () => field.textContent();
 
-  name(value) {
-    if (value === undefined) {
-      return this._input.name();
-    }
+    /** 取用方法：包在里面的原生输入元素（族内用法，见 16 号清单第 23 条）。 */
+    api.inputUnit = () => field;
 
-    this._input.name(value);
-    return this;
-  }
+    api.type = (value) => {
+      if (value === undefined) {
+        return field.attr('type');
+      }
 
-  textContent() {
-    return this._input.textContent();
-  }
+      field.attr('type', value || 'text');
+      return api;
+    };
 
-  /** 取用方法：包在里面的原生输入元素（vField 的浮动编辑面要写它的样式，见 16 号清单第 23 条）。 */
-  inputUnit() {
-    return this._input;
-  }
+    api.value = (value) => {
+      if (value === undefined) {
+        return field._el?.value ?? state.value ?? field.attr('value') ?? '';
+      }
 
-  type(value) {
-    if (value === undefined) {
-      return this._input.attr('type');
-    }
+      const next = resolveTextValue(value);
 
-    this._input.attr('type', value || 'text');
-    return this;
-  }
+      state.value = next;
+      field.attr('value', next);
+      syncClear();
+      return api;
+    };
 
-  value(value) {
-    if (value === undefined) {
-      return this._input._el?.value ?? this._value ?? this._input.attr('value') ?? '';
-    }
+    api.text = (value) => api.value(value);
+    api.content = (value) => api.value(value);
 
-    const next = resolveTextValue(value);
-    this._value = next;
-    this._input.attr('value', next);
-    this._syncClear();
-    return this;
-  }
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return field.attr('placeholder');
+      }
 
-  hydrateSnapshot() {
-    if (this._input._el) {
-      this.value(this._input._el.value);
-    }
-    return this;
-  }
+      const next = resolveTextValue(value);
 
-  text(value) {
-    return this.value(value);
-  }
+      field.attr('placeholder', next || null);
+      return api;
+    };
 
-  content(value) {
-    return this.value(value);
-  }
+    api.disabled = booleanCommand('disabled', applyDisabled);
+    api.readonly = booleanCommand('readonly', applyReadonly);
+    api.required = booleanCommand('required', applyRequired);
+    api.error = booleanCommand('error', applyError);
 
-  placeholder(value) {
-    if (value === undefined) {
-      return this._input.attr('placeholder');
-    }
+    // 读写分离：跨组件只读判断走这三个方法（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+    api.isReadonly = () => state.readonly;
+    api.isError = () => state.error;
 
-    const next = resolveTextValue(value);
-    this._input.attr('placeholder', next || null);
-    return this;
-  }
+    api.clearable = (value) => {
+      if (value === undefined) {
+        return state.clearable;
+      }
 
-  // 读写分离：跨组件只读判断走这两个方法（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
+      state.clearable = Boolean(value);
+      field.attr('data-clearable', state.clearable ? 'true' : null);
+      syncClearPadding();
+      syncClear();
+      return api;
+    };
 
-  isReadonly() {
-    return this._readonly.value;
-  }
+    api.clear = () => {
+      api.value('');
 
-  isError() {
-    return this._error.value;
-  }
+      if (field._el) {
+        field._el.dispatchEvent(new Event('input', { bubbles: true }));
+        field._el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
 
-  clearable(value) {
-    if (value === undefined) {
-      return this._clearable;
-    }
+      return api;
+    };
 
-    this._clearable = Boolean(value);
-    this._input.attr('data-clearable', this._clearable ? 'true' : null);
-    this._syncClearPadding();
-    this._syncClear();
-    return this;
-  }
+    /** 字符串 / 数字 = 占位符（旧 `_setupInput` 的兜底分支）。 */
+    api.setupString = (value) => api.placeholder(value);
 
-  clear() {
-    this.value('');
+    /**
+     * props 分派：本组件的键走命令；**元素分派（`class` / `attrs` / `style` / `onXxx` / `vn` /
+     * 其它节点方法如 `access`）交回引擎**，只有「普通属性」按控件语义写到内层 input
+     * （旧 `InputNode.attr` 的口径）。判定顺序与 `ElementNode._setupObject` 一致，只把属性这一支改道。
+     */
+    api.setupObject = (options) => {
+      if (!isPlainObject(options)) {
+        return api;
+      }
 
-    if (this._input._el) {
-      this._input._el.dispatchEvent(new Event('input', { bubbles: true }));
-      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    return this;
-  }
-
-  _syncClear() {
-    syncClearButton(this, this._input, this._clearButton);
-    return this;
-  }
-
-  _syncClearPadding() {
-    this._input.style('paddingRight', this._clearable ? '34px' : '12px');
-    return this;
-  }
-
-  /**
-   * 权限状态落位：只读时用自身 disabled() 禁用内层输入。
-   */
-  _applyAccessState(state) {
-    if (state === 'readonly') {
-      this._accessDisabled = true;
-      this.disabled(true);
-    } else if (this._accessDisabled) {
-      this._accessDisabled = false;
-      this.disabled(false);
-    }
-  }
-
-  _setupInput(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
       const {
-        clearable,
         children,
+        clearable,
         content,
         disabled,
         error,
@@ -286,81 +247,117 @@ export class InputNode extends HtmlElementNode {
         type,
         value,
         ...elementConfig
-      } = setup;
+      } = options;
 
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+      const engineConfig = {};
+
+      Object.entries(elementConfig).forEach(([key, optionValue]) => {
+        const kind = optionKindOf(key);
+
+        if (kind === 'class') {
+          applyPropValue(node, optionValue, (next) => api.className(next));
+          return;
+        }
+        if (kind === 'attrs') {
+          api.attr(optionValue);
+          return;
+        }
+        if (kind === 'style') {
+          node.styles(optionValue);
+          return;
+        }
+        if (key.startsWith('on') && typeof optionValue === 'function') {
+          node.on(key.slice(2).toLowerCase(), optionValue);
+          return;
+        }
+        // 身份交回引擎的元素分派（写根元素）
+        if (key === 'vn') {
+          engineConfig[key] = optionValue;
+          return;
+        }
+        // 本组件的命令优先（name / id / textContent … 这些节点上也有同名方法，按控件语义走内层 input）
+        if (typeof api[key] === 'function') {
+          applyPropValue(node, optionValue, (next) => api[key](next));
+          return;
+        }
+        // 其余节点方法（access / mountable / whenFailed …）交回引擎的元素分派
+        if (typeof node[key] === 'function') {
+          engineConfig[key] = optionValue;
+          return;
+        }
+
+        applyPropValue(node, optionValue, (next) => api.attr(key, next));
+      });
+
+      if (Object.keys(engineConfig).length > 0) {
+        node.setup(engineConfig);
       }
 
       if (type !== undefined) {
-        applyPropValue(this, type, (next) => this.type(next));
+        applyPropValue(node, type, (next) => api.type(next));
       }
-
       if (placeholder !== undefined) {
-        applyPropValue(this, placeholder, (next) => this.placeholder(next));
+        applyPropValue(node, placeholder, (next) => api.placeholder(next));
       }
-
       if (value !== undefined) {
-        applyPropValue(this, value, (next) => this.value(next));
+        applyPropValue(node, value, (next) => api.value(next));
       } else if (text !== undefined) {
-        applyPropValue(this, text, (next) => this.value(next));
+        applyPropValue(node, text, (next) => api.value(next));
       } else if (content !== undefined) {
-        applyPropValue(this, content, (next) => this.value(next));
+        applyPropValue(node, content, (next) => api.value(next));
       } else if (children !== undefined) {
-        applyPropValue(this, children, (next) => this.value(next));
+        applyPropValue(node, children, (next) => api.value(next));
       }
-
       if (required !== undefined) {
-        applyPropValue(this, required, (next) => this.required(next));
+        applyPropValue(node, required, (next) => api.required(next));
       }
-
       if (readonly !== undefined) {
-        applyPropValue(this, readonly, (next) => this.readonly(next));
+        applyPropValue(node, readonly, (next) => api.readonly(next));
       }
-
       if (disabled !== undefined) {
-        applyPropValue(this, disabled, (next) => this.disabled(next));
+        applyPropValue(node, disabled, (next) => api.disabled(next));
       }
-
       if (error !== undefined) {
-        applyPropValue(this, error, (next) => this.error(next));
+        applyPropValue(node, error, (next) => api.error(next));
       }
-
       if (clearable !== undefined) {
-        applyPropValue(this, clearable, (next) => this.clearable(next));
+        applyPropValue(node, clearable, (next) => api.clearable(next));
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.placeholder(setup);
-  }
-}
+    // 元素机制挂到局部节点：SSR 回读走内层 input，权限落位走视图根（渲染路径按节点调用）
+    field.hydrateSnapshot = () => {
+      if (field._el) {
+        api.value(field._el.value);
+      }
+      return field;
+    };
+    let accessDisabled = false;
+    node._applyAccessState = (accessState) => {
+      if (accessState === 'readonly') {
+        accessDisabled = true;
+        api.disabled(true);
+      } else if (accessDisabled) {
+        accessDisabled = false;
+        api.disabled(false);
+      }
+    };
 
-export function vInput(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VInput',
-    createNode: (setup) => new InputNode(setup),
-    commands: [
-      'inputUnit',
-      'type',
-      'value',
-      'text',
-      'content',
-      'placeholder',
-      'isDisabled',
-      'isReadonly',
-      'isError',
-      'clearable',
-      'clear',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'readonly',
-      'required',
-      'error'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      api.clear();
+      field._el?.focus();
+    });
+    field.on('input', syncClear);
+    field.on('change', syncClear);
+
+    syncClearPadding();
+    syncClear();
+    return node;
   });
 }
 
-export const VInput = vInput;
+export const vInput = createComponentShortcut(VInput);
