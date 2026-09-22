@@ -44,9 +44,7 @@ export function VProgress() {
       value: 0
     };
 
-    const labelBox = span({ vn: 'VProgressLabel' })
-      .attr('aria-hidden', 'true')
-      .style('display', 'none');
+    const labelBox = span({ vn: 'VProgressLabel' }).attr('aria-hidden', 'true');
     const track = div({ vn: 'VProgressTrack' });
     const bar = span({ vn: 'VProgressBar' });
     const textBox = span({ vn: 'VProgressText' });
@@ -98,8 +96,9 @@ export function VProgress() {
       node.attr('data-percent', String(Number(state.percent.toFixed(2))));
       node.attr('data-value', String(state.value));
       node.attr('data-has-label', hasLabel ? 'true' : null);
+      node.attr('data-show-text', state.showText ? 'true' : null);
 
-      labelBox.style('display', hasLabel ? 'inline-flex' : 'none');
+      // 标签位 / 文本位的显隐归 CSS（`[data-has-label]` / `[data-show-text]` 规则）
       bar.style('background', color);
 
       if (state.indeterminate) {
@@ -115,10 +114,7 @@ export function VProgress() {
       }
 
       if (state.showText) {
-        textBox.style('display', 'inline-flex');
         textBox.rebuild();
-      } else {
-        textBox.style('display', 'none');
       }
     };
 
@@ -184,7 +180,6 @@ export function VProgress() {
       }
 
       state.showText = Boolean(value);
-      node.attr('data-show-text', state.showText ? 'true' : null);
       syncProgress();
       return api;
     };

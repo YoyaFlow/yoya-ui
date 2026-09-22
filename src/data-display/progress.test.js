@@ -53,7 +53,8 @@ describe('vProgress', () => {
     progress.showText(false);
 
     expect(bar.style.background).toBe('rgb(124, 58, 237)');
-    expect(element.querySelector('[vn~="VProgressText"]').style.display).toBe('none');
+    // 文本位显隐归 CSS（`[data-show-text='true']` 规则），这里看状态属性
+    expect(element.dataset.showText).toBeUndefined();
   });
 
   it('supports custom text and format callbacks', () => {

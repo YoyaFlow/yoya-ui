@@ -2109,6 +2109,7 @@ body {
 
   [vn~='VProgress'] [vn~='VProgressLabel'] {
     color: var(--yoya-color-text-secondary, #475569);
+    display: none;
     flex: 0 0 auto;
     font-size: 13px;
     font-weight: 600;
@@ -2118,6 +2119,15 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* 标签位 / 文本位的显隐：有内容才显示（`data-has-label` / `data-show-text` 是状态真源） */
+  [vn~='VProgress'][data-has-label='true'] [vn~='VProgressLabel'] {
+    display: inline-flex;
+  }
+
+  [vn~='VProgress'][data-show-text='true'] [vn~='VProgressText'] {
+    display: inline-flex;
   }
 
   [vn~='VProgress'] [vn~='VProgressTrack'] {
@@ -2140,6 +2150,7 @@ body {
 
   [vn~='VProgress'] [vn~='VProgressText'] {
     color: var(--yoya-color-text-secondary, #475569);
+    display: none;
     flex: 0 0 auto;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
