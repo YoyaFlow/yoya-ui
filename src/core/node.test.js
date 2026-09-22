@@ -94,6 +94,57 @@ describe('ViewNode core', () => {
     expect(root.children()[0].attr('src')).toBeUndefined();
   });
 
+  it('writes attributes with no value when the value is an empty string', () => {
+    const root = div({ 'data-marker': '', hidden: '', spellcheck: '' }, (page) => {
+      page.span({ attrs: { 'data-tag': '' } });
+    });
+    const element = root.renderDom();
+    const tag = element.querySelector('span');
+
+    // 没有值的属性 = 值写 `''`：快照、真 DOM、toHTML 三处同形
+    expect(root.attr('data-marker')).toBe('');
+    expect(element.getAttribute('data-marker')).toBe('');
+    expect(element.getAttribute('spellcheck')).toBe('');
+    expect(tag.getAttribute('data-tag')).toBe('');
+    expect(root.toHTML()).toContain('data-marker=""');
+
+    // 布尔 IDL 属性（`hidden` 这类 `(boolean | string)`）不再被反射改写 / 删掉
+    expect(element.getAttribute('hidden')).toBe('');
+    expect(root.toHTML()).toContain('hidden=""');
+  });
+
+  it('writes boolean attribute names as present and removes them with null', () => {
+    const node = button({ attrs: { disabled: '' } });
+    const element = node.renderDom();
+
+    // 布尔属性名（checked / disabled / readonly / selected）：任何值都表示"存在"
+    expect(element.hasAttribute('disabled')).toBe(true);
+    expect(node.toHTML()).toContain('disabled="disabled"');
+
+    node.attr('disabled', null);
+
+    expect(node.attr('disabled')).toBeUndefined();
+    expect(element.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('keeps the empty string as a value through read-value bindings while null removes', () => {
+    const marker = ref('');
+    const root = div({ 'data-marker': marker });
+    const element = root.renderDom();
+
+    expect(element.getAttribute('data-marker')).toBe('');
+
+    marker.value = 'ready';
+
+    expect(element.getAttribute('data-marker')).toBe('ready');
+
+    // `null` = 不存在（删除），与 `''`（有属性、没有值）分开
+    marker.value = null;
+
+    expect(root.attr('data-marker')).toBeUndefined();
+    expect(element.getAttribute('data-marker')).toBeNull();
+  });
+
   it('binds to a target and destroys DOM and event listeners', () => {
     document.body.innerHTML = '<main id="app"></main>';
     const onClick = vi.fn();

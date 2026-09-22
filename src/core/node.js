@@ -1741,6 +1741,13 @@ export function applyAttribute(element, name, value) {
 
   if (name in element) {
     try {
+      // 布尔 IDL 属性（`hidden` 这类 `(boolean | string)`）：**不再镜像**——反射会把刚写好的
+      // 内容属性改写成语义等价但不同的写法，空串甚至会被当成假值删掉（`hidden=""` 消失，
+      // 而属性快照 / toHTML 还留着）。这类属性以内容属性为真身，读回走反射即可。
+      if (typeof element[name] === 'boolean') {
+        return;
+      }
+
       // 已经是目标值就不再写 property：输入类元素上重复写 value 会把光标/选区顶到末尾。
       if (element[name] === value || element[name] === text) {
         return;
@@ -4195,7 +4202,14 @@ export class ElementNode extends ViewNode {
   }
 
   /**
-   * 读写属性。传入 null/undefined/false 时移除属性。
+   * 读写属性。
+   *
+   * - **删除**：`attr(name, null | undefined | false)` —— 快照与真 DOM 一起清掉，
+   *   布尔 IDL 属性（`disabled` / `checked` …）顺手复位；删除只走这一条路，不另立 API。
+   * - **没有值的属性**：值写 `''`（`div({ 'data-marker': '' })` → `data-marker=""`，
+   *   DOM 与 `toHTML` 同形）。`''` 是值、`null` 是不存在，两者不互相顶替。
+   * - **布尔属性名**（`checked` / `disabled` / `readonly` / `selected`）：任何值都表示"存在"，
+   *   按 HTML 规矩写成同名（`disabled="disabled"`），`null` 才是拿掉。
    */
   attr(name, value) {
     if (value === undefined && typeof name === 'string') {
