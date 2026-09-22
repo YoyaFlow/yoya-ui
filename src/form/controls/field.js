@@ -1,10 +1,9 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity, viewRootOf } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
-import { ButtonNode } from '../../actions/button.js';
+import { vButton } from '../../actions/button.js';
+import { viewRootOf } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
+import { button, div } from '../../html/index.js';
 import {
-  componentClass,
-  isPlainObject,
+  createComponentShortcut,
   normalizeChildren,
   replaceChildren,
   setupContentSlot,
@@ -14,41 +13,107 @@ import {
 import { formatDisplayValue } from './shared.js';
 import { applyControlValue, findFieldControl, readControlValue } from './form-values.js';
 
-class FieldNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VField';
-    this._mode = 'view';
-    this._control = null;
-    this._hintVisible = false;
-    this._hovered = false;
-    this._headerBox = new HtmlElementNode('div').className('yoya-vfield-header');
-    this._displayBox = new HtmlElementNode('div').className('yoya-vfield-display');
-    this._editorBox = new HtmlElementNode('div')
-      .className('yoya-vfield-editor')
-      .style('display', 'none');
-    this._labelBox = new HtmlElementNode('div').className('yoya-vfield-label');
-    this._hintBox = new HtmlElementNode('div')
-      .className('yoya-vfield-hint')
-      .style('display', 'none');
-    this._errorBox = new HtmlElementNode('div')
-      .className('yoya-vfield-error')
-      .style('display', 'none');
-    this._actionButton = new ButtonNode('✎')
-      .className('yoya-vfield-action')
-      .size('small')
-      .variant('secondary')
-      .attr({ tabindex: '-1', 'aria-hidden': 'true' })
-      .on('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        this.mode(this._mode === 'edit' ? 'view' : 'edit');
-      });
-    this._confirmButton = new HtmlElementNode('button')
-      .className('yoya-vfield-confirm')
-      .attr({ type: 'button', 'aria-label': '确认', title: '确认' })
-      .child('✓')
-      .styles({
+/**
+ * 字段：查看态 / 编辑态两套面 + 浮动编辑。
+ *
+ * - 形态 B：状态（当前态 / 悬停 / 提示可见 / 编辑快照 / 格式化器）与命令都在闭包里，
+ *   视图由结构返回；身份写在结构里（`vn: 'VField'` + 各部件自己的 `vn`），不再有类名与
+ *   `defineComponentIdentity`（票 15 §4）。
+ * - 控件是**投递进来的内容**（`control(setup)` 进编辑面），字段没有它的句柄：
+ *   按自己造出来的编辑面找（`findFieldControl`，见 16 号清单第 15 条的取用器口径）。
+ * - 落位与聚焦在 `whenMount` / 切态时做，读元素一律走 `renderDom()`（不再读 `_el`）。
+ */
+export function VField() {
+  return vNode((api) => {
+    const state = {
+      control: null,
+      editSnapshot: null,
+      formatter: null,
+      hintVisible: false,
+      hovered: false,
+      mode: 'view'
+    };
+
+    const labelBox = div({
+      style: {
+        color: themeValue('color-text-strong', '#111827'),
+        flex: '1 1 auto',
+        fontWeight: '700',
+        lineHeight: '1.35'
+      },
+      vn: 'VFieldLabel'
+    });
+    const displayBox = div({
+      style: {
+        alignItems: 'center',
+        border: themeBorder('color-border', '#d8dee8'),
+        borderRadius: '6px',
+        boxSizing: 'border-box',
+        color: themeValue('color-text', '#172033'),
+        display: 'flex',
+        minHeight: 'var(--yoya-control-height-md, 34px)',
+        padding: '0 12px',
+        width: '100%'
+      },
+      vn: 'VFieldDisplay'
+    });
+    const editorBox = div({
+      style: {
+        background: themeValue('color-surface', '#ffffff'),
+        borderRadius: '6px',
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18)',
+        boxSizing: 'border-box',
+        display: 'none',
+        left: '0',
+        minHeight: 'var(--yoya-control-height-md, 34px)',
+        minWidth: '0',
+        padding: '0',
+        position: 'absolute',
+        top: '0',
+        width: '100%',
+        zIndex: 'var(--yoya-z-overlay, 1200)'
+      },
+      vn: 'VFieldEditor'
+    });
+    const hintBox = div({
+      style: {
+        color: themeValue('color-text-muted', '#64748b'),
+        display: 'none',
+        fontSize: '12px',
+        lineHeight: '1.45'
+      },
+      vn: 'VFieldHint'
+    });
+    const errorBox = div({
+      style: {
+        color: themeValue('color-text-danger', '#b91c1c'),
+        display: 'none',
+        fontSize: '12px',
+        lineHeight: '1.45'
+      },
+      vn: 'VFieldError'
+    });
+    // 动作按钮复用 vButton：身份写多值（部件 + 组件），样式仍归自己
+    const actionButton = vButton('✎').size('small').variant('secondary');
+    actionButton.setup({ vn: 'VFieldAction VButton' });
+    actionButton.attr({
+      'aria-hidden': 'true',
+      'aria-label': '编辑',
+      tabindex: '-1',
+      title: '编辑'
+    });
+    actionButton.styles({
+      flexShrink: '0',
+      gap: '0',
+      minWidth: '32px',
+      opacity: '0',
+      pointerEvents: 'none',
+      transition: 'opacity 120ms ease'
+    });
+    const confirmButton = button({
+      'aria-hidden': 'true',
+      'aria-label': '确认',
+      style: {
         background: 'transparent',
         border: '0',
         color: themeValue('color-primary', '#1f6feb'),
@@ -59,13 +124,16 @@ class FieldNode extends HtmlElementNode {
         opacity: '0',
         padding: '0 4px',
         pointerEvents: 'none'
-      })
-      .on('click', () => this.view());
-    this._cancelButton = new HtmlElementNode('button')
-      .className('yoya-vfield-cancel')
-      .attr({ type: 'button', 'aria-label': '取消', title: '取消' })
-      .child('✕')
-      .styles({
+      },
+      tabindex: '-1',
+      title: '确认',
+      type: 'button',
+      vn: 'VFieldConfirm'
+    }).child('✓');
+    const cancelButton = button({
+      'aria-hidden': 'true',
+      'aria-label': '取消',
+      style: {
         background: 'transparent',
         border: '0',
         color: themeValue('color-text-secondary', '#6f6f6f'),
@@ -76,372 +144,293 @@ class FieldNode extends HtmlElementNode {
         opacity: '0',
         padding: '0 4px',
         pointerEvents: 'none'
-      })
-      .on('click', () => this.cancel());
+      },
+      tabindex: '-1',
+      title: '取消',
+      type: 'button',
+      vn: 'VFieldCancel'
+    }).child('✕');
 
-    this.className(componentClass, 'yoya-vfield');
-    this.styles({
-      display: 'grid',
-      gap: '8px',
-      minWidth: '0',
-      position: 'relative'
-    });
-    this._headerBox.styles({
-      alignItems: 'center',
-      display: 'flex',
-      gap: '8px',
-      justifyContent: 'space-between',
-      minWidth: '0'
-    });
-    this._labelBox.styles({
-      color: themeValue('color-text-strong', '#111827'),
-      flex: '1 1 auto',
-      fontWeight: '700',
-      lineHeight: '1.35'
-    });
-    this._displayBox.styles({
-      alignItems: 'center',
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '6px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text', '#172033'),
-      display: 'flex',
-      minHeight: 'var(--yoya-control-height-md, 34px)',
-      padding: '0 12px',
-      width: '100%'
-    });
-    this._editorBox.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      borderRadius: '6px',
-      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18)',
-      boxSizing: 'border-box',
-      left: '0',
-      minHeight: 'var(--yoya-control-height-md, 34px)',
-      minWidth: '0',
-      padding: '0',
-      position: 'absolute',
-      top: '0',
-      width: '100%',
-      zIndex: 'var(--yoya-z-overlay, 1200)'
-    });
-    this._hintBox.styles({
-      color: themeValue('color-text-muted', '#64748b'),
-      fontSize: '12px',
-      lineHeight: '1.45'
-    });
-    this._errorBox.styles({
-      color: themeValue('color-text-danger', '#b91c1c'),
-      fontSize: '12px',
-      lineHeight: '1.45'
-    });
-    this._actionButton.styles({
-      flexShrink: '0',
-      gap: '0',
-      minWidth: '32px',
-      opacity: '0',
-      pointerEvents: 'none',
-      transition: 'opacity 120ms ease'
-    });
-    this._headerBox.child(
-      this._labelBox,
-      this._actionButton,
-      this._confirmButton,
-      this._cancelButton
+    const node = div(
+      {
+        'data-mode': 'view',
+        style: { display: 'grid', gap: '8px', minWidth: '0', position: 'relative' },
+        vn: 'VField'
+      },
+      (root) =>
+        root.child(
+          div(
+            {
+              style: {
+                alignItems: 'center',
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'space-between',
+                minWidth: '0'
+              },
+              vn: 'VFieldHeader'
+            },
+            (header) => header.child(labelBox, actionButton, confirmButton, cancelButton)
+          ),
+          displayBox,
+          editorBox,
+          hintBox,
+          errorBox
+        )
     );
-    this.child(this._headerBox, this._displayBox, this._editorBox, this._hintBox, this._errorBox);
-    this.on('mouseenter', () => {
-      this._hovered = true;
-      this._syncActionButton();
-    });
-    this.on('mouseleave', () => {
-      this._hovered = false;
-      this._syncActionButton();
-    });
-    this._setupField(setup);
-    this._syncActionButton();
-    this.on('dblclick', (event) => {
-      if (event.defaultPrevented) {
-        return;
+
+    /** 编辑面：textarea 控件去掉自己的边框与背景（写控件内部样式，字段没有别的手段）。 */
+    const syncEditorSurface = () => {
+      const control = currentControl();
+      const unit = control ? (viewRootOf(control) ?? control) : null;
+
+      if (!unit?._input || unit._input._tagName !== 'textarea') {
+        return api;
       }
-      if (this._mode === 'view' && this.control()) {
-        this.edit();
+
+      unit._input.style('border', '0');
+      unit._input.style('boxShadow', null);
+      unit._input.style('background', 'transparent');
+      return api;
+    };
+
+    /** 编辑面吸在查看面上：读元素走公共取用方法，未落地时不动。 */
+    const positionEditor = () => {
+      // 未落地（还没建 DOM）时不动：`_el` 只读判定与 VTableWrapper 的首屏口径一致
+      if (!node._el) {
+        return api;
       }
-    });
-  }
 
-  renderDom() {
-    const element = super.renderDom();
-    if (this._mode === 'edit') {
-      this._positionEditor();
-      this._focusEditor();
-    }
-    return element;
-  }
+      const fieldElement = node.renderDom();
+      const anchor = displayBox.renderDom() || fieldElement;
+      const fieldRect = fieldElement.getBoundingClientRect();
+      const rect = anchor.getBoundingClientRect();
 
-  _syncEditorSurface() {
-    const control = this.control();
-    // 控件可能是 vNode 组件（成员是 ComponentNode）：内部输入元素在视图根上
-    const unit = control ? (viewRootOf(control) ?? control) : null;
-    if (!unit?._input || unit._input._tagName !== 'textarea') {
-      return this;
-    }
-    unit._input.style('border', '0');
-    unit._input.style('boxShadow', null);
-    unit._input.style('background', 'transparent');
-    return this;
-  }
-
-  _positionEditor() {
-    if (!this._el) {
-      return this;
-    }
-    const anchor = this._displayBox._el || this._el;
-    const fieldRect = this._el.getBoundingClientRect();
-    const rect = anchor.getBoundingClientRect();
-    this._editorBox.styles({
-      left: rect.left - fieldRect.left + 'px',
-      minHeight: rect.height + 'px',
-      top: rect.top - fieldRect.top + 'px',
-      width: rect.width + 'px'
-    });
-    return this;
-  }
-
-  _focusEditor() {
-    if (!this._editorBox._el) {
-      return this;
-    }
-    const field = this._editorBox._el.querySelector('input, textarea, select');
-    if (field && typeof field.focus === 'function') {
-      field.focus();
-    }
-    return this;
-  }
-
-  label(value) {
-    if (value === undefined) {
-      return this._labelBox.textContent();
-    }
-
-    replaceChildren(this._labelBox, normalizeChildren(value));
-    return this;
-  }
-
-  hint(value) {
-    if (value === undefined) {
-      return this._hintBox.textContent();
-    }
-
-    const hasContent = value !== null && value !== undefined && value !== '';
-    this._hintVisible = hasContent;
-    this._hintBox.style('display', this._hintVisible ? null : 'none');
-    replaceChildren(this._hintBox, hasContent ? normalizeChildren(value) : []);
-    return this;
-  }
-
-  error(value) {
-    if (value === undefined) {
-      return this._errorBox.textContent();
-    }
-
-    const hasContent = value !== null && value !== undefined && value !== '';
-    this._errorBox.style('display', hasContent ? null : 'none');
-    this.attr('data-error', hasContent ? 'true' : null);
-    this._hintBox.style('display', hasContent ? 'none' : this._hintVisible ? null : 'none');
-    replaceChildren(this._errorBox, hasContent ? normalizeChildren(value) : []);
-    return this;
-  }
-
-  display(value) {
-    if (value === undefined) {
-      return this._displayBox.textContent();
-    }
-
-    if (typeof value === 'function') {
-      setupContentSlot(this._displayBox, value);
-      return this;
-    }
-
-    replaceChildren(this._displayBox, normalizeChildren(value));
-    return this;
-  }
-
-  formatter(handler) {
-    if (handler === undefined) {
-      return this._formatter;
-    }
-
-    this._formatter = typeof handler === 'function' ? handler : null;
-    if (this._mode === 'view') {
-      this._syncDisplayFromControl();
-    }
-    return this;
-  }
-
-  displayClass(...classes) {
-    if (classes.length === 0) {
-      return this._displayBox.className();
-    }
-
-    this._displayBox.className(...classes);
-    return this;
-  }
-
-  displayStyle(value) {
-    if (value === undefined) {
-      return this._displayBox.styles();
-    }
-
-    this._displayBox.styles(value);
-    return this;
-  }
-
-  control(setup) {
-    if (setup === undefined) {
-      return this._control ?? findFieldControl(this._editorBox);
-    }
-
-    setupContentSlot(this._editorBox, setup);
-    this._control = findFieldControl(this._editorBox);
-    this._syncEditorSurface();
-
-    if (this._mode === 'view') {
-      this._syncDisplayFromControl();
-    }
-
-    this._syncActionButton();
-
-    return this;
-  }
-
-  editor(setup) {
-    return this.control(setup);
-  }
-
-  value(value) {
-    const control = this.control();
-
-    if (value === undefined) {
-      return control ? readControlValue(control) : this._displayBox.textContent();
-    }
-
-    if (control) {
-      applyControlValue(control, value);
-    } else {
-      this.display(value);
-    }
-
-    if (this._mode === 'view') {
-      this._syncDisplayFromControl();
-    }
-
-    return this;
-  }
-
-  mode(value) {
-    if (value === undefined) {
-      return this._mode;
-    }
-
-    this._mode = value === 'edit' ? 'edit' : 'view';
-    this.attr('data-mode', this._mode);
-
-    if (this._mode === 'edit') {
-      this._editSnapshot = this.control() ? readControlValue(this.control()) : null;
-      this._displayBox.style('visibility', 'hidden');
-      this._editorBox.style('display', null);
-      this._positionEditor();
-      this._focusEditor();
-    } else {
-      this._editorBox.style('display', 'none');
-      this._displayBox.style('visibility', null);
-      this._syncDisplayFromControl();
-    }
-
-    this._syncActionButton();
-
-    return this;
-  }
-
-  view() {
-    return this.mode('view');
-  }
-
-  edit() {
-    return this.mode('edit');
-  }
-
-  cancel() {
-    const control = this.control();
-    if (control && this._editSnapshot !== null && this._editSnapshot !== undefined) {
-      applyControlValue(control, this._editSnapshot);
-    }
-    this._editSnapshot = null;
-    return this.view();
-  }
-
-  _syncDisplayFromControl() {
-    const control = this.control();
-
-    if (!control) {
-      return this;
-    }
-
-    const value = readControlValue(control);
-    const content = this._formatter ? this._formatter(value, this) : formatDisplayValue(value);
-
-    replaceChildren(this._displayBox, normalizeChildren(content ?? value));
-    return this;
-  }
-
-  _syncActionButton() {
-    if (!this._actionButton) {
-      return this;
-    }
-
-    const hasControl = Boolean(this.control());
-    const editing = this._mode === 'edit';
-    const entryVisible = hasControl && !editing && this._hovered;
-
-    this._actionButton.label('✎');
-    this._actionButton.attr({
-      'aria-hidden': entryVisible ? null : 'true',
-      'aria-label': '编辑',
-      title: '编辑'
-    });
-    this._actionButton.attr('tabindex', entryVisible ? null : '-1');
-    this._actionButton.style('opacity', entryVisible ? '1' : '0');
-    this._actionButton.style('pointerEvents', entryVisible ? null : 'none');
-
-    [this._confirmButton, this._cancelButton].forEach((button) => {
-      if (!button) {
-        return;
-      }
-      const actionLabel = button === this._confirmButton ? '确认' : '取消';
-      button.attr({
-        'aria-hidden': editing ? null : 'true',
-        'aria-label': actionLabel,
-        title: actionLabel
+      editorBox.styles({
+        left: `${rect.left - fieldRect.left}px`,
+        minHeight: `${rect.height}px`,
+        top: `${rect.top - fieldRect.top}px`,
+        width: `${rect.width}px`
       });
-      button.attr('tabindex', editing ? null : '-1');
-      button.style('opacity', editing ? '1' : '0');
-      button.style('pointerEvents', editing ? null : 'none');
-    });
+      return api;
+    };
 
-    return this;
-  }
+    const focusEditor = () => {
+      const editorElement = editorBox.renderDom();
+      const field = editorElement?.querySelector('input, textarea, select');
 
-  _setupField(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+      if (field && typeof field.focus === 'function') {
+        field.focus();
+      }
+      return api;
+    };
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+    const currentControl = () => state.control ?? findFieldControl(editorBox);
 
-    if (isPlainObject(setup)) {
+    const syncDisplayFromControl = () => {
+      const control = currentControl();
+
+      if (!control) {
+        return api;
+      }
+
+      const value = readControlValue(control);
+      const content = state.formatter ? state.formatter(value, api) : formatDisplayValue(value);
+
+      replaceChildren(displayBox, normalizeChildren(content ?? value));
+      return api;
+    };
+
+    const syncActionButton = () => {
+      const hasControl = Boolean(currentControl());
+      const editing = state.mode === 'edit';
+      const entryVisible = hasControl && !editing && state.hovered;
+
+      actionButton.attr({
+        'aria-hidden': entryVisible ? null : 'true',
+        'aria-label': '编辑',
+        tabindex: entryVisible ? null : '-1',
+        title: '编辑'
+      });
+      actionButton.style('opacity', entryVisible ? '1' : '0');
+      actionButton.style('pointerEvents', entryVisible ? null : 'none');
+
+      [confirmButton, cancelButton].forEach((buttonNode) => {
+        const actionLabel = buttonNode === confirmButton ? '确认' : '取消';
+
+        buttonNode.attr({
+          'aria-hidden': editing ? null : 'true',
+          'aria-label': actionLabel,
+          tabindex: editing ? null : '-1',
+          title: actionLabel
+        });
+        buttonNode.style('opacity', editing ? '1' : '0');
+        buttonNode.style('pointerEvents', editing ? null : 'none');
+      });
+
+      return api;
+    };
+
+    api.label = (value) => {
+      if (value === undefined) {
+        return labelBox.textContent();
+      }
+
+      replaceChildren(labelBox, normalizeChildren(value));
+      return api;
+    };
+
+    api.hint = (value) => {
+      if (value === undefined) {
+        return hintBox.textContent();
+      }
+
+      const hasContent = value !== null && value !== undefined && value !== '';
+
+      state.hintVisible = hasContent;
+      hintBox.style('display', hasContent ? null : 'none');
+      replaceChildren(hintBox, hasContent ? normalizeChildren(value) : []);
+      return api;
+    };
+
+    api.error = (value) => {
+      if (value === undefined) {
+        return errorBox.textContent();
+      }
+
+      const hasContent = value !== null && value !== undefined && value !== '';
+
+      errorBox.style('display', hasContent ? null : 'none');
+      node.attr('data-error', hasContent ? 'true' : null);
+      hintBox.style('display', hasContent ? 'none' : state.hintVisible ? null : 'none');
+      replaceChildren(errorBox, hasContent ? normalizeChildren(value) : []);
+      return api;
+    };
+
+    api.display = (value) => {
+      if (value === undefined) {
+        return displayBox.textContent();
+      }
+
+      if (typeof value === 'function') {
+        setupContentSlot(displayBox, value);
+        return api;
+      }
+
+      replaceChildren(displayBox, normalizeChildren(value));
+      return api;
+    };
+
+    api.formatter = (handler) => {
+      if (handler === undefined) {
+        return state.formatter;
+      }
+
+      state.formatter = typeof handler === 'function' ? handler : null;
+      if (state.mode === 'view') {
+        syncDisplayFromControl();
+      }
+      return api;
+    };
+
+    api.displayClass = (...classes) => {
+      if (classes.length === 0) {
+        return displayBox.className();
+      }
+
+      displayBox.className(...classes);
+      return api;
+    };
+
+    api.displayStyle = (value) => {
+      if (value === undefined) {
+        return displayBox.styles();
+      }
+
+      displayBox.styles(value);
+      return api;
+    };
+
+    api.control = (setup) => {
+      if (setup === undefined) {
+        return currentControl();
+      }
+
+      setupContentSlot(editorBox, setup);
+      state.control = findFieldControl(editorBox);
+      syncEditorSurface();
+
+      if (state.mode === 'view') {
+        syncDisplayFromControl();
+      }
+      syncActionButton();
+
+      return api;
+    };
+
+    api.editor = (setup) => api.control(setup);
+
+    api.value = (value) => {
+      const control = currentControl();
+
+      if (value === undefined) {
+        return control ? readControlValue(control) : displayBox.textContent();
+      }
+
+      if (control) {
+        applyControlValue(control, value);
+      } else {
+        api.display(value);
+      }
+
+      if (state.mode === 'view') {
+        syncDisplayFromControl();
+      }
+      return api;
+    };
+
+    api.mode = (value) => {
+      if (value === undefined) {
+        return state.mode;
+      }
+
+      state.mode = value === 'edit' ? 'edit' : 'view';
+      node.attr('data-mode', state.mode);
+
+      if (state.mode === 'edit') {
+        const control = currentControl();
+
+        state.editSnapshot = control ? readControlValue(control) : null;
+        displayBox.style('visibility', 'hidden');
+        editorBox.style('display', null);
+        positionEditor();
+        focusEditor();
+      } else {
+        editorBox.style('display', 'none');
+        displayBox.style('visibility', null);
+        syncDisplayFromControl();
+      }
+
+      syncActionButton();
+      return api;
+    };
+
+    api.view = () => api.mode('view');
+    api.edit = () => api.mode('edit');
+
+    api.cancel = () => {
+      const control = currentControl();
+
+      if (control && state.editSnapshot !== null && state.editSnapshot !== undefined) {
+        applyControlValue(control, state.editSnapshot);
+      }
+
+      state.editSnapshot = null;
+      return api.view();
+    };
+
+    /** props：字段自己的键走命令，其余键按元素 options 写（与旧 `_setupField` 同口径）。 */
+    api.setupObject = (setup) => {
       const {
         children,
         control,
@@ -459,83 +448,94 @@ class FieldNode extends HtmlElementNode {
       } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
 
       if (label !== undefined) {
-        this.label(label);
+        api.label(label);
       }
 
       if (hint !== undefined) {
-        this.hint(hint);
+        api.hint(hint);
       }
 
       if (display !== undefined) {
-        this.display(display);
+        api.display(display);
       }
 
       if (formatter !== undefined) {
-        this.formatter(formatter);
+        api.formatter(formatter);
       }
 
       if (displayClass !== undefined) {
-        this.displayClass(...(Array.isArray(displayClass) ? displayClass : [displayClass]));
+        api.displayClass(...(Array.isArray(displayClass) ? displayClass : [displayClass]));
       }
 
       if (displayStyle !== undefined) {
-        this.displayStyle(displayStyle);
+        api.displayStyle(displayStyle);
       }
 
       if (editor !== undefined) {
-        this.editor(editor);
+        api.editor(editor);
       } else if (control !== undefined) {
-        this.control(control);
+        api.control(control);
       } else if (children !== undefined) {
-        this.editor(children);
+        api.editor(children);
       }
 
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
 
       if (error !== undefined) {
-        this.error(error);
+        api.error(error);
       }
 
       if (mode !== undefined) {
-        this.mode(mode);
+        api.mode(mode);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.display(setup);
-  }
-}
+    /** 字符串 / 数字 / 节点 = 查看态内容（旧 `_setupField` 的兜底分支）。 */
+    api.setupString = (value) => api.display(value);
 
-export function vField(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VField',
-    createNode: (setup) => new FieldNode(setup),
-    commands: [
-      'label',
-      'hint',
-      'error',
-      'display',
-      'formatter',
-      'displayClass',
-      'displayStyle',
-      'control',
-      'editor',
-      'value',
-      'mode',
-      'view',
-      'edit',
-      'cancel'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    node.on('mouseenter', () => {
+      state.hovered = true;
+      syncActionButton();
+    });
+    node.on('mouseleave', () => {
+      state.hovered = false;
+      syncActionButton();
+    });
+    node.on('dblclick', (event) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (state.mode === 'view' && currentControl()) {
+        api.edit();
+      }
+    });
+    actionButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      api.mode(state.mode === 'edit' ? 'view' : 'edit');
+    });
+    confirmButton.on('click', () => api.view());
+    cancelButton.on('click', () => api.cancel());
+
+    // 落地后补一次：编辑态要吸在查看面上并聚焦（与旧 renderDom 收口同一时机）
+    api.whenMount = () => {
+      if (state.mode === 'edit') {
+        positionEditor();
+        focusEditor();
+      }
+    };
+
+    syncActionButton();
+    return node;
   });
 }
 
-export const VField = vField;
-defineComponentIdentity(VField, 'VField');
+export const vField = createComponentShortcut(VField);

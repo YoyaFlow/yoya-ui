@@ -2560,24 +2560,24 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelectorAll('[data-form-demo]')).toHaveLength(5);
 
     const detailDemo = page.querySelector('[data-form-demo="detail"]');
-    const detailField = detailDemo.querySelector('.yoya-vfield');
+    const detailField = detailDemo.querySelector('[vn~="VField"]');
     const detailItem = detailDemo.querySelector('.yoya-vdetail-item');
 
     expect(detailItem.dataset.labelVisible).toBeUndefined();
     expect(detailItem.style.gridTemplateColumns).toBe('minmax(0, 1fr)');
-    expect(detailField.querySelector('.yoya-vfield-label').textContent).toBe('服务名称');
+    expect(detailField.querySelector('[vn~="VFieldLabel"]').textContent).toBe('服务名称');
 
     detailField.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
-    const detailAction = detailField.querySelector('.yoya-vfield-action');
+    const detailAction = detailField.querySelector('[vn~="VFieldAction"]');
 
     expect(detailAction.style.opacity).toBe('1');
     detailAction.click();
     expect(detailField.dataset.mode).toBe('edit');
 
     const saveDemo = page.querySelector('[data-form-demo="save"]');
-    const saveField = saveDemo.querySelector('.yoya-vfield');
+    const saveField = saveDemo.querySelector('[vn~="VField"]');
     saveField.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
-    saveField.querySelector('.yoya-vfield-action').click();
+    saveField.querySelector('[vn~="VFieldAction"]').click();
     const saveInput = saveField.querySelector('input');
     saveInput.value = 'worker';
     saveInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2589,9 +2589,9 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(saveDemo.querySelector('[data-field-save-status]').textContent).toContain('worker');
 
     const validationDemo = page.querySelector('[data-form-demo="validation"]');
-    const validationField = validationDemo.querySelector('.yoya-vfield');
+    const validationField = validationDemo.querySelector('[vn~="VField"]');
     validationField.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
-    validationField.querySelector('.yoya-vfield-action').click();
+    validationField.querySelector('[vn~="VFieldAction"]').click();
     const validationInput = validationField.querySelector('input');
     validationInput.value = '';
     validationInput.dispatchEvent(new Event('input', { bubbles: true }));

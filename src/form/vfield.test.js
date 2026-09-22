@@ -16,11 +16,11 @@ describe('vField floating edit', () => {
   it('renders an input-sized display box mirroring the control value', () => {
     const field = makeField('Ada');
     const el = field.renderDom();
-    const display = el.querySelector('.yoya-vfield-display');
+    const display = el.querySelector('[vn~="VFieldDisplay"]');
     expect(display.textContent).toContain('Ada');
     expect(display.style.minHeight).toContain('yoya-control-height-md');
     expect(display.style.display).toBe('flex');
-    expect(el.querySelector('.yoya-vfield-editor').style.display).toBe('none');
+    expect(el.querySelector('[vn~="VFieldEditor"]').style.display).toBe('none');
   });
 
   it('double-click enters edit with an editor anchored to the field', () => {
@@ -28,7 +28,7 @@ describe('vField floating edit', () => {
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(field.mode()).toBe('edit');
-    const editor = el.querySelector('.yoya-vfield-editor');
+    const editor = el.querySelector('[vn~="VFieldEditor"]');
     expect(editor.style.display).not.toBe('none');
     expect(el.style.position).toBe('relative');
     expect(editor.style.position).toBe('absolute');
@@ -38,40 +38,40 @@ describe('vField floating edit', () => {
     const field = makeField();
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const input = el.querySelector('.yoya-vfield-editor input');
+    const input = el.querySelector('[vn~="VFieldEditor"] input');
     input.value = 'Zoe';
-    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+    el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Zoe');
-    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Zoe');
+    expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Zoe');
   });
 
   it('cancel button cancels and restores the previous value', () => {
     const field = makeField('Ada');
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const input = el.querySelector('.yoya-vfield-editor input');
+    const input = el.querySelector('[vn~="VFieldEditor"] input');
     input.value = 'Zoe';
-    el.querySelector('.yoya-vfield-cancel').dispatchEvent(
+    el.querySelector('[vn~="VFieldCancel"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
     expect(field.value()).toBe('Ada');
-    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Ada');
+    expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Ada');
   });
 
   it('focus loss does not close the editor; confirm saves', () => {
     const field = makeField();
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const input = el.querySelector('.yoya-vfield-editor input');
+    const input = el.querySelector('[vn~="VFieldEditor"] input');
     input.value = 'Ray';
     input.dispatchEvent(new MouseEvent('blur', { bubbles: true }));
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
     expect(field.mode()).toBe('edit');
-    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+    el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
@@ -81,8 +81,8 @@ describe('vField floating edit', () => {
   it('anchors the floating editor to the display box, not the whole field', () => {
     const field = makeField();
     const el = field.renderDom();
-    const display = el.querySelector('.yoya-vfield-display');
-    const editor = el.querySelector('.yoya-vfield-editor');
+    const display = el.querySelector('[vn~="VFieldDisplay"]');
+    const editor = el.querySelector('[vn~="VFieldEditor"]');
 
     display.getBoundingClientRect = () => ({
       bottom: 80,
@@ -110,7 +110,7 @@ describe('vField floating edit', () => {
       });
     });
     const el = field.renderDom();
-    const display = el.querySelector('.yoya-vfield-display');
+    const display = el.querySelector('[vn~="VFieldDisplay"]');
     expect(display.querySelector('strong')?.textContent).toBe('SRE');
     expect(display.textContent).toContain('团队');
   });
@@ -119,42 +119,42 @@ describe('vField floating edit', () => {
     const field = makeField('Ada');
     field.formatter((value) => vBadge(String(value)).status('success'));
     const el = field.renderDom();
-    expect(el.querySelector('.yoya-vfield-display .yoya-vbadge')).toBeTruthy();
-    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Ada');
+    expect(el.querySelector('[vn~="VFieldDisplay"] .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Ada');
 
     // edit then save: formatting persists (still a badge), value updated
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const input = el.querySelector('.yoya-vfield-editor input');
+    const input = el.querySelector('[vn~="VFieldEditor"] input');
     input.value = 'Zoe';
-    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+    el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
-    expect(el.querySelector('.yoya-vfield-display .yoya-vbadge')).toBeTruthy();
-    expect(el.querySelector('.yoya-vfield-display').textContent).toContain('Zoe');
+    expect(el.querySelector('[vn~="VFieldDisplay"] .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Zoe');
   });
 
   it('displayClass and displayStyle customize the display box', () => {
     const field = makeField();
     const el = field.renderDom();
-    const display = el.querySelector('.yoya-vfield-display');
-    expect(display.classList.contains('yoya-vfield-display')).toBe(true);
+    const display = el.querySelector('[vn~="VFieldDisplay"]');
+    expect(display.getAttribute('vn')).toBe('VFieldDisplay');
     field.displayClass('my-display');
     field.displayStyle({ color: 'rgb(220, 38, 38)' });
-    expect(el.querySelector('.yoya-vfield-display').classList.contains('my-display')).toBe(true);
-    expect(el.querySelector('.yoya-vfield-display').style.color).toBe('rgb(220, 38, 38)');
+    expect(el.querySelector('[vn~="VFieldDisplay"]').classList.contains('my-display')).toBe(true);
+    expect(el.querySelector('[vn~="VFieldDisplay"]').style.color).toBe('rgb(220, 38, 38)');
   });
 
   it('hides the display box behind the floating editor in edit mode', () => {
     const field = makeField();
     field.displayStyle({ minHeight: '72px' });
     const el = field.renderDom();
-    const display = el.querySelector('.yoya-vfield-display');
+    const display = el.querySelector('[vn~="VFieldDisplay"]');
 
     expect(display.style.visibility).not.toBe('hidden');
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(display.style.visibility).toBe('hidden');
 
-    el.querySelector('.yoya-vfield-cancel').dispatchEvent(
+    el.querySelector('[vn~="VFieldCancel"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(display.style.visibility).not.toBe('hidden');
@@ -167,7 +167,7 @@ describe('vField floating edit', () => {
     });
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const textarea = el.querySelector('.yoya-vfield-editor textarea');
+    const textarea = el.querySelector('[vn~="VFieldEditor"] textarea');
     expect(textarea.style.border).not.toContain('1px');
   });
 
@@ -178,7 +178,7 @@ describe('vField floating edit', () => {
     });
     const el = field.renderDom();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    const textarea = el.querySelector('.yoya-vfield-editor textarea');
+    const textarea = el.querySelector('[vn~="VFieldEditor"] textarea');
     textarea.value = '第一行\n第二行';
     textarea.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
@@ -188,7 +188,7 @@ describe('vField floating edit', () => {
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
     expect(field.mode()).toBe('edit');
 
-    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+    el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');
@@ -214,7 +214,7 @@ describe('vField floating edit', () => {
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(field.mode()).toBe('edit');
 
-    const boxes = el.querySelectorAll('.yoya-vfield-editor input[type="checkbox"]');
+    const boxes = el.querySelectorAll('[vn~="VFieldEditor"] input[type="checkbox"]');
     boxes[1].dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     boxes[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
     boxes[1].dispatchEvent(new Event('change', { bubbles: true }));
@@ -230,7 +230,7 @@ describe('vField floating edit', () => {
     document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }));
     expect(field.mode()).toBe('edit');
-    el.querySelector('.yoya-vfield-confirm').dispatchEvent(
+    el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(field.mode()).toBe('view');

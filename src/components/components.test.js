@@ -2328,8 +2328,8 @@ describe('compound components', () => {
     const element = field.renderDom();
 
     expect(element.dataset.mode).toBe('edit');
-    expect(element.querySelector('.yoya-vfield-display').style.display).toBe('flex');
-    expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
+    expect(element.querySelector('[vn~="VFieldDisplay"]').style.display).toBe('flex');
+    expect(element.querySelector('[vn~="VFieldEditor"]').style.display).toBe('');
 
     field.value('worker');
 
@@ -2338,7 +2338,7 @@ describe('compound components', () => {
     field.mode('view');
 
     expect(element.dataset.mode).toBe('view');
-    expect(element.querySelector('.yoya-vfield-display').textContent).toBe('worker');
+    expect(element.querySelector('[vn~="VFieldDisplay"]').textContent).toBe('worker');
   });
 
   it('reveals an edit button on hover and enters edit mode when clicked', () => {
@@ -2354,11 +2354,11 @@ describe('compound components', () => {
     });
 
     const element = field.renderDom();
-    const action = element.querySelector('.yoya-vfield-action');
+    const action = element.querySelector('[vn~="VFieldAction"]');
 
     expect(action).not.toBeNull();
-    expect(action.parentElement.classList.contains('yoya-vfield-header')).toBe(true);
-    expect(action.previousElementSibling.classList.contains('yoya-vfield-label')).toBe(true);
+    expect(action.parentElement.getAttribute('vn')).toBe('VFieldHeader');
+    expect(action.previousElementSibling.getAttribute('vn')).toBe('VFieldLabel');
     expect(action.textContent).toBe('✎');
     expect(action.getAttribute('aria-label')).toBe('编辑');
     expect(action.style.opacity).toBe('0');
@@ -2373,7 +2373,7 @@ describe('compound components', () => {
     expect(action.textContent).toBe('✎');
     expect(action.getAttribute('aria-label')).toBe('编辑');
     expect(action.style.opacity).toBe('0');
-    expect(element.querySelector('.yoya-vfield-editor').style.display).toBe('');
+    expect(element.querySelector('[vn~="VFieldEditor"]').style.display).toBe('');
     expect(element.querySelector('.yoya-vinput').value).toBe('SRE Team');
   });
 

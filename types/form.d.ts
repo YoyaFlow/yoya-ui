@@ -339,6 +339,9 @@ export class VField extends HtmlElementNode {
   hint(value: ChildInput): VField;
   error(value: string | boolean | null): VField;
   display(value: ChildInput): VField;
+  formatter(handler: ((value: unknown, field: VField) => ChildInput) | null): VField;
+  displayClass(...classes: string[]): VField;
+  displayStyle(style: Record<string, string | number | null>): VField;
   control(setup: ChildInput | SetupCallback<HtmlElementNode>): VField;
   editor(setup: ChildInput | SetupCallback<HtmlElementNode>): VField;
   value(): unknown;
@@ -347,6 +350,7 @@ export class VField extends HtmlElementNode {
   mode(value: 'view' | 'edit'): VField;
   view(): VField;
   edit(): VField;
+  cancel(): VField;
 }
 
 export type FormItemRule = (

@@ -154,7 +154,7 @@ describe('vRate', () => {
 
     expect(field.control()).toBeInstanceOf(VRate);
     expect(field.value()).toBe(4);
-    expect(fieldElement.querySelector('.yoya-vfield-display').textContent).toBe('4');
+    expect(fieldElement.querySelector('[vn~="VFieldDisplay"]').textContent).toBe('4');
 
     field.mode('edit');
     field.value(2);

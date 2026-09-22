@@ -8,7 +8,6 @@ import {
 } from '../../components/shared.js';
 import { VCheckboxes } from './checkboxes.js';
 import { VRadios } from './radios.js';
-import { VField } from './field.js';
 import { VFormItem } from './form-item.js';
 import { VForm } from './form.js';
 import { assignFormValue, isControlDisabled, isControlRequired } from './shared.js';
@@ -20,6 +19,11 @@ function isControlCapable(node) {
   return (
     Boolean(node) && (typeof node.value === 'function' || typeof node._collectValue === 'function')
   );
+}
+
+/** 字段容器能力判定：字段暴露 `control()` + `mode()`——**身份不再参与**（票 15 §4）。 */
+function isFieldCapable(node) {
+  return Boolean(node) && typeof node.control === 'function' && typeof node.mode === 'function';
 }
 
 function readControlValue(control) {
@@ -135,7 +139,7 @@ function collectFormValues(node, result) {
     return result;
   }
 
-  if (node instanceof VField) {
+  if (isFieldCapable(node)) {
     node.children().forEach((child) => collectFormValues(child, result));
     return result;
   }
@@ -199,7 +203,7 @@ function applyFormValues(node, values) {
       return;
     }
 
-    if (current instanceof VField || current instanceof VForm) {
+    if (isFieldCapable(current) || current instanceof VForm) {
       current.children().forEach((child) => visit(child));
       return;
     }
@@ -244,7 +248,7 @@ function validateFormControls(node, formValues = {}) {
       return;
     }
 
-    if (current instanceof VForm || current instanceof VField) {
+    if (current instanceof VForm || isFieldCapable(current)) {
       current.children().forEach((child) => visit(child));
       return;
     }
