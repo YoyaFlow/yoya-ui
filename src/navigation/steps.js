@@ -12,9 +12,10 @@ import {
  * - 结构：`ol[VSteps] > li[VStep] > span[VStepsIndicator] + div[VStepsContent](title + description) + span[VStepsConnector]`；
  * - **部件用到才建、建过复用**（与 `VTable` 的段命令同一口径）：建的顺序固定，与调用顺序无关，
  *   也不靠身份在结构里找；
- * - 命令只写**快照**（`attr` / `style` / `replaceChildren`）：首屏就是构建期快照，不需要写后再刷；
+ * - 命令**直接写快照**（`attr` / `style` / `replaceChildren`）：首屏就是构建期快照，
+ *   没有"写完再刷一遍"的动作；
  * - **项归造它的一方**：容器自己造的项自己记账（子项数与每项状态从这份账里收口）；
- *   容器把「第几个 / 共几个 + 容器态」通过 `vStep.track(…)` 交给项，由项自己算状态与连线。
+ *   容器只把自己的容器态**交给**每一项（`vStep.track(…)`），项自己写自己的快照。
  */
 
 /** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
@@ -98,8 +99,12 @@ export function VStep() {
       return stepIndicatorText(effectiveStatus(), state.index);
     };
 
-    /** 状态 / 缩进 / 连线：容器态或自身状态一变就收口一次（写的都是快照）。 */
-    const syncStep = () => {
+    /**
+     * 写这一项的快照：状态 / aria / 指示器 / 连线 / 缩进。
+     * 自身命令（title / description / icon / status）与容器给的 `track(…)` 都走它——
+     * 一个状态驱动多处 DOM 时，写口必须收在一个地方，不然会出现"改一半"的中间态。
+     */
+    const writeStep = () => {
       const { connector, content, description, indicator } = partsOf();
       const status = effectiveStatus();
       const indicatorSize = state.size === 'small' ? '24px' : '30px';
@@ -154,7 +159,7 @@ export function VStep() {
       state.title = value ?? '';
       state.titleSet = true;
       replaceChildren(partsOf().title, state.titleSet ? normalizeChildren(state.title) : []);
-      return syncStep();
+      return writeStep();
     };
 
     api.text = (value) => (value === undefined ? state.title : api.title(value));
@@ -170,7 +175,7 @@ export function VStep() {
         partsOf().description,
         state.descriptionSet ? normalizeChildren(state.description) : []
       );
-      return syncStep();
+      return writeStep();
     };
 
     api.desc = (value) => (value === undefined ? state.description : api.description(value));
@@ -181,7 +186,7 @@ export function VStep() {
       }
 
       state.icon = value;
-      return syncStep();
+      return writeStep();
     };
 
     api.status = (value) => {
@@ -190,7 +195,7 @@ export function VStep() {
       }
 
       state.status = value || null;
-      return syncStep();
+      return writeStep();
     };
 
     /** 容器给的定位与容器态（步骤条内部协议）：算出的状态 / 连线 / 尺寸都从它派生。 */
@@ -201,7 +206,7 @@ export function VStep() {
       state.stepsCurrent = context.current;
       state.stepsStatus = context.status;
       state.total = context.total;
-      return syncStep();
+      return writeStep();
     };
 
     /** props：`title / text / description / desc / icon / status / children` + 其余元素配置。 */
@@ -265,16 +270,8 @@ export function VSteps() {
     /** 项账：容器自己造的项（`items` 替换 / `vStep` 追加都记在这里）。 */
     let steps = [];
 
-    /** 容器态 → 每项定位：容器开一个口，项算自己的状态。 */
-    const syncSteps = () => {
-      self.node().attr({
-        'data-current': String(state.current),
-        'data-direction': state.direction,
-        'data-size': state.size,
-        'data-status': state.status,
-        'data-step-count': String(steps.length)
-      });
-
+    /** 把容器态交给每一项（父→子命令）：容器不替项写状态，只给"第几个 / 共几个 + 容器态"。 */
+    const deliverContext = () => {
       steps.forEach((step, index) =>
         step.track({
           current: state.current,
@@ -294,7 +291,8 @@ export function VSteps() {
       }
 
       state.current = Math.max(0, Number(value) || 0);
-      return syncSteps();
+      self.node().attr('data-current', String(state.current));
+      return deliverContext();
     };
 
     api.status = (value) => {
@@ -303,7 +301,8 @@ export function VSteps() {
       }
 
       state.status = ['error', 'finish', 'process'].includes(value) ? value : 'process';
-      return syncSteps();
+      self.node().attr('data-status', state.status);
+      return deliverContext();
     };
 
     api.direction = (value) => {
@@ -312,7 +311,8 @@ export function VSteps() {
       }
 
       state.direction = value === 'vertical' ? 'vertical' : 'horizontal';
-      return syncSteps();
+      self.node().attr('data-direction', state.direction);
+      return deliverContext();
     };
 
     api.size = (value) => {
@@ -321,7 +321,8 @@ export function VSteps() {
       }
 
       state.size = value === 'small' ? 'small' : 'default';
-      return syncSteps();
+      self.node().attr('data-size', state.size);
+      return deliverContext();
     };
 
     /** 项投递：造一份项并落进 `<ol>`，账记在自己身上。 */
@@ -329,7 +330,9 @@ export function VSteps() {
       const step = normalizeStepItem(setup);
       steps = [...steps, step];
       self.node().child(step);
-      return syncSteps();
+      self.node().attr('data-step-count', String(steps.length));
+      // 项数一变，**每一项**的"共几个"都变了（最后一项的连线显隐靠它）
+      return deliverContext();
     };
 
     api.items = (value) => {
@@ -340,7 +343,8 @@ export function VSteps() {
       steps.forEach((step) => step.destroy());
       steps = [];
       (Array.isArray(value) ? value : []).forEach((item) => api.vStep(item));
-      return syncSteps();
+      self.node().attr('data-step-count', String(steps.length));
+      return deliverContext();
     };
 
     api.next = () => {
@@ -398,7 +402,16 @@ export function VSteps() {
       return api;
     };
 
-    return ol({ role: 'list', vn: 'VSteps' });
+    // 结构里就带默认快照（命令只覆盖自己那一项）：首屏不依赖"谁先跑过一遍"
+    return ol({
+      'data-current': '0',
+      'data-direction': 'horizontal',
+      'data-size': 'default',
+      'data-status': 'process',
+      'data-step-count': '0',
+      role: 'list',
+      vn: 'VSteps'
+    });
   });
 }
 
