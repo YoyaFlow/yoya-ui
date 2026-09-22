@@ -143,6 +143,24 @@ describe('mountable condition adoption', () => {
     expect(element.querySelector('[data-panel]')).toBeNull();
   });
 
+  it('keeps a false condition when the child is re-inserted outside a builder', () => {
+    const host = div();
+    const panel = div((node) => {
+      node.mountable(false);
+      node.attr('data-panel', 'true');
+    });
+    const element = host.renderDom();
+
+    host.child(panel);
+    expect(element.querySelector('[data-panel]')).toBeNull();
+
+    // 构建之外的重新插入（clearChildren + child）不能把条件为假的子节点挂进 DOM：
+    // 释放旧挂载绑定会把 _childMountStates 里的状态清掉，必须发生在登记新绑定之前。
+    host.clearChildren().child([panel]);
+    expect(panel.isMounted()).toBe(false);
+    expect(element.querySelector('[data-panel]')).toBeNull();
+  });
+
   it('adopts a mountable declaration on replaceChild replacements', () => {
     const visible = ref(true);
     const list = div();

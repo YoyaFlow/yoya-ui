@@ -2644,6 +2644,14 @@ export class ViewNode {
       node._mountConditionRef.value = condition;
     }
 
+    // 先释放上一轮为同一子节点登记的绑定：它的 cleanup 会清掉 _childMountStates 里的旧状态，
+    // 放在新绑定登记之后就会把新绑定刚写下的挂载态一起抹掉（构建之外的重新插入会因此
+    // 把条件为假的子节点挂进 DOM）。顺序：释放旧的 → 登记新的 → 新的写入自己的状态。
+    if (typeof node._parentMountCleanup === 'function') {
+      node._parentMountCleanup();
+      node._parentMountCleanup = null;
+    }
+
     const binding = registerNodeBinding(
       this,
       'mount',
@@ -2659,9 +2667,6 @@ export class ViewNode {
 
     // 子节点销毁时释放父节点为它登记的挂载绑定与挂载状态：列表容器通常长命，
     // 残留绑定会把已经销毁的行一直钉在内存里（keyed 行增删频繁时尤其明显）。
-    if (typeof node._parentMountCleanup === 'function') {
-      node._parentMountCleanup();
-    }
     node._parentMountCleanup = () => {
       releaseBindings([binding]);
       this._childMountStates?.delete(node);
