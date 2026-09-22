@@ -1,306 +1,306 @@
-import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import { button as buttonTag, div, img } from '../html/index.js';
+import { createComponentShortcut, isPlainObject } from '../components/shared.js';
 import { LazyImageNode } from '../async/lazy-image.js';
 
 const MAX_ZOOM = 5;
 
-export class VImagePreview extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._src = null;
-    this._thumb = null;
-    this._alt = '';
-    this._zoom = 1;
-    this._panX = 0;
-    this._panY = 0;
-    this._open = false;
-    this._overlay = null;
-    this._stage = null;
-    this._escHandler = null;
-    this._drag = null;
-    this._onPanMove = null;
-    this._onPanEnd = null;
+/**
+ * 图片预览（形态 B，票 15 §4）：视图根是缩略图容器 `div`，「打开」时把浮层绑到 `document.body`。
+ *
+ * - 身份写在结构里：根 `vn: 'VImagePreview'`；浮层那几个部件自带身份
+ *   （`VImagePreviewOverlay` / `Stage` / `Close` / `Tool` / `Toolbar` / `Backdrop`）；
+ * - 状态与命令收进 `vNode` 闭包（`src` / `thumb` / `alt` / `zoom` / `resetZoom` / `previewState` /
+ *   `open` / `close` / `toggle`）；浮层按需建、关闭即销毁（与旧实现同口径）；
+ * - 元素级时机：旧 `destroy()` 里的收尾（关浮层 + 解绑 Esc / 拖拽监听）改 `whenDestroy`；
+ * - props 分派：`alt` / `thumb` / `src` 走命令，其余按元素 options 写；字符串 = 图片 src
+ *   （旧实现里字符串被静默忽略，这一刀明确成 src）。
+ */
+export function VImagePreview() {
+  return vNode((api) => {
+    const state = {
+      alt: '',
+      drag: null,
+      escHandler: null,
+      escUnbind: null,
+      lazy: null,
+      open: false,
+      overlay: null,
+      panX: 0,
+      panY: 0,
+      src: null,
+      stage: null,
+      thumb: null,
+      zoom: 1
+    };
+    let panMove = null;
+    let panMoveUnbind = null;
+    let panEnd = null;
+    let panEndUnbind = null;
 
-    this._thumbImg = new HtmlElementNode('img').attr({ loading: 'lazy' });
-    this.className(componentClass, 'yoya-vimagepreview');
-    this.attr({ 'data-open': null });
-    this.styles({
+    const thumbImg = img({ loading: 'lazy' });
+    const node = div({ vn: 'VImagePreview' }).attr({ 'data-open': null }).styles({
       boxSizing: 'border-box',
       cursor: 'zoom-in',
       display: 'inline-block',
       lineHeight: '0'
     });
-    this.child(this._thumbImg);
-    this.on('click', () => this.open());
 
-    this._setupImagePreview(setup);
-    this._syncThumb();
-  }
+    node.child(thumbImg);
+    node.on('click', () => api.open());
 
-  src(value) {
-    if (value === undefined) {
-      return this._src;
-    }
+    const syncThumb = () => {
+      thumbImg.attr('src', state.thumb || state.src);
+      thumbImg.attr('alt', state.alt || null);
+    };
 
-    this._src = value === null || value === undefined ? null : String(value);
-    this._syncThumb();
-    if (this._open && this._lazy) {
-      this._lazy.src(this._src);
-    }
-    return this;
-  }
+    const syncStage = () => {
+      if (!state.stage) {
+        return;
+      }
 
-  thumb(value) {
-    if (value === undefined) {
-      return this._thumb;
-    }
+      state.stage.style(
+        'transform',
+        `scale(${state.zoom}) translate(${state.panX}px, ${state.panY}px)`
+      );
+    };
 
-    this._thumb = value === null || value === undefined ? null : String(value);
-    this._syncThumb();
-    return this;
-  }
+    const endPan = () => {
+      state.drag = null;
 
-  alt(value) {
-    if (value === undefined) {
-      return this._alt;
-    }
-
-    this._alt = String(value ?? '');
-    this._syncThumb();
-    if (this._open && this._lazy) {
-      this._lazy.alt(this._alt);
-    }
-    return this;
-  }
-
-  zoom(value) {
-    if (value === undefined) {
-      return this._zoom;
-    }
-
-    const parsed = Number(value);
-    this._zoom = Number.isFinite(parsed) ? Math.min(MAX_ZOOM, Math.max(1, parsed)) : 1;
-    if (this._zoom === 1) {
-      this._panX = 0;
-      this._panY = 0;
-    }
-    this._syncStage();
-    return this;
-  }
-
-  resetZoom() {
-    this._zoom = 1;
-    this._panX = 0;
-    this._panY = 0;
-    this._syncStage();
-    return this;
-  }
-
-  /** 当前预览状态：open / closed。 */
-  previewState() {
-    return this._open ? 'open' : 'closed';
-  }
-
-  open() {
-    if (this._open || !this._src || !this._el) {
-      return this;
-    }
-
-    this._open = true;
-    this.attr('data-open', 'true');
-    this._buildOverlay();
-    this._escHandler = (event) => {
-      if (event.key === 'Escape') {
-        this.close();
+      if (panMove) {
+        panMoveUnbind?.();
+        panMove = null;
+        panMoveUnbind = null;
+      }
+      if (panEnd) {
+        panEndUnbind?.();
+        panEnd = null;
+        panEndUnbind = null;
       }
     };
-    this._escUnbind = bindDocumentEvent('keydown', this._escHandler);
-    return this;
-  }
 
-  close() {
-    if (!this._open) {
-      return this;
-    }
+    const panMoveHandler = (event) => {
+      if (!state.drag) {
+        return;
+      }
 
-    this._open = false;
-    this.attr('data-open', null);
-    this._endPan();
-
-    if (this._escHandler) {
-      this._escUnbind?.();
-      this._escHandler = null;
-      this._escUnbind = null;
-    }
-    if (this._overlay) {
-      this._overlay.destroy();
-      this._overlay = null;
-    }
-    this._stage = null;
-    this._lazy = null;
-    return this;
-  }
-
-  toggle() {
-    return this._open ? this.close() : this.open();
-  }
-
-  destroy() {
-    this.close();
-    return super.destroy();
-  }
-
-  _syncThumb() {
-    this._thumbImg.attr('src', this._thumb || this._src);
-    this._thumbImg.attr('alt', this._alt || null);
-  }
-
-  _buildOverlay() {
-    const lazy = new LazyImageNode().src(this._src).alt(this._alt);
-    this._lazy = lazy;
-
-    const stage = new HtmlElementNode('div')
-      .className('yoya-vimagepreview-stage')
-      .styles({
-        display: 'flex',
-        maxHeight: '86vh',
-        maxWidth: '90vw',
-        position: 'relative'
-      })
-      .on('mousedown', (event) => this._startPan(event));
-    stage.child(lazy);
-    this._stage = stage;
-
-    const closeButton = new HtmlElementNode('button')
-      .className('yoya-vimagepreview-close')
-      .attr({ 'aria-label': '关闭预览', type: 'button' })
-      .child('×')
-      .on('click', () => this.close());
-
-    const zoomOut = new HtmlElementNode('button')
-      .className('yoya-vimagepreview-tool')
-      .attr({ 'aria-label': '缩小', type: 'button' })
-      .child('−')
-      .on('click', () => this.zoom(this._zoom - 0.5));
-    const zoomReset = new HtmlElementNode('button')
-      .className('yoya-vimagepreview-tool')
-      .attr({ 'aria-label': '重置缩放', type: 'button' })
-      .child('1:1')
-      .on('click', () => this.resetZoom());
-    const zoomIn = new HtmlElementNode('button')
-      .className('yoya-vimagepreview-tool')
-      .attr({ 'aria-label': '放大', type: 'button' })
-      .child('＋')
-      .on('click', () => this.zoom(this._zoom + 0.5));
-
-    const toolbar = new HtmlElementNode('div')
-      .className('yoya-vimagepreview-toolbar')
-      .child(zoomOut, zoomReset, zoomIn);
-
-    const backdrop = new HtmlElementNode('div')
-      .className('yoya-vimagepreview-backdrop')
-      .on('click', () => this.close());
-
-    const overlay = new HtmlElementNode('div')
-      .className(componentClass, 'yoya-vimagepreview-overlay')
-      .styles({
-        alignItems: 'center',
-        display: 'flex',
-        inset: '0',
-        justifyContent: 'center',
-        position: 'fixed',
-        zIndex: '1000'
-      })
-      .child(backdrop, stage, closeButton, toolbar);
-
-    this._overlay = overlay;
-    overlay.bindTo(document.body);
-    this._syncStage();
-  }
-
-  _syncStage() {
-    if (!this._stage) {
-      return;
-    }
-
-    this._stage.style(
-      'transform',
-      `scale(${this._zoom}) translate(${this._panX}px, ${this._panY}px)`
-    );
-  }
-
-  _startPan(event) {
-    if (this._zoom <= 1) {
-      return;
-    }
-
-    this._drag = {
-      panX: this._panX,
-      panY: this._panY,
-      startX: event.clientX,
-      startY: event.clientY
+      state.panX = state.drag.panX + (event.clientX - state.drag.startX);
+      state.panY = state.drag.panY + (event.clientY - state.drag.startY);
+      syncStage();
     };
-    this._onPanMove = (moveEvent) => this._panMove(moveEvent);
-    this._onPanEnd = () => this._endPan();
-    this._panMoveUnbind = bindDocumentEvent('mousemove', this._onPanMove);
-    this._panEndUnbind = bindDocumentEvent('mouseup', this._onPanEnd);
-  }
 
-  _panMove(event) {
-    if (!this._drag) {
-      return;
-    }
+    const startPan = (event) => {
+      if (state.zoom <= 1) {
+        return;
+      }
 
-    this._panX = this._drag.panX + (event.clientX - this._drag.startX);
-    this._panY = this._drag.panY + (event.clientY - this._drag.startY);
-    this._syncStage();
-  }
+      state.drag = {
+        panX: state.panX,
+        panY: state.panY,
+        startX: event.clientX,
+        startY: event.clientY
+      };
+      panMove = (moveEvent) => panMoveHandler(moveEvent);
+      panEnd = () => endPan();
+      panMoveUnbind = bindDocumentEvent('mousemove', panMove);
+      panEndUnbind = bindDocumentEvent('mouseup', panEnd);
+    };
 
-  _endPan() {
-    this._drag = null;
-    if (this._onPanMove) {
-      this._panMoveUnbind?.();
-      this._onPanMove = null;
-      this._panMoveUnbind = null;
-    }
-    if (this._onPanEnd) {
-      this._panEndUnbind?.();
-      this._onPanEnd = null;
-      this._panEndUnbind = null;
-    }
-  }
+    const buildOverlay = () => {
+      const lazy = new LazyImageNode().src(state.src).alt(state.alt);
 
-  _setupImagePreview(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+      state.lazy = lazy;
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      const stage = div({ vn: 'VImagePreviewStage' })
+        .styles({
+          display: 'flex',
+          maxHeight: '86vh',
+          maxWidth: '90vw',
+          position: 'relative'
+        })
+        .child(lazy);
 
-    if (isPlainObject(setup)) {
+      stage.on('mousedown', (event) => startPan(event));
+      state.stage = stage;
+
+      const closeButton = buttonTag({ vn: 'VImagePreviewClose' })
+        .attr({ 'aria-label': '关闭预览', type: 'button' })
+        .child('×')
+        .on('click', () => api.close());
+
+      const zoomOut = buttonTag({ vn: 'VImagePreviewTool' })
+        .attr({ 'aria-label': '缩小', type: 'button' })
+        .child('−')
+        .on('click', () => api.zoom(state.zoom - 0.5));
+      const zoomReset = buttonTag({ vn: 'VImagePreviewTool' })
+        .attr({ 'aria-label': '重置缩放', type: 'button' })
+        .child('1:1')
+        .on('click', () => api.resetZoom());
+      const zoomIn = buttonTag({ vn: 'VImagePreviewTool' })
+        .attr({ 'aria-label': '放大', type: 'button' })
+        .child('＋')
+        .on('click', () => api.zoom(state.zoom + 0.5));
+
+      const toolbar = div({ vn: 'VImagePreviewToolbar' }).child(zoomOut, zoomReset, zoomIn);
+      const backdrop = div({ vn: 'VImagePreviewBackdrop' }).on('click', () => api.close());
+      const overlay = div({ vn: 'VImagePreviewOverlay' })
+        .styles({
+          alignItems: 'center',
+          display: 'flex',
+          inset: '0',
+          justifyContent: 'center',
+          position: 'fixed',
+          zIndex: '1000'
+        })
+        .child(backdrop, stage, closeButton, toolbar);
+
+      state.overlay = overlay;
+      overlay.bindTo(document.body);
+      syncStage();
+    };
+
+    api.src = (value) => {
+      if (value === undefined) {
+        return state.src;
+      }
+
+      state.src = value === null || value === undefined ? null : String(value);
+      syncThumb();
+      if (state.open && state.lazy) {
+        state.lazy.src(state.src);
+      }
+      return api;
+    };
+
+    api.thumb = (value) => {
+      if (value === undefined) {
+        return state.thumb;
+      }
+
+      state.thumb = value === null || value === undefined ? null : String(value);
+      syncThumb();
+      return api;
+    };
+
+    api.alt = (value) => {
+      if (value === undefined) {
+        return state.alt;
+      }
+
+      state.alt = String(value ?? '');
+      syncThumb();
+      if (state.open && state.lazy) {
+        state.lazy.alt(state.alt);
+      }
+      return api;
+    };
+
+    api.zoom = (value) => {
+      if (value === undefined) {
+        return state.zoom;
+      }
+
+      const parsed = Number(value);
+
+      state.zoom = Number.isFinite(parsed) ? Math.min(MAX_ZOOM, Math.max(1, parsed)) : 1;
+      if (state.zoom === 1) {
+        state.panX = 0;
+        state.panY = 0;
+      }
+      syncStage();
+      return api;
+    };
+
+    api.resetZoom = () => {
+      state.zoom = 1;
+      state.panX = 0;
+      state.panY = 0;
+      syncStage();
+      return api;
+    };
+
+    /** 当前预览状态：open / closed。 */
+    api.previewState = () => (state.open ? 'open' : 'closed');
+
+    api.open = () => {
+      if (state.open || !state.src || !node._el) {
+        return api;
+      }
+
+      state.open = true;
+      node.attr('data-open', 'true');
+      buildOverlay();
+      state.escHandler = (event) => {
+        if (event.key === 'Escape') {
+          api.close();
+        }
+      };
+      state.escUnbind = bindDocumentEvent('keydown', state.escHandler);
+      return api;
+    };
+
+    api.close = () => {
+      if (!state.open) {
+        return api;
+      }
+
+      state.open = false;
+      node.attr('data-open', null);
+      endPan();
+
+      if (state.escHandler) {
+        state.escUnbind?.();
+        state.escHandler = null;
+        state.escUnbind = null;
+      }
+      if (state.overlay) {
+        state.overlay.destroy();
+        state.overlay = null;
+      }
+      state.stage = null;
+      state.lazy = null;
+      return api;
+    };
+
+    api.toggle = () => (state.open ? api.close() : api.open());
+
+    /** 字符串 = 图片 src（旧实现里字符串被静默忽略，这一刀明确成 src）。 */
+    api.setupString = (next) => api.src(next);
+
+    /** props：`alt` / `thumb` / `src` 走命令，其余按元素 options 写（与旧 `_setupImagePreview` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const { alt, src, thumb, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
-
       if (alt !== undefined) {
-        this.alt(alt);
+        api.alt(alt);
       }
       if (thumb !== undefined) {
-        this.thumb(thumb);
+        api.thumb(thumb);
       }
       if (src !== undefined) {
-        this.src(src);
+        api.src(src);
       }
-    }
-  }
+
+      return api;
+    };
+
+    // 旧 `destroy()` 猴补的等价物：关浮层 + 解绑 Esc / 拖拽监听
+    api.whenDestroy = () => {
+      api.close();
+    };
+
+    syncThumb();
+    return node;
+  });
 }
 
-export function vImagePreview(first = null, second = null, third = null) {
-  return createComponentFactory(VImagePreview, first, second, third, arguments);
-}
+export const vImagePreview = createComponentShortcut(VImagePreview);

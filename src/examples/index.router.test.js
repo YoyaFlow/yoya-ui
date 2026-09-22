@@ -769,7 +769,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     const previewPage = document.querySelector('[data-c-end-docs="image-preview"]');
     expect(previewPage.querySelector('h1').textContent).toBe('vImagePreview 图片预览');
-    expect(previewPage.querySelector('.yoya-vimagepreview')).not.toBeNull();
+    expect(previewPage.querySelector('[vn~="VImagePreview"]')).not.toBeNull();
 
     await openRoute('/components/c-end/transition');
     await vi.waitFor(() => {

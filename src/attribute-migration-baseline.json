@@ -23,7 +23,6 @@
     "src/data-display/code-block.js": 1,
     "src/data-display/code.js": 6,
     "src/data-display/gauge.js": 1,
-    "src/data-display/image-preview.js": 9,
     "src/data-display/progress.js": 6,
     "src/data-display/ring-stat.js": 4,
     "src/data-display/sparkline.js": 1,
@@ -100,14 +99,7 @@
     "yoya-vtransition-enter": 2,
     "yoya-vtransition-duration": 2,
     "yoya-vtransition-leave": 2,
-    "yoya-vmasonry": 2,
-    "yoya-vimagepreview": 2,
-    "yoya-vimagepreview-overlay": 9,
-    "yoya-vimagepreview-backdrop": 1,
-    "yoya-vimagepreview-stage": 2,
-    "yoya-vimagepreview-close": 2,
-    "yoya-vimagepreview-toolbar": 1,
-    "yoya-vimagepreview-tool": 2
+    "yoya-vmasonry": 2
   },
   "identity": [
     "src/actions/button.js",
@@ -125,7 +117,6 @@
     "src/data-display/chart.js",
     "src/data-display/code.js",
     "src/data-display/gauge.js",
-    "src/data-display/image-preview.js",
     "src/data-display/progress.js",
     "src/data-display/ring-stat.js",
     "src/data-display/sparkline.js",

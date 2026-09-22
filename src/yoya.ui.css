@@ -2315,19 +2315,19 @@ body {
     margin-bottom: var(--yoya-masonry-gap, 16px);
   }
 
-  :where(.yoya-vimagepreview) {
+  :where([vn~='VImagePreview']) {
     box-sizing: border-box;
     cursor: zoom-in;
     display: inline-block;
     line-height: 0;
   }
 
-  .yoya-vimagepreview > img {
+  [vn~='VImagePreview'] > img {
     display: block;
     max-width: 100%;
   }
 
-  .yoya-vimagepreview-overlay {
+  [vn~='VImagePreviewOverlay'] {
     align-items: center;
     background: rgba(0, 0, 0, 0.72);
     box-sizing: border-box;
@@ -2338,24 +2338,24 @@ body {
     z-index: 1000;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-backdrop {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewBackdrop'] {
     inset: 0;
     position: absolute;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-stage {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] {
     position: relative;
     transform-origin: center;
     transition: transform 180ms ease;
     z-index: 1;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-stage .yoya-vlazyimage {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] .yoya-vlazyimage {
     max-height: 86vh;
     max-width: 90vw;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-close {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewClose'] {
     align-items: center;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -2375,11 +2375,11 @@ body {
     z-index: 2;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-close:hover {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewClose']:hover {
     background: rgba(255, 255, 255, 0.26);
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-toolbar {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewToolbar'] {
     align-items: center;
     bottom: 18px;
     display: flex;
@@ -2390,7 +2390,7 @@ body {
     z-index: 2;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-tool {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewTool'] {
     align-items: center;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -2407,7 +2407,7 @@ body {
     padding: 0 10px;
   }
 
-  .yoya-vimagepreview-overlay .yoya-vimagepreview-tool:hover {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewTool']:hover {
     background: rgba(255, 255, 255, 0.26);
   }
 }
