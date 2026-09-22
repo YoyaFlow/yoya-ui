@@ -11,7 +11,13 @@ import { VBooleanControl } from './shared.js';
 class CheckboxNode extends VBooleanControl {
   constructor(setup = null) {
     super('checkbox');
-    this._identity = 'VCheckbox';
+    // 身份：根 + 部件（基类只造结构，身份归组件自己写）
+    this.setup({ vn: 'VCheckbox' });
+    this._input.setup({ vn: 'VCheckboxInput' });
+    this._visualBox.setup({ vn: 'VCheckboxVisual' });
+    this._contentBox.setup({ vn: 'VCheckboxContent' });
+    this._labelBox.setup({ vn: 'VCheckboxLabel' });
+    this._descriptionBox.setup({ vn: 'VCheckboxDescription' });
     this._visualBox.styles({
       alignItems: 'center',
       background: themeValue('color-surface', '#ffffff'),

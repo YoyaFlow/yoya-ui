@@ -144,7 +144,7 @@ describe('component shell', () => {
       value: 'dev'
     });
     const element = radios.renderDom();
-    const input = element.querySelectorAll('.yoya-vradio input')[1];
+    const input = element.querySelectorAll('[vn~="VRadio"] input')[1];
 
     input.checked = true;
     input.dispatchEvent(new Event('change', { bubbles: true }));

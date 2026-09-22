@@ -3,7 +3,6 @@ import { HtmlElementNode } from '../../html/index.js';
 import { VRate } from '../rate.js';
 import {
   booleanMethod,
-  componentClass,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -61,15 +60,13 @@ class VBooleanControl extends HtmlElementNode {
     super('label', null);
     this._kind = tagName;
     this._optionValue = 'on';
-    this._input = new HtmlElementNode('input').className(`yoya-v${tagName}-input`);
-    this._visualBox = new HtmlElementNode('span').className(`yoya-v${tagName}-visual`);
-    this._contentBox = new HtmlElementNode('span').className(`yoya-v${tagName}-content`);
-    this._labelBox = new HtmlElementNode('span').className(`yoya-v${tagName}-label`);
-    this._descriptionBox = new HtmlElementNode('span')
-      .className(`yoya-v${tagName}-description`)
-      .style('display', 'none');
-
-    this.className(componentClass, `yoya-v${tagName}`);
+    // 基类只造结构：身份（根 + 各部件）由 `checkbox` / `switch` / `radio` 三个子类自己写，
+    // 命名契约要求字面量 PascalCase（见 attribute-migration-baseline 门禁）。
+    this._input = new HtmlElementNode('input');
+    this._visualBox = new HtmlElementNode('span');
+    this._contentBox = new HtmlElementNode('span');
+    this._labelBox = new HtmlElementNode('span');
+    this._descriptionBox = new HtmlElementNode('span').style('display', 'none');
     this.styles({
       alignItems: 'center',
       cursor: 'pointer',

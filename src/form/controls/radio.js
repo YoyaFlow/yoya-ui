@@ -7,7 +7,13 @@ import { VBooleanControl } from './shared.js';
 class RadioNode extends VBooleanControl {
   constructor(setup = null) {
     super('radio');
-    this._identity = 'VRadio';
+    // 身份：根 + 部件（基类只造结构，身份归组件自己写）
+    this.setup({ vn: 'VRadio' });
+    this._input.setup({ vn: 'VRadioInput' });
+    this._visualBox.setup({ vn: 'VRadioVisual' });
+    this._contentBox.setup({ vn: 'VRadioContent' });
+    this._labelBox.setup({ vn: 'VRadioLabel' });
+    this._descriptionBox.setup({ vn: 'VRadioDescription' });
     this._input.attr('type', 'radio');
     this._visualBox.styles({
       alignItems: 'center',
@@ -97,7 +103,7 @@ function unregisterRadio(radio) {
 }
 
 function createRadioDot() {
-  return new HtmlElementNode('span').className('yoya-vradio-dot').styles({
+  return new HtmlElementNode('span').setup({ vn: 'VRadioDot' }).styles({
     background: themeValue('color-primary', '#2563eb'),
     borderRadius: '999px',
     height: '8px',

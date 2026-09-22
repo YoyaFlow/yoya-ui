@@ -7,8 +7,14 @@ import { VBooleanControl } from './shared.js';
 class SwitchNode extends VBooleanControl {
   constructor(setup = null) {
     super('switch');
-    this._identity = 'VSwitch';
-    this._thumbBox = new HtmlElementNode('span').className('yoya-vswitch-thumb');
+    // 身份：根 + 部件（基类只造结构，身份归组件自己写）
+    this.setup({ vn: 'VSwitch' });
+    this._input.setup({ vn: 'VSwitchInput' });
+    this._visualBox.setup({ vn: 'VSwitchVisual' });
+    this._contentBox.setup({ vn: 'VSwitchContent' });
+    this._labelBox.setup({ vn: 'VSwitchLabel' });
+    this._descriptionBox.setup({ vn: 'VSwitchDescription' });
+    this._thumbBox = new HtmlElementNode('span').setup({ vn: 'VSwitchThumb' });
     this._visualBox.styles({
       background: themeValue('color-border-strong', '#cbd5e1'),
       border: themeBorder('color-border-strong', '#cbd5e1'),

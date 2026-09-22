@@ -214,7 +214,7 @@ describe('compound components', () => {
       change
     });
     const element = radios.renderDom();
-    const items = [...element.querySelectorAll('.yoya-vradio')];
+    const items = [...element.querySelectorAll('[vn~="VRadio"]')];
 
     expect(radios.value()).toBe('staging');
     expect(items).toHaveLength(3);
@@ -239,12 +239,12 @@ describe('compound components', () => {
     const disabled = vRadio({ label: '定时发布', disabled: true });
     const page = div((root) => root.child(radio, disabled));
     const element = page.renderDom();
-    const items = [...element.querySelectorAll('.yoya-vradio')];
+    const items = [...element.querySelectorAll('[vn~="VRadio"]')];
 
-    expect(items[0].querySelector('.yoya-vradio-label').textContent).toBe('启用自动部署');
-    expect(items[0].querySelector('.yoya-vradio-description').textContent).toBe('发布后自动执行');
+    expect(items[0].querySelector('[vn~="VRadioLabel"]').textContent).toBe('启用自动部署');
+    expect(items[0].querySelector('[vn~="VRadioDescription"]').textContent).toBe('发布后自动执行');
     expect(items[0].dataset.checked).toBe('true');
-    expect(items[0].querySelector('.yoya-vradio-dot')).not.toBeNull();
+    expect(items[0].querySelector('[vn~="VRadioDot"]')).not.toBeNull();
     expect(items[1].dataset.checked).toBeUndefined();
     expect(items[1].querySelector('input').disabled).toBe(true);
   });
@@ -276,7 +276,7 @@ describe('compound components', () => {
     });
     const page = div((root) => root.child(first, second));
     const element = page.renderDom();
-    const items = [...element.querySelectorAll('.yoya-vradio')];
+    const items = [...element.querySelectorAll('[vn~="VRadio"]')];
 
     expect(first.checked()).toBe(true);
 
@@ -2304,8 +2304,8 @@ describe('compound components', () => {
 
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vcheckbox').dataset.checked).toBe('true');
-    expect(element.querySelector('.yoya-vswitch').dataset.checked).toBeUndefined();
+    expect(element.querySelector('[vn~="VCheckbox"]').dataset.checked).toBe('true');
+    expect(element.querySelector('[vn~="VSwitch"]').dataset.checked).toBeUndefined();
     expect(group.value()).toEqual(['sh']);
 
     group.value(['hz']);
