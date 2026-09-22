@@ -955,11 +955,11 @@ body {
     width: 0;
   }
 
-  .yoya-vtreeranger .yoya-vtreeranger-list {
+  [vn~='VTreeRanger'] [vn~='VTreeRangerList'] {
     scrollbar-width: none;
   }
 
-  .yoya-vtreeranger .yoya-vtreeranger-list::-webkit-scrollbar {
+  [vn~='VTreeRanger'] [vn~='VTreeRangerList']::-webkit-scrollbar {
     display: none;
     height: 0;
     width: 0;

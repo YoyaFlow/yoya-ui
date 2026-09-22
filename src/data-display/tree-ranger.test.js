@@ -37,7 +37,7 @@ describe('vTreeRanger', () => {
     const element = browser.renderDom();
 
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(element.querySelectorAll('.yoya-vtreeranger-column')).toHaveLength(3);
+    expect(element.querySelectorAll('[vn~="VTreeRangerColumn"]')).toHaveLength(3);
     expect(element.querySelector('[data-index="0"]').textContent).toContain('类型 A');
 
     element.querySelector('[data-index="0"]').click();
@@ -45,7 +45,7 @@ describe('vTreeRanger', () => {
 
     expect(browser.selectedKeys()[0]).toBe('a');
     expect(browser.current()).toBe(1);
-    const secondColumn = element.querySelectorAll('.yoya-vtreeranger-column')[1];
+    const secondColumn = element.querySelectorAll('[vn~="VTreeRangerColumn"]')[1];
     expect(secondColumn.textContent).toContain('项 1');
   });
 
@@ -91,7 +91,7 @@ describe('vTreeRanger', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(requests).toEqual([1]);
 
-    const list = element.querySelector('.yoya-vtreeranger-list');
+    const list = element.querySelector('[vn~="VTreeRangerList"]');
     Object.defineProperty(list, 'clientHeight', { configurable: true, value: 300 });
     Object.defineProperty(list, 'scrollHeight', { configurable: true, value: 100000 });
     Object.defineProperty(list, 'scrollTop', { configurable: true, value: 99700 });
@@ -134,7 +134,7 @@ describe('vTreeRanger', () => {
 
     element.querySelector('[data-index="0"]').click();
     await new Promise((resolve) => setTimeout(resolve, 20));
-    const secondColumn = element.querySelectorAll('.yoya-vtreeranger-column')[1];
+    const secondColumn = element.querySelectorAll('[vn~="VTreeRangerColumn"]')[1];
     expect(secondColumn.textContent).toContain('项 2');
 
     typeItems = [

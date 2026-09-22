@@ -1,7 +1,6 @@
 import { HtmlElementNode } from '../html/index.js';
 import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
   isPlainObject,
   normalizeComponentArguments,
   replaceChildren,
@@ -135,8 +134,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
         return root;
       }
 
-      root = new HtmlElementNode('div')
-        .className(componentClass, 'yoya-vtreeranger')
+      root = new HtmlElementNode('div', { vn: 'VTreeRanger' })
         .attr({ role: 'group', 'aria-label': state.ariaLabel })
         .styles({
           boxSizing: 'border-box',
@@ -223,7 +221,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
     }
 
     function createColumnView(slot) {
-      const status = new HtmlElementNode('div').className('yoya-vtreeranger-column-status').styles({
+      const status = new HtmlElementNode('div', { vn: 'VTreeRangerColumnStatus' }).styles({
         boxSizing: 'border-box',
         color: themeValue('color-text-muted', '#8b949e'),
         flex: '0 0 auto',
@@ -232,10 +230,12 @@ export function vTreeRanger(first = null, second = null, third = null) {
         padding: '6px 10px'
       });
 
-      const viewport = new HtmlElementNode('div')
-        .className('yoya-vtreeranger-viewport')
-        .styles({ boxSizing: 'border-box', minHeight: '100%', position: 'relative' });
-      const list = new HtmlElementNode('div').className('yoya-vtreeranger-list').styles({
+      const viewport = new HtmlElementNode('div', { vn: 'VTreeRangerViewport' }).styles({
+        boxSizing: 'border-box',
+        minHeight: '100%',
+        position: 'relative'
+      });
+      const list = new HtmlElementNode('div', { vn: 'VTreeRangerList' }).styles({
         boxSizing: 'border-box',
         flex: '1 1 auto',
         minHeight: '0',
@@ -251,8 +251,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
         maybeLoadMore(view);
       });
 
-      const columnRoot = new HtmlElementNode('div')
-        .className('yoya-vtreeranger-column')
+      const columnRoot = new HtmlElementNode('div', { vn: 'VTreeRangerColumn' })
         .attr('data-column', String(slot))
         .styles({
           boxSizing: 'border-box',
@@ -349,8 +348,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const selected = level.selected === key;
       const focused = level.focus === key;
 
-      const row = new HtmlElementNode('div')
-        .className('yoya-vtreeranger-row')
+      const row = new HtmlElementNode('div', { vn: 'VTreeRangerRow' })
         .attr({
           'aria-selected': selected ? 'true' : 'false',
           'data-key': String(key),
@@ -402,7 +400,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const iconContent =
         config && typeof config.icon === 'function' ? config.icon(item, itemIndex) : null;
       if (iconContent !== null && iconContent !== undefined) {
-        const iconBox = new HtmlElementNode('span').className('yoya-vtreeranger-icon').styles({
+        const iconBox = new HtmlElementNode('span', { vn: 'VTreeRangerIcon' }).styles({
           flex: '0 0 auto',
           fontSize: '12px',
           marginRight: '6px',
@@ -440,8 +438,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
     }
 
     function buildCrumbs() {
-      return new HtmlElementNode('div')
-        .className('yoya-vtreeranger-crumbs')
+      return new HtmlElementNode('div', { vn: 'VTreeRangerCrumbs' })
         .attr({ 'aria-label': '当前路径' })
         .styles({
           alignItems: 'center',
@@ -477,13 +474,13 @@ export function vTreeRanger(first = null, second = null, third = null) {
 
       segments.forEach((segment, index) => {
         if (index > 0) {
-          const separator = new HtmlElementNode('span')
-            .className('yoya-vtreeranger-crumb-separator')
-            .styles({
+          const separator = new HtmlElementNode('span', { vn: 'VTreeRangerCrumbSeparator' }).styles(
+            {
               color: themeValue('color-text-muted', '#8b949e'),
               flex: '0 0 auto',
               opacity: '0.7'
-            });
+            }
+          );
           separator.child('/');
           crumbs.child(separator);
         }
@@ -496,20 +493,17 @@ export function vTreeRanger(first = null, second = null, third = null) {
       if (segment.canJump) {
         attrs.tabindex = '0';
       }
-      const crumb = new HtmlElementNode('span')
-        .className('yoya-vtreeranger-crumb')
-        .attr(attrs)
-        .styles({
-          color: active
-            ? themeValue('color-text', '#1f2328')
-            : themeValue('color-text-secondary', '#57606a'),
-          cursor: segment.canJump ? 'pointer' : 'default',
-          flex: '0 0 auto',
-          fontWeight: active ? '600' : '400',
-          maxWidth: '240px',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        });
+      const crumb = new HtmlElementNode('span', { vn: 'VTreeRangerCrumb' }).attr(attrs).styles({
+        color: active
+          ? themeValue('color-text', '#1f2328')
+          : themeValue('color-text-secondary', '#57606a'),
+        cursor: segment.canJump ? 'pointer' : 'default',
+        flex: '0 0 auto',
+        fontWeight: active ? '600' : '400',
+        maxWidth: '240px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      });
       crumb.child(segment.text);
       if (segment.canJump) {
         crumb.on('click', () => jumpTo(segment.levelIndex));
