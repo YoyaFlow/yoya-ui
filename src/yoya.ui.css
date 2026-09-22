@@ -1810,6 +1810,70 @@ body {
     stroke-linejoin: round;
   }
 
+  :where([vn~='VTimeline']) {
+    position: relative;
+  }
+
+  [vn~='VTimeline'] [vn~='VTimelineLine'] {
+    background: var(--yoya-color-border, #e2e8f0);
+    bottom: 16px;
+    left: 11px;
+    position: absolute;
+    top: 8px;
+    width: 2px;
+    z-index: 0;
+  }
+
+  :where([vn~='VTimelineItem']) {
+    display: flex;
+    gap: 12px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemIndicator'] {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding-top: 6px;
+    width: 24px;
+    z-index: 1;
+  }
+
+  /* 状态色是状态（内联绑定），描边与尺寸是静态样式 */
+  [vn~='VTimelineItem'] [vn~='VTimelineItemDot'] {
+    border: 2px solid var(--yoya-color-surface, #ffffff);
+    border-radius: 50%;
+    height: 10px;
+    width: 10px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemBody'] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-bottom: 20px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemTitle'] {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemTime'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemContent'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 6px;
+  }
+
   :where([vn~='VProgress']) {
     align-items: center;
     box-sizing: border-box;

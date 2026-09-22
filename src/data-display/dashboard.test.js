@@ -125,19 +125,19 @@ describe('dashboard family', () => {
     });
     timeline.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vtimeline');
-    const items = element.querySelectorAll('.yoya-vtimeline-item');
+    const element = document.querySelector('[vn~="VTimeline"]');
+    const items = element.querySelectorAll('[vn~="VTimelineItem"]');
     expect(items).toHaveLength(2);
     const first = items[0];
-    expect(first.querySelector('.yoya-vtimeline-item-title').textContent).toBe('服务发布成功');
-    expect(first.querySelector('.yoya-vtimeline-item-time').textContent).toBe('09:32');
-    expect(first.querySelector('.yoya-vtimeline-item-content').textContent).toContain('v2.4.1');
-    expect(first.querySelector('.yoya-vtimeline-item-dot').getAttribute('style')).toContain(
+    expect(first.querySelector('[vn~="VTimelineItemTitle"]').textContent).toBe('服务发布成功');
+    expect(first.querySelector('[vn~="VTimelineItemTime"]').textContent).toBe('09:32');
+    expect(first.querySelector('[vn~="VTimelineItemContent"]').textContent).toContain('v2.4.1');
+    expect(first.querySelector('[vn~="VTimelineItemDot"]').getAttribute('style')).toContain(
       'color-success'
     );
-    expect(items[1].querySelector('.yoya-vtimeline-item-dot').getAttribute('style')).toContain(
+    expect(items[1].querySelector('[vn~="VTimelineItemDot"]').getAttribute('style')).toContain(
       'color-danger'
     );
-    expect(element.querySelector('.yoya-vtimeline-line')).not.toBeNull();
+    expect(element.querySelector('[vn~="VTimelineLine"]')).not.toBeNull();
   });
 });

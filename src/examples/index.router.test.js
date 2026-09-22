@@ -623,7 +623,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       ['/components/board/sparkline', '[vn~="VSparkline"]', 'SparklineDemo'],
       ['/components/board/ring-stat', '[vn~="VRingStat"]', 'RingStatDemo'],
       ['/components/board/gauge', '[vn~="VGauge"]', 'GaugeDemo'],
-      ['/components/board/timeline', '.yoya-vtimeline', 'TimelineDemo']
+      ['/components/board/timeline', '[vn~="VTimeline"]', 'TimelineDemo']
     ];
     for (const [path, selector, demoName] of cases) {
       await openRoute(path);
