@@ -1,9 +1,15 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
+import { registerChildFactories, vText } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
-import { createComponentShell } from '../components/component-shell.js';
 import {
-  componentClass,
+  HtmlElementNode,
+  button as buttonTag,
+  div,
+  input as inputTag,
+  span
+} from '../html/index.js';
+import {
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -61,31 +67,32 @@ const DEFAULT_PALETTE = [
 ];
 
 /**
- * vColorPicker 是带自定义弹窗的颜色选择器：触发器打开弹窗，
- * 弹窗内包含已选颜色（右键清除）、预设色板、透明度调节与已选颜色效果预览。
+ * 颜色选择器（形态 B，票 15 §4）：视图根是外壳 `div` + 触发按钮 + 弹窗。
+ *
+ * - 身份写在结构里：根 `vn: 'VColorPicker'`、触发按钮与里面的预览 / 文本
+ *   （`VColorPickerTrigger` / `VColorPickerTriggerPreview` / `VColorPickerTriggerText`）、
+ *   已选行（`VColorPickerSelected` / `VColorPickerSelectedPreview` / `VColorPickerSelectedText` /
+ *   `VColorPickerClearSelected`）、色板 `VColorPickerPalette`（色块 `VColorPickerSwatch`）、
+ *   侧栏 `VColorPickerSide`（效果 `VColorPickerEffect` / 透明度文本 `VColorPickerAlphaText`）、
+ *   弹窗 `VColorPickerPopup`；
+ * - 状态与命令收进 `vNode` 闭包；`change` 回调第二、三参照旧（alpha、组件句柄 `self.node()`）；
+ * - 元素级时机：旧 `renderDom()` / `destroy()` 猴补换 `whenMount` / `whenDestroy`
+ *   （弹窗定位与文档 / 窗口监听），读元素只读 `_el` 判定"建没建"；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupColorPicker` 同口径）。
  */
-class ColorPickerNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VColorPicker';
-    this.className(componentClass, 'yoya-vcolor-picker');
-    this.styles({ position: 'relative' });
+export function VColorPicker() {
+  return vNode((api, self) => {
+    const state = {
+      alpha: 100,
+      changeHandlers: [],
+      open: false,
+      presetColors: DEFAULT_PALETTE.slice(),
+      value: null
+    };
+    let outsideUnbind = null;
+    let repositionUnbind = null;
 
-    this._value = null;
-    this._alpha = 100;
-    this._presetColors = DEFAULT_PALETTE.slice();
-    this._changeHandlers = [];
-    this._open = false;
-    this._outsideListener = null;
-    this._repositionListener = null;
-
-    this._buildStructure();
-    this._setupColorPicker(setup);
-  }
-
-  _buildStructure() {
-    this._triggerPreview = new HtmlElementNode('span')
-      .className('yoya-vcolor-picker-trigger-preview')
+    const triggerPreview = span({ vn: 'VColorPickerTriggerPreview' })
       .attr('data-vcolor-trigger-preview', 'true')
       .styles({
         border: '1px solid var(--yoya-color-border, #d8dee8)',
@@ -95,15 +102,11 @@ class ColorPickerNode extends HtmlElementNode {
         height: '16px',
         width: '16px'
       });
-
-    this._triggerTextNode = vText('');
-    this._triggerText = new HtmlElementNode('span')
-      .className('yoya-vcolor-picker-trigger-text')
+    const triggerTextNode = vText('');
+    const triggerText = span({ vn: 'VColorPickerTriggerText' })
       .attr('data-vcolor-trigger-text', 'true')
-      .child(this._triggerTextNode);
-
-    this._trigger = new HtmlElementNode('button')
-      .className('yoya-vcolor-picker-trigger')
+      .child(triggerTextNode);
+    const trigger = buttonTag({ vn: 'VColorPickerTrigger' })
       .attr({
         'aria-expanded': 'false',
         'aria-haspopup': 'true',
@@ -122,24 +125,9 @@ class ColorPickerNode extends HtmlElementNode {
         gap: '8px',
         padding: '5px 10px'
       })
-      .child(this._triggerPreview, this._triggerText)
-      .on('click', () => this.toggle());
+      .child(triggerPreview, triggerText);
 
-    this._selected = new HtmlElementNode('div')
-      .className('yoya-vcolor-picker-selected')
-      .attr('data-vcolor-selected', 'true')
-      .styles({
-        alignItems: 'center',
-        background: 'var(--yoya-color-surface-hover, #f3f3f3)',
-        borderRadius: '6px',
-        display: 'flex',
-        gap: '8px',
-        justifyContent: 'space-between',
-        padding: '6px 8px'
-      });
-
-    this._selectedPreview = new HtmlElementNode('span')
-      .className('yoya-vcolor-picker-selected-preview')
+    const selectedPreview = span({ vn: 'VColorPickerSelectedPreview' })
       .attr('data-vcolor-selected-preview', 'true')
       .styles({
         border: '1px solid var(--yoya-color-border, #d8dee8)',
@@ -149,15 +137,11 @@ class ColorPickerNode extends HtmlElementNode {
         height: '18px',
         width: '18px'
       });
-
-    this._selectedTextNode = vText('');
-    this._selectedText = new HtmlElementNode('span')
-      .className('yoya-vcolor-picker-selected-text')
+    const selectedTextNode = vText('');
+    const selectedText = span({ vn: 'VColorPickerSelectedText' })
       .attr('data-vcolor-selected-text', 'true')
-      .child(this._selectedTextNode);
-
-    this._clearSelectedButton = new HtmlElementNode('button')
-      .className('yoya-vcolor-picker-clear-selected')
+      .child(selectedTextNode);
+    const clearSelectedButton = buttonTag({ vn: 'VColorPickerClearSelected' })
       .attr({
         'aria-label': '清除已选颜色',
         'data-vcolor-clear-selected': 'true',
@@ -172,13 +156,22 @@ class ColorPickerNode extends HtmlElementNode {
         fontSize: '12px',
         padding: '0'
       })
-      .child('清除')
-      .on('click', () => this.clearValue());
+      .child('清除');
+    const selected = div({ vn: 'VColorPickerSelected' })
+      .attr('data-vcolor-selected', 'true')
+      .styles({
+        alignItems: 'center',
+        background: 'var(--yoya-color-surface-hover, #f3f3f3)',
+        borderRadius: '6px',
+        display: 'flex',
+        gap: '8px',
+        justifyContent: 'space-between',
+        padding: '6px 8px'
+      });
 
-    this._selected.child(this._selectedPreview, this._selectedText, this._clearSelectedButton);
+    selected.child(selectedPreview, selectedText, clearSelectedButton);
 
-    this._paletteBox = new HtmlElementNode('div')
-      .className('yoya-vcolor-picker-palette')
+    const paletteBox = div({ vn: 'VColorPickerPalette' })
       .attr('data-vcolor-palette', 'true')
       .styles({
         display: 'grid',
@@ -186,8 +179,8 @@ class ColorPickerNode extends HtmlElementNode {
         gridTemplateColumns: 'repeat(8, 18px)'
       });
 
-    this._alphaTextNode = vText('100%');
-    this._alphaInput = new HtmlElementNode('input')
+    const alphaTextNode = vText('100%');
+    const alphaInput = inputTag()
       .attr({
         'data-vcolor-alpha': 'true',
         max: '100',
@@ -200,11 +193,8 @@ class ColorPickerNode extends HtmlElementNode {
         height: '84px',
         margin: '0',
         writingMode: 'vertical-lr'
-      })
-      .on('input', (event) => this.alpha(Number(event.target.value)));
-
-    this._alphaText = new HtmlElementNode('span')
-      .className('yoya-vcolor-picker-alpha-text')
+      });
+    const alphaText = span({ vn: 'VColorPickerAlphaText' })
       .attr('data-vcolor-alpha-text', 'true')
       .styles({
         color: themeValue('color-text-muted', '#64748b'),
@@ -212,16 +202,14 @@ class ColorPickerNode extends HtmlElementNode {
         minWidth: '34px',
         textAlign: 'right'
       })
-      .child(this._alphaTextNode);
+      .child(alphaTextNode);
 
-    this._effectFill = new HtmlElementNode('div').attr('data-vcolor-effect-fill', 'true').styles({
+    const effectFill = div({ 'data-vcolor-effect-fill': 'true' }).styles({
       borderRadius: '5px',
       height: '100%',
       width: '100%'
     });
-
-    this._effectBox = new HtmlElementNode('div')
-      .className('yoya-vcolor-picker-effect')
+    const effectBox = div({ vn: 'VColorPickerEffect' })
       .attr('data-vcolor-effect', 'true')
       .styles({
         backgroundImage: 'conic-gradient(#d3d3d3 25%, #ffffff 0 50%, #d3d3d3 0 75%, #ffffff 0)',
@@ -232,10 +220,8 @@ class ColorPickerNode extends HtmlElementNode {
         height: '28px',
         width: '28px'
       })
-      .child(this._effectFill);
-
-    this._sidePanel = new HtmlElementNode('div')
-      .className('yoya-vcolor-picker-side')
+      .child(effectFill);
+    const sidePanel = div({ vn: 'VColorPickerSide' })
       .styles({
         alignItems: 'center',
         display: 'flex',
@@ -243,10 +229,8 @@ class ColorPickerNode extends HtmlElementNode {
         gap: '8px',
         minWidth: '28px'
       })
-      .child(this._effectBox, this._alphaInput, this._alphaText);
-
-    this._panel = new HtmlElementNode('div')
-      .className('yoya-vcolor-picker-popup')
+      .child(effectBox, alphaInput, alphaText);
+    const panel = div({ vn: 'VColorPickerPopup' })
       .attr('data-vcolor-popup', 'true')
       .styles({
         background: 'var(--yoya-color-surface, #ffffff)',
@@ -263,327 +247,299 @@ class ColorPickerNode extends HtmlElementNode {
         zIndex: '110'
       })
       .child(
-        this._selected,
-        new HtmlElementNode('div')
-          .styles({
-            display: 'flex',
-            gap: '12px',
-            marginTop: '10px'
-          })
-          .child(this._paletteBox, this._sidePanel)
+        selected,
+        div({
+          style: { display: 'flex', gap: '12px', marginTop: '10px' }
+        }).child(paletteBox, sidePanel)
       );
+    const node = div({ vn: 'VColorPicker' }).styles({ position: 'relative' });
 
-    this.child(this._trigger, this._panel);
-    this._renderPalette();
-    this._sync();
-  }
+    node.child(trigger, panel);
 
-  /** 读写当前颜色（#rgb / #rrggbb）；null 表示未选择。 */
-  value(next) {
-    if (next === undefined) {
-      return this._value;
-    }
+    const createSwatch = (color) =>
+      buttonTag({ vn: 'VColorPickerSwatch' })
+        .attr({
+          'aria-label': `选择颜色 ${color}`,
+          'data-vcolor-swatch': color,
+          title: color,
+          type: 'button'
+        })
+        .styles({
+          background: color,
+          border: '1px solid var(--yoya-color-border, #d8dee8)',
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          cursor: 'pointer',
+          height: '18px',
+          padding: '0',
+          width: '18px'
+        })
+        .on('click', () => api.value(color));
 
-    if (next === null) {
-      return this.clearValue();
-    }
+    const renderPalette = () => {
+      replaceChildren(
+        paletteBox,
+        state.presetColors.map((color) => createSwatch(color))
+      );
+    };
 
-    const normalized = normalizeColor(next);
-    if (!normalized) {
-      return this;
-    }
-
-    this._value = normalized;
-    this._sync();
-    this._notifyChange();
-    return this;
-  }
-
-  /** 读写透明度（0-100）。 */
-  alpha(next) {
-    if (next === undefined) {
-      return this._alpha;
-    }
-
-    const value = Number(next);
-    this._alpha = Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 100;
-    this._sync();
-    this._notifyChange();
-    return this;
-  }
-
-  /** 返回带透明度的 rgba() 颜色串；未选择颜色时返回 null。 */
-  rgba() {
-    if (!this._value) {
-      return null;
-    }
-
-    const hex = this._value.slice(1);
-    const red = parseInt(hex.slice(0, 2), 16);
-    const green = parseInt(hex.slice(2, 4), 16);
-    const blue = parseInt(hex.slice(4, 6), 16);
-    const alpha = Math.round((this._alpha / 100) * 1000) / 1000;
-    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-  }
-
-  /** 清除已选颜色。 */
-  clearValue() {
-    this._value = null;
-    this._sync();
-    this._notifyChange();
-    return this;
-  }
-
-  /** 打开/关闭弹窗。 */
-  open(value = true) {
-    this._open = Boolean(value);
-    this._trigger.attr('aria-expanded', this._open ? 'true' : 'false');
-    if (this._open) {
-      this._panel.style('display', null);
-      this._positionPanel();
-    } else {
-      this._panel.style('display', 'none');
-    }
-    this._bindOutsideClose(this._open);
-    this._bindReposition(this._open);
-    return this;
-  }
-
-  close() {
-    return this.open(false);
-  }
-
-  toggle() {
-    return this.open(!this._open);
-  }
-
-  /** 读写预设色板。 */
-  palette(next) {
-    if (next === undefined) {
-      return [...this._presetColors];
-    }
-
-    this._presetColors = normalizeFavorites(next);
-    this._renderPalette();
-    return this;
-  }
-
-  /** 注册颜色变化回调（color, alpha, picker）。 */
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-
-    this._changeHandlers = [handler];
-    return this;
-  }
-
-  /** change 的别名。 */
-  onChange(handler) {
-    return this.change(handler);
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (this._open) {
-      this._positionPanel();
-    }
-    return element;
-  }
-
-  destroy() {
-    this._bindOutsideClose(false);
-    this._bindReposition(false);
-    return super.destroy();
-  }
-
-  _bindOutsideClose(enabled) {
-    if (enabled && !this._outsideUnbind) {
-      this._outsideListener = (event) => {
-        if (!this._el || !this._el.contains(event.target)) {
-          this.close();
-        }
-      };
-      this._outsideUnbind = bindDocumentEvent('mousedown', this._outsideListener);
-      return;
-    }
-
-    if (!enabled && this._outsideUnbind) {
-      this._outsideUnbind();
-      this._outsideListener = null;
-      this._outsideUnbind = null;
-    }
-  }
-
-  _bindReposition(enabled) {
-    if (enabled && !this._repositionUnbind) {
-      this._repositionListener = () => this._positionPanel();
-      const unbindScroll = bindWindowEvent('scroll', this._repositionListener, true);
-      const unbindResize = bindWindowEvent('resize', this._repositionListener);
-      this._repositionUnbind = () => {
-        unbindScroll();
-        unbindResize();
-      };
-      return;
-    }
-
-    if (!enabled && this._repositionUnbind) {
-      this._repositionUnbind();
-      this._repositionListener = null;
-      this._repositionUnbind = null;
-    }
-  }
-
-  /** 弹窗以 fixed 定位在触发器下方，避免被父容器 overflow 裁剪。 */
-  _positionPanel() {
-    if (
-      typeof window === 'undefined' ||
-      typeof document === 'undefined' ||
-      !this._el ||
-      !this._trigger._el
-    ) {
-      return;
-    }
-
-    const rect = this._trigger._el.getBoundingClientRect();
-    const panel = this._panel._el;
-    if (!panel) {
-      return;
-    }
-
-    const panelWidth = panel.offsetWidth || 250;
-    const panelHeight = panel.offsetHeight || 280;
-    const margin = 8;
-    let left = rect.left;
-    if (left + panelWidth > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - panelWidth - margin);
-    }
-    let top = rect.bottom + 6;
-    if (top + panelHeight > window.innerHeight - margin) {
-      top = Math.max(margin, rect.top - panelHeight - 6);
-    }
-
-    this._panel.styles({
-      left: `${left}px`,
-      position: 'fixed',
-      top: `${top}px`
-    });
-  }
-
-  _sync() {
-    const color = this._value;
-    const rgba = this.rgba();
-    const label = color ? `${color} ${this._alpha}%` : '选择颜色';
-    this._triggerPreview.style('background', rgba || 'transparent');
-    this._triggerTextNode.textContent(label);
-    this._selectedPreview.style('background', rgba || 'transparent');
-    this._selectedTextNode.textContent(color ? label : '未选择');
-    this._alphaInput.attr('value', String(this._alpha));
-    this._alphaTextNode.textContent(`${this._alpha}%`);
-    this._effectFill.style('background', rgba || 'transparent');
-    return this;
-  }
-
-  _notifyChange() {
-    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-    this._changeHandlers.forEach((handler) =>
-      handler(this._value, this._alpha, this._componentHandle ?? this)
-    );
-  }
-
-  _renderPalette() {
-    replaceChildren(
-      this._paletteBox,
-      this._presetColors.map((color) => this._createSwatch(color))
-    );
-    return this;
-  }
-
-  _createSwatch(color) {
-    return new HtmlElementNode('button')
-      .className('yoya-vcolor-picker-swatch')
-      .attr({
-        'aria-label': `选择颜色 ${color}`,
-        'data-vcolor-swatch': color,
-        title: color,
-        type: 'button'
-      })
-      .styles({
-        background: color,
-        border: '1px solid var(--yoya-color-border, #d8dee8)',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        cursor: 'pointer',
-        height: '18px',
-        padding: '0',
-        width: '18px'
-      })
-      .on('click', () => this.value(color));
-  }
-
-  _setupColorPicker(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const { alpha, change, color, onChange, open, palette, value, ...elementConfig } = setup;
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+    const bindOutsideClose = (enabled) => {
+      if (enabled && !outsideUnbind) {
+        outsideUnbind = bindDocumentEvent('mousedown', (event) => {
+          if (!node._el || !node._el.contains(event.target)) {
+            api.close();
+          }
+        });
+        return;
       }
+
+      if (!enabled && outsideUnbind) {
+        outsideUnbind();
+        outsideUnbind = null;
+      }
+    };
+
+    const bindReposition = (enabled) => {
+      if (enabled && !repositionUnbind) {
+        const reposition = () => positionPanel();
+        const unbindScroll = bindWindowEvent('scroll', reposition, true);
+        const unbindResize = bindWindowEvent('resize', reposition);
+
+        repositionUnbind = () => {
+          unbindScroll();
+          unbindResize();
+        };
+        return;
+      }
+
+      if (!enabled && repositionUnbind) {
+        repositionUnbind();
+        repositionUnbind = null;
+      }
+    };
+
+    /** 弹窗以 fixed 定位在触发器下方，避免被父容器 overflow 裁剪。 */
+    const positionPanel = () => {
+      if (typeof window === 'undefined' || !node._el || !trigger._el) {
+        return;
+      }
+
+      const rect = trigger._el.getBoundingClientRect();
+      const panelElement = panel._el;
+
+      if (!panelElement) {
+        return;
+      }
+
+      const panelWidth = panelElement.offsetWidth || 250;
+      const panelHeight = panelElement.offsetHeight || 280;
+      const margin = 8;
+      let left = rect.left;
+
+      if (left + panelWidth > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - panelWidth - margin);
+      }
+
+      let top = rect.bottom + 6;
+
+      if (top + panelHeight > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - panelHeight - 6);
+      }
+
+      panel.styles({
+        left: `${left}px`,
+        position: 'fixed',
+        top: `${top}px`
+      });
+    };
+
+    /** 带透明度的 rgba() 颜色串；未选择颜色时为 null。 */
+    const rgba = () => {
+      if (!state.value) {
+        return null;
+      }
+
+      const hex = state.value.slice(1);
+      const red = parseInt(hex.slice(0, 2), 16);
+      const green = parseInt(hex.slice(2, 4), 16);
+      const blue = parseInt(hex.slice(4, 6), 16);
+      const alpha = Math.round((state.alpha / 100) * 1000) / 1000;
+
+      return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+    };
+
+    const sync = () => {
+      const color = state.value;
+      const colorValue = rgba();
+      const label = color ? `${color} ${state.alpha}%` : '选择颜色';
+
+      triggerPreview.style('background', colorValue || 'transparent');
+      triggerTextNode.textContent(label);
+      selectedPreview.style('background', colorValue || 'transparent');
+      selectedTextNode.textContent(color ? label : '未选择');
+      alphaInput.attr('value', String(state.alpha));
+      alphaTextNode.textContent(`${state.alpha}%`);
+      effectFill.style('background', colorValue || 'transparent');
+    };
+
+    /** 句柄交给使用方的是组件节点（与旧外壳的 `_componentHandle` 同一口径） */
+    const notifyChange = () => {
+      state.changeHandlers.forEach((handler) => handler(state.value, state.alpha, self.node()));
+    };
+
+    trigger.on('click', () => api.toggle());
+    clearSelectedButton.on('click', () => api.clearValue());
+    alphaInput.on('input', (event) => api.alpha(Number(event.target.value)));
+
+    /** 读写当前颜色（#rgb / #rrggbb）；null 表示未选择。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return state.value;
+      }
+
+      if (next === null) {
+        return api.clearValue();
+      }
+
+      const normalized = normalizeColor(next);
+
+      if (!normalized) {
+        return api;
+      }
+
+      state.value = normalized;
+      sync();
+      notifyChange();
+      return api;
+    };
+
+    /** 读写透明度（0-100）。 */
+    api.alpha = (next) => {
+      if (next === undefined) {
+        return state.alpha;
+      }
+
+      const value = Number(next);
+
+      state.alpha = Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 100;
+      sync();
+      notifyChange();
+      return api;
+    };
+
+    api.rgba = () => rgba();
+
+    /** 清除已选颜色。 */
+    api.clearValue = () => {
+      state.value = null;
+      sync();
+      notifyChange();
+      return api;
+    };
+
+    /** 打开/关闭弹窗。 */
+    api.open = (value = true) => {
+      state.open = Boolean(value);
+      trigger.attr('aria-expanded', state.open ? 'true' : 'false');
+
+      if (state.open) {
+        panel.style('display', null);
+        positionPanel();
+      } else {
+        panel.style('display', 'none');
+      }
+
+      bindOutsideClose(state.open);
+      bindReposition(state.open);
+      return api;
+    };
+
+    api.close = () => api.open(false);
+
+    api.toggle = () => api.open(!state.open);
+
+    /** 读写预设色板。 */
+    api.palette = (next) => {
+      if (next === undefined) {
+        return [...state.presetColors];
+      }
+
+      state.presetColors = normalizeFavorites(next);
+      renderPalette();
+      return api;
+    };
+
+    /** 注册颜色变化回调（color, alpha, picker）；后一次注册替换前一次。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    /** change 的别名。 */
+    api.onChange = (handler) => api.change(handler);
+
+    /** 字符串 = 初始颜色（旧 `_setupColorPicker` 的兜底分支）。 */
+    api.setupString = (next) => api.value(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupColorPicker` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
+      const { alpha, change, color, onChange, open, palette, value, ...elementConfig } = setup;
+
+      if (Object.keys(elementConfig).length > 0) {
+        node.setup(elementConfig);
+      }
+
       if (palette !== undefined) {
-        this.palette(palette);
+        api.palette(palette);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       } else if (color !== undefined) {
-        this.value(color);
+        api.value(color);
       }
       if (alpha !== undefined) {
-        this.alpha(alpha);
+        api.alpha(alpha);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
       if (open !== undefined) {
-        this.open(open);
+        api.open(open);
       }
-      return;
-    }
 
-    this.value(setup);
-  }
-}
+      return api;
+    };
 
-export function vColorPicker(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VColorPicker',
-    createNode: (setup) => new ColorPickerNode(setup),
-    commands: [
-      'value',
-      'alpha',
-      'rgba',
-      'clearValue',
-      'open',
-      'close',
-      'toggle',
-      'palette',
-      'change',
-      'onChange'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    // 旧 `renderDom()` 猴补的等价物：落地时若已展开，补一次弹窗定位
+    api.whenMount = () => {
+      if (state.open) {
+        positionPanel();
+      }
+    };
+
+    // 旧 `destroy()` 猴补的等价物：解绑文档 / 窗口监听
+    api.whenDestroy = () => {
+      bindOutsideClose(false);
+      bindReposition(false);
+    };
+
+    renderPalette();
+    sync();
+    return node;
   });
 }
 
-export const VColorPicker = vColorPicker;
-defineComponentIdentity(VColorPicker, 'VColorPicker');
+export const vColorPicker = createComponentShortcut(VColorPicker);
 
 registerChildFactories(HtmlElementNode, { vColorPicker });
 
@@ -594,6 +550,7 @@ function normalizeColor(value) {
 
   const text = String(value).trim();
   const short = /^#([0-9a-f]{3})$/i.exec(text);
+
   if (short) {
     return `#${short[1]
       .split('')

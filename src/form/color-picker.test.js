@@ -9,7 +9,7 @@ describe('vColorPicker', () => {
   it('renders a trigger and a closed custom popup with palette, alpha and effect', () => {
     const element = vColorPicker().renderDom();
 
-    expect(element.className).toContain('yoya-vcolor-picker');
+    expect(element.getAttribute('vn')).toBe('VColorPicker');
     expect(element.querySelector('[data-vcolor-trigger]')).not.toBeNull();
     const popup = element.querySelector('[data-vcolor-popup]');
     expect(popup).not.toBeNull();
@@ -87,6 +87,6 @@ describe('vColorPicker', () => {
 
   it('registers the parent shortcut', () => {
     const root = div((page) => page.vColorPicker());
-    expect(root.renderDom().querySelector('.yoya-vcolor-picker')).not.toBeNull();
+    expect(root.renderDom().querySelector('[vn~="VColorPicker"]')).not.toBeNull();
   });
 });
