@@ -7,12 +7,13 @@ import {
   ViewNode,
   vText
 } from '../core/index.js';
+import { applySetupValue } from '../core/node.js';
 import {
   bindDocumentEvent,
   bindWindowEvent,
   injectDocumentStyle
 } from '../core/document-events.js';
-import { themeBorder, themeValue } from '../components/shared.js';
+import { replaceChildren, themeBorder, themeValue } from '../components/shared.js';
 import { createComponentFactory, createComponentShortcut } from '../components/shared.js';
 import { vSlot } from '../layout/v-slot.js';
 import { vNode } from '../core/v-node.js';
@@ -73,10 +74,9 @@ function ensureScrollbarStyle() {
 }
 
 function createRouterViewsStorageKey(routerInstance) {
-  const source = [
-    routerInstance._defaultPath || '/',
-    routerInstance._routes.map((route) => route.pattern).join('|')
-  ].join('::');
+  const source = [routerInstance.default() || '/', routerInstance.routePatterns().join('|')].join(
+    '::'
+  );
   let hash = 0;
 
   for (let index = 0; index < source.length; index += 1) {
@@ -101,441 +101,449 @@ function readSavedTabs(storageKey) {
  * Router 是一个很轻的 hash 路由出口。
  * 它负责路径匹配、参数提取、守卫和把路由视图渲染到自身节点内。
  */
-export class Router extends ElementNode {
-  constructor(setup = null) {
-    super('div');
-    this._routes = [];
-    this._defaultPath = null;
-    this._notFoundView = null;
-    this._beforeEach = null;
-    this._currentPath = '/';
-    this._currentParams = {};
-    this._currentQuery = {};
-    this._currentRoute = null;
-    this._currentView = null;
-    this._loadingView = null;
-    this._errorView = null;
-    this._navigationGeneration = 0;
-    this._outlet = this;
-    this._subscribers = new Set();
-    this._ignoreNextHashPath = null;
-    this._mode = 'hash';
-    this._started = false;
-    this._onHashChange = () => this._handleHashChange();
-    this._onPopState = () => this._handlePopState();
-    this.attr('data-yoya-router', '');
-
-    if (setup !== null) {
-      this.setup(setup);
-    }
-  }
-
-  /**
-   * 设置无 hash 时进入的默认路径。
-   */
-  default(path) {
-    this._defaultPath = normalizePath(path);
-    return this;
-  }
-
-  mode(value) {
-    if (value === undefined) {
-      return this._mode;
-    }
-
-    const nextMode = value === 'history' ? 'history' : 'hash';
-
-    if (nextMode === this._mode) {
-      return this;
-    }
-
-    const wasStarted = this._started;
-    if (wasStarted) {
-      this.stop();
-    }
-
-    this._mode = nextMode;
-
-    if (wasStarted) {
-      this.start();
-    }
-
-    return this;
-  }
-
-  /**
-   * 添加路由。config 可以是视图函数，也可以是 { view/component, beforeEnter }。
-   */
-  route(pattern, config) {
-    const route = normalizeRoute(pattern, config);
-    this._routes.push(route);
-    return this;
-  }
-
-  /**
-   * 设置未匹配路由的视图函数。
-   */
-  notFound(view) {
-    this._notFoundView = view;
-    return this;
-  }
-
-  /**
-   * 设置异步路由视图加载中的默认视图。支持 ViewNode、文本或 (context) => view 函数。
-   */
-  loading(view) {
-    this._loadingView = view;
-    return this;
-  }
-
-  /**
-   * 设置异步路由视图加载失败的默认视图。支持 ViewNode、文本或 (error, context) => view 函数。
-   */
-  error(view) {
-    this._errorView = view;
-    return this;
-  }
-
-  /**
-   * 设置全局前置守卫，返回 false 时阻止导航。
-   */
-  beforeEach(guard) {
-    this._beforeEach = guard;
-    return this;
-  }
-
-  start() {
-    if (!this._started) {
-      if (this._mode === 'history') {
-        this._stopListening = bindWindowEvent('popstate', this._onPopState);
-      } else {
-        this._stopListening = bindWindowEvent('hashchange', this._onHashChange);
-      }
-      this._started = true;
-    }
-
-    const currentPath = readPath(this._mode);
-    const isDefaultLocation =
-      this._mode === 'history'
-        ? currentPath === '/' || currentPath === '/index.html'
-        : !window.location.hash;
-
-    if (isDefaultLocation && this._defaultPath) {
-      return this.navigate(this._defaultPath, { replace: true });
-    }
-
-    return this.refresh();
-  }
-
-  stop() {
-    if (this._started) {
-      this._stopListening?.();
-      this._stopListening = null;
-      this._started = false;
-    }
-
-    return this;
-  }
-
-  /**
-   * 导航到指定路径。replace 为 true 时不新增浏览器历史记录。
-   */
-  navigate(path, options = {}) {
-    // 外部地址（未注册）直接整页跳转
-    if (isDocumentUrl(path)) {
-      return this.navigateDocument(String(path).trim(), options);
-    }
-
-    const nextPath = normalizePath(path);
-    const resolved = this._resolve(nextPath);
-
-    if (!this._canEnter(resolved.context)) {
-      return this;
-    }
-
-    // 文档路由：渲染占位视图，然后把地址交给浏览器（整页跳转，不 pushState）
-    if (resolved.route?.url) {
-      this._renderResolved(resolved);
-      return this.navigateDocument(resolved.route.url, {
-        replace: Boolean(options.replace || resolved.route.replace)
-      });
-    }
-
-    const pathChanged = writePath(nextPath, options, this._mode);
-    if (pathChanged && !options.replace && this._mode === 'hash') {
-      this._ignoreNextHashPath = nextPath;
-    }
-    this._renderResolved(resolved);
-    return this;
-  }
-
-  refresh() {
-    const nextPath = readPath(this._mode);
-    const resolved = this._resolve(nextPath);
-
-    if (!this._canEnter(resolved.context)) {
-      return this;
-    }
-
-    this._renderResolved(resolved);
-    return this;
-  }
-
-  /**
-   * 服务端渲染入口：按路径解析并渲染匹配视图到自身节点，不依赖 window。
-   * 守卫返回 false 时不提交；异步视图在服务端序列化其 loading 视图。
-   */
-  renderPath(path) {
-    const resolved = this._resolve(path);
-
-    if (!this._canEnter(resolved.context)) {
-      return this;
-    }
-
-    this._renderResolved(resolved);
-    return this;
-  }
-
-  /**
-   * 整页跳转出口：文档路由（内部 HTML 地址 / 外部链接）默认走这里。
-   * 宿主环境可以覆盖以接入自己的跳转实现；无 window（服务端）时是 no-op。
-   */
-  navigateDocument(url, options = {}) {
-    if (!url || typeof window === 'undefined') {
-      return this;
-    }
-
-    if (options.replace) {
-      window.location.replace(url);
-    } else {
-      window.location.assign(url);
-    }
-
-    return this;
-  }
-
-  currentPath() {
-    return this._currentPath;
-  }
-
-  currentParams() {
-    return { ...this._currentParams };
-  }
-
-  currentQuery() {
-    return { ...this._currentQuery };
-  }
-
-  currentRoute() {
-    return this._currentRoute;
-  }
-
-  currentView() {
-    return this._currentView;
-  }
-
-  outlet(value) {
-    if (value === undefined) return this._outlet;
-    if (!(value instanceof ElementNode)) {
-      throw new TypeError('Router outlet must be an ElementNode');
-    }
-    this._outlet = value;
-    return this;
-  }
-
-  subscribe(listener) {
-    if (typeof listener !== 'function') {
-      throw new TypeError('Router subscriber must be a function');
-    }
-    this._subscribers.add(listener);
-    return () => this._subscribers.delete(listener);
-  }
-
-  go(delta) {
-    window.history.go(delta);
-    return this;
-  }
-
-  back() {
-    return this.go(-1);
-  }
-
-  forward() {
-    return this.go(1);
-  }
-
-  destroy() {
-    this.stop();
-    this._navigationGeneration += 1;
-    this._destroyCurrentView();
-    this._subscribers.clear();
-    return super.destroy();
-  }
-
-  _resolve(path) {
-    const routeMatch = this._routes
-      .map((route) => ({ route, match: matchRoute(route.pattern, path) }))
-      .find(({ match }) => match);
-
-    if (routeMatch) {
-      const context = createRouteContext(this, path, routeMatch.route, routeMatch.match);
-      return { context, route: routeMatch.route, view: routeMatch.route.view };
-    }
-
-    const parsed = parsePath(path);
-    const context = createRouteContext(this, path, null, {
-      params: {},
-      pathname: parsed.pathname,
-      query: parsed.query
-    });
-
-    return { context, route: null, view: this._notFoundView };
-  }
-
-  _handleHashChange() {
-    const nextPath = readHashPath();
-
-    if (this._ignoreNextHashPath === nextPath) {
-      this._ignoreNextHashPath = null;
-      return this;
-    }
-
-    this._ignoreNextHashPath = null;
-
-    if (nextPath === this._currentPath) {
-      return this;
-    }
-
-    return this.refresh();
-  }
-
-  _handlePopState() {
-    this._ignoreNextHashPath = null;
-    return this.refresh();
-  }
-
-  _canEnter(to) {
-    const from = {
-      params: this.currentParams(),
-      path: this._currentPath,
-      query: this.currentQuery(),
-      route: this._currentRoute
+export function VRouter() {
+  return vNode((api, self) => {
+    const state = {
+      beforeEach: null,
+      currentParams: {},
+      currentPath: '/',
+      currentQuery: {},
+      currentRoute: null,
+      currentView: null,
+      defaultPath: null,
+      destroyed: false,
+      errorView: null,
+      ignoreNextHashPath: null,
+      loadingView: null,
+      mode: 'hash',
+      navigationGeneration: 0,
+      notFoundView: null,
+      outlet: null,
+      routes: [],
+      started: false,
+      stopListening: null,
+      subscribers: new Set()
     };
 
-    if (this._beforeEach && this._beforeEach(to, from, this) === false) {
-      return false;
-    }
+    const router = () => self.node();
 
-    if (to.route?.beforeEnter && to.route.beforeEnter(to, from, this) === false) {
-      return false;
-    }
+    const resolve = (path) => {
+      const routeMatch = state.routes
+        .map((route) => ({ match: matchRoute(route.pattern, path), route }))
+        .find(({ match }) => match);
 
-    return true;
-  }
-
-  _renderResolved(resolved) {
-    const { context, route, view } = resolved;
-
-    // 路由视图在挂进 outlet 之前就构建完成（同步与异步两条路径），构建帧因此要由
-    // 构建方显式声明：视图里的 inject 才能读到 outlet 祖先的 provide，视图自己声明的
-    // provide 也只落在产出的子树上，不外溢给 outlet 的同级。
-    const buildInOutletScope = (build) => buildInProviderScope(this._outlet, build);
-
-    // 文档路由：不渲染 SPA 视图，交出一个「正在跳转」的占位（含可点的真实链接）。
-    // refresh() / popstate 落到这类路由时只渲染占位、不重复整页跳转，避免回退死循环。
-    if (route?.url) {
-      this._navigationGeneration += 1;
-      this._commitView(
-        resolved,
-        buildInOutletScope(() => buildDocumentView(route, context))
-      );
-      return;
-    }
-
-    const result = buildInOutletScope(() => (typeof view === 'function' ? view(context) : view));
-
-    this._navigationGeneration += 1;
-
-    if (!isPromiseLike(result)) {
-      this._commitView(
-        resolved,
-        buildInOutletScope(() => normalizeRouteView(result, context))
-      );
-      return;
-    }
-
-    const generation = this._navigationGeneration;
-    this._commitView(
-      resolved,
-      buildInOutletScope(() => this._buildLoadingView(route, context))
-    );
-    Promise.resolve(result).then(
-      (value) => {
-        if (generation !== this._navigationGeneration || this._deleted) return value;
-        let nextView;
-        try {
-          nextView = buildInOutletScope(() => normalizeRouteView(value, context));
-        } catch (error) {
-          this._commitView(
-            resolved,
-            buildInOutletScope(() => this._buildErrorView(route, context, error))
-          );
-          return value;
-        }
-        this._commitView(resolved, nextView);
-        return value;
-      },
-      (error) => {
-        if (generation !== this._navigationGeneration || this._deleted) return error;
-        this._commitView(
-          resolved,
-          buildInOutletScope(() => this._buildErrorView(route, context, error))
-        );
-        return error;
+      if (routeMatch) {
+        const context = createRouteContext(router(), path, routeMatch.route, routeMatch.match);
+        return { context, route: routeMatch.route, view: routeMatch.route.view };
       }
-    );
-  }
 
-  _commitView(resolved, nextView) {
-    const { context, route } = resolved;
-    const outlet = this._outlet;
+      const parsed = parsePath(path);
+      const context = createRouteContext(router(), path, null, {
+        params: {},
+        pathname: parsed.pathname,
+        query: parsed.query
+      });
 
-    this._destroyCurrentView();
-    outlet._children = [];
+      return { context, route: null, view: state.notFoundView };
+    };
 
-    if (outlet._el) {
-      outlet._el.replaceChildren();
-    }
+    const canEnter = (to) => {
+      const from = {
+        params: { ...state.currentParams },
+        path: state.currentPath,
+        query: { ...state.currentQuery },
+        route: state.currentRoute
+      };
 
-    outlet.child(nextView);
-    this._currentPath = context.path;
-    this._currentParams = context.params;
-    this._currentQuery = context.query;
-    this._currentRoute = route;
-    this._currentView = nextView;
-    this._subscribers.forEach((listener) => listener(context, this));
-  }
+      if (state.beforeEach && state.beforeEach(to, from, router()) === false) {
+        return false;
+      }
 
-  _buildLoadingView(route, context) {
-    return resolveRouteEntry(route?.loading ?? this._loadingView ?? defaultLoadingView, [context]);
-  }
+      if (to.route?.beforeEnter && to.route.beforeEnter(to, from, router()) === false) {
+        return false;
+      }
 
-  _buildErrorView(route, context, error) {
-    return resolveRouteEntry(route?.error ?? this._errorView ?? defaultErrorView, [error, context]);
-  }
+      return true;
+    };
 
-  _destroyCurrentView() {
-    if (this._currentView?.destroy) {
-      this._currentView.destroy();
-    }
+    const buildLoadingView = (route, context) =>
+      resolveRouteEntry(route?.loading ?? state.loadingView ?? defaultLoadingView, [context]);
 
-    this._currentView = null;
-  }
+    const buildErrorView = (route, context, error) =>
+      resolveRouteEntry(route?.error ?? state.errorView ?? defaultErrorView, [error, context]);
+
+    const destroyCurrentView = () => {
+      state.currentView?.destroy?.();
+      state.currentView = null;
+    };
+
+    /** 提交一次导航结果：出口换成新视图，状态与订阅者一起收口。 */
+    const commitView = (resolved, nextView) => {
+      const { context, route } = resolved;
+      const outlet = state.outlet;
+
+      destroyCurrentView();
+      replaceChildren(outlet, [nextView]);
+      state.currentPath = context.path;
+      state.currentParams = context.params;
+      state.currentQuery = context.query;
+      state.currentRoute = route;
+      state.currentView = nextView;
+      state.subscribers.forEach((listener) => listener(context, router()));
+    };
+
+    const renderResolved = (resolved) => {
+      const { context, route, view } = resolved;
+
+      // 路由视图在挂进 outlet 之前就构建完成（同步与异步两条路径），构建帧因此要由
+      // 构建方显式声明：视图里的 inject 才能读到 outlet 祖先的 provide，视图自己声明的
+      // provide 也只落在产出的子树上，不外溢给 outlet 的同级。
+      const buildInOutletScope = (build) => buildInProviderScope(state.outlet, build);
+
+      // 文档路由：不渲染 SPA 视图，交出一个「正在跳转」的占位（含可点的真实链接）。
+      // refresh() / popstate 落到这类路由时只渲染占位、不重复整页跳转，避免回退死循环。
+      if (route?.url) {
+        state.navigationGeneration += 1;
+        commitView(
+          resolved,
+          buildInOutletScope(() => buildDocumentView(route, context))
+        );
+        return;
+      }
+
+      const result = buildInOutletScope(() => (typeof view === 'function' ? view(context) : view));
+
+      state.navigationGeneration += 1;
+
+      if (!isPromiseLike(result)) {
+        commitView(
+          resolved,
+          buildInOutletScope(() => normalizeRouteView(result, context))
+        );
+        return;
+      }
+
+      const generation = state.navigationGeneration;
+
+      commitView(
+        resolved,
+        buildInOutletScope(() => buildLoadingView(route, context))
+      );
+
+      Promise.resolve(result).then(
+        (value) => {
+          if (generation !== state.navigationGeneration || state.destroyed) return value;
+          let nextView;
+          try {
+            nextView = buildInOutletScope(() => normalizeRouteView(value, context));
+          } catch (error) {
+            commitView(
+              resolved,
+              buildInOutletScope(() => buildErrorView(route, context, error))
+            );
+            return value;
+          }
+          commitView(resolved, nextView);
+          return value;
+        },
+        (error) => {
+          if (generation !== state.navigationGeneration || state.destroyed) return error;
+          commitView(
+            resolved,
+            buildInOutletScope(() => buildErrorView(route, context, error))
+          );
+          return error;
+        }
+      );
+    };
+
+    const refresh = () => {
+      const nextPath = readPath(state.mode);
+      const resolved = resolve(nextPath);
+
+      if (!canEnter(resolved.context)) {
+        return api;
+      }
+
+      renderResolved(resolved);
+      return api;
+    };
+
+    api.default = (path) => {
+      if (path === undefined) {
+        return state.defaultPath;
+      }
+
+      state.defaultPath = normalizePath(path);
+      return api;
+    };
+
+    api.mode = (value) => {
+      if (value === undefined) {
+        return state.mode;
+      }
+
+      const nextMode = value === 'history' ? 'history' : 'hash';
+
+      if (nextMode === state.mode) {
+        return api;
+      }
+
+      const wasStarted = state.started;
+      if (wasStarted) {
+        api.stop();
+      }
+
+      state.mode = nextMode;
+
+      if (wasStarted) {
+        api.start();
+      }
+
+      return api;
+    };
+
+    /** 添加路由。config 可以是视图函数，也可以是 { view/component, beforeEnter }。 */
+    api.route = (pattern, config) => {
+      state.routes.push(normalizeRoute(pattern, config));
+      return api;
+    };
+
+    /** 声明式别名：`router.vRoute(pattern, config)`。 */
+    api.vRoute = (pattern, config) => api.route(pattern, config);
+
+    api.notFound = (view) => {
+      state.notFoundView = view;
+      return api;
+    };
+
+    api.loading = (view) => {
+      state.loadingView = view;
+      return api;
+    };
+
+    api.error = (view) => {
+      state.errorView = view;
+      return api;
+    };
+
+    api.beforeEach = (guard) => {
+      state.beforeEach = guard;
+      return api;
+    };
+
+    api.start = () => {
+      if (!state.started) {
+        state.stopListening =
+          state.mode === 'history'
+            ? bindWindowEvent('popstate', () => api.refresh())
+            : bindWindowEvent('hashchange', () => handleHashChange());
+        state.started = true;
+      }
+
+      const currentPath = readPath(state.mode);
+      const isDefaultLocation =
+        state.mode === 'history'
+          ? currentPath === '/' || currentPath === '/index.html'
+          : typeof window === 'undefined' || !window.location.hash;
+
+      if (isDefaultLocation && state.defaultPath) {
+        return api.navigate(state.defaultPath, { replace: true });
+      }
+
+      return refresh();
+    };
+
+    api.stop = () => {
+      if (state.started) {
+        state.stopListening?.();
+        state.stopListening = null;
+        state.started = false;
+      }
+
+      return api;
+    };
+
+    /** 导航到指定路径。replace 为 true 时不新增浏览器历史记录。 */
+    api.navigate = (path, options = {}) => {
+      // 外部地址（未注册）直接整页跳转
+      if (isDocumentUrl(path)) {
+        // 走节点上的同名命令：宿主可以覆盖 `node.navigateDocument` 接入自己的跳转实现
+        return self.node().navigateDocument(String(path).trim(), options);
+      }
+
+      const nextPath = normalizePath(path);
+      const resolved = resolve(nextPath);
+
+      if (!canEnter(resolved.context)) {
+        return api;
+      }
+
+      // 文档路由：渲染占位视图，然后把地址交给浏览器（整页跳转，不 pushState）
+      if (resolved.route?.url) {
+        renderResolved(resolved);
+        return self.node().navigateDocument(resolved.route.url, {
+          replace: Boolean(options.replace || resolved.route.replace)
+        });
+      }
+
+      const pathChanged = writePath(nextPath, options, state.mode);
+
+      if (pathChanged && !options.replace && state.mode === 'hash') {
+        state.ignoreNextHashPath = nextPath;
+      }
+
+      renderResolved(resolved);
+      return api;
+    };
+
+    api.refresh = () => refresh();
+
+    /**
+     * 服务端渲染入口：按路径解析并渲染匹配视图到自身节点，不依赖 window。
+     * 守卫返回 false 时不提交；异步视图在服务端序列化其 loading 视图。
+     */
+    api.renderPath = (path) => {
+      const resolved = resolve(path);
+
+      if (!canEnter(resolved.context)) {
+        return api;
+      }
+
+      renderResolved(resolved);
+      return api;
+    };
+
+    /**
+     * 整页跳转出口：文档路由（内部 HTML 地址 / 外部链接）默认走这里。
+     * 宿主环境可以覆盖以接入自己的跳转实现；无 window（服务端）时是 no-op。
+     */
+    api.navigateDocument = (url, options = {}) => {
+      if (!url || typeof window === 'undefined') {
+        return api;
+      }
+
+      if (options.replace) {
+        window.location.replace(url);
+      } else {
+        window.location.assign(url);
+      }
+
+      return api;
+    };
+
+    api.currentPath = () => state.currentPath;
+    api.currentParams = () => ({ ...state.currentParams });
+    api.currentQuery = () => ({ ...state.currentQuery });
+    api.currentRoute = () => state.currentRoute;
+    api.currentView = () => state.currentView;
+
+    api.outlet = (value) => {
+      if (value === undefined) return state.outlet;
+
+      // null = 回到默认出口（路由器自己的根元素）；销毁 vRouterView 时用它复位
+      if (value === null) {
+        state.outlet = state.root;
+        return api;
+      }
+
+      if (!(value instanceof ElementNode)) {
+        throw new TypeError('Router outlet must be an ElementNode');
+      }
+
+      state.outlet = value;
+      return api;
+    };
+
+    /** 只读辅助（同模块的 vRouterViews 用）：路由表形状 / 解析结果 / 取消在途导航。 */
+    api.routePatterns = () => state.routes.map((route) => route.pattern);
+    api.resolve = (path) => resolve(path);
+    /** 当前订阅者数量（诊断用：能看出子组件销毁时有没有把订阅收干净）。 */
+    api.subscriberCount = () => state.subscribers.size;
+    api.cancelPending = () => {
+      state.navigationGeneration += 1;
+      state.currentView = null;
+      return api;
+    };
+
+    /** props：键在路由器上有同名命令就调命令，其余键按元素 options 写（与旧 ElementNode 分派一致）。 */
+    api.setupObject = (config) => {
+      const elementConfig = {};
+
+      Object.entries(config).forEach(([key, value]) => {
+        if (typeof api[key] === 'function') {
+          api[key](value);
+          return;
+        }
+
+        elementConfig[key] = value;
+      });
+
+      if (Object.keys(elementConfig).length > 0) {
+        self.node().setup(elementConfig);
+      }
+
+      return api;
+    };
+
+    api.subscribe = (listener) => {
+      if (typeof listener !== 'function') {
+        throw new TypeError('Router subscriber must be a function');
+      }
+
+      state.subscribers.add(listener);
+      return () => state.subscribers.delete(listener);
+    };
+
+    api.go = (delta) => {
+      if (typeof window !== 'undefined') {
+        window.history.go(delta);
+      }
+
+      return api;
+    };
+
+    api.back = () => api.go(-1);
+    api.forward = () => api.go(1);
+
+    const handleHashChange = () => {
+      const nextPath = readHashPath();
+
+      if (state.ignoreNextHashPath === nextPath) {
+        state.ignoreNextHashPath = null;
+        return api;
+      }
+
+      state.ignoreNextHashPath = null;
+
+      if (nextPath === state.currentPath) {
+        return api;
+      }
+
+      return refresh();
+    };
+
+    api.whenDestroy = () => {
+      api.stop();
+      state.navigationGeneration += 1;
+      state.destroyed = true;
+      destroyCurrentView();
+      state.subscribers.clear();
+    };
+
+    // 出口默认是路由器自己的根元素（命令跑起来时结构已经建好）
+    return div({ 'data-yoya-router': '', vn: 'VRouter' }, (element) => {
+      state.root = element;
+      state.outlet = element;
+    });
+  });
 }
 
 export function createRouter(first = null, second = null, third = null) {
   const args = normalizeSetupArguments(first, second, third);
-  const node = new Router(args.first);
+  const node = createComponentFactory(VRouter);
+
+  applySetupValue(node, args.first);
   applyElementOptions(node, args.options);
   if (typeof args.callback === 'function') args.callback(node);
   return node;
@@ -547,13 +555,13 @@ export function vRoute(pattern, config) {
   return { config, pattern };
 }
 
+/** 旧名保留：Router 现在是 `VRouter` 这个组件定义（身份 `vn="VRouter"`）。 */
+export const Router = VRouter;
+
 export function vRouter(first = null, second = null, third = null) {
   const args = normalizeSetupArguments(first, second, third);
-  const node = new Router();
-  node.vRoute = (pattern, config) => {
-    node.route(pattern, config);
-    return node;
-  };
+  const node = createComponentFactory(VRouter);
+
   applyDeclarativeRouterSetup(node, args.first);
   applyElementOptions(node, args.options);
   if (typeof args.callback === 'function') args.callback(node);
@@ -727,7 +735,7 @@ export function VRouterView(routerInstance) {
 
     routerInstance.outlet(outlet);
     api.whenDestroy = () => {
-      if (routerInstance.outlet() === outlet) routerInstance.outlet(routerInstance);
+      if (routerInstance.outlet() === outlet) routerInstance.outlet(null);
     };
     return outlet;
   });
@@ -1244,8 +1252,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     }
 
     contentNode.clearChildren().commit();
-    routerInstance._navigationGeneration += 1;
-    routerInstance._currentView = null;
+    routerInstance.cancelPending();
   };
 
   const titleContextMenu = new ElementNode('div')
@@ -1295,8 +1302,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     const remaining = Array.from(state.tabs.keys());
     if (remaining.length === 0) {
       contentNode.clearChildren().commit();
-      routerInstance._navigationGeneration += 1;
-      routerInstance._currentView = null;
+      routerInstance.cancelPending();
       return;
     }
 
@@ -1500,7 +1506,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
         .slice()
         .reverse()
         .forEach((path) => {
-          const resolved = routerInstance._resolve(path);
+          const resolved = routerInstance.resolve(path);
           updateTitle({ ...resolved.context, path });
         });
     } finally {
@@ -1543,7 +1549,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     closeTabContextMenu();
     unbindResize();
     unsubscribe();
-    if (routerInstance.outlet() === contentNode) routerInstance.outlet(routerInstance);
+    if (routerInstance.outlet() === contentNode) routerInstance.outlet(null);
     return destroy();
   };
   if (typeof callback === 'function') callback(node);
@@ -1592,7 +1598,11 @@ function normalizeRoute(pattern, config) {
 }
 
 function assertRouter(routerInstance) {
-  if (!(routerInstance instanceof Router)) {
+  // 能力约定：路由器要有导航与订阅两件事，不按组件名 / 原型链判定（票 15 §11.4）
+  if (
+    typeof routerInstance?.navigate !== 'function' ||
+    typeof routerInstance?.subscribe !== 'function'
+  ) {
     throw new TypeError('vLink and vRouterView require a Router instance');
   }
 }
@@ -1606,7 +1616,10 @@ function applyDeclarativeRouterSetup(node, setup) {
     setup(node);
     return node;
   }
-  if (!setup || typeof setup !== 'object') return node;
+  // 只认普通对象（props）：节点 / 句柄 / 数组不是声明式配置
+  if (!setup || typeof setup !== 'object' || setup instanceof ViewNode || Array.isArray(setup)) {
+    return node;
+  }
 
   const {
     beforeEach,
@@ -1639,7 +1652,7 @@ function resolveDocumentTarget(routerInstance, target) {
     return { rel: null, target: null, url: String(target).trim() };
   }
 
-  const route = routerInstance._resolve(target).route;
+  const route = routerInstance.resolve(target).route;
   return route?.url ? route : null;
 }
 

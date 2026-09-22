@@ -265,6 +265,9 @@ describe('router', () => {
 
   it('preserves modified link clicks and registers parent shortcuts', () => {
     const appRouter = router((r) => r.route('/reports', () => div('报表')));
+    const notified = vi.fn();
+
+    appRouter.subscribe(notified);
     const root = div((page) => {
       page.vLink(appRouter, { label: '报表', to: '/reports' });
       page.vRouterView(appRouter);
@@ -282,8 +285,12 @@ describe('router', () => {
     expect(appRouter.currentPath()).toBe('/');
     expect(root.children()[1].attr('vn')).toContain('VRouterView');
 
+    notified.mockClear();
+    const subscribersBeforeDestroy = appRouter.subscriberCount();
     root.destroy();
-    expect(appRouter._subscribers.size).toBe(0);
+    // 销毁树时子组件把自己的订阅收干净（链接退订），剩下的是测试自己加的那一个
+    expect(appRouter.subscriberCount()).toBe(subscribersBeforeDestroy - 1);
+    expect(notified).not.toHaveBeenCalled();
   });
 
   it('renders ViewNode labels (e.g. I18n text nodes) instead of stringifying them', () => {
@@ -497,13 +504,20 @@ describe('router', () => {
       titleResolver: ({ route }) => (typeof route?.title === 'function' ? route.title : null)
     });
     const root = div((page) => page.child(views)).bindTo('#app');
+    const notified = vi.fn();
+
+    appRouter.subscribe(notified);
 
     appRouter.navigate('/file/main.js', { replace: true });
     expect(views.renderDom().querySelector('[vn~="VRouterViewsLabel"]').textContent).toBe(
       '文件：main.js'
     );
+    notified.mockClear();
+    const subscribersBeforeDestroy = appRouter.subscriberCount();
     root.destroy();
-    expect(appRouter._subscribers.size).toBe(0);
+    // 销毁时 vRouterViews 会退订自己的出口订阅，剩下的是测试自己加的那一个
+    expect(appRouter.subscriberCount()).toBe(subscribersBeforeDestroy - 1);
+    expect(notified).not.toHaveBeenCalled();
   });
 
   it('shows an expand button when titles overflow and opens a title list popup', () => {
@@ -981,7 +995,7 @@ describe('router', () => {
     resolveView(div('太迟了'));
     await flush();
 
-    expect(appRouter._currentView).toBeNull();
+    expect(appRouter.currentView()).toBeNull();
   });
 
   it('updates vRouterViews titles while an async route is loading', async () => {

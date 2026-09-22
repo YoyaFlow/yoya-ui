@@ -2,6 +2,7 @@ export {
   Router,
   VLink,
   VLinkLabel,
+  VRouter,
   VRouterView,
   createRouter,
   router,

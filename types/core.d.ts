@@ -10,7 +10,7 @@ import type { CodeBlock } from './data-display.js';
 import type { DynamicLoaderNode, DynamicLoaderOptions } from './async.js';
 import type { HtmlElementNode } from './html.js';
 import type { VThemeShell } from './layout.js';
-import type { Router } from './router.js';
+import type { VRouter } from './router.js';
 import type { VThemeModeSwitch } from './theme.js';
 
 // ---------------------------------------------------------------------------
@@ -603,25 +603,25 @@ export class ElementNode extends ViewNode {
   ): VThemeModeSwitch;
   /** vRouter shortcut: declarative router container. */
   vRouter(
-    first?: SetupInput<Router> | null,
+    first?: SetupInput<VRouter> | null,
     options?: ElementOptions,
-    callback?: SetupCallback<Router>
-  ): Router;
+    callback?: SetupCallback<VRouter>
+  ): VRouter;
   /** vLink shortcut: router link. */
   vLink(
-    routerInstance: Router,
+    routerInstance: VRouter,
     setup?: SetupInput<HtmlElementNode> | null,
     callback?: SetupCallback<HtmlElementNode>
   ): HtmlElementNode;
   /** vRouterView shortcut: current route outlet. */
   vRouterView(
-    routerInstance: Router,
+    routerInstance: VRouter,
     setup?: SetupInput<HtmlElementNode> | null,
     callback?: SetupCallback<HtmlElementNode>
   ): HtmlElementNode;
   /** vRouterViews shortcut: multi-outlet router view. */
   vRouterViews(
-    routerInstance: Router,
+    routerInstance: VRouter,
     setup?: SetupInput<HtmlElementNode> | null,
     callback?: SetupCallback<HtmlElementNode>
   ): HtmlElementNode;

@@ -50,40 +50,41 @@ export interface NavigateOptions {
   state?: unknown;
 }
 
-/** Hash/history router as a view node. */
-export class Router extends ElementNode {
-  default(path: string): Router;
+/** Hash/history VRouter as a view node. */
+export class VRouter extends ElementNode {
+  default(): string | null;
+  default(path: string): VRouter;
   mode(): RouterMode;
-  mode(value: RouterMode): Router;
-  route(pattern: string, config: RouteConfig | RouteView): Router;
+  mode(value: RouterMode): VRouter;
+  route(pattern: string, config: RouteConfig | RouteView): VRouter;
   /** Declarative route registration (available on vRouter instances). */
-  vRoute(pattern: string, config: RouteConfig | RouteView): Router;
-  notFound(view: RouteView): Router;
-  loading(view: RouteView): Router;
-  error(view: RouteView): Router;
-  beforeEach(guard: RouterGuard): Router;
-  start(): Router;
-  stop(): Router;
-  navigate(path: string, options?: NavigateOptions): Router;
+  vRoute(pattern: string, config: RouteConfig | RouteView): VRouter;
+  notFound(view: RouteView): VRouter;
+  loading(view: RouteView): VRouter;
+  error(view: RouteView): VRouter;
+  beforeEach(guard: RouterGuard): VRouter;
+  start(): VRouter;
+  stop(): VRouter;
+  navigate(path: string, options?: NavigateOptions): VRouter;
   /**
    * Full-page navigation outlet for document routes (internal HTML addresses and
    * external links). Override it to plug in a custom navigation; it is a no-op
    * where `window` is unavailable (server rendering).
    */
-  navigateDocument(url: string, options?: NavigateOptions): Router;
-  refresh(): Router;
-  renderPath(path: string): Router;
+  navigateDocument(url: string, options?: NavigateOptions): VRouter;
+  refresh(): VRouter;
+  renderPath(path: string): VRouter;
   currentPath(): string;
   currentParams(): Record<string, string>;
   currentQuery(): Record<string, string>;
   currentRoute(): RouteDeclaration | null;
   currentView(): ViewNodeLike | null;
   outlet(): ElementNode;
-  outlet(value: ElementNode): Router;
-  subscribe(listener: (router: Router) => void): () => void;
-  go(delta: number): Router;
-  back(): Router;
-  forward(): Router;
+  outlet(value: ElementNode): VRouter;
+  subscribe(listener: (router: VRouter) => void): () => void;
+  go(delta: number): VRouter;
+  back(): VRouter;
+  forward(): VRouter;
 }
 
 /** Minimal node shape returned by currentView(). */
@@ -97,43 +98,46 @@ export interface ViewNodeLike {
 /** Creates a router; alias of createRouter. */
 export const router: typeof createRouter;
 
-/** Creates a router with optional setup. */
-export const createRouter: ElementFactory<Router> & {
-  (first?: SetupInput<Router> | null, callback?: SetupCallback<Router>): Router;
+/** Legacy name of the router component definition. */
+export const Router: typeof VRouter;
+
+/** Creates a VRouter with optional setup. */
+export const createRouter: ElementFactory<VRouter> & {
+  (first?: SetupInput<VRouter> | null, callback?: SetupCallback<VRouter>): VRouter;
 };
 
 /** Declares a route (used inside route lists). */
 export function vRoute(pattern: string, config: RouteConfig | RouteView): RouteDeclaration;
 
-/** Declarative router container. */
-export const vRouter: ElementFactory<Router> & {
-  (first?: SetupInput<Router> | null, callback?: SetupCallback<Router>): Router;
+/** Declarative VRouter container. */
+export const vRouter: ElementFactory<VRouter> & {
+  (first?: SetupInput<VRouter> | null, callback?: SetupCallback<VRouter>): VRouter;
 };
 
-/** Router link with to/params/query/replace/exact helpers. */
+/** VRouter link with to/params/query/replace/exact helpers. */
 export function vLink(
-  routerInstance: Router,
+  routerInstance: VRouter,
   setup?: SetupInput<HtmlElementNode> | null,
   callback?: SetupCallback<HtmlElementNode>
 ): HtmlElementNode;
 
 /** Current-route outlet bound to a router. */
 export function vRouterView(
-  routerInstance: Router,
+  routerInstance: VRouter,
   setup?: SetupInput<HtmlElementNode> | null,
   callback?: SetupCallback<HtmlElementNode>
 ): HtmlElementNode;
 
 /** Multi-outlet router view. */
 export function vRouterViews(
-  routerInstance: Router,
+  routerInstance: VRouter,
   setup?: SetupInput<HtmlElementNode> | null,
   callback?: SetupCallback<HtmlElementNode>
 ): HtmlElementNode;
 
 /**
- * Parent-shortcut surface merged onto HtmlElementNode. Router shortcuts
- * (vRouter/vLink/vRouterView/vRouterViews) live on ElementNode and are
+ * Parent-shortcut surface merged onto HtmlElementNode. VRouter shortcuts
+ * (vRouter/vLink/VRouterView/VRouterViews) live on ElementNode and are
  * inherited; this interface is kept for the shared DSL merge point.
  */
 export interface RouterParentShortcuts {}
