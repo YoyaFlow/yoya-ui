@@ -1,8 +1,7 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { vNode } from '../core/v-node.js';
+import { div, span } from '../html/index.js';
 import {
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
   themeValue
@@ -16,232 +15,284 @@ const progressStatusColors = {
   warning: themeValue('color-warning', '#f59e0b')
 };
 
-/** 进度条的节点类型（不导出到包入口）；公开组件 `vProgress` 是 vNode 外壳。 */
-class ProgressNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VProgress';
-    this._value = 0;
-    this._max = 100;
-    this._percent = 0;
-    this._showText = true;
-    this._status = 'normal';
-    this._size = 'default';
-    this._strokeColor = null;
-    this._indeterminate = false;
-    this._format = null;
-    this._textContent = null;
-    this._ariaLabel = null;
-    this._label = null;
+/**
+ * 进度条（形态 B，票 15 §4）：视图根是外壳 `div` + 标签位 + 轨道（内含进度条）+ 文本位。
+ *
+ * - 身份写在结构里：根 `vn: 'VProgress'`、`VProgressLabel` / `VProgressTrack` / `VProgressBar` /
+ *   `VProgressText`；
+ * - 标签位与文本位是**区域**（`rebuildable`）：内容由各自的 setup 产出，命令改状态后再 `rebuild()`
+ *   （与旧节点类型同口径，不引入集中 sync）；
+ * - 状态与命令收进 `vNode` 闭包；indeterminate 的 keyframes 名随类名一起去掉 `yoya-v` 前缀
+ *   （`yoya-progress-indeterminate`，JS 与 CSS 同刀）；
+ * - props 分派：本组件的键走命令，其余按元素 options 写；数字 / 数字字符串 = value，
+ *   其它字符串 = label（与旧 `_setupProgress` 同口径）。
+ */
+export function VProgress() {
+  return vNode((api) => {
+    const state = {
+      ariaLabel: null,
+      format: null,
+      indeterminate: false,
+      label: null,
+      max: 100,
+      percent: 0,
+      showText: true,
+      size: 'default',
+      status: 'normal',
+      strokeColor: null,
+      textContent: null,
+      value: 0
+    };
 
-    this._labelBox = new HtmlElementNode('span')
-      .className('yoya-vprogress-label')
+    const labelBox = span({ vn: 'VProgressLabel' })
       .attr('aria-hidden', 'true')
-      .style('display', 'none')
-      .setup((box) => {
-        box.rebuildable();
-        box.child(normalizeChildren(this._label));
-      });
-    this._track = new HtmlElementNode('div').className('yoya-vprogress-track');
-    this._bar = new HtmlElementNode('span').className('yoya-vprogress-bar');
-    this._textBox = new HtmlElementNode('span').className('yoya-vprogress-text').setup((box) => {
+      .style('display', 'none');
+    const track = div({ vn: 'VProgressTrack' });
+    const bar = span({ vn: 'VProgressBar' });
+    const textBox = span({ vn: 'VProgressText' });
+    const node = div({ vn: 'VProgress' })
+      .attr({
+        'aria-valuemax': '100',
+        'aria-valuemin': '0',
+        'aria-valuenow': '0',
+        'data-percent': '0',
+        'data-size': 'default',
+        'data-status': 'normal',
+        'data-value': '0',
+        role: 'progressbar'
+      })
+      .child(labelBox, track, textBox);
+
+    track.child(bar);
+
+    /** 文本区内容：显式文本优先，其次 indeterminate 文案、format 结果与百分比。 */
+    const progressText = () => {
+      if (state.textContent !== null && state.textContent !== undefined) {
+        return state.textContent;
+      }
+
+      if (state.indeterminate) {
+        return '处理中';
+      }
+
+      if (state.format) {
+        return state.format(state.value, state.percent);
+      }
+
+      return `${Math.round(state.percent)}%`;
+    };
+
+    const syncProgress = () => {
+      const rawPercent = state.max > 0 ? (state.value / state.max) * 100 : 0;
+
+      state.percent = Number.isFinite(rawPercent) ? Math.max(0, Math.min(100, rawPercent)) : 0;
+
+      const color =
+        state.strokeColor || progressStatusColors[state.status] || progressStatusColors.normal;
+      const hasLabel = labelBox.children().length > 0;
+
+      node.attr('aria-label', state.ariaLabel);
+      node.attr('aria-valuemax', String(state.max));
+      node.attr('aria-valuenow', state.indeterminate ? null : String(state.value));
+      node.attr('data-indeterminate', state.indeterminate ? 'true' : null);
+      node.attr('data-percent', String(Number(state.percent.toFixed(2))));
+      node.attr('data-value', String(state.value));
+      node.attr('data-has-label', hasLabel ? 'true' : null);
+
+      labelBox.style('display', hasLabel ? 'inline-flex' : 'none');
+      bar.style('background', color);
+
+      if (state.indeterminate) {
+        bar.styles({
+          animation: 'yoya-progress-indeterminate 1.2s ease-in-out infinite',
+          width: '100%'
+        });
+      } else {
+        bar.styles({
+          animation: null,
+          width: `${state.percent}%`
+        });
+      }
+
+      if (state.showText) {
+        textBox.style('display', 'inline-flex');
+        textBox.rebuild();
+      } else {
+        textBox.style('display', 'none');
+      }
+    };
+
+    // 标签位 / 文本位是区域：内容由各自的 setup 产出（命令改状态后 rebuild）
+    labelBox.setup((box) => {
       box.rebuildable();
-      box.child(normalizeChildren(this._progressText()));
+      box.child(normalizeChildren(state.label));
     });
-    this._track.child(this._bar);
-
-    this.className(componentClass, 'yoya-vprogress');
-    this.attr({
-      'aria-valuemax': '100',
-      'aria-valuemin': '0',
-      'aria-valuenow': '0',
-      'data-percent': '0',
-      'data-size': 'default',
-      'data-status': 'normal',
-      'data-value': '0',
-      role: 'progressbar'
+    textBox.setup((box) => {
+      box.rebuildable();
+      box.child(normalizeChildren(progressText()));
     });
-    super.child(this._labelBox, this._track, this._textBox);
 
-    this._setupProgress(setup);
-    this._syncProgress();
-  }
+    api.value = (value) => {
+      if (value === undefined) {
+        return state.value;
+      }
 
-  value(value) {
-    if (value === undefined) {
-      return this._value;
-    }
+      const nextValue = Number(value);
 
-    const nextValue = Number(value);
-    if (Number.isFinite(nextValue)) {
-      this._value = Math.max(0, Math.min(this._max, nextValue));
-    }
+      if (Number.isFinite(nextValue)) {
+        state.value = Math.max(0, Math.min(state.max, nextValue));
+      }
 
-    this._syncProgress();
-    return this;
-  }
+      syncProgress();
+      return api;
+    };
 
-  max(value) {
-    if (value === undefined) {
-      return this._max;
-    }
+    api.max = (value) => {
+      if (value === undefined) {
+        return state.max;
+      }
 
-    const nextValue = Number(value);
-    this._max = Number.isFinite(nextValue) && nextValue > 0 ? nextValue : 100;
-    if (this._value > this._max) {
-      this._value = this._max;
-    }
+      const nextValue = Number(value);
 
-    this._syncProgress();
-    return this;
-  }
+      state.max = Number.isFinite(nextValue) && nextValue > 0 ? nextValue : 100;
+      if (state.value > state.max) {
+        state.value = state.max;
+      }
 
-  percent(value) {
-    if (value === undefined) {
-      return this._percent;
-    }
+      syncProgress();
+      return api;
+    };
 
-    const nextValue = Number(value);
-    if (Number.isFinite(nextValue)) {
-      this._value = (this._max * Math.max(0, Math.min(100, nextValue))) / 100;
-    }
+    api.percent = (value) => {
+      if (value === undefined) {
+        return state.percent;
+      }
 
-    this._syncProgress();
-    return this;
-  }
+      const nextValue = Number(value);
 
-  showText(value) {
-    if (value === undefined) {
-      return this._showText;
-    }
+      if (Number.isFinite(nextValue)) {
+        state.value = (state.max * Math.max(0, Math.min(100, nextValue))) / 100;
+      }
 
-    this._showText = Boolean(value);
-    this.attr('data-show-text', this._showText ? 'true' : null);
-    this._syncProgress();
-    return this;
-  }
+      syncProgress();
+      return api;
+    };
 
-  label(content) {
-    if (content === undefined) {
-      return this._labelBox.textContent();
-    }
+    api.showText = (value) => {
+      if (value === undefined) {
+        return state.showText;
+      }
 
-    this._label = content;
-    this._labelBox.rebuild();
-    this._syncProgress();
-    return this;
-  }
+      state.showText = Boolean(value);
+      node.attr('data-show-text', state.showText ? 'true' : null);
+      syncProgress();
+      return api;
+    };
 
-  /** 文本区内容：显式文本优先，其次 indeterminate 文案、format 结果与百分比。 */
-  _progressText() {
-    if (this._textContent !== null && this._textContent !== undefined) {
-      return this._textContent;
-    }
+    api.label = (content) => {
+      if (content === undefined) {
+        return labelBox.textContent();
+      }
 
-    if (this._indeterminate) {
-      return '处理中';
-    }
+      state.label = content;
+      labelBox.rebuild();
+      syncProgress();
+      return api;
+    };
 
-    if (this._format) {
-      return this._format(this._value, this._percent);
-    }
+    api.text = (content) => {
+      if (content === undefined) {
+        return state.textContent;
+      }
 
-    return `${Math.round(this._percent)}%`;
-  }
+      state.textContent = content === null || content === undefined ? null : content;
+      syncProgress();
+      return api;
+    };
 
-  text(content) {
-    if (content === undefined) {
-      return this._textContent;
-    }
+    api.format = (handler) => {
+      if (handler === undefined) {
+        return state.format;
+      }
 
-    this._textContent = content === null || content === undefined ? null : content;
-    this._syncProgress();
-    return this;
-  }
+      state.format = typeof handler === 'function' ? handler : null;
+      syncProgress();
+      return api;
+    };
 
-  format(handler) {
-    if (handler === undefined) {
-      return this._format;
-    }
+    api.status = (value) => {
+      if (value === undefined) {
+        return state.status;
+      }
 
-    this._format = typeof handler === 'function' ? handler : null;
-    this._syncProgress();
-    return this;
-  }
+      state.status = ['error', 'normal', 'processing', 'success', 'warning'].includes(value)
+        ? value
+        : 'normal';
+      node.attr('data-status', state.status);
+      syncProgress();
+      return api;
+    };
 
-  status(value) {
-    if (value === undefined) {
-      return this._status;
-    }
+    api.size = (value) => {
+      if (value === undefined) {
+        return state.size;
+      }
 
-    this._status = ['error', 'normal', 'processing', 'success', 'warning'].includes(value)
-      ? value
-      : 'normal';
-    this.attr('data-status', this._status);
-    this._syncProgress();
-    return this;
-  }
+      state.size = ['default', 'large', 'small'].includes(value) ? value : 'default';
+      node.attr('data-size', state.size);
+      return api;
+    };
 
-  size(value) {
-    if (value === undefined) {
-      return this._size;
-    }
+    api.strokeColor = (value) => {
+      if (value === undefined) {
+        return state.strokeColor;
+      }
 
-    this._size = ['default', 'large', 'small'].includes(value) ? value : 'default';
-    this.attr('data-size', this._size);
-    return this;
-  }
+      state.strokeColor = value || null;
+      syncProgress();
+      return api;
+    };
 
-  strokeColor(value) {
-    if (value === undefined) {
-      return this._strokeColor;
-    }
+    api.indeterminate = (value) => {
+      if (value === undefined) {
+        return state.indeterminate;
+      }
 
-    this._strokeColor = value || null;
-    this._syncProgress();
-    return this;
-  }
+      state.indeterminate = Boolean(value);
+      syncProgress();
+      return api;
+    };
 
-  indeterminate(value) {
-    if (value === undefined) {
-      return this._indeterminate;
-    }
+    api.active = (value) => api.indeterminate(value);
 
-    this._indeterminate = Boolean(value);
-    this._syncProgress();
-    return this;
-  }
+    api.ariaLabel = (content) => {
+      if (content === undefined) {
+        return state.ariaLabel;
+      }
 
-  active(value) {
-    return this.indeterminate(value);
-  }
+      state.ariaLabel = content === null || content === undefined ? null : String(content);
+      syncProgress();
+      return api;
+    };
 
-  ariaLabel(content) {
-    if (content === undefined) {
-      return this._ariaLabel;
-    }
+    /** 数字 / 数字字符串 = value，其它字符串 = label（旧 `_setupProgress` 的兜底分支）。 */
+    api.setupString = (value) => {
+      if (
+        typeof value === 'number' ||
+        (typeof value === 'string' && !Number.isNaN(Number(value)))
+      ) {
+        return api.value(value);
+      }
 
-    this._ariaLabel = content === null || content === undefined ? null : String(content);
-    this._syncProgress();
-    return this;
-  }
+      return api.label(value);
+    };
 
-  _setupProgress(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupProgress` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (typeof setup === 'number' || (typeof setup === 'string' && !Number.isNaN(Number(setup)))) {
-      this.value(setup);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
       const {
         active,
         ariaLabel,
@@ -261,129 +312,55 @@ class ProgressNode extends HtmlElementNode {
       } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
-
       if (ariaLabel !== undefined) {
-        this.ariaLabel(ariaLabel);
+        api.ariaLabel(ariaLabel);
       }
-
       if (label !== undefined) {
-        this.label(label);
+        api.label(label);
       }
-
       if (max !== undefined) {
-        this.max(max);
+        api.max(max);
       }
-
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
-
       if (percent !== undefined) {
-        this.percent(percent);
+        api.percent(percent);
       }
-
       if (showText !== undefined) {
-        this.showText(showText);
+        api.showText(showText);
       }
-
       if (status !== undefined) {
-        this.status(status);
+        api.status(status);
       }
-
       if (size !== undefined) {
-        this.size(size);
+        api.size(size);
       }
-
       if (strokeColor !== undefined) {
-        this.strokeColor(strokeColor);
+        api.strokeColor(strokeColor);
       }
-
       if (format !== undefined) {
-        this.format(format);
+        api.format(format);
       }
-
       if (text !== undefined) {
-        this.text(text);
+        api.text(text);
       } else if (children !== undefined) {
-        this.text(children);
+        api.text(children);
       }
-
       if (indeterminate !== undefined) {
-        this.indeterminate(indeterminate);
+        api.indeterminate(indeterminate);
       } else if (active !== undefined) {
-        this.indeterminate(active);
+        api.indeterminate(active);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.label(setup);
-  }
-
-  _syncProgress() {
-    const rawPercent = this._max > 0 ? (this._value / this._max) * 100 : 0;
-    this._percent = Number.isFinite(rawPercent) ? Math.max(0, Math.min(100, rawPercent)) : 0;
-    const color =
-      this._strokeColor || progressStatusColors[this._status] || progressStatusColors.normal;
-
-    this.attr('aria-label', this._ariaLabel);
-    this.attr('aria-valuemax', String(this._max));
-    this.attr('aria-valuenow', this._indeterminate ? null : String(this._value));
-    this.attr('data-indeterminate', this._indeterminate ? 'true' : null);
-    this.attr('data-percent', String(Number(this._percent.toFixed(2))));
-    this.attr('data-value', String(this._value));
-    this.attr('data-has-label', this._labelBox.children().length > 0 ? 'true' : null);
-
-    this._labelBox.style('display', this._labelBox.children().length > 0 ? 'inline-flex' : 'none');
-    this._bar.style('background', color);
-
-    if (this._indeterminate) {
-      this._bar.styles({
-        animation: 'yoya-vprogress-indeterminate 1.2s ease-in-out infinite',
-        width: '100%'
-      });
-    } else {
-      this._bar.styles({
-        animation: null,
-        width: `${this._percent}%`
-      });
-    }
-
-    if (this._showText) {
-      this._textBox.style('display', 'inline-flex');
-      this._textBox.rebuild();
-    } else {
-      this._textBox.style('display', 'none');
-    }
-
-    return this;
-  }
-}
-
-export function vProgress(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VProgress',
-    createNode: (setup) => new ProgressNode(setup),
-    commands: [
-      'value',
-      'max',
-      'percent',
-      'showText',
-      'label',
-      'text',
-      'format',
-      'status',
-      'size',
-      'strokeColor',
-      'indeterminate',
-      'active',
-      'ariaLabel'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    syncProgress();
+    return node;
   });
 }
 
-export const VProgress = vProgress;
-defineComponentIdentity(VProgress, 'VProgress');
+export const vProgress = createComponentShortcut(VProgress);

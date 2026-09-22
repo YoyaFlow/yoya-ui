@@ -1667,7 +1667,7 @@ body {
     display: block;
   }
 
-  :where(.yoya-vprogress) {
+  :where([vn~='VProgress']) {
     align-items: center;
     box-sizing: border-box;
     display: flex;
@@ -1676,7 +1676,7 @@ body {
     width: 100%;
   }
 
-  .yoya-vprogress .yoya-vprogress-label {
+  [vn~='VProgress'] [vn~='VProgressLabel'] {
     color: var(--yoya-color-text-secondary, #475569);
     flex: 0 0 auto;
     font-size: 13px;
@@ -1689,7 +1689,7 @@ body {
     white-space: nowrap;
   }
 
-  .yoya-vprogress .yoya-vprogress-track {
+  [vn~='VProgress'] [vn~='VProgressTrack'] {
     background: var(--yoya-color-surface-active, #eef2f7);
     border-radius: 999px;
     box-sizing: border-box;
@@ -1700,14 +1700,14 @@ body {
     position: relative;
   }
 
-  .yoya-vprogress .yoya-vprogress-bar {
+  [vn~='VProgress'] [vn~='VProgressBar'] {
     border-radius: inherit;
     display: block;
     height: 100%;
     transition: width 160ms ease;
   }
 
-  .yoya-vprogress .yoya-vprogress-text {
+  [vn~='VProgress'] [vn~='VProgressText'] {
     color: var(--yoya-color-text-secondary, #475569);
     flex: 0 0 auto;
     font-size: 12px;
@@ -1718,23 +1718,23 @@ body {
     white-space: nowrap;
   }
 
-  .yoya-vprogress[data-size='small'] .yoya-vprogress-track {
+  [vn~='VProgress'][data-size='small'] [vn~='VProgressTrack'] {
     height: 4px;
   }
 
-  .yoya-vprogress[data-size='large'] .yoya-vprogress-track {
+  [vn~='VProgress'][data-size='large'] [vn~='VProgressTrack'] {
     height: 12px;
   }
 
-  .yoya-vprogress[data-size='large'] .yoya-vprogress-text {
+  [vn~='VProgress'][data-size='large'] [vn~='VProgressText'] {
     font-size: 14px;
   }
 
-  .yoya-vprogress[data-indeterminate='true'] .yoya-vprogress-bar {
-    animation: yoya-vprogress-indeterminate 1.2s ease-in-out infinite;
+  [vn~='VProgress'][data-indeterminate='true'] [vn~='VProgressBar'] {
+    animation: yoya-progress-indeterminate 1.2s ease-in-out infinite;
   }
 
-  @keyframes yoya-vprogress-indeterminate {
+  @keyframes yoya-progress-indeterminate {
     0% {
       transform: translateX(-100%);
       width: 40%;

@@ -2244,7 +2244,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const demo = document.querySelector('[data-data-display-demo="dynamic"]');
-    const progress = demo.querySelector('.yoya-vprogress');
+    const progress = demo.querySelector('[vn~="VProgress"]');
     const status = demo.querySelector('[data-progress-dynamic-status]');
     const addButton = [...demo.querySelectorAll('button')].find((button) =>
       button.textContent.includes('加 10')

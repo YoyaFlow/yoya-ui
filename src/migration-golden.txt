@@ -29,8 +29,8 @@ probe:    null
 residue:  (空)
 
 ### vProgress / 百分比
-dom:      <div aria-valuemax=100 aria-valuemin=0 aria-valuenow=40 class=yoya-component yoya-vprogress data-percent=40 data-size=default data-status=normal data-value=40 role=progressbar><span aria-hidden=true class=yoya-vprogress-label style=display: none;><div class=yoya-vprogress-track><span class=yoya-vprogress-bar style=background: var(--yoya-color-primary, #2563eb); width: 40%;><span class=yoya-vprogress-text style=display: inline-flex;>#text:40%
-toHTML:   <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="40" class="yoya-component yoya-vprogress" data-percent="40" data-size="default" data-status="normal" data-value="40" role="progressbar"><span aria-hidden="true" class="yoya-vprogress-label" style="display:none"></span><div class="yoya-vprogress-track"><span class="yoya-vprogress-bar" style="background:var(--yoya-color-primary, #2563eb);width:40%"></span></div><span class="yoya-vprogress-text" style="display:inline-flex">40%</span></div>
+dom:      <div aria-valuemax=100 aria-valuemin=0 aria-valuenow=40 data-percent=40 data-size=default data-status=normal data-value=40 role=progressbar vn=VProgress><span aria-hidden=true style=display: none; vn=VProgressLabel><div vn=VProgressTrack><span style=background: var(--yoya-color-primary, #2563eb); width: 40%; vn=VProgressBar><span style=display: inline-flex; vn=VProgressText>#text:40%
+toHTML:   <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="40" data-percent="40" data-size="default" data-status="normal" data-value="40" role="progressbar" vn="VProgress"><span aria-hidden="true" style="display:none" vn="VProgressLabel"></span><div vn="VProgressTrack"><span style="background:var(--yoya-color-primary, #2563eb);width:40%" vn="VProgressBar"></span></div><span style="display:inline-flex" vn="VProgressText">40%</span></div>
 probe:    {"value":40}
 residue:  (空)
 

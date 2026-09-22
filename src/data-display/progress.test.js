@@ -5,7 +5,7 @@ describe('vProgress', () => {
   it('renders a numeric progress value with semantic progressbar attrs', () => {
     const progress = vProgress(42);
     const element = progress.renderDom();
-    const bar = element.querySelector('.yoya-vprogress-bar');
+    const bar = element.querySelector('[vn~="VProgressBar"]');
 
     expect(element.getAttribute('role')).toBe('progressbar');
     expect(element.getAttribute('aria-valuemin')).toBe('0');
@@ -14,7 +14,7 @@ describe('vProgress', () => {
     expect(element.dataset.value).toBe('42');
     expect(element.dataset.percent).toBe('42');
     expect(bar.style.width).toBe('42%');
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('42%');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('42%');
   });
 
   it('computes percent from max and supports percent updates', () => {
@@ -24,13 +24,13 @@ describe('vProgress', () => {
     expect(progress.value()).toBe(50);
     expect(progress.percent()).toBe(25);
     expect(element.getAttribute('aria-valuemax')).toBe('200');
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('25%');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('25%');
 
     progress.percent(50);
 
     expect(progress.value()).toBe(100);
     expect(progress.percent()).toBe(50);
-    expect(element.querySelector('.yoya-vprogress-bar').style.width).toBe('50%');
+    expect(element.querySelector('[vn~="VProgressBar"]').style.width).toBe('50%');
   });
 
   it('supports statuses, custom color, label, size, and hidden text', () => {
@@ -41,9 +41,9 @@ describe('vProgress', () => {
       value: 80
     });
     const element = progress.renderDom();
-    const bar = element.querySelector('.yoya-vprogress-bar');
+    const bar = element.querySelector('[vn~="VProgressBar"]');
 
-    expect(element.querySelector('.yoya-vprogress-label').textContent).toBe('构建');
+    expect(element.querySelector('[vn~="VProgressLabel"]').textContent).toBe('构建');
     expect(element.dataset.status).toBe('success');
     expect(element.dataset.size).toBe('small');
     expect(element.dataset.hasLabel).toBe('true');
@@ -53,7 +53,7 @@ describe('vProgress', () => {
     progress.showText(false);
 
     expect(bar.style.background).toBe('rgb(124, 58, 237)');
-    expect(element.querySelector('.yoya-vprogress-text').style.display).toBe('none');
+    expect(element.querySelector('[vn~="VProgressText"]').style.display).toBe('none');
   });
 
   it('supports custom text and format callbacks', () => {
@@ -62,22 +62,22 @@ describe('vProgress', () => {
     const element = progress.renderDom();
 
     expect(format).toHaveBeenCalledWith(64, 64);
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('64/100 (64%)');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('64/100 (64%)');
 
     progress.text('发布中');
 
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('发布中');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('发布中');
   });
 
   it('switches to indeterminate mode and clears aria-valuenow', () => {
     const progress = vProgress({ indeterminate: true, value: 30 });
     const element = progress.renderDom();
-    const bar = element.querySelector('.yoya-vprogress-bar');
+    const bar = element.querySelector('[vn~="VProgressBar"]');
 
     expect(element.dataset.indeterminate).toBe('true');
     expect(element.getAttribute('aria-valuenow')).toBeNull();
-    expect(bar.style.animation).toContain('yoya-vprogress-indeterminate');
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('处理中');
+    expect(bar.style.animation).toContain('yoya-progress-indeterminate');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('处理中');
 
     progress.active(false);
 
@@ -101,7 +101,7 @@ describe('vProgress', () => {
     expect(callbackNode).toBe(progress);
     expect(element.id).toBe('task-progress');
     expect(element.style.maxWidth).toBe('320px');
-    expect(element.querySelector('.yoya-vprogress-bar').style.width).toBe('65%');
+    expect(element.querySelector('[vn~="VProgressBar"]').style.width).toBe('65%');
   });
 
   it('registers vProgress as a parent shortcut and updates live', () => {
@@ -111,13 +111,13 @@ describe('vProgress', () => {
     const progress = root.children()[0];
     const element = root.renderDom();
 
-    expect(element.querySelector('.yoya-vprogress-label').textContent).toBe('部署');
-    expect(element.querySelector('.yoya-vprogress-bar').style.width).toBe('64%');
+    expect(element.querySelector('[vn~="VProgressLabel"]').textContent).toBe('部署');
+    expect(element.querySelector('[vn~="VProgressBar"]').style.width).toBe('64%');
 
     progress.value(88);
 
-    expect(element.querySelector('.yoya-vprogress-bar').style.width).toBe('88%');
-    expect(element.querySelector('.yoya-vprogress-text').textContent).toBe('88%');
+    expect(element.querySelector('[vn~="VProgressBar"]').style.width).toBe('88%');
+    expect(element.querySelector('[vn~="VProgressText"]').textContent).toBe('88%');
   });
 
   it('accepts numeric strings and clamps values to max', () => {
