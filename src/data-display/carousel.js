@@ -1,489 +1,467 @@
-import { HtmlElementNode } from '../html/index.js';
-import { ArrowLeftOutlined, ArrowRightOutlined } from '../svg/icons.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
-import { componentClass, isPlainObject, replaceChildren } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import { button, div } from '../html/index.js';
+import { ArrowLeftOutlined, ArrowRightOutlined } from '../svg/icons.js';
+import { createComponentShortcut } from '../components/shared.js';
+
+/**
+ * 走马灯（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
+ *
+ * - 结构：`div[VCarousel] > div[VCarouselViewport]`；**视口的匿名占位**接轨道
+ *   （`self.node().child(track)` 落进视口），轨道、箭头 `button[VCarouselArrow][data-dir]`、圆点容器
+ *   `div[VCarouselDots]` 都由命令**按需建、建过复用**（它们不在视图里，命令要写 transform / disabled / 显隐）；
+ * - 轨道自己是个组件：幻灯片是它的孩子、位移是它自己的 `transform`——命令写自己的节点，
+ *   不去碰视图里的元素（16 号清单第 14 条）；
+ * - 命令直接写快照；一处状态驱动多处 DOM（aria / 圆点 / 箭头 / 播放）时写口唯一收在 `writeView()`；
+ * - 文档级滑动收口走 `bindDocumentEvent`，定时器与解绑统一在 `whenDestroy` 里收。
+ */
 
 const SWIPE_THRESHOLD = 40;
-
-/** 轮播的节点类型（不导出）；公开组件 `vCarousel` 是 vNode 外壳。 */
-class CarouselNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VCarousel';
-    this._activeIndex = 0;
-    this._itemsData = [];
-    this._renderItem = null;
-    this._autoplay = false;
-    this._interval = 3500;
-    this._loop = true;
-    this._showArrows = true;
-    this._showDots = true;
-    this._height = null;
-    this._timer = null;
-    this._paused = false;
-
-    this._viewport = new HtmlElementNode('div').className('yoya-vcarousel-viewport');
-    this._track = new HtmlElementNode('div').className('yoya-vcarousel-track');
-    this._prevButton = new HtmlElementNode('button')
-      .className('yoya-vcarousel-arrow yoya-vcarousel-arrow--prev')
-      .attr({ 'aria-label': '上一项', type: 'button' })
-      .child(ArrowLeftOutlined())
-      .on('click', () => this.prev());
-    this._nextButton = new HtmlElementNode('button')
-      .className('yoya-vcarousel-arrow yoya-vcarousel-arrow--next')
-      .attr({ 'aria-label': '下一项', type: 'button' })
-      .child(ArrowRightOutlined())
-      .on('click', () => this.next());
-    this._swipeStart = null;
-    this._swipeCleanup = null;
-    this._viewport
-      .style('touchAction', 'pan-y')
-      .on('pointerdown', (event) => this._swipeDown(event))
-      .on('mousedown', (event) => this._swipeDown(event))
-      .on('touchstart', (event) => this._swipeDown(event));
-    this._dots = new HtmlElementNode('div')
-      .className('yoya-vcarousel-dots')
-      .attr({ 'aria-label': '轮播指示', role: 'tablist' });
-
-    this._viewport.child(this._track);
-    this.className(componentClass, 'yoya-vcarousel');
-    this.attr({
-      'aria-label': '走马灯，第 1 / 0 项',
-      'aria-roledescription': 'carousel',
-      'data-active': '0',
-      'data-count': '0',
-      'data-loop': 'true',
-      role: 'region',
-      tabindex: '0'
-    });
-    this.styles({
-      boxSizing: 'border-box',
-      display: 'grid',
-      gridTemplateRows: 'minmax(0, 1fr) auto',
-      minWidth: '0',
-      position: 'relative'
-    });
-    this.child(this._viewport, this._prevButton, this._nextButton, this._dots);
-    this.on('keydown', (event) => this._handleKeydown(event));
-    this.on('mouseenter', () => this._pause());
-    this.on('mouseleave', () => this._resume());
-    this.on('focusin', () => this._pause());
-    this.on('focusout', (event) => {
-      if (!event.relatedTarget || !this._el?.contains(event.relatedTarget)) {
-        this._resume();
-      }
-    });
-    this._setupCarousel(setup);
-    this._syncState();
-  }
-
-  slides(value, render = null) {
-    if (value === undefined) {
-      return this._itemsData.slice();
-    }
-
-    if (typeof render === 'function') {
-      this._renderItem = render;
-    }
-
-    this._itemsData = Array.isArray(value) ? value.slice() : [value];
-    this._activeIndex = 0;
-    this._renderSlides();
-    this._renderDots();
-    this._syncState();
-    return this;
-  }
-
-  items(value, render = null) {
-    return this.slides(value, render);
-  }
-
-  renderItem(handler) {
-    if (handler === undefined) {
-      return this._renderItem;
-    }
-
-    this._renderItem = typeof handler === 'function' ? handler : null;
-    if (this._itemsData.length > 0) {
-      this._renderSlides();
-    }
-    return this;
-  }
-
-  active(value) {
-    if (value === undefined) {
-      return this._activeIndex;
-    }
-
-    const count = this._itemsData.length;
-    let nextIndex = Math.floor(Number(value));
-
-    if (!Number.isFinite(nextIndex)) {
-      nextIndex = 0;
-    }
-
-    if (count === 0) {
-      this._activeIndex = 0;
-      this._syncState();
-      return this;
-    }
-
-    if (this._loop) {
-      this._activeIndex = ((nextIndex % count) + count) % count;
-    } else {
-      this._activeIndex = Math.max(0, Math.min(count - 1, nextIndex));
-    }
-
-    this._syncState();
-    return this;
-  }
-
-  goTo(value) {
-    return this.active(value);
-  }
-
-  next() {
-    if (this._itemsData.length === 0) {
-      return this;
-    }
-
-    if (this._loop) {
-      return this.active(this._activeIndex + 1);
-    }
-
-    return this.active(Math.min(this._activeIndex + 1, this._itemsData.length - 1));
-  }
-
-  prev() {
-    if (this._itemsData.length === 0) {
-      return this;
-    }
-
-    if (this._loop) {
-      return this.active(this._activeIndex - 1);
-    }
-
-    return this.active(Math.max(0, this._activeIndex - 1));
-  }
-
-  loop(value) {
-    if (value === undefined) {
-      return this._loop;
-    }
-
-    this._loop = Boolean(value);
-    this.attr('data-loop', this._loop ? 'true' : null);
-    this._syncState();
-    return this;
-  }
-
-  autoplay(value) {
-    if (value === undefined) {
-      return this._autoplay;
-    }
-
-    this._autoplay = Boolean(value);
-    this.attr('data-autoplay', this._autoplay ? 'true' : null);
-    this._syncPlayback();
-    return this;
-  }
-
-  start() {
-    return this.autoplay(true);
-  }
-
-  stop() {
-    return this.autoplay(false);
-  }
-
-  interval(value) {
-    if (value === undefined) {
-      return this._interval;
-    }
-
-    const parsed = Number(value);
-    this._interval = Number.isFinite(parsed) && parsed > 0 ? parsed : 3500;
-    if (this._autoplay) {
-      this._clearTimer();
-      this._startTimer();
-    }
-    return this;
-  }
-
-  arrows(value) {
-    if (value === undefined) {
-      return this._showArrows;
-    }
-
-    this._showArrows = Boolean(value);
-    this.attr('data-arrows', this._showArrows ? 'true' : null);
-    this._prevButton.style('display', this._showArrows ? null : 'none');
-    this._nextButton.style('display', this._showArrows ? null : 'none');
-    return this;
-  }
-
-  dots(value) {
-    if (value === undefined) {
-      return this._showDots;
-    }
-
-    this._showDots = Boolean(value);
-    this.attr('data-dots', this._showDots ? 'true' : null);
-    this._dots.style('display', this._showDots ? null : 'none');
-    return this;
-  }
-
-  height(value) {
-    if (value === undefined) {
-      return this._height;
-    }
-
-    this._height = value || null;
-    this.style('height', this._height);
-    this.style('minHeight', this._height);
-    return this;
-  }
-
-  destroy() {
-    this._clearTimer();
-    if (this._swipeCleanup) {
-      this._swipeCleanup();
-      this._swipeCleanup = null;
-    }
-    return super.destroy();
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-
-    if (!this._swipeCleanup) {
-      const onUp = (event) => this._swipeUp(event);
-      const unbindPointerUp = bindDocumentEvent('pointerup', onUp);
-      const unbindMouseUp = bindDocumentEvent('mouseup', onUp);
-      const unbindTouchEnd = bindDocumentEvent('touchend', onUp);
-      this._swipeCleanup = () => {
-        unbindPointerUp();
-        unbindMouseUp();
-        unbindTouchEnd();
-      };
-    }
-    return element;
-  }
-
-  _handleKeydown(event) {
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      this.prev();
-    } else if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      this.next();
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      this.active(0);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      this.active(this._itemsData.length - 1);
-    }
-  }
-
-  _swipeDown(event) {
-    if (this._swipeStart) {
-      return;
-    }
-
-    const point = this._resolvePoint(event);
-    if (!point) {
-      return;
-    }
-
-    this._swipeStart = point;
-    this._pause();
-  }
-
-  _swipeUp(event) {
-    if (!this._swipeStart) {
-      return;
-    }
-
-    const point = this._resolvePoint(event);
-    const start = this._swipeStart;
-    this._swipeStart = null;
-    this._resume();
-
-    if (!point) {
-      return;
-    }
-
-    const deltaX = point.x - start.x;
-    const deltaY = point.y - start.y;
-
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) <= Math.abs(deltaY)) {
-      return;
-    }
-
-    if (deltaX < 0) {
-      this.next();
-    } else {
-      this.prev();
-    }
-  }
-
-  _resolvePoint(event) {
-    const touch = event.touches?.[0] ?? event.changedTouches?.[0];
-    const x = touch?.clientX ?? event.clientX;
-    const y = touch?.clientY ?? event.clientY;
-
-    if (typeof x !== 'number' || typeof y !== 'number') {
-      return null;
-    }
-
-    return { x, y };
-  }
-
-  _renderSlides() {
-    const count = this._itemsData.length;
-
-    replaceChildren(
-      this._track,
-      this._itemsData.map((item, index) => {
-        const slide = new HtmlElementNode('div').className('yoya-vcarousel-slide').attr({
-          'aria-label': `${index + 1} / ${count}`,
-          'aria-roledescription': 'slide',
-          role: 'group'
-        });
-        slide.child(this._renderItem ? this._renderItem(item, index, this) : item);
-        return slide;
-      })
-    );
-  }
-
-  _renderDots() {
-    replaceChildren(
-      this._dots,
-      this._itemsData.map((_, index) => {
-        const dot = new HtmlElementNode('button')
-          .className('yoya-vcarousel-dot')
-          .attr({
-            'aria-label': `跳转到第 ${index + 1} 项`,
-            role: 'tab',
-            tabindex: '-1',
-            type: 'button'
-          })
-          .on('click', () => this.active(index));
-        return dot;
-      })
-    );
-  }
-
-  _syncState() {
-    const count = this._itemsData.length;
-
-    this.attr('data-active', String(this._activeIndex));
-    this.attr('data-count', String(count));
-    this.attr('aria-label', `走马灯，第 ${this._activeIndex + 1} / ${count} 项`);
-    this._track.style(
-      'transform',
-      count > 0
-        ? this._activeIndex === 0
-          ? 'translateX(0%)'
-          : `translateX(-${this._activeIndex * 100}%)`
-        : null
-    );
-
-    this._dots.children().forEach((dot, index) => {
-      dot.attr('aria-selected', index === this._activeIndex ? 'true' : null);
-      dot.attr('tabindex', index === this._activeIndex ? '0' : '-1');
-    });
-
-    this._syncArrows();
-    this._syncPlayback();
-    this._emitChange();
-    return this;
-  }
-
-  _syncArrows() {
-    const count = this._itemsData.length;
-    const canPrev = count > 1 && (this._loop || this._activeIndex > 0);
-    const canNext = count > 1 && (this._loop || this._activeIndex < count - 1);
-
-    this._prevButton.attr('disabled', canPrev ? null : true);
-    this._nextButton.attr('disabled', canNext ? null : true);
-    this._prevButton.attr('aria-disabled', canPrev ? null : 'true');
-    this._nextButton.attr('aria-disabled', canNext ? null : 'true');
-  }
-
-  _syncPlayback() {
-    if (this._autoplay && !this._paused && this._itemsData.length > 1) {
-      this._startTimer();
-    } else {
-      this._clearTimer();
-    }
-  }
-
-  _startTimer() {
-    if (this._timer || !this._autoplay || this._paused || this._itemsData.length < 2) {
-      return;
-    }
-
-    this._timer = setInterval(() => this.next(), this._interval);
-  }
-
-  _clearTimer() {
-    if (this._timer) {
-      clearInterval(this._timer);
-      this._timer = null;
-    }
-  }
-
-  _pause() {
-    if (!this._autoplay) {
-      return;
-    }
-
-    this._paused = true;
-    this.attr('data-paused', 'true');
-    this._clearTimer();
-  }
-
-  _emitChange() {
-    if (!this._el) {
-      return;
-    }
-
-    this._el.dispatchEvent(
-      new CustomEvent('change', {
-        bubbles: false,
-        detail: {
-          count: this._itemsData.length,
-          index: this._activeIndex
+const DEFAULT_INTERVAL = 3500;
+
+/** 幻灯片（形态 A）。 */
+function CarouselSlide() {
+  return div({ 'aria-roledescription': 'slide', role: 'group', vn: 'VCarouselSlide' });
+}
+
+/** 圆点（形态 A）。 */
+function CarouselDot() {
+  return button({ role: 'tab', tabindex: '-1', type: 'button', vn: 'VCarouselDot' });
+}
+
+/**
+ * 轨道（形态 B）：幻灯片是它的孩子、位移是它自己的 `transform`。
+ * 容器把它交给视口占位，之后只调它的命令（`index` / `slides`）。
+ */
+function CarouselTrack() {
+  return vNode((api, self) => {
+    let slides = [];
+
+    /** 幻灯片：造一批新片、收掉旧的（片进轨道自己）。 */
+    api.slides = (items, render) => {
+      slides.forEach((slide) => slide.destroy());
+      slides = items.map((item, index) => {
+        const slide = CarouselSlide();
+        const content = render ? render(item, index) : item;
+
+        if (content !== null && content !== undefined) {
+          slide.child(content);
         }
-      })
-    );
-  }
 
-  _resume() {
-    if (!this._autoplay) {
-      return;
-    }
+        self.node().child(slide);
+        return slide;
+      });
 
-    this._paused = false;
-    this.attr('data-paused', null);
-    this._startTimer();
-  }
+      return api;
+    };
 
-  _setupCarousel(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    /** 位移 + 每片的 aria 计数：轨道自己的快照。 */
+    api.index = (index, count) => {
+      self
+        .node()
+        .style(
+          'transform',
+          count > 0 ? (index === 0 ? 'translateX(0%)' : `translateX(-${index * 100}%)`) : null
+        );
+      slides.forEach((slide, slideIndex) => {
+        slide.attr('aria-label', `${slideIndex + 1} / ${count}`);
+      });
+      return api;
+    };
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+    return div({ vn: 'VCarouselTrack' });
+  });
+}
 
-    if (isPlainObject(setup)) {
+const carouselTrack = createComponentShortcut(CarouselTrack);
+
+/**
+ * 走马灯：`items / renderItem` 出幻灯片，`active / goTo / next / prev / loop` 控制当前项，
+ * `autoplay / interval` 控制自动播放，`arrows / dots / height` 控制外壳。
+ * 对象 = props，字符串 / 数字 = 一张幻灯片，函数 = 构建回调（默认落组件节点构建帧）。
+ */
+export function VCarousel() {
+  return vNode((api, self) => {
+    const state = {
+      activeIndex: 0,
+      arrows: true,
+      autoplay: false,
+      dots: true,
+      height: null,
+      interval: DEFAULT_INTERVAL,
+      items: [],
+      loop: true,
+      paused: false,
+      renderItem: null,
+      timer: null
+    };
+
+    let prevButton = null;
+    let nextButton = null;
+    let dotsBox = null;
+    let trackPart = null;
+    let dots = [];
+    let swipeStart = null;
+
+    /** 轨道：用到才建、建过复用（交给视口匿名占位）。 */
+    const trackOf = () => {
+      if (!trackPart) {
+        trackPart = carouselTrack();
+        self.node().child(trackPart);
+      }
+
+      return trackPart;
+    };
+
+    /** 箭头：用到才建、建过复用（不在视图里）。 */
+    const arrowsOf = () => {
+      if (!prevButton) {
+        prevButton = button({
+          'aria-label': '上一项',
+          'data-dir': 'prev',
+          type: 'button',
+          vn: 'VCarouselArrow'
+        }).child(ArrowLeftOutlined());
+        prevButton.on('click', () => api.prev());
+
+        nextButton = button({
+          'aria-label': '下一项',
+          'data-dir': 'next',
+          type: 'button',
+          vn: 'VCarouselArrow'
+        }).child(ArrowRightOutlined());
+        nextButton.on('click', () => api.next());
+
+        self.node().child(prevButton, nextButton);
+      }
+
+      return { next: nextButton, prev: prevButton };
+    };
+
+    /** 圆点容器：用到才建、建过复用（不在视图里）。 */
+    const dotsOf = () => {
+      if (!dotsBox) {
+        dotsBox = div({ 'aria-label': '轮播指示', role: 'tablist', vn: 'VCarouselDots' });
+        self.node().child(dotsBox);
+      }
+
+      return dotsBox;
+    };
+
+    /** 圆点：一项一个，点哪张跳哪张。 */
+    const writeDots = () => {
+      dots.forEach((dot) => dot.destroy());
+      dots = state.items.map((_, index) => {
+        const dot = CarouselDot();
+
+        dot.on('click', () => api.active(index));
+        dotsOf().child(dot);
+        return dot;
+      });
+      return api;
+    };
+
+    /**
+     * 写这一份快照：容器 aria / 计数 / 轨道位移 / 圆点选中态 / 箭头可用性 / 播放状态。
+     * 一处状态驱动多处 DOM，写口收在一个地方——不然会出现"改一半"的中间态。
+     */
+    const writeView = (emit = false) => {
+      const count = state.items.length;
+      const index = state.activeIndex;
+      const { next, prev } = arrowsOf();
+
+      self.node().attr({
+        'aria-label': `走马灯，第 ${index + 1} / ${count} 项`,
+        'data-active': String(index),
+        'data-count': String(count)
+      });
+      trackOf().index(index, count);
+
+      dots.forEach((dot, dotIndex) => {
+        dot.attr('aria-selected', dotIndex === index ? 'true' : null);
+        dot.attr('tabindex', dotIndex === index ? '0' : '-1');
+      });
+
+      const canPrev = count > 1 && (state.loop || index > 0);
+      const canNext = count > 1 && (state.loop || index < count - 1);
+
+      prev.attr({ 'aria-disabled': canPrev ? null : 'true', disabled: canPrev ? null : true });
+      next.attr({ 'aria-disabled': canNext ? null : 'true', disabled: canNext ? null : true });
+      prev.style('display', state.arrows ? null : 'none');
+      next.style('display', state.arrows ? null : 'none');
+      dotsOf().style('display', state.dots ? null : 'none');
+
+      if (state.autoplay && !state.paused && count > 1) {
+        startTimer();
+      } else {
+        clearTimer();
+      }
+
+      if (emit) {
+        const element = self.node().renderDom();
+
+        element?.dispatchEvent?.(
+          new CustomEvent('change', { bubbles: false, detail: { count, index } })
+        );
+      }
+
+      return api;
+    };
+
+    const clearTimer = () => {
+      if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+      }
+    };
+
+    const startTimer = () => {
+      if (state.timer || !state.autoplay || state.paused || state.items.length < 2) {
+        return;
+      }
+
+      state.timer = setInterval(() => api.next(), state.interval);
+    };
+
+    const pause = () => {
+      if (!state.autoplay) {
+        return;
+      }
+
+      state.paused = true;
+      self.node().attr('data-paused', 'true');
+      clearTimer();
+    };
+
+    const resume = () => {
+      if (!state.autoplay) {
+        return;
+      }
+
+      state.paused = false;
+      self.node().attr('data-paused', null);
+      startTimer();
+    };
+
+    const resolvePoint = (event) => {
+      const touch = event.touches?.[0] ?? event.changedTouches?.[0];
+      const x = touch?.clientX ?? event.clientX;
+      const y = touch?.clientY ?? event.clientY;
+
+      if (typeof x !== 'number' || typeof y !== 'number') {
+        return null;
+      }
+
+      return { x, y };
+    };
+
+    const swipeDown = (event) => {
+      if (swipeStart) {
+        return;
+      }
+
+      const point = resolvePoint(event);
+
+      if (!point) {
+        return;
+      }
+
+      swipeStart = point;
+      pause();
+    };
+
+    const swipeUp = (event) => {
+      if (!swipeStart) {
+        return;
+      }
+
+      const point = resolvePoint(event);
+      const start = swipeStart;
+      swipeStart = null;
+      resume();
+
+      if (!point) {
+        return;
+      }
+
+      const deltaX = point.x - start.x;
+      const deltaY = point.y - start.y;
+
+      if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
+      }
+
+      if (deltaX < 0) {
+        api.next();
+      } else {
+        api.prev();
+      }
+    };
+
+    const handleKeydown = (event) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        api.prev();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        api.next();
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        api.active(0);
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        api.active(state.items.length - 1);
+      }
+    };
+
+    api.slides = (value, render = null) => {
+      if (value === undefined) {
+        return state.items.slice();
+      }
+
+      if (typeof render === 'function') {
+        state.renderItem = render;
+      }
+
+      state.items = Array.isArray(value) ? value.slice() : [value];
+      state.activeIndex = 0;
+      trackOf().slides(state.items, state.renderItem);
+      writeDots();
+      return writeView();
+    };
+
+    api.items = (value, render = null) =>
+      value === undefined ? api.slides() : api.slides(value, render);
+
+    api.renderItem = (handler) => {
+      if (handler === undefined) {
+        return state.renderItem;
+      }
+
+      state.renderItem = typeof handler === 'function' ? handler : null;
+
+      if (state.items.length > 0) {
+        trackOf().slides(state.items, state.renderItem);
+      }
+
+      return api;
+    };
+
+    api.active = (value) => {
+      if (value === undefined) {
+        return state.activeIndex;
+      }
+
+      const count = state.items.length;
+      let nextIndex = Math.floor(Number(value));
+
+      if (!Number.isFinite(nextIndex)) {
+        nextIndex = 0;
+      }
+
+      if (count === 0) {
+        state.activeIndex = 0;
+        return writeView();
+      }
+
+      state.activeIndex = state.loop
+        ? ((nextIndex % count) + count) % count
+        : Math.max(0, Math.min(count - 1, nextIndex));
+      return writeView(true);
+    };
+
+    api.goTo = (value) => api.active(value);
+
+    api.next = () => {
+      if (state.items.length === 0) {
+        return api;
+      }
+
+      return api.active(
+        state.loop ? state.activeIndex + 1 : Math.min(state.activeIndex + 1, state.items.length - 1)
+      );
+    };
+
+    api.prev = () => {
+      if (state.items.length === 0) {
+        return api;
+      }
+
+      return api.active(state.loop ? state.activeIndex - 1 : Math.max(0, state.activeIndex - 1));
+    };
+
+    api.loop = (value) => {
+      if (value === undefined) {
+        return state.loop;
+      }
+
+      state.loop = Boolean(value);
+      self.node().attr('data-loop', state.loop ? 'true' : null);
+      return writeView();
+    };
+
+    api.autoplay = (value) => {
+      if (value === undefined) {
+        return state.autoplay;
+      }
+
+      state.autoplay = Boolean(value);
+      self.node().attr('data-autoplay', state.autoplay ? 'true' : null);
+      return writeView();
+    };
+
+    api.start = () => api.autoplay(true);
+    api.stop = () => api.autoplay(false);
+
+    api.interval = (value) => {
+      if (value === undefined) {
+        return state.interval;
+      }
+
+      const parsed = Number(value);
+      state.interval = Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_INTERVAL;
+
+      if (state.autoplay) {
+        clearTimer();
+        startTimer();
+      }
+
+      return api;
+    };
+
+    api.arrows = (value) => {
+      if (value === undefined) {
+        return state.arrows;
+      }
+
+      state.arrows = Boolean(value);
+      self.node().attr('data-arrows', state.arrows ? 'true' : null);
+      return writeView();
+    };
+
+    api.dots = (value) => {
+      if (value === undefined) {
+        return state.dots;
+      }
+
+      state.dots = Boolean(value);
+      self.node().attr('data-dots', state.dots ? 'true' : null);
+      return writeView();
+    };
+
+    api.height = (value) => {
+      if (value === undefined) {
+        return state.height;
+      }
+
+      state.height = value || null;
+      self.node().style('height', state.height);
+      self.node().style('minHeight', state.height);
+      return api;
+    };
+
+    /** props：`slides / items / children / renderItem / active / loop / autoplay / interval / arrows / dots / height`。 */
+    api.setupObject = (config) => {
       const {
         active,
         arrows,
@@ -497,80 +475,110 @@ class CarouselNode extends HtmlElementNode {
         renderItem,
         slides,
         ...elementConfig
-      } = setup;
+      } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        self.node().setup(elementConfig);
       }
 
       if (renderItem !== undefined) {
-        this.renderItem(renderItem);
+        api.renderItem(renderItem);
       }
 
       const slideSetup = slides ?? items ?? children;
+
       if (slideSetup !== undefined) {
-        this.slides(slideSetup);
+        api.slides(slideSetup);
       }
 
       if (active !== undefined) {
-        this.active(active);
+        api.active(active);
       }
 
       if (loop !== undefined) {
-        this.loop(loop);
+        api.loop(loop);
       }
 
       if (autoplay !== undefined) {
-        this.autoplay(autoplay);
+        api.autoplay(autoplay);
       }
 
       if (interval !== undefined) {
-        this.interval(interval);
+        api.interval(interval);
       }
 
       if (arrows !== undefined) {
-        this.arrows(arrows);
+        api.arrows(arrows);
       }
 
       if (dots !== undefined) {
-        this.dots(dots);
+        api.dots(dots);
       }
 
       if (height !== undefined) {
-        this.height(height);
+        api.height(height);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.slides(setup);
-  }
-}
+    /** 字符串 / 数字 = 一张幻灯片。 */
+    api.setupString = (value) => api.slides(value);
 
-export function vCarousel(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VCarousel',
-    createNode: (setup) => new CarouselNode(setup),
-    commands: [
-      'slides',
-      'items',
-      'renderItem',
-      'active',
-      'goTo',
-      'next',
-      'prev',
-      'loop',
-      'autoplay',
-      'start',
-      'stop',
-      'interval',
-      'arrows',
-      'dots',
-      'height'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    // 文档级滑动：不依赖落地时机（与旧实现同为渲染前绑、销毁时解）
+    const unbindSwipe = [
+      bindDocumentEvent('pointerup', swipeUp),
+      bindDocumentEvent('mouseup', swipeUp),
+      bindDocumentEvent('touchend', swipeUp)
+    ];
+
+    api.whenDestroy = () => {
+      clearTimer();
+      unbindSwipe.forEach((unbind) => unbind());
+    };
+
+    // 结构里就带默认快照（命令只覆盖自己那一项）；轨道的匿名占位接幻灯片
+    return div(
+      {
+        'aria-label': '走马灯，第 1 / 0 项',
+        'aria-roledescription': 'carousel',
+        'data-active': '0',
+        'data-count': '0',
+        'data-loop': 'true',
+        role: 'region',
+        style: {
+          boxSizing: 'border-box',
+          display: 'grid',
+          gridTemplateRows: 'minmax(0, 1fr) auto',
+          minWidth: '0',
+          position: 'relative'
+        },
+        tabindex: '0',
+        vn: 'VCarousel'
+      },
+      (root) => {
+        root.on('keydown', handleKeydown);
+        root.on('mouseenter', pause);
+        root.on('mouseleave', resume);
+        root.on('focusin', pause);
+        root.on('focusout', (event) => {
+          if (!event.relatedTarget || !event.currentTarget?.contains(event.relatedTarget)) {
+            resume();
+          }
+        });
+        root.child(
+          // 视口是匿名占位：轨道由命令造好后落进来
+          div({ vn: 'VCarouselViewport', vn_slot: '' }, (viewport) => {
+            viewport
+              .style('touchAction', 'pan-y')
+              .on('pointerdown', swipeDown)
+              .on('mousedown', swipeDown)
+              .on('touchstart', swipeDown);
+          })
+        );
+      }
+    );
   });
 }
 
-export const VCarousel = vCarousel;
-defineComponentIdentity(VCarousel, 'VCarousel');
+export const vCarousel = createComponentShortcut(VCarousel);

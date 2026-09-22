@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { VCarousel, div, vCarousel } from '../index.js';
+import { div, hasComponentIdentity, vCarousel } from '../index.js';
 
 describe('vCarousel', () => {
   beforeEach(() => {
@@ -19,14 +19,14 @@ describe('vCarousel', () => {
     });
     const element = carousel.renderDom();
 
-    expect(carousel).toBeInstanceOf(VCarousel);
-    expect(element.classList.contains('yoya-vcarousel')).toBe(true);
-    expect(element.querySelectorAll('.yoya-vcarousel-slide')).toHaveLength(3);
-    expect(element.querySelectorAll('.yoya-vcarousel-dot')).toHaveLength(3);
-    expect(element.querySelector('.yoya-vcarousel-track').style.transform).toBe('translateX(0%)');
+    expect(hasComponentIdentity(carousel, 'VCarousel')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VCarousel');
+    expect(element.querySelectorAll("[vn~='VCarouselSlide']")).toHaveLength(3);
+    expect(element.querySelectorAll("[vn~='VCarouselDot']")).toHaveLength(3);
+    expect(element.querySelector("[vn~='VCarouselTrack']").style.transform).toBe('translateX(0%)');
     expect(element.dataset.active).toBe('0');
-    expect(element.querySelector('.yoya-vcarousel-arrow--prev').disabled).toBe(true);
-    expect(element.querySelector('.yoya-vcarousel-arrow--next').disabled).toBe(false);
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='prev']").disabled).toBe(true);
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").disabled).toBe(false);
   });
 
   it('wraps with loop and clamps without loop', () => {
@@ -43,7 +43,7 @@ describe('vCarousel', () => {
     carousel.loop(false).active(2);
     carousel.next();
     expect(carousel.active()).toBe(2);
-    expect(element.querySelector('.yoya-vcarousel-arrow--next').disabled).toBe(true);
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").disabled).toBe(true);
 
     carousel.prev();
     expect(carousel.active()).toBe(1);
@@ -55,7 +55,7 @@ describe('vCarousel', () => {
       slides: ['A', 'B', 'C']
     });
     const element = carousel.renderDom();
-    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
 
     viewport.dispatchEvent(
       new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
@@ -76,7 +76,7 @@ describe('vCarousel', () => {
       slides: ['A', 'B', 'C']
     });
     const element = carousel.renderDom();
-    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
 
     viewport.dispatchEvent(
       new MouseEvent('mousedown', { bubbles: true, clientX: 100, clientY: 20 })
@@ -100,7 +100,7 @@ describe('vCarousel', () => {
       slides: ['A', 'B', 'C']
     });
     const element = carousel.renderDom();
-    const viewport = element.querySelector('.yoya-vcarousel-viewport');
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
 
     viewport.dispatchEvent(
       new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
@@ -122,9 +122,9 @@ describe('vCarousel', () => {
     });
     const element = carousel.renderDom();
 
-    element.querySelectorAll('.yoya-vcarousel-dot')[2].click();
+    element.querySelectorAll("[vn~='VCarouselDot']")[2].click();
     expect(carousel.active()).toBe(2);
-    expect(element.querySelector('.yoya-vcarousel-track').style.transform).toBe(
+    expect(element.querySelector("[vn~='VCarouselTrack']").style.transform).toBe(
       'translateX(-200%)'
     );
 
@@ -190,9 +190,13 @@ describe('vCarousel', () => {
     });
     const element = carousel.renderDom();
 
-    expect(element.querySelector('.yoya-vcarousel-arrow--prev').style.display).toBe('none');
-    expect(element.querySelector('.yoya-vcarousel-arrow--next').style.display).toBe('none');
-    expect(element.querySelector('.yoya-vcarousel-dots').style.display).toBe('none');
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='prev']").style.display).toBe(
+      'none'
+    );
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").style.display).toBe(
+      'none'
+    );
+    expect(element.querySelector("[vn~='VCarouselDots']").style.display).toBe('none');
   });
 
   it('registers vCarousel as a parent shortcut', () => {
@@ -204,7 +208,7 @@ describe('vCarousel', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vcarousel')).not.toBeNull();
-    expect(element.querySelectorAll('.yoya-vcarousel-slide')).toHaveLength(2);
+    expect(element.querySelector("[vn~='VCarousel']")).not.toBeNull();
+    expect(element.querySelectorAll("[vn~='VCarouselSlide']")).toHaveLength(2);
   });
 });

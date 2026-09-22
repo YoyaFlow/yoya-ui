@@ -717,7 +717,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelector('h1').textContent).toBe('vCarousel 走马灯');
     expect(page.textContent).toContain('carousel.autoplay(value)');
     expect(demos).toHaveLength(4);
-    expect(basic.querySelector('.yoya-vcarousel')).not.toBeNull();
+    expect(basic.querySelector("[vn~='VCarousel']")).not.toBeNull();
     expect(basic.querySelector('[data-source-example]').textContent).toContain(
       'CarouselBasicExample1'
     );
@@ -732,7 +732,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     toggleLoopButton.click();
     nextButton.click();
 
-    expect(loopDemo.querySelector('.yoya-vcarousel').dataset.loop).toBeUndefined();
+    expect(loopDemo.querySelector("[vn~='VCarousel']").dataset.loop).toBeUndefined();
     expect(loopDemo.querySelector('[data-carousel-loop-status]').textContent).toContain(
       '当前 2 / 3'
     );

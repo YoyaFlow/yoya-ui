@@ -1803,7 +1803,7 @@ body {
     gap: 6px;
   }
 
-  :where(.yoya-vcarousel) {
+  :where([vn~='VCarousel']) {
     box-sizing: border-box;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
@@ -1811,14 +1811,14 @@ body {
     position: relative;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-viewport {
+  [vn~='VCarousel'] [vn~='VCarouselViewport'] {
     min-height: 0;
     min-width: 0;
     overflow: hidden;
     position: relative;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-track {
+  [vn~='VCarousel'] [vn~='VCarouselTrack'] {
     display: flex;
     height: 100%;
     min-width: 0;
@@ -1826,14 +1826,14 @@ body {
     will-change: transform;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-slide {
+  [vn~='VCarousel'] [vn~='VCarouselSlide'] {
     box-sizing: border-box;
     flex: 0 0 100%;
     height: 100%;
     min-width: 0;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow {
+  [vn~='VCarousel'] [vn~='VCarouselArrow'] {
     align-items: center;
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
@@ -1852,31 +1852,31 @@ body {
     z-index: 2;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow:hover:not([disabled]) {
+  [vn~='VCarousel'] [vn~='VCarouselArrow']:hover:not([disabled]) {
     background: var(--yoya-color-surface-hover, #f8fafc);
     border-color: var(--yoya-color-primary, #2563eb);
     color: var(--yoya-color-primary-hover, #1d4ed8);
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow[disabled] {
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][disabled] {
     cursor: not-allowed;
     opacity: 0.35;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow--prev {
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][data-dir='prev'] {
     left: 10px;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow--next {
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][data-dir='next'] {
     right: 10px;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-arrow svg {
+  [vn~='VCarousel'] [vn~='VCarouselArrow'] svg {
     height: 16px;
     width: 16px;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-dots {
+  [vn~='VCarousel'] [vn~='VCarouselDots'] {
     align-items: center;
     display: flex;
     gap: 6px;
@@ -1885,7 +1885,7 @@ body {
     padding: 8px;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-dot {
+  [vn~='VCarousel'] [vn~='VCarouselDot'] {
     background: var(--yoya-color-border-muted, #94a3b8);
     border: 0;
     border-radius: 999px;
@@ -1898,7 +1898,7 @@ body {
     width: 8px;
   }
 
-  .yoya-vcarousel .yoya-vcarousel-dot[aria-selected='true'] {
+  [vn~='VCarousel'] [vn~='VCarouselDot'][aria-selected='true'] {
     background: var(--yoya-color-primary, #2563eb);
     width: 18px;
   }

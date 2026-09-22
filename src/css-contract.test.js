@@ -152,16 +152,16 @@ const scrollSelectors = [
 ];
 
 const carouselSelectors = [
-  '.yoya-vcarousel',
-  '.yoya-vcarousel-viewport',
-  '.yoya-vcarousel-track',
-  '.yoya-vcarousel-slide',
-  '.yoya-vcarousel-arrow',
-  '.yoya-vcarousel-arrow--prev',
-  '.yoya-vcarousel-arrow--next',
-  '.yoya-vcarousel-dots',
-  '.yoya-vcarousel-dot',
-  ".yoya-vcarousel-dot[aria-selected='true']"
+  "[vn~='VCarousel']",
+  "[vn~='VCarouselViewport']",
+  "[vn~='VCarouselTrack']",
+  "[vn~='VCarouselSlide']",
+  "[vn~='VCarouselArrow']",
+  "[vn~='VCarouselArrow'][data-dir='prev']",
+  "[vn~='VCarouselArrow'][data-dir='next']",
+  "[vn~='VCarouselDots']",
+  "[vn~='VCarouselDot']",
+  "[vn~='VCarouselDot'][aria-selected='true']"
 ];
 
 const effectsSelectors = [
