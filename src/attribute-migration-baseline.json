@@ -10,7 +10,6 @@
     "src/actions/dropdown-menu.js": 5,
     "src/navigation/breadcrumb.js": 6,
     "src/navigation/navbar.js": 10,
-    "src/navigation/tabs.js": 2,
     "src/feedback/dialog.js": 4,
     "src/feedback/message.js": 6,
     "src/feedback/tooltip.js": 4,

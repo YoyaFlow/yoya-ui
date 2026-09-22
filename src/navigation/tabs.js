@@ -60,8 +60,9 @@ export function VTab() {
   return vNode((api, self) => {
     const state = { active: false, disabled: false, key: null };
     const sequence = allocateNumber();
-    const triggerId = `yoya-vtab-trigger-${sequence}`;
-    const panelId = `yoya-vtab-panel-${sequence}`;
+    // id 前缀去 `yoya-v`（全局名只留中性前缀，与 `yoya-timer-range-*` / `yoya-progress-*` 同一口径）
+    const triggerId = `yoya-tab-trigger-${sequence}`;
+    const panelId = `yoya-tab-panel-${sequence}`;
 
     let panelPart = null;
 
