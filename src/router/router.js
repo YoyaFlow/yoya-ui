@@ -12,12 +12,11 @@ import {
   bindWindowEvent,
   injectDocumentStyle
 } from '../core/document-events.js';
-import {
-  normalizeChildren,
-  replaceChildren,
-  themeBorder,
-  themeValue
-} from '../components/shared.js';
+import { themeBorder, themeValue } from '../components/shared.js';
+import { createComponentFactory, createComponentShortcut } from '../components/shared.js';
+import { vSlot } from '../layout/v-slot.js';
+import { vNode } from '../core/v-node.js';
+import { a, div, span } from '../html/index.js';
 
 const maxVisibleTitles = 8;
 let scrollbarStyle = null;
@@ -561,71 +560,181 @@ export function vRouter(first = null, second = null, third = null) {
   return node;
 }
 
-export function vLink(routerInstance, setup = null, callback = null) {
+/** 链接标签（形态 A）：`vn_slot` 标记 = 它在链接里的位置。 */
+export function VLinkLabel() {
+  return span({ vn: 'VLinkLabel', vn_slot: 'label' });
+}
+
+export const vLinkLabel = createComponentShortcut(VLinkLabel);
+
+/**
+ * 链接（形态 B）：`a[VLink] > 标签占位`。
+ *
+ * - 地址 / 参数 / 查询 / 替换 / 精确匹配是命令，命令只写自己的快照（`href` / `aria-current` /
+ *   `is-active` 类）；标签是内容位，内容（`VLinkLabel`）自带 `vn_slot`、投递即落位；
+ * - 订阅路由器、退订走 `whenDestroy`；点击委托挂在元素自己身上，外部链接与文档路由交给浏览器。
+ *
+ * 定义 `VLink(routerInstance)` 收自己的依赖（路由器），调用方参数由 `vLink` 按标准分派。
+ */
+export function VLink(routerInstance) {
   assertRouter(routerInstance);
-  const node = new ElementNode('a');
-  const state = {
-    exact: true,
-    label: null,
-    params: {},
-    query: {},
-    replace: false,
-    to: '/'
-  };
-  const labelNode = new ElementNode('span').setup({ vn: 'VLinkLabel' });
 
-  node.setup({ vn: 'VLink' });
-  node.attr('data-router-link', 'true');
-  node.child(labelNode);
-  node.to = (value) => updateLinkValue(node, state, 'to', value);
-  node.params = (value) => updateLinkValue(node, state, 'params', value || {});
-  node.query = (value) => updateLinkValue(node, state, 'query', value || {});
-  node.replace = (value) => updateLinkValue(node, state, 'replace', Boolean(value));
-  node.exact = (value) => updateLinkValue(node, state, 'exact', Boolean(value));
-  node.label = (value) => {
-    if (value === undefined) return state.label;
-    state.label = value;
-    replaceChildren(labelNode, normalizeChildren(value));
-    return node;
-  };
+  return vNode((api, self) => {
+    const state = { exact: true, label: null, params: {}, query: {}, replace: false, to: '/' };
 
-  applyLinkSetup(node, state, setup);
-  updateLink(node, state, routerInstance);
-  node.on('click', (event) => {
-    if (!shouldHandleLinkClick(event, node)) return;
-    const target = buildLinkPath(state.to, state.params, state.query);
-    // 外部链接与文档路由交给浏览器整页跳转（href 已是真实地址）
-    if (resolveDocumentTarget(routerInstance, target)) return;
-    event.preventDefault();
-    routerInstance.navigate(target, { replace: state.replace });
+    /** 标签内容：没显式设过标签时跟随 `to`（与旧实现一致）。内容自带 `vn_slot`，投递即落位。 */
+    const writeLabel = (node, value) => {
+      node.child(vLinkLabel(value));
+      return api;
+    };
+
+    /**
+     * 写这一份快照：href / aria-current / is-active（都是自己的属性和类）。
+     * 首屏在视图里直接写元素（构建期还没有组件节点），命令与订阅走组件节点。
+     */
+    const writeLink = (node) => {
+      const target = buildLinkPath(state.to, state.params, state.query);
+      const documentTarget = resolveDocumentTarget(routerInstance, target);
+      const href = documentTarget
+        ? documentTarget.url
+        : routerInstance.mode() === 'history'
+          ? target
+          : `#${target}`;
+      const active = isLinkActive(routerInstance.currentPath(), target, state.exact);
+      const classes = new Set(
+        String(node.attr('class') || '')
+          .split(/\s+/)
+          .filter(Boolean)
+      );
+
+      if (active) {
+        classes.add('is-active');
+      } else {
+        classes.delete('is-active');
+      }
+
+      node.attr({
+        'aria-current': active ? 'page' : null,
+        class: [...classes].join(' '),
+        href
+      });
+
+      // 路由声明的 target / rel 落到链接上（未声明时不动用户自己设的属性）
+      if (documentTarget?.target) node.attr('target', documentTarget.target);
+      if (documentTarget?.rel) node.attr('rel', documentTarget.rel);
+      return api;
+    };
+
+    api.to = (value) => {
+      if (value === undefined) return state.to;
+      state.to = value;
+      if (state.label === null) writeLabel(self.node(), value);
+      return writeLink(self.node());
+    };
+
+    api.params = (value) => {
+      if (value === undefined) return state.params;
+      state.params = value || {};
+      return writeLink(self.node());
+    };
+
+    api.query = (value) => {
+      if (value === undefined) return state.query;
+      state.query = value || {};
+      return writeLink(self.node());
+    };
+
+    api.replace = (value) => {
+      if (value === undefined) return state.replace;
+      state.replace = Boolean(value);
+      return api;
+    };
+
+    api.exact = (value) => {
+      if (value === undefined) return state.exact;
+      state.exact = Boolean(value);
+      return writeLink(self.node());
+    };
+
+    api.label = (value) => {
+      if (value === undefined) return state.label;
+      state.label = value;
+      return writeLabel(self.node(), value);
+    };
+
+    /** props：`to / params / query / replace / exact / label` + 其余元素配置。 */
+    api.setupObject = (config) => {
+      const { exact, label, params, query, replace, to, ...elementConfig } = config;
+
+      if (Object.keys(elementConfig).length > 0) {
+        self.node().setup(elementConfig);
+      }
+
+      if (to !== undefined) api.to(to);
+      if (params !== undefined) api.params(params);
+      if (query !== undefined) api.query(query);
+      if (replace !== undefined) api.replace(replace);
+      if (exact !== undefined) api.exact(exact);
+      if (label !== undefined) api.label(label);
+      return api;
+    };
+
+    /** 字符串 = 目标 + 标签（与旧实现一致）。 */
+    api.setupString = (value) => {
+      api.to(value);
+      api.label(value);
+      return api;
+    };
+
+    const unsubscribe = routerInstance.subscribe(() => writeLink(self.node()));
+
+    api.whenDestroy = () => {
+      unsubscribe();
+    };
+
+    return a({ 'data-router-link': 'true', href: '#', vn: 'VLink' }, (element) => {
+      element.on('click', (event) => {
+        if (!shouldHandleLinkClick(event, element)) return;
+
+        const target = buildLinkPath(state.to, state.params, state.query);
+        // 外部链接与文档路由交给浏览器整页跳转（href 已是真实地址）
+        if (resolveDocumentTarget(routerInstance, target)) return;
+
+        event.preventDefault();
+        routerInstance.navigate(target, { replace: state.replace });
+      });
+      // 标签是内容位：占位自带一个空标签（与旧实现一致），命令投递时按占位替换
+      element.child(vSlot({ children: span({ vn: 'VLinkLabel' }), name: 'label' }));
+      writeLink(element);
+    });
   });
+}
 
-  const unsubscribe = routerInstance.subscribe(() => updateLink(node, state, routerInstance));
-  const destroy = node.destroy.bind(node);
-  node.destroy = () => {
-    unsubscribe();
-    return destroy();
-  };
-  if (typeof callback === 'function') callback(node);
-  return node;
+export function vLink(routerInstance, setup = null, callback = null) {
+  return createComponentFactory(VLink, routerInstance, setup, callback, arguments);
+}
+
+/**
+ * 路由出口（形态 B）：`div[VRouterView]`。
+ * 视图根在**构建期**注册成出口（SSR 也要用到），组件销毁时按需摘掉。
+ */
+export function VRouterView(routerInstance) {
+  assertRouter(routerInstance);
+
+  return vNode((api) => {
+    // 出口必须是个节点句柄（路由器要往它里面渲染），所以视图根先落在局部再返回
+    const outlet = div({ 'data-router-view': 'true', vn: 'VRouterView' });
+
+    routerInstance.outlet(outlet);
+    api.whenDestroy = () => {
+      if (routerInstance.outlet() === outlet) routerInstance.outlet(routerInstance);
+    };
+    return outlet;
+  });
 }
 
 export function vRouterView(routerInstance, setup = null, callback = null) {
-  assertRouter(routerInstance);
-  const node = new ElementNode('div');
-  node.setup({ vn: 'VRouterView' });
-  node.attr('data-router-view', 'true');
-  if (typeof setup === 'function') node.setup(setup);
-  else if (setup) node.setup(setup);
-  routerInstance.outlet(node);
-
-  const destroy = node.destroy.bind(node);
-  node.destroy = () => {
-    if (routerInstance.outlet() === node) routerInstance.outlet(routerInstance);
-    return destroy();
-  };
-  if (typeof callback === 'function') callback(node);
-  return node;
+  return createComponentFactory(VRouterView, routerInstance, setup, callback, arguments);
 }
 
 export function vRouterViews(routerInstance, setup = null, callback = null) {
@@ -1517,69 +1626,6 @@ function applyDeclarativeRouterSetup(node, setup) {
     if (declaration?.pattern !== undefined) node.vRoute(declaration.pattern, declaration.config);
   });
   if (notFound !== undefined) node.notFound(notFound);
-  return node;
-}
-
-function applyLinkSetup(node, state, setup) {
-  if (typeof setup === 'function') {
-    setup(node);
-    return;
-  }
-  if (typeof setup === 'string') {
-    node.to(setup);
-    node.label(setup);
-    return;
-  }
-  if (!setup) return;
-
-  const { exact, label, params, query, replace, to, ...elementConfig } = setup;
-  if (Object.keys(elementConfig).length) node.setup(elementConfig);
-  if (to !== undefined) state.to = to;
-  if (params !== undefined) state.params = params || {};
-  if (query !== undefined) state.query = query || {};
-  if (replace !== undefined) state.replace = Boolean(replace);
-  if (exact !== undefined) state.exact = Boolean(exact);
-  state.label = label ?? state.to;
-  node.label(state.label);
-}
-
-function updateLinkValue(node, state, key, value) {
-  if (value === undefined) return state[key];
-  state[key] = value;
-  if (key === 'to' && state.label === null) {
-    replaceChildren(node.children()[0], normalizeChildren(value));
-  }
-  const routerInstance = node._routerInstance;
-  if (routerInstance) updateLink(node, state, routerInstance);
-  return node;
-}
-
-function updateLink(node, state, routerInstance) {
-  node._routerInstance = routerInstance;
-  const target = buildLinkPath(state.to, state.params, state.query);
-  const documentTarget = resolveDocumentTarget(routerInstance, target);
-  const href = documentTarget
-    ? documentTarget.url
-    : routerInstance.mode() === 'history'
-      ? target
-      : `#${target}`;
-  const active = isLinkActive(routerInstance.currentPath(), target, state.exact);
-  const classes = new Set(
-    String(node.attr('class') || '')
-      .split(/\s+/)
-      .filter(Boolean)
-  );
-  if (active) classes.add('is-active');
-  else classes.delete('is-active');
-  node.attr({
-    'aria-current': active ? 'page' : null,
-    class: [...classes].join(' '),
-    href
-  });
-
-  // 路由声明的 target / rel 落到链接上（未声明时不动用户自己设的属性）
-  if (documentTarget?.target) node.attr('target', documentTarget.target);
-  if (documentTarget?.rel) node.attr('rel', documentTarget.rel);
   return node;
 }
 
