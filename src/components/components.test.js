@@ -2483,17 +2483,17 @@ describe('compound components', () => {
     const element = form.renderDom();
 
     expect(form.validate()).toBe(false);
-    expect(element.querySelectorAll('.yoya-vform-item[data-error="true"]')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VFormItem"][data-error="true"]')).toHaveLength(2);
     expect(element.textContent).toContain('项目名称不能为空');
     expect(element.textContent).toContain('运维角色必须选择');
-    element.querySelectorAll('.yoya-vform-item-hint').forEach((hint) => {
+    element.querySelectorAll('[vn~="VFormItemHint"]').forEach((hint) => {
       expect(hint.style.display).toBe('none');
     });
 
     form.values({ projectName: '网关', role: '运维' });
     expect(form.validate()).toBe(true);
-    expect(element.querySelectorAll('.yoya-vform-item[data-error="true"]')).toHaveLength(0);
-    element.querySelectorAll('.yoya-vform-item-hint').forEach((hint) => {
+    expect(element.querySelectorAll('[vn~="VFormItem"][data-error="true"]')).toHaveLength(0);
+    element.querySelectorAll('[vn~="VFormItemHint"]').forEach((hint) => {
       expect(hint.style.display).not.toBe('none');
     });
   });
@@ -2539,7 +2539,7 @@ describe('compound components', () => {
       });
     });
     const element = form.renderDom();
-    const indicators = element.querySelectorAll('.yoya-vform-item-required-indicator');
+    const indicators = element.querySelectorAll('[vn~="VFormItemRequiredIndicator"]');
 
     expect(indicators[0].style.display).toBe('none');
     expect(indicators[1].style.display).not.toBe('none');

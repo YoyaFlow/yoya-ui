@@ -360,6 +360,8 @@ export type FormItemRule = (
 
 /** Form item with name/label/validation. */
 export class VFormItem extends HtmlElementNode {
+  name(): string;
+  name(value: string | number): this;
   label(value?: ChildInput): this;
   hint(value: ChildInput): VFormItem;
   error(value: string | boolean | null): VFormItem;

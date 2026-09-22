@@ -1935,7 +1935,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       button.textContent.includes('创建')
     );
     submitButton.click();
-    expect(dialog.querySelector('.yoya-vform-item-error')).not.toBeNull();
+    expect(dialog.querySelector('[vn~="VFormItemError"]')).not.toBeNull();
     expect(formDemo.textContent).toContain('请检查必填项');
 
     const title = dialog.querySelector('input[name="title"]');

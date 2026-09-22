@@ -70,7 +70,7 @@ describe('form hydration', () => {
     document.body.innerHTML = `<div id="app">${html}</div>`;
     hydrate(page, '#app');
 
-    expect(document.querySelector('#app .yoya-vform-item-error').textContent).toContain(
+    expect(document.querySelector('#app [vn~="VFormItemError"]').textContent).toContain(
       '该项为必填'
     );
     expect(document.querySelector('#app [data-error]')).not.toBeNull();

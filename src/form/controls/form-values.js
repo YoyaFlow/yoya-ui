@@ -1,5 +1,4 @@
 import { VRate } from '../rate.js';
-import { viewRootOf } from '../../core/node.js';
 import {
   isPlainObject,
   normalizeChildren,
@@ -8,7 +7,6 @@ import {
 } from '../../components/shared.js';
 import { VCheckboxes } from './checkboxes.js';
 import { VRadios } from './radios.js';
-import { VFormItem } from './form-item.js';
 import { VForm } from './form.js';
 import { assignFormValue, isControlDisabled, isControlRequired } from './shared.js';
 
@@ -24,6 +22,11 @@ function isControlCapable(node) {
 /** 字段容器能力判定：字段暴露 `control()` + `mode()`——**身份不再参与**（票 15 §4）。 */
 function isFieldCapable(node) {
   return Boolean(node) && typeof node.control === 'function' && typeof node.mode === 'function';
+}
+
+/** 表单项能力判定：`name()` + `rules()` 是它的专属组合——**身份不再参与**（票 15 §4）。 */
+function isFormItemCapable(node) {
+  return Boolean(node) && typeof node.name === 'function' && typeof node.rules === 'function';
 }
 
 function readControlValue(control) {
@@ -144,7 +147,7 @@ function collectFormValues(node, result) {
     return result;
   }
 
-  if (node instanceof VFormItem) {
+  if (isFormItemCapable(node)) {
     const name = node.name();
     if (name) {
       assignFormValue(result, name, node.value());
@@ -208,7 +211,7 @@ function applyFormValues(node, values) {
       return;
     }
 
-    if (current instanceof VFormItem) {
+    if (isFormItemCapable(current)) {
       const name = current.name();
       if (name && Object.prototype.hasOwnProperty.call(values, name)) {
         current.value(values[name]);
@@ -239,8 +242,8 @@ function validateFormControls(node, formValues = {}) {
       return;
     }
 
-    if (current instanceof VFormItem) {
-      // 子项可能是 vNode 组件（成员是 ComponentNode）：私有校验方法在视图根上
+    if (isFormItemCapable(current)) {
+      // 校验是族内协议：项组件在视图根上暴露 `_validate(formValues)`（与 `_collectValue` 同族）
       const unit = viewRootOf(current) ?? current;
       if (!unit._validate(formValues)) {
         valid = false;
@@ -319,3 +322,4 @@ export {
   validateFormControls,
   findFieldControl
 };
+import { viewRootOf } from '../../core/node.js';
