@@ -1,14 +1,8 @@
-import {
-  ViewNode,
-  VTextNode,
-  defineComponentIdentity,
-  hasComponentIdentity
-} from '../core/node.js';
+import { ViewNode, VTextNode, hasComponentIdentity } from '../core/node.js';
 import { allocateNumber } from '../core/id.js';
 import { HtmlElementNode } from '../html/index.js';
 import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
   applyElementOptions,
   normalizeComponentArguments,
   isPlainObject,
@@ -47,31 +41,30 @@ export function vPagination(first = null, second = null, third = null) {
 
     let changeHandler = null;
 
-    const rootId = `yoya-vpagination-${sequence}`;
-    const pageInputId = `yoya-vpagination-page-${sequence}`;
-    const pageSizeId = `yoya-vpagination-size-${sequence}`;
+    const rootId = `yoya-pagination-${sequence}`;
+    const pageInputId = `yoya-pagination-page-${sequence}`;
+    const pageSizeId = `yoya-pagination-size-${sequence}`;
 
     const totalText = new VTextNode('共 0 条');
     const pageText = new VTextNode('第 1 / 1 页');
-    const summary = new HtmlElementNode('div')
-      .className('yoya-vpagination-summary')
+    const summary = new HtmlElementNode('div', { vn: 'VPaginationSummary' })
       .attr('aria-live', 'polite')
       .styles({
         display: 'grid',
         gap: '2px'
       });
-    const controls = new HtmlElementNode('div').className('yoya-vpagination-controls').styles({
+    const controls = new HtmlElementNode('div', { vn: 'VPaginationControls' }).styles({
       alignItems: 'center',
       display: 'flex',
       flexWrap: 'wrap',
       gap: '8px'
     });
-    const jumpGroup = new HtmlElementNode('div').className('yoya-vpagination-jump').styles({
+    const jumpGroup = new HtmlElementNode('div', { vn: 'VPaginationJump' }).styles({
       alignItems: 'center',
       display: 'inline-flex',
       gap: '6px'
     });
-    const sizeGroup = new HtmlElementNode('div').className('yoya-vpagination-size').styles({
+    const sizeGroup = new HtmlElementNode('div', { vn: 'VPaginationSize' }).styles({
       alignItems: 'center',
       display: 'inline-flex',
       gap: '6px'
@@ -82,8 +75,7 @@ export function vPagination(first = null, second = null, third = null) {
     const nextButton = createActionButton('next', '下一页');
     const lastButton = createActionButton('last', '尾页');
     const jumpButton = createActionButton('jump', '前往');
-    const pageInput = new HtmlElementNode('input')
-      .className('yoya-vpagination-page-input')
+    const pageInput = new HtmlElementNode('input', { vn: 'VPaginationPageInput' })
       .attr({
         'aria-label': '跳转页码',
         'data-role': 'page-input',
@@ -99,31 +91,27 @@ export function vPagination(first = null, second = null, third = null) {
         minWidth: '72px',
         width: '72px'
       });
-    const jumpLabel = new HtmlElementNode('label')
-      .className('yoya-vpagination-jump-label')
+    const jumpLabel = new HtmlElementNode('label', { vn: 'VPaginationJumpLabel' })
       .attr('for', pageInputId)
       .styles({
         color: themeValue('color-text-secondary', '#475569'),
         fontSize: '12px',
         fontWeight: '600'
       });
-    const jumpSuffix = new HtmlElementNode('span')
-      .className('yoya-vpagination-jump-suffix')
+    const jumpSuffix = new HtmlElementNode('span', { vn: 'VPaginationJumpSuffix' })
       .styles({
         color: themeValue('color-text-muted', '#64748b'),
         fontSize: '12px'
       })
       .child('页');
-    const pageSizeLabel = new HtmlElementNode('label')
-      .className('yoya-vpagination-size-label')
+    const pageSizeLabel = new HtmlElementNode('label', { vn: 'VPaginationSizeLabel' })
       .attr('for', pageSizeId)
       .styles({
         color: themeValue('color-text-secondary', '#475569'),
         fontSize: '12px',
         fontWeight: '600'
       });
-    const pageSizeSelect = new HtmlElementNode('select')
-      .className('yoya-vpagination-page-size')
+    const pageSizeSelect = new HtmlElementNode('select', { vn: 'VPaginationPageSize' })
       .attr({
         'aria-label': '每页条数',
         'data-role': 'page-size',
@@ -135,8 +123,7 @@ export function vPagination(first = null, second = null, third = null) {
         width: 'auto'
       });
 
-    root = new HtmlElementNode('nav')
-      .className(componentClass, 'yoya-vpagination')
+    root = new HtmlElementNode('nav', { vn: 'VPagination' })
       .attr({
         'aria-label': state.ariaLabel,
         id: rootId
@@ -150,8 +137,6 @@ export function vPagination(first = null, second = null, third = null) {
         minWidth: '0',
         padding: '4px 0'
       });
-    root._identity = 'VPagination';
-
     root.child(summary, controls, sizeGroup);
     summary.child(totalText, pageText);
     controls.child(firstButton, previousButton, jumpGroup, nextButton, lastButton);
@@ -355,8 +340,7 @@ export function vPagination(first = null, second = null, third = null) {
     }
 
     function createActionButton(action, label) {
-      const control = new HtmlElementNode('button')
-        .className('yoya-vpagination-button')
+      const control = new HtmlElementNode('button', { vn: 'VPaginationButton' })
         .attr({
           'data-action': action,
           type: 'button'
@@ -500,7 +484,7 @@ export function vPagination(first = null, second = null, third = null) {
       replaceChildren(
         pageSizeSelect,
         options.map((option, index) => {
-          const item = new HtmlElementNode('option').className('yoya-vpagination-page-size-option');
+          const item = new HtmlElementNode('option', { vn: 'VPaginationPageSizeOption' });
           item.attr({
             disabled: option.disabled ? true : null,
             selected: option.value === selectedValue ? true : null,
@@ -647,4 +631,3 @@ export function vPagination(first = null, second = null, third = null) {
 }
 
 export const VPagination = vPagination;
-defineComponentIdentity(VPagination, 'VPagination');

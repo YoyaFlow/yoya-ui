@@ -1938,7 +1938,7 @@ describe('compound components', () => {
     });
 
     const element = page.renderDom();
-    const paginationRoot = element.querySelector('.yoya-vpagination');
+    const paginationRoot = element.querySelector('[vn~="VPagination"]');
     const first = paginationRoot.querySelector('[data-action="first"]');
     const previous = paginationRoot.querySelector('[data-action="previous"]');
     const next = paginationRoot.querySelector('[data-action="next"]');
@@ -1955,10 +1955,10 @@ describe('compound components', () => {
     expect(paginationRoot.getAttribute('aria-label')).toBe('分页');
     expect(typeof direct.renderDom).toBe('function');
     expect(typeof direct.update).toBe('function');
-    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+    expect(paginationRoot.querySelector('[vn~="VPaginationSummary"]').textContent).toContain(
       '共 35 条'
     );
-    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+    expect(paginationRoot.querySelector('[vn~="VPaginationSummary"]').textContent).toContain(
       '第 2 / 4 页'
     );
     expect(first.disabled).toBe(false);
@@ -1983,7 +1983,7 @@ describe('compound components', () => {
       totalPages: 1
     });
 
-    expect(paginationRoot.querySelector('.yoya-vpagination-summary').textContent).toContain(
+    expect(paginationRoot.querySelector('[vn~="VPaginationSummary"]').textContent).toContain(
       '共 0 条'
     );
     expect(first.disabled).toBe(true);
