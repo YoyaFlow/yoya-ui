@@ -2025,7 +2025,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const nextButton = [...demo.querySelectorAll('button')].find((button) =>
       button.textContent.includes('下一步')
     );
-    const steps = demo.querySelector('.yoya-vsteps');
+    const steps = demo.querySelector('[vn~="VSteps"]');
 
     expect(status.textContent).toBe('当前第 2 步：配置');
     expect(steps.dataset.current).toBe('1');
@@ -2034,7 +2034,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(status.textContent).toBe('当前第 3 步：发布');
     expect(steps.dataset.current).toBe('2');
-    expect(demo.querySelectorAll('.yoya-vstep')[2].dataset.status).toBe('process');
+    expect(demo.querySelectorAll('[vn~="VStep"]')[2].dataset.status).toBe('process');
   });
 
   it('switches tabs in the tabs docs demo', async () => {

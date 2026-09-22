@@ -1,444 +1,415 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, viewRootOf } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { vNode } from '../core/v-node.js';
+import { div, li, ol, span } from '../html/index.js';
 import {
-  componentClass,
-  isPlainObject,
+  createComponentShortcut,
   normalizeChildren,
   replaceChildren
 } from '../components/shared.js';
 
-/** 步骤条容器的节点类型（不导出）；公开组件 `vSteps` 是 vNode 外壳。 */
-class StepsNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('ol', null);
-    this._identity = 'VSteps';
-    this._current = 0;
-    this._status = 'process';
-    this._direction = 'horizontal';
-    this._size = 'default';
+/**
+ * 步骤条（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
+ *
+ * - 结构：`ol[VSteps] > li[VStep] > span[VStepsIndicator] + div[VStepsContent](title + description) + span[VStepsConnector]`；
+ * - **部件用到才建、建过复用**（与 `VTable` 的段命令同一口径）：建的顺序固定，与调用顺序无关，
+ *   也不靠身份在结构里找；
+ * - 命令只写**快照**（`attr` / `style` / `replaceChildren`）：首屏就是构建期快照，不需要写后再刷；
+ * - **项归造它的一方**：容器自己造的项自己记账（子项数与每项状态从这份账里收口）；
+ *   容器把「第几个 / 共几个 + 容器态」通过 `vStep.track(…)` 交给项，由项自己算状态与连线。
+ */
 
-    this.className(componentClass, 'yoya-vsteps');
-    this.attr({
-      'data-current': '0',
-      'data-direction': 'horizontal',
-      'data-size': 'default',
-      'data-status': 'process',
-      role: 'list'
-    });
-    this._setupSteps(setup);
-    this._syncSteps();
-  }
+/** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
+const STEP_ITEM = Symbol('yoya.stepItem');
 
-  current(value) {
-    if (value === undefined) {
-      return this._current;
-    }
+/**
+ * 步骤项：结构（指示器 / 内容 / 连线）+ 命令（标题 / 描述 / 图标 / 状态）。
+ * 字符串 = 标题；对象 = props；容器态由 `track(…)` 进来。
+ */
+export function VStep() {
+  return vNode((api, self) => {
+    const state = {
+      description: '',
+      // 未设置与显式设为空串要区分：前者不产出子节点，后者保留空内容盒
+      descriptionSet: false,
+      direction: 'horizontal',
+      icon: null,
+      index: 0,
+      size: 'default',
+      status: null,
+      stepsCurrent: 0,
+      stepsStatus: 'process',
+      title: '',
+      titleSet: false,
+      total: 1
+    };
 
-    this._current = Math.max(0, Number(value) || 0);
-    this.attr('data-current', String(this._current));
-    this._syncSteps();
-    return this;
-  }
+    let indicatorPart = null;
+    let contentPart = null;
+    let titlePart = null;
+    let descriptionPart = null;
+    let connectorPart = null;
+    /** 指示器已渲染的内容：状态没变就不重挂（用户给的是节点时尤其要认这个账）。 */
+    let renderedIndicator;
 
-  status(value) {
-    if (value === undefined) {
-      return this._status;
-    }
+    /** 四块部件：用到才建、建过复用，落位顺序固定（指示器 / 内容 / 连线）。 */
+    const partsOf = () => {
+      if (!indicatorPart) {
+        indicatorPart = span({ vn: 'VStepsIndicator' });
+        titlePart = div({ vn: 'VStepsTitle' });
+        descriptionPart = div({ vn: 'VStepsDescription' }).style('display', 'none');
+        contentPart = div({ vn: 'VStepsContent' }, (content) =>
+          content.child(titlePart, descriptionPart)
+        );
+        connectorPart = span({ vn: 'VStepsConnector' });
+        self.node().child(indicatorPart, contentPart, connectorPart);
+      }
 
-    this._status = ['error', 'finish', 'process'].includes(value) ? value : 'process';
-    this.attr('data-status', this._status);
-    this._syncSteps();
-    return this;
-  }
+      return {
+        connector: connectorPart,
+        content: contentPart,
+        description: descriptionPart,
+        indicator: indicatorPart,
+        title: titlePart
+      };
+    };
 
-  direction(value) {
-    if (value === undefined) {
-      return this._direction;
-    }
+    /** 有效状态：自己显式设过就用它，否则按「已完成 / 当前项 / 未开始」派生。 */
+    const effectiveStatus = () => {
+      if (state.status) {
+        return state.status;
+      }
 
-    this._direction = value === 'vertical' ? 'vertical' : 'horizontal';
-    this.attr('data-direction', this._direction);
-    this._syncSteps();
-    return this;
-  }
+      if (state.index < state.stepsCurrent) {
+        return 'finish';
+      }
 
-  size(value) {
-    if (value === undefined) {
-      return this._size;
-    }
+      if (state.index === state.stepsCurrent) {
+        return state.stepsStatus || 'process';
+      }
 
-    this._size = value === 'small' ? 'small' : 'default';
-    this.attr('data-size', this._size);
-    this._syncSteps();
-    return this;
-  }
+      return 'wait';
+    };
 
-  items(value) {
-    if (value === undefined) {
-      return this.children().filter((child) => viewRootOf(child) instanceof StepNode);
-    }
+    /** 指示器内容：给了图标用图标，否则按有效状态给 ✓ / ! / 序号。 */
+    const indicatorContent = () => {
+      if (state.icon !== null && state.icon !== undefined) {
+        return state.icon;
+      }
 
-    replaceChildren(this, []);
+      return stepIndicatorText(effectiveStatus(), state.index);
+    };
 
-    if (Array.isArray(value)) {
-      value.forEach((item) => {
-        this.child(normalizeStepItem(item));
-      });
-    }
+    /** 状态 / 缩进 / 连线：容器态或自身状态一变就收口一次（写的都是快照）。 */
+    const syncStep = () => {
+      const { connector, content, description, indicator } = partsOf();
+      const status = effectiveStatus();
+      const indicatorSize = state.size === 'small' ? '24px' : '30px';
+      const indicatorCenter = state.size === 'small' ? '11px' : '14px';
+      const indicatorHalf = state.size === 'small' ? '12px' : '15px';
+      const indicatorValue = indicatorContent();
 
-    return this;
-  }
+      if (!Object.is(indicatorValue, renderedIndicator)) {
+        renderedIndicator = indicatorValue;
+        replaceChildren(indicator, normalizeChildren(indicatorValue));
+      }
 
-  next() {
-    const steps = this.items();
+      self.node().attr('data-status', status);
+      self.node().attr('aria-current', state.index === state.stepsCurrent ? 'step' : null);
+      description.style('display', description.children().length > 0 ? null : 'none');
+      connector.style('display', state.index < state.total - 1 ? 'block' : 'none');
 
-    if (this._current < steps.length - 1) {
-      this.current(this._current + 1);
-    }
+      if (state.direction === 'vertical') {
+        self.node().style('gridTemplateColumns', 'auto minmax(0, 1fr)');
+        self.node().style('gap', '10px');
+        content.style('paddingTop', '3px');
+        connector.styles({
+          bottom: '-12px',
+          height: 'auto',
+          left: indicatorHalf,
+          right: null,
+          top: indicatorSize,
+          width: '2px'
+        });
+      } else {
+        self.node().style('gridTemplateColumns', 'minmax(0, 1fr)');
+        self.node().style('gap', '0');
+        content.style('paddingTop', '6px');
+        connector.styles({
+          bottom: null,
+          height: '2px',
+          left: indicatorSize,
+          right: '0',
+          top: indicatorCenter,
+          width: 'auto'
+        });
+      }
 
-    return this;
-  }
+      return api;
+    };
 
-  prev() {
-    if (this._current > 0) {
-      this.current(this._current - 1);
-    }
+    api.title = (value) => {
+      if (value === undefined) {
+        return state.title;
+      }
 
-    return this;
-  }
+      state.title = value ?? '';
+      state.titleSet = true;
+      replaceChildren(partsOf().title, state.titleSet ? normalizeChildren(state.title) : []);
+      return syncStep();
+    };
 
-  child(...children) {
-    super.child(...children);
-    this._syncSteps();
-    return this;
-  }
+    api.text = (value) => (value === undefined ? state.title : api.title(value));
 
-  _setupSteps(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.description = (value) => {
+      if (value === undefined) {
+        return state.description;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      state.description = value ?? '';
+      state.descriptionSet = true;
+      replaceChildren(
+        partsOf().description,
+        state.descriptionSet ? normalizeChildren(state.description) : []
+      );
+      return syncStep();
+    };
 
-    if (Array.isArray(setup)) {
-      this.items(setup);
-      return;
-    }
+    api.desc = (value) => (value === undefined ? state.description : api.description(value));
 
-    if (isPlainObject(setup)) {
-      const { children, current, direction, items, size, status, ...elementConfig } = setup;
+    api.icon = (value) => {
+      if (value === undefined) {
+        return state.icon;
+      }
+
+      state.icon = value;
+      return syncStep();
+    };
+
+    api.status = (value) => {
+      if (value === undefined) {
+        return state.status;
+      }
+
+      state.status = value || null;
+      return syncStep();
+    };
+
+    /** 容器给的定位与容器态（步骤条内部协议）：算出的状态 / 连线 / 尺寸都从它派生。 */
+    api.track = (context) => {
+      state.direction = context.direction;
+      state.index = context.index;
+      state.size = context.size;
+      state.stepsCurrent = context.current;
+      state.stepsStatus = context.status;
+      state.total = context.total;
+      return syncStep();
+    };
+
+    /** props：`title / text / description / desc / icon / status / children` + 其余元素配置。 */
+    api.setupObject = (config) => {
+      const { children, desc, description, icon, status, text, title, ...elementConfig } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (current !== undefined) {
-        this.current(current);
-      }
-
-      if (status !== undefined) {
-        this.status(status);
-      }
-
-      if (direction !== undefined) {
-        this.direction(direction);
-      }
-
-      if (size !== undefined) {
-        this.size(size);
-      }
-
-      if (items !== undefined) {
-        this.items(items);
-      } else if (children !== undefined) {
-        this.items(children);
-      }
-
-      return;
-    }
-
-    this.items([setup]);
-  }
-
-  _syncSteps() {
-    const steps = this.children().filter((child) => viewRootOf(child) instanceof StepNode);
-
-    this.attr('data-step-count', String(steps.length));
-    steps.forEach((step, index) => {
-      // 子项可能是 vNode 组件（成员是 ComponentNode）：内部状态与同步都落到视图根（节点类型）上
-      const unit = viewRootOf(step) ?? step;
-      unit._index = index;
-      unit._total = steps.length;
-      unit._stepsCurrent = this._current;
-      unit._stepsStatus = this._status;
-      unit._stepsDirection = this._direction;
-      unit._stepsSize = this._size;
-      unit._syncStepState();
-    });
-    return this;
-  }
-}
-
-/** 步骤项的节点类型（不导出）；公开组件 `vStep` 是 vNode 外壳。 */
-class StepNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('li', null);
-    this._identity = 'VStep';
-    this._title = '';
-    this._description = '';
-    // 未设置与显式设为空串要区分：前者不产出子节点，后者保留空内容盒（与原实现一致）。
-    this._titleSet = false;
-    this._descriptionSet = false;
-    this._icon = null;
-    this._status = null;
-    this._index = 0;
-    this._total = 1;
-    this._stepsCurrent = 0;
-    this._stepsStatus = 'process';
-    this._stepsDirection = 'horizontal';
-    this._stepsSize = 'default';
-
-    // 三块内容都是区域：内容由各自的 setup 产出，setter 只改字段再 rebuild。
-    this._indicatorBox = new HtmlElementNode('span')
-      .className('yoya-vsteps-indicator')
-      .setup((box) => {
-        box.rebuildable();
-        const icon = this._icon;
-        const content =
-          icon === null || icon === undefined
-            ? stepIndicatorText(this._effectiveStatus(), this._index)
-            : icon;
-        box.child(normalizeChildren(content));
-      });
-    this._titleBox = new HtmlElementNode('div').className('yoya-vsteps-title').setup((box) => {
-      box.rebuildable();
-      box.child(this._titleSet ? normalizeChildren(this._title) : []);
-    });
-    this._descriptionBox = new HtmlElementNode('div')
-      .className('yoya-vsteps-description')
-      .setup((box) => {
-        box.rebuildable();
-        box.child(this._descriptionSet ? normalizeChildren(this._description) : []);
-      });
-    this._contentBox = new HtmlElementNode('div').className('yoya-vsteps-content');
-    this._connector = new HtmlElementNode('span').className('yoya-vsteps-connector');
-
-    this.className(componentClass, 'yoya-vstep');
-    this.attr('role', 'listitem');
-    this._contentBox.className('yoya-vsteps-content');
-    this._titleBox.className('yoya-vsteps-title');
-    this._descriptionBox.className('yoya-vsteps-description');
-    this._connector.className('yoya-vsteps-connector');
-    this.child(this._indicatorBox, this._contentBox, this._connector);
-    this._contentBox.child(this._titleBox, this._descriptionBox);
-    this._setupStep(setup);
-    this._syncStepState();
-  }
-
-  title(value) {
-    if (value === undefined) {
-      return this._title;
-    }
-
-    this._title = value ?? '';
-    this._titleSet = true;
-    this._titleBox.rebuild();
-    return this;
-  }
-
-  text(value) {
-    return this.title(value);
-  }
-
-  description(value) {
-    if (value === undefined) {
-      return this._description;
-    }
-
-    this._description = value ?? '';
-    this._descriptionSet = true;
-    this._descriptionBox.rebuild();
-    return this;
-  }
-
-  desc(value) {
-    return this.description(value);
-  }
-
-  icon(value) {
-    if (value === undefined) {
-      return this._icon;
-    }
-
-    this._icon = value;
-    this._syncStepState();
-    return this;
-  }
-
-  status(value) {
-    if (value === undefined) {
-      return this._status;
-    }
-
-    this._status = value || null;
-    this._syncStepState();
-    return this;
-  }
-
-  _setupStep(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (Array.isArray(setup) && setup.length >= 2) {
-      this.title(setup[0]);
-      this.description(setup[1]);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const { children, desc, description, icon, status, text, title, ...elementConfig } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        self.node().setup(elementConfig);
       }
 
       if (icon !== undefined) {
-        this.icon(icon);
+        api.icon(icon);
       }
 
       if (status !== undefined) {
-        this.status(status);
+        api.status(status);
       }
 
       if (title !== undefined) {
-        this.title(title);
+        api.title(title);
       } else if (text !== undefined) {
-        this.title(text);
+        api.title(text);
       }
 
       if (description !== undefined) {
-        this.description(description);
+        api.description(description);
       } else if (desc !== undefined) {
-        this.description(desc);
+        api.description(desc);
       } else if (children !== undefined) {
-        this.description(children);
+        api.description(children);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.title(setup);
-  }
+    /** 字符串 / 数字 = 标题。 */
+    api.setupString = (value) => api.title(value);
 
-  _effectiveStatus() {
-    if (this._status) {
-      return this._status;
-    }
-
-    if (this._index < this._stepsCurrent) {
-      return 'finish';
-    }
-
-    if (this._index === this._stepsCurrent) {
-      return this._stepsStatus || 'process';
-    }
-
-    return 'wait';
-  }
-
-  _syncStepState() {
-    const status = this._effectiveStatus();
-    const size = this._stepsSize;
-    const indicatorSize = size === 'small' ? '24px' : '30px';
-    const indicatorCenter = size === 'small' ? '11px' : '14px';
-    const indicatorHalf = size === 'small' ? '12px' : '15px';
-
-    this.attr('data-status', status);
-    this.attr('aria-current', this._index === this._stepsCurrent ? 'step' : null);
-    this._descriptionBox.style(
-      'display',
-      this._descriptionBox.children().length > 0 ? null : 'none'
-    );
-
-    this._indicatorBox.rebuild();
-
-    this._connector.style('display', this._index < this._total - 1 ? 'block' : 'none');
-
-    if (this._stepsDirection === 'vertical') {
-      this.style('gridTemplateColumns', 'auto minmax(0, 1fr)');
-      this.style('gap', '10px');
-      this._contentBox.style('paddingTop', '3px');
-      this._connector.styles({
-        bottom: '-12px',
-        height: 'auto',
-        left: indicatorHalf,
-        right: null,
-        top: indicatorSize,
-        width: '2px'
-      });
-    } else {
-      this.style('gridTemplateColumns', 'minmax(0, 1fr)');
-      this.style('gap', '0');
-      this._contentBox.style('paddingTop', '6px');
-      this._connector.styles({
-        bottom: null,
-        height: '2px',
-        left: indicatorSize,
-        right: '0',
-        top: indicatorCenter,
-        width: 'auto'
-      });
-    }
-
-    return this;
-  }
-}
-
-export function vSteps(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSteps',
-    createNode: (setup) => new StepsNode(setup),
-    commands: ['current', 'status', 'direction', 'size', 'items', 'next', 'prev'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    return li({ role: 'listitem', vn: 'VStep' });
   });
 }
 
-export function vStep(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VStep',
-    createNode: (setup) => new StepNode(setup),
-    commands: ['title', 'text', 'description', 'desc', 'icon', 'status'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+const stepShortcut = createComponentShortcut(VStep);
+
+/** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+export function vStep(...args) {
+  const node = stepShortcut(...args);
+  // 标在节点上而不是查组件名：本容器自己认自己的项
+  node[STEP_ITEM] = true;
+  return node;
+}
+
+/**
+ * 步骤条容器：`ol[VSteps]`；`current / status / direction / size` 是容器态，
+ * 每项的状态与连线由容器 `track(…)` 后由项自己算。
+ */
+export function VSteps() {
+  return vNode((api, self) => {
+    const state = { current: 0, direction: 'horizontal', size: 'default', status: 'process' };
+
+    /** 项账：容器自己造的项（`items` 替换 / `vStep` 追加都记在这里）。 */
+    let steps = [];
+
+    /** 容器态 → 每项定位：容器开一个口，项算自己的状态。 */
+    const syncSteps = () => {
+      self.node().attr({
+        'data-current': String(state.current),
+        'data-direction': state.direction,
+        'data-size': state.size,
+        'data-status': state.status,
+        'data-step-count': String(steps.length)
+      });
+
+      steps.forEach((step, index) =>
+        step.track({
+          current: state.current,
+          direction: state.direction,
+          index,
+          size: state.size,
+          status: state.status,
+          total: steps.length
+        })
+      );
+      return api;
+    };
+
+    api.current = (value) => {
+      if (value === undefined) {
+        return state.current;
+      }
+
+      state.current = Math.max(0, Number(value) || 0);
+      return syncSteps();
+    };
+
+    api.status = (value) => {
+      if (value === undefined) {
+        return state.status;
+      }
+
+      state.status = ['error', 'finish', 'process'].includes(value) ? value : 'process';
+      return syncSteps();
+    };
+
+    api.direction = (value) => {
+      if (value === undefined) {
+        return state.direction;
+      }
+
+      state.direction = value === 'vertical' ? 'vertical' : 'horizontal';
+      return syncSteps();
+    };
+
+    api.size = (value) => {
+      if (value === undefined) {
+        return state.size;
+      }
+
+      state.size = value === 'small' ? 'small' : 'default';
+      return syncSteps();
+    };
+
+    /** 项投递：造一份项并落进 `<ol>`，账记在自己身上。 */
+    api.vStep = (setup) => {
+      const step = normalizeStepItem(setup);
+      steps = [...steps, step];
+      self.node().child(step);
+      return syncSteps();
+    };
+
+    api.items = (value) => {
+      if (value === undefined) {
+        return steps.slice();
+      }
+
+      steps.forEach((step) => step.destroy());
+      steps = [];
+      (Array.isArray(value) ? value : []).forEach((item) => api.vStep(item));
+      return syncSteps();
+    };
+
+    api.next = () => {
+      if (state.current < steps.length - 1) {
+        api.current(state.current + 1);
+      }
+
+      return api;
+    };
+
+    api.prev = () => {
+      if (state.current > 0) {
+        api.current(state.current - 1);
+      }
+
+      return api;
+    };
+
+    /** props：`current / status / direction / size / items / children` + 其余元素配置。 */
+    api.setupObject = (config) => {
+      const { children, current, direction, items, size, status, ...elementConfig } = config;
+
+      if (Object.keys(elementConfig).length > 0) {
+        self.node().setup(elementConfig);
+      }
+
+      if (current !== undefined) {
+        api.current(current);
+      }
+
+      if (status !== undefined) {
+        api.status(status);
+      }
+
+      if (direction !== undefined) {
+        api.direction(direction);
+      }
+
+      if (size !== undefined) {
+        api.size(size);
+      }
+
+      const itemsSetup = items ?? children;
+
+      if (itemsSetup !== undefined) {
+        api.items(itemsSetup);
+      }
+
+      return api;
+    };
+
+    /** 字符串 / 数字 = 一条步骤（只有标题）。 */
+    api.setupString = (value) => {
+      api.items([value]);
+      return api;
+    };
+
+    return ol({ role: 'list', vn: 'VSteps' });
   });
 }
 
-export const VSteps = vSteps;
-export const VStep = vStep;
-defineComponentIdentity(VSteps, 'VSteps');
-defineComponentIdentity(VStep, 'VStep');
+export const vSteps = createComponentShortcut(VSteps);
 
+/** 步骤归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */
 function normalizeStepItem(item) {
-  if (viewRootOf(item) instanceof StepNode) {
-    return item;
-  }
-
-  if (Array.isArray(item)) {
-    return vStep(item);
-  }
-
-  return vStep(item);
+  return item?.[STEP_ITEM] ? item : vStep(item);
 }
 
+/** 序号：完成 ✓、出错 !、其余显示第几个。 */
 function stepIndicatorText(status, index) {
   if (status === 'finish') {
     return '✓';

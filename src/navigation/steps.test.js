@@ -12,7 +12,7 @@ describe('vSteps', () => {
       ]
     });
     const element = steps.renderDom();
-    const items = element.querySelectorAll('.yoya-vstep');
+    const items = element.querySelectorAll("[vn~='VStep']");
 
     expect(element.getAttribute('role')).toBe('list');
     expect(items[0].style.gridTemplateColumns).toBe('minmax(0, 1fr)');
@@ -21,8 +21,8 @@ describe('vSteps', () => {
     expect(items[1].dataset.status).toBe('process');
     expect(items[2].dataset.status).toBe('wait');
     expect(items[0].textContent).toContain('创建');
-    expect(items[0].querySelector('.yoya-vsteps-indicator').textContent).toBe('✓');
-    expect(items[1].querySelector('.yoya-vsteps-indicator').textContent).toBe('2');
+    expect(items[0].querySelector("[vn~='VStepsIndicator']").textContent).toBe('✓');
+    expect(items[1].querySelector("[vn~='VStepsIndicator']").textContent).toBe('2');
   });
 
   it('supports error status and dynamic current changes', () => {
@@ -32,10 +32,10 @@ describe('vSteps', () => {
       status: 'error'
     });
     const element = steps.renderDom();
-    const items = element.querySelectorAll('.yoya-vstep');
+    const items = element.querySelectorAll("[vn~='VStep']");
 
     expect(items[1].dataset.status).toBe('error');
-    expect(items[1].querySelector('.yoya-vsteps-indicator').textContent).toBe('!');
+    expect(items[1].querySelector("[vn~='VStepsIndicator']").textContent).toBe('!');
 
     steps.status('process');
     steps.next();
@@ -55,13 +55,13 @@ describe('vSteps', () => {
         step.title('第一步');
         step.description('说明');
       });
-      steps.vStep(['第二步', '继续']);
+      steps.vStep({ description: '继续', title: '第二步' });
     });
     const element = steps.renderDom();
 
-    expect(element.querySelectorAll('.yoya-vstep')).toHaveLength(2);
-    expect(element.querySelector('.yoya-vsteps-title').textContent).toBe('第一步');
-    expect(element.querySelector('.yoya-vsteps-description').textContent).toBe('说明');
+    expect(element.querySelectorAll("[vn~='VStep']")).toHaveLength(2);
+    expect(element.querySelector("[vn~='VStepsTitle']").textContent).toBe('第一步');
+    expect(element.querySelector("[vn~='VStepsDescription']").textContent).toBe('说明');
   });
 
   it('switches direction and size and hides the last connector', () => {
@@ -73,11 +73,11 @@ describe('vSteps', () => {
 
     expect(element.dataset.direction).toBe('vertical');
     expect(element.dataset.size).toBe('small');
-    expect(element.querySelector('.yoya-vstep').style.gridTemplateColumns).toBe(
+    expect(element.querySelector("[vn~='VStep']").style.gridTemplateColumns).toBe(
       'auto minmax(0, 1fr)'
     );
 
-    const connectors = element.querySelectorAll('.yoya-vsteps-connector');
+    const connectors = element.querySelectorAll("[vn~='VStepsConnector']");
     expect(connectors[0].style.display).not.toBe('none');
     expect(connectors[2].style.display).toBe('none');
   });
@@ -85,7 +85,7 @@ describe('vSteps', () => {
   it('shows an explicit visible display on non-last connectors', () => {
     const steps = vSteps({ items: ['A', 'B', 'C'] });
     const element = steps.renderDom();
-    const connectors = element.querySelectorAll('.yoya-vsteps-connector');
+    const connectors = element.querySelectorAll("[vn~='VStepsConnector']");
 
     expect(connectors[0].style.display).toBe('block');
     expect(connectors[1].style.display).toBe('block');
@@ -100,7 +100,7 @@ describe('vSteps', () => {
     steps.items([{ title: 'Y' }]);
     const element = root.renderDom();
 
-    expect(element.querySelectorAll('.yoya-vstep')).toHaveLength(1);
+    expect(element.querySelectorAll("[vn~='VStep']")).toHaveLength(1);
     expect(element.textContent).toContain('Y');
   });
 });
