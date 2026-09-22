@@ -1903,14 +1903,14 @@ body {
     width: 18px;
   }
 
-  :where(.yoya-vupload) {
+  :where([vn~='VUpload']) {
     display: grid;
     gap: 10px;
     min-width: 0;
     width: 100%;
   }
 
-  .yoya-vupload .yoya-vupload-dropzone {
+  [vn~='VUpload'] [vn~='VUploadDropzone'] {
     align-items: center;
     background: var(--yoya-color-surface-muted, #fbfcfe);
     border: 1px dashed var(--yoya-color-border-strong, #cbd5e1);
@@ -1931,29 +1931,29 @@ body {
       background 140ms ease;
   }
 
-  .yoya-vupload .yoya-vupload-dropzone:hover,
-  .yoya-vupload .yoya-vupload-dropzone[data-dragging='true'] {
+  [vn~='VUpload'] [vn~='VUploadDropzone']:hover,
+  [vn~='VUpload'] [vn~='VUploadDropzone'][data-dragging='true'] {
     background: var(--yoya-color-primary-subtle, #eff6ff);
     border-color: var(--yoya-color-primary, #2563eb);
   }
 
-  .yoya-vupload .yoya-vupload-dropzone[data-disabled='true'] {
+  [vn~='VUpload'] [vn~='VUploadDropzone'][data-disabled='true'] {
     cursor: not-allowed;
     opacity: 0.6;
   }
 
-  .yoya-vupload .yoya-vupload-dropzone-title {
+  [vn~='VUpload'] [vn~='VUploadDropzoneTitle'] {
     color: var(--yoya-color-text, #172033);
     font-size: 14px;
     font-weight: 600;
   }
 
-  .yoya-vupload .yoya-vupload-dropzone-hint {
+  [vn~='VUpload'] [vn~='VUploadDropzoneHint'] {
     color: var(--yoya-color-text-muted, #64748b);
     font-size: 12px;
   }
 
-  .yoya-vupload .yoya-vupload-list {
+  [vn~='VUpload'] [vn~='VUploadList'] {
     display: grid;
     gap: 6px;
     list-style: none;
@@ -1961,7 +1961,7 @@ body {
     padding: 0;
   }
 
-  .yoya-vupload .yoya-vupload-item {
+  [vn~='VUpload'] [vn~='VUploadItem'] {
     align-items: center;
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border-faint, #e2e8f0);
@@ -1974,13 +1974,13 @@ body {
     padding: 8px 10px;
   }
 
-  .yoya-vupload .yoya-vupload-item-info {
+  [vn~='VUpload'] [vn~='VUploadItemInfo'] {
     display: grid;
     gap: 3px;
     min-width: 0;
   }
 
-  .yoya-vupload .yoya-vupload-item-name {
+  [vn~='VUpload'] [vn~='VUploadItemName'] {
     color: var(--yoya-color-text, #172033);
     font-size: 13px;
     overflow: hidden;
@@ -1988,25 +1988,25 @@ body {
     white-space: nowrap;
   }
 
-  .yoya-vupload .yoya-vupload-item-meta {
+  [vn~='VUpload'] [vn~='VUploadItemMeta'] {
     color: var(--yoya-color-text-muted, #64748b);
     font-size: 12px;
   }
 
-  .yoya-vupload .yoya-vupload-progress {
+  [vn~='VUpload'] [vn~='VUploadProgress'] {
     background: var(--yoya-color-surface-active, #eef2f7);
     border-radius: 999px;
     height: 4px;
     overflow: hidden;
   }
 
-  .yoya-vupload .yoya-vupload-progress-bar {
+  [vn~='VUpload'] [vn~='VUploadProgressBar'] {
     background: var(--yoya-color-primary, #2563eb);
     display: block;
     height: 100%;
   }
 
-  .yoya-vupload .yoya-vupload-remove {
+  [vn~='VUpload'] [vn~='VUploadRemove'] {
     align-items: center;
     background: transparent;
     border: 0;
@@ -2020,7 +2020,7 @@ body {
     width: 24px;
   }
 
-  .yoya-vupload .yoya-vupload-remove:hover {
+  [vn~='VUpload'] [vn~='VUploadRemove']:hover {
     background: var(--yoya-color-danger-subtle, #fef2f2);
     color: var(--yoya-color-text-danger, #b91c1c);
   }

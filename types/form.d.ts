@@ -430,6 +430,7 @@ export class VUpload extends HtmlElementNode {
   clear(): VUpload;
   status(index: number, value: string): VUpload;
   progress(index?: number, value?: number): this;
+  dropZone(): HtmlElementNode;
   dropZone(setup: SetupInput<HtmlElementNode>): VUpload;
 }
 

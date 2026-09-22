@@ -584,7 +584,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const page = document.querySelector('[data-component-route-item="form:upload"]');
-    expect(page.querySelector('.yoya-vupload')).not.toBeNull();
+    expect(page.querySelector('[vn~="VUpload"]')).not.toBeNull();
     expect(page.querySelector('[data-source-example]').textContent).toContain('UploadExample1');
   });
 

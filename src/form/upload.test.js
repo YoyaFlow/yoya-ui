@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VUpload, div, vForm, vUpload } from '../index.js';
+import { div, hasComponentIdentity, vForm, vUpload } from '../index.js';
 
 function createFile(name = 'a.txt', type = 'text/plain') {
   return new File(['content'], name, { type });
 }
 
 function findUpload(node) {
-  if (node instanceof VUpload) {
+  if (hasComponentIdentity(node, 'VUpload')) {
     return node;
   }
 
@@ -25,10 +25,11 @@ describe('vUpload', () => {
     const upload = vUpload();
     const element = upload.renderDom();
 
-    expect(upload).toBeInstanceOf(VUpload);
+    expect(hasComponentIdentity(upload, 'VUpload')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VUpload');
     expect(element.querySelector('input[type="file"]').style.display).toBe('none');
-    expect(element.querySelector('.yoya-vupload-dropzone')).not.toBeNull();
-    expect(element.querySelector('.yoya-vupload-dropzone-title').textContent).toContain(
+    expect(element.querySelector('[vn~="VUploadDropzone"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VUploadDropzoneTitle"]').textContent).toContain(
       '点击或拖拽文件'
     );
   });
@@ -44,7 +45,7 @@ describe('vUpload', () => {
 
     expect(upload.files()).toHaveLength(2);
     expect(upload.items()[0].name).toBe('a.txt');
-    expect(element.querySelectorAll('.yoya-vupload-item')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VUploadItem"]')).toHaveLength(2);
 
     upload.remove(0);
     expect(upload.files()).toHaveLength(1);
@@ -54,7 +55,7 @@ describe('vUpload', () => {
     upload.status(0, 'uploading');
     expect(upload.progress(0)).toBe(40);
     expect(upload.status(0)).toBe('uploading');
-    expect(element.querySelector('.yoya-vupload-progress-bar').style.width).toBe('40%');
+    expect(element.querySelector('[vn~="VUploadProgressBar"]').style.width).toBe('40%');
   });
 
   it('applies accept, multiple, and disabled behavior', () => {
@@ -83,7 +84,7 @@ describe('vUpload', () => {
   it('accepts files from a drop event', () => {
     const upload = vUpload();
     const element = upload.renderDom();
-    const dropZone = element.querySelector('.yoya-vupload-dropzone');
+    const dropZone = element.querySelector('[vn~="VUploadDropzone"]');
     const event = new Event('drop', { bubbles: true, cancelable: true });
 
     Object.defineProperty(event, 'dataTransfer', {
@@ -101,7 +102,7 @@ describe('vUpload', () => {
     });
     const upload = page.children()[0];
 
-    expect(upload).toBeInstanceOf(VUpload);
+    expect(hasComponentIdentity(upload, 'VUpload')).toBe(true);
     expect(upload.multiple()).toBe(true);
   });
 
@@ -115,7 +116,7 @@ describe('vUpload', () => {
     form.renderDom();
     const upload = findUpload(form);
 
-    expect(upload).toBeInstanceOf(VUpload);
+    expect(hasComponentIdentity(upload, 'VUpload')).toBe(true);
     upload.addFiles([createFile('a.txt'), createFile('b.png', 'image/png')]);
 
     expect(form.values().attachments).toHaveLength(2);
