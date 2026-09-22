@@ -186,7 +186,6 @@ const dataDisplayDocsDefinitions = Object.freeze({
         '通过数组或对象数组一次性创建详情项。',
         'vDetail({ items: [["名称", "值"]] })'
       ],
-      ['vDetail([...])', '第一个参数是数组时直接当作 items。', 'vDetail([["名称", "值"]])'],
       [
         'detail.items(items)',
         '替换全部详情项，适合接口返回后整体更新。',
@@ -202,7 +201,6 @@ const dataDisplayDocsDefinitions = Object.freeze({
         '在详情容器回调里声明单项。',
         'detail.vDetailItem((item) => item.label("状态").value("运行中"))'
       ],
-      ['vDetailItem(label, value)', '两参数快捷创建详情项。', "vDetailItem('状态', '运行中')"],
       [
         'vDetailItem({ label, value })',
         '对象方式创建，value 支持任意 ViewNode 或组件。',
@@ -1302,12 +1300,12 @@ function DetailColumnsExample1() {
   const status = vText('当前 2 列');
   const detail = vDetail((detail) => {
     detail.columns(2);
-    detail.vDetailItem('服务名称', 'api-gateway');
-    detail.vDetailItem('状态', '运行中');
-    detail.vDetailItem('负责人', 'SRE 团队');
-    detail.vDetailItem('最近发布', 'v1.4.2');
-    detail.vDetailItem('访问地址', 'https://api.example.com');
-    detail.vDetailItem('部署区域', '华东 1');
+    detail.vDetailItem({ label: '服务名称', value: 'api-gateway' });
+    detail.vDetailItem({ label: '状态', value: '运行中' });
+    detail.vDetailItem({ label: '负责人', value: 'SRE 团队' });
+    detail.vDetailItem({ label: '最近发布', value: 'v1.4.2' });
+    detail.vDetailItem({ label: '访问地址', value: 'https://api.example.com' });
+    detail.vDetailItem({ label: '部署区域', value: '华东 1' });
   });
 
   return {
@@ -1383,10 +1381,10 @@ function DetailDynamicExample1() {
   const owner = vText('SRE 团队');
   const version = vText('v1.4.2');
   const detail = vDetail((detail) => {
-    detail.vDetailItem('服务名称', name);
-    detail.vDetailItem('状态', status);
-    detail.vDetailItem('负责人', owner);
-    detail.vDetailItem('最近发布', version);
+    detail.vDetailItem({ label: '服务名称', value: name });
+    detail.vDetailItem({ label: '状态', value: status });
+    detail.vDetailItem({ label: '负责人', value: owner });
+    detail.vDetailItem({ label: '最近发布', value: version });
   });
   const switchService = () => {
     const next = name.textContent() === 'api-gateway' ? 'worker' : 'api-gateway';

@@ -795,8 +795,8 @@ const CASES = [
     probe: (detail) => ({ columns: detail.columns(), items: detail.items().length })
   },
   {
-    name: 'vDetailItem / 标签 + 值（两参写法）',
-    build: () => api.vDetailItem('版本', '0.6.13'),
+    name: 'vDetailItem / 标签 + 值',
+    build: () => api.vDetailItem({ label: '版本', value: '0.6.13' }),
     probe: (item) => ({ label: item.label(), value: item.value() })
   }
 ];

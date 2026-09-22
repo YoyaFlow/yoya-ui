@@ -1,8 +1,8 @@
-import { ViewNode, defineComponentIdentity } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { ViewNode, hasComponentIdentity } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
+import { dd, div, dl, dt } from '../html/index.js';
 import {
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -10,14 +10,18 @@ import {
   themeValue
 } from '../components/shared.js';
 
-/** 详情列表的节点类型（不导出到包入口）；公开组件 `vDetail` 是 vNode 外壳。 */
-class DetailNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('dl', null);
-    this._identity = 'VDetail';
-    this._columns = 3;
-    this.className(componentClass, 'yoya-vdetail');
-    this.styles({
+/**
+ * 详情列表（形态 B，票 15 §4）：`dl` 是视图根，条目是 `VDetailItem` 组件。
+ *
+ * - 身份写在结构里：根 `vn: 'VDetail'`；
+ * - 状态与命令收进 `vNode` 闭包（`columns` / `column` / `items`）；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素；**数组不再是 items**
+ *   （按标准分派当子节点列表），要整批替换条目请用 `items([...])` 或 `vDetail({ items })`。
+ */
+export function VDetail() {
+  return vNode((api) => {
+    const state = { columns: 3 };
+    const node = dl({ vn: 'VDetail' }).styles({
       border: themeBorder('color-border', '#d8dee8'),
       borderRadius: '8px',
       display: 'grid',
@@ -25,217 +29,185 @@ class DetailNode extends HtmlElementNode {
       margin: '0',
       overflow: 'hidden'
     });
-    this.columns(this._columns);
-    this._setupDetail(setup);
-  }
 
-  columns(value) {
-    if (value === undefined) {
-      return this._columns;
-    }
+    const applyColumns = () => {
+      node.attr('data-columns', String(state.columns));
+      node.style('gridTemplateColumns', `repeat(${state.columns}, minmax(0, 1fr))`);
+    };
 
-    this._columns = normalizeDetailColumns(value);
-    this.attr('data-columns', String(this._columns));
-    this.style('gridTemplateColumns', `repeat(${this._columns}, minmax(0, 1fr))`);
-    return this;
-  }
+    api.columns = (value) => {
+      if (value === undefined) {
+        return state.columns;
+      }
 
-  column(value) {
-    return this.columns(value);
-  }
+      state.columns = normalizeDetailColumns(value);
+      applyColumns();
+      return api;
+    };
 
-  items(value) {
-    if (value === undefined) {
-      return this.children();
-    }
+    api.column = (value) => api.columns(value);
 
-    replaceChildren(this, []);
+    api.items = (value) => {
+      if (value === undefined) {
+        return node.children();
+      }
 
-    if (Array.isArray(value)) {
-      value.forEach((item) => {
-        this.child(normalizeDetailItem(item));
-      });
-    }
+      replaceChildren(node, []);
 
-    return this;
-  }
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          node.child(normalizeDetailItem(item));
+        });
+      }
 
-  _setupDetail(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+      return api;
+    };
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+    /** 节点 / 字符串 = 直接作为条目内容（旧 `_setupDetail` 的兜底分支）。 */
+    api.setupString = (next) => {
+      node.child(next);
+      return api;
+    };
 
-    if (Array.isArray(setup)) {
-      this.items(setup);
-      return;
-    }
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
 
-    if (isPlainObject(setup)) {
-      this.setup(setup);
-      return;
-    }
+      const { column, columns, items, ...elementConfig } = setup;
 
-    this.child(setup);
-  }
+      if (Object.keys(elementConfig).length > 0) {
+        node.setup(elementConfig);
+      }
+      if (columns !== undefined) {
+        api.columns(columns);
+      }
+      if (column !== undefined) {
+        api.column(column);
+      }
+      if (items !== undefined) {
+        api.items(items);
+      }
+
+      return api;
+    };
+
+    applyColumns();
+    return node;
+  });
 }
 
-/** 详情项的节点类型（不导出到包入口）；公开组件 `vDetailItem` 是 vNode 外壳。 */
-class DetailItemNode extends HtmlElementNode {
-  constructor(setup = null, value = undefined) {
-    super('div', null);
-    this._identity = 'VDetailItem';
-    this._labelBox = new HtmlElementNode('dt').className('yoya-vdetail-label');
-    this._valueBox = new HtmlElementNode('dd').className('yoya-vdetail-value');
+export const vDetail = createComponentShortcut(VDetail);
 
-    this.className('yoya-vdetail-item');
-    this.styles({
+/**
+ * 详情项（形态 B，票 15 §4）：`div` 是视图根，标签位 `dt`、内容位 `dd` 各自带身份。
+ *
+ * - 身份写在结构里：根 `vn: 'VDetailItem'`、`VDetailLabel` / `VDetailValue`；
+ * - 命令 `label` / `value` / `content`；**第二参不再被当作"值"**——两参写法
+ *   `vDetailItem(label, value)` 请改 `vDetailItem({ label, value })`。
+ */
+export function VDetailItem() {
+  return vNode((api) => {
+    const labelBox = dt({ vn: 'VDetailLabel' }).styles({
+      color: themeValue('color-text-secondary', '#475569'),
+      fontWeight: '700',
+      margin: '0',
+      wordBreak: 'break-word'
+    });
+    const valueBox = dd({ vn: 'VDetailValue' }).styles({
+      color: themeValue('color-text-strong', '#111827'),
+      margin: '0',
+      wordBreak: 'break-word'
+    });
+    const node = div({ vn: 'VDetailItem' }).styles({
       alignItems: 'start',
       display: 'grid',
       gap: '12px',
       gridTemplateColumns: 'minmax(96px, 1fr) minmax(0, 1.5fr)',
       padding: '12px 16px'
     });
-    this._labelBox.styles({
-      color: themeValue('color-text-secondary', '#475569'),
-      fontWeight: '700',
-      margin: '0',
-      wordBreak: 'break-word'
-    });
-    this._valueBox.styles({
-      color: themeValue('color-text-strong', '#111827'),
-      margin: '0',
-      wordBreak: 'break-word'
-    });
-    this.child(this._labelBox, this._valueBox);
-    this._setupDetailItem(setup, value);
-    this._syncLabelPresence();
-  }
 
-  label(content) {
-    if (content === undefined) {
-      return this._labelBox.textContent();
-    }
+    node.child(labelBox, valueBox);
 
-    const hasContent = content !== null && content !== undefined && content !== '';
-    replaceChildren(this._labelBox, hasContent ? normalizeChildren(content) : []);
-    this._syncLabelPresence();
-    return this;
-  }
+    const syncLabelPresence = () => {
+      const hasLabel = labelBox.children().length > 0;
 
-  value(content) {
-    if (content === undefined) {
-      return this._valueBox.textContent();
-    }
+      node.style(
+        'gridTemplateColumns',
+        hasLabel ? 'minmax(96px, 1fr) minmax(0, 1.5fr)' : 'minmax(0, 1fr)'
+      );
+      labelBox.style('display', hasLabel ? null : 'none');
+      node.attr('data-label-visible', hasLabel ? 'true' : null);
+    };
 
-    replaceChildren(this._valueBox, normalizeChildren(content));
-    return this;
-  }
+    api.label = (content) => {
+      if (content === undefined) {
+        return labelBox.textContent();
+      }
 
-  content(content) {
-    return this.value(content);
-  }
+      const hasContent = content !== null && content !== undefined && content !== '';
 
-  _syncLabelPresence() {
-    const hasLabel = this._labelBox.children().length > 0;
-    this.style(
-      'gridTemplateColumns',
-      hasLabel ? 'minmax(96px, 1fr) minmax(0, 1.5fr)' : 'minmax(0, 1fr)'
-    );
-    this._labelBox.style('display', hasLabel ? null : 'none');
-    this.attr('data-label-visible', hasLabel ? 'true' : null);
-    return this;
-  }
+      replaceChildren(labelBox, hasContent ? normalizeChildren(content) : []);
+      syncLabelPresence();
+      return api;
+    };
 
-  _setupDetailItem(setup, value) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.value = (content) => {
+      if (content === undefined) {
+        return valueBox.textContent();
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      replaceChildren(valueBox, normalizeChildren(content));
+      return api;
+    };
 
-    if (Array.isArray(setup) && value === undefined && setup.length >= 2) {
-      this.label(setup[0]);
-      this.value(setup[1]);
-      return;
-    }
+    api.content = (content) => api.value(content);
 
-    if (isPlainObject(setup)) {
-      const { children, content, label, text, value: itemValue, ...elementConfig } = setup;
+    /** 字符串 / 节点 = 内容位（旧 `_setupDetailItem` 的兜底分支）。 */
+    api.setupString = (content) => api.value(content);
+
+    /** props：`label` / `value` / `content` / `text` / `children` 走内容位，其余按元素 options 写。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
+      const { children, content, label, text, value, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
-
       if (label !== undefined) {
-        this.label(label);
+        api.label(label);
       }
-
-      if (itemValue !== undefined) {
-        this.value(itemValue);
+      if (value !== undefined) {
+        api.value(value);
       } else if (content !== undefined) {
-        this.value(content);
+        api.value(content);
       } else if (text !== undefined) {
-        this.value(text);
+        api.value(text);
       } else if (children !== undefined) {
-        this.value(children);
+        api.value(children);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    if (value !== undefined) {
-      this.label(setup);
-      this.value(value);
-      return;
-    }
-
-    this.value(setup);
-  }
-}
-
-export function vDetail(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VDetail',
-    createNode: (setup) => new DetailNode(setup),
-    commands: ['columns', 'column', 'items'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    syncLabelPresence();
+    return node;
   });
 }
 
-export const VDetail = vDetail;
-defineComponentIdentity(VDetail, 'VDetail');
-
-/**
- * 详情项：第二参是该条的值（不是子节点），所以外壳不做额外参数分派——
- * 第二个参数在 `createNode` 里直接交给节点类型的构造器。
- */
-export function vDetailItem(setup = null, value = undefined) {
-  return createComponentShell({
-    identity: 'VDetailItem',
-    createNode: (first) => new DetailItemNode(first, value),
-    commands: ['label', 'value', 'content'],
-    args: [setup]
-  });
-}
-
-export const VDetailItem = vDetailItem;
-defineComponentIdentity(VDetailItem, 'VDetailItem');
+export const vDetailItem = createComponentShortcut(VDetailItem);
 
 function normalizeDetailItem(item) {
-  if (item instanceof VDetailItem) {
+  if (hasComponentIdentity(item, 'VDetailItem')) {
     return item;
   }
 
   if (Array.isArray(item) && item.length >= 2) {
-    return vDetailItem(item[0], item[1]);
+    return vDetailItem({ label: item[0], value: item[1] });
   }
 
   if (item instanceof ViewNode) {

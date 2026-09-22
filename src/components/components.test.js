@@ -1792,20 +1792,20 @@ describe('compound components', () => {
           item.label('主机');
           item.value('api-gateway-01');
         });
-        detail.vDetailItem(vDetailItem('状态', '运行中'));
+        detail.vDetailItem(vDetailItem({ label: '状态', value: '运行中' }));
       });
     });
 
     const element = page.renderDom();
-    const items = element.querySelectorAll('.yoya-vdetail-item');
+    const items = element.querySelectorAll('[vn~="VDetailItem"]');
 
-    expect(element.querySelector('.yoya-vdetail')).not.toBeNull();
+    expect(element.querySelector('[vn~="VDetail"]')).not.toBeNull();
     expect(items).toHaveLength(2);
     expect(items[0].querySelector('dt').textContent).toBe('主机');
     expect(items[0].querySelector('dd').textContent).toBe('api-gateway-01');
     expect(items[1].querySelector('dt').textContent).toBe('状态');
     expect(items[1].querySelector('dd').textContent).toBe('运行中');
-    expect(vDetailItem('版本', '1.2.3').toHTML()).toContain('1.2.3');
+    expect(vDetailItem({ label: '版本', value: '1.2.3' }).toHTML()).toContain('1.2.3');
   });
 
   it('dynamically changes how many detail items are shown per row', () => {
@@ -1821,13 +1821,13 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
     const detail = page.children()[0];
-    const detailElement = element.querySelector('.yoya-vdetail');
+    const detailElement = element.querySelector('[vn~="VDetail"]');
 
     expect(detail.columns()).toBe(2);
     expect(detailElement.dataset.columns).toBe('2');
     expect(detailElement.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
-    expect(detailElement.querySelectorAll('.yoya-vdetail-item')).toHaveLength(3);
-    expect(detailElement.querySelector('.yoya-vdetail-item').style.gridTemplateColumns).toBe(
+    expect(detailElement.querySelectorAll('[vn~="VDetailItem"]')).toHaveLength(3);
+    expect(detailElement.querySelector('[vn~="VDetailItem"]').style.gridTemplateColumns).toBe(
       'minmax(96px, 1fr) minmax(0, 1.5fr)'
     );
 

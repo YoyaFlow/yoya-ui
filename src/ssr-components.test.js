@@ -85,7 +85,7 @@ function buildAllComponentsPage() {
     root.child(vCard((card) => card.vCardBody('卡片')));
     root.child(vBadge({ count: 5, children: '徽标' }));
     root.child(vAvatar({ text: 'A' }));
-    root.child(vDetail((d) => d.vDetailItem('名称', '值')));
+    root.child(vDetail((d) => d.vDetailItem({ label: '名称', value: '值' })));
     root.child(codeBlock({ content: 'code' }));
     root.child(vProgress({ percent: 40 }));
     root.child(vTable((t) => t.vTr((r) => r.vTd('x'))));

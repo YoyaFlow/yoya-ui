@@ -2359,7 +2359,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const detailDemo = document.querySelector('[data-data-display-demo="dynamic"]');
-    const detail = detailDemo.querySelector('.yoya-vdetail');
+    const detail = detailDemo.querySelector('[vn~="VDetail"]');
     const switchButton = [...detailDemo.querySelectorAll('button')].find((button) =>
       button.textContent.includes('切换服务')
     );
@@ -2382,7 +2382,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const columnsDemo = document.querySelector('[data-data-display-demo="columns"]');
-    const detail = columnsDemo.querySelector('.yoya-vdetail');
+    const detail = columnsDemo.querySelector('[vn~="VDetail"]');
     const status = columnsDemo.querySelector('[data-detail-columns-status]');
     const threeColumnsButton = [...columnsDemo.querySelectorAll('button')].find((button) =>
       button.textContent.includes('3 列')
@@ -2561,7 +2561,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     const detailDemo = page.querySelector('[data-form-demo="detail"]');
     const detailField = detailDemo.querySelector('[vn~="VField"]');
-    const detailItem = detailDemo.querySelector('.yoya-vdetail-item');
+    const detailItem = detailDemo.querySelector('[vn~="VDetailItem"]');
 
     expect(detailItem.dataset.labelVisible).toBeUndefined();
     expect(detailItem.style.gridTemplateColumns).toBe('minmax(0, 1fr)');
