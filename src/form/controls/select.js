@@ -1,10 +1,14 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
-import { ViewNode } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { applyPropValue, ViewNode } from '../../core/node.js';
+import { optionKindOf } from '../../core/setup-keys.js';
+import { vNode } from '../../core/v-node.js';
 import {
-  booleanMethod,
-  componentClass,
+  div,
+  HtmlElementNode,
+  option as optionTag,
+  select as selectTag
+} from '../../html/index.js';
+import {
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -14,362 +18,364 @@ import {
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
-class SelectNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VSelect';
-    this._options = [];
-    this._placeholder = '';
-    this._value = '';
-    this._clearable = true;
-    this._clearButton = createClearButton('VSelectClear', {
+/**
+ * 下拉选择（形态 B）：视图根是外壳 `div` + 内层 `select` + 清空按钮，选项由数据渲染。
+ *
+ * - 身份写在结构里：根 `vn: 'VSelect'`、内层 `vn: 'VSelectField'`、选项 `vn: 'VSelectOption'`、
+ *   清空按钮 `vn: 'VSelectClear'`（能力类 `yoya-control-clear` 保留）；
+ * - 元素级方法按控件语义路由到内层 select（`attr` / `className` / `id` / `name` / `value` / `placeholder` …），
+ *   命令写在 api 上，调用方拿组件句柄直接调；
+ * - SSR 回读 `hydrateSnapshot` 挂内层 select（渲染路径按节点调用）；
+ * - props 分派与 `VInput` 同口径：本组件命令优先，元素分派（`class` / `attrs` / `style` / `onXxx` / `vn` /
+ *   其它节点方法如 `access`）交回引擎，剩下的按属性写内层 select（见 16 号清单第 29 条）。
+ */
+export function VSelect() {
+  return vNode((api) => {
+    const state = {
+      clearable: true,
+      disabled: false,
+      error: false,
+      options: [],
+      placeholder: '',
+      required: false,
+      value: ''
+    };
+
+    const field = selectTag({
+      style: {
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border-strong', '#cbd5e1'),
+        borderRadius: '6px',
+        boxSizing: 'border-box',
+        color: themeValue('color-text', '#172033'),
+        cursor: 'pointer',
+        font: 'inherit',
+        minHeight: 'var(--yoya-control-height-md, 34px)',
+        outline: 'none',
+        padding: '0 32px 0 12px',
+        width: '100%'
+      },
+      vn: 'VSelectField'
+    });
+    const clearButton = createClearButton('VSelectClear', {
       right: '30px',
       top: '50%',
       transform: 'translateY(-50%)'
     });
-    this._input = new HtmlElementNode('select').className(componentClass, 'yoya-vselect').styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border-strong', '#cbd5e1'),
-      borderRadius: '6px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text', '#172033'),
-      cursor: 'pointer',
-      font: 'inherit',
-      minHeight: 'var(--yoya-control-height-md, 34px)',
-      outline: 'none',
-      padding: '0 32px 0 12px',
-      width: '100%'
-    });
+    const node = div(
+      {
+        style: { minWidth: '0', position: 'relative', width: '100%' },
+        vn: 'VSelect'
+      },
+      (root) => root.child(field, clearButton)
+    );
 
-    this._addRootClass(componentClass, 'yoya-vselect-wrap');
-    this.styles({
-      minWidth: '0',
-      position: 'relative',
-      width: '100%'
-    });
-    this._clearButton.on('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      this.clear();
-      this._input._el?.focus();
-    });
-    this._input.on('change', () => this._syncClear());
-    this.child(this._input, this._clearButton);
+    // 清空按钮的判定读 api：clearable() / isDisabled() / isReadonly() / value()
+    const syncClear = () => syncClearButton(api, field, clearButton);
+    const syncClearPadding = () => field.style('paddingRight', state.clearable ? '52px' : '32px');
 
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this._input.attr('required', enabled ? true : null);
-    });
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this._input.attr('disabled', enabled ? true : null);
-      this._input.style('cursor', enabled ? 'not-allowed' : 'pointer');
-      this._input.style('opacity', enabled ? '0.64' : '1');
-      this._syncClear();
-    });
-    this.error = booleanMethod(this, 'error', false, (enabled) => {
-      this._input.attr('data-error', enabled ? 'true' : null);
-      this._input.style(
+    const renderOptions = () => {
+      const nodes = [];
+      const selectedValue = resolveTextValue(state.value);
+
+      if (state.placeholder) {
+        const placeholderNode = optionTag({
+          disabled: true,
+          style: { color: themeValue('color-border-muted', '#94a3b8') },
+          value: '',
+          vn: 'VSelectOption'
+        });
+
+        placeholderNode.attr('selected', selectedValue ? null : true);
+        replaceChildren(placeholderNode, normalizeChildren(state.placeholder));
+        nodes.push(placeholderNode);
+      } else if (state.clearable && !selectedValue) {
+        nodes.push(
+          optionTag({
+            selected: true,
+            style: { color: themeValue('color-border-muted', '#94a3b8') },
+            value: '',
+            vn: 'VSelectOption'
+          })
+        );
+      }
+
+      state.options.forEach((option, index) => {
+        nodes.push(createSelectOptionNode(option, selectedValue, index));
+      });
+
+      replaceChildren(field, nodes);
+
+      if (field._el) {
+        field._el.value = selectedValue;
+      }
+    };
+
+    const applyDisabled = () => {
+      field.attr('disabled', state.disabled ? true : null);
+      field.style('cursor', state.disabled ? 'not-allowed' : 'pointer');
+      field.style('opacity', state.disabled ? '0.64' : '1');
+      syncClear();
+    };
+    const applyRequired = () => field.attr('required', state.required ? true : null);
+    const applyError = () => {
+      field.attr('data-error', state.error ? 'true' : null);
+      field.style(
         'borderColor',
-        enabled
+        state.error
           ? themeValue('color-danger', '#dc2626')
           : themeValue('color-border-strong', '#cbd5e1')
       );
-      this._input.style(
+      field.style(
         'boxShadow',
-        enabled ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}` : null
+        state.error
+          ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
+          : null
       );
-    });
+    };
+    const booleanCommand = (key, apply) => (value) => {
+      if (value === undefined) {
+        return state[key];
+      }
 
-    this._setupSelect(setup);
-    this._syncClearPadding();
-    this._syncClear();
-  }
+      state[key] = Boolean(value);
+      apply();
+      return api;
+    };
 
-  _addRootClass(...classes) {
-    super.className(...classes);
-    return this;
-  }
+    api.attr = (name, value) => {
+      if (name && typeof name === 'object') {
+        Object.entries(name).forEach(([key, nextValue]) => api.attr(key, nextValue));
+        return api;
+      }
 
-  className(...classes) {
-    if (classes.length === 0) {
-      return this._input.className();
-    }
+      if (name === 'value') {
+        return value === undefined ? api.value() : api.value(value);
+      }
 
-    this._input.className(...classes);
-    return this;
-  }
+      if (value === undefined) {
+        return field.attr(name);
+      }
 
-  attr(name, value) {
-    if (name && typeof name === 'object') {
-      Object.entries(name).forEach(([key, nextValue]) => this.attr(key, nextValue));
-      return this;
-    }
+      field.attr(name, value);
+      return api;
+    };
 
-    if (name === 'value') {
-      return value === undefined ? this.value() : this.value(value);
-    }
+    api.className = (...classes) => {
+      if (classes.length === 0) {
+        return field.className();
+      }
 
-    if (value === undefined) {
-      return this._input.attr(name);
-    }
+      field.className(...classes);
+      return api;
+    };
 
-    this._input.attr(name, value);
-    return this;
-  }
+    api.id = (value) => {
+      if (value === undefined) {
+        return field.id();
+      }
 
-  on(eventName, handler, options) {
-    if (this._input && (eventName === 'focus' || eventName === 'blur')) {
-      this._input.on(eventName, handler, options);
-      return this;
-    }
+      field.id(value);
+      return api;
+    };
 
-    return super.on(eventName, handler, options);
-  }
+    api.name = (value) => {
+      if (value === undefined) {
+        return field.name();
+      }
 
-  id(value) {
-    if (value === undefined) {
-      return this._input.id();
-    }
+      field.name(value);
+      return api;
+    };
 
-    this._input.id(value);
-    return this;
-  }
+    api.textContent = () => field.textContent();
 
-  name(value) {
-    if (value === undefined) {
-      return this._input.name();
-    }
+    api.value = (value) => {
+      if (value === undefined) {
+        return field._el?.value ?? state.value ?? '';
+      }
 
-    this._input.name(value);
-    return this;
-  }
+      state.value = resolveTextValue(value);
+      renderOptions();
+      syncClear();
+      return api;
+    };
 
-  textContent() {
-    return this._input.textContent();
-  }
+    api.text = (value) => api.value(value);
+    api.content = (value) => api.value(value);
 
-  value(value) {
-    if (value === undefined) {
-      return this._input._el?.value ?? this._value ?? '';
-    }
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return state.placeholder;
+      }
 
-    this._value = resolveTextValue(value);
-    this._renderOptions();
-    this._syncClear();
-    return this;
-  }
+      state.placeholder = resolveTextValue(value);
+      renderOptions();
+      return api;
+    };
 
-  hydrateSnapshot() {
-    if (this._input._el) {
-      this.value(this._input._el.value);
-    }
-    return this;
-  }
+    api.options = (value) => {
+      if (value === undefined) {
+        return state.options.slice();
+      }
 
-  text(value) {
-    return this.value(value);
-  }
+      state.options = Array.isArray(value) ? value.slice() : [];
+      renderOptions();
+      return api;
+    };
 
-  content(value) {
-    return this.value(value);
-  }
+    api.disabled = booleanCommand('disabled', applyDisabled);
+    api.required = booleanCommand('required', applyRequired);
+    api.error = booleanCommand('error', applyError);
 
-  placeholder(value) {
-    if (value === undefined) {
-      return this._placeholder;
-    }
+    // 读写分离：跨组件只读判断走这三个方法（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+    // 下拉选择没有只读态，恒为 false，供清空按钮判别直接调用
+    api.isReadonly = () => false;
+    api.isError = () => state.error;
 
-    this._placeholder = resolveTextValue(value);
-    this._renderOptions();
-    return this;
-  }
+    api.clearable = (value) => {
+      if (value === undefined) {
+        return state.clearable;
+      }
 
-  options(value) {
-    if (value === undefined) {
-      return this._options.slice();
-    }
+      state.clearable = Boolean(value);
+      field.attr('data-clearable', state.clearable ? 'true' : null);
+      renderOptions();
+      syncClearPadding();
+      syncClear();
+      return api;
+    };
 
-    this._options = Array.isArray(value) ? value.slice() : [];
-    this._renderOptions();
-    return this;
-  }
+    api.clear = () => {
+      api.value('');
 
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
+      if (field._el) {
+        field._el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
 
-  // 下拉选择没有只读态，恒为 false，供清空按钮判别直接调用
-  isReadonly() {
-    return false;
-  }
+      return api;
+    };
 
-  isError() {
-    return this._error.value;
-  }
+    /** 字符串 / 数字 = 选中值（旧 `_setupSelect` 的兜底分支）。 */
+    api.setupString = (value) => api.value(value);
 
-  clearable(value) {
-    if (value === undefined) {
-      return this._clearable;
-    }
+    /** props：本组件的键走命令，其余按引擎的元素分派落位（与 `VInput` 同口径）。 */
+    api.setupObject = (options) => {
+      if (!isPlainObject(options)) {
+        return api;
+      }
 
-    this._clearable = Boolean(value);
-    this._input.attr('data-clearable', this._clearable ? 'true' : null);
-    this._renderOptions();
-    this._syncClearPadding();
-    this._syncClear();
-    return this;
-  }
-
-  clear() {
-    this.value('');
-
-    if (this._input._el) {
-      this._input._el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    return this;
-  }
-
-  _syncClear() {
-    syncClearButton(this, this._input, this._clearButton);
-    return this;
-  }
-
-  _syncClearPadding() {
-    this._input.style('paddingRight', this._clearable ? '52px' : '32px');
-    return this;
-  }
-
-  _renderOptions() {
-    const nodes = [];
-    const selectedValue = resolveTextValue(this._value);
-
-    if (this._placeholder) {
-      const placeholderNode = new HtmlElementNode('option').className('yoya-vselect-option');
-      placeholderNode.attr({ disabled: true, value: '' });
-      placeholderNode.attr('selected', selectedValue ? null : true);
-      placeholderNode.styles({
-        color: themeValue('color-border-muted', '#94a3b8')
-      });
-      replaceChildren(placeholderNode, normalizeChildren(this._placeholder));
-      nodes.push(placeholderNode);
-    } else if (this._clearable && !selectedValue) {
-      const clearPlaceholderNode = new HtmlElementNode('option')
-        .className('yoya-vselect-option')
-        .attr({ selected: true, value: '' })
-        .styles({
-          color: themeValue('color-border-muted', '#94a3b8')
-        });
-      nodes.push(clearPlaceholderNode);
-    }
-
-    this._options.forEach((option, index) => {
-      nodes.push(createSelectOptionNode(option, selectedValue, index));
-    });
-
-    replaceChildren(this._input, nodes);
-
-    if (this._input._el) {
-      this._input._el.value = selectedValue;
-    }
-  }
-
-  _setupSelect(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
       const {
-        clearable,
         children,
+        clearable,
         content,
         disabled,
         error,
-        options,
+        options: optionList,
         placeholder,
         required,
         text,
         value,
         ...elementConfig
-      } = setup;
+      } = options;
 
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+      const engineConfig = {};
+
+      Object.entries(elementConfig).forEach(([key, optionValue]) => {
+        const kind = optionKindOf(key);
+
+        if (kind === 'class') {
+          applyPropValue(node, optionValue, (next) => api.className(next));
+          return;
+        }
+        if (kind === 'attrs') {
+          api.attr(optionValue);
+          return;
+        }
+        if (kind === 'style') {
+          node.styles(optionValue);
+          return;
+        }
+        if (key.startsWith('on') && typeof optionValue === 'function') {
+          node.on(key.slice(2).toLowerCase(), optionValue);
+          return;
+        }
+        if (key === 'vn') {
+          engineConfig[key] = optionValue;
+          return;
+        }
+        if (typeof api[key] === 'function') {
+          applyPropValue(node, optionValue, (next) => api[key](next));
+          return;
+        }
+        if (typeof node[key] === 'function') {
+          engineConfig[key] = optionValue;
+          return;
+        }
+
+        applyPropValue(node, optionValue, (next) => api.attr(key, next));
+      });
+
+      if (Object.keys(engineConfig).length > 0) {
+        node.setup(engineConfig);
       }
 
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        applyPropValue(node, placeholder, (next) => api.placeholder(next));
       }
-
-      if (options !== undefined) {
-        this.options(options);
+      if (optionList !== undefined) {
+        applyPropValue(node, optionList, (next) => api.options(next));
       }
-
       if (value !== undefined) {
-        this.value(value);
+        applyPropValue(node, value, (next) => api.value(next));
       } else if (text !== undefined) {
-        this.value(text);
+        applyPropValue(node, text, (next) => api.value(next));
       } else if (content !== undefined) {
-        this.value(content);
+        applyPropValue(node, content, (next) => api.value(next));
       } else if (children !== undefined) {
-        this.value(children);
+        applyPropValue(node, children, (next) => api.value(next));
       }
-
       if (required !== undefined) {
-        this.required(required);
+        applyPropValue(node, required, (next) => api.required(next));
       }
-
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        applyPropValue(node, disabled, (next) => api.disabled(next));
       }
-
       if (error !== undefined) {
-        this.error(error);
+        applyPropValue(node, error, (next) => api.error(next));
       }
-
       if (clearable !== undefined) {
-        this.clearable(clearable);
+        applyPropValue(node, clearable, (next) => api.clearable(next));
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.value(setup);
-  }
-}
+    // 元素机制挂到内层 select：SSR 回读按节点调用
+    field.hydrateSnapshot = () => {
+      if (field._el) {
+        api.value(field._el.value);
+      }
+      return field;
+    };
 
-export function vSelect(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSelect',
-    createNode: (setup) => new SelectNode(setup),
-    commands: [
-      'value',
-      'text',
-      'content',
-      'placeholder',
-      'options',
-      'isDisabled',
-      'isReadonly',
-      'isError',
-      'clearable',
-      'clear',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'required',
-      'disabled',
-      'error'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    clearButton.on('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      api.clear();
+      field._el?.focus();
+    });
+    field.on('change', syncClear);
+
+    syncClearPadding();
+    renderOptions();
+    syncClear();
+    return node;
   });
 }
 
-export const VSelect = vSelect;
-defineComponentIdentity(VSelect, 'VSelect');
+export const vSelect = createComponentShortcut(VSelect);
 
 function createSelectOptionNode(option, selectedValue, index) {
   if (option instanceof HtmlElementNode && option.tagName?.() === 'option') {
@@ -379,7 +385,7 @@ function createSelectOptionNode(option, selectedValue, index) {
   }
 
   const normalized = normalizeSelectOption(option, index);
-  const node = new HtmlElementNode('option').className('yoya-vselect-option');
+  const node = optionTag({ vn: 'VSelectOption' });
   const isSelected = normalized.value === selectedValue;
 
   node.attr('value', normalized.value);

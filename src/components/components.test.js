@@ -490,7 +490,7 @@ describe('compound components', () => {
       }
     );
     const selectRoot = select.renderDom();
-    const selectElement = selectRoot.querySelector('.yoya-vselect');
+    const selectElement = selectRoot.querySelector('[vn~="VSelectField"]');
 
     let menuCallback = null;
     const menu = vMenu({ attrs: { 'data-menu': 'actions' } }, (node) => {
@@ -2035,8 +2035,10 @@ describe('compound components', () => {
     expect(element.querySelector('[vn~="VInputField"]').name).toBe('serviceName');
     expect(element.querySelector('[vn~="VInputField"]').placeholder).toBe('服务名');
     expect(element.querySelector('[vn~="VInputField"]').value).toBe('api-gateway');
-    expect(element.querySelector('.yoya-vselect').value).toBe('运行中');
-    expect(element.querySelector('.yoya-vselect option[selected]').textContent).toBe('运行中');
+    expect(element.querySelector('[vn~="VSelectField"]').value).toBe('运行中');
+    expect(element.querySelector('[vn~="VSelectField"] option[selected]').textContent).toBe(
+      '运行中'
+    );
     expect(element.querySelector('[vn~="VTextareaField"]').value).toBe('初始说明');
     expect(element.querySelector('[vn~="VTextareaField"]').readOnly).toBe(true);
 
@@ -2444,7 +2446,7 @@ describe('compound components', () => {
       status: '停止'
     });
     expect(element.querySelector('[vn~="VInputField"]').value).toBe('worker');
-    expect(element.querySelector('.yoya-vselect').value).toBe('停止');
+    expect(element.querySelector('[vn~="VSelectField"]').value).toBe('停止');
 
     form.values({
       enabled: false,
