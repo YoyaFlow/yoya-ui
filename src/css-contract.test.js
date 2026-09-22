@@ -23,7 +23,16 @@ const sharedActionSelectors = [
   '.yoya-vcontext-menu',
   '.yoya-vcontext-target',
   '.yoya-vcontext-panel',
-  ".yoya-vcontext-menu[data-open='true'] > .yoya-vcontext-panel"
+  ".yoya-vcontext-menu[data-open='true'] > .yoya-vcontext-panel",
+  "[vn~='VSymbolButton']",
+  "[vn~='VSymbolButton']:hover",
+  "[vn~='VFloatButton']",
+  "[vn~='VFloatButton'][data-variant='primary']",
+  "[vn~='VFloatButton'][data-size='large']",
+  "[vn~='VFloatButton'][data-label='true']",
+  "[vn~='VFloatButton'][disabled]",
+  "[vn~='VFloatButton'][data-fixed='true']",
+  "[vn~='VFloatButton'][data-position='bottom-right']"
 ];
 
 const navigationSelectors = [

@@ -321,6 +321,106 @@ body {
     height: 0;
     width: 0;
   }
+  :where([vn~='VSymbolButton']) {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    outline: none;
+    padding: 4px;
+  }
+
+  [vn~='VSymbolButton']:hover {
+    background: var(--yoya-color-surface-hover, rgba(15, 23, 42, 0.06));
+  }
+
+  :where([vn~='VFloatButton']) {
+    align-items: center;
+    /* 默认档 = medium */
+    border-radius: 9999px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 6px;
+    height: 48px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 48px;
+    padding: 0;
+    user-select: none;
+  }
+
+  [vn~='VFloatButton'][data-variant='primary'] {
+    background: var(--yoya-color-primary, #2563eb);
+    border: none;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VFloatButton']:not([data-variant='primary']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VFloatButton'][data-size='small'] {
+    height: 36px;
+    min-width: 36px;
+  }
+
+  [vn~='VFloatButton'][data-size='large'] {
+    height: 56px;
+    min-width: 56px;
+  }
+
+  /* 有标签时左右留白（几何归 CSS，JS 只写 data-label） */
+  [vn~='VFloatButton'][data-label='true'] {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  [vn~='VFloatButton'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.56;
+  }
+
+  /* 固定定位：`fixed()` 打开，档位由 `position()` 选 */
+  [vn~='VFloatButton'][data-fixed='true'] {
+    position: fixed;
+    z-index: 100;
+  }
+
+  [vn~='VFloatButton'][data-position='bottom-left'] {
+    bottom: 24px;
+    left: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='bottom-right'] {
+    bottom: 24px;
+    right: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='top-left'] {
+    left: 24px;
+    top: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='top-right'] {
+    right: 24px;
+    top: 24px;
+  }
+
   :where(.yoya-vbutton) {
     align-items: center;
     border-radius: var(--yoya-radius-md, 6px);

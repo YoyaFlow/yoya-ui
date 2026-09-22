@@ -15,12 +15,10 @@ describe('vSymbolButton', () => {
     const element = button.renderDom();
 
     expect(element.tagName).toBe('BUTTON');
-    expect(element.className).toContain('yoya-vsymbol-button');
+    expect(element.getAttribute('vn')).toBe('VSymbolButton');
     expect(element.getAttribute('type')).toBe('button');
-    expect(element.style.border).toBe('0px');
-    expect(element.style.outline).toBe('none');
-    expect(element.style.boxShadow).toBe('none');
-    expect(element.style.background).toBe('transparent');
+    // 静态样式（无边框 / 透明底 / hover 底色）在 yoya.ui.css，由 css-contract 守
+    expect(element.style.border).toBe('');
     expect(element.querySelector('svg')).not.toBeNull();
     expect(element.getAttribute('aria-label')).toBe('搜索');
   });
@@ -53,6 +51,6 @@ describe('vSymbolButton', () => {
     });
     const element = root.renderDom();
 
-    expect(element.querySelector('.yoya-vsymbol-button')).not.toBeNull();
+    expect(element.querySelector('[vn~="VSymbolButton"]')).not.toBeNull();
   });
 });

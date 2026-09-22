@@ -2697,7 +2697,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     ).toContain("import { PlusOutlined, div, vFloatButton, vText } from '@yoyaflow/yoya-ui';");
 
     const basicDemo = page.querySelector('[data-float-button-demo="basic"]');
-    basicDemo.querySelector('.yoya-vfloat-button').click();
+    basicDemo.querySelector('[vn~="VFloatButton"]').click();
 
     expect(basicDemo.querySelector('[data-float-button-output]').textContent).toBe(
       '已触发新建操作'

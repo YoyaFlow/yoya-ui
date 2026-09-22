@@ -1,282 +1,153 @@
-import { createComponentShell } from '../components/component-shell.js';
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity } from '../core/node.js';
-import {
-  applyElementOptions,
-  componentClass,
-  isPlainObject,
-  normalizeChildren,
-  themeBorder,
-  themeValue
-} from '../components/shared.js';
+import { asSignal, computed, ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { button, span } from '../html/index.js';
+import { createComponentShortcut, normalizeChildren } from '../components/shared.js';
 
-const positionPresets = {
-  'bottom-left': { bottom: '24px', left: '24px' },
-  'bottom-right': { bottom: '24px', right: '24px' },
-  'top-left': { left: '24px', top: '24px' },
-  'top-right': { right: '24px', top: '24px' }
-};
-
-const sizePresets = {
-  large: { height: '56px', minWidth: '56px' },
-  medium: { height: '48px', minWidth: '48px' },
-  small: { height: '36px', minWidth: '36px' }
-};
+const positionPresets = new Set(['bottom-left', 'bottom-right', 'top-left', 'top-right']);
 
 /**
  * vFloatButton 悬浮按钮：圆形操作入口，支持图标、扩展标签和固定定位。
  */
-export class FloatButtonNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('button', null);
-    this._identity = 'VFloatButton';
-    this._variant = 'primary';
-    this._size = 'medium';
-    this._fixed = false;
-    this._position = null;
-    this._icon = null;
-    this._label = null;
-    this._iconBox = new HtmlElementNode('span')
-      .className('yoya-vfloat-button-icon')
-      .setup((box) => {
-        box.rebuildable();
-        box.child(normalizeChildren(this._icon));
-      });
-    this._labelBox = new HtmlElementNode('span')
-      .className('yoya-vfloat-button-label')
-      .setup((box) => {
-        box.rebuildable();
-        box.child(normalizeChildren(this._label));
-      });
+/**
+ * 悬浮按钮（形态 B）：圆形操作入口，支持图标、扩展标签和固定定位。
+ *
+ * - 静态样式（形状 / 尺寸档 / 变体配色 / 固定定位四档 / 禁用态）全在 `yoya.ui.css`（R5）：
+ *   JS 只写 `data-*` 状态与两个内容位；
+ * - 图标位 / 标签位是**内容通道**（`rebuildable()` 区域 + `icon()` / `label()` 整体替换）；
+ *   "有没有内容"看两个来源（内容框实况 + 写入标记），不缓存结构（R6 / 47 条）。
+ */
+export function VFloatButton({
+  children,
+  disabled = false,
+  fixed,
+  icon,
+  label,
+  position,
+  size = 'medium',
+  text,
+  variant = 'primary',
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+  const variantState = asSignal(variant);
+  const sizeState = asSignal(size);
+  const disabledState = asSignal(disabled);
+  const fixedState = asSignal(Boolean(fixed));
+  const positionState = asSignal(positionPresets.has(position) ? position : null);
+  // 内容写入标记：命令写完内容后让"有没有内容"的绑定重新求值（结构读不能进 computed）
+  const iconVersion = ref(0);
+  const labelVersion = ref(0);
+  let iconValue = icon;
+  let labelValue = label ?? text ?? children;
 
-    this.className(componentClass, 'yoya-vfloat-button');
-    this.attr('type', 'button');
-    this.styles({
-      alignItems: 'center',
-      borderRadius: '9999px',
-      boxSizing: 'border-box',
-      cursor: 'pointer',
-      display: 'inline-flex',
-      font: 'inherit',
-      gap: '6px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      padding: '0',
-      userSelect: 'none'
-    });
-    this.child(this._iconBox, this._labelBox);
-    this._syncIconVisibility();
-    this._syncLabelVisibility();
-    this.variant(this._variant);
-    this.size(this._size);
+  const variantValue = computed(() => variantState.value || 'primary');
+  const sizeValue = computed(() => sizeState.value || 'medium');
+  const disabledValue = computed(() => Boolean(disabledState.value));
+  const fixedValue = computed(() => Boolean(fixedState.value));
+  const positionValue = computed(() => positionState.value);
+  // 固定定位只在「固定 + 有档位」时生效（CSS 按 data-fixed / data-position 命中）
+  const fixedKey = computed(() =>
+    fixedValue.value && positionValue.value ? positionValue.value : null
+  );
 
-    this._setupFloatButton(setup);
-  }
+  const iconBox = span({ vn: 'VFloatButtonIcon' }, (box) => {
+    box.rebuildable();
+    box.child(normalizeChildren(iconValue));
+  });
+  const labelBox = span({ vn: 'VFloatButtonLabel' }, (box) => {
+    box.rebuildable();
+    box.child(normalizeChildren(labelValue));
+  });
 
-  icon(content) {
-    this._icon = content;
-    this._iconBox.rebuild();
-    this._syncIconVisibility();
-    return this;
-  }
+  const hasIcon = () => {
+    iconVersion.value;
+    return iconBox.children().length > 0 || iconBox.textContent() !== '';
+  };
+  const hasLabel = () => {
+    labelVersion.value;
+    return labelBox.children().length > 0 || labelBox.textContent() !== '';
+  };
 
-  label(content) {
-    this._label = content;
-    this._labelBox.rebuild();
-    this._syncLabelVisibility();
-    return this;
-  }
+  return vNode((api) => {
+    api.icon = (content) => {
+      iconValue = content;
+      iconBox.rebuild();
+      iconVersion.value += 1;
+      return api;
+    };
 
-  content(content) {
-    return this.label(content);
-  }
+    api.label = (content) => {
+      labelValue = content;
+      labelBox.rebuild();
+      labelVersion.value += 1;
+      return api;
+    };
 
-  text(content) {
-    return this.label(content);
-  }
+    api.content = (content) => api.label(content);
+    api.text = (content) => api.label(content);
 
-  variant(value) {
-    if (value === undefined) {
-      return this._variant;
-    }
-
-    this._variant = value || 'primary';
-    this.attr('data-variant', this._variant);
-
-    const primary = this._variant === 'primary';
-    this.styles({
-      background: themeValue(
-        primary ? 'color-primary' : 'color-surface',
-        primary ? '#2563eb' : '#ffffff'
-      ),
-      border: primary ? 'none' : themeBorder('color-border-strong', '#cbd5e1'),
-      boxShadow: '0 6px 16px rgba(15, 23, 42, 0.16)',
-      color: themeValue(
-        primary ? 'color-text-inverse' : 'color-text',
-        primary ? '#ffffff' : '#172033'
-      )
-    });
-    return this;
-  }
-
-  type(value) {
-    return this.variant(value);
-  }
-
-  size(value) {
-    if (value === undefined) {
-      return this._size;
-    }
-
-    this._size = value || 'medium';
-    this.attr('data-size', this._size);
-
-    const preset = sizePresets[this._size] || sizePresets.medium;
-    this.style('height', preset.height);
-    this.style('minWidth', preset.minWidth);
-    return this;
-  }
-
-  disabled(value) {
-    this.attr('disabled', value ? true : null);
-    this.attr('aria-disabled', value ? 'true' : null);
-    this.style('cursor', value ? 'not-allowed' : 'pointer');
-    this.style('opacity', value ? '0.56' : null);
-    return this;
-  }
-
-  fixed(value = true) {
-    this._fixed = Boolean(value);
-    this._syncPosition();
-    return this;
-  }
-
-  position(value) {
-    if (value === undefined) {
-      return this._position;
-    }
-
-    this._position = positionPresets[value] ? value : null;
-    this._syncPosition();
-    return this;
-  }
-
-  _syncPosition() {
-    const preset = this._fixed && this._position ? positionPresets[this._position] : null;
-
-    this.style('position', this._fixed ? 'fixed' : null);
-    this.style('zIndex', this._fixed ? '100' : null);
-    this.style('bottom', preset?.bottom ?? null);
-    this.style('left', preset?.left ?? null);
-    this.style('right', preset?.right ?? null);
-    this.style('top', preset?.top ?? null);
-    return this;
-  }
-
-  _syncIconVisibility() {
-    const hasIcon = this._iconBox.children().length > 0 || this._iconBox.textContent() !== '';
-    this.attr('data-icon', hasIcon ? 'true' : null);
-    this._iconBox.style('display', hasIcon ? null : 'none');
-    return this;
-  }
-
-  _syncLabelVisibility() {
-    const hasLabel = this._labelBox.children().length > 0 || this._labelBox.textContent() !== '';
-    this.attr('data-label', hasLabel ? 'true' : null);
-    this.style('paddingLeft', hasLabel ? '18px' : null);
-    this.style('paddingRight', hasLabel ? '18px' : null);
-    this._labelBox.style('display', hasLabel ? null : 'none');
-    return this;
-  }
-
-  _setupFloatButton(setup) {
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        attrs,
-        children,
-        disabled,
-        fixed,
-        icon,
-        label,
-        position,
-        size,
-        style,
-        text,
-        variant,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+    api.variant = (next) => {
+      if (next === undefined) {
+        return variantValue.value;
       }
 
-      applyElementOptions(this, { attrs, style });
+      variantState.value = next;
+      return api;
+    };
 
-      if (icon !== undefined) {
-        this.icon(icon);
+    api.type = (next) => (next === undefined ? variantValue.value : api.variant(next));
+
+    api.size = (next) => {
+      if (next === undefined) {
+        return sizeValue.value;
       }
 
-      if (label !== undefined) {
-        this.label(label);
-      } else if (text !== undefined) {
-        this.label(text);
-      } else if (children !== undefined) {
-        this.label(children);
+      sizeState.value = next;
+      return api;
+    };
+
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return disabledValue.value;
       }
 
-      if (variant !== undefined) {
-        this.variant(variant);
+      disabledState.value = next;
+      return api;
+    };
+
+    /** `fixed()` 无参 = 打开（迁移前的默认参数口径）。 */
+    api.fixed = (next = true) => {
+      fixedState.value = next;
+      return api;
+    };
+
+    api.position = (next) => {
+      if (next === undefined) {
+        return positionValue.value;
       }
 
-      if (size !== undefined) {
-        this.size(size);
-      }
+      positionState.value = positionPresets.has(next) ? next : null;
+      return api;
+    };
 
-      if (disabled !== undefined) {
-        this.disabled(disabled);
-      }
-
-      if (fixed !== undefined) {
-        this.fixed(fixed);
-      }
-
-      if (position !== undefined) {
-        this.position(position);
-      }
-
-      return;
-    }
-
-    if (setup !== null && setup !== undefined) {
-      this.label(setup);
-    }
-  }
-}
-
-export function vFloatButton(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VFloatButton',
-    createNode: (setup) => new FloatButtonNode(setup),
-    commands: [
-      'icon',
-      'label',
-      'content',
-      'text',
-      'variant',
-      'type',
-      'size',
-      'disabled',
-      'fixed',
-      'position'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    return button(
+      {
+        ...elementConfig,
+        attrs: { type: 'button', ...restAttrs },
+        'aria-disabled': computed(() => (disabledValue.value ? 'true' : null)),
+        'data-fixed': computed(() => (fixedValue.value ? 'true' : null)),
+        'data-icon': () => (hasIcon() ? 'true' : null),
+        'data-label': () => (hasLabel() ? 'true' : null),
+        'data-position': fixedKey,
+        'data-size': sizeValue,
+        'data-variant': variantValue,
+        disabled: computed(() => (disabledValue.value ? true : null)),
+        style: restStyle ?? {},
+        vn: 'VFloatButton'
+      },
+      (root) => root.child(iconBox, labelBox)
+    );
   });
 }
 
-export const VFloatButton = vFloatButton;
-defineComponentIdentity(VFloatButton, 'VFloatButton');
+export const vFloatButton = createComponentShortcut(VFloatButton, { props: true });

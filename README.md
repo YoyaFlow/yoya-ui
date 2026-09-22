@@ -287,7 +287,7 @@ small core is — budget against the download column. The last column says what 
 | ---------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `yoya.core.js`                     | 2.5 KB ~ **30.1 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly                                                                                         |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                                                                                           |
-| `yoya.ui.js` (all categories)      | 5.9 KB ~ **103.5 KB**                   | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                                                                                                         |
+| `yoya.ui.js` (all categories)      | 5.9 KB ~ **103.1 KB**                   | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                                                                                                         |
 | `yoya.router.js`                   | 10.5 KB ~ **32.7 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                                                                                                     |
 | `yoya.compiler-runtime.js`         | 3.2 KB ~ **21.1 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …); the main entry never includes them |
 | `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                         |
@@ -298,10 +298,10 @@ Self-contained entries (core inlined, single file):
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
 | `yoya.router.full.js`                 | 321.4 KB | 136.7 KB | 40.5 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 911.3 KB | 428.6 KB | 116.0 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 844.2 KB | 398.3 KB | 106.4 KB | core + all components                |
+| `yoya.ui-router.full.js` (everything) | 909.2 KB | 425.4 KB | 115.7 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 842.1 KB | 395.1 KB | 106.1 KB | core + all components                |
 
-Component skin `yoya.ui.css`: 70.9 KB raw / **11.5 KB gzip**. The core layer ships no skin of its own
+Component skin `yoya.ui.css`: 73.2 KB raw / **11.9 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
 
 `npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the

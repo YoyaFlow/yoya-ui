@@ -300,14 +300,15 @@ describe('compound components', () => {
 
     expect(element.tagName).toBe('BUTTON');
     expect(element.type).toBe('button');
-    expect(element.classList.contains('yoya-vfloat-button')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VFloatButton');
     expect(element.dataset.variant).toBe('primary');
     expect(element.dataset.size).toBe('small');
     expect(element.dataset.icon).toBe('true');
     expect(element.dataset.label).toBe('true');
-    expect(element.querySelector('.yoya-vfloat-button-icon').textContent).toBe('＋');
-    expect(element.querySelector('.yoya-vfloat-button-label').textContent).toBe('新建任务');
-    expect(element.style.paddingLeft).toBe('18px');
+    expect(element.querySelector('[vn~="VFloatButtonIcon"]').textContent).toBe('＋');
+    expect(element.querySelector('[vn~="VFloatButtonLabel"]').textContent).toBe('新建任务');
+    // 有标签时的左右留白归 CSS（`[data-label='true']` 规则）
+    expect(element.style.paddingLeft).toBe('');
   });
 
   it('keeps an icon-only float button round without label padding', () => {
@@ -316,9 +317,9 @@ describe('compound components', () => {
 
     expect(element.dataset.icon).toBe('true');
     expect(element.dataset.label).toBeUndefined();
-    expect(element.style.paddingLeft).not.toBe('18px');
-    expect(element.style.borderRadius).toBe('9999px');
-    expect(element.querySelector('.yoya-vfloat-button-label').style.display).toBe('none');
+    expect(element.style.paddingLeft).toBe('');
+    expect(element.querySelector('[vn~="VFloatButtonLabel"]').hasAttribute('hidden')).toBe(false);
+    expect(element.querySelector('[vn~="VFloatButtonLabel"]').children).toHaveLength(0);
   });
 
   it('applies disabled and fixed position presets', () => {
@@ -331,10 +332,9 @@ describe('compound components', () => {
     const element = action.renderDom();
 
     expect(element.disabled).toBe(true);
-    expect(element.style.position).toBe('fixed');
-    expect(element.style.bottom).toBe('24px');
-    expect(element.style.right).toBe('24px');
-    expect(element.style.zIndex).toBe('100');
+    // 固定定位归 CSS：状态只落 `data-fixed` / `data-position`
+    expect(element.dataset.fixed).toBe('true');
+    expect(element.dataset.position).toBe('bottom-right');
   });
 
   it('accepts label, element options, and a final button setup callback', () => {
