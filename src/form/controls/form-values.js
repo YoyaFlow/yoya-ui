@@ -7,7 +7,6 @@ import {
 } from '../../components/shared.js';
 import { VCheckboxes } from './checkboxes.js';
 import { VRadios } from './radios.js';
-import { VForm } from './form.js';
 import { assignFormValue, isControlDisabled, isControlRequired } from './shared.js';
 
 /**
@@ -27,6 +26,11 @@ function isFieldCapable(node) {
 /** 表单项能力判定：`name()` + `rules()` 是它的专属组合——**身份不再参与**（票 15 §4）。 */
 function isFormItemCapable(node) {
   return Boolean(node) && typeof node.name === 'function' && typeof node.rules === 'function';
+}
+
+/** 表单容器能力判定：`values()` + `validate()` 是它的专属组合——**身份不再参与**（票 15 §4）。 */
+function isFormCapable(node) {
+  return Boolean(node) && typeof node.values === 'function' && typeof node.validate === 'function';
 }
 
 function readControlValue(control) {
@@ -137,7 +141,7 @@ function collectFormValues(node, result) {
     return result;
   }
 
-  if (node instanceof VForm) {
+  if (isFormCapable(node)) {
     node.children().forEach((child) => collectFormValues(child, result));
     return result;
   }
@@ -206,7 +210,7 @@ function applyFormValues(node, values) {
       return;
     }
 
-    if (isFieldCapable(current) || current instanceof VForm) {
+    if (isFieldCapable(current) || isFormCapable(current)) {
       current.children().forEach((child) => visit(child));
       return;
     }
@@ -251,7 +255,7 @@ function validateFormControls(node, formValues = {}) {
       return;
     }
 
-    if (current instanceof VForm || isFieldCapable(current)) {
+    if (isFormCapable(current) || isFieldCapable(current)) {
       current.children().forEach((child) => visit(child));
       return;
     }

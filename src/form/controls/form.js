@@ -1,105 +1,98 @@
-import { createComponentShell } from '../../components/component-shell.js';
-import { defineComponentIdentity } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
-import { applyComponentSetup, componentClass, isPlainObject } from '../../components/shared.js';
+import { vNode } from '../../core/v-node.js';
+import { viewRootOf } from '../../core/node.js';
+import { form } from '../../html/index.js';
+import {
+  applyComponentSetup,
+  createComponentShortcut,
+  isPlainObject
+} from '../../components/shared.js';
 import { applyFormValues, collectFormValues, validateFormControls } from './form-values.js';
 
-class FormNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('form', null);
-    this._identity = 'VForm';
-
-    this.className(componentClass, 'yoya-vform');
-    this.styles({
-      display: 'grid',
-      gap: '16px',
-      minWidth: '0'
+/**
+ * 表单容器（形态 B）：值收集 / 回填 / 校验都转给 `form-values`，自己只当容器与身份。
+ *
+ * - 身份写在结构里（`vn: 'VForm'`），不再有类名与 `defineComponentIdentity`（票 15 §4）；
+ * - 收集 / 校验遍历的是自己的子树（`collectFormValues` / `validateFormControls` 按能力判定，
+ *   不按组件身份），所以形状换成 vNode 不影响采集链；
+ * - `reset()` / `submit()` 是用户交互命令：未落地（没建 DOM）时无事可做，读 `_el` 判定
+ *   （与 VTableWrapper 的首屏口径一致，不为判定提前建 DOM）。
+ */
+export function VForm() {
+  return vNode((api, self) => {
+    const node = form({
+      style: { display: 'grid', gap: '16px', minWidth: '0' },
+      vn: 'VForm'
     });
 
-    this._setupForm(setup);
-  }
+    /**
+     * 采集 / 校验的根：**组件解析之后的视图根**。
+     * 投递进来的内容在解析前只是排在组件节点上（`child()` 的懒解析），所以遍历必须走
+     * 解析过的根——`viewRootOf` 只解析视图、不建 DOM，SSR 同样安全。
+     */
+    const rootOf = () => viewRootOf(self.node()) ?? node;
 
-  values(value) {
-    if (value === undefined) {
-      const result = {};
-      collectFormValues(this, result);
-      return result;
-    }
+    api.values = (value) => {
+      if (value === undefined) {
+        const result = {};
+        collectFormValues(rootOf(), result);
+        return result;
+      }
 
-    if (isPlainObject(value)) {
-      applyFormValues(this, value);
-    }
+      if (isPlainObject(value)) {
+        applyFormValues(rootOf(), value);
+      }
 
-    return this;
-  }
+      return api;
+    };
 
-  value(value) {
-    return this.values(value);
-  }
+    api.value = (value) => api.values(value);
 
-  validate() {
-    const values = this.values();
-    return validateFormControls(this, values);
-  }
+    api.validate = () => {
+      const values = api.values();
+      return validateFormControls(rootOf(), values);
+    };
 
-  reset() {
-    if (this._el?.reset) {
-      this._el.reset();
-    }
+    api.reset = () => {
+      const element = node._el;
 
-    return this;
-  }
+      if (element?.reset) {
+        element.reset();
+      }
+      return api;
+    };
 
-  submit() {
-    if (this._el?.requestSubmit) {
-      this._el.requestSubmit();
-    } else if (this._el?.dispatchEvent) {
-      this._el.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    }
+    api.submit = () => {
+      const element = node._el;
 
-    return this;
-  }
+      if (element?.requestSubmit) {
+        element.requestSubmit();
+      } else if (element?.dispatchEvent) {
+        element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      }
+      return api;
+    };
 
-  _setupForm(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
+    /** props：`children` 走投递、`values` 回填，其余键按元素 options 写（与旧 `_setupForm` 同口径）。 */
+    api.setupObject = (setup) => {
       const { children, values, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
 
       if (children !== undefined) {
-        applyComponentSetup(this, children);
+        applyComponentSetup(node, children);
       }
 
       if (values !== undefined) {
-        this.values(values);
+        api.values(values);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.child(setup);
-  }
-}
-
-export function vForm(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VForm',
-    createNode: (setup) => new FormNode(setup),
-    commands: ['values', 'value', 'validate', 'reset', 'submit'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    return node;
   });
 }
 
-export const VForm = vForm;
-defineComponentIdentity(VForm, 'VForm');
+export const vForm = createComponentShortcut(VForm);

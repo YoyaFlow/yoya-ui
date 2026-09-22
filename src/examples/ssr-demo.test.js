@@ -25,7 +25,7 @@ describe('SSR standalone demo page', () => {
 
     const output = element.querySelector('[data-ssr-live-output]');
     expect(output.textContent).toContain('yoya-vdialog');
-    expect(output.textContent).toContain('yoya-vform');
+    expect(output.textContent).toContain('vn="VForm"');
 
     const host = document.querySelector('#ssr-demo-host');
     expect(host.querySelector('[data-ssr-live]')).not.toBeNull();
