@@ -5,7 +5,7 @@ describe('vBadge', () => {
   it('renders standalone count badges and hides zero by default', () => {
     const badge = vBadge(5);
     const element = badge.renderDom();
-    const box = element.querySelector('.yoya-vbadge-count');
+    const box = element.querySelector('[vn~="VBadgeCount"]');
 
     expect(box.textContent).toBe('5');
     expect(box.style.display).not.toBe('none');
@@ -25,7 +25,7 @@ describe('vBadge', () => {
   it('applies overflowCount to numeric counts', () => {
     const badge = vBadge({ count: 120 });
     const element = badge.renderDom();
-    const box = element.querySelector('.yoya-vbadge-count');
+    const box = element.querySelector('[vn~="VBadgeCount"]');
 
     expect(box.textContent).toBe('99+');
 
@@ -37,9 +37,9 @@ describe('vBadge', () => {
   it('wraps child content and positions the badge at the top right', () => {
     const badge = vBadge({ count: 8, children: '消息' });
     const element = badge.renderDom();
-    const box = element.querySelector('.yoya-vbadge-count');
+    const box = element.querySelector('[vn~="VBadgeCount"]');
 
-    expect(element.querySelector('.yoya-vbadge-content').textContent).toBe('消息');
+    expect(element.querySelector('[vn~="VBadgeContent"]').textContent).toBe('消息');
     expect(box.style.position).toBe('absolute');
     expect(box.style.transform).toContain('translate(calc(50% + 0px)');
     expect(element.dataset.standalone).toBeUndefined();
@@ -54,7 +54,7 @@ describe('vBadge', () => {
   it('supports dot and status modes with custom colors and text', () => {
     const dotBadge = vBadge({ dot: true, children: '通知' });
     const dotElement = dotBadge.renderDom();
-    const dotBox = dotElement.querySelector('.yoya-vbadge-count');
+    const dotBox = dotElement.querySelector('[vn~="VBadgeCount"]');
 
     expect(dotBox.style.display).not.toBe('none');
     expect(dotBox.textContent).toBe('');
@@ -63,11 +63,11 @@ describe('vBadge', () => {
 
     const statusBadge = vBadge({ status: 'success', text: '运行中' });
     const statusElement = statusBadge.renderDom();
-    const statusBox = statusElement.querySelector('.yoya-vbadge-count');
+    const statusBox = statusElement.querySelector('[vn~="VBadgeCount"]');
 
     expect(statusElement.dataset.status).toBe('success');
     expect(statusBox.style.background).toContain('var(--yoya-color-success');
-    expect(statusElement.querySelector('.yoya-vbadge-text').textContent).toBe('运行中');
+    expect(statusElement.querySelector('[vn~="VBadgeText"]').textContent).toBe('运行中');
 
     statusBadge.color('#0f766e');
 
@@ -85,7 +85,7 @@ describe('vBadge', () => {
       }
     );
     const element = badge.renderDom();
-    const box = element.querySelector('.yoya-vbadge-count');
+    const box = element.querySelector('[vn~="VBadgeCount"]');
 
     expect(callbackNode).toBe(badge);
     expect(element.id).toBe('build-badge');
@@ -99,7 +99,7 @@ describe('vBadge', () => {
 
     const badge = root.children()[0];
     const element = root.renderDom();
-    const box = element.querySelector('.yoya-vbadge-count');
+    const box = element.querySelector('[vn~="VBadgeCount"]');
 
     expect(element.textContent).toContain('告警');
     expect(box.textContent).toBe('4');
@@ -108,6 +108,6 @@ describe('vBadge', () => {
     badge.text('待处理');
 
     expect(box.textContent).toBe('12');
-    expect(element.querySelector('.yoya-vbadge-text').textContent).toBe('待处理');
+    expect(element.querySelector('[vn~="VBadgeText"]').textContent).toBe('待处理');
   });
 });

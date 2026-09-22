@@ -1030,7 +1030,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       'define'
     );
     expect(page.querySelector('[data-definition-demo="compose"] .yoya-vavatar')).not.toBeNull();
-    expect(page.querySelector('[data-definition-demo="compose"] .yoya-vbadge')).not.toBeNull();
+    expect(page.querySelector('[data-definition-demo="compose"] [vn~="VBadge"]')).not.toBeNull();
 
     const interactiveDemo = page.querySelector('[data-definition-demo="interactive-compose"]');
     const jumpButton = [...interactiveDemo.querySelectorAll('button')].find((button) =>
@@ -2287,13 +2287,13 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     );
 
     expect(status.textContent).toBe('当前 0');
-    expect(countDemo.querySelector('.yoya-vbadge-count').textContent).toBe('0');
+    expect(countDemo.querySelector('[vn~="VBadgeCount"]').textContent).toBe('0');
     expect(countDemo.textContent).toContain('99+');
 
     addButton.click();
 
     expect(status.textContent).toBe('当前 1');
-    expect(countDemo.querySelector('.yoya-vbadge-count').textContent).toBe('1');
+    expect(countDemo.querySelector('[vn~="VBadgeCount"]').textContent).toBe('1');
   });
 
   it('switches avatar status in the avatar docs demo', async () => {

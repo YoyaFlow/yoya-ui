@@ -119,7 +119,7 @@ describe('vField floating edit', () => {
     const field = makeField('Ada');
     field.formatter((value) => vBadge(String(value)).status('success'));
     const el = field.renderDom();
-    expect(el.querySelector('[vn~="VFieldDisplay"] .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('[vn~="VFieldDisplay"] [vn~="VBadge"]')).toBeTruthy();
     expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Ada');
 
     // edit then save: formatting persists (still a badge), value updated
@@ -129,7 +129,7 @@ describe('vField floating edit', () => {
     el.querySelector('[vn~="VFieldConfirm"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
-    expect(el.querySelector('[vn~="VFieldDisplay"] .yoya-vbadge')).toBeTruthy();
+    expect(el.querySelector('[vn~="VFieldDisplay"] [vn~="VBadge"]')).toBeTruthy();
     expect(el.querySelector('[vn~="VFieldDisplay"]').textContent).toContain('Zoe');
   });
 
