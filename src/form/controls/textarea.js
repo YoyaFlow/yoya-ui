@@ -338,9 +338,8 @@ export function VTextarea() {
     });
 
     root.child(field, clearButton);
-    // 编辑面暴露给 vField（浮动编辑撤内层边框等）：与旧节点类型的 `_input` 对齐；
-    // 后续可收敛成显式能力（editorSurface()），属于表单族后续一刀。
-    root._input = field;
+    // 取用方法：包在里面的原生输入元素（vField 的浮动编辑面要写它的样式，见 16 号清单第 23 条）
+    api.inputUnit = () => field;
     syncClearPadding();
     syncClear();
     return root;

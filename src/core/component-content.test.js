@@ -37,6 +37,21 @@ describe('component content side', () => {
     expect(card.children().map((child) => child.tagName?.() ?? null)).toContain('p');
   });
 
+  it('reports content dropped in before the view resolved, without adopting it into the root', () => {
+    const card = vNode(() => div((root) => root.span('body')));
+
+    card.child(p('early'));
+
+    // 未解析：内容先排在组件节点上，children() 如实读出（容器要遍历自己的内容时不必先解包视图根）
+    expect(card.children()).toHaveLength(1);
+    expect(card.children()[0].tagName()).toBe('p');
+
+    // 解析之后内容住进根元素：仍然只报一次
+    const host = mountToHost(card);
+    expect(host.innerHTML).toBe('<div><span>body</span><p>early</p></div>');
+    expect(card.children()).toHaveLength(2);
+  });
+
   it('keeps server and client output identical', () => {
     const build = () => {
       const card = vNode(() => div((root) => root.span('body')));

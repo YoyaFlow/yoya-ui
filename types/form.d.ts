@@ -194,6 +194,8 @@ export class VInput extends HtmlElementNode {
   error(value: string | boolean | null): VInput;
   clearable(value: boolean): VInput;
   clear(): VInput;
+  /** 取用方法：包在里面的原生输入元素（浮动编辑面等族内用法）。 */
+  inputUnit(): HtmlElementNode;
 }
 
 /** Time input with mode support. */
@@ -233,6 +235,8 @@ export class VTextarea extends HtmlElementNode {
   rows(value: number): VTextarea;
   clearable(value: boolean): VTextarea;
   clear(): VTextarea;
+  /** 取用方法：包在里面的原生输入元素（浮动编辑面等族内用法）。 */
+  inputUnit(): HtmlElementNode;
 }
 
 /** Select control. */
@@ -372,6 +376,8 @@ export class VFormItem extends HtmlElementNode {
   rules(callbacks: FormItemRule | FormItemRule[]): VFormItem;
   value(): unknown;
   value(value: unknown): VFormItem;
+  /** 族内校验入口（vForm 逐项调）：判定必填 / 校验器并写错误，返回是否通过。 */
+  check(formValues?: Record<string, unknown>): boolean;
 }
 
 /** Form with values/validation/reset/submit. */

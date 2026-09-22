@@ -228,11 +228,10 @@ export function VFormItem() {
     };
 
     /**
-     * form 族内校验协议：容器（vForm）逐项调，句柄给的是组件节点本身。
-     * 协议挂在**视图根元素**上（不是 api 命令）：与 `_collectValue` 同一族写法，
-     * 且 `vNode` 的 api 不收下划线开头的键。
+     * 族内校验入口：容器（vForm）逐项调，判定必填 / 跑校验器并写错误，返回是否通过。
+     * 它是**命令**（写在 api 上）——调用方拿着组件句柄直接调，不需要先解包到视图根。
      */
-    node._validate = (formValues) => {
+    api.check = (formValues) => {
       const control = findFieldControl(editorBox);
       const value = api.value();
 

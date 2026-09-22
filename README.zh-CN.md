@@ -278,8 +278,8 @@ npm run build   # 产出 dist/，末尾打印体积表
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
 | `yoya.router.full.js`            | 317.3 KB | 136.1 KB | 40.3 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 900.7 KB | 466.7 KB | 119.5 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 833.6 KB | 436.3 KB | 109.8 KB | core + 全部组件                |
+| `yoya.ui-router.full.js`（全量） | 900.5 KB | 466.7 KB | 119.5 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 833.4 KB | 436.4 KB | 109.7 KB | core + 全部组件                |
 
 组件皮肤 `yoya.ui.css`：61.7 KB raw / **9.4 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。

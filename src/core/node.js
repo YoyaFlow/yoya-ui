@@ -3461,7 +3461,9 @@ export class ComponentNode extends ViewNode {
 
   children() {
     if (!this._resolvedList) {
-      return [];
+      // 还没解析：投递进来的内容先排在组件节点自己身上（child() 的懒解析），这里如实返回。
+      // 容器要遍历自己的内容时就该直接遍历，不需要先「解包到视图根」再去问根要孩子。
+      return [...this._children];
     }
 
     if (!this._roots) {

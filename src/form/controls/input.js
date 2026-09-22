@@ -152,6 +152,11 @@ export class InputNode extends HtmlElementNode {
     return this._input.textContent();
   }
 
+  /** 取用方法：包在里面的原生输入元素（vField 的浮动编辑面要写它的样式，见 16 号清单第 23 条）。 */
+  inputUnit() {
+    return this._input;
+  }
+
   type(value) {
     if (value === undefined) {
       return this._input.attr('type');
@@ -337,6 +342,7 @@ export function vInput(first = null, second = null, third = null) {
     identity: 'VInput',
     createNode: (setup) => new InputNode(setup),
     commands: [
+      'inputUnit',
       'type',
       'value',
       'text',

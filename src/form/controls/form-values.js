@@ -247,9 +247,8 @@ function validateFormControls(node, formValues = {}) {
     }
 
     if (isFormItemCapable(current)) {
-      // 校验是族内协议：项组件在视图根上暴露 `_validate(formValues)`（与 `_collectValue` 同族）
-      const unit = viewRootOf(current) ?? current;
-      if (!unit._validate(formValues)) {
+      // 校验是项组件自己的命令：拿着组件句柄直接调（不解包、不查视图根）
+      if (!current.check(formValues)) {
         valid = false;
       }
       return;
@@ -326,4 +325,3 @@ export {
   validateFormControls,
   findFieldControl
 };
-import { viewRootOf } from '../../core/node.js';

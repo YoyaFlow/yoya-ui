@@ -1,5 +1,4 @@
 import { vButton } from '../../actions/button.js';
-import { viewRootOf } from '../../core/node.js';
 import { vNode } from '../../core/v-node.js';
 import { button, div } from '../../html/index.js';
 import {
@@ -179,18 +178,18 @@ export function VField() {
         )
     );
 
-    /** 编辑面：textarea 控件去掉自己的边框与背景（写控件内部样式，字段没有别的手段）。 */
+    /** 编辑面：textarea 控件去掉自己的边框与背景（走控件的 `inputUnit()` 取用方法，不解包视图根）。 */
     const syncEditorSurface = () => {
       const control = currentControl();
-      const unit = control ? (viewRootOf(control) ?? control) : null;
+      const unit = typeof control?.inputUnit === 'function' ? control.inputUnit() : null;
 
-      if (!unit?._input || unit._input._tagName !== 'textarea') {
+      if (unit?.tagName?.() !== 'textarea') {
         return api;
       }
 
-      unit._input.style('border', '0');
-      unit._input.style('boxShadow', null);
-      unit._input.style('background', 'transparent');
+      unit.style('border', '0');
+      unit.style('boxShadow', null);
+      unit.style('background', 'transparent');
       return api;
     };
 

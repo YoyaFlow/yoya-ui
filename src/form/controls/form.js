@@ -1,5 +1,4 @@
 import { vNode } from '../../core/v-node.js';
-import { viewRootOf } from '../../core/node.js';
 import { form } from '../../html/index.js';
 import {
   applyComponentSetup,
@@ -24,22 +23,15 @@ export function VForm() {
       vn: 'VForm'
     });
 
-    /**
-     * 采集 / 校验的根：**组件解析之后的视图根**。
-     * 投递进来的内容在解析前只是排在组件节点上（`child()` 的懒解析），所以遍历必须走
-     * 解析过的根——`viewRootOf` 只解析视图、不建 DOM，SSR 同样安全。
-     */
-    const rootOf = () => viewRootOf(self.node()) ?? node;
-
     api.values = (value) => {
       if (value === undefined) {
         const result = {};
-        collectFormValues(rootOf(), result);
+        collectFormValues(self.node(), result);
         return result;
       }
 
       if (isPlainObject(value)) {
-        applyFormValues(rootOf(), value);
+        applyFormValues(self.node(), value);
       }
 
       return api;
@@ -49,7 +41,7 @@ export function VForm() {
 
     api.validate = () => {
       const values = api.values();
-      return validateFormControls(rootOf(), values);
+      return validateFormControls(self.node(), values);
     };
 
     api.reset = () => {
