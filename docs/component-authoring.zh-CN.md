@@ -185,6 +185,8 @@ api.count = (value) => (value === undefined ? count.value : ((count.value = valu
 2. **"只在调用过才写"的属性**用 `xxxSet` 标记 + 读值绑定（保持"没碰过就不写 DOM 属性"的逐字节语义）。
 3. **不许写完再集中刷**：没有 `flush()` 之外的批量写、没有 `markDirty()` + rAF 这种延迟刷；命令改完当拍 DOM 就是对的。
 
+**一条容易踩的边界（引擎契约，`src/core/binding-landing.test.js` 有用例）**：绑定**构建期只求值一次**，**落地时才订阅**依赖——也就是"构建之后、落地之前"的写入不会自动进首屏，而**组件 props 正好落在这个窗口里**（props 在 build 之后才应用）。所以走读值绑定的组件要在写状态的收口处自己补一下：**值**调视图根 `node.flush()`（幂等，值没变不写 DOM），**结构**对区域调 `rebuild()`；落地之后订阅接管，命令写状态就不必再手动收口。同一个区域节点上的绑定在区域重建时会被归到该轮区域名单一起释放，所以**别把绑定注册在区域节点自己身上**——放在它的父/兄弟节点，或让区域 builder 重新登记。
+
 门禁：`src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结"集中快照函数"存量（**只减不增**，新文件一个都不许有）。迁移一刀之后跑 `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js` 下调基线。较真的理由不止可读性：指令式写快照**编译路径吃不到**，只要不是"静态结构 + 活值 + 条件/列表"，编译器就整块回落通用路径。
 
 ### 6.1 可重建区域

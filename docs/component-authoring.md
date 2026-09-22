@@ -199,6 +199,8 @@ Three hard rules:
 2. **"Only written once touched" attributes** use an `xxxSet` flag plus a read-value binding (keeps the byte-for-byte "untouched means no DOM attribute" semantics).
 3. **No write-then-flush batch**: nothing beyond `flush()` on a region, no `markDirty()` + rAF deferred writes; after a command runs, the DOM is correct on the same tick.
 
+**A boundary that is easy to hit** (engine contract, covered by `src/core/binding-landing.test.js`): a binding is **evaluated once at build time** and only **subscribes on landing** — so writes made between build and landing do not reach the first paint, and **component props land exactly in that window** (props are applied after the build). Components written with read-value bindings must therefore close the loop where they write state: call `node.flush()` on the view root for **values** (idempotent, no DOM write when unchanged) and `rebuild()` on the **region** for structure. After landing the subscriptions take over and commands no longer need it. Note also that bindings registered on a region node itself are released together with that region's run — register them on the parent/sibling instead, or re-register inside the region builder.
+
 Gate: `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
 
 ### 6.1 Rebuildable regions

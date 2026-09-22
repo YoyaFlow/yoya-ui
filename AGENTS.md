@@ -223,6 +223,11 @@ function ServiceDetailCard() {
 - 例外（票 15 §4）："只在调用过才写"的属性用 `xxxSet` 标记 + 读值绑定，保持逐字节一致。
 - 仍然禁止：写完再集中刷（`flush()` / `markDirty()` / rAF 批量写）、构造之后按身份查找再写
   （`querySelector('[vn~=…]')`）、组件里直接操作 `_el` / `_children`。
+- **构建 → 落地窗口要自己收口**（引擎契约，`src/core/binding-landing.test.js` 固化成用例）：
+  绑定**构建期只求值一次**（`binding-ownership.test.js` 有用例守着"后续渲染不重复求值"），
+  **落地时才订阅**依赖；而组件 props 正好落在这个窗口里（props 在 build 之后才应用）。
+  所以"props → 命令 → ref"的写法必须由组件自己收口一次：**值** 调视图根的 `node.flush()`
+  （幂等，值没变不写 DOM），**结构** 对区域调 `rebuild()`。落地之后订阅接管，命令写状态即可。
 - 迁移期存量的历史写法（`syncXxx()` / `_syncXxx()` 把多处 `attr` / `style` / `replaceChildren`
   收在一个函数里、由命令同步调用）**不是错**，但**只减不增**：
   `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结存量，
