@@ -167,6 +167,7 @@ export class VAutocomplete extends HtmlElementNode {
   ): VAutocomplete;
   limit(): number;
   limit(next: number): VAutocomplete;
+  isDisabled(): boolean;
   disabled(): boolean;
   disabled(next: boolean): VAutocomplete;
   required(): boolean;

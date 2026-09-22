@@ -1,39 +1,44 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
+import { registerChildFactories } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
-import { createComponentShell } from '../components/component-shell.js';
-import { booleanMethod, componentClass, isPlainObject, themeValue } from '../components/shared.js';
+import { HtmlElementNode, div, input as inputTag } from '../html/index.js';
+import { createComponentShortcut, isPlainObject, themeValue } from '../components/shared.js';
 
 /**
- * vAutocomplete 是自动完成输入：输入时从 source（数组或函数）过滤建议，
- * 支持键盘上下/回车选择与鼠标点选。
+ * 自动完成输入（形态 B，票 15 §4）：视图根是外壳 `div` + 内层输入 + 建议列表。
+ *
+ * - 身份写在结构里：根 `vn: 'VAutocomplete'`、输入 `vn: 'VAutocompleteInput'`、
+ *   建议列表 `vn: 'VAutocompleteList'`、每条建议 `vn: 'VAutocompleteOption'`
+ *   （`data-vautocomplete-*` 这些既有角色标记一并保留：角色标记不是身份）；
+ * - 建议列表是**区域**（`rebuildable`）：内容由它自己的 setup 产出，指针悬停时推迟重建；
+ * - 元素级时机：列表定位在 `whenMount`（旧 `renderDom()` 猴补的等价物），文档 / 窗口监听与
+ *   关闭动作在 `whenDestroy`（旧 `destroy()` 猴补的等价物）；读元素只读 `_el` 判定"建没建"。
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupAutocomplete` 同口径）。
  */
-class AutocompleteNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VAutocomplete';
-    this.className(componentClass, 'yoya-vautocomplete');
-    this.styles({ position: 'relative', width: '100%' });
+export function VAutocomplete() {
+  return vNode((api, self) => {
+    const state = {
+      changeHandlers: [],
+      disabled: false,
+      highlight: -1,
+      limit: 8,
+      open: false,
+      optionNodes: [],
+      placeholder: '输入以搜索',
+      pointerOverList: false,
+      required: false,
+      source: [],
+      suggestions: [],
+      value: ''
+    };
+    let outsideUnbind = null;
+    let repositionUnbind = null;
 
-    this._value = '';
-    this._source = [];
-    this._limit = 8;
-    this._placeholder = '输入以搜索';
-    this._changeHandlers = [];
-    this._open = false;
-    this._highlight = -1;
-    this._pointerOverList = false;
-    this._suggestions = [];
-    this._optionNodes = [];
-    this._outsideListener = null;
-    this._repositionListener = null;
-
-    this._input = new HtmlElementNode('input')
-      .className('yoya-vautocomplete-input')
+    const input = inputTag({ vn: 'VAutocompleteInput' })
       .attr({
         autocomplete: 'off',
         'data-vautocomplete-input': 'true',
-        placeholder: this._placeholder,
+        placeholder: state.placeholder,
         type: 'text'
       })
       .styles({
@@ -47,14 +52,8 @@ class AutocompleteNode extends HtmlElementNode {
         outline: 'none',
         padding: '0 10px',
         width: '100%'
-      })
-      .on('input', (event) => this._handleInput(event.target.value))
-      .on('keydown', (event) => this._handleKeydown(event))
-      .on('focus', () => this._openSuggestions())
-      .on('click', () => this._openSuggestions());
-
-    this._list = new HtmlElementNode('div')
-      .className('yoya-vautocomplete-list')
+      });
+    const suggestionList = div({ vn: 'VAutocompleteList' })
       .attr('data-vautocomplete-list', 'true')
       .styles({
         background: 'var(--yoya-color-surface, #ffffff)',
@@ -68,319 +67,314 @@ class AutocompleteNode extends HtmlElementNode {
         padding: '4px',
         position: 'fixed',
         zIndex: '110'
-      })
-      .on('mouseenter', () => {
-        this._pointerOverList = true;
-      })
-      .on('mouseleave', () => {
-        this._pointerOverList = false;
-        if (this._list.rebuildPending()) {
-          // 悬停期间被推迟的重建，在指针离开后补上。
-          this._renderList();
-        }
-      })
-      .setup((list) => {
-        // 列表是区域：内容由这次 setup 产出；指针悬停时只刷值、不重建节点。
-        list.rebuildable(() => !this._pointerOverList);
-        this._buildOptions(list);
       });
+    const node = div({ vn: 'VAutocomplete' }).styles({ position: 'relative', width: '100%' });
 
-    this.child(this._input, this._list);
+    node.child(input, suggestionList);
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('data-disabled', enabled ? 'true' : null);
-      this._input.attr('disabled', enabled ? true : null);
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this.attr('data-required', enabled ? 'true' : null);
-      this._input.attr('required', enabled ? true : null);
-    });
+    const resolveSuggestions = (query) => {
+      const source = state.source;
 
-    this._setupAutocomplete(setup);
-  }
-
-  /** 读写当前输入值。 */
-  value(next) {
-    if (next === undefined) {
-      return this._value;
-    }
-    this._value = String(next ?? '');
-    this._input.attr('value', this._value);
-    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-    this._changeHandlers.forEach((handler) => handler(this._value, this._componentHandle ?? this));
-    return this;
-  }
-
-  /** 设置建议来源：选项数组或返回建议的同步函数。 */
-  source(next) {
-    if (next === undefined) {
-      return this._source;
-    }
-    this._source = next;
-    return this;
-  }
-
-  options(next) {
-    return this.source(next);
-  }
-
-  /** 建议列表最多显示的条数。 */
-  limit(next) {
-    if (next === undefined) {
-      return this._limit;
-    }
-    this._limit = Math.max(1, Number(next) || 8);
-    return this;
-  }
-
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
-
-  name(value) {
-    if (value === undefined) {
-      return this.attr('data-name') || '';
-    }
-    this.attr('data-name', value ? String(value) : null);
-    this._input.attr('name', value ? String(value) : null);
-    return this;
-  }
-
-  placeholder(value) {
-    if (value === undefined) {
-      return this._placeholder;
-    }
-    this._placeholder = String(value);
-    this._input.attr('placeholder', this._placeholder);
-    return this;
-  }
-
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-    this._changeHandlers = [handler];
-    return this;
-  }
-
-  onChange(handler) {
-    return this.change(handler);
-  }
-
-  close() {
-    this._open = false;
-    this._pointerOverList = false;
-    this._list.style('display', 'none');
-    this._bindOutsideClose(false);
-    this._bindReposition(false);
-    return this;
-  }
-
-  destroy() {
-    this.close();
-    return super.destroy();
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (this._open) {
-      this._positionList();
-    }
-    return element;
-  }
-
-  _collectValue() {
-    return this._value;
-  }
-
-  _resolveSuggestions(query) {
-    const source = this._source;
-    if (typeof source === 'function') {
-      return Promise.resolve(source(query)).then((items) => normalizeSuggestions(items));
-    }
-    return Promise.resolve(normalizeSuggestions(source)).then((items) =>
-      query
-        ? items.filter((item) => item.label.toLowerCase().includes(String(query).toLowerCase()))
-        : items
-    );
-  }
-
-  _handleInput(query) {
-    this.value(query);
-    this._openSuggestions();
-  }
-
-  _openSuggestions() {
-    if (this.disabled()) {
-      return;
-    }
-
-    void this._resolveSuggestions(this._value).then((items) => {
-      this._suggestions = items.slice(0, this._limit);
-      this._highlight = this._suggestions.length > 0 ? 0 : -1;
-      this._renderList();
-      this._open = this._suggestions.length > 0;
-      this._list.style('display', this._open ? null : 'none');
-      if (this._open) {
-        this._bindOutsideClose(true);
-        this._bindReposition(true);
-        this._positionList();
+      if (typeof source === 'function') {
+        return Promise.resolve(source(query)).then((items) => normalizeSuggestions(items));
       }
-    });
-  }
 
-  _handleKeydown(event) {
-    if (!this._open || this._suggestions.length === 0) {
-      return;
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      this._highlight = (this._highlight + 1) % this._suggestions.length;
-      this._setHighlight(this._highlight);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      this._highlight = (this._highlight - 1 + this._suggestions.length) % this._suggestions.length;
-      this._setHighlight(this._highlight);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      const item = this._suggestions[this._highlight];
-      if (item) {
-        this._select(item);
-      }
-    } else if (event.key === 'Escape') {
-      this.close();
-    }
-  }
-
-  _select(item) {
-    this.value(item.value);
-    this.close();
-  }
-
-  _renderList() {
-    this._list.rebuild();
-    this._setHighlight(this._highlight);
-    return this;
-  }
-
-  /** 区域 builder：按当前建议产出选项节点。 */
-  _buildOptions(list) {
-    this._optionNodes = [];
-    this._suggestions.forEach((item, index) => {
-      const option = new HtmlElementNode('div')
-        .className('yoya-vautocomplete-option')
-        .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
-        .styles({
-          borderRadius: '4px',
-          boxSizing: 'border-box',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          padding: '5px 8px',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        })
-        .on('mousedown', (event) => {
-          event.preventDefault();
-          this._select(item);
-        })
-        .on('mouseenter', () => this._setHighlight(index))
-        .child(item.label);
-      this._optionNodes.push(option);
-      list.child(option);
-    });
-  }
-
-  /** 只更新高亮样式，不重建下拉列表（避免悬停时销毁正在点击的节点）。 */
-  _setHighlight(index) {
-    this._highlight = index;
-    (this._optionNodes || []).forEach((option, optionIndex) => {
-      option.styles(
-        optionIndex === index
-          ? { background: themeValue('color-primary-subtle', '#eff6ff') }
-          : { background: null }
+      return Promise.resolve(normalizeSuggestions(source)).then((items) =>
+        query
+          ? items.filter((item) => item.label.toLowerCase().includes(String(query).toLowerCase()))
+          : items
       );
-    });
-    return this;
-  }
+    };
 
-  _bindOutsideClose(enabled) {
-    if (enabled && !this._outsideUnbind) {
-      this._outsideListener = (event) => {
-        if (!this._el || !this._el.contains(event.target)) {
-          this.close();
+    /** 只更新高亮样式，不重建下拉列表（避免悬停时销毁正在点击的节点）。 */
+    const setHighlight = (index) => {
+      state.highlight = index;
+      (state.optionNodes || []).forEach((option, optionIndex) => {
+        option.styles(
+          optionIndex === index
+            ? { background: themeValue('color-primary-subtle', '#eff6ff') }
+            : { background: null }
+        );
+      });
+    };
+
+    /** 区域 builder：按当前建议产出选项节点。 */
+    const buildOptions = (list) => {
+      state.optionNodes = [];
+      state.suggestions.forEach((item, index) => {
+        const option = div({ vn: 'VAutocompleteOption' })
+          .attr({ 'data-vautocomplete-option': item.value, role: 'option' })
+          .styles({
+            borderRadius: '4px',
+            boxSizing: 'border-box',
+            cursor: 'pointer',
+            overflow: 'hidden',
+            padding: '5px 8px',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          })
+          .child(item.label);
+
+        option.on('mousedown', (event) => {
+          event.preventDefault();
+          select(item);
+        });
+        option.on('mouseenter', () => setHighlight(index));
+        state.optionNodes.push(option);
+        list.child(option);
+      });
+    };
+
+    const renderList = () => {
+      suggestionList.rebuild();
+      setHighlight(state.highlight);
+    };
+
+    const bindOutsideClose = (enabled) => {
+      if (enabled && !outsideUnbind) {
+        outsideUnbind = bindDocumentEvent('mousedown', (event) => {
+          if (!node._el || !node._el.contains(event.target)) {
+            api.close();
+          }
+        });
+        return;
+      }
+
+      if (!enabled && outsideUnbind) {
+        outsideUnbind();
+        outsideUnbind = null;
+      }
+    };
+
+    const bindReposition = (enabled) => {
+      if (enabled && !repositionUnbind) {
+        const reposition = () => positionList();
+        const unbindScroll = bindWindowEvent('scroll', reposition, true);
+        const unbindResize = bindWindowEvent('resize', reposition);
+
+        repositionUnbind = () => {
+          unbindScroll();
+          unbindResize();
+        };
+        return;
+      }
+
+      if (!enabled && repositionUnbind) {
+        repositionUnbind();
+        repositionUnbind = null;
+      }
+    };
+
+    /** 根据输入框坐标定位下拉列表（fixed 定位，脱离容器裁剪）。 */
+    const positionList = () => {
+      if (typeof window === 'undefined' || !input._el || !suggestionList._el) {
+        return;
+      }
+
+      const rect = input._el.getBoundingClientRect();
+      const listElement = suggestionList._el;
+      const listHeight = listElement.offsetHeight || 240;
+      const margin = 8;
+      let top = rect.bottom + 6;
+
+      if (top + listHeight > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - listHeight - 6);
+      }
+
+      suggestionList.styles({
+        left: `${rect.left}px`,
+        top: `${top}px`,
+        width: `${Math.max(rect.width, 180)}px`
+      });
+    };
+
+    const select = (item) => {
+      api.value(item.value);
+      api.close();
+    };
+
+    const openSuggestions = () => {
+      if (state.disabled) {
+        return;
+      }
+
+      void resolveSuggestions(state.value).then((items) => {
+        state.suggestions = items.slice(0, state.limit);
+        state.highlight = state.suggestions.length > 0 ? 0 : -1;
+        renderList();
+        state.open = state.suggestions.length > 0;
+        suggestionList.style('display', state.open ? null : 'none');
+
+        if (state.open) {
+          bindOutsideClose(true);
+          bindReposition(true);
+          positionList();
         }
-      };
-      this._outsideUnbind = bindDocumentEvent('mousedown', this._outsideListener);
-      return;
-    }
+      });
+    };
 
-    if (!enabled && this._outsideUnbind) {
-      this._outsideUnbind();
-      this._outsideListener = null;
-      this._outsideUnbind = null;
-    }
-  }
+    const handleInput = (query) => {
+      api.value(query);
+      openSuggestions();
+    };
 
-  _bindReposition(enabled) {
-    if (enabled && !this._repositionUnbind) {
-      this._repositionListener = () => this._positionList();
-      const unbindScroll = bindWindowEvent('scroll', this._repositionListener, true);
-      const unbindResize = bindWindowEvent('resize', this._repositionListener);
-      this._repositionUnbind = () => {
-        unbindScroll();
-        unbindResize();
-      };
-      return;
-    }
+    const handleKeydown = (event) => {
+      if (!state.open || state.suggestions.length === 0) {
+        return;
+      }
 
-    if (!enabled && this._repositionUnbind) {
-      this._repositionUnbind();
-      this._repositionListener = null;
-      this._repositionUnbind = null;
-    }
-  }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        state.highlight = (state.highlight + 1) % state.suggestions.length;
+        setHighlight(state.highlight);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        state.highlight =
+          (state.highlight - 1 + state.suggestions.length) % state.suggestions.length;
+        setHighlight(state.highlight);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const item = state.suggestions[state.highlight];
 
-  /** 根据输入框坐标定位下拉列表（fixed 定位，脱离容器裁剪）。 */
-  _positionList() {
-    if (
-      typeof window === 'undefined' ||
-      typeof document === 'undefined' ||
-      !this._input._el ||
-      !this._list._el
-    ) {
-      return;
-    }
+        if (item) {
+          select(item);
+        }
+      } else if (event.key === 'Escape') {
+        api.close();
+      }
+    };
 
-    const rect = this._input._el.getBoundingClientRect();
-    const panel = this._list._el;
-    const panelHeight = panel.offsetHeight || 240;
-    const margin = 8;
-    let top = rect.bottom + 6;
-    if (top + panelHeight > window.innerHeight - margin) {
-      top = Math.max(margin, rect.top - panelHeight - 6);
-    }
+    input.on('input', (event) => handleInput(event.target.value));
+    input.on('keydown', (event) => handleKeydown(event));
+    input.on('focus', () => openSuggestions());
+    input.on('click', () => openSuggestions());
 
-    this._list.styles({
-      left: `${rect.left}px`,
-      top: `${top}px`,
-      width: `${Math.max(rect.width, 180)}px`
+    suggestionList.on('mouseenter', () => {
+      state.pointerOverList = true;
     });
-  }
+    suggestionList.on('mouseleave', () => {
+      state.pointerOverList = false;
+      if (suggestionList.rebuildPending()) {
+        // 悬停期间被推迟的重建，在指针离开后补上。
+        renderList();
+      }
+    });
+    suggestionList.setup((list) => {
+      // 列表是区域：内容由这次 setup 产出；指针悬停时只刷值、不重建节点。
+      list.rebuildable(() => !state.pointerOverList);
+      buildOptions(list);
+    });
 
-  _setupAutocomplete(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    /** 读写当前输入值。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return state.value;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      state.value = String(next ?? '');
+      input.attr('value', state.value);
+      // 句柄交给使用方的是组件节点（与旧外壳的 `_componentHandle` 同一口径）
+      state.changeHandlers.forEach((handler) => handler(state.value, self.node()));
+      return api;
+    };
 
-    if (isPlainObject(setup)) {
+    /** 设置建议来源：选项数组或返回建议的同步函数。 */
+    api.source = (next) => {
+      if (next === undefined) {
+        return state.source;
+      }
+
+      state.source = next;
+      return api;
+    };
+
+    api.options = (next) => api.source(next);
+
+    /** 建议列表最多显示的条数。 */
+    api.limit = (next) => {
+      if (next === undefined) {
+        return state.limit;
+      }
+
+      state.limit = Math.max(1, Number(next) || 8);
+      return api;
+    };
+
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+
+    api.name = (value) => {
+      if (value === undefined) {
+        return node.attr('data-name') || '';
+      }
+
+      node.attr('data-name', value ? String(value) : null);
+      input.attr('name', value ? String(value) : null);
+      return api;
+    };
+
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return state.placeholder;
+      }
+
+      state.placeholder = String(value);
+      input.attr('placeholder', state.placeholder);
+      return api;
+    };
+
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(next);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      input.attr('disabled', state.disabled ? true : null);
+      return api;
+    };
+
+    api.required = (next) => {
+      if (next === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(next);
+      node.attr('data-required', state.required ? 'true' : null);
+      input.attr('required', state.required ? true : null);
+      return api;
+    };
+
+    /** 注册取值变化回调（后一次注册替换前一次，与旧方法面一致）。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    api.onChange = (handler) => api.change(handler);
+
+    api.close = () => {
+      state.open = false;
+      state.pointerOverList = false;
+      suggestionList.style('display', 'none');
+      bindOutsideClose(false);
+      bindReposition(false);
+      return api;
+    };
+
+    /** 数组 / 函数 = 建议来源（旧 `_setupAutocomplete` 的兜底分支）。 */
+    api.setupString = (next) => api.options(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupAutocomplete` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const {
         change,
         disabled,
@@ -394,69 +388,60 @@ class AutocompleteNode extends HtmlElementNode {
         value,
         ...elementConfig
       } = setup;
+
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
+
       if (source !== undefined) {
-        this.source(source);
+        api.source(source);
       } else if (options !== undefined) {
-        this.options(options);
+        api.options(options);
       }
       if (limit !== undefined) {
-        this.limit(limit);
+        api.limit(limit);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        api.placeholder(placeholder);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
-      return;
-    }
 
-    this.options(setup);
-  }
-}
+      return api;
+    };
 
-export function vAutocomplete(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VAutocomplete',
-    createNode: (setup) => new AutocompleteNode(setup),
-    commands: [
-      'value',
-      'source',
-      'options',
-      'limit',
-      'isDisabled',
-      'name',
-      'placeholder',
-      'change',
-      'onChange',
-      'close',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    // 旧 `renderDom()` 猴补的等价物：落地时若已展开，补一次列表定位
+    api.whenMount = () => {
+      if (state.open) {
+        positionList();
+      }
+    };
+
+    // 旧 `destroy()` 猴补的等价物：关闭列表并解绑文档 / 窗口监听
+    api.whenDestroy = () => {
+      api.close();
+    };
+
+    return node;
   });
 }
 
-export const VAutocomplete = vAutocomplete;
-defineComponentIdentity(VAutocomplete, 'VAutocomplete');
+export const vAutocomplete = createComponentShortcut(VAutocomplete);
 
 registerChildFactories(HtmlElementNode, { vAutocomplete });
 

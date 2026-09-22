@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VAutocomplete, div, vAutocomplete, vForm } from '../index.js';
+import { div, hasComponentIdentity, vAutocomplete, vForm } from '../index.js';
 
 const source = ['JavaScript', 'TypeScript', 'Vue', 'React', 'Svelte'];
 
 function findAutocomplete(node) {
-  if (node instanceof VAutocomplete) {
+  if (hasComponentIdentity(node, 'VAutocomplete')) {
     return node;
   }
 
@@ -28,8 +28,8 @@ describe('vAutocomplete', () => {
     const autocomplete = vAutocomplete({ placeholder: '搜索技术栈', source });
     const element = autocomplete.renderDom();
 
-    expect(autocomplete).toBeInstanceOf(VAutocomplete);
-    expect(element.classList.contains('yoya-vautocomplete')).toBe(true);
+    expect(hasComponentIdentity(autocomplete, 'VAutocomplete')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VAutocomplete');
     expect(element.querySelector('[data-vautocomplete-input]').placeholder).toBe('搜索技术栈');
     expect(element.querySelector('[data-vautocomplete-list]').style.display).toBe('none');
     expect(element.querySelector('[data-vautocomplete-list]').style.position).toBe('fixed');
@@ -177,7 +177,7 @@ describe('vAutocomplete', () => {
     });
     const autocomplete = page.children()[0];
 
-    expect(autocomplete).toBeInstanceOf(VAutocomplete);
+    expect(hasComponentIdentity(autocomplete, 'VAutocomplete')).toBe(true);
     expect(autocomplete.value()).toBe('Vue');
   });
 
