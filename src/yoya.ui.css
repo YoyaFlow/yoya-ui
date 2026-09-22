@@ -965,7 +965,7 @@ body {
     width: 0;
   }
 
-  .yoya-vtreetable {
+  :where([vn~='VTreeTable']) {
     box-sizing: border-box;
     font-family: var(--yoya-font-family, inherit);
     font-size: var(--yoya-font-size-sm, 13px);
@@ -975,36 +975,36 @@ body {
     width: 100%;
   }
 
-  .yoya-vtreetable .yoya-vtreetable-table {
+  [vn~='VTreeTable'] [vn~='VTreeTableTable'] {
     border-collapse: collapse;
     width: 100%;
   }
 
-  .yoya-vtreetable th,
-  .yoya-vtreetable td {
+  [vn~='VTreeTable'] th,
+  [vn~='VTreeTable'] td {
     border-bottom: 1px solid var(--yoya-color-border-faint, light-dark(#efefef, #2a2a2a));
     padding: 6px 10px;
     text-align: left;
     vertical-align: middle;
   }
 
-  .yoya-vtreetable thead th {
+  [vn~='VTreeTable'] thead th {
     background: var(--yoya-color-surface-muted, light-dark(#f5f5f5, #1c1c1c));
     color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
     font-weight: 600;
     white-space: nowrap;
   }
 
-  .yoya-vtreetable tbody tr:hover {
+  [vn~='VTreeTable'] tbody tr:hover {
     background: var(--yoya-color-surface-hover, light-dark(#f3f3f3, #262626));
   }
 
   /* 折叠的行走 [hidden]：行常驻、只切可见性 */
-  .yoya-vtreetable tbody tr[hidden] {
+  [vn~='VTreeTable'] tbody tr[hidden] {
     display: none;
   }
 
-  .yoya-vtreetable .yoya-vtreetable-expand {
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand'] {
     background: transparent;
     border: 0;
     border-radius: 4px;
@@ -1015,28 +1015,28 @@ body {
     padding: 0 3px;
   }
 
-  .yoya-vtreetable .yoya-vtreetable-expand:hover {
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand']:hover {
     background: transparent;
     color: var(--yoya-color-primary, #1f6feb);
   }
 
-  .yoya-vtreetable .yoya-vtreetable-expand:focus-visible {
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand']:focus-visible {
     outline: 2px solid var(--yoya-color-primary-ring, rgba(31, 111, 235, 0.35));
     outline-offset: 1px;
   }
 
-  .yoya-vtreetable .yoya-vtreetable-select {
+  [vn~='VTreeTable'] [vn~='VTreeTableSelect'] {
     accent-color: var(--yoya-color-primary, #1f6feb);
     margin: 0;
   }
 
-  .yoya-vtreetable thead th:first-child,
-  .yoya-vtreetable tbody td:first-child {
+  [vn~='VTreeTable'] thead th:first-child,
+  [vn~='VTreeTable'] tbody td:first-child {
     padding-left: 10px;
   }
 
-  .yoya-vtreetable thead th:first-child,
-  .yoya-vtreetable tbody td:first-child {
+  [vn~='VTreeTable'] thead th:first-child,
+  [vn~='VTreeTable'] tbody td:first-child {
     white-space: nowrap;
     width: 1%;
   }
