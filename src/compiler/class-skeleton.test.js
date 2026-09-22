@@ -53,13 +53,13 @@ describe('form C skeletons', () => {
   });
 
   it('records an actionable reason for a constructor it cannot read', () => {
-    // 形态 C 的构造体读不懂时要有可定位的原因（表格 / 展示族的进度条都迁到 vNode 了，
-    // 这里换成仍在形态 C 的数字看板）
-    const file = posix.join('src/data-display/board.js');
+    // 形态 C 的构造体读不懂时要有可定位的原因（表格 / 进度条 / 数字看板都迁到 vNode 了，
+    // 这里换成仍在形态 C 的导航栏：`applyComponentSetup(this, setup)` 之前有动态接线）
+    const file = posix.join('src/navigation/navbar.js');
     const result = compileComponent({
       source: readFileSync(file, 'utf8'),
       file,
-      export: 'vDigitalBoard',
+      export: 'vNavbar',
       core
     });
 

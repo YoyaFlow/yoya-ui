@@ -610,8 +610,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const page = document.querySelector('[data-component-route-item="board:digital-board"]');
-    expect(page.querySelector('.yoya-vdigital-board')).not.toBeNull();
-    expect(page.querySelectorAll('.yoya-vdigital-board-item').length).toBeGreaterThan(0);
+    expect(page.querySelector('[vn~="VDigitalBoard"]')).not.toBeNull();
+    expect(page.querySelectorAll('[vn~="VDigitalBoardItem"]').length).toBeGreaterThan(0);
     expect(page.querySelector('[data-source-example]').textContent).toContain('DigitalBoardDemo');
   });
   it('renders the dashboard family demo pages', async () => {

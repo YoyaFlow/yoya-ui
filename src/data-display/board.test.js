@@ -25,17 +25,17 @@ describe('digital board', () => {
     });
     board.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vdigital-board');
+    const element = document.querySelector('[vn~="VDigitalBoard"]');
     expect(element).not.toBeNull();
     expect(element.style.gridTemplateColumns).toContain('auto-fit');
 
-    const items = element.querySelectorAll('.yoya-vdigital-board-item');
+    const items = element.querySelectorAll('[vn~="VDigitalBoardItem"]');
     expect(items).toHaveLength(2);
     const first = items[0];
-    expect(first.querySelector('.yoya-vdigital-board-item-label').textContent).toBe('服务总数');
-    expect(first.querySelector('.yoya-vdigital-board-item-value-box').textContent).toContain('128');
-    expect(first.querySelector('.yoya-vdigital-board-item-unit').textContent).toBe('个');
-    expect(first.querySelector('.yoya-vdigital-board-item-trend').textContent).toBe('+12 本月');
+    expect(first.querySelector('[vn~="VDigitalBoardItemLabel"]').textContent).toBe('服务总数');
+    expect(first.querySelector('[vn~="VDigitalBoardItemValueBox"]').textContent).toContain('128');
+    expect(first.querySelector('[vn~="VDigitalBoardItemUnit"]').textContent).toBe('个');
+    expect(first.querySelector('[vn~="VDigitalBoardItemTrend"]').textContent).toBe('+12 本月');
   });
 
   it('supports explicit columns, tone colors and trend direction', () => {
@@ -61,22 +61,22 @@ describe('digital board', () => {
 
     expect(board.renderDom().style.gridTemplateColumns).toContain('repeat(4');
 
-    const items = document.querySelectorAll('.yoya-vdigital-board-item');
+    const items = document.querySelectorAll('[vn~="VDigitalBoardItem"]');
     const success = items[0];
     const danger = items[1];
-    const successAccent = success.querySelector('.yoya-vdigital-board-item-accent');
-    const dangerAccent = danger.querySelector('.yoya-vdigital-board-item-accent');
+    const successAccent = success.querySelector('[vn~="VDigitalBoardItemAccent"]');
+    const dangerAccent = danger.querySelector('[vn~="VDigitalBoardItemAccent"]');
 
     expect(successAccent.getAttribute('style')).toContain('color-success');
     expect(dangerAccent.getAttribute('style')).toContain('color-danger');
 
-    expect(
-      success.querySelector('.yoya-vdigital-board-item-trend').getAttribute('style')
-    ).toContain('color-success');
-    expect(danger.querySelector('.yoya-vdigital-board-item-trend').getAttribute('style')).toContain(
+    expect(success.querySelector('[vn~="VDigitalBoardItemTrend"]').getAttribute('style')).toContain(
+      'color-success'
+    );
+    expect(danger.querySelector('[vn~="VDigitalBoardItemTrend"]').getAttribute('style')).toContain(
       'color-danger'
     );
-    expect(danger.querySelector('.yoya-vdigital-board-item-icon').style.display).toBe('flex');
+    expect(danger.querySelector('[vn~="VDigitalBoardItemIcon"]').style.display).toBe('flex');
   });
 
   it('updates label, value and unit through setters', () => {
@@ -84,16 +84,14 @@ describe('digital board', () => {
     item.label('请求量').value('84.2').unit('k').trend('+6.4% 较昨日');
     item.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vdigital-board-item');
-    expect(element.querySelector('.yoya-vdigital-board-item-label').textContent).toBe('请求量');
-    expect(element.querySelector('.yoya-vdigital-board-item-value-box').textContent).toContain(
+    const element = document.querySelector('[vn~="VDigitalBoardItem"]');
+    expect(element.querySelector('[vn~="VDigitalBoardItemLabel"]').textContent).toBe('请求量');
+    expect(element.querySelector('[vn~="VDigitalBoardItemValueBox"]').textContent).toContain(
       '84.2'
     );
 
     item.value('120');
-    expect(element.querySelector('.yoya-vdigital-board-item-value-box').textContent).toContain(
-      '120'
-    );
+    expect(element.querySelector('[vn~="VDigitalBoardItemValueBox"]').textContent).toContain('120');
     expect(item.value()).toBe('120');
     expect(item.unit()).toBe('k');
     expect(item.trend()).toBe('+6.4% 较昨日');
@@ -117,6 +115,6 @@ describe('digital board', () => {
     expect(document.querySelector('[data-board="main"]')).not.toBeNull();
     const item = document.querySelector('[data-item="queued"]');
     expect(item).not.toBeNull();
-    expect(item.querySelector('.yoya-vdigital-board-item-label').textContent).toBe('排队任务');
+    expect(item.querySelector('[vn~="VDigitalBoardItemLabel"]').textContent).toBe('排队任务');
   });
 });
