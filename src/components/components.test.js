@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
-  VTimerRange,
   button,
   createI18n,
   div,
@@ -2186,7 +2185,7 @@ describe('compound components', () => {
     const element = range.renderDom();
     const controls = element.querySelectorAll('[vn~="VInputField"]');
 
-    expect(range).toBeInstanceOf(VTimerRange);
+    expect(hasComponentIdentity(range, 'VTimerRange')).toBe(true);
     expect(controls).toHaveLength(2);
     expect(controls[0].type).toBe('date');
     expect(controls[0].name).toBe('deploymentStart');
@@ -2210,7 +2209,7 @@ describe('compound components', () => {
       root.vTimerRange({ mode: 'time', value: ['08:30', '17:30'] });
     });
     const element = page.renderDom();
-    const range = element.querySelector('.yoya-vtimer-range');
+    const range = element.querySelector('[vn~="VTimerRange"]');
 
     expect(range).not.toBeNull();
     expect(range.querySelectorAll('input')).toHaveLength(2);
@@ -2225,7 +2224,7 @@ describe('compound components', () => {
     expect(element.dataset.error).toBe('true');
     expect(element.dataset.invalid).toBe('true');
     expect(element.getAttribute('aria-invalid')).toBe('true');
-    const errorMessage = element.querySelector('.yoya-vtimer-range-error');
+    const errorMessage = element.querySelector('[vn~="VTimerRangeError"]');
     const controls = element.querySelectorAll('input');
     expect(errorMessage.id).not.toBe('');
     expect(errorMessage.textContent).toBe('结束值不能早于开始值');
@@ -2249,7 +2248,7 @@ describe('compound components', () => {
     const changed = vi.fn();
     const range = vTimerRange({ value: ['2026-08-19', '2026-08-21'] }).on('change', changed);
     const element = range.renderDom();
-    const endControl = element.querySelector('.yoya-vtimer-range-end');
+    const endControl = element.querySelector('[vn~="VTimerRangeEnd"] input');
 
     endControl.value = '2026-08-22';
     endControl.dispatchEvent(new Event('change', { bubbles: true }));

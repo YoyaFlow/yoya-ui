@@ -114,7 +114,7 @@ describe('deterministic ids across renders', () => {
         root.vTimerRange();
       })
     );
-    const ids = [...html.matchAll(/yoya-vtimer-range-error-(\d+)/g)].map((match) => match[1]);
+    const ids = [...html.matchAll(/yoya-timer-range-error-(\d+)/g)].map((match) => match[1]);
 
     expect(ids).toHaveLength(6);
     expect(new Set(ids).size).toBe(2);

@@ -1,211 +1,224 @@
-import { defineComponentIdentity, VTextNode } from '../../core/node.js';
-import { createComponentShell } from '../../components/component-shell.js';
+import { vText } from '../../core/node.js';
+import { vNode } from '../../core/v-node.js';
 import { allocateId } from '../../core/id.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { div, span } from '../../html/index.js';
 import {
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   resolveTextValue,
   themeValue
 } from '../../components/shared.js';
 import { vTimer } from './timer.js';
 
-/** 时间范围输入框的节点类型（不导出）；公开组件 `vTimerRange` 是 vNode 外壳。 */
-class TimerRangeNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VTimerRange';
-    const errorId = allocateId('yoya-vtimer-range-error');
-    this._name = '';
-    this._startTimer = vTimer()
-      .className('yoya-vtimer-range-start')
-      .attr('aria-label', '开始值')
-      .attr('aria-describedby', errorId);
-    this._endTimer = vTimer()
-      .className('yoya-vtimer-range-end')
-      .attr('aria-label', '结束值')
-      .attr('aria-describedby', errorId);
-    this._errorText = new VTextNode('');
-    this._errorMessage = new HtmlElementNode('span')
-      .className('yoya-vtimer-range-error')
+/**
+ * 时间范围输入（形态 B，票 15 §4）：视图根是外壳 `div` + 两个时间输入 + 错误提示。
+ *
+ * - 身份写在结构里：根 `vn: 'VTimerRange'`、两个输入写**多值身份**
+ *   （`'VTimerRangeStart VTimer VInput'` / `'VTimerRangeEnd VTimer VInput'`：部件 + 复用组件，
+ *   与 `VField` 的动作按钮同一口径）、错误提示 `vn: 'VTimerRangeError'`；
+ * - 输入是复用 `vTimer` 的组件，`aria-label` / `name` / `aria-describedby` 仍按旧口径走 `attr`
+ *   路由到内层 `<input>`；状态与命令收进 `vNode` 闭包；
+ * - 合并 change：任一输入变化先 `stopPropagation`、本地校验，再从视图根派发一次带 `detail` 的
+ *   合并事件（口径不变）；SSR 回读仍挂 `hydrateSnapshot` 在视图根上；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupTimerRange` 同口径）。
+ */
+export function VTimerRange() {
+  return vNode((api) => {
+    const errorId = allocateId('yoya-timer-range-error');
+    const state = { name: '' };
+
+    const startTimer = vTimer();
+
+    startTimer.setup({ vn: 'VTimerRangeStart VTimer VInput' });
+    startTimer.attr({ 'aria-label': '开始值', 'aria-describedby': errorId });
+
+    const endTimer = vTimer();
+
+    endTimer.setup({ vn: 'VTimerRangeEnd VTimer VInput' });
+    endTimer.attr({ 'aria-label': '结束值', 'aria-describedby': errorId });
+
+    const errorText = vText('');
+    const errorMessage = span({ vn: 'VTimerRangeError' })
       .id(errorId)
       .attr('aria-live', 'polite')
       .style('color', themeValue('color-danger', '#dc2626'))
       .style('fontSize', '0.875rem')
       .style('gridColumn', '1 / -1')
-      .child(this._errorText);
-
-    this.className(componentClass, 'yoya-vtimer-range').attr('role', 'group');
-    this.styles({
+      .child(errorText);
+    const node = div({ vn: 'VTimerRange' }).attr('role', 'group').styles({
       alignItems: 'center',
       display: 'grid',
       gap: '8px',
       gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'
     });
-    this._startTimer.on('change', (event) => this._handleTimerChange(event));
-    this._endTimer.on('change', (event) => this._handleTimerChange(event));
-    this.child(this._startTimer, this._endTimer, this._errorMessage);
-    this._setupTimerRange(setup);
-  }
 
-  mode(value) {
-    if (value === undefined) {
-      return this._startTimer.mode();
-    }
+    const validate = () => {
+      const { start, end } = api.value();
+      const invalid = Boolean(start && end && end < start);
 
-    this._startTimer.mode(value);
-    this._endTimer.mode(value);
-    return this;
-  }
+      node.attr('data-error', invalid ? 'true' : null);
+      node.attr('data-invalid', invalid ? 'true' : null);
+      node.attr('aria-invalid', invalid ? 'true' : null);
+      startTimer.error(invalid);
+      endTimer.error(invalid);
+      startTimer.attr('aria-invalid', invalid ? 'true' : null);
+      endTimer.attr('aria-invalid', invalid ? 'true' : null);
+      errorText.textContent(invalid ? '结束值不能早于开始值' : '');
+      return !invalid;
+    };
 
-  name(value) {
-    if (value === undefined) {
-      return this._name;
-    }
+    const handleTimerChange = (event) => {
+      event.stopPropagation();
+      validate();
 
-    this._name = resolveTextValue(value);
-    this._startTimer.attr('name', this._name ? `${this._name}Start` : null);
-    this._endTimer.attr('name', this._name ? `${this._name}End` : null);
-    return this;
-  }
+      if (node._el) {
+        const CustomEventClass = node._el.ownerDocument.defaultView.CustomEvent;
 
-  start(value) {
-    if (value === undefined) {
-      return this._startTimer.value();
-    }
+        node._el.dispatchEvent(
+          new CustomEventClass('change', {
+            bubbles: true,
+            detail: api.value()
+          })
+        );
+      }
+    };
 
-    this._startTimer.value(value);
-    this._validate();
-    return this;
-  }
+    startTimer.on('change', (event) => handleTimerChange(event));
+    endTimer.on('change', (event) => handleTimerChange(event));
+    node.child(startTimer, endTimer, errorMessage);
 
-  end(value) {
-    if (value === undefined) {
-      return this._endTimer.value();
-    }
+    api.mode = (value) => {
+      if (value === undefined) {
+        return startTimer.mode();
+      }
 
-    this._endTimer.value(value);
-    this._validate();
-    return this;
-  }
+      startTimer.mode(value);
+      endTimer.mode(value);
+      return api;
+    };
 
-  value(value) {
-    if (value === undefined) {
-      return { start: this.start(), end: this.end() };
-    }
+    api.name = (value) => {
+      if (value === undefined) {
+        return state.name;
+      }
 
-    const [start, end] = Array.isArray(value) ? value : [value?.start ?? '', value?.end ?? ''];
-    this.start(start);
-    this.end(end);
-    return this;
-  }
+      state.name = resolveTextValue(value);
+      startTimer.attr('name', state.name ? `${state.name}Start` : null);
+      endTimer.attr('name', state.name ? `${state.name}End` : null);
+      return api;
+    };
 
-  disabled(value) {
-    if (value === undefined) {
-      return this._startTimer.disabled();
-    }
+    api.start = (value) => {
+      if (value === undefined) {
+        return startTimer.value();
+      }
 
-    this._startTimer.disabled(value);
-    this._endTimer.disabled(value);
-    return this;
-  }
+      startTimer.value(value);
+      validate();
+      return api;
+    };
 
-  readonly(value) {
-    if (value === undefined) {
-      return this._startTimer.readonly();
-    }
+    api.end = (value) => {
+      if (value === undefined) {
+        return endTimer.value();
+      }
 
-    this._startTimer.readonly(value);
-    this._endTimer.readonly(value);
-    return this;
-  }
+      endTimer.value(value);
+      validate();
+      return api;
+    };
 
-  required(value) {
-    if (value === undefined) {
-      return this._startTimer.required();
-    }
+    api.value = (value) => {
+      if (value === undefined) {
+        return { start: api.start(), end: api.end() };
+      }
 
-    this._startTimer.required(value);
-    this._endTimer.required(value);
-    return this;
-  }
+      const [start, end] = Array.isArray(value) ? value : [value?.start ?? '', value?.end ?? ''];
 
-  _setupTimerRange(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+      api.start(start);
+      api.end(end);
+      return api;
+    };
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+    api.disabled = (value) => {
+      if (value === undefined) {
+        return startTimer.disabled();
+      }
 
-    if (isPlainObject(setup)) {
+      startTimer.disabled(value);
+      endTimer.disabled(value);
+      return api;
+    };
+
+    api.readonly = (value) => {
+      if (value === undefined) {
+        return startTimer.readonly();
+      }
+
+      startTimer.readonly(value);
+      endTimer.readonly(value);
+      return api;
+    };
+
+    api.required = (value) => {
+      if (value === undefined) {
+        return startTimer.required();
+      }
+
+      startTimer.required(value);
+      endTimer.required(value);
+      return api;
+    };
+
+    /** 字符串 / 数组 / { start, end } = 初始值（旧 `_setupTimerRange` 的兜底分支）。 */
+    api.setupString = (next) => api.value(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupTimerRange` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const { disabled, end, mode, name, readonly, required, start, value, ...elementConfig } =
         setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
-      if (mode !== undefined) this.mode(mode);
-      if (name !== undefined) this.name(name);
-      if (value !== undefined) this.value(value);
-      else this.value({ start, end });
-      if (required !== undefined) this.required(required);
-      if (readonly !== undefined) this.readonly(readonly);
-      if (disabled !== undefined) this.disabled(disabled);
-      return;
-    }
+      if (mode !== undefined) {
+        api.mode(mode);
+      }
+      if (name !== undefined) {
+        api.name(name);
+      }
+      if (value !== undefined) {
+        api.value(value);
+      } else {
+        api.value({ start, end });
+      }
+      if (required !== undefined) {
+        api.required(required);
+      }
+      if (readonly !== undefined) {
+        api.readonly(readonly);
+      }
+      if (disabled !== undefined) {
+        api.disabled(disabled);
+      }
 
-    this.value(setup);
-  }
+      return api;
+    };
 
-  _handleTimerChange(event) {
-    event.stopPropagation();
-    this._validate();
+    // SSR 回读：内层输入的元素机制随 DOM 走，这里补一次范围校验（与旧 `hydrateSnapshot` 同口径）
+    node.hydrateSnapshot = () => {
+      startTimer.hydrateSnapshot?.();
+      endTimer.hydrateSnapshot?.();
+      validate();
+      return node;
+    };
 
-    if (this._el) {
-      const CustomEventClass = this._el.ownerDocument.defaultView.CustomEvent;
-      this._el.dispatchEvent(
-        new CustomEventClass('change', {
-          bubbles: true,
-          detail: this.value()
-        })
-      );
-    }
-  }
-
-  hydrateSnapshot() {
-    this._startTimer.hydrateSnapshot?.();
-    this._endTimer.hydrateSnapshot?.();
-    this._validate();
-    return this;
-  }
-
-  _validate() {
-    const { start, end } = this.value();
-    const invalid = Boolean(start && end && end < start);
-
-    this.attr('data-error', invalid ? 'true' : null);
-    this.attr('data-invalid', invalid ? 'true' : null);
-    this.attr('aria-invalid', invalid ? 'true' : null);
-    this._startTimer.error(invalid);
-    this._endTimer.error(invalid);
-    this._startTimer.attr('aria-invalid', invalid ? 'true' : null);
-    this._endTimer.attr('aria-invalid', invalid ? 'true' : null);
-    this._errorText.textContent(invalid ? '结束值不能早于开始值' : '');
-    return !invalid;
-  }
-}
-
-export function vTimerRange(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTimerRange',
-    createNode: (setup) => new TimerRangeNode(setup),
-    commands: ['mode', 'start', 'end', 'value', 'disabled', 'readonly', 'required'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    return node;
   });
 }
 
-export const VTimerRange = vTimerRange;
-defineComponentIdentity(VTimerRange, 'VTimerRange');
+export const vTimerRange = createComponentShortcut(VTimerRange);
