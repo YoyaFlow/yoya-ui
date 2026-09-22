@@ -1,9 +1,9 @@
 import { allocateNumber } from '../core/id.js';
 import { vNode } from '../core/v-node.js';
 import { button, div, section, span } from '../html/index.js';
+import { vSlot } from '../layout/v-slot.js';
 import {
   createComponentShortcut,
-  normalizeChildren,
   replaceChildren,
   resolveTextValue
 } from '../components/shared.js';
@@ -14,7 +14,9 @@ import {
  * - 结构：`div[VTabs] > div[VTabsNav](role=tablist) + div[VTabsPanels]`；
  *   页签项 `VTab` 的视图根是**触发器** `button[VTabTrigger]`，面板 `section[VTabPanel]` 由项自己的
  *   `panel()` 命令按需建、建过复用——容器取走半边的**内容**分别落进导航与面板容器；
- * - 容器与项的部件都**用到才建、建过复用**（与 `VTable` 段命令同一口径），不预建、不按身份查找；
+ * - 触发器里的**标签 / 图标**是固定内容位：结构里 `vSlot('label')` / `vSlot('icon')` 声明占位，
+ *   内容（`VTabLabel` / `VTabIcon`）自带 `vn_slot` 标记，命令投递即落位（`VCard` 同一口径，替换语义自带）；
+ * - 不在视图里的部件（面板）才「用到才建、建过复用」（与 `VTable` 段命令同一口径），不预建、不按身份查找；
  * - 命令**直接写快照**（`attr` / `replaceChildren`）：首屏就是构建期快照，没有"写完再刷一遍"；
  * - 容器只把「你是不是当前项」交给每一项（`tab.active(…)`），项自己写自己的触发器 / 面板快照。
  */
@@ -37,6 +39,19 @@ function TabsPanels() {
   return div({ vn: 'VTabsPanels' });
 }
 
+/** 标签内容（形态 A）：`vn_slot` 标记 = 它在触发器里的位置。 */
+export function VTabLabel() {
+  return span({ vn: 'VTabLabel', vn_slot: 'label' });
+}
+
+/** 图标内容（形态 A）：默认隐藏，投递图标后由内容自己决定显隐。 */
+export function VTabIcon() {
+  return span({ 'aria-hidden': 'true', vn: 'VTabIcon', vn_slot: 'icon' }).style('display', 'none');
+}
+
+export const vTabLabel = createComponentShortcut(VTabLabel);
+export const vTabIcon = createComponentShortcut(VTabIcon);
+
 /**
  * 页签项：触发器是视图根（进导航），面板走 `panel()` 内容通道（进面板容器）。
  * 字符串 = 标签；对象 = props；`active / disabled / index` 由容器 `active(…)` 驱动。
@@ -48,27 +63,7 @@ export function VTab() {
     const triggerId = `yoya-vtab-trigger-${sequence}`;
     const panelId = `yoya-vtab-panel-${sequence}`;
 
-    let iconPart = null;
-    let labelPart = null;
     let panelPart = null;
-
-    const iconOf = () => {
-      if (!iconPart) {
-        iconPart = span({ 'aria-hidden': 'true', style: { display: 'none' }, vn: 'VTabIcon' });
-        self.node().child(iconPart);
-      }
-
-      return iconPart;
-    };
-
-    const labelOf = () => {
-      if (!labelPart) {
-        labelPart = span({ vn: 'VTabLabel' });
-        self.node().child(labelPart);
-      }
-
-      return labelPart;
-    };
 
     /** 写这一项的快照：触发器与面板的选中态。 */
     const writeTab = () => {
@@ -124,10 +119,12 @@ export function VTab() {
 
     api.label = (content) => {
       if (content === undefined) {
-        return labelOf().textContent();
+        return state.label == null ? '' : resolveTextValue(state.label);
       }
 
-      replaceChildren(labelOf(), normalizeChildren(content));
+      state.label = content;
+      // 内容自带 `vn_slot`，投递即替换标签占位里的内容（VCard 口径）
+      self.node().child(vTabLabel(content));
       return api;
     };
 
@@ -135,13 +132,11 @@ export function VTab() {
     api.title = (content) => (content === undefined ? api.label() : api.label(content));
 
     api.icon = (content) => {
-      const box = iconOf();
+      state.icon = content;
+      const empty = content === null || content === undefined || content === '';
 
-      replaceChildren(box, normalizeChildren(content));
-      box.style(
-        'display',
-        content === null || content === undefined || content === '' ? 'none' : null
-      );
+      // 空图标保持隐藏（与旧实现一致）：内容自带 vn_slot，投递即替换图标占位里的内容
+      self.node().child(vTabIcon(content).style('display', empty ? 'none' : null));
       return api;
     };
 
@@ -234,15 +229,20 @@ export function VTab() {
     /** 字符串 / 数字 = 标签。 */
     api.setupString = (value) => api.label(value);
 
-    return button({
-      'aria-controls': panelId,
-      'aria-selected': 'false',
-      id: triggerId,
-      role: 'tab',
-      tabindex: '-1',
-      type: 'button',
-      vn: 'VTabTrigger'
-    });
+    return button(
+      {
+        'aria-controls': panelId,
+        'aria-selected': 'false',
+        id: triggerId,
+        role: 'tab',
+        tabindex: '-1',
+        type: 'button',
+        vn: 'VTabTrigger'
+      },
+      (trigger) => {
+        trigger.child(vSlot('icon'), vSlot('label'));
+      }
+    );
   });
 }
 
