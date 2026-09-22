@@ -1,5 +1,4 @@
 import {
-  componentClass,
   createComponentShortcut,
   isPlainObject,
   normalizeChildren,
@@ -33,7 +32,6 @@ export function VTextarea() {
     };
 
     const field = textareaTag({
-      class: `${componentClass} yoya-vtextarea`,
       style: {
         background: themeValue('color-surface', '#ffffff'),
         border: themeBorder('color-border-strong', '#cbd5e1'),
@@ -46,11 +44,11 @@ export function VTextarea() {
         padding: '10px 12px',
         resize: 'vertical',
         width: '100%'
-      }
+      },
+      vn: 'VTextareaField'
     });
     const clearButton = createClearButton('VTextareaClear', { right: '6px', top: '6px' });
     const root = div({
-      class: `${componentClass} yoya-vtextarea-wrap`,
       style: { minWidth: '0', position: 'relative', width: '100%' },
       vn: 'VTextarea'
     });

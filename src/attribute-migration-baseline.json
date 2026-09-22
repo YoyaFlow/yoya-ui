@@ -27,7 +27,6 @@
     "src/form/controls/select.js": 5,
     "src/form/controls/shared.js": 6,
     "src/form/controls/switch.js": 1,
-    "src/form/controls/textarea.js": 2,
     "src/form/controls/timer-range.js": 5,
     "src/form/rate.js": 6,
     "src/form/slider.js": 3,

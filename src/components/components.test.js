@@ -2037,8 +2037,8 @@ describe('compound components', () => {
     expect(element.querySelector('[vn~="VInputField"]').value).toBe('api-gateway');
     expect(element.querySelector('.yoya-vselect').value).toBe('运行中');
     expect(element.querySelector('.yoya-vselect option[selected]').textContent).toBe('运行中');
-    expect(element.querySelector('.yoya-vtextarea').value).toBe('初始说明');
-    expect(element.querySelector('.yoya-vtextarea').readOnly).toBe(true);
+    expect(element.querySelector('[vn~="VTextareaField"]').value).toBe('初始说明');
+    expect(element.querySelector('[vn~="VTextareaField"]').readOnly).toBe(true);
 
     input.value('worker');
     textarea.value('更新说明');
