@@ -1,36 +1,32 @@
-import { createComponentShell } from '../components/component-shell.js';
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
-import { booleanMethod, componentClass, isPlainObject, themeValue } from '../components/shared.js';
+import { registerChildFactories, vText } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
+import { HtmlElementNode, div, input as inputTag, span } from '../html/index.js';
+import { createComponentShortcut, isPlainObject, themeValue } from '../components/shared.js';
 
 /**
- * vSlider 是滑动条输入控件：min/max/step 约束取值，支持数值显示、
- * 禁用状态与 change 回调，可放入 vFormItem 参与表单收集。
+ * 滑动条（形态 B，票 15 §4）：视图根是外壳 `div` + 原生 range 输入 + 数值标签。
+ *
+ * - 身份写在结构里：根 `vn: 'VSlider'`、内层 `vn: 'VSliderInput'`、数值标签 `vn: 'VSliderValue'`；
+ *   `data-vslider-input` / `data-vslider-value` 这两个既有角色标记一并保留（角色标记不是身份）；
+ * - 状态与命令收进 `vNode` 闭包；`change` 回调的第二参交给使用方的是**组件句柄**（`self.node()`，
+ *   与旧外壳的 `_componentHandle` 同一口径）；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupSlider` 同口径）。
  */
-class SliderNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VSlider';
-    this.className(componentClass, 'yoya-vslider');
-    this.styles({
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      display: 'flex',
-      gap: '10px',
-      minWidth: '0',
-      width: '100%'
-    });
+export function VSlider() {
+  return vNode((api, self) => {
+    const state = {
+      changeHandlers: [],
+      disabled: false,
+      max: 100,
+      min: 0,
+      required: false,
+      showValue: true,
+      step: 1,
+      value: 0,
+      vertical: false
+    };
 
-    this._min = 0;
-    this._max = 100;
-    this._step = 1;
-    this._value = 0;
-    this._showValue = true;
-    this._vertical = false;
-    this._changeHandlers = [];
-
-    this._input = new HtmlElementNode('input')
-      .className('yoya-vslider-input')
+    const input = inputTag({ vn: 'VSliderInput' })
       .attr({
         'data-vslider-input': 'true',
         max: '100',
@@ -39,12 +35,9 @@ class SliderNode extends HtmlElementNode {
         type: 'range',
         value: '0'
       })
-      .styles({ flex: '1 1 auto', minWidth: '0' })
-      .on('input', (event) => this.value(Number(event.target.value)));
-
-    this._valueText = vText('0');
-    this._valueLabel = new HtmlElementNode('span')
-      .className('yoya-vslider-value')
+      .styles({ flex: '1 1 auto', minWidth: '0' });
+    const valueText = vText('0');
+    const valueLabel = span({ vn: 'VSliderValue' })
       .attr('data-vslider-value', 'true')
       .styles({
         color: themeValue('color-text-muted', '#64748b'),
@@ -52,165 +45,175 @@ class SliderNode extends HtmlElementNode {
         minWidth: '36px',
         textAlign: 'right'
       })
-      .child(this._valueText);
-
-    this.child(this._input, this._valueLabel);
-    this._sync();
-
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('data-disabled', enabled ? 'true' : null);
-      this._input.attr('disabled', enabled ? true : null);
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this.attr('data-required', enabled ? 'true' : null);
-      this._input.attr('required', enabled ? true : null);
+      .child(valueText);
+    const node = div({ vn: 'VSlider' }).styles({
+      alignItems: 'center',
+      boxSizing: 'border-box',
+      display: 'flex',
+      gap: '10px',
+      minWidth: '0',
+      width: '100%'
     });
 
-    this._setupSlider(setup);
-  }
+    node.child(input, valueLabel);
 
-  /** 读写当前数值（自动收敛到 min/max/step 范围内）。 */
-  value(next) {
-    if (next === undefined) {
-      return this._value;
-    }
+    const sync = () => {
+      input.attr('value', String(state.value));
+      valueText.textContent(String(state.value));
+    };
 
-    this._setValue(next, true);
-    return this;
-  }
+    const setValue = (next, emit) => {
+      const value = Number(next);
 
-  min(next) {
-    if (next === undefined) {
-      return this._min;
-    }
-    this._min = Number(next) || 0;
-    this._input.attr('min', String(this._min));
-    this._setValue(this._value, false);
-    return this;
-  }
+      state.value = Number.isFinite(value)
+        ? clampNumber(value, state.min, state.max, state.step)
+        : state.min;
+      sync();
 
-  max(next) {
-    if (next === undefined) {
-      return this._max;
-    }
-    this._max = Number(next) || 0;
-    this._input.attr('max', String(this._max));
-    this._setValue(this._value, false);
-    return this;
-  }
+      if (emit) {
+        state.changeHandlers.forEach((handler) => handler(state.value, self.node()));
+      }
+    };
 
-  step(next) {
-    if (next === undefined) {
-      return this._step;
-    }
-    this._step = Number(next) || 1;
-    this._input.attr('step', String(this._step));
-    this._setValue(this._value, false);
-    return this;
-  }
+    input.on('input', (event) => api.value(Number(event.target.value)));
 
-  /** 是否显示当前数值。 */
-  showValue(next) {
-    if (next === undefined) {
-      return this._showValue;
-    }
-    this._showValue = Boolean(next);
-    this._valueLabel.style('display', this._showValue ? null : 'none');
-    return this;
-  }
+    /** 读写当前数值（自动收敛到 min/max/step 范围内）。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return state.value;
+      }
 
-  /** 切换为竖向排列（writing-mode 方案，值从下往上增长）。 */
-  vertical(next) {
-    if (next === undefined) {
-      return this._vertical;
-    }
+      setValue(next, true);
+      return api;
+    };
 
-    this._vertical = Boolean(next);
-    this.attr('data-vertical', this._vertical ? 'true' : null);
-    this.styles({
-      flexDirection: this._vertical ? 'column' : 'row',
-      height: this._vertical ? '180px' : null,
-      width: this._vertical ? null : '100%'
-    });
-    this._input.styles({
-      direction: this._vertical ? 'rtl' : null,
-      height: this._vertical ? '100%' : null,
-      minHeight: this._vertical ? '0' : null,
-      minWidth: this._vertical ? null : '0',
-      writingMode: this._vertical ? 'vertical-lr' : null
-    });
-    this._valueLabel.styles({
-      minWidth: this._vertical ? null : '36px',
-      textAlign: this._vertical ? 'center' : 'right'
-    });
-    return this;
-  }
+    api.min = (next) => {
+      if (next === undefined) {
+        return state.min;
+      }
 
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
+      state.min = Number(next) || 0;
+      input.attr('min', String(state.min));
+      setValue(state.value, false);
+      return api;
+    };
 
-  name(value) {
-    if (value === undefined) {
-      return this.attr('data-name') || '';
-    }
-    this.attr('data-name', value ? String(value) : null);
-    this._input.attr('name', value ? String(value) : null);
-    return this;
-  }
+    api.max = (next) => {
+      if (next === undefined) {
+        return state.max;
+      }
 
-  /** 注册数值变化回调。 */
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-    this._changeHandlers = [handler];
-    return this;
-  }
+      state.max = Number(next) || 0;
+      input.attr('max', String(state.max));
+      setValue(state.value, false);
+      return api;
+    };
 
-  onChange(handler) {
-    return this.change(handler);
-  }
+    api.step = (next) => {
+      if (next === undefined) {
+        return state.step;
+      }
 
-  /** 供 vFormItem 读取值。 */
-  _collectValue() {
-    return this._value;
-  }
+      state.step = Number(next) || 1;
+      input.attr('step', String(state.step));
+      setValue(state.value, false);
+      return api;
+    };
 
-  _sync() {
-    this._input.attr('value', String(this._value));
-    this._valueText.textContent(String(this._value));
-    return this;
-  }
+    /** 是否显示当前数值。 */
+    api.showValue = (next) => {
+      if (next === undefined) {
+        return state.showValue;
+      }
 
-  _setValue(next, emit) {
-    const value = Number(next);
-    this._value = Number.isFinite(value)
-      ? clampNumber(value, this._min, this._max, this._step)
-      : this._min;
-    this._sync();
-    if (emit) {
-      // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-      this._changeHandlers.forEach((handler) =>
-        handler(this._value, this._componentHandle ?? this)
-      );
-    }
-    return this;
-  }
+      state.showValue = Boolean(next);
+      valueLabel.style('display', state.showValue ? null : 'none');
+      return api;
+    };
 
-  _setupSlider(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    /** 切换为竖向排列（writing-mode 方案，值从下往上增长）。 */
+    api.vertical = (next) => {
+      if (next === undefined) {
+        return state.vertical;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      state.vertical = Boolean(next);
+      node.attr('data-vertical', state.vertical ? 'true' : null);
+      node.styles({
+        flexDirection: state.vertical ? 'column' : 'row',
+        height: state.vertical ? '180px' : null,
+        width: state.vertical ? null : '100%'
+      });
+      input.styles({
+        direction: state.vertical ? 'rtl' : null,
+        height: state.vertical ? '100%' : null,
+        minHeight: state.vertical ? '0' : null,
+        minWidth: state.vertical ? null : '0',
+        writingMode: state.vertical ? 'vertical-lr' : null
+      });
+      valueLabel.styles({
+        minWidth: state.vertical ? null : '36px',
+        textAlign: state.vertical ? 'center' : 'right'
+      });
+      return api;
+    };
 
-    if (isPlainObject(setup)) {
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(next);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      input.attr('disabled', state.disabled ? true : null);
+      return api;
+    };
+
+    api.required = (next) => {
+      if (next === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(next);
+      node.attr('data-required', state.required ? 'true' : null);
+      input.attr('required', state.required ? true : null);
+      return api;
+    };
+
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+
+    api.name = (value) => {
+      if (value === undefined) {
+        return node.attr('data-name') || '';
+      }
+
+      node.attr('data-name', value ? String(value) : null);
+      input.attr('name', value ? String(value) : null);
+      return api;
+    };
+
+    /** 注册数值变化回调（后一次注册替换前一次，与旧方法面一致）。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    api.onChange = (handler) => api.change(handler);
+
+    /** 字符串 / 数字 = 初始数值（旧 `_setupSlider` 的兜底分支）。 */
+    api.setupString = (next) => api.value(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupSlider` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const {
         change,
         disabled,
@@ -225,73 +228,53 @@ class SliderNode extends HtmlElementNode {
         vertical,
         ...elementConfig
       } = setup;
+
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
+
       if (min !== undefined) {
-        this.min(min);
+        api.min(min);
       }
       if (max !== undefined) {
-        this.max(max);
+        api.max(max);
       }
       if (step !== undefined) {
-        this.step(step);
+        api.step(step);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (showValue !== undefined) {
-        this.showValue(showValue);
+        api.showValue(showValue);
       }
       if (vertical !== undefined) {
-        this.vertical(vertical);
+        api.vertical(vertical);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
-      return;
-    }
 
-    this.value(setup);
-  }
-}
+      return api;
+    };
 
-export function vSlider(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSlider',
-    createNode: (setup) => new SliderNode(setup),
-    commands: [
-      'value',
-      'min',
-      'max',
-      'step',
-      'showValue',
-      'vertical',
-      'isDisabled',
-      'name',
-      'change',
-      'onChange',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    sync();
+    return node;
   });
 }
 
-export const VSlider = vSlider;
-defineComponentIdentity(VSlider, 'VSlider');
+export const vSlider = createComponentShortcut(VSlider);
 
 registerChildFactories(HtmlElementNode, { vSlider });
 

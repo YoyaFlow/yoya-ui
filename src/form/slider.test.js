@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VSlider, div, vForm, vSlider } from '../index.js';
+import { div, hasComponentIdentity, vForm, vSlider } from '../index.js';
 
 function findSlider(node) {
-  if (node instanceof VSlider) {
+  if (hasComponentIdentity(node, 'VSlider')) {
     return node;
   }
 
@@ -21,8 +21,8 @@ describe('vSlider', () => {
     const slider = vSlider({ max: 200, min: 10, step: 5, value: 60 });
     const element = slider.renderDom();
 
-    expect(slider).toBeInstanceOf(VSlider);
-    expect(element.classList.contains('yoya-vslider')).toBe(true);
+    expect(hasComponentIdentity(slider, 'VSlider')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VSlider');
 
     const input = element.querySelector('[data-vslider-input]');
     expect(input.type).toBe('range');
@@ -111,7 +111,7 @@ describe('vSlider', () => {
     });
     const slider = page.children()[0];
 
-    expect(slider).toBeInstanceOf(VSlider);
+    expect(hasComponentIdentity(slider, 'VSlider')).toBe(true);
     expect(slider.value()).toBe(20);
   });
 
