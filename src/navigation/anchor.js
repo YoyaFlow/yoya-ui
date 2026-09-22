@@ -1,17 +1,22 @@
-import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { a, li, nav, ul } from '../html/index.js';
-import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
+import {
+  createComponentShortcut,
+  normalizeChildren,
+  replaceChildren,
+  resolveTextValue,
+  setupContentSlot
+} from '../components/shared.js';
 
 /**
  * 锚点导航（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
  * - 结构：`nav[VAnchor] > ul[VAnchorList] > li[VAnchorItem] > a[VAnchorLink] + ul[VAnchorChildren]`；
- * - **状态放 `ref`，值位置直接传句柄**：标题 / 地址 / 当前态 / 子列表显隐都是绑定，
- *   命令只改状态，不找节点、不碰 `_el` / `_children`；
- * - **匿名占位**：导航的匿名占位是列表（子项落进 `<ul>`），项的匿名占位是子列表
- *   （`nested` / `item.vAnchorItem` 的子项落进子 `<ul>`）——两处都靠槽位落位，没有按身份查找；
- * - 项由**造它的一方持有**（导航自己建的项自己记账）：子项数 / 当前态从这份账里收口；
+ * - **部件用到才建、建过复用**（与 `VTable` 的段命令同一口径）：项的链接 / 子列表由项自己的命令造，
+ *   导航的列表声明成匿名占位（`vn_slot: ''`）接 `anchor.child(item)`，其余内容仍进组件根；
+ * - 命令只写**快照**（`attr` / `replaceChildren`）和自己的账：不找节点、不碰 `_el` / `_children`，
+ *   也不依赖"写完再刷"——首屏就是构建期快照；
+ * - 项由**造它的一方持有**（导航自己建的项自己记账，项自己建的子项自己记账）：子项数 / 当前态从这里收口；
  * - 全局滚动在 `whenMount` 里按落地收口绑（`bindWindowEvent` / `bindDocumentEvent`，destroy 自动卸），
  *   点击走元素自己的 `on('click')` 委托。
  */
@@ -20,25 +25,22 @@ const SCROLL_OPTIONS = { capture: true, passive: true };
 const DEFAULT_LABEL = '页面锚点';
 const DEFAULT_OFFSET = 80;
 
+/** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
+const ANCHOR_ITEM = Symbol('yoya.anchorItem');
+
 /** 列表（形态 A）：身份 + 匿名占位——匿名内容（子项）落进这张 `<ul>`。 */
 function AnchorList() {
   return ul({ vn: 'VAnchorList', vn_slot: '' });
 }
 
-/** 链接（形态 A）：地址与文本都是活值，由项的状态直接驱动。 */
-function AnchorLink(href, title) {
-  return a({ href, vn: 'VAnchorLink' }, (link) => {
-    link.child(title);
-  });
+/** 链接（形态 A）。 */
+function AnchorLink() {
+  return a({ vn: 'VAnchorLink' });
 }
 
-/** 子列表（形态 A）：身份 + 匿名占位（`nested` 的子项落这里），没有子项时隐藏。 */
-function AnchorChildren(visible) {
-  return ul({
-    style: { display: () => (visible() ? null : 'none') },
-    vn: 'VAnchorChildren',
-    vn_slot: ''
-  });
+/** 子列表（形态 A）：没有子项时隐藏，显隐由项自己的命令收口。 */
+function AnchorChildren() {
+  return ul({ vn: 'VAnchorChildren' }).style('display', 'none');
 }
 
 /**
@@ -47,89 +49,103 @@ function AnchorChildren(visible) {
  */
 export function VAnchorItem() {
   return vNode((api, self) => {
-    const href = ref(null);
-    const title = ref('');
-    const active = ref(false);
-    const nestedCount = ref(0);
-
-    /** 子项账：只记本项造出来的（含嵌套里的），当前态与显隐都从这里收口。 */
-    let nestedNodes = [];
+    const state = { active: false, href: null, title: '' };
+    let linkPart = null;
+    let childrenPart = null;
 
     /**
-     * 状态写入收口：**首屏之前**绑定只求值不订阅，这时写状态要把视图快照刷到一起；
-     * 渲染之后订阅已接上，写入自己就到 DOM（与 `VTableWrapper.syncView` 同一口径）。
+     * 两块部件：**用到才建、建过复用**（与 `VTable` 的段命令同一口径），落进 `<li>` 的顺序固定为
+     * 链接在前、子列表在后——与调用顺序无关，也不靠身份在结构里找。
      */
-    const sync = () => {
-      const node = self.node();
-
-      if (!node._el) {
-        node.flush();
+    const partsOf = () => {
+      if (!linkPart) {
+        linkPart = AnchorLink();
+        self.node().child(linkPart);
       }
 
-      return api;
+      if (!childrenPart) {
+        childrenPart = AnchorChildren();
+        self.node().child(childrenPart);
+      }
+
+      return { children: childrenPart, link: linkPart };
     };
 
-    const syncNested = () => {
-      nestedCount.value = nestedNodes.length;
-      return sync();
+    /** 地址 / 子列表显隐 / 有子项标记：改一处收口一次（写的都是快照，首屏直接读得到）。 */
+    const syncItem = () => {
+      const { children, link } = partsOf();
+      const hasChildren = children.children().length > 0;
+
+      link.attr('href', state.href || null);
+      children.style('display', hasChildren ? null : 'none');
+      self.node().attr('data-has-children', hasChildren ? 'true' : null);
+      return api;
     };
 
     api.title = (content) => {
       if (content === undefined) {
-        return title.value;
+        return state.title;
       }
 
-      title.value = content ?? '';
-      return sync();
+      state.title = content;
+      replaceChildren(partsOf().link, normalizeChildren(content ?? ''));
+      return api;
     };
 
-    api.text = (content) => (content === undefined ? title.value : api.title(content));
+    api.text = (content) => (content === undefined ? state.title : api.title(content));
     api.label = api.text;
 
     api.href = (value) => {
       if (value === undefined) {
-        return href.value;
+        return state.href;
       }
 
-      href.value = value === null || value === undefined ? null : String(resolveTextValue(value));
-      return sync();
+      state.href = value === null || value === undefined ? null : String(resolveTextValue(value));
+      return syncItem();
     };
 
     api.nested = (setup) => {
       if (setup === undefined) {
-        return nestedNodes.slice();
+        return partsOf().children.children();
       }
 
-      return api.nestedItems(setup);
+      const children = partsOf().children;
+      replaceChildren(children, []);
+
+      if (typeof setup === 'function') {
+        setupContentSlot(children, setup);
+      } else {
+        (Array.isArray(setup) ? setup : [setup]).forEach((item) =>
+          children.child(normalizeAnchorItem(item))
+        );
+      }
+
+      return syncItem();
     };
 
     api.subItems = (setup) => (setup === undefined ? api.nested() : api.nested(setup));
 
-    /** 子项投递：造一份子项并交给匿名占位（子列表），账记在自己身上。 */
+    /** 子项投递：造一份子项、落进子列表；子项数与显隐从子列表自己收口。 */
     api.vAnchorItem = (setup) => {
-      const item = vAnchorItem(setup);
-      nestedNodes = [...nestedNodes, item];
-      self.node().child(item);
-      return syncNested();
+      partsOf().children.child(normalizeAnchorItem(setup));
+      return syncItem();
     };
 
-    /** 子项列表：数组 / 单值 = 替换；函数 = 构建回调（回调句柄上直接 `vAnchorItem`）。 */
+    /** 子项列表：数组 / 单值 = 替换。 */
     api.nestedItems = (setup) => {
-      nestedNodes.forEach((item) => item.destroy());
-      nestedNodes = [];
-
-      if (typeof setup === 'function') {
-        setup(api);
-      } else {
-        (Array.isArray(setup) ? setup : [setup]).forEach((item) => api.vAnchorItem(item));
-      }
-
-      return syncNested();
+      replaceChildren(partsOf().children, []);
+      (Array.isArray(setup) ? setup : [setup]).forEach((item) =>
+        partsOf().children.child(normalizeAnchorItem(item))
+      );
+      return syncItem();
     };
 
     api.active = (value = true) => {
-      active.value = Boolean(value);
-      return sync();
+      state.active = Boolean(value);
+      partsOf();
+      self.node().attr('data-active', state.active ? 'true' : null);
+      self.node().attr('aria-current', state.active ? 'true' : null);
+      return api;
     };
 
     /** props：`title / text / label / content / href / nested / items / children / active` + 其余元素配置。 */
@@ -181,17 +197,7 @@ export function VAnchorItem() {
     /** 字符串 / 数字 = 标题。 */
     api.setupString = (value) => api.title(value);
 
-    return li({ vn: 'VAnchorItem' }, (item) => {
-      item.attr({
-        'aria-current': () => (active.value ? 'true' : null),
-        'data-active': () => (active.value ? 'true' : null),
-        'data-has-children': () => (nestedCount.value > 0 ? 'true' : null)
-      });
-      item.child(
-        AnchorLink(href, title),
-        AnchorChildren(() => nestedCount.value > 0)
-      );
-    });
+    return li({ vn: 'VAnchorItem' });
   });
 }
 
@@ -199,7 +205,10 @@ const anchorItemShortcut = createComponentShortcut(VAnchorItem);
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
 export function vAnchorItem(...args) {
-  return anchorItemShortcut(...args);
+  const node = anchorItemShortcut(...args);
+  // 标在节点上而不是查组件名：本模块自己认自己的子项（含嵌套层）
+  node[ANCHOR_ITEM] = true;
+  return node;
 }
 
 /**
@@ -211,22 +220,20 @@ export function vAnchorItem(...args) {
  */
 export function VAnchor() {
   return vNode((api, self) => {
-    const activeHref = ref(null);
-    const offset = ref(DEFAULT_OFFSET);
-    const target = ref(null);
+    const state = { activeHref: null, offset: DEFAULT_OFFSET, target: null };
 
     /** 项账：导航自己造的项节点（`items` 替换 / `vAnchorItem` 追加都记在这里）。 */
     let items = [];
 
     const syncActive = () => {
-      const current = activeHref.value;
+      const current = state.activeHref;
       items.forEach((item) => item.active(item.href() === current));
       return api;
     };
 
     const syncItems = () => {
       self.node().attr('data-item-count', String(items.length));
-      self.node().attr('data-active-href', activeHref.value || null);
+      self.node().attr('data-active-href', state.activeHref || null);
       return syncActive();
     };
 
@@ -243,11 +250,11 @@ export function VAnchor() {
     };
 
     const resolveScrollContainer = () => {
-      if (!target.value) {
+      if (!state.target) {
         return typeof window === 'undefined' ? null : window;
       }
 
-      return resolveTargetElement(target.value) || (typeof window === 'undefined' ? null : window);
+      return resolveTargetElement(state.target) || (typeof window === 'undefined' ? null : window);
     };
 
     const resolveAnchorTarget = (value) => {
@@ -257,7 +264,7 @@ export function VAnchor() {
         return null;
       }
 
-      const scope = target.value ? resolveTargetElement(target.value) : document;
+      const scope = state.target ? resolveTargetElement(state.target) : document;
 
       if (!scope) {
         return null;
@@ -272,7 +279,7 @@ export function VAnchor() {
 
     const targetTop = (targetElement) => {
       const container = resolveScrollContainer();
-      const gap = offset.value || 0;
+      const gap = state.offset || 0;
 
       if (!container || container === window) {
         const scrollTop =
@@ -327,7 +334,7 @@ export function VAnchor() {
         container && container !== window && typeof container.getBoundingClientRect === 'function'
           ? container.getBoundingClientRect()
           : null;
-      const threshold = offset.value || 0;
+      const threshold = state.offset || 0;
       let next = null;
       let found = false;
 
@@ -353,7 +360,7 @@ export function VAnchor() {
         }
       });
 
-      if (found && next !== activeHref.value) {
+      if (found && next !== state.activeHref) {
         api.active(next);
       }
     };
@@ -382,30 +389,30 @@ export function VAnchor() {
 
     api.offset = (value) => {
       if (value === undefined) {
-        return offset.value;
+        return state.offset;
       }
 
-      offset.value = Math.max(0, Number(resolveTextValue(value)) || 0);
-      self.node().attr('data-offset', String(offset.value));
+      state.offset = Math.max(0, Number(resolveTextValue(value)) || 0);
+      self.node().attr('data-offset', String(state.offset));
       return api;
     };
 
     api.target = (value) => {
       if (value === undefined) {
-        return target.value;
+        return state.target;
       }
 
-      target.value = value || null;
+      state.target = value || null;
       return api;
     };
 
     api.active = (value) => {
       if (value === undefined) {
-        return activeHref.value;
+        return state.activeHref;
       }
 
-      activeHref.value = value || null;
-      self.node().attr('data-active-href', activeHref.value || null);
+      state.activeHref = value || null;
+      self.node().attr('data-active-href', state.activeHref || null);
       return syncActive();
     };
 
@@ -498,6 +505,11 @@ export function VAnchor() {
 }
 
 export const vAnchor = createComponentShortcut(VAnchor);
+
+/** 子项归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */
+function normalizeAnchorItem(item) {
+  return item?.[ANCHOR_ITEM] ? item : vAnchorItem(item);
+}
 
 function cssEscape(value) {
   return typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value;
