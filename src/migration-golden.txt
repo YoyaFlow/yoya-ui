@@ -409,14 +409,14 @@ probe:    {"active":"zh-CN","size":"medium","variant":"secondary"}
 residue:  (空)
 
 ### vAvatar / 文本 + 形状尺寸
-dom:      <span aria-label=张 class=yoya-component yoya-vavatar data-color=#2563eb data-shape=square data-size=large role=img style=background: rgb(37, 99, 235); color: var(--yoya-color-text-inverse, #ffffff);><img alt= class=yoya-vavatar-image><span class=yoya-vavatar-content>#text:张<span aria-hidden=true class=yoya-vavatar-status>
-toHTML:   <span aria-label="张" class="yoya-component yoya-vavatar" data-color="#2563eb" data-shape="square" data-size="large" role="img" style="background:#2563eb;color:var(--yoya-color-text-inverse, #ffffff)"><img alt="" class="yoya-vavatar-image"><span class="yoya-vavatar-content">张</span><span aria-hidden="true" class="yoya-vavatar-status"></span></span>
+dom:      <span aria-label=张 data-color=#2563eb data-shape=square data-size=large role=img style=--yoya-avatar-color: #2563eb; vn=VAvatar><img alt= vn=VAvatarImage><span vn=VAvatarContent>#text:张<span aria-hidden=true vn=VAvatarStatus>
+toHTML:   <span aria-label="张" data-color="#2563eb" data-shape="square" data-size="large" role="img" style="--yoya-avatar-color:#2563eb" vn="VAvatar"><img alt="" vn="VAvatarImage"><span vn="VAvatarContent">张</span><span aria-hidden="true" vn="VAvatarStatus"></span></span>
 probe:    {"color":"#2563eb","shape":"square","size":"large"}
 residue:  (空)
 
 ### vAvatar / 图标 + 状态
-dom:      <span aria-label=服务 class=yoya-component yoya-vavatar data-shape=circle data-size=medium data-status=success role=img><img alt= class=yoya-vavatar-image><span class=yoya-vavatar-content>#text:服务<span aria-hidden=true class=yoya-vavatar-status>
-toHTML:   <span aria-label="服务" class="yoya-component yoya-vavatar" data-shape="circle" data-size="medium" data-status="success" role="img"><img alt="" class="yoya-vavatar-image"><span class="yoya-vavatar-content">服务</span><span aria-hidden="true" class="yoya-vavatar-status"></span></span>
+dom:      <span aria-label=服务 data-shape=circle data-size=medium data-status=success role=img vn=VAvatar><img alt= vn=VAvatarImage><span vn=VAvatarContent>#text:服务<span aria-hidden=true vn=VAvatarStatus>
+toHTML:   <span aria-label="服务" data-shape="circle" data-size="medium" data-status="success" role="img" vn="VAvatar"><img alt="" vn="VAvatarImage"><span vn="VAvatarContent">服务</span><span aria-hidden="true" vn="VAvatarStatus"></span></span>
 probe:    {"label":"服务","status":"success"}
 residue:  (空)
 

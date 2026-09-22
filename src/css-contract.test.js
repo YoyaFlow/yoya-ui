@@ -116,17 +116,18 @@ const navigationSelectors = [
 ];
 
 const avatarSelectors = [
-  '.yoya-vavatar',
-  ".yoya-vavatar[data-shape='square']",
-  ".yoya-vavatar[data-size='small']",
-  ".yoya-vavatar[data-size='large']",
-  '.yoya-vavatar-content',
-  '.yoya-vavatar-image',
-  ".yoya-vavatar[data-image='true'] .yoya-vavatar-image",
-  '.yoya-vavatar-status',
-  ".yoya-vavatar[data-status='online'] .yoya-vavatar-status",
-  ".yoya-vavatar[data-status='busy'] .yoya-vavatar-status",
-  ".yoya-vavatar[data-status='away'] .yoya-vavatar-status"
+  "[vn~='VAvatar']",
+  "[vn~='VAvatar'][data-color]",
+  "[vn~='VAvatar'][data-shape='square']",
+  "[vn~='VAvatar'][data-size='small']",
+  "[vn~='VAvatar'][data-size='large']",
+  "[vn~='VAvatar'] [vn~='VAvatarContent']",
+  "[vn~='VAvatar'] [vn~='VAvatarImage']",
+  "[vn~='VAvatar'][data-image='true'] [vn~='VAvatarImage']",
+  "[vn~='VAvatar'] [vn~='VAvatarStatus']",
+  "[vn~='VAvatar'][data-status='online'] [vn~='VAvatarStatus']",
+  "[vn~='VAvatar'][data-status='busy'] [vn~='VAvatarStatus']",
+  "[vn~='VAvatar'][data-status='away'] [vn~='VAvatarStatus']"
 ];
 
 const feedbackSelectors = [

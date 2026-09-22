@@ -78,6 +78,22 @@ describe('ViewNode core', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('clears attributes without reflecting the reset onto string DOM properties', () => {
+    const root = div((page) => {
+      page.img({ alt: '头像', src: '/a.png' });
+    });
+    const image = root.renderDom().querySelector('img');
+
+    expect(image.getAttribute('src')).toBe('/a.png');
+
+    root.children()[0].attr('src', null);
+
+    // 清属性只 `removeAttribute`：字符串 / URL 属性赋 `false` 会被反射成 `"false"`，
+    // 布尔属性（`disabled` / `checked` …）才需要顺手把 IDL 属性复位。
+    expect(image.getAttribute('src')).toBeNull();
+    expect(root.children()[0].attr('src')).toBeUndefined();
+  });
+
   it('binds to a target and destroys DOM and event listeners', () => {
     document.body.innerHTML = '<main id="app"></main>';
     const onClick = vi.fn();

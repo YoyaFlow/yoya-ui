@@ -34,7 +34,11 @@ const dataDisplayDocsDefinitions = Object.freeze({
       ['vAvatar("A")', '创建文字头像，适合展示姓名或资源首字母。', 'vAvatar("A")'],
       ['avatar.src(value)', '设置图片地址并切换为图片头像。', 'avatar.src("/alice.png")'],
       ['avatar.alt(value)', '设置图片替代文本和头像 aria-label。', 'avatar.alt("Alice")'],
-      ['avatar.icon(value)', '用图标或任意 ViewNode 作为头像内容。', 'avatar.icon("★")'],
+      [
+        'avatar.icon(value)',
+        '用图标字符作为头像内容（节点内容请在构建期走 props）。',
+        'avatar.icon("★")'
+      ],
       ['avatar.size(value)', '切换 small / medium / large / xlarge 尺寸。', 'avatar.size("large")'],
       ['avatar.shape(value)', '切换 circle / square 形状。', 'avatar.shape("square")'],
       ['avatar.color(value)', '覆盖头像背景色。', "avatar.color('#0f766e')"],

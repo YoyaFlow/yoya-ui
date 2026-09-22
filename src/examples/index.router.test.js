@@ -1030,7 +1030,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelectorAll('[data-definition-demo]')[0].dataset.definitionDemo).toBe(
       'define'
     );
-    expect(page.querySelector('[data-definition-demo="compose"] .yoya-vavatar')).not.toBeNull();
+    expect(page.querySelector('[data-definition-demo="compose"] [vn~="VAvatar"]')).not.toBeNull();
     expect(page.querySelector('[data-definition-demo="compose"] [vn~="VBadge"]')).not.toBeNull();
 
     const interactiveDemo = page.querySelector('[data-definition-demo="interactive-compose"]');
@@ -2325,7 +2325,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const demo = document.querySelector('[data-data-display-demo="image"]');
-    const images = demo.querySelectorAll('.yoya-vavatar-image');
+    const images = demo.querySelectorAll('[vn~="VAvatarImage"]');
 
     expect(images).toHaveLength(3);
     images.forEach((image) => {

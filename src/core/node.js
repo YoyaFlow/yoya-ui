@@ -1712,7 +1712,9 @@ export function isBooleanAttribute(name) {
 export function applyAttribute(element, name, value) {
   if (value === null || value === undefined || value === false) {
     element.removeAttribute(name);
-    if (name in element) {
+    // 只重置**布尔** IDL 属性：字符串 / URL 属性赋 `false` 会被反射成 `"false"`
+    // （`img.src = false` → `src="false"`），DOM 与 `toHTML` / 属性快照就此不一致。
+    if (name in element && typeof element[name] === 'boolean') {
       try {
         element[name] = false;
       } catch {

@@ -1567,9 +1567,9 @@ body {
     padding: 5px 10px;
   }
 
-  :where(.yoya-vavatar) {
+  :where([vn~='VAvatar']) {
     align-items: center;
-    background: var(--yoya-color-primary-subtle, #eff6ff);
+    background: var(--yoya-avatar-color, var(--yoya-color-primary-subtle, #eff6ff));
     border-radius: 50%;
     box-sizing: border-box;
     color: var(--yoya-color-primary-hover, #1d4ed8);
@@ -1584,35 +1584,40 @@ body {
     vertical-align: middle;
   }
 
-  .yoya-vavatar[data-shape='square'] {
+  /* 自定义颜色是状态（`data-color` + `--yoya-avatar-color`）：文字自动反色 */
+  [vn~='VAvatar'][data-color] {
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VAvatar'][data-shape='square'] {
     border-radius: var(--yoya-radius-md, 6px);
   }
 
-  .yoya-vavatar[data-size='small'] {
+  [vn~='VAvatar'][data-size='small'] {
     font-size: 12px;
     height: 28px;
     width: 28px;
   }
 
-  .yoya-vavatar[data-size='medium'] {
+  [vn~='VAvatar'][data-size='medium'] {
     font-size: 14px;
     height: 32px;
     width: 32px;
   }
 
-  .yoya-vavatar[data-size='large'] {
+  [vn~='VAvatar'][data-size='large'] {
     font-size: 16px;
     height: 40px;
     width: 40px;
   }
 
-  .yoya-vavatar[data-size='xlarge'] {
+  [vn~='VAvatar'][data-size='xlarge'] {
     font-size: 20px;
     height: 48px;
     width: 48px;
   }
 
-  .yoya-vavatar .yoya-vavatar-content {
+  [vn~='VAvatar'] [vn~='VAvatarContent'] {
     align-items: center;
     display: inline-flex;
     justify-content: center;
@@ -1620,7 +1625,7 @@ body {
     padding: 2px;
   }
 
-  .yoya-vavatar .yoya-vavatar-image {
+  [vn~='VAvatar'] [vn~='VAvatarImage'] {
     border-radius: inherit;
     display: none;
     height: 100%;
@@ -1628,15 +1633,15 @@ body {
     width: 100%;
   }
 
-  .yoya-vavatar[data-image='true'] .yoya-vavatar-image {
+  [vn~='VAvatar'][data-image='true'] [vn~='VAvatarImage'] {
     display: block;
   }
 
-  .yoya-vavatar[data-image='true'] .yoya-vavatar-content {
+  [vn~='VAvatar'][data-image='true'] [vn~='VAvatarContent'] {
     display: none;
   }
 
-  .yoya-vavatar .yoya-vavatar-status {
+  [vn~='VAvatar'] [vn~='VAvatarStatus'] {
     background: var(--yoya-color-text-muted, #64748b);
     border: 2px solid var(--yoya-color-surface, #ffffff);
     border-radius: 50%;
@@ -1648,22 +1653,22 @@ body {
     width: 10px;
   }
 
-  .yoya-vavatar[data-status='online'] .yoya-vavatar-status {
+  [vn~='VAvatar'][data-status='online'] [vn~='VAvatarStatus'] {
     background: var(--yoya-color-success, #22c55e);
     display: block;
   }
 
-  .yoya-vavatar[data-status='busy'] .yoya-vavatar-status {
+  [vn~='VAvatar'][data-status='busy'] [vn~='VAvatarStatus'] {
     background: var(--yoya-color-danger, #ef4444);
     display: block;
   }
 
-  .yoya-vavatar[data-status='away'] .yoya-vavatar-status {
+  [vn~='VAvatar'][data-status='away'] [vn~='VAvatarStatus'] {
     background: var(--yoya-color-warning, #f59e0b);
     display: block;
   }
 
-  .yoya-vavatar[data-status='offline'] .yoya-vavatar-status {
+  [vn~='VAvatar'][data-status='offline'] [vn~='VAvatarStatus'] {
     display: block;
   }
 
