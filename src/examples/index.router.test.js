@@ -2047,7 +2047,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     const demo = document.querySelector('[data-navigation-demo="basic"]');
     const status = demo.querySelector('[data-tabs-basic-status]');
-    const triggers = demo.querySelectorAll('.yoya-vtab-trigger');
+    const triggers = demo.querySelectorAll("[vn~='VTabTrigger']");
 
     expect(status.textContent).toBe('当前：概览');
     expect(triggers[0].getAttribute('aria-selected')).toBe('true');
@@ -2056,7 +2056,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(status.textContent).toBe('当前：日志');
     expect(triggers[1].getAttribute('aria-selected')).toBe('true');
-    expect(demo.querySelector('.yoya-vtab-panel').hidden).toBe(true);
+    expect(demo.querySelector("[vn~='VTabPanel']").hidden).toBe(true);
   });
 
   it('switches the active item in the breadcrumb docs demo', async () => {

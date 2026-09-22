@@ -18,7 +18,7 @@ import {
 } from './menu.js';
 import { VNavbar, vNavbar } from './navbar.js';
 import { VStep, VSteps, vStep, vSteps } from './steps.js';
-import { TabsNode, VTab, VTabs, vTab, vTabs } from './tabs.js';
+import { VTab, VTabs, vTab, vTabs } from './tabs.js';
 
 const navigationFactories = {
   vAnchor,
@@ -38,8 +38,6 @@ const navigationFactories = {
 };
 
 registerChildFactories(HtmlElementNode, navigationFactories);
-// 子工厂注册到**节点类型**上：组件节点由核心的委托自动获得同名方法
-registerChildFactories(TabsNode, { vTab });
 
 export {
   VAnchor,

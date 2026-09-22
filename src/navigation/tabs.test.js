@@ -13,12 +13,12 @@ describe('vTabs', () => {
       ]
     });
     const element = tabs.renderDom();
-    const triggers = element.querySelectorAll('.yoya-vtab-trigger');
-    const panels = element.querySelectorAll('.yoya-vtab-panel');
+    const triggers = element.querySelectorAll("[vn~='VTabTrigger']");
+    const panels = element.querySelectorAll("[vn~='VTabPanel']");
 
     expect(element.dataset.activeIndex).toBe('1');
     expect(element.dataset.tabCount).toBe('3');
-    expect(element.querySelector('.yoya-vtabs-nav').getAttribute('aria-label')).toBe('服务导航');
+    expect(element.querySelector("[vn~='VTabsNav']").getAttribute('aria-label')).toBe('服务导航');
     expect(triggers[1].getAttribute('aria-selected')).toBe('true');
     expect(triggers[1].getAttribute('tabindex')).toBe('0');
     expect(triggers[0].getAttribute('aria-selected')).toBe('false');
@@ -39,7 +39,7 @@ describe('vTabs', () => {
       ]
     });
     const element = tabs.renderDom();
-    const triggers = element.querySelectorAll('.yoya-vtab-trigger');
+    const triggers = element.querySelectorAll("[vn~='VTabTrigger']");
 
     triggers[2].click();
 
@@ -69,7 +69,7 @@ describe('vTabs', () => {
     });
     const element = tabs.renderDom();
     document.body.appendChild(element);
-    const triggers = element.querySelectorAll('.yoya-vtab-trigger');
+    const triggers = element.querySelectorAll("[vn~='VTabTrigger']");
 
     triggers[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' }));
 
@@ -99,7 +99,7 @@ describe('vTabs', () => {
     expect(element.dataset.orientation).toBe('vertical');
     expect(element.dataset.variant).toBe('pills');
     expect(element.dataset.size).toBe('small');
-    expect(element.querySelector('.yoya-vtabs-nav').getAttribute('aria-orientation')).toBe(
+    expect(element.querySelector("[vn~='VTabsNav']").getAttribute('aria-orientation')).toBe(
       'vertical'
     );
 
@@ -110,7 +110,7 @@ describe('vTabs', () => {
     tabs.active(1);
 
     expect(tabs.children()).toHaveLength(2);
-    expect(element.querySelectorAll('.yoya-vtab-trigger')[1].getAttribute('aria-selected')).toBe(
+    expect(element.querySelectorAll("[vn~='VTabTrigger']")[1].getAttribute('aria-selected')).toBe(
       'true'
     );
     expect(element.textContent).toContain('Y');
@@ -132,9 +132,9 @@ describe('vTabs', () => {
     });
     const element = root.renderDom();
 
-    expect(element.querySelectorAll('.yoya-vtab-trigger')).toHaveLength(2);
-    expect(element.querySelector('.yoya-vtabs-nav').getAttribute('aria-label')).toBe('演示标签');
-    expect(element.querySelector('.yoya-vtab-panel').textContent).toContain('概览面板');
+    expect(element.querySelectorAll("[vn~='VTabTrigger']")).toHaveLength(2);
+    expect(element.querySelector("[vn~='VTabsNav']").getAttribute('aria-label')).toBe('演示标签');
+    expect(element.querySelector("[vn~='VTabPanel']").textContent).toContain('概览面板');
     expect(root.children()[0].active()).toBe('overview');
   });
 
@@ -143,7 +143,7 @@ describe('vTabs', () => {
       items: [{ label: '概览', content: '概览内容' }]
     }).toHTML();
 
-    expect(html).toContain('class="yoya-component yoya-vtabs"');
+    expect(html).toContain('vn="VTabs"');
     expect(html).toContain('role="tablist"');
     expect(html).toContain('role="tab"');
     expect(html).toContain('role="tabpanel"');
@@ -157,6 +157,6 @@ describe('vTabs', () => {
     });
 
     expect(tab.label()).toBe('标签');
-    expect(tab._panel.textContent()).toBe('内容');
+    expect(tab.panel().textContent()).toBe('内容');
   });
 });
