@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { VScroll, div, vScroll } from '../index.js';
+import { div, hasComponentIdentity, vScroll } from '../index.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -14,12 +14,12 @@ describe('vScroll', () => {
     });
     const element = scroll.renderDom();
 
-    expect(scroll).toBeInstanceOf(VScroll);
-    expect(element.classList.contains('yoya-vscroll')).toBe(true);
+    expect(hasComponentIdentity(scroll, 'VScroll')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VScroll');
     expect(element.dataset.page).toBe('0');
     expect(element.dataset.blocked).toBe('true');
     expect(element.dataset.virtual).toBeUndefined();
-    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
     expect(element.textContent).toContain('A');
     expect(element.textContent).toContain('B');
   });
@@ -34,7 +34,7 @@ describe('vScroll', () => {
 
     expect(scroll.virtual()).toBe(true);
     expect(element.dataset.virtual).toBe('true');
-    expect(element.querySelectorAll('.yoya-vscroll-virtual-item')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VScrollVirtualItem"]')).toHaveLength(1);
   });
 
   it('virtualizes large item lists and keeps a real scroll height', () => {
@@ -52,32 +52,32 @@ describe('vScroll', () => {
     Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
     element.dispatchEvent(new Event('scroll', { bubbles: false }));
 
-    let wrappers = element.querySelectorAll('.yoya-vscroll-list > .yoya-vscroll-virtual-item');
+    let wrappers = element.querySelectorAll('[vn~="VScrollList"] > [vn~="VScrollVirtualItem"]');
 
     expect(element.dataset.virtual).toBe('true');
     expect(scroll.itemHeight()).toBe(40);
     expect(scroll.overscan()).toBe(2);
     expect(wrappers).toHaveLength(6);
     expect(wrappers[0].dataset.index).toBe('0');
-    expect(element.querySelector('.yoya-vscroll-list').style.height).toBe('48016px');
+    expect(element.querySelector('[vn~="VScrollList"]').style.height).toBe('48016px');
 
     Object.defineProperty(element, 'scrollTop', { configurable: true, value: 480 });
     element.dispatchEvent(new Event('scroll', { bubbles: false }));
 
-    wrappers = element.querySelectorAll('.yoya-vscroll-list > .yoya-vscroll-virtual-item');
+    wrappers = element.querySelectorAll('[vn~="VScrollList"] > [vn~="VScrollVirtualItem"]');
     expect(wrappers).toHaveLength(9);
     expect(wrappers[0].dataset.index).toBe('7');
     expect(wrappers[wrappers.length - 1].dataset.index).toBe('15');
 
     const html = scroll.toHTML();
-    expect(html.match(/yoya-vscroll-virtual-item/g)).toHaveLength(9);
+    expect(html.match(/vn="VScrollVirtualItem"/g)).toHaveLength(9);
     expect(html).toContain('data-index="7"');
     expect(html).not.toContain('项目 999');
 
     scroll.virtual(false);
 
     expect(element.dataset.virtual).toBeUndefined();
-    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(1000);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(1000);
   });
 
   it('virtualizes appended data without rendering every row', () => {
@@ -93,11 +93,11 @@ describe('vScroll', () => {
     scroll.append(Array.from({ length: 100 }, (_, index) => `第 ${index + 2} 项`));
 
     expect(scroll.items()).toHaveLength(101);
-    expect(element.querySelectorAll('.yoya-vscroll-virtual-item')).toHaveLength(2);
-    expect(element.querySelector('.yoya-vscroll-virtual-item').getAttribute('aria-setsize')).toBe(
+    expect(element.querySelectorAll('[vn~="VScrollVirtualItem"]')).toHaveLength(2);
+    expect(element.querySelector('[vn~="VScrollVirtualItem"]').getAttribute('aria-setsize')).toBe(
       '101'
     );
-    expect(element.querySelector('.yoya-vscroll-list').style.height).toBe('3854px');
+    expect(element.querySelector('[vn~="VScrollList"]').style.height).toBe('3854px');
   });
 
   it('keeps static content non-virtualized', () => {
@@ -110,7 +110,7 @@ describe('vScroll', () => {
     const element = scroll.renderDom();
 
     expect(element.dataset.virtual).toBeUndefined();
-    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
   });
 
   it('loads more when the scroll position reaches the threshold', () => {
@@ -135,7 +135,7 @@ describe('vScroll', () => {
 
     expect(loadMore).toHaveBeenCalledTimes(1);
     expect(scroll.page()).toBe(1);
-    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
 
     scroll.block(true);
     element.dispatchEvent(new Event('scroll', { bubbles: false }));
@@ -180,9 +180,9 @@ describe('vScroll', () => {
     await scroll.load();
 
     expect(scroll.page()).toBe(1);
-    expect(element.querySelectorAll('.yoya-vscroll-list > div')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
     expect(scroll.block()).toBe(true);
-    expect(element.querySelector('.yoya-vscroll-footer').textContent).toContain('没有更多了');
+    expect(element.querySelector('[vn~="VScrollFooter"]').textContent).toContain('没有更多了');
   });
 
   it('resets data, page and blocked state', () => {
@@ -198,7 +198,7 @@ describe('vScroll', () => {
     expect(scroll.page()).toBe(0);
     expect(scroll.block()).toBe(false);
     expect(scroll.items()).toEqual([]);
-    expect(element.querySelectorAll('.yoya-vscroll-list > *')).toHaveLength(0);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > *')).toHaveLength(0);
   });
 
   it('keeps the item renderer after reset so later appends stay structured', () => {
@@ -213,7 +213,7 @@ describe('vScroll', () => {
     scroll.reset();
     scroll.append(['C', 'D']);
 
-    const rows = [...element.querySelectorAll('.yoya-vscroll-list > *')];
+    const rows = [...element.querySelectorAll('[vn~="VScrollList"] > *')];
     expect(rows).toHaveLength(2);
     expect(rows[0].className).toBe('demo-item');
     expect(rows[0].textContent).toBe('C');
@@ -229,7 +229,7 @@ describe('vScroll', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vscroll')).not.toBeNull();
-    expect(element.querySelector('.yoya-vscroll-list > div').textContent).toBe('A');
+    expect(element.querySelector('[vn~="VScroll"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VScrollList"] > div').textContent).toBe('A');
   });
 });

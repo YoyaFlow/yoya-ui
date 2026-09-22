@@ -1,8 +1,7 @@
-import { createComponentShell } from '../components/component-shell.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
+import { vNode } from '../core/v-node.js';
+import { div, span } from '../html/index.js';
 import {
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   normalizeChildren,
   replaceChildren,
@@ -13,571 +12,527 @@ const VIRTUAL_GAP = 8;
 const VIRTUAL_PADDING = 12;
 const AUTO_VIRTUAL_THRESHOLD = 100;
 
-/** 滚动容器的节点类型（不导出）；公开组件 `vScroll` 是 vNode 外壳。 */
-class ScrollNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VScroll';
-    this._blocked = false;
-    this._loading = false;
-    this._loop = false;
-    this._page = 0;
-    this._threshold = 80;
-    this._checkScheduled = false;
-    this._loadMoreHandler = null;
-    this._renderItem = null;
-    this._itemsData = [];
-    this._virtual = null;
-    this._itemHeight = 48;
-    this._overscan = 5;
-    this._resizeObserver = null;
-    this._loadingContent = '加载中…';
-    this._endContent = '没有更多了';
-
-    this._list = new HtmlElementNode('div').className('yoya-vscroll-list');
-    this._statusBox = new HtmlElementNode('span').className('yoya-vscroll-status');
-    this._footer = new HtmlElementNode('div')
-      .className('yoya-vscroll-footer')
-      .child(this._statusBox);
-
-    this.className(componentClass, 'yoya-vscroll');
-    this.attr({
-      'aria-busy': 'false',
-      'aria-live': 'polite',
-      'data-item-height': '48',
-      'data-overscan': '5',
-      'data-page': '0',
-      'data-threshold': '80',
-      role: 'feed'
-    });
-    this.styles({
-      boxSizing: 'border-box',
-      minWidth: '0',
-      overflowY: 'auto',
-      overscrollBehavior: 'contain',
-      position: 'relative'
-    });
-    this.child(this._list, this._footer);
-    this.on('scroll', () => this._handleScroll());
-    this._setupScroll(setup);
-    this._syncVirtualState();
-    this._syncFooter();
-  }
-
-  content(setup) {
-    if (setup === undefined) {
-      return this._list.children();
-    }
-
-    this._itemsData = [];
-    this._renderItem = null;
-    setupContentSlot(this._list, setup);
-    this._syncVirtualState();
-    this._scheduleCheck();
-    return this;
-  }
-
-  items(value, render = null) {
-    if (value === undefined) {
-      return this._itemsData.slice();
-    }
-
-    if (typeof render === 'function') {
-      this._renderItem = render;
-    }
-
-    this._itemsData = Array.isArray(value) ? value.slice() : [value];
-    this._renderItems();
-    this._scheduleCheck();
-    return this;
-  }
-
-  append(value, render = null) {
-    const incoming = Array.isArray(value) ? value : [value];
-
-    if (typeof render === 'function') {
-      this._renderItem = render;
-    }
-
-    this._itemsData = this._itemsData.concat(incoming);
-    this._renderItems();
-    if (incoming.length > 0) {
-      this._scheduleCheck();
-    }
-    return this;
-  }
-
-  renderItem(handler) {
-    if (handler === undefined) {
-      return this._renderItem;
-    }
-
-    this._renderItem = typeof handler === 'function' ? handler : null;
-    if (this._itemsData.length > 0) {
-      this._renderItems();
-    }
-    return this;
-  }
-
-  loadMore(handler) {
-    if (handler === undefined) {
-      return this._loadMoreHandler;
-    }
-
-    this._loadMoreHandler = typeof handler === 'function' ? handler : null;
-    if (this._loadMoreHandler) {
-      this._scheduleCheck();
-    }
-    return this;
-  }
-
-  onLoadMore(handler) {
-    return this.loadMore(handler);
-  }
-
-  loop(value) {
-    if (value === undefined) {
-      return this._loop;
-    }
-
-    this._loop = Boolean(value);
-    if (this._loop) {
-      this._blocked = false;
-    }
-    this.attr('data-loop', this._loop ? 'true' : null);
-    this.attr('data-blocked', this._blocked ? 'true' : null);
-    this._syncFooter();
-    return this;
-  }
-
-  block(value) {
-    if (value === undefined) {
-      return this._blocked;
-    }
-
-    this._blocked = Boolean(value);
-    if (this._blocked) {
-      this._loop = false;
-    }
-    this.attr('data-blocked', this._blocked ? 'true' : null);
-    this.attr('data-loop', this._loop ? 'true' : null);
-    this._syncFooter();
-    return this;
-  }
-
-  blocked(value) {
-    return this.block(value);
-  }
-
-  loading(value) {
-    if (value === undefined) {
-      return this._loading;
-    }
-
-    this._loading = Boolean(value);
-    this.attr('data-loading', this._loading ? 'true' : null);
-    this.attr('aria-busy', this._loading ? 'true' : 'false');
-    this._syncFooter();
-    return this;
-  }
-
-  threshold(value) {
-    if (value === undefined) {
-      return this._threshold;
-    }
-
-    const parsed = Number(value);
-    this._threshold = Number.isFinite(parsed) && parsed >= 0 ? parsed : 80;
-    this.attr('data-threshold', String(this._threshold));
-    return this;
-  }
-
-  virtual(value) {
-    if (value === undefined) {
-      return this._isVirtualEnabled();
-    }
-
-    this._virtual = Boolean(value);
-    this._syncVirtualState();
-    if (this._itemsData.length > 0) {
-      this._renderItems();
-    }
-    return this;
-  }
-
-  virtualize(value) {
-    return this.virtual(value);
-  }
-
-  itemHeight(value) {
-    if (value === undefined) {
-      return this._itemHeight;
-    }
-
-    const parsed = Number(value);
-    this._itemHeight = Number.isFinite(parsed) && parsed > 0 ? Math.max(1, parsed) : 48;
-    this.attr('data-item-height', String(this._itemHeight));
-    if (this._itemsData.length > 0) {
-      this._renderItems();
-    }
-    return this;
-  }
-
-  overscan(value) {
-    if (value === undefined) {
-      return this._overscan;
-    }
-
-    const parsed = Number(value);
-    this._overscan = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 5;
-    this.attr('data-overscan', String(this._overscan));
-    if (this._itemsData.length > 0) {
-      this._renderItems();
-    }
-    return this;
-  }
-
-  page(value) {
-    if (value === undefined) {
-      return this._page;
-    }
-
-    const parsed = Number(value);
-    this._page = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
-    this.attr('data-page', String(this._page));
-    return this;
-  }
-
-  loadingText(content) {
-    if (content === undefined) {
-      return this._loadingContent;
-    }
-
-    this._loadingContent = content;
-    this._syncFooter();
-    return this;
-  }
-
-  endText(content) {
-    if (content === undefined) {
-      return this._endContent;
-    }
-
-    this._endContent = content;
-    this._syncFooter();
-    return this;
-  }
-
-  reset() {
-    this._itemsData = [];
-    this._page = 0;
-    this._blocked = false;
-    this._loading = false;
-    this.attr('data-blocked', null);
-    this.attr('data-loading', null);
-    this.attr('data-page', '0');
-    this.attr('aria-busy', 'false');
-    replaceChildren(this._list, []);
-    this._syncVirtualState();
-    this._syncFooter();
-    return this;
-  }
-
-  clear() {
-    return this.reset();
-  }
-
-  load() {
-    if (
-      this._deleted ||
-      this._loading ||
-      this._blocked ||
-      typeof this._loadMoreHandler !== 'function'
-    ) {
-      return Promise.resolve(false);
-    }
-
-    this.page(this._page + 1);
-    this.loading(true);
-
-    const context = {
-      append: (value, render) => this.append(value, render),
-      block: (value = true) => this.block(value),
-      done: () => this.block(true),
-      page: this._page,
-      scroll: this
+/**
+ * 滚动容器（形态 B，票 15 §4）：视图根是滚动容器 `div` + 列表 + 加载 / 结束页脚。
+ *
+ * - 身份写在结构里：根 `vn: 'VScroll'`、列表 `VScrollList`、页脚 `VScrollFooter`
+ *   （状态位 `VScrollStatus`）、虚拟行 `VScrollVirtualItem`；
+ * - 状态与命令收进 `vNode` 闭包；`renderItem(item, index, scroll)` 的第三参交给使用方的是
+ *   **组件句柄**（`self.node()`，与其它组件的回调口径一致）、`loadMore` 上下文里的 `scroll` 同此；
+ * - 元素级时机：旧 `renderDom()` / `destroy()` 猴补换 `whenMount` / `whenDestroy`
+ *   （首屏按真实尺寸重算窗口 + 订阅尺寸变化 / 解绑观察者）；读元素只读 `_el` 判定"建没建"；
+ * - 虚拟窗口不靠临时换视图树：`renderItems()` 每次都把"当前窗口"刷进列表（首屏 = 确定性初始窗口），
+ *   `toHTML()` 直接序列化即可（服务端没有 `_el`，窗口与视口无关）；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupScroll` 同口径）。
+ */
+export function VScroll() {
+  return vNode((api, self) => {
+    const state = {
+      blocked: false,
+      checkScheduled: false,
+      endContent: '没有更多了',
+      itemHeight: 48,
+      itemsData: [],
+      loadMoreHandler: null,
+      loading: false,
+      loadingContent: '加载中…',
+      loop: false,
+      overscan: 5,
+      page: 0,
+      renderItem: null,
+      resizeObserver: null,
+      threshold: 80,
+      virtual: null
     };
 
-    let result;
-    try {
-      result = this._loadMoreHandler(context);
-    } catch (error) {
-      this.loading(false);
-      return Promise.reject(error);
-    }
-
-    if (result && typeof result.then === 'function') {
-      return Promise.resolve(result).then(
-        (value) => {
-          if (value !== undefined && value !== null) {
-            this.append(value);
-          }
-          this.loading(false);
-          return true;
-        },
-        (error) => {
-          this.loading(false);
-          throw error;
-        }
-      );
-    }
-
-    if (result !== undefined && result !== null) {
-      this.append(result);
-    }
-    this.loading(false);
-    return Promise.resolve(true);
-  }
-
-  check() {
-    return this._checkLoad();
-  }
-
-  toHTML() {
-    if (!this._isVirtualEnabled() || this._itemsData.length === 0) {
-      return super.toHTML();
-    }
-
-    const count = this._itemsData.length;
-    const { end, start } = this._visibleRange(count);
-    const windowItems = [];
-
-    for (let index = start; index < end; index += 1) {
-      const content = this._renderItem
-        ? this._renderItem(this._itemsData[index], index, this)
-        : this._itemsData[index];
-      windowItems.push(this._createVirtualItem(content, index, count));
-    }
-
-    const originalChildren = this._list._children;
-    this._list._children = windowItems;
-    this._list.style('height', `${this._virtualListHeight(count)}px`);
-
-    try {
-      return super.toHTML();
-    } finally {
-      this._list._children = originalChildren;
-    }
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (this._isVirtualEnabled() && this._itemsData.length > 0) {
-      this._renderItems();
-      this._observeSize();
-    }
-    this._scheduleCheck();
-    return element;
-  }
-
-  destroy() {
-    this._disconnectSizeObserver();
-    return super.destroy();
-  }
-
-  _renderItems() {
-    this._syncVirtualState();
-    const count = this._itemsData.length;
-
-    if (!this._isVirtualEnabled() || count === 0) {
-      replaceChildren(
-        this._list,
-        this._itemsData.map((item, index) =>
-          this._renderItem ? this._renderItem(item, index, this) : item
-        )
-      );
-      return this;
-    }
-
-    const { end, start } = this._visibleRange(count);
-    const nodes = [];
-
-    for (let index = start; index < end; index += 1) {
-      const content = this._renderItem
-        ? this._renderItem(this._itemsData[index], index, this)
-        : this._itemsData[index];
-      nodes.push(this._createVirtualItem(content, index, count));
-    }
-
-    replaceChildren(this._list, nodes);
-    this._list.style('height', `${this._virtualListHeight(count)}px`);
-    return this;
-  }
-
-  _handleScroll() {
-    if (this._isVirtualEnabled() && this._itemsData.length > 0) {
-      this._renderItems();
-    }
-    this._checkLoad();
-  }
-
-  _visibleRange(count) {
-    const pitch = this._itemHeight + VIRTUAL_GAP;
-    const scrollTop = this._el ? Number(this._el.scrollTop) || 0 : 0;
-    const clientHeight = this._el ? Number(this._el.clientHeight) || 0 : 0;
-    const start = Math.max(0, Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - this._overscan);
-    const end = Math.min(
-      count,
-      Math.max(0, Math.ceil((scrollTop + clientHeight - VIRTUAL_PADDING) / pitch) + this._overscan)
-    );
-
-    return { end, start };
-  }
-
-  _createVirtualItem(content, index, count) {
-    const pitch = this._itemHeight + VIRTUAL_GAP;
-    const top = VIRTUAL_PADDING + index * pitch;
-
-    return new HtmlElementNode('div')
-      .className('yoya-vscroll-virtual-item')
+    const list = div({ vn: 'VScrollList' });
+    const statusBox = span({ vn: 'VScrollStatus' });
+    const footer = div({ vn: 'VScrollFooter' }).child(statusBox);
+    const node = div({ vn: 'VScroll' })
       .attr({
-        'aria-posinset': String(index + 1),
-        'aria-setsize': String(count),
-        'data-index': String(index)
+        'aria-busy': 'false',
+        'aria-live': 'polite',
+        'data-item-height': '48',
+        'data-overscan': '5',
+        'data-page': '0',
+        'data-threshold': '80',
+        role: 'feed'
       })
       .styles({
         boxSizing: 'border-box',
-        height: `${this._itemHeight}px`,
-        left: '0',
         minWidth: '0',
-        overflow: 'visible',
-        position: 'absolute',
-        right: '0',
-        top: `${top}px`,
-        width: '100%'
-      })
-      .child(content);
-  }
-
-  _virtualListHeight(count) {
-    if (count === 0) {
-      return 0;
-    }
-
-    return VIRTUAL_PADDING * 2 + count * this._itemHeight + (count - 1) * VIRTUAL_GAP;
-  }
-
-  _syncVirtualState() {
-    const enabled = this._isVirtualEnabled() && this._itemsData.length > 0;
-    this.attr('data-virtual', enabled ? 'true' : null);
-
-    if (enabled) {
-      this._list.styles({
-        display: 'block',
-        gap: '0',
-        padding: '0',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
         position: 'relative'
       });
-      this._observeSize();
-    } else {
-      this._list.styles({
-        display: null,
-        gap: null,
-        height: null,
-        padding: null,
-        position: null
-      });
-      this._disconnectSizeObserver();
-    }
 
-    return this;
-  }
+    node.child(list, footer);
 
-  _isVirtualEnabled() {
-    return (
-      this._virtual === true ||
-      (this._virtual === null && this._itemsData.length >= AUTO_VIRTUAL_THRESHOLD)
-    );
-  }
+    const isVirtualEnabled = () =>
+      state.virtual === true ||
+      (state.virtual === null && state.itemsData.length >= AUTO_VIRTUAL_THRESHOLD);
 
-  _observeSize() {
-    if (!this._el || typeof ResizeObserver !== 'function' || this._resizeObserver) {
-      return;
-    }
+    const virtualListHeight = (count) => {
+      if (count === 0) {
+        return 0;
+      }
 
-    this._resizeObserver = new ResizeObserver(() => {
-      if (this._deleted || !this._isVirtualEnabled() || this._itemsData.length === 0) {
+      return VIRTUAL_PADDING * 2 + count * state.itemHeight + (count - 1) * VIRTUAL_GAP;
+    };
+
+    const visibleRange = (count) => {
+      const pitch = state.itemHeight + VIRTUAL_GAP;
+      const scrollTop = node._el ? Number(node._el.scrollTop) || 0 : 0;
+      const clientHeight = node._el ? Number(node._el.clientHeight) || 0 : 0;
+      const start = Math.max(0, Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - state.overscan);
+      const end = Math.min(
+        count,
+        Math.max(
+          0,
+          Math.ceil((scrollTop + clientHeight - VIRTUAL_PADDING) / pitch) + state.overscan
+        )
+      );
+
+      return { end, start };
+    };
+
+    const renderEntry = (item, index) =>
+      state.renderItem ? state.renderItem(item, index, self.node()) : item;
+
+    const createVirtualItem = (content, index, count) => {
+      const pitch = state.itemHeight + VIRTUAL_GAP;
+      const top = VIRTUAL_PADDING + index * pitch;
+
+      return div({ vn: 'VScrollVirtualItem' })
+        .attr({
+          'aria-posinset': String(index + 1),
+          'aria-setsize': String(count),
+          'data-index': String(index)
+        })
+        .styles({
+          boxSizing: 'border-box',
+          height: `${state.itemHeight}px`,
+          left: '0',
+          minWidth: '0',
+          overflow: 'visible',
+          position: 'absolute',
+          right: '0',
+          top: `${top}px`,
+          width: '100%'
+        })
+        .child(content);
+    };
+
+    const disconnectSizeObserver = () => {
+      if (state.resizeObserver) {
+        state.resizeObserver.disconnect();
+        state.resizeObserver = null;
+      }
+    };
+
+    const observeSize = () => {
+      if (!node._el || typeof ResizeObserver !== 'function' || state.resizeObserver) {
         return;
       }
-      this._renderItems();
-    });
-    this._resizeObserver.observe(this._el);
-  }
 
-  _disconnectSizeObserver() {
-    if (this._resizeObserver) {
-      this._resizeObserver.disconnect();
-      this._resizeObserver = null;
-    }
-  }
+      state.resizeObserver = new ResizeObserver(() => {
+        if (node._deleted || !isVirtualEnabled() || state.itemsData.length === 0) {
+          return;
+        }
+        renderItems();
+      });
+      state.resizeObserver.observe(node._el);
+    };
 
-  _checkLoad() {
-    if (this._loading || this._blocked || !this._el) {
-      return this;
-    }
+    const syncVirtualState = () => {
+      const enabled = isVirtualEnabled() && state.itemsData.length > 0;
 
-    const distance =
-      (this._el.scrollHeight || 0) - (this._el.scrollTop || 0) - (this._el.clientHeight || 0);
+      node.attr('data-virtual', enabled ? 'true' : null);
 
-    if (distance <= this._threshold) {
-      this.load();
-    }
+      if (enabled) {
+        list.styles({
+          display: 'block',
+          gap: '0',
+          padding: '0',
+          position: 'relative'
+        });
+        observeSize();
+      } else {
+        list.styles({
+          display: null,
+          gap: null,
+          height: null,
+          padding: null,
+          position: null
+        });
+        disconnectSizeObserver();
+      }
+    };
 
-    return this;
-  }
+    const renderItems = () => {
+      syncVirtualState();
 
-  _scheduleCheck() {
-    if (this._checkScheduled || this._deleted || typeof queueMicrotask !== 'function') {
-      return this;
-    }
+      const count = state.itemsData.length;
 
-    this._checkScheduled = true;
-    queueMicrotask(() => {
-      this._checkScheduled = false;
-      this._checkLoad();
-    });
-    return this;
-  }
+      if (!isVirtualEnabled() || count === 0) {
+        replaceChildren(
+          list,
+          state.itemsData.map((item, index) => renderEntry(item, index))
+        );
+        return;
+      }
 
-  _syncFooter() {
-    if (this._loading) {
-      replaceChildren(this._statusBox, normalizeChildren(this._loadingContent));
-      this._footer.style('display', 'flex');
-      return this;
-    }
+      const { end, start } = visibleRange(count);
+      const nodes = [];
 
-    if (this._blocked) {
-      replaceChildren(this._statusBox, normalizeChildren(this._endContent));
-      this._footer.style('display', 'flex');
-      return this;
-    }
+      for (let index = start; index < end; index += 1) {
+        nodes.push(createVirtualItem(renderEntry(state.itemsData[index], index), index, count));
+      }
 
-    replaceChildren(this._statusBox, []);
-    this._footer.style('display', 'none');
-    return this;
-  }
+      replaceChildren(list, nodes);
+      list.style('height', `${virtualListHeight(count)}px`);
+    };
 
-  _setupScroll(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    const syncFooter = () => {
+      if (state.loading) {
+        replaceChildren(statusBox, normalizeChildren(state.loadingContent));
+        footer.style('display', 'flex');
+        return;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      if (state.blocked) {
+        replaceChildren(statusBox, normalizeChildren(state.endContent));
+        footer.style('display', 'flex');
+        return;
+      }
 
-    if (isPlainObject(setup)) {
+      replaceChildren(statusBox, []);
+      footer.style('display', 'none');
+    };
+
+    const checkLoad = () => {
+      if (state.loading || state.blocked || !node._el) {
+        return api;
+      }
+
+      const distance =
+        (node._el.scrollHeight || 0) - (node._el.scrollTop || 0) - (node._el.clientHeight || 0);
+
+      if (distance <= state.threshold) {
+        api.load();
+      }
+
+      return api;
+    };
+
+    const scheduleCheck = () => {
+      if (state.checkScheduled || node._deleted || typeof queueMicrotask !== 'function') {
+        return api;
+      }
+
+      state.checkScheduled = true;
+      queueMicrotask(() => {
+        state.checkScheduled = false;
+        checkLoad();
+      });
+      return api;
+    };
+
+    const load = () => {
+      if (
+        node._deleted ||
+        state.loading ||
+        state.blocked ||
+        typeof state.loadMoreHandler !== 'function'
+      ) {
+        return Promise.resolve(false);
+      }
+
+      api.page(state.page + 1);
+      api.loading(true);
+
+      const context = {
+        append: (value, render) => api.append(value, render),
+        block: (value = true) => api.block(value),
+        done: () => api.block(true),
+        page: state.page,
+        scroll: self.node()
+      };
+
+      let result;
+
+      try {
+        result = state.loadMoreHandler(context);
+      } catch (error) {
+        api.loading(false);
+        return Promise.reject(error);
+      }
+
+      if (result && typeof result.then === 'function') {
+        return Promise.resolve(result).then(
+          (value) => {
+            if (value !== undefined && value !== null) {
+              api.append(value);
+            }
+            api.loading(false);
+            return true;
+          },
+          (error) => {
+            api.loading(false);
+            throw error;
+          }
+        );
+      }
+
+      if (result !== undefined && result !== null) {
+        api.append(result);
+      }
+      api.loading(false);
+      return Promise.resolve(true);
+    };
+
+    const handleScroll = () => {
+      if (isVirtualEnabled() && state.itemsData.length > 0) {
+        renderItems();
+      }
+      checkLoad();
+    };
+
+    node.on('scroll', () => handleScroll());
+
+    /** 读写列表内容（静态内容口径；`items` 走数据口径）。 */
+    api.content = (setup) => {
+      if (setup === undefined) {
+        return list.children();
+      }
+
+      state.itemsData = [];
+      state.renderItem = null;
+      setupContentSlot(list, setup);
+      syncVirtualState();
+      scheduleCheck();
+      return api;
+    };
+
+    api.items = (value, render = null) => {
+      if (value === undefined) {
+        return state.itemsData.slice();
+      }
+
+      if (typeof render === 'function') {
+        state.renderItem = render;
+      }
+
+      state.itemsData = Array.isArray(value) ? value.slice() : [value];
+      renderItems();
+      scheduleCheck();
+      return api;
+    };
+
+    api.append = (value, render = null) => {
+      const incoming = Array.isArray(value) ? value : [value];
+
+      if (typeof render === 'function') {
+        state.renderItem = render;
+      }
+
+      state.itemsData = state.itemsData.concat(incoming);
+      renderItems();
+      if (incoming.length > 0) {
+        scheduleCheck();
+      }
+      return api;
+    };
+
+    api.renderItem = (handler) => {
+      if (handler === undefined) {
+        return state.renderItem;
+      }
+
+      state.renderItem = typeof handler === 'function' ? handler : null;
+      if (state.itemsData.length > 0) {
+        renderItems();
+      }
+      return api;
+    };
+
+    api.loadMore = (handler) => {
+      if (handler === undefined) {
+        return state.loadMoreHandler;
+      }
+
+      state.loadMoreHandler = typeof handler === 'function' ? handler : null;
+      if (state.loadMoreHandler) {
+        scheduleCheck();
+      }
+      return api;
+    };
+
+    api.onLoadMore = (handler) => api.loadMore(handler);
+
+    api.loop = (value) => {
+      if (value === undefined) {
+        return state.loop;
+      }
+
+      state.loop = Boolean(value);
+      if (state.loop) {
+        state.blocked = false;
+      }
+      node.attr('data-loop', state.loop ? 'true' : null);
+      node.attr('data-blocked', state.blocked ? 'true' : null);
+      syncFooter();
+      return api;
+    };
+
+    api.block = (value) => {
+      if (value === undefined) {
+        return state.blocked;
+      }
+
+      state.blocked = Boolean(value);
+      if (state.blocked) {
+        state.loop = false;
+      }
+      node.attr('data-blocked', state.blocked ? 'true' : null);
+      node.attr('data-loop', state.loop ? 'true' : null);
+      syncFooter();
+      return api;
+    };
+
+    api.blocked = (value) => api.block(value);
+
+    api.loading = (value) => {
+      if (value === undefined) {
+        return state.loading;
+      }
+
+      state.loading = Boolean(value);
+      node.attr('data-loading', state.loading ? 'true' : null);
+      node.attr('aria-busy', state.loading ? 'true' : 'false');
+      syncFooter();
+      return api;
+    };
+
+    api.threshold = (value) => {
+      if (value === undefined) {
+        return state.threshold;
+      }
+
+      const parsed = Number(value);
+
+      state.threshold = Number.isFinite(parsed) && parsed >= 0 ? parsed : 80;
+      node.attr('data-threshold', String(state.threshold));
+      return api;
+    };
+
+    api.virtual = (value) => {
+      if (value === undefined) {
+        return isVirtualEnabled();
+      }
+
+      state.virtual = Boolean(value);
+      syncVirtualState();
+      if (state.itemsData.length > 0) {
+        renderItems();
+      }
+      return api;
+    };
+
+    api.virtualize = (value) => api.virtual(value);
+
+    api.itemHeight = (value) => {
+      if (value === undefined) {
+        return state.itemHeight;
+      }
+
+      const parsed = Number(value);
+
+      state.itemHeight = Number.isFinite(parsed) && parsed > 0 ? Math.max(1, parsed) : 48;
+      node.attr('data-item-height', String(state.itemHeight));
+      if (state.itemsData.length > 0) {
+        renderItems();
+      }
+      return api;
+    };
+
+    api.overscan = (value) => {
+      if (value === undefined) {
+        return state.overscan;
+      }
+
+      const parsed = Number(value);
+
+      state.overscan = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 5;
+      node.attr('data-overscan', String(state.overscan));
+      if (state.itemsData.length > 0) {
+        renderItems();
+      }
+      return api;
+    };
+
+    api.page = (value) => {
+      if (value === undefined) {
+        return state.page;
+      }
+
+      const parsed = Number(value);
+
+      state.page = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
+      node.attr('data-page', String(state.page));
+      return api;
+    };
+
+    api.loadingText = (content) => {
+      if (content === undefined) {
+        return state.loadingContent;
+      }
+
+      state.loadingContent = content;
+      syncFooter();
+      return api;
+    };
+
+    api.endText = (content) => {
+      if (content === undefined) {
+        return state.endContent;
+      }
+
+      state.endContent = content;
+      syncFooter();
+      return api;
+    };
+
+    api.reset = () => {
+      state.itemsData = [];
+      state.page = 0;
+      state.blocked = false;
+      state.loading = false;
+      node.attr('data-blocked', null);
+      node.attr('data-loading', null);
+      node.attr('data-page', '0');
+      node.attr('aria-busy', 'false');
+      replaceChildren(list, []);
+      syncVirtualState();
+      syncFooter();
+      return api;
+    };
+
+    api.clear = () => api.reset();
+
+    api.load = () => load();
+
+    api.check = () => checkLoad();
+
+    /** 字符串 / 节点 / 数组 = 列表内容（旧 `_setupScroll` 的兜底分支）。 */
+    api.setupString = (next) => api.content(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupScroll` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const {
         block,
         blocked,
@@ -601,113 +556,82 @@ class ScrollNode extends HtmlElementNode {
       } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
 
       if (renderItem !== undefined) {
-        this.renderItem(renderItem);
+        api.renderItem(renderItem);
       }
-
       if (virtual !== undefined) {
-        this.virtual(virtual);
+        api.virtual(virtual);
       }
-
       if (itemHeight !== undefined) {
-        this.itemHeight(itemHeight);
+        api.itemHeight(itemHeight);
       }
-
       if (overscan !== undefined) {
-        this.overscan(overscan);
+        api.overscan(overscan);
       }
-
       if (content !== undefined) {
-        this.content(content);
+        api.content(content);
       } else if (children !== undefined) {
-        this.content(children);
+        api.content(children);
       }
-
       if (items !== undefined) {
-        this.items(items);
+        api.items(items);
       }
-
       if (loadMore !== undefined) {
-        this.loadMore(loadMore);
+        api.loadMore(loadMore);
       } else if (onLoadMore !== undefined) {
-        this.loadMore(onLoadMore);
+        api.loadMore(onLoadMore);
       }
-
       if (loop !== undefined) {
-        this.loop(loop);
+        api.loop(loop);
       }
-
       if (block !== undefined) {
-        this.block(block);
+        api.block(block);
       } else if (blocked !== undefined) {
-        this.block(blocked);
+        api.block(blocked);
       }
-
       if (loading !== undefined) {
-        this.loading(loading);
+        api.loading(loading);
       }
-
       if (threshold !== undefined) {
-        this.threshold(threshold);
+        api.threshold(threshold);
       }
-
       if (page !== undefined) {
-        this.page(page);
+        api.page(page);
       }
-
       if (loadingText !== undefined) {
-        this.loadingText(loadingText);
+        api.loadingText(loadingText);
       }
-
       if (endText !== undefined) {
-        this.endText(endText);
+        api.endText(endText);
       }
-
       if (reset !== undefined && reset) {
-        this.reset();
+        api.reset();
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.content(setup);
-  }
-}
+    // 旧 `renderDom()` 猴补的等价物：落地后按真实尺寸重算窗口、订阅尺寸变化、补一次触底检查
+    api.whenMount = () => {
+      if (isVirtualEnabled() && state.itemsData.length > 0) {
+        renderItems();
+        observeSize();
+      }
+      scheduleCheck();
+    };
 
-export function vScroll(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VScroll',
-    createNode: (setup) => new ScrollNode(setup),
-    commands: [
-      'content',
-      'items',
-      'append',
-      'renderItem',
-      'loadMore',
-      'onLoadMore',
-      'loop',
-      'block',
-      'blocked',
-      'loading',
-      'threshold',
-      'virtual',
-      'virtualize',
-      'itemHeight',
-      'overscan',
-      'page',
-      'loadingText',
-      'endText',
-      'reset',
-      'clear',
-      'load',
-      'check'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    // 旧 `destroy()` 猴补的等价物：解绑尺寸观察者
+    api.whenDestroy = () => {
+      disconnectSizeObserver();
+    };
+
+    syncVirtualState();
+    syncFooter();
+    return node;
   });
 }
 
-export const VScroll = vScroll;
-defineComponentIdentity(VScroll, 'VScroll');
+export const vScroll = createComponentShortcut(VScroll);

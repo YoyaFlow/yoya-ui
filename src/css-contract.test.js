@@ -141,14 +141,14 @@ const feedbackSelectors = [
 ];
 
 const scrollSelectors = [
-  '.yoya-vscroll',
-  '.yoya-vscroll-list',
-  ".yoya-vscroll[data-virtual='true'] .yoya-vscroll-list",
-  '.yoya-vscroll-virtual-item',
-  '.yoya-vscroll-footer',
-  ".yoya-vscroll[data-loading='true'] > .yoya-vscroll-footer",
-  ".yoya-vscroll[data-blocked='true'] > .yoya-vscroll-footer",
-  '.yoya-vscroll-status'
+  "[vn~='VScroll']",
+  "[vn~='VScrollList']",
+  "[vn~='VScroll'][data-virtual='true'] [vn~='VScrollList']",
+  "[vn~='VScrollVirtualItem']",
+  "[vn~='VScrollFooter']",
+  "[vn~='VScroll'][data-loading='true'] > [vn~='VScrollFooter']",
+  "[vn~='VScroll'][data-blocked='true'] > [vn~='VScrollFooter']",
+  "[vn~='VScrollStatus']"
 ];
 
 const carouselSelectors = [

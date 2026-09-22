@@ -65,8 +65,8 @@ probe:    null
 residue:  (空)
 
 ### vScroll / 空容器
-dom:      <div aria-busy=false aria-live=polite class=yoya-component yoya-vscroll data-item-height=48 data-overscan=5 data-page=0 data-threshold=80 role=feed style=box-sizing: border-box; height: 120px; min-width: 0px; overflow-y: auto; overscroll-behavior: contain; position: relative;><div class=yoya-vscroll-list><div class=yoya-vscroll-footer style=display: none;><span class=yoya-vscroll-status>
-toHTML:   <div aria-busy="false" aria-live="polite" class="yoya-component yoya-vscroll" data-item-height="48" data-overscan="5" data-page="0" data-threshold="80" role="feed" style="box-sizing:border-box;height:120px;min-width:0;overflow-y:auto;overscroll-behavior:contain;position:relative"><div class="yoya-vscroll-list"></div><div class="yoya-vscroll-footer" style="display:none"><span class="yoya-vscroll-status"></span></div></div>
+dom:      <div aria-busy=false aria-live=polite data-item-height=48 data-overscan=5 data-page=0 data-threshold=80 role=feed style=box-sizing: border-box; height: 120px; min-width: 0px; overflow-y: auto; overscroll-behavior: contain; position: relative; vn=VScroll><div vn=VScrollList><div style=display: none; vn=VScrollFooter><span vn=VScrollStatus>
+toHTML:   <div aria-busy="false" aria-live="polite" data-item-height="48" data-overscan="5" data-page="0" data-threshold="80" role="feed" style="box-sizing:border-box;height:120px;min-width:0;overflow-y:auto;overscroll-behavior:contain;position:relative" vn="VScroll"><div vn="VScrollList"></div><div style="display:none" vn="VScrollFooter"><span vn="VScrollStatus"></span></div></div>
 probe:    {"threshold":80,"virtual":false,"itemHeight":48}
 residue:  (空)
 
@@ -101,8 +101,8 @@ probe:    {"href":"#alone","active":null}
 residue:  (空)
 
 ### vScroll / 静态列表
-dom:      <div aria-busy=false aria-live=polite class=yoya-component yoya-vscroll data-item-height=40 data-overscan=5 data-page=0 data-threshold=120 role=feed style=box-sizing: border-box; min-width: 0px; overflow-y: auto; overscroll-behavior: contain; position: relative;><div class=yoya-vscroll-list><div ><span >#text:第 1 行<div ><span >#text:第 2 行<div ><span >#text:第 3 行<div class=yoya-vscroll-footer style=display: none;><span class=yoya-vscroll-status>
-toHTML:   <div aria-busy="false" aria-live="polite" class="yoya-component yoya-vscroll" data-item-height="40" data-overscan="5" data-page="0" data-threshold="120" role="feed" style="box-sizing:border-box;min-width:0;overflow-y:auto;overscroll-behavior:contain;position:relative"><div class="yoya-vscroll-list"><div><span>第 1 行</span></div><div><span>第 2 行</span></div><div><span>第 3 行</span></div></div><div class="yoya-vscroll-footer" style="display:none"><span class="yoya-vscroll-status"></span></div></div>
+dom:      <div aria-busy=false aria-live=polite data-item-height=40 data-overscan=5 data-page=0 data-threshold=120 role=feed style=box-sizing: border-box; min-width: 0px; overflow-y: auto; overscroll-behavior: contain; position: relative; vn=VScroll><div vn=VScrollList><div ><span >#text:第 1 行<div ><span >#text:第 2 行<div ><span >#text:第 3 行<div style=display: none; vn=VScrollFooter><span vn=VScrollStatus>
+toHTML:   <div aria-busy="false" aria-live="polite" data-item-height="40" data-overscan="5" data-page="0" data-threshold="120" role="feed" style="box-sizing:border-box;min-width:0;overflow-y:auto;overscroll-behavior:contain;position:relative" vn="VScroll"><div vn="VScrollList"><div><span>第 1 行</span></div><div><span>第 2 行</span></div><div><span>第 3 行</span></div></div><div style="display:none" vn="VScrollFooter"><span vn="VScrollStatus"></span></div></div>
 probe:    {"itemHeight":40,"threshold":120,"virtual":false,"page":0}
 residue:  (空)
 

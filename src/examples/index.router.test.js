@@ -649,14 +649,14 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelector('h1').textContent).toBe('vScroll 滚动组件');
     expect(page.textContent).toContain('scroll.loadMore(handler)');
     expect(demos).toHaveLength(4);
-    expect(basic.querySelector('.yoya-vscroll')).not.toBeNull();
+    expect(basic.querySelector('[vn~="VScroll"]')).not.toBeNull();
     expect(basic.querySelector('[data-source-example]').textContent).toContain(
       'ScrollBasicExample1'
     );
 
     const virtualDemo = page.querySelector('[data-data-display-demo="virtual"]');
-    expect(virtualDemo.querySelector('.yoya-vscroll').dataset.virtual).toBe('true');
-    expect(virtualDemo.querySelectorAll('.yoya-vscroll-virtual-item').length).toBeGreaterThan(0);
+    expect(virtualDemo.querySelector('[vn~="VScroll"]').dataset.virtual).toBe('true');
+    expect(virtualDemo.querySelectorAll('[vn~="VScrollVirtualItem"]').length).toBeGreaterThan(0);
     expect(virtualDemo.querySelector('[data-source-example]').textContent).toContain(
       'ScrollVirtualExample1'
     );
@@ -670,17 +670,17 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     );
 
     loopButton.click();
-    expect(loopDemo.querySelector('.yoya-vscroll').dataset.loop).toBe('true');
+    expect(loopDemo.querySelector('[vn~="VScroll"]').dataset.loop).toBe('true');
 
     blockButton.click();
-    expect(loopDemo.querySelector('.yoya-vscroll').dataset.blocked).toBe('true');
+    expect(loopDemo.querySelector('[vn~="VScroll"]').dataset.blocked).toBe('true');
 
     // 异步演示「重新加载」：reset + check 之后回到第 1 页，且列表项仍是渲染出来的元素
     const asyncDemo = page.querySelector('[data-data-display-demo="async"]');
     const reloadButton = [...asyncDemo.querySelectorAll('button')].find((button) =>
       button.textContent.includes('重新加载')
     );
-    const asyncRows = () => [...asyncDemo.querySelectorAll('.yoya-vscroll-list > *')];
+    const asyncRows = () => [...asyncDemo.querySelectorAll('[vn~="VScrollList"] > *')];
 
     await vi.waitFor(
       () => {

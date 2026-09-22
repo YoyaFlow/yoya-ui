@@ -1749,7 +1749,7 @@ body {
     }
   }
 
-  :where(.yoya-vscroll) {
+  :where([vn~='VScroll']) {
     box-sizing: border-box;
     min-width: 0;
     overflow-y: auto;
@@ -1757,21 +1757,21 @@ body {
     position: relative;
   }
 
-  .yoya-vscroll .yoya-vscroll-list {
+  [vn~='VScroll'] [vn~='VScrollList'] {
     display: grid;
     gap: 8px;
     min-width: 0;
     padding: 12px;
   }
 
-  .yoya-vscroll[data-virtual='true'] .yoya-vscroll-list {
+  [vn~='VScroll'][data-virtual='true'] [vn~='VScrollList'] {
     display: block;
     gap: 0;
     padding: 0;
     position: relative;
   }
 
-  .yoya-vscroll .yoya-vscroll-virtual-item {
+  [vn~='VScroll'] [vn~='VScrollVirtualItem'] {
     box-sizing: border-box;
     left: 0;
     min-width: 0;
@@ -1781,7 +1781,7 @@ body {
     width: 100%;
   }
 
-  .yoya-vscroll .yoya-vscroll-footer {
+  [vn~='VScroll'] [vn~='VScrollFooter'] {
     align-items: center;
     border-top: 1px solid var(--yoya-color-border-faint, #e2e8f0);
     color: var(--yoya-color-text-muted, #64748b);
@@ -1792,12 +1792,12 @@ body {
     padding: 8px 12px;
   }
 
-  .yoya-vscroll[data-loading='true'] > .yoya-vscroll-footer,
-  .yoya-vscroll[data-blocked='true'] > .yoya-vscroll-footer {
+  [vn~='VScroll'][data-loading='true'] > [vn~='VScrollFooter'],
+  [vn~='VScroll'][data-blocked='true'] > [vn~='VScrollFooter'] {
     display: flex;
   }
 
-  .yoya-vscroll .yoya-vscroll-status {
+  [vn~='VScroll'] [vn~='VScrollStatus'] {
     align-items: center;
     display: inline-flex;
     gap: 6px;

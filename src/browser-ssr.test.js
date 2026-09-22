@@ -45,7 +45,7 @@ describe('browser-only components server render', () => {
     });
 
     const html = scroll.toHTML();
-    const items = html.match(/yoya-vscroll-virtual-item/g) || [];
+    const items = html.match(/vn="VScrollVirtualItem"/g) || [];
 
     expect(items).toHaveLength(5);
     expect(html).toContain('data-index="0"');

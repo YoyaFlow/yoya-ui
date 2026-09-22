@@ -62,7 +62,7 @@ describe('browser-only components hydration', () => {
     document.body.innerHTML = `<div id="app">${html}</div>`;
 
     const scroll = hydrate(page, '#app');
-    const rows = document.querySelectorAll('#app .yoya-vscroll-virtual-item');
+    const rows = document.querySelectorAll('#app [vn~="VScrollVirtualItem"]');
 
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.length).toBeLessThan(500);
