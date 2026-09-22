@@ -1,17 +1,15 @@
 import { vNode } from '../core/v-node.js';
 import { div, li, ol, span } from '../html/index.js';
-import {
-  createComponentShortcut,
-  normalizeChildren,
-  replaceChildren
-} from '../components/shared.js';
+import { vSlot } from '../layout/v-slot.js';
+import { createComponentShortcut, normalizeChildren } from '../components/shared.js';
 
 /**
  * 步骤条（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
  * - 结构：`ol[VSteps] > li[VStep] > span[VStepsIndicator] + div[VStepsContent](title + description) + span[VStepsConnector]`；
- * - **部件用到才建、建过复用**（与 `VTable` 的段命令同一口径）：建的顺序固定，与调用顺序无关，
- *   也不靠身份在结构里找；
+ * - **纯内容位走 `VCard` 口径**：指示器 / 标题 / 描述在结构里 `vSlot(…)` 占位，内容
+ *   （`VStepsIndicator` / `VStepsTitle` / `VStepsDescription`）自带 `vn_slot`，命令投递即落位；
+ *   只有「命令要写样式」的两块（内容盒 / 连线）才留在结构里按需取用——它们不装内容，走不了内容通道；
  * - 命令**直接写快照**（`attr` / `style` / `replaceChildren`）：首屏就是构建期快照，
  *   没有"写完再刷一遍"的动作；
  * - **项归造它的一方**：容器自己造的项自己记账（子项数与每项状态从这份账里收口）；
@@ -20,6 +18,25 @@ import {
 
 /** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
 const STEP_ITEM = Symbol('yoya.stepItem');
+
+/** 指示器内容（形态 A）：`vn_slot` 标记 = 它在步骤项里的位置。 */
+export function VStepsIndicator() {
+  return span({ vn: 'VStepsIndicator', vn_slot: 'indicator' });
+}
+
+/** 标题内容（形态 A）。 */
+export function VStepsTitle() {
+  return div({ vn: 'VStepsTitle', vn_slot: 'title' });
+}
+
+/** 描述内容（形态 A）。 */
+export function VStepsDescription() {
+  return div({ vn: 'VStepsDescription', vn_slot: 'description' });
+}
+
+export const vStepsIndicator = createComponentShortcut(VStepsIndicator);
+export const vStepsTitle = createComponentShortcut(VStepsTitle);
+export const vStepsDescription = createComponentShortcut(VStepsDescription);
 
 /**
  * 步骤项：结构（指示器 / 内容 / 连线）+ 命令（标题 / 描述 / 图标 / 状态）。
@@ -43,34 +60,13 @@ export function VStep() {
       total: 1
     };
 
-    let indicatorPart = null;
-    let contentPart = null;
-    let titlePart = null;
-    let descriptionPart = null;
-    let connectorPart = null;
     /** 指示器已渲染的内容：状态没变就不重挂（用户给的是节点时尤其要认这个账）。 */
     let renderedIndicator;
 
-    /** 四块部件：用到才建、建过复用，落位顺序固定（指示器 / 内容 / 连线）。 */
-    const partsOf = () => {
-      if (!indicatorPart) {
-        indicatorPart = span({ vn: 'VStepsIndicator' });
-        titlePart = div({ vn: 'VStepsTitle' });
-        descriptionPart = div({ vn: 'VStepsDescription' }).style('display', 'none');
-        contentPart = div({ vn: 'VStepsContent' }, (content) =>
-          content.child(titlePart, descriptionPart)
-        );
-        connectorPart = span({ vn: 'VStepsConnector' });
-        self.node().child(indicatorPart, contentPart, connectorPart);
-      }
-
-      return {
-        connector: connectorPart,
-        content: contentPart,
-        description: descriptionPart,
-        indicator: indicatorPart,
-        title: titlePart
-      };
+    /** 内容投递：内容自带 `vn_slot`，投递即替换对应占位里的内容（VCard 口径）。 */
+    const deliver = (part) => {
+      self.node().child(part);
+      return api;
     };
 
     /** 有效状态：自己显式设过就用它，否则按「已完成 / 当前项 / 未开始」派生。 */
@@ -105,47 +101,24 @@ export function VStep() {
      * 一个状态驱动多处 DOM 时，写口必须收在一个地方，不然会出现"改一半"的中间态。
      */
     const writeStep = () => {
-      const { connector, content, description, indicator } = partsOf();
       const status = effectiveStatus();
-      const indicatorSize = state.size === 'small' ? '24px' : '30px';
-      const indicatorCenter = state.size === 'small' ? '11px' : '14px';
-      const indicatorHalf = state.size === 'small' ? '12px' : '15px';
       const indicatorValue = indicatorContent();
 
       if (!Object.is(indicatorValue, renderedIndicator)) {
         renderedIndicator = indicatorValue;
-        replaceChildren(indicator, normalizeChildren(indicatorValue));
+        deliver(vStepsIndicator(indicatorValue));
       }
 
       self.node().attr('data-status', status);
       self.node().attr('aria-current', state.index === state.stepsCurrent ? 'step' : null);
-      description.style('display', description.children().length > 0 ? null : 'none');
-      connector.style('display', state.index < state.total - 1 ? 'block' : 'none');
+      self.node().attr('data-last', state.index === state.total - 1 ? 'true' : null);
 
       if (state.direction === 'vertical') {
         self.node().style('gridTemplateColumns', 'auto minmax(0, 1fr)');
         self.node().style('gap', '10px');
-        content.style('paddingTop', '3px');
-        connector.styles({
-          bottom: '-12px',
-          height: 'auto',
-          left: indicatorHalf,
-          right: null,
-          top: indicatorSize,
-          width: '2px'
-        });
       } else {
         self.node().style('gridTemplateColumns', 'minmax(0, 1fr)');
         self.node().style('gap', '0');
-        content.style('paddingTop', '6px');
-        connector.styles({
-          bottom: null,
-          height: '2px',
-          left: indicatorSize,
-          right: '0',
-          top: indicatorCenter,
-          width: 'auto'
-        });
       }
 
       return api;
@@ -158,7 +131,7 @@ export function VStep() {
 
       state.title = value ?? '';
       state.titleSet = true;
-      replaceChildren(partsOf().title, state.titleSet ? normalizeChildren(state.title) : []);
+      deliver(vStepsTitle(state.titleSet ? normalizeChildren(state.title) : []));
       return writeStep();
     };
 
@@ -171,10 +144,7 @@ export function VStep() {
 
       state.description = value ?? '';
       state.descriptionSet = true;
-      replaceChildren(
-        partsOf().description,
-        state.descriptionSet ? normalizeChildren(state.description) : []
-      );
+      deliver(vStepsDescription(state.descriptionSet ? normalizeChildren(state.description) : []));
       return writeStep();
     };
 
@@ -245,7 +215,16 @@ export function VStep() {
     /** 字符串 / 数字 = 标题。 */
     api.setupString = (value) => api.title(value);
 
-    return li({ role: 'listitem', vn: 'VStep' });
+    // 纯内容位在结构里占位（内容由命令投递）；连线 / 内容盒的样式随容器态走 CSS 规则
+    return li({ role: 'listitem', vn: 'VStep' }, (step) => {
+      step.child(
+        vSlot('indicator'),
+        div({ vn: 'VStepsContent' }, (content) =>
+          content.child(vSlot('title'), vSlot('description'))
+        ),
+        span({ vn: 'VStepsConnector' })
+      );
+    });
   });
 }
 

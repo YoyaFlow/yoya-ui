@@ -77,19 +77,21 @@ describe('vSteps', () => {
       'auto minmax(0, 1fr)'
     );
 
-    const connectors = element.querySelectorAll("[vn~='VStepsConnector']");
-    expect(connectors[0].style.display).not.toBe('none');
-    expect(connectors[2].style.display).toBe('none');
+    const stepsItems = element.querySelectorAll("[vn~='VStep']");
+    expect(stepsItems[0].hasAttribute('data-last')).toBe(false);
+    expect(stepsItems[2].getAttribute('data-last')).toBe('true');
   });
 
-  it('shows an explicit visible display on non-last connectors', () => {
+  it('marks the last step so the connector rule hides its line', () => {
     const steps = vSteps({ items: ['A', 'B', 'C'] });
     const element = steps.renderDom();
-    const connectors = element.querySelectorAll("[vn~='VStepsConnector']");
+    const stepsItems = element.querySelectorAll("[vn~='VStep']");
 
-    expect(connectors[0].style.display).toBe('block');
-    expect(connectors[1].style.display).toBe('block');
-    expect(connectors[2].style.display).toBe('none');
+    expect(stepsItems[0].hasAttribute('data-last')).toBe(false);
+    expect(stepsItems[1].hasAttribute('data-last')).toBe(false);
+    expect(stepsItems[2].getAttribute('data-last')).toBe('true');
+    // 末项以外的连线由 CSS 规则显示：`[vn~='VStep']:not([data-last='true']) [vn~='VStepsConnector']`
+    expect(element.querySelectorAll("[vn~='VStepsConnector']")).toHaveLength(3);
   });
 
   it('replaces items and registers vSteps as a parent shortcut', () => {

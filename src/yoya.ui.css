@@ -1195,6 +1195,40 @@ body {
     position: absolute;
   }
 
+  /* 连线：非末项显示；几何随方向与尺寸（写属性会破坏"内容盒里放占位"的结构，所以走规则） */
+  [vn~='VStep']:not([data-last='true']) [vn~='VStepsConnector'] {
+    display: block;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'] [vn~='VStepsConnector'] {
+    left: 30px;
+    right: 0;
+    top: 14px;
+    width: auto;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'][data-size='small'] [vn~='VStepsConnector'] {
+    left: 24px;
+    top: 11px;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'] [vn~='VStepsConnector'] {
+    bottom: -12px;
+    height: auto;
+    left: 15px;
+    top: 30px;
+    width: 2px;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'][data-size='small'] [vn~='VStepsConnector'] {
+    left: 12px;
+    top: 24px;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsDescription']:empty {
+    display: none;
+  }
+
   [vn~='VStep'][data-status='finish'] [vn~='VStepsIndicator'] {
     background: var(--yoya-color-success, #16a34a);
     border-color: var(--yoya-color-success, #16a34a);
