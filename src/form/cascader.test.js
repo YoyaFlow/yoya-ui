@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VCascader, div, vCascader, vForm } from '../index.js';
+import { div, hasComponentIdentity, vCascader, vForm } from '../index.js';
 
 const options = [
   {
@@ -24,7 +24,7 @@ const options = [
 ];
 
 function findCascader(node) {
-  if (node instanceof VCascader) {
+  if (hasComponentIdentity(node, 'VCascader')) {
     return node;
   }
 
@@ -43,8 +43,8 @@ describe('vCascader', () => {
     const cascader = vCascader({ options, placeholder: '请选择地区' });
     const element = cascader.renderDom();
 
-    expect(cascader).toBeInstanceOf(VCascader);
-    expect(element.classList.contains('yoya-vcascader')).toBe(true);
+    expect(hasComponentIdentity(cascader, 'VCascader')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VCascader');
     expect(element.querySelector('[data-vcascader-trigger]')).not.toBeNull();
     expect(element.querySelector('[data-vcascader-trigger]').textContent).toContain('请选择地区');
     expect(element.querySelector('[data-vcascader-panel]').style.display).toBe('none');
@@ -107,7 +107,7 @@ describe('vCascader', () => {
     });
     const cascader = page.children()[0];
 
-    expect(cascader).toBeInstanceOf(VCascader);
+    expect(hasComponentIdentity(cascader, 'VCascader')).toBe(true);
     expect(cascader.options()).toHaveLength(2);
   });
 

@@ -1,38 +1,42 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
+import { registerChildFactories, vText } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { HtmlElementNode, button as buttonTag, div, span } from '../html/index.js';
 import {
-  booleanMethod,
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   themeValue
 } from '../components/shared.js';
 
 /**
- * vCascader 是级联选择控件：按层级从 options 树中逐级选择，
- * 选中路径以数组形式取值（value 为各级 value 组成的数组）。
+ * 级联选择（形态 B，票 15 §4）：视图根是外壳 `div` + 触发按钮 + 弹出面板。
+ *
+ * - 身份写在结构里：根 `vn: 'VCascader'`、触发按钮 `vn: 'VCascaderTrigger'`、
+ *   面板 `vn: 'VCascaderPanel'`（内含 `vn: 'VCascaderColumns'`）；列与选项在每次渲染面板时现建
+ *   （`vn: 'VCascaderColumn'` / `vn: 'VCascaderOption'`，用到才建、建过即换）；
+ * - 状态与命令收进 `vNode` 闭包；`change` 回调第二参交给使用方的是**组件句柄**（`self.node()`）；
+ * - 元素级时机：面板定位在 `whenMount`（旧 `renderDom()` 猴补的等价物），文档 / 窗口监听在
+ *   `whenDestroy` 上解绑；读元素只读 `_el` 判定"建没建"，不为了判定提前建 DOM（SSR 会碰 document）。
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupCascader` 同口径）。
  */
-class CascaderNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VCascader';
-    this.className(componentClass, 'yoya-vcascader');
-    this.styles({ position: 'relative' });
+export function VCascader() {
+  return vNode((api, self) => {
+    const state = {
+      activePath: [],
+      changeHandlers: [],
+      disabled: false,
+      open: false,
+      options: [],
+      placeholder: '请选择',
+      required: false,
+      value: []
+    };
+    let outsideUnbind = null;
+    let repositionUnbind = null;
 
-    this._options = [];
-    this._value = [];
-    this._activePath = [];
-    this._placeholder = '请选择';
-    this._changeHandlers = [];
-    this._open = false;
-    this._outsideListener = null;
-    this._repositionListener = null;
-
-    this._triggerText = vText(this._placeholder);
-    this._trigger = new HtmlElementNode('button')
-      .className('yoya-vcascader-trigger')
+    const triggerText = vText(state.placeholder);
+    const trigger = buttonTag({ vn: 'VCascaderTrigger' })
       .attr({
         'aria-expanded': 'false',
         'aria-haspopup': 'listbox',
@@ -57,20 +61,15 @@ class CascaderNode extends HtmlElementNode {
         width: '100%'
       })
       .child(
-        this._triggerText,
-        new HtmlElementNode('span')
-          .styles({ color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' })
-          .child('▾')
-      )
-      .on('click', () => this.toggle());
-
-    this._columns = new HtmlElementNode('div')
-      .className('yoya-vcascader-columns')
+        triggerText,
+        span({
+          style: { color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' }
+        }).child('▾')
+      );
+    const columns = div({ vn: 'VCascaderColumns' })
       .attr('data-vcascader-columns', 'true')
       .styles({ display: 'flex', minWidth: '0' });
-
-    this._panel = new HtmlElementNode('div')
-      .className('yoya-vcascader-panel')
+    const panel = div({ vn: 'VCascaderPanel' })
       .attr('data-vcascader-panel', 'true')
       .styles({
         background: 'var(--yoya-color-surface, #ffffff)',
@@ -88,152 +87,54 @@ class CascaderNode extends HtmlElementNode {
         width: '100%',
         zIndex: '110'
       })
-      .child(this._columns);
+      .child(columns);
+    const node = div({ vn: 'VCascader' }).styles({ position: 'relative' });
 
-    this.child(this._trigger, this._panel);
+    node.child(trigger, panel);
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('data-disabled', enabled ? 'true' : null);
-      this._trigger.attr('disabled', enabled ? true : null);
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this.attr('data-required', enabled ? 'true' : null);
-    });
+    const syncTrigger = () => {
+      if (state.value.length === 0) {
+        triggerText.textContent(state.placeholder);
+        return;
+      }
 
-    this._setupCascader(setup);
-  }
+      const labels = findPathByValues(state.options, state.value).map((option) => option.label);
 
-  /** 读写级联选项树（{ label, value, children }[]）。 */
-  options(next) {
-    if (next === undefined) {
-      return cloneOptions(this._options);
-    }
-    this._options = normalizeOptions(next);
-    this._syncTrigger();
-    if (this._open) {
-      this._renderColumns();
-    }
-    return this;
-  }
+      triggerText.textContent(labels.length > 0 ? labels.join(' / ') : state.value.join(' / '));
+    };
 
-  /** 读写选中路径（各级 value 组成的数组）。 */
-  value(next) {
-    if (next === undefined) {
-      return [...this._value];
-    }
+    const renderColumns = () => {
+      replaceChildren(columns, []);
 
-    const values = Array.isArray(next) ? next : next === null || next === undefined ? [] : [next];
-    const path = findPathByValues(this._options, values);
-    this._value = path.map((option) => option.value);
-    this._activePath = path;
-    this._syncTrigger();
-    return this;
-  }
+      const levels = [];
+      let levelOptions = state.options;
 
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
+      state.activePath.forEach((active) => {
+        levels.push(levelOptions);
+        const next = levelOptions.find((option) => option.value === active.value);
+        levelOptions = next ? next.children : [];
+      });
 
-  name(value) {
-    if (value === undefined) {
-      return this.attr('data-name') || '';
-    }
-    this.attr('data-name', value ? String(value) : null);
-    return this;
-  }
+      if (state.activePath.length === 0 || levelOptions.length > 0) {
+        levels.push(levelOptions);
+      }
 
-  placeholder(value) {
-    if (value === undefined) {
-      return this._placeholder;
-    }
-    this._placeholder = String(value);
-    this._syncTrigger();
-    return this;
-  }
+      levels.forEach((options, level) => {
+        columns.child(createColumn(options, level, levels.length));
+      });
+    };
 
-  open(value = true) {
-    this._open = Boolean(value);
-    this._trigger.attr('aria-expanded', this._open ? 'true' : 'false');
-    if (this._open) {
-      this._renderColumns();
-      this._panel.style('display', null);
-      this._positionPanel();
-    } else {
-      this._panel.style('display', 'none');
-    }
-    this._bindOutsideClose(this._open);
-    this._bindReposition(this._open);
-    return this;
-  }
-
-  close() {
-    return this.open(false);
-  }
-
-  toggle() {
-    return this.open(!this._open);
-  }
-
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-    this._changeHandlers = [handler];
-    return this;
-  }
-
-  onChange(handler) {
-    return this.change(handler);
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (this._open) {
-      this._positionPanel();
-    }
-    return element;
-  }
-
-  destroy() {
-    this._bindOutsideClose(false);
-    this._bindReposition(false);
-    return super.destroy();
-  }
-
-  _collectValue() {
-    return [...this._value];
-  }
-
-  _renderColumns() {
-    replaceChildren(this._columns, []);
-    const levels = [];
-    let levelOptions = this._options;
-
-    this._activePath.forEach((active) => {
-      levels.push(levelOptions);
-      const next = levelOptions.find((option) => option.value === active.value);
-      levelOptions = next ? next.children : [];
-    });
-
-    if (this._activePath.length === 0 || levelOptions.length > 0) {
-      levels.push(levelOptions);
-    }
-
-    levels.forEach((options, level) => {
-      const active = this._activePath[level] || null;
-      const column = new HtmlElementNode('div').className('yoya-vcascader-column').styles({
-        borderRight:
-          level < levels.length - 1 ? '1px solid var(--yoya-color-border-faint, #efefef)' : '0',
+    const createColumn = (options, level, total) => {
+      const active = state.activePath[level] || null;
+      const column = div({ vn: 'VCascaderColumn' }).styles({
+        borderRight: level < total - 1 ? '1px solid var(--yoya-color-border-faint, #efefef)' : '0',
         boxSizing: 'border-box',
         minWidth: '120px',
         padding: '2px'
       });
 
       options.forEach((option) => {
-        const row = new HtmlElementNode('div')
-          .className('yoya-vcascader-option')
+        const row = div({ vn: 'VCascaderOption' })
           .attr({ 'data-vcascader-option': option.value, role: 'option' })
           .styles({
             alignItems: 'center',
@@ -244,14 +145,15 @@ class CascaderNode extends HtmlElementNode {
             gap: '6px',
             justifyContent: 'space-between',
             padding: '4px 8px'
-          })
-          .on('mouseenter', () => {
-            row.styles({ background: themeValue('color-surface-hover', '#f1f5f9') });
-          })
-          .on('mouseleave', () => {
-            row.style('background', null);
-          })
-          .on('click', () => this._selectOption(level, option));
+          });
+
+        row.on('mouseenter', () => {
+          row.styles({ background: themeValue('color-surface-hover', '#f1f5f9') });
+        });
+        row.on('mouseleave', () => {
+          row.style('background', null);
+        });
+        row.on('click', () => selectOption(level, option));
 
         const isActive = active !== null && active.value === option.value;
         if (isActive) {
@@ -262,205 +164,276 @@ class CascaderNode extends HtmlElementNode {
         }
 
         row.child(
-          new HtmlElementNode('span')
-            .styles({
+          span({
+            style: {
               flex: '1 1 auto',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
-            })
-            .child(option.label),
+            }
+          }).child(option.label),
           option.children.length > 0
-            ? new HtmlElementNode('span')
-                .styles({ color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' })
-                .child('›')
+            ? span({
+                style: { color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' }
+              }).child('›')
             : null
         );
         column.child(row);
       });
 
-      this._columns.child(column);
-    });
-  }
+      return column;
+    };
 
-  _selectOption(level, option) {
-    const path = this._activePath.slice(0, level);
-    path.push(option);
-    this._activePath = path;
+    const selectOption = (level, option) => {
+      const path = state.activePath.slice(0, level);
 
-    if (option.children.length > 0) {
-      this._value = path.map((entry) => entry.value);
-      this._syncTrigger();
-      this._notifyChange();
-      this._renderColumns();
-      return;
-    }
+      path.push(option);
+      state.activePath = path;
 
-    this._value = path.map((entry) => entry.value);
-    this._syncTrigger();
-    this._notifyChange();
-    this.close();
-  }
-
-  /** 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型 */
-  _notifyChange() {
-    this._changeHandlers.forEach((handler) =>
-      handler([...this._value], this._componentHandle ?? this)
-    );
-  }
-
-  _syncTrigger() {
-    if (this._value.length === 0) {
-      this._triggerText.textContent(this._placeholder);
-      return;
-    }
-
-    const labels = findPathByValues(this._options, this._value).map((option) => option.label);
-    this._triggerText.textContent(labels.length > 0 ? labels.join(' / ') : this._value.join(' / '));
-  }
-
-  _bindOutsideClose(enabled) {
-    if (enabled && !this._outsideUnbind) {
-      this._outsideListener = (event) => {
-        if (!this._el || !this._el.contains(event.target)) {
-          this.close();
-        }
-      };
-      this._outsideUnbind = bindDocumentEvent('mousedown', this._outsideListener);
-      return;
-    }
-
-    if (!enabled && this._outsideUnbind) {
-      this._outsideUnbind();
-      this._outsideListener = null;
-      this._outsideUnbind = null;
-    }
-  }
-
-  _bindReposition(enabled) {
-    if (enabled && !this._repositionUnbind) {
-      this._repositionListener = () => this._positionPanel();
-      const unbindScroll = bindWindowEvent('scroll', this._repositionListener, true);
-      const unbindResize = bindWindowEvent('resize', this._repositionListener);
-      this._repositionUnbind = () => {
-        unbindScroll();
-        unbindResize();
-      };
-      return;
-    }
-
-    if (!enabled && this._repositionUnbind) {
-      this._repositionUnbind();
-      this._repositionListener = null;
-      this._repositionUnbind = null;
-    }
-  }
-
-  _positionPanel() {
-    if (
-      typeof window === 'undefined' ||
-      typeof document === 'undefined' ||
-      !this._el ||
-      !this._trigger._el
-    ) {
-      return;
-    }
-
-    const rect = this._trigger._el.getBoundingClientRect();
-    const panel = this._panel._el;
-    if (!panel) {
-      return;
-    }
-
-    const panelHeight = panel.offsetHeight || 240;
-    const margin = 8;
-    let top = rect.bottom + 6;
-    if (top + panelHeight > window.innerHeight - margin) {
-      top = Math.max(margin, rect.top - panelHeight - 6);
-    }
-    this._panel.styles({ left: `${rect.left}px`, position: 'fixed', top: `${top}px` });
-  }
-
-  _setupCascader(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        change,
-        disabled,
-        name,
-        onChange,
-        options,
-        placeholder,
-        required,
-        value,
-        ...elementConfig
-      } = setup;
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+      if (option.children.length > 0) {
+        state.value = path.map((entry) => entry.value);
+        syncTrigger();
+        notifyChange();
+        renderColumns();
+        return;
       }
+
+      state.value = path.map((entry) => entry.value);
+      syncTrigger();
+      notifyChange();
+      api.close();
+    };
+
+    /** 句柄交给使用方的是组件节点（与旧外壳的 `_componentHandle` 同一口径） */
+    const notifyChange = () => {
+      state.changeHandlers.forEach((handler) => handler([...state.value], self.node()));
+    };
+
+    const bindOutsideClose = (enabled) => {
+      if (enabled && !outsideUnbind) {
+        outsideUnbind = bindDocumentEvent('mousedown', (event) => {
+          if (!node._el || !node._el.contains(event.target)) {
+            api.close();
+          }
+        });
+        return;
+      }
+
+      if (!enabled && outsideUnbind) {
+        outsideUnbind();
+        outsideUnbind = null;
+      }
+    };
+
+    const bindReposition = (enabled) => {
+      if (enabled && !repositionUnbind) {
+        const reposition = () => positionPanel();
+        const unbindScroll = bindWindowEvent('scroll', reposition, true);
+        const unbindResize = bindWindowEvent('resize', reposition);
+
+        repositionUnbind = () => {
+          unbindScroll();
+          unbindResize();
+        };
+        return;
+      }
+
+      if (!enabled && repositionUnbind) {
+        repositionUnbind();
+        repositionUnbind = null;
+      }
+    };
+
+    const positionPanel = () => {
+      if (typeof window === 'undefined' || !node._el || !trigger._el) {
+        return;
+      }
+
+      const rect = trigger._el.getBoundingClientRect();
+      const panelElement = panel._el;
+
+      if (!panelElement) {
+        return;
+      }
+
+      const panelHeight = panelElement.offsetHeight || 240;
+      const margin = 8;
+      let top = rect.bottom + 6;
+
+      if (top + panelHeight > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - panelHeight - 6);
+      }
+      panel.styles({ left: `${rect.left}px`, position: 'fixed', top: `${top}px` });
+    };
+
+    trigger.on('click', () => api.toggle());
+
+    /** 读写级联选项树（{ label, value, children }[]）。 */
+    api.options = (next) => {
+      if (next === undefined) {
+        return cloneOptions(state.options);
+      }
+
+      state.options = normalizeOptions(next);
+      syncTrigger();
+      if (state.open) {
+        renderColumns();
+      }
+      return api;
+    };
+
+    /** 读写选中路径（各级 value 组成的数组）。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return [...state.value];
+      }
+
+      const values = Array.isArray(next) ? next : next === null ? [] : [next];
+      const path = findPathByValues(state.options, values);
+
+      state.value = path.map((option) => option.value);
+      state.activePath = path;
+      syncTrigger();
+      return api;
+    };
+
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+
+    api.open = (value = true) => {
+      state.open = Boolean(value);
+      trigger.attr('aria-expanded', state.open ? 'true' : 'false');
+
+      if (state.open) {
+        renderColumns();
+        panel.style('display', null);
+        positionPanel();
+      } else {
+        panel.style('display', 'none');
+      }
+
+      bindOutsideClose(state.open);
+      bindReposition(state.open);
+      return api;
+    };
+
+    api.close = () => api.open(false);
+
+    api.toggle = () => api.open(!state.open);
+
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(next);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      trigger.attr('disabled', state.disabled ? true : null);
+      return api;
+    };
+
+    api.required = (next) => {
+      if (next === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(next);
+      node.attr('data-required', state.required ? 'true' : null);
+      return api;
+    };
+
+    api.name = (value) => {
+      if (value === undefined) {
+        return node.attr('data-name') || '';
+      }
+
+      node.attr('data-name', value ? String(value) : null);
+      return api;
+    };
+
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return state.placeholder;
+      }
+
+      state.placeholder = String(value);
+      syncTrigger();
+      return api;
+    };
+
+    /** 注册选中路径变化回调（后一次注册替换前一次，与旧方法面一致）。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    api.onChange = (handler) => api.change(handler);
+
+    /** 数组 = 初始选项树（旧 `_setupCascader` 的兜底分支）。 */
+    api.setupString = (next) => api.options(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupCascader` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
+      const { change, disabled, name, onChange, options, placeholder, required, value, ...rest } =
+        setup;
+
+      if (Object.keys(rest).length > 0) {
+        node.setup(rest);
+      }
+
       if (options !== undefined) {
-        this.options(options);
+        api.options(options);
       }
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        api.placeholder(placeholder);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
-      return;
-    }
 
-    this.options(setup);
-  }
-}
+      return api;
+    };
 
-export function vCascader(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VCascader',
-    createNode: (setup) => new CascaderNode(setup),
-    commands: [
-      'options',
-      'value',
-      'isDisabled',
-      'name',
-      'placeholder',
-      'open',
-      'close',
-      'toggle',
-      'change',
-      'onChange',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    // 旧 `renderDom()` 猴补的等价物：落地时若已展开，补一次面板定位
+    api.whenMount = () => {
+      if (state.open) {
+        positionPanel();
+      }
+    };
+
+    // 旧 `destroy()` 猴补的等价物：文档 / 窗口监听随组件销毁解绑
+    api.whenDestroy = () => {
+      bindOutsideClose(false);
+      bindReposition(false);
+    };
+
+    return node;
   });
 }
 
-export const VCascader = vCascader;
-defineComponentIdentity(VCascader, 'VCascader');
+export const vCascader = createComponentShortcut(VCascader);
 
 registerChildFactories(HtmlElementNode, { vCascader });
 
@@ -486,9 +459,11 @@ function findPathByValues(options, values) {
 
   for (const value of values) {
     const option = level.find((entry) => entry.value === value);
+
     if (!option) {
       break;
     }
+
     path.push(option);
     level = option.children;
   }
