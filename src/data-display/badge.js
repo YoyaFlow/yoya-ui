@@ -182,34 +182,6 @@ export function VBadge() {
     const contentBox = VBadgeContent();
     const textBox = VBadgeText(view);
 
-    // 视图：父组件只写组合，子结构各自带自己的结构与绑定
-    const root = span(
-      {
-        style: {
-          alignItems: 'center',
-          boxSizing: 'border-box',
-          display: 'inline-flex',
-          gap: '6px',
-          lineHeight: '1',
-          position: 'relative',
-          verticalAlign: 'middle'
-        },
-        vn: 'VBadge'
-      },
-      (box) => {
-        box.attr('data-count', () => (count.value === null ? null : String(count.value)));
-        box.attr('data-overflow-count', () =>
-          overflowWritten.value ? String(overflowCount.value) : null
-        );
-        box.attr('data-show-zero', () => (showZero.value ? 'true' : null));
-        box.attr('data-dot', () => (dot.value ? 'true' : null));
-        box.attr('data-status', status);
-        box.attr('data-color', color);
-        box.attr('data-standalone', () => (hasContent.value ? null : 'true'));
-        box.child(contentBox, VBadgeCount(view), textBox);
-      }
-    );
-
     /** 投递进来的内容在解析前只排在组件节点上；`self.node()` 在 setup 期取会抛。 */
     const queuedContent = () => {
       try {
@@ -380,6 +352,8 @@ export function VBadge() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
+        // 只有元素级配置（class / attrs / style / onXxx / 其它节点方法与属性）转发到视图根；
+        // 业务键上面已经走命令了。root 在下面「视图」那一段定义，这里是闭包、调用发生在构建之后。
         root.setupObject(elementConfig);
       }
       if (overflowOption !== undefined) {
@@ -428,6 +402,34 @@ export function VBadge() {
       refreshContentFlag();
       refresh();
     };
+
+    // 视图：父组件只写组合，子结构各自带自己的结构与绑定
+    const root = span(
+      {
+        style: {
+          alignItems: 'center',
+          boxSizing: 'border-box',
+          display: 'inline-flex',
+          gap: '6px',
+          lineHeight: '1',
+          position: 'relative',
+          verticalAlign: 'middle'
+        },
+        vn: 'VBadge'
+      },
+      (box) => {
+        box.attr('data-count', () => (count.value === null ? null : String(count.value)));
+        box.attr('data-overflow-count', () =>
+          overflowWritten.value ? String(overflowCount.value) : null
+        );
+        box.attr('data-show-zero', () => (showZero.value ? 'true' : null));
+        box.attr('data-dot', () => (dot.value ? 'true' : null));
+        box.attr('data-status', status);
+        box.attr('data-color', color);
+        box.attr('data-standalone', () => (hasContent.value ? null : 'true'));
+        box.child(contentBox, VBadgeCount(view), textBox);
+      }
+    );
 
     refreshContentFlag();
     return root;
