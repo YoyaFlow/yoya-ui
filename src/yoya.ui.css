@@ -321,6 +321,130 @@ body {
     height: 0;
     width: 0;
   }
+  :where([vn~='VField']) {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    position: relative;
+  }
+
+  [vn~='VField'] [vn~='VFieldHeader'] {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  [vn~='VField'] [vn~='VFieldLabel'] {
+    color: var(--yoya-color-text-strong, #111827);
+    flex: 1 1 auto;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VField'] [vn~='VFieldDisplay'] {
+    align-items: center;
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    display: flex;
+    min-height: var(--yoya-control-height-md, 34px);
+    padding: 0 12px;
+    width: 100%;
+  }
+
+  /* 编辑态：查看面留位、编辑面吸在它上面（位置由 JS 量测后写行内） */
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldDisplay'] {
+    visibility: hidden;
+  }
+
+  [vn~='VField'] [vn~='VFieldEditor'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    min-height: var(--yoya-control-height-md, 34px);
+    min-width: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: var(--yoya-z-overlay, 1200);
+  }
+
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldEditor'] {
+    display: block;
+  }
+
+  [vn~='VField'] [vn~='VFieldHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* 提示与报错互斥：有内容才显示（`data-hint` / `data-error` 是状态真源） */
+  [vn~='VField'][data-hint='true']:not([data-error='true']) [vn~='VFieldHint'] {
+    display: block;
+  }
+
+  [vn~='VField'] [vn~='VFieldError'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  [vn~='VField'][data-error='true'] [vn~='VFieldError'] {
+    display: block;
+  }
+
+  /* 动作按钮 / 确认 / 取消：默认收起，状态由根上的 `data-action` / `data-mode` 打开 */
+  [vn~='VField'] [vn~='VFieldAction'] {
+    flex-shrink: 0;
+    gap: 0;
+    min-width: 32px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  [vn~='VField'][data-action='true'] [vn~='VFieldAction'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [vn~='VField'] [vn~='VFieldConfirm'],
+  [vn~='VField'] [vn~='VFieldCancel'] {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.35;
+    opacity: 0;
+    padding: 0 4px;
+    pointer-events: none;
+  }
+
+  [vn~='VField'] [vn~='VFieldConfirm'] {
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  [vn~='VField'] [vn~='VFieldCancel'] {
+    color: var(--yoya-color-text-secondary, #6f6f6f);
+  }
+
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldConfirm'],
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldCancel'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   :where([vn~='VSymbolButton']) {
     align-items: center;
     background: transparent;

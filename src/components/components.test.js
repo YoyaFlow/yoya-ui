@@ -2327,8 +2327,9 @@ describe('compound components', () => {
     const element = field.renderDom();
 
     expect(element.dataset.mode).toBe('edit');
-    expect(element.querySelector('[vn~="VFieldDisplay"]').style.display).toBe('flex');
-    expect(element.querySelector('[vn~="VFieldEditor"]').style.display).toBe('');
+    // 查看面 / 编辑面的显隐与几何归 CSS：JS 只写 `data-mode`
+    expect(element.querySelector('[vn~="VFieldDisplay"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VFieldEditor"]')).not.toBeNull();
 
     field.value('worker');
 
@@ -2360,19 +2361,20 @@ describe('compound components', () => {
     expect(action.previousElementSibling.getAttribute('vn')).toBe('VFieldLabel');
     expect(action.textContent).toBe('✎');
     expect(action.getAttribute('aria-label')).toBe('编辑');
-    expect(action.style.opacity).toBe('0');
+    // 动作按钮显隐归 CSS（`[data-action='true']`），这里看根上的状态
+    expect(element.dataset.action).toBeUndefined();
 
     element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
 
-    expect(action.style.opacity).toBe('1');
+    expect(element.dataset.action).toBe('true');
 
     action.click();
 
     expect(element.dataset.mode).toBe('edit');
     expect(action.textContent).toBe('✎');
     expect(action.getAttribute('aria-label')).toBe('编辑');
-    expect(action.style.opacity).toBe('0');
-    expect(element.querySelector('[vn~="VFieldEditor"]').style.display).toBe('');
+    expect(element.dataset.action).toBeUndefined();
+    expect(element.querySelector('[vn~="VFieldEditor"]')).not.toBeNull();
     expect(element.querySelector('[vn~="VInputField"]').value).toBe('SRE Team');
   });
 

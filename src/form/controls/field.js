@@ -5,9 +5,7 @@ import {
   createComponentShortcut,
   normalizeChildren,
   replaceChildren,
-  setupContentSlot,
-  themeBorder,
-  themeValue
+  setupContentSlot
 } from '../../components/shared.js';
 import { formatDisplayValue } from './shared.js';
 import { applyControlValue, findFieldControl, readControlValue } from './form-values.js';
@@ -33,65 +31,12 @@ export function VField() {
       mode: 'view'
     };
 
-    const labelBox = div({
-      style: {
-        color: themeValue('color-text-strong', '#111827'),
-        flex: '1 1 auto',
-        fontWeight: '700',
-        lineHeight: '1.35'
-      },
-      vn: 'VFieldLabel'
-    });
-    const displayBox = div({
-      style: {
-        alignItems: 'center',
-        border: themeBorder('color-border', '#d8dee8'),
-        borderRadius: '6px',
-        boxSizing: 'border-box',
-        color: themeValue('color-text', '#172033'),
-        display: 'flex',
-        minHeight: 'var(--yoya-control-height-md, 34px)',
-        padding: '0 12px',
-        width: '100%'
-      },
-      vn: 'VFieldDisplay'
-    });
-    const editorBox = div({
-      style: {
-        background: themeValue('color-surface', '#ffffff'),
-        borderRadius: '6px',
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.18)',
-        boxSizing: 'border-box',
-        display: 'none',
-        left: '0',
-        minHeight: 'var(--yoya-control-height-md, 34px)',
-        minWidth: '0',
-        padding: '0',
-        position: 'absolute',
-        top: '0',
-        width: '100%',
-        zIndex: 'var(--yoya-z-overlay, 1200)'
-      },
-      vn: 'VFieldEditor'
-    });
-    const hintBox = div({
-      style: {
-        color: themeValue('color-text-muted', '#64748b'),
-        display: 'none',
-        fontSize: '12px',
-        lineHeight: '1.45'
-      },
-      vn: 'VFieldHint'
-    });
-    const errorBox = div({
-      style: {
-        color: themeValue('color-text-danger', '#b91c1c'),
-        display: 'none',
-        fontSize: '12px',
-        lineHeight: '1.45'
-      },
-      vn: 'VFieldError'
-    });
+    // 各块的静态样式在 `yoya.ui.css`（R5）：JS 只留状态绑定与量测结果
+    const labelBox = div({ vn: 'VFieldLabel' });
+    const displayBox = div({ vn: 'VFieldDisplay' });
+    const editorBox = div({ vn: 'VFieldEditor' });
+    const hintBox = div({ vn: 'VFieldHint' });
+    const errorBox = div({ vn: 'VFieldError' });
     // 动作按钮复用 vButton：身份写多值（部件 + 组件），样式仍归自己
     const actionButton = vButton('✎').size('small').variant('secondary');
     actionButton.setup({ vn: 'VFieldAction VButton' });
@@ -101,29 +46,9 @@ export function VField() {
       tabindex: '-1',
       title: '编辑'
     });
-    actionButton.styles({
-      flexShrink: '0',
-      gap: '0',
-      minWidth: '32px',
-      opacity: '0',
-      pointerEvents: 'none',
-      transition: 'opacity 120ms ease'
-    });
     const confirmButton = button({
       'aria-hidden': 'true',
       'aria-label': '确认',
-      style: {
-        background: 'transparent',
-        border: '0',
-        color: themeValue('color-primary', '#1f6feb'),
-        cursor: 'pointer',
-        font: 'inherit',
-        fontWeight: '700',
-        lineHeight: '1.35',
-        opacity: '0',
-        padding: '0 4px',
-        pointerEvents: 'none'
-      },
       tabindex: '-1',
       title: '确认',
       type: 'button',
@@ -132,18 +57,6 @@ export function VField() {
     const cancelButton = button({
       'aria-hidden': 'true',
       'aria-label': '取消',
-      style: {
-        background: 'transparent',
-        border: '0',
-        color: themeValue('color-text-secondary', '#6f6f6f'),
-        cursor: 'pointer',
-        font: 'inherit',
-        fontWeight: '700',
-        lineHeight: '1.35',
-        opacity: '0',
-        padding: '0 4px',
-        pointerEvents: 'none'
-      },
       tabindex: '-1',
       title: '取消',
       type: 'button',
@@ -153,23 +66,12 @@ export function VField() {
     const node = div(
       {
         'data-mode': 'view',
-        style: { display: 'grid', gap: '8px', minWidth: '0', position: 'relative' },
         vn: 'VField'
       },
       (root) =>
         root.child(
-          div(
-            {
-              style: {
-                alignItems: 'center',
-                display: 'flex',
-                gap: '8px',
-                justifyContent: 'space-between',
-                minWidth: '0'
-              },
-              vn: 'VFieldHeader'
-            },
-            (header) => header.child(labelBox, actionButton, confirmButton, cancelButton)
+          div({ vn: 'VFieldHeader' }, (header) =>
+            header.child(labelBox, actionButton, confirmButton, cancelButton)
           ),
           displayBox,
           editorBox,
@@ -251,8 +153,8 @@ export function VField() {
         tabindex: entryVisible ? null : '-1',
         title: '编辑'
       });
-      actionButton.style('opacity', entryVisible ? '1' : '0');
-      actionButton.style('pointerEvents', entryVisible ? null : 'none');
+      // 显隐几何归 CSS（`[data-action='true']` 规则）
+      node.attr('data-action', entryVisible ? 'true' : null);
 
       [confirmButton, cancelButton].forEach((buttonNode) => {
         const actionLabel = buttonNode === confirmButton ? '确认' : '取消';
@@ -263,8 +165,6 @@ export function VField() {
           tabindex: editing ? null : '-1',
           title: actionLabel
         });
-        buttonNode.style('opacity', editing ? '1' : '0');
-        buttonNode.style('pointerEvents', editing ? null : 'none');
       });
 
       return api;
@@ -287,7 +187,7 @@ export function VField() {
       const hasContent = value !== null && value !== undefined && value !== '';
 
       state.hintVisible = hasContent;
-      hintBox.style('display', hasContent ? null : 'none');
+      node.attr('data-hint', hasContent ? 'true' : null);
       replaceChildren(hintBox, hasContent ? normalizeChildren(value) : []);
       return api;
     };
@@ -299,9 +199,7 @@ export function VField() {
 
       const hasContent = value !== null && value !== undefined && value !== '';
 
-      errorBox.style('display', hasContent ? null : 'none');
       node.attr('data-error', hasContent ? 'true' : null);
-      hintBox.style('display', hasContent ? 'none' : state.hintVisible ? null : 'none');
       replaceChildren(errorBox, hasContent ? normalizeChildren(value) : []);
       return api;
     };
@@ -400,13 +298,10 @@ export function VField() {
         const control = currentControl();
 
         state.editSnapshot = control ? readControlValue(control) : null;
-        displayBox.style('visibility', 'hidden');
-        editorBox.style('display', null);
+        // 查看面留位 / 编辑面显隐由 `[data-mode='edit']` 的 CSS 规则接管
         positionEditor();
         focusEditor();
       } else {
-        editorBox.style('display', 'none');
-        displayBox.style('visibility', null);
         syncDisplayFromControl();
       }
 

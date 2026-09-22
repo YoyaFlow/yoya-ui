@@ -18,9 +18,9 @@ describe('vField floating edit', () => {
     const el = field.renderDom();
     const display = el.querySelector('[vn~="VFieldDisplay"]');
     expect(display.textContent).toContain('Ada');
-    expect(display.style.minHeight).toContain('yoya-control-height-md');
-    expect(display.style.display).toBe('flex');
-    expect(el.querySelector('[vn~="VFieldEditor"]').style.display).toBe('none');
+    // 查看面 / 编辑面的静态样式与显隐都归 yoya.ui.css（`[vn~='VFieldDisplay']` 与 `[data-mode]` 规则）
+    expect(display.getAttribute('vn')).toBe('VFieldDisplay');
+    expect(el.dataset.mode).toBe('view');
   });
 
   it('double-click enters edit with an editor anchored to the field', () => {
@@ -29,9 +29,9 @@ describe('vField floating edit', () => {
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(field.mode()).toBe('edit');
     const editor = el.querySelector('[vn~="VFieldEditor"]');
-    expect(editor.style.display).not.toBe('none');
-    expect(el.style.position).toBe('relative');
-    expect(editor.style.position).toBe('absolute');
+    // 编辑面显隐 / 定位档位由 `[data-mode='edit']` 的 CSS 规则接管（量测结果仍写行内）
+    expect(el.dataset.mode).toBe('edit');
+    expect(editor.getAttribute('vn')).toBe('VFieldEditor');
   });
 
   it('confirm button saves and restores display to the new value', () => {
@@ -150,14 +150,15 @@ describe('vField floating edit', () => {
     const el = field.renderDom();
     const display = el.querySelector('[vn~="VFieldDisplay"]');
 
-    expect(display.style.visibility).not.toBe('hidden');
+    expect(display).not.toBeNull();
     el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    expect(display.style.visibility).toBe('hidden');
+    // 编辑态：查看面留位（`[data-mode='edit']` 规则给 `visibility: hidden`）
+    expect(el.dataset.mode).toBe('edit');
 
     el.querySelector('[vn~="VFieldCancel"]').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
-    expect(display.style.visibility).not.toBe('hidden');
+    expect(el.dataset.mode).toBe('view');
   });
 
   it('removes the textarea inline border inside the floating editor', () => {

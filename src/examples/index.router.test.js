@@ -2571,7 +2571,9 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     detailField.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
     const detailAction = detailField.querySelector('[vn~="VFieldAction"]');
 
-    expect(detailAction.style.opacity).toBe('1');
+    // 动作按钮的显隐归 CSS（`[data-action='true']` 规则），这里看状态属性
+    expect(detailField.dataset.action).toBe('true');
+    expect(detailAction).not.toBeNull();
     detailAction.click();
     expect(detailField.dataset.mode).toBe('edit');
 
