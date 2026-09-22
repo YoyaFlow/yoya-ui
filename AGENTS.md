@@ -211,6 +211,27 @@ function ServiceDetailCard() {
 - 演示代码同样以声明式写法为主，参数对象只作为 API 说明保留。
 - 每个组件或演示集最多保留一个完整的参数对象案例，其余示例使用声明式写法。
 
+## State → View: Read-Value Bindings First
+
+**新代码（含迁移中的每个文件）状态到视图一律优先走读值绑定**，不要新增"集中快照函数"。
+
+- 状态放 `ref`（`src/core/signals/handle.js`），结构里挂**读值绑定**：
+  `attr(name, () => …)` / `style(name, () => …)` / `toggleClass(name, () => …)` /
+  `child(vText(() => …))`；命令只改状态，**不搬 DOM**。
+- 值位置白名单：`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable`（函数或句柄 = 活值）。
+  `child()` **不是**值位置——文本要写 `child(vText(() => …))`。
+- 例外（票 15 §4）："只在调用过才写"的属性用 `xxxSet` 标记 + 读值绑定，保持逐字节一致。
+- 仍然禁止：写完再集中刷（`flush()` / `markDirty()` / rAF 批量写）、构造之后按身份查找再写
+  （`querySelector('[vn~=…]')`）、组件里直接操作 `_el` / `_children`。
+- 迁移期存量的历史写法（`syncXxx()` / `_syncXxx()` 把多处 `attr` / `style` / `replaceChildren`
+  收在一个函数里、由命令同步调用）**不是错**，但**只减不增**：
+  `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结存量，
+  新文件一个都不许有；迁移一刀之后用 `UPDATE_VIEW_BINDING_BASELINE=1` 下调。
+- 为什么较真：集中快照把"状态"和"状态→视图的映射"拆到两处（读代码要跳），而且指令式写快照
+  **编译路径吃不到**，只能整体回落通用路径——按仓库「编译路径为打榜曝光服务」的定位，
+  模板式写法（结构一次写清 + 活值）才是能给编译器接住的形状。
+  `src/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
+
 ## Setup 回调节点命名规则
 
 setup 回调参数是节点（ViewNode / 组件），命名按职责语义化，避免与闭包外层业务数据同名，防止变量遮蔽：

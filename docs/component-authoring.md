@@ -165,6 +165,42 @@ yoya-ui state is driven by the built-in Signals: a component holds state in `ref
 - Text: pass a handle for state-driven text — `vText(count)`, `child(count)` and `div(count)` (a handle in the factory's setup position, equivalent to `div((el) => el.child(count))`) are equivalent; only wrap in `computed(fn)` when the value is derived. When you need imperative in-place replacement, keep a `vText()` handle and call `textContent(next)` (replaces, idempotent). **The node-level `text()` was removed**: append with `child(content)` (repeated appends stack), and "set the label" with a `vText()` handle plus `textContent(next)`. Component-level `text()` (`vBadge` / `vProgress` / `vMenu`, …) and SVG's `<text>` `text()` are separate APIs and still work.
 - Expose methods, not handles: keep internal state in `ref`, and expose chainable methods such as `value(next)` / `disabled(next)` instead of handing the signal object to callers.
 
+#### 6.0 Two shapes side by side: centralised snapshot (legacy) vs read-value binding (target)
+
+The 0.6 → 0.7 attribute migration was an **equivalence migration**: the old "state + `_syncXxx()` writes snapshots" shape was moved over as-is, so the golden file (`src/migration-equivalence.test.js`) could prove byte for byte that only class names / identity changed. **Do not copy that shape in new code** — state → view goes through read-value bindings:
+
+```js
+// legacy shape (migration stock, only-decrease): state in a closure, mapping centralised in one function
+const state = { count: null };
+const badgeBox = span({ vn: 'VBadgeCount' }).styles({ ...static... });
+const syncBadge = () => {
+  badgeBox.style('display', state.count === null ? 'none' : 'inline-flex');
+  badgeBox.attr('aria-label', state.count === null ? null : String(state.count));
+};
+api.count = (value) => (value === undefined ? state.count : ((state.count = value), syncBadge(), api));
+
+// target shape: state in a ref, the mapping lives in the structure, commands only change state
+const count = ref(null);
+const visible = computed(() => count.value !== null);
+const node = span({ vn: 'VBadge' }, (root) =>
+  root
+    .span({ vn: 'VBadgeContent', vn_slot: '' })
+    .span({ vn: 'VBadgeCount', style: { ...static... } })
+      .style('display', () => (visible.value ? 'inline-flex' : 'none'))
+      .attr('aria-label', () => (visible.value ? String(count.value) : null))
+      .child(vText(() => (visible.value ? String(count.value) : '')))
+);
+api.count = (value) => (value === undefined ? count.value : ((count.value = value), api));
+```
+
+Three hard rules:
+
+1. **Value positions**: `attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable` take a handle or a zero-argument reader; `child()` is **not** a value position — write text as `child(vText(() => …))`.
+2. **"Only written once touched" attributes** use an `xxxSet` flag plus a read-value binding (keeps the byte-for-byte "untouched means no DOM attribute" semantics).
+3. **No write-then-flush batch**: nothing beyond `flush()` on a region, no `markDirty()` + rAF deferred writes; after a command runs, the DOM is correct on the same tick.
+
+Gate: `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
+
 ### 6.1 Rebuildable regions
 
 When a block needs "structure follows data" and a stateful component is too heavy, mark it as a region:

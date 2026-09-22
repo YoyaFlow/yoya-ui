@@ -151,6 +151,42 @@ yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值�
 - 文案：状态驱动的文案传句柄——`vText(count)`、`child(count)`、元素工厂 setup 位置的 `div(count)` 三种写法等价（`div(count)` 等价 `div((el) => el.child(count))`），只有值本身是派生结果时才套 `computed(fn)`；需要命令式原地替换时，持有 `vText()` 句柄用 `textContent(next)`（替换、幂等）。**节点级 `text()` 已移除**：追加文本用 `child(content)`，反复追加会堆叠，要"设置文案"就用 `vText()` 句柄的 `textContent(next)`；组件自己的 `text()`（`vBadge` / `vProgress` / `vMenu` 等）与 SVG `<text>` 的 `text()` 是另一套 API，照旧可用。
 - 对外只暴露方法：组件内部用 `ref` 持有状态，对外给 `value(next)` / `disabled(next)` 这类链式方法，不把内部信号对象交给使用者。
 
+#### 6.0 写法对照：集中快照（历史）与读值绑定（目标）
+
+0.6 → 0.7 的属性化迁移是**等价迁移**：老组件里的"状态 + `_syncXxx()` 集中写快照"原样搬了过来，为的是让金标（`src/migration-equivalence.test.js`）逐字节证明"只换了类名 / 身份"。**新代码不要照抄这个形状**——状态 → 视图请走读值绑定：
+
+```js
+// 历史形状（迁移期存量，只减不增）：状态在闭包里，视图映射集中在一个函数里，命令同步调它
+const state = { count: null };
+const badgeBox = span({ vn: 'VBadgeCount' }).styles({ …静态… });
+const syncBadge = () => {
+  badgeBox.style('display', state.count === null ? 'none' : 'inline-flex');
+  badgeBox.attr('aria-label', state.count === null ? null : String(state.count));
+};
+api.count = (value) => (value === undefined ? state.count : ((state.count = value), syncBadge(), api));
+
+// 目标形状：状态放 ref，映射写在结构里（读值绑定），命令只改状态
+const count = ref(null);
+const visible = computed(() => count.value !== null);
+const node = span({ vn: 'VBadge' }, (root) =>
+  root
+    .span({ vn: 'VBadgeContent', vn_slot: '' })
+    .span({ vn: 'VBadgeCount', style: { …静态… } })
+      .style('display', () => (visible.value ? 'inline-flex' : 'none'))
+      .attr('aria-label', () => (visible.value ? String(count.value) : null))
+      .child(vText(() => (visible.value ? String(count.value) : '')))
+);
+api.count = (value) => (value === undefined ? count.value : ((count.value = value), api));
+```
+
+三条硬规则：
+
+1. **值位置白名单**：`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable` 接受句柄或零参闭包；`child()` **不是**值位置——文本要写 `child(vText(() => …))`。
+2. **"只在调用过才写"的属性**用 `xxxSet` 标记 + 读值绑定（保持"没碰过就不写 DOM 属性"的逐字节语义）。
+3. **不许写完再集中刷**：没有 `flush()` 之外的批量写、没有 `markDirty()` + rAF 这种延迟刷；命令改完当拍 DOM 就是对的。
+
+门禁：`src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结"集中快照函数"存量（**只减不增**，新文件一个都不许有）。迁移一刀之后跑 `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js` 下调基线。较真的理由不止可读性：指令式写快照**编译路径吃不到**，只要不是"静态结构 + 活值 + 条件/列表"，编译器就整块回落通用路径。
+
 ### 6.1 可重建区域
 
 当一块内容需要「结构随数据变化」，而组件级状态容器又太重时，把它标记成区域：
