@@ -2346,7 +2346,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(demos).toHaveLength(5);
     expect(demos[demos.length - 1].dataset.dataDisplayDemo).toBe('upload');
-    expect(uploadDemo.querySelector('.yoya-vavatar-upload')).not.toBeNull();
+    expect(uploadDemo.querySelector('[vn~="VAvatarUpload"]')).not.toBeNull();
     expect(uploadDemo.querySelector('[data-avatar-upload-status]').textContent).toBe('未选择头像');
   });
 

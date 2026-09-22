@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { VAvatarUpload, div, vAvatarUpload, vForm } from '../index.js';
+import { div, hasComponentIdentity, vAvatarUpload, vForm } from '../index.js';
 
 function createImageFile(name = 'avatar.png', type = 'image/png') {
   return new File(['image'], name, { type });
 }
 
 function findAvatarUpload(node) {
-  if (node instanceof VAvatarUpload) {
+  if (hasComponentIdentity(node, 'VAvatarUpload')) {
     return node;
   }
 
@@ -25,10 +25,11 @@ describe('vAvatarUpload', () => {
     const upload = vAvatarUpload();
     const element = upload.renderDom();
 
-    expect(upload).toBeInstanceOf(VAvatarUpload);
+    expect(hasComponentIdentity(upload, 'VAvatarUpload')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VAvatarUpload');
     expect(element.querySelector('input[type="file"]').style.display).toBe('none');
-    expect(element.querySelector('.yoya-vavatar-upload-preview')).not.toBeNull();
-    expect(element.querySelector('.yoya-vavatar-upload-hint').textContent).toBe('点击上传头像');
+    expect(element.querySelector('[vn~="VAvatarUploadPreview"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VAvatarUploadHint"]').textContent).toBe('点击上传头像');
   });
 
   it('sets, reads, and removes an avatar file', () => {
@@ -40,12 +41,12 @@ describe('vAvatarUpload', () => {
     expect(upload.value()).toBe(file);
     expect(upload.files()).toEqual([file]);
     expect(upload.items()[0]).toBe(file);
-    expect(element.querySelector('.yoya-vavatar-upload-image')).not.toBeNull();
+    expect(element.querySelector('[vn~="VAvatarUploadImage"]')).not.toBeNull();
 
     upload.remove();
     expect(upload.value()).toBeNull();
     expect(upload.files()).toEqual([]);
-    expect(element.querySelector('.yoya-vavatar-upload-hint').textContent).toBe('点击上传头像');
+    expect(element.querySelector('[vn~="VAvatarUploadHint"]').textContent).toBe('点击上传头像');
   });
 
   it('applies accept, disabled, shape, and size behavior', () => {
@@ -70,7 +71,7 @@ describe('vAvatarUpload', () => {
     });
     const upload = page.children()[0];
 
-    expect(upload).toBeInstanceOf(VAvatarUpload);
+    expect(hasComponentIdentity(upload, 'VAvatarUpload')).toBe(true);
     expect(upload.shape()).toBe('square');
   });
 

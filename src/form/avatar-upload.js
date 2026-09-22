@@ -1,360 +1,353 @@
-import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
-import { CloseOutlined, UserOutlined } from '../svg/icons.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { registerChildFactories } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
+  HtmlElementNode,
+  button as buttonTag,
+  div,
+  img,
+  input as inputTag,
+  span
+} from '../html/index.js';
+import { CloseOutlined, UserOutlined } from '../svg/icons.js';
+import {
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   resolveTextValue,
   themeValue
 } from '../components/shared.js';
 
-/** 头像上传的节点类型（不导出到包入口）；公开组件 `vAvatarUpload` 是 vNode 外壳。 */
-class AvatarUploadNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VAvatarUpload';
-    this._accept = 'image/*';
-    this._disabled = false;
-    this._name = '';
-    this._objectUrl = null;
-    this._shape = 'circle';
-    this._size = 96;
-    this._value = null;
-    this._input = new HtmlElementNode('input')
-      .attr({ accept: 'image/*', tabindex: '-1', type: 'file' })
-      .style('display', 'none');
-    this._preview = new HtmlElementNode('div')
-      .className('yoya-vavatar-upload-preview')
-      .attr({ role: 'button', tabindex: '0' });
-    this._remove = new HtmlElementNode('button')
-      .className('yoya-vavatar-upload-remove')
+/**
+ * 头像上传（形态 B，票 15 §4）：视图根是外壳 `div` + 隐藏的 file 输入 + 预览区 + 移除按钮。
+ *
+ * - 身份写在结构里：根 `vn: 'VAvatarUpload'`、预览区 `vn: 'VAvatarUploadPreview'`、
+ *   移除按钮 `vn: 'VAvatarUploadRemove'`、预览图 `vn: 'VAvatarUploadImage'`、
+ *   空态 `VAvatarUploadFallback`（提示 `VAvatarUploadHint`）；
+ * - 状态与命令收进 `vNode` 闭包；预览内容**按需建**：有值时建 `<img>`、没值时建空态；
+ * - 元素级时机：旧 `destroy()` 里释放 object URL 改 `whenDestroy`；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupAvatarUpload` 同口径）。
+ */
+export function VAvatarUpload() {
+  return vNode((api, self) => {
+    const state = {
+      accept: 'image/*',
+      disabled: false,
+      name: '',
+      objectUrl: null,
+      shape: 'circle',
+      size: 96,
+      value: null
+    };
+
+    const input = inputTag({ style: { display: 'none' } }).attr({
+      accept: 'image/*',
+      tabindex: '-1',
+      type: 'file'
+    });
+    const preview = div({ vn: 'VAvatarUploadPreview' }).attr({
+      role: 'button',
+      tabindex: '0'
+    });
+    const removeButton = buttonTag({ vn: 'VAvatarUploadRemove' })
       .attr({ 'aria-label': '移除头像', title: '移除', type: 'button' })
       .child(CloseOutlined().styles({ height: '12px', width: '12px' }))
       .style('display', 'none');
-
-    this.className(componentClass, 'yoya-vavatar-upload');
-    this.styles({
+    const node = div({ vn: 'VAvatarUpload' }).styles({
       display: 'inline-grid',
       gap: '8px',
       justifyItems: 'center',
       minWidth: '0'
     });
-    this.child(this._input, this._preview, this._remove);
 
-    this._input.on('change', () => this._handleInputChange());
-    this._preview.on('click', () => this._openPicker());
-    this._preview.on('keydown', (event) => {
+    node.child(input, preview, removeButton);
+
+    const releaseObjectUrl = () => {
+      if (
+        state.objectUrl &&
+        typeof URL !== 'undefined' &&
+        typeof URL.revokeObjectURL === 'function'
+      ) {
+        URL.revokeObjectURL(state.objectUrl);
+      }
+      state.objectUrl = null;
+    };
+
+    const syncPreviewSize = () => {
+      preview.styles({
+        borderRadius: state.shape === 'square' ? '10px' : '50%',
+        height: `${state.size}px`,
+        width: `${state.size}px`
+      });
+    };
+
+    const sync = () => {
+      releaseObjectUrl();
+      replaceChildren(preview, []);
+      node.attr('data-has-value', state.value ? 'true' : null);
+      removeButton.style('display', state.value ? null : 'none');
+
+      if (state.value) {
+        if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+          state.objectUrl = URL.createObjectURL(state.value);
+        }
+        preview.child(
+          img({ vn: 'VAvatarUploadImage' }).attr({
+            alt: '头像预览',
+            src: state.objectUrl || ''
+          })
+        );
+      } else {
+        preview.child(
+          div({ vn: 'VAvatarUploadFallback' }).child(
+            UserOutlined().styles({
+              color: themeValue('color-text-muted', '#64748b'),
+              height: '28px',
+              width: '28px'
+            }),
+            span({ vn: 'VAvatarUploadHint' }).child('点击上传头像')
+          )
+        );
+      }
+
+      syncPreviewSize();
+    };
+
+    const emitChange = () => {
+      if (!node._el) {
+        return;
+      }
+
+      const EventClass = node._el.ownerDocument?.defaultView?.Event || Event;
+
+      node._el.dispatchEvent(new EventClass('change', { bubbles: true }));
+    };
+
+    const setDragging = (dragging) => {
+      preview.attr('data-dragging', dragging ? 'true' : null);
+    };
+
+    const openPicker = () => {
+      if (!state.disabled) {
+        input._el?.click();
+      }
+    };
+
+    const acceptsFile = (file) => {
+      const rules = state.accept
+        .split(',')
+        .map((rule) => rule.trim().toLowerCase())
+        .filter(Boolean);
+      const fileType = (file.type || '').toLowerCase();
+      const fileName = (file.name || '').toLowerCase();
+
+      return rules.some((rule) => {
+        if (rule === '*' || rule === '*/*') {
+          return true;
+        }
+        if (rule.startsWith('.')) {
+          return fileName.endsWith(rule);
+        }
+        if (rule.endsWith('/*')) {
+          return fileType.startsWith(rule.slice(0, -1));
+        }
+        return fileType === rule;
+      });
+    };
+
+    const addFiles = (fileList) => {
+      if (!fileList || state.disabled) {
+        return;
+      }
+
+      const file = Array.from(fileList).find((item) => acceptsFile(item));
+
+      if (file) {
+        api.value(file);
+      }
+    };
+
+    input.on('change', () => {
+      if (input._el?.files) {
+        addFiles(input._el.files);
+      }
+      if (input._el) {
+        input._el.value = '';
+      }
+    });
+    preview.on('click', () => openPicker());
+    preview.on('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        this._openPicker();
+        openPicker();
       }
     });
-    this._preview.on('dragenter', (event) => {
+    preview.on('dragenter', (event) => {
       event.preventDefault();
-      this._setDragging(true);
+      setDragging(true);
     });
-    this._preview.on('dragover', (event) => {
+    preview.on('dragover', (event) => {
       event.preventDefault();
-      this._setDragging(true);
+      setDragging(true);
     });
-    this._preview.on('dragleave', () => this._setDragging(false));
-    this._preview.on('drop', (event) => this._handleDrop(event));
-    this._remove.on('click', (event) => {
+    preview.on('dragleave', () => setDragging(false));
+    preview.on('drop', (event) => {
+      event.preventDefault();
+      setDragging(false);
+
+      if (!state.disabled && event.dataTransfer?.files) {
+        addFiles(event.dataTransfer.files);
+      }
+    });
+    removeButton.on('click', (event) => {
       event.stopPropagation();
-      this.remove();
+      api.remove();
     });
 
-    this._setupAvatarUpload(setup);
-    this._sync();
-  }
-
-  name(value) {
-    if (value === undefined) {
-      return this._name;
-    }
-
-    this._name = resolveTextValue(value);
-    return this;
-  }
-
-  accept(value) {
-    if (value === undefined) {
-      return this._accept;
-    }
-
-    this._accept = value ? String(value) : 'image/*';
-    this._input.attr('accept', this._accept);
-    this.attr('data-accept', this._accept);
-    return this;
-  }
-
-  shape(value) {
-    if (value === undefined) {
-      return this._shape;
-    }
-
-    this._shape = value === 'square' ? 'square' : 'circle';
-    this.attr('data-shape', this._shape);
-    this._syncPreviewSize();
-    return this;
-  }
-
-  size(value) {
-    if (value === undefined) {
-      return this._size;
-    }
-
-    this._size = Math.max(32, Number(value) || 96);
-    this.attr('data-size', String(this._size));
-    this._syncPreviewSize();
-    return this;
-  }
-
-  disabled(value) {
-    if (value === undefined) {
-      return this._disabled;
-    }
-
-    this._disabled = Boolean(value);
-    this.attr('data-disabled', this._disabled ? 'true' : null);
-    this._preview.attr('aria-disabled', this._disabled ? 'true' : null);
-    this._preview.attr('tabindex', this._disabled ? '-1' : '0');
-    this._input.attr('disabled', this._disabled ? true : null);
-    this._sync();
-    return this;
-  }
-
-  value(value) {
-    if (value === undefined) {
-      return this._value;
-    }
-
-    this._value = value instanceof File ? value : null;
-    this._sync();
-    this._emitChange();
-    return this;
-  }
-
-  files(value) {
-    if (value === undefined) {
-      return this._value ? [this._value] : [];
-    }
-
-    const next = Array.isArray(value) ? value[0] : value;
-    return this.value(next);
-  }
-
-  items(value) {
-    return this.files(value);
-  }
-
-  addFiles(fileList) {
-    if (!fileList || this._disabled) {
-      return this;
-    }
-
-    const file = Array.from(fileList).find((item) => this._acceptsFile(item));
-    if (file) {
-      this.value(file);
-    }
-    return this;
-  }
-
-  remove() {
-    if (this._value) {
-      this.value(null);
-    }
-    return this;
-  }
-
-  clear() {
-    return this.remove();
-  }
-
-  destroy() {
-    this._releaseObjectUrl();
-    return super.destroy();
-  }
-
-  _openPicker() {
-    if (!this._disabled) {
-      this._input._el?.click();
-    }
-  }
-
-  _handleInputChange() {
-    if (this._input._el?.files) {
-      this.addFiles(this._input._el.files);
-    }
-    if (this._input._el) {
-      this._input._el.value = '';
-    }
-  }
-
-  _handleDrop(event) {
-    event.preventDefault();
-    this._setDragging(false);
-
-    if (!this._disabled && event.dataTransfer?.files) {
-      this.addFiles(event.dataTransfer.files);
-    }
-  }
-
-  _setDragging(dragging) {
-    this._preview.attr('data-dragging', dragging ? 'true' : null);
-  }
-
-  _acceptsFile(file) {
-    const rules = this._accept
-      .split(',')
-      .map((rule) => rule.trim().toLowerCase())
-      .filter(Boolean);
-    const fileType = (file.type || '').toLowerCase();
-    const fileName = (file.name || '').toLowerCase();
-
-    return rules.some((rule) => {
-      if (rule === '*' || rule === '*/*') {
-        return true;
+    api.name = (value) => {
+      if (value === undefined) {
+        return state.name;
       }
-      if (rule.startsWith('.')) {
-        return fileName.endsWith(rule);
+
+      state.name = resolveTextValue(value);
+      return api;
+    };
+
+    api.accept = (value) => {
+      if (value === undefined) {
+        return state.accept;
       }
-      if (rule.endsWith('/*')) {
-        return fileType.startsWith(rule.slice(0, -1));
+
+      state.accept = value ? String(value) : 'image/*';
+      input.attr('accept', state.accept);
+      node.attr('data-accept', state.accept);
+      return api;
+    };
+
+    api.shape = (value) => {
+      if (value === undefined) {
+        return state.shape;
       }
-      return fileType === rule;
-    });
-  }
 
-  _sync() {
-    this._releaseObjectUrl();
-    replaceChildren(this._preview, []);
-    this.attr('data-has-value', this._value ? 'true' : null);
-    this._remove.style('display', this._value ? null : 'none');
+      state.shape = value === 'square' ? 'square' : 'circle';
+      node.attr('data-shape', state.shape);
+      syncPreviewSize();
+      return api;
+    };
 
-    if (this._value) {
-      if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
-        this._objectUrl = URL.createObjectURL(this._value);
+    api.size = (value) => {
+      if (value === undefined) {
+        return state.size;
       }
-      this._preview.child(
-        new HtmlElementNode('img')
-          .className('yoya-vavatar-upload-image')
-          .attr({ alt: '头像预览', src: this._objectUrl || '' })
-      );
-    } else {
-      this._preview.child(
-        new HtmlElementNode('div').className('yoya-vavatar-upload-fallback').child(
-          UserOutlined().styles({
-            color: themeValue('color-text-muted', '#64748b'),
-            height: '28px',
-            width: '28px'
-          }),
-          new HtmlElementNode('span').className('yoya-vavatar-upload-hint').child('点击上传头像')
-        )
-      );
-    }
 
-    this._syncPreviewSize();
-    return this;
-  }
+      state.size = Math.max(32, Number(value) || 96);
+      node.attr('data-size', String(state.size));
+      syncPreviewSize();
+      return api;
+    };
 
-  _syncPreviewSize() {
-    this._preview.styles({
-      borderRadius: this._shape === 'square' ? '10px' : '50%',
-      height: `${this._size}px`,
-      width: `${this._size}px`
-    });
-  }
+    api.disabled = (value) => {
+      if (value === undefined) {
+        return state.disabled;
+      }
 
-  _releaseObjectUrl() {
-    if (
-      this._objectUrl &&
-      typeof URL !== 'undefined' &&
-      typeof URL.revokeObjectURL === 'function'
-    ) {
-      URL.revokeObjectURL(this._objectUrl);
-    }
-    this._objectUrl = null;
-  }
+      state.disabled = Boolean(value);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      preview.attr('aria-disabled', state.disabled ? 'true' : null);
+      preview.attr('tabindex', state.disabled ? '-1' : '0');
+      input.attr('disabled', state.disabled ? true : null);
+      sync();
+      return api;
+    };
 
-  _emitChange() {
-    if (!this._el) {
-      return;
-    }
+    api.value = (value) => {
+      if (value === undefined) {
+        return state.value;
+      }
 
-    const EventClass = this._el.ownerDocument?.defaultView?.Event || Event;
-    this._el.dispatchEvent(new EventClass('change', { bubbles: true }));
-  }
+      state.value = value instanceof File ? value : null;
+      sync();
+      emitChange();
+      return api;
+    };
 
-  _setupAvatarUpload(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.files = (value) => {
+      if (value === undefined) {
+        return state.value ? [state.value] : [];
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      const next = Array.isArray(value) ? value[0] : value;
 
-    if (isPlainObject(setup)) {
+      return api.value(next);
+    };
+
+    api.items = (value) => api.files(value);
+
+    api.addFiles = (fileList) => {
+      addFiles(fileList);
+      return api;
+    };
+
+    api.remove = () => {
+      if (state.value) {
+        api.value(null);
+      }
+      return api;
+    };
+
+    api.clear = () => api.remove();
+
+    /** 字符串 / 数字 = 根内容（旧 `_setupAvatarUpload` 的兜底分支）。 */
+    api.setupString = (setup) => {
+      self.node().child(setup);
+      return api;
+    };
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupAvatarUpload` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const { accept, disabled, files, name, shape, size, value, ...elementConfig } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
 
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (accept !== undefined) {
-        this.accept(accept);
+        api.accept(accept);
       }
       if (shape !== undefined) {
-        this.shape(shape);
+        api.shape(shape);
       }
       if (size !== undefined) {
-        this.size(size);
+        api.size(size);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
 
       const initialValue = value ?? files?.[0];
       if (initialValue !== undefined) {
-        this.value(initialValue);
+        api.value(initialValue);
       }
 
-      return;
-    }
+      return api;
+    };
 
-    this.child(setup);
-  }
-}
+    // 旧 `destroy()` 猴补的等价物：释放 object URL
+    api.whenDestroy = () => {
+      releaseObjectUrl();
+    };
 
-export function vAvatarUpload(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VAvatarUpload',
-    createNode: (setup) => new AvatarUploadNode(setup),
-    commands: [
-      'name',
-      'accept',
-      'shape',
-      'size',
-      'disabled',
-      'value',
-      'files',
-      'items',
-      'addFiles',
-      'remove',
-      'clear'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    sync();
+    return node;
   });
 }
 
-export const VAvatarUpload = vAvatarUpload;
-defineComponentIdentity(VAvatarUpload, 'VAvatarUpload');
+export const vAvatarUpload = createComponentShortcut(VAvatarUpload);
 
 registerChildFactories(HtmlElementNode, { vAvatarUpload });

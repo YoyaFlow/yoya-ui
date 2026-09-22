@@ -2025,14 +2025,14 @@ body {
     color: var(--yoya-color-text-danger, #b91c1c);
   }
 
-  :where(.yoya-vavatar-upload) {
+  :where([vn~='VAvatarUpload']) {
     display: inline-grid;
     gap: 8px;
     justify-items: center;
     min-width: 0;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-preview {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'] {
     align-items: center;
     background: var(--yoya-color-surface-muted, #fbfcfe);
     border: 1px dashed var(--yoya-color-border-strong, #cbd5e1);
@@ -2048,24 +2048,24 @@ body {
       background 140ms ease;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-preview:hover,
-  .yoya-vavatar-upload .yoya-vavatar-upload-preview[data-dragging='true'] {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview']:hover,
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'][data-dragging='true'] {
     background: var(--yoya-color-primary-subtle, #eff6ff);
     border-color: var(--yoya-color-primary, #2563eb);
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-preview[data-disabled='true'] {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'][data-disabled='true'] {
     cursor: not-allowed;
     opacity: 0.6;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-image {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadImage'] {
     height: 100%;
     object-fit: cover;
     width: 100%;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-fallback {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadFallback'] {
     align-items: center;
     display: grid;
     gap: 5px;
@@ -2073,13 +2073,13 @@ body {
     padding: 8px;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-hint {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadHint'] {
     color: var(--yoya-color-text-muted, #64748b);
     font-size: 12px;
     text-align: center;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-remove {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadRemove'] {
     align-items: center;
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border-faint, #e2e8f0);
@@ -2093,7 +2093,7 @@ body {
     width: 24px;
   }
 
-  .yoya-vavatar-upload .yoya-vavatar-upload-remove:hover {
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadRemove']:hover {
     background: var(--yoya-color-danger-subtle, #fef2f2);
     color: var(--yoya-color-text-danger, #b91c1c);
   }
