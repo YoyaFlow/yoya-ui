@@ -10,7 +10,7 @@ describe('dashboard family', () => {
     const spark = vSparkline({ data: [1, 4, 2, 8, 5], tone: 'success', fill: true });
     spark.bindTo('#app');
 
-    const element = document.querySelector('svg.yoya-vsparkline');
+    const element = document.querySelector('svg[vn~="VSparkline"]');
     expect(element).not.toBeNull();
     const line = element.querySelector('polyline');
     expect(line).not.toBeNull();
@@ -42,7 +42,7 @@ describe('dashboard family', () => {
     expect(element.querySelector('[vn~="VTrendCardValue"]').textContent).toContain('84.2');
     expect(element.querySelector('[vn~="VTrendCardValue"]').textContent).toContain('k');
     expect(element.querySelector('[vn~="VTrendCardDelta"]').textContent).toBe('+6.4%');
-    expect(element.querySelector('.yoya-vsparkline')).not.toBeNull();
+    expect(element.querySelector('[vn~="VSparkline"]')).not.toBeNull();
     expect(element.querySelector('[vn~="VTrendCardDelta"]').getAttribute('style')).toContain(
       'color-success'
     );
@@ -94,7 +94,7 @@ describe('dashboard family', () => {
     const gauge = vGauge({ value: 40, max: 100, unit: '%', tone: 'warning' });
     gauge.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vgauge');
+    const element = document.querySelector('[vn~="VGauge"]');
     expect(element).not.toBeNull();
     const svg = element.querySelector('svg');
     const needle = svg.querySelector('polygon');

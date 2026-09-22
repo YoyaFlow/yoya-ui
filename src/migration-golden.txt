@@ -373,8 +373,8 @@ probe:    {"source":2,"value":"v"}
 residue:  (空)
 
 ### vChart / 适配器 + 尺寸
-dom:      <div class=yoya-vchart style=display: block; height: 180px; width: 320px;>
-toHTML:   <div class="yoya-vchart" style="display:block;height:180px;width:320px"></div>
+dom:      <div style=height: 180px; width: 320px; vn=VChart>
+toHTML:   <div style="height:180px;width:320px" vn="VChart"></div>
 probe:    {"data":[1,2,3],"height":180,"options":{"theme":"light"},"width":320}
 residue:  (空)
 

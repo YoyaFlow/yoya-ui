@@ -620,9 +620,9 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     // 第二项是"这个组件自己的身份选择器"：未迁移的用旧类名，迁移后的用 `[vn~='…']`
     const cases = [
       ['/components/board/trend-card', '[vn~="VTrendCard"]', 'TrendCardDemo'],
-      ['/components/board/sparkline', '.yoya-vsparkline', 'SparklineDemo'],
+      ['/components/board/sparkline', '[vn~="VSparkline"]', 'SparklineDemo'],
       ['/components/board/ring-stat', '[vn~="VRingStat"]', 'RingStatDemo'],
-      ['/components/board/gauge', '.yoya-vgauge', 'GaugeDemo'],
+      ['/components/board/gauge', '[vn~="VGauge"]', 'GaugeDemo'],
       ['/components/board/timeline', '.yoya-vtimeline', 'TimelineDemo']
     ];
     for (const [path, selector, demoName] of cases) {

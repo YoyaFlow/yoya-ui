@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VChart, div, vChart } from '../index.js';
+import { div, hasComponentIdentity, vChart } from '../index.js';
 
 describe('VChart', () => {
   beforeEach(() => {
@@ -12,14 +12,14 @@ describe('VChart', () => {
     };
     const chart = vChart({ adapter, data: [1, 2], options: { color: 'blue' } });
 
-    expect(chart).toBeInstanceOf(VChart);
+    expect(hasComponentIdentity(chart, 'VChart')).toBe(true);
     chart.bindTo(document.body);
     chart.renderDom();
 
-    expect(document.querySelector('.yoya-vchart')).not.toBeNull();
+    expect(document.querySelector('[vn~="VChart"]')).not.toBeNull();
     expect(adapter.init).toHaveBeenCalledTimes(1);
     expect(adapter.init).toHaveBeenCalledWith(
-      document.querySelector('.yoya-vchart'),
+      document.querySelector('[vn~="VChart"]'),
       expect.objectContaining({ data: [1, 2], options: { color: 'blue' }, chart })
     );
   });
@@ -78,7 +78,7 @@ describe('VChart', () => {
     expect(chart.height()).toBe(360);
 
     const placeholder = vChart().bindTo(document.body);
-    expect(placeholder.renderDom().classList.contains('yoya-vchart')).toBe(true);
+    expect(placeholder.renderDom().getAttribute('vn')).toBe('VChart');
   });
 
   it('destroys a replaced adapter before initializing the next one', () => {
@@ -102,7 +102,7 @@ describe('VChart', () => {
     root.destroy();
 
     expect(adapter.destroy).toHaveBeenCalledWith(instance, expect.objectContaining({ chart }));
-    expect(document.querySelector('.yoya-vchart')).toBeNull();
+    expect(document.querySelector('[vn~="VChart"]')).toBeNull();
   });
 
   it('does not initialize a replacement adapter after destruction', () => {

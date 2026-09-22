@@ -1,11 +1,8 @@
-import { HtmlElementNode } from '../html/index.js';
-import { SvgElementNode } from '../svg/index.js';
-import {
-  applyComponentSetup,
-  componentClass,
-  createComponentFactory,
-  themeValue
-} from '../components/shared.js';
+import { asSignal, computed } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { div } from '../html/index.js';
+import { svg } from '../svg/index.js';
+import { createComponentShortcut, themeValue } from '../components/shared.js';
 
 const gaugeTones = {
   danger: themeValue('color-danger', '#dc2626'),
@@ -15,148 +12,116 @@ const gaugeTones = {
   warning: themeValue('color-warning', '#d97706')
 };
 
+const GAUGE_CX = 100;
+const GAUGE_CY = 100;
+const GAUGE_RADIUS = 80;
+const GAUGE_TRACK = 'M 20 100 A 80 80 0 0 1 180 100';
+const GAUGE_NEEDLE = '96,108 104,108 100,42';
+
 /**
- * 仪表盘：半圆刻度 + 指针，适合负载、使用率等区间指标。
+ * 仪表盘（形态 B）：半圆刻度 + 指针，适合负载、使用率等区间指标。
+ *
+ * - 静态几何（尺寸 / 描边 / 字号 / 文本锚点 / 颜色）在 `yoya.ui.css`（R5）；
+ *   随状态变的只有三样：弧线路径、指针角度、数值文本（R6：读句柄 → `computed` → 属性绑定）。
+ * - 命令只写状态（R9），归一化（`Number(…) || 默认值`）放在读时；给句柄就是活值。
  */
-export class VGauge extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._value = 0;
-    this._max = 100;
-    this._unit = '';
-    this._tone = 'primary';
-    this._size = 220;
+export function VGauge({ max = 100, tone = 'primary', unit = '', value = 0, ...rest } = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+  const valueState = asSignal(value);
+  const maxState = asSignal(max);
+  const unitState = asSignal(unit);
+  const toneState = asSignal(tone);
 
-    this._svg = new SvgElementNode('svg');
-    this._track = new SvgElementNode('path');
-    this._arc = new SvgElementNode('path');
-    this._needle = new SvgElementNode('polygon');
-    this._hub = new SvgElementNode('circle');
-    this._hubInner = new SvgElementNode('circle');
-    this._valueText = new SvgElementNode('text');
-    this._minText = new SvgElementNode('text');
-    this._maxText = new SvgElementNode('text');
+  const valueValue = computed(() => Number(valueState.value) || 0);
+  const maxValue = computed(() => Number(maxState.value) || 100);
+  const toneValue = computed(() => toneState.value || 'primary');
+  const toneColor = computed(() => gaugeTones[toneValue.value] || toneValue.value);
+  const percent = computed(() =>
+    maxValue.value > 0 ? Math.min(100, Math.max(0, (valueValue.value / maxValue.value) * 100)) : 0
+  );
+  const arcPath = computed(() => {
+    const angle = Math.PI * (1 + percent.value / 100);
+    const endX = GAUGE_CX + GAUGE_RADIUS * Math.cos(angle);
+    const endY = GAUGE_CY + GAUGE_RADIUS * Math.sin(angle);
 
-    this.className(componentClass, 'yoya-vgauge');
-    this.styles({ boxSizing: 'border-box', position: 'relative' });
-    this.child(
-      this._svg.child(
-        this._track,
-        this._arc,
-        this._needle,
-        this._hub,
-        this._hubInner,
-        this._valueText,
-        this._minText,
-        this._maxText
-      )
+    return `M 20 100 A 80 80 0 0 1 ${endX.toFixed(2)} ${endY.toFixed(2)}`;
+  });
+  const needleRotate = computed(
+    () => `rotate(${(-90 + (percent.value / 100) * 180).toFixed(2)} ${GAUGE_CX} ${GAUGE_CY})`
+  );
+  const valueText = computed(() => `${valueValue.value}${unitState.value ?? ''}`);
+  const maxText = computed(() => String(maxValue.value));
+
+  return vNode((api) => {
+    api.value = (next) => {
+      if (next === undefined) {
+        return valueValue.value;
+      }
+
+      valueState.value = next;
+      return api;
+    };
+
+    api.max = (next) => {
+      if (next === undefined) {
+        return maxValue.value;
+      }
+
+      maxState.value = next;
+      return api;
+    };
+
+    api.unit = (next) => {
+      if (next === undefined) {
+        return unitState.value;
+      }
+
+      unitState.value = next;
+      return api;
+    };
+
+    api.tone = (next) => {
+      if (next === undefined) {
+        return toneValue.value;
+      }
+
+      toneState.value = next;
+      return api;
+    };
+
+    // 结构（R2）：一棵树写在 return 里；静态样式在 CSS（R5），随状态变的走绑定（R6）
+    return div(
+      { ...elementConfig, attrs: restAttrs ?? {}, style: restStyle ?? {}, vn: 'VGauge' },
+      (root) => {
+        root.child(
+          svg(
+            { attrs: { preserveAspectRatio: 'none', viewBox: '0 0 200 110' }, vn: 'VGaugeChart' },
+            (chart) => {
+              chart.path({ attrs: { d: GAUGE_TRACK, fill: 'none' }, vn: 'VGaugeTrack' });
+              chart.path({
+                attrs: { d: arcPath, fill: 'none' },
+                style: { stroke: toneColor },
+                vn: 'VGaugeArc'
+              });
+              chart.polygon({
+                attrs: { points: GAUGE_NEEDLE, transform: needleRotate },
+                vn: 'VGaugeNeedle'
+              });
+              chart.circle({ attrs: { cx: GAUGE_CX, cy: GAUGE_CY, r: 8 }, vn: 'VGaugeHub' });
+              chart.circle({ attrs: { cx: GAUGE_CX, cy: GAUGE_CY, r: 3.5 }, vn: 'VGaugeHubInner' });
+              chart.text({ attrs: { x: GAUGE_CX, y: 72 }, vn: 'VGaugeValue' }, (label) =>
+                label.text(valueText)
+              );
+              chart.text({ attrs: { x: 20, y: 106 }, vn: 'VGaugeMin' }, (label) => label.text('0'));
+              chart.text({ attrs: { x: 180, y: 106 }, vn: 'VGaugeMax' }, (label) =>
+                label.text(maxText)
+              );
+            }
+          )
+        );
+      }
     );
-    this._render();
-    applyComponentSetup(this, setup);
-    this._render();
-  }
-
-  value(value) {
-    if (value === undefined) return this._value;
-    this._value = Number(value) || 0;
-    this._render();
-    return this;
-  }
-
-  max(value) {
-    if (value === undefined) return this._max;
-    this._max = Number(value) || 100;
-    this._render();
-    return this;
-  }
-
-  unit(value) {
-    if (value === undefined) return this._unit;
-    this._unit = value;
-    this._render();
-    return this;
-  }
-
-  tone(value) {
-    if (value === undefined) return this._tone;
-    this._tone = value;
-    this._render();
-    return this;
-  }
-
-  _render() {
-    const cx = 100;
-    const cy = 100;
-    const radius = 80;
-    const pct = this._max > 0 ? Math.min(100, Math.max(0, (this._value / this._max) * 100)) : 0;
-    const angle = Math.PI * (1 + pct / 100);
-    const endX = cx + radius * Math.cos(angle);
-    const endY = cy + radius * Math.sin(angle);
-    const rotate = -90 + (pct / 100) * 180;
-
-    this.style('width', `${this._size}px`);
-    this.style('height', `${Math.round(this._size / 2)}px`);
-    this._svg
-      .attr({ preserveAspectRatio: 'none', viewBox: '0 0 200 110' })
-      .styles({ display: 'block', height: '100%', width: '100%' });
-
-    this._track
-      .attr({
-        d: 'M 20 100 A 80 80 0 0 1 180 100',
-        fill: 'none',
-        'stroke-linecap': 'round',
-        'stroke-width': 12
-      })
-      .style('stroke', themeValue('color-border-faint', '#e5e7eb'));
-    this._arc
-      .attr({
-        d: `M 20 100 A 80 80 0 0 1 ${endX.toFixed(2)} ${endY.toFixed(2)}`,
-        fill: 'none',
-        'stroke-linecap': 'round',
-        'stroke-width': 12
-      })
-      .style('stroke', gaugeTones[this._tone] || this._tone);
-    this._needle
-      .attr({
-        points: `${cx - 4},${cy + 8} ${cx + 4},${cy + 8} ${cx},42`,
-        transform: `rotate(${rotate.toFixed(2)} ${cx} ${cy})`
-      })
-      .styles({
-        fill: themeValue('color-text', '#24292f'),
-        stroke: themeValue('color-text', '#24292f'),
-        strokeLinejoin: 'round',
-        strokeWidth: '1'
-      });
-    this._hub.attr({ cx, cy, r: 8 }).style('fill', themeValue('color-text', '#24292f'));
-    this._hubInner.attr({ cx, cy, r: 3.5 }).style('fill', themeValue('color-surface', '#ffffff'));
-    this._valueText
-      .attr({ 'text-anchor': 'middle', x: cx, y: 72 })
-      .styles({
-        fill: themeValue('color-text', '#24292f'),
-        fontSize: '20px',
-        fontWeight: '700'
-      })
-      .clearChildren()
-      .text(`${this._value}${this._unit}`);
-    this._minText
-      .attr({ 'text-anchor': 'start', x: 20, y: 106 })
-      .styles({
-        fill: themeValue('color-text-secondary', '#64748b'),
-        fontSize: '10px'
-      })
-      .clearChildren()
-      .text('0');
-    this._maxText
-      .attr({ 'text-anchor': 'end', x: 180, y: 106 })
-      .styles({
-        fill: themeValue('color-text-secondary', '#64748b'),
-        fontSize: '10px'
-      })
-      .clearChildren()
-      .text(String(this._max));
-  }
+  });
 }
 
-export function vGauge(first = null, second = null, third = null) {
-  return createComponentFactory(VGauge, first, second, third, arguments);
-}
+export const vGauge = createComponentShortcut(VGauge, { props: true });

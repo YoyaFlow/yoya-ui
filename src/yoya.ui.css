@@ -1730,6 +1730,86 @@ body {
     white-space: pre;
   }
 
+  :where([vn~='VChart']) {
+    display: block;
+    width: 100%;
+  }
+
+  :where([vn~='VGauge']) {
+    box-sizing: border-box;
+    height: 110px;
+    position: relative;
+    width: 220px;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeChart'] {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeTrack'] {
+    stroke: var(--yoya-color-border-faint, #e5e7eb);
+    stroke-linecap: round;
+    stroke-width: 12;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeArc'] {
+    stroke-linecap: round;
+    stroke-width: 12;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeNeedle'] {
+    fill: var(--yoya-color-text, #24292f);
+    stroke: var(--yoya-color-text, #24292f);
+    stroke-linejoin: round;
+    stroke-width: 1;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeHub'] {
+    fill: var(--yoya-color-text, #24292f);
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeHubInner'] {
+    fill: var(--yoya-color-surface, #ffffff);
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeValue'] {
+    fill: var(--yoya-color-text, #24292f);
+    font-size: 20px;
+    font-weight: 700;
+    text-anchor: middle;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeMin'] {
+    fill: var(--yoya-color-text-secondary, #64748b);
+    font-size: 10px;
+    text-anchor: start;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeMax'] {
+    fill: var(--yoya-color-text-secondary, #64748b);
+    font-size: 10px;
+    text-anchor: end;
+  }
+
+  :where([vn~='VSparkline']) {
+    display: block;
+    height: 32px;
+    width: 100%;
+  }
+
+  [vn~='VSparkline'] [vn~='VSparklineArea'] {
+    fill-opacity: 0.14;
+    pointer-events: none;
+  }
+
+  [vn~='VSparkline'] [vn~='VSparklineLine'] {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   :where([vn~='VProgress']) {
     align-items: center;
     box-sizing: border-box;

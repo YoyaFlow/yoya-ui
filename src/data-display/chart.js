@@ -1,215 +1,175 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { asSignal, computed } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { div } from '../html/index.js';
+import { createComponentShortcut } from '../components/shared.js';
 
 /**
- * Library-agnostic chart host. Adapters own the actual chart implementation.
+ * 与图表库无关的宿主容器（形态 B）：适配器负责真正的图表实现。
+ *
+ * - 结构只有一棵 `div`：静态的 `display` / `width` 归 CSS，尺寸是状态 → 读值绑定。
+ * - 适配器生命周期从**猴补**改成组件钩子：`renderDom()` 猴补初始化 → `whenMount`（元素真正落地，
+ *   宿主可测量）；`destroy()` 覆写 → `whenDestroy`（幂等，随子树销毁一起走）。
+ * - 句柄交给适配器的是**组件节点**（`self.node()`），不是内部节点类型；适配器实例与已初始化
+ *   标记是内部字段，不进绑定。
  */
-class ChartNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div');
-    this._identity = 'VChart';
-    this._adapter = null;
-    this._instance = null;
-    this._initialized = false;
-    this._data = undefined;
-    this._options = {};
-    this._width = undefined;
-    this._height = undefined;
-    this._destroyed = false;
+export function VChart({ adapter = null, data, height, options = {}, width, ...rest } = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+  const adapterState = asSignal(adapter);
+  const dataState = asSignal(data);
+  const optionsState = asSignal(options || {});
+  const widthState = asSignal(width);
+  const heightState = asSignal(height);
+  // 适配器实例 / 生命周期标记：内部字段（不是视图状态）
+  let instance = null;
+  let initialized = false;
+  let destroyed = false;
+  let host = null;
 
-    this.className('yoya-vchart');
-    this.styles({ display: 'block', width: '100%' });
-    this._setupChart(setup);
-  }
+  const widthText = computed(() => (widthState.value == null ? null : toCssSize(widthState.value)));
+  const heightText = computed(() =>
+    heightState.value == null ? null : toCssSize(heightState.value)
+  );
 
-  adapter(value) {
-    if (value === undefined) {
-      return this._adapter;
-    }
+  return vNode((api, self) => {
+    const context = () => ({
+      chart: self.node(),
+      data: dataState.value,
+      height: heightState.value,
+      host,
+      options: optionsState.value,
+      width: widthState.value
+    });
 
-    if (this._destroyed) {
-      return this;
-    }
+    const destroyAdapter = () => {
+      if (!initialized) {
+        return;
+      }
 
-    if (this._initialized) {
-      this._destroyAdapter();
-    }
+      const current = adapterState.value;
 
-    this._adapter = value || null;
-    if (this._el && this._adapter) {
-      this._initializeAdapter();
-    }
-
-    return this;
-  }
-
-  data(value) {
-    if (value === undefined) {
-      return this._data;
-    }
-
-    this._data = value;
-    this._updateAdapter();
-    return this;
-  }
-
-  options(value) {
-    if (value === undefined) {
-      return this._options;
-    }
-
-    this._options = value || {};
-    this._updateAdapter();
-    return this;
-  }
-
-  width(value) {
-    if (value === undefined) {
-      return this._width;
-    }
-
-    this._width = value;
-    this.style('width', value === null ? '100%' : toCssSize(value));
-    this._resizeAdapter();
-    return this;
-  }
-
-  height(value) {
-    if (value === undefined) {
-      return this._height;
-    }
-
-    this._height = value;
-    this.style('height', value === null ? null : toCssSize(value));
-    this._resizeAdapter();
-    return this;
-  }
-
-  resize(width = this._width, height = this._height) {
-    this._width = width;
-    this._height = height;
-    if (width !== undefined) {
-      this.style('width', toCssSize(width));
-    }
-    if (height !== undefined) {
-      this.style('height', toCssSize(height));
-    }
-    this._resizeAdapter();
-    return this;
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (element && !this._destroyed) {
-      this._initializeAdapter();
-    }
-    return element;
-  }
-
-  destroy() {
-    if (this._destroyed) {
-      return this;
-    }
-
-    this._destroyed = true;
-    this._destroyAdapter();
-    return super.destroy();
-  }
-
-  _setupChart(setup) {
-    if (!setup || typeof setup !== 'object') {
-      return;
-    }
-
-    const { adapter, data, height, options, width, ...elementConfig } = setup;
-    if (Object.keys(elementConfig).length > 0) {
-      this.setup(elementConfig);
-    }
-    this._data = data;
-    this._options = options || {};
-    this._width = width;
-    this._height = height;
-
-    if (width !== undefined) {
-      this.width(width);
-    }
-    if (height !== undefined) {
-      this.height(height);
-    }
-    if (adapter) {
-      this._adapter = adapter;
-    }
-  }
-
-  _context() {
-    return {
-      // 句柄交给适配器的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-      chart: this._componentHandle ?? this,
-      data: this._data,
-      height: this._height,
-      host: this._el,
-      options: this._options,
-      width: this._width
+      if (current && typeof current.destroy === 'function') {
+        current.destroy(instance, context());
+      }
+      instance = null;
+      initialized = false;
     };
-  }
 
-  _initializeAdapter() {
-    if (!this._adapter || this._initialized || !this._el || this._destroyed) {
-      return;
-    }
+    const initializeAdapter = () => {
+      const current = adapterState.value;
 
-    if (typeof this._adapter.init === 'function') {
-      this._instance = this._adapter.init(this._el, this._context());
-    } else if (typeof this._adapter === 'function') {
-      this._instance = this._adapter(this._el, this._context());
-    } else {
-      throw new TypeError('Chart adapter must provide an init(host, context) function');
-    }
+      if (!current || initialized || !host || destroyed) {
+        return;
+      }
 
-    this._initialized = true;
-  }
+      if (typeof current.init === 'function') {
+        instance = current.init(host, context());
+      } else if (typeof current === 'function') {
+        instance = current(host, context());
+      } else {
+        throw new TypeError('Chart adapter must provide an init(host, context) function');
+      }
 
-  _updateAdapter() {
-    if (this._instance === null || !this._adapter || typeof this._adapter.update !== 'function') {
-      return;
-    }
+      initialized = true;
+    };
 
-    this._adapter.update(this._instance, this._context());
-  }
+    const updateAdapter = (method) => {
+      const current = adapterState.value;
 
-  _resizeAdapter() {
-    if (this._instance === null || !this._adapter || typeof this._adapter.resize !== 'function') {
-      return;
-    }
+      if (instance === null || !current || typeof current[method] !== 'function') {
+        return;
+      }
 
-    this._adapter.resize(this._instance, this._context());
-  }
+      current[method](instance, context());
+    };
 
-  _destroyAdapter() {
-    if (!this._initialized) {
-      return;
-    }
+    api.adapter = (next) => {
+      if (next === undefined) {
+        return adapterState.value;
+      }
 
-    if (this._adapter && typeof this._adapter.destroy === 'function') {
-      this._adapter.destroy(this._instance, this._context());
-    }
-    this._instance = null;
-    this._initialized = false;
-  }
-}
+      if (destroyed) {
+        return api;
+      }
 
-export function vChart(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VChart',
-    createNode: (setup) => new ChartNode(setup),
-    commands: ['adapter', 'data', 'options', 'width', 'height', 'resize'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+      destroyAdapter();
+      adapterState.value = next || null;
+      initializeAdapter();
+      return api;
+    };
+
+    api.data = (next) => {
+      if (next === undefined) {
+        return dataState.value;
+      }
+
+      dataState.value = next;
+      updateAdapter('update');
+      return api;
+    };
+
+    api.options = (next) => {
+      if (next === undefined) {
+        return optionsState.value;
+      }
+
+      optionsState.value = next || {};
+      updateAdapter('update');
+      return api;
+    };
+
+    api.width = (next) => {
+      if (next === undefined) {
+        return widthState.value;
+      }
+
+      widthState.value = next;
+      updateAdapter('resize');
+      return api;
+    };
+
+    api.height = (next) => {
+      if (next === undefined) {
+        return heightState.value;
+      }
+
+      heightState.value = next;
+      updateAdapter('resize');
+      return api;
+    };
+
+    api.resize = (width, height) => {
+      const nextWidth = width === undefined ? widthState.value : width;
+      const nextHeight = height === undefined ? heightState.value : height;
+
+      widthState.value = nextWidth;
+      heightState.value = nextHeight;
+      updateAdapter('resize');
+      return api;
+    };
+
+    /** 旧 `renderDom()` 猴补的等价物：元素真正落地后适配器才有可测量的宿主。 */
+    api.whenMount = (hook) => {
+      host = hook.element();
+      initializeAdapter();
+    };
+
+    /** 旧 `destroy()` 覆写的等价物：随子树销毁收口，销毁后不再初始化（替换适配器也无效）。 */
+    api.whenDestroy = () => {
+      destroyed = true;
+      destroyAdapter();
+      host = null;
+    };
+
+    return div({
+      ...elementConfig,
+      attrs: restAttrs ?? {},
+      style: { height: heightText, width: widthText, ...restStyle },
+      vn: 'VChart'
+    });
   });
 }
 
-export const VChart = vChart;
-defineComponentIdentity(VChart, 'VChart');
+export const vChart = createComponentShortcut(VChart, { props: true });
 
 function toCssSize(value) {
   return typeof value === 'number' ? `${value}px` : value;
