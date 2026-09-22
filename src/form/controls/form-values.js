@@ -1,4 +1,3 @@
-import { VRate } from '../rate.js';
 import {
   isPlainObject,
   normalizeChildren,
@@ -269,7 +268,8 @@ function validateFormControls(node, formValues = {}) {
     if (isControl) {
       if (!isControlDisabled(current) && isControlRequired(current)) {
         const value = readControlValue(current);
-        if (current instanceof VRate && value === 0) {
+        // 值语义的能力约定：控件自己声明"哪些值是空"（速率 0 视为空）——不按组件身份分支
+        if (typeof current.isEmptyValue === 'function' && current.isEmptyValue(value)) {
           valid = false;
           return;
         }

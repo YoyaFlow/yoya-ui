@@ -1,34 +1,50 @@
-import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { registerChildFactories } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
+  HtmlElementNode,
+  button as buttonTag,
+  div,
+  input as inputTag,
+  span
+} from '../html/index.js';
+import {
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   resolveTextValue,
   themeValue
 } from '../components/shared.js';
 
-class RateNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VRate';
-    this._allowClear = true;
-    this._allowHalf = false;
-    this._character = '★';
-    this._count = 5;
-    this._disabled = false;
-    this._error = false;
-    this._focused = false;
-    this._hoverValue = 0;
-    this._name = '';
-    this._readonly = false;
-    this._required = false;
-    this._size = 22;
-    this._stars = null;
-    this._value = 0;
-    this._input = new HtmlElementNode('input')
-      .className('yoya-vrate-input')
+/**
+ * 评分（形态 B，票 15 §4）：视图根是外壳 `div` + 隐藏的原生 range 输入 + 星标组。
+ *
+ * - 身份写在结构里：根 `vn: 'VRate'`、隐藏输入 `vn: 'VRateInput'`、星标组 `vn: 'VRateStars'`、
+ *   单颗星 `vn: 'VRateStar'`（基座 `VRateStarBase` / 填充 `VRateStarFill`）；
+ * - 状态与命令收进 `vNode` 闭包，命令写在 api 上，调用方拿组件句柄直接调；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落到根元素（与旧 `_setupRate` 同口径）；
+ * - **值语义的能力声明** `isEmptyValue()`：速率为 0 视为空值——跨模块判定走能力约定，
+ *   不按组件身份分支（见 `form-values.js` / `controls/shared.js`）。
+ */
+export function VRate() {
+  return vNode((api) => {
+    const state = {
+      allowClear: true,
+      allowHalf: false,
+      character: '★',
+      count: 5,
+      disabled: false,
+      error: false,
+      focused: false,
+      hoverValue: 0,
+      name: '',
+      readonly: false,
+      required: false,
+      size: 22,
+      value: 0
+    };
+    let stars = null;
+
+    const input = inputTag({ vn: 'VRateInput' })
       .attr({
         'aria-hidden': 'true',
         max: '5',
@@ -38,8 +54,7 @@ class RateNode extends HtmlElementNode {
         type: 'range'
       })
       .style('display', 'none');
-    this._starsBox = new HtmlElementNode('div')
-      .className('yoya-vrate-stars')
+    const starsBox = div({ vn: 'VRateStars' })
       .attr({ 'aria-label': '评分', role: 'radiogroup', tabindex: '0' })
       .styles({
         alignItems: 'center',
@@ -51,457 +66,449 @@ class RateNode extends HtmlElementNode {
         padding: '4px',
         transition: 'box-shadow 120ms ease'
       });
-
-    this.className(componentClass, 'yoya-vrate');
-    this.styles({
+    const node = div({ vn: 'VRate' }).styles({
       display: 'inline-grid',
       gap: '6px',
       minWidth: '0'
     });
-    this.child(this._input, this._starsBox);
 
-    this._starsBox.on('keydown', (event) => this._handleKeydown(event));
-    this._starsBox.on('focusin', () => this._setFocused(true));
-    this._starsBox.on('focusout', () => this._setFocused(false));
+    node.child(input, starsBox);
 
-    this._setupRate(setup);
-    this._sync();
-  }
+    const normalizeValue = (value) => {
+      let next = Number(value);
+      if (!Number.isFinite(next)) {
+        next = 0;
+      }
 
-  value(value) {
-    if (value === undefined) {
-      return this._value;
-    }
+      next = state.allowHalf ? Math.round(next * 2) / 2 : Math.round(next);
+      return Math.max(0, Math.min(state.count, next));
+    };
 
-    const next = this._normalizeValue(value);
-    if (next !== this._value) {
-      this._value = next;
-      this._sync();
-    }
-    return this;
-  }
+    const starFillRatio = (starIndex, displayValue) => {
+      if (displayValue >= starIndex) {
+        return 1;
+      }
 
-  count(value) {
-    if (value === undefined) {
-      return this._count;
-    }
+      if (state.allowHalf && displayValue === starIndex - 0.5) {
+        return 0.5;
+      }
 
-    const next = Math.max(1, Math.trunc(Number(value)) || 1);
-    if (next !== this._count) {
-      this._count = next;
-      this._value = this._normalizeValue(this._value);
-      this._sync();
-    }
-    return this;
-  }
+      return 0;
+    };
 
-  max(value) {
-    return this.count(value);
-  }
+    const syncStars = () => {
+      if (!stars) {
+        return;
+      }
 
-  allowHalf(value) {
-    if (value === undefined) {
-      return this._allowHalf;
-    }
+      const displayValue = state.hoverValue > 0 ? state.hoverValue : state.value;
+      const activeStar =
+        state.allowHalf && state.value % 1 !== 0 ? Math.ceil(state.value) : Math.round(state.value);
 
-    const enabled = Boolean(value);
-    if (enabled !== this._allowHalf) {
-      this._allowHalf = enabled;
-      this._value = this._normalizeValue(this._value);
-      this._sync();
-    }
-    return this;
-  }
+      stars.forEach((starButton, index) => {
+        const starIndex = index + 1;
+        const ratio = starFillRatio(starIndex, displayValue);
+        const isChecked =
+          state.value === starIndex || (state.allowHalf && state.value === starIndex - 0.5);
+        const fill = starButton.children()[1];
 
-  allowClear(value) {
-    if (value === undefined) {
-      return this._allowClear;
-    }
+        starButton.attr('aria-checked', isChecked ? 'true' : 'false');
+        starButton.attr('data-filled', ratio > 0 ? 'true' : null);
+        starButton.attr('data-half', ratio > 0 && ratio < 1 ? 'true' : null);
+        starButton.attr('tabindex', starIndex === activeStar ? '0' : '-1');
+        starButton.style(
+          'cursor',
+          state.disabled ? 'not-allowed' : state.readonly ? 'default' : 'pointer'
+        );
+        const clipRight = `${Math.round((1 - ratio) * 100)}%`;
 
-    this._allowClear = Boolean(value);
-    this.attr('data-allow-clear', this._allowClear ? 'true' : null);
-    return this;
-  }
-
-  clearable(value) {
-    return this.allowClear(value);
-  }
-
-  character(value) {
-    if (value === undefined) {
-      return this._character;
-    }
-
-    this._character = resolveTextValue(value) || '★';
-    this._renderStars();
-    return this;
-  }
-
-  size(value) {
-    if (value === undefined) {
-      return this._size;
-    }
-
-    this._size = Math.max(12, Number(value) || 22);
-    this._renderStars();
-    return this;
-  }
-
-  name(value) {
-    if (value === undefined) {
-      return this._name;
-    }
-
-    this._name = resolveTextValue(value);
-    this._input.attr('name', this._name || null);
-    this.attr('data-name', this._name || null);
-    return this;
-  }
-
-  disabled(value) {
-    if (value === undefined) {
-      return this._disabled;
-    }
-
-    this._disabled = Boolean(value);
-    this._syncState();
-    return this;
-  }
-
-  readonly(value) {
-    if (value === undefined) {
-      return this._readonly;
-    }
-
-    this._readonly = Boolean(value);
-    this._syncState();
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this._required;
-    }
-
-    this._required = Boolean(value);
-    this._input.attr('required', this._required ? true : null);
-    this.attr('data-required', this._required ? 'true' : null);
-    return this;
-  }
-
-  error(value) {
-    if (value === undefined) {
-      return this._error;
-    }
-
-    this._error = Boolean(value);
-    this._syncState();
-    return this;
-  }
-
-  clear() {
-    if (this._value !== 0 && !this._disabled && !this._readonly) {
-      this._setValue(0, true);
-    }
-    return this;
-  }
-
-  _sync() {
-    this._syncInput();
-    this._syncState();
-
-    if (!this._stars || this._stars.length !== this._count) {
-      this._renderStars();
-    }
-    return this;
-  }
-
-  _syncInput() {
-    this._input.attr({
-      max: String(this._count),
-      min: '0',
-      step: this._allowHalf ? '0.5' : '1',
-      value: String(this._value)
-    });
-    return this;
-  }
-
-  _syncState() {
-    this.attr('data-value', String(this._value));
-    this.attr('data-count', String(this._count));
-    this.attr('data-allow-half', this._allowHalf ? 'true' : null);
-    this.attr('data-allow-clear', this._allowClear ? 'true' : null);
-    this.attr('data-disabled', this._disabled ? 'true' : null);
-    this.attr('data-readonly', this._readonly ? 'true' : null);
-    this.attr('data-error', this._error ? 'true' : null);
-    this.attr('data-hover-value', this._hoverValue > 0 ? String(this._hoverValue) : null);
-    this._input.attr('disabled', this._disabled ? true : null);
-    this._starsBox.attr('aria-disabled', this._disabled ? 'true' : null);
-    this._starsBox.attr('aria-invalid', this._error ? 'true' : null);
-    this._starsBox.attr('aria-readonly', this._readonly ? 'true' : null);
-    this._starsBox.attr('tabindex', this._disabled ? '-1' : '0');
-    this.style('opacity', this._disabled ? '0.64' : '1');
-    this._starsBox.style(
-      'boxShadow',
-      this._error
-        ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
-        : this._focused
-          ? `0 0 0 3px ${themeValue('color-primary-ring', 'rgba(37, 99, 235, 0.22)')}`
-          : null
-    );
-
-    // 星标状态（指针、aria-checked、填充比例）跟着 disabled / readonly / error 一起走：
-    // 挂载后再改状态时旧指针不会留在星标上（迁移期金标对比暴露的既有不一致）。
-    if (this._stars) {
-      this._syncStars();
-    }
-    return this;
-  }
-
-  _renderStars() {
-    replaceChildren(this._starsBox, []);
-    this._stars = [];
-
-    for (let index = 1; index <= this._count; index += 1) {
-      const button = this._createStar(index);
-      this._stars.push(button);
-      this._starsBox.child(button);
-    }
-
-    this._syncStars();
-    return this;
-  }
-
-  _createStar(starIndex) {
-    const button = new HtmlElementNode('button')
-      .className('yoya-vrate-star')
-      .attr({
-        'aria-checked': 'false',
-        'aria-label': `${starIndex} 分`,
-        'data-value': String(starIndex),
-        role: 'radio',
-        tabindex: '-1',
-        type: 'button'
-      })
-      .styles({
-        alignItems: 'center',
-        background: 'transparent',
-        border: 'none',
-        borderRadius: '4px',
-        boxSizing: 'border-box',
-        display: 'inline-flex',
-        flex: '0 0 auto',
-        fontSize: `${this._size}px`,
-        height: `${this._size + 8}px`,
-        justifyContent: 'center',
-        lineHeight: '1',
-        margin: '0',
-        padding: '0',
-        position: 'relative',
-        width: `${this._size + 8}px`
+        fill.style('clipPath', `inset(0 ${clipRight} 0 0)`);
+        fill.style('WebkitClipPath', `inset(0 ${clipRight} 0 0)`);
+        fill.style('color', ratio > 0 ? themeValue('color-warning', '#f59e0b') : 'transparent');
       });
-    const base = new HtmlElementNode('span')
-      .className('yoya-vrate-star-base')
-      .styles({
-        alignItems: 'center',
-        color: themeValue('color-border-muted', '#94a3b8'),
-        display: 'flex',
-        inset: '0',
-        justifyContent: 'center',
-        lineHeight: '1',
-        position: 'absolute'
-      })
-      .child(this._character);
-    const fill = new HtmlElementNode('span')
-      .className('yoya-vrate-star-fill')
-      .styles({
-        alignItems: 'center',
-        clipPath: 'inset(0 100% 0 0)',
-        color: themeValue('color-warning', '#f59e0b'),
-        display: 'flex',
-        inset: '0',
-        justifyContent: 'center',
-        lineHeight: '1',
-        overflow: 'hidden',
-        position: 'absolute',
-        WebkitClipPath: 'inset(0 100% 0 0)'
-      })
-      .child(this._character);
+    };
 
-    button.child(base, fill);
-    button.on('click', (event) => {
-      event.preventDefault();
-      this._selectStar(starIndex, event);
-    });
-    button.on('mouseenter', (event) => this._setHover(starIndex, event));
-    button.on('mouseleave', () => this._setHover(0));
-    return button;
-  }
+    const createStar = (starIndex) => {
+      const starButton = buttonTag({ vn: 'VRateStar' })
+        .attr({
+          'aria-checked': 'false',
+          'aria-label': `${starIndex} 分`,
+          'data-value': String(starIndex),
+          role: 'radio',
+          tabindex: '-1',
+          type: 'button'
+        })
+        .styles({
+          alignItems: 'center',
+          background: 'transparent',
+          border: 'none',
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          display: 'inline-flex',
+          flex: '0 0 auto',
+          fontSize: `${state.size}px`,
+          height: `${state.size + 8}px`,
+          justifyContent: 'center',
+          lineHeight: '1',
+          margin: '0',
+          padding: '0',
+          position: 'relative',
+          width: `${state.size + 8}px`
+        });
+      const base = span({ vn: 'VRateStarBase' })
+        .styles({
+          alignItems: 'center',
+          color: themeValue('color-border-muted', '#94a3b8'),
+          display: 'flex',
+          inset: '0',
+          justifyContent: 'center',
+          lineHeight: '1',
+          position: 'absolute'
+        })
+        .child(state.character);
+      const fill = span({ vn: 'VRateStarFill' })
+        .styles({
+          alignItems: 'center',
+          clipPath: 'inset(0 100% 0 0)',
+          color: themeValue('color-warning', '#f59e0b'),
+          display: 'flex',
+          inset: '0',
+          justifyContent: 'center',
+          lineHeight: '1',
+          overflow: 'hidden',
+          position: 'absolute',
+          WebkitClipPath: 'inset(0 100% 0 0)'
+        })
+        .child(state.character);
 
-  _syncStars() {
-    const displayValue = this._hoverValue > 0 ? this._hoverValue : this._value;
-    const activeStar =
-      this._allowHalf && this._value % 1 !== 0 ? Math.ceil(this._value) : Math.round(this._value);
+      starButton.child(base, fill);
+      starButton.on('click', (event) => {
+        event.preventDefault();
+        selectStar(starIndex, event);
+      });
+      starButton.on('mouseenter', (event) => setHover(starIndex, event));
+      starButton.on('mouseleave', () => setHover(0));
+      return starButton;
+    };
 
-    this._stars.forEach((button, index) => {
-      const starIndex = index + 1;
-      const ratio = this._starFillRatio(starIndex, displayValue);
-      const isChecked =
-        this._value === starIndex || (this._allowHalf && this._value === starIndex - 0.5);
-      const fill = button.children()[1];
+    const renderStars = () => {
+      replaceChildren(starsBox, []);
+      stars = [];
 
-      button.attr('aria-checked', isChecked ? 'true' : 'false');
-      button.attr('data-filled', ratio > 0 ? 'true' : null);
-      button.attr('data-half', ratio > 0 && ratio < 1 ? 'true' : null);
-      button.attr('tabindex', starIndex === activeStar ? '0' : '-1');
-      button.style(
-        'cursor',
-        this._disabled ? 'not-allowed' : this._readonly ? 'default' : 'pointer'
+      for (let index = 1; index <= state.count; index += 1) {
+        const starButton = createStar(index);
+        stars.push(starButton);
+        starsBox.child(starButton);
+      }
+
+      syncStars();
+    };
+
+    const syncInput = () => {
+      input.attr({
+        max: String(state.count),
+        min: '0',
+        step: state.allowHalf ? '0.5' : '1',
+        value: String(state.value)
+      });
+    };
+
+    const syncState = () => {
+      node.attr('data-value', String(state.value));
+      node.attr('data-count', String(state.count));
+      node.attr('data-allow-half', state.allowHalf ? 'true' : null);
+      node.attr('data-allow-clear', state.allowClear ? 'true' : null);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      node.attr('data-readonly', state.readonly ? 'true' : null);
+      node.attr('data-error', state.error ? 'true' : null);
+      node.attr('data-hover-value', state.hoverValue > 0 ? String(state.hoverValue) : null);
+      input.attr('disabled', state.disabled ? true : null);
+      starsBox.attr('aria-disabled', state.disabled ? 'true' : null);
+      starsBox.attr('aria-invalid', state.error ? 'true' : null);
+      starsBox.attr('aria-readonly', state.readonly ? 'true' : null);
+      starsBox.attr('tabindex', state.disabled ? '-1' : '0');
+      node.style('opacity', state.disabled ? '0.64' : '1');
+      starsBox.style(
+        'boxShadow',
+        state.error
+          ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
+          : state.focused
+            ? `0 0 0 3px ${themeValue('color-primary-ring', 'rgba(37, 99, 235, 0.22)')}`
+            : null
       );
-      const clipRight = `${Math.round((1 - ratio) * 100)}%`;
-      fill.style('clipPath', `inset(0 ${clipRight} 0 0)`);
-      fill.style('WebkitClipPath', `inset(0 ${clipRight} 0 0)`);
-      fill.style('color', ratio > 0 ? themeValue('color-warning', '#f59e0b') : 'transparent');
-    });
-    return this;
-  }
 
-  _starFillRatio(starIndex, displayValue) {
-    if (displayValue >= starIndex) {
-      return 1;
-    }
+      // 星标状态（指针、aria-checked、填充比例）跟着 disabled / readonly / error 一起走：
+      // 挂载后再改状态时旧指针不会留在星标上（迁移期金标对比暴露的既有不一致）。
+      if (stars) {
+        syncStars();
+      }
+    };
 
-    if (this._allowHalf && displayValue === starIndex - 0.5) {
-      return 0.5;
-    }
+    const sync = () => {
+      syncInput();
+      syncState();
 
-    return 0;
-  }
+      if (!stars || stars.length !== state.count) {
+        renderStars();
+      }
+    };
 
-  _normalizeValue(value) {
-    let next = Number(value);
-    if (!Number.isFinite(next)) {
-      next = 0;
-    }
+    const pointerValue = (starIndex, event) => {
+      if (!state.allowHalf || !event) {
+        return starIndex;
+      }
 
-    next = this._allowHalf ? Math.round(next * 2) / 2 : Math.round(next);
-    return Math.max(0, Math.min(this._count, next));
-  }
+      const rect = event.currentTarget?.getBoundingClientRect?.();
+      if (rect?.width && event.offsetX < rect.width / 2) {
+        return starIndex - 0.5;
+      }
 
-  _selectStar(starIndex, event) {
-    if (this._disabled || this._readonly) {
-      return;
-    }
-
-    let next = this._pointerValue(starIndex, event);
-    if (this._allowClear && next === this._value) {
-      next = 0;
-    }
-    this._setValue(next, true);
-  }
-
-  _setHover(starIndex, event) {
-    if (this._disabled || this._readonly) {
-      return;
-    }
-
-    this._hoverValue = starIndex > 0 ? this._pointerValue(starIndex, event) : 0;
-    this._syncStars();
-    this.attr('data-hover-value', this._hoverValue > 0 ? String(this._hoverValue) : null);
-  }
-
-  _pointerValue(starIndex, event) {
-    if (!this._allowHalf || !event) {
       return starIndex;
-    }
+    };
 
-    const rect = event.currentTarget?.getBoundingClientRect?.();
-    if (rect?.width && event.offsetX < rect.width / 2) {
-      return starIndex - 0.5;
-    }
+    const setValue = (next, emit) => {
+      const normalized = normalizeValue(next);
+      state.hoverValue = 0;
 
-    return starIndex;
-  }
-
-  _setValue(next, emit) {
-    const normalized = this._normalizeValue(next);
-    this._hoverValue = 0;
-
-    if (normalized !== this._value) {
-      this._value = normalized;
-      this._sync();
-      if (emit) {
-        this._emitChange();
+      if (normalized !== state.value) {
+        state.value = normalized;
+        sync();
+        if (emit) {
+          emitChange();
+        }
       }
-    }
-    return this;
-  }
+    };
 
-  _handleKeydown(event) {
-    if (this._disabled || this._readonly) {
-      return;
-    }
-
-    const step = this._allowHalf ? 0.5 : 1;
-    let next = null;
-
-    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-      next = this._value + step;
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-      next = this._value - step;
-    } else if (event.key === 'Home') {
-      next = this._allowHalf ? 0.5 : 1;
-    } else if (event.key === 'End') {
-      next = this._count;
-    } else if (event.key === 'Enter' || event.key === ' ') {
-      if (this._hoverValue > 0) {
-        this._selectStar(this._hoverValue);
-      } else if (this._allowClear && this._value > 0) {
-        this._setValue(0, true);
+    const setHover = (starIndex, event) => {
+      if (state.disabled || state.readonly) {
+        return;
       }
+
+      state.hoverValue = starIndex > 0 ? pointerValue(starIndex, event) : 0;
+      syncStars();
+      node.attr('data-hover-value', state.hoverValue > 0 ? String(state.hoverValue) : null);
+    };
+
+    const selectStar = (starIndex, event) => {
+      if (state.disabled || state.readonly) {
+        return;
+      }
+
+      let next = pointerValue(starIndex, event);
+      if (state.allowClear && next === state.value) {
+        next = 0;
+      }
+      setValue(next, true);
+    };
+
+    const handleKeydown = (event) => {
+      if (state.disabled || state.readonly) {
+        return;
+      }
+
+      const step = state.allowHalf ? 0.5 : 1;
+      let next = null;
+
+      if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+        next = state.value + step;
+      } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+        next = state.value - step;
+      } else if (event.key === 'Home') {
+        next = state.allowHalf ? 0.5 : 1;
+      } else if (event.key === 'End') {
+        next = state.count;
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        if (state.hoverValue > 0) {
+          selectStar(state.hoverValue);
+        } else if (state.allowClear && state.value > 0) {
+          setValue(0, true);
+        }
+        event.preventDefault();
+        return;
+      }
+
+      if (next === null) {
+        return;
+      }
+
       event.preventDefault();
-      return;
-    }
+      setValue(next, true);
+    };
 
-    if (next === null) {
-      return;
-    }
+    const setFocused = (focused) => {
+      state.focused = focused;
+      node.attr('data-focused', focused ? 'true' : null);
+      syncState();
+    };
 
-    event.preventDefault();
-    this._setValue(next, true);
-  }
+    const emitChange = () => {
+      if (!node._el) {
+        return;
+      }
 
-  _setFocused(focused) {
-    this._focused = focused;
-    this.attr('data-focused', focused ? 'true' : null);
-    this._syncState();
-  }
+      const EventClass = node._el.ownerDocument?.defaultView?.CustomEvent || CustomEvent;
 
-  _emitChange() {
-    if (!this._el) {
-      return;
-    }
+      node._el.dispatchEvent(
+        new EventClass('change', {
+          bubbles: true,
+          detail: state.value
+        })
+      );
+    };
 
-    const EventClass = this._el.ownerDocument?.defaultView?.CustomEvent || CustomEvent;
-    this._el.dispatchEvent(
-      new EventClass('change', {
-        bubbles: true,
-        detail: this._value
-      })
-    );
-  }
+    starsBox.on('keydown', (event) => handleKeydown(event));
+    starsBox.on('focusin', () => setFocused(true));
+    starsBox.on('focusout', () => setFocused(false));
 
-  _setupRate(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.value = (value) => {
+      if (value === undefined) {
+        return state.value;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      const next = normalizeValue(value);
+      if (next !== state.value) {
+        state.value = next;
+        sync();
+      }
+      return api;
+    };
 
-    if (isPlainObject(setup)) {
+    api.count = (value) => {
+      if (value === undefined) {
+        return state.count;
+      }
+
+      const next = Math.max(1, Math.trunc(Number(value)) || 1);
+      if (next !== state.count) {
+        state.count = next;
+        state.value = normalizeValue(state.value);
+        sync();
+      }
+      return api;
+    };
+
+    api.max = (value) => api.count(value);
+
+    api.allowHalf = (value) => {
+      if (value === undefined) {
+        return state.allowHalf;
+      }
+
+      const enabled = Boolean(value);
+      if (enabled !== state.allowHalf) {
+        state.allowHalf = enabled;
+        state.value = normalizeValue(state.value);
+        sync();
+      }
+      return api;
+    };
+
+    api.allowClear = (value) => {
+      if (value === undefined) {
+        return state.allowClear;
+      }
+
+      state.allowClear = Boolean(value);
+      node.attr('data-allow-clear', state.allowClear ? 'true' : null);
+      return api;
+    };
+
+    api.clearable = (value) => api.allowClear(value);
+
+    api.character = (value) => {
+      if (value === undefined) {
+        return state.character;
+      }
+
+      state.character = resolveTextValue(value) || '★';
+      renderStars();
+      return api;
+    };
+
+    api.size = (value) => {
+      if (value === undefined) {
+        return state.size;
+      }
+
+      state.size = Math.max(12, Number(value) || 22);
+      renderStars();
+      return api;
+    };
+
+    api.name = (value) => {
+      if (value === undefined) {
+        return state.name;
+      }
+
+      state.name = resolveTextValue(value);
+      input.attr('name', state.name || null);
+      node.attr('data-name', state.name || null);
+      return api;
+    };
+
+    api.disabled = (value) => {
+      if (value === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(value);
+      syncState();
+      return api;
+    };
+
+    api.readonly = (value) => {
+      if (value === undefined) {
+        return state.readonly;
+      }
+
+      state.readonly = Boolean(value);
+      syncState();
+      return api;
+    };
+
+    api.required = (value) => {
+      if (value === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(value);
+      input.attr('required', state.required ? true : null);
+      node.attr('data-required', state.required ? 'true' : null);
+      return api;
+    };
+
+    api.error = (value) => {
+      if (value === undefined) {
+        return state.error;
+      }
+
+      state.error = Boolean(value);
+      syncState();
+      return api;
+    };
+
+    api.clear = () => {
+      if (state.value !== 0 && !state.disabled && !state.readonly) {
+        setValue(0, true);
+      }
+      return api;
+    };
+
+    /**
+     * 值语义的能力声明：速率为 0 即"空值"。
+     * 必填校验与表单采集按它判定，跨模块不再看组件身份（票 15 §3-Q1）。
+     */
+    api.isEmptyValue = (value) => normalizeValue(value) === 0;
+
+    /** 字符串 / 数字 = 初始评分（旧 `_setupRate` 的兜底分支）。 */
+    api.setupString = (value) => api.value(value);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupRate` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const {
         allowClear,
         allowHalf,
@@ -520,76 +527,53 @@ class RateNode extends HtmlElementNode {
       } = setup;
 
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
 
       if (count !== undefined || max !== undefined) {
-        this.count(count ?? max);
+        api.count(count ?? max);
       }
       if (allowHalf !== undefined) {
-        this.allowHalf(allowHalf);
+        api.allowHalf(allowHalf);
       }
       if (character !== undefined) {
-        this.character(character);
+        api.character(character);
       }
       if (size !== undefined) {
-        this.size(size);
+        api.size(size);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (readonly !== undefined) {
-        this.readonly(readonly);
+        api.readonly(readonly);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (error !== undefined) {
-        this.error(error);
+        api.error(error);
       }
       if (clearable !== undefined) {
-        this.allowClear(clearable);
+        api.allowClear(clearable);
       } else if (allowClear !== undefined) {
-        this.allowClear(allowClear);
+        api.allowClear(allowClear);
       }
-      return;
-    }
 
-    this.value(setup);
-  }
-}
+      return api;
+    };
 
-export function vRate(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VRate',
-    createNode: (setup) => new RateNode(setup),
-    commands: [
-      'value',
-      'count',
-      'max',
-      'allowHalf',
-      'allowClear',
-      'clearable',
-      'character',
-      'size',
-      'name',
-      'disabled',
-      'readonly',
-      'required',
-      'error',
-      'clear'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    sync();
+    return node;
   });
 }
 
-export const VRate = vRate;
-defineComponentIdentity(VRate, 'VRate');
+export const vRate = createComponentShortcut(VRate);
 
 registerChildFactories(HtmlElementNode, { vRate });

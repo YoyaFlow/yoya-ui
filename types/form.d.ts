@@ -409,6 +409,8 @@ export class VRate extends HtmlElementNode {
   required(value: boolean): VRate;
   error(value: string | boolean | null): VRate;
   clear(): VRate;
+  /** 值语义的能力声明：速率为 0 即"空值"（必填校验按它判定）。 */
+  isEmptyValue(value: unknown): boolean;
 }
 
 /** File upload with dropzone. */

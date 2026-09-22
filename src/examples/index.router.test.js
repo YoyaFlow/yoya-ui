@@ -597,7 +597,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     });
 
     const page = document.querySelector('[data-component-route-item="form:rate"]');
-    expect(page.querySelector('.yoya-vrate')).not.toBeNull();
+    expect(page.querySelector('[vn~="VRate"]')).not.toBeNull();
     expect(page.querySelector('[data-source-example]').textContent).toContain('RateExample1');
   });
 

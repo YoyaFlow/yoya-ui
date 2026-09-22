@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VRate, div, vField, vForm, vRate } from '../index.js';
+import { div, hasComponentIdentity, vField, vForm, vRate } from '../index.js';
 
 function findRate(node) {
-  if (node instanceof VRate) {
+  if (hasComponentIdentity(node, 'VRate')) {
     return node;
   }
 
@@ -21,11 +21,11 @@ describe('vRate', () => {
     const rate = vRate({ count: 5, value: 3 });
     const element = rate.renderDom();
 
-    expect(rate).toBeInstanceOf(VRate);
-    expect(element.classList.contains('yoya-vrate')).toBe(true);
-    expect(element.querySelectorAll('.yoya-vrate-star')).toHaveLength(5);
-    expect(element.querySelector('.yoya-vrate-input').type).toBe('range');
-    expect(element.querySelector('.yoya-vrate-input').style.display).toBe('none');
+    expect(hasComponentIdentity(rate, 'VRate')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VRate');
+    expect(element.querySelectorAll('[vn~="VRateStar"]')).toHaveLength(5);
+    expect(element.querySelector('[vn~="VRateInput"]').type).toBe('range');
+    expect(element.querySelector('[vn~="VRateInput"]').style.display).toBe('none');
     expect(rate.value()).toBe(3);
     expect(element.querySelector('[data-value="3"]').getAttribute('aria-checked')).toBe('true');
   });
@@ -54,12 +54,12 @@ describe('vRate', () => {
 
     element.querySelector('[data-value="4"]').click();
     expect(rate.value()).toBe(3);
-    expect(element.querySelector('.yoya-vrate-stars').getAttribute('aria-disabled')).toBe('true');
+    expect(element.querySelector('[vn~="VRateStars"]').getAttribute('aria-disabled')).toBe('true');
 
     rate.disabled(false).readonly(true);
     element.querySelector('[data-value="4"]').click();
     expect(rate.value()).toBe(3);
-    expect(element.querySelector('.yoya-vrate-stars').getAttribute('aria-readonly')).toBe('true');
+    expect(element.querySelector('[vn~="VRateStars"]').getAttribute('aria-readonly')).toBe('true');
 
     rate.readonly(false);
     element.querySelector('[data-value="4"]').click();
@@ -96,11 +96,11 @@ describe('vRate', () => {
     expect(rate.name()).toBe('score');
     expect(rate.required()).toBe(true);
     expect(rate.error()).toBe(true);
-    expect(element.querySelectorAll('.yoya-vrate-star')).toHaveLength(7);
-    expect(element.querySelector('.yoya-vrate-star-base').textContent).toBe('●');
-    expect(element.querySelector('.yoya-vrate-input').name).toBe('score');
-    expect(element.querySelector('.yoya-vrate-input').required).toBe(true);
-    expect(element.querySelector('.yoya-vrate-stars').getAttribute('aria-invalid')).toBe('true');
+    expect(element.querySelectorAll('[vn~="VRateStar"]')).toHaveLength(7);
+    expect(element.querySelector('[vn~="VRateStarBase"]').textContent).toBe('●');
+    expect(element.querySelector('[vn~="VRateInput"]').name).toBe('score');
+    expect(element.querySelector('[vn~="VRateInput"]').required).toBe(true);
+    expect(element.querySelector('[vn~="VRateStars"]').getAttribute('aria-invalid')).toBe('true');
   });
 
   it('registers vRate as a parent shortcut', () => {
@@ -109,7 +109,7 @@ describe('vRate', () => {
     });
     const rate = page.children()[0];
 
-    expect(rate).toBeInstanceOf(VRate);
+    expect(hasComponentIdentity(rate, 'VRate')).toBe(true);
     expect(rate.value()).toBe(2);
   });
 
@@ -152,12 +152,27 @@ describe('vRate', () => {
     });
     const fieldElement = field.renderDom();
 
-    expect(field.control()).toBeInstanceOf(VRate);
+    expect(hasComponentIdentity(field.control(), 'VRate')).toBe(true);
     expect(field.value()).toBe(4);
     expect(fieldElement.querySelector('[vn~="VFieldDisplay"]').textContent).toBe('4');
 
     field.mode('edit');
     field.value(2);
     expect(field.value()).toBe(2);
+  });
+
+  it('declares zero as an empty value for required checks without a form item', () => {
+    // 值语义走能力约定（`isEmptyValue`），不按组件身份分支：直接挂在 vForm 下的评分也一样判定
+    const form = vForm((root) => root.vRate({ name: 'score', required: true }));
+    form.renderDom();
+
+    const rate = findRate(form);
+    expect(rate.isEmptyValue(0)).toBe(true);
+    expect(rate.isEmptyValue(3)).toBe(false);
+    expect(form.validate()).toBe(false);
+
+    rate.value(3);
+    expect(form.values().score).toBe(3);
+    expect(form.validate()).toBe(true);
   });
 });

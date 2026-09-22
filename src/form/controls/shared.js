@@ -1,6 +1,5 @@
 import { ViewNode } from '../../core/node.js';
 import { HtmlElementNode } from '../../html/index.js';
-import { VRate } from '../rate.js';
 import {
   booleanMethod,
   isPlainObject,
@@ -309,7 +308,8 @@ function normalizeValueList(value) {
 }
 
 function isEmptyFormValue(value, control = null) {
-  if (control instanceof VRate && value === 0) {
+  // 值语义的能力约定：控件自己声明"哪些值是空"（速率 0 视为空）——不按组件身份分支
+  if (typeof control?.isEmptyValue === 'function' && control.isEmptyValue(value)) {
     return true;
   }
 
