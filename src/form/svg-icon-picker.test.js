@@ -16,13 +16,13 @@ describe('vSvgIconPicker', () => {
     document.body.appendChild(element);
 
     expect(element.querySelector('[data-vsvg-icon-trigger]')).not.toBeNull();
-    expect(element.querySelectorAll('.yoya-vsvg-icon-picker-cell').length).toBeGreaterThan(10);
-    expect(element.querySelector('.yoya-vsvg-icon-picker-grid').style.height).toBe('360px');
+    expect(element.querySelectorAll('[vn~="VSvgIconPickerCell"]').length).toBeGreaterThan(10);
+    expect(element.querySelector('[vn~="VSvgIconPickerGrid"]').style.height).toBe('360px');
     expect(picker.value()).toBe('StarOutlined');
 
     picker.open();
     await settle();
-    const dialog = element.querySelector('.yoya-vsvg-icon-picker-dialog');
+    const dialog = element.querySelector('[vn~="VSvgIconPickerDialog"]');
     expect(dialog.getAttribute('open')).not.toBeNull();
   });
 
@@ -41,7 +41,7 @@ describe('vSvgIconPicker', () => {
 
     expect(picker.value()).toBe('SearchOutlined');
     expect(changed).toContain('SearchOutlined');
-    expect(element.querySelector('.yoya-vsvg-icon-picker-dialog').getAttribute('open')).toBeNull();
+    expect(element.querySelector('[vn~="VSvgIconPickerDialog"]').getAttribute('open')).toBeNull();
   });
 
   it('restricts candidate icons via icons()', () => {
@@ -59,8 +59,8 @@ describe('vSvgIconPicker', () => {
     const element = picker.renderDom();
     document.body.appendChild(element);
 
-    const grid = element.querySelector('.yoya-vsvg-icon-picker-grid');
-    const total = element.querySelectorAll('.yoya-vsvg-icon-picker-cell').length;
+    const grid = element.querySelector('[vn~="VSvgIconPickerGrid"]');
+    const total = element.querySelectorAll('[vn~="VSvgIconPickerCell"]').length;
     expect(total).toBe(24);
 
     Object.defineProperty(grid, 'clientHeight', { configurable: true, value: 360 });
@@ -69,7 +69,7 @@ describe('vSvgIconPicker', () => {
     grid.dispatchEvent(new Event('scroll', { bubbles: true }));
     await settle();
 
-    const afterAll = element.querySelectorAll('.yoya-vsvg-icon-picker-cell').length;
+    const afterAll = element.querySelectorAll('[vn~="VSvgIconPickerCell"]').length;
     expect(afterAll).toBe(picker.icons().length);
   });
 

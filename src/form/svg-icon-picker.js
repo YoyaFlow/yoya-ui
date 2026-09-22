@@ -1,9 +1,8 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories, vText } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { registerChildFactories, vText } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
+import { HtmlElementNode, button as buttonTag, div, span } from '../html/index.js';
 import {
-  booleanMethod,
-  componentClass,
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   themeValue
@@ -24,56 +23,42 @@ function collectBuiltinIcons() {
 }
 
 /**
- * vSvgIconPicker 是带弹窗的 SVG 图标选择器：触发器展示当前选中图标，
- * 点击打开相对较大的弹窗，弹窗内提供图标方阵，点击某个图标即选中并关闭。
+ * SVG 图标选择器（形态 B，票 15 §4）：视图根是外壳 `div` + 触发按钮 + 选择弹窗。
+ *
+ * - 身份写在结构里：根 `vn: 'VSvgIconPicker'`、触发按钮与图标位
+ *   （`VSvgIconPickerTrigger` / `VSvgIconPickerTriggerIcon`）、方阵 `VSvgIconPickerGrid`
+ *   （每个格子 `VSvgIconPickerCell`）、标题 `VSvgIconPickerDialogTitle`；
+ * - 弹窗复用 `vDialog`：身份写**多值**（`vn: 'VSvgIconPickerDialog VDialog'`，与 `VField` 的动作按钮同一口径，
+ *   见 `form/controls/field.js`），VDialog 自己的类名随它在波 4 收口；
+ * - 方阵按需建：首批 24 个、滚到底分批补，弹窗打开后还补一次"填满视口"；
+ * - 状态与命令收进 `vNode` 闭包；`change` 回调第二参交给使用方的是**组件句柄**（`self.node()`）；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupSvgIconPicker` 同口径）。
  */
-class SvgIconPickerNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VSvgIconPicker';
-    this.className(componentClass, 'yoya-vsvg-icon-picker');
-    this.styles({ position: 'relative' });
+export function VSvgIconPicker() {
+  return vNode((api, self) => {
+    const state = {
+      changeHandlers: [],
+      disabled: false,
+      fillPending: false,
+      iconEntries: collectBuiltinIcons().map((name) => ({
+        factory: builtinIcons[name],
+        name
+      })),
+      renderedCount: 0,
+      required: false,
+      value: null
+    };
+    let grid = null;
 
-    this._value = null;
-    this._iconEntries = collectBuiltinIcons().map((name) => ({
-      factory: builtinIcons[name],
-      name
-    }));
-    this._changeHandlers = [];
-    this._fillPending = false;
-    this._grid = null;
-    this._renderedCount = 0;
-    this._triggerIcon = null;
-    this._triggerText = null;
-
-    this._buildStructure();
-
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('data-disabled', enabled ? 'true' : null);
-      this._trigger.attr('disabled', enabled ? true : null);
+    const triggerIcon = span({ vn: 'VSvgIconPickerTriggerIcon' }).styles({
+      alignItems: 'center',
+      display: 'inline-flex',
+      height: `${TRIGGER_ICON_SIZE}px`,
+      justifyContent: 'center',
+      width: `${TRIGGER_ICON_SIZE}px`
     });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this.attr('data-required', enabled ? 'true' : null);
-    });
-
-    this._setupSvgIconPicker(setup);
-  }
-
-  _buildStructure() {
-    this._triggerIcon = new HtmlElementNode('span')
-      .className('yoya-vsvg-icon-picker-trigger-icon')
-      .styles({
-        alignItems: 'center',
-        display: 'inline-flex',
-        height: `${TRIGGER_ICON_SIZE}px`,
-        justifyContent: 'center',
-        width: `${TRIGGER_ICON_SIZE}px`
-      });
-
-    this._triggerText = vText('选择图标');
-    this._trigger = new HtmlElementNode('button')
-      .className('yoya-vsvg-icon-picker-trigger')
+    const triggerText = vText('选择图标');
+    const trigger = buttonTag({ vn: 'VSvgIconPickerTrigger' })
       .attr({
         'aria-expanded': 'false',
         'aria-haspopup': 'dialog',
@@ -94,28 +79,31 @@ class SvgIconPickerNode extends HtmlElementNode {
         minHeight: '34px',
         padding: '5px 10px'
       })
-      .child(this._triggerIcon, this._triggerText)
-      .on('click', () => this.toggle());
+      .child(triggerIcon, triggerText);
+    const node = div({ vn: 'VSvgIconPicker' }).styles({ position: 'relative' });
 
-    this._dialog = vDialog({
+    const dialog = vDialog({
       open: false,
-      onClose: () => this._trigger.attr('aria-expanded', 'false')
+      onClose: () => trigger.attr('aria-expanded', 'false')
     });
-    this._dialog.className('yoya-vsvg-icon-picker-dialog');
-    this._dialog.styles({ maxWidth: 'min(92vw, 760px)' });
-    this._dialog.content((body) => {
-      body.div((title) => {
-        title.className('yoya-vsvg-icon-picker-dialog-title');
-        title.styles({
-          color: themeValue('color-text', '#172033'),
-          fontSize: '15px',
-          fontWeight: '600',
-          marginBottom: '12px'
-        });
-        title.child('选择图标');
-      });
-      this._grid = new HtmlElementNode('div')
-        .className('yoya-vsvg-icon-picker-grid')
+
+    // 弹窗复用 vDialog：身份写多值（部件 + 组件），样式仍归自己
+    dialog.setup({ vn: 'VSvgIconPickerDialog VDialog' });
+    dialog.styles({ maxWidth: 'min(92vw, 760px)' });
+    dialog.content((body) => {
+      body.div(
+        {
+          style: {
+            color: themeValue('color-text', '#172033'),
+            fontSize: '15px',
+            fontWeight: '600',
+            marginBottom: '12px'
+          },
+          vn: 'VSvgIconPickerDialogTitle'
+        },
+        (title) => title.child('选择图标')
+      );
+      grid = div({ vn: 'VSvgIconPickerGrid' })
         .styles({
           boxSizing: 'border-box',
           display: 'grid',
@@ -125,315 +113,343 @@ class SvgIconPickerNode extends HtmlElementNode {
           overflowY: 'auto',
           padding: '2px'
         })
-        .on('scroll', () => this._maybeLoadMoreIcons());
-      body.child(this._grid);
+        .on('scroll', () => maybeLoadMoreIcons());
+      body.child(grid);
     });
-    this._renderGrid();
 
-    this.child(this._trigger, this._dialog);
-  }
+    node.child(trigger, dialog);
 
-  _renderGrid() {
-    if (!this._grid) return;
-    if (this._renderedCount === 0) {
-      this._renderedCount = Math.min(ICON_BATCH_SIZE, this._iconEntries.length);
-    }
-    replaceChildren(this._grid, []);
-    this._iconEntries.slice(0, this._renderedCount).forEach((entry) => {
-      this._grid.child(this._createCell(entry));
-    });
-  }
+    const createCell = (entry) => {
+      const { factory, name } = entry;
+      const selected = state.value === name;
+      const cell = buttonTag({ vn: 'VSvgIconPickerCell' })
+        .attr({
+          'aria-label': name,
+          'aria-pressed': selected ? 'true' : 'false',
+          'data-icon-name': name,
+          title: name,
+          type: 'button'
+        })
+        .styles({
+          alignItems: 'center',
+          background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
+          border: selected
+            ? `1px solid ${themeValue('color-primary', '#2563eb')}`
+            : `1px solid ${themeValue('color-border-faint', '#eef1f4')}`,
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+          color: 'inherit',
+          cursor: 'pointer',
+          display: 'flex',
+          height: '56px',
+          justifyContent: 'center',
+          padding: '0',
+          width: '100%'
+        });
 
-  _createCell(entry) {
-    const { factory, name } = entry;
-    const selected = this._value === name;
-    const cell = new HtmlElementNode('button')
-      .className('yoya-vsvg-icon-picker-cell')
-      .attr({
-        'aria-label': name,
-        'aria-pressed': selected ? 'true' : 'false',
-        'data-icon-name': name,
-        title: name,
-        type: 'button'
-      })
-      .styles({
-        alignItems: 'center',
-        background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
-        border: selected
-          ? `1px solid ${themeValue('color-primary', '#2563eb')}`
-          : `1px solid ${themeValue('color-border-faint', '#eef1f4')}`,
-        borderRadius: '8px',
-        boxSizing: 'border-box',
-        color: 'inherit',
-        cursor: 'pointer',
-        display: 'flex',
-        height: '56px',
-        justifyContent: 'center',
-        padding: '0',
-        width: '100%'
+      cell.on('mouseenter', () => {
+        if (!selected) {
+          cell.style('background', themeValue('color-surface-hover', '#f0f2f5'));
+        }
       });
-    cell.on('mouseenter', () => {
-      if (!selected) {
-        cell.style('background', themeValue('color-surface-hover', '#f0f2f5'));
-      }
-    });
-    cell.on('mouseleave', () => {
-      cell.style(
-        'background',
-        selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent'
-      );
-    });
-    cell.on('click', () => {
-      this.value(name);
-      this.close();
-    });
-    cell.child(
-      factory().styles({
-        height: `${DEFAULT_ICON_SIZE}px`,
-        width: `${DEFAULT_ICON_SIZE}px`
-      })
-    );
-    return cell;
-  }
-
-  _renderMoreIcons() {
-    if (!this._grid) return;
-    const next = Math.min(this._iconEntries.length, this._renderedCount + ICON_BATCH_SIZE);
-    while (this._renderedCount < next) {
-      this._grid.child(this._createCell(this._iconEntries[this._renderedCount]));
-      this._renderedCount += 1;
-    }
-  }
-
-  _maybeLoadMoreIcons() {
-    if (!this._grid || this._renderedCount >= this._iconEntries.length) return;
-    const el = this._grid._el;
-    if (!el) return;
-    const distance = el.scrollHeight - el.scrollTop - (el.clientHeight || 0);
-    if (distance <= ICON_LOAD_MORE_THRESHOLD) {
-      this._renderMoreIcons();
-    }
-  }
-
-  _fillViewport() {
-    if (!this._grid) return;
-    const el = this._grid._el;
-    if (!el) return;
-    let guard = 0;
-    while (this._renderedCount < this._iconEntries.length && guard < 200) {
-      if (el.scrollHeight > (el.clientHeight || 0)) break;
-      this._renderMoreIcons();
-      guard += 1;
-    }
-  }
-
-  _scheduleFill() {
-    if (this._fillPending) return;
-    this._fillPending = true;
-    setTimeout(() => {
-      this._fillPending = false;
-      if (this._dialog.isOpen()) {
-        this._fillViewport();
-      }
-    }, 0);
-  }
-
-  _sync() {
-    replaceChildren(this._triggerIcon, []);
-    const entry = this._iconEntries.find((item) => item.name === this._value);
-    if (entry) {
-      this._triggerIcon.child(
-        entry.factory().styles({
-          height: `${TRIGGER_ICON_SIZE}px`,
-          width: `${TRIGGER_ICON_SIZE}px`
+      cell.on('mouseleave', () => {
+        cell.style(
+          'background',
+          selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent'
+        );
+      });
+      cell.on('click', () => {
+        api.value(name);
+        api.close();
+      });
+      cell.child(
+        factory().styles({
+          height: `${DEFAULT_ICON_SIZE}px`,
+          width: `${DEFAULT_ICON_SIZE}px`
         })
       );
-      this._triggerText.textContent(entry.name);
-    } else {
-      this._triggerText.textContent('选择图标');
-    }
-    const valueIndex = this._iconEntries.findIndex((item) => item.name === this._value);
-    if (valueIndex >= this._renderedCount) {
-      this._renderedCount = valueIndex + 1;
-    }
-    this._renderGrid();
-  }
+      return cell;
+    };
 
-  /** 读写当前选中图标名；null 表示未选择。 */
-  value(next) {
-    if (next === undefined) {
-      return this._value;
-    }
-    if (next === null) {
-      return this.clearValue();
-    }
-    if (!this._iconEntries.some((entry) => entry.name === next)) {
-      return this;
-    }
-    this._value = next;
-    this._sync();
-    this._notifyChange();
-    return this;
-  }
-
-  /** 清除已选图标。 */
-  clearValue() {
-    this._value = null;
-    this._sync();
-    this._notifyChange();
-    return this;
-  }
-
-  /** 供 vFormItem 收集当前值。 */
-  _collectValue() {
-    return this._value;
-  }
-
-  /** 读写分离：跨组件只读判断走这个入口（票 02 方案 c） */
-  isDisabled() {
-    return this._disabled.value;
-  }
-
-  /** 读写字段名（vFormItem 之外的标识）。 */
-  name(value) {
-    if (value === undefined) {
-      return this.attr('data-name') || '';
-    }
-    this.attr('data-name', value ? String(value) : null);
-    return this;
-  }
-
-  /** 读写图标集合：字符串名（内置图标）或 { name, icon } 自定义条目。 */
-  icons(list) {
-    if (list === undefined) {
-      return this._iconEntries.map((entry) => entry.name);
-    }
-    const next = [];
-    (Array.isArray(list) ? list : [list]).forEach((entry) => {
-      if (typeof entry === 'string') {
-        if (typeof builtinIcons[entry] === 'function') {
-          next.push({ factory: builtinIcons[entry], name: entry });
-        }
-      } else if (entry && typeof entry.name === 'string' && typeof entry.icon === 'function') {
-        next.push({ factory: entry.icon, name: entry.name });
+    const renderGrid = () => {
+      if (!grid) {
+        return;
       }
-    });
-    this._iconEntries = next;
-    if (this._value !== null && !next.some((entry) => entry.name === this._value)) {
-      this._value = null;
-    }
-    this._renderedCount = 0;
-    this._sync();
-    return this;
-  }
 
-  /** 打开/关闭选择弹窗。 */
-  open(value = true) {
-    this._trigger.attr('aria-expanded', value ? 'true' : 'false');
-    this._dialog.open(value);
-    if (value) {
-      this._scheduleFill();
-    }
-    return this;
-  }
+      if (state.renderedCount === 0) {
+        state.renderedCount = Math.min(ICON_BATCH_SIZE, state.iconEntries.length);
+      }
+      replaceChildren(grid, []);
+      state.iconEntries.slice(0, state.renderedCount).forEach((entry) => {
+        grid.child(createCell(entry));
+      });
+    };
 
-  close() {
-    return this.open(false);
-  }
+    const renderMoreIcons = () => {
+      if (!grid) {
+        return;
+      }
 
-  toggle() {
-    if (this._dialog.isOpen()) {
-      return this.close();
-    }
-    return this.open();
-  }
+      const next = Math.min(state.iconEntries.length, state.renderedCount + ICON_BATCH_SIZE);
 
-  /** 注册图标变化回调（name, picker）。 */
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-    this._changeHandlers = [handler];
-    return this;
-  }
+      while (state.renderedCount < next) {
+        grid.child(createCell(state.iconEntries[state.renderedCount]));
+        state.renderedCount += 1;
+      }
+    };
 
-  /** change 的别名。 */
-  onChange(handler) {
-    return this.change(handler);
-  }
+    const maybeLoadMoreIcons = () => {
+      if (!grid || state.renderedCount >= state.iconEntries.length) {
+        return;
+      }
 
-  _notifyChange() {
-    // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-    this._changeHandlers.forEach((handler) => handler(this._value, this._componentHandle ?? this));
-  }
+      const element = grid._el;
 
-  _setupSvgIconPicker(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-    if (isPlainObject(setup)) {
+      if (!element) {
+        return;
+      }
+
+      const distance = element.scrollHeight - element.scrollTop - (element.clientHeight || 0);
+
+      if (distance <= ICON_LOAD_MORE_THRESHOLD) {
+        renderMoreIcons();
+      }
+    };
+
+    const fillViewport = () => {
+      if (!grid) {
+        return;
+      }
+
+      const element = grid._el;
+
+      if (!element) {
+        return;
+      }
+
+      let guard = 0;
+
+      while (state.renderedCount < state.iconEntries.length && guard < 200) {
+        if (element.scrollHeight > (element.clientHeight || 0)) {
+          break;
+        }
+
+        renderMoreIcons();
+        guard += 1;
+      }
+    };
+
+    const scheduleFill = () => {
+      if (state.fillPending) {
+        return;
+      }
+
+      state.fillPending = true;
+      setTimeout(() => {
+        state.fillPending = false;
+        if (dialog.isOpen()) {
+          fillViewport();
+        }
+      }, 0);
+    };
+
+    const sync = () => {
+      replaceChildren(triggerIcon, []);
+
+      const entry = state.iconEntries.find((item) => item.name === state.value);
+
+      if (entry) {
+        triggerIcon.child(
+          entry.factory().styles({
+            height: `${TRIGGER_ICON_SIZE}px`,
+            width: `${TRIGGER_ICON_SIZE}px`
+          })
+        );
+        triggerText.textContent(entry.name);
+      } else {
+        triggerText.textContent('选择图标');
+      }
+
+      const valueIndex = state.iconEntries.findIndex((item) => item.name === state.value);
+
+      if (valueIndex >= state.renderedCount) {
+        state.renderedCount = valueIndex + 1;
+      }
+      renderGrid();
+    };
+
+    /** 句柄交给使用方的是组件节点（与旧外壳的 `_componentHandle` 同一口径） */
+    const notifyChange = () => {
+      state.changeHandlers.forEach((handler) => handler(state.value, self.node()));
+    };
+
+    trigger.on('click', () => api.toggle());
+
+    /** 读写当前选中图标名；null 表示未选择。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return state.value;
+      }
+
+      if (next === null) {
+        return api.clearValue();
+      }
+
+      if (!state.iconEntries.some((entry) => entry.name === next)) {
+        return api;
+      }
+
+      state.value = next;
+      sync();
+      notifyChange();
+      return api;
+    };
+
+    /** 清除已选图标。 */
+    api.clearValue = () => {
+      state.value = null;
+      sync();
+      notifyChange();
+      return api;
+    };
+
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
+
+    /** 读写字段名（vFormItem 之外的标识）。 */
+    api.name = (value) => {
+      if (value === undefined) {
+        return node.attr('data-name') || '';
+      }
+
+      node.attr('data-name', value ? String(value) : null);
+      return api;
+    };
+
+    /** 读写图标集合：字符串名（内置图标）或 { name, icon } 自定义条目。 */
+    api.icons = (list) => {
+      if (list === undefined) {
+        return state.iconEntries.map((entry) => entry.name);
+      }
+
+      const next = [];
+
+      (Array.isArray(list) ? list : [list]).forEach((entry) => {
+        if (typeof entry === 'string') {
+          if (typeof builtinIcons[entry] === 'function') {
+            next.push({ factory: builtinIcons[entry], name: entry });
+          }
+        } else if (entry && typeof entry.name === 'string' && typeof entry.icon === 'function') {
+          next.push({ factory: entry.icon, name: entry.name });
+        }
+      });
+      state.iconEntries = next;
+
+      if (state.value !== null && !next.some((entry) => entry.name === state.value)) {
+        state.value = null;
+      }
+      state.renderedCount = 0;
+      sync();
+      return api;
+    };
+
+    /** 打开/关闭选择弹窗。 */
+    api.open = (value = true) => {
+      trigger.attr('aria-expanded', value ? 'true' : 'false');
+      dialog.open(value);
+
+      if (value) {
+        scheduleFill();
+      }
+      return api;
+    };
+
+    api.close = () => api.open(false);
+
+    api.toggle = () => (dialog.isOpen() ? api.close() : api.open());
+
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return state.disabled;
+      }
+
+      state.disabled = Boolean(next);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      trigger.attr('disabled', state.disabled ? true : null);
+      return api;
+    };
+
+    api.required = (next) => {
+      if (next === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(next);
+      node.attr('data-required', state.required ? 'true' : null);
+      return api;
+    };
+
+    /** 注册图标变化回调（name, picker）；后一次注册替换前一次。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    /** change 的别名。 */
+    api.onChange = (handler) => api.change(handler);
+
+    /** 字符串 = 初始图标名（旧 `_setupSvgIconPicker` 的兜底分支）。 */
+    api.setupString = (next) => api.value(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupSvgIconPicker` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const { change, disabled, icons, name, onChange, open, required, value, ...elementConfig } =
         setup;
+
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
+
       if (icons !== undefined) {
-        this.icons(icons);
+        api.icons(icons);
       }
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (open !== undefined) {
-        this.open(open);
+        api.open(open);
       }
-      return;
-    }
-    this.value(setup);
-  }
-}
 
-export function vSvgIconPicker(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSvgIconPicker',
-    createNode: (setup) => new SvgIconPickerNode(setup),
-    commands: [
-      'value',
-      'clearValue',
-      'isDisabled',
-      'name',
-      'icons',
-      'open',
-      'close',
-      'toggle',
-      'change',
-      'onChange',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+      return api;
+    };
+
+    renderGrid();
+    return node;
   });
 }
 
-export const VSvgIconPicker = vSvgIconPicker;
-defineComponentIdentity(VSvgIconPicker, 'VSvgIconPicker');
+export const vSvgIconPicker = createComponentShortcut(VSvgIconPicker);
 
 registerChildFactories(HtmlElementNode, { vSvgIconPicker });
