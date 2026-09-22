@@ -1,27 +1,20 @@
-import { componentNameOf, viewRootOf } from '../core/node.js';
+import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { a, li, nav, ul } from '../html/index.js';
-import {
-  createComponentShortcut,
-  normalizeChildren,
-  replaceChildren,
-  resolveTextValue,
-  setupContentSlot
-} from '../components/shared.js';
+import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
 /**
  * 锚点导航（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
  * - 结构：`nav[VAnchor] > ul[VAnchorList] > li[VAnchorItem] > a[VAnchorLink] + ul[VAnchorChildren]`；
- * - **匿名占位就是列表**（`vn_slot: ''`）：`anchor.child(item)` 与命令投递的内容都落进那张 `<ul>`，
- *   子项进列表的语义与旧节点类型的 `child()` 分流一致（§11.17：分流改成槽位，语义不变）；
- * - 全局只绑 `window` / `document` 的滚动（`whenMount` 里按落地收口绑，`destroy()` 自动卸），
- *   点击走元素自己的 `on('click')` 委托；
- * - 结构里的块（列表 / 链接 / 子列表）**按身份现取**（`findInView`），命令不存节点句柄。
+ * - **状态放 `ref`，值位置直接传句柄**：标题 / 地址 / 当前态 / 子列表显隐都是绑定，
+ *   命令只改状态，不找节点、不碰 `_el` / `_children`；
+ * - **匿名占位**：导航的匿名占位是列表（子项落进 `<ul>`），项的匿名占位是子列表
+ *   （`nested` / `item.vAnchorItem` 的子项落进子 `<ul>`）——两处都靠槽位落位，没有按身份查找；
+ * - 项由**造它的一方持有**（导航自己建的项自己记账）：子项数 / 当前态从这份账里收口；
+ * - 全局滚动在 `whenMount` 里按落地收口绑（`bindWindowEvent` / `bindDocumentEvent`，destroy 自动卸），
+ *   点击走元素自己的 `on('click')` 委托。
  */
-
-/** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
-const ANCHOR_ITEM = Symbol('yoya.anchorItem');
 
 const SCROLL_OPTIONS = { capture: true, passive: true };
 const DEFAULT_LABEL = '页面锚点';
@@ -32,138 +25,134 @@ function AnchorList() {
   return ul({ vn: 'VAnchorList', vn_slot: '' });
 }
 
-/** 链接（形态 A）。 */
-function AnchorLink() {
-  return a({ vn: 'VAnchorLink' });
+/** 链接（形态 A）：地址与文本都是活值，由项的状态直接驱动。 */
+function AnchorLink(href, title) {
+  return a({ href, vn: 'VAnchorLink' }, (link) => {
+    link.child(title);
+  });
 }
 
-/** 子列表（形态 A）：没有子项时隐藏，显隐由项自己的命令收口。 */
-function AnchorChildren() {
-  return ul({ vn: 'VAnchorChildren' }).style('display', 'none');
-}
-
-/**
- * 结构里按身份现取：组件的命令在 setup 之后才跑，那时视图已经建好（起手节点是视图根）。
- * 组件节点展开到视图根再往下走；找不到返回 null。
- */
-function findInView(node, name) {
-  const root = viewRootOf(node) ?? node;
-  const children = typeof root?.children === 'function' ? root.children() : [];
-
-  for (const child of children) {
-    const unit = viewRootOf(child) ?? child;
-
-    if (componentNameOf(unit) === name) {
-      return unit;
-    }
-
-    const nested = findInView(unit, name);
-
-    if (nested) {
-      return nested;
-    }
-  }
-
-  return null;
+/** 子列表（形态 A）：身份 + 匿名占位（`nested` 的子项落这里），没有子项时隐藏。 */
+function AnchorChildren(visible) {
+  return ul({
+    style: { display: () => (visible() ? null : 'none') },
+    vn: 'VAnchorChildren',
+    vn_slot: ''
+  });
 }
 
 /**
  * 锚点项：结构（`li > a + ul`）+ 命令（标题 / 地址 / 子项 / 当前态）。
- * 字符串 = 标题；对象 = props；子项数组走 `nested`。
+ * 字符串 = 标题；对象 = props；子项走 `nested` / `vAnchorItem`（落进子列表）。
  */
 export function VAnchorItem() {
   return vNode((api, self) => {
-    const state = { active: false, href: null, title: '' };
+    const href = ref(null);
+    const title = ref('');
+    const active = ref(false);
+    const nestedCount = ref(0);
 
-    const itemOf = () => viewRootOf(self.node());
-    const linkOf = () => findInView(itemOf(), 'VAnchorLink');
-    const childrenOf = () => findInView(itemOf(), 'VAnchorChildren');
+    /** 子项账：只记本项造出来的（含嵌套里的），当前态与显隐都从这里收口。 */
+    let nestedNodes = [];
 
-    /** 地址 / 子列表显隐 / 有子项标记：改一处收口一次。 */
-    const syncItem = () => {
-      const children = childrenOf();
-      const hasChildren = Boolean(children) && children.children().length > 0;
+    /**
+     * 状态写入收口：**首屏之前**绑定只求值不订阅，这时写状态要把视图快照刷到一起；
+     * 渲染之后订阅已接上，写入自己就到 DOM（与 `VTableWrapper.syncView` 同一口径）。
+     */
+    const sync = () => {
+      const node = self.node();
 
-      linkOf()?.attr('href', state.href || null);
-      children?.style('display', hasChildren ? null : 'none');
-      itemOf().attr('data-has-children', hasChildren ? 'true' : null);
+      if (!node._el) {
+        node.flush();
+      }
+
       return api;
+    };
+
+    const syncNested = () => {
+      nestedCount.value = nestedNodes.length;
+      return sync();
     };
 
     api.title = (content) => {
       if (content === undefined) {
-        return state.title;
+        return title.value;
       }
 
-      state.title = content;
-      const link = linkOf();
-
-      if (link) {
-        replaceChildren(link, normalizeChildren(content ?? ''));
-      }
-
-      return api;
+      title.value = content ?? '';
+      return sync();
     };
 
-    api.text = (content) => (content === undefined ? state.title : api.title(content));
+    api.text = (content) => (content === undefined ? title.value : api.title(content));
     api.label = api.text;
 
     api.href = (value) => {
       if (value === undefined) {
-        return state.href;
+        return href.value;
       }
 
-      state.href = value === null || value === undefined ? null : String(resolveTextValue(value));
-      return syncItem();
+      href.value = value === null || value === undefined ? null : String(resolveTextValue(value));
+      return sync();
     };
 
     api.nested = (setup) => {
-      const children = childrenOf();
-
       if (setup === undefined) {
-        return children ? children.children() : [];
+        return nestedNodes.slice();
       }
 
-      if (Array.isArray(setup)) {
-        replaceChildren(children, []);
-        setup.forEach((item) => children.child(normalizeAnchorItem(item)));
-      } else {
-        setupContentSlot(children, setup);
-      }
-
-      return syncItem();
+      return api.nestedItems(setup);
     };
 
     api.subItems = (setup) => (setup === undefined ? api.nested() : api.nested(setup));
 
+    /** 子项投递：造一份子项并交给匿名占位（子列表），账记在自己身上。 */
+    api.vAnchorItem = (setup) => {
+      const item = vAnchorItem(setup);
+      nestedNodes = [...nestedNodes, item];
+      self.node().child(item);
+      return syncNested();
+    };
+
+    /** 子项列表：数组 / 单值 = 替换；函数 = 构建回调（回调句柄上直接 `vAnchorItem`）。 */
+    api.nestedItems = (setup) => {
+      nestedNodes.forEach((item) => item.destroy());
+      nestedNodes = [];
+
+      if (typeof setup === 'function') {
+        setup(api);
+      } else {
+        (Array.isArray(setup) ? setup : [setup]).forEach((item) => api.vAnchorItem(item));
+      }
+
+      return syncNested();
+    };
+
     api.active = (value = true) => {
-      state.active = Boolean(value);
-      itemOf().attr('data-active', state.active ? 'true' : null);
-      itemOf().attr('aria-current', state.active ? 'true' : null);
-      return syncItem();
+      active.value = Boolean(value);
+      return sync();
     };
 
     /** props：`title / text / label / content / href / nested / items / children / active` + 其余元素配置。 */
     api.setupObject = (config) => {
       const {
-        active,
+        active: isActive,
         children,
         content,
-        href,
+        href: linkHref,
         items,
         label,
         nested,
         text,
-        title,
+        title: label2,
         ...elementConfig
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        itemOf().setup(elementConfig);
+        self.node().setup(elementConfig);
       }
 
-      if (title !== undefined) {
-        api.title(title);
+      if (label2 !== undefined) {
+        api.title(label2);
       } else if (label !== undefined) {
         api.label(label);
       } else if (text !== undefined) {
@@ -172,18 +161,18 @@ export function VAnchorItem() {
         api.text(content);
       }
 
-      if (href !== undefined) {
-        api.href(href);
+      if (linkHref !== undefined) {
+        api.href(linkHref);
       }
 
       const nestedSetup = nested ?? items ?? children;
 
       if (nestedSetup !== undefined) {
-        api.nested(nestedSetup);
+        api.nestedItems(nestedSetup);
       }
 
-      if (active !== undefined) {
-        api.active(active);
+      if (isActive !== undefined) {
+        api.active(isActive);
       }
 
       return api;
@@ -192,8 +181,16 @@ export function VAnchorItem() {
     /** 字符串 / 数字 = 标题。 */
     api.setupString = (value) => api.title(value);
 
-    return li({ vn: 'VAnchorItem' }, (element) => {
-      element.child(AnchorLink(), AnchorChildren());
+    return li({ vn: 'VAnchorItem' }, (item) => {
+      item.attr({
+        'aria-current': () => (active.value ? 'true' : null),
+        'data-active': () => (active.value ? 'true' : null),
+        'data-has-children': () => (nestedCount.value > 0 ? 'true' : null)
+      });
+      item.child(
+        AnchorLink(href, title),
+        AnchorChildren(() => nestedCount.value > 0)
+      );
     });
   });
 }
@@ -202,87 +199,65 @@ const anchorItemShortcut = createComponentShortcut(VAnchorItem);
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
 export function vAnchorItem(...args) {
-  const node = anchorItemShortcut(...args);
-  // 标在节点上而不是查组件名：本模块自己认自己的子项（含嵌套层）
-  node[ANCHOR_ITEM] = true;
-  return node;
+  return anchorItemShortcut(...args);
 }
 
 /**
- * 锚点导航：`nav > ul[VAnchorList]`；全局滚动跟当前项、点击滚动到目标并高亮。
+ * 锚点导航：`nav > ul[VAnchorList]`；滚动跟当前项、点击滚动到目标并高亮。
  * 对象 = props，字符串 / 数字 = 一条锚点项，函数 = 构建回调（默认落组件节点构建帧）。
+ *
+ * 项只认自己造的（`items` / `vAnchorItem` / `child` 里进来的项节点）；匿名塞进列表的其它内容
+ * 照旧渲染，但不参与子项数与当前态对账——一张导航里只走一条投递通道。
  */
 export function VAnchor() {
   return vNode((api, self) => {
-    const state = { activeHref: null, offset: DEFAULT_OFFSET, target: null };
+    const activeHref = ref(null);
+    const offset = ref(DEFAULT_OFFSET);
+    const target = ref(null);
 
-    const rootOf = () => viewRootOf(self.node());
-    const listOf = () => findInView(self.node(), 'VAnchorList');
+    /** 项账：导航自己造的项节点（`items` 替换 / `vAnchorItem` 追加都记在这里）。 */
+    let items = [];
 
-    /** 本模块的项按列表顺序摊平（含嵌套层）；其它内容（用户自造节点）不参与对账。 */
-    const collectItems = (nodes, out = []) => {
-      nodes.forEach((node) => {
-        const item = node?.[ANCHOR_ITEM] ? node : null;
-
-        if (!item) {
-          return;
-        }
-
-        out.push(item);
-        collectItems(item.nested(), out);
-      });
-
-      return out;
-    };
-
-    const itemsOf = () => {
-      const list = listOf();
-      return list ? collectItems(list.children()) : [];
-    };
-
-    /** 当前项标记：`data-active-href` 落在导航上，项自己的激活态由项收口。 */
     const syncActive = () => {
-      const activeHref = state.activeHref;
-
-      rootOf().attr('data-active-href', activeHref || null);
-      itemsOf().forEach((item) => item.active(item.href() === activeHref));
+      const current = activeHref.value;
+      items.forEach((item) => item.active(item.href() === current));
       return api;
     };
 
-    /** 子项数 + 当前项标记：内容一变就收口一次。 */
     const syncItems = () => {
-      rootOf().attr('data-item-count', String(itemsOf().length));
+      self.node().attr('data-item-count', String(items.length));
+      self.node().attr('data-active-href', activeHref.value || null);
       return syncActive();
     };
 
-    const resolveTargetElement = (target) => {
-      if (typeof Element !== 'undefined' && target instanceof Element) {
-        return target;
+    const resolveTargetElement = (value) => {
+      if (typeof Element !== 'undefined' && value instanceof Element) {
+        return value;
       }
 
-      if (typeof target === 'string' && typeof document !== 'undefined') {
-        return document.querySelector(target);
+      if (typeof value === 'string' && typeof document !== 'undefined') {
+        return document.querySelector(value);
       }
 
-      return target || null;
+      return value || null;
     };
 
     const resolveScrollContainer = () => {
-      if (!state.target) {
+      if (!target.value) {
         return typeof window === 'undefined' ? null : window;
       }
 
-      return resolveTargetElement(state.target) || (typeof window === 'undefined' ? null : window);
+      return resolveTargetElement(target.value) || (typeof window === 'undefined' ? null : window);
     };
 
-    const resolveAnchorTarget = (href) => {
-      const id = String(href).replace(/^#/, '');
+    const resolveAnchorTarget = (value) => {
+      const id = String(value).replace(/^#/, '');
 
       if (!id || typeof document === 'undefined') {
         return null;
       }
 
-      const scope = state.target ? resolveTargetElement(state.target) : document;
+      const scope = target.value ? resolveTargetElement(target.value) : document;
 
       if (!scope) {
         return null;
@@ -297,19 +272,19 @@ export function VAnchor() {
 
     const targetTop = (targetElement) => {
       const container = resolveScrollContainer();
-      const offset = state.offset || 0;
+      const gap = offset.value || 0;
 
       if (!container || container === window) {
         const scrollTop =
           typeof window !== 'undefined'
             ? window.scrollY || document.documentElement?.scrollTop || 0
             : 0;
-        return scrollTop + targetElement.getBoundingClientRect().top - offset;
+        return scrollTop + targetElement.getBoundingClientRect().top - gap;
       }
 
       const containerRect = container.getBoundingClientRect();
       return (
-        container.scrollTop + targetElement.getBoundingClientRect().top - containerRect.top - offset
+        container.scrollTop + targetElement.getBoundingClientRect().top - containerRect.top - gap
       );
     };
 
@@ -331,18 +306,18 @@ export function VAnchor() {
       }
     };
 
-    const scrollToTarget = (href) => {
-      const targetElement = resolveAnchorTarget(href);
+    const scrollToTarget = (value) => {
+      const targetElement = resolveAnchorTarget(value);
 
       if (targetElement) {
         scrollElementIntoView(targetElement);
       }
 
       if (typeof history !== 'undefined' && typeof history.replaceState === 'function') {
-        history.replaceState(null, '', href);
+        history.replaceState(null, '', value);
       }
 
-      api.active(href);
+      api.active(value);
     };
 
     /** 滚动位置 → 当前项：目标过了阈值（偏移量）就算到它。 */
@@ -352,11 +327,11 @@ export function VAnchor() {
         container && container !== window && typeof container.getBoundingClientRect === 'function'
           ? container.getBoundingClientRect()
           : null;
-      const threshold = state.offset || 0;
-      let activeHref = null;
-      let foundTarget = false;
+      const threshold = offset.value || 0;
+      let next = null;
+      let found = false;
 
-      itemsOf().forEach((item) => {
+      items.forEach((item) => {
         const href = item.href();
 
         if (!href) {
@@ -369,144 +344,146 @@ export function VAnchor() {
           return;
         }
 
-        foundTarget = true;
+        found = true;
         const rect = targetElement.getBoundingClientRect();
         const top = containerRect ? rect.top - containerRect.top : rect.top;
 
         if (top - threshold <= 0) {
-          activeHref = href;
+          next = href;
         }
       });
 
-      if (foundTarget && activeHref !== state.activeHref) {
-        api.active(activeHref);
+      if (found && next !== activeHref.value) {
+        api.active(next);
       }
     };
 
     const handleClick = (event) => {
       const link = event.target.closest?.('[vn~="VAnchorLink"]');
-      const list = listOf()?.renderDom();
 
-      if (!link || !list?.contains(link)) {
+      if (!link || !event.currentTarget?.contains(link)) {
         return;
       }
 
-      const href = link.getAttribute('href');
+      const value = link.getAttribute('href');
 
-      if (!href || !href.startsWith('#')) {
+      if (!value || !value.startsWith('#')) {
         return;
       }
 
       event.preventDefault();
-      scrollToTarget(href);
+      scrollToTarget(value);
     };
 
     api.ariaLabel = (content) => {
-      rootOf().attr('aria-label', resolveTextValue(content) || DEFAULT_LABEL);
+      self.node().attr('aria-label', resolveTextValue(content) || DEFAULT_LABEL);
       return api;
     };
 
     api.offset = (value) => {
       if (value === undefined) {
-        return state.offset;
+        return offset.value;
       }
 
-      state.offset = Math.max(0, Number(resolveTextValue(value)) || 0);
-      rootOf().attr('data-offset', String(state.offset));
+      offset.value = Math.max(0, Number(resolveTextValue(value)) || 0);
+      self.node().attr('data-offset', String(offset.value));
       return api;
     };
 
     api.target = (value) => {
       if (value === undefined) {
-        return state.target;
+        return target.value;
       }
 
-      state.target = value || null;
+      target.value = value || null;
       return api;
-    };
-
-    api.items = (value) => {
-      const list = listOf();
-
-      if (!list) {
-        return value === undefined ? [] : api;
-      }
-
-      if (value === undefined) {
-        return list.children();
-      }
-
-      replaceChildren(list, []);
-      value.forEach((item) => list.child(normalizeAnchorItem(item)));
-      return syncItems();
-    };
-
-    /** 段命令：项进列表（与 `table.vTr(…)` 同一口径——自己的结构自己收）。 */
-    api.vAnchorItem = (setup) => {
-      listOf()?.child(normalizeAnchorItem(setup));
-      return syncItems();
     };
 
     api.active = (value) => {
       if (value === undefined) {
-        return state.activeHref;
+        return activeHref.value;
       }
 
-      state.activeHref = value || null;
+      activeHref.value = value || null;
+      self.node().attr('data-active-href', activeHref.value || null);
       return syncActive();
     };
 
     api.activeHref = (value) => api.active(value);
 
+    /** 项投递：造一份项并交给匿名占位（列表）；账记在自己身上，替换时先收掉旧账。 */
+    api.vAnchorItem = (setup) => {
+      const item = vAnchorItem(setup);
+      items = [...items, item];
+      self.node().child(item);
+      return syncItems();
+    };
+
+    api.items = (value) => {
+      if (value === undefined) {
+        return items.slice();
+      }
+
+      items.forEach((item) => item.destroy());
+      items = [];
+      (Array.isArray(value) ? value : [value]).forEach((item) => api.vAnchorItem(item));
+      return syncItems();
+    };
+
     /** props：`ariaLabel / offset / target / items / children / activeHref / active` + 其余元素配置。 */
     api.setupObject = (config) => {
-      const { activeHref, ariaLabel, children, items, offset, target, ...elementConfig } = config;
+      const {
+        active,
+        activeHref: initialActive,
+        ariaLabel,
+        children,
+        items: itemSetup,
+        offset: initialOffset,
+        target: initialTarget,
+        ...elementConfig
+      } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        rootOf().setup(elementConfig);
+        self.node().setup(elementConfig);
       }
 
       if (ariaLabel !== undefined) {
         api.ariaLabel(ariaLabel);
       }
 
-      if (offset !== undefined) {
-        api.offset(offset);
+      if (initialOffset !== undefined) {
+        api.offset(initialOffset);
       }
 
-      if (target !== undefined) {
-        api.target(target);
+      if (initialTarget !== undefined) {
+        api.target(initialTarget);
       }
 
-      const itemSetup = items ?? children;
+      const itemsSetup = itemSetup ?? children;
 
-      if (itemSetup !== undefined) {
-        api.items(Array.isArray(itemSetup) ? itemSetup : [itemSetup]);
+      if (itemsSetup !== undefined) {
+        api.items(itemsSetup);
       }
 
-      if (activeHref !== undefined) {
-        api.active(activeHref);
+      const initial = initialActive ?? active;
+
+      if (initial !== undefined) {
+        api.active(initial);
       }
 
       return api;
     };
 
-    /** 字符串 / 数字 = 一条锚点项（标题作项名，没有地址）。 */
+    /** 字符串 / 数字 = 一条锚点项（只有标题，没有地址）。 */
     api.setupString = (value) => {
       api.items([value]);
       return api;
     };
 
-    /** 落地才绑全局滚动（`whenMount` 按落地收口触发，绑定后再跟一次当前位置）；destroy 自动卸。 */
+    /** 落地才绑全局滚动（`whenMount` 按落地收口触发，绑定后先跟一次当前位置）；destroy 自动卸。 */
     api.whenMount = () => {
-      const root = rootOf();
-
-      if (!root) {
-        return;
-      }
-
-      root.bindWindowEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
-      root.bindDocumentEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
+      self.node().bindWindowEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
+      self.node().bindDocumentEvent('scroll', syncActiveFromScroll, SCROLL_OPTIONS);
       syncActiveFromScroll();
     };
 
@@ -521,14 +498,6 @@ export function VAnchor() {
 }
 
 export const vAnchor = createComponentShortcut(VAnchor);
-
-function normalizeAnchorItem(item) {
-  if (item?.[ANCHOR_ITEM]) {
-    return item;
-  }
-
-  return vAnchorItem(item);
-}
 
 function cssEscape(value) {
   return typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value;
