@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CodeBlock, codeBlock, div } from '../index.js';
+import { CodeBlock, codeBlock, div, hasComponentIdentity } from '../index.js';
 
 describe('CodeBlock', () => {
   it('wraps VCode with a stable hook and preserves language/content/copy behavior', async () => {
@@ -10,16 +10,18 @@ describe('CodeBlock', () => {
     });
     const element = block.renderDom();
 
-    expect(block).toBeInstanceOf(CodeBlock);
-    expect(element.classList.contains('yoya-vcode-block')).toBe(true);
+    // 身份 = 多值 `vn`（`CodeBlock` 与 `VCode` 任一名命中）
+    expect(hasComponentIdentity(block, 'CodeBlock')).toBe(true);
+    expect(hasComponentIdentity(block, 'VCode')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('CodeBlock VCode');
     expect(element.dataset.language).toBe('sql');
-    expect(element.querySelector('.yoya-vcode-content').textContent).toBe(
+    expect(element.querySelector('[vn~="VCodeContent"]').textContent).toBe(
       'SELECT * FROM services;'
     );
-    expect(element.querySelector('.yoya-vcode-copy').textContent).toBe('复制 SQL');
+    expect(element.querySelector('[vn~="VCodeCopy"]').textContent).toBe('复制 SQL');
 
     block.content('SELECT id FROM services;');
-    expect(block.renderDom().querySelector('.yoya-vcode-content').textContent).toBe(
+    expect(block.renderDom().querySelector('[vn~="VCodeContent"]').textContent).toBe(
       'SELECT id FROM services;'
     );
     expect(await block.copy()).toBe('SELECT id FROM services;');
@@ -29,8 +31,8 @@ describe('CodeBlock', () => {
     const direct = new CodeBlock({ content: 'const ready = true;', language: 'js' });
     const root = div((page) => page.codeBlock({ content: 'console.log(ready);', language: 'js' }));
 
-    expect(direct.toHTML()).toContain('yoya-vcode-block');
-    expect(root.children()[0]).toBeInstanceOf(CodeBlock);
+    expect(direct.toHTML()).toContain('vn="CodeBlock VCode"');
+    expect(hasComponentIdentity(root.children()[0], 'CodeBlock')).toBe(true);
     expect(root.children()[0].language()).toBe('js');
   });
 });

@@ -1,178 +1,163 @@
-import { HtmlElementNode } from '../html/index.js';
-import { ref } from '../core/signals/handle.js';
-import {
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  normalizeChildren,
-  replaceChildren,
-  themeBorder,
-  themeValue
-} from '../components/shared.js';
+import { asSignal, computed } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { ViewNode, vText } from '../core/index.js';
+import { button, code as codeBox, div, pre, span } from '../html/index.js';
+import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
-export class VCode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._languageBadge = new HtmlElementNode('span')
-      .className('yoya-vcode-language')
-      .style('display', 'none');
-    this._copyButton = new HtmlElementNode('button')
-      .className('yoya-vcode-copy')
-      .attr({ 'aria-label': '复制代码', type: 'button' })
-      .on('click', () => {
-        void this.copy();
-      });
-    this._toolbar = new HtmlElementNode('div').className('yoya-vcode-toolbar');
-    this._codeBox = new HtmlElementNode('code').className('yoya-vcode-content');
-    this._preBox = new HtmlElementNode('pre').className('yoya-vcode-pre').child(this._codeBox);
-    this._copyable = ref(true); // 内部状态：对外仍走 copyable() 方法
+const DEFAULT_COPY_LABEL = '复制';
 
-    this.className(componentClass, 'yoya-vcode');
-    this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '8px',
-      color: themeValue('color-text', '#172033'),
-      overflow: 'hidden'
-    });
-    this._toolbar.styles({
-      alignItems: 'center',
-      background: themeValue('color-code-header', '#f8fafc'),
-      display: 'flex',
-      gap: '8px',
-      justifyContent: 'space-between',
-      padding: '10px 12px'
-    });
-    this._languageBadge.styles({
-      background: themeValue('color-code-badge', '#e2e8f0'),
-      borderRadius: '999px',
-      color: themeValue('color-code-badge-text', '#334155'),
-      fontSize: '12px',
-      fontWeight: '700',
-      lineHeight: '1',
-      padding: '4px 8px'
-    });
-    this._preBox.styles({
-      background: themeValue('color-code-bg', '#fbfcfe'),
-      margin: '0',
-      overflow: 'auto',
-      padding: '14px 16px'
-    });
-    this._codeBox.styles({
-      display: 'block',
-      fontFamily: '"Cascadia Code", "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace',
-      fontSize: '13px',
-      lineHeight: '1.55',
-      minWidth: 'max-content',
-      whiteSpace: 'pre'
-    });
-    this.copyLabel('复制');
-    this.copyable(true);
-    this._toolbar.child(this._languageBadge, this._copyButton);
-    this.child(this._toolbar, this._preBox);
-    this._setupCode(setup);
-  }
+/**
+ * 代码块（形态 B，照 `AGENTS.md`「Component Writing Rules」R1–R12 写）。
+ *
+ * - 一个业务组件函数 = 一个边界（R1）；整棵树写在最后那个 `return` 里（R2）。
+ * - props 在参数表里解构、`...rest` 摊进根元素工厂（R3）；`attrs` / `style` 是显式通道（R4）。
+ * - **静态样式全在 `yoya.ui.css`**（R5）：外壳 / 工具条 / 语言徽标 / 代码区都不再写行内样式；
+ *   显隐这类状态几何写 `[data-language]` / `[data-copyable]` 规则。
+ * - **数据驱动**（R6 / R9）：`content` / `text` / `language` / `copyable` / `copyLabel` 给句柄就是活值；
+ *   命令只写状态，视图走读值绑定。
+ * - **节点内容只在构建期落位**：`content()` / `text()` 只收文本，节点内容走 props。
+ */
+export function VCode({
+  children,
+  content,
+  copyLabel,
+  copyable = true,
+  language = null,
+  text,
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+  // `attrs` 里直写 `data-language` 也算设置语言：语言只有这一份真源（徽标显隐跟着它走）
+  const languageState = asSignal(language ?? restAttrs?.['data-language'] ?? null);
+  const copyableState = asSignal(copyable);
+  const copyLabelState = asSignal(copyLabel ?? DEFAULT_COPY_LABEL);
 
-  content(content) {
-    replaceChildren(this._codeBox, normalizeChildren(content));
-    return this;
-  }
+  const languageValue = computed(() => languageState.value || null);
+  const languageText = computed(() => languageValue.value ?? '');
+  const copyableValue = computed(() => Boolean(copyableState.value));
+  const copyLabelText = computed(() => copyLabelState.value ?? DEFAULT_COPY_LABEL);
 
-  text(content) {
-    return this.content(content);
-  }
+  // 内容位只有一处：节点在构建期落位，文本 / 句柄是活值（`content` / `text` 写同一份数据）
+  const initial = content ?? text ?? children ?? null;
+  const contentNode = initial instanceof ViewNode ? initial : null;
+  const contentValue = asSignal(contentNode === null ? initial : null);
+  const contentText = computed(() =>
+    contentNode === null ? resolveTextValue(contentValue.value) : resolveTextValue(contentNode)
+  );
 
-  language(value) {
-    if (value === undefined) {
-      return this.attr('data-language');
-    }
-
-    const language = value === null || value === undefined ? '' : String(value);
-    this.attr('data-language', language || null);
-    this._languageBadge.style('display', language ? null : 'none');
-    replaceChildren(this._languageBadge, language ? normalizeChildren(language) : []);
-    return this;
-  }
-
-  copyable(value = undefined) {
-    if (value === undefined) {
-      return this._copyable.value;
-    }
-
-    const enabled = Boolean(value);
-    this._copyable.value = enabled;
-    this.attr('data-copyable', enabled ? 'true' : null);
-    this._copyButton.style('display', enabled ? null : 'none');
-    return this;
-  }
-
-  copyLabel(value) {
-    if (value === undefined) {
-      return this._copyButton.textContent();
-    }
-
-    replaceChildren(this._copyButton, normalizeChildren(value ?? '复制'));
-    return this;
-  }
-
-  async copy() {
-    const text = this._codeBox.textContent();
-
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      }
-    } catch {
-      // Copy should fail softly in unsupported contexts.
-    }
-
-    return text;
-  }
-
-  _setupCode(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const { children, content, copyLabel, copyable, language, text, ...elementConfig } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+  return vNode((api) => {
+    /** 内容命令：只写数据（`content` / `text` 迁移前同义）。 */
+    const writeContent = (next) => {
+      if (next instanceof ViewNode) {
+        throw new TypeError(
+          'vCode 的内容命令只收文本：节点内容请在构建期用 props（content / text / children）给。'
+        );
       }
 
-      if (language !== undefined) {
-        this.language(language);
+      contentValue.value = next ?? null;
+      return api;
+    };
+    const contentCommand = (next) => (next === undefined ? contentValue.value : writeContent(next));
+
+    api.content = contentCommand;
+    api.text = contentCommand;
+
+    api.language = (next) => {
+      if (next === undefined) {
+        return languageValue.value;
       }
 
-      if (copyLabel !== undefined) {
-        this.copyLabel(copyLabel);
+      languageState.value = next === null ? '' : String(next);
+      return api;
+    };
+
+    api.copyable = (next) => {
+      if (next === undefined) {
+        return copyableValue.value;
       }
 
-      if (copyable !== undefined) {
-        this.copyable(copyable);
+      copyableState.value = Boolean(next);
+      return api;
+    };
+
+    api.copyLabel = (next) => {
+      if (next === undefined) {
+        return copyLabelText.value;
       }
 
-      if (content !== undefined) {
-        this.content(content);
-      } else if (text !== undefined) {
-        this.content(text);
-      } else if (children !== undefined) {
-        this.content(children);
+      copyLabelState.value = next ?? DEFAULT_COPY_LABEL;
+      return api;
+    };
+
+    /** 复制内容：读的是**数据**（不回头读 DOM），与迁移前 `_codeBox.textContent()` 同结果。 */
+    api.copy = async () => {
+      const value = contentNode === null ? contentValue.value : contentNode;
+      const text = resolveTextValue(value);
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        }
+      } catch {
+        // Copy should fail softly in unsupported contexts.
       }
 
-      return;
-    }
+      return text;
+    };
 
-    this.content(setup);
-  }
+    /** 位置参数：字符串 / 数字 = 内容（迁移前 `_setupCode` 的兜底分支同口径）。 */
+    api.setupString = (next) => writeContent(next);
+
+    // 结构（R2）：一棵树写在 return 里；属性 / 样式在工厂参数里（R4），子节点在回调里往下嵌
+    return div(
+      {
+        ...elementConfig,
+        attrs: restAttrs ?? {},
+        'data-copyable': computed(() => (copyableValue.value ? 'true' : null)),
+        'data-language': languageValue,
+        style: restStyle ?? {},
+        vn: 'VCode'
+      },
+      (root) => {
+        root.child(
+          div({ vn: 'VCodeToolbar' }, (bar) => {
+            bar.child(
+              // 语言徽标：显隐走 `[data-language]` 规则（CSS），文本是活值
+              span({ vn: 'VCodeLanguage' }, (badge) =>
+                badge.child(
+                  vText(languageText).mountable(computed(() => languageText.value !== ''))
+                )
+              ),
+
+              // 复制按钮：显隐走 `[data-copyable]` 规则（CSS）
+              button(
+                {
+                  attrs: { 'aria-label': '复制代码', type: 'button' },
+                  onClick: () => void api.copy(),
+                  vn: 'VCodeCopy'
+                },
+                (copyButton) => copyButton.child(vText(copyLabelText))
+              )
+            );
+          }),
+
+          // 代码区：pre > code，内容与文本都是数据
+          pre({ vn: 'VCodePre' }, (box) =>
+            box.child(
+              codeBox({ vn: 'VCodeContent' }, (textBox) => {
+                if (contentNode !== null) {
+                  textBox.child(contentNode);
+                }
+                textBox.child(
+                  vText(contentText).mountable(computed(() => contentText.value !== ''))
+                );
+              })
+            )
+          )
+        );
+      }
+    );
+  });
 }
 
-export function vCode(first = null, second = null, third = null) {
-  return createComponentFactory(VCode, first, second, third, arguments);
-}
+export const vCode = createComponentShortcut(VCode, { props: true });

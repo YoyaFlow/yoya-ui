@@ -1672,6 +1672,64 @@ body {
     display: block;
   }
 
+  :where([vn~='VCode']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    color: var(--yoya-color-text, #172033);
+    overflow: hidden;
+  }
+
+  [vn~='VCode'] [vn~='VCodeToolbar'] {
+    align-items: center;
+    background: var(--yoya-color-code-header, #f8fafc);
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  /* 语言徽标：设过语言才显示（`data-language` 是这份状态的真源） */
+  [vn~='VCode'] [vn~='VCodeLanguage'] {
+    background: var(--yoya-color-code-badge, #e2e8f0);
+    border-radius: 999px;
+    color: var(--yoya-color-code-badge-text, #334155);
+    display: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 8px;
+  }
+
+  [vn~='VCode'][data-language] [vn~='VCodeLanguage'] {
+    display: inline;
+  }
+
+  /* 复制按钮：`copyable(false)` 收起 */
+  [vn~='VCode'] [vn~='VCodeCopy'] {
+    display: none;
+  }
+
+  [vn~='VCode'][data-copyable='true'] [vn~='VCodeCopy'] {
+    display: inline-block;
+  }
+
+  [vn~='VCode'] [vn~='VCodePre'] {
+    background: var(--yoya-color-code-bg, #fbfcfe);
+    margin: 0;
+    overflow: auto;
+    padding: 14px 16px;
+  }
+
+  [vn~='VCode'] [vn~='VCodeContent'] {
+    display: block;
+    font-family: 'Cascadia Code', 'Fira Code', ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    min-width: max-content;
+    white-space: pre;
+  }
+
   :where([vn~='VProgress']) {
     align-items: center;
     box-sizing: border-box;

@@ -1859,9 +1859,9 @@ describe('compound components', () => {
       });
 
       const element = snippet.renderDom();
-      element.querySelector('.yoya-vcode-copy').click();
+      element.querySelector('[vn~="VCodeCopy"]').click();
 
-      expect(element.classList.contains('yoya-vcode')).toBe(true);
+      expect(element.getAttribute('vn')).toBe('VCode');
       expect(element.dataset.language).toBe('sql');
       expect(element.querySelector('pre code').textContent).toBe('SELECT * FROM services;');
       expect(writeText).toHaveBeenCalledWith('SELECT * FROM services;');

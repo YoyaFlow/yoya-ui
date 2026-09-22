@@ -1,16 +1,15 @@
-import { VCode } from './code.js';
 import { ElementNode, registerChildFactories } from '../core/index.js';
-import { createComponentFactory } from '../components/shared.js';
+import { createComponentShortcut } from '../components/shared.js';
+import { VCode } from './code.js';
 
-export class CodeBlock extends VCode {
-  constructor(setup = null) {
-    super(setup);
-    this.className('yoya-vcode-block');
-  }
+/**
+ * `CodeBlock` = 代码块的别名形态（历史 API）：同一棵树 + **多值身份** `CodeBlock VCode`
+ * （与 `VSvgIconPickerDialog VDialog` / `VTimer VInput` 同一口径），样式与命令全部沿用 `VCode`。
+ */
+export function CodeBlock(props = {}) {
+  return VCode(props).setup({ vn: 'CodeBlock VCode' });
 }
 
-export function codeBlock(first = null, second = null, third = null) {
-  return createComponentFactory(CodeBlock, first, second, third, arguments);
-}
+export const codeBlock = createComponentShortcut(CodeBlock, { props: true });
 
 registerChildFactories(ElementNode, { codeBlock });

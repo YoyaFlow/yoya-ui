@@ -248,7 +248,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const page = document.querySelector('[data-icons-page]');
     const grid = page.querySelector('[data-icons-grid]');
     const cells = grid.querySelectorAll('[data-icon-name]');
-    const source = page.querySelector('.yoya-vcode-block .yoya-vcode-content');
+    const source = page.querySelector('[vn~="CodeBlock"] [vn~="VCodeContent"]');
     const copyButtons = grid.querySelectorAll('.components-icon-copy');
     const originalClipboard = navigator.clipboard;
     const writeText = vi.fn();
