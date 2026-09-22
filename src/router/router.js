@@ -745,815 +745,852 @@ export function vRouterView(routerInstance, setup = null, callback = null) {
   return createComponentFactory(VRouterView, routerInstance, setup, callback, arguments);
 }
 
-export function vRouterViews(routerInstance, setup = null, callback = null) {
+export function VRouterViews(routerInstance) {
   assertRouter(routerInstance);
-  const node = new ElementNode('div');
-  const titleNode = new ElementNode('header')
-    .setup({ vn: 'VRouterViewsTitlebar' })
-    .attr({ role: 'tablist', 'aria-label': '已打开页面' });
-  const contentNode = new ElementNode('div').setup({ vn: 'VRouterViewsContent' });
-  const moreButtonText = vText('⋯');
-  const moreButton = new ElementNode('button')
-    .setup({ vn: 'VRouterViewsExpand' })
-    .attr({ type: 'button', 'aria-expanded': 'false', 'aria-label': '展开全部标签' })
-    .styles({
-      alignItems: 'center',
-      background: 'transparent',
-      border: '0',
-      color: themeValue('color-text-secondary', '#57606a'),
-      cursor: 'pointer',
-      display: 'none',
-      flexShrink: '0',
-      font: 'inherit',
-      gap: '6px',
-      height: '24px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      marginBottom: '0',
-      marginLeft: 'auto',
-      minWidth: '24px',
-      padding: '0',
-      position: 'sticky',
-      right: '8px',
-      zIndex: '2'
-    })
-    .child(moreButtonText);
-  const popup = new ElementNode('div')
-    .setup({ vn: 'VRouterViewsPopup' })
-    .attr({ role: 'menu', 'aria-label': '已打开页面' })
-    .styles({
-      background: themeValue('color-surface', '#ffffff'),
+
+  return vNode((api) => {
+    const node = new ElementNode('div');
+    const titleNode = new ElementNode('header')
+      .setup({ vn: 'VRouterViewsTitlebar' })
+      .attr({ role: 'tablist', 'aria-label': '已打开页面' });
+    const contentNode = new ElementNode('div').setup({ vn: 'VRouterViewsContent' });
+    const moreButtonText = vText('⋯');
+    const moreButton = new ElementNode('button')
+      .setup({ vn: 'VRouterViewsExpand' })
+      .attr({ type: 'button', 'aria-expanded': 'false', 'aria-label': '展开全部标签' })
+      .styles({
+        alignItems: 'center',
+        background: 'transparent',
+        border: '0',
+        color: themeValue('color-text-secondary', '#57606a'),
+        cursor: 'pointer',
+        display: 'none',
+        flexShrink: '0',
+        font: 'inherit',
+        gap: '6px',
+        height: '24px',
+        justifyContent: 'center',
+        lineHeight: '1',
+        marginBottom: '0',
+        marginLeft: 'auto',
+        minWidth: '24px',
+        padding: '0',
+        position: 'sticky',
+        right: '8px',
+        zIndex: '2'
+      })
+      .child(moreButtonText);
+    const popup = new ElementNode('div')
+      .setup({ vn: 'VRouterViewsPopup' })
+      .attr({ role: 'menu', 'aria-label': '已打开页面' })
+      .styles({
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border', '#d0d7de'),
+        borderRadius: '8px',
+        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
+        display: 'none',
+        maxHeight: '280px',
+        maxWidth: '260px',
+        minWidth: '180px',
+        msOverflowStyle: 'none',
+        overflowY: 'auto',
+        padding: '6px',
+        position: 'fixed',
+        scrollbarWidth: 'none',
+        zIndex: '100'
+      });
+    const state = {
+      lockTitle: false,
+      overflow: false,
+      persist: true,
+      popupOpen: false,
+      storageKey: createRouterViewsStorageKey(routerInstance),
+      suppressPersist: false,
+      tabs: new Map(),
+      title: '工作区',
+      titleResolver: null,
+      titlePosition: 'top'
+    };
+
+    node.setup({ vn: 'VRouterViews' });
+    node.styles({
       border: themeBorder('color-border', '#d0d7de'),
-      borderRadius: '8px',
-      boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-      display: 'none',
-      maxHeight: '280px',
-      maxWidth: '260px',
-      minWidth: '180px',
-      msOverflowStyle: 'none',
-      overflowY: 'auto',
-      padding: '6px',
-      position: 'fixed',
-      scrollbarWidth: 'none',
-      zIndex: '100'
-    });
-  const state = {
-    lockTitle: false,
-    overflow: false,
-    persist: true,
-    popupOpen: false,
-    storageKey: createRouterViewsStorageKey(routerInstance),
-    suppressPersist: false,
-    tabs: new Map(),
-    title: '工作区',
-    titleResolver: null,
-    titlePosition: 'top'
-  };
-
-  node.setup({ vn: 'VRouterViews' });
-  node.styles({
-    border: themeBorder('color-border', '#d0d7de'),
-    boxSizing: 'border-box',
-    overflow: 'hidden'
-  });
-  titleNode.styles({
-    background: themeValue('color-surface-hover', '#f6f8fa'),
-    borderBottom: themeBorder('color-border', '#d0d7de'),
-    boxSizing: 'border-box',
-    color: themeValue('color-text-secondary', '#57606a'),
-    display: 'flex',
-    flexWrap: 'nowrap',
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-    fontSize: '13px',
-    gap: '0px',
-    msOverflowStyle: 'none',
-    overflowX: 'auto',
-    overflowY: 'hidden',
-    padding: '0px 0px',
-    scrollbarWidth: 'none',
-    width: '100%'
-  });
-  contentNode.setup({ vn: 'VRouterViewsContent' });
-  contentNode.styles({ minHeight: '120px', padding: '16px' });
-  node.child(titleNode, contentNode, popup);
-
-  const applyLockedTitle = () => {
-    const vertical = state.titlePosition !== 'top';
-
-    if (state.lockTitle) {
-      node.styles({
-        display: 'flex',
-        flexDirection: vertical ? 'row' : 'column',
-        height: '100%',
-        minHeight: '0',
-        overflow: 'hidden'
-      });
-      titleNode.style('flex', '0 0 auto');
-      contentNode.styles({
-        flex: '1 1 auto',
-        minHeight: '0',
-        minWidth: '0',
-        overflow: 'auto'
-      });
-      return;
-    }
-
-    node.styles({
-      flexDirection: null,
-      height: null,
-      minHeight: null,
+      boxSizing: 'border-box',
       overflow: 'hidden'
-    });
-    titleNode.style('flex', null);
-    contentNode.styles({
-      flex: vertical ? '1 1 auto' : null,
-      minHeight: '120px',
-      minWidth: vertical ? '0' : null,
-      overflow: null
-    });
-  };
-
-  const applyTitlePosition = (position) => {
-    const vertical = position !== 'top';
-
-    node.styles({
-      alignItems: vertical ? 'stretch' : null,
-      display: vertical ? 'flex' : null
     });
     titleNode.styles({
       background: themeValue('color-surface-hover', '#f6f8fa'),
-      borderBottom: vertical ? null : themeBorder('color-border', '#d0d7de'),
-      borderLeft: position === 'right' ? '1px solid' : null,
-      borderLeftColor: position === 'right' ? themeValue('color-border', '#d0d7de') : null,
-      borderLeftStyle: position === 'right' ? 'solid' : null,
-      borderLeftWidth: position === 'right' ? '1px' : null,
-      borderRight: position === 'left' ? '1px solid' : null,
-      borderRightColor: position === 'left' ? themeValue('color-border', '#d0d7de') : null,
-      borderRightStyle: position === 'left' ? 'solid' : null,
-      borderRightWidth: position === 'left' ? '1px' : null,
+      borderBottom: themeBorder('color-border', '#d0d7de'),
       boxSizing: 'border-box',
       color: themeValue('color-text-secondary', '#57606a'),
       display: 'flex',
-      flexDirection: vertical ? 'column' : 'row',
-      flexShrink: vertical ? '0' : null,
       flexWrap: 'nowrap',
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
       fontSize: '13px',
       gap: '0px',
       msOverflowStyle: 'none',
-      overflowX: vertical ? 'hidden' : 'auto',
-      overflowY: vertical ? 'auto' : 'hidden',
-      padding: vertical ? '10px 8px' : '0px 0px',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      padding: '0px 0px',
       scrollbarWidth: 'none',
-      width: vertical ? null : '100%'
+      width: '100%'
     });
-    contentNode.styles({
-      flex: vertical ? '1 1 auto' : null,
-      minWidth: vertical ? '0' : null
-    });
-    const orderedChildren =
-      position === 'right' ? [contentNode, titleNode, popup] : [titleNode, contentNode, popup];
-    node.clearChildren().child(orderedChildren);
-    if (node._el) {
-      orderedChildren.forEach((child) => {
-        const childElement = child.renderDom();
-        if (childElement) node._el.appendChild(childElement);
-      });
-    }
-    applyLockedTitle();
-  };
+    contentNode.setup({ vn: 'VRouterViewsContent' });
+    contentNode.styles({ minHeight: '120px', padding: '16px' });
+    node.child(titleNode, contentNode, popup);
 
-  const resolveTitle = (context = {}) => {
-    let title = state.title;
-    const routeTitle = context.route?.title;
-    if (routeTitle !== undefined) {
-      title = typeof routeTitle === 'function' ? routeTitle(context) : routeTitle;
-    }
-    if (state.titleResolver) {
-      const resolved = state.titleResolver(context);
-      if (resolved !== undefined && resolved !== null) {
-        title = typeof resolved === 'function' ? resolved(context) : resolved;
-      }
-    }
-    return title ?? '';
-  };
+    const applyLockedTitle = () => {
+      const vertical = state.titlePosition !== 'top';
 
-  const styleTitleTab = (entry, active) => {
-    const tab = entry.tab;
-    const position = state.titlePosition;
-    const vertical = position !== 'top';
-
-    entry.label.attr('aria-selected', String(active));
-    tab.styles({
-      background: active
-        ? themeValue('color-surface', '#ffffff')
-        : themeValue('color-surface-active', '#eaeef2'),
-      border: themeBorder('color-border', '#d0d7de'),
-      borderBottomColor:
-        position === 'top'
-          ? active
-            ? themeValue('color-surface', '#ffffff')
-            : themeValue('color-border', '#d0d7de')
-          : themeValue('color-border', '#d0d7de'),
-      borderLeftColor: 'transparent',
-      borderRightColor:
-        position === 'left'
-          ? active
-            ? themeValue('color-surface', '#ffffff')
-            : themeValue('color-border', '#d0d7de')
-          : themeValue('color-border', '#d0d7de'),
-      color: active
-        ? themeValue('color-text', '#24292f')
-        : themeValue('color-text-secondary', '#57606a'),
-      fontWeight: active ? '600' : '400',
-      marginBottom: position === 'top' ? '-9px' : '0',
-      marginLeft: position === 'right' ? '-9px' : '0',
-      marginRight: position === 'left' ? '-9px' : '0',
-      padding: vertical ? '8px 10px' : '7px 14px 8px'
-    });
-  };
-
-  const setOverflowButtonVisible = (visible) => {
-    state.overflow = Boolean(visible);
-    node.attr('data-title-overflow', state.overflow ? 'true' : null);
-    moreButton.style('display', state.overflow ? 'inline-flex' : 'none');
-  };
-
-  const updateOverflow = () => {
-    if (state.titlePosition !== 'top' || state.tabs.size <= maxVisibleTitles) {
-      setOverflowButtonVisible(false);
-      return;
-    }
-
-    setOverflowButtonVisible(true);
-  };
-
-  const syncMoreButton = () => {
-    const tabEntries = Array.from(state.tabs.entries());
-    const children = tabEntries
-      .slice(0, maxVisibleTitles)
-      .map(([, entry]) => entry.tab)
-      .filter((child) => child !== moreButton);
-    const shouldShowButton = tabEntries.length > maxVisibleTitles && state.titlePosition === 'top';
-
-    if (!shouldShowButton) {
-      if (state.popupOpen) closePopup();
-      titleNode._children = children;
-      titleNode._childrenDirty = true;
-      if (titleNode._el) {
-        titleNode._el.replaceChildren(
-          ...children.map((child) => child.renderDom()).filter(Boolean)
-        );
-      } else {
-        moreButton._el?.remove();
-      }
-      setOverflowButtonVisible(false);
-      return;
-    }
-
-    titleNode._children = [...children, moreButton];
-    titleNode._childrenDirty = true;
-    if (titleNode._el) {
-      const childElements = children.map((child) => child.renderDom()).filter(Boolean);
-      titleNode._el.replaceChildren(...childElements, moreButton.renderDom());
-    }
-    updateOverflow();
-  };
-
-  const persistTabs = () => {
-    if (!state.persist || state.suppressPersist || typeof localStorage === 'undefined') return;
-
-    try {
-      localStorage.setItem(
-        state.storageKey,
-        JSON.stringify({
-          activePath: routerInstance.currentPath(),
-          paths: Array.from(state.tabs.keys())
-        })
-      );
-    } catch {
-      // 存储不可用时静默跳过持久化。
-    }
-  };
-
-  let popupCleanup = null;
-
-  const closePopup = () => {
-    state.popupOpen = false;
-    node.attr('data-title-popup', null);
-    moreButton.attr('aria-expanded', 'false');
-    popup.style('display', 'none');
-    if (popupCleanup) {
-      popupCleanup();
-      popupCleanup = null;
-    }
-  };
-
-  const buildPopup = () => {
-    popup.clearChildren();
-    if (popup._el) popup._el.replaceChildren();
-
-    Array.from(state.tabs.entries())
-      .slice(maxVisibleTitles)
-      .forEach(([path, entry]) => {
-        const title = entry.text.textContent();
-        const item = new ElementNode('div')
-          .setup({ vn: 'VRouterViewsPopupItem' })
-          .attr({ role: 'menuitem', tabIndex: '0', 'data-router-view-path': path })
-          .styles({
-            alignItems: 'center',
-            borderRadius: '6px',
-            color: themeValue('color-text', '#24292f'),
-            cursor: 'pointer',
-            display: 'flex',
-            fontSize: '13px',
-            gap: '8px',
-            padding: '7px 8px',
-            width: '100%'
-          });
-        const titleSpan = new ElementNode('span')
-          .setup({ vn: 'VRouterViewsPopupTitle' })
-          .styles({
-            flex: '1',
-            minWidth: '0',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          })
-          .child(title);
-        const closeButton = new ElementNode('button')
-          .setup({ vn: 'VRouterViewsPopupClose' })
-          .attr({ type: 'button', 'aria-label': `关闭 ${title}` })
-          .styles({
-            background: 'transparent',
-            border: '0',
-            color: 'inherit',
-            cursor: 'pointer',
-            flexShrink: '0',
-            font: 'inherit',
-            lineHeight: '1',
-            padding: '2px 4px'
-          })
-          .child('×');
-        if (path === routerInstance.currentPath()) {
-          item.attr('aria-current', 'true');
-          item.styles({
-            background: themeValue('color-primary-subtle', '#e8f0fe'),
-            color: themeValue('color-primary', '#1f6feb')
-          });
-        }
-        const activate = () => {
-          closePopup();
-          routerInstance.navigate(path);
-        };
-        item.on('click', activate);
-        item.on('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            activate();
-          }
+      if (state.lockTitle) {
+        node.styles({
+          display: 'flex',
+          flexDirection: vertical ? 'row' : 'column',
+          height: '100%',
+          minHeight: '0',
+          overflow: 'hidden'
         });
-        closeButton.on('click', (event) => {
-          event.stopPropagation();
-          closeTitleTab(path, event);
-          if (state.popupOpen) buildPopup();
+        titleNode.style('flex', '0 0 auto');
+        contentNode.styles({
+          flex: '1 1 auto',
+          minHeight: '0',
+          minWidth: '0',
+          overflow: 'auto'
         });
-        item.child(titleSpan, closeButton);
-        popup.child(item);
-      });
-  };
-
-  const openPopup = () => {
-    if (state.tabs.size === 0) return;
-
-    ensureScrollbarStyle();
-    buildPopup();
-    state.popupOpen = true;
-    node.attr('data-title-popup', 'true');
-    moreButton.attr('aria-expanded', 'true');
-    popup.styles({
-      display: 'block'
-    });
-    placePopup();
-
-    const handleDocumentClick = (event) => {
-      if (!popup._el?.contains(event.target) && !moreButton._el?.contains(event.target)) {
-        closePopup();
-      }
-    };
-    const handleKeydown = (event) => {
-      if (event.key === 'Escape') closePopup();
-    };
-    const handleScroll = () => placePopup();
-    const handleResize = () => placePopup();
-
-    const unbindClick = bindDocumentEvent('click', handleDocumentClick);
-    const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
-    const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
-    const unbindResize = bindWindowEvent('resize', handleResize);
-    popupCleanup = () => {
-      unbindClick();
-      unbindKeydown();
-      unbindScroll();
-      unbindResize();
-    };
-
-    function placePopup() {
-      const buttonRect = moreButton._el?.getBoundingClientRect();
-      const popupRect = popup._el?.getBoundingClientRect();
-      if (!buttonRect || !popupRect) {
         return;
       }
 
-      const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 0;
-      const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
-      const edge = 8;
-      let left = buttonRect.right - popupRect.width;
-      left = Math.max(edge, Math.min(left, viewportWidth - popupRect.width - edge));
+      node.styles({
+        flexDirection: null,
+        height: null,
+        minHeight: null,
+        overflow: 'hidden'
+      });
+      titleNode.style('flex', null);
+      contentNode.styles({
+        flex: vertical ? '1 1 auto' : null,
+        minHeight: '120px',
+        minWidth: vertical ? '0' : null,
+        overflow: null
+      });
+    };
 
-      let top = buttonRect.bottom + 4;
-      if (top + popupRect.height + edge > viewportHeight) {
-        top = Math.max(edge, buttonRect.top - popupRect.height - 4);
+    const applyTitlePosition = (position) => {
+      const vertical = position !== 'top';
+
+      node.styles({
+        alignItems: vertical ? 'stretch' : null,
+        display: vertical ? 'flex' : null
+      });
+      titleNode.styles({
+        background: themeValue('color-surface-hover', '#f6f8fa'),
+        borderBottom: vertical ? null : themeBorder('color-border', '#d0d7de'),
+        borderLeft: position === 'right' ? '1px solid' : null,
+        borderLeftColor: position === 'right' ? themeValue('color-border', '#d0d7de') : null,
+        borderLeftStyle: position === 'right' ? 'solid' : null,
+        borderLeftWidth: position === 'right' ? '1px' : null,
+        borderRight: position === 'left' ? '1px solid' : null,
+        borderRightColor: position === 'left' ? themeValue('color-border', '#d0d7de') : null,
+        borderRightStyle: position === 'left' ? 'solid' : null,
+        borderRightWidth: position === 'left' ? '1px' : null,
+        boxSizing: 'border-box',
+        color: themeValue('color-text-secondary', '#57606a'),
+        display: 'flex',
+        flexDirection: vertical ? 'column' : 'row',
+        flexShrink: vertical ? '0' : null,
+        flexWrap: 'nowrap',
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        fontSize: '13px',
+        gap: '0px',
+        msOverflowStyle: 'none',
+        overflowX: vertical ? 'hidden' : 'auto',
+        overflowY: vertical ? 'auto' : 'hidden',
+        padding: vertical ? '10px 8px' : '0px 0px',
+        scrollbarWidth: 'none',
+        width: vertical ? null : '100%'
+      });
+      contentNode.styles({
+        flex: vertical ? '1 1 auto' : null,
+        minWidth: vertical ? '0' : null
+      });
+      const orderedChildren =
+        position === 'right' ? [contentNode, titleNode, popup] : [titleNode, contentNode, popup];
+      node.clearChildren().child(orderedChildren);
+      if (node._el) {
+        orderedChildren.forEach((child) => {
+          const childElement = child.renderDom();
+          if (childElement) node._el.appendChild(childElement);
+        });
+      }
+      applyLockedTitle();
+    };
+
+    const resolveTitle = (context = {}) => {
+      let title = state.title;
+      const routeTitle = context.route?.title;
+      if (routeTitle !== undefined) {
+        title = typeof routeTitle === 'function' ? routeTitle(context) : routeTitle;
+      }
+      if (state.titleResolver) {
+        const resolved = state.titleResolver(context);
+        if (resolved !== undefined && resolved !== null) {
+          title = typeof resolved === 'function' ? resolved(context) : resolved;
+        }
+      }
+      return title ?? '';
+    };
+
+    const styleTitleTab = (entry, active) => {
+      const tab = entry.tab;
+      const position = state.titlePosition;
+      const vertical = position !== 'top';
+
+      entry.label.attr('aria-selected', String(active));
+      tab.styles({
+        background: active
+          ? themeValue('color-surface', '#ffffff')
+          : themeValue('color-surface-active', '#eaeef2'),
+        border: themeBorder('color-border', '#d0d7de'),
+        borderBottomColor:
+          position === 'top'
+            ? active
+              ? themeValue('color-surface', '#ffffff')
+              : themeValue('color-border', '#d0d7de')
+            : themeValue('color-border', '#d0d7de'),
+        borderLeftColor: 'transparent',
+        borderRightColor:
+          position === 'left'
+            ? active
+              ? themeValue('color-surface', '#ffffff')
+              : themeValue('color-border', '#d0d7de')
+            : themeValue('color-border', '#d0d7de'),
+        color: active
+          ? themeValue('color-text', '#24292f')
+          : themeValue('color-text-secondary', '#57606a'),
+        fontWeight: active ? '600' : '400',
+        marginBottom: position === 'top' ? '-9px' : '0',
+        marginLeft: position === 'right' ? '-9px' : '0',
+        marginRight: position === 'left' ? '-9px' : '0',
+        padding: vertical ? '8px 10px' : '7px 14px 8px'
+      });
+    };
+
+    const setOverflowButtonVisible = (visible) => {
+      state.overflow = Boolean(visible);
+      node.attr('data-title-overflow', state.overflow ? 'true' : null);
+      moreButton.style('display', state.overflow ? 'inline-flex' : 'none');
+    };
+
+    const updateOverflow = () => {
+      if (state.titlePosition !== 'top' || state.tabs.size <= maxVisibleTitles) {
+        setOverflowButtonVisible(false);
+        return;
       }
 
+      setOverflowButtonVisible(true);
+    };
+
+    const syncMoreButton = () => {
+      const tabEntries = Array.from(state.tabs.entries());
+      const children = tabEntries
+        .slice(0, maxVisibleTitles)
+        .map(([, entry]) => entry.tab)
+        .filter((child) => child !== moreButton);
+      const shouldShowButton =
+        tabEntries.length > maxVisibleTitles && state.titlePosition === 'top';
+
+      if (!shouldShowButton) {
+        if (state.popupOpen) closePopup();
+        titleNode._children = children;
+        titleNode._childrenDirty = true;
+        if (titleNode._el) {
+          titleNode._el.replaceChildren(
+            ...children.map((child) => child.renderDom()).filter(Boolean)
+          );
+        } else {
+          moreButton._el?.remove();
+        }
+        setOverflowButtonVisible(false);
+        return;
+      }
+
+      titleNode._children = [...children, moreButton];
+      titleNode._childrenDirty = true;
+      if (titleNode._el) {
+        const childElements = children.map((child) => child.renderDom()).filter(Boolean);
+        titleNode._el.replaceChildren(...childElements, moreButton.renderDom());
+      }
+      updateOverflow();
+    };
+
+    const persistTabs = () => {
+      if (!state.persist || state.suppressPersist || typeof localStorage === 'undefined') return;
+
+      try {
+        localStorage.setItem(
+          state.storageKey,
+          JSON.stringify({
+            activePath: routerInstance.currentPath(),
+            paths: Array.from(state.tabs.keys())
+          })
+        );
+      } catch {
+        // 存储不可用时静默跳过持久化。
+      }
+    };
+
+    let popupCleanup = null;
+
+    const closePopup = () => {
+      state.popupOpen = false;
+      node.attr('data-title-popup', null);
+      moreButton.attr('aria-expanded', 'false');
+      popup.style('display', 'none');
+      if (popupCleanup) {
+        popupCleanup();
+        popupCleanup = null;
+      }
+    };
+
+    const buildPopup = () => {
+      popup.clearChildren();
+      if (popup._el) popup._el.replaceChildren();
+
+      Array.from(state.tabs.entries())
+        .slice(maxVisibleTitles)
+        .forEach(([path, entry]) => {
+          const title = entry.text.textContent();
+          const item = new ElementNode('div')
+            .setup({ vn: 'VRouterViewsPopupItem' })
+            .attr({ role: 'menuitem', tabIndex: '0', 'data-router-view-path': path })
+            .styles({
+              alignItems: 'center',
+              borderRadius: '6px',
+              color: themeValue('color-text', '#24292f'),
+              cursor: 'pointer',
+              display: 'flex',
+              fontSize: '13px',
+              gap: '8px',
+              padding: '7px 8px',
+              width: '100%'
+            });
+          const titleSpan = new ElementNode('span')
+            .setup({ vn: 'VRouterViewsPopupTitle' })
+            .styles({
+              flex: '1',
+              minWidth: '0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            })
+            .child(title);
+          const closeButton = new ElementNode('button')
+            .setup({ vn: 'VRouterViewsPopupClose' })
+            .attr({ type: 'button', 'aria-label': `关闭 ${title}` })
+            .styles({
+              background: 'transparent',
+              border: '0',
+              color: 'inherit',
+              cursor: 'pointer',
+              flexShrink: '0',
+              font: 'inherit',
+              lineHeight: '1',
+              padding: '2px 4px'
+            })
+            .child('×');
+          if (path === routerInstance.currentPath()) {
+            item.attr('aria-current', 'true');
+            item.styles({
+              background: themeValue('color-primary-subtle', '#e8f0fe'),
+              color: themeValue('color-primary', '#1f6feb')
+            });
+          }
+          const activate = () => {
+            closePopup();
+            routerInstance.navigate(path);
+          };
+          item.on('click', activate);
+          item.on('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              activate();
+            }
+          });
+          closeButton.on('click', (event) => {
+            event.stopPropagation();
+            closeTitleTab(path, event);
+            if (state.popupOpen) buildPopup();
+          });
+          item.child(titleSpan, closeButton);
+          popup.child(item);
+        });
+    };
+
+    const openPopup = () => {
+      if (state.tabs.size === 0) return;
+
+      ensureScrollbarStyle();
+      buildPopup();
+      state.popupOpen = true;
+      node.attr('data-title-popup', 'true');
+      moreButton.attr('aria-expanded', 'true');
       popup.styles({
-        left: `${left}px`,
-        top: `${top}px`
+        display: 'block'
       });
-    }
-  };
+      placePopup();
 
-  moreButton.on('click', () => {
-    if (state.popupOpen) {
-      closePopup();
-    } else {
-      openPopup();
-    }
-  });
+      const handleDocumentClick = (event) => {
+        if (!popup._el?.contains(event.target) && !moreButton._el?.contains(event.target)) {
+          closePopup();
+        }
+      };
+      const handleKeydown = (event) => {
+        if (event.key === 'Escape') closePopup();
+      };
+      const handleScroll = () => placePopup();
+      const handleResize = () => placePopup();
 
-  const renderDom = node.renderDom.bind(node);
-  node.renderDom = () => {
-    ensureScrollbarStyle();
-    const element = renderDom();
-    updateOverflow();
-    return element;
-  };
-  node.updateOverflow = updateOverflow;
+      const unbindClick = bindDocumentEvent('click', handleDocumentClick);
+      const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
+      const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
+      const unbindResize = bindWindowEvent('resize', handleResize);
+      popupCleanup = () => {
+        unbindClick();
+        unbindKeydown();
+        unbindScroll();
+        unbindResize();
+      };
 
-  node.titlePosition = (value) => {
-    if (value === undefined) return state.titlePosition;
+      function placePopup() {
+        const buttonRect = moreButton._el?.getBoundingClientRect();
+        const popupRect = popup._el?.getBoundingClientRect();
+        if (!buttonRect || !popupRect) {
+          return;
+        }
 
-    const next = normalizeTitlePosition(value);
-    state.titlePosition = next;
-    if (next !== 'top' && state.popupOpen) closePopup();
-    node.attr('data-title-position', state.titlePosition);
-    titleNode.attr('aria-orientation', state.titlePosition === 'top' ? 'horizontal' : 'vertical');
-    applyTitlePosition(state.titlePosition);
-    syncMoreButton();
-    state.tabs.forEach((entry, path) => {
-      styleTitleTab(entry, path === routerInstance.currentPath());
+        const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 0;
+        const viewportHeight = window.innerHeight || document.documentElement?.clientHeight || 0;
+        const edge = 8;
+        let left = buttonRect.right - popupRect.width;
+        left = Math.max(edge, Math.min(left, viewportWidth - popupRect.width - edge));
+
+        let top = buttonRect.bottom + 4;
+        if (top + popupRect.height + edge > viewportHeight) {
+          top = Math.max(edge, buttonRect.top - popupRect.height - 4);
+        }
+
+        popup.styles({
+          left: `${left}px`,
+          top: `${top}px`
+        });
+      }
+    };
+
+    moreButton.on('click', () => {
+      if (state.popupOpen) {
+        closePopup();
+      } else {
+        openPopup();
+      }
     });
-    updateOverflow();
-    return node;
-  };
-  node.titlePosition(state.titlePosition);
 
-  node.lockTitle = (value = true) => {
-    if (value === undefined) return state.lockTitle;
-    state.lockTitle = Boolean(value);
-    node.attr('data-title-locked', state.lockTitle ? 'true' : null);
-    applyTitlePosition(state.titlePosition);
-    updateOverflow();
-    return node;
-  };
-  node.titleLocked = node.lockTitle;
+    // 落地收口：注入滚动条样式 + 按宽度更新溢出按钮（渲染之后再量）
+    api.whenMount = () => {
+      ensureScrollbarStyle();
+      restoreTabsOnce();
+      api.updateOverflow();
+    };
 
-  const closeTitleTab = (path, event = null) => {
-    if (event) event.stopPropagation();
-    const entries = Array.from(state.tabs.entries());
-    const closingIndex = entries.findIndex(([tabPath]) => tabPath === path);
-    const entry = state.tabs.get(path);
-    if (!entry) return;
+    /** 恢复上次打开的标签（props 可能带 storageKey，所以放在 props 落完之后跑）。 */
+    const restoreTabsOnce = () => {
+      if (state.restored) return;
+      state.restored = true;
+      restoreTabs();
+    };
 
-    const wasActive = entry.label.attr('aria-selected') === 'true';
-    state.tabs.delete(path);
-    titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
-    titleNode._childrenDirty = true;
-    entry.tab.destroy();
-    syncMoreButton();
-    persistTabs();
+    /** props：`title / persist / storageKey / titlePosition / titleResolver` + 其余元素配置。 */
+    api.setupObject = (config) => {
+      Object.entries(config).forEach(([key, value]) => {
+        if (key === 'title') {
+          state.title = value;
+          return;
+        }
 
-    if (!wasActive) return;
-    const remainingPaths = Array.from(state.tabs.keys());
-    if (remainingPaths.length > 0) {
-      const nextPath = remainingPaths[Math.min(closingIndex, remainingPaths.length - 1)];
-      routerInstance.navigate(nextPath, { replace: true });
-      return;
-    }
+        if (key === 'persist') {
+          state.persist = Boolean(value);
+          return;
+        }
 
-    contentNode.clearChildren().commit();
-    routerInstance.cancelPending();
-  };
+        if (key === 'storageKey') {
+          state.storageKey = value;
+          return;
+        }
 
-  const titleContextMenu = new ElementNode('div')
-    .setup({ vn: 'VRouterViewsContext' })
-    .attr({ role: 'menu', 'aria-label': '标签页操作' })
-    .styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d0d7de'),
-      borderRadius: '8px',
-      boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-      display: 'none',
-      minWidth: '180px',
-      padding: '6px',
-      position: 'fixed',
-      zIndex: '100'
-    });
-  let contextMenuCleanup = null;
+        if (key === 'titleResolver') {
+          state.titleResolver = typeof value === 'function' ? value : null;
+          return;
+        }
 
-  const closeTabContextMenu = () => {
-    titleContextMenu.styles({ display: 'none' });
-    titleContextMenu.clearChildren();
-    titleContextMenu._el?.remove();
-    if (contextMenuCleanup) {
-      contextMenuCleanup();
-      contextMenuCleanup = null;
-    }
-  };
+        // 其余键：有同名命令就调命令（lockTitle / titlePosition …），否则按元素 options 写
+        if (typeof api[key] === 'function') {
+          api[key](value);
+          return;
+        }
 
-  const closeTabs = (pathsToClose, activatePath = null) => {
-    const closing = new Set(pathsToClose);
-    const entries = Array.from(state.tabs.entries());
-    const closingIndex = entries.findIndex(([tabPath]) => closing.has(tabPath));
+        node.setup({ [key]: value });
+      });
 
-    entries.forEach(([tabPath, entry]) => {
-      if (!closing.has(tabPath)) return;
-      state.tabs.delete(tabPath);
+      restoreTabsOnce();
+      return api;
+    };
+    api.updateOverflow = updateOverflow;
+
+    api.titlePosition = (value) => {
+      if (value === undefined) return state.titlePosition;
+
+      const next = normalizeTitlePosition(value);
+      state.titlePosition = next;
+      if (next !== 'top' && state.popupOpen) closePopup();
+      node.attr('data-title-position', state.titlePosition);
+      titleNode.attr('aria-orientation', state.titlePosition === 'top' ? 'horizontal' : 'vertical');
+      applyTitlePosition(state.titlePosition);
+      syncMoreButton();
+      state.tabs.forEach((entry, path) => {
+        styleTitleTab(entry, path === routerInstance.currentPath());
+      });
+      updateOverflow();
+      return node;
+    };
+    api.titlePosition(state.titlePosition);
+
+    api.lockTitle = (value = true) => {
+      if (value === undefined) return state.lockTitle;
+      state.lockTitle = Boolean(value);
+      node.attr('data-title-locked', state.lockTitle ? 'true' : null);
+      applyTitlePosition(state.titlePosition);
+      updateOverflow();
+      return node;
+    };
+    api.titleLocked = api.lockTitle;
+
+    const closeTitleTab = (path, event = null) => {
+      if (event) event.stopPropagation();
+      const entries = Array.from(state.tabs.entries());
+      const closingIndex = entries.findIndex(([tabPath]) => tabPath === path);
+      const entry = state.tabs.get(path);
+      if (!entry) return;
+
+      const wasActive = entry.label.attr('aria-selected') === 'true';
+      state.tabs.delete(path);
       titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
       titleNode._childrenDirty = true;
       entry.tab.destroy();
-    });
-    syncMoreButton();
-    persistTabs();
-    if (state.popupOpen) buildPopup();
+      syncMoreButton();
+      persistTabs();
 
-    if (!closing.has(routerInstance.currentPath())) return;
+      if (!wasActive) return;
+      const remainingPaths = Array.from(state.tabs.keys());
+      if (remainingPaths.length > 0) {
+        const nextPath = remainingPaths[Math.min(closingIndex, remainingPaths.length - 1)];
+        routerInstance.navigate(nextPath, { replace: true });
+        return;
+      }
 
-    const remaining = Array.from(state.tabs.keys());
-    if (remaining.length === 0) {
       contentNode.clearChildren().commit();
       routerInstance.cancelPending();
-      return;
-    }
-
-    const target =
-      activatePath && state.tabs.has(activatePath)
-        ? activatePath
-        : remaining[Math.min(Math.max(closingIndex, 0), remaining.length - 1)];
-    routerInstance.navigate(target, { replace: true });
-  };
-
-  const copyTabUrl = (path) => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
-    const origin = typeof window === 'undefined' ? '' : window.location.origin;
-    const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
-    const url =
-      routerInstance.mode() === 'history'
-        ? `${origin}${pathname}${path}`
-        : `${origin}${pathname}#${path}`;
-    navigator.clipboard.writeText(url).catch(() => {});
-  };
-
-  const openTabContextMenu = (path, event) => {
-    if (state.popupOpen) closePopup();
-    closeTabContextMenu();
-
-    const entries = Array.from(state.tabs.entries());
-    const clickedIndex = entries.findIndex(([tabPath]) => tabPath === path);
-    const closeOthers = () =>
-      closeTabs(
-        entries.filter(([tabPath]) => tabPath !== path).map(([tabPath]) => tabPath),
-        path
-      );
-    const closeLeft = () =>
-      closeTabs(
-        entries.slice(0, clickedIndex).map(([tabPath]) => tabPath),
-        path
-      );
-    const closeRight = () =>
-      closeTabs(
-        entries.slice(clickedIndex + 1).map(([tabPath]) => tabPath),
-        path
-      );
-    const closeAll = () => closeTabs(entries.map(([tabPath]) => tabPath));
-
-    const addItem = (label, action, danger = false, disabled = false) => {
-      const item = new ElementNode('div')
-        .setup({ vn: 'VRouterViewsContextItem' })
-        .attr({ role: 'menuitem', tabIndex: '0' })
-        .child(label)
-        .styles({
-          alignItems: 'center',
-          borderRadius: '6px',
-          color: danger
-            ? themeValue('color-text-danger', '#b91c1c')
-            : themeValue('color-text', '#24292f'),
-          cursor: disabled ? 'default' : 'pointer',
-          display: 'flex',
-          fontSize: '13px',
-          gap: '8px',
-          padding: '7px 10px',
-          width: '100%'
-        });
-      if (disabled) {
-        item.attr('aria-disabled', 'true');
-        item.styles({ opacity: '0.4' });
-      } else {
-        item.on('click', () => {
-          closeTabContextMenu();
-          action();
-        });
-      }
-      titleContextMenu.child(item);
-      return item;
     };
-    const addSeparator = () =>
-      titleContextMenu.child(new ElementNode('div').setup({ vn: 'VRouterViewsContextSeparator' }));
 
-    addItem('刷新', () => routerInstance.navigate(path, { replace: true }));
-    addItem('复制链接', () => copyTabUrl(path));
-    addSeparator();
-    addItem('关闭', () => closeTitleTab(path), true);
-    addItem('关闭其他', closeOthers, false, entries.length <= 1);
-    addItem('关闭左侧', closeLeft, false, clickedIndex <= 0);
-    addItem('关闭右侧', closeRight, false, clickedIndex === entries.length - 1);
-    addSeparator();
-    addItem('关闭全部', closeAll, true, entries.length === 0);
+    const titleContextMenu = new ElementNode('div')
+      .setup({ vn: 'VRouterViewsContext' })
+      .attr({ role: 'menu', 'aria-label': '标签页操作' })
+      .styles({
+        background: themeValue('color-surface', '#ffffff'),
+        border: themeBorder('color-border', '#d0d7de'),
+        borderRadius: '8px',
+        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
+        display: 'none',
+        minWidth: '180px',
+        padding: '6px',
+        position: 'fixed',
+        zIndex: '100'
+      });
+    let contextMenuCleanup = null;
 
-    titleContextMenu.bindTo(document.body);
-    titleContextMenu.styles({ display: 'block' });
-
-    const rect = titleContextMenu._el.getBoundingClientRect();
-    const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth || 0;
-    const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight || 0;
-    const edge = 8;
-    const left = Math.max(edge, Math.min(event.clientX || 0, viewportWidth - rect.width - edge));
-    const top = Math.max(edge, Math.min(event.clientY || 0, viewportHeight - rect.height - edge));
-    titleContextMenu.styles({ left: `${left}px`, top: `${top}px` });
-
-    const handlePointerDown = (pointerEvent) => {
-      if (!titleContextMenu._el?.contains(pointerEvent.target)) {
-        closeTabContextMenu();
+    const closeTabContextMenu = () => {
+      titleContextMenu.styles({ display: 'none' });
+      titleContextMenu.clearChildren();
+      titleContextMenu._el?.remove();
+      if (contextMenuCleanup) {
+        contextMenuCleanup();
+        contextMenuCleanup = null;
       }
     };
-    const handleKeydown = (keyEvent) => {
-      if (keyEvent.key === 'Escape') closeTabContextMenu();
-    };
-    const handleScroll = () => closeTabContextMenu();
 
-    const unbindPointerDown = bindDocumentEvent('mousedown', handlePointerDown);
-    const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
-    const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
-    const unbindResize = bindWindowEvent('resize', handleScroll);
-    contextMenuCleanup = () => {
-      unbindPointerDown();
-      unbindKeydown();
-      unbindScroll();
-      unbindResize();
-    };
-  };
+    const closeTabs = (pathsToClose, activatePath = null) => {
+      const closing = new Set(pathsToClose);
+      const entries = Array.from(state.tabs.entries());
+      const closingIndex = entries.findIndex(([tabPath]) => closing.has(tabPath));
 
-  const updateTitle = (context = {}) => {
-    const path = context.path || routerInstance.currentPath();
-    const visiblePaths = new Set(
-      state.titlePosition === 'top'
-        ? Array.from(state.tabs.keys()).slice(0, maxVisibleTitles)
-        : Array.from(state.tabs.keys())
-    );
-    let entry = state.tabs.get(path);
-
-    if (!entry) {
-      const tab = new ElementNode('div').setup({ vn: 'VRouterViewsTitle' });
-      const text = vText(resolveTitle(context));
-      const label = new ElementNode('button').setup({ vn: 'VRouterViewsLabel' }).child(text);
-      const closeButton = new ElementNode('button').setup({ vn: 'VRouterViewsClose' });
-      tab.attr({ 'data-router-view-path': path });
-      tab.styles({
-        alignItems: 'center',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        font: 'inherit',
-        gap: '8px',
-        whiteSpace: 'nowrap'
+      entries.forEach(([tabPath, entry]) => {
+        if (!closing.has(tabPath)) return;
+        state.tabs.delete(tabPath);
+        titleNode._children = titleNode.children().filter((child) => child !== entry.tab);
+        titleNode._childrenDirty = true;
+        entry.tab.destroy();
       });
-      label.attr({ role: 'tab', type: 'button' });
-      label.styles({
-        background: 'transparent',
-        border: '0',
-        color: 'inherit',
-        cursor: 'pointer',
-        font: 'inherit',
-        padding: '0'
-      });
-      label.on('click', () => routerInstance.navigate(path));
-      closeButton.attr({ type: 'button', 'aria-label': `关闭 ${resolveTitle(context)}` });
-      closeButton.styles({
-        background: 'transparent',
-        border: '0',
-        color: 'inherit',
-        cursor: 'pointer',
-        font: 'inherit',
-        lineHeight: '1',
-        padding: '0'
-      });
-      closeButton.child('×');
-      closeButton.on('click', (event) => closeTitleTab(path, event));
-      tab.on('contextmenu', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openTabContextMenu(path, event);
-      });
-      tab.child(label, closeButton);
-      titleNode.child(tab);
-      entry = { closeButton, label, tab, text };
-      state.tabs.set(path, entry);
-      styleTitleTab(entry, false);
-    } else {
-      const title = resolveTitle(context);
-      entry.text.textContent(title);
-      entry.closeButton.attr('aria-label', `关闭 ${title}`);
-    }
-
-    if (!visiblePaths.has(path)) {
-      state.tabs.delete(path);
-      state.tabs = new Map([[path, entry], ...state.tabs]);
-    }
-    state.tabs.forEach((entry, tabPath) => styleTitleTab(entry, tabPath === path));
-    syncMoreButton();
-    if (state.popupOpen) buildPopup();
-    persistTabs();
-  };
-
-  const restoreTabs = () => {
-    if (!state.persist) return;
-
-    const saved = readSavedTabs(state.storageKey);
-    if (!saved) return;
-
-    state.suppressPersist = true;
-    try {
-      saved.paths
-        .slice()
-        .reverse()
-        .forEach((path) => {
-          const resolved = routerInstance.resolve(path);
-          updateTitle({ ...resolved.context, path });
-        });
-    } finally {
-      state.suppressPersist = false;
+      syncMoreButton();
       persistTabs();
+      if (state.popupOpen) buildPopup();
+
+      if (!closing.has(routerInstance.currentPath())) return;
+
+      const remaining = Array.from(state.tabs.keys());
+      if (remaining.length === 0) {
+        contentNode.clearChildren().commit();
+        routerInstance.cancelPending();
+        return;
+      }
+
+      const target =
+        activatePath && state.tabs.has(activatePath)
+          ? activatePath
+          : remaining[Math.min(Math.max(closingIndex, 0), remaining.length - 1)];
+      routerInstance.navigate(target, { replace: true });
+    };
+
+    const copyTabUrl = (path) => {
+      if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+      const origin = typeof window === 'undefined' ? '' : window.location.origin;
+      const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
+      const url =
+        routerInstance.mode() === 'history'
+          ? `${origin}${pathname}${path}`
+          : `${origin}${pathname}#${path}`;
+      navigator.clipboard.writeText(url).catch(() => {});
+    };
+
+    const openTabContextMenu = (path, event) => {
+      if (state.popupOpen) closePopup();
+      closeTabContextMenu();
+
+      const entries = Array.from(state.tabs.entries());
+      const clickedIndex = entries.findIndex(([tabPath]) => tabPath === path);
+      const closeOthers = () =>
+        closeTabs(
+          entries.filter(([tabPath]) => tabPath !== path).map(([tabPath]) => tabPath),
+          path
+        );
+      const closeLeft = () =>
+        closeTabs(
+          entries.slice(0, clickedIndex).map(([tabPath]) => tabPath),
+          path
+        );
+      const closeRight = () =>
+        closeTabs(
+          entries.slice(clickedIndex + 1).map(([tabPath]) => tabPath),
+          path
+        );
+      const closeAll = () => closeTabs(entries.map(([tabPath]) => tabPath));
+
+      const addItem = (label, action, danger = false, disabled = false) => {
+        const item = new ElementNode('div')
+          .setup({ vn: 'VRouterViewsContextItem' })
+          .attr({ role: 'menuitem', tabIndex: '0' })
+          .child(label)
+          .styles({
+            alignItems: 'center',
+            borderRadius: '6px',
+            color: danger
+              ? themeValue('color-text-danger', '#b91c1c')
+              : themeValue('color-text', '#24292f'),
+            cursor: disabled ? 'default' : 'pointer',
+            display: 'flex',
+            fontSize: '13px',
+            gap: '8px',
+            padding: '7px 10px',
+            width: '100%'
+          });
+        if (disabled) {
+          item.attr('aria-disabled', 'true');
+          item.styles({ opacity: '0.4' });
+        } else {
+          item.on('click', () => {
+            closeTabContextMenu();
+            action();
+          });
+        }
+        titleContextMenu.child(item);
+        return item;
+      };
+      const addSeparator = () =>
+        titleContextMenu.child(
+          new ElementNode('div').setup({ vn: 'VRouterViewsContextSeparator' })
+        );
+
+      addItem('刷新', () => routerInstance.navigate(path, { replace: true }));
+      addItem('复制链接', () => copyTabUrl(path));
+      addSeparator();
+      addItem('关闭', () => closeTitleTab(path), true);
+      addItem('关闭其他', closeOthers, false, entries.length <= 1);
+      addItem('关闭左侧', closeLeft, false, clickedIndex <= 0);
+      addItem('关闭右侧', closeRight, false, clickedIndex === entries.length - 1);
+      addSeparator();
+      addItem('关闭全部', closeAll, true, entries.length === 0);
+
+      titleContextMenu.bindTo(document.body);
+      titleContextMenu.styles({ display: 'block' });
+
+      const rect = titleContextMenu._el.getBoundingClientRect();
+      const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth || 0;
+      const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight || 0;
+      const edge = 8;
+      const left = Math.max(edge, Math.min(event.clientX || 0, viewportWidth - rect.width - edge));
+      const top = Math.max(edge, Math.min(event.clientY || 0, viewportHeight - rect.height - edge));
+      titleContextMenu.styles({ left: `${left}px`, top: `${top}px` });
+
+      const handlePointerDown = (pointerEvent) => {
+        if (!titleContextMenu._el?.contains(pointerEvent.target)) {
+          closeTabContextMenu();
+        }
+      };
+      const handleKeydown = (keyEvent) => {
+        if (keyEvent.key === 'Escape') closeTabContextMenu();
+      };
+      const handleScroll = () => closeTabContextMenu();
+
+      const unbindPointerDown = bindDocumentEvent('mousedown', handlePointerDown);
+      const unbindKeydown = bindDocumentEvent('keydown', handleKeydown);
+      const unbindScroll = bindWindowEvent('scroll', handleScroll, true);
+      const unbindResize = bindWindowEvent('resize', handleScroll);
+      contextMenuCleanup = () => {
+        unbindPointerDown();
+        unbindKeydown();
+        unbindScroll();
+        unbindResize();
+      };
+    };
+
+    const updateTitle = (context = {}) => {
+      const path = context.path || routerInstance.currentPath();
+      const visiblePaths = new Set(
+        state.titlePosition === 'top'
+          ? Array.from(state.tabs.keys()).slice(0, maxVisibleTitles)
+          : Array.from(state.tabs.keys())
+      );
+      let entry = state.tabs.get(path);
+
+      if (!entry) {
+        const tab = new ElementNode('div').setup({ vn: 'VRouterViewsTitle' });
+        const text = vText(resolveTitle(context));
+        const label = new ElementNode('button').setup({ vn: 'VRouterViewsLabel' }).child(text);
+        const closeButton = new ElementNode('button').setup({ vn: 'VRouterViewsClose' });
+        tab.attr({ 'data-router-view-path': path });
+        tab.styles({
+          alignItems: 'center',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          font: 'inherit',
+          gap: '8px',
+          whiteSpace: 'nowrap'
+        });
+        label.attr({ role: 'tab', type: 'button' });
+        label.styles({
+          background: 'transparent',
+          border: '0',
+          color: 'inherit',
+          cursor: 'pointer',
+          font: 'inherit',
+          padding: '0'
+        });
+        label.on('click', () => routerInstance.navigate(path));
+        closeButton.attr({ type: 'button', 'aria-label': `关闭 ${resolveTitle(context)}` });
+        closeButton.styles({
+          background: 'transparent',
+          border: '0',
+          color: 'inherit',
+          cursor: 'pointer',
+          font: 'inherit',
+          lineHeight: '1',
+          padding: '0'
+        });
+        closeButton.child('×');
+        closeButton.on('click', (event) => closeTitleTab(path, event));
+        tab.on('contextmenu', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openTabContextMenu(path, event);
+        });
+        tab.child(label, closeButton);
+        titleNode.child(tab);
+        entry = { closeButton, label, tab, text };
+        state.tabs.set(path, entry);
+        styleTitleTab(entry, false);
+      } else {
+        const title = resolveTitle(context);
+        entry.text.textContent(title);
+        entry.closeButton.attr('aria-label', `关闭 ${title}`);
+      }
+
+      if (!visiblePaths.has(path)) {
+        state.tabs.delete(path);
+        state.tabs = new Map([[path, entry], ...state.tabs]);
+      }
+      state.tabs.forEach((entry, tabPath) => styleTitleTab(entry, tabPath === path));
+      syncMoreButton();
+      if (state.popupOpen) buildPopup();
+      persistTabs();
+    };
+
+    const restoreTabs = () => {
+      if (!state.persist) return;
+
+      const saved = readSavedTabs(state.storageKey);
+      if (!saved) return;
+
+      state.suppressPersist = true;
+      try {
+        saved.paths
+          .slice()
+          .reverse()
+          .forEach((path) => {
+            const resolved = routerInstance.resolve(path);
+            updateTitle({ ...resolved.context, path });
+          });
+      } finally {
+        state.suppressPersist = false;
+        persistTabs();
+      }
+    };
+
+    routerInstance.outlet(contentNode);
+    if (routerInstance.currentRoute() || routerInstance.currentPath() !== '/') {
+      updateTitle({
+        params: routerInstance.currentParams(),
+        path: routerInstance.currentPath(),
+        query: routerInstance.currentQuery(),
+        route: routerInstance.currentRoute(),
+        router: routerInstance
+      });
     }
-  };
+    const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
 
-  if (typeof setup === 'function') {
-    setup(node);
-  } else if (setup && typeof setup === 'object') {
-    const { persist, storageKey, title, titlePosition, titleResolver, ...elementConfig } = setup;
-    if (title !== undefined) state.title = title;
-    if (persist !== undefined) state.persist = Boolean(persist);
-    if (storageKey !== undefined) state.storageKey = storageKey;
-    if (titlePosition !== undefined) node.titlePosition(titlePosition);
-    if (typeof titleResolver === 'function') state.titleResolver = titleResolver;
-    if (Object.keys(elementConfig).length > 0) node.setup(elementConfig);
-  }
+    const handleResize = () => updateOverflow();
+    const unbindResize = bindWindowEvent('resize', handleResize);
 
-  routerInstance.outlet(contentNode);
-  restoreTabs();
-  if (routerInstance.currentRoute() || routerInstance.currentPath() !== '/') {
-    updateTitle({
-      params: routerInstance.currentParams(),
-      path: routerInstance.currentPath(),
-      query: routerInstance.currentQuery(),
-      route: routerInstance.currentRoute(),
-      router: routerInstance
-    });
-  }
-  const unsubscribe = routerInstance.subscribe((context) => updateTitle(context));
+    api.whenDestroy = () => {
+      if (state.popupOpen) closePopup();
+      closeTabContextMenu();
+      unbindResize();
+      unsubscribe();
+      if (routerInstance.outlet() === contentNode) routerInstance.outlet(null);
+    };
 
-  const handleResize = () => updateOverflow();
-  const unbindResize = bindWindowEvent('resize', handleResize);
+    return node;
+  });
+}
 
-  const destroy = node.destroy.bind(node);
-  node.destroy = () => {
-    if (state.popupOpen) closePopup();
-    closeTabContextMenu();
-    unbindResize();
-    unsubscribe();
-    if (routerInstance.outlet() === contentNode) routerInstance.outlet(null);
-    return destroy();
-  };
-  if (typeof callback === 'function') callback(node);
-  return node;
+export function vRouterViews(routerInstance, setup = null, callback = null) {
+  return createComponentFactory(VRouterViews, routerInstance, setup, callback, arguments);
 }
 
 registerChildFactories(ElementNode, { vLink, vRouter, vRouterView, vRouterViews });
