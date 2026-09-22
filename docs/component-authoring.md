@@ -196,6 +196,7 @@ api.count = (value) => (value === undefined ? count.value : ((count.value = valu
 Three hard rules:
 
 1. **Value positions**: `attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable` take a handle or a zero-argument reader; `child()` is **not** a value position — write text as `child(vText(() => …))`.
+   **Prefer passing the handle for a plain read** (`attr('data-status', status)`, `style('width', view.width)`): a handle and a reader run through the same binding pipeline; use a reader only when you need to map/combine (or name the derivation as a `computed` and pass that handle).
 2. **"Only written once touched" attributes** use an `xxxSet` flag plus a read-value binding (keeps the byte-for-byte "untouched means no DOM attribute" semantics).
 3. **No write-then-flush batch**: nothing beyond `flush()` on a region, no `markDirty()` + rAF deferred writes; after a command runs, the DOM is correct on the same tick.
 

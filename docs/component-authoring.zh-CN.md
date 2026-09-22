@@ -182,6 +182,7 @@ api.count = (value) => (value === undefined ? count.value : ((count.value = valu
 三条硬规则：
 
 1. **值位置白名单**：`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable` 接受句柄或零参闭包；`child()` **不是**值位置——文本要写 `child(vText(() => …))`。
+   **纯读优先直接传句柄**（`attr('data-status', status)`、`style('width', view.width)`）：句柄与闭包走同一条绑定管线；只有需要映射 / 组合时才写闭包，或先把派生命名成 `computed` 再传句柄。
 2. **"只在调用过才写"的属性**用 `xxxSet` 标记 + 读值绑定（保持"没碰过就不写 DOM 属性"的逐字节语义）。
 3. **不许写完再集中刷**：没有 `flush()` 之外的批量写、没有 `markDirty()` + rAF 这种延迟刷；命令改完当拍 DOM 就是对的。
 

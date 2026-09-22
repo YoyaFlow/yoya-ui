@@ -251,6 +251,9 @@ function VXxx() {
   `child(vText(() => …))`；命令只改状态，**不搬 DOM**。
 - 值位置白名单：`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable`（函数或句柄 = 活值）。
   `child()` **不是**值位置——文本要写 `child(vText(() => …))`。
+- **纯读优先直接传句柄**（`attr('data-status', status)`、`style('width', view.width)`、`vText(name)`）：
+  句柄与零参闭包走同一条绑定管线，句柄更直白。只有**需要映射 / 组合**时才写闭包
+  （`() => (visible.value ? 'inline-flex' : 'none')`），或先把派生命名成 `computed` 放进 props 对象里再传句柄。
 - 例外（票 15 §4）："只在调用过才写"的属性用 `xxxSet` 标记 + 读值绑定，保持逐字节一致。
 - 仍然禁止：写完再集中刷（`flush()` / `markDirty()` / rAF 批量写）、构造之后按身份查找再写
   （`querySelector('[vn~=…]')`）、组件里直接操作 `_el` / `_children`。

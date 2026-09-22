@@ -95,7 +95,7 @@ function VBadgeCount(view) {
             : view.badgeText.value
           : null
       );
-      box.attr('title', () => view.title.value);
+      box.attr('title', view.title);
       // 点模式"没有文本"= 条件挂载（不在 DOM，节点还活着），不重建结构
       box.child(
         vText(() => (view.dotMode.value ? '' : view.badgeText.value)).mountable(
@@ -203,8 +203,8 @@ export function VBadge() {
         );
         box.attr('data-show-zero', () => (showZero.value ? 'true' : null));
         box.attr('data-dot', () => (dot.value ? 'true' : null));
-        box.attr('data-status', () => status.value);
-        box.attr('data-color', () => color.value);
+        box.attr('data-status', status);
+        box.attr('data-color', color);
         box.attr('data-standalone', () => (hasContent.value ? null : 'true'));
         box.child(contentBox, VBadgeCount(view), textBox);
       }
@@ -380,7 +380,7 @@ export function VBadge() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        root.setup(elementConfig);
+        root.setupObject(elementConfig);
       }
       if (overflowOption !== undefined) {
         api.overflowCount(overflowOption);
