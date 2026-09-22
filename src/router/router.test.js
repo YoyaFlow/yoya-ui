@@ -28,7 +28,7 @@ function openTabMenu(path) {
 }
 
 function clickMenuItem(label) {
-  const items = document.querySelectorAll('.yoya-vrouter-views-context-item');
+  const items = document.querySelectorAll('[vn~="VRouterViewsContextItem"]');
   const item = Array.from(items).find((node) => node.textContent === label);
   item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   return item;
@@ -243,11 +243,11 @@ describe('router', () => {
     });
     const outlet = vRouterView(appRouter);
     const root = div((page) => page.child(link, outlet)).bindTo('#app');
-    const element = document.querySelector('.yoya-vlink');
+    const element = document.querySelector('[vn~="VLink"]');
 
     expect(element.textContent).toBe('用户资料');
     expect(element.getAttribute('href')).toBe('#/users/Ada%20Lovelace?tab=profile');
-    expect(outlet.renderDom().classList.contains('yoya-vrouter-view')).toBe(true);
+    expect(outlet.renderDom().getAttribute('vn')).toBe('VRouterView');
 
     const click = new MouseEvent('click', { bubbles: true, button: 0, cancelable: true });
     element.dispatchEvent(click);
@@ -269,7 +269,7 @@ describe('router', () => {
       page.vLink(appRouter, { label: '报表', to: '/reports' });
       page.vRouterView(appRouter);
     }).bindTo('#app');
-    const element = document.querySelector('.yoya-vlink');
+    const element = document.querySelector('[vn~="VLink"]');
     const click = new MouseEvent('click', {
       bubbles: true,
       button: 0,
@@ -280,7 +280,7 @@ describe('router', () => {
     element.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(false);
     expect(appRouter.currentPath()).toBe('/');
-    expect(root.children()[1].className()).toContain('yoya-vrouter-view');
+    expect(root.children()[1].attr('vn')).toContain('VRouterView');
 
     root.destroy();
     expect(appRouter._subscribers.size).toBe(0);
@@ -297,7 +297,7 @@ describe('router', () => {
     document.body.innerHTML = '';
     document.body.appendChild(link.renderDom());
 
-    const label = document.querySelector('.yoya-vlink');
+    const label = document.querySelector('[vn~="VLink"]');
     expect(label.textContent).toBe('Home');
     expect(label.textContent).not.toContain('[object');
   });
@@ -382,83 +382,83 @@ describe('router', () => {
     div((page) => page.child(views)).bindTo('#app');
 
     appRouter.start();
-    expect(views.renderDom().classList.contains('yoya-vrouter-views')).toBe(true);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').tagName).toBe('HEADER');
+    expect(views.renderDom().getAttribute('vn')).toBe('VRouterViews');
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').tagName).toBe('HEADER');
     expect(
-      views.renderDom().querySelector('.yoya-vrouter-views-titlebar').getAttribute('role')
+      views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').getAttribute('role')
     ).toBe('tablist');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.overflowX).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.overflowX).toBe(
       'auto'
     );
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.overflowY).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.overflowY).toBe(
       'hidden'
     );
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-titlebar').style.width).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.width).toBe(
       '100%'
     );
     expect(
       views
         .renderDom()
-        .querySelector('.yoya-vrouter-views-titlebar')
+        .querySelector('[vn~="VRouterViewsTitlebar"]')
         .style.getPropertyValue('scrollbar-width')
     ).toBe('none');
     expect(
       document
-        .querySelector('[data-yoya-vrouter-views-popup-style]')
-        .textContent.includes('.yoya-vrouter-views-titlebar::-webkit-scrollbar')
+        .querySelector('[data-yoya-router-popup-style]')
+        .textContent.includes("[vn~='VRouterViewsTitlebar']::-webkit-scrollbar")
     ).toBe(true);
-    const titleTab = views.renderDom().querySelector('.yoya-vrouter-views-title');
-    const titleLabel = titleTab.querySelector('.yoya-vrouter-views-label');
+    const titleTab = views.renderDom().querySelector('[vn~="VRouterViewsTitle"]');
+    const titleLabel = titleTab.querySelector('[vn~="VRouterViewsLabel"]');
     expect(titleLabel.textContent).toBe('项目概览');
     expect(titleLabel.getAttribute('role')).toBe('tab');
     expect(titleTab.style.display).toBe('inline-flex');
     expect(titleTab.style.borderRadius).toBe('');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '概览内容'
     );
 
     appRouter.navigate('/editor', { replace: true });
-    const titleTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+    const titleTabs = views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]');
     expect(
-      Array.from(titleTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+      Array.from(titleTabs, (tab) => tab.querySelector('[vn~="VRouterViewsLabel"]').textContent)
     ).toEqual(['代码编辑器', '项目概览']);
     expect(
-      titleTabs[0].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
+      titleTabs[0].querySelector('[vn~="VRouterViewsLabel"]').getAttribute('aria-selected')
     ).toBe('true');
     expect(
-      titleTabs[1].querySelector('.yoya-vrouter-views-label').getAttribute('aria-selected')
+      titleTabs[1].querySelector('[vn~="VRouterViewsLabel"]').getAttribute('aria-selected')
     ).toBe('false');
-    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-close')).toHaveLength(2);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelectorAll('[vn~="VRouterViewsClose"]')).toHaveLength(2);
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '编辑内容'
     );
 
-    titleTabs[1].querySelector('.yoya-vrouter-views-close').click();
+    titleTabs[1].querySelector('[vn~="VRouterViewsClose"]').click();
     expect(appRouter.currentPath()).toBe('/editor');
-    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(1);
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '编辑内容'
     );
 
     appRouter.navigate('/overview', { replace: true });
-    const reopenedTabs = views.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+    const reopenedTabs = views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]');
     expect(
-      Array.from(reopenedTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+      Array.from(reopenedTabs, (tab) => tab.querySelector('[vn~="VRouterViewsLabel"]').textContent)
     ).toEqual(['项目概览', '代码编辑器']);
-    reopenedTabs[0].querySelector('.yoya-vrouter-views-close').click();
+    reopenedTabs[0].querySelector('[vn~="VRouterViewsClose"]').click();
     expect(appRouter.currentPath()).toBe('/editor');
     expect(
-      views.renderDom().querySelector('.yoya-vrouter-views-label[aria-selected="true"]').textContent
+      views.renderDom().querySelector('[vn~="VRouterViewsLabel"][aria-selected="true"]').textContent
     ).toBe('代码编辑器');
-    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(1);
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '编辑内容'
     );
 
-    reopenedTabs[1].querySelector('.yoya-vrouter-views-close').click();
-    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(0);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe('');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-expand')).toBeNull();
+    reopenedTabs[1].querySelector('[vn~="VRouterViewsClose"]').click();
+    expect(views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(0);
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe('');
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsExpand"]')).toBeNull();
   });
 
   it('switches to the previous tab when the active last tab closes', () => {
@@ -475,12 +475,12 @@ describe('router', () => {
     appRouter.navigate('/editor', { replace: true });
     views
       .renderDom()
-      .querySelector('[data-router-view-path="/editor"] .yoya-vrouter-views-close')
+      .querySelector('[data-router-view-path="/editor"] [vn~="VRouterViewsClose"]')
       .click();
 
     expect(appRouter.currentPath()).toBe('/overview');
-    expect(views.renderDom().querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(1);
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '概览内容'
     );
   });
@@ -499,7 +499,7 @@ describe('router', () => {
     const root = div((page) => page.child(views)).bindTo('#app');
 
     appRouter.navigate('/file/main.js', { replace: true });
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-label').textContent).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsLabel"]').textContent).toBe(
       '文件：main.js'
     );
     root.destroy();
@@ -538,16 +538,16 @@ describe('router', () => {
     ].forEach((path) => appRouter.navigate(path, { replace: true }));
 
     const element = views.renderDom();
-    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
+    const titlebar = element.querySelector('[vn~="VRouterViewsTitlebar"]');
     views.updateOverflow();
 
-    const button = titlebar.querySelector('.yoya-vrouter-views-expand');
-    const popup = element.querySelector('.yoya-vrouter-views-popup');
-    const visibleTabs = titlebar.querySelectorAll('.yoya-vrouter-views-title');
+    const button = titlebar.querySelector('[vn~="VRouterViewsExpand"]');
+    const popup = element.querySelector('[vn~="VRouterViewsPopup"]');
+    const visibleTabs = titlebar.querySelectorAll('[vn~="VRouterViewsTitle"]');
     expect(element.dataset.titleOverflow).toBe('true');
     expect(visibleTabs).toHaveLength(8);
     expect(
-      Array.from(visibleTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+      Array.from(visibleTabs, (tab) => tab.querySelector('[vn~="VRouterViewsLabel"]').textContent)
     ).toEqual(['页面 10', '页面 9', '页面 8', '页面 7', '页面 6', '页面 5', '页面 4', '页面 3']);
     expect(button.style.display).toBe('inline-flex');
     expect(button.textContent).toBe('⋯');
@@ -562,28 +562,28 @@ describe('router', () => {
     expect(titlebar.lastElementChild).toBe(button);
 
     button.click();
-    const items = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
+    const items = popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]');
     expect(element.dataset.titlePopup).toBe('true');
     expect(button.getAttribute('aria-expanded')).toBe('true');
     expect(popup.style.display).toBe('block');
     expect(popup.style.getPropertyValue('scrollbar-width')).toBe('none');
-    expect(document.querySelector('[data-yoya-vrouter-views-popup-style]')).not.toBeNull();
+    expect(document.querySelector('[data-yoya-router-popup-style]')).not.toBeNull();
     expect(
-      Array.from(items, (item) => item.querySelector('.yoya-vrouter-views-popup-title').textContent)
+      Array.from(items, (item) => item.querySelector('[vn~="VRouterViewsPopupTitle"]').textContent)
     ).toEqual(['页面 2', '页面 1']);
     expect(items[0].style.fontSize).toBe('13px');
-    expect(popup.querySelectorAll('.yoya-vrouter-views-popup-close')).toHaveLength(2);
+    expect(popup.querySelectorAll('[vn~="VRouterViewsPopupClose"]')).toHaveLength(2);
     expect(
       document
-        .querySelector('[data-yoya-vrouter-views-popup-style]')
-        .textContent.includes('.yoya-vrouter-views-popup-item:hover')
+        .querySelector('[data-yoya-router-popup-style]')
+        .textContent.includes("[vn~='VRouterViewsPopupItem']:hover")
     ).toBe(true);
 
-    popup.querySelectorAll('.yoya-vrouter-views-popup-close')[0].click();
+    popup.querySelectorAll('[vn~="VRouterViewsPopupClose"]')[0].click();
     expect(appRouter.currentPath()).toBe('/page-10');
-    expect(popup.querySelectorAll('.yoya-vrouter-views-popup-item')).toHaveLength(1);
-    const remainingItems = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
-    expect(remainingItems[0].querySelector('.yoya-vrouter-views-popup-title').textContent).toBe(
+    expect(popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]')).toHaveLength(1);
+    const remainingItems = popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]');
+    expect(remainingItems[0].querySelector('[vn~="VRouterViewsPopupTitle"]').textContent).toBe(
       '页面 1'
     );
 
@@ -596,14 +596,14 @@ describe('router', () => {
     expect(popup.style.display).toBe('none');
 
     button.click();
-    const afterItems = popup.querySelectorAll('.yoya-vrouter-views-popup-item');
+    const afterItems = popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]');
     expect(afterItems).toHaveLength(1);
-    expect(afterItems[0].querySelector('.yoya-vrouter-views-popup-title').textContent).toBe(
+    expect(afterItems[0].querySelector('[vn~="VRouterViewsPopupTitle"]').textContent).toBe(
       '页面 3'
     );
-    const visibleTabsAfter = titlebar.querySelectorAll('.yoya-vrouter-views-title');
+    const visibleTabsAfter = titlebar.querySelectorAll('[vn~="VRouterViewsTitle"]');
     expect(visibleTabsAfter).toHaveLength(8);
-    expect(visibleTabsAfter[0].querySelector('.yoya-vrouter-views-label').textContent).toBe(
+    expect(visibleTabsAfter[0].querySelector('[vn~="VRouterViewsLabel"]').textContent).toBe(
       '页面 1'
     );
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -630,8 +630,8 @@ describe('router', () => {
     const element = views.renderDom();
     views.updateOverflow();
 
-    const button = element.querySelector('.yoya-vrouter-views-expand');
-    const popup = element.querySelector('.yoya-vrouter-views-popup');
+    const button = element.querySelector('[vn~="VRouterViewsExpand"]');
+    const popup = element.querySelector('[vn~="VRouterViewsPopup"]');
     const originalWidth = window.innerWidth;
     const originalHeight = window.innerHeight;
 
@@ -699,10 +699,10 @@ describe('router', () => {
     const restoredRouter = createRouter();
     const restoredViews = vRouterViews(restoredRouter, { storageKey: 'test-router-views' });
     const restoredRoot = div((page) => page.child(restoredViews)).bindTo('#app');
-    const restoredTabs = restoredViews.renderDom().querySelectorAll('.yoya-vrouter-views-title');
+    const restoredTabs = restoredViews.renderDom().querySelectorAll('[vn~="VRouterViewsTitle"]');
 
     expect(
-      Array.from(restoredTabs, (tab) => tab.querySelector('.yoya-vrouter-views-label').textContent)
+      Array.from(restoredTabs, (tab) => tab.querySelector('[vn~="VRouterViewsLabel"]').textContent)
     ).toEqual(['持久化 C', '持久化 B', '持久化 A']);
 
     restoredRoot.destroy();
@@ -722,7 +722,7 @@ describe('router', () => {
     appRouter.navigate('/settings', { replace: true });
 
     const element = views.renderDom();
-    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
+    const titlebar = element.querySelector('[vn~="VRouterViewsTitlebar"]');
     const overviewTab = titlebar.querySelector('[data-router-view-path="/overview"]');
 
     expect(element.dataset.titlePosition).toBe('left');
@@ -730,7 +730,7 @@ describe('router', () => {
     expect(titlebar.style.flexDirection).toBe('column');
     expect(titlebar.style.borderRightWidth).toBe('1px');
     expect(titlebar.style.overflowY).toBe('auto');
-    expect(titlebar.querySelector('.yoya-vrouter-views-expand')).toBeNull();
+    expect(titlebar.querySelector('[vn~="VRouterViewsExpand"]')).toBeNull();
     expect(element.firstElementChild).toBe(titlebar);
     expect(overviewTab.style.borderRadius).toBe('');
     expect(overviewTab.style.marginRight).toBe('-9px');
@@ -761,8 +761,8 @@ describe('router', () => {
     appRouter.navigate('/settings', { replace: true });
 
     const element = views.renderDom();
-    const titlebar = element.querySelector('.yoya-vrouter-views-titlebar');
-    const content = element.querySelector('.yoya-vrouter-views-content');
+    const titlebar = element.querySelector('[vn~="VRouterViewsTitlebar"]');
+    const content = element.querySelector('[vn~="VRouterViewsContent"]');
 
     expect(element.dataset.titleLocked).toBe('true');
     expect(element.style.display).toBe('flex');
@@ -1002,15 +1002,15 @@ describe('router', () => {
 
     appRouter.navigate('/async', { replace: true });
 
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-label').textContent).toBe('异步页');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsLabel"]').textContent).toBe('异步页');
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '加载中…'
     );
 
     resolveView(div('异步内容'));
     await flush();
 
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '异步内容'
     );
   });
@@ -1106,16 +1106,16 @@ describe('router', () => {
     create.appRouter.navigate('/b', { replace: true });
 
     openTabMenu('/a');
-    const menu = document.querySelector('.yoya-vrouter-views-context');
+    const menu = document.querySelector('[vn~="VRouterViewsContext"]');
     expect(menu).not.toBeNull();
     expect(menu.style.display).toBe('block');
     expect(
       Array.from(
-        menu.querySelectorAll('.yoya-vrouter-views-context-item'),
+        menu.querySelectorAll('[vn~="VRouterViewsContextItem"]'),
         (item) => item.textContent
       )
     ).toEqual(['刷新', '复制链接', '关闭', '关闭其他', '关闭左侧', '关闭右侧', '关闭全部']);
-    expect(menu.querySelectorAll('.yoya-vrouter-views-context-separator')).toHaveLength(2);
+    expect(menu.querySelectorAll('[vn~="VRouterViewsContextSeparator"]')).toHaveLength(2);
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(menu.style.display).toBe('none');
@@ -1127,7 +1127,7 @@ describe('router', () => {
     create.appRouter.navigate('/a', { replace: true });
 
     const tab = openTabMenu('/a');
-    const menu = document.querySelector('.yoya-vrouter-views-context');
+    const menu = document.querySelector('[vn~="VRouterViewsContext"]');
     expect(tab).not.toBeNull();
     expect(menu.style.display).toBe('block');
 
@@ -1147,7 +1147,7 @@ describe('router', () => {
     openTabMenu('/a');
     clickMenuItem('关闭');
 
-    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(document.querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(1);
     expect(document.querySelector('[data-router-view-path="/a"]')).toBeNull();
     expect(create.appRouter.currentPath()).toBe('/b');
     create.root.destroy();
@@ -1166,7 +1166,7 @@ describe('router', () => {
     openTabMenu('/b');
     clickMenuItem('关闭其他');
 
-    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(1);
+    expect(document.querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(1);
     expect(create.appRouter.currentPath()).toBe('/b');
     expect(document.querySelector('[data-router-view-path="/b"]')).not.toBeNull();
     create.root.destroy();
@@ -1186,7 +1186,7 @@ describe('router', () => {
     clickMenuItem('关闭左侧');
 
     const labels = Array.from(
-      document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+      document.querySelectorAll('[vn~="VRouterViewsTitle"] [vn~="VRouterViewsLabel"]'),
       (label) => label.textContent
     );
     expect(labels).toEqual(['B', 'A']);
@@ -1208,7 +1208,7 @@ describe('router', () => {
     clickMenuItem('关闭右侧');
 
     const labels = Array.from(
-      document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+      document.querySelectorAll('[vn~="VRouterViewsTitle"] [vn~="VRouterViewsLabel"]'),
       (label) => label.textContent
     );
     expect(labels).toEqual(['C', 'B']);
@@ -1227,8 +1227,8 @@ describe('router', () => {
     openTabMenu('/b');
     clickMenuItem('关闭全部');
 
-    expect(document.querySelectorAll('.yoya-vrouter-views-title')).toHaveLength(0);
-    expect(document.querySelector('.yoya-vrouter-views-content').textContent).toBe('');
+    expect(document.querySelectorAll('[vn~="VRouterViewsTitle"]')).toHaveLength(0);
+    expect(document.querySelector('[vn~="VRouterViewsContent"]').textContent).toBe('');
     expect(create.appRouter.currentView()).toBeNull();
     create.root.destroy();
   });
@@ -1280,7 +1280,7 @@ describe('router', () => {
 
     const labels = () =>
       Array.from(
-        document.querySelectorAll('.yoya-vrouter-views-title .yoya-vrouter-views-label'),
+        document.querySelectorAll('[vn~="VRouterViewsTitle"] [vn~="VRouterViewsLabel"]'),
         (label) => label.textContent
       );
     expect(labels()).toEqual(['C', 'B', 'A']);
@@ -1325,10 +1325,10 @@ describe('document routes', () => {
     // 不写 SPA 历史：地址栏由浏览器的整页跳转负责
     expect(window.location.pathname).toBe('/');
 
-    const placeholder = document.querySelector('.yoya-vrouter-document');
+    const placeholder = document.querySelector('[vn~="VRouterDocument"]');
     expect(placeholder.getAttribute('data-router-document')).toBe('/legacy/report.html');
     expect(placeholder.querySelector('a').getAttribute('href')).toBe('/legacy/report.html');
-    expect(views.renderDom().querySelector('.yoya-vrouter-views-content').textContent).toBe(
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '旧报表'
     );
     root.destroy();
@@ -1412,7 +1412,7 @@ describe('document routes', () => {
 
     expect(navigateDocument).not.toHaveBeenCalled();
     expect(appRouter.toHTML()).toContain('data-router-document="/legacy/report.html"');
-    expect(appRouter.toHTML()).toContain('<a class="yoya-vlink" href="/legacy/report.html">');
+    expect(appRouter.toHTML()).toContain('<a href="/legacy/report.html" vn="VLink">');
   });
 
   it('accepts a custom placeholder view for a document route', () => {
@@ -1496,6 +1496,6 @@ describe('router provide scope', () => {
 
     appRouter.navigate('/a', { replace: true });
 
-    expect(document.querySelector('.yoya-vrouter-views-content').textContent).toBe('a:Ada');
+    expect(document.querySelector('[vn~="VRouterViewsContent"]').textContent).toBe('a:Ada');
   });
 });

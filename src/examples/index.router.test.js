@@ -20,7 +20,7 @@ async function openRoute(path) {
 
   await vi.waitFor(
     () => {
-      const content = document.querySelector('.yoya-vrouter-views-content');
+      const content = document.querySelector('[vn~="VRouterViewsContent"]');
       if (!content || content.textContent === '加载中…') {
         throw new Error(`路由 ${path} 仍在加载中`);
       }
@@ -31,7 +31,7 @@ async function openRoute(path) {
 }
 
 function selectedRouteTitle() {
-  return document.querySelector('.yoya-vrouter-views-label[aria-selected="true"]')?.textContent;
+  return document.querySelector('[vn~="VRouterViewsLabel"][aria-selected="true"]')?.textContent;
 }
 
 beforeEach(() => {
@@ -132,8 +132,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(document.head.querySelector('[data-demo-menu-scrollbar-style]')).toBeNull();
     expect(document.querySelector('[data-components-router-views]').style.overflow).toBe('auto');
     expect(document.querySelector('[data-components-router-views]').style.height).toBe('100%');
-    expect(document.querySelector('.yoya-vrouter-views').dataset.titleLocked).toBe('true');
-    expect(document.querySelector('.yoya-vrouter-views-content').style.overflow).toBe('auto');
+    expect(document.querySelector('[vn~="VRouterViews"]').dataset.titleLocked).toBe('true');
+    expect(document.querySelector('[vn~="VRouterViewsContent"]').style.overflow).toBe('auto');
     expect(document.querySelector('.components-workspace')).not.toBeNull();
     expect(document.querySelector('.yoya-vsplit-panel')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
@@ -2801,7 +2801,7 @@ export function SampleCard() {
     expect(linksFrame.getAttribute('src')).toContain('router-links.html');
     expect(declarativeFrame.getAttribute('src')).toContain('declarative-router.html');
     expect(historyFrame.getAttribute('src')).toContain('router-history.html');
-    expect(routerPage.querySelector('.yoya-vrouter-view')).toBeNull();
+    expect(routerPage.querySelector('[vn~="VRouterView"]')).toBeNull();
     expect(window.location.hash).toContain('/components/navigation/router');
 
     await openRoute('/components/navigation/router-views');
@@ -2821,7 +2821,7 @@ export function SampleCard() {
     expect(topFrame).not.toBeNull();
     expect(editorFrame.getAttribute('src')).toContain('router-views.html');
     expect(topFrame.getAttribute('src')).toContain('router-views-top.html');
-    expect(viewsPage.querySelector('.yoya-vrouter-views')).toBeNull();
+    expect(viewsPage.querySelector('[vn~="VRouterViews"]')).toBeNull();
     expect(window.location.hash).toContain('/components/navigation/router-views');
   });
 

@@ -63,7 +63,6 @@
     "src/async/lazy-image.js": 3,
     "src/async/skeleton.js": 5,
     "src/i18n/index.js": 1,
-    "src/router/router.js": 34,
     "src/theme/theme-mode-switch.js": 1,
     "src/effects/glow-button.js": 2,
     "src/effects/transition.js": 8

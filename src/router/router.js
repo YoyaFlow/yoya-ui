@@ -34,42 +34,42 @@ function ensureScrollbarStyle() {
   if (scrollbarStyle) return;
 
   scrollbarStyle = injectDocumentStyle(
-    `.yoya-vrouter-views-titlebar,
-.yoya-vrouter-views-popup {
+    `[vn~='VRouterViewsTitlebar'],
+[vn~='VRouterViewsPopup'] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.yoya-vrouter-views-titlebar::-webkit-scrollbar,
-.yoya-vrouter-views-popup::-webkit-scrollbar {
+[vn~='VRouterViewsTitlebar']::-webkit-scrollbar,
+[vn~='VRouterViewsPopup']::-webkit-scrollbar {
   display: none;
   height: 0;
   width: 0;
 }
-.yoya-vrouter-views-popup-item:hover {
+[vn~='VRouterViewsPopupItem']:hover {
   background: var(--yoya-color-surface-hover, #eef3f9);
 }
-.yoya-vrouter-views-popup-item[aria-current='true'] {
+[vn~='VRouterViewsPopupItem'][aria-current='true'] {
   background: var(--yoya-color-primary-subtle, #e8f0fe);
   color: var(--yoya-color-primary, #1f6feb);
 }
-.yoya-vrouter-views-popup-close {
+[vn~='VRouterViewsPopupClose'] {
   color: var(--yoya-color-text-secondary, #57606a);
   opacity: 0.65;
 }
-.yoya-vrouter-views-popup-item:hover .yoya-vrouter-views-popup-close,
-.yoya-vrouter-views-popup-close:hover {
+[vn~='VRouterViewsPopupItem']:hover [vn~='VRouterViewsPopupClose'],
+[vn~='VRouterViewsPopupClose']:hover {
   color: var(--yoya-color-text-danger, #b91c1c);
   opacity: 1;
 }
-.yoya-vrouter-views-context-item:hover {
+[vn~='VRouterViewsContextItem']:hover {
   background: var(--yoya-color-surface-hover, #f6f8fa);
 }
-.yoya-vrouter-views-context-separator {
+[vn~='VRouterViewsContextSeparator'] {
   background: var(--yoya-color-border, #d0d7de);
   height: 1px;
   margin: 4px 6px;
 }`,
-    'data-yoya-vrouter-views-popup-style'
+    'data-yoya-router-popup-style'
   );
 }
 
@@ -572,9 +572,9 @@ export function vLink(routerInstance, setup = null, callback = null) {
     replace: false,
     to: '/'
   };
-  const labelNode = new ElementNode('span').className('yoya-vlink-label');
+  const labelNode = new ElementNode('span').setup({ vn: 'VLinkLabel' });
 
-  node.className('yoya-vlink');
+  node.setup({ vn: 'VLink' });
   node.attr('data-router-link', 'true');
   node.child(labelNode);
   node.to = (value) => updateLinkValue(node, state, 'to', value);
@@ -613,7 +613,7 @@ export function vLink(routerInstance, setup = null, callback = null) {
 export function vRouterView(routerInstance, setup = null, callback = null) {
   assertRouter(routerInstance);
   const node = new ElementNode('div');
-  node.className('yoya-vrouter-view');
+  node.setup({ vn: 'VRouterView' });
   node.attr('data-router-view', 'true');
   if (typeof setup === 'function') node.setup(setup);
   else if (setup) node.setup(setup);
@@ -632,12 +632,12 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   assertRouter(routerInstance);
   const node = new ElementNode('div');
   const titleNode = new ElementNode('header')
-    .className('yoya-vrouter-views-titlebar')
+    .setup({ vn: 'VRouterViewsTitlebar' })
     .attr({ role: 'tablist', 'aria-label': '已打开页面' });
-  const contentNode = new ElementNode('div').className('yoya-vrouter-views-content');
+  const contentNode = new ElementNode('div').setup({ vn: 'VRouterViewsContent' });
   const moreButtonText = vText('⋯');
   const moreButton = new ElementNode('button')
-    .className('yoya-vrouter-views-expand')
+    .setup({ vn: 'VRouterViewsExpand' })
     .attr({ type: 'button', 'aria-expanded': 'false', 'aria-label': '展开全部标签' })
     .styles({
       alignItems: 'center',
@@ -662,7 +662,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     })
     .child(moreButtonText);
   const popup = new ElementNode('div')
-    .className('yoya-vrouter-views-popup')
+    .setup({ vn: 'VRouterViewsPopup' })
     .attr({ role: 'menu', 'aria-label': '已打开页面' })
     .styles({
       background: themeValue('color-surface', '#ffffff'),
@@ -693,7 +693,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     titlePosition: 'top'
   };
 
-  node.className('yoya-vrouter-views');
+  node.setup({ vn: 'VRouterViews' });
   node.styles({
     border: themeBorder('color-border', '#d0d7de'),
     boxSizing: 'border-box',
@@ -716,7 +716,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     scrollbarWidth: 'none',
     width: '100%'
   });
-  contentNode.className('yoya-vrouter-views-content');
+  contentNode.setup({ vn: 'VRouterViewsContent' });
   contentNode.styles({ minHeight: '120px', padding: '16px' });
   node.child(titleNode, contentNode, popup);
 
@@ -941,7 +941,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       .forEach(([path, entry]) => {
         const title = entry.text.textContent();
         const item = new ElementNode('div')
-          .className('yoya-vrouter-views-popup-item')
+          .setup({ vn: 'VRouterViewsPopupItem' })
           .attr({ role: 'menuitem', tabIndex: '0', 'data-router-view-path': path })
           .styles({
             alignItems: 'center',
@@ -955,7 +955,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
             width: '100%'
           });
         const titleSpan = new ElementNode('span')
-          .className('yoya-vrouter-views-popup-title')
+          .setup({ vn: 'VRouterViewsPopupTitle' })
           .styles({
             flex: '1',
             minWidth: '0',
@@ -965,7 +965,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
           })
           .child(title);
         const closeButton = new ElementNode('button')
-          .className('yoya-vrouter-views-popup-close')
+          .setup({ vn: 'VRouterViewsPopupClose' })
           .attr({ type: 'button', 'aria-label': `关闭 ${title}` })
           .styles({
             background: 'transparent',
@@ -1140,7 +1140,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
   };
 
   const titleContextMenu = new ElementNode('div')
-    .className('yoya-vrouter-views-context')
+    .setup({ vn: 'VRouterViewsContext' })
     .attr({ role: 'menu', 'aria-label': '标签页操作' })
     .styles({
       background: themeValue('color-surface', '#ffffff'),
@@ -1234,7 +1234,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
 
     const addItem = (label, action, danger = false, disabled = false) => {
       const item = new ElementNode('div')
-        .className('yoya-vrouter-views-context-item')
+        .setup({ vn: 'VRouterViewsContextItem' })
         .attr({ role: 'menuitem', tabIndex: '0' })
         .child(label)
         .styles({
@@ -1263,9 +1263,7 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
       return item;
     };
     const addSeparator = () =>
-      titleContextMenu.child(
-        new ElementNode('div').className('yoya-vrouter-views-context-separator')
-      );
+      titleContextMenu.child(new ElementNode('div').setup({ vn: 'VRouterViewsContextSeparator' }));
 
     addItem('刷新', () => routerInstance.navigate(path, { replace: true }));
     addItem('复制链接', () => copyTabUrl(path));
@@ -1320,10 +1318,10 @@ export function vRouterViews(routerInstance, setup = null, callback = null) {
     let entry = state.tabs.get(path);
 
     if (!entry) {
-      const tab = new ElementNode('div').className('yoya-vrouter-views-title');
+      const tab = new ElementNode('div').setup({ vn: 'VRouterViewsTitle' });
       const text = vText(resolveTitle(context));
-      const label = new ElementNode('button').className('yoya-vrouter-views-label').child(text);
-      const closeButton = new ElementNode('button').className('yoya-vrouter-views-close');
+      const label = new ElementNode('button').setup({ vn: 'VRouterViewsLabel' }).child(text);
+      const closeButton = new ElementNode('button').setup({ vn: 'VRouterViewsClose' });
       tab.attr({ 'data-router-view-path': path });
       tab.styles({
         alignItems: 'center',
@@ -1571,7 +1569,6 @@ function updateLink(node, state, routerInstance) {
       .split(/\s+/)
       .filter(Boolean)
   );
-  classes.add('yoya-vlink');
   if (active) classes.add('is-active');
   else classes.delete('is-active');
   node.attr({
@@ -1655,14 +1652,14 @@ function buildDocumentView(route, context) {
 
   const url = route.url;
   const label = route.title || url;
-  const box = new ElementNode('div').className('yoya-vrouter-document');
+  const box = new ElementNode('div').setup({ vn: 'VRouterDocument' });
   box.attr({
     'data-router-document': url,
     ...(route.target ? { 'data-router-target': route.target } : {})
   });
   box.child(
     new ElementNode('a')
-      .className('yoya-vlink')
+      .setup({ vn: 'VLink' })
       .attr({ href: url, rel: route.rel || null, target: route.target || null })
       .child(label)
   );

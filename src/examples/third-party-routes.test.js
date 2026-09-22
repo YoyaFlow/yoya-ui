@@ -172,7 +172,7 @@ async function openRoute(path) {
 
   await vi.waitFor(
     () => {
-      const content = document.querySelector('.yoya-vrouter-views-content');
+      const content = document.querySelector("[vn~='VRouterViewsContent']");
       if (!content || content.textContent === '加载中…') {
         throw new Error(`路由 ${path} 仍在加载中`);
       }
@@ -183,7 +183,7 @@ async function openRoute(path) {
 }
 
 function selectedRouteTitle() {
-  return document.querySelector('.yoya-vrouter-views-label[aria-selected="true"]')?.textContent;
+  return document.querySelector("[vn~='VRouterViewsLabel'][aria-selected='true']")?.textContent;
 }
 
 beforeEach(() => {
