@@ -211,6 +211,37 @@ function ServiceDetailCard() {
 - 演示代码同样以声明式写法为主，参数对象只作为 API 说明保留。
 - 每个组件或演示集最多保留一个完整的参数对象案例，其余示例使用声明式写法。
 
+## Business Component Function: it defines the boundary
+
+组件的**默认写法**是有名函数声明（`function XxxName() {}`）——**一个业务组件函数 = 一个组件边界**：
+一个身份（`vn`）、一份状态、一套命令、一棵视图。
+
+```js
+function VXxx() {
+  return vNode((api, self) => {
+    const value = ref(0);                                  // 边界内：状态
+    api.step = (next) => { value.value = next; return api; };  // 边界内：命令（只改状态）
+    return span({ vn: 'VXxx', style: { …静态… } }, (root) => {   // 边界内：结构 + 绑定一次写清
+      root.style('width', () => `${value.value}px`);
+      root.child(VXxxPart(value));
+    });
+  });
+}
+```
+
+- **子结构也是业务组件函数**：同样用有名函数（A 形态薄工厂直接返回视图；有状态/命令就是 B 形态），
+  父组件里只写组合；父组件内部不堆匿名元素，结构也不散进局部变量或命令。
+- **结构默认用 setupFunction 嵌套**：`工厂({ vn, style }, (node) => { node.style(绑定); node.child(…); })`
+  ——静态部分留在工厂参数里，绑定与子节点写在回调里；不要写 `span({…}).style(…)` 这种挂在
+  工厂调用之外的链式结构。
+- **参数从哪进来不改变边界**：基础库组件用 `setupObject` / `setupString`（为了给 `vXxx` 快捷方法
+  留分派入口，支持 `card.vCardHeader(…)` 这类嵌套写法），业务侧可以直接 `function XxxName(props)`；
+  差别只是参数来源。
+- 视图根要留个名字（要返回它、props 里的元素级配置也落在它上面）；命令里碰组件自己用 `self.node()`，
+  子部件句柄只在"命令要写它"时才在构建期取。
+
+参考实现：`src/data-display/badge.js`（`VBadge` + `VBadgeContent` / `VBadgeCount` / `VBadgeText`）。
+
 ## State → View: Read-Value Bindings First
 
 **新代码（含迁移中的每个文件）状态到视图一律优先走读值绑定**，不要新增"集中快照函数"。
@@ -227,7 +258,9 @@ function ServiceDetailCard() {
   绑定**构建期只求值一次**（`binding-ownership.test.js` 有用例守着"后续渲染不重复求值"），
   **落地时才订阅**依赖；而组件 props 正好落在这个窗口里（props 在 build 之后才应用）。
   所以"props → 命令 → ref"的写法必须由组件自己收口一次：**值** 调视图根的 `node.flush()`
-  （幂等，值没变不写 DOM），**结构** 对区域调 `rebuild()`。落地之后订阅接管，命令写状态即可。
+  （幂等，值没变不写 DOM）。**结构优先不重建**：条件显隐用 `mountable()`、列表用 `keyed()`、
+  换内容用 `replaceChildren()`；**非必要不用 `rebuild()`**（`rebuildable()` 只留给"整块结构
+  确实必须重建"，见上文「状态与列表」）。落地之后订阅接管，命令写状态即可。
 - 迁移期存量的历史写法（`syncXxx()` / `_syncXxx()` 把多处 `attr` / `style` / `replaceChildren`
   收在一个函数里、由命令同步调用）**不是错**，但**只减不增**：
   `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结存量，

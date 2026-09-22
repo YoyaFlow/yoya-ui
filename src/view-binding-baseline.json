@@ -24,7 +24,6 @@
     "src/form/rate.js": 3,
     "src/form/upload.js": 1,
     "src/data-display/avatar.js": 1,
-    "src/data-display/badge.js": 1,
     "src/data-display/detail.js": 1,
     "src/data-display/image-preview.js": 2,
     "src/data-display/progress.js": 1,
