@@ -1,24 +1,58 @@
-import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity, registerChildFactories } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
+import { registerChildFactories } from '../core/node.js';
+import { vNode } from '../core/v-node.js';
 import {
-  booleanMethod,
-  componentClass,
+  HtmlElementNode,
+  button as buttonTag,
+  div,
+  input as inputTag,
+  span
+} from '../html/index.js';
+import {
+  createComponentShortcut,
   isPlainObject,
   replaceChildren,
   themeValue
 } from '../components/shared.js';
 
 /**
- * vTagsInput 是标签输入控件：回车/逗号添加标签，退格删除，
- * 标签可点 × 移除，值以字符串数组收集。
+ * 标签输入（形态 B，票 15 §4）：视图根是外壳 `div` + 标签容器 + 文本输入。
+ *
+ * - 身份写在结构里：根 `vn: 'VTagsInput'`、标签容器 `vn: 'VTagsInputChips'`、
+ *   输入 `vn: 'VTagsInputField'`、单个标签 `vn: 'VTagsInputTag'`
+ *   （`data-vtags-*` 这些既有角色标记一并保留：角色标记不是身份）；
+ * - 状态与命令收进 `vNode` 闭包；`change` 回调第二参交给使用方的是**组件句柄**（`self.node()`）；
+ * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupTagsInput` 同口径）。
  */
-class TagsInputNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VTagsInput';
-    this.className(componentClass, 'yoya-vtags-input');
-    this.styles({
+export function VTagsInput() {
+  return vNode((api, self) => {
+    const state = {
+      changeHandlers: [],
+      disabled: false,
+      placeholder: '输入后回车添加',
+      required: false,
+      value: []
+    };
+
+    const chips = div({ vn: 'VTagsInputChips' })
+      .attr('data-vtags-chips', 'true')
+      .styles({ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '6px' });
+    const input = inputTag({ vn: 'VTagsInputField' })
+      .attr({
+        'data-vtags-input': 'true',
+        placeholder: state.placeholder,
+        type: 'text'
+      })
+      .styles({
+        background: 'transparent',
+        border: '0',
+        boxSizing: 'border-box',
+        flex: '1 1 120px',
+        font: 'inherit',
+        minWidth: '80px',
+        outline: 'none',
+        padding: '2px 0'
+      });
+    const node = div({ vn: 'VTagsInput' }).styles({
       alignItems: 'center',
       background: 'var(--yoya-color-surface, #ffffff)',
       border: '1px solid var(--yoya-color-border, #d8dee8)',
@@ -32,248 +66,207 @@ class TagsInputNode extends HtmlElementNode {
       width: '100%'
     });
 
-    this._value = [];
-    this._placeholder = '输入后回车添加';
-    this._changeHandlers = [];
+    node.child(chips, input);
 
-    this._chips = new HtmlElementNode('div')
-      .className('yoya-vtags-input-chips')
-      .attr('data-vtags-chips', 'true')
-      .styles({ alignItems: 'center', display: 'flex', flexWrap: 'wrap', gap: '6px' });
+    const currentInputValue = () => input._el?.value ?? input.attr('value') ?? '';
 
-    this._input = new HtmlElementNode('input')
-      .className('yoya-vtags-input-field')
-      .attr({
-        'data-vtags-input': 'true',
-        placeholder: this._placeholder,
-        type: 'text'
+    const renderChips = () => {
+      replaceChildren(
+        chips,
+        state.value.map((tag, index) => createChip(tag, index))
+      );
+    };
+
+    const createChip = (tag, index) => {
+      const removeButton = buttonTag({
+        'aria-label': `移除 ${tag}`,
+        'data-vtags-remove': 'true',
+        title: '移除',
+        type: 'button'
       })
-      .styles({
-        background: 'transparent',
-        border: '0',
-        boxSizing: 'border-box',
-        flex: '1 1 120px',
-        font: 'inherit',
-        minWidth: '80px',
-        outline: 'none',
-        padding: '2px 0'
-      })
-      .on('keydown', (event) => this._handleKeydown(event));
+        .styles({
+          background: 'transparent',
+          border: '0',
+          color: themeValue('color-text-muted', '#64748b'),
+          cursor: 'pointer',
+          fontSize: '12px',
+          lineHeight: '1',
+          padding: '0'
+        })
+        .child('×');
 
-    this.child(this._chips, this._input);
-    this._renderChips();
+      removeButton.on('click', () => removeTag(index));
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('data-disabled', enabled ? 'true' : null);
-      this._input.attr('disabled', enabled ? true : null);
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this.attr('data-required', enabled ? 'true' : null);
-    });
+      return span({ vn: 'VTagsInputTag' })
+        .attr('data-vtags-tag', tag)
+        .styles({
+          alignItems: 'center',
+          background: themeValue('color-surface-muted', '#f1f5f9'),
+          border: '1px solid var(--yoya-color-border-faint, #efefef)',
+          borderRadius: '4px',
+          boxSizing: 'border-box',
+          display: 'inline-flex',
+          fontSize: '13px',
+          gap: '4px',
+          padding: '1px 6px'
+        })
+        .child(span().child(tag), removeButton);
+    };
 
-    this._setupTagsInput(setup);
-  }
+    const notifyChange = () => {
+      // 句柄交给使用方的是组件节点（与旧外壳的 `_componentHandle` 同一口径）
+      state.changeHandlers.forEach((handler) => handler([...state.value], self.node()));
+    };
 
-  /** 读写标签数组。 */
-  value(next) {
-    if (next === undefined) {
-      return [...this._value];
-    }
+    const addTag = (raw) => {
+      const tag = String(raw).trim();
 
-    this._value = (Array.isArray(next) ? next : []).map((item) => String(item)).filter(Boolean);
-    this._renderChips();
-    this._notifyChange();
-    return this;
-  }
+      if (!tag || state.value.includes(tag)) {
+        return;
+      }
 
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
+      state.value.push(tag);
+      renderChips();
+      notifyChange();
+    };
 
-  name(value) {
-    if (value === undefined) {
-      return this.attr('data-name') || '';
-    }
-    this.attr('data-name', value ? String(value) : null);
-    return this;
-  }
+    const removeTag = (index) => {
+      if (index < 0 || index >= state.value.length) {
+        return;
+      }
 
-  placeholder(value) {
-    if (value === undefined) {
-      return this._placeholder;
-    }
-    this._placeholder = String(value);
-    this._input.attr('placeholder', this._placeholder);
-    return this;
-  }
+      state.value.splice(index, 1);
+      renderChips();
+      notifyChange();
+    };
 
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandlers.slice();
-    }
-    this._changeHandlers = [handler];
-    return this;
-  }
+    const handleKeydown = (event) => {
+      if (event.key === 'Enter' || event.key === ',') {
+        event.preventDefault();
+        addTag(currentInputValue());
+        input.attr('value', '');
+        return;
+      }
 
-  onChange(handler) {
-    return this.change(handler);
-  }
+      if (event.key === 'Backspace' && !currentInputValue() && state.value.length > 0) {
+        removeTag(state.value.length - 1);
+      }
+    };
 
-  _collectValue() {
-    return [...this._value];
-  }
+    input.on('keydown', (event) => handleKeydown(event));
 
-  /** 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型 */
-  _notifyChange() {
-    this._changeHandlers.forEach((handler) =>
-      handler([...this._value], this._componentHandle ?? this)
-    );
-  }
+    /** 读写标签数组。 */
+    api.value = (next) => {
+      if (next === undefined) {
+        return [...state.value];
+      }
 
-  _addTag(raw) {
-    const tag = String(raw).trim();
-    if (!tag || this._value.includes(tag)) {
-      return;
-    }
-    this._value.push(tag);
-    this._renderChips();
-    this._notifyChange();
-  }
+      state.value = (Array.isArray(next) ? next : []).map((item) => String(item)).filter(Boolean);
+      renderChips();
+      notifyChange();
+      return api;
+    };
 
-  _removeTag(index) {
-    if (index < 0 || index >= this._value.length) {
-      return;
-    }
-    this._value.splice(index, 1);
-    this._renderChips();
-    this._notifyChange();
-  }
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => state.disabled;
 
-  _handleKeydown(event) {
-    if (event.key === 'Enter' || event.key === ',') {
-      event.preventDefault();
-      this._addTag(this._currentInputValue());
-      this._input.attr('value', '');
-      return;
-    }
+    api.name = (value) => {
+      if (value === undefined) {
+        return node.attr('data-name') || '';
+      }
 
-    if (event.key === 'Backspace' && !this._currentInputValue() && this._value.length > 0) {
-      this._removeTag(this._value.length - 1);
-    }
-  }
+      node.attr('data-name', value ? String(value) : null);
+      return api;
+    };
 
-  _currentInputValue() {
-    return this._input._el?.value ?? this._input.attr('value') ?? '';
-  }
+    api.placeholder = (value) => {
+      if (value === undefined) {
+        return state.placeholder;
+      }
 
-  _renderChips() {
-    replaceChildren(
-      this._chips,
-      this._value.map((tag, index) =>
-        new HtmlElementNode('span')
-          .className('yoya-vtags-input-tag')
-          .attr('data-vtags-tag', tag)
-          .styles({
-            alignItems: 'center',
-            background: themeValue('color-surface-muted', '#f1f5f9'),
-            border: '1px solid var(--yoya-color-border-faint, #efefef)',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-            display: 'inline-flex',
-            fontSize: '13px',
-            gap: '4px',
-            padding: '1px 6px'
-          })
-          .child(
-            new HtmlElementNode('span').child(tag),
-            new HtmlElementNode('button')
-              .attr({
-                'aria-label': `移除 ${tag}`,
-                'data-vtags-remove': 'true',
-                title: '移除',
-                type: 'button'
-              })
-              .styles({
-                background: 'transparent',
-                border: '0',
-                color: themeValue('color-text-muted', '#64748b'),
-                cursor: 'pointer',
-                fontSize: '12px',
-                lineHeight: '1',
-                padding: '0'
-              })
-              .child('×')
-              .on('click', () => this._removeTag(index))
-          )
-      )
-    );
-  }
+      state.placeholder = String(value);
+      input.attr('placeholder', state.placeholder);
+      return api;
+    };
 
-  _setupTagsInput(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return state.disabled;
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      state.disabled = Boolean(next);
+      node.attr('data-disabled', state.disabled ? 'true' : null);
+      input.attr('disabled', state.disabled ? true : null);
+      return api;
+    };
 
-    if (isPlainObject(setup)) {
+    api.required = (next) => {
+      if (next === undefined) {
+        return state.required;
+      }
+
+      state.required = Boolean(next);
+      node.attr('data-required', state.required ? 'true' : null);
+      return api;
+    };
+
+    /** 注册标签变化回调（后一次注册替换前一次，与旧方法面一致）。 */
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return state.changeHandlers.slice();
+      }
+
+      state.changeHandlers = [handler];
+      return api;
+    };
+
+    api.onChange = (handler) => api.change(handler);
+
+    /** 字符串 / 数组 = 初始标签（旧 `_setupTagsInput` 的兜底分支）。 */
+    api.setupString = (next) => api.value(next);
+
+    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupTagsInput` 同口径）。 */
+    api.setupObject = (setup) => {
+      if (!isPlainObject(setup)) {
+        return api;
+      }
+
       const { change, disabled, name, onChange, placeholder, required, value, ...elementConfig } =
         setup;
+
       if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
+        node.setup(elementConfig);
       }
+
       if (value !== undefined) {
-        this.value(value);
+        api.value(value);
       }
       if (placeholder !== undefined) {
-        this.placeholder(placeholder);
+        api.placeholder(placeholder);
       }
       if (disabled !== undefined) {
-        this.disabled(disabled);
+        api.disabled(disabled);
       }
       if (name !== undefined) {
-        this.name(name);
+        api.name(name);
       }
       if (required !== undefined) {
-        this.required(required);
+        api.required(required);
       }
       if (change !== undefined) {
-        this.change(change);
+        api.change(change);
       } else if (onChange !== undefined) {
-        this.onChange(onChange);
+        api.onChange(onChange);
       }
-      return;
-    }
 
-    this.value(setup);
-  }
-}
+      return api;
+    };
 
-export function vTagsInput(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTagsInput',
-    createNode: (setup) => new TagsInputNode(setup),
-    commands: [
-      'value',
-      'isDisabled',
-      'name',
-      'placeholder',
-      'change',
-      'onChange',
-      // 构造函数里用 booleanMethod 挂的开关方法
-      'disabled',
-      'required'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+    renderChips();
+    return node;
   });
 }
 
-export const VTagsInput = vTagsInput;
-defineComponentIdentity(VTagsInput, 'VTagsInput');
+export const vTagsInput = createComponentShortcut(VTagsInput);
 
 registerChildFactories(HtmlElementNode, { vTagsInput });

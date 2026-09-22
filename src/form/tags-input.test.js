@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VTagsInput, div, vForm, vTagsInput } from '../index.js';
+import { div, hasComponentIdentity, vForm, vTagsInput } from '../index.js';
 
 function findTagsInput(node) {
-  if (node instanceof VTagsInput) {
+  if (hasComponentIdentity(node, 'VTagsInput')) {
     return node;
   }
 
@@ -28,8 +28,8 @@ describe('vTagsInput', () => {
     const tags = vTagsInput({ placeholder: '添加标签' });
     const element = tags.renderDom();
 
-    expect(tags).toBeInstanceOf(VTagsInput);
-    expect(element.classList.contains('yoya-vtags-input')).toBe(true);
+    expect(hasComponentIdentity(tags, 'VTagsInput')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VTagsInput');
     expect(element.querySelector('[data-vtags-input]').placeholder).toBe('添加标签');
     expect(tags.value()).toEqual([]);
   });
@@ -81,7 +81,7 @@ describe('vTagsInput', () => {
     });
     const tags = page.children()[0];
 
-    expect(tags).toBeInstanceOf(VTagsInput);
+    expect(hasComponentIdentity(tags, 'VTagsInput')).toBe(true);
     expect(tags.value()).toEqual(['x']);
   });
 
