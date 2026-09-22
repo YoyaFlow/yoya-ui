@@ -1,5 +1,5 @@
 import { currentSignals } from './contract.js';
-import { recordRead, withCollect, withoutCollect } from './deps.js';
+import { bumpWriteSerial, recordRead, withCollect, withoutCollect } from './deps.js';
 import { dependentCount, registerSubscriberLedger, subscribeWithLedger } from './observe.js';
 import {
   beginSignalsBatch,
@@ -59,6 +59,9 @@ export class SignalHandle {
     if (!this._writable) {
       throw new TypeError('computed signal is read-only');
     }
+
+    // 写入序号：绑定在落地时用它判断"构建之后源被写过没有"（见 deps.js）
+    bumpWriteSerial();
 
     const batchActive = isSignalsBatchActive();
     const bridge = currentDevtoolsBridge();
@@ -127,6 +130,21 @@ export function isSignal(value) {
 export function ref(initial) {
   const adapter = currentSignals();
   return new SignalHandle(adapter, adapter.createSignal(initial));
+}
+
+/**
+ * 把值统一成句柄：**已经是句柄的原样返回**，普通值包一层 `ref`。
+ *
+ * 用来实现"props 给句柄就是活值、给普通值就是快照"这条口径（见 `AGENTS.md`
+ * 「Component Writing Rules」R9）：组件拿到句柄后照常放值位置 / 交给 `computed`，
+ * 内部不必自己判断来的是哪一种。
+ *
+ * 只给**值**用（字符串 / 数字 / 布尔 / 对象数据）。节点不要往里放 —— 值位置上的句柄
+ * 走的是文本通道（`String(node)` 会得到 `[object Object]`），节点内容该走结构
+ * （构建期 `child(node)`）。
+ */
+export function asSignal(value) {
+  return isSignal(value) ? value : ref(value);
 }
 
 /**

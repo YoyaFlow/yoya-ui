@@ -1,14 +1,8 @@
-import { computed, ref } from '../core/signals/handle.js';
+import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
+import { ViewNode, vText } from '../core/index.js';
 import { span } from '../html/index.js';
-import { vText } from '../core/index.js';
-import {
-  createComponentShortcut,
-  isPlainObject,
-  normalizeChildren,
-  replaceChildren,
-  themeValue
-} from '../components/shared.js';
+import { createComponentShortcut, themeValue } from '../components/shared.js';
 
 const statusColors = {
   default: themeValue('color-text-muted', '#8c8c8c'),
@@ -18,422 +12,297 @@ const statusColors = {
   warning: themeValue('color-warning', '#faad14')
 };
 
+/** 值位置上的活文本：`null` / `undefined` 统一成空串（句柄走的是文本通道，会 `String(...)`）。 */
+const asText = (value) => computed(() => value.value ?? '');
+
 /**
- * VBadge 的**参考实现**：业务组件函数 + 有名子结构函数 + 读值绑定。
+ * 徽标（形态 B，`AGENTS.md`「Component Writing Rules」R1–R12 的参考实现）。
  *
- * 口径（`AGENTS.md`「业务组件函数」与「State → View: Read-Value Bindings First」两节、
- * `docs/component-authoring{,.zh-CN}.md` §6.0、16 号清单第 44–46 条）：
- *
- * 1. **业务组件函数决定组件边界**，一律用有名函数声明：`function VXxx() { … return vNode((api) => 视图) }`；
- *    子结构同样用**有名函数**定义（本文件内、不导出），父组件里只写组合；
- * 2. **结构用 setupFunction 嵌套**：`span({ vn, style }, (box) => { box.style(绑定); box.child(…); })`——
- *    静态部分写在工厂参数里，绑定与子节点写在回调里，不把 `.style(...)` 挂到工厂调用之外；
- * 3. **状态 → 视图走读值绑定**：状态是 `ref`，映射写在结构里（`style(name, () => …)` /
- *    `attr(name, () => …)` / `child(vText(() => …))`），命令只改状态；
- * 4. **非必要不用 `rebuild`**：角标数字是值绑定，点模式"没有文本"用 `mountable()`（条件挂载），
- *    文本位内容由命令 `replaceChildren()` 直接写——都不到"整块结构必须重建"；
- * 5. **props 通道要收口**：绑定构建期只求值一次、落地才订阅（引擎契约，
- *    见 `src/core/binding-landing.test.js`），而 props 正好落在"构建 → 落地"之间，
- *    所以写状态的命令末尾调一次 `self.node().flush()`（幂等；落地后订阅接管，不必再调）。
+ * - **一个业务组件函数 = 一个边界**（R1）；整棵树写在最后那个 `return` 里，子节点用回调往下嵌（R2）。
+ * - **props 在参数表里解构、`...rest` 摊进根元素工厂**（R3）；属性 / 样式写进工厂参数（R4）。
+ * - **静态样式与状态几何都在 `yoya.ui.css`**（R5 / R10）：JS 只留随状态变的绑定，
+ *   偏移这类几何走 CSS 变量。
+ * - **数据驱动**（R6 / R9）：`count` / `status` / `text` / `children` 给句柄就是活值；
+ *   读句柄的派生一律 `computed`；命令只写数据，**不搬结构**（没有部件句柄、没有 `replaceChildren`）。
+ * - **节点内容只在构建期落位**：运行期换节点请重建组件（要换的是文本就传句柄或走 `text()`）。
+ * - **非必要不用 `rebuild`**（R7）：点模式"没有文本"用 `mountable()`。
+ * - **构建之后落位的写入要收口**（R8）：由命令那一层统一 `flush()` 一次（幂等）。
  */
+export function VBadge({
+  children,
+  color = null,
+  content,
+  count = null,
+  dot = false,
+  label,
+  offset,
+  overflowCount,
+  showZero = false,
+  status = null,
+  text,
+  title = null,
+  ...rest
+} = {}) {
+  const value = asSignal(count === '' ? null : count);
+  // 归一化的 props 也要保活：**状态**是"句柄原样 / 普通值包 ref"，归一放在**读时**的 computed 上
+  // （构建期直接 `Boolean(…)` / `Number(…)` 会把传进来的句柄吃成常量，静默丢活值）。
+  const overflowState = asSignal(overflowCount);
+  const showZeroState = asSignal(showZero);
+  const dotState = asSignal(dot);
+  const overflow = computed(() => {
+    const numeric = Number(overflowState.value);
 
-/** 子结构：内容框——默认占位（`vn_slot: ''`），匿名内容与 `child()` 落在这里。无行为，形态 A。 */
-function VBadgeContent() {
-  return span({
-    style: { alignItems: 'center', display: 'inline-flex', minWidth: '0' },
-    vn: 'VBadgeContent',
-    vn_slot: ''
+    return Number.isFinite(numeric) ? numeric : 99;
   });
-}
+  const showZeroValue = computed(() => Boolean(showZeroState.value));
+  const dotValue = computed(() => Boolean(dotState.value));
+  const overflowWritten = ref(overflowCount !== undefined);
+  const statusValue = asSignal(status || null);
+  const colorValue = asSignal(color || null);
+  const offsetX = ref(Number.isFinite(Number(offset?.x)) ? Number(offset.x) : 0);
+  const offsetY = ref(Number.isFinite(Number(offset?.y)) ? Number(offset.y) : 0);
+  const titleValue = asSignal(title);
 
-/** 子结构：角标位——显隐、配色、定位与数字全是读值绑定。 */
-function VBadgeCount(view) {
-  return span(
-    {
-      style: {
-        alignItems: 'center',
-        background: themeValue('color-danger', '#ff4d4f'),
-        borderRadius: '10px',
-        boxSizing: 'border-box',
-        color: themeValue('color-text-inverse', '#ffffff'),
-        display: 'none',
-        fontSize: '12px',
-        fontWeight: '700',
-        height: '18px',
-        justifyContent: 'center',
-        lineHeight: '1',
-        minWidth: '18px',
-        padding: '0 6px',
-        position: 'absolute',
-        right: '0',
-        textAlign: 'center',
-        top: '0',
-        transform: 'translate(50%, -50%)',
-        whiteSpace: 'nowrap',
-        zIndex: '1'
-      },
-      vn: 'VBadgeCount'
-    },
-    (box) => {
-      box.style('display', () => (view.visible.value ? 'inline-flex' : 'none'));
-      box.style('background', () => (view.visible.value ? view.background.value : null));
-      box.style('position', () => (view.hasContent.value ? 'absolute' : 'static'));
-      box.style('transform', () =>
-        view.hasContent.value
-          ? `translate(calc(50% + ${view.offsetX.value}px), calc(-50% + ${view.offsetY.value}px))`
-          : null
-      );
-      box.style('borderRadius', () => (view.dotMode.value ? '999px' : '10px'));
-      box.style('height', () => (view.dotMode.value ? '8px' : '18px'));
-      box.style('minWidth', () => (view.dotMode.value ? '8px' : '18px'));
-      box.style('padding', () => (view.dotMode.value ? '0' : '0 6px'));
-      box.style('width', () => (view.dotMode.value ? '8px' : null));
-      box.attr('aria-label', () =>
-        view.visible.value
-          ? view.dotMode.value
-            ? view.status.value || '通知'
-            : view.badgeText.value
-          : null
-      );
-      box.attr('title', view.title);
-      // 点模式"没有文本"= 条件挂载（不在 DOM，节点还活着），不重建结构
-      box.child(
-        vText(() => (view.dotMode.value ? '' : view.badgeText.value)).mountable(
-          () => !view.dotMode.value
-        )
-      );
+  // 内容：节点 → 构建期落位；文本 / 句柄 → 数据（`content()` 只写这份数据）
+  const initialContent = children ?? content ?? null;
+  const contentNode = initialContent instanceof ViewNode ? initialContent : null;
+  const contentValue = asSignal(contentNode === null ? initialContent : null);
+  const contentText = asText(contentValue);
+  // 文本位：同上
+  const textValue = asSignal(text !== undefined ? text : (label ?? null));
+  const textText = asText(textValue);
+
+  // 派生（读句柄 → computed）
+  const countVisible = computed(() => {
+    if (value.value === null || value.value === undefined || value.value === '') {
+      return false;
     }
-  );
-}
 
-/** 子结构：文本位——显隐是读值绑定，内容由 `text()` 命令写进这个节点。 */
-function VBadgeText(view) {
-  return span(
-    {
-      style: {
-        color: themeValue('color-text-secondary', '#475569'),
-        display: 'none',
-        fontSize: '12px',
-        lineHeight: '1'
-      },
-      vn: 'VBadgeText'
-    },
-    (box) => {
-      box.style('display', () => (view.textVisible.value ? 'inline-flex' : 'none'));
+    const numeric = Number(value.value);
+
+    return Number.isFinite(numeric) && numeric === 0 ? Boolean(showZeroValue.value) : true;
+  });
+  const dotMode = computed(() => Boolean(statusValue.value || dotValue.value));
+  const visible = computed(() => dotMode.value || countVisible.value);
+  const countText = computed(() => {
+    const numeric = Number(value.value);
+
+    if (Number.isFinite(numeric) && value.value !== '') {
+      const max = Number(overflow.value) || 99;
+
+      return numeric > max ? `${max}+` : String(value.value);
     }
+
+    return String(value.value);
+  });
+  /** 有没有内容 —— 看**数据**（不读结构）：有内容时角标浮到右上角（CSS 用这个属性开关）。 */
+  const hasContent = computed(
+    () => contentNode !== null || (contentValue.value !== null && contentValue.value !== '')
   );
-}
+  // 几何 → CSS 变量（R10）：`var(--yoya-badge-offset-x, 0px)` 兜默认值，JS 不拼 transform
+  const offsetXText = computed(() => `${offsetX.value}px`);
+  const offsetYText = computed(() => `${offsetY.value}px`);
 
-export function VBadge() {
-  return vNode((api, self) => {
-    const count = ref(null);
-    const overflowCount = ref(99);
-    const overflowWritten = ref(false);
-    const showZero = ref(false);
-    const dot = ref(false);
-    const status = ref(null);
-    const color = ref(null);
-    const offsetX = ref(0);
-    const offsetY = ref(0);
-    const title = ref(null);
-    const textContent = ref(null);
-    const hasContent = ref(false);
-
-    const countVisible = computed(() => {
-      if (count.value === null || count.value === undefined || count.value === '') {
-        return false;
+  return vNode((api) => {
+    api.content = (next) => {
+      if (next === undefined) {
+        return contentValue.value;
       }
 
-      const numeric = Number(count.value);
-
-      return Number.isFinite(numeric) && numeric === 0 ? showZero.value : true;
-    });
-    const dotMode = computed(() => Boolean(status.value || dot.value));
-
-    /** 交给子结构的那一份"视图事实"（子结构的 props）。 */
-    const view = {
-      badgeText: computed(() => {
-        const numeric = Number(count.value);
-
-        if (Number.isFinite(numeric) && count.value !== '') {
-          const max = Number(overflowCount.value) || 99;
-
-          return numeric > max ? `${max}+` : String(count.value);
-        }
-
-        return String(count.value);
-      }),
-      background: computed(
-        () =>
-          color.value ||
-          (status.value ? statusColors[status.value] : themeValue('color-danger', '#ff4d4f'))
-      ),
-      dotMode,
-      hasContent,
-      offsetX,
-      offsetY,
-      status,
-      textVisible: computed(() => textContent.value !== null && textContent.value !== ''),
-      title,
-      visible: computed(() => dotMode.value || countVisible.value)
-    };
-
-    // 内容位与文本位是命令目标（`content()` / `text()` 往里写内容），句柄只能在构建期拿
-    const contentBox = VBadgeContent();
-    const textBox = VBadgeText(view);
-
-    /** 投递进来的内容在解析前只排在组件节点上；`self.node()` 在 setup 期取会抛。 */
-    const queuedContent = () => {
-      try {
-        return self.node().children();
-      } catch {
-        return [];
-      }
-    };
-    const refreshContentFlag = () => {
-      hasContent.value = contentBox.children().length + queuedContent().length > 0;
-    };
-
-    /** props 落在"构建 → 落地"窗口里，写完状态收口一次（落地后订阅接管，幂等）。 */
-    const refresh = () => {
-      self.node().flush();
-    };
-
-    api.content = (value) => {
-      if (value === undefined) {
-        return contentBox.children();
+      if (next instanceof ViewNode) {
+        throw new TypeError(
+          'vBadge.content(node)：节点内容请在构建期用 props.children 给（content() 只写数据）。'
+        );
       }
 
-      replaceChildren(contentBox, normalizeChildren(value));
-      refreshContentFlag();
-      refresh();
+      contentValue.value = next ?? null;
       return api;
     };
 
-    api.count = (value) => {
-      if (value === undefined) {
-        return count.value;
+    api.count = (next) => {
+      if (next === undefined) {
+        return value.value;
       }
 
-      count.value = value === null || value === undefined || value === '' ? null : value;
-      refresh();
+      value.value = next === null || next === undefined || next === '' ? null : next;
       return api;
     };
 
-    api.overflowCount = (value) => {
-      if (value === undefined) {
-        return overflowCount.value;
+    api.overflowCount = (next) => {
+      if (next === undefined) {
+        return overflow.value;
       }
 
-      const nextValue = Number(value);
+      const parsed = Number(next);
 
-      overflowCount.value = Number.isFinite(nextValue) ? nextValue : 99;
+      overflowState.value = Number.isFinite(parsed) ? parsed : 99;
       overflowWritten.value = true;
-      refresh();
       return api;
     };
 
-    api.showZero = (value) => {
-      if (value === undefined) {
-        return showZero.value;
+    api.showZero = (next) => {
+      if (next === undefined) {
+        return showZeroValue.value;
       }
 
-      showZero.value = Boolean(value);
-      refresh();
+      showZeroState.value = Boolean(next);
       return api;
     };
 
-    api.dot = (value) => {
-      if (value === undefined) {
-        return dot.value;
+    api.dot = (next) => {
+      if (next === undefined) {
+        return dotValue.value;
       }
 
-      dot.value = Boolean(value);
-      refresh();
+      dotState.value = Boolean(next);
       return api;
     };
 
-    api.status = (value) => {
-      if (value === undefined) {
-        return status.value;
+    api.status = (next) => {
+      if (next === undefined) {
+        return statusValue.value;
       }
 
-      status.value = value || null;
-      refresh();
+      statusValue.value = next || null;
       return api;
     };
 
-    api.color = (value) => {
-      if (value === undefined) {
-        return color.value;
+    api.color = (next) => {
+      if (next === undefined) {
+        return colorValue.value;
       }
 
-      color.value = value || null;
-      refresh();
+      colorValue.value = next || null;
       return api;
     };
 
-    api.text = (value) => {
-      if (value === undefined) {
-        return textContent.value;
+    api.text = (next) => {
+      if (next === undefined) {
+        return textValue.value;
       }
 
-      textContent.value = value === null || value === undefined ? null : value;
-      // 内容通道：直接写内容位（显隐由绑定管），不是结构重建
-      replaceChildren(
-        textBox,
-        value === null || value === undefined ? [] : normalizeChildren(value)
-      );
-      refresh();
-      return api;
-    };
-
-    api.label = (value) => api.text(value);
-
-    api.title = (value) => {
-      if (value === undefined) {
-        return title.value;
+      if (next instanceof ViewNode) {
+        throw new TypeError('vBadge.text(node)：text 只收文本（节点内容请用 props.children）。');
       }
 
-      title.value = value ?? null;
-      refresh();
+      textValue.value = next ?? null;
       return api;
     };
 
-    api.offset = (value) => {
-      if (value === undefined) {
+    api.label = (next) => api.text(next);
+
+    api.title = (next) => {
+      if (next === undefined) {
+        return titleValue.value;
+      }
+
+      titleValue.value = next ?? null;
+      return api;
+    };
+
+    api.offset = (next) => {
+      if (next === undefined) {
         return { x: offsetX.value, y: offsetY.value };
       }
 
-      const x = Number(value?.x ?? 0);
-      const y = Number(value?.y ?? 0);
+      const x = Number(next?.x ?? 0);
+      const y = Number(next?.y ?? 0);
 
       offsetX.value = Number.isFinite(x) ? x : 0;
       offsetY.value = Number.isFinite(y) ? y : 0;
-      refresh();
       return api;
     };
 
-    /** 数字 / 数字字符串 = count，其它字符串 = 内容（旧 `_setupBadge` 的兜底分支）。 */
-    api.setupString = (value) => {
-      if (
-        typeof value === 'number' ||
-        (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)))
-      ) {
-        return api.count(value);
-      }
+    /** 位置参数：数字 / 数字串 = 数量，其余字符串 = 内容（迁移前 `_setupBadge` 的兜底分支同口径）。 */
+    api.setupString = (next) => {
+      const numeric =
+        typeof next === 'number' ||
+        (typeof next === 'string' && next.trim() !== '' && !Number.isNaN(Number(next)));
 
-      self.node().child(value);
-      refreshContentFlag();
-      refresh();
-      return api;
+      return numeric ? api.count(next) : api.content(next);
     };
 
-    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupBadge` 同口径）。 */
-    api.setupObject = (config) => {
-      if (!isPlainObject(config)) {
-        return api;
-      }
-
-      const {
-        children,
-        color: colorOption,
-        content,
-        count: countOption,
-        dot: dotOption,
-        label,
-        offset,
-        overflowCount: overflowOption,
-        showZero: showZeroOption,
-        status: statusOption,
-        text,
-        title: titleOption,
-        ...elementConfig
-      } = config;
-
-      if (Object.keys(elementConfig).length > 0) {
-        // 只有元素级配置（class / attrs / style / onXxx / 其它节点方法与属性）转发到视图根；
-        // 业务键上面已经走命令了。root 在下面「视图」那一段定义，这里是闭包、调用发生在构建之后。
-        root.setupObject(elementConfig);
-      }
-      if (overflowOption !== undefined) {
-        api.overflowCount(overflowOption);
-      }
-      if (showZeroOption !== undefined) {
-        api.showZero(showZeroOption);
-      }
-      if (countOption !== undefined) {
-        api.count(countOption);
-      }
-      if (dotOption !== undefined) {
-        api.dot(dotOption);
-      }
-      if (statusOption !== undefined) {
-        api.status(statusOption);
-      }
-      if (colorOption !== undefined) {
-        api.color(colorOption);
-      }
-      if (offset !== undefined) {
-        api.offset(offset);
-      }
-      if (titleOption !== undefined) {
-        api.title(titleOption);
-      }
-      if (text !== undefined) {
-        api.text(text);
-      } else if (label !== undefined) {
-        api.text(label);
-      }
-      if (children !== undefined) {
-        self.node().child(children);
-      } else if (content !== undefined) {
-        self.node().child(content);
-      }
-
-      // 内容投递会改变"有没有内容"（角标定位 / data-standalone），投递完再收一次
-      refreshContentFlag();
-      refresh();
-      return api;
-    };
-
-    // 固定分派投递（`vBadge(节点 / 数组)`、`badge.child(x)`）在挂载时补一次内容标记
-    api.whenMount = () => {
-      refreshContentFlag();
-      refresh();
-    };
-
-    // 视图：父组件只写组合，子结构各自带自己的结构与绑定
-    const root = span(
+    /**
+     * 命令的收口（R8）：还没落地时写完状态补一次求值，首屏就是终值；落地之后订阅接管，
+     * 这里只剩一次 `_el` 读。覆盖 `vBadge(5)` 这类位置参数与"建好就配置"的写法。
+     */
+    // 结构（R2）：一个 return 装下整棵树；属性 / 样式在工厂参数里（R4），子节点在回调里往下嵌
+    return span(
       {
-        style: {
-          alignItems: 'center',
-          boxSizing: 'border-box',
-          display: 'inline-flex',
-          gap: '6px',
-          lineHeight: '1',
-          position: 'relative',
-          verticalAlign: 'middle'
-        },
+        ...rest,
+        'data-color': colorValue,
+        'data-count': computed(() => (value.value === null ? null : String(value.value))),
+        'data-dot': computed(() => (dotValue.value ? 'true' : null)),
+        'data-overflow-count': computed(() =>
+          overflowWritten.value ? String(overflow.value) : null
+        ),
+        'data-show-zero': computed(() => (showZeroValue.value ? 'true' : null)),
+        'data-standalone': computed(() => (hasContent.value ? null : 'true')),
+        'data-status': statusValue,
         vn: 'VBadge'
       },
-      (box) => {
-        box.attr('data-count', () => (count.value === null ? null : String(count.value)));
-        box.attr('data-overflow-count', () =>
-          overflowWritten.value ? String(overflowCount.value) : null
+      (root) => {
+        root.child(
+          // 内容位：位置由组件写死（R11：单内容位不做部件投递）。
+          // 节点在构建期落位；文本 / 句柄是活值 —— 都只是"把数据放到位置上"，没有部件句柄
+          span({ vn: 'VBadgeContent' }, (box) => {
+            if (contentNode !== null) {
+              box.child(contentNode);
+            }
+            // 文本活值：没有文本时不挂（避免留一个空文本节点）
+            box.child(vText(contentText).mountable(computed(() => contentText.value !== '')));
+          }),
+
+          // 角标位：随状态变的样式 / 属性在工厂参数里；子节点在回调里
+          span(
+            {
+              attrs: {
+                'aria-label': computed(() =>
+                  visible.value
+                    ? dotMode.value
+                      ? statusValue.value || '通知'
+                      : countText.value
+                    : null
+                ),
+                title: titleValue
+              },
+              style: {
+                '--yoya-badge-offset-x': offsetXText,
+                '--yoya-badge-offset-y': offsetYText,
+                background: computed(() =>
+                  visible.value
+                    ? colorValue.value ||
+                      (statusValue.value
+                        ? statusColors[statusValue.value]
+                        : themeValue('color-danger', '#ff4d4f'))
+                    : null
+                ),
+                display: computed(() => (visible.value ? 'inline-flex' : 'none'))
+              },
+              vn: 'VBadgeCount'
+            },
+            (box) => {
+              // 点模式"没有文本"= 条件挂载（节点在、只是不在 DOM），不重建结构（R7）
+              box.child(vText(countText).mountable(computed(() => !dotMode.value)));
+            }
+          ),
+
+          // 文本位：显隐是绑定，内容是数据（`text()` 命令只写这份数据）
+          span(
+            {
+              style: {
+                display: computed(() =>
+                  textValue.value === null || textValue.value === '' ? 'none' : 'inline-flex'
+                )
+              },
+              vn: 'VBadgeText'
+            },
+            (box) => box.child(vText(textText).mountable(computed(() => textText.value !== '')))
+          )
         );
-        box.attr('data-show-zero', () => (showZero.value ? 'true' : null));
-        box.attr('data-dot', () => (dot.value ? 'true' : null));
-        box.attr('data-status', status);
-        box.attr('data-color', color);
-        box.attr('data-standalone', () => (hasContent.value ? null : 'true'));
-        box.child(contentBox, VBadgeCount(view), textBox);
       }
     );
-
-    refreshContentFlag();
-    return root;
   });
 }
 
-export const vBadge = createComponentShortcut(VBadge);
+export const vBadge = createComponentShortcut(VBadge, { props: true });

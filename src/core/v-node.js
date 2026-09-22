@@ -107,6 +107,7 @@ function attachCommands(node, api) {
 
     node[key] = (...args) => {
       const result = command.apply(api, args);
+
       return result === api ? node : result;
     };
   });

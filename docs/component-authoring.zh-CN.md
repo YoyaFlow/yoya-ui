@@ -188,7 +188,32 @@ api.count = (value) => (value === undefined ? count.value : ((count.value = valu
 
 **一条容易踩的边界（引擎契约，`src/core/binding-landing.test.js` 有用例）**：绑定**构建期只求值一次**，**落地时才订阅**依赖——也就是"构建之后、落地之前"的写入不会自动进首屏，而**组件 props 正好落在这个窗口里**（props 在 build 之后才应用）。所以走读值绑定的组件要在写状态的收口处自己补一下：**值**调视图根 `node.flush()`（幂等，值没变不写 DOM）；**结构优先不重建**——条件显隐用 `mountable()`、列表用 `keyed()`、换内容用 `replaceChildren()`，`rebuildable()` 只留给"整块结构确实必须重建"（见 §6.1）。落地之后订阅接管，命令写状态就不必再手动收口。同一个区域节点上的绑定在区域重建时会被归到该轮区域名单一起释放，所以**别把绑定注册在区域节点自己身上**——放在它的父/兄弟节点，或让区域 builder 重新登记。
 
-**组件与子结构的写法（2026-09-22 定）**：组件一律用**有名函数声明**定义，**一个业务组件函数 = 一个组件边界**（`function VXxx() { return vNode((api) => …) }`）；子结构同样用有名函数定义（无行为 = A 形态薄工厂，直接返回视图），父组件里只写组合。结构**默认用 setupFunction 嵌套**书写：`span({ vn, style }, (box) => { box.style(绑定); box.child(…); })`——静态部分在工厂参数里、绑定与子节点在回调里，不要写成 `span({…}).style(…)` 这种挂在工厂调用之外的链式结构。参考实现：`src/data-display/badge.js`。
+**组件怎么写（2026-09-22 定）**：组件一律用**有名函数声明**定义，**一个业务组件函数 = 一个组件边界**（`function VXxx() { return vNode((api) => …) }`），而且**整棵树就写在最后那个 `return` 里**——不为"看起来整齐"把每块再拆成函数（拆了之后读结构要来回跳）。只有某块**自己要复用、或自带行为（状态 / 命令）**时才提成有名函数（A 形态薄工厂 / B 形态 vNode）。结构**默认用 setupFunction 嵌套**书写：`工厂(options, (box) => { box.style(绑定); box.child(…); })`——静态部分在工厂参数里、绑定与子节点在回调里，不要写成 `span({…}).style(…)` 这种挂在工厂调用之外的链式结构。
+
+**props / 属性 / 样式**：
+
+- **参数表里解构、`rest` 照 JSX 摊开**：`function VXxx({ count, ...rest } = {})`，结构里写 `工厂({ ...rest, vn: 'VXxx' }, …)` —— `class` / `attrs` / `style` / `onXxx` 由引擎的键分类表（`src/core/setup-keys.js`）处理，不用手拆、也不用第二处转投。
+- **属性 / 样式用 JSON 一次写清**：`node.attr({ … })` / `node.style({ … })`（值位置照旧能放句柄与零参闭包）。
+- **静态样式放 `src/yoya.ui.css`**（`[vn~='VXxx'] …`；状态相关的几何写成 `[data-*]` 规则），组件 JS 里只留随状态变的绑定。
+- **内容与文本也是数据**：props 给普通值就是快照、给句柄就是活值（统一用核心助手 `asSignal(value)` 归一化）；字符串 / 句柄放值位置（`child(值)`），**节点内容在构建期落位**（运行期换节点 = 重建组件）。命令只写数据 —— 不接部件句柄、不写 `replaceChildren`。
+- **"有没有内容"按数据写属性**（`data-standalone` 这类），CSS 用它开关几何；**不要用 `:has(> … > *)`** 判内容 —— 它只匹配元素子节点，纯文本内容命不中。
+
+参考实现：`src/data-display/badge.js` 与 `src/yoya.ui.css` 的 VBadge 段。
+
+**规则速查（从 VBadge 这一刀总结；全文见 `AGENTS.md` 的 Component Writing Rules）**：R1 一个业务组件函数 = 一个边界 · R2 整棵树写在最后那个 `return` 里（不往外面提中间节点变量，也不为整齐拆函数，除非要复用或自带行为）· R3 props 在参数表里解构、`...rest` 摊进根元素工厂 · R4 属性 / 样式尽量写进工厂参数（`attrs` / `style` / 顶层 `data-*`）· R5 静态样式进 `yoya.ui.css`，JS 只留随状态变的绑定 · R6 读句柄的派生用 `computed`、读结构的用零参闭包 · R7 条件用 `mountable()` / `cond ? null : node`，列表用 `keyed()`，别靠重建 · R8 构建之后落位的写入要收口 · R9 能靠句柄 props 表达就不新增命令 · R10 可配置几何走 CSS 变量 · R11 对外有 ≥2 个"调用方可投递的插入点"才用 `vSlot` 部件形态（`VCardHeader` 那种），只有 1 个内容位就把位置写死（VBadge）· R12 部件身份是调用方的书写面，组件自己算出来的内部块（`VBadgeCount`）不是投递 API。逐组件选择（内容通道、是否保留命令、`:has()`）同节列出，不要照抄。
+
+**props 走调用、嵌套走 `.setup()`（2026-09-22 定）**：业务组件函数自己收 props——`function VBadge(props = {})`；快捷方法用 `createComponentShortcut(VBadge, { props: true })` 把调用里的**第一个普通对象**当 props 交给定义函数，其余位置参数照旧按 setup 分派。父组件里要继续嵌套，可以走位置参数，也可以在定义函数返回的节点上继续：
+
+```js
+function ServiceBadge() {
+  return VBadge({ count: 5 }).setup((badge) => {
+    badge.child('订单'); // 内容继续嵌套
+    badge.text('待处理');
+  });
+}
+```
+
+props 在构建期读到，状态一次初始化到位（绑定首评即终值）。**构建之后**才落位的东西——位置参数、`.setup()` 回调、以及"建好还没落地就用命令配置"——都掉在上面那条「构建 → 落地」窗口里：引擎在**组件构建帧末**收口一次，组件自己的命令要自收口（`if (!self.node()._el) self.node().flush()`）。还有一个推论：读**结构**的绑定（"这个组件有没有内容"）要写零参闭包，**别预存 `computed`**——`computed` 只在响应式输入变化时失效重算，读结构会缓存住旧值，闭包每次收口都会重新读。
 
 门禁：`src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结"集中快照函数"存量（**只减不增**，新文件一个都不许有）。迁移一刀之后跑 `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js` 下调基线。较真的理由不止可读性：指令式写快照**编译路径吃不到**，只要不是"静态结构 + 活值 + 条件/列表"，编译器就整块回落通用路径。
 

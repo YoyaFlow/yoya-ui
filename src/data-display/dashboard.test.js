@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { vGauge, vRingStat, vSparkline, vTimeline, vTrendCard } from '../index.js';
+import { ref, vGauge, vRingStat, vSparkline, vTimeline, vTrendCard } from '../index.js';
 
 describe('dashboard family', () => {
   beforeEach(() => {
@@ -37,32 +37,53 @@ describe('dashboard family', () => {
     });
     card.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vtrend-card');
-    expect(element.querySelector('.yoya-vtrend-card-title').textContent).toBe('今日请求');
-    expect(element.querySelector('.yoya-vtrend-card-value').textContent).toContain('84.2');
-    expect(element.querySelector('.yoya-vtrend-card-value').textContent).toContain('k');
-    expect(element.querySelector('.yoya-vtrend-card-delta').textContent).toBe('+6.4%');
+    const element = document.querySelector('[vn~="VTrendCard"]');
+    expect(element.querySelector('[vn~="VTrendCardTitle"]').textContent).toBe('今日请求');
+    expect(element.querySelector('[vn~="VTrendCardValue"]').textContent).toContain('84.2');
+    expect(element.querySelector('[vn~="VTrendCardValue"]').textContent).toContain('k');
+    expect(element.querySelector('[vn~="VTrendCardDelta"]').textContent).toBe('+6.4%');
     expect(element.querySelector('.yoya-vsparkline')).not.toBeNull();
-    expect(element.querySelector('.yoya-vtrend-card-delta').getAttribute('style')).toContain(
+    expect(element.querySelector('[vn~="VTrendCardDelta"]').getAttribute('style')).toContain(
       'color-success'
     );
 
     card.up(false);
-    expect(element.querySelector('.yoya-vtrend-card-delta').getAttribute('style')).toContain(
+    expect(element.querySelector('[vn~="VTrendCardDelta"]').getAttribute('style')).toContain(
       'color-danger'
     );
+  });
+
+  it('keeps handle props live on the dashboard family（归一化不吞句柄）', () => {
+    const up = ref(true);
+    const card = vTrendCard({ data: [1, 2, 3], delta: '+1%', title: '请求', up, value: '10' });
+    const cardElement = card.renderDom();
+    const delta = cardElement.querySelector('[vn~="VTrendCardDelta"]');
+
+    up.value = false;
+
+    expect(delta.getAttribute('style')).toContain('color-danger');
+
+    const percent = ref(10);
+    const ring = vRingStat({ label: '成功率', percent });
+    const ringElement = ring.renderDom();
+    const circle = ringElement.querySelector('circle + circle');
+    const before = Number(circle.getAttribute('stroke-dashoffset'));
+
+    percent.value = 60;
+
+    expect(Number(circle.getAttribute('stroke-dashoffset'))).toBeLessThan(before);
   });
 
   it('renders a ring stat with percent driving the arc offset', () => {
     const ring = vRingStat({ percent: 68, label: '成功率', tone: 'success' });
     ring.bindTo('#app');
 
-    const element = document.querySelector('.yoya-vring-stat');
+    const element = document.querySelector('[vn~="VRingStat"]');
     const circle = element.querySelector('circle + circle');
     expect(circle).not.toBeNull();
     expect(Number(circle.getAttribute('stroke-dasharray'))).toBeGreaterThan(0);
     expect(Number(circle.getAttribute('stroke-dashoffset'))).toBeGreaterThan(0);
-    expect(element.querySelector('.yoya-vring-stat-label').textContent).toBe('成功率');
+    expect(element.querySelector('[vn~="VRingStatLabel"]').textContent).toBe('成功率');
     expect(circle.getAttribute('style')).toContain('color-success');
 
     ring.percent(100);

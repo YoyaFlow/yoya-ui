@@ -548,7 +548,26 @@ function isSameComponent(value, Definition) {
   }
 }
 
-export function createComponentShortcut(Definition) {
+/**
+ * 组件定义 → 快捷方法。
+ *
+ * 默认（不传 options）：`Definition()` 不带参，调用方参数全部按 setup 分派落到组件节点上
+ * （`setupFunction` / `setupString` / `setupObject` + 节点 / 数组的固定分派）——存量组件的形态。
+ *
+ * `{ props: true }`：**定义函数自己吃 props**（业务组件函数形态）。此时调用方参数里的
+ * **第一个普通对象**作为 props 传给定义函数（构建期就知道，状态一次初始化到位、绑定首评即终值，
+ * 不需要"构建 → 落地"窗口的收口）；其余参数照旧按 setup 分派，只是它们**在构建之后**才落位，
+ * 组件的命令要自己收口（`if (!self.node()._el) self.node().flush()`，见 `badge.js`）——
+ * 于是嵌套结构走 `.setup(cb)` 或位置参数：
+ *
+ * ```js
+ * vBadge({ count: 5, dot: true }).setup((badge) => badge.child(...));   // props 走调用、嵌套走 .setup()
+ * vCard('标题', { variant: 'primary' }, (card) => card.vCardHeader('头'));  // 文本 + props + 回调
+ * ```
+ */
+export function createComponentShortcut(Definition, options = {}) {
+  const acceptsProps = options.props === true;
+
   return function componentShortcut(first = null, second = null, third = null) {
     // 复用同类实例（旧 `createComponentFactory` 的语义）：`vCard(已有卡片)` 返回它自己，
     // 其余参数继续按 setup 分派补上。
@@ -563,7 +582,10 @@ export function createComponentShortcut(Definition) {
       return first;
     }
 
-    const node = Definition();
+    // props = 参数里的第一个普通对象（定义函数吃 props 时）；其余参数照旧走 setup 分派
+    const args = Array.from(arguments);
+    const props = acceptsProps ? args.find((value) => isPlainObject(value)) : undefined;
+    const node = acceptsProps ? Definition(props) : Definition();
 
     if (!node || typeof node.setup !== 'function') {
       throw new TypeError(
@@ -572,12 +594,14 @@ export function createComponentShortcut(Definition) {
       );
     }
 
-    applySetupValue(node, first);
-    applySetupValue(node, second);
-    applySetupValue(node, third);
+    // 已经作为 props 进定义函数的那一份不再分派；其余按出现顺序落位
+    for (let index = 0; index < args.length; index += 1) {
+      const value = args[index];
 
-    for (let index = 3; index < arguments.length; index += 1) {
-      applySetupValue(node, arguments[index]);
+      if (acceptsProps && value === props) {
+        continue;
+      }
+      applySetupValue(node, value);
     }
 
     return node;

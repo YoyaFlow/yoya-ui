@@ -9,6 +9,22 @@ function currentCollector() {
 // 读取旁路：dev 护栏用（核心不依赖它）。与收集语义无关——收集仍只记最内层收集器。
 let readObserver = null;
 
+/**
+ * 句柄写入的全局序号：绑定的求值记下当时的序号，**落地时**据此判断"构建之后源有没有被写过"。
+ *
+ * 为什么需要：绑定构建期只求值一次、落地才订阅依赖，所以「构建 → 落地」窗口里的写入收不到
+ * 通知；若源之后不再变化，绑定会一直停在构建期快照（静默错值）。落地时对上过号的绑定对齐一次即可。
+ */
+let writeSerial = 0;
+
+export function bumpWriteSerial() {
+  writeSerial += 1;
+}
+
+export function currentWriteSerial() {
+  return writeSerial;
+}
+
 /** 内部：安装读取观察者；没有收集器时也会收到回调（正是「声明区域之前读」的场景）。 */
 export function setReadObserver(observer) {
   readObserver = observer;

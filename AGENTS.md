@@ -18,8 +18,16 @@ Fall back to text search for string literals, configuration, non-code files, or 
 Local tickets are the source of truth for pending tracer-bullet work. They live under
 `.scratch/<feature-slug>/issues/*.md` (one ticket per file); `.scratch/` is intentionally
 git-ignored. When the user asks about “工作票” or remaining tasks, inspect the newest ticket
-set by directory modification time before answering. The current active set is
-`.scratch/post-0.6-followups/issues/`.
+set by directory modification time before answering.
+
+The current active set is **`.scratch/vnode-convergence/issues/`**（组件收敛 + 属性化迁移）。
+动组件之前至少读这几份：
+
+- `15-attribute-and-identity-migration-plan.md`：方案、波次、逐刀台账（§11.6 / §11.7）；
+- `16-migration-gap-list.md`：降级与口径台账（每条都写清"原能力 / 迁移后口径 / 影响面"）；
+- `17-handoff.md`：**交接现场**（当前状态、硬口径、每刀执行清单）；
+- `19-component-writing-rules.md`：写法规则 R1–R12 / 四维度判据怎么逐条查；
+- `18-compiler-runtime-options-merge.md`：编译器侧待办（options 里的 `...rest`）。
 
 ## 编译路径的定位（准则，优先级最高）
 
@@ -211,32 +219,139 @@ function ServiceDetailCard() {
 - 演示代码同样以声明式写法为主，参数对象只作为 API 说明保留。
 - 每个组件或演示集最多保留一个完整的参数对象案例，其余示例使用声明式写法。
 
-## Business Component Function: it defines the boundary
+## Component Writing Rules（2026-09-22 定稿，参考实现 VBadge）
 
-组件的**默认写法**是有名函数声明（`function XxxName() {}`）——**一个业务组件函数 = 一个组件边界**：
-一个身份（`vn`）、一份状态、一套命令、一棵视图。
+从 `VBadge` 这一刀总结出来的**通用写法**。改造其他组件、迁移新文件都按这十条过；
+逐组件的选择见下面「不要一刀切」一节，逐条怎么检查见 `.scratch/vnode-convergence/issues/19-component-writing-rules.md`。
 
 ```js
-function VXxx() {
-  return vNode((api, self) => {
-    const value = ref(0);                                  // 边界内：状态
-    api.step = (next) => { value.value = next; return api; };  // 边界内：命令（只改状态）
-    return span({ vn: 'VXxx', style: { …静态… } }, (root) => {   // 边界内：结构 + 绑定一次写清
-      root.style('width', () => `${value.value}px`);
-      root.child(VXxxPart(value));
-    });
-  });
+export function VXxx({ count = null, ...rest } = {}) {
+  // R1 边界 + R3 参数
+  const value = ref(count); // R6 状态
+  const text = computed(() => String(value.value ?? '')); // R6 读句柄的派生
+
+  return vNode(() =>
+    // R2 一棵树
+    span({ ...rest, 'data-count': value, vn: 'VXxx' }, (root) => {
+      root.child(span({ vn: 'VXxxLabel' }, (label) => label.child(vText(text))));
+    })
+  );
 }
 ```
 
-- **子结构也是业务组件函数**：同样用有名函数（A 形态薄工厂直接返回视图；有状态/命令就是 B 形态），
-  父组件里只写组合；父组件内部不堆匿名元素，结构也不散进局部变量或命令。
-- **结构默认用 setupFunction 嵌套**：`工厂({ vn, style }, (node) => { node.style(绑定); node.child(…); })`
-  ——静态部分留在工厂参数里，绑定与子节点写在回调里；不要写 `span({…}).style(…)` 这种挂在
-  工厂调用之外的链式结构。
+- **R1 边界**：一个业务组件函数 = 一个组件边界（`function VXxx(...) {}`）——身份（`vn`）、状态、
+  命令、视图都在里面。
+- **R2 一棵树**：整棵树写在最后那个 `return` 里，子节点用回调往下嵌；不往 `return` 外面提中间节点
+  变量，也不为"看起来整齐"把每块提成函数（要**复用**或**自带行为**才提）。
+- **R3 参数**：props 在参数表里解构；`...rest` 照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VXxx' }`），
+  `class` / `attrs` / `style` / `onXxx` 交给引擎的键分类表（`src/core/setup-keys.js`）；`vn` 写在最后。
+- **R4 属性 / 样式**：能进工厂参数就进参数（`attrs` / `style` 对象，或 `data-*` 这类顶层键），
+  值位置可以放句柄 / 零参闭包 / `computed`；只有"要拿句柄、要多步"才在回调里写语句。
+- **R5 静态样式进 CSS**：静态（颜色 / 尺寸 / 字体 / 布局）写 `[vn~='VXxx'] …`，状态几何写
+  `[data-*]` 规则；组件 JS 里只留随状态变的绑定。
+- **R6 状态 → 视图**：状态是 `ref`；纯读直接传句柄；读**句柄**的派生用 `computed`；
+  **读结构**（`children().length`、DOM）必须零参闭包 —— `computed` 会缓存住旧值。
+- **R7 条件与列表**：条件用 `mountable()`（节点在、只是不在 DOM）或 `cond ? null : node`（彻底不在树）；
+  列表用 `keyed()`；只有整块结构必须重建才用区域 `rebuild()`。
+- **R8 收口（引擎兜，组件不写）**：「构建 → 落地」窗口里的写入由引擎在**落地时对齐一次** ——
+  `ReactiveTarget` 在求值时记下写入序号（`deps.js` 的 `currentWriteSerial()`），落地时若该绑定
+  读过的**源**在构建之后被写过，就重新求值并提交（那时元素已建，能直接落到 DOM）。
+  于是 props 对象分派、位置参数、"建好就配置"、以及**先写句柄 props 再渲染**都进首屏；
+  组件里没有任何收口代码，也没有"命令出口 flush"那层。
+  **没有源的绑定**（零参闭包，例如读普通对象）不在对齐范围 —— "构建期只求值一次、后续渲染
+  不重复求值"的契约照旧（`binding-ownership.test.js`）；这类绑定写完数据要自己 `flush()`，
+  结构变化走区域 `rebuild()`。
+- **R9 数据驱动优先**：props 给句柄就是活值（核心助手 `asSignal(value)`：句柄原样返回、普通值包
+  `ref`，见 `src/core/signals/handle.js`）。**归一化要放在"读"的时候**：`Boolean(prop)` /
+  `Number(prop)` / `prop || 默认值` 写在构建期会把传进来的句柄**吃成常量**（静默丢活值）——
+  状态存"句柄原样 / 普通值包 `ref`"，映射写成 `computed(() => …)`，命令写这份状态句柄。
+  能靠句柄表达的更新就不要新加命令；有命令的组件，命令**只改状态 / 只写数据**，不搬结构
+  （不接部件句柄、不写 `replaceChildren`）、不查找节点、不写 `_el` / `_children`。
+  **内容与文本也是数据**：字符串 / 句柄放在值位置上（句柄 = 活文本），节点在构建期落位 ——
+  别为了"命令换内容"把节点句柄接出来再手动重建。
+- **R10 几何交给 CSS**：可配置几何（偏移 / 尺寸）走 CSS 变量 + `var(…, 默认值)`，JS 不拼样式字符串
+  （`--x` 自定义属性现在能落 DOM 与 SSR）。
+
+**不要一刀切（逐组件定，写进 16 号清单）**：
+
+- **R11 插入点数量决定形态**：对外有 **≥2 个"调用方可投递的插入点"**（card 的 header / body / footer、
+  tabs 的导航 / 面板、table 的表头 / 表体…）→ 每个插入点用 `vSlot('name')` 声明占位、内容自带
+  `vn_slot` 落位，部件是**独立单元**（`VCardHeader` = 自己的 `vn` + 自己的样式 + 自己的投递命令），
+  位置与调用顺序无关；**只有 1 个内容位**（VBadge）→ 位置由组件自己写死（JSX 的 `{children}`），
+  不给部件 API、也不要 `vn_slot` 占位。
+  删 `vn_slot` 时必须**同时**把"有没有内容"的判据改成读数据，否则会出现静默错判。
+- **R12 部件身份是"调用方的书写面"**：`VCardHeader` 这类部件是给调用方用的（按名投递、写选择器、
+  跨模块识别）；组件自己算出来的内部块（`VBadgeCount` / `VBadgeText`）**即使写了 `vn`**（给 CSS、
+  调试用）也**不是部件 API** —— 外部不按名往里投内容。判据一句话：**"调用方能不能决定某块内容
+  进哪个位置？"** 能 → 部件；内容由 props / 状态算出来 → 内部块。
+
+### 块形态判据：四个维度（2026-09-22 补）
+
+一个块（一段结构）该写成什么样，看四个维度，按下面的顺序定：
+
+| #   | 维度                           | 取值                               | 结果                                                                                                                 |
+| --- | ------------------------------ | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | **位置归属**                   | 调用方按位置投递（≥2 个插入点）    | **部件**（`vSlot('name')` 占位 + 部件身份 + 投递 API，R11 / R12）                                                    |
+|     |                                | 组件自己算 / 只有 1 个内容位       | **内部块**（位置写死；有 `vn` 也只给 CSS / 调试，不承诺投递）                                                        |
+| 2   | **有没有自己的行为**           | 有状态 / 命令 / 生命周期钩子       | **形态 B**：`vNode((api) => 视图)` —— 有行为就是组件边界，自己写 `vn`（部件也可以有行为，如 `VTab`：active / panel） |
+|     |                                | 无状态、无命令、无钩子             | **形态 A**：薄工厂直接返回视图（或就地内联）                                                                         |
+| 3   | **可插拔**（有时有、有时没有） | 组件自己决定有无                   | **条件渲染**：`mountable()`（节点在、只是不在 DOM）或 `cond ? null : node`（彻底不在树）                             |
+|     |                                | 调用方决定给不给、给哪个           | **部件占位**（空着是零布局，不占地方）                                                                               |
+|     |                                | 总是有                             | 直接写死                                                                                                             |
+| 4   | **复杂度**                     | 一行、无独立布局 / 身份            | 就地内联匿名元素（不给名字）                                                                                         |
+|     |                                | 多行 / 有自己的布局样式 / 多处引用 | 提成有名结构（否则父函数读不下去）——注意"提名字"≠"拆成组件"                                                          |
+
+要点：
+
+- **维度 1 先定**：只有"调用方要按位置投递"才上部件；否则一律内部块。
+- **维度 3 别和部件混**：自动显隐用条件渲染（`mountable` / 三元），**不要为了"有时没有"就上部件** ——
+  那会多出占位元素 + `vn_slot` 属性 + 投递通道（VBadge 早先那版就是白背这套）。
+- **维度 4 只决定"要不要名字"**，不决定形态：复杂 ≠ 要拆组件（VBadge 的角标 / 文本位不简单，
+  但位置归组件、无行为 → 内部块）。
+
+对照例子：`VCard` 的 header / body / footer = 调用方投递 + 无行为 → A 形态部件 + 占位；
+`VTab` = 调用方投递 + **有行为**（active / panel）→ B 形态部件；`VBadgeCount` / `VBadgeText` =
+位置归组件 + 无行为 + "有时没有" → 内部块 + `mountable()`。
+
+- **命令 vs 纯 props**：库内组件的公开命令（`badge.count()` 这类）暂时保留（示例 / 用例在用）；
+  新组件能用句柄 props 表达更新的，优先不加命令。
+- **`computed` 读结构**：只有"结构变化由某个 ref 驱动"时才能用 `computed`（例如内容就是 `ref`），
+  否则一律闭包。
+
+**VBadge 的特例与两条教训**：
+
+- **"有没有内容 → 角标定位"按数据写属性**：组件算好 `data-standalone`（没有内容才写），CSS 用
+  `[vn~='VBadge']:not([data-standalone]) …` 开关几何。**别用 `:has(> [vn~='VBadgeContent'] > *)`** ——
+  它只匹配**元素**子节点，纯文本内容（`children: '消息'`）命不中，角标就不会浮起来。
+- **节点内容只在构建期落位**：要运行期换的是文本（传句柄 / 走 `text()`）；要换节点就重建组件。
+  这样组件里没有部件句柄、也没有 `replaceChildren`。
+
+参考实现：`src/data-display/badge.js` + `src/yoya.ui.css` 的 VBadge 段。
+
+**其余既有口径仍然适用**：
+
+- **结构默认用 setupFunction 嵌套**：`工厂(options, (node) => { node.child(…); })`——静态部分留在
+  工厂参数里；不要写 `span({…}).style(…)` 这种挂在工厂调用之外的链式结构。
+- **参数从哪进来不改变边界**：基础库组件用 `setupObject` / `setupString`（给 `vXxx` 快捷方法留分派
+  入口），业务侧可以直接 `function XxxName(props)`；差别只是参数来源。
+- **props 走调用、嵌套走 `.setup()`**：定义函数收 props（`function VXxx(props = {})`），快捷方法写
+  `createComponentShortcut(VXxx, { props: true })`；父里继续嵌套写
+  `VXxx(props).setup((host) => host.child(…))` 或走位置参数 `vXxx(props, (host) => …)`。
+- **视图根留个名字**（要返回它）；命令里碰组件自己用 `self.node()`，子部件句柄只在"命令要写它"时
+  才在构建期取。
 - **参数从哪进来不改变边界**：基础库组件用 `setupObject` / `setupString`（为了给 `vXxx` 快捷方法
   留分派入口，支持 `card.vCardHeader(…)` 这类嵌套写法），业务侧可以直接 `function XxxName(props)`；
   差别只是参数来源。
+- **props 走调用、嵌套走 `.setup()`**：定义函数收 props（`function VXxx(props = {})`），快捷方法写
+  `createComponentShortcut(VXxx, { props: true })`（调用里的**第一个普通对象**当 props 交给定义函数，
+  其余位置参数照旧按 setup 分派）。父里要继续嵌套就写
+  `VXxx(props).setup((host) => host.child(…))`，或走位置参数 `vXxx(props, (host) => …)`。
+- **构建之后落位的写入要收口**：props 在构建期就读到（绑定首评即终值）；位置参数、`.setup()` 回调、
+  以及"建好还没落地就用命令配置"都落在「构建 → 落地」窗口里（那里绑定只求值一次、落地才订阅）。
+  引擎在**组件构建帧末**收口一次；组件自己的命令要自收口：
+  `if (!self.node()._el) self.node().flush()`（`_el` 只读判定落地，幂等，落地后只剩一次读）。
+- **读结构的绑定写零参闭包**（`() => contentBox.children().length > 0`），**不要预存 `computed`**：
+  `computed` 只在响应式输入变化时失效重算，读结构会缓存住旧值；闭包每次收口重新读。
 - 视图根要留个名字（要返回它、props 里的元素级配置也落在它上面）；命令里碰组件自己用 `self.node()`，
   子部件句柄只在"命令要写它"时才在构建期取。
 

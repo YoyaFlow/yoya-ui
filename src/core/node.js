@@ -1773,6 +1773,20 @@ export function toKebabStyleName(name) {
   return String(name).replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 }
 
+/**
+ * 行内样式落盘：普通属性走索引写入，**自定义属性（`--x`）必须走 `setProperty`** ——
+ * 它在 `CSSStyleDeclaration` 上不是索引属性，`el.style['--x'] = …` 只会写成 JS 属性、进不了 DOM。
+ * （SSR 的 `serializeStyles` 不受影响：`toKebabStyleName` 不动 `--x` 这种键名。）
+ */
+function applyInlineStyle(element, name, value) {
+  if (String(name).startsWith('--')) {
+    element.style.setProperty(name, value === null || value === undefined ? '' : String(value));
+    return;
+  }
+
+  element.style[name] = value || '';
+}
+
 function sameEventListenerOptions(a, b) {
   if (a === b) {
     return true;
@@ -1855,9 +1869,15 @@ export class ViewNode {
       }
     }
 
-    // 首屏求值：只有本次构建登记过绑定、且已回到构建栈最外层时才刷一次，
-    // 避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
-    if (setupStack.length === 0 && bindingSerial !== serialBefore) {
+    // 首屏求值：回到最外层构建帧时刷一次，避免每一层都遍历整棵子树（深树会退化成 O(深度 × 绑定数)）。
+    //
+    // 不看"本轮有没有登记绑定"：`node.setup(cb)`（结构建好后再跑一次构建回调，典型是
+    // `vBadge(props).setup((badge) => badge.count(5))`）里回调改的是**状态**，绑定是上一帧登记的，
+    // 按登记计数判断就会漏掉这条路径。值没变时 commitBindingValue 会跳过，代价只是一遍读取。
+    if (
+      setupStack.length === 0 &&
+      (bindingSerial !== serialBefore || this instanceof ComponentNode)
+    ) {
       flushBindingsIn(this);
     }
 
@@ -4333,7 +4353,7 @@ export class ElementNode extends ViewNode {
     }
 
     if (this._el) {
-      this._el.style[name] = value || '';
+      applyInlineStyle(this._el, name, value);
     }
     if (
       this._el &&
@@ -4593,7 +4613,7 @@ export class ElementNode extends ViewNode {
       const names = sortedKeys(styles);
       for (let index = 0; index < names.length; index += 1) {
         const name = names[index];
-        this._el.style[name] = styles[name];
+        applyInlineStyle(this._el, name, styles[name]);
       }
     }
 

@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { div, vBadge } from '../index.js';
+import { VBadge, div, ref, vBadge } from '../index.js';
 
 describe('vBadge', () => {
+  it('defines the component as a named function and keeps nesting via .setup()', () => {
+    const node = VBadge({ count: 9 }).setup((badge) => {
+      // 单内容位：内容走 props / `content()` 命令（没有 `vn_slot` 占位，不认组件外 `.child()` 投递）
+      badge.content('订单');
+      badge.text('待处理');
+      badge.count(10);
+    });
+    const element = node.renderDom();
+
+    expect(element.querySelector('[vn~="VBadgeContent"]').textContent).toBe('订单');
+    expect(element.querySelector('[vn~="VBadgeText"]').textContent).toBe('待处理');
+    expect(element.querySelector('[vn~="VBadgeCount"]').textContent).toBe('10');
+    expect(element.dataset.standalone).toBeUndefined();
+
+    node.count(11);
+
+    expect(element.querySelector('[vn~="VBadgeCount"]').textContent).toBe('11');
+  });
+
   it('renders standalone count badges and hides zero by default', () => {
     const badge = vBadge(5);
     const element = badge.renderDom();
@@ -9,7 +28,8 @@ describe('vBadge', () => {
 
     expect(box.textContent).toBe('5');
     expect(box.style.display).not.toBe('none');
-    expect(box.style.position).toBe('static');
+    // 没有内容：内容框空、按独立徽标渲染（定位 / 位移由 CSS 按 data-standalone 开关）
+    expect(element.querySelector('[vn~="VBadgeContent"]').children).toHaveLength(0);
     expect(element.dataset.standalone).toBe('true');
 
     badge.count(0);
@@ -40,15 +60,15 @@ describe('vBadge', () => {
     const box = element.querySelector('[vn~="VBadgeCount"]');
 
     expect(element.querySelector('[vn~="VBadgeContent"]').textContent).toBe('消息');
-    expect(box.style.position).toBe('absolute');
-    expect(box.style.transform).toContain('translate(calc(50% + 0px)');
     expect(element.dataset.standalone).toBeUndefined();
+    // 定位 / 位移归 CSS（`[data-standalone]` 那条规则 + 变量），JS 只把偏移注进去
+    expect(box.style.getPropertyValue('--yoya-badge-offset-x')).toBe('0px');
 
     badge.offset({ x: 4, y: -2 });
 
     expect(badge.offset()).toEqual({ x: 4, y: -2 });
-    expect(box.style.transform).toContain('calc(50% + 4px)');
-    expect(box.style.transform).toContain('calc(-50% + -2px)');
+    expect(box.style.getPropertyValue('--yoya-badge-offset-x')).toBe('4px');
+    expect(box.style.getPropertyValue('--yoya-badge-offset-y')).toBe('-2px');
   });
 
   it('supports dot and status modes with custom colors and text', () => {
@@ -58,8 +78,8 @@ describe('vBadge', () => {
 
     expect(dotBox.style.display).not.toBe('none');
     expect(dotBox.textContent).toBe('');
-    expect(dotBox.style.width).toBe('8px');
-    expect(dotBox.style.borderRadius).toBe('999px');
+    // 点模式的几何（8px / 999px / padding 0）在 CSS 里，按根上的 data-dot 命中
+    expect(dotElement.dataset.dot).toBe('true');
 
     const statusBadge = vBadge({ status: 'success', text: '运行中' });
     const statusElement = statusBadge.renderDom();
@@ -109,5 +129,34 @@ describe('vBadge', () => {
 
     expect(box.textContent).toBe('12');
     expect(element.querySelector('[vn~="VBadgeText"]').textContent).toBe('待处理');
+  });
+
+  it('takes handles as props：给句柄就是活值，不用命令', () => {
+    const count = ref(3);
+    const dot = ref(false);
+    const showZero = ref(false);
+    const badge = vBadge({ children: '消息', count, dot, showZero });
+    const element = badge.renderDom();
+    const box = element.querySelector('[vn~="VBadgeCount"]');
+
+    expect(box.textContent).toBe('3');
+
+    count.value = 9;
+
+    expect(box.textContent).toBe('9');
+    expect(element.dataset.count).toBe('9');
+
+    // 归一化的 props（布尔）也要保活：句柄不能被构建期的 Boolean() 吃掉
+    count.value = 0;
+
+    expect(box.style.display).toBe('none');
+
+    showZero.value = true;
+
+    expect(box.style.display).not.toBe('none');
+
+    dot.value = true;
+
+    expect(element.dataset.dot).toBe('true');
   });
 });

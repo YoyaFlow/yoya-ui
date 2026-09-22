@@ -861,6 +861,17 @@ export function computed<T>(compute: () => T): Readonly<SignalHandle<T>>;
 /** True for yoya signal handles (plain `{ value }` objects are not signals). */
 export function isSignal(value: unknown): value is SignalHandle<unknown>;
 
+/**
+ * Coerces a value to a signal handle: handles pass through unchanged, plain values are
+ * wrapped in `ref`. Use it for "props may be a handle (live) or a plain value (snapshot)"
+ * without branching inside the component.
+ *
+ * Only for values (string / number / boolean / data objects) — a node in a value position
+ * goes through the text channel and would stringify.
+ */
+export function asSignal<T>(value: SignalHandle<T>): SignalHandle<T>;
+export function asSignal<T>(value: T): SignalHandle<T>;
+
 /** Runs `run` with coalesced notification when the engine supports batching. */
 export function batch<T>(run: () => T): T;
 

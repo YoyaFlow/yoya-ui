@@ -617,19 +617,20 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
   it('renders the dashboard family demo pages', async () => {
     root = renderExamplesIndex('#app');
 
+    // 第二项是"这个组件自己的身份选择器"：未迁移的用旧类名，迁移后的用 `[vn~='…']`
     const cases = [
-      ['/components/board/trend-card', 'yoya-vtrend-card', 'TrendCardDemo'],
-      ['/components/board/sparkline', 'yoya-vsparkline', 'SparklineDemo'],
-      ['/components/board/ring-stat', 'yoya-vring-stat', 'RingStatDemo'],
-      ['/components/board/gauge', 'yoya-vgauge', 'GaugeDemo'],
-      ['/components/board/timeline', 'yoya-vtimeline', 'TimelineDemo']
+      ['/components/board/trend-card', '[vn~="VTrendCard"]', 'TrendCardDemo'],
+      ['/components/board/sparkline', '.yoya-vsparkline', 'SparklineDemo'],
+      ['/components/board/ring-stat', '[vn~="VRingStat"]', 'RingStatDemo'],
+      ['/components/board/gauge', '.yoya-vgauge', 'GaugeDemo'],
+      ['/components/board/timeline', '.yoya-vtimeline', 'TimelineDemo']
     ];
-    for (const [path, className, demoName] of cases) {
+    for (const [path, selector, demoName] of cases) {
       await openRoute(path);
       const itemIndex = path.split('/').pop();
       const page = document.querySelector(`[data-component-route-item="board:${itemIndex}"]`);
       expect(page).not.toBeNull();
-      expect(page.querySelector(`.${className}`)).not.toBeNull();
+      expect(page.querySelector(selector)).not.toBeNull();
       expect(page.querySelector('[data-source-example]').textContent).toContain(demoName);
     }
   });

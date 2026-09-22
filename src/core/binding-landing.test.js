@@ -1,19 +1,15 @@
 /**
- * 读值绑定在「构建 → 落地」窗口里的**契约与组件纪律**（VBadge 试点验出来的）。
+ * 读值绑定在「构建 → 落地」窗口里的**契约与对齐点**。
  *
- * 引擎是两段式（`ReactiveTarget` + `activateBindings`）：
+ * 引擎是三段式（`ReactiveTarget` + `activateBindings`）：
  * 1. **构建期**求值一次（写节点快照，SSR 的 `toHTML()` 也吃这份）；
- * 2. **落地时**（`renderDom` / 挂载）才订阅依赖，此后写入原地更新。
+ * 2. **落地时对齐一次**：如果这个绑定读过的**源**在构建之后被写过（`deps.js` 的写入序号变了），
+ *    就重新求值并提交 —— 那时还没订阅，收不到通知；源若此后不再变化，快照会**永远**停在
+ *    构建期值（静默错值）。没有源的绑定（零参闭包）不在此列，"只求值一次"的契约照旧；
+ * 3. **订阅接管**：落地之后写源原地更新。
  *
- * 既有用例明确守着"构建期绑定只求值一次、后续渲染不重复求值"
- * （`src/core/binding-ownership.test.js` → `evaluates a build-time binding once, not on every render`），
- * 所以**落地不会重新求值**。于是"构建之后、落地之前"的写入（组件 props 正好落在这个窗口里：
- * props 在 build 之后才应用）不会被自动跟上——组件得自己收口：
- *
- * - 值 → `self.node().flush()`（只重求值绑定；值没变不写 DOM，幂等）；
- * - 结构 → 区域的 `rebuild()`（内容由 builder 重新产出）。
- *
- * 落地之后订阅接管，命令再写状态就不需要手动收口。
+ * 于是"构建之后、落地之前"的写入（props 对象分派、位置参数、"建好就配置"、直接写句柄 props）
+ * 都能进首屏，组件不需要任何收口代码。
  */
 import { describe, expect, it } from 'vitest';
 import { createComponentShortcut } from '../components/shared.js';
@@ -23,16 +19,16 @@ import { ref } from './signals/handle.js';
 import { vNode } from './v-node.js';
 
 describe('读值绑定：构建 → 落地窗口', () => {
-  it('契约：落地前的写入不会自动进首屏（构建期只求值一次）', () => {
+  it('落地对齐：构建后被写过的源，首屏就是新值', () => {
     const name = ref('a');
     const root = span({ vn: 'PBindProbe' }, (r) => r.child(vText(() => name.value)));
 
     name.value = 'b';
 
-    expect(root.renderDom().textContent).toBe('a');
+    expect(root.renderDom().textContent).toBe('b');
   });
 
-  it('契约：组件 props 驱动 ref 时同理（props 在 build 之后才应用）', () => {
+  it('落地对齐：组件对象分派的 props 也进首屏', () => {
     const size = ref(1);
     const Probe = () =>
       vNode((api) => {
@@ -40,7 +36,31 @@ describe('读值绑定：构建 → 落地窗口', () => {
         return span({ vn: 'PBindProbe2' }).style('width', () => `${size.value}px`);
       });
 
-    expect(createComponentShortcut(Probe)({ size: 9 }).renderDom().style.width).toBe('1px');
+    expect(createComponentShortcut(Probe)({ size: 9 }).renderDom().style.width).toBe('9px');
+  });
+
+  it('契约：没有源的绑定（零参闭包）不会在落地时重算', () => {
+    let evaluations = 0;
+    const noise = ref(0); // 与这个绑定无关的写入（全局序号会变）
+    const data = { label: 'a' };
+    const root = span({ vn: 'PBindProbe7' }, (r) =>
+      r.attr('data-probe', () => {
+        evaluations += 1;
+        return `p${data.label}`;
+      })
+    );
+
+    noise.value = 1;
+    const element = root.renderDom();
+
+    expect(evaluations).toBe(1);
+    expect(element.getAttribute('data-probe')).toBe('pa');
+
+    data.label = 'b';
+    root.flush();
+
+    expect(evaluations).toBe(2);
+    expect(element.getAttribute('data-probe')).toBe('pb');
   });
 
   it('纪律：写完状态后自己 flush()，首屏就是新值', () => {
@@ -77,5 +97,24 @@ describe('读值绑定：构建 → 落地窗口', () => {
     count.value = 2;
 
     expect(element.textContent).toBe('2');
+  });
+
+  it('`node.setup(cb)` 的嵌套写法：回调里写状态，帧末自动收口', () => {
+    const Probe = () =>
+      vNode((api) => {
+        const width = ref(1);
+        api.width = (value) => ((width.value = Number(value)), api);
+        return span({ vn: 'PBindProbe6' }, (box) => {
+          box.style('width', () => `${width.value}px`);
+        });
+      });
+    const vProbe = createComponentShortcut(Probe);
+
+    // props 走调用、嵌套走 .setup()——回调里写状态，绑定要跟上
+    const element = vProbe()
+      .setup((probe) => probe.width(42))
+      .renderDom();
+
+    expect(element.style.width).toBe('42px');
   });
 });

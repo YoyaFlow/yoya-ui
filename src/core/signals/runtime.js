@@ -3,6 +3,7 @@ import { trackedSubscribe } from './observe.js';
 import {
   acquireCollectorToken,
   collectInto,
+  currentWriteSerial,
   dedupeSourcesInPlace,
   releaseCollectorToken
 } from './deps.js';
@@ -43,6 +44,7 @@ export class ReactiveTarget {
     this.running = false;
     this.queued = false;
     this.value = undefined;
+    this.serial = 0; // 上次求值时的写入序号（落地对齐用）
   }
 
   evaluate() {
@@ -58,6 +60,7 @@ export class ReactiveTarget {
 
       this.value = value;
       this.evaluated = true;
+      this.serial = currentWriteSerial();
 
       // 单依赖不保留数组：绝大多数绑定（值绑定、句柄订阅）都只有一个依赖
       if (sources.length === 1) {
@@ -200,6 +203,12 @@ export class ReactiveTarget {
     this.active = true;
     if (!this.evaluated) {
       this.evaluate();
+    } else if ((this.onlySource || this.sources) && this.serial !== currentWriteSerial()) {
+      // 构建之后、落地之前，这个绑定的**源**被写过：那时还没订阅，收不到通知；
+      // 若源此后不再变化，快照就永远停在构建期值（静默错值）。落地时对齐一次。
+      // 没有源的绑定（零参闭包）不在此列 —— "构建期只求值一次"的契约照旧。
+      this.refresh();
+      return;
     }
     this.syncSubscriptions();
   }

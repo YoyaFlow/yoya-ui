@@ -1749,6 +1749,161 @@ body {
     }
   }
 
+  /* 徽标：静态样式、点模式几何、"有没有内容 → 角标定位"都在这里（原在 JS 里那 27 条 style +
+     定位 / 位移两条绑定）。JS 侧只留显隐与背景两条读值绑定，加 `data-*` 与偏移变量，
+     见 src/data-display/badge.js（写法口径见 AGENTS.md「Component Writing Rules」）。 */
+  :where([vn~='VBadge']) {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+    line-height: 1;
+    position: relative;
+    vertical-align: middle;
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeContent'] {
+    align-items: center;
+    display: inline-flex;
+    min-width: 0;
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeCount'] {
+    align-items: center;
+    border-radius: 10px;
+    color: var(--yoya-color-text-inverse, #ffffff);
+    font-size: 12px;
+    font-weight: 700;
+    height: 18px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 18px;
+    padding: 0 6px;
+    position: static; /* 没有内容时跟着排版走；有内容时才浮到右上角（下一条规则） */
+    right: 0;
+    text-align: center;
+    top: 0;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  /* 点模式 / 状态模式：几何随根上的 data-dot / data-status 走 */
+  [vn~='VBadge']:is([data-dot='true'], [data-status]) [vn~='VBadgeCount'] {
+    border-radius: 999px;
+    height: 8px;
+    min-width: 8px;
+    padding: 0;
+    width: 8px;
+  }
+
+  /* 有内容（组件按数据写在 `data-standalone` 上）→ 角标浮到右上角。位置与位移归 CSS，
+     偏移量由 JS 注进来的 CSS 变量给（`--yoya-badge-offset-x/y`，没给就是 0）。
+     说明：不用 `:has(> [vn~='VBadgeContent'] > *)` —— 那个只匹配**元素**子节点，
+     纯文本内容（`children: '消息'`）不会被命中。 */
+  [vn~='VBadge']:not([data-standalone]) [vn~='VBadgeCount'] {
+    position: absolute;
+    transform: translate(
+      calc(50% + var(--yoya-badge-offset-x, 0px)),
+      calc(-50% + var(--yoya-badge-offset-y, 0px))
+    );
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeText'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  /* 环形统计：静态样式（原在 JS 里那 4 块行内样式）。圆环几何是 SVG 属性，留在 JS；
+     尺寸走 CSS 变量，根与 svg 共用同一个值。 */
+  :where([vn~='VRingStat']) {
+    height: var(--yoya-ring-stat-size, 120px);
+    position: relative;
+    width: var(--yoya-ring-stat-size, 120px);
+  }
+
+  [vn~='VRingStat'] svg {
+    display: block;
+    height: var(--yoya-ring-stat-size, 120px);
+    width: var(--yoya-ring-stat-size, 120px);
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatTrack'] {
+    stroke: var(--yoya-color-border-faint, #e5e7eb);
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatCenter'] {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatValue'] {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatLabel'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  /* 趋势卡：静态样式（原在 JS 里那 5 块行内样式）。涨跌颜色随 `up` 变，留在 JS。 */
+  :where([vn~='VTrendCard']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #e2e8f0);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 16px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardTitle'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardValue'] {
+    align-items: baseline;
+    display: flex;
+    font-size: 26px;
+    font-weight: 700;
+    gap: 6px;
+    line-height: 1.2;
+    margin-top: 6px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardUnit'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardFooter'] {
+    align-items: flex-end;
+    display: flex;
+    margin-top: 8px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardDelta'] {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+
   :where([vn~='VScroll']) {
     box-sizing: border-box;
     min-width: 0;

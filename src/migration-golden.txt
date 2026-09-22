@@ -5,7 +5,7 @@ probe:    {"shown":true,"motion":"auto"}
 residue:  (空)
 
 ### vTransition / leave + duration
-dom:      <div class=yoya-component yoya-vtransition yoya-vtransition--leave data-duration=120 data-motion=auto data-state=leave style=box-sizing: border-box; vn=VTransition><span >#text:内容
+dom:      <div class=yoya-component yoya-vtransition yoya-vtransition--leave data-duration=120 data-motion=auto data-state=leave style=--yoya-vtransition-duration: 120ms; box-sizing: border-box; vn=VTransition><span >#text:内容
 toHTML:   <div class="yoya-component yoya-vtransition yoya-vtransition--leave" data-duration="120" data-motion="auto" data-state="leave" style="--yoya-vtransition-duration:120ms;box-sizing:border-box" vn="VTransition"><span>内容</span></div>
 probe:    {"shown":false,"duration":120}
 residue:  (空)
@@ -17,8 +17,8 @@ probe:    {"variant":"primary"}
 residue:  (空)
 
 ### vBadge / 文本 + 类型
-dom:      <span style=align-items: center; box-sizing: border-box; display: inline-flex; gap: 6px; line-height: 1; position: relative; vertical-align: middle; type=primary vn=VBadge><span style=align-items: center; display: inline-flex; min-width: 0px; vn=VBadgeContent vn_slot=>#text:新<span style=align-items: center; border-radius: 10px; box-sizing: border-box; color: var(--yoya-color-text-inverse, #ffffff); display: none; font-size: 12px; font-weight: 700; height: 18px; justify-content: center; line-height: 1; min-width: 18px; padding: 0px 6px; position: absolute; right: 0px; text-align: center; top: 0px; transform: translate(calc(50% + 0px), calc(-50% + 0px)); white-space: nowrap; z-index: 1; vn=VBadgeCount>#text:null<span style=color: var(--yoya-color-text-secondary, #475569); display: none; font-size: 12px; line-height: 1; vn=VBadgeText>
-toHTML:   <span style="align-items:center;box-sizing:border-box;display:inline-flex;gap:6px;line-height:1;position:relative;vertical-align:middle" type="primary" vn="VBadge"><span style="align-items:center;display:inline-flex;min-width:0" vn="VBadgeContent" vn_slot="">新</span><span style="align-items:center;border-radius:10px;box-sizing:border-box;color:var(--yoya-color-text-inverse, #ffffff);display:none;font-size:12px;font-weight:700;height:18px;justify-content:center;line-height:1;min-width:18px;padding:0 6px;position:absolute;right:0;text-align:center;top:0;transform:translate(calc(50% + 0px), calc(-50% + 0px));white-space:nowrap;z-index:1" vn="VBadgeCount">null</span><span style="color:var(--yoya-color-text-secondary, #475569);display:none;font-size:12px;line-height:1" vn="VBadgeText"></span></span>
+dom:      <span type=primary vn=VBadge><span vn=VBadgeContent>#text:新<span style=--yoya-badge-offset-x: 0px; --yoya-badge-offset-y: 0px; display: none; vn=VBadgeCount>#text:null<span style=display: none; vn=VBadgeText>
+toHTML:   <span type="primary" vn="VBadge"><span vn="VBadgeContent">新</span><span style="--yoya-badge-offset-x:0px;--yoya-badge-offset-y:0px;display:none" vn="VBadgeCount">null</span><span style="display:none" vn="VBadgeText"></span></span>
 probe:    null
 residue:  (空)
 

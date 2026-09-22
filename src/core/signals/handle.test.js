@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { defaultAdapter } from './engine.js';
 import { currentSignals, installSignals } from './contract.js';
-import { batch, computed, isSignal, ref } from './handle.js';
+import { asSignal, batch, computed, isSignal, ref } from './handle.js';
 
 afterEach(() => {
   installSignals(null);
@@ -269,5 +269,29 @@ describe('batch', () => {
     batch(() => calls.push('run'));
 
     expect(calls).toEqual(['enter', 'run', 'exit']);
+  });
+
+  describe('asSignal', () => {
+    it('句柄原样返回，普通值包一层 ref', () => {
+      const handle = ref(1);
+
+      expect(asSignal(handle)).toBe(handle);
+
+      const wrapped = asSignal('a');
+
+      expect(isSignal(wrapped)).toBe(true);
+      expect(wrapped.value).toBe('a');
+    });
+
+    it('包出来的句柄是活值：写它，读它的人跟着变', () => {
+      const value = asSignal(2);
+      const seen = [];
+
+      value.subscribe((next) => seen.push(next));
+      value.value = 3;
+
+      expect(value.value).toBe(3);
+      expect(seen).toEqual([3]);
+    });
   });
 });
