@@ -2,7 +2,11 @@ import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { ViewNode, vText } from '../core/index.js';
 import { a, li, nav, ul } from '../html/index.js';
-import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
+import {
+  createComponentShortcut,
+  createListItemKey,
+  resolveTextValue
+} from '../components/shared.js';
 
 /**
  * 锚点导航（票 15 §4；2026-09-23 按「容器组件」口径重写，参考实现 `VTable`）。
@@ -29,28 +33,6 @@ const DEFAULT_OFFSET = 80;
 
 /** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
 const ANCHOR_ITEM = Symbol('yoya.anchorItem');
-
-/**
- * 项键工厂：**每个组件实例一份**（不是模块级）——同一页面渲染两次的键逐字一致（SSR 直出 / hydrate
- * 都对得上），同一个项节点重复投递也始终是同一个键（`keyed` 按它复用 / 搬动）。项是**节点**而不是数据行，
- * 键只能按节点身份发：按 href / 下标发键会在插入 / 重排时把同一个节点换到另一个键上。
- */
-function createItemKey() {
-  const keys = new WeakMap();
-  let serial = 0;
-
-  return (item) => {
-    let key = keys.get(item);
-
-    if (key === undefined) {
-      key = `anchor-item:${serial}`;
-      serial += 1;
-      keys.set(item, key);
-    }
-
-    return key;
-  };
-}
 
 /** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
 const textOf = (value) => resolveTextValue(value);
@@ -104,7 +86,7 @@ export function VAnchorItem({
   // 子项：一份数据源（结构由 keyed 对账；`items()` 与子列表显隐都读它）
   const itemNodes = ref([]);
   const childrenAttr = computed(() => (itemNodes.value.length > 0 ? 'true' : null));
-  const keyOfItem = createItemKey();
+  const keyOfItem = createListItemKey('anchor-item');
 
   /** 建 / 复用一份子项，并把当前项句柄交给它（嵌套项再往下传，与 JSX 的 `current` 同形）。 */
   const wireItem = (setup) => {
@@ -283,7 +265,7 @@ export function VAnchor({
   /** 项：一份数据源（结构由 keyed 对账；计数与滚动扫描都读它）。 */
   const itemNodes = ref([]);
   const itemCount = computed(() => String(itemNodes.value.length));
-  const keyOfItem = createItemKey();
+  const keyOfItem = createListItemKey('anchor-item');
 
   return vNode((api, self) => {
     /** 建 / 复用一份项，并把当前项句柄交给它（外部造好的项也走这条）。 */

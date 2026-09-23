@@ -224,6 +224,30 @@ export function normalizeChildren(content) {
   return Array.isArray(content) ? content : [content];
 }
 
+/**
+ * 列表项的**身份键**（`keyed` 用）：每个组件实例建一份，不是模块级——同一页面渲染两次的键逐字一致
+ * （SSR 直出 / hydrate 都对得上），同一个项节点重复投递也始终是同一个键（行按它复用 / 搬动）。
+ *
+ * 项是**节点**而不是数据行，键只能按节点身份发：按 href / 下标发键，会在插入 / 重排时把同一个节点换到
+ * 另一个键上（旧成员先销毁，再按新键重建一个已经销毁的节点）。键会由引擎镜像成 `data-row-key`。
+ */
+export function createListItemKey(prefix = 'item') {
+  const keys = new WeakMap();
+  let serial = 0;
+
+  return (item) => {
+    let key = keys.get(item);
+
+    if (key === undefined) {
+      key = `${prefix}:${serial}`;
+      serial += 1;
+      keys.set(item, key);
+    }
+
+    return key;
+  };
+}
+
 export function replaceChildren(node, children) {
   node.children().forEach((child) => child.destroy());
   node._children = [];

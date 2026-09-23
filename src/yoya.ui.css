@@ -1964,6 +1964,11 @@ body {
     display: none;
   }
 
+  /* 空的内容盒不占网格行（标题 / 描述现在都是常驻内部块，没内容时靠 `:empty` 隐掉） */
+  [vn~='VSteps'] [vn~='VStepsTitle']:empty {
+    display: none;
+  }
+
   [vn~='VStep'][data-status='finish'] [vn~='VStepsIndicator'] {
     background: var(--yoya-color-success, #16a34a);
     border-color: var(--yoya-color-success, #16a34a);

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { div, vSteps } from '../index.js';
+import { div, ref, span, vStep, vSteps } from '../index.js';
+
+const STEP = '[vn~="VStep"]';
+const TITLE = '[vn~="VStepsTitle"]';
 
 describe('vSteps', () => {
   it('renders derived step statuses from the current step', () => {
@@ -104,5 +107,88 @@ describe('vSteps', () => {
 
     expect(element.querySelectorAll("[vn~='VStep']")).toHaveLength(1);
     expect(element.textContent).toContain('Y');
+  });
+
+  it('keeps prop handles live and mirrors state on attributes', () => {
+    const current = ref(1);
+    const direction = ref('horizontal');
+    const status = ref('process');
+    const steps = vSteps({ current, direction, items: ['A', 'B', 'C'], status });
+    const element = steps.renderDom();
+    const items = element.querySelectorAll(STEP);
+
+    expect(element.dataset.current).toBe('1');
+    expect(items[1].dataset.status).toBe('process');
+
+    // 句柄 props 是活值：写状态就落 DOM（容器与每一项都跟着走）
+    current.value = 2;
+
+    expect(element.dataset.current).toBe('2');
+    expect(items[0].dataset.status).toBe('finish');
+    expect(items[2].dataset.status).toBe('process');
+    expect(items[2].getAttribute('aria-current')).toBe('step');
+    expect(items[2].getAttribute('data-last')).toBe('true');
+
+    direction.value = 'vertical';
+
+    expect(element.dataset.direction).toBe('vertical');
+    expect(items[0].style.gridTemplateColumns).toBe('auto minmax(0, 1fr)');
+
+    status.value = 'error';
+
+    expect(items[2].dataset.status).toBe('error');
+    expect(items[2].querySelector('[vn~="VStepsIndicator"]').textContent).toBe('!');
+
+    steps.destroy();
+  });
+
+  it('reconciles the step list by identity instead of rebuilding it', () => {
+    const first = vStep({ title: 'A' });
+    const second = vStep({ title: 'B' });
+    const steps = vSteps({ items: [first] });
+    const element = steps.renderDom();
+    const firstLi = element.querySelector(STEP);
+
+    first.title('A2');
+    steps.vStep(second);
+
+    const items = steps.items();
+    const lis = element.querySelectorAll(STEP);
+
+    // 留下来的项还挂在原来的节点与 DOM 上（不重建、不整段重排）
+    expect(items[0]).toBe(first);
+    expect(items[1]).toBe(second);
+    expect(lis[0]).toBe(firstLi);
+    expect(lis[0].querySelector(TITLE).textContent).toBe('A2');
+    expect(element.dataset.stepCount).toBe('2');
+    expect(lis[0].hasAttribute('data-last')).toBe(false);
+    expect(lis[1].getAttribute('data-last')).toBe('true');
+
+    // 整批替换：同一个项实例复用，离场的销毁
+    steps.items([first]);
+
+    expect(steps.items()).toHaveLength(1);
+    expect(element.querySelector(STEP)).toBe(firstLi);
+    expect(element.dataset.stepCount).toBe('1');
+    expect(firstLi.getAttribute('data-last')).toBe('true');
+
+    steps.destroy();
+  });
+
+  it('takes node content from props and rejects it in the content commands', () => {
+    const step = vStep({
+      description: span('节点描述'),
+      icon: span('★'),
+      title: span('节点标题')
+    });
+    const element = step.renderDom();
+
+    expect(element.querySelector(TITLE).textContent).toBe('节点标题');
+    expect(element.querySelector('[vn~="VStepsDescription"]').textContent).toBe('节点描述');
+    expect(element.querySelector('[vn~="VStepsIndicator"]').textContent).toBe('★');
+    expect(() => step.title(span('其它'))).toThrow(/props\.title/);
+    expect(() => step.icon(span('其它'))).toThrow(/props\.icon/);
+
+    step.destroy();
   });
 });

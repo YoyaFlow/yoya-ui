@@ -179,11 +179,22 @@ export class VNavbar extends HtmlElementNode {
   actions(setup: SetupInput<HtmlElementNode>): VNavbar;
 }
 
+/**
+ * 步骤项输入：字符串 / 数字 = 标题，其余按项的标准分派。
+ */
+export type StepItemInput = string | number | VStep | StepItemOptions;
+
 export interface StepItemOptions {
+  /** 文本 / 句柄 / 节点（节点在构建期落位；`title()` 命令只收文本）。 */
   title?: ChildInput;
+  text?: ChildInput;
   description?: ChildInput;
+  /** `description` 的兼容别名（`children` 同义）。 */
+  desc?: ChildInput;
+  children?: ChildInput;
+  /** 指示器内容：文本 / 句柄 / 节点（节点在构建期落位）。 */
   icon?: ChildInput;
-  status?: StepStatus;
+  status?: StepStatus | null;
   [key: string]: any;
 }
 
@@ -191,11 +202,30 @@ export interface StepItemOptions {
 export class VStep extends HtmlElementNode {
   title(content?: ChildInput): this;
   text(content?: ChildInput): this;
+  description(): ChildInput;
   description(content: ChildInput): VStep;
+  desc(): ChildInput;
   desc(content: ChildInput): VStep;
+  icon(): ChildInput;
   icon(content: ChildInput): VStep;
   status(): StepStatus | null;
   status(value: StepStatus | null): VStep;
+}
+
+/**
+ * `vSteps({ … })` 的 props——只收数据 + 元素选项；步骤从 `items`（或命令 `steps.vStep(…)`）来，
+ * `children` 是 `items` 的兼容别名。
+ */
+export interface StepsOptions {
+  /** 当前步骤下标（从 0 起）。 */
+  current?: number;
+  status?: StepStatus;
+  direction?: StepDirection;
+  size?: StepSize;
+  items?: StepItemInput[];
+  /** `items` 的兼容别名。 */
+  children?: StepItemInput[];
+  [key: string]: unknown;
 }
 
 /** Step progress list. */
@@ -208,7 +238,8 @@ export class VSteps extends HtmlElementNode {
   direction(value: StepDirection): VSteps;
   size(): StepSize;
   size(value: StepSize): VSteps;
-  items(value: Array<string | VStep | StepItemOptions>): VSteps;
+  items(): VStep[];
+  items(value: StepItemInput | StepItemInput[]): VSteps;
   next(): VSteps;
   prev(): VSteps;
   child(...children: ChildInput[]): this;
@@ -280,8 +311,12 @@ export const vMenuGroup: ElementFactory<VMenuGroup>;
 export const vMenuItem: ElementFactory<VMenuItem>;
 export const vNavbar: ElementFactory<VNavbar>;
 export const vSidebar: ElementFactory<VSidebar>;
-export const vStep: ElementFactory<VStep>;
-export const vSteps: ElementFactory<VSteps>;
+export const vStep: {
+  (first?: StepItemOptions | SetupInput<VStep> | null, callback?: SetupCallback<VStep>): VStep;
+} & ElementFactory<VStep>;
+export const vSteps: {
+  (first?: StepsOptions | SetupCallback<VSteps> | null, callback?: SetupCallback<VSteps>): VSteps;
+} & ElementFactory<VSteps>;
 export const vSubMenu: ElementFactory<VSubMenu>;
 export const vTab: ElementFactory<VTab>;
 export const vTabs: ElementFactory<VTabs>;
@@ -316,8 +351,11 @@ export interface NavigationParentShortcuts {
   vMenuItem(first?: SetupInput<VMenuItem> | null, callback?: SetupCallback<VMenuItem>): VMenuItem;
   vNavbar(first?: SetupInput<VNavbar> | null, callback?: SetupCallback<VNavbar>): VNavbar;
   vSidebar(first?: SetupInput<VSidebar> | null, callback?: SetupCallback<VSidebar>): VSidebar;
-  vStep(first?: SetupInput<VStep> | null, callback?: SetupCallback<VStep>): VStep;
-  vSteps(first?: SetupInput<VSteps> | null, callback?: SetupCallback<VSteps>): VSteps;
+  vStep(first?: StepItemOptions | SetupInput<VStep> | null, callback?: SetupCallback<VStep>): VStep;
+  vSteps(
+    first?: StepsOptions | SetupInput<VSteps> | null,
+    callback?: SetupCallback<VSteps>
+  ): VSteps;
   vSubMenu(first?: SetupInput<VSubMenu> | null, callback?: SetupCallback<VSubMenu>): VSubMenu;
   vTab(first?: SetupInput<VTab> | null, callback?: SetupCallback<VTab>): VTab;
   vTabs(first?: SetupInput<VTabs> | null, callback?: SetupCallback<VTabs>): VTabs;

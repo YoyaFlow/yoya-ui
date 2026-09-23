@@ -170,6 +170,7 @@ const navigationSelectors = [
   "[vn~='VStepsIndicator']",
   "[vn~='VStepsTitle']",
   "[vn~='VStepsDescription']",
+  "[vn~='VSteps'] [vn~='VStepsTitle']:empty",
   "[vn~='VStepsConnector']",
   "[vn~='VStep'][data-status='finish'] [vn~='VStepsIndicator']",
   "[vn~='VStep'][data-status='process'] [vn~='VStepsIndicator']",
