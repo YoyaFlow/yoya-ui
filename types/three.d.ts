@@ -32,6 +32,23 @@ export interface ThreeResizeSize {
   width: number;
 }
 
+/** `vThree({ … })` 的 props（句柄 props 是活值；`threeLib` 注入模块命名空间）。 */
+export interface ThreeOptions {
+  threeLib?: ThreeLib;
+  width?: number | string;
+  height?: number | string;
+  scene?: any;
+  camera?: any;
+  rendererOptions?: Record<string, any>;
+  devicePixelRatio?: number | null;
+  autoResize?: boolean;
+  autoRender?: boolean;
+  onReady?: (api: ThreeInstanceApi) => void;
+  onResize?: (size: ThreeResizeSize) => void;
+  onFrame?: (api: ThreeInstanceApi) => void;
+  [key: string]: unknown;
+}
+
 /** Three.js scene host (the three library itself is not bundled). */
 export class VThree extends HtmlElementNode {
   threeLib(lib: ThreeLib): VThree;
@@ -60,18 +77,22 @@ export class VThree extends HtmlElementNode {
   getRenderer(): ThreeRenderer | null;
   start(): VThree;
   stop(): VThree;
-  render(): VThree;
+  /** 手动渲染一帧（`render()` 与引擎保留键冲突，命令名用 `renderFrame()`）。 */
+  renderFrame(): VThree;
   resize(): VThree;
   dispose(): VThree;
 }
 
 export const vThree: ElementFactory<VThree> & {
-  (first?: SetupInput<VThree> | null, callback?: SetupCallback<VThree>): VThree;
+  (first?: ThreeOptions | SetupInput<VThree> | null, callback?: SetupCallback<VThree>): VThree;
 };
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface ThreeParentShortcuts {
-  vThree(first?: SetupInput<VThree> | null, callback?: SetupCallback<VThree>): VThree;
+  vThree(
+    first?: ThreeOptions | SetupInput<VThree> | null,
+    callback?: SetupCallback<VThree>
+  ): VThree;
 }
 
 export type { ElementOptions };

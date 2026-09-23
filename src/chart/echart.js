@@ -1,9 +1,15 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
-import { createComponentFactory, isPlainObject } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import {
+  createComponentShortcut,
+  delegateNodeCommands,
+  isPlainObject
+} from '../components/shared.js';
 
-export class VEchart extends HtmlElementNode {
+/** ECharts 宿主容器的**节点类型**（不导出）：适配器初始化 / 尺寸观察 / 销毁都留在这里。 */
+class EchartNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', { vn: 'VEChart' });
     this._autoResize = true;
@@ -21,12 +27,9 @@ export class VEchart extends HtmlElementNode {
     this._theme = null;
     this._width = '100%';
 
-    this.styles({
-      height: this._height,
-      overflow: 'hidden',
-      position: 'relative',
-      width: this._width
-    });
+    // `overflow` / `position` 在样式表里（R5）；`height` / `width` 是状态 → 行内值
+    this.style('height', this._height);
+    this.style('width', this._width);
     this._setupEchart(setup);
   }
 
@@ -362,8 +365,19 @@ export class VEchart extends HtmlElementNode {
   }
 }
 
-export function vEchart(first = null, second = null, third = null) {
-  return createComponentFactory(VEchart, first, second, third, arguments);
+/**
+ * ECharts 宿主（形态 B）：视图根是节点类型扩展 `EchartNode`（适配器初始化 / 尺寸观察 / 销毁都在它上面），
+ * 外层 `vNode` 用 `delegateNodeCommands` 把节点类型的公开方法整体补齐——`vEchart` 拿到的是组件句柄，
+ * 命令面（`echartsLib` / `option` / `data` / `width` / `height` / `loading` / `onChartReady`…）照旧。
+ */
+export function VEchart(props = {}) {
+  return vNode((api) => {
+    const node = new EchartNode(props);
+    delegateNodeCommands(api, node);
+    return node;
+  });
 }
+
+export const vEchart = createComponentShortcut(VEchart, { props: true });
 
 registerChildFactories(HtmlElementNode, { vEchart });

@@ -291,7 +291,7 @@ small core is — budget against the download column. The last column says what 
 | `yoya.router.js`                   | 9.0 KB ~ **31.1 KB**                    | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                                                                                                     |
 | `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.3 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …); the main entry never includes them |
 | `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                         |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 20.9 / 21.3 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                                                                                                  |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.1 KB ~ 21.7 / 22.2 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                                                                                                  |
 
 Self-contained entries (core inlined, single file):
 
@@ -301,7 +301,7 @@ Self-contained entries (core inlined, single file):
 | `yoya.ui-router.full.js` (everything) | 901.2 KB | 392.0 KB | 110.0 KB | core + all components + router / SSR |
 | `yoya.ui.full.js`                     | 841.4 KB | 367.1 KB | 101.7 KB | core + all components                |
 
-Component skin `yoya.ui.css`: 114.2 KB raw / **19.9 KB gzip**. The core layer ships no skin of its own
+Component skin `yoya.ui.css`: 114.3 KB raw / **20.0 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
 
 `npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the

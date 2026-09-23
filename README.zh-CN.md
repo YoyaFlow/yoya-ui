@@ -271,7 +271,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | `yoya.router.js`                   | 9.0 KB ~ **31.1 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）                                                                                                                    |
 | `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.3 KB**              | 编译产物的运行期钩子，导出面 = 发射器能写出的钩子全集（`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …）；主入口不含这些钩子 |
 | `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                   |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 20.9 / 21.3 KB     | `vEchart` / `vThree` 封装                                                                                                                                                                                                                                                |
+| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.1 KB ~ 21.7 / 22.2 KB     | `vEchart` / `vThree` 封装                                                                                                                                                                                                                                                |
 
 自包含入口（core 已内联，单文件直用）：
 
@@ -281,7 +281,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | `yoya.ui-router.full.js`（全量） | 901.2 KB | 392.0 KB | 110.0 KB | core + 全部组件 + router / SSR |
 | `yoya.ui.full.js`                | 841.4 KB | 367.1 KB | 101.7 KB | core + 全部组件                |
 
-组件皮肤 `yoya.ui.css`：114.2 KB raw / **19.9 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+组件皮肤 `yoya.ui.css`：114.3 KB raw / **20.0 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。
 
 `npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，

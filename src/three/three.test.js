@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { div } from '../index.js';
-import { VThree, vThree } from '../yoya.three.js';
+import { hasComponentIdentity } from '../index.js';
+import { vThree } from '../yoya.three.js';
 
 function createFakeThree() {
   const renderers = [];
@@ -129,7 +130,7 @@ describe('VThree', () => {
     });
     const three = page.children()[0];
 
-    expect(three).toBeInstanceOf(VThree);
+    expect(hasComponentIdentity(three, 'VThree')).toBe(true);
     expect(three.attr('vn')).toContain('VThree');
     expect(three.height()).toBe('240px');
   });

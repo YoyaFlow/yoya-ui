@@ -3941,11 +3941,15 @@ body {
   :where([vn~='VEChart']) {
     box-sizing: border-box;
     min-width: 0;
+    overflow: hidden;
+    position: relative;
   }
 
   :where([vn~='VThree']) {
     box-sizing: border-box;
     min-width: 0;
+    overflow: hidden;
+    position: relative;
 
     canvas {
       display: block;

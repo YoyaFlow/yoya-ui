@@ -1,17 +1,16 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
-import { createComponentFactory, isPlainObject } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import { createComponentShortcut, delegateCommands, isPlainObject } from '../components/shared.js';
 
 const DEFAULT_RENDERER_OPTIONS = Object.freeze({ antialias: true });
 
 /**
- * VThree 是 Three.js 的生命周期胶水节点：
- * 引擎创建一个真实容器，Three.js 渲染器在客户端挂进容器；
- * 组件负责渲染循环、像素比/尺寸同步与销毁清理。
- * Three.js 本体不打包，使用方通过 threeLib() 注入模块命名空间。
+ * Three.js 宿主容器的**节点类型**（不导出）：渲染循环、像素比 / 尺寸同步与销毁清理都在这里。
+ * Three.js 本体不打包，使用方通过 `threeLib()` 注入模块命名空间。
  */
-export class VThree extends HtmlElementNode {
+class ThreeNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', { vn: 'VThree' });
     this._autoRender = true;
@@ -34,12 +33,9 @@ export class VThree extends HtmlElementNode {
     this._threeLib = null;
     this._width = '100%';
 
-    this.styles({
-      height: this._height,
-      overflow: 'hidden',
-      position: 'relative',
-      width: this._width
-    });
+    // `overflow` / `position` 在样式表里（R5）；`height` / `width` 是状态 → 行内值
+    this.style('height', this._height);
+    this.style('width', this._width);
     this._setupThree(setup);
   }
 
@@ -519,8 +515,51 @@ export class VThree extends HtmlElementNode {
   }
 }
 
-export function vThree(first = null, second = null, third = null) {
-  return createComponentFactory(VThree, first, second, third, arguments);
+/**
+ * Three.js 宿主（形态 B）：视图根是节点类型扩展 `ThreeNode`，外层 `vNode` 用 `delegateNodeCommands`
+ * 把节点类型的公开方法整体补齐——`vThree` 拿到的是组件句柄，命令面（`threeLib` / `renderer` / `camera` /
+ * `scene` / `start` / `stop` / `onReady`…）照旧。
+ */
+export function VThree(props = {}) {
+  return vNode((api) => {
+    const node = new ThreeNode(props);
+
+    delegateCommands(api, node, THREE_COMMANDS);
+    // `render()` 是引擎保留键（`ViewNode.render`），不进命令面 → 手动渲染一帧走这个别名
+    api.renderFrame = () => {
+      node.render();
+      return api;
+    };
+    return node;
+  });
 }
 
+export const vThree = createComponentShortcut(VThree, { props: true });
+
 registerChildFactories(HtmlElementNode, { vThree });
+/**
+ * 对外命令面清单（显式列）：`render()` 与节点 API 冲突（引擎保留键），不进命令面——
+ * 需要手动渲染一帧用 `renderFrame()`（见 16 号第 35 条那一类的口径）。
+ */
+const THREE_COMMANDS = [
+  'threeLib',
+  'getThreeLib',
+  'scene',
+  'getScene',
+  'camera',
+  'getCamera',
+  'rendererOptions',
+  'width',
+  'height',
+  'devicePixelRatio',
+  'autoResize',
+  'autoRender',
+  'onReady',
+  'onResize',
+  'onFrame',
+  'getRenderer',
+  'start',
+  'stop',
+  'resize',
+  'dispose'
+];

@@ -7,6 +7,23 @@ export interface EChartsLib {
   [key: string]: any;
 }
 
+/** `vEchart({ … })` 的 props（句柄 props 是活值；`echartsLib` 注入模块命名空间）。 */
+export interface EChartOptions {
+  echartsLib?: EChartsLib;
+  width?: number | string;
+  height?: number | string;
+  option?: Record<string, any>;
+  theme?: string;
+  renderer?: 'canvas' | 'svg' | string;
+  devicePixelRatio?: number;
+  autoResize?: boolean;
+  loading?: boolean;
+  loadingText?: string;
+  onChartReady?: (chart: unknown) => void;
+  onChartResize?: (width: number, height: number) => void;
+  [key: string]: unknown;
+}
+
 /** ECharts component (the echarts library itself is not bundled). */
 export class VEchart extends HtmlElementNode {
   echartsLib(lib: EChartsLib): VEchart;
@@ -29,12 +46,15 @@ export class VEchart extends HtmlElementNode {
 }
 
 export const vEchart: ElementFactory<VEchart> & {
-  (first?: SetupInput<VEchart> | null, callback?: SetupCallback<VEchart>): VEchart;
+  (first?: EChartOptions | SetupInput<VEchart> | null, callback?: SetupCallback<VEchart>): VEchart;
 };
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface ChartParentShortcuts {
-  vEchart(first?: SetupInput<VEchart> | null, callback?: SetupCallback<VEchart>): VEchart;
+  vEchart(
+    first?: EChartOptions | SetupInput<VEchart> | null,
+    callback?: SetupCallback<VEchart>
+  ): VEchart;
 }
 
 export type { ElementOptions };
