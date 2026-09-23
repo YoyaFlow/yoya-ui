@@ -2,7 +2,7 @@ import { bindDocumentEvent } from '../core/document-events.js';
 import { vNode } from '../core/v-node.js';
 import { button as buttonTag, div, img } from '../html/index.js';
 import { createComponentShortcut, isPlainObject } from '../components/shared.js';
-import { LazyImageNode } from '../async/lazy-image.js';
+import { vLazyImage } from '../async/lazy-image.js';
 
 const MAX_ZOOM = 5;
 
@@ -109,7 +109,8 @@ export function VImagePreview() {
     };
 
     const buildOverlay = () => {
-      const lazy = new LazyImageNode().src(state.src).alt(state.alt);
+      // 跨模块只用组件入口（`vLazyImage`），不再 new 节点类型
+      const lazy = vLazyImage({ alt: state.alt, src: state.src });
 
       state.lazy = lazy;
 

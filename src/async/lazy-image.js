@@ -8,7 +8,8 @@ import {
 } from '../components/shared.js';
 
 /** 懒加载图片的节点类型（不导出到包入口）；公开组件 `vLazyImage` 是 vNode 外壳。 */
-export class LazyImageNode extends HtmlElementNode {
+/** 节点类型扩展（不导出）：IntersectionObserver / 加载 / 失败重试都留在这里。 */
+class LazyImageNode extends HtmlElementNode {
   constructor(setup = null) {
     super('div', { vn: 'VLazyImage' });
     this._src = null;

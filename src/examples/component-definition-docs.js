@@ -215,9 +215,16 @@ class BadgeNode extends HtmlElementNode {
   // 元素机制：renderDom / child 语义 / 测量 / 生命周期
 }
 
-export function vBadge(first = null, second = null, third = null) {
-  return createComponentShell({ identity: 'VBadge', createNode: (setup) => new BadgeNode(setup) });
-}`,
+export function VBadge(props = {}) {
+  return vNode((api) => {
+    const node = new BadgeNode(props);
+    // 公开命令面用 delegateCommands / delegateNodeCommands 从节点类型补齐
+    delegateCommands(api, node, ['count', 'content', 'dot']);
+    return node;
+  });
+}
+
+export const vBadge = createComponentShortcut(VBadge, { props: true });`,
     references: ['只有"自定义元素种类"这类引擎扩展才写节点类型；业务组件用 A 或 B。']
   }
 ];
