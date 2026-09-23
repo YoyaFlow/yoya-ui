@@ -384,6 +384,7 @@ const feedbackSelectors = [
   "[vn~='VTooltip']",
   "[vn~='VTooltipTarget']",
   "[vn~='VTooltipPanel']",
+  "[vn~='VDialog']:not([open])",
   "[vn~='VTooltip'][data-open='true'] > [vn~='VTooltipPanel']",
   "[vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']",
   "[vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']",

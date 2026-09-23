@@ -1639,6 +1639,11 @@ body {
     display: none;
   }
 
+  /* 关着的对话框自己藏起来（没有 `showModal` 的环境里 UA 不会帮忙，原来是在 JS 里写行内 display） */
+  [vn~='VDialog']:not([open]) {
+    display: none;
+  }
+
   [vn~='VDialogClose'] {
     align-items: center;
     background: transparent;
