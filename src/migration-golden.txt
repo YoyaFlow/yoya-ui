@@ -167,8 +167,8 @@ probe:    {"role":null,"data-placement":"top"}
 residue:  (空)
 
 ### vMessageContainer / 空容器
-dom:      <div aria-live=polite class=yoya-component yoya-vmessage-container data-placement=top-right style=display: flex; flex-direction: column; gap: 8px; max-width: 360px; position: fixed; right: 16px; top: 16px; z-index: 1000;>
-toHTML:   <div aria-live="polite" class="yoya-component yoya-vmessage-container" data-placement="top-right" style="display:flex;flex-direction:column;gap:8px;max-width:360px;position:fixed;right:16px;top:16px;z-index:1000"></div>
+dom:      <div aria-live=polite data-placement=top-right vn=VMessageContainer>
+toHTML:   <div aria-live="polite" data-placement="top-right" vn="VMessageContainer"></div>
 probe:    {"data-placement":"top-right","data-inline":null}
 residue:  (空)
 

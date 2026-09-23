@@ -104,6 +104,21 @@ const menuR5Selectors = [
   "[data-sidebar-hidden='true']"
 ];
 
+const messageSelectors = [
+  "[vn~='VMessage']",
+  "[vn~='VMessage'][data-type='success']",
+  "[vn~='VMessage'][data-type='error']",
+  "[vn~='VMessage'][data-type='warning']",
+  "[vn~='VMessageCountdown']",
+  "[vn~='VMessage'][data-countdown='true'] > [vn~='VMessageCountdown']",
+  "[vn~='VMessageClose']",
+  "[vn~='VMessage']:not([data-closable='false']) > [vn~='VMessageClose']",
+  "[vn~='VMessageCountdownBar']",
+  "[vn~='VMessageContainer']",
+  "[vn~='VMessageContainer'][data-placement='bottom']",
+  "[vn~='VMessageContainer'][data-inline='true']"
+];
+
 const lazyImageSelectors = [
   "[vn~='VLazyImage']",
   "[vn~='VLazyImage'] [vn~='VLazyImageImg']",
@@ -441,6 +456,12 @@ describe('CSS style contract', () => {
 
   it('covers the lazy image state selectors', () => {
     lazyImageSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the message selectors', () => {
+    messageSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

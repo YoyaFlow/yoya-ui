@@ -1,19 +1,15 @@
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { vText } from '../core/index.js';
+import { vNode } from '../core/v-node.js';
 import { CloseOutlined } from '../svg/icons.js';
 import {
-  componentClass,
+  createComponentShortcut,
+  delegateNodeCommands,
   isPlainObject,
-  messageTypeStyles,
   normalizeChildren,
   normalizeMessageOptions,
-  placementStyles,
   removeChild,
-  replaceChildren,
-  themeBorder,
-  themeValue
+  replaceChildren
 } from '../components/shared.js';
 
 const messageTypes = ['success', 'error', 'warning', 'info'];
@@ -21,46 +17,20 @@ const messageTypes = ['success', 'error', 'warning', 'info'];
 /** VMessage 的节点类型（不导出）；公开组件 `vMessage` 是 vNode 外壳。 */
 class MessageNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VMessage';
+    super('div', { vn: 'VMessage' });
     this._closeHandlers = [];
     this._countdownDuration = 0;
     this._countdownTimer = null;
-    this._contentBox = new HtmlElementNode('span').className('yoya-vmessage-content');
-    this._countdownBox = new HtmlElementNode('span')
-      .className('yoya-vmessage-countdown')
-      .attr('aria-hidden', 'true')
-      .styles({
-        color: 'inherit',
-        flexShrink: '0',
-        fontVariantNumeric: 'tabular-nums',
-        fontSize: '12px',
-        opacity: '0.65'
-      })
-      .style('display', 'none');
+    this._contentBox = new HtmlElementNode('span', { vn: 'VMessageContent' });
+    this._countdownBox = new HtmlElementNode('span', { vn: 'VMessageCountdown' }).attr(
+      'aria-hidden',
+      'true'
+    );
     this._countdownText = vText('');
     this._countdownBox.child(this._countdownText);
-    this._closeButton = new HtmlElementNode('span')
-      .className('yoya-vmessage-close')
+    this._closeButton = new HtmlElementNode('span', { vn: 'VMessageClose' })
       .attr({ role: 'button', tabindex: '0', 'aria-label': '关闭消息' })
-      .styles({
-        alignItems: 'center',
-        background: 'transparent',
-        border: '0',
-        borderRadius: '50%',
-        color: 'inherit',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        flexShrink: '0',
-        height: '20px',
-        justifyContent: 'center',
-        marginLeft: 'auto',
-        opacity: '0.72',
-        padding: '0',
-        width: '20px'
-      })
-      .style('display', 'none')
-      .child(CloseOutlined().styles({ height: '14px', width: '14px' }))
+      .child(CloseOutlined())
       .on('click', () => this.close())
       .on('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -68,34 +38,13 @@ class MessageNode extends HtmlElementNode {
           this.close();
         }
       });
-    this._progressBar = new HtmlElementNode('span')
-      .className('yoya-vmessage-countdown-bar')
-      .attr('aria-hidden', 'true')
-      .styles({
-        background: 'currentColor',
-        bottom: '0',
-        height: '2px',
-        left: '0',
-        opacity: '0',
-        position: 'absolute',
-        width: '100%'
-      });
+    this._progressBar = new HtmlElementNode('span', { vn: 'VMessageCountdownBar' }).attr(
+      'aria-hidden',
+      'true'
+    );
 
-    this.className(componentClass, 'yoya-vmessage');
-    this.attr('role', 'status');
-    this.styles({
-      alignItems: 'center',
-      background: themeValue('color-info-subtle', '#eff6ff'),
-      border: themeBorder('color-info-border', '#bfdbfe'),
-      borderRadius: '6px',
-      color: themeValue('color-info-text', '#1e3a8a'),
-      display: 'flex',
-      gap: '10px',
-      lineHeight: '1.4',
-      overflow: 'hidden',
-      padding: '10px 12px',
-      position: 'relative'
-    });
+    // 静态样式与类型配色都在 `yoya.ui.css`（R5）；状态位：`data-type` / `data-closable` / `data-countdown`
+    this.attr({ role: 'status', 'data-closable': 'false' });
     this.child(this._contentBox, this._countdownBox, this._closeButton, this._progressBar);
     this.type('info');
     this._setupMessage(setup);
@@ -113,12 +62,11 @@ class MessageNode extends HtmlElementNode {
 
     const nextType = messageTypes.includes(value) ? value : 'info';
     this.attr('data-type', nextType);
-    this.styles(messageTypeStyles(nextType));
     return this;
   }
 
   closable(value = true) {
-    this._closeButton.style('display', value ? null : 'none');
+    this.attr('data-closable', value ? null : 'false');
     return this;
   }
 
@@ -130,21 +78,20 @@ class MessageNode extends HtmlElementNode {
     this._clearCountdown();
     this._countdownDuration = Number(duration) || 0;
     const show = Boolean(enabled) && this._countdownDuration > 0;
-    this._countdownBox.style('display', show ? null : 'none');
-    this._progressBar.style('opacity', show ? '0.45' : '0');
+    this.attr('data-countdown', show ? 'true' : null);
 
     if (!show) {
       return this;
     }
 
     this._countdownText.textContent(`${Math.ceil(this._countdownDuration / 1000)}s`);
-    this._progressBar.style('width', '100%');
+    this._progressBar.style('--yoya-message-countdown-progress', '100%');
     const startedAt = Date.now();
     this._countdownTimer = setInterval(() => {
       const remaining = Math.max(0, this._countdownDuration - (Date.now() - startedAt));
       this._countdownText.textContent(`${Math.ceil(remaining / 1000)}s`);
       this._progressBar.style(
-        'width',
+        '--yoya-message-countdown-progress',
         `${Math.max(0, (remaining / this._countdownDuration) * 100)}%`
       );
       if (remaining <= 0) {
@@ -232,23 +179,12 @@ class MessageNode extends HtmlElementNode {
 /** VMessageContainer 的节点类型（不导出）；公开组件 `vMessageContainer` 是 vNode 外壳。 */
 class MessageContainerNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VMessageContainer';
+    super('div', { vn: 'VMessageContainer' });
     this._nextId = 1;
     this._messages = new Map();
     this._inline = false;
-    this.className(componentClass, 'yoya-vmessage-container');
+    // 容器几何与 placement 都在 `yoya.ui.css`（R5）；`data-placement` / `data-inline` 是状态位
     this.attr({ 'aria-live': 'polite', 'data-placement': 'top-right' });
-    this.styles({
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      maxWidth: '360px',
-      position: 'fixed',
-      right: '16px',
-      top: '16px',
-      zIndex: '1000'
-    });
     this._setupContainer(setup);
   }
 
@@ -258,38 +194,18 @@ class MessageContainerNode extends HtmlElementNode {
     }
 
     this.attr('data-placement', value || 'top-right');
-    this.styles(placementStyles(value || 'top-right'));
     return this;
   }
 
   /** 内嵌模式：容器静态定位并占满宽度，适合放在卡片/局部区域；false 恢复浮层定位。 */
   inline(value = true) {
     this._inline = Boolean(value);
+    this.attr('data-inline', this._inline ? 'true' : null);
 
-    if (this._inline) {
-      this.styles({
-        bottom: null,
-        left: null,
-        maxWidth: 'none',
-        position: 'static',
-        right: null,
-        top: null,
-        transform: null,
-        width: '100%',
-        zIndex: null
-      });
-      return this;
+    if (!this._inline) {
+      this.placement(this.placement() || 'top-right');
     }
 
-    this.styles({
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      maxWidth: '360px',
-      position: 'fixed',
-      zIndex: '1000'
-    });
-    this.placement(this.placement() || 'top-right');
     return this;
   }
 
@@ -394,33 +310,32 @@ class MessageContainerNode extends HtmlElementNode {
   }
 }
 
-export function vMessage(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VMessage',
-    createNode: (setup) => new MessageNode(setup),
-    commands: ['content', 'type', 'closable', 'countdown', 'onClose', 'close'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 消息条（形态 B）：视图根是节点类型扩展 `MessageNode`（倒计时定时器 / 关闭处理器归它），
+ * 外层 `vNode` 用 `delegateNodeCommands` 补齐命令面与元素 DSL；类型配色 / 关闭位 / 倒计时
+ * 都由根上的状态位（`data-type` / `data-closable` / `data-countdown`）交给 CSS（R5）。
+ */
+export function VMessage(props = {}) {
+  return vNode((api) => {
+    const node = new MessageNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export function vMessageContainer(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VMessageContainer',
-    createNode: (setup) => new MessageContainerNode(setup),
-    commands: [
-      'placement',
-      'inline',
-      'show',
-      'success',
-      'error',
-      'warning',
-      'info',
-      'close',
-      'clear'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+export const vMessage = createComponentShortcut(VMessage, { props: true });
+
+/** 消息容器（形态 B）：`placement` / `inline` 是状态位（`data-placement` / `data-inline`），
+ * 定位与内嵌布局在 `yoya.ui.css`；`show` / `close` / `clear` 等仍归节点类型。 */
+export function VMessageContainer(props = {}) {
+  return vNode((api) => {
+    const node = new MessageContainerNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
+
+export const vMessageContainer = createComponentShortcut(VMessageContainer, { props: true });
 
 export const toast = {
   _container: null,
@@ -469,8 +384,3 @@ export const toast = {
     return this.container().clear();
   }
 };
-
-export const VMessage = vMessage;
-defineComponentIdentity(VMessage, 'VMessage');
-export const VMessageContainer = vMessageContainer;
-defineComponentIdentity(VMessageContainer, 'VMessageContainer');

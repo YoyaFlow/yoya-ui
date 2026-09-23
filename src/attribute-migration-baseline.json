@@ -2,7 +2,6 @@
   "js": {
     "src/layout/index.js": 14,
     "src/layout/split-panel.js": 4,
-    "src/feedback/message.js": 6,
     "src/async/skeleton.js": 5,
     "src/effects/transition.js": 8
   },
@@ -23,7 +22,6 @@
     "src/async/skeleton.js",
     "src/components/component-shell.js",
     "src/feedback/message-manager.js",
-    "src/feedback/message.js",
     "src/layout/split-panel.js"
   ]
 }

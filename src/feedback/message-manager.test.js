@@ -40,7 +40,7 @@ describe('VMessageManager', () => {
     manager.warning('警告消息', { duration: 0 });
     manager.info('提示消息', { duration: 0 });
 
-    expect(document.querySelectorAll('.yoya-vmessage')).toHaveLength(4);
+    expect(document.querySelectorAll('[vn~="VMessage"]')).toHaveLength(4);
     expect(document.body.textContent).not.toContain('旧消息');
     expect(document.querySelector('[data-type="success"]').textContent).toContain('新消息');
     expect(document.querySelector('[data-type="error"]').textContent).toContain('错误消息');
@@ -48,7 +48,7 @@ describe('VMessageManager', () => {
     expect(document.querySelector('[data-type="info"]').textContent).toContain('提示消息');
 
     expect(manager.clear()).toBe(manager);
-    expect(document.querySelectorAll('.yoya-vmessage')).toHaveLength(0);
+    expect(document.querySelectorAll('[vn~="VMessage"]')).toHaveLength(0);
   });
 
   it('exposes its container for existing toast compatibility', () => {
@@ -81,9 +81,9 @@ describe('VMessageManager', () => {
 
     // 容器迁成 vNode 后 `close` 是组件节点上的命令包装、内部自调用落在视图根上，
     // 这里改成验行为：销毁后消息与容器都不在了
-    expect(document.querySelector('.yoya-vmessage')).toBeNull();
+    expect(document.querySelector('[vn~="VMessage"]')).toBeNull();
     expect(manager.show('已销毁', { duration: 0 })).toBe(null);
-    expect(document.querySelector('.yoya-vmessage-container')).toBeNull();
+    expect(document.querySelector('[vn~="VMessageContainer"]')).toBeNull();
   });
 
   it('destroys an injected container with its messages, timer, events, and DOM', () => {
@@ -91,7 +91,7 @@ describe('VMessageManager', () => {
     const container = vMessageContainer();
     const manager = new VMessageManager({ container }).bindTo(document.body);
     manager.show('稍后关闭', { id: 'later', duration: 1000 });
-    const closeButton = document.querySelector('.yoya-vmessage-close');
+    const closeButton = document.querySelector('[vn~="VMessageClose"]');
     const removeEventListener = vi.spyOn(closeButton, 'removeEventListener');
 
     expect(manager.container()).toBe(container);
@@ -100,7 +100,7 @@ describe('VMessageManager', () => {
     vi.advanceTimersByTime(1000);
 
     expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function), undefined);
-    expect(document.querySelector('.yoya-vmessage-container')).toBeNull();
+    expect(document.querySelector('[vn~="VMessageContainer"]')).toBeNull();
     expect(manager.show('已销毁', { duration: 0 })).toBe(null);
     expect(manager.success('已销毁', { duration: 0 })).toBe(null);
     expect(manager.error('已销毁', { duration: 0 })).toBe(null);
@@ -109,6 +109,6 @@ describe('VMessageManager', () => {
     expect(manager.bindTo(document.body)).toBe(manager);
     expect(manager.close('later')).toBe(manager);
     expect(manager.clear()).toBe(manager);
-    expect(document.querySelector('.yoya-vmessage-container')).toBeNull();
+    expect(document.querySelector('[vn~="VMessageContainer"]')).toBeNull();
   });
 });

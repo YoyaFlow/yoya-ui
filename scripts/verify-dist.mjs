@@ -283,13 +283,13 @@ const BUDGET_ARTIFACTS = {
   'node.min.js': 96 * 1024,
   // 组件皮肤：core 层无皮肤，这里只盯组件样式本身的膨胀。
   // 96 → 100 KB（`050860f`）→ 104 KB（按钮族 / 主题模式切换）→ 108 KB（`menu` + `tree-ranger`）→
-  // 112 KB（`context-menu` / `dropdown-menu` / `dialog` / `tooltip` 等波 5 剩下的文件，2026-09-23）：
+  // 112 KB（`context-menu` / `dropdown-menu` / `dialog` / `tooltip`）→ 116 KB（`message` 等波 5 剩下的文件）：
   // R5 返工批把组件里的**行内静态样式搬进皮肤**（样式总量不变、只是从 JS 行内挪到这里），门限按
   // "实测 + 余量"的兜底口径，不贴着上限。R5 队列已清空；波 5 剩下的文件（`message` / `skeleton` /
   // `split-panel` / `lazy-image` / `transition` / `layout/index`）搬完行内样式后，按票 15 §9 的既定口径
   // **在波 6 收口时用"实测 + 10%"重新收紧**（同时做票 22 的皮肤去重：现状实测只有约 2.4 KB 属于
   // "规则体逐字重复"、可在规则级合并）。
-  'yoya.ui.css': 112 * 1024
+  'yoya.ui.css': 116 * 1024
 };
 
 // 首屏真实成本是「入口 + 它引用的公共 chunk」，按实际下载量（min+gzip）单独设预算。

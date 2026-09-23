@@ -1,6 +1,11 @@
-import { VMessageContainer, vMessageContainer } from './message.js';
+import { vMessageContainer } from './message.js';
 import { ViewNode } from '../core/index.js';
 import { applyComponentArguments, normalizeComponentArguments } from '../components/shared.js';
+import { hasComponentIdentity } from '../core/node.js';
+
+/** 容器判定走身份事实（`class` 定义的 `instanceof` 在组件化后不再成立）。 */
+const isMessageContainer = (value) =>
+  Boolean(value) && hasComponentIdentity(value, 'VMessageContainer');
 
 /**
  * Owns one explicitly bound message container and its complete lifecycle.
@@ -9,9 +14,9 @@ export class VMessageManager extends ViewNode {
   constructor(setup = null) {
     super();
 
-    if (setup instanceof VMessageContainer) {
+    if (isMessageContainer(setup)) {
       this._container = setup;
-    } else if (setup && typeof setup === 'object' && setup.container instanceof VMessageContainer) {
+    } else if (setup && typeof setup === 'object' && isMessageContainer(setup.container)) {
       this._container = setup.container;
     } else {
       this._container = vMessageContainer(setup);

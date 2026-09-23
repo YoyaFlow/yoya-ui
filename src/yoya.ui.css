@@ -1458,6 +1458,145 @@ body {
     display: block;
   }
 
+  /* 消息条 / 消息容器：静态样式 + 类型配色 + 状态位（原来全写在 JS 行内，R5 搬进来）。
+     状态位：根上的 `data-type`（success / error / warning / info，info 是默认）、
+     `data-closable='false'`（关闭按钮那一格隐藏）、`data-countdown='true'`（倒计时文本与进度条）。 */
+  [vn~='VMessage'] {
+    align-items: center;
+    background: var(--yoya-color-info-subtle, #eff6ff);
+    border: 1px solid var(--yoya-color-info-border, #bfdbfe);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-info-text, #1e3a8a);
+    display: flex;
+    gap: 10px;
+    line-height: 1.4;
+    overflow: hidden;
+    padding: 10px 12px;
+    position: relative;
+  }
+
+  [vn~='VMessage'][data-type='success'] {
+    background: var(--yoya-color-success-subtle, #ecfdf5);
+    border-color: var(--yoya-color-success-border, #bbf7d0);
+    color: var(--yoya-color-success-text, #166534);
+  }
+
+  [vn~='VMessage'][data-type='error'] {
+    background: var(--yoya-color-danger-subtle, #fef2f2);
+    border-color: var(--yoya-color-danger-border, #fecaca);
+    color: var(--yoya-color-danger-text, #991b1b);
+  }
+
+  [vn~='VMessage'][data-type='warning'] {
+    background: var(--yoya-color-warning-subtle, #fffbeb);
+    border-color: var(--yoya-color-warning-border, #fde68a);
+    color: var(--yoya-color-warning-text, #92400e);
+  }
+
+  [vn~='VMessageCountdown'] {
+    color: inherit;
+    display: none;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.65;
+  }
+
+  [vn~='VMessage'][data-countdown='true'] > [vn~='VMessageCountdown'] {
+    display: inline;
+  }
+
+  [vn~='VMessageClose'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: inherit;
+    cursor: pointer;
+    display: none;
+    flex-shrink: 0;
+    height: 20px;
+    justify-content: center;
+    margin-left: auto;
+    opacity: 0.72;
+    padding: 0;
+    width: 20px;
+  }
+
+  [vn~='VMessage']:not([data-closable='false']) > [vn~='VMessageClose'] {
+    display: inline-flex;
+  }
+
+  [vn~='VMessageClose'] svg {
+    height: 14px;
+    width: 14px;
+  }
+
+  [vn~='VMessageCountdownBar'] {
+    background: currentColor;
+    bottom: 0;
+    height: 2px;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    width: var(--yoya-message-countdown-progress, 100%);
+  }
+
+  [vn~='VMessage'][data-countdown='true'] > [vn~='VMessageCountdownBar'] {
+    opacity: 0.45;
+  }
+
+  [vn~='VMessageContainer'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+    position: fixed;
+    z-index: 1000;
+  }
+
+  /* placement 规则与 `placementStyles()` 一一对应（默认 top-right） */
+  [vn~='VMessageContainer'][data-placement='top-right'] {
+    right: 16px;
+    top: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='top-left'] {
+    left: 16px;
+    top: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='top'] {
+    left: 50%;
+    top: 16px;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom-right'] {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom-left'] {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom'] {
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* 内嵌模式：静态定位、占满宽度（原来写一整套行内样式切换） */
+  [vn~='VMessageContainer'][data-inline='true'] {
+    max-width: none;
+    position: static;
+    width: 100%;
+  }
+
   /* 对话框：根 / 头部 / 关闭按钮的静态样式（原来都在 JS 行内，R5 搬进来）；
      "关闭按钮那一行整体关掉"走根上的 `data-closable='false'` 规则。 */
   [vn~='VDialog'] {

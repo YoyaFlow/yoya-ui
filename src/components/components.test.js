@@ -616,11 +616,12 @@ describe('compound components', () => {
     const closed = vi.fn();
     const message = vMessage('保存成功').type('success').closable(true).onClose(closed);
     const messageElement = message.renderDom();
-    const closeElement = messageElement.querySelector('.yoya-vmessage-close');
+    const closeElement = messageElement.querySelector('[vn~="VMessageClose"]');
 
     expect(closeElement.tagName).toBe('SPAN');
-    expect(closeElement.style.borderWidth).toBe('0px');
-    expect(closeElement.style.marginLeft).toBe('auto');
+    // 关闭按钮的静态样式在 `yoya.ui.css`（`[vn~='VMessageClose']`），这里只断言身份与结构
+    expect(closeElement.getAttribute('vn')).toContain('VMessageClose');
+    expect(messageElement.dataset.closable).toBeUndefined();
     expect(closeElement.querySelector('svg')).not.toBeNull();
 
     closeElement.click();
@@ -651,13 +652,13 @@ describe('compound components', () => {
     container.show('旧消息', { id: 'save', duration: 0 });
     container.show('新消息', { id: 'save', duration: 0 });
 
-    expect(document.body.querySelectorAll('.yoya-vmessage')).toHaveLength(1);
+    expect(document.body.querySelectorAll('[vn~="VMessage"]')).toHaveLength(1);
     expect(document.body.textContent).not.toContain('旧消息');
     expect(document.body.textContent).toContain('新消息');
 
     container.close('save');
 
-    expect(document.body.querySelectorAll('.yoya-vmessage')).toHaveLength(0);
+    expect(document.body.querySelectorAll('[vn~="VMessage"]')).toHaveLength(0);
   });
 
   it('clears message timers when the container is destroyed', () => {
@@ -669,11 +670,11 @@ describe('compound components', () => {
     container.destroy();
     // 容器迁成 vNode 后 `close` 是组件节点上的命令包装、内部销毁走视图根，
     // 这里改成验行为：销毁即关闭消息，随后推进计时器不会再有副作用
-    expect(document.body.querySelector('.yoya-vmessage')).toBeNull();
+    expect(document.body.querySelector('[vn~="VMessage"]')).toBeNull();
 
     vi.advanceTimersByTime(1000);
 
-    expect(document.body.querySelector('.yoya-vmessage-container')).toBeNull();
+    expect(document.body.querySelector('[vn~="VMessageContainer"]')).toBeNull();
   });
 
   it('creates vMenu and vMenuItem command components', () => {

@@ -48,7 +48,7 @@ describe('SSR standalone demo page', () => {
     const form = host.querySelector('[data-ssr-form]');
     expect(form.querySelector('[data-error]')).not.toBeNull();
     host.querySelector('[data-ssr-submit]').click();
-    expect(host.querySelector('[data-ssr-messages] .yoya-vmessage')).toBeNull();
+    expect(host.querySelector('[data-ssr-messages] [vn~="VMessage"]')).toBeNull();
 
     // 填写后提交：错误清除并弹出成功消息
     const inputs = form.querySelectorAll('input');

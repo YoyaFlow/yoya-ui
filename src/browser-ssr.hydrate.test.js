@@ -51,8 +51,8 @@ describe('browser-only components hydration', () => {
     const host = hydrate(page, '#app');
     host.show('已保存');
 
-    expect(document.querySelector('#app .yoya-vmessage')).not.toBeNull();
-    expect(document.querySelector('#app .yoya-vmessage').textContent).toContain('已保存');
+    expect(document.querySelector('#app [vn~="VMessage"]')).not.toBeNull();
+    expect(document.querySelector('#app [vn~="VMessage"]').textContent).toContain('已保存');
   });
 
   it('keeps a virtual scroll interactive after hydration', () => {
