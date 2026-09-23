@@ -404,8 +404,9 @@ export interface TableWrapperOptions {
 
 /**
  * Structure-only table shell: sections and rows are declared by the caller.
- * Props: `caption` / `vThead` / `vTbody` / `vTfoot` / `vTr`; every other key goes
- * to the shell element (class / attrs / style / onXxx …).
+ * Props: `caption` plus element options (class / attrs / style / onXxx …) — sections
+ * (the constant `caption` / `thead` / `tbody` / `tfoot`) are filled through commands:
+ * `vTable((table) => table.vThead(…))` or `table.vThead(…)` at runtime.
  */
 export class VTable extends HtmlElementNode {
   caption(content?: ChildInput): this;

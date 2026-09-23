@@ -33,9 +33,25 @@ const columnKeyOf = (column, index) => column?.key ?? index;
  */
 const TABLE_DATA_KEYS = new Set(['columns', 'rows', 'data', 'empty', 'emptyText']);
 
-/** 结构 props 守卫：`vTable({ rows })` 这类数据键要**报错**——不报错就当成同名 DOM 属性静默写下去。 */
+/** 段 / 行只能走命令（键名与命令同名，写进 props 会静默变成 DOM 属性）。 */
+const TABLE_SECTION_KEYS = new Set(['vThead', 'vTbody', 'vTfoot', 'vTr']);
+
+/**
+ * 结构 props 守卫：两类键要**报错**（不报错就会被当成同名 DOM 属性静默写下去）——
+ *
+ * - 数据键（`columns` / `rows` / `emptyText`…）：那是 `vTableWrapper` 的事；
+ * - 段 / 行键（`vThead` / `vTbody` / `vTfoot` / `vTr`）：段只能走命令（`table.vThead(…)`），
+ *   props 里只收 `caption` 与元素选项。
+ */
 function assertVTableStructure(props) {
   Object.keys(props).forEach((key) => {
+    if (TABLE_SECTION_KEYS.has(key)) {
+      throw new TypeError(
+        `vTable() does not take "${key}": sections and rows are commands ` +
+          '(vTable((table) => table.vThead(…)) / table.vThead(…)); props only take caption + element options.'
+      );
+    }
+
     if (TABLE_DATA_KEYS.has(key)) {
       throw new TypeError(
         `vTable() does not take "${key}": the data-driven table is vTableWrapper(...) ` +
@@ -334,8 +350,9 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  *
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
- * - **props 在参数表里展开**：`caption` → 标题、`vThead` / `vTbody` / `vTfoot` → 三个段、`vTr` → 表体行，
- *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）；
+ * - **props 只收 `caption` 与元素选项**：`function VTable({ caption, ...rest })`，`...rest` 照 JSX 摊进根
+ *   元素工厂；**段 / 行一律走命令**（`vTable((table) => table.vThead(…))` 或运行期 `table.vThead(…)`）——
+ *   写进 props 直接报错，不会被当成同名 DOM 属性静默写下去；
  * - **段常驻、命令只往里填内容**：`caption + thead + tbody + tfoot` 在视图里一次写清（就地建、命令就地
  *   定义，外面不留任何部件变量），`api.caption / vThead / vTbody / vTfoot / vTr` 只是往对应段里写
  *   内容 / 配置——没有"有没有"这份状态，也没有预建再挑时机挂载的动作；空段不渲染任何行。
@@ -345,16 +362,7 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  * - 没有 `find`（不按身份找节点）、不碰 `_el` / `_children`；
  * - **壳不装数据**：`columns` / `rows` / `emptyText` 那层在 `VTableWrapper` 上（壳只被它消费）。
  */
-export function VTable({
-  caption,
-  // 段 / 行 props 的键名就是命令名，但段工厂（`vThead` / `vTbody` / `vTfoot` / `vTr`）同名，
-  // 解构时换绑名，别把工厂遮住
-  vThead: headSetup,
-  vTbody: bodySetup,
-  vTfoot: footSetup,
-  vTr: rowSetup,
-  ...rest
-} = {}) {
+export function VTable({ caption, ...rest } = {}) {
   assertVTableStructure(rest);
 
   return vNode((api) => {
@@ -368,7 +376,7 @@ export function VTable({
             vTableGrid({ vn_slot: '' }, (tableGrid) => {
               /**
                * 四个段常驻，各自的命令就在**它自己的构建回调**里定义：回调参数就是那个部件，
-               * 闭包直接抓它——外面不留部件变量。props 与命令同一套落位（就在命令旁边）。
+               * 闭包直接抓它——外面不留部件变量，段的内容只从命令来。
                */
               tableGrid.child(
                 vTableCaption((captionPart) => {
@@ -391,8 +399,6 @@ export function VTable({
 
                     return api;
                   };
-
-                  if (headSetup !== undefined) api.vThead(headSetup);
                 }),
                 vTbody((bodyPart) => {
                   api.vTbody = (setup) => {
@@ -407,9 +413,6 @@ export function VTable({
                     bodyPart.vTr(setup);
                     return api;
                   };
-
-                  if (bodySetup !== undefined) api.vTbody(bodySetup);
-                  if (rowSetup !== undefined) api.vTr(rowSetup);
                 }),
                 vTfoot((footPart) => {
                   api.vTfoot = (setup) => {
@@ -419,8 +422,6 @@ export function VTable({
 
                     return api;
                   };
-
-                  if (footSetup !== undefined) api.vTfoot(footSetup);
                 })
               );
             })

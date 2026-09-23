@@ -107,28 +107,24 @@ describe('vTable declarative sections', () => {
     );
   });
 
-  it('takes caption / sections / row through props and keeps the rest on the shell', () => {
+  it('rejects the section keys instead of writing them as attributes', () => {
+    expect(() => vTable({ vThead: '名称' })).toThrow(/commands/);
+    expect(() => vTable({ vTr: '一行' })).toThrow(/commands/);
+  });
+
+  it('takes caption through props and keeps the rest on the shell', () => {
     const table = vTable({
       attrs: { id: 'props-table' },
       caption: '季度报表',
-      style: { maxWidth: '240px' },
-      vThead: (head) => head.vTr((row) => row.vTh('名称')),
-      vTbody: (body) => body.vTr((row) => row.vTd('api-gateway')),
-      vTfoot: (foot) => foot.vTr((row) => row.vTd('合计')),
-      vTr: (row) => row.vTd('追加行')
+      style: { maxWidth: '240px' }
     });
     const element = table.renderDom();
     const grid = element.querySelector(GRID);
 
-    // 其余键 = 元素 options，落在视图根（壳）上
+    // props 只收 caption 与元素选项（其余键 = 元素 options，落在视图根 / 壳上）
     expect(element.id).toBe('props-table');
     expect(element.style.maxWidth).toBe('240px');
-    // 自己的键 = 段 / 行，落在 <table> 里
     expect(grid.querySelector(CAPTION).textContent).toBe('季度报表');
-    expect(grid.querySelector(`${HEAD} th`).textContent).toBe('名称');
-    expect(grid.querySelectorAll(`${BODY} tr`)).toHaveLength(2);
-    expect(grid.querySelector(`${BODY} tr td`).textContent).toBe('api-gateway');
-    expect(grid.querySelector(`${FOOT} td`).textContent).toBe('合计');
   });
 
   it('shares one part instance between props and commands', () => {
