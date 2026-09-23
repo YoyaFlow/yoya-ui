@@ -83,6 +83,13 @@ const tableSelectors = [
   "[vn~='VTd'][data-empty='true']"
 ];
 
+const cardSelectors = [
+  "[vn~='VCard']",
+  "[vn~='VCardHeader']",
+  "[vn~='VCardBody']",
+  "[vn~='VCardFooter']"
+];
+
 const navigationSelectors = [
   "[vn~='VMenu']",
   "[vn~='VMenu'][data-orientation='horizontal']",
@@ -262,6 +269,12 @@ describe('CSS style contract', () => {
 
   it('covers the table selectors', () => {
     tableSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the card selectors', () => {
+    cardSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

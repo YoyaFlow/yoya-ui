@@ -1,4 +1,4 @@
-import { createComponentShortcut, themeBorder, themeValue } from '../components/shared.js';
+import { createComponentShortcut } from '../components/shared.js';
 import { vNode } from '../core/v-node.js';
 import { div } from '../html/index.js';
 import { vSlot } from '../layout/v-slot.js';
@@ -10,41 +10,22 @@ import { vSlot } from '../layout/v-slot.js';
  * - part 是 A 形态薄工厂（直接返回元素）：`vn_slot` 标记 = 它在卡片里的位置；
  * - `vCardHeader/Body/Footer` 是快捷方法：走 setupFunction / setupString / setupObject 分派；
  * - `VCard` 是 B 形态：结构里放三个 VSlot 占位，命令把 part 投进对应占位（替换语义）。
+ * - 静态样式全在 `yoya.ui.css`（R5）：根一条 + 每个 part 一条。part 可以脱离卡片单独用
+ *   （`vCardBody(…)` 常常当普通容器），所以 part 规则不带祖先选择器。
  */
 export function VCardHeader() {
   return div({
-    style: {
-      borderBottom: themeBorder('color-border-faint', '#e5e7eb'),
-      fontWeight: '700',
-      padding: '12px 16px'
-    },
     vn: 'VCardHeader',
     vn_slot: 'header'
   });
 }
 
 export function VCardBody() {
-  return div({
-    style: { padding: '16px' },
-    vn: 'VCardBody',
-    vn_slot: 'body'
-  });
+  return div({ vn: 'VCardBody', vn_slot: 'body' });
 }
 
 export function VCardFooter() {
-  return div({
-    style: {
-      alignItems: 'center',
-      background: themeValue('color-surface-hover', '#f8fafc'),
-      borderTop: themeBorder('color-border-faint', '#e5e7eb'),
-      display: 'flex',
-      gap: '8px',
-      justifyContent: 'flex-end',
-      padding: '12px 16px'
-    },
-    vn: 'VCardFooter',
-    vn_slot: 'footer'
-  });
+  return div({ vn: 'VCardFooter', vn_slot: 'footer' });
 }
 
 export const vCardHeader = createComponentShortcut(VCardHeader);
@@ -60,26 +41,9 @@ export function VCard() {
     api.vCardFooter = (setup) => self.node().child(vCardFooter(setup));
 
     // 结构 + 槽位：三个零布局占位，位置由结构决定（与调用顺序无关）
-    return div(
-      {
-        style: {
-          background: themeValue('color-surface', '#ffffff'),
-          border: themeBorder('color-border', '#d8dee8'),
-          borderRadius: '8px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
-          color: themeValue('color-text-strong', '#111827'),
-          overflow: 'hidden'
-        },
-        vn: 'VCard'
-      },
-      (element) => {
-        element.child(
-          vSlot({ name: 'header' }),
-          vSlot({ name: 'body' }),
-          vSlot({ name: 'footer' })
-        );
-      }
-    );
+    return div({ vn: 'VCard' }, (element) => {
+      element.child(vSlot({ name: 'header' }), vSlot({ name: 'body' }), vSlot({ name: 'footer' }));
+    });
   });
 }
 
