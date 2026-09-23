@@ -166,6 +166,25 @@ describe('vTable declarative sections', () => {
       'VTr'
     ]);
   });
+
+  it('mounts sections on demand instead of building them inside commands', () => {
+    const table = vTable();
+    const grid = table.renderDom().querySelector(GRID);
+
+    // 没用到就不在 DOM 里（部件常驻视图树，`mountable` 决定挂不挂）
+    expect(table.renderDom().querySelector(CAPTION)).toBeNull();
+    expect(grid.querySelectorAll(':scope > thead, :scope > tbody, :scope > tfoot')).toHaveLength(0);
+
+    table.vThead((head) => head.vTr((row) => row.vTh('名称')));
+    expect(grid.querySelector(`${HEAD} th`).textContent).toBe('名称');
+
+    // 后写的标题仍然排在表头前面：位置由结构定，不看调用顺序
+    table.caption('报表');
+    expect([...grid.children].map((child) => child.getAttribute('vn'))).toEqual([
+      'VTableCaption',
+      'VThead'
+    ]);
+  });
 });
 
 describe('vTableWrapper data-driven table', () => {

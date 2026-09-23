@@ -335,9 +335,10 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
  * - **props 在参数表里展开**：`caption` → 标题、`vThead` / `vTbody` / `vTfoot` → 三个段、`vTr` → 表体行，
- *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）。props 里的段与运行期命令
- *   （`table.caption(…)` / `table.vThead(…)` / …）**共用同一份按需建的段**——都挂在 `<table>`
- *   自己的句柄上，先 props 后命令不会建出两份，也不需要"再找一遍"；
+ *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）；
+ * - **段的"有没有"是状态、不是结构动作**（R9）：四个段一次写清挂在 `<table>` 上，`mountable(状态)`
+ *   决定进不进 DOM——props 与运行期命令（`table.caption(…)` / `table.vThead(…)` / …）都只翻状态位、
+ *   写内容 / 配置，**命令不搬结构**；DOM 顺序固定为 标题 → 表头 → 表体 → 表尾，与调用顺序无关；
  * - 段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
  *   活值对账，都挂在真表体上；
  * - 没有预建节点、没有 `find`、不碰 `_el` / `_children`；
@@ -356,67 +357,38 @@ export function VTable({
   assertVTableStructure(rest);
 
   return vNode((api) => {
-    let captionPart = null;
-    let headPart = null;
-    let bodyPart = null;
-    let footPart = null;
-
     /**
-     * 段挂在 `<table>` **自己的句柄**上：props 路径（定义体）与运行期命令都走这一份宿主，
-     * 于是"用到才建、建过就复用"只需要一处判断；也不用 `self.node()`（那是组件节点，不是内容位）。
+     * 四个段的"有没有"是四个状态位：结构在构建期一次写清（挂 `<table>` 自己的句柄），
+     * 用到哪个就把哪个 `mountable` 打开——命令只翻状态，不建节点、不搬结构。
      */
+    const hasCaption = ref(false);
+    const hasHead = ref(false);
+    const hasBody = ref(false);
+    const hasFoot = ref(false);
+
     const tableGrid = vTableGrid({ vn_slot: '' });
 
-    const captionOf = () => {
-      if (!captionPart) {
-        captionPart = vTableCaption();
-        tableGrid.child(captionPart);
-      }
+    const captionPart = vTableCaption().mountable(hasCaption);
+    const headPart = vThead().mountable(hasHead);
+    const bodyPart = vTbody().mountable(hasBody);
+    const footPart = vTfoot().mountable(hasFoot);
 
-      return captionPart;
-    };
-
-    const headOf = () => {
-      if (!headPart) {
-        headPart = vThead();
-        tableGrid.child(headPart);
-      }
-
-      return headPart;
-    };
-
-    const bodyOf = () => {
-      if (!bodyPart) {
-        bodyPart = vTbody();
-        tableGrid.child(bodyPart);
-      }
-
-      return bodyPart;
-    };
-
-    const footOf = () => {
-      if (!footPart) {
-        footPart = vTfoot();
-        tableGrid.child(footPart);
-      }
-
-      return footPart;
-    };
+    tableGrid.child(captionPart, headPart, bodyPart, footPart);
 
     api.caption = (content) => {
-      const box = captionOf();
-
       if (content === undefined) {
-        return box.text();
+        return captionPart.text();
       }
 
-      box.text(content);
+      hasCaption.value = true;
+      captionPart.text(content);
       return api;
     };
 
     api.vThead = (setup) => {
       if (setup !== undefined) {
-        headOf().setup(setup);
+        hasHead.value = true;
+        headPart.setup(setup);
       }
 
       return api;
@@ -424,7 +396,8 @@ export function VTable({
 
     api.vTbody = (setup) => {
       if (setup !== undefined) {
-        bodyOf().setup(setup);
+        hasBody.value = true;
+        bodyPart.setup(setup);
       }
 
       return api;
@@ -432,26 +405,43 @@ export function VTable({
 
     api.vTfoot = (setup) => {
       if (setup !== undefined) {
-        footOf().setup(setup);
+        hasFoot.value = true;
+        footPart.setup(setup);
       }
 
       return api;
     };
 
     api.vTr = (setup) => {
-      bodyOf().vTr(setup);
+      hasBody.value = true;
+      bodyPart.vTr(setup);
       return api;
     };
 
     /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
-    // props 里的段：用到才建，落进 `<table>`；顺序 = 标题 → 表头 → 表体 → 表尾
-    if (caption !== undefined) captionOf().text(caption);
-    if (headSetup !== undefined) headOf().setup(headSetup);
-    if (bodySetup !== undefined) bodyOf().setup(bodySetup);
-    if (footSetup !== undefined) footOf().setup(footSetup);
-    if (rowSetup !== undefined) bodyOf().vTr(rowSetup);
+    // props 里的段：与命令同一套落位（翻状态 + 写内容 / 配置），顺序固定
+    if (caption !== undefined) {
+      hasCaption.value = true;
+      captionPart.text(caption);
+    }
+    if (headSetup !== undefined) {
+      hasHead.value = true;
+      headPart.setup(headSetup);
+    }
+    if (bodySetup !== undefined) {
+      hasBody.value = true;
+      bodyPart.setup(bodySetup);
+    }
+    if (footSetup !== undefined) {
+      hasFoot.value = true;
+      footPart.setup(footSetup);
+    }
+    if (rowSetup !== undefined) {
+      hasBody.value = true;
+      bodyPart.vTr(rowSetup);
+    }
 
     const view = div({ ...rest, vn: 'VTable' }, (shell) =>
       shell.child(vTableScroll((scroll) => scroll.child(tableGrid)))
