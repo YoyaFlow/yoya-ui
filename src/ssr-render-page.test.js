@@ -122,7 +122,7 @@ describe('renderPage', () => {
       { messages }
     );
 
-    expect(html).toContain('yoya-vbody');
+    expect(html).toContain('vn="VBody"');
     expect(html).toContain('内容');
   });
 

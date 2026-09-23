@@ -310,17 +310,17 @@ const layoutExtraRules = [
       width: '360px'
     }
   ],
-  ['.components-layout-docs--popup .yoya-vdialog-content', { display: 'grid', gap: '14px' }],
+  ['.components-layout-docs--popup [vn~="VDialogContent"]', { display: 'grid', gap: '14px' }],
   ['.components-layout-docs--templates', { gap: '24px' }],
   [
     '.components-layout-template-shell',
     { display: 'grid', gap: '16px', minWidth: '0', width: '100%' }
   ],
   ['.components-layout-template-frame', { minWidth: '0' }],
-  ['.components-layout-template-frame .yoya-vheader', {}],
-  ['.components-layout-template-frame .yoya-vaside', {}],
+  ['.components-layout-template-frame [vn~="VHeader"]', {}],
+  ['.components-layout-template-frame [vn~="VAside"]', {}],
   [
-    '.components-layout-template-frame .yoya-vmain',
+    '.components-layout-template-frame [vn~="VMain"]',
     {
       padding: '14px'
     }
@@ -511,7 +511,7 @@ const radioExtraRules = [
 const dataDisplayExtraRules = [];
 
 const feedbackExtraRules = [
-  ['.components-feedback-demo-live .yoya-vmessage-container', { minHeight: '44px' }]
+  ['.components-feedback-demo-live [vn~="VMessageContainer"]', { minHeight: '44px' }]
 ];
 
 const navigationExtraRules = [
@@ -643,7 +643,7 @@ const iconExtraRules = [
     { color: 'var(--yoya-color-text-muted, #5a6575)', margin: '0', paddingLeft: '18px' }
   ],
   [
-    '.components-icons-page .yoya-vdialog',
+    '.components-icons-page [vn~="VDialog"]',
     {
       maxWidth: 'min(92vw, 920px)',
       width: '100%'

@@ -297,26 +297,25 @@ body {
   --yoya-control-height-md: 30px;
   --yoya-control-height-lg: 34px;
 }
-/* 属性化迁移进行中（票 15）：组件身份与部件位置从 `yoya-component` / `yoya-v*` 类名搬到
-   `vn` / `vn_slot` 属性。过渡期两套并存——`[vn]` 与 `.yoya-component` 都吃基线条目，
-   组件逐刀切换（JS 与 CSS 同一刀），波 6 收口时删掉类名一侧。
-   门禁：src/attribute-migration-baseline.test.js（只减不增）。 */
+/* 属性化迁移收口（票 15 波 6）：组件身份与部件位置一律走 `vn` / `vn_slot` 属性，
+   类名一侧（`yoya-component` / `yoya-v*`）已全部退场——预设规则的起点只有身份作用域
+   `[vn~='VXxx']` 与跨组件能力类 `yoya-<feature>`。
+   门禁：src/preset-scope.test.js（身份作用域）+ src/attribute-migration-baseline.test.js（只减不增）。 */
 @layer yoya {
-  .yoya-component,
   [vn] {
     box-sizing: border-box;
     font-family: var(--yoya-font-family);
     font-size: var(--yoya-font-size);
     line-height: var(--yoya-line-height);
   }
-  :where(.yoya-vaside),
-  :where(.yoya-vmain) {
+  :where([vn~='VAside']),
+  :where([vn~='VMain']) {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  :where(.yoya-vaside)::-webkit-scrollbar,
-  :where(.yoya-vmain)::-webkit-scrollbar {
+  :where([vn~='VAside'])::-webkit-scrollbar,
+  :where([vn~='VMain'])::-webkit-scrollbar {
     display: none;
     height: 0;
     width: 0;

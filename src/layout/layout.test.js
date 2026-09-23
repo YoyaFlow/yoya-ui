@@ -33,7 +33,7 @@ describe('layout components', () => {
     const toolbarElement = toolbar.renderDom();
 
     expect(toolbar.tagName()).toBe('div');
-    expect(toolbarElement.classList.contains('yoya-flex')).toBe(true);
+    expect(toolbarElement.getAttribute('vn')).toBe('VFlex');
     expect(toolbarElement.style.display).toBe('flex');
     expect(toolbarElement.style.gap).toBe('12px');
     expect(toolbarElement.style.alignItems).toBe('center');
@@ -62,7 +62,7 @@ describe('layout components', () => {
     expect(gridElement.style.gap).toBe('16px');
 
     const shell = container({ maxWidth: '960px', paddingInline: '24px' }).renderDom();
-    expect(shell.classList.contains('yoya-container')).toBe(true);
+    expect(shell.getAttribute('vn')).toBe('VContainer');
     expect(shell.style.maxWidth).toBe('960px');
     expect(shell.style.marginLeft).toBe('auto');
     expect(shell.style.marginRight).toBe('auto');
@@ -86,13 +86,13 @@ describe('layout components', () => {
     const rowElement = row.renderDom();
     const [a, b, c] = rowElement.children;
 
-    expect(rowElement.classList.contains('yoya-vrow')).toBe(true);
+    expect(rowElement.getAttribute('vn')).toBe('VRow');
     expect(rowElement.style.display).toBe('flex');
     expect(rowElement.style.flexWrap).toBe('wrap');
     expect(rowElement.style.justifyContent).toBe('space-between');
     expect(rowElement.style.alignItems).toBe('center');
 
-    expect(a.classList.contains('yoya-vcol')).toBe(true);
+    expect(a.getAttribute('vn')).toBe('VCol');
     expect(parseFloat(a.style.width)).toBeCloseTo(25);
     expect(parseFloat(a.style.marginLeft)).toBeCloseTo(8.333333);
     expect(a.style.paddingLeft).toBe('10px');
@@ -112,9 +112,10 @@ describe('layout components', () => {
     });
 
     expect(root.children()[0].renderDom().style.width).toBe('50%');
-    expect(vRow({ gutter: 16, children: [vCol({ span: 8, offset: 2 }, 'B')] }).toHTML()).toContain(
-      'class="yoya-layout yoya-vrow"'
-    );
+    const rowHtml = vRow({ gutter: 16, children: [vCol({ span: 8, offset: 2 }, 'B')] }).toHTML();
+
+    expect(rowHtml).toContain('class="yoya-layout"');
+    expect(rowHtml).toContain('vn="VRow"');
   });
 
   it('switches vCol spans at Element-style responsive breakpoints and cleans up', () => {
@@ -154,9 +155,9 @@ describe('layout components', () => {
     });
     const shellElement = shell.renderDom();
 
-    expect(shellElement.classList.contains('yoya-vcontainer')).toBe(true);
+    expect(shellElement.getAttribute('vn')).toBe('VLayoutContainer');
     expect(shellElement.style.flexDirection).toBe('column');
-    expect(shellElement.querySelector('header').classList.contains('yoya-vheader')).toBe(true);
+    expect(shellElement.querySelector('header').getAttribute('vn')).toBe('VHeader');
     expect(shellElement.querySelector('header').style.height).toBe('64px');
     expect(shellElement.querySelector('main').textContent).toBe('Content');
     expect(shellElement.querySelector('footer').style.height).toBe('48px');
@@ -168,7 +169,7 @@ describe('layout components', () => {
     const rowShellElement = rowShell.renderDom();
 
     expect(rowShellElement.style.flexDirection).toBe('row');
-    expect(rowShellElement.querySelector('aside').classList.contains('yoya-vaside')).toBe(true);
+    expect(rowShellElement.querySelector('aside').getAttribute('vn')).toBe('VAside');
     expect(rowShellElement.querySelector('aside').style.width).toBe('240px');
     expect(rowShellElement.querySelector('main').textContent).toBe('Workspace');
   });
@@ -184,13 +185,13 @@ describe('layout components', () => {
       });
     });
     const shellElement = shell.renderDom();
-    const bodyElement = shellElement.querySelector('.yoya-vheader').nextElementSibling;
-    const aside = bodyElement.querySelector('.yoya-vaside');
-    const main = bodyElement.querySelector('.yoya-vmain');
+    const bodyElement = shellElement.querySelector('[vn~="VHeader"]').nextElementSibling;
+    const aside = bodyElement.querySelector('[vn~="VAside"]');
+    const main = bodyElement.querySelector('[vn~="VMain"]');
 
     expect(shellElement.style.height).toContain('100');
     expect(shellElement.style.overflow).toBe('hidden');
-    expect(shellElement.querySelector('.yoya-vheader').style.position).toBe('sticky');
+    expect(shellElement.querySelector('[vn~="VHeader"]').style.position).toBe('sticky');
     expect(bodyElement.style.flex).toBe('1 1 auto');
     expect(bodyElement.style.overflow).toBe('hidden');
     expect(aside.style.overflow).toBe('auto');
@@ -215,10 +216,10 @@ describe('layout components', () => {
     const [body] = root.children();
     const [row, line, cards] = body.children();
 
-    expect(body.renderDom().classList.contains('yoya-vstack')).toBe(true);
-    expect(row.renderDom().classList.contains('yoya-hstack')).toBe(true);
-    expect(row.children()[1].renderDom().classList.contains('yoya-spacer')).toBe(true);
-    expect(line.renderDom().classList.contains('yoya-divider')).toBe(true);
+    expect(body.renderDom().getAttribute('vn')).toBe('VStack');
+    expect(row.renderDom().getAttribute('vn')).toBe('VHStack');
+    expect(row.children()[1].renderDom().getAttribute('vn')).toBe('VSpacer');
+    expect(line.renderDom().getAttribute('vn')).toBe('VDivider');
     expect(cards.renderDom().style.gridTemplateColumns).toBe('1fr 1fr');
   });
 
@@ -226,7 +227,7 @@ describe('layout components', () => {
     const root = flex({ gap: '12px', children: [div('A')] });
 
     expect(root.toHTML()).toBe(
-      '<div class="yoya-layout yoya-flex" style="display:flex; gap:12px"><div>A</div></div>'
+      '<div class="yoya-layout" style="display:flex; gap:12px" vn="VFlex"><div>A</div></div>'
     );
   });
 
@@ -238,7 +239,7 @@ describe('layout components', () => {
     });
     const element = cards.renderDom();
 
-    expect(element.classList.contains('yoya-responsive-grid')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VResponsiveGrid');
     expect(element.style.gridTemplateColumns).toBe('repeat(auto-fit, minmax(240px, 1fr))');
     expect(element.style.gap).toBe('16px');
     expect(element.textContent).toBe('AB');
@@ -251,7 +252,7 @@ describe('layout components', () => {
     const root = responsiveGrid({ minColumnWidth: '14rem', gap: '12px', children: [div('A')] });
 
     expect(root.toHTML()).toBe(
-      '<div class="yoya-layout yoya-responsive-grid" style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr))"><div>A</div></div>'
+      '<div class="yoya-layout" style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr))" vn="VResponsiveGrid"><div>A</div></div>'
     );
   });
 
@@ -317,11 +318,11 @@ describe('layout components', () => {
         shell.vMain('Content');
       });
       const element = layout.renderDom();
-      const aside = element.querySelector('.yoya-vaside');
-      const main = element.querySelector('.yoya-vmain');
+      const aside = element.querySelector('[vn~="VAside"]');
+      const main = element.querySelector('[vn~="VMain"]');
 
       expect(element.classList.contains('yoya-mobile-layout')).toBe(true);
-      expect(element.classList.contains('yoya-vmobile-layout')).toBe(true);
+      expect(element.getAttribute('vn')).toBe('VMobileLayout');
       expect(element.dataset.mobileLayout).toBe('false');
       expect(element.style.flexDirection).toBe('row');
       expect(aside.style.width).toBe('240px');
@@ -341,8 +342,8 @@ describe('layout components', () => {
       expect(main.style.width).toBe('100%');
       expect(layout.mobile()).toBe(true);
 
-      const toggle = element.querySelector('.yoya-vmobile-layout-toggle');
-      const backdrop = element.querySelector('.yoya-vmobile-layout-backdrop');
+      const toggle = element.querySelector('[vn~="VMobileLayoutToggle"]');
+      const backdrop = element.querySelector('[vn~="VMobileLayoutBackdrop"]');
       expect(toggle.style.display).toBe('inline-flex');
       expect(backdrop.style.display).toBe('none');
 
@@ -397,7 +398,7 @@ describe('layout components', () => {
     const alias = vMobileLayout({ breakpoint: 640 });
     const aliasElement = alias.renderDom();
     expect(aliasElement.classList.contains('yoya-mobile-layout')).toBe(true);
-    expect(aliasElement.classList.contains('yoya-vmobile-layout')).toBe(true);
+    expect(aliasElement.getAttribute('vn')).toBe('VMobileLayout');
     layout.destroy();
     alias.destroy();
   });
@@ -411,9 +412,9 @@ describe('layout components', () => {
       children: [div('Header'), div('Content')]
     });
     const element = page.renderDom();
-    const content = element.querySelector('.yoya-vbody-content');
+    const content = element.querySelector('[vn~="VBodyContent"]');
 
-    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VBody');
     expect(element.getAttribute('data-page-body')).toBe('true');
     expect(element.style.background).toBe('rgb(238, 242, 255)');
     expect(element.style.padding).toBe('24px');
@@ -438,10 +439,11 @@ describe('layout components', () => {
   });
   it('serializes page body styles for server rendering', () => {
     expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
-      'class="yoya-layout yoya-vbody"'
+      'class="yoya-layout"'
     );
+    expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain('vn="VBody"');
     expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
-      'class="yoya-vbody-content"'
+      'vn="VBodyContent"'
     );
     expect(vBody({ maxWidth: '72rem', children: div('Page') }).toHTML()).toContain(
       'max-width:72rem'
@@ -455,7 +457,7 @@ describe('layout components', () => {
     const fullPage = createVBodyPage('Full page');
 
     expect(document.querySelector('#existing')).not.toBeNull();
-    expect(document.querySelector('#local .yoya-vbody-content').textContent).toBe('Local page');
+    expect(document.querySelector('#local [vn~="VBodyContent"]').textContent).toBe('Local page');
     expect(document.body.lastElementChild).toBe(fullPage.renderDom());
     expect(document.body.lastElementChild.textContent).toBe('Full page');
   });

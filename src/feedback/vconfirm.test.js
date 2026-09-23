@@ -16,7 +16,7 @@ describe('vConfirm', () => {
     const confirmBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
       b.textContent.includes('确定')
     );
-    expect(confirmBtn.closest('.yoya-vstack')?.style.justifyContent).toBe('flex-end');
+    expect(confirmBtn.closest('[vn~="VStack"]')?.style.justifyContent).toBe('flex-end');
     confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await expect(promise).resolves.toBe(true);
     expect(confirmed).toBe(true);

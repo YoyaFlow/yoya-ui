@@ -1,10 +1,5 @@
 {
-  "js": {
-    "src/layout/index.js": 14
-  },
-  "css": {
-    "yoya-vaside": 2,
-    "yoya-vmain": 2
-  },
-  "identity": ["src/components/component-shell.js"]
+  "js": {},
+  "css": {},
+  "identity": []
 }

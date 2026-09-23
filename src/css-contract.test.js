@@ -597,10 +597,10 @@ describe('CSS style contract', () => {
 
   it('hides scrollbars on aside and main layout regions', () => {
     expect(css).toMatch(
-      /:where\(\.yoya-vaside\),\s*:where\(\.yoya-vmain\) \{\s*-ms-overflow-style: none;\s*scrollbar-width: none;/
+      /:where\(\[vn~='VAside'\]\),\s*:where\(\[vn~='VMain'\]\) \{\s*-ms-overflow-style: none;\s*scrollbar-width: none;/
     );
     expect(css).toMatch(
-      /:where\(\.yoya-vaside\)::-webkit-scrollbar,[\s\S]*?:where\(\.yoya-vmain\)::-webkit-scrollbar \{\s*display: none;\s*height: 0;/
+      /:where\(\[vn~='VAside'\]\)::-webkit-scrollbar,[\s\S]*?:where\(\[vn~='VMain'\]\)::-webkit-scrollbar \{\s*display: none;\s*height: 0;/
     );
   });
 

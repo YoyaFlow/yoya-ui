@@ -1,4 +1,4 @@
-import { elementHasClass, registerChildFactories } from '../core/node.js';
+import { hasComponentIdentity, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { MenuOutlined } from '../svg/icons.js';
@@ -50,12 +50,19 @@ const layoutOptionNames = new Set([
 const layoutRegionOptionNames = new Set(['height', 'width']);
 
 export function flex(first = null, second = null, third = null) {
-  return createLayoutNode('flex', { display: 'flex' }, first, applyFlexOptions, second, third);
+  return createLayoutNode(
+    { vn: 'VFlex' },
+    { display: 'flex' },
+    first,
+    applyFlexOptions,
+    second,
+    third
+  );
 }
 
 export function stack(first = null, second = null, third = null) {
   return createLayoutNode(
-    'stack',
+    { vn: 'VStack' },
     { display: 'flex', flexDirection: 'column' },
     first,
     applyFlexOptions,
@@ -66,7 +73,7 @@ export function stack(first = null, second = null, third = null) {
 
 export function vstack(first = null, second = null, third = null) {
   return createLayoutNode(
-    'vstack',
+    { vn: 'VStack' },
     { display: 'flex', flexDirection: 'column' },
     first,
     applyFlexOptions,
@@ -77,7 +84,7 @@ export function vstack(first = null, second = null, third = null) {
 
 export function hstack(first = null, second = null, third = null) {
   return createLayoutNode(
-    'hstack',
+    { vn: 'VHStack' },
     { display: 'flex', flexDirection: 'row' },
     first,
     applyFlexOptions,
@@ -88,7 +95,7 @@ export function hstack(first = null, second = null, third = null) {
 
 export function center(first = null, second = null, third = null) {
   return createLayoutNode(
-    'center',
+    { vn: 'VCenter' },
     { display: 'flex', alignItems: 'center', justifyContent: 'center' },
     first,
     applyFlexOptions,
@@ -99,9 +106,9 @@ export function center(first = null, second = null, third = null) {
 
 export function vRow(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode('div');
+  const node = new HtmlElementNode('div', { vn: 'VRow' });
 
-  node.className('yoya-layout', 'yoya-vrow');
+  node.className('yoya-layout');
   node.styles({ boxSizing: 'border-box', display: 'flex', flexWrap: 'wrap', width: '100%' });
   node._gutter = null;
 
@@ -141,9 +148,9 @@ export function vRow(first = null, second = null, third = null) {
 
 export function vCol(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode('div');
+  const node = new HtmlElementNode('div', { vn: 'VCol' });
 
-  node.className('yoya-layout', 'yoya-vcol');
+  node.className('yoya-layout');
   node.styles({ boxSizing: 'border-box', minWidth: '0' });
   node._baseCol = normalizeColProps({});
   node._responsiveCols = [];
@@ -217,13 +224,20 @@ export function vCol(first = null, second = null, third = null) {
 }
 
 export function grid(first = null, second = null, third = null) {
-  return createLayoutNode('grid', { display: 'grid' }, first, applyGridOptions, second, third);
+  return createLayoutNode(
+    { vn: 'VGrid' },
+    { display: 'grid' },
+    first,
+    applyGridOptions,
+    second,
+    third
+  );
 }
 
 export function responsiveGrid(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = createLayoutNode(
-    'responsive-grid',
+    { vn: 'VResponsiveGrid' },
     { display: 'grid' },
     args.first,
     applyResponsiveGridOptions,
@@ -285,11 +299,11 @@ export function responsiveGrid(first = null, second = null, third = null) {
 
 export function vBody(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode('div');
-  const content = new HtmlElementNode('div').className('yoya-vbody-content');
+  const node = new HtmlElementNode('div', { vn: 'VBody' });
+  const content = new HtmlElementNode('div', { vn: 'VBodyContent' });
   const appendOuterChild = node.child.bind(node);
 
-  node.className('yoya-layout', 'yoya-vbody');
+  node.className('yoya-layout');
   node.attr('data-page-body', 'true');
   node.styles({
     background: themeValue('color-bg', '#f9f9f9'),
@@ -375,7 +389,7 @@ function wrapResponsiveGridDestroy(node) {
 
 export function container(first = null, second = null, third = null) {
   return createLayoutNode(
-    'container',
+    { vn: 'VContainer' },
     {
       width: '100%',
       maxWidth: '1120px',
@@ -393,9 +407,9 @@ export function container(first = null, second = null, third = null) {
 
 export function vContainer(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode('div');
+  const node = new HtmlElementNode('div', { vn: 'VLayoutContainer' });
 
-  node.className('yoya-layout', 'yoya-vcontainer');
+  node.className('yoya-layout');
   node.styles({ boxSizing: 'border-box', display: 'flex', minWidth: '0', width: '100%' });
   node._direction = null;
   node._viewport = false;
@@ -465,9 +479,9 @@ export function vContainer(first = null, second = null, third = null) {
 
 export function mobileLayout(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode('div');
+  const node = new HtmlElementNode('div', { vn: 'VMobileLayout' });
 
-  node.className('yoya-layout', 'yoya-mobile-layout', 'yoya-vmobile-layout');
+  node.className('yoya-layout', 'yoya-mobile-layout');
   node.attr('data-mobile-layout', 'false');
   node.styles({ boxSizing: 'border-box', display: 'flex', minWidth: '0', width: '100%' });
   node._breakpoint = 768;
@@ -483,12 +497,12 @@ export function mobileLayout(first = null, second = null, third = null) {
   node._drawerEnabled = true;
   node._asideOpen = false;
   node._asideBackdrop = new HtmlElementNode('div')
-    .className('yoya-vmobile-layout-backdrop')
+    .setup({ vn: 'VMobileLayoutBackdrop' })
     .attr('aria-hidden', 'true')
     .style('display', 'none')
     .on('click', () => node.closeAside());
   node._asideToggle = new HtmlElementNode('button')
-    .className('yoya-vmobile-layout-toggle')
+    .setup({ vn: 'VMobileLayoutToggle' })
     .attr({ type: 'button', 'aria-label': '打开导航', 'aria-expanded': 'false' })
     .style('display', 'none')
     .child(MenuOutlined().styles({ height: '18px', width: '18px' }))
@@ -639,7 +653,7 @@ export const vMobileLayout = mobileLayout;
 
 export function vHeader(first = null, second = null, third = null) {
   return createLayoutNode(
-    'vheader',
+    { vn: 'VHeader' },
     { boxSizing: 'border-box', flex: '0 0 auto', height: '60px', width: '100%' },
     first,
     applyHeaderOptions,
@@ -653,7 +667,7 @@ export function vHeader(first = null, second = null, third = null) {
 
 export function vAside(first = null, second = null, third = null) {
   return createLayoutNode(
-    'vaside',
+    { vn: 'VAside' },
     { boxSizing: 'border-box', flex: '0 0 auto', minWidth: '0', width: '300px' },
     first,
     applyAsideOptions,
@@ -667,7 +681,7 @@ export function vAside(first = null, second = null, third = null) {
 
 export function vMain(first = null, second = null, third = null) {
   return createLayoutNode(
-    'vmain',
+    { vn: 'VMain' },
     {
       boxSizing: 'border-box',
       flex: '1 1 auto',
@@ -687,7 +701,7 @@ export function vMain(first = null, second = null, third = null) {
 
 export function vFooter(first = null, second = null, third = null) {
   return createLayoutNode(
-    'vfooter',
+    { vn: 'VFooter' },
     { boxSizing: 'border-box', flex: '0 0 auto', height: '60px', width: '100%' },
     first,
     applyHeaderOptions,
@@ -701,7 +715,7 @@ export function vFooter(first = null, second = null, third = null) {
 
 export function spacer(first = null, second = null, third = null) {
   const node = createLayoutNode(
-    'spacer',
+    { vn: 'VSpacer' },
     { flexGrow: 1, minWidth: 0, minHeight: 0 },
     first,
     applySpacerOptions,
@@ -714,7 +728,7 @@ export function spacer(first = null, second = null, third = null) {
 }
 
 export function divider(first = null, second = null, third = null) {
-  const node = createLayoutNode('divider', {}, first, applyDividerOptions, second, third);
+  const node = createLayoutNode({ vn: 'VDivider' }, {}, first, applyDividerOptions, second, third);
   node.attr('role', 'separator');
 
   if (!node.attr('aria-orientation')) {
@@ -753,8 +767,13 @@ registerChildFactories(HtmlElementNode, layoutFactories);
 
 export { VMasonry, vMasonry, VSplitPanel, vSplitPanel };
 
+/**
+ * 布局族公共构造：`rootConfig` 是**视图根元素配置**（身份写在里面的 `vn: 'VXxx'`，
+ * 值 = 导出名 PascalCase），
+ * 能力类 `yoya-layout` 只表示"这是布局族"；`yoya-v*` 类名已退场（票 15 波 6）。
+ */
 function createLayoutNode(
-  kind,
+  rootConfig,
   baseStyles,
   first,
   applyOptions,
@@ -765,8 +784,8 @@ function createLayoutNode(
   enhance = null
 ) {
   const args = normalizeComponentArguments(first, second, third);
-  const node = new HtmlElementNode(tagName);
-  node.className('yoya-layout', `yoya-${kind}`);
+  const node = new HtmlElementNode(tagName, rootConfig);
+  node.className('yoya-layout');
   node.styles(baseStyles);
   if (enhance) {
     enhance(node);
@@ -1051,7 +1070,7 @@ function syncMobileLayoutChild(layout, child) {
   }
 
   const drawerAside = Boolean(
-    elementHasClass(target, 'yoya-vaside') && layout._mobile && layout._drawerEnabled
+    hasComponentIdentity(target, 'VAside') && layout._mobile && layout._drawerEnabled
   );
 
   if (drawerAside) {
@@ -1092,7 +1111,7 @@ function syncMobileLayoutChild(layout, child) {
     return;
   }
 
-  if (elementHasClass(target, 'yoya-vaside')) {
+  if (hasComponentIdentity(target, 'VAside')) {
     if (target._mobileDrawerStylesApplied) {
       target._mobileDrawerStylesApplied = false;
       target.styles({
@@ -1125,7 +1144,7 @@ function syncMobileLayoutChild(layout, child) {
     return;
   }
 
-  if (elementHasClass(target, 'yoya-vmain')) {
+  if (hasComponentIdentity(target, 'VMain')) {
     target.styles({
       flex: '1 1 auto',
       minHeight: '0',
@@ -1191,13 +1210,13 @@ function syncMobileLayoutChrome(layout) {
 function layoutHasMobileAside(layout) {
   return layout.children().some((child) => {
     const target = child?._resolved ?? child?._resolve?.() ?? child;
-    return elementHasClass(target, 'yoya-vaside');
+    return hasComponentIdentity(target, 'VAside');
   });
 }
 
 function layoutChildIsHeaderOrFooter(child) {
   const target = child?._resolved ?? child?._resolve?.() ?? child;
-  return elementHasClass(target, 'yoya-vheader') || elementHasClass(target, 'yoya-vfooter');
+  return hasComponentIdentity(target, 'VHeader') || hasComponentIdentity(target, 'VFooter');
 }
 
 function applyContainerLayoutOptions(node, options) {

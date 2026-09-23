@@ -58,7 +58,7 @@ describe('vNode component factory', () => {
   it('adds no placeholder element and renders arrays as a fragment', () => {
     const single = mount(CounterCard());
     expect(single.children).toHaveLength(1);
-    expect(single.firstElementChild.className).toContain('yoya-vstack');
+    expect(single.firstElementChild.getAttribute('vn')).toBe('VStack');
 
     const multi = mount(vNode(() => [p('A'), p('B')]));
     expect(multi.children).toHaveLength(2);

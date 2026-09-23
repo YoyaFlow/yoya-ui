@@ -138,9 +138,9 @@ Component identity no longer lives on class names (§7), so this is an ordinary 
 - **Identity is the `vn` attribute** on the component's view root: `vn="VCard"`. A wrapper sharing one root writes several names, space separated (`vn="VTimer VInput"`); any of them matches.
 - **Parts** carry their own name the same way (`vn="VCardHeader"`); caller-supplied content declares its position with `vn_slot` (see the authoring guide).
 - **Preset rules always start from the identity**: selectors in `yoya.ui.css` are `[vn~="VXxx"] …` (no orphan part selectors), so replacing the identity detaches the whole subtree from preset styles in one step — state hooks included (`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` stops applying).
-- **Class names are not identity**: the old `yoya-component` / `yoya-v*` families are retiring (the shared base rule is `[vn]` now; the leftovers go in ticket 15, wave 6). Cross-component capability classes stay: `yoya-<feature>` (`yoya-icon`, `yoya-layout`, `yoya-control-clear`).
+- **Class names are not identity**: the old `yoya-component` / `yoya-v*` families are gone (ticket 15, wave 6); the shared base rule is `[vn]`. Cross-component capability classes stay: `yoya-<feature>` (`yoya-icon`, `yoya-layout`, `yoya-control-clear`).
 - State always uses kebab-case `data-*` attributes; class names do not carry state.
-- Guarded by `src/attribute-migration-baseline.test.js` (class-name stock can only shrink), `src/preset-scope.test.js` (preset rules must stay root-scoped) and `src/css-contract.test.js`; `src/className-contract.test.js` is replaced by the attribute-contract test when the migration closes.
+- Guarded by `src/attribute-migration-baseline.test.js` (the class-name stock is zero and can never grow) and `src/preset-scope.test.js` (every rule in the skin starts from an identity the library really declares), plus `src/css-contract.test.js` for the concrete rules.
 
 ### Theme switch JS API (optional)
 

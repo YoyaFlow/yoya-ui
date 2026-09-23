@@ -133,9 +133,9 @@ For the field-access rules see §7.3.
   - **Public slots**: `slot: 't-head'` (declaration on the structure side, envelope on the content side); the
     envelope never enters the DOM. `slot` and `vn_slot` are separate namespaces.
   - State always uses kebab-case `data-*` attributes (`data-variant`, `data-open`).
-  - **Class names retire**: `yoya-component` and `yoya-v*` (component and part) are being removed — new rules
-    are written from `[vn="VXxx"]`, and the leftovers clear in ticket 15, wave 6. Cross-component capability
-    classes `yoya-<feature>` (`yoya-layout`, `yoya-icon`, `yoya-control-clear`) stay.
+  - **Class names retired**: `yoya-component` and `yoya-v*` (component and part) are gone as of ticket 15,
+    wave 6 — rules are written from `[vn="VXxx"]`. Cross-component capability classes `yoya-<feature>`
+    (`yoya-layout`, `yoya-icon`, `yoya-control-clear`) stay.
   - Preset rules must be scoped from the identity (`[vn="VXxx"] …`, no orphan part selectors), so swapping the
     identity detaches the whole subtree from preset styles.
 - Third-party components should use their own identity names and class prefix (e.g. `acme-status-badge`) to avoid conflicts with built-in styles.

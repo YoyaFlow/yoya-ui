@@ -1,8 +1,8 @@
 /**
- * 属性化迁移门禁（票 15 波 0）——**只减不增**。
+ * 属性化迁移门禁（票 15 波 0 起，波 6 收口）——**类名存量已清零，只减不增**。
  *
  * 目标态：`yoya-component` / `yoya-v*` 类名全部退场，身份走 `vn` 属性、部件走 `vn_slot`。
- * 迁移是**逐组件**做的（JS 与 CSS 同一刀），所以这里冻结的是"还剩多少"：
+ * 迁移是**逐组件**做的（JS 与 CSS 同一刀），这里冻结的就是"还剩多少"——收口后全部为空：
  *
  * - `js`：库内 JS 里每个文件还剩多少个 `yoya-v*` 字面量（注释不计）；
  * - `css`：`src/yoya.ui.css` 里每个 `.yoya-v*` / `yoya-v*` 记号还剩多少次；
@@ -217,13 +217,15 @@ describe('属性化迁移门禁（只减不增）', () => {
       '预设样式表里出现新的组件类名选择器（只减不增）；请改用 [vn="VXxx"] 身份作用域'
     ).toEqual([]);
 
-    const remaining = Object.entries(baseline.js).filter(
-      ([file, count]) => (actual.js[file] ?? 0) >= count
-    );
+    // 波 6 收口：存量已清零，`js` / `css` 两段必须保持空——重新引入类名身份会在这里红。
     expect(
-      remaining.length,
-      `还有 ${remaining.length} 个文件带着组件类名（迁移完成后请下调基线）`
-    ).toBeGreaterThan(0);
+      Object.keys(actual.js),
+      '组件类名存量已清零（票 15 波 6）：身份只走 `vn` 属性，别再加 `yoya-v*` 类名'
+    ).toEqual([]);
+    expect(
+      Object.keys(actual.css),
+      '预设样式表里已无类名选择器（票 15 波 6）：新规则一律从 `[vn~="VXxx"]` 起头'
+    ).toEqual([]);
   });
 
   it('身份缺失清单与基线一致（迁移后逐项减少）', () => {

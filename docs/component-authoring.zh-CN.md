@@ -121,8 +121,8 @@ export function CounterCard() {
   - **部件（part）**：结构侧 `vSlot('name')` 零布局占位、内容侧 `vn_slot: 'name'` 标记，`child()` 进组件自动落位。
   - **公开槽位**：`slot: 't-head'`（结构侧声明 + 内容侧信封），信封本身不进 DOM。`slot` 与 `vn_slot` 是两个名空间。
   - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），属性不承载身份之外的语义。
-  - **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）正在删除——新规则一律从 `[vn="VXxx"]` 起头，
-    存量在票 15 波 6 清空；跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
+  - **类名已退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）随票 15 波 6 全部删除——新规则一律从
+    `[vn="VXxx"]` 起头；跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
   - 组件预设规则必须从身份作用域书写（`[vn="VXxx"] …`，禁止孤儿部件选择器），保证换掉身份后整棵子树与预设样式脱钩。
 - 第三方组件建议使用自己的身份名与类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
 - 颜色、间距等样式优先使用主题变量 `var(--yoya-<token>, fallback)`，主题根为 `:root, [data-yoya-theme]`（见 `yoya.ui.css`）。

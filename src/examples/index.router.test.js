@@ -1868,7 +1868,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(inputDemo.querySelector('input')).toBe(inputElement);
 
     const rebuild = page.querySelector('[data-state-demo="rebuild"] .components-state-demo-live');
-    const rebuildRoot = rebuild.querySelector('.yoya-vstack');
+    const rebuildRoot = rebuild.querySelector('[vn~="VStack"]');
     const rebuildLine = rebuildRoot.querySelector('p');
     const executeButton = [...rebuild.querySelectorAll('button')].find((button) =>
       button.textContent.includes('执行')
@@ -1878,11 +1878,11 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(rebuild.textContent).toContain('状态：running');
     expect(rebuild.textContent).toContain('次数：1');
     // 区域重建：区域根元素稳定，子节点整体替换
-    expect(rebuild.querySelector('.yoya-vstack')).toBe(rebuildRoot);
-    expect(rebuild.querySelector('.yoya-vstack p')).not.toBe(rebuildLine);
+    expect(rebuild.querySelector('[vn~="VStack"]')).toBe(rebuildRoot);
+    expect(rebuild.querySelector('[vn~="VStack"] p')).not.toBe(rebuildLine);
 
     const toggle = page.querySelector('[data-state-demo="toggle"] .components-state-demo-live');
-    const toggleRoot = toggle.querySelector('.yoya-vstack');
+    const toggleRoot = toggle.querySelector('[vn~="VStack"]');
     const toggleLine = toggleRoot.querySelector('p');
     const toggleButton = [...toggle.querySelectorAll('button')].find((button) =>
       button.textContent.includes('隐藏')
@@ -1891,8 +1891,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(toggle.textContent).toContain('当前内容已隐藏');
     expect(toggle.querySelector('button').textContent).toBe('显示');
-    expect(toggle.querySelector('.yoya-vstack')).toBe(toggleRoot);
-    expect(toggle.querySelector('.yoya-vstack p')).not.toBe(toggleLine);
+    expect(toggle.querySelector('[vn~="VStack"]')).toBe(toggleRoot);
+    expect(toggle.querySelector('[vn~="VStack"] p')).not.toBe(toggleLine);
   });
 
   it('keeps popup documentation dialogs closed until the trigger is clicked', async () => {
@@ -2476,7 +2476,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       '[data-button-demo="sizes"] [data-button-live] button'
     );
     const row = document.querySelector(
-      '[data-button-demo="sizes"] [data-button-live] .yoya-hstack'
+      '[data-button-demo="sizes"] [data-button-live] [vn~="VHStack"]'
     );
 
     expect(row.style.alignItems).toBe('center');

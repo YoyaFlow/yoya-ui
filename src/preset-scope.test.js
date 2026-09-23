@@ -1,3 +1,18 @@
+/**
+ * 预设样式的**身份作用域**门禁（票 15 波 6，替代类名时代的"孤儿 part 选择器"扫描）。
+ *
+ * 类名退场后，`yoya.ui.css` 里的选择器只有两种合法起点：
+ *
+ * 1. **组件身份作用域** `[vn~='VXxx'] …` —— 部件也有自己的身份、可以自己起头（部件是独立单元，
+ *    见票 19 的 R11 / R12），所以不再有"部件规则必须挂在根类下面"这条约束；
+ * 2. **跨组件能力类** `yoya-<feature>`（`yoya-icon` / `yoya-layout` / `yoya-control-clear` …）。
+ *
+ * 于是这里守两件在存量清零后才成立的硬事：
+ *
+ * - 预设样式表里**不再出现 `.yoya-component` / `.yoya-v*` 类名选择器**（旧一侧已删，回归即红）；
+ * - 每个 `[vn~='VXxx']` 记号都必须是**库内真实声明的身份**（JS 里写过 `vn: 'VXxx'`）——
+ *   防的是错字与**死选择器**（组件改名 / 退场后留下一条永远匹配不上的规则）。
+ */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -28,164 +43,52 @@ function listJsFiles(dir) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
       out.push(...listJsFiles(full));
-    } else if (entry.endsWith('.js')) {
+    } else if (entry.endsWith('.js') && !entry.endsWith('.test.js')) {
       out.push(full);
     }
   }
   return out;
 }
 
-function quoted(text) {
-  const out = [];
-  const re = /(['"`])([\s\S]*?)(?<!\\)\1/g;
-  let match;
-  while ((match = re.exec(text)) !== null) out.push(match[2]);
-  return out;
-}
+/** 库内 JS 里声明的全部身份（`vn: 'VXxx'`，多值空格分隔）。 */
+function declaredIdentities() {
+  const identities = new Set();
 
-function classNameBlocks(source) {
-  const blocks = [];
-  const re = /\.(?:className|class)\(/g;
-  let match;
-  while ((match = re.exec(source)) !== null) {
-    const open = match.index + match[0].length - 1;
-    let depth = 0;
-    for (let i = open; i < source.length; i += 1) {
-      const ch = source[i];
-      if (ch === '(') {
-        depth += 1;
-      } else if (ch === ')') {
-        depth -= 1;
-        if (depth === 0) {
-          blocks.push(source.slice(open, i + 1));
-          break;
+  for (const dir of libraryDirs) {
+    for (const file of listJsFiles(resolve(dir))) {
+      const source = readFileSync(file, 'utf8');
+      for (const match of source.matchAll(/\bvn\s*:\s*(['"])([\s\S]*?)\1/g)) {
+        for (const name of match[2].trim().split(/\s+/)) {
+          if (name) identities.add(name);
         }
       }
     }
   }
-  return blocks;
+
+  return identities;
 }
 
-/**
- * options 对象里的类名键：`class` / `className`（含带引号的写法），值可以是字符串或模板字面量。
- *
- * 核心的键分派表把 `class` 与 `className` 归为同一类（`src/core/setup-keys.js`），
- * 所以 `div({ class: 'yoya-x' })` 与 `div((root) => root.className('yoya-x'))` 等价——
- * 根类扫描必须两种写法都认，否则函数式写法会被误判成"孤儿 part 选择器"。
- */
-function classOptionLiterals(source) {
-  const out = [];
-  const re = /(?:^|[\s{,{])(?:class|className|['"`]class(?:Name)?['"`])\s*:\s*(['"`])([\s\S]*?)\1/g;
-  let match;
-  while ((match = re.exec(source)) !== null) {
-    out.push(match[2]);
-  }
-  return out;
-}
-
-// Root inventory: yoya- class literals co-located with componentClass
-const roots = new Set(['yoya-component']);
-for (const dir of libraryDirs) {
-  for (const file of listJsFiles(resolve(dir))) {
-    const source = readFileSync(file, 'utf8');
-    const literals = [
-      ...classNameBlocks(source)
-        .filter((block) => block.includes('componentClass'))
-        .flatMap(quoted),
-      ...classOptionLiterals(source).filter((literal) => literal.includes('componentClass'))
-    ];
-
-    for (const literal of literals) {
-      for (const part of literal.split(/\s+/)) {
-        if (part.startsWith('yoya-')) roots.add(part);
-      }
-    }
-  }
-}
-
-// 布局区域根类（vContainer 内部节点，不带 componentClass 但属于合法根）
-const LAYOUT_ROOT_CLASSES = [
-  'yoya-vaside',
-  'yoya-vmain',
-  'yoya-vheader',
-  'yoya-vfooter',
-  'yoya-vcontainer',
-  'yoya-vbody',
-  'yoya-vrow',
-  'yoya-vcol'
+const css = readFileSync(resolve('src/yoya.ui.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const identities = declaredIdentities();
+const cssIdentities = [
+  ...new Set([...css.matchAll(/\[vn~?=?'?([A-Za-z0-9]+)'?\]/g)].map((m) => m[1]))
 ];
-for (const root of LAYOUT_ROOT_CLASSES) {
-  roots.add(root);
-}
-// Parts whose prefix differs from the owning root class
-const ROOT_ALIASES = {
-  'yoya-vtab-': 'yoya-vtabs',
-  'yoya-vcontext-': 'yoya-vcontext-menu',
-  'yoya-vdropdown-': 'yoya-vdropdown-menu'
-};
+const classTokens = [...new Set(css.match(/\.yoya-(?:component|v[a-z0-9-]+)/g) ?? [])];
 
-function owningRoot(token) {
-  if (roots.has(token)) return null;
-  for (const [prefix, root] of Object.entries(ROOT_ALIASES)) {
-    if (token.startsWith(prefix)) return root;
-  }
-  let best = null;
-  for (const root of roots) {
-    if (root === 'yoya-component') continue;
-    if (token.startsWith(`${root}-`) || token.startsWith(`${root}--`)) {
-      if (!best || root.length > best.length) best = root;
-    }
-  }
-  return best;
-}
-
-const css = readFileSync(resolve('src/yoya.ui.css'), 'utf8');
-const selectorRe = /([^{}@][^{}]*)\{/g;
-const yoyaTokenRe = /\.yoya-v[a-z0-9-]+/g;
-
-function splitCompounds(selector) {
-  const out = [];
-  let depth = 0;
-  let current = '';
-  for (const ch of selector) {
-    if (ch === '[' || ch === '(') depth += 1;
-    else if (ch === ']' || ch === ')') depth -= 1;
-    if (ch === ',' && depth === 0) {
-      out.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  out.push(current);
-  return out;
-}
-
-const orphans = [];
-let match;
-while ((match = selectorRe.exec(css)) !== null) {
-  const selector = match[1];
-  if (!selector.trim()) continue;
-  for (const compound of splitCompounds(selector)) {
-    const trimmed = compound.trim();
-    const tokens = [...trimmed.matchAll(yoyaTokenRe)].map((x) => x[0].replace('.', ''));
-    if (tokens.length === 0) continue;
-    if (roots.has(tokens[0])) continue;
-    orphans.push(trimmed);
-  }
-}
-
-describe('preset style root scope', () => {
-  it('scopes every preset part rule under its owning root class', () => {
-    const unowned = orphans.filter(
-      (selector) => !owningRoot(selector.match(yoyaTokenRe)[0].replace('.', ''))
-    );
-    expect(unowned, `orphan selectors without a resolvable root: ${unowned.join(', ')}`).toEqual(
-      []
-    );
+describe('preset style identity scope', () => {
+  it('keeps no class-name based component selectors in the preset stylesheet', () => {
     expect(
-      orphans,
-      `orphan preset selectors (must be root-scoped): ${orphans.slice(0, 20).join(' | ')}${orphans.length > 20 ? ' …' : ''}`
+      classTokens,
+      `类名一侧已退场（票 15 波 6）：预设规则一律从 [vn~='VXxx'] 起头，这里是 ${classTokens.join(', ')}`
+    ).toEqual([]);
+  });
+
+  it('references only identities the library actually declares', () => {
+    const unknown = cssIdentities.filter((name) => !identities.has(name)).sort();
+
+    expect(
+      unknown,
+      `预设样式里的死选择器（这些身份库内没有声明，改名 / 退场后的残留？）：${unknown.join(', ')}`
     ).toEqual([]);
   });
 });

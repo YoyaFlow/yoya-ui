@@ -66,7 +66,7 @@ describe('VThemeShell virtual mode', () => {
     const element = shell.renderDom();
 
     expect(element).toBe(body.renderDom());
-    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VBody');
     expect(element.style.background).toBe('var(--yoya-color-surface, #ffffff)');
     expect(element.style.border).toBe('1px solid var(--yoya-color-border, #d8dee8)');
     expect(element.style.borderRadius).toBe('var(--yoya-radius-md, 6px)');
@@ -109,7 +109,7 @@ describe('VThemeShell virtual mode', () => {
 
     const element = shell.renderDom();
 
-    expect(element.classList.contains('yoya-vbody')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VBody');
     expect(element.style.background).toBe('var(--yoya-color-surface, #ffffff)');
     expect(element.style.borderRadius).toBe('var(--yoya-radius-md, 6px)');
   });
