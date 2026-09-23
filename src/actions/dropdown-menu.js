@@ -1,280 +1,259 @@
-import { HtmlElementNode } from '../html/index.js';
+import { asSignal, computed, ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import { MenuNode } from '../navigation/menu.js';
+import { div } from '../html/index.js';
 import { vButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { ref } from '../core/signals/handle.js';
-import { vNode } from '../core/v-node.js';
 import { allocateId } from '../core/id.js';
 import {
   createComponentShortcut,
   delegateNodeCommands,
   elementHasIdentity,
-  isPlainObject,
   setupButtonSlot,
   setupContentSlot
 } from '../components/shared.js';
 
-/** VDropdownMenu 的节点类型（不导出）；公开组件 `vDropdownMenu` 是 vNode 外壳。 */
-class DropdownMenuNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', { vn: 'VDropdownMenu' });
-    this._closeOnSelect = true;
-    this._globalCloseCleanup = null;
-    this._panelId = allocateId('yoya-dropdown-panel');
-    // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
-    this._open = ref(false);
-    this._trigger = vButton('操作')
-      .setup({ vn: 'VDropdownTrigger VButton' })
-      .attr({
-        'aria-controls': this._panelId,
-        'aria-expanded': 'false',
-        'aria-haspopup': 'menu'
-      })
-      .on('click', (event) => {
-        event.preventDefault();
-        // 触发钮禁用态以 DOM 属性为准（票 01 后 VButton 状态走内部 ref）
-        if (!this._trigger.attr('disabled')) {
-          this.toggle();
-        }
-      });
-    this._trigger.on('keydown', (event) => this._handleTriggerKeydown(event));
-    this._menu = new MenuNode().setup({ vn: 'VDropdownContent VMenu' });
-    this._panel = new HtmlElementNode('div')
-      .id(this._panelId)
-      .setup({ vn: 'VDropdownPanel' })
-      .attr('aria-hidden', 'true')
-      .child(this._menu);
-
-    this._menu.on('click', (event) => {
-      const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
-      if (
-        this._closeOnSelect &&
-        menuItem &&
-        !menuItem.disabled &&
-        !elementHasIdentity(menuItem, 'VSubMenuTrigger')
-      ) {
-        this.close();
-        this._focusTrigger();
-      }
-    });
-    this.child(this._trigger, this._panel);
-    this.placement('bottom-start');
-    this._setupDropdownMenu(setup);
-  }
-
-  trigger(setup) {
-    if (setup === undefined) {
-      return this._trigger;
-    }
-
-    setupButtonSlot(this._trigger, setup);
-    return this;
-  }
-
-  menuContent(setup) {
-    if (setup === undefined) {
-      return this._menu;
-    }
-
-    setupContentSlot(this._menu, setup);
-    return this;
-  }
-
-  placement(value) {
-    if (value === undefined) {
-      return this.attr('data-placement');
-    }
-
-    const placement = value || 'bottom-start';
-    this.attr('data-placement', placement);
-    return this;
-  }
-
-  closeOnSelect(value = true) {
-    this._closeOnSelect = Boolean(value);
-    return this;
-  }
-
-  open(value = true) {
-    const enabled = Boolean(value);
-
-    this._open.value = enabled;
-    this.attr('data-open', enabled ? 'true' : null);
-    this._trigger.attr('aria-expanded', enabled ? 'true' : 'false');
-    this._panel.attr('aria-hidden', enabled ? 'false' : 'true');
-
-    if (enabled) {
-      this._bindGlobalCloseHandlers();
-      this._focusFirstEnabledItem();
-    } else {
-      this._releaseGlobalCloseHandlers();
-    }
-
-    return this;
-  }
-
-  close() {
-    return this.open(false);
-  }
-
-  toggle() {
-    return this.open(!this._open.value);
-  }
-
-  destroy() {
-    this.close();
-    return super.destroy();
-  }
-
-  _bindGlobalCloseHandlers() {
-    if (this._globalCloseCleanup) {
-      return;
-    }
-
-    const handlePointer = (event) => {
-      if (!this._el?.contains(event.target)) {
-        this.close();
-      }
-    };
-    const handleKey = (event) => {
-      if (event.key === 'Escape') {
-        const shouldRestoreFocus = this._el?.contains(event.target);
-        this.close();
-        if (shouldRestoreFocus) {
-          this._focusTrigger();
-        }
-      }
-    };
-
-    const unbindPointer = bindDocumentEvent('click', handlePointer);
-    const unbindKey = bindDocumentEvent('keydown', handleKey);
-    this._globalCloseCleanup = () => {
-      unbindPointer();
-      unbindKey();
-      this._globalCloseCleanup = null;
-    };
-  }
-
-  _releaseGlobalCloseHandlers() {
-    if (this._globalCloseCleanup) {
-      this._globalCloseCleanup();
-    }
-  }
-
-  _handleTriggerKeydown(event) {
-    // 触发钮禁用态以 DOM 属性为准（票 01 后 VButton 状态走内部 ref）
-    if (this._trigger.attr('disabled')) {
-      return;
-    }
-
-    if (!['ArrowDown', 'ArrowUp', 'Enter', ' ', 'Spacebar'].includes(event.key)) {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (event.key === 'ArrowUp') {
-      this.open();
-      this._focusLastEnabledItem();
-      return;
-    }
-
-    this.open();
-  }
-
-  _focusFirstEnabledItem() {
-    const firstItem = this._menu._enabledMenuItems()[0];
-    firstItem?.focus?.();
-  }
-
-  _focusLastEnabledItem() {
-    const items = this._menu._enabledMenuItems();
-    const lastItem = items[items.length - 1];
-    lastItem?.focus?.();
-  }
-
-  _focusTrigger() {
-    this._trigger.focus?.();
-  }
-
-  _setupDropdownMenu(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        children,
-        closeOnSelect,
-        content,
-        label,
-        menu,
-        menuContent,
-        open,
-        placement,
-        text,
-        trigger,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        super._setupObject(elementConfig);
-      }
-
-      if (trigger !== undefined) {
-        this.trigger(trigger);
-      } else if (label !== undefined) {
-        this.trigger(label);
-      } else if (text !== undefined) {
-        this.trigger(text);
-      }
-
-      const menuSetup = menuContent ?? menu ?? content ?? children;
-      if (menuSetup !== undefined) {
-        this.menuContent(menuSetup);
-      }
-
-      if (placement !== undefined) {
-        this.placement(placement);
-      }
-
-      if (closeOnSelect !== undefined) {
-        this.closeOnSelect(closeOnSelect);
-      }
-
-      if (open !== undefined) {
-        this.open(open);
-      }
-
-      return;
-    }
-
-    this.trigger(setup);
-  }
-}
-
 /**
- * 下拉菜单（形态 B）：视图根是节点类型扩展 `DropdownMenuNode`（触发器 / 面板 / 内层菜单都是它的子节点、
- * 全局关闭监听挂在它的 `destroy()` 上），外层 `vNode` 用 `delegateNodeCommands` 把节点类型的公开方法
- * （`trigger` / `menuContent` / `placement` / `closeOnSelect` / `open` / `close` / `toggle`）与元素 DSL
- * 整体补齐。面板定位按 `data-placement` 交给 CSS 规则（R5，不再写行内 placement 样式）。
+ * 下拉菜单（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * 判据 ②（16 号第 96 条）：要的是**元素级交互 + 文档级监听的生命周期**（触发器点击 / 键盘、
+ * 打开期间挂"点外面关掉"与 Esc）——闭包 + `whenDestroy` 就够，`DropdownMenuNode` 那层节点类型退场：
+ *
+ * - 状态（`open` / `placement` / `closeOnSelect`）在闭包里，根 `data-open` / `data-placement`、
+ *   触发器的 `aria-expanded`、面板的 `aria-hidden` 全是读值绑定（R4 / R6），命令只写状态；
+ * - 面板定位按 `data-placement` 交给 CSS 规则（R5，JS 不写行内 placement 样式）；
+ * - **触发器 / 内层菜单各留一个取用器**（`trigger(setup)` / `menuContent(setup)`，运行期可替换，
+ *   见 16 号第 103 条）；内层菜单用菜单族的 `MenuNode`，聚焦走它的**公开命令** `enabledItems()`
+ *   （不再读私有方法，见 16 号第 27 条）；
+ * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 触发器文案
+ *   （迁移前 `_setupDropdownMenu` 的兜底分支同口径）。
  */
-export function VDropdownMenu(props = {}) {
+export function VDropdownMenu({
+  children,
+  closeOnSelect,
+  content,
+  label,
+  menu,
+  menuContent,
+  open,
+  placement,
+  text,
+  trigger,
+  ...rest
+} = {}) {
+  // 状态是句柄原样 / 普通值包 ref，归一放在读时的派生上（R9）
+  const openState = ref(false);
+  const closeOnSelectState = asSignal(closeOnSelect);
+  const placementState = asSignal(placement);
+  const panelId = allocateId('yoya-dropdown-panel');
+
+  const placementValue = computed(() => placementState.value || 'bottom-start');
+  const closeOnSelectValue = computed(() =>
+    closeOnSelectState.value === undefined ? true : Boolean(closeOnSelectState.value)
+  );
+
+  let globalCloseCleanup = null;
+  let menuBox = null;
+  let triggerBox = null;
+  let view = null;
+
   return vNode((api) => {
-    const node = new DropdownMenuNode(props);
-    delegateNodeCommands(api, node);
-    // 位置参数里的字符串 / 数字：迁移前走 `_setupDropdownMenu(setup)` 的兜底分支 = 触发器文案
-    // （组件化后位置参数回落到"视图根的 setup 分派"，不回构造函数，所以要显式补这一条）
-    api.setupString = (value) => {
-      node.trigger(value);
+    const releaseGlobalClose = () => {
+      globalCloseCleanup?.();
+    };
+
+    /** 打开期间才挂文档级监听：点外面 / Esc（Esc 之后把焦点还给触发器）。 */
+    const bindGlobalClose = () => {
+      if (globalCloseCleanup) {
+        return;
+      }
+
+      const handlePointer = (event) => {
+        if (!view?._el?.contains(event.target)) {
+          api.close();
+        }
+      };
+      const handleKey = (event) => {
+        if (event.key !== 'Escape') {
+          return;
+        }
+
+        const shouldRestoreFocus = Boolean(view?._el?.contains(event.target));
+        api.close();
+
+        if (shouldRestoreFocus) {
+          triggerBox?.focus?.();
+        }
+      };
+
+      const unbindPointer = bindDocumentEvent('click', handlePointer);
+      const unbindKey = bindDocumentEvent('keydown', handleKey);
+
+      globalCloseCleanup = () => {
+        unbindPointer();
+        unbindKey();
+        globalCloseCleanup = null;
+      };
+    };
+
+    const focusItem = (fromEnd) => {
+      const items = menuBox?.enabledItems?.() ?? [];
+      const item = fromEnd ? items[items.length - 1] : items[0];
+
+      item?.focus?.();
+    };
+
+    api.trigger = (setup) => {
+      if (setup === undefined) {
+        return triggerBox;
+      }
+
+      setupButtonSlot(triggerBox, setup);
       return api;
     };
-    return node;
+
+    api.menuContent = (setup) => {
+      if (setup === undefined) {
+        return menuBox;
+      }
+
+      setupContentSlot(menuBox, setup);
+      return api;
+    };
+
+    api.placement = (value) => {
+      if (value === undefined) {
+        return placementValue.value;
+      }
+
+      placementState.value = value;
+      return api;
+    };
+
+    /** 选中即关：写方法（无参 = 开，与迁移前同口径）。 */
+    api.closeOnSelect = (value = true) => {
+      closeOnSelectState.value = Boolean(value);
+      return api;
+    };
+
+    api.open = (value = true) => {
+      const enabled = Boolean(value);
+
+      openState.value = enabled;
+
+      if (enabled) {
+        bindGlobalClose();
+        focusItem(false);
+      } else {
+        releaseGlobalClose();
+      }
+
+      return api;
+    };
+
+    api.close = () => api.open(false);
+    api.toggle = () => api.open(!openState.value);
+
+    /** 位置参数：字符串 / 数字 = 触发器文案（迁移前 `_setupDropdownMenu` 的兜底分支同口径）。 */
+    api.setupString = (value) => api.trigger(value);
+
+    api.whenDestroy = () => {
+      api.close();
+    };
+
+    // 结构（R2）：整棵树写在 return 里；状态类属性是读值绑定（R4 / R6）
+    view = div(
+      {
+        ...rest,
+        'data-open': computed(() => (openState.value ? 'true' : null)),
+        'data-placement': placementValue,
+        vn: 'VDropdownMenu'
+      },
+      (root) => {
+        triggerBox = vButton('操作')
+          .setup({ vn: 'VDropdownTrigger VButton' })
+          .attr({
+            'aria-controls': panelId,
+            'aria-expanded': computed(() => (openState.value ? 'true' : 'false')),
+            'aria-haspopup': 'menu'
+          })
+          .on('click', (event) => {
+            event.preventDefault();
+            // 触发钮禁用态以 DOM 属性为准（票 01 后 VButton 状态走内部 ref）
+            if (!triggerBox.attr('disabled')) {
+              api.toggle();
+            }
+          })
+          .on('keydown', (event) => {
+            if (triggerBox.attr('disabled')) {
+              return;
+            }
+
+            if (!['ArrowDown', 'ArrowUp', 'Enter', ' ', 'Spacebar'].includes(event.key)) {
+              return;
+            }
+
+            event.preventDefault();
+            api.open();
+
+            if (event.key === 'ArrowUp') {
+              focusItem(true);
+            }
+          });
+
+        menuBox = new MenuNode().setup({ vn: 'VDropdownContent VMenu' });
+        menuBox.on('click', (event) => {
+          const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
+
+          if (
+            closeOnSelectValue.value &&
+            menuItem &&
+            !menuItem.disabled &&
+            !elementHasIdentity(menuItem, 'VSubMenuTrigger')
+          ) {
+            api.close();
+            triggerBox.focus?.();
+          }
+        });
+
+        root.child(
+          triggerBox,
+          div(
+            {
+              attrs: { 'aria-hidden': computed(() => (openState.value ? 'false' : 'true')) },
+              id: panelId,
+              vn: 'VDropdownPanel'
+            },
+            (panel) => panel.child(menuBox)
+          )
+        );
+
+        // props：触发器 → 菜单内容 → 定位 → 选中即关 → 打开态（迁移前 `_setupDropdownMenu` 的顺序）
+        const triggerSetup = trigger ?? label ?? text;
+        const menuSetup = menuContent ?? menu ?? content ?? children;
+
+        if (triggerSetup !== undefined) {
+          api.trigger(triggerSetup);
+        }
+        if (menuSetup !== undefined) {
+          api.menuContent(menuSetup);
+        }
+        if (placement !== undefined) {
+          api.placement(placement);
+        }
+        if (closeOnSelect !== undefined) {
+          api.closeOnSelect(closeOnSelect);
+        }
+        if (open !== undefined) {
+          api.open(open);
+        }
+      }
+    );
+
+    // 元素级命令代委托（第三方仍可用 `menu.attr(…)` / `menu.on(…)`）
+    delegateNodeCommands(api, view);
+
+    return view;
   });
 }
 

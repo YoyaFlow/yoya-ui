@@ -87,7 +87,11 @@ export class MenuNode extends HtmlElementNode {
     return element;
   }
 
-  _enabledMenuItems() {
+  /**
+   * 可聚焦的菜单项（跳过禁用项）：菜单族的**公开命令**——`vDropdownMenu` 用它做打开后的首个 / 末个聚焦，
+   * 不再从外部读私有方法（票 16 第 27 条：跨模块只走命令）。
+   */
+  enabledItems() {
     if (!this._el) {
       return [];
     }
@@ -130,7 +134,7 @@ export class MenuNode extends HtmlElementNode {
     const orientation = this.attr('data-orientation') || 'vertical';
     const keyStep =
       orientation === 'vertical' ? { ArrowDown: 1, ArrowUp: -1 } : { ArrowLeft: -1, ArrowRight: 1 };
-    const items = this._enabledMenuItems();
+    const items = this.enabledItems();
     const currentItem = event.target.closest?.('[vn~="VMenuItem"]');
 
     if (
@@ -628,7 +632,7 @@ class SubMenuNode extends HtmlElementNode {
       event.preventDefault();
       event.stopPropagation();
       this.open();
-      const firstItem = this._menu._enabledMenuItems()[0];
+      const firstItem = this._menu.enabledItems()[0];
       if (firstItem) {
         this._menu._syncTabStops(firstItem);
         firstItem.focus();
