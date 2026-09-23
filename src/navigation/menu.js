@@ -437,67 +437,99 @@ export function vMenuDivider(setup = null) {
 
 export const VMenuDivider = vMenuDivider;
 
-/** 菜单分组的节点类型（不导出）；公开组件 `vMenuGroup` 是 vNode 外壳。 */
-class MenuGroupNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', { vn: 'VMenuGroup' });
-    const labelId = allocateId('yoya-menu-group-label');
-    this._orientation = 'vertical';
-    this._labelBox = new HtmlElementNode('div', { vn: 'VMenuGroupLabel' }).id(labelId);
+/**
+ * 菜单分组（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * `MenuGroupNode` 那层节点类型退场（组件不继承基础元素）：分组就是"带标签的一段单元"——
+ * 标签盒常驻（运行期可替换 → 取用器），子单元是**普通匿名内容**（`child(…)` 落进分组根，
+ * 与迁移前 `super.child(…)` 同一条落位路径）。
+ *
+ * 两处口径变化（见 16 号第 112 条）：
+ * - **朝向**：② 之后朝向样式按菜单作用域写（`[vn~='VMenu'][data-orientation=…] …`），
+ *   分组不再往下推 `data-orientation`；分组自己的属性位由菜单经身份表写（它自己还要用）。
+ * - **"子节点加入"时机**：迁移前的 `child()` 覆盖会在加入时通知侧栏重排、重算 tab 序；
+ *   闭包组件没有这个时机（vNode 的 `api` 不允许定义 `child`）——侧栏折叠态对"后加内容"要等
+ *   下一次 `setSidebarContentCollapsed` 走查（新建分组时本来就会走一遍）。
+ */
+export function VMenuGroup() {
+  const labelId = allocateId('yoya-menu-group-label');
+  let labelBox = null;
+  let view = null;
 
-    this.attr({ 'aria-labelledby': labelId, role: 'group' });
-    super.child(this._labelBox);
-    this._setupMenuGroup(setup);
-  }
+  return vNode((api) => {
+    api.label = (content) => {
+      replaceChildren(labelBox, normalizeChildren(content));
+      return api;
+    };
 
-  label(content) {
-    replaceChildren(this._labelBox, normalizeChildren(content));
-    return this;
-  }
+    api.title = (content) => api.label(content);
 
-  title(content) {
-    return this.label(content);
-  }
+    /** 侧栏折叠态：标签位标记成"视觉隐藏"（`data-sidebar-hidden`，显隐归 CSS）。 */
+    api.sidebarHidden = (hidden) => {
+      labelBox?.attr('data-sidebar-hidden', hidden ? 'true' : null);
+      return api;
+    };
 
-  child(...children) {
-    super.child(...children);
-    this.children().forEach((child) => applyMenuOrientation(child, this._orientation));
-    if (this._el) {
-      const EventClass = this._el.ownerDocument.defaultView.Event;
-      this._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
-    }
-    this._sidebarContentChangeCallback?.();
-    return this;
-  }
+    // 调用方参数：对象 = 标签 / 子单元 / 元素配置；字符串 = 标签（迁移前 `_setupMenuGroup` 同口径）
+    api.setupObject = (config) => {
+      if (config === null || config === undefined) {
+        return api;
+      }
 
-  _menuOrientation(orientation) {
-    this._orientation = orientation === 'horizontal' ? 'horizontal' : 'vertical';
-    this.attr('data-orientation', this._orientation);
-    this.children().forEach((child) => applyMenuOrientation(child, this._orientation));
-    return this;
-  }
+      const { children, label, title, ...elementConfig } = config;
 
-  _setupMenuGroup(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
+      if (Object.keys(elementConfig).length > 0) {
+        view.setup(elementConfig);
+      }
+      if (label !== undefined) {
+        api.label(label);
+      } else if (title !== undefined) {
+        api.title(title);
+      }
+      if (children !== undefined) {
+        view.child(children);
+      }
 
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
+      return api;
+    };
 
-    if (isPlainObject(setup)) {
-      const { children, label, title, ...elementConfig } = setup;
-      if (Object.keys(elementConfig).length > 0) this.setup(elementConfig);
-      if (label !== undefined) this.label(label);
-      else if (title !== undefined) this.title(title);
-      if (children !== undefined) this.child(children);
-      return;
-    }
+    api.setupString = (value) => api.label(value);
 
-    this.label(setup);
-  }
+    /**
+     * **细粒度结构命令**（同 `VTable` 的段命令）：往分组里投递一个单元，并在**加入时**通知菜单
+     * 重算 roving tabindex——迁移前这一步在节点类型的 `child()` 覆盖里，闭包组件没有那个时机，
+     * 所以把命令收在自己身上（`_el` 只读判定 + DOM 事件，与菜单项 `disabled()` 的通知同口径）。
+     */
+    const appendUnit = (unit) => {
+      view.child(unit);
+
+      if (view._el) {
+        const EventClass = view._el.ownerDocument?.defaultView?.Event ?? Event;
+        view._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
+      }
+
+      return unit;
+    };
+
+    api.vMenuItem = (setup) => appendUnit(vMenuItem(setup));
+    api.vMenuGroup = (setup) => appendUnit(vMenuGroup(setup));
+    api.vSubMenu = (setup) => appendUnit(vSubMenu(setup));
+    api.vMenuDivider = (setup) => appendUnit(vMenuDivider(setup));
+
+    // 结构（R2）：标签盒常驻，子单元按普通匿名内容往下排
+    view = div(
+      { attrs: { 'aria-labelledby': labelId, role: 'group' }, vn: 'VMenuGroup' },
+      (root) => {
+        root.child(
+          div({ id: labelId, vn: 'VMenuGroupLabel' }, (box) => {
+            labelBox = box;
+          })
+        );
+      }
+    );
+
+    return view;
+  });
 }
 
 /** 子菜单的节点类型（不导出）；公开组件 `vSubMenu` 是 vNode 外壳。 */
@@ -1028,7 +1060,7 @@ function setSidebarContentCollapsed(root, collapsed, sidebar) {
     // 子单元可能是 vNode 组件（成员是 ComponentNode）：判定与取值都落到**视图根**（节点类型）上
     const unit = viewRootOf(node) ?? node;
 
-    if ((unit instanceof MenuNode || unit instanceof MenuGroupNode) && contentChangeCallback) {
+    if ((unit instanceof MenuNode || hasComponentIdentity(node, 'VMenuGroup')) && contentChangeCallback) {
       unit._sidebarContentChangeCallback = contentChangeCallback;
     }
 
@@ -1052,8 +1084,9 @@ function setSidebarContentCollapsed(root, collapsed, sidebar) {
       return;
     }
 
-    if (unit instanceof MenuGroupNode) {
-      setSidebarVisuallyHidden(unit._labelBox, collapsed);
+    if (hasComponentIdentity(node, 'VMenuGroup')) {
+      // 分组是闭包组件了：视觉隐藏标记落在它自己的标签位上（同一个 `data-sidebar-hidden` 口径）
+      node.sidebarHidden(collapsed);
     }
 
     if (typeof node.children === 'function') {
@@ -1129,23 +1162,6 @@ export function VMenu() {
 export const vMenu = createComponentShortcut(VMenu);
 
 export const vMenuItem = createComponentShortcut(VMenuItem);
-
-export function VMenuGroup() {
-  return vNode((api) => {
-    const element = new MenuGroupNode();
-    delegateCommands(api, element, ['label', 'title']);
-    delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
-    api.setupObject = (config) => {
-      element._setupMenuGroup(config);
-      return api;
-    };
-    api.setupString = (value) => {
-      element._setupMenuGroup(value);
-      return api;
-    };
-    return element;
-  });
-}
 
 export const vMenuGroup = createComponentShortcut(VMenuGroup);
 
