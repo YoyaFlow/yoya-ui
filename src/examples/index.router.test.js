@@ -133,7 +133,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(document.querySelector('[data-components-router-views]').style.overflow).toBe('auto');
     expect(document.querySelector('[data-components-router-views]').style.height).toBe('100%');
     expect(document.querySelector('[vn~="VRouterViews"]').dataset.titleLocked).toBe('true');
-    expect(document.querySelector('[vn~="VRouterViewsContent"]').style.overflow).toBe('auto');
+    // 锁定态的几何（内容区自滚）归 CSS 的 `[data-title-locked='true']` 规则
+    expect(document.querySelector('[vn~="VRouterViewsContent"]')).not.toBeNull();
     expect(document.querySelector('.components-workspace')).not.toBeNull();
     expect(document.querySelector('.yoya-vsplit-panel')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();

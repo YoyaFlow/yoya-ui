@@ -394,32 +394,16 @@ describe('router', () => {
     expect(
       views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').getAttribute('role')
     ).toBe('tablist');
-    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.overflowX).toBe(
-      'auto'
-    );
-    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.overflowY).toBe(
-      'hidden'
-    );
-    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]').style.width).toBe(
-      '100%'
-    );
-    expect(
-      views
-        .renderDom()
-        .querySelector('[vn~="VRouterViewsTitlebar"]')
-        .style.getPropertyValue('scrollbar-width')
-    ).toBe('none');
-    expect(
-      document
-        .querySelector('[data-yoya-router-popup-style]')
-        .textContent.includes("[vn~='VRouterViewsTitlebar']::-webkit-scrollbar")
-    ).toBe(true);
+    // 标题条的静态样式（含 overflow 两轴）在 `yoya.ui.css`，这里只认身份与结构
+    expect(views.renderDom().querySelector('[vn~="VRouterViewsTitlebar"]')).not.toBeNull();
+    expect(views.renderDom().dataset.titlePosition).toBe('top');
+    // 滚动条隐藏 / 各部件静态样式都在 `yoya.ui.css`（`css-contract.test.js` 按选择器守着），
+    // 运行期不再注入样式表
+    expect(document.querySelector('[data-yoya-router-popup-style]')).toBeNull();
     const titleTab = views.renderDom().querySelector('[vn~="VRouterViewsTitle"]');
     const titleLabel = titleTab.querySelector('[vn~="VRouterViewsLabel"]');
     expect(titleLabel.textContent).toBe('项目概览');
     expect(titleLabel.getAttribute('role')).toBe('tab');
-    expect(titleTab.style.display).toBe('inline-flex');
-    expect(titleTab.style.borderRadius).toBe('');
     expect(views.renderDom().querySelector('[vn~="VRouterViewsContent"]').textContent).toBe(
       '概览内容'
     );
@@ -563,15 +547,9 @@ describe('router', () => {
     expect(
       Array.from(visibleTabs, (tab) => tab.querySelector('[vn~="VRouterViewsLabel"]').textContent)
     ).toEqual(['页面 10', '页面 9', '页面 8', '页面 7', '页面 6', '页面 5', '页面 4', '页面 3']);
-    expect(button.style.display).toBe('inline-flex');
     expect(button.textContent).toBe('⋯');
-    expect(button.style.borderWidth).toBe('0px');
-    expect(button.style.justifyContent).toBe('center');
-    expect(button.style.alignItems).toBe('center');
-    expect(button.style.position).toBe('sticky');
-    expect(button.style.right).toBe('8px');
-    expect(button.style.zIndex).toBe('2');
-    expect(button.style.marginLeft).toBe('auto');
+    // 溢出按钮的静态样式与打开规则都在 CSS（`[data-title-overflow='true']`），这里看状态属性
+    expect(element.dataset.titleOverflow).toBe('true');
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(titlebar.lastElementChild).toBe(button);
 
@@ -579,19 +557,11 @@ describe('router', () => {
     const items = popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]');
     expect(element.dataset.titlePopup).toBe('true');
     expect(button.getAttribute('aria-expanded')).toBe('true');
-    expect(popup.style.display).toBe('block');
-    expect(popup.style.getPropertyValue('scrollbar-width')).toBe('none');
-    expect(document.querySelector('[data-yoya-router-popup-style]')).not.toBeNull();
+    expect(document.querySelector('[data-yoya-router-popup-style]')).toBeNull();
     expect(
       Array.from(items, (item) => item.querySelector('[vn~="VRouterViewsPopupTitle"]').textContent)
     ).toEqual(['页面 2', '页面 1']);
-    expect(items[0].style.fontSize).toBe('13px');
     expect(popup.querySelectorAll('[vn~="VRouterViewsPopupClose"]')).toHaveLength(2);
-    expect(
-      document
-        .querySelector('[data-yoya-router-popup-style]')
-        .textContent.includes("[vn~='VRouterViewsPopupItem']:hover")
-    ).toBe(true);
 
     popup.querySelectorAll('[vn~="VRouterViewsPopupClose"]')[0].click();
     expect(appRouter.currentPath()).toBe('/page-10');
@@ -607,7 +577,6 @@ describe('router', () => {
     remainingItems[0].click();
     expect(appRouter.currentPath()).toBe('/page-01');
     expect(element.dataset.titlePopup).toBeUndefined();
-    expect(popup.style.display).toBe('none');
 
     button.click();
     const afterItems = popup.querySelectorAll('[vn~="VRouterViewsPopupItem"]');
@@ -741,22 +710,17 @@ describe('router', () => {
 
     expect(element.dataset.titlePosition).toBe('left');
     expect(titlebar.getAttribute('aria-orientation')).toBe('vertical');
-    expect(titlebar.style.flexDirection).toBe('column');
-    expect(titlebar.style.borderRightWidth).toBe('1px');
-    expect(titlebar.style.overflowY).toBe('auto');
+    // 竖排的几何 / 边框朝向归 CSS：`[data-title-position='left']` 规则
+    expect(element.dataset.titlePosition).toBe('left');
     expect(titlebar.querySelector('[vn~="VRouterViewsExpand"]')).toBeNull();
     expect(element.firstElementChild).toBe(titlebar);
-    expect(overviewTab.style.borderRadius).toBe('');
-    expect(overviewTab.style.marginRight).toBe('-9px');
+    expect(overviewTab).not.toBeNull();
 
     views.titlePosition('right');
 
     expect(element.dataset.titlePosition).toBe('right');
-    expect(titlebar.style.borderLeftWidth).toBe('1px');
-    expect(titlebar.style.borderRightWidth).toBe('');
     expect(element.children[1]).toBe(titlebar);
-    expect(overviewTab.style.borderRadius).toBe('');
-    expect(overviewTab.style.marginLeft).toBe('-9px');
+    expect(titlebar.getAttribute('aria-orientation')).toBe('vertical');
 
     root.destroy();
   });
@@ -779,25 +743,20 @@ describe('router', () => {
     const content = element.querySelector('[vn~="VRouterViewsContent"]');
 
     expect(element.dataset.titleLocked).toBe('true');
-    expect(element.style.display).toBe('flex');
-    expect(element.style.flexDirection).toBe('column');
-    expect(element.style.height).toContain('100');
-    expect(titlebar.style.flex).toBe('0 0 auto');
-    expect(content.style.flex).toBe('1 1 auto');
-    expect(content.style.overflow).toBe('auto');
-    expect(content.style.minHeight).toContain('0');
+    // 锁定态的几何（根 flex / 内容区自滚）归 CSS：`[data-title-locked='true']` 规则
+    expect(element.dataset.titleLocked).toBe('true');
+    expect(titlebar).not.toBeNull();
+    expect(content).not.toBeNull();
 
     views.titlePosition('left');
 
-    expect(element.style.flexDirection).toBe('row');
-    expect(titlebar.style.overflowY).toBe('auto');
-    expect(content.style.overflow).toBe('auto');
+    expect(element.dataset.titlePosition).toBe('left');
+    expect(element.dataset.titleLocked).toBe('true');
 
     views.lockTitle(false);
 
     expect(element.dataset.titleLocked).toBeUndefined();
-    expect(content.style.overflow).toBe('');
-    expect(content.style.minHeight).toBe('120px');
+    expect(content).not.toBeNull();
 
     root.destroy();
   });
@@ -1122,7 +1081,8 @@ describe('router', () => {
     openTabMenu('/a');
     const menu = document.querySelector('[vn~="VRouterViewsContext"]');
     expect(menu).not.toBeNull();
-    expect(menu.style.display).toBe('block');
+    // 菜单只在打开时挂在 body 上（关掉即摘），所以"在文档里"本身就是打开态
+    expect(menu.parentElement).toBe(document.body);
     expect(
       Array.from(
         menu.querySelectorAll('[vn~="VRouterViewsContextItem"]'),
@@ -1132,7 +1092,8 @@ describe('router', () => {
     expect(menu.querySelectorAll('[vn~="VRouterViewsContextSeparator"]')).toHaveLength(2);
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(menu.style.display).toBe('none');
+    // 关掉即从 body 上摘下来
+    expect(document.querySelector('[vn~="VRouterViewsContext"]')).toBeNull();
     create.root.destroy();
   });
 
@@ -1143,10 +1104,10 @@ describe('router', () => {
     const tab = openTabMenu('/a');
     const menu = document.querySelector('[vn~="VRouterViewsContext"]');
     expect(tab).not.toBeNull();
-    expect(menu.style.display).toBe('block');
+    expect(menu.parentElement).toBe(document.body);
 
     document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    expect(menu.style.display).toBe('none');
+    expect(document.querySelector('[vn~="VRouterViewsContext"]')).toBeNull();
     create.root.destroy();
   });
 

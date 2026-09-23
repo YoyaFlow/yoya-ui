@@ -88,6 +88,41 @@ const cascaderSelectors = [
   "[vn~='VCascaderOption'] > [vn~='VCascaderOptionArrow']"
 ];
 
+const routerViewsSelectors = [
+  "[vn~='VRouterViews']",
+  "[vn~='VRouterViews'] > [vn~='VRouterViewsTitlebar']",
+  "[vn~='VRouterViews'] > [vn~='VRouterViewsContent']",
+  "[vn~='VRouterViews'][data-title-position='left'] > [vn~='VRouterViewsTitlebar']",
+  "[vn~='VRouterViews'][data-title-position='left'] > [vn~='VRouterViewsContent']",
+  "[vn~='VRouterViews'][data-title-locked='true']",
+  "[vn~='VRouterViews'][data-title-locked='true'] > [vn~='VRouterViewsTitlebar']",
+  "[vn~='VRouterViews'][data-title-locked='true'] > [vn~='VRouterViewsContent']",
+  "[vn~='VRouterViewsTitlebar'] > [vn~='VRouterViewsExpand']",
+  "[vn~='VRouterViews'][data-title-overflow='true'] > [vn~='VRouterViewsTitlebar'] > [vn~='VRouterViewsExpand']",
+  "[vn~='VRouterViewsTitle']",
+  "[vn~='VRouterViewsTitle'][data-active='true']",
+  "[vn~='VRouterViews'][data-title-position='top'] [vn~='VRouterViewsTitle'][data-active='true']",
+  "[vn~='VRouterViews'][data-title-position='left'] [vn~='VRouterViewsTitle'][data-active='true']",
+  "[vn~='VRouterViewsTitle'] > [vn~='VRouterViewsLabel']",
+  "[vn~='VRouterViewsTitle'] > [vn~='VRouterViewsClose']",
+  "[vn~='VRouterViews'] > [vn~='VRouterViewsPopup']",
+  "[vn~='VRouterViews'][data-title-popup='true'] > [vn~='VRouterViewsPopup']",
+  "[vn~='VRouterViewsPopup'] > [vn~='VRouterViewsPopupItem']",
+  "[vn~='VRouterViewsPopupItem'][aria-current='true']",
+  "[vn~='VRouterViewsPopupItem'] > [vn~='VRouterViewsPopupTitle']",
+  "[vn~='VRouterViewsPopupItem'] > [vn~='VRouterViewsPopupClose']",
+  "[vn~='VRouterViewsContext']",
+  "[vn~='VRouterViewsContext'] > [vn~='VRouterViewsContextItem']",
+  "[vn~='VRouterViewsContextItem'][data-danger='true']",
+  "[vn~='VRouterViewsContextItem'][aria-disabled='true']",
+  "[vn~='VRouterViewsPopupItem']:hover",
+  "[vn~='VRouterViewsPopupItem']:hover [vn~='VRouterViewsPopupClose']",
+  "[vn~='VRouterViewsTitlebar']::-webkit-scrollbar",
+  "[vn~='VRouterViewsPopup']::-webkit-scrollbar",
+  "[vn~='VRouterViewsContextItem']:hover",
+  "[vn~='VRouterViewsContextSeparator']"
+];
+
 const tableSelectors = [
   "[vn~='VTable']",
   "[vn~='VTableScroll']",
@@ -285,6 +320,12 @@ describe('CSS style contract', () => {
 
   it('covers the cascader selectors', () => {
     cascaderSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the router views selectors', () => {
+    routerViewsSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

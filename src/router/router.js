@@ -8,19 +8,14 @@ import {
   vText
 } from '../core/index.js';
 import { applySetupValue } from '../core/node.js';
-import {
-  bindDocumentEvent,
-  bindWindowEvent,
-  injectDocumentStyle
-} from '../core/document-events.js';
-import { replaceChildren, themeBorder, themeValue } from '../components/shared.js';
+import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
+import { replaceChildren } from '../components/shared.js';
 import { createComponentFactory, createComponentShortcut } from '../components/shared.js';
 import { vSlot } from '../layout/v-slot.js';
 import { vNode } from '../core/v-node.js';
 import { a, button, div, header, span } from '../html/index.js';
 
 const maxVisibleTitles = 8;
-let scrollbarStyle = null;
 
 // 绝对地址：带协议（http: / https: / mailto: / tel: …）或协议相对（//host）。
 const documentUrlPattern = /^[a-z][a-z0-9+.-]*:|\/\//i;
@@ -28,49 +23,6 @@ const documentUrlPattern = /^[a-z][a-z0-9+.-]*:|\/\//i;
 /** 该地址是否应交给浏览器做整页跳转（而不是渲染 SPA 视图）。 */
 function isDocumentUrl(value) {
   return typeof value === 'string' && documentUrlPattern.test(value.trim());
-}
-
-function ensureScrollbarStyle() {
-  if (scrollbarStyle) return;
-
-  scrollbarStyle = injectDocumentStyle(
-    `[vn~='VRouterViewsTitlebar'],
-[vn~='VRouterViewsPopup'] {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-[vn~='VRouterViewsTitlebar']::-webkit-scrollbar,
-[vn~='VRouterViewsPopup']::-webkit-scrollbar {
-  display: none;
-  height: 0;
-  width: 0;
-}
-[vn~='VRouterViewsPopupItem']:hover {
-  background: var(--yoya-color-surface-hover, #eef3f9);
-}
-[vn~='VRouterViewsPopupItem'][aria-current='true'] {
-  background: var(--yoya-color-primary-subtle, #e8f0fe);
-  color: var(--yoya-color-primary, #1f6feb);
-}
-[vn~='VRouterViewsPopupClose'] {
-  color: var(--yoya-color-text-secondary, #57606a);
-  opacity: 0.65;
-}
-[vn~='VRouterViewsPopupItem']:hover [vn~='VRouterViewsPopupClose'],
-[vn~='VRouterViewsPopupClose']:hover {
-  color: var(--yoya-color-text-danger, #b91c1c);
-  opacity: 1;
-}
-[vn~='VRouterViewsContextItem']:hover {
-  background: var(--yoya-color-surface-hover, #f6f8fa);
-}
-[vn~='VRouterViewsContextSeparator'] {
-  background: var(--yoya-color-border, #d0d7de);
-  height: 1px;
-  margin: 4px 6px;
-}`,
-    'data-yoya-router-popup-style'
-  );
 }
 
 function createRouterViewsStorageKey(routerInstance) {
@@ -768,88 +720,23 @@ export function VRouterViews(routerInstance) {
     const moreButton = button({
       'aria-expanded': 'false',
       'aria-label': '展开全部标签',
-      style: {
-        alignItems: 'center',
-        background: 'transparent',
-        border: '0',
-        color: themeValue('color-text-secondary', '#57606a'),
-        cursor: 'pointer',
-        display: 'none',
-        flexShrink: '0',
-        font: 'inherit',
-        gap: '6px',
-        height: '24px',
-        justifyContent: 'center',
-        lineHeight: '1',
-        marginBottom: '0',
-        marginLeft: 'auto',
-        minWidth: '24px',
-        padding: '0',
-        position: 'sticky',
-        right: '8px',
-        zIndex: '2'
-      },
       type: 'button',
       vn: 'VRouterViewsExpand'
     }).child('⋯');
     const titleNode = header({
       'aria-label': '已打开页面',
       role: 'tablist',
-      style: {
-        background: themeValue('color-surface-hover', '#f6f8fa'),
-        borderBottom: themeBorder('color-border', '#d0d7de'),
-        boxSizing: 'border-box',
-        color: themeValue('color-text-secondary', '#57606a'),
-        display: 'flex',
-        flexWrap: 'nowrap',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: '13px',
-        gap: '0px',
-        msOverflowStyle: 'none',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        padding: '0px 0px',
-        scrollbarWidth: 'none',
-        width: '100%'
-      },
       vn: 'VRouterViewsTitlebar'
     });
-    const contentNode = div({
-      style: { minHeight: '120px', padding: '16px' },
-      vn: 'VRouterViewsContent'
-    });
+    const contentNode = div({ vn: 'VRouterViewsContent' });
     const popup = div({
       'aria-label': '已打开页面',
       role: 'menu',
-      style: {
-        background: themeValue('color-surface', '#ffffff'),
-        border: themeBorder('color-border', '#d0d7de'),
-        borderRadius: '8px',
-        boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-        display: 'none',
-        maxHeight: '280px',
-        maxWidth: '260px',
-        minWidth: '180px',
-        msOverflowStyle: 'none',
-        overflowY: 'auto',
-        padding: '6px',
-        position: 'fixed',
-        scrollbarWidth: 'none',
-        zIndex: '100'
-      },
       vn: 'VRouterViewsPopup'
     });
-    const node = div(
-      {
-        'data-title-position': 'top',
-        style: {
-          border: themeBorder('color-border', '#d0d7de'),
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        },
-        vn: 'VRouterViews'
-      },
-      (root) => root.child(titleNode, contentNode, popup)
+    // 位置 / 锁定 / 溢出 / 弹窗都走属性（`data-title-*`），样式全在 `yoya.ui.css`
+    const node = div({ 'data-title-position': 'top', vn: 'VRouterViews' }, (root) =>
+      root.child(titleNode, contentNode, popup)
     );
 
     const state = {
@@ -867,85 +754,15 @@ export function VRouterViews(routerInstance) {
       landed: false
     };
 
-    const applyLockedTitle = () => {
-      const vertical = state.titlePosition !== 'top';
-
-      if (state.lockTitle) {
-        node.styles({
-          display: 'flex',
-          flexDirection: vertical ? 'row' : 'column',
-          height: '100%',
-          minHeight: '0',
-          overflow: 'hidden'
-        });
-        titleNode.style('flex', '0 0 auto');
-        contentNode.styles({
-          flex: '1 1 auto',
-          minHeight: '0',
-          minWidth: '0',
-          overflow: 'auto'
-        });
-        return;
-      }
-
-      node.styles({
-        flexDirection: null,
-        height: null,
-        minHeight: null,
-        overflow: 'hidden'
-      });
-      titleNode.style('flex', null);
-      contentNode.styles({
-        flex: vertical ? '1 1 auto' : null,
-        minHeight: '120px',
-        minWidth: vertical ? '0' : null,
-        overflow: null
-      });
-    };
-
+    /**
+     * 位置只做两件事（`data-title-position` 由 `api.titlePosition` 写）：
+     * 子节点顺序（`right` 时内容在前）交给引擎对账，样式归 CSS 的 `[data-title-position=…]` 规则。
+     */
     const applyTitlePosition = (position) => {
-      const vertical = position !== 'top';
-
-      node.styles({
-        alignItems: vertical ? 'stretch' : null,
-        display: vertical ? 'flex' : null
-      });
-      titleNode.styles({
-        background: themeValue('color-surface-hover', '#f6f8fa'),
-        borderBottom: vertical ? null : themeBorder('color-border', '#d0d7de'),
-        borderLeft: position === 'right' ? '1px solid' : null,
-        borderLeftColor: position === 'right' ? themeValue('color-border', '#d0d7de') : null,
-        borderLeftStyle: position === 'right' ? 'solid' : null,
-        borderLeftWidth: position === 'right' ? '1px' : null,
-        borderRight: position === 'left' ? '1px solid' : null,
-        borderRightColor: position === 'left' ? themeValue('color-border', '#d0d7de') : null,
-        borderRightStyle: position === 'left' ? 'solid' : null,
-        borderRightWidth: position === 'left' ? '1px' : null,
-        boxSizing: 'border-box',
-        color: themeValue('color-text-secondary', '#57606a'),
-        display: 'flex',
-        flexDirection: vertical ? 'column' : 'row',
-        flexShrink: vertical ? '0' : null,
-        flexWrap: 'nowrap',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: '13px',
-        gap: '0px',
-        msOverflowStyle: 'none',
-        overflowX: vertical ? 'hidden' : 'auto',
-        overflowY: vertical ? 'auto' : 'hidden',
-        padding: vertical ? '10px 8px' : '0px 0px',
-        scrollbarWidth: 'none',
-        width: vertical ? null : '100%'
-      });
-      contentNode.styles({
-        flex: vertical ? '1 1 auto' : null,
-        minWidth: vertical ? '0' : null
-      });
       const orderedChildren =
         position === 'right' ? [contentNode, titleNode, popup] : [titleNode, contentNode, popup];
       // 落位对账：留下的按新顺序复用（DOM 跟着搬家），清单外的由 commit 销毁
       orderChildren(node, orderedChildren);
-      applyLockedTitle();
     };
 
     const resolveTitle = (context = {}) => {
@@ -964,38 +781,9 @@ export function VRouterViews(routerInstance) {
     };
 
     const styleTitleTab = (entry, active) => {
-      const tab = entry.tab;
-      const position = state.titlePosition;
-      const vertical = position !== 'top';
-
       entry.label.attr('aria-selected', String(active));
-      tab.styles({
-        background: active
-          ? themeValue('color-surface', '#ffffff')
-          : themeValue('color-surface-active', '#eaeef2'),
-        border: themeBorder('color-border', '#d0d7de'),
-        borderBottomColor:
-          position === 'top'
-            ? active
-              ? themeValue('color-surface', '#ffffff')
-              : themeValue('color-border', '#d0d7de')
-            : themeValue('color-border', '#d0d7de'),
-        borderLeftColor: 'transparent',
-        borderRightColor:
-          position === 'left'
-            ? active
-              ? themeValue('color-surface', '#ffffff')
-              : themeValue('color-border', '#d0d7de')
-            : themeValue('color-border', '#d0d7de'),
-        color: active
-          ? themeValue('color-text', '#24292f')
-          : themeValue('color-text-secondary', '#57606a'),
-        fontWeight: active ? '600' : '400',
-        marginBottom: position === 'top' ? '-9px' : '0',
-        marginLeft: position === 'right' ? '-9px' : '0',
-        marginRight: position === 'left' ? '-9px' : '0',
-        padding: vertical ? '8px 10px' : '7px 14px 8px'
-      });
+      // 高亮是状态：底色 / 边框朝向 / 负 margin 全归 CSS 的 `[data-active='true']` 规则
+      entry.tab.attr('data-active', active ? 'true' : null);
     };
 
     /** 溢出按钮：常驻标题条，显隐靠条件挂载（不需要时不在 DOM 里）。 */
@@ -1005,7 +793,6 @@ export function VRouterViews(routerInstance) {
       state.overflow = visible;
       node.attr('data-title-overflow', visible ? 'true' : null);
       moreButton.mountable(visible);
-      moreButton.style('display', visible ? 'inline-flex' : 'none');
     };
 
     /**
@@ -1070,7 +857,6 @@ export function VRouterViews(routerInstance) {
       state.popupOpen = false;
       node.attr('data-title-popup', null);
       moreButton.attr('aria-expanded', 'false');
-      popup.style('display', 'none');
       if (popupCleanup) {
         popupCleanup();
         popupCleanup = null;
@@ -1085,51 +871,18 @@ export function VRouterViews(routerInstance) {
           const item = div({
             'data-router-view-path': path,
             role: 'menuitem',
-            style: {
-              alignItems: 'center',
-              borderRadius: '6px',
-              color: themeValue('color-text', '#24292f'),
-              cursor: 'pointer',
-              display: 'flex',
-              fontSize: '13px',
-              gap: '8px',
-              padding: '7px 8px',
-              width: '100%'
-            },
             tabIndex: '0',
             vn: 'VRouterViewsPopupItem'
           });
-          const titleSpan = span({
-            style: {
-              flex: '1',
-              minWidth: '0',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            },
-            vn: 'VRouterViewsPopupTitle'
-          }).child(title);
+          const titleSpan = span({ vn: 'VRouterViewsPopupTitle' }).child(title);
           const closeButton = button({
             'aria-label': `关闭 ${title}`,
-            style: {
-              background: 'transparent',
-              border: '0',
-              color: 'inherit',
-              cursor: 'pointer',
-              flexShrink: '0',
-              font: 'inherit',
-              lineHeight: '1',
-              padding: '2px 4px'
-            },
             type: 'button',
             vn: 'VRouterViewsPopupClose'
           }).child('×');
           if (path === routerInstance.currentPath()) {
+            // 当前页高亮：状态走属性，颜色归 CSS（`[aria-current='true']` 规则）
             item.attr('aria-current', 'true');
-            item.styles({
-              background: themeValue('color-primary-subtle', '#e8f0fe'),
-              color: themeValue('color-primary', '#1f6feb')
-            });
           }
           const activate = () => {
             closePopup();
@@ -1158,14 +911,10 @@ export function VRouterViews(routerInstance) {
     const openPopup = () => {
       if (state.tabs.size === 0) return;
 
-      ensureScrollbarStyle();
       buildPopup();
       state.popupOpen = true;
       node.attr('data-title-popup', 'true');
       moreButton.attr('aria-expanded', 'true');
-      popup.styles({
-        display: 'block'
-      });
       placePopup();
 
       const handleDocumentClick = (event) => {
@@ -1229,7 +978,6 @@ export function VRouterViews(routerInstance) {
     // 落地收口：注入滚动条样式 + 恢复上次打开的标签（props 这时才全部落完）
     api.whenMount = () => {
       state.landed = true;
-      ensureScrollbarStyle();
       restoreTabsOnce();
       writeTitlebar();
     };
@@ -1337,17 +1085,6 @@ export function VRouterViews(routerInstance) {
         titleContextMenu = div({
           'aria-label': '标签页操作',
           role: 'menu',
-          style: {
-            background: themeValue('color-surface', '#ffffff'),
-            border: themeBorder('color-border', '#d0d7de'),
-            borderRadius: '8px',
-            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.18)',
-            display: 'none',
-            minWidth: '180px',
-            padding: '6px',
-            position: 'fixed',
-            zIndex: '100'
-          },
           vn: 'VRouterViewsContext'
         });
       }
@@ -1357,7 +1094,6 @@ export function VRouterViews(routerInstance) {
 
     const closeTabContextMenu = () => {
       if (!titleContextMenu) return;
-      titleContextMenu.styles({ display: 'none' });
       replaceChildren(titleContextMenu, []);
       titleContextMenu.renderDom()?.remove();
       if (contextMenuCleanup) {
@@ -1441,25 +1177,15 @@ export function VRouterViews(routerInstance) {
         const menu = contextMenuOf();
         const item = div({
           role: 'menuitem',
-          style: {
-            alignItems: 'center',
-            borderRadius: '6px',
-            color: danger
-              ? themeValue('color-text-danger', '#b91c1c')
-              : themeValue('color-text', '#24292f'),
-            cursor: disabled ? 'default' : 'pointer',
-            display: 'flex',
-            fontSize: '13px',
-            gap: '8px',
-            padding: '7px 10px',
-            width: '100%'
-          },
           tabIndex: '0',
           vn: 'VRouterViewsContextItem'
         }).child(label);
+        if (danger) {
+          item.attr('data-danger', 'true');
+        }
         if (disabled) {
+          // 禁用态：属性 + CSS（`aria-disabled='true'` 规则给 cursor / opacity）
           item.attr('aria-disabled', 'true');
-          item.styles({ opacity: '0.4' });
         } else {
           item.on('click', () => {
             closeTabContextMenu();
@@ -1483,7 +1209,6 @@ export function VRouterViews(routerInstance) {
 
       const menu = contextMenuOf();
       menu.bindTo(document.body);
-      menu.styles({ display: 'block' });
 
       const rect = menu.renderDom().getBoundingClientRect();
       const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth || 0;
@@ -1529,41 +1254,16 @@ export function VRouterViews(routerInstance) {
         const text = vText(title);
         const label = button({
           role: 'tab',
-          style: {
-            background: 'transparent',
-            border: '0',
-            color: 'inherit',
-            cursor: 'pointer',
-            font: 'inherit',
-            padding: '0'
-          },
           type: 'button',
           vn: 'VRouterViewsLabel'
         });
         const closeButton = button({
           'aria-label': `关闭 ${title}`,
-          style: {
-            background: 'transparent',
-            border: '0',
-            color: 'inherit',
-            cursor: 'pointer',
-            font: 'inherit',
-            lineHeight: '1',
-            padding: '0'
-          },
           type: 'button',
           vn: 'VRouterViewsClose'
         });
         const tab = div({
           'data-router-view-path': path,
-          style: {
-            alignItems: 'center',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            font: 'inherit',
-            gap: '8px',
-            whiteSpace: 'nowrap'
-          },
           vn: 'VRouterViewsTitle'
         });
 
