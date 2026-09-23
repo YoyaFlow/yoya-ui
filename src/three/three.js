@@ -1,490 +1,75 @@
 import { registerChildFactories } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
+import { HtmlElementNode, div } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { vNode } from '../core/v-node.js';
-import { createComponentShortcut, delegateCommands, isPlainObject } from '../components/shared.js';
+import {
+  createComponentShortcut,
+  delegateNodeCommands,
+  isPlainObject
+} from '../components/shared.js';
 
 const DEFAULT_RENDERER_OPTIONS = Object.freeze({ antialias: true });
 
 /**
- * Three.js 宿主容器的**节点类型**（不导出）：渲染循环、像素比 / 尺寸同步与销毁清理都在这里。
- * Three.js 本体不打包，使用方通过 `threeLib()` 注入模块命名空间。
+ * Three.js 宿主（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * **组件不继承基础元素**（票 16 第 112 / 114 条）：`ThreeNode` 那层节点类型退场，视图根就是普通
+ * 元素节点；渲染器的生命周期改挂**组件钩子**——
+ *
+ * - `whenMount(host)`：取落地元素（`host.element()`，`core/hooks.js` 的既有口子）并排一帧做初始化：
+ *   建场景 / 相机 / `WebGLRenderer`、把 `renderer.domElement` 挂进宿主、同步像素比与尺寸、
+ *   跑 ready 回调、按 `autoRender` 起渲染循环、按 `autoResize` 挂尺寸观察器；
+ * - `whenDestroy()`：停循环、断观察器、`dispose()` 渲染器；
+ * - 状态（`scene` / `camera` / `rendererOptions` / `width` / `height` / `devicePixelRatio` /
+ *   `autoResize` / `autoRender`）全在闭包，命令只写状态；`width` / `height` 是随状态变的行内值。
  */
-class ThreeNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', { vn: 'VThree' });
-    this._autoRender = true;
-    this._autoResize = true;
-    this._camera = null;
-    this._devicePixelRatio = null;
-    this._frameCallbacks = [];
-    this._frameId = null;
-    this._height = '400px';
-    this._initScheduled = false;
-    this._onReadyCallbacks = [];
-    this._onResizeCallbacks = [];
-    this._renderer = null;
-    this._rendererOptions = { ...DEFAULT_RENDERER_OPTIONS };
-    this._resizeHandler = null;
-    this._resizeObserver = null;
-    this._resizeUnbind = null;
-    this._running = false;
-    this._scene = null;
-    this._threeLib = null;
-    this._width = '100%';
+export function VThree({
+  autoRender,
+  autoResize,
+  camera,
+  devicePixelRatio,
+  height,
+  onFrame,
+  onReady,
+  onResize,
+  rendererOptions,
+  scene,
+  threeLib,
+  width,
+  ...rest
+} = {}) {
+  const state = {
+    autoRender: autoRender === undefined ? true : Boolean(autoRender),
+    autoResize: autoResize === undefined ? true : Boolean(autoResize),
+    camera: camera ?? null,
+    destroyed: false,
+    devicePixelRatio: devicePixelRatio ?? null,
+    element: null,
+    frameCallbacks: [],
+    frameId: null,
+    height: height ?? '400px',
+    initScheduled: false,
+    onReadyCallbacks: [],
+    onResizeCallbacks: [],
+    renderer: null,
+    rendererOptions: { ...DEFAULT_RENDERER_OPTIONS },
+    resizeObserver: null,
+    resizeUnbind: null,
+    running: false,
+    scene: scene ?? null,
+    threeLib: threeLib ?? null,
+    width: width ?? '100%'
+  };
 
-    // `overflow` / `position` 在样式表里（R5）；`height` / `width` 是状态 → 行内值
-    this.style('height', this._height);
-    this.style('width', this._width);
-    this._setupThree(setup);
-  }
-
-  threeLib(lib) {
-    if (lib) {
-      this._threeLib = lib;
-    } else if (typeof window !== 'undefined' && window.THREE) {
-      this._threeLib = window.THREE;
-    }
-    return this;
-  }
-
-  getThreeLib() {
-    return this._threeLib;
-  }
-
-  scene(value) {
-    if (value === undefined) {
-      return this._scene;
+  const resolveLib = () => {
+    if (!state.threeLib && typeof window !== 'undefined' && window.THREE) {
+      state.threeLib = window.THREE;
     }
 
-    this._scene = value;
-    return this;
-  }
+    return state.threeLib;
+  };
 
-  getScene() {
-    return this._scene;
-  }
-
-  camera(value) {
-    if (value === undefined) {
-      return this._camera;
-    }
-
-    this._camera = value;
-    return this;
-  }
-
-  getCamera() {
-    return this._camera;
-  }
-
-  rendererOptions(value) {
-    if (value === undefined) {
-      return { ...this._rendererOptions };
-    }
-
-    this._rendererOptions = {
-      ...DEFAULT_RENDERER_OPTIONS,
-      ...(isPlainObject(value) ? value : {})
-    };
-    return this;
-  }
-
-  width(value) {
-    if (value === undefined) {
-      return this._width;
-    }
-
-    this._width = value;
-    this.style('width', value);
-    return this;
-  }
-
-  height(value) {
-    if (value === undefined) {
-      return this._height;
-    }
-
-    this._height = value;
-    this.style('height', value);
-    return this;
-  }
-
-  devicePixelRatio(value) {
-    if (value === undefined) {
-      return this._devicePixelRatio;
-    }
-
-    this._devicePixelRatio = value;
-    if (this._renderer) {
-      this._syncPixelRatio();
-      this._handleResize();
-    }
-    return this;
-  }
-
-  autoResize(value) {
-    if (value === undefined) {
-      return this._autoResize;
-    }
-
-    this._autoResize = Boolean(value);
-    if (this._renderer) {
-      if (this._autoResize) {
-        if (!this._resizeObserver && !this._resizeHandler) {
-          this._initResizeObserver();
-        }
-      } else {
-        this._disconnectResizeObserver();
-      }
-    }
-    return this;
-  }
-
-  autoRender(value) {
-    if (value === undefined) {
-      return this._autoRender;
-    }
-
-    this._autoRender = Boolean(value);
-    if (this._renderer) {
-      if (this._autoRender) {
-        this.start();
-      } else {
-        this.stop();
-      }
-    }
-    return this;
-  }
-
-  onReady(callback) {
-    if (typeof callback === 'function') {
-      if (this._renderer) {
-        callback(this._api());
-      } else {
-        this._onReadyCallbacks.push(callback);
-      }
-    }
-    return this;
-  }
-
-  onResize(callback) {
-    if (typeof callback === 'function') {
-      this._onResizeCallbacks.push(callback);
-    }
-    return this;
-  }
-
-  onFrame(callback) {
-    if (typeof callback === 'function') {
-      this._frameCallbacks.push(callback);
-    }
-    return this;
-  }
-
-  getRenderer() {
-    return this._renderer;
-  }
-
-  start() {
-    if (this._renderer && !this._running) {
-      this._running = true;
-      this._frameId = requestAnimationFrame(() => this._frame());
-    }
-    return this;
-  }
-
-  stop() {
-    this._running = false;
-    if (this._frameId !== null) {
-      cancelAnimationFrame(this._frameId);
-      this._frameId = null;
-    }
-    return this;
-  }
-
-  render() {
-    if (this._renderer && this._scene && this._camera) {
-      this._renderer.render(this._scene, this._camera);
-    }
-    return this;
-  }
-
-  resize() {
-    this._handleResize();
-    return this;
-  }
-
-  dispose() {
-    this._disposeThree();
-    return this;
-  }
-
-  destroy() {
-    this._disposeThree();
-    return super.destroy();
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (element && !this._renderer && !this._initScheduled) {
-      this._initScheduled = true;
-      requestAnimationFrame(() => this._init());
-    }
-    return element;
-  }
-
-  _setupThree(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        autoRender,
-        autoResize,
-        camera,
-        devicePixelRatio,
-        height,
-        onFrame,
-        onReady,
-        onResize,
-        rendererOptions,
-        scene,
-        threeLib,
-        width,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (threeLib !== undefined) {
-        this.threeLib(threeLib);
-      }
-      if (scene !== undefined) {
-        this.scene(scene);
-      }
-      if (camera !== undefined) {
-        this.camera(camera);
-      }
-      if (width !== undefined) {
-        this.width(width);
-      }
-      if (height !== undefined) {
-        this.height(height);
-      }
-      if (rendererOptions !== undefined) {
-        this.rendererOptions(rendererOptions);
-      }
-      if (devicePixelRatio !== undefined) {
-        this.devicePixelRatio(devicePixelRatio);
-      }
-      if (autoResize !== undefined) {
-        this.autoResize(autoResize);
-      }
-      if (autoRender !== undefined) {
-        this.autoRender(autoRender);
-      }
-      if (onReady !== undefined) {
-        this.onReady(onReady);
-      }
-      if (onResize !== undefined) {
-        this.onResize(onResize);
-      }
-      if (onFrame !== undefined) {
-        this.onFrame(onFrame);
-      }
-      return;
-    }
-
-    this.child(setup);
-  }
-
-  _init() {
-    this._initScheduled = false;
-    if (this._deleted) {
-      return;
-    }
-
-    if (!this._threeLib) {
-      this.threeLib();
-    }
-    if (!this._threeLib) {
-      console.warn('[VThree] Three.js library not provided. Call threeLib() first.');
-      return;
-    }
-    if (this._renderer || !this._el) {
-      return;
-    }
-
-    try {
-      const lib = this._threeLib;
-      if (!this._scene) {
-        this._scene = new lib.Scene();
-      }
-      if (!this._camera) {
-        this._camera = new lib.PerspectiveCamera(75, 1, 0.1, 1000);
-        if (typeof this._camera.position?.set === 'function') {
-          this._camera.position.set(0, 0, 5);
-        }
-      }
-
-      this._renderer = new lib.WebGLRenderer(this._rendererOptions);
-      this._el.appendChild(this._renderer.domElement);
-      this._syncPixelRatio();
-      this._handleResize();
-      this._executeReadyCallbacks();
-
-      if (this._autoRender) {
-        this.start();
-      } else {
-        this.render();
-      }
-      if (this._autoResize) {
-        this._initResizeObserver();
-      }
-    } catch (error) {
-      console.error('[VThree] Failed to initialize renderer:', error);
-    }
-  }
-
-  _frame() {
-    if (this._deleted || !this._running || !this._renderer) {
-      this._running = false;
-      this._frameId = null;
-      return;
-    }
-
-    const api = this._api();
-    this._frameCallbacks.forEach((callback) => {
-      try {
-        callback(api);
-      } catch (error) {
-        console.error('[VThree] Error in onFrame callback:', error);
-      }
-    });
-    this.render();
-    this._frameId = requestAnimationFrame(() => this._frame());
-  }
-
-  _api() {
-    return {
-      camera: this._camera,
-      renderer: this._renderer,
-      scene: this._scene,
-      threeLib: this._threeLib
-    };
-  }
-
-  _executeReadyCallbacks() {
-    if (!this._renderer) {
-      return;
-    }
-
-    const api = this._api();
-    this._onReadyCallbacks.forEach((callback) => {
-      try {
-        callback(api);
-      } catch (error) {
-        console.error('[VThree] Error in onReady callback:', error);
-      }
-    });
-    this._onReadyCallbacks = [];
-  }
-
-  _initResizeObserver() {
-    if (typeof ResizeObserver !== 'undefined') {
-      this._resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { height, width } = entry.contentRect;
-          if (width > 0 || height > 0) {
-            this._handleResize();
-          }
-        }
-      });
-      if (this._el) {
-        this._resizeObserver.observe(this._el);
-      }
-      return;
-    }
-
-    this._resizeHandler = () => this._handleResize();
-    this._resizeUnbind = bindWindowEvent('resize', this._resizeHandler);
-  }
-
-  _disconnectResizeObserver() {
-    if (this._resizeObserver) {
-      this._resizeObserver.disconnect();
-      this._resizeObserver = null;
-    }
-    if (this._resizeHandler) {
-      this._resizeUnbind?.();
-      this._resizeHandler = null;
-      this._resizeUnbind = null;
-    }
-  }
-
-  _syncPixelRatio() {
-    if (!this._renderer) {
-      return;
-    }
-
-    const pixelRatio =
-      this._devicePixelRatio ?? ((typeof window !== 'undefined' && window.devicePixelRatio) || 1);
-    this._renderer.setPixelRatio(pixelRatio);
-  }
-
-  _handleResize() {
-    if (!this._renderer) {
-      return;
-    }
-
-    const { height, width } = this._measureSize();
-    this._renderer.setSize(width, height);
-    if (this._camera?.isPerspectiveCamera) {
-      this._camera.aspect = width / height;
-      if (typeof this._camera.updateProjectionMatrix === 'function') {
-        this._camera.updateProjectionMatrix();
-      }
-    }
-
-    const size = { height, width };
-    this._onResizeCallbacks.forEach((callback) => {
-      try {
-        callback(size);
-      } catch (error) {
-        console.error('[VThree] Error in onResize callback:', error);
-      }
-    });
-    this.render();
-  }
-
-  _measureSize() {
-    let height = 0;
-    let width = 0;
-
-    if (this._el) {
-      const rect = this._el.getBoundingClientRect();
-      width = this._el.clientWidth || rect.width || 0;
-      height = this._el.clientHeight || rect.height || 0;
-    }
-
-    width = width || this._parseLength(this._width);
-    height = height || this._parseLength(this._height);
-    return {
-      height: Math.max(1, Math.round(height)),
-      width: Math.max(1, Math.round(width))
-    };
-  }
-
-  _parseLength(value) {
+  const parseLength = (value) => {
     if (typeof value === 'number') {
       return value;
     }
@@ -493,73 +78,463 @@ class ThreeNode extends HtmlElementNode {
       return match ? Number(match[1]) : 0;
     }
     return 0;
-  }
+  };
 
-  _disposeThree() {
-    this.stop();
-    this._disconnectResizeObserver();
-    if (this._renderer) {
-      try {
-        this._renderer.dispose();
-      } catch (error) {
-        console.error('[VThree] Failed to dispose renderer:', error);
-      }
-      this._renderer = null;
-    }
-    this._camera = null;
-    this._frameCallbacks = [];
-    this._onReadyCallbacks = [];
-    this._onResizeCallbacks = [];
-    this._scene = null;
-    this._threeLib = null;
-  }
-}
-
-/**
- * Three.js 宿主（形态 B）：视图根是节点类型扩展 `ThreeNode`，外层 `vNode` 用 `delegateNodeCommands`
- * 把节点类型的公开方法整体补齐——`vThree` 拿到的是组件句柄，命令面（`threeLib` / `renderer` / `camera` /
- * `scene` / `start` / `stop` / `onReady`…）照旧。
- */
-export function VThree(props = {}) {
   return vNode((api) => {
-    const node = new ThreeNode(props);
+    /** 回调拿到的取用面（迁移前 `_api()` 同口径）。 */
+    const frameApi = () => ({
+      camera: state.camera,
+      renderer: state.renderer,
+      scene: state.scene,
+      threeLib: state.threeLib
+    });
 
-    delegateCommands(api, node, THREE_COMMANDS);
-    // `render()` 是引擎保留键（`ViewNode.render`），不进命令面 → 手动渲染一帧走这个别名
-    api.renderFrame = () => {
-      node.render();
+    const renderFrame = () => {
+      if (state.renderer && state.scene && state.camera) {
+        state.renderer.render(state.scene, state.camera);
+      }
+
       return api;
     };
-    return node;
+
+    const start = () => {
+      if (state.renderer && !state.running) {
+        state.running = true;
+        state.frameId = requestAnimationFrame(() => tick());
+      }
+
+      return api;
+    };
+
+    const stop = () => {
+      state.running = false;
+
+      if (state.frameId !== null) {
+        cancelAnimationFrame(state.frameId);
+        state.frameId = null;
+      }
+
+      return api;
+    };
+
+    const measureSize = () => {
+      let boxHeight = 0;
+      let boxWidth = 0;
+      const element = state.element;
+
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        boxWidth = element.clientWidth || rect.width || 0;
+        boxHeight = element.clientHeight || rect.height || 0;
+      }
+
+      boxWidth = boxWidth || parseLength(state.width);
+      boxHeight = boxHeight || parseLength(state.height);
+
+      return {
+        height: Math.max(1, Math.round(boxHeight)),
+        width: Math.max(1, Math.round(boxWidth))
+      };
+    };
+
+    const syncPixelRatio = () => {
+      if (!state.renderer) {
+        return;
+      }
+
+      const pixelRatio =
+        state.devicePixelRatio ?? ((typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+      state.renderer.setPixelRatio(pixelRatio);
+    };
+
+    const handleResize = () => {
+      if (!state.renderer) {
+        return api;
+      }
+
+      const { height: boxHeight, width: boxWidth } = measureSize();
+      state.renderer.setSize(boxWidth, boxHeight);
+
+      if (state.camera?.isPerspectiveCamera) {
+        state.camera.aspect = boxWidth / boxHeight;
+
+        if (typeof state.camera.updateProjectionMatrix === 'function') {
+          state.camera.updateProjectionMatrix();
+        }
+      }
+
+      const size = { height: boxHeight, width: boxWidth };
+      state.onResizeCallbacks.forEach((callback) => {
+        try {
+          callback(size);
+        } catch (error) {
+          console.error('[VThree] Error in onResize callback:', error);
+        }
+      });
+
+      renderFrame();
+      return api;
+    };
+
+    const disconnectResizeObserver = () => {
+      if (state.resizeObserver) {
+        state.resizeObserver.disconnect();
+        state.resizeObserver = null;
+      }
+      if (state.resizeUnbind) {
+        state.resizeUnbind();
+        state.resizeUnbind = null;
+      }
+    };
+
+    const initResizeObserver = () => {
+      if (typeof ResizeObserver !== 'undefined') {
+        state.resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const { height: boxHeight, width: boxWidth } = entry.contentRect;
+
+            if (boxWidth > 0 || boxHeight > 0) {
+              handleResize();
+            }
+          }
+        });
+
+        if (state.element) {
+          state.resizeObserver.observe(state.element);
+        }
+
+        return;
+      }
+
+      state.resizeUnbind = bindWindowEvent('resize', () => handleResize());
+    };
+
+    const executeReadyCallbacks = () => {
+      if (!state.renderer) {
+        return;
+      }
+
+      const payload = frameApi();
+      state.onReadyCallbacks.forEach((callback) => {
+        try {
+          callback(payload);
+        } catch (error) {
+          console.error('[VThree] Error in onReady callback:', error);
+        }
+      });
+      state.onReadyCallbacks = [];
+    };
+
+    const tick = () => {
+      if (state.destroyed || !state.running || !state.renderer) {
+        state.running = false;
+        state.frameId = null;
+        return;
+      }
+
+      const payload = frameApi();
+      state.frameCallbacks.forEach((callback) => {
+        try {
+          callback(payload);
+        } catch (error) {
+          console.error('[VThree] Error in onFrame callback:', error);
+        }
+      });
+
+      renderFrame();
+      state.frameId = requestAnimationFrame(() => tick());
+    };
+
+    /** 初始化：落地之后（`whenMount` 排一帧）再建渲染器，宿主元素由钩子上下文给。 */
+    const initThree = () => {
+      state.initScheduled = false;
+
+      if (state.destroyed) {
+        return;
+      }
+
+      const lib = resolveLib();
+
+      if (!lib) {
+        console.warn('[VThree] Three.js library not provided. Call threeLib() first.');
+        return;
+      }
+
+      if (state.renderer || !state.element) {
+        return;
+      }
+
+      try {
+        if (!state.scene) {
+          state.scene = new lib.Scene();
+        }
+        if (!state.camera) {
+          state.camera = new lib.PerspectiveCamera(75, 1, 0.1, 1000);
+
+          if (typeof state.camera.position?.set === 'function') {
+            state.camera.position.set(0, 0, 5);
+          }
+        }
+
+        state.renderer = new lib.WebGLRenderer(state.rendererOptions);
+        state.element.appendChild(state.renderer.domElement);
+        syncPixelRatio();
+        handleResize();
+        executeReadyCallbacks();
+
+        if (state.autoRender) {
+          start();
+        } else {
+          renderFrame();
+        }
+
+        if (state.autoResize) {
+          initResizeObserver();
+        }
+      } catch (error) {
+        console.error('[VThree] Failed to initialize renderer:', error);
+      }
+    };
+
+    const disposeThree = () => {
+      stop();
+      disconnectResizeObserver();
+
+      if (state.renderer) {
+        try {
+          state.renderer.dispose();
+        } catch (error) {
+          console.error('[VThree] Failed to dispose renderer:', error);
+        }
+        state.renderer = null;
+      }
+
+      state.camera = null;
+      state.frameCallbacks = [];
+      state.onReadyCallbacks = [];
+      state.onResizeCallbacks = [];
+      state.scene = null;
+      state.threeLib = null;
+    };
+
+    api.threeLib = (lib) => {
+      if (lib !== undefined) {
+        state.threeLib = lib ?? null;
+      }
+
+      return api;
+    };
+    api.getThreeLib = () => state.threeLib;
+
+    api.scene = (value) => {
+      if (value === undefined) {
+        return state.scene;
+      }
+
+      state.scene = value;
+      return api;
+    };
+    api.getScene = () => state.scene;
+
+    api.camera = (value) => {
+      if (value === undefined) {
+        return state.camera;
+      }
+
+      state.camera = value;
+      return api;
+    };
+    api.getCamera = () => state.camera;
+
+    api.rendererOptions = (value) => {
+      if (value === undefined) {
+        return { ...state.rendererOptions };
+      }
+
+      state.rendererOptions = {
+        ...DEFAULT_RENDERER_OPTIONS,
+        ...(isPlainObject(value) ? value : {})
+      };
+      return api;
+    };
+
+    api.width = (value) => {
+      if (value === undefined) {
+        return state.width;
+      }
+
+      state.width = value;
+      return api;
+    };
+
+    api.height = (value) => {
+      if (value === undefined) {
+        return state.height;
+      }
+
+      state.height = value;
+      return api;
+    };
+
+    api.devicePixelRatio = (value) => {
+      if (value === undefined) {
+        return state.devicePixelRatio;
+      }
+
+      state.devicePixelRatio = value;
+
+      if (state.renderer) {
+        syncPixelRatio();
+        handleResize();
+      }
+
+      return api;
+    };
+
+    api.autoResize = (value) => {
+      if (value === undefined) {
+        return state.autoResize;
+      }
+
+      state.autoResize = Boolean(value);
+
+      if (state.renderer) {
+        if (state.autoResize) {
+          if (!state.resizeObserver && !state.resizeUnbind) {
+            initResizeObserver();
+          }
+        } else {
+          disconnectResizeObserver();
+        }
+      }
+
+      return api;
+    };
+
+    api.autoRender = (value) => {
+      if (value === undefined) {
+        return state.autoRender;
+      }
+
+      state.autoRender = Boolean(value);
+
+      if (state.renderer) {
+        if (state.autoRender) {
+          start();
+        } else {
+          stop();
+        }
+      }
+
+      return api;
+    };
+
+    api.onReady = (callback) => {
+      if (typeof callback === 'function') {
+        if (state.renderer) {
+          callback(frameApi());
+        } else {
+          state.onReadyCallbacks.push(callback);
+        }
+      }
+
+      return api;
+    };
+
+    api.onResize = (callback) => {
+      if (typeof callback === 'function') {
+        state.onResizeCallbacks.push(callback);
+      }
+
+      return api;
+    };
+
+    api.onFrame = (callback) => {
+      if (typeof callback === 'function') {
+        state.frameCallbacks.push(callback);
+      }
+
+      return api;
+    };
+
+    api.getRenderer = () => state.renderer;
+    api.start = () => start();
+    api.stop = () => stop();
+    /** `render()` 与引擎保留键冲突（16 号第 35 / 94 条口径）：手动渲染一帧走这个别名。 */
+    api.renderFrame = () => renderFrame();
+    api.resize = () => handleResize();
+    api.dispose = () => {
+      disposeThree();
+      return api;
+    };
+
+    // 结构（R2）：宿主是普通元素节点；尺寸是随状态变的行内值（静态样式在样式表里）
+    const view = div({
+      ...rest,
+      style: { height: state.height, width: state.width },
+      vn: 'VThree'
+    });
+
+    // 渲染器生命周期（不再用 `renderDom()` / `_el`：落地元素由钩子上下文给）
+    api.whenMount = (host) => {
+      state.element = host?.element?.() ?? null;
+
+      if (!state.renderer && !state.initScheduled) {
+        state.initScheduled = true;
+        requestAnimationFrame(() => initThree());
+      }
+    };
+
+    api.whenDestroy = () => {
+      state.destroyed = true;
+      disposeThree();
+    };
+
+    // props：库 / 场景 / 相机 / 尺寸 / 渲染器选项 / 像素比 / 观察 / 回调（迁移前 `_setupThree` 的顺序）
+    if (threeLib !== undefined) {
+      api.threeLib(threeLib);
+    }
+    if (scene !== undefined) {
+      api.scene(scene);
+    }
+    if (camera !== undefined) {
+      api.camera(camera);
+    }
+    if (width !== undefined) {
+      api.width(width);
+    }
+    if (height !== undefined) {
+      api.height(height);
+    }
+    if (rendererOptions !== undefined) {
+      api.rendererOptions(rendererOptions);
+    }
+    if (devicePixelRatio !== undefined) {
+      api.devicePixelRatio(devicePixelRatio);
+    }
+    if (autoResize !== undefined) {
+      api.autoResize(autoResize);
+    }
+    if (autoRender !== undefined) {
+      api.autoRender(autoRender);
+    }
+    if (onReady !== undefined) {
+      api.onReady(onReady);
+    }
+    if (onResize !== undefined) {
+      api.onResize(onResize);
+    }
+    if (onFrame !== undefined) {
+      api.onFrame(onFrame);
+    }
+
+    // 元素级命令代委托（第三方仍可用 `host.attr(…)` / `host.on(…)`）
+    delegateNodeCommands(api, view);
+
+    return view;
   });
 }
 
 export const vThree = createComponentShortcut(VThree, { props: true });
 
 registerChildFactories(HtmlElementNode, { vThree });
-/**
- * 对外命令面清单（显式列）：`render()` 与节点 API 冲突（引擎保留键），不进命令面——
- * 需要手动渲染一帧用 `renderFrame()`（见 16 号第 35 条那一类的口径）。
- */
-const THREE_COMMANDS = [
-  'threeLib',
-  'getThreeLib',
-  'scene',
-  'getScene',
-  'camera',
-  'getCamera',
-  'rendererOptions',
-  'width',
-  'height',
-  'devicePixelRatio',
-  'autoResize',
-  'autoRender',
-  'onReady',
-  'onResize',
-  'onFrame',
-  'getRenderer',
-  'start',
-  'stop',
-  'resize',
-  'dispose'
-];
