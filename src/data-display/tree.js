@@ -1,6 +1,7 @@
-import { HtmlElementNode } from '../html/index.js';
+import { HtmlElementNode, input as inputTag } from '../html/index.js';
 import { appendNodeChild, ViewNode } from '../core/node.js';
 import { allocateId } from '../core/id.js';
+import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import {
   createComponentShortcut,
@@ -13,20 +14,38 @@ import {
 } from '../components/shared.js';
 
 /**
- * 树形勾选框输入节点。indeterminate 是 DOM property，无法序列化成 HTML 属性，
- * 因此在 renderDom 阶段补设；toHTML 阶段用 aria-checked="mixed" 表达半选态。
+ * 树里的勾选框（形态 B 薄组件）：`indeterminate` 是 DOM property（写不成属性、也进不了 SSR），
+ * 所以**落地时**用引擎的元素级操作口子补设（`box.prop('indeterminate', …)` + `whenMount`），
+ * 半选态在 SSR / 静态 HTML 里仍由 `aria-checked="mixed"` 表达。
+ * 原来的节点类型写法（重写 `renderDom` 只为补设这个 property）按口径退场——组件不继承基础元素
+ * （票 16 第 114 条）。
  */
-class TreeCheckboxInput extends HtmlElementNode {
-  constructor(indeterminate = false) {
-    super('input');
-    this._treeIndeterminate = Boolean(indeterminate);
-  }
+function VTreeCheckbox({ indeterminate = false, inputConfig, onToggle }) {
+  const indeterminateState = ref(Boolean(indeterminate));
 
-  renderDom() {
-    const element = super.renderDom();
-    element.indeterminate = this._treeIndeterminate;
-    return element;
-  }
+  return vNode((api) => {
+    const box = inputTag(inputConfig);
+
+    api.whenMount = () => {
+      box.prop('indeterminate', indeterminateState.value);
+    };
+
+    /** 半选态是 DOM property（写不成属性）：状态收在组件里，落地 / 变更都走引擎口子补设。 */
+    api.indeterminate = (value) => {
+      if (value === undefined) {
+        return indeterminateState.value;
+      }
+
+      indeterminateState.value = Boolean(value);
+      box.prop('indeterminate', indeterminateState.value);
+      return api;
+    };
+
+    box.on('click', (event) => event.stopPropagation());
+    box.on('change', () => onToggle(box.prop('checked') ?? false));
+
+    return box;
+  });
 }
 
 export class VTreeNode {
@@ -853,10 +872,8 @@ function createTreeRuntime(first = null) {
   function updateCheckbox(checkbox, node, checked, indeterminate) {
     checkbox.attr('checked', checked ? true : null);
     checkbox.attr('aria-checked', indeterminate ? 'mixed' : checked ? 'true' : 'false');
-    checkbox._treeIndeterminate = indeterminate;
-    if (checkbox._el) {
-      checkbox._el.indeterminate = indeterminate;
-    }
+    // 半选态走组件命令（内部用引擎的元素级口子补设 DOM property，组件代码不碰 `_el`）
+    checkbox.indeterminate(Boolean(indeterminate));
   }
 
   function writeBackNodeState() {
@@ -1075,28 +1092,28 @@ function createTreeRuntime(first = null) {
   function createCheckbox(node) {
     const checked = state.checkedKeys.has(node.id);
     const indeterminate = isIndeterminate(node);
-    const input = new TreeCheckboxInput(indeterminate)
-      .setup({ vn: 'VTreeCheckbox' })
-      .attr({
-        'aria-checked': indeterminate ? 'mixed' : checked ? 'true' : 'false',
-        'aria-label': `选择 ${resolveTextValue(node.label) || node.id}`,
-        checked: checked ? true : null,
-        disabled: node.disabled ? true : null,
-        tabindex: '-1',
-        type: 'checkbox'
-      })
-      .styles({
-        flex: '0 0 auto',
-        height: '16px',
-        margin: '0',
-        width: '16px'
-      });
 
-    input.on('click', (event) => event.stopPropagation());
-    input.on('change', () => {
-      api.check(node.id, input._el?.checked ?? false);
+    return VTreeCheckbox({
+      indeterminate,
+      inputConfig: {
+        attrs: {
+          'aria-checked': indeterminate ? 'mixed' : checked ? 'true' : 'false',
+          'aria-label': `选择 ${resolveTextValue(node.label) || node.id}`,
+          checked: checked ? true : null,
+          disabled: node.disabled ? true : null,
+          tabindex: '-1',
+          type: 'checkbox'
+        },
+        style: {
+          flex: '0 0 auto',
+          height: '16px',
+          margin: '0',
+          width: '16px'
+        },
+        vn: 'VTreeCheckbox'
+      },
+      onToggle: (next) => api.check(node.id, next)
     });
-    return input;
   }
 
   function createTreeNodeIcon(content) {
