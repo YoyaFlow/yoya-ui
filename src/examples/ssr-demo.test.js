@@ -24,7 +24,7 @@ describe('SSR standalone demo page', () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
     const output = element.querySelector('[data-ssr-live-output]');
-    expect(output.textContent).toContain('yoya-vdialog');
+    expect(output.textContent).toContain('vn="VDialog"');
     expect(output.textContent).toContain('vn="VForm"');
 
     const host = document.querySelector('#ssr-demo-host');

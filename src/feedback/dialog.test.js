@@ -16,7 +16,7 @@ describe('vDialog', () => {
     const element = dialog.renderDom();
 
     expect(element.tagName).toBe('DIALOG');
-    expect(element.querySelector('.yoya-vdialog-content').textContent).toContain('确认发布');
+    expect(element.querySelector('[vn~="VDialogContent"]').textContent).toContain('确认发布');
 
     dialog.open(true);
     expect(element.hasAttribute('open')).toBe(true);
@@ -67,7 +67,7 @@ describe('vDialog', () => {
       sheet.content((content) => content.child('确认发布'));
     });
     const element = dialog.renderDom();
-    const closeButton = element.querySelector('.yoya-vdialog-close');
+    const closeButton = element.querySelector('[vn~="VDialogClose"]');
 
     expect(closeButton).toBeTruthy();
     dialog.open(true);
@@ -80,7 +80,8 @@ describe('vDialog', () => {
     const dialog = vDialog({ closable: false });
     const element = dialog.renderDom();
 
-    expect(element.querySelector('.yoya-vdialog-header').style.display).toBe('none');
+    // 关闭按钮那一行的显隐是根上的状态位 + CSS 规则（不再是行内 display）
+    expect(element.dataset.closable).toBe('false');
   });
 
   it('invokes onClose when the dialog closes and not on repeat close', () => {

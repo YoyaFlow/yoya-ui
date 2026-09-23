@@ -1458,25 +1458,68 @@ body {
     display: block;
   }
 
-  .yoya-vdialog .yoya-vdialog-close:hover {
+  /* 对话框：根 / 头部 / 关闭按钮的静态样式（原来都在 JS 行内，R5 搬进来）；
+     "关闭按钮那一行整体关掉"走根上的 `data-closable='false'` 规则。 */
+  [vn~='VDialog'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 24px 72px rgba(15, 23, 42, 0.2);
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    max-width: min(92vw, 680px);
+    padding: 16px;
+    position: relative;
+    width: 100%;
+  }
+
+  [vn~='VDialogHeader'] {
+    align-items: center;
+    display: flex;
+  }
+
+  [vn~='VDialog'][data-closable='false'] > [vn~='VDialogHeader'] {
+    display: none;
+  }
+
+  [vn~='VDialogClose'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #57606a);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin-bottom: 4px;
+    margin-left: auto;
+    padding: 0;
+    width: 28px;
+  }
+
+  [vn~='VDialog'] [vn~='VDialogClose']:hover {
     background: var(--yoya-color-surface-hover, #eef0f3);
     color: var(--yoya-color-text, #172033);
   }
 
-  :where(.yoya-vtooltip) {
+  :where([vn~='VTooltip']) {
     box-sizing: border-box;
     display: inline-flex;
     max-width: 100%;
     position: relative;
   }
 
-  .yoya-vtooltip .yoya-vtooltip-target {
+  [vn~='VTooltip'] [vn~='VTooltipTarget'] {
     align-items: center;
     display: inline-flex;
     min-width: 0;
   }
 
-  .yoya-vtooltip .yoya-vtooltip-panel {
+  [vn~='VTooltip'] [vn~='VTooltipPanel'] {
     background: var(--yoya-color-text-strong, #111827);
     border: 1px solid var(--yoya-color-text-strong, #111827);
     border-radius: var(--yoya-radius-sm, 4px);
@@ -1493,11 +1536,76 @@ body {
     z-index: var(--yoya-z-popover);
   }
 
-  .yoya-vtooltip[data-open='true'] > .yoya-vtooltip-panel {
+  [vn~='VTooltip'][data-open='true'] > [vn~='VTooltipPanel'] {
     display: block;
   }
 
-  .yoya-vtooltip .yoya-vtooltip-panel::after {
+  /* 面板定位按 `data-placement` 定（原来在 JS 里写行内 placement 样式，R5 搬成 12 条规则） */
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    left: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    right: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel'] {
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel'] {
+    left: 0;
+    top: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel'] {
+    right: 0;
+    top: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel'] {
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel'] {
+    bottom: 0;
+    right: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel'] {
+    right: calc(100% + 8px);
+    top: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel'] {
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel'] {
+    bottom: 0;
+    left: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel'] {
+    left: calc(100% + 8px);
+    top: 0;
+  }
+
+  [vn~='VTooltip'] [vn~='VTooltipPanel']::after {
     border: 5px solid transparent;
     content: '';
     height: 0;
@@ -1505,83 +1613,83 @@ body {
     width: 0;
   }
 
-  .yoya-vtooltip[data-placement='top'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='top-start'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='top-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel']::after {
     border-top-color: var(--yoya-color-text-strong, #111827);
     bottom: -10px;
   }
 
-  .yoya-vtooltip[data-placement='top'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']::after {
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .yoya-vtooltip[data-placement='top-start'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel']::after {
     left: 12px;
   }
 
-  .yoya-vtooltip[data-placement='top-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel']::after {
     right: 12px;
   }
 
-  .yoya-vtooltip[data-placement='bottom'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='bottom-start'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='bottom-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel']::after {
     border-bottom-color: var(--yoya-color-text-strong, #111827);
     top: -10px;
   }
 
-  .yoya-vtooltip[data-placement='bottom'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel']::after {
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .yoya-vtooltip[data-placement='bottom-start'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']::after {
     left: 12px;
   }
 
-  .yoya-vtooltip[data-placement='bottom-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel']::after {
     right: 12px;
   }
 
-  .yoya-vtooltip[data-placement='left'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='left-start'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='left-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel']::after {
     border-left-color: var(--yoya-color-text-strong, #111827);
     right: -10px;
   }
 
-  .yoya-vtooltip[data-placement='left'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']::after {
     top: 50%;
     transform: translateY(-50%);
   }
 
-  .yoya-vtooltip[data-placement='left-start'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel']::after {
     bottom: 12px;
   }
 
-  .yoya-vtooltip[data-placement='left-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel']::after {
     top: 12px;
   }
 
-  .yoya-vtooltip[data-placement='right'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='right-start'] > .yoya-vtooltip-panel::after,
-  .yoya-vtooltip[data-placement='right-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel']::after {
     border-right-color: var(--yoya-color-text-strong, #111827);
     left: -10px;
   }
 
-  .yoya-vtooltip[data-placement='right'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel']::after {
     top: 50%;
     transform: translateY(-50%);
   }
 
-  .yoya-vtooltip[data-placement='right-start'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel']::after {
     bottom: 12px;
   }
 
-  .yoya-vtooltip[data-placement='right-end'] > .yoya-vtooltip-panel::after {
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel']::after {
     top: 12px;
   }
 

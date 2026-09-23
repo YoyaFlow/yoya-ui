@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { VTooltip, div, vButton, vTooltip } from '../index.js';
+import { div, hasComponentIdentity, vButton, vTooltip } from '../index.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -13,11 +13,11 @@ describe('vTooltip', () => {
       target: vButton('保存')
     });
     const element = tooltip.renderDom();
-    const target = element.querySelector('.yoya-vtooltip-target');
-    const panel = element.querySelector('.yoya-vtooltip-panel');
+    const target = element.querySelector('[vn~="VTooltipTarget"]');
+    const panel = element.querySelector('[vn~="VTooltipPanel"]');
 
-    expect(tooltip).toBeInstanceOf(VTooltip);
-    expect(element.classList.contains('yoya-vtooltip')).toBe(true);
+    expect(hasComponentIdentity(tooltip, 'VTooltip')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VTooltip');
     expect(element.dataset.placement).toBe('top');
     expect(element.dataset.open).toBeUndefined();
     expect(target.textContent).toBe('保存');
@@ -32,17 +32,19 @@ describe('vTooltip', () => {
       target: '悬停区域'
     });
     const element = tooltip.renderDom();
-    const target = element.querySelector('.yoya-vtooltip-target');
+    const target = element.querySelector('[vn~="VTooltipTarget"]');
 
     target.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
 
     expect(element.dataset.open).toBe('true');
-    expect(element.querySelector('.yoya-vtooltip-panel').getAttribute('aria-hidden')).toBe('false');
+    expect(element.querySelector('[vn~="VTooltipPanel"]').getAttribute('aria-hidden')).toBe(
+      'false'
+    );
 
     target.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
 
     expect(element.dataset.open).toBeUndefined();
-    expect(element.querySelector('.yoya-vtooltip-panel').getAttribute('aria-hidden')).toBe('true');
+    expect(element.querySelector('[vn~="VTooltipPanel"]').getAttribute('aria-hidden')).toBe('true');
   });
 
   it('accepts top-left, bottom-left and other corner placement aliases', () => {
@@ -74,7 +76,7 @@ describe('vTooltip', () => {
       trigger: 'focus'
     });
     const element = tooltip.renderDom();
-    const button = element.querySelector('.yoya-vtooltip-target [vn~="VButton"]');
+    const button = element.querySelector('[vn~="VTooltipTarget"] [vn~="VButton"]');
 
     button.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     expect(element.dataset.open).toBe('true');
@@ -91,7 +93,7 @@ describe('vTooltip', () => {
       trigger: 'click'
     }).bindTo(document.body);
     const element = tooltip.renderDom();
-    const target = element.querySelector('.yoya-vtooltip-target');
+    const target = element.querySelector('[vn~="VTooltipTarget"]');
 
     target.click();
     expect(element.dataset.open).toBe('true');
@@ -110,7 +112,7 @@ describe('vTooltip', () => {
       root.vTooltip(tooltip);
     });
     const element = page.renderDom();
-    const wrapper = element.querySelector('.yoya-vtooltip');
+    const wrapper = element.querySelector('[vn~="VTooltip"]');
 
     expect(wrapper).not.toBeNull();
 
@@ -118,6 +120,6 @@ describe('vTooltip', () => {
     expect(wrapper.dataset.open).toBe('true');
 
     tooltip.content('更新提示');
-    expect(wrapper.querySelector('.yoya-vtooltip-panel').textContent).toBe('更新提示');
+    expect(wrapper.querySelector('[vn~="VTooltipPanel"]').textContent).toBe('更新提示');
   });
 });

@@ -1,69 +1,33 @@
 import { HtmlElementNode } from '../html/index.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
+  createComponentShortcut,
+  delegateNodeCommands,
   isPlainObject,
   normalizeChildren,
-  replaceChildren,
-  themeValue
+  replaceChildren
 } from '../components/shared.js';
 
 /** 对话框的节点类型（不导出）；公开组件 `vDialog` 是 vNode 外壳。 */
 class DialogNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('dialog', null);
-    this._identity = 'VDialog';
+    super('dialog', { vn: 'VDialog' });
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
-    this.className(componentClass, 'yoya-vdialog');
-    this.styles({
-      background: themeValue('color-surface', '#ffffff'),
-      border: 'none',
-      borderRadius: '10px',
-      boxSizing: 'border-box',
-      color: themeValue('color-text', '#172033'),
-      maxWidth: 'min(92vw, 680px)',
-      padding: '16px',
-      boxShadow: '0 24px 72px rgba(15, 23, 42, 0.2)',
-      position: 'relative',
-      width: '100%'
-    });
+    // 静态样式在 `yoya.ui.css` 的 `[vn~='VDialog*']` 规则里（R5）
     this.attr('aria-modal', 'true');
     this.attr('role', 'dialog');
     this._pendingOpenSync = false;
     this._closable = true;
     this._closeHandler = null;
-    this._closeButton = new HtmlElementNode('button')
-      .className('yoya-vdialog-close')
+    this._closeButton = new HtmlElementNode('button', { vn: 'VDialogClose' })
       .attr({ type: 'button', 'aria-label': '关闭' })
-      .styles({
-        alignItems: 'center',
-        background: 'transparent',
-        border: '0',
-        borderRadius: '50%',
-        boxSizing: 'border-box',
-        color: themeValue('color-text-secondary', '#57606a'),
-        cursor: 'pointer',
-        display: 'inline-flex',
-        font: 'inherit',
-        height: '28px',
-        justifyContent: 'center',
-        lineHeight: '1',
-        marginBottom: '4px',
-        marginLeft: 'auto',
-        padding: '0',
-        width: '28px'
-      })
       .child('×')
       .on('click', () => this.close());
-    this._header = new HtmlElementNode('div').className('yoya-vdialog-header').styles({
-      alignItems: 'center',
-      display: 'flex'
-    });
+    this._header = new HtmlElementNode('div', { vn: 'VDialogHeader' });
     this._header.child(this._closeButton);
-    this._content = new HtmlElementNode('div').className('yoya-vdialog-content');
+    this._content = new HtmlElementNode('div', { vn: 'VDialogContent' });
     this.child(this._header, this._content);
     this.on('cancel', (event) => {
       event.preventDefault();
@@ -128,7 +92,8 @@ class DialogNode extends HtmlElementNode {
 
   closable(value = true) {
     this._closable = Boolean(value);
-    this._header.style('display', this._closable ? null : 'none');
+    // 关闭按钮那一行整体的显隐交给 CSS（`[data-closable='false']`），不再写行内 display
+    this.attr('data-closable', this._closable ? null : 'false');
     return this;
   }
 
@@ -267,14 +232,17 @@ class DialogNode extends HtmlElementNode {
   }
 }
 
-export function vDialog(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VDialog',
-    createNode: (setup) => new DialogNode(setup),
-    commands: ['content', 'open', 'close', 'isOpen', 'onClose', 'closable'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 对话框（形态 B）：视图根是节点类型扩展 `DialogNode`（原生 `<dialog>` 的 `showModal` / `close`
+ * 与"不支持 showModal 时的 display 兜底"都归它），外层 `vNode` 用 `delegateNodeCommands` 补齐
+ * 命令面（`content` / `open` / `close` / `isOpen` / `onClose` / `closable`）与元素 DSL。
+ */
+export function VDialog(props = {}) {
+  return vNode((api) => {
+    const node = new DialogNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export const VDialog = vDialog;
-defineComponentIdentity(VDialog, 'VDialog');
+export const vDialog = createComponentShortcut(VDialog, { props: true });

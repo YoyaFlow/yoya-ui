@@ -12,7 +12,7 @@ describe('browser-only components hydration', () => {
     tooltip.open(true);
 
     expect(tooltip.renderDom().dataset.open).toBe('true');
-    expect(document.querySelector('#app .yoya-vtooltip-panel').getAttribute('aria-hidden')).toBe(
+    expect(document.querySelector('#app [vn~="VTooltipPanel"]').getAttribute('aria-hidden')).toBe(
       'false'
     );
   });

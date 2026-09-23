@@ -319,14 +319,22 @@ const avatarSelectors = [
 ];
 
 const feedbackSelectors = [
-  '.yoya-vtooltip',
-  '.yoya-vtooltip-target',
-  '.yoya-vtooltip-panel',
-  ".yoya-vtooltip[data-open='true'] > .yoya-vtooltip-panel",
-  ".yoya-vtooltip[data-placement='top'] > .yoya-vtooltip-panel::after",
-  ".yoya-vtooltip[data-placement='bottom'] > .yoya-vtooltip-panel::after",
-  ".yoya-vtooltip[data-placement='left'] > .yoya-vtooltip-panel::after",
-  ".yoya-vtooltip[data-placement='right'] > .yoya-vtooltip-panel::after"
+  "[vn~='VTooltip']",
+  "[vn~='VTooltipTarget']",
+  "[vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-open='true'] > [vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel']",
+  "[vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']::after",
+  "[vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel']::after",
+  "[vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']::after",
+  "[vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel']::after",
+  "[vn~='VDialog']",
+  "[vn~='VDialogHeader']",
+  "[vn~='VDialog'][data-closable='false'] > [vn~='VDialogHeader']",
+  "[vn~='VDialogClose']"
 ];
 
 const scrollSelectors = [

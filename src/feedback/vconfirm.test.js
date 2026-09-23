@@ -11,7 +11,7 @@ describe('vConfirm', () => {
         confirmed = true;
       }
     });
-    const dialog = document.querySelector('.yoya-vdialog');
+    const dialog = document.querySelector('[vn~="VDialog"]');
     expect(dialog).toBeTruthy();
     const confirmBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
       b.textContent.includes('确定')
@@ -32,7 +32,7 @@ describe('vConfirm', () => {
         cancelled = true;
       }
     });
-    const dialog = document.querySelector('.yoya-vdialog');
+    const dialog = document.querySelector('[vn~="VDialog"]');
     const cancelBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
       b.textContent.includes('取消')
     );
@@ -44,7 +44,7 @@ describe('vConfirm', () => {
 
   it('resolves false on Escape', async () => {
     const promise = vConfirm({ content: '任意键' });
-    const dialog = document.querySelector('.yoya-vdialog');
+    const dialog = document.querySelector('[vn~="VDialog"]');
     dialog.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
     );
@@ -59,7 +59,7 @@ describe('vConfirm', () => {
       content: '异步',
       onConfirm: () => gate
     });
-    const dialog = document.querySelector('.yoya-vdialog');
+    const dialog = document.querySelector('[vn~="VDialog"]');
     const confirmBtn = Array.from(dialog.querySelectorAll('button')).find((b) =>
       b.textContent.includes('确定')
     );

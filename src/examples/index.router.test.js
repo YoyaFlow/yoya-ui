@@ -300,12 +300,10 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const dialogClose = dialog.querySelector('[aria-label="关闭"]');
     expect(dialogClose.tagName).toBe('BUTTON');
     expect(dialogClose.getAttribute('aria-label')).toBe('关闭');
-    expect(dialogClose.style.width).toBe('28px');
-    expect(dialogClose.style.height).toBe('28px');
-    expect(dialogClose.style.borderWidth).toBe('0px');
-    expect(dialog.querySelector('.components-icon-source-dialog-header').style.display).toBe(
-      'flex'
-    );
+    // 关闭按钮与头部的静态样式在 `yoya.ui.css`（`[vn~='VDialogClose']` / `[vn~='VDialogHeader']`），
+    // 这里只断言身份与结构
+    expect(dialogClose.getAttribute('vn')).toContain('VDialogClose');
+    expect(dialog.querySelector('.components-icon-source-dialog-header')).not.toBeNull();
     expect(dialog.querySelector('.components-icon-source-dialog-code').textContent).toContain(
       'export function ArrowDownOutlined'
     );
@@ -2622,25 +2620,25 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const page = document.querySelector('[data-feedback-docs="tooltip"]');
     const demos = page.querySelectorAll('[data-feedback-demo]');
     const placementDemo = page.querySelector('[data-feedback-demo="placement"]');
-    const placementTargets = placementDemo.querySelectorAll('.yoya-vtooltip');
+    const placementTargets = placementDemo.querySelectorAll('[vn~="VTooltip"]');
 
     expect(page.querySelector('h1').textContent).toBe('vTooltip 提示');
     expect(demos).toHaveLength(2);
     expect(placementTargets).toHaveLength(8);
 
     placementTargets[0]
-      .querySelector('.yoya-vtooltip-target')
+      .querySelector('[vn~="VTooltipTarget"]')
       .dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
     expect(placementTargets[0].dataset.open).toBe('true');
 
     const triggerDemo = page.querySelector('[data-feedback-demo="trigger"]');
     triggerDemo.querySelector('[vn~="VButton"]').click();
-    expect(triggerDemo.querySelector('.yoya-vtooltip').dataset.open).toBe('true');
+    expect(triggerDemo.querySelector('[vn~="VTooltip"]').dataset.open).toBe('true');
 
     document
       .querySelector('.components-workspace')
       .dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(triggerDemo.querySelector('.yoya-vtooltip').dataset.open).toBeUndefined();
+    expect(triggerDemo.querySelector('[vn~="VTooltip"]').dataset.open).toBeUndefined();
 
     const placementSource = placementDemo.querySelector('[data-source-example]').textContent;
     expect(placementSource).toContain('export function TooltipPlacementExample1');

@@ -1,33 +1,14 @@
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import { allocateId } from '../core/id.js';
-import { componentClass, isPlainObject, setupContentSlot } from '../components/shared.js';
-
-const tooltipPlacementStyles = {
-  bottom: { left: '50%', top: 'calc(100% + 8px)', transform: 'translateX(-50%)' },
-  'bottom-end': { right: '0', top: 'calc(100% + 8px)' },
-  'bottom-start': { left: '0', top: 'calc(100% + 8px)' },
-  left: { right: 'calc(100% + 8px)', top: '50%', transform: 'translateY(-50%)' },
-  'left-end': { right: 'calc(100% + 8px)', top: '0' },
-  'left-start': { bottom: '0', right: 'calc(100% + 8px)' },
-  right: { left: 'calc(100% + 8px)', top: '50%', transform: 'translateY(-50%)' },
-  'right-end': { left: 'calc(100% + 8px)', top: '0' },
-  'right-start': { bottom: '0', left: 'calc(100% + 8px)' },
-  top: { bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)' },
-  'top-end': { bottom: 'calc(100% + 8px)', right: '0' },
-  'top-start': { bottom: 'calc(100% + 8px)', left: '0' }
-};
-
-const tooltipPlacementBase = {
-  bottom: null,
-  left: null,
-  right: null,
-  top: null,
-  transform: null
-};
+import {
+  createComponentShortcut,
+  delegateNodeCommands,
+  isPlainObject,
+  setupContentSlot
+} from '../components/shared.js';
 
 const tooltipPlacementAliases = {
   'bottom-left': 'bottom-start',
@@ -53,16 +34,14 @@ const tooltipTriggers = ['click', 'focus', 'manual'];
 /** VTooltip 的节点类型（不导出）；公开组件 `vTooltip` 是 vNode 外壳。 */
 class TooltipNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VTooltip';
+    super('div', { vn: 'VTooltip' });
     this._triggerMode = 'hover';
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vtooltip-panel');
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
 
-    this._target = new HtmlElementNode('span')
-      .className('yoya-vtooltip-target')
+    this._target = new HtmlElementNode('span', { vn: 'VTooltipTarget' })
       .attr('aria-describedby', this._panelId)
       .on('mouseenter', () => this._handleHoverEnter())
       .on('mouseleave', () => this._handleHoverLeave())
@@ -72,10 +51,9 @@ class TooltipNode extends HtmlElementNode {
 
     this._panel = new HtmlElementNode('div')
       .id(this._panelId)
-      .className('yoya-vtooltip-panel')
+      .setup({ vn: 'VTooltipPanel' })
       .attr({ 'aria-hidden': 'true', role: 'tooltip' });
 
-    this.className(componentClass, 'yoya-vtooltip');
     this.child(this._target, this._panel);
     this.placement('top');
     this.trigger('hover');
@@ -108,7 +86,6 @@ class TooltipNode extends HtmlElementNode {
     const requestedPlacement = value || 'top';
     const placement = tooltipPlacementAliases[requestedPlacement] || requestedPlacement;
     this.attr('data-placement', placement);
-    this._panel.styles(getTooltipPlacementStyles(placement));
     return this;
   }
 
@@ -286,21 +263,17 @@ class TooltipNode extends HtmlElementNode {
   }
 }
 
-export function vTooltip(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VTooltip',
-    createNode: (setup) => new TooltipNode(setup),
-    commands: ['target', 'content', 'placement', 'trigger', 'open', 'close', 'toggle'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 文字提示（形态 B）：视图根是节点类型扩展 `TooltipNode`（目标区 / 面板 / 全局关闭监听归它），
+ * 外层 `vNode` 用 `delegateNodeCommands` 补齐命令面与元素 DSL。
+ * 面板定位按 `data-placement` 交给 CSS 规则（R5，不再写行内 placement 样式）。
+ */
+export function VTooltip(props = {}) {
+  return vNode((api) => {
+    const node = new TooltipNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-function getTooltipPlacementStyles(placement) {
-  return {
-    ...tooltipPlacementBase,
-    ...(tooltipPlacementStyles[placement] || tooltipPlacementStyles.top)
-  };
-}
-
-export const VTooltip = vTooltip;
-defineComponentIdentity(VTooltip, 'VTooltip');
+export const vTooltip = createComponentShortcut(VTooltip, { props: true });
