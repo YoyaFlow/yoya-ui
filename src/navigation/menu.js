@@ -239,6 +239,8 @@ export function VMenuItem() {
   const disabledState = ref(false);
   const hoverState = ref(false);
   const hoverableState = ref(false);
+  /** 容器给的 roving tab 停点（`null` = 还没被容器收进漫游，不写 `tabindex`）。 */
+  const tabIndexState = ref(null);
 
   let iconBox = null;
   let labelBox = null;
@@ -276,8 +278,12 @@ export function VMenuItem() {
       return api;
     };
 
-    /** 禁用：写方法（与迁移前同口径——`Boolean(value)`，所以 `disabled()` 是"启用"）。 */
+    /** 禁用：写方法（与迁移前同口径——`Boolean(value)`，所以 `disabled()` 是"启用"）；无参读当前值。 */
     api.disabled = (value) => {
+      if (value === undefined) {
+        return disabledState.value;
+      }
+
       disabledState.value = Boolean(value);
 
       // 菜单的 roving tabindex 靠这条 DOM 事件重算（菜单容器那一刀会换成容器态下推）
@@ -291,6 +297,18 @@ export function VMenuItem() {
 
     api.hoverable = (value = true) => {
       hoverableState.value = Boolean(value);
+      return api;
+    };
+
+    /** 容器态：当前 tab 停点（容器推给单元，单元自己派生 `tabindex`）。 */
+    api.tabStop = (value = true) => {
+      tabIndexState.value = Boolean(value);
+      return api;
+    };
+
+    /** 把焦点交给项：容器漫游 / 下拉菜单都用它，不再从外面碰元素。 */
+    api.focus = () => {
+      view?._el?.focus?.();
       return api;
     };
 
@@ -319,6 +337,9 @@ export function VMenuItem() {
         'data-danger': computed(() => (dangerState.value ? 'true' : null)),
         'data-hoverable': computed(() => (hoverableState.value ? 'true' : null)),
         'data-hovered': computed(() => (hoverState.value ? 'true' : null)),
+        tabindex: computed(() =>
+          tabIndexState.value === null ? null : tabIndexState.value ? 0 : -1
+        ),
         vn: 'VMenuItem'
       },
       (root) => {
@@ -1060,7 +1081,10 @@ function setSidebarContentCollapsed(root, collapsed, sidebar) {
     // 子单元可能是 vNode 组件（成员是 ComponentNode）：判定与取值都落到**视图根**（节点类型）上
     const unit = viewRootOf(node) ?? node;
 
-    if ((unit instanceof MenuNode || hasComponentIdentity(node, 'VMenuGroup')) && contentChangeCallback) {
+    if (
+      (unit instanceof MenuNode || hasComponentIdentity(node, 'VMenuGroup')) &&
+      contentChangeCallback
+    ) {
       unit._sidebarContentChangeCallback = contentChangeCallback;
     }
 
