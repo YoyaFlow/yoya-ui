@@ -433,7 +433,8 @@ export function VTable() {
       });
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       return api;
@@ -442,9 +443,11 @@ export function VTable() {
     /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
-    return div({ vn: 'VTable' }, (root) =>
+    const view = div({ vn: 'VTable' }, (root) =>
       root.child(vTableScroll((scroll) => scroll.child(vTableGrid({ vn_slot: '' }))))
     );
+
+    return view;
   });
 }
 

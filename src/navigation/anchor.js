@@ -164,7 +164,8 @@ export function VAnchorItem() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (label2 !== undefined) {
@@ -197,7 +198,9 @@ export function VAnchorItem() {
     /** 字符串 / 数字 = 标题。 */
     api.setupString = (value) => api.title(value);
 
-    return li({ vn: 'VAnchorItem' });
+    const view = li({ vn: 'VAnchorItem' });
+
+    return view;
   });
 }
 
@@ -451,7 +454,8 @@ export function VAnchor() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (ariaLabel !== undefined) {
@@ -494,13 +498,15 @@ export function VAnchor() {
       syncActiveFromScroll();
     };
 
-    return nav(
+    const view = nav(
       { 'aria-label': DEFAULT_LABEL, 'data-offset': String(DEFAULT_OFFSET), vn: 'VAnchor' },
       (element) => {
         element.on('click', handleClick);
         element.child(AnchorList());
       }
     );
+
+    return view;
   });
 }
 

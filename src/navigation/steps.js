@@ -184,7 +184,8 @@ export function VStep() {
       const { children, desc, description, icon, status, text, title, ...elementConfig } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (icon !== undefined) {
@@ -216,7 +217,7 @@ export function VStep() {
     api.setupString = (value) => api.title(value);
 
     // 纯内容位在结构里占位（内容由命令投递）；连线 / 内容盒的样式随容器态走 CSS 规则
-    return li({ role: 'listitem', vn: 'VStep' }, (step) => {
+    const view = li({ role: 'listitem', vn: 'VStep' }, (step) => {
       step.child(
         vSlot('indicator'),
         div({ vn: 'VStepsContent' }, (content) =>
@@ -225,6 +226,8 @@ export function VStep() {
         span({ vn: 'VStepsConnector' })
       );
     });
+
+    return view;
   });
 }
 
@@ -347,7 +350,8 @@ export function VSteps() {
       const { children, current, direction, items, size, status, ...elementConfig } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (current !== undefined) {
@@ -382,7 +386,7 @@ export function VSteps() {
     };
 
     // 结构里就带默认快照（命令只覆盖自己那一项）：首屏不依赖"谁先跑过一遍"
-    return ol({
+    const view = ol({
       'data-current': '0',
       'data-direction': 'horizontal',
       'data-size': 'default',
@@ -391,6 +395,8 @@ export function VSteps() {
       role: 'list',
       vn: 'VSteps'
     });
+
+    return view;
   });
 }
 

@@ -189,7 +189,8 @@ export function VTab() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (label !== undefined) {
@@ -230,7 +231,7 @@ export function VTab() {
     /** 字符串 / 数字 = 标签。 */
     api.setupString = (value) => api.label(value);
 
-    return button(
+    const view = button(
       {
         'aria-controls': panelId,
         'aria-selected': 'false',
@@ -244,6 +245,8 @@ export function VTab() {
         trigger.child(vSlot('icon'), vSlot('label'));
       }
     );
+
+    return view;
   });
 }
 
@@ -591,7 +594,8 @@ export function VTabs() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (ariaLabel !== undefined) {
@@ -638,7 +642,7 @@ export function VTabs() {
     };
 
     // 结构里就带默认快照（命令只覆盖自己那一项）
-    return div({
+    const view = div({
       'data-active-index': '0',
       'data-orientation': 'horizontal',
       'data-size': 'default',
@@ -646,6 +650,8 @@ export function VTabs() {
       'data-variant': 'line',
       vn: 'VTabs'
     });
+
+    return view;
   });
 }
 

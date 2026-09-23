@@ -346,6 +346,11 @@ export function VXxx({ count = null, ...rest } = {}) {
   `createComponentShortcut(VXxx, { props: true })`（调用里的**第一个普通对象**当 props 交给定义函数，
   其余位置参数照旧按 setup 分派）。父里要继续嵌套就写
   `VXxx(props).setup((host) => host.child(…))`，或走位置参数 `vXxx(props, (host) => …)`。
+- **`setupObject` 里"其余键"落视图根**：用 `setupObject` 的组件，非命令键要交给**视图根元素**
+  （定义里给根留个名字，`view.setup(elementConfig)`）。**别写 `self.node().setup(elementConfig)`**：
+  `self.node()` 是组件节点，它的 `setup()` 会再进一次 `api.setupObject` → 自递归（栈溢出）。
+  `self.node()` 的用途只有两个：`child()`（部件投影）与元素级委派（`attr` / `style` / `on` …）。
+  回归用例：`src/components/component-props-dispatch.test.js`（10 个组件逐个验非命令键）。
 - **构建之后落位的写入要收口**：props 在构建期就读到（绑定首评即终值）；位置参数、`.setup()` 回调、
   以及"建好还没落地就用命令配置"都落在「构建 → 落地」窗口里（那里绑定只求值一次、落地才订阅）。
   引擎在**组件构建帧末**收口一次；组件自己的命令要自收口：

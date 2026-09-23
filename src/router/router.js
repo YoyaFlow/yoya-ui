@@ -480,7 +480,8 @@ export function VRouter() {
       });
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       return api;
@@ -532,10 +533,12 @@ export function VRouter() {
     };
 
     // 出口默认是路由器自己的根元素（命令跑起来时结构已经建好）
-    return div({ 'data-yoya-router': '', vn: 'VRouter' }, (element) => {
+    const view = div({ 'data-yoya-router': '', vn: 'VRouter' }, (element) => {
       state.root = element;
       state.outlet = element;
     });
+
+    return view;
   });
 }
 
@@ -675,7 +678,8 @@ export function VLink(routerInstance) {
       const { exact, label, params, query, replace, to, ...elementConfig } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (to !== undefined) api.to(to);
@@ -700,7 +704,7 @@ export function VLink(routerInstance) {
       unsubscribe();
     };
 
-    return a({ 'data-router-link': 'true', href: '#', vn: 'VLink' }, (element) => {
+    const view = a({ 'data-router-link': 'true', href: '#', vn: 'VLink' }, (element) => {
       element.on('click', (event) => {
         if (!shouldHandleLinkClick(event, element)) return;
 
@@ -715,6 +719,8 @@ export function VLink(routerInstance) {
       element.child(vSlot({ children: span({ vn: 'VLinkLabel' }), name: 'label' }));
       writeLink(element);
     });
+
+    return view;
   });
 }
 

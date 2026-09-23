@@ -478,7 +478,8 @@ export function VCarousel() {
       } = config;
 
       if (Object.keys(elementConfig).length > 0) {
-        self.node().setup(elementConfig);
+        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
+        view.setup(elementConfig);
       }
 
       if (renderItem !== undefined) {
@@ -538,7 +539,7 @@ export function VCarousel() {
     };
 
     // 结构里就带默认快照（命令只覆盖自己那一项）；轨道的匿名占位接幻灯片
-    return div(
+    const view = div(
       {
         'aria-label': '走马灯，第 1 / 0 项',
         'aria-roledescription': 'carousel',
@@ -578,6 +579,8 @@ export function VCarousel() {
         );
       }
     );
+
+    return view;
   });
 }
 
