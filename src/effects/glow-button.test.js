@@ -89,11 +89,18 @@ describe('vGlowButton', () => {
     const button = vGlowButton('部署');
     const element = button.renderDom();
 
-    element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // 几何来自**事件当前的元素**（不是 `renderDom()` 再取一次）：先给它一份可测的 rect
+    element.getBoundingClientRect = () => ({ height: 40, left: 10, top: 20, width: 200 });
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 60, clientY: 40 }));
 
     const ripple = element.querySelector('[vn~="VGlowButtonRipple"]');
     expect(ripple).not.toBeNull();
     expect(ripple.getAttribute('aria-hidden')).toBe('true');
+    // size = max(200, 40) = 200；left = 60 - 10 - 100、top = 40 - 20 - 100
+    expect(ripple.style.width).toBe('200px');
+    expect(ripple.style.height).toBe('200px');
+    expect(ripple.style.left).toBe('-50px');
+    expect(ripple.style.top).toBe('-80px');
 
     ripple.dispatchEvent(new Event('animationend'));
     expect(element.querySelector('[vn~="VGlowButtonRipple"]')).toBeNull();

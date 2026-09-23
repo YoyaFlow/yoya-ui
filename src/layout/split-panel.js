@@ -58,7 +58,8 @@ export function VSplitPanel({
   return vNode((api, self) => {
     /** 容器当前尺寸（拖拽 / 键盘调整都要量，方向决定量哪个轴）。 */
     const containerSize = () => {
-      const element = self.node().renderDom();
+      // 量测只读已经落地的元素（`_el`）：不为了量一次就提前 `renderDom()` 把 DOM 建出来
+      const element = self.node()._el;
 
       if (!element) {
         return 0;
@@ -92,15 +93,16 @@ export function VSplitPanel({
     };
 
     const startDrag = (event) => {
-      const element = self.node().renderDom();
+      const element = self.node()._el;
+      const firstElement = firstBox?._el;
 
-      if (event.button !== 0 || !element || firstBox === null) {
+      if (event.button !== 0 || !element || !firstElement) {
         return;
       }
 
       event.preventDefault();
       const horizontal = directionValue.value === 'horizontal';
-      const rect = firstBox.renderDom().getBoundingClientRect();
+      const rect = firstElement.getBoundingClientRect();
 
       drag = {
         containerSize: horizontal ? element.offsetWidth : element.offsetHeight,
@@ -119,7 +121,8 @@ export function VSplitPanel({
             ? 16
             : 0;
 
-      if (!delta || !self.node().renderDom()) {
+      // 落地判定只读 `_el`（不要为了"建没建"去 `renderDom()` 把 DOM 建出来）
+      if (!delta || !self.node()._el) {
         return;
       }
 

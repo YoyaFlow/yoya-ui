@@ -156,8 +156,9 @@ export function VGlowButton({
         return;
       }
 
-      const element = button.renderDom();
-      const rect = element?.getBoundingClientRect?.();
+      // 量测取**事件当前的元素**（监听就绑在它身上）：组件不碰别的组件的 DOM，也不提前 `renderDom()`
+      // （`renderDom()` 是**构建**入口：没落地时会把 DOM 建出来，SSR 里还会碰 document；见 AGENTS「SSR 开发纪律」）
+      const rect = event.currentTarget?.getBoundingClientRect?.();
       const size = Math.max(rect?.width || 120, rect?.height || 40);
       const x = event.clientX || 0;
       const y = event.clientY || 0;

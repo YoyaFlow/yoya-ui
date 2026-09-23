@@ -102,8 +102,9 @@ export function VField() {
         return api;
       }
 
-      const fieldElement = node.renderDom();
-      const anchor = displayBox.renderDom() || fieldElement;
+      // 已经落地了，直接读元素（`_el`）；不再用 `renderDom()` 去"取"元素
+      const fieldElement = node._el;
+      const anchor = displayBox._el || fieldElement;
       const fieldRect = fieldElement.getBoundingClientRect();
       const rect = anchor.getBoundingClientRect();
 
@@ -117,7 +118,8 @@ export function VField() {
     };
 
     const focusEditor = () => {
-      const editorElement = editorBox.renderDom();
+      // 只要元素本身（已落地）；不为"取元素"提前 renderDom()
+      const editorElement = editorBox._el;
       const field = editorElement?.querySelector('input, textarea, select');
 
       if (field && typeof field.focus === 'function') {
