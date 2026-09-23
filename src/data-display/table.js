@@ -366,58 +366,63 @@ export function VTable({
         vTableScroll((scroll) =>
           scroll.child(
             vTableGrid({ vn_slot: '' }, (tableGrid) => {
-              /** 四个段就地建（常驻），命令就地定义：闭包直接抓这一处的部件，外面不留变量。 */
-              const captionPart = vTableCaption();
-              const headPart = vThead();
-              const bodyPart = vTbody();
-              const footPart = vTfoot();
+              /**
+               * 四个段常驻，各自的命令就在**它自己的构建回调**里定义：回调参数就是那个部件，
+               * 闭包直接抓它——外面不留部件变量。props 与命令同一套落位（就在命令旁边）。
+               */
+              tableGrid.child(
+                vTableCaption((captionPart) => {
+                  api.caption = (content) => {
+                    if (content === undefined) {
+                      return captionPart.text();
+                    }
 
-              tableGrid.child(captionPart, headPart, bodyPart, footPart);
+                    captionPart.text(content);
+                    return api;
+                  };
 
-              api.caption = (content) => {
-                if (content === undefined) {
-                  return captionPart.text();
-                }
+                  if (caption !== undefined) api.caption(caption);
+                }),
+                vThead((headPart) => {
+                  api.vThead = (setup) => {
+                    if (setup !== undefined) {
+                      headPart.setup(setup);
+                    }
 
-                captionPart.text(content);
-                return api;
-              };
+                    return api;
+                  };
 
-              api.vThead = (setup) => {
-                if (setup !== undefined) {
-                  headPart.setup(setup);
-                }
+                  if (headSetup !== undefined) api.vThead(headSetup);
+                }),
+                vTbody((bodyPart) => {
+                  api.vTbody = (setup) => {
+                    if (setup !== undefined) {
+                      bodyPart.setup(setup);
+                    }
 
-                return api;
-              };
+                    return api;
+                  };
 
-              api.vTbody = (setup) => {
-                if (setup !== undefined) {
-                  bodyPart.setup(setup);
-                }
+                  api.vTr = (setup) => {
+                    bodyPart.vTr(setup);
+                    return api;
+                  };
 
-                return api;
-              };
+                  if (bodySetup !== undefined) api.vTbody(bodySetup);
+                  if (rowSetup !== undefined) api.vTr(rowSetup);
+                }),
+                vTfoot((footPart) => {
+                  api.vTfoot = (setup) => {
+                    if (setup !== undefined) {
+                      footPart.setup(setup);
+                    }
 
-              api.vTfoot = (setup) => {
-                if (setup !== undefined) {
-                  footPart.setup(setup);
-                }
+                    return api;
+                  };
 
-                return api;
-              };
-
-              api.vTr = (setup) => {
-                bodyPart.vTr(setup);
-                return api;
-              };
-
-              // props 与命令同一套落位
-              if (caption !== undefined) api.caption(caption);
-              if (headSetup !== undefined) api.vThead(headSetup);
-              if (bodySetup !== undefined) api.vTbody(bodySetup);
-              if (footSetup !== undefined) api.vTfoot(footSetup);
-              if (rowSetup !== undefined) api.vTr(rowSetup);
+                  if (footSetup !== undefined) api.vTfoot(footSetup);
+                })
+              );
             })
           )
         )
