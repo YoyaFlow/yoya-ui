@@ -858,9 +858,9 @@ describe('compound components', () => {
 
     expect(element.getAttribute('vn').includes('VSidebar')).toBe(true);
     trigger.click();
-    expect(element.style.overflow).toBe('visible');
+    expect(element.dataset.overflow).toBe('visible');
     trigger.click();
-    expect(element.style.overflow).toBe('hidden');
+    expect(element.dataset.overflow).toBe('hidden');
 
     sidebar.destroy();
   });
@@ -891,7 +891,7 @@ describe('compound components', () => {
     trigger.click();
     expect(submenu.dataset.open).toBe('true');
     expect(shortcut.textContent).toBe('▾');
-    expect(element.style.overflow).toBe('hidden');
+    expect(element.dataset.overflow).toBe('hidden');
 
     item.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     expect(item.dataset.hovered).toBe('true');
@@ -969,14 +969,15 @@ describe('compound components', () => {
     expect(toggle.getAttribute('aria-label')).toBe('展开侧边导航');
     expect(toggle.textContent).toBe('›');
     expect(label.textContent).toBe('概览');
-    expect(label.style.position).toBe('absolute');
+    // 折叠态里菜单文字视觉隐藏 = 状态位 + CSS 规则（不再是行内样式）
+    expect(label.dataset.sidebarHidden).toBe('true');
     expect(submenu.dataset.open).toBeUndefined();
     expect(submenuShortcut.textContent).toBe('›');
-    expect(submenuShortcut.style.position).toBe('');
+    expect(submenuShortcut.hasAttribute('data-sidebar-hidden')).toBe(false);
 
     submenuTrigger.click();
     expect(element.dataset.collapsed).toBeUndefined();
-    expect(label.style.position).toBe('');
+    expect(label.hasAttribute('data-sidebar-hidden')).toBe(false);
     expect(submenu.dataset.open).toBe('true');
 
     sidebar.collapsed(true);
@@ -1099,24 +1100,24 @@ describe('compound components', () => {
 
       let labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(4);
-      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+      labels.forEach((label) => expect(label.dataset.sidebarHidden).toBe('true'));
 
       group.vMenuItem('渲染后分组项目');
       submenu.menuContent().vMenuItem('渲染后嵌套项目');
       labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(6);
-      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+      labels.forEach((label) => expect(label.dataset.sidebarHidden).toBe('true'));
 
       sidebar.menuContent((menu) => menu.vMenuItem('审计日志'));
       labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(1);
       expect(labels[0].textContent).toBe('审计日志');
-      expect(labels[0].style.position).toBe('absolute');
+      expect(labels[0].dataset.sidebarHidden).toBe('true');
 
       sidebar.menuContent().vMenuItem('告警中心');
       labels = element.querySelectorAll('[vn~="VMenuItemLabel"]');
       expect(labels).toHaveLength(2);
-      labels.forEach((label) => expect(label.style.position).toBe('absolute'));
+      labels.forEach((label) => expect(label.dataset.sidebarHidden).toBe('true'));
 
       sidebar.destroy();
     } finally {

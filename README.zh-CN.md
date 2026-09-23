@@ -267,7 +267,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `yoya.core.js`                     | 2.6 KB ~ **30.2 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly                                                                                                                            |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                                                                                                                                      |
-| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **101.2 KB**             | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                                                                                                        |
+| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **101.1 KB**             | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                                                                                                        |
 | `yoya.router.js`                   | 9.0 KB ~ **31.1 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）                                                                                                                    |
 | `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.3 KB**              | 编译产物的运行期钩子，导出面 = 发射器能写出的钩子全集（`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …）；主入口不含这些钩子 |
 | `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                   |
@@ -278,10 +278,10 @@ npm run build   # 产出 dist/，末尾打印体积表
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
 | `yoya.router.full.js`            | 314.2 KB | 131.4 KB | 39.1 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 912.5 KB | 402.6 KB | 112.5 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 853.3 KB | 377.9 KB | 104.2 KB | core + 全部组件                |
+| `yoya.ui-router.full.js`（全量） | 912.3 KB | 402.3 KB | 112.4 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 853.1 KB | 377.5 KB | 104.1 KB | core + 全部组件                |
 
-组件皮肤 `yoya.ui.css`：100.9 KB raw / **17.5 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+组件皮肤 `yoya.ui.css`：101.6 KB raw / **17.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。
 
 `npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，

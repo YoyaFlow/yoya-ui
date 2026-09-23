@@ -29,6 +29,9 @@ const MENU_CHILD_FACTORIES = [
   'vSidebar'
 ];
 
+/** 菜单内容归一：`null` / `undefined` / 空串 = 没有内容（空盒由 CSS 的 `:empty` 规则隐掉）。 */
+const isEmptyMenuContent = (value) => value === null || value === undefined || value === '';
+
 /**
  * 菜单容器的**节点类型**（不导出）：朝向落盘、tab 序维护、子节点加入时的朝向同步都在这里，
  * 公开组件 `vMenu` 是 vNode 外壳。族内 `VSubMenu` 的内容区也直接 `new` 它。
@@ -210,13 +213,15 @@ export class MenuItemNode extends HtmlElementNode {
     this._active = ref(false);
     this._danger = ref(false);
     this._disabled = ref(false);
-    this._iconBox = new HtmlElementNode('span', { vn: 'VMenuItemIcon' })
-      .attr('aria-hidden', 'true')
-      .style('display', 'none');
+    this._iconBox = new HtmlElementNode('span', { vn: 'VMenuItemIcon' }).attr(
+      'aria-hidden',
+      'true'
+    );
     this._labelBox = new HtmlElementNode('span', { vn: 'VMenuItemLabel' });
-    this._shortcutBox = new HtmlElementNode('span', { vn: 'VMenuItemShortcut' })
-      .attr('aria-hidden', 'true')
-      .style('display', 'none');
+    this._shortcutBox = new HtmlElementNode('span', { vn: 'VMenuItemShortcut' }).attr(
+      'aria-hidden',
+      'true'
+    );
 
     this.attr({ role: 'menuitem', type: 'button' });
     super.child(this._iconBox, this._labelBox, this._shortcutBox);
@@ -249,19 +254,15 @@ export class MenuItemNode extends HtmlElementNode {
   }
 
   icon(content) {
-    replaceChildren(this._iconBox, normalizeChildren(content));
-    this._iconBox.style(
-      'display',
-      content === null || content === undefined || content === '' ? 'none' : null
-    );
+    // 空内容 = 真清空（`.yoya.ui.css` 的 `:empty` 规则负责不占地方，R5 不再写行内 display）
+    replaceChildren(this._iconBox, isEmptyMenuContent(content) ? [] : normalizeChildren(content));
     return this;
   }
 
   shortcut(content) {
-    replaceChildren(this._shortcutBox, normalizeChildren(content));
-    this._shortcutBox.style(
-      'display',
-      content === null || content === undefined || content === '' ? 'none' : null
+    replaceChildren(
+      this._shortcutBox,
+      isEmptyMenuContent(content) ? [] : normalizeChildren(content)
     );
     return this;
   }
@@ -898,7 +899,8 @@ class SidebarNode extends HtmlElementNode {
 
   collapsible(value = true) {
     this._collapsible = Boolean(value);
-    this._toggle.style('display', this._collapsible ? null : 'none');
+    // 折叠开关的显隐交给 CSS（`[data-collapsible='false']`），不再写行内 display
+    this.attr('data-collapsible', this._collapsible ? null : 'false');
     return this;
   }
 
@@ -1037,11 +1039,11 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
     if (value && !submenu._disabled.value && sidebar._collapsed.value) {
       sidebar.collapsed(false);
     }
-    sidebar.style('overflow', submenu._open.value && !submenu._inline ? 'visible' : 'hidden');
+    sidebar.attr('data-overflow', submenu._open.value && !submenu._inline ? 'visible' : 'hidden');
     return result;
   };
   if (submenu._open.value) {
-    sidebar.style('overflow', submenu._inline ? 'hidden' : 'visible');
+    sidebar.attr('data-overflow', submenu._inline ? 'hidden' : 'visible');
   }
   submenu._trigger.on('keydown', (event) => {
     if (
@@ -1054,31 +1056,12 @@ function bindSidebarSubMenuExpansion(submenu, sidebar) {
   });
 }
 
+/**
+ * 折叠态里把菜单文字 / 快捷键**视觉隐藏**（可访问性保留）：只写一个状态位，
+ * 具体样式在 `yoya.ui.css` 的 `[data-sidebar-hidden='true']` 规则里（R5，不再存 / 还原行内样式）。
+ */
 function setSidebarVisuallyHidden(node, hidden) {
-  const hiddenStyles = {
-    clip: 'rect(0 0 0 0)',
-    clipPath: 'inset(50%)',
-    height: '1px',
-    overflow: 'hidden',
-    position: 'absolute',
-    whiteSpace: 'nowrap',
-    width: '1px'
-  };
-
-  if (hidden) {
-    if (!node._sidebarVisibleStyles) {
-      node._sidebarVisibleStyles = Object.fromEntries(
-        Object.keys(hiddenStyles).map((name) => [name, node.style(name) ?? null])
-      );
-    }
-    node.styles(hiddenStyles);
-    return;
-  }
-
-  if (node._sidebarVisibleStyles) {
-    node.styles(node._sidebarVisibleStyles);
-    node._sidebarVisibleStyles = null;
-  }
+  node.attr('data-sidebar-hidden', hidden ? 'true' : null);
 }
 
 /**

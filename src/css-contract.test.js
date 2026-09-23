@@ -93,6 +93,15 @@ const masonrySelectors = [
   "[vn~='VMasonry'] > *"
 ];
 
+const menuR5Selectors = [
+  "[vn~='VMenuItemIcon']:empty",
+  "[vn~='VMenuItemShortcut']:empty",
+  "[vn~='VSidebar'][data-collapsible='false']",
+  "[vn~='VSidebar'][data-overflow='visible']",
+  "[vn~='VSidebar'][data-overflow='hidden']",
+  "[data-sidebar-hidden='true']"
+];
+
 const rateSelectors = [
   "[vn~='VRate']",
   "[vn~='VRate'][data-disabled='true']",
@@ -379,6 +388,12 @@ describe('CSS style contract', () => {
 
   it('covers the masonry selectors', () => {
     masonrySelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the menu / sidebar state selectors', () => {
+    menuR5Selectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

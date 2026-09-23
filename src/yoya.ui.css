@@ -1743,6 +1743,35 @@ body {
     width: 0;
   }
 
+  /* 菜单项：图标 / 快捷键位空着就不占地方（原来靠 JS 写行内 `display`，R5 改成 `:empty` 规则） */
+  [vn~='VMenuItemIcon']:empty,
+  [vn~='VMenuItemShortcut']:empty {
+    display: none;
+  }
+
+  /* 侧栏：折叠开关可按需隐藏；子菜单弹出时放开裁剪；折叠态里菜单文字 / 快捷键视觉隐藏（可访问性保留） */
+  [vn~='VSidebar'][data-collapsible='false'] [vn~='VSidebarToggle'] {
+    display: none;
+  }
+
+  [vn~='VSidebar'][data-overflow='visible'] {
+    overflow: visible;
+  }
+
+  [vn~='VSidebar'][data-overflow='hidden'] {
+    overflow: hidden;
+  }
+
+  [data-sidebar-hidden='true'] {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
   [vn~='VTreeRanger'] [vn~='VTreeRangerList'] {
     scrollbar-width: none;
   }
