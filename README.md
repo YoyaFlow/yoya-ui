@@ -298,10 +298,10 @@ Self-contained entries (core inlined, single file):
 | Artifact                              | raw      | min      | min+gzip | Contents                             |
 | ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
 | `yoya.router.full.js`                 | 321.4 KB | 136.7 KB | 40.5 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 909.0 KB | 422.9 KB | 115.4 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 841.9 KB | 392.7 KB | 105.7 KB | core + all components                |
+| `yoya.ui-router.full.js` (everything) | 908.1 KB | 422.2 KB | 115.4 KB | core + all components + router / SSR |
+| `yoya.ui.full.js`                     | 841.0 KB | 391.9 KB | 105.7 KB | core + all components                |
 
-Component skin `yoya.ui.css`: 78.3 KB raw / **12.9 KB gzip**. The core layer ships no skin of its own
+Component skin `yoya.ui.css`: 79.9 KB raw / **13.3 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
 
 `npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the

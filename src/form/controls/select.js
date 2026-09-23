@@ -12,9 +12,7 @@ import {
   isPlainObject,
   normalizeChildren,
   replaceChildren,
-  resolveTextValue,
-  themeBorder,
-  themeValue
+  resolveTextValue
 } from '../../components/shared.js';
 import { createClearButton, syncClearButton } from './shared.js';
 
@@ -23,6 +21,8 @@ import { createClearButton, syncClearButton } from './shared.js';
  *
  * - 身份写在结构里：根 `vn: 'VSelect'`、内层 `vn: 'VSelectField'`、选项 `vn: 'VSelectOption'`、
  *   清空按钮 `vn: 'VSelectClear'`（能力类 `yoya-control-clear` 保留）；
+ * - 静态样式全在 `yoya.ui.css`（R5）；随状态变的几何 / 配色（清空留白、禁用、报错、选中项）走
+ *   元素上的 `data-clearable` / `disabled` / `data-error` / `selected` 属性规则，JS 只写状态；
  * - 元素级方法按控件语义路由到内层 select（`attr` / `className` / `id` / `name` / `value` / `placeholder` …），
  *   命令写在 api 上，调用方拿组件句柄直接调；
  * - SSR 回读 `hydrateSnapshot` 挂内层 select（渲染路径按节点调用）；
@@ -41,20 +41,9 @@ export function VSelect() {
       value: ''
     };
 
+    // `data-clearable` 是"要不要给清空按钮留位置"的状态真源（CSS 规则读它，见 yoya.ui.css）
     const field = selectTag({
-      style: {
-        background: themeValue('color-surface', '#ffffff'),
-        border: themeBorder('color-border-strong', '#cbd5e1'),
-        borderRadius: '6px',
-        boxSizing: 'border-box',
-        color: themeValue('color-text', '#172033'),
-        cursor: 'pointer',
-        font: 'inherit',
-        minHeight: 'var(--yoya-control-height-md, 34px)',
-        outline: 'none',
-        padding: '0 32px 0 12px',
-        width: '100%'
-      },
+      'data-clearable': state.clearable ? 'true' : null,
       vn: 'VSelectField'
     });
     const clearButton = createClearButton('VSelectClear', {
@@ -62,26 +51,20 @@ export function VSelect() {
       top: '50%',
       transform: 'translateY(-50%)'
     });
-    const node = div(
-      {
-        style: { minWidth: '0', position: 'relative', width: '100%' },
-        vn: 'VSelect'
-      },
-      (root) => root.child(field, clearButton)
-    );
+    const node = div({ vn: 'VSelect' }, (root) => root.child(field, clearButton));
 
     // 清空按钮的判定读 api：clearable() / isDisabled() / isReadonly() / value()
     const syncClear = () => syncClearButton(api, field, clearButton);
-    const syncClearPadding = () => field.style('paddingRight', state.clearable ? '52px' : '32px');
 
     const renderOptions = () => {
       const nodes = [];
       const selectedValue = resolveTextValue(state.value);
 
       if (state.placeholder) {
+        // 身份之外再给个标记：占位项的置灰色归 CSS（`[data-placeholder]` 规则）
         const placeholderNode = optionTag({
+          'data-placeholder': 'true',
           disabled: true,
-          style: { color: themeValue('color-border-muted', '#94a3b8') },
           value: '',
           vn: 'VSelectOption'
         });
@@ -90,14 +73,8 @@ export function VSelect() {
         replaceChildren(placeholderNode, normalizeChildren(state.placeholder));
         nodes.push(placeholderNode);
       } else if (state.clearable && !selectedValue) {
-        nodes.push(
-          optionTag({
-            selected: true,
-            style: { color: themeValue('color-border-muted', '#94a3b8') },
-            value: '',
-            vn: 'VSelectOption'
-          })
-        );
+        // 空项自己没有文案（`color` 不可观察），只留结构
+        nodes.push(optionTag({ selected: true, value: '', vn: 'VSelectOption' }));
       }
 
       state.options.forEach((option, index) => {
@@ -113,26 +90,10 @@ export function VSelect() {
 
     const applyDisabled = () => {
       field.attr('disabled', state.disabled ? true : null);
-      field.style('cursor', state.disabled ? 'not-allowed' : 'pointer');
-      field.style('opacity', state.disabled ? '0.64' : '1');
       syncClear();
     };
     const applyRequired = () => field.attr('required', state.required ? true : null);
-    const applyError = () => {
-      field.attr('data-error', state.error ? 'true' : null);
-      field.style(
-        'borderColor',
-        state.error
-          ? themeValue('color-danger', '#dc2626')
-          : themeValue('color-border-strong', '#cbd5e1')
-      );
-      field.style(
-        'boxShadow',
-        state.error
-          ? `0 0 0 1px ${themeValue('color-danger-ring', 'rgba(220, 38, 38, 0.2)')}`
-          : null
-      );
-    };
+    const applyError = () => field.attr('data-error', state.error ? 'true' : null);
     const booleanCommand = (key, apply) => (value) => {
       if (value === undefined) {
         return state[key];
@@ -242,7 +203,6 @@ export function VSelect() {
       state.clearable = Boolean(value);
       field.attr('data-clearable', state.clearable ? 'true' : null);
       renderOptions();
-      syncClearPadding();
       syncClear();
       return api;
     };
@@ -368,7 +328,6 @@ export function VSelect() {
     });
     field.on('change', syncClear);
 
-    syncClearPadding();
     renderOptions();
     syncClear();
     return node;
@@ -393,12 +352,6 @@ function createSelectOptionNode(option, selectedValue, index) {
 
   if (normalized.disabled) {
     node.attr('disabled', true);
-  }
-
-  if (isSelected) {
-    node.styles({
-      color: themeValue('color-text', '#172033')
-    });
   }
 
   replaceChildren(node, normalizeChildren(normalized.label));

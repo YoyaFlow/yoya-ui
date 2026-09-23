@@ -16,7 +16,7 @@
     "src/form/controls/form-item.js": 1,
     "src/form/controls/input.js": 2,
     "src/form/controls/radio.js": 1,
-    "src/form/controls/select.js": 2,
+    "src/form/controls/select.js": 1,
     "src/form/controls/shared.js": 2,
     "src/form/controls/switch.js": 1,
     "src/form/controls/textarea.js": 2,

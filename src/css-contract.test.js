@@ -62,6 +62,16 @@ const formItemSelectors = [
   "[vn~='VFormItem'][data-error='true'] > [vn~='VFormItemError']"
 ];
 
+const selectSelectors = [
+  "[vn~='VSelect']",
+  "[vn~='VSelect'] > [vn~='VSelectField']",
+  "[vn~='VSelect'] > [vn~='VSelectField'][data-clearable='true']",
+  "[vn~='VSelect'] > [vn~='VSelectField'][disabled]",
+  "[vn~='VSelect'] > [vn~='VSelectField'][data-error='true']",
+  "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][selected]",
+  "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true']"
+];
+
 const navigationSelectors = [
   "[vn~='VMenu']",
   "[vn~='VMenu'][data-orientation='horizontal']",
@@ -229,6 +239,12 @@ describe('CSS style contract', () => {
 
   it('covers the form item selectors', () => {
     formItemSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the select selectors', () => {
+    selectSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

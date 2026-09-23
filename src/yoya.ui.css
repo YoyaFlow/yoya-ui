@@ -508,6 +508,52 @@ body {
     display: block;
   }
 
+  /* 下拉选择：静态样式（原在 JS 里那 4 块行内样式）。随状态变的四样——清空留白 / 禁用 / 报错 /
+     选中项——都读元素上的属性：`data-clearable`、`disabled`、`data-error`、`selected`。 */
+  :where([vn~='VSelect']) {
+    min-width: 0;
+    position: relative;
+    width: 100%;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    cursor: pointer;
+    font: inherit;
+    min-height: var(--yoya-control-height-md, 34px);
+    outline: none;
+    padding: 0 32px 0 12px;
+    width: 100%;
+  }
+
+  /* 可清空时给清空按钮留位置（`clearable` 状态由组件写在字段的 `data-clearable` 上） */
+  [vn~='VSelect'] > [vn~='VSelectField'][data-clearable='true'] {
+    padding-right: 52px;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.64;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'][data-error='true'] {
+    border-color: var(--yoya-color-danger, #dc2626);
+    box-shadow: 0 0 0 1px var(--yoya-color-danger-ring, rgba(220, 38, 38, 0.2));
+  }
+
+  /* 选中项用正文字色；占位项压暗（写在后面，两条同权重时它赢） */
+  [vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][selected] {
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true'] {
+    color: var(--yoya-color-border-muted, #94a3b8);
+  }
+
   :where([vn~='VSymbolButton']) {
     align-items: center;
     background: transparent;
