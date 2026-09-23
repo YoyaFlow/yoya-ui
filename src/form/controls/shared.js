@@ -1,31 +1,12 @@
-import { ViewNode } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { ref } from '../../core/signals/handle.js';
+import { HtmlElementNode, input as inputFactory, label, span } from '../../html/index.js';
 import {
-  booleanMethod,
-  isPlainObject,
+  delegateNodeCommands,
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
   themeValue
 } from '../../components/shared.js';
-
-/**
- * 布尔控件的命令面（节点类型上的公开方法）：三个控件的 `vNode` 定义用它把命令挂到 `api` 上，
- * `delegateNodeCommands` 再兜底补齐构造函数里挂的开关。
- */
-const BOOLEAN_CONTROL_COMMANDS = [
-  'checked',
-  'content',
-  'description',
-  'disabled',
-  'indeterminate',
-  'isDisabled',
-  'label',
-  'optionValue',
-  'required',
-  'text',
-  'value'
-];
 
 /** 清空按钮：身份走 `vn`（各控件一份），能力类 `yoya-control-clear` 保留（跨组件能力类不退场）。 */
 function createClearButton(identity, position = {}) {
@@ -73,241 +54,294 @@ function syncClearButton(control, inputNode, clearButton) {
 }
 
 /**
- * 布尔控件的**节点类型**（视图根，不导出到包入口）：`checkbox` / `switch` / `radio`
- * 三个组件各自的定义函数里 `new` 它、返回它当视图根（元素机制住在节点上），
- * 身份（`vn`）由各子类自己用字面量写。
+ * 布尔控件（`VCheckbox` / `VRadio` / `VSwitch`）共用的**结构与命令**（形态 B；R1–R12，参考 `VBadge`）。
+ *
+ * 三个组件只有"身份 / 输入类型 / 视觉"三处不同——结构、状态、命令、SSR 回读、元素级委派完全一样，
+ * 所以都收在这一份工厂里；**身份（`vn`）字面量留在各组件的调用点上**（门禁与可读性都靠它）。
+ *
+ * - 状态（`checked` / `disabled` / `required` / `indeterminate` / `optionValue` / `name` / 文案）在闭包里，
+ *   落点是**内层 `<input>`**（原生语义）与根上的状态位（`data-checked` / `aria-disabled` / `data-name`）；
+ * - `indeterminate` 是 DOM property（写不成属性），只在**元素已落地**时补设（与迁移前同口径；
+ *   `data-display/tree.js` 的 `TreeCheckboxInput` 为了同一件事保留了节点类型，是另一种解法）；
+ * - SSR 回读钩子 `hydrateSnapshot` 挂在**内层 `<input>` 节点**上（渲染路径按节点调用，
+ *   与 `input` / `select` / `textarea` 同口径）；
+ * - 元素级命令（`attr` / `style` / `on` …）代委托到视图根：组组件就是按 `item.attr(…)` / `item.on(…)`
+ *   与项对话的（见 16 号第 106 条）。
+ *
+ * `config`：`root`（根元素配置，含 `vn`，调用方的 `...rest` 也摊在这里）/ `input`（内层 `<input>` 配置，
+ * 含 `vn` 与 `type`）/ `boxes`（`visual` / `content` / `label` / `description` 四块部件配置，各含 `vn`）/
+ * `decorateVisual(box)`（视觉盒里的静态件，如开关的滑块）/ `syncVisual(box, enabled)`（勾选态视觉）。
  */
-class VBooleanControl extends HtmlElementNode {
-  constructor(tagName) {
-    super('label', null);
-    this._kind = tagName;
-    this._optionValue = 'on';
-    // 基类只造结构：身份（根 + 各部件）由 `checkbox` / `switch` / `radio` 三个子类自己写，
-    // 命名契约要求字面量 PascalCase（见 attribute-migration-baseline 门禁）。
-    this._input = new HtmlElementNode('input');
-    this._visualBox = new HtmlElementNode('span');
-    this._contentBox = new HtmlElementNode('span');
-    this._labelBox = new HtmlElementNode('span');
-    this._descriptionBox = new HtmlElementNode('span').style('display', 'none');
-    this.styles({
-      alignItems: 'center',
-      cursor: 'pointer',
-      display: 'inline-grid',
-      gap: '10px',
-      gridTemplateColumns: 'auto minmax(0, 1fr)',
-      position: 'relative'
-    });
-    this._input.attr('type', 'checkbox');
-    this._input.styles({
-      height: '1px',
-      margin: '0',
-      opacity: '0',
-      pointerEvents: 'none',
-      position: 'absolute',
-      width: '1px'
-    });
-    this._contentBox.styles({
-      display: 'grid',
-      gap: '2px',
-      minWidth: '0'
-    });
-    this._labelBox.styles({
-      color: themeValue('color-text', '#172033'),
-      fontWeight: '600',
-      lineHeight: '1.35'
-    });
-    this._descriptionBox.styles({
-      color: themeValue('color-text-muted', '#64748b'),
-      fontSize: '12px',
-      lineHeight: '1.45'
-    });
-    this._contentBox.child(this._labelBox, this._descriptionBox);
-    this.child(this._visualBox, this._input, this._contentBox);
+export function createBooleanControl(
+  api,
+  { boxes, decorateVisual = null, input: inputConfig, root, syncVisual = null }
+) {
+  const checkedState = ref(false);
+  const disabledState = ref(false);
+  const indeterminateState = ref(false);
+  const requiredState = ref(false);
+  const optionValueState = ref('on');
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.checked = booleanMethod(this, 'checked', false, (enabled) => {
-      this.attr('data-checked', enabled ? 'true' : null);
-      this._input.attr('checked', enabled ? true : null);
-      this._syncVisual(enabled);
-    });
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this._input.attr('disabled', enabled ? true : null);
-      this.attr('aria-disabled', enabled ? 'true' : null);
-      this.style('opacity', enabled ? '0.64' : '1');
-    });
-    this.required = booleanMethod(this, 'required', false, (enabled) => {
-      this._input.attr('required', enabled ? true : null);
-    });
-    this.indeterminate = booleanMethod(this, 'indeterminate', false, (enabled) => {
-      if (this._input._el) {
-        this._input._el.indeterminate = enabled;
+  let descriptionBox = null;
+  let inputView = null;
+  let labelBox = null;
+  let visualBox = null;
+
+  const applyChecked = (enabled) => {
+    view.attr('data-checked', enabled ? 'true' : null);
+    inputView.attr('checked', enabled ? true : null);
+    syncVisual?.(visualBox, enabled);
+  };
+
+  const view = label(
+    {
+      style: {
+        alignItems: 'center',
+        cursor: 'pointer',
+        display: 'inline-grid',
+        gap: '10px',
+        gridTemplateColumns: 'auto minmax(0, 1fr)',
+        position: 'relative'
       }
-    });
+    },
+    (rootBox) => {
+      // 身份 + 调用方的元素配置（`...rest`）：落在视图根上
+      rootBox.setup(root);
 
-    this._input.on('change', (event) => {
-      if (this.disabled()) {
-        return;
-      }
+      visualBox = span(boxes.visual, (box) => decorateVisual?.(box));
 
-      this.checked(Boolean(event.target?.checked));
-    });
-  }
+      inputView = inputFactory(
+        {
+          ...inputConfig,
+          style: {
+            height: '1px',
+            margin: '0',
+            opacity: '0',
+            pointerEvents: 'none',
+            position: 'absolute',
+            width: '1px'
+          }
+        },
+        (box) => {
+          box.on('change', (event) => {
+            if (disabledState.value) {
+              return;
+            }
 
-  label(value) {
+            api.checked(Boolean(event.target?.checked));
+          });
+        }
+      );
+
+      const contentBox = span({
+        ...boxes.content,
+        style: { display: 'grid', gap: '2px', minWidth: '0' }
+      });
+
+      labelBox = span({
+        ...boxes.label,
+        style: {
+          color: themeValue('color-text', '#172033'),
+          fontWeight: '600',
+          lineHeight: '1.35'
+        }
+      });
+
+      descriptionBox = span({
+        ...boxes.description,
+        style: {
+          color: themeValue('color-text-muted', '#64748b'),
+          display: 'none',
+          fontSize: '12px',
+          lineHeight: '1.45'
+        }
+      });
+
+      contentBox.child(labelBox, descriptionBox);
+      rootBox.child(visualBox, inputView, contentBox);
+
+      // 初始视觉（未勾选）：迁移前是子类构造函数里那句 `this._syncVisual(false)`
+      syncVisual?.(visualBox, false);
+    }
+  );
+
+  api.checked = (value) => {
     if (value === undefined) {
-      return this._labelBox.textContent();
+      return checkedState.value;
     }
 
-    replaceChildren(this._labelBox, normalizeChildren(value));
-    return this;
-  }
+    const next = Boolean(value);
+    checkedState.value = next;
+    applyChecked(next);
+    return api;
+  };
 
-  text(value) {
-    return this.label(value);
-  }
+  api.value = (value) => (value === undefined ? api.checked() : api.checked(value));
 
-  content(value) {
-    return this.label(value);
-  }
-
-  description(value) {
+  api.disabled = (value) => {
     if (value === undefined) {
-      return this._descriptionBox.textContent();
+      return disabledState.value;
+    }
+
+    const next = Boolean(value);
+    disabledState.value = next;
+    inputView.attr('disabled', next ? true : null);
+    view.attr('aria-disabled', next ? 'true' : null);
+    view.style('opacity', next ? '0.64' : '1');
+    return api;
+  };
+
+  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+  api.isDisabled = () => disabledState.value;
+
+  api.required = (value) => {
+    if (value === undefined) {
+      return requiredState.value;
+    }
+
+    const next = Boolean(value);
+    requiredState.value = next;
+    inputView.attr('required', next ? true : null);
+    return api;
+  };
+
+  api.indeterminate = (value) => {
+    if (value === undefined) {
+      return indeterminateState.value;
+    }
+
+    const next = Boolean(value);
+    indeterminateState.value = next;
+
+    if (inputView._el) {
+      inputView._el.indeterminate = next;
+    }
+
+    return api;
+  };
+
+  api.optionValue = (value) => {
+    if (value === undefined) {
+      return optionValueState.value;
+    }
+
+    optionValueState.value = resolveTextValue(value) || 'on';
+    inputView.attr('value', optionValueState.value);
+    return api;
+  };
+
+  api.name = (value) => {
+    if (value === undefined) {
+      return inputView.name();
+    }
+
+    inputView.name(value);
+    view.attr('data-name', value ?? null);
+    return api;
+  };
+
+  api.label = (value) => {
+    if (value === undefined) {
+      return labelBox.textContent();
+    }
+
+    replaceChildren(labelBox, normalizeChildren(value));
+    return api;
+  };
+
+  api.text = (value) => api.label(value);
+  api.content = (value) => api.label(value);
+
+  api.description = (value) => {
+    if (value === undefined) {
+      return descriptionBox.textContent();
     }
 
     const hasContent = value !== null && value !== undefined && value !== '';
-    this._descriptionBox.style('display', hasContent ? null : 'none');
-    replaceChildren(this._descriptionBox, hasContent ? normalizeChildren(value) : []);
-    return this;
-  }
+    descriptionBox.style('display', hasContent ? null : 'none');
+    replaceChildren(descriptionBox, hasContent ? normalizeChildren(value) : []);
+    return api;
+  };
 
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
-
-  value(value) {
-    if (value === undefined) {
-      return this.checked();
+  // SSR 回读：挂在**内层 `<input>` 节点**上（渲染路径按节点调用；与 input / select / textarea 同口径）
+  inputView.hydrateSnapshot = () => {
+    if (inputView._el) {
+      api.checked(inputView._el.checked);
     }
 
-    return this.checked(value);
-  }
+    return inputView;
+  };
 
-  optionValue(value) {
-    if (value === undefined) {
-      return this._optionValue;
-    }
+  // 元素级命令代委托（组组件按 `item.attr(…)` / `item.on(…)` 与项对话）
+  delegateNodeCommands(api, view);
 
-    this._optionValue = resolveTextValue(value) || 'on';
-    this._input.attr('value', this._optionValue);
-    return this;
-  }
-
-  name(value) {
-    if (value === undefined) {
-      return this._input.name();
-    }
-
-    this._input.name(value);
-    this.attr('data-name', value ?? null);
-    return this;
-  }
-
-  hydrateSnapshot() {
-    if (this._input._el) {
-      this.checked(this._input._el.checked);
-    }
-    return this;
-  }
-
-  _setupBoolean(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        checked,
-        children,
-        content,
-        description,
-        disabled,
-        label,
-        name,
-        optionValue,
-        required,
-        text,
-        value,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (label !== undefined) {
-        this.label(label);
-      } else if (text !== undefined) {
-        this.text(text);
-      } else if (content !== undefined) {
-        this.content(content);
-      } else if (children !== undefined) {
-        this.label(children);
-      }
-
-      if (description !== undefined) {
-        this.description(description);
-      }
-
-      if (name !== undefined) {
-        this.name(name);
-      }
-
-      if (optionValue !== undefined) {
-        this.optionValue(optionValue);
-      } else if (value !== undefined && typeof value !== 'boolean') {
-        this.optionValue(value);
-      }
-
-      if (checked !== undefined) {
-        this.checked(checked);
-      } else if (value !== undefined && typeof value === 'boolean') {
-        this.checked(value);
-      }
-
-      if (required !== undefined) {
-        this.required(required);
-      }
-
-      if (disabled !== undefined) {
-        this.disabled(disabled);
-      }
-
-      return;
-    }
-
-    if (
-      setup instanceof ViewNode ||
-      Array.isArray(setup) ||
-      typeof setup === 'string' ||
-      typeof setup === 'number'
-    ) {
-      this.label(setup);
-      return;
-    }
-
-    this.label(setup);
-  }
-
-  _syncVisual() {}
+  return view;
 }
 
+/**
+ * 布尔控件的 props 落位（迁移前 `_setupBoolean` 的等价物）。
+ *
+ * 顺序与迁移前逐字一致：文案（`label ?? text ?? content ?? children`）→ 描述 → 名字 → 选项值
+ * （`optionValue`，或非布尔的 `value`）→ 勾选（`checked`，或布尔的 `value`）→ 必填 → 禁用。
+ *
+ * 注意：`indeterminate` **不在**这里处理——迁移前它是"元素配置"（写成属性），命令面才有
+ * `indeterminate()`；要改这个口径得先登记（见 16 号清单的写法）。
+ */
+export function applyBooleanControlProps(api, props = {}) {
+  const {
+    checked,
+    children,
+    content,
+    description,
+    disabled,
+    label: labelContent,
+    name,
+    optionValue,
+    required,
+    text,
+    value
+  } = props;
+
+  if (labelContent !== undefined) {
+    api.label(labelContent);
+  } else if (text !== undefined) {
+    api.text(text);
+  } else if (content !== undefined) {
+    api.content(content);
+  } else if (children !== undefined) {
+    api.label(children);
+  }
+
+  if (description !== undefined) {
+    api.description(description);
+  }
+
+  if (name !== undefined) {
+    api.name(name);
+  }
+
+  if (optionValue !== undefined) {
+    api.optionValue(optionValue);
+  } else if (value !== undefined && typeof value !== 'boolean') {
+    api.optionValue(value);
+  }
+
+  if (checked !== undefined) {
+    api.checked(checked);
+  } else if (value !== undefined && typeof value === 'boolean') {
+    api.checked(value);
+  }
+
+  if (required !== undefined) {
+    api.required(required);
+  }
+
+  if (disabled !== undefined) {
+    api.disabled(disabled);
+  }
+
+  return api;
+}
 function formatDisplayValue(value) {
   if (Array.isArray(value)) {
     return value.map((item) => resolveTextValue(item)).join(', ');
@@ -400,10 +434,8 @@ function assignFormValue(result, name, value) {
 }
 
 export {
-  BOOLEAN_CONTROL_COMMANDS,
   createClearButton,
   syncClearButton,
-  VBooleanControl,
   formatDisplayValue,
   normalizeValueList,
   isEmptyFormValue,

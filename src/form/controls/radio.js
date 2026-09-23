@@ -1,84 +1,132 @@
 import { vNode } from '../../core/v-node.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { span } from '../../html/index.js';
 import {
   createComponentShortcut,
-  delegateCommands,
-  delegateNodeCommands,
   replaceChildren,
   themeBorder,
   themeValue
 } from '../../components/shared.js';
-import { BOOLEAN_CONTROL_COMMANDS, VBooleanControl } from './shared.js';
+import { applyBooleanControlProps, createBooleanControl } from './shared.js';
 
-class RadioNode extends VBooleanControl {
-  constructor(setup = null) {
-    super('radio');
-    // 身份：根 + 部件（基类只造结构，身份归组件自己写）
-    this.setup({ vn: 'VRadio' });
-    this._input.setup({ vn: 'VRadioInput' });
-    this._visualBox.setup({ vn: 'VRadioVisual' });
-    this._contentBox.setup({ vn: 'VRadioContent' });
-    this._labelBox.setup({ vn: 'VRadioLabel' });
-    this._descriptionBox.setup({ vn: 'VRadioDescription' });
-    this._input.attr('type', 'radio');
-    this._visualBox.styles({
-      alignItems: 'center',
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border-strong', '#cbd5e1'),
-      borderRadius: '999px',
-      boxSizing: 'border-box',
-      display: 'inline-flex',
-      height: '16px',
-      justifyContent: 'center',
-      lineHeight: '1',
-      transition: 'background 120ms ease, border-color 120ms ease',
-      width: '16px'
+/**
+ * 单选框（形态 B；2026-09-24 与 `VCheckbox` / `VSwitch` 一起收成真 B，写法规格照 `VBadge`）。
+ *
+ * 结构与命令收在同族的 `createBooleanControl`（见 `./shared.js`）；这里写自己的三件事 + **同名互斥**：
+ * 同名（`name()`）的独立单选框分在一组，勾选其中一个时把同组其余的清掉——原来靠"包一层 `this.checked`"
+ * 实现，闭包化后包的是 `api.checked`（`hydrateSnapshot` 走同一个 `api.checked`，所以 SSR 回读也走互斥）。
+ */
+export function VRadio({
+  checked,
+  children,
+  content,
+  description,
+  disabled,
+  label: labelContent,
+  name,
+  optionValue,
+  required,
+  text,
+  value,
+  ...rest
+} = {}) {
+  return vNode((api) => {
+    const view = createBooleanControl(api, {
+      root: { ...rest, vn: 'VRadio' },
+      input: { attrs: { type: 'radio' }, vn: 'VRadioInput' },
+      boxes: {
+        visual: {
+          style: {
+            alignItems: 'center',
+            background: themeValue('color-surface', '#ffffff'),
+            border: themeBorder('color-border-strong', '#cbd5e1'),
+            borderRadius: '999px',
+            boxSizing: 'border-box',
+            display: 'inline-flex',
+            height: '16px',
+            justifyContent: 'center',
+            lineHeight: '1',
+            transition: 'background 120ms ease, border-color 120ms ease',
+            width: '16px'
+          },
+          vn: 'VRadioVisual'
+        },
+        content: { vn: 'VRadioContent' },
+        label: { vn: 'VRadioLabel' },
+        description: { vn: 'VRadioDescription' }
+      },
+      /** 勾选态视觉：描边 + 中间那颗点（原来在 `_syncVisual` 里）。 */
+      syncVisual: (visualBox, enabled) => {
+        visualBox.styles({
+          borderColor: enabled
+            ? themeValue('color-primary', '#2563eb')
+            : themeValue('color-border-strong', '#cbd5e1')
+        });
+        replaceChildren(visualBox, enabled ? [createRadioDot()] : []);
+      }
     });
-    this._syncVisual(false);
-    // checked 在基类是实例属性（booleanMethod），互斥逻辑包一层而不是原型重写
-    const baseChecked = this.checked;
-    this.checked = (value) => {
-      if (value !== undefined && value && this.name()) {
-        const group = radioGroups.get(this.name());
+
+    /** 同名互斥：勾上自己之前先把同组其他项清掉（迁移前包 `checked` 的同一口径）。 */
+    const baseChecked = api.checked;
+
+    api.checked = (next) => {
+      if (next !== undefined && next && api.name()) {
+        const group = radioGroups.get(api.name());
+
         group?.forEach((other) => {
-          if (other !== this && other.checked()) {
+          if (other !== api && other.checked()) {
             other.checked(false);
           }
         });
       }
 
-      return baseChecked(value);
+      return baseChecked(next);
     };
-    this._setupBoolean(setup);
-    registerRadio(this);
-  }
 
-  name(value) {
-    if (value === undefined) {
-      return super.name();
-    }
+    /** `name` 换名要换组（先退旧组、再进新组），读写仍走 `createBooleanControl` 装的那份。 */
+    const baseName = api.name;
 
-    unregisterRadio(this);
-    const result = super.name(value);
-    registerRadio(this);
-    return result;
-  }
+    api.name = (next) => {
+      if (next === undefined) {
+        return baseName();
+      }
 
-  destroy() {
-    unregisterRadio(this);
-    return super.destroy();
-  }
+      unregisterRadio(api);
+      baseName(next);
+      registerRadio(api);
+      return api;
+    };
 
-  _syncVisual(enabled) {
-    this._visualBox.styles({
-      borderColor: enabled
-        ? themeValue('color-primary', '#2563eb')
-        : themeValue('color-border-strong', '#cbd5e1')
+    api.whenDestroy = () => {
+      unregisterRadio(api);
+    };
+
+    /** 位置参数：字符串 / 数字 = 标签（迁移前 `_setupBoolean` 的兜底分支同口径）。 */
+    api.setupString = (next) => {
+      api.label(next);
+      return api;
+    };
+
+    applyBooleanControlProps(api, {
+      checked,
+      children,
+      content,
+      description,
+      disabled,
+      label: labelContent,
+      name,
+      optionValue,
+      required,
+      text,
+      value
     });
-    replaceChildren(this._visualBox, enabled ? [createRadioDot()] : []);
-  }
+
+    registerRadio(api);
+
+    return view;
+  });
 }
 
+/** 同名单选框的分组表（`vRadio({ name })` 之间互斥；`destroy()` 时退组）。 */
 export const radioGroups = new Map();
 
 function registerRadio(radio) {
@@ -109,31 +157,14 @@ function unregisterRadio(radio) {
 }
 
 function createRadioDot() {
-  return new HtmlElementNode('span').setup({ vn: 'VRadioDot' }).styles({
-    background: themeValue('color-primary', '#2563eb'),
-    borderRadius: '999px',
-    height: '8px',
-    width: '8px'
-  });
-}
-
-/**
- * 单选框（形态 B）：视图根是节点类型 `RadioNode`（元素机制住在节点上），命令挂到 `api`。
- */
-export function VRadio(props = {}) {
-  return vNode((api) => {
-    const root = new RadioNode(props);
-
-    delegateCommands(api, root, BOOLEAN_CONTROL_COMMANDS);
-    delegateNodeCommands(api, root);
-
-    /** 位置参数：字符串 / 数字 / 节点 / 数组 = 标签（迁移前 `_setupBoolean` 的兜底分支同口径）。 */
-    api.setupString = (value) => {
-      root.label(value);
-      return api;
-    };
-
-    return root;
+  return span({
+    style: {
+      background: themeValue('color-primary', '#2563eb'),
+      borderRadius: '999px',
+      height: '8px',
+      width: '8px'
+    },
+    vn: 'VRadioDot'
   });
 }
 

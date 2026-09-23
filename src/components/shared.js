@@ -84,9 +84,11 @@ export function delegateChildFactories(api, node, names) {
 /**
  * 节点类型上有、组件 `api` 上还没有的**公开方法**：补进命令面。
  *
- * 视图根是节点类型的组件（布尔控件族走 `class XxxNode extends VBooleanControl`）用它兜底：
- * 构造函数里用 `booleanMethod` 挂的开关（`disabled()` / `checked()` …）不在原型上，
- * 手工清单漏一个就会静默失效（迁移表单控件时踩到：`vTimer().disabled()` 直接不存在）。
+ * 视图根还是节点类型的组件（`navigation/menu` / `data-display/tree` / `chart/echart` 等）用它兜底：
+ * 构造函数里挂的开关（`disabled()` / `checked()` …）不在原型上，手工清单漏一个就会静默失效
+ * （迁移表单控件时踩到：`vTimer().disabled()` 直接不存在）。
+ * 闭包形态的组件（真 B）不走这条——命令自己在 `api` 上写，元素级命令需要时才代委托
+ * （如布尔控件族的 `createBooleanControl`）。
  * 口径与旧的 `createComponentShell` 一致，只是不再需要外壳。
  */
 export function delegateNodeCommands(api, node) {
