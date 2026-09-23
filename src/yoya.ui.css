@@ -2297,15 +2297,6 @@ body {
     padding: 2px 0 2px 14px;
   }
 
-  /* 子列表：没有子项就不显示（`data-has-children` 写在项根上，是这份状态的真源） */
-  [vn~='VAnchorItem'] > [vn~='VAnchorChildren'] {
-    display: none;
-  }
-
-  [vn~='VAnchorItem'][data-has-children='true'] > [vn~='VAnchorChildren'] {
-    display: grid;
-  }
-
   [vn~='VAnchor'] [vn~='VAnchorChildren'] [vn~='VAnchorLink'] {
     font-size: 13px;
     padding: 5px 10px;

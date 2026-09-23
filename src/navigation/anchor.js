@@ -40,7 +40,7 @@ function AnchorLink() {
 
 /** 子列表（形态 A）：没有子项时隐藏，显隐由项自己的命令收口。 */
 function AnchorChildren() {
-  return ul({ vn: 'VAnchorChildren' });
+  return ul({ vn: 'VAnchorChildren' }).style('display', 'none');
 }
 
 /**
@@ -71,15 +71,13 @@ export function VAnchorItem() {
       return { children: childrenPart, link: linkPart };
     };
 
-    /**
-     * 地址 / 有子项标记：改一处收口一次（写的都是快照，首屏直接读得到）。
-     * 子列表的显隐归 CSS（`[data-has-children='true']` 规则读的这个属性）。
-     */
+    /** 地址 / 子列表显隐 / 有子项标记：改一处收口一次（写的都是快照，首屏直接读得到）。 */
     const syncItem = () => {
       const { children, link } = partsOf();
       const hasChildren = children.children().length > 0;
 
       link.attr('href', state.href || null);
+      children.style('display', hasChildren ? null : 'none');
       self.node().attr('data-has-children', hasChildren ? 'true' : null);
       return api;
     };
