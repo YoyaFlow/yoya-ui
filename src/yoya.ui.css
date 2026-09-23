@@ -1782,6 +1782,133 @@ body {
     width: 0;
   }
 
+  /* 树形穿梭：容器 / 列 / 状态位 / 视口 / 列表（原来都写在 JS 行内，R5 搬进来）。
+     每行的虚拟几何走 CSS 变量（`--yoya-tree-ranger-row-height` / `-row-top`），
+     视口高度走 `--yoya-tree-ranger-viewport-height`；选中 / 悬停是状态位与 `:hover`。 */
+  [vn~='VTreeRanger'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+  }
+
+  [vn~='VTreeRangerColumn'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  [vn~='VTreeRangerColumnStatus'] {
+    box-sizing: border-box;
+    color: var(--yoya-color-text-muted, #8b949e);
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 10px;
+  }
+
+  /* 有数据行时状态位被清空：空盒不显示（原来写行内 `display`） */
+  [vn~='VTreeRangerColumnStatus']:empty {
+    display: none;
+  }
+
+  [vn~='VTreeRangerViewport'] {
+    box-sizing: border-box;
+    height: var(--yoya-tree-ranger-viewport-height, 100%);
+    min-height: 100%;
+    position: relative;
+  }
+
+  [vn~='VTreeRangerList'] {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: relative;
+    scrollbar-width: none;
+  }
+
+  [vn~='VTreeRangerRow'] {
+    align-items: center;
+    background: transparent;
+    border-bottom: 1px solid var(--yoya-color-border-faint, #eef1f4);
+    border-left: 2px solid transparent;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    font-size: 13px;
+    height: var(--yoya-tree-ranger-row-height, 32px);
+    line-height: 1.2;
+    overflow: hidden;
+    padding: 0 10px;
+    position: absolute;
+    top: var(--yoya-tree-ranger-row-top, 0px);
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  [vn~='VTreeRangerRow'][data-selected='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-left-color: var(--yoya-color-primary, #2563eb);
+  }
+
+  [vn~='VTreeRangerRow']:not([data-selected='true']):hover {
+    background: var(--yoya-color-surface-hover, #f0f2f5);
+  }
+
+  [vn~='VTreeRangerIcon'] {
+    flex: 0 0 auto;
+    font-size: 12px;
+    margin-right: 6px;
+    opacity: 0.75;
+  }
+
+  [vn~='VTreeRangerCrumbs'] {
+    align-items: center;
+    background: var(--yoya-color-surface-hover, #f6f8fa);
+    border-bottom: 1px solid var(--yoya-color-border, #d0d7de);
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.4;
+    min-height: 32px;
+    overflow: hidden;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  [vn~='VTreeRangerCrumbSeparator'] {
+    color: var(--yoya-color-text-muted, #8b949e);
+    flex: 0 0 auto;
+    opacity: 0.7;
+  }
+
+  [vn~='VTreeRangerCrumb'] {
+    color: var(--yoya-color-text-secondary, #57606a);
+    flex: 0 0 auto;
+    font-weight: 400;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [vn~='VTreeRangerCrumb'][data-can-jump='true'] {
+    cursor: pointer;
+  }
+
+  [vn~='VTreeRangerCrumb'][data-active='true'] {
+    color: var(--yoya-color-text, #1f2328);
+    font-weight: 600;
+  }
+
   :where([vn~='VTreeTable']) {
     box-sizing: border-box;
     font-family: var(--yoya-font-family, inherit);

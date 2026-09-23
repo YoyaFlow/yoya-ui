@@ -4,8 +4,7 @@ import {
   isPlainObject,
   normalizeComponentArguments,
   replaceChildren,
-  resolveTextValue,
-  themeValue
+  resolveTextValue
 } from '../components/shared.js';
 import { vSplitPanel } from '../layout/split-panel.js';
 
@@ -134,15 +133,11 @@ export function vTreeRanger(first = null, second = null, third = null) {
         return root;
       }
 
-      root = new HtmlElementNode('div', { vn: 'VTreeRanger' })
-        .attr({ role: 'group', 'aria-label': state.ariaLabel })
-        .styles({
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          minWidth: '0'
-        });
+      // 容器几何在 `yoya.ui.css` 的 `[vn~='VTreeRanger']` 规则里（R5，JS 不写行内静态样式）
+      root = new HtmlElementNode('div', { vn: 'VTreeRanger' }).attr({
+        role: 'group',
+        'aria-label': state.ariaLabel
+      });
       root.on('keydown', (event) => handleKeydown(event));
       root.attr('tabindex', '0');
       buildStructure();
@@ -221,29 +216,9 @@ export function vTreeRanger(first = null, second = null, third = null) {
     }
 
     function createColumnView(slot) {
-      const status = new HtmlElementNode('div', { vn: 'VTreeRangerColumnStatus' }).styles({
-        boxSizing: 'border-box',
-        color: themeValue('color-text-muted', '#8b949e'),
-        flex: '0 0 auto',
-        fontSize: '12px',
-        lineHeight: '1.4',
-        padding: '6px 10px'
-      });
-
-      const viewport = new HtmlElementNode('div', { vn: 'VTreeRangerViewport' }).styles({
-        boxSizing: 'border-box',
-        minHeight: '100%',
-        position: 'relative'
-      });
-      const list = new HtmlElementNode('div', { vn: 'VTreeRangerList' }).styles({
-        boxSizing: 'border-box',
-        flex: '1 1 auto',
-        minHeight: '0',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
-        position: 'relative',
-        scrollbarWidth: 'none'
-      });
+      const status = new HtmlElementNode('div', { vn: 'VTreeRangerColumnStatus' });
+      const viewport = new HtmlElementNode('div', { vn: 'VTreeRangerViewport' });
+      const list = new HtmlElementNode('div', { vn: 'VTreeRangerList' });
       list.child(viewport);
       list.on('scroll', () => {
         const view = columnViews[slot];
@@ -251,17 +226,10 @@ export function vTreeRanger(first = null, second = null, third = null) {
         maybeLoadMore(view);
       });
 
-      const columnRoot = new HtmlElementNode('div', { vn: 'VTreeRangerColumn' })
-        .attr('data-column', String(slot))
-        .styles({
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          minHeight: '0',
-          minWidth: '0',
-          width: '100%'
-        });
+      const columnRoot = new HtmlElementNode('div', { vn: 'VTreeRangerColumn' }).attr(
+        'data-column',
+        String(slot)
+      );
       columnRoot.child(list, status);
       return { boundLevel: null, columnRoot, list, slot, status, viewport };
     }
@@ -288,21 +256,17 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const level = view.boundLevel === null ? null : state.levels[view.boundLevel];
       if (!level) {
         replaceChildren(view.status, [state.emptyText]);
-        view.status.style('display', null);
         return;
       }
       if (level.loading) {
         replaceChildren(view.status, [state.loadingText]);
-        view.status.style('display', null);
       } else if (level.error) {
         replaceChildren(view.status, [level.error?.message ?? '加载失败']);
-        view.status.style('display', null);
       } else if (level.items.length === 0) {
         replaceChildren(view.status, [state.emptyText]);
-        view.status.style('display', null);
       } else {
+        // 有行就清空状态位——空盒由 `[vn~='VTreeRangerColumnStatus']:empty { display: none }` 隐掉（R5）
         replaceChildren(view.status, []);
-        view.status.style('display', 'none');
       }
     }
 
@@ -310,14 +274,14 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const level = view.boundLevel === null ? null : state.levels[view.boundLevel];
       if (!level) {
         replaceChildren(view.viewport, []);
-        view.viewport.style('height', '100%');
+        setViewportHeight(view, '100%');
         return;
       }
 
       const count = level.items.length;
       if (count === 0) {
         replaceChildren(view.viewport, []);
-        view.viewport.style('height', '100%');
+        setViewportHeight(view, '100%');
         return;
       }
 
@@ -338,7 +302,12 @@ export function vTreeRanger(first = null, second = null, third = null) {
         nodes.push(createRow(view, itemIndex));
       }
       replaceChildren(view.viewport, nodes);
-      view.viewport.style('height', `${virtualListHeight(count)}px`);
+      setViewportHeight(view, `${virtualListHeight(count)}px`);
+    }
+
+    /** 视口高度是**量测出来的值**（虚拟列表总高 / 兜底 100%）：走 CSS 变量，映射在样式表里。 */
+    function setViewportHeight(view, value) {
+      view.viewport.style('--yoya-tree-ranger-viewport-height', value);
     }
 
     function createRow(view, itemIndex) {
@@ -348,43 +317,21 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const selected = level.selected === key;
       const focused = level.focus === key;
 
-      const row = new HtmlElementNode('div', { vn: 'VTreeRangerRow' })
-        .attr({
-          'aria-selected': selected ? 'true' : 'false',
-          'data-key': String(key),
-          'data-index': String(itemIndex),
-          role: 'option',
-          tabindex: focused ? '0' : '-1'
-        })
-        .styles({
-          alignItems: 'center',
-          background: selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent',
-          borderLeft: selected
-            ? `2px solid ${themeValue('color-primary', '#2563eb')}`
-            : '2px solid transparent',
-          borderBottom: `1px solid ${themeValue('color-border-faint', '#eef1f4')}`,
-          boxSizing: 'border-box',
-          cursor: 'pointer',
-          display: 'flex',
-          fontSize: '13px',
-          height: `${state.itemHeight}px`,
-          lineHeight: '1.2',
-          overflow: 'hidden',
-          padding: '0 10px',
-          position: 'absolute',
-          top: `${VIRTUAL_PADDING + itemIndex * (state.itemHeight + VIRTUAL_GAP)}px`,
-          whiteSpace: 'nowrap',
-          width: '100%'
-        });
-      row.on('mouseenter', () => {
-        if (!selected) row.style('background', themeValue('color-surface-hover', '#f0f2f5'));
+      const row = new HtmlElementNode('div', { vn: 'VTreeRangerRow' }).attr({
+        'aria-selected': selected ? 'true' : 'false',
+        'data-selected': selected ? 'true' : null,
+        'data-key': String(key),
+        'data-index': String(itemIndex),
+        role: 'option',
+        tabindex: focused ? '0' : '-1'
       });
-      row.on('mouseleave', () => {
-        row.style(
-          'background',
-          selected ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent'
-        );
-      });
+      // 每行的虚拟几何是**算出来的值**：走 CSS 变量（`--yoya-tree-ranger-row-height` / `-row-top`），
+      // 选中 / 悬停的配色在样式表里（`[data-selected='true']` 与 `:hover` 规则，R5）
+      row.style('--yoya-tree-ranger-row-height', `${state.itemHeight}px`);
+      row.style(
+        '--yoya-tree-ranger-row-top',
+        `${VIRTUAL_PADDING + itemIndex * (state.itemHeight + VIRTUAL_GAP)}px`
+      );
       row.on('click', (event) => {
         event.stopPropagation();
         selectItem(view.boundLevel, item);
@@ -400,12 +347,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
       const iconContent =
         config && typeof config.icon === 'function' ? config.icon(item, itemIndex) : null;
       if (iconContent !== null && iconContent !== undefined) {
-        const iconBox = new HtmlElementNode('span', { vn: 'VTreeRangerIcon' }).styles({
-          flex: '0 0 auto',
-          fontSize: '12px',
-          marginRight: '6px',
-          opacity: '0.75'
-        });
+        const iconBox = new HtmlElementNode('span', { vn: 'VTreeRangerIcon' });
         iconBox.child(iconContent);
         row.child(iconBox);
       }
@@ -438,23 +380,9 @@ export function vTreeRanger(first = null, second = null, third = null) {
     }
 
     function buildCrumbs() {
-      return new HtmlElementNode('div', { vn: 'VTreeRangerCrumbs' })
-        .attr({ 'aria-label': '当前路径' })
-        .styles({
-          alignItems: 'center',
-          background: themeValue('color-surface-hover', '#f6f8fa'),
-          borderBottom: `1px solid ${themeValue('color-border', '#d0d7de')}`,
-          boxSizing: 'border-box',
-          display: 'flex',
-          flex: '0 0 auto',
-          fontSize: '12px',
-          gap: '6px',
-          lineHeight: '1.4',
-          minHeight: '32px',
-          overflow: 'hidden',
-          padding: '6px 10px',
-          whiteSpace: 'nowrap'
-        });
+      return new HtmlElementNode('div', { vn: 'VTreeRangerCrumbs' }).attr({
+        'aria-label': '当前路径'
+      });
     }
 
     function renderCrumbs() {
@@ -474,13 +402,7 @@ export function vTreeRanger(first = null, second = null, third = null) {
 
       segments.forEach((segment, index) => {
         if (index > 0) {
-          const separator = new HtmlElementNode('span', { vn: 'VTreeRangerCrumbSeparator' }).styles(
-            {
-              color: themeValue('color-text-muted', '#8b949e'),
-              flex: '0 0 auto',
-              opacity: '0.7'
-            }
-          );
+          const separator = new HtmlElementNode('span', { vn: 'VTreeRangerCrumbSeparator' });
           separator.child('/');
           crumbs.child(separator);
         }
@@ -493,16 +415,10 @@ export function vTreeRanger(first = null, second = null, third = null) {
       if (segment.canJump) {
         attrs.tabindex = '0';
       }
-      const crumb = new HtmlElementNode('span', { vn: 'VTreeRangerCrumb' }).attr(attrs).styles({
-        color: active
-          ? themeValue('color-text', '#1f2328')
-          : themeValue('color-text-secondary', '#57606a'),
-        cursor: segment.canJump ? 'pointer' : 'default',
-        flex: '0 0 auto',
-        fontWeight: active ? '600' : '400',
-        maxWidth: '240px',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
+      const crumb = new HtmlElementNode('span', { vn: 'VTreeRangerCrumb' }).attr({
+        ...attrs,
+        'data-active': active ? 'true' : null,
+        'data-can-jump': segment.canJump ? 'true' : null
       });
       crumb.child(segment.text);
       if (segment.canJump) {

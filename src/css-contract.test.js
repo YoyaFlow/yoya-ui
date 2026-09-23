@@ -102,6 +102,21 @@ const menuR5Selectors = [
   "[data-sidebar-hidden='true']"
 ];
 
+const treeRangerSelectors = [
+  "[vn~='VTreeRanger']",
+  "[vn~='VTreeRangerColumn']",
+  "[vn~='VTreeRangerColumnStatus']",
+  "[vn~='VTreeRangerColumnStatus']:empty",
+  "[vn~='VTreeRangerViewport']",
+  "[vn~='VTreeRangerList']",
+  "[vn~='VTreeRangerRow']",
+  "[vn~='VTreeRangerRow'][data-selected='true']",
+  "[vn~='VTreeRangerIcon']",
+  "[vn~='VTreeRangerCrumbs']",
+  "[vn~='VTreeRangerCrumbSeparator']",
+  "[vn~='VTreeRangerCrumb'][data-active='true']"
+];
+
 const rateSelectors = [
   "[vn~='VRate']",
   "[vn~='VRate'][data-disabled='true']",
@@ -394,6 +409,12 @@ describe('CSS style contract', () => {
 
   it('covers the menu / sidebar state selectors', () => {
     menuR5Selectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the tree ranger selectors', () => {
+    treeRangerSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });
