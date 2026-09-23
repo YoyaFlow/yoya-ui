@@ -72,6 +72,22 @@ const selectSelectors = [
   "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true']"
 ];
 
+const cascaderSelectors = [
+  "[vn~='VCascader']",
+  "[vn~='VCascader'] > [vn~='VCascaderTrigger']",
+  "[vn~='VCascader'] > [vn~='VCascaderTrigger'] > [vn~='VCascaderArrow']",
+  "[vn~='VCascader'] > [vn~='VCascaderPanel']",
+  "[vn~='VCascader'][data-open='true'] > [vn~='VCascaderPanel']",
+  "[vn~='VCascaderPanel'] > [vn~='VCascaderColumns']",
+  "[vn~='VCascaderColumns'] > [vn~='VCascaderColumn']",
+  "[vn~='VCascaderColumns'] > [vn~='VCascaderColumn']:not(:last-child)",
+  "[vn~='VCascaderColumn'] > [vn~='VCascaderOption']",
+  "[vn~='VCascaderColumn'] > [vn~='VCascaderOption']:hover",
+  "[vn~='VCascaderOption'][data-active='true']",
+  "[vn~='VCascaderOption'] > [vn~='VCascaderOptionLabel']",
+  "[vn~='VCascaderOption'] > [vn~='VCascaderOptionArrow']"
+];
+
 const tableSelectors = [
   "[vn~='VTable']",
   "[vn~='VTableScroll']",
@@ -263,6 +279,12 @@ describe('CSS style contract', () => {
 
   it('covers the select selectors', () => {
     selectSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the cascader selectors', () => {
+    cascaderSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

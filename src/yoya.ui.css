@@ -554,6 +554,104 @@ body {
     color: var(--yoya-color-border-muted, #94a3b8);
   }
 
+  /* 级联选择：静态样式（原在 JS 里的那些行内样式）。面板显隐 / 选项高亮是状态（根上的 `data-open`、
+     选项上的 `data-active`），行悬停交给 `:hover`；定位结果（left / top / position: fixed）仍写行内。 */
+  :where([vn~='VCascader']) {
+    position: relative;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderTrigger'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 8px;
+    justify-content: space-between;
+    min-height: var(--yoya-control-height-md, 34px);
+    padding: 0 10px;
+    width: 100%;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderTrigger'] > [vn~='VCascaderArrow'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderPanel'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    box-shadow: var(--yoya-shadow-md, 0 8px 18px rgba(15, 23, 42, 0.1));
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: 4px;
+    position: absolute;
+    top: calc(100% + 6px);
+    width: 100%;
+    z-index: 110;
+  }
+
+  [vn~='VCascader'][data-open='true'] > [vn~='VCascaderPanel'] {
+    display: block;
+  }
+
+  [vn~='VCascaderPanel'] > [vn~='VCascaderColumns'] {
+    display: flex;
+    min-width: 0;
+  }
+
+  [vn~='VCascaderColumns'] > [vn~='VCascaderColumn'] {
+    box-sizing: border-box;
+    min-width: 120px;
+    padding: 2px;
+  }
+
+  /* 列之间的分隔线：最后一列不画（原来是按 level / total 现算的行内样式） */
+  [vn~='VCascaderColumns'] > [vn~='VCascaderColumn']:not(:last-child) {
+    border-right: 1px solid var(--yoya-color-border-faint, #efefef);
+  }
+
+  [vn~='VCascaderColumn'] > [vn~='VCascaderOption'] {
+    align-items: center;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    padding: 4px 8px;
+  }
+
+  [vn~='VCascaderColumn'] > [vn~='VCascaderOption']:hover {
+    background: var(--yoya-color-surface-hover, #f1f5f9);
+  }
+
+  /* 高亮写在悬停之后：选中项保持自己的底色（旧实现悬停后会把高亮抹掉） */
+  [vn~='VCascaderOption'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+  }
+
+  [vn~='VCascaderOption'] > [vn~='VCascaderOptionLabel'] {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VCascaderOption'] > [vn~='VCascaderOptionArrow'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
   :where([vn~='VSymbolButton']) {
     align-items: center;
     background: transparent;

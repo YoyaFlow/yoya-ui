@@ -47,7 +47,9 @@ describe('vCascader', () => {
     expect(element.getAttribute('vn')).toBe('VCascader');
     expect(element.querySelector('[data-vcascader-trigger]')).not.toBeNull();
     expect(element.querySelector('[data-vcascader-trigger]').textContent).toContain('请选择地区');
-    expect(element.querySelector('[data-vcascader-panel]').style.display).toBe('none');
+    // 面板显隐归 CSS（`[data-open='true']` 规则）：根上的状态属性才是真源
+    expect(element.hasAttribute('data-open')).toBe(false);
+    expect(element.querySelector('[data-vcascader-panel]')).not.toBeNull();
   });
 
   it('opens, navigates columns and selects a leaf path', () => {
@@ -57,7 +59,8 @@ describe('vCascader', () => {
 
     element.querySelector('[data-vcascader-trigger]').click();
     const panel = element.querySelector('[data-vcascader-panel]');
-    expect(panel.style.display).not.toBe('none');
+    expect(element.dataset.open).toBe('true');
+    expect(panel).not.toBeNull();
     expect(element.querySelector('[data-vcascader-trigger]').getAttribute('aria-expanded')).toBe(
       'true'
     );
@@ -73,7 +76,7 @@ describe('vCascader', () => {
     expect(element.querySelector('[data-vcascader-trigger]').textContent).toContain(
       '广东 / 深圳 / 南山区'
     );
-    expect(element.querySelector('[data-vcascader-panel]').style.display).toBe('none');
+    expect(element.hasAttribute('data-open')).toBe(false);
     expect(onChange).toHaveBeenLastCalledWith(['guangdong', 'shenzhen', 'nanshan'], cascader);
   });
 

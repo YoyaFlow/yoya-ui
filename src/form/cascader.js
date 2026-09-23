@@ -2,12 +2,7 @@ import { registerChildFactories, vText } from '../core/node.js';
 import { vNode } from '../core/v-node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
 import { HtmlElementNode, button as buttonTag, div, span } from '../html/index.js';
-import {
-  createComponentShortcut,
-  isPlainObject,
-  replaceChildren,
-  themeValue
-} from '../components/shared.js';
+import { createComponentShortcut, isPlainObject, replaceChildren } from '../components/shared.js';
 
 /**
  * 级联选择（形态 B，票 15 §4）：视图根是外壳 `div` + 触发按钮 + 弹出面板。
@@ -44,51 +39,10 @@ export function VCascader() {
         title: '选择',
         type: 'button'
       })
-      .styles({
-        alignItems: 'center',
-        background: 'var(--yoya-color-surface, #ffffff)',
-        border: '1px solid var(--yoya-color-border, #d8dee8)',
-        borderRadius: '6px',
-        boxSizing: 'border-box',
-        color: 'inherit',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        font: 'inherit',
-        gap: '8px',
-        justifyContent: 'space-between',
-        minHeight: 'var(--yoya-control-height-md, 34px)',
-        padding: '0 10px',
-        width: '100%'
-      })
-      .child(
-        triggerText,
-        span({
-          style: { color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' }
-        }).child('▾')
-      );
-    const columns = div({ vn: 'VCascaderColumns' })
-      .attr('data-vcascader-columns', 'true')
-      .styles({ display: 'flex', minWidth: '0' });
-    const panel = div({ vn: 'VCascaderPanel' })
-      .attr('data-vcascader-panel', 'true')
-      .styles({
-        background: 'var(--yoya-color-surface, #ffffff)',
-        border: '1px solid var(--yoya-color-border, #d8dee8)',
-        borderRadius: '8px',
-        boxShadow: 'var(--yoya-shadow-md, 0 8px 18px rgba(15, 23, 42, 0.1))',
-        boxSizing: 'border-box',
-        display: 'none',
-        left: '0',
-        maxHeight: '260px',
-        overflow: 'auto',
-        padding: '4px',
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        width: '100%',
-        zIndex: '110'
-      })
-      .child(columns);
-    const node = div({ vn: 'VCascader' }).styles({ position: 'relative' });
+      .child(triggerText, span({ vn: 'VCascaderArrow' }).child('▾'));
+    const columns = div({ vn: 'VCascaderColumns' }).attr('data-vcascader-columns', 'true');
+    const panel = div({ vn: 'VCascaderPanel' }).attr('data-vcascader-panel', 'true').child(columns);
+    const node = div({ vn: 'VCascader' });
 
     node.child(trigger, panel);
 
@@ -120,63 +74,31 @@ export function VCascader() {
       }
 
       levels.forEach((options, level) => {
-        columns.child(createColumn(options, level, levels.length));
+        columns.child(createColumn(options, level));
       });
     };
 
-    const createColumn = (options, level, total) => {
+    const createColumn = (options, level) => {
       const active = state.activePath[level] || null;
-      const column = div({ vn: 'VCascaderColumn' }).styles({
-        borderRight: level < total - 1 ? '1px solid var(--yoya-color-border-faint, #efefef)' : '0',
-        boxSizing: 'border-box',
-        minWidth: '120px',
-        padding: '2px'
-      });
+      const column = div({ vn: 'VCascaderColumn' });
 
       options.forEach((option) => {
-        const row = div({ vn: 'VCascaderOption' })
-          .attr({ 'data-vcascader-option': option.value, role: 'option' })
-          .styles({
-            alignItems: 'center',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-            cursor: 'pointer',
-            display: 'flex',
-            gap: '6px',
-            justifyContent: 'space-between',
-            padding: '4px 8px'
-          });
+        const row = div({ vn: 'VCascaderOption' }).attr({
+          'data-vcascader-option': option.value,
+          role: 'option'
+        });
 
-        row.on('mouseenter', () => {
-          row.styles({ background: themeValue('color-surface-hover', '#f1f5f9') });
-        });
-        row.on('mouseleave', () => {
-          row.style('background', null);
-        });
         row.on('click', () => selectOption(level, option));
 
         const isActive = active !== null && active.value === option.value;
         if (isActive) {
-          row.styles({
-            background: themeValue('color-primary-subtle', '#eff6ff'),
-            color: themeValue('color-primary-hover', '#1d4ed8')
-          });
+          // 高亮是状态：颜色归 CSS 的 `[data-active='true']` 规则
+          row.attr('data-active', 'true');
         }
 
         row.child(
-          span({
-            style: {
-              flex: '1 1 auto',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }
-          }).child(option.label),
-          option.children.length > 0
-            ? span({
-                style: { color: themeValue('color-text-muted', '#64748b'), fontSize: '12px' }
-              }).child('›')
-            : null
+          span({ vn: 'VCascaderOptionLabel' }).child(option.label),
+          option.children.length > 0 ? span({ vn: 'VCascaderOptionArrow' }).child('›') : null
         );
         column.child(row);
       });
@@ -303,13 +225,12 @@ export function VCascader() {
     api.open = (value = true) => {
       state.open = Boolean(value);
       trigger.attr('aria-expanded', state.open ? 'true' : 'false');
+      // 面板显隐归 CSS（`[data-open='true']` 规则）：JS 只写状态
+      node.attr('data-open', state.open ? 'true' : null);
 
       if (state.open) {
         renderColumns();
-        panel.style('display', null);
         positionPanel();
-      } else {
-        panel.style('display', 'none');
       }
 
       bindOutsideClose(state.open);
