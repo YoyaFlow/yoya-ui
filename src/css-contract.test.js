@@ -72,6 +72,21 @@ const selectSelectors = [
   "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true']"
 ];
 
+const rateSelectors = [
+  "[vn~='VRate']",
+  "[vn~='VRate'][data-disabled='true']",
+  "[vn~='VRate'] [vn~='VRateInput']",
+  "[vn~='VRate'] [vn~='VRateStars']",
+  "[vn~='VRate'][data-focused='true'] [vn~='VRateStars']",
+  "[vn~='VRate'][data-error='true'] [vn~='VRateStars']",
+  "[vn~='VRate'] [vn~='VRateStar']",
+  "[vn~='VRate'][data-disabled='true'] [vn~='VRateStar']",
+  "[vn~='VRate'][data-readonly='true'] [vn~='VRateStar']",
+  "[vn~='VRate'] [vn~='VRateStarBase']",
+  "[vn~='VRate'] [vn~='VRateStarFill']",
+  "[vn~='VRate'] [vn~='VRateStar'][data-filled='true'] [vn~='VRateStarFill']"
+];
+
 const cascaderSelectors = [
   "[vn~='VCascader']",
   "[vn~='VCascader'] > [vn~='VCascaderTrigger']",
@@ -317,6 +332,12 @@ describe('CSS style contract', () => {
 
   it('covers the select selectors', () => {
     selectSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the rate selectors', () => {
+    rateSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

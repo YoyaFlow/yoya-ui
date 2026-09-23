@@ -2716,6 +2716,93 @@ body {
     margin-top: 6px;
   }
 
+  /* 评分：静态样式（原在 JS 里那 5 块行内样式）——星标几何走 `--yoya-rate-size` 变量，
+     填充比例走 `--yoya-rate-fill`（JS 只写变量，不拼样式字符串） */
+  :where([vn~='VRate']) {
+    display: inline-grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  [vn~='VRate'][data-disabled='true'] {
+    opacity: 0.64;
+  }
+
+  [vn~='VRate'] [vn~='VRateInput'] {
+    display: none;
+  }
+
+  [vn~='VRate'] [vn~='VRateStars'] {
+    align-items: center;
+    border-radius: 8px;
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+    outline: none;
+    padding: 4px;
+    transition: box-shadow 120ms ease;
+  }
+
+  [vn~='VRate'][data-focused='true'] [vn~='VRateStars'] {
+    box-shadow: 0 0 0 3px var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.22));
+  }
+
+  [vn~='VRate'][data-error='true'] [vn~='VRateStars'] {
+    box-shadow: 0 0 0 1px var(--yoya-color-danger-ring, rgba(220, 38, 38, 0.2));
+  }
+
+  [vn~='VRate'] [vn~='VRateStar'] {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: var(--yoya-rate-size, 22px);
+    height: calc(var(--yoya-rate-size, 22px) + 8px);
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: calc(var(--yoya-rate-size, 22px) + 8px);
+  }
+
+  [vn~='VRate'][data-disabled='true'] [vn~='VRateStar'] {
+    cursor: not-allowed;
+  }
+
+  [vn~='VRate'][data-readonly='true'] [vn~='VRateStar'] {
+    cursor: default;
+  }
+
+  [vn~='VRate'] [vn~='VRateStarBase'],
+  [vn~='VRate'] [vn~='VRateStarFill'] {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    line-height: 1;
+    position: absolute;
+  }
+
+  [vn~='VRate'] [vn~='VRateStarBase'] {
+    color: var(--yoya-color-border-muted, #94a3b8);
+  }
+
+  [vn~='VRate'] [vn~='VRateStarFill'] {
+    -webkit-clip-path: inset(0 var(--yoya-rate-fill, 100%) 0 0);
+    clip-path: inset(0 var(--yoya-rate-fill, 100%) 0 0);
+    color: transparent;
+    overflow: hidden;
+  }
+
+  [vn~='VRate'] [vn~='VRateStar'][data-filled='true'] [vn~='VRateStarFill'] {
+    color: var(--yoya-color-warning, #f59e0b);
+  }
+
   :where([vn~='VProgress']) {
     align-items: center;
     box-sizing: border-box;

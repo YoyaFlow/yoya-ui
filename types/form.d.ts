@@ -391,6 +391,28 @@ export class VForm extends HtmlElementNode {
   submit(): boolean;
 }
 
+/**
+ * `vRate({ … })` 的 props——只收数据 + 元素选项：本组件的键走命令，其余按引擎的元素分派落视图根。
+ */
+export interface RateOptions {
+  value?: number;
+  count?: number;
+  /** `count` 的兼容别名。 */
+  max?: number;
+  allowHalf?: boolean;
+  allowClear?: boolean;
+  /** `allowClear` 的兼容别名。 */
+  clearable?: boolean;
+  character?: string;
+  size?: number | string;
+  name?: string;
+  disabled?: boolean;
+  readonly?: boolean;
+  required?: boolean;
+  error?: boolean | null;
+  [key: string]: unknown;
+}
+
 /** Star rating control. */
 export class VRate extends HtmlElementNode {
   value(): number;
@@ -399,16 +421,24 @@ export class VRate extends HtmlElementNode {
   count(value: number): VRate;
   max(): number;
   max(value: number): VRate;
+  allowHalf(): boolean;
   allowHalf(value: boolean): VRate;
+  allowClear(): boolean;
   allowClear(value: boolean): VRate;
+  clearable(): boolean;
   clearable(value: boolean): VRate;
+  character(): string;
   character(value: string): VRate;
-  size(): string;
-  size(value: string): VRate;
+  size(): number;
+  size(value: number | string): VRate;
+  disabled(): boolean;
   disabled(value: boolean): VRate;
+  readonly(): boolean;
   readonly(value: boolean): VRate;
+  required(): boolean;
   required(value: boolean): VRate;
-  error(value: string | boolean | null): VRate;
+  error(): boolean;
+  error(value: boolean | null): VRate;
   clear(): VRate;
   /** 值语义的能力声明：速率为 0 即"空值"（必填校验按它判定）。 */
   isEmptyValue(value: unknown): boolean;
@@ -466,7 +496,9 @@ export const vRadios: ElementFactory<VRadios>;
 export const vField: ElementFactory<VField>;
 export const vFormItem: ElementFactory<VFormItem>;
 export const vForm: ElementFactory<VForm>;
-export const vRate: ElementFactory<VRate>;
+export const vRate: {
+  (first?: RateOptions | SetupInput<VRate> | null, callback?: SetupCallback<VRate>): VRate;
+} & ElementFactory<VRate>;
 export const vUpload: ElementFactory<VUpload>;
 export const vAvatarUpload: ElementFactory<VAvatarUpload>;
 export const vColorPicker: ElementFactory<VColorPicker> & {
@@ -498,7 +530,7 @@ export interface FormParentShortcuts {
   vField(first?: SetupInput<VField> | null, callback?: SetupCallback<VField>): VField;
   vFormItem(first?: SetupInput<VFormItem> | null, callback?: SetupCallback<VFormItem>): VFormItem;
   vForm(first?: SetupInput<VForm> | null, callback?: SetupCallback<VForm>): VForm;
-  vRate(first?: SetupInput<VRate> | null, callback?: SetupCallback<VRate>): VRate;
+  vRate(first?: RateOptions | SetupInput<VRate> | null, callback?: SetupCallback<VRate>): VRate;
   vUpload(first?: SetupInput<VUpload> | null, callback?: SetupCallback<VUpload>): VUpload;
   vAvatarUpload(
     first?: SetupInput<VAvatarUpload> | null,
