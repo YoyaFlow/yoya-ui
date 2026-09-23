@@ -402,7 +402,11 @@ export interface TableWrapperOptions {
   rowKey?: TableRowKey;
 }
 
-/** Structure-only table shell: sections and rows are declared by the caller. */
+/**
+ * Structure-only table shell: sections and rows are declared by the caller.
+ * Props: `caption` / `vThead` / `vTbody` / `vTfoot` / `vTr`; every other key goes
+ * to the shell element (class / attrs / style / onXxx …).
+ */
 export class VTable extends HtmlElementNode {
   caption(content?: ChildInput): this;
   child(...children: ChildInput[]): this;

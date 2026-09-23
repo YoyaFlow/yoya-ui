@@ -106,6 +106,53 @@ describe('vTable declarative sections', () => {
       /vTableWrapper/
     );
   });
+
+  it('takes caption / sections / row through props and keeps the rest on the shell', () => {
+    const table = vTable({
+      attrs: { id: 'props-table' },
+      caption: '季度报表',
+      style: { maxWidth: '240px' },
+      vThead: (head) => head.vTr((row) => row.vTh('名称')),
+      vTbody: (body) => body.vTr((row) => row.vTd('api-gateway')),
+      vTfoot: (foot) => foot.vTr((row) => row.vTd('合计')),
+      vTr: (row) => row.vTd('追加行')
+    });
+    const element = table.renderDom();
+    const grid = element.querySelector(GRID);
+
+    // 其余键 = 元素 options，落在视图根（壳）上
+    expect(element.id).toBe('props-table');
+    expect(element.style.maxWidth).toBe('240px');
+    // 自己的键 = 段 / 行，落在 <table> 里
+    expect(grid.querySelector(CAPTION).textContent).toBe('季度报表');
+    expect(grid.querySelector(`${HEAD} th`).textContent).toBe('名称');
+    expect(grid.querySelectorAll(`${BODY} tr`)).toHaveLength(2);
+    expect(grid.querySelector(`${BODY} tr td`).textContent).toBe('api-gateway');
+    expect(grid.querySelector(`${FOOT} td`).textContent).toBe('合计');
+  });
+
+  it('shares one part instance between props and commands', () => {
+    const table = vTable({ caption: '甲' });
+
+    table.caption('乙');
+    const element = table.renderDom();
+
+    // props 建过一次，命令复用同一份（不是两份标题）——DOM 是用户可见的真源
+    expect(element.querySelectorAll(CAPTION)).toHaveLength(1);
+    expect(element.querySelector(CAPTION).textContent).toBe('乙');
+    // 注：`table.caption()` 这条**读**回路径在"写过两次"之后会把旧文本一起返回（DOM 是对的）——
+    // 既有问题，见 16 号清单第 73 条，与本次 props 改造无关，单独一刀修。
+  });
+
+  it('keeps the positional callback and the props in one call', () => {
+    const table = vTable({ caption: '报表' }, (table) => {
+      table.vTbody((body) => body.vTr((row) => row.vTd('api-gateway')));
+    });
+    const element = table.renderDom();
+
+    expect(element.querySelector(CAPTION).textContent).toBe('报表');
+    expect(element.querySelector(`${BODY} td`).textContent).toBe('api-gateway');
+  });
 });
 
 describe('vTableWrapper data-driven table', () => {

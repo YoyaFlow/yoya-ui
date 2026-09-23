@@ -33,6 +33,18 @@ const columnKeyOf = (column, index) => column?.key ?? index;
  */
 const TABLE_DATA_KEYS = new Set(['columns', 'rows', 'data', 'empty', 'emptyText']);
 
+/** 结构 props 守卫：`vTable({ rows })` 这类数据键要**报错**——不报错就当成同名 DOM 属性静默写下去。 */
+function assertVTableStructure(props) {
+  Object.keys(props).forEach((key) => {
+    if (TABLE_DATA_KEYS.has(key)) {
+      throw new TypeError(
+        `vTable() does not take "${key}": the data-driven table is vTableWrapper(...) ` +
+          '(columns / rows / emptyText). vTable only takes structure.'
+      );
+    }
+  });
+}
+
 /**
  * 单元格的**数据**样式（列头 / 正文共用）：预设样式（边框 / 内边距 / 字重 / 垂直对齐 / 配色）在
  * `yoya.ui.css` 的 `[vn~='VTh']` / `[vn~='VTd']` 规则里（R5）；这里只写列定义带来的对齐 / 换行 /
@@ -322,51 +334,69 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  *
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
- * - 用户按顺序添加：`table.caption('…')` / `table.vThead(…)` / `table.vTbody(…)` / `table.vTfoot(…)`，
- *   段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
+ * - **props 在参数表里展开**：`caption` → 标题、`vThead` / `vTbody` / `vTfoot` → 三个段、`vTr` → 表体行，
+ *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）。props 里的段在**定义体的结构声明**里
+ *   落位，与运行期命令（`table.caption(…)` / `table.vThead(…)` / …）**共用同一份按需建的段**——
+ *   先 props 后命令不会建出两份；
+ * - 段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
  *   活值对账，都挂在真表体上；
  * - 没有预建节点、没有 `find`、不碰 `_el` / `_children`；
  * - **壳不装数据**：`columns` / `rows` / `emptyText` 那层在 `VTableWrapper` 上（壳只被它消费）。
  */
-export function VTable() {
+export function VTable({
+  caption,
+  // 段 / 行 props 的键名就是命令名，但段工厂（`vThead` / `vTbody` / `vTfoot` / `vTr`）同名，
+  // 解构时换绑名，别把工厂遮住
+  vThead: headSetup,
+  vTbody: bodySetup,
+  vTfoot: footSetup,
+  vTr: rowSetup,
+  ...rest
+} = {}) {
+  assertVTableStructure(rest);
+
   return vNode((api, self) => {
     let captionPart = null;
     let headPart = null;
     let bodyPart = null;
     let footPart = null;
 
-    /** 按需建段：用到才建，建过就复用（不是预建，也不靠身份在结构里找）。 */
-    const captionOf = () => {
+    /**
+     * 按需建段：用到才建，建过就复用（不是预建，也不靠身份在结构里找）。
+     * **宿主由调用方给**：props 路径（定义体的结构声明）是 `<table>` 那个句柄，运行期命令是组件节点
+     * ——两条路都落进表格的匿名占位（`vn_slot: ''`），并且共用 `captionPart` 这些实例。
+     */
+    const captionOf = (host = self.node()) => {
       if (!captionPart) {
         captionPart = vTableCaption();
-        self.node().child(captionPart);
+        host.child(captionPart);
       }
 
       return captionPart;
     };
 
-    const headOf = () => {
+    const headOf = (host = self.node()) => {
       if (!headPart) {
         headPart = vThead();
-        self.node().child(headPart);
+        host.child(headPart);
       }
 
       return headPart;
     };
 
-    const bodyOf = () => {
+    const bodyOf = (host = self.node()) => {
       if (!bodyPart) {
         bodyPart = vTbody();
-        self.node().child(bodyPart);
+        host.child(bodyPart);
       }
 
       return bodyPart;
     };
 
-    const footOf = () => {
+    const footOf = (host = self.node()) => {
       if (!footPart) {
         footPart = vTfoot();
-        self.node().child(footPart);
+        host.child(footPart);
       }
 
       return footPart;
@@ -412,46 +442,31 @@ export function VTable() {
       return api;
     };
 
-    /** props：键在组件上有同名命令就调命令，其余键按元素 options 写。 */
-    api.setupObject = (config) => {
-      const elementConfig = {};
-
-      Object.entries(config).forEach(([key, value]) => {
-        if (TABLE_DATA_KEYS.has(key)) {
-          throw new TypeError(
-            `vTable() does not take "${key}": the data-driven table is vTableWrapper(...) ` +
-              '(columns / rows / emptyText). vTable only takes structure.'
-          );
-        }
-
-        if (typeof api[key] === 'function') {
-          api[key](value);
-          return;
-        }
-
-        elementConfig[key] = value;
-      });
-
-      if (Object.keys(elementConfig).length > 0) {
-        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
-        view.setup(elementConfig);
-      }
-
-      return api;
-    };
-
     /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
-    const view = div({ vn: 'VTable' }, (root) =>
-      root.child(vTableScroll((scroll) => scroll.child(vTableGrid({ vn_slot: '' }))))
+    const view = div({ ...rest, vn: 'VTable' }, (shell) =>
+      shell.child(
+        vTableScroll((scroll) =>
+          scroll.child(
+            vTableGrid({ vn_slot: '' }, (tableGrid) => {
+              // props 里的段：在结构声明里落位（没给就不建）；顺序 = 标题 → 表头 → 表体 → 表尾
+              if (caption !== undefined) captionOf(tableGrid).text(caption);
+              if (headSetup !== undefined) headOf(tableGrid).setup(headSetup);
+              if (bodySetup !== undefined) bodyOf(tableGrid).setup(bodySetup);
+              if (footSetup !== undefined) footOf(tableGrid).setup(footSetup);
+              if (rowSetup !== undefined) bodyOf(tableGrid).vTr(rowSetup);
+            })
+          )
+        )
+      )
     );
 
     return view;
   });
 }
 
-export const vTable = createComponentShortcut(VTable);
+export const vTable = createComponentShortcut(VTable, { props: true });
 
 /**
  * 数据驱动表格（`VTable` 之上的一层）：`caption` / `columns` / `rows` / `emptyText` 都归它管。
