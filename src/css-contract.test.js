@@ -104,6 +104,16 @@ const menuR5Selectors = [
   "[data-sidebar-hidden='true']"
 ];
 
+const transitionSelectors = [
+  "[vn~='VTransition']",
+  "[vn~='VTransition'][data-hidden='true']",
+  "[vn~='VTransition'][data-state='enter']",
+  "[vn~='VTransition'][data-state='leave']",
+  "[vn~='VTransition'][data-motion='always']",
+  '@keyframes yoya-transition-enter',
+  '@keyframes yoya-transition-leave'
+];
+
 const splitPanelSelectors = [
   "[vn~='VSplitPanel']",
   "[vn~='VSplitPanel'][data-direction='vertical']",
@@ -473,6 +483,12 @@ describe('CSS style contract', () => {
 
   it('covers the split panel selectors', () => {
     splitPanelSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the transition selectors', () => {
+    transitionSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

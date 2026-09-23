@@ -1,8 +1,7 @@
 {
   "js": {
     "src/layout/index.js": 14,
-    "src/async/skeleton.js": 5,
-    "src/effects/transition.js": 8
+    "src/async/skeleton.js": 5
   },
   "css": {
     "yoya-vaside": 2,
@@ -11,11 +10,7 @@
     "yoya-vskeleton-bar": 3,
     "yoya-vskeleton-avatar": 3,
     "yoya-vskeleton-block": 3,
-    "yoya-vskeleton-shimmer": 2,
-    "yoya-vtransition": 5,
-    "yoya-vtransition-enter": 2,
-    "yoya-vtransition-duration": 2,
-    "yoya-vtransition-leave": 2
+    "yoya-vskeleton-shimmer": 2
   },
   "identity": [
     "src/async/skeleton.js",

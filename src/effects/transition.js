@@ -1,7 +1,7 @@
-import { defineComponentIdentity, ViewNode } from '../core/node.js';
+import { ViewNode } from '../core/node.js';
 import { ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
-import { applyComponentSetup, componentClass, isPlainObject } from '../components/shared.js';
+import { applyComponentSetup, isPlainObject } from '../components/shared.js';
 import { div } from '../html/index.js';
 
 /**
@@ -43,13 +43,6 @@ export function vTransition(first = null, second = null, third = null) {
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const animationClassOf = () => {
-      if (motion.value === 'always' || prefersReducedMotion()) {
-        return null;
-      }
-      return shown.value ? 'yoya-vtransition--enter' : 'yoya-vtransition--leave';
-    };
 
     /** WAAPI 只在 `motion: 'always'` 下跑，且必须有真实宿主元素（挂载前是 no-op）。 */
     const syncAnimation = () => {
@@ -132,25 +125,17 @@ export function vTransition(first = null, second = null, third = null) {
     const options = isPlainObject(first) && !(first instanceof ViewNode) ? first : null;
     const extras = [second, third, ...rest];
 
-    // 身份标记走 options（对象事实，不落 DOM；票 07）
+    // 身份标记走 options（对象事实 + 真 DOM 属性；票 07 / 15）；
+    // 动效由 CSS 的 `[data-state]` / `[data-motion]` / `prefers-reduced-motion` 规则决定（R5），
+    // 所以这里不再写 `box-sizing` / `display` 行内样式，也不再 toggle 动画类名。
     return div({ vn: 'VTransition' }, (root) => {
-      root.className(componentClass, 'yoya-vtransition');
       root.attr('data-motion', () => motion.value);
       root.attr('data-state', () => (shown.value ? 'enter' : 'leave'));
       root.attr('data-duration', () => (durationSet.value ? String(duration.value) : null));
-      root.toggleClass(
-        'yoya-vtransition--enter',
-        () => animationClassOf() === 'yoya-vtransition--enter'
-      );
-      root.toggleClass(
-        'yoya-vtransition--leave',
-        () => animationClassOf() === 'yoya-vtransition--leave'
-      );
-      root.style('boxSizing', 'border-box');
-      root.style('--yoya-vtransition-duration', () =>
+      root.attr('data-hidden', () => (hidden.value ? 'true' : null));
+      root.style('--yoya-transition-duration', () =>
         durationSet.value ? `${duration.value}ms` : null
       );
-      root.style('display', () => (hidden.value ? 'none' : null));
 
       if (typeof first === 'function') {
         first(root);
@@ -180,6 +165,5 @@ export function vTransition(first = null, second = null, third = null) {
   });
 }
 
-/** 身份判定：`member instanceof VTransition` 与工厂函数本身（票 07 前靠视图根身份）。 */
+/** 工厂函数别名（定义与快捷名同一份实现；身份判定改用 `hasComponentIdentity` / `componentNameOf`）。 */
 export const VTransition = vTransition;
-defineComponentIdentity(VTransition, 'VTransition');

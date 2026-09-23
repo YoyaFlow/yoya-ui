@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { VTransition, vTransition } from '../index.js';
+import { componentNameOf, hasComponentIdentity, vTransition } from '../index.js';
 import { div } from '../html/index.js';
-import { componentNameOf } from '../core/node.js';
 
 /** jsdom 没有 WAAPI：桩一层 `Element.animate`，好把 `motion: 'always'` 那条路走通。 */
 const stubAnimate = () => {
@@ -43,9 +42,9 @@ describe('vTransition', () => {
     const transition = vTransition({ children: '内容' });
     const element = transition.renderDom();
 
-    expect(transition).toBeInstanceOf(VTransition);
-    expect(element.classList.contains('yoya-vtransition')).toBe(true);
-    expect(element.classList.contains('yoya-vtransition--enter')).toBe(true);
+    expect(hasComponentIdentity(transition, 'VTransition')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VTransition');
+    expect(element.dataset.state).toBe('enter');
     expect(element.dataset.state).toBe('enter');
     expect(element.dataset.motion).toBe('auto');
     expect(element.textContent).toContain('内容');
@@ -61,14 +60,14 @@ describe('vTransition', () => {
 
     transition.show(false);
     expect(element.dataset.state).toBe('leave');
-    expect(element.classList.contains('yoya-vtransition--leave')).toBe(true);
+    expect(element.dataset.state).toBe('leave');
 
     element.dispatchEvent(new Event('animationend'));
-    expect(element.style.display).toBe('none');
+    expect(element.dataset.hidden).toBe('true');
 
     transition.show(true);
     expect(element.dataset.state).toBe('enter');
-    expect(element.style.display).not.toBe('none');
+    expect(element.hasAttribute('data-hidden')).toBe(false);
 
     transition.destroy();
     host.remove();
@@ -96,7 +95,7 @@ describe('vTransition', () => {
     expect(animate.calls[0].cancelled, '上一条动画要取消').toBe(true);
 
     animate.calls[1].onfinish(); // leave 动画结束 → 隐藏
-    expect(element.style.display).toBe('none');
+    expect(element.dataset.hidden).toBe('true');
 
     transition.destroy();
     expect(animate.calls[1].cancelled, '销毁时取消在跑的动画').toBe(true);
@@ -104,7 +103,7 @@ describe('vTransition', () => {
     host.remove();
   });
 
-  it('prefers-reduced-motion：不加动画类、退出立即隐藏', () => {
+  it('prefers-reduced-motion：动画由 CSS 关掉、退出立即隐藏', () => {
     const originalMedia = window.matchMedia;
     window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
 
@@ -112,14 +111,14 @@ describe('vTransition', () => {
     const host = mountInto(transition);
     const element = host.firstElementChild;
 
-    expect(element.classList.contains('yoya-vtransition--enter')).toBe(false);
+    expect(element.dataset.state).toBe('enter');
 
     transition.show(false);
-    expect(element.classList.contains('yoya-vtransition--leave')).toBe(false);
-    expect(element.style.display).toBe('none');
+    expect(element.dataset.state).toBe('leave');
+    expect(element.dataset.hidden).toBe('true');
 
     transition.show(true);
-    expect(element.style.display).not.toBe('none');
+    expect(element.hasAttribute('data-hidden')).toBe(false);
 
     transition.destroy();
     host.remove();
@@ -135,10 +134,10 @@ describe('vTransition', () => {
     expect(transition.motion()).toBe('auto');
   });
 
-  it('身份是对象事实且落到真 DOM：instanceof 成立、DOM 带 vn', () => {
+  it('身份是对象事实且落到真 DOM：hasComponentIdentity 成立、DOM 带 vn', () => {
     const transition = vTransition('内容');
 
-    expect(transition).toBeInstanceOf(VTransition);
+    expect(hasComponentIdentity(transition, 'VTransition')).toBe(true);
     expect(componentNameOf(transition)).toBe('VTransition');
     expect(transition.renderDom().getAttribute('vn')).toBe('VTransition');
     expect(transition.toHTML()).toContain('vn="VTransition"');
@@ -147,7 +146,7 @@ describe('vTransition', () => {
   it('serializes deterministically for SSR', () => {
     const html = vTransition({ children: '内容' }).toHTML();
 
-    expect(html).toContain('yoya-vtransition');
+    expect(html).toContain('vn="VTransition"');
     expect(html).toContain('data-state="enter"');
   });
 });

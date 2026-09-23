@@ -783,7 +783,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       button.textContent.includes('切换显示')
     );
     toggleButton.click();
-    expect(forceDemo.querySelector('.yoya-vtransition').dataset.state).toBe('leave');
+    expect(forceDemo.querySelector('[vn~="VTransition"]').dataset.state).toBe('leave');
 
     await openRoute('/components/c-end/masonry');
     await vi.waitFor(() => {

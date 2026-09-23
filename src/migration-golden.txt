@@ -1,12 +1,12 @@
 ### vTransition / 默认
-dom:      <div class=yoya-component yoya-vtransition yoya-vtransition--enter data-motion=auto data-state=enter style=box-sizing: border-box; vn=VTransition><span >#text:内容
-toHTML:   <div class="yoya-component yoya-vtransition yoya-vtransition--enter" data-motion="auto" data-state="enter" style="box-sizing:border-box" vn="VTransition"><span>内容</span></div>
+dom:      <div data-motion=auto data-state=enter vn=VTransition><span >#text:内容
+toHTML:   <div data-motion="auto" data-state="enter" vn="VTransition"><span>内容</span></div>
 probe:    {"shown":true,"motion":"auto"}
 residue:  (空)
 
 ### vTransition / leave + duration
-dom:      <div class=yoya-component yoya-vtransition yoya-vtransition--leave data-duration=120 data-motion=auto data-state=leave style=--yoya-vtransition-duration: 120ms; box-sizing: border-box; vn=VTransition><span >#text:内容
-toHTML:   <div class="yoya-component yoya-vtransition yoya-vtransition--leave" data-duration="120" data-motion="auto" data-state="leave" style="--yoya-vtransition-duration:120ms;box-sizing:border-box" vn="VTransition"><span>内容</span></div>
+dom:      <div data-duration=120 data-motion=auto data-state=leave style=--yoya-transition-duration: 120ms; vn=VTransition><span >#text:内容
+toHTML:   <div data-duration="120" data-motion="auto" data-state="leave" style="--yoya-transition-duration:120ms" vn="VTransition"><span>内容</span></div>
 probe:    {"shown":false,"duration":120}
 residue:  (空)
 

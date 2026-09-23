@@ -4123,23 +4123,28 @@ body {
     display: inline-flex;
   }
 
-  :where(.yoya-vtransition) {
+  :where([vn~='VTransition']) {
     box-sizing: border-box;
   }
 
-  .yoya-vtransition[data-state='enter'] {
-    animation: yoya-vtransition-enter var(--yoya-vtransition-duration, 280ms) ease both;
+  /* 出场动画跑完把节点藏起来（原来在 JS 里写行内 `display`，R5 改成状态位规则） */
+  [vn~='VTransition'][data-hidden='true'] {
+    display: none;
   }
 
-  .yoya-vtransition[data-state='leave'] {
-    animation: yoya-vtransition-leave var(--yoya-vtransition-duration, 240ms) ease both;
+  [vn~='VTransition'][data-state='enter'] {
+    animation: yoya-transition-enter var(--yoya-transition-duration, 280ms) ease both;
   }
 
-  .yoya-vtransition[data-motion='always'] {
+  [vn~='VTransition'][data-state='leave'] {
+    animation: yoya-transition-leave var(--yoya-transition-duration, 240ms) ease both;
+  }
+
+  [vn~='VTransition'][data-motion='always'] {
     animation: none !important;
   }
 
-  @keyframes yoya-vtransition-enter {
+  @keyframes yoya-transition-enter {
     from {
       opacity: 0;
       transform: translateY(12px) scale(0.98);
@@ -4151,7 +4156,7 @@ body {
     }
   }
 
-  @keyframes yoya-vtransition-leave {
+  @keyframes yoya-transition-leave {
     from {
       opacity: 1;
       transform: none;
@@ -4164,7 +4169,7 @@ body {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .yoya-vtransition[data-motion='auto'] {
+    [vn~='VTransition'][data-motion='auto'] {
       animation: none;
     }
   }
