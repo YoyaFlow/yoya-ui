@@ -279,4 +279,49 @@ describe('vAnchor', () => {
 
     anchor.destroy();
   });
+
+  it('reconciles the item list by identity instead of rebuilding it', () => {
+    const first = vAnchorItem({ href: '#a', title: 'A' });
+    const anchor = vAnchor({ items: [first] });
+    const element = anchor.renderDom();
+    const firstLi = element.querySelector(ITEM);
+
+    first.title('A2');
+    anchor.vAnchorItem({ href: '#b', title: 'B' });
+
+    const items = anchor.items();
+    const lis = element.querySelectorAll(ITEM);
+
+    expect(items).toHaveLength(2);
+    // 留下来的项还挂在原来的节点与 DOM 上（不重建、不整段重排）
+    expect(items[0]).toBe(first);
+    expect(lis[0]).toBe(firstLi);
+    expect(lis[0].querySelector(LINK).textContent).toBe('A2');
+    expect(lis[1].querySelector(LINK).getAttribute('href')).toBe('#b');
+
+    // 整批替换：同一个项实例复用，离场的销毁
+    anchor.items([first]);
+
+    expect(anchor.items()).toHaveLength(1);
+    expect(element.querySelectorAll(ITEM)).toHaveLength(1);
+    expect(element.querySelector(ITEM)).toBe(firstLi);
+    expect(element.dataset.itemCount).toBe('1');
+
+    anchor.destroy();
+  });
+
+  it('renders anonymous content inside the list without counting it', () => {
+    const anchor = vAnchor((root) => {
+      root.vAnchorItem({ href: '#a', title: 'A' });
+      root.child(vAnchorItem({ href: '#extra', title: '匿名' }));
+    });
+    const element = anchor.renderDom();
+    const list = element.querySelector('[vn~="VAnchorList"]');
+
+    expect(list.querySelectorAll(ITEM)).toHaveLength(2);
+    expect(element.dataset.itemCount).toBe('1');
+    expect(list.textContent).toContain('匿名');
+
+    anchor.destroy();
+  });
 });

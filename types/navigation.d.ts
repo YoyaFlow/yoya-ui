@@ -77,7 +77,8 @@ export class VAnchorItem extends HtmlElementNode {
   items(): VAnchorItem[];
   items(value: AnchorItemInput | AnchorItemInput[]): VAnchorItem;
   vAnchorItem(setup: SetupInput<VAnchorItem>): VAnchorItem;
-  nested(): HtmlElementNode[];
+  /** 子项：读回的是**项节点**（与 `items()` 同源，结构由 `keyed` 对账）。 */
+  nested(): VAnchorItem[];
   nested(setup: AnchorItemInput | AnchorItemInput[] | SetupCallback<VAnchorItem>): VAnchorItem;
   nestedItems(value: AnchorItemInput | AnchorItemInput[]): VAnchorItem;
   subItems(setup?: AnchorItemInput | AnchorItemInput[] | SetupCallback<VAnchorItem>): VAnchorItem;

@@ -2,29 +2,25 @@ import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import { ViewNode, vText } from '../core/index.js';
 import { a, li, nav, ul } from '../html/index.js';
-import {
-  createComponentShortcut,
-  normalizeChildren,
-  replaceChildren,
-  resolveTextValue
-} from '../components/shared.js';
+import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
 /**
  * 锚点导航（票 15 §4；2026-09-23 按「容器组件」口径重写，参考实现 `VTable`）。
  *
- * - **结构一次写清、部件常驻**（不再"用到才建"）：
+ * - **结构一次写清、部件常驻**：
  *   `nav[VAnchor] > ul[VAnchorList] > li[VAnchorItem] > a[VAnchorLink] + ul[VAnchorChildren]`；
  *   列表是导航的**匿名占位**（`vn_slot: ''`）——`anchor.child(item)` 落进这张 `<ul>`；
- * - **命令只写状态 / 内容**：链接文本、`href`、`data-active`、`data-has-children`、`data-offset`、
- *   `data-item-count`、`data-active-href` 都是**读值绑定**（`ref` + 派生），命令改状态、DOM 自己跟上——
- *   没有 `syncXxx()` 集中快照，也不在命令里现建部件；
- * - **项由造它的一方持有**：导航记自己的项账、项记自己的子项账；容器态（当前项）沿账往下推
- *   （`VAnchor.active(…)` → `item.active(…)`），不遍历结构找节点；
- * - **文本是数据**：字符串 / 数字 / 句柄放值位置就是活文本，节点内容在构建期走 props
- *   （`title()` / `text()` 只收文本，与 `VCode` / `VBadge` 同口径）；
- * - **静态样式在 `yoya.ui.css`**（R5）；空子列表由 `[vn~='VAnchorChildren']:empty` 规则隐藏；
- * - 全局滚动在 `whenMount` 里按落地收口绑（`bindWindowEvent` / `bindDocumentEvent`，destroy 自动卸），
- *   点击走元素自己的 `on('click')` 委托。
+ * - **列表 = 一份 `ref([])` + `keyed` 对账**：项从 `items` / `vAnchorItem` 来，增删改排序由引擎按身份键
+ *   复用 / 搬动 / 销毁——**不 rebuild、也不 `replaceChildren` 全量重建**；`data-item-count`、子列表显隐、
+ *   滚动扫描都读这一份数据，没有第二本账；
+ * - **容器态就是一个句柄**：`activeHref`（props / 命令 / 外部句柄）通过 `track` 交给每一项，项自己比对自己的
+ *   `href`；嵌套项由项把**同一个句柄**再往下传（与 JSX 的 `current={current}` 同形）——没有"遍历推当前态"，
+ *   也没有订阅；
+ * - **命令只写状态 / 数据**，DOM 全走读值绑定（链接文本 / `href` / `data-active` / `aria-current` /
+ *   `data-has-children` / `data-offset` / `data-item-count` / `data-active-href` / `vText` + `mountable`）；
+ * - 文本是数据（节点标题在构建期走 props，`title()` 只收文本）；静态样式在 `yoya.ui.css`（R5），
+ *   空子列表由 `[vn~='VAnchorChildren']:empty` 隐藏；
+ * - 全局滚动在 `whenMount` 里按落地收口绑（destroy 自动卸），点击走元素自己的 `on('click')` 委托。
  */
 
 const SCROLL_OPTIONS = { capture: true, passive: true };
@@ -34,13 +30,39 @@ const DEFAULT_OFFSET = 80;
 /** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
 const ANCHOR_ITEM = Symbol('yoya.anchorItem');
 
+/**
+ * 项键工厂：**每个组件实例一份**（不是模块级）——同一页面渲染两次的键逐字一致（SSR 直出 / hydrate
+ * 都对得上），同一个项节点重复投递也始终是同一个键（`keyed` 按它复用 / 搬动）。项是**节点**而不是数据行，
+ * 键只能按节点身份发：按 href / 下标发键会在插入 / 重排时把同一个节点换到另一个键上。
+ */
+function createItemKey() {
+  const keys = new WeakMap();
+  let serial = 0;
+
+  return (item) => {
+    let key = keys.get(item);
+
+    if (key === undefined) {
+      key = `anchor-item:${serial}`;
+      serial += 1;
+      keys.set(item, key);
+    }
+
+    return key;
+  };
+}
+
 /** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
 const textOf = (value) => resolveTextValue(value);
+
+/** 列表归一：数组原样、空值成空表、其余单值成一项。 */
+const asList = (value) =>
+  value === null || value === undefined ? [] : Array.isArray(value) ? value : [value];
 
 /**
  * 锚点项（形态 B）：结构 = `li > a[VAnchorLink] + ul[VAnchorChildren]`，两块部件**常驻**。
  * 字符串 = 标题；props 见 `AnchorItemOptions`（`children` 是子项列表的兼容别名）；
- * 子项走 `nested` / `items` / `vAnchorItem`（落进子列表）。
+ * 子项走 `nested` / `items` / `vAnchorItem`（落进子列表，结构由 `keyed` 对账）。
  */
 export function VAnchorItem({
   active = false,
@@ -70,12 +92,26 @@ export function VAnchorItem({
     return value === null || value === undefined || value === '' ? null : textOf(value);
   });
 
-  // 状态：激活位 + 子项账（**项自己造的项**——容器态沿这本账往下推）
+  // 当前态 = 自己的显式位 + 容器交给的「当前项句柄」（脱离容器时只有显式位）
   const activeState = asSignal(active);
-  const ownActive = computed(() => Boolean(activeState.value));
+  const located = ref(null);
+  const ownActive = computed(() => {
+    const locator = located.value;
+    return Boolean(activeState.value) || (locator !== null && hrefAttr.value === locator.value);
+  });
   const activeAttr = computed(() => (ownActive.value ? 'true' : null));
-  const childState = ref([]);
-  const childrenAttr = computed(() => (childState.value.length > 0 ? 'true' : null));
+
+  // 子项：一份数据源（结构由 keyed 对账；`items()` 与子列表显隐都读它）
+  const itemNodes = ref([]);
+  const childrenAttr = computed(() => (itemNodes.value.length > 0 ? 'true' : null));
+  const keyOfItem = createItemKey();
+
+  /** 建 / 复用一份子项，并把当前项句柄交给它（嵌套项再往下传，与 JSX 的 `current` 同形）。 */
+  const wireItem = (setup) => {
+    const node = normalizeAnchorItem(setup);
+    node.track(located.value);
+    return node;
+  };
 
   return vNode((api) => {
     api.title = (next) => {
@@ -111,10 +147,65 @@ export function VAnchorItem({
       return api;
     };
 
+    /**
+     * 容器把「当前项句柄」交给项（16 号清单第 8 条：容器态走子项命令）——已经造好的子项跟着换源，
+     * 之后新投递的子项在 `wireItem` 里拿到同一个句柄。
+     */
+    api.track = (source) => {
+      located.value = source ?? null;
+      itemNodes.value.forEach((node) => node.track?.(located.value));
+      return api;
+    };
+
+    /** 追加一份子项：只写数据，结构交给 `keyed` 对账。 */
+    api.vAnchorItem = (setup) => {
+      itemNodes.value = [...itemNodes.value, wireItem(setup)];
+      return api;
+    };
+
+    /** 子项整批替换：写一份新数组（留下来的项按身份键复用，离场的销毁）。 */
+    api.items = (value) => {
+      if (value === undefined) {
+        return itemNodes.value.slice();
+      }
+
+      itemNodes.value = asList(value).map(wireItem);
+      return api;
+    };
+
+    api.nestedItems = (value) => api.items(value);
+
+    /**
+     * 子列表：无参 = 读子项；函数 = 整批替换后声明（**回调句柄 = 项句柄**，`sub.vAnchorItem(…)` 照旧；
+     * 元素级方法没有了——见 16 号清单第 5 条）；数组 / 单值 = 整批替换。
+     */
+    api.nested = (setup) => {
+      if (setup === undefined) {
+        return itemNodes.value.slice();
+      }
+
+      if (typeof setup === 'function') {
+        itemNodes.value = [];
+        setup(api);
+        return api;
+      }
+
+      return api.items(setup);
+    };
+
+    api.subItems = (setup) => (setup === undefined ? api.nested() : api.nested(setup));
+
     /** 字符串 / 数字 = 标题（与迁移前 `_setupAnchorItem` 的兜底分支同口径）。 */
     api.setupString = (value) => api.title(value);
 
-    // 结构（R2）：一棵树写在 return 里；状态走读值绑定（R6），部件在回调里往下嵌
+    // props 里的子项与命令共用同一条通道（函数 = 子列表构建回调）
+    const initialNested = nested ?? itemOptions ?? nestedOptions;
+
+    if (initialNested !== undefined) {
+      api.nested(initialNested);
+    }
+
+    // 结构（R2）：一棵树写在 return 里；状态走读值绑定（R6），列表由 keyed 从数据对账
     return li(
       {
         ...elementConfig,
@@ -125,7 +216,7 @@ export function VAnchorItem({
       },
       (item) =>
         item.child(
-          // 链接位（常驻）：文本与地址都是读值绑定，命令只写这两份数据
+          // 链接位：文本与地址都是读值绑定，命令只写这两份数据
           a({ vn: 'VAnchorLink' }, (link) => {
             link.attr('href', hrefAttr);
 
@@ -136,71 +227,10 @@ export function VAnchorItem({
             link.child(vText(titleText).mountable(hasTitle));
           }),
 
-          // 子列表位（常驻）：项命令就地定义在**它自己的构建回调**里（回调参数就是这块部件）
-          ul({ vn: 'VAnchorChildren' }, (childrenList) => {
-            /** 追加一份子项：先落结构、再记进项账（当前态由容器沿账往下推）。 */
-            const appendItem = (setup) => {
-              const child = normalizeAnchorItem(setup);
-              childrenList.child(child);
-              childState.value = [...childState.value, child];
-              return api;
-            };
-
-            const appendEach = (value) => {
-              normalizeChildren(value).forEach((entry) => appendItem(entry));
-              return api;
-            };
-
-            /** 整批替换：先收掉旧项的结构，再清空项账。 */
-            const clearItems = () => {
-              replaceChildren(childrenList, []);
-              childState.value = [];
-              return api;
-            };
-
-            // 命令就是那个助手本身：外面再包一层 `(setup) => appendItem(setup)` 只是纯转发
-            api.vAnchorItem = appendItem;
-
-            api.items = (value) => {
-              if (value === undefined) {
-                return childState.value.slice();
-              }
-
-              clearItems();
-              return appendEach(value);
-            };
-
-            api.nestedItems = (value) => api.items(value);
-
-            /**
-             * 子列表：函数 = 整批替换后声明（**回调句柄 = 项句柄**，`sub.vAnchorItem(…)` 照旧；
-             * 元素级方法没有了——见 16 号清单第 5 条），数组 / 单值 = 整批替换，
-             * 无参 = 读子列表内容。
-             */
-            api.nested = (setup) => {
-              if (setup === undefined) {
-                return childrenList.children();
-              }
-
-              clearItems();
-
-              if (typeof setup === 'function') {
-                setup(api);
-                return api;
-              }
-
-              return appendEach(setup);
-            };
-
-            api.subItems = (setup) => (setup === undefined ? api.nested() : api.nested(setup));
-
-            // props 里的子项与命令共用同一条通道（函数 = 子列表构建回调）
-            const initialNested = nested ?? itemOptions ?? nestedOptions;
-
-            if (initialNested !== undefined) {
-              api.nested(initialNested);
-            }
-          })
+          // 子列表位：空列表由自己的 `:empty` 规则隐藏，内容从 itemNodes 对账
+          ul({ vn: 'VAnchorChildren' }, (children) =>
+            children.keyed(itemNodes, keyOfItem, (node) => node)
+          )
         )
     );
   });
@@ -245,23 +275,22 @@ export function VAnchor({
   const offsetText = computed(() => String(offsetValue.value));
 
   const targetState = ref(targetOption ?? null);
-  const activeState = asSignal(activeHref ?? active ?? null);
-  const activeValue = computed(() => activeState.value || null);
 
-  /** 项账：导航自己造的项（`items` 替换 / `vAnchorItem` 追加都记在这里）。 */
-  const itemState = ref([]);
-  const itemCount = computed(() => String(itemState.value.length));
+  /** 容器态：当前项句柄（props / 命令 / 外部句柄都写它，项通过 `track` 拿到的是同一个句柄）。 */
+  const current = asSignal(activeHref ?? active ?? null);
+  const currentValue = computed(() => current.value || null);
+
+  /** 项：一份数据源（结构由 keyed 对账；计数与滚动扫描都读它）。 */
+  const itemNodes = ref([]);
+  const itemCount = computed(() => String(itemNodes.value.length));
+  const keyOfItem = createItemKey();
 
   return vNode((api, self) => {
-    /**
-     * 容器态往下推（16 号清单第 8 条）：容器把自己的当前项通过**子项命令**推给子项，
-     * 走的是各层自己的项账（导航的项账 + 项的子项账）——不遍历结构找节点，也不是"写完再刷"。
-     */
-    const pushActive = (list, current) => {
-      list.forEach((item) => {
-        item.active(item.href() === current);
-        pushActive(typeof item.items === 'function' ? item.items() : [], current);
-      });
+    /** 建 / 复用一份项，并把当前项句柄交给它（外部造好的项也走这条）。 */
+    const wireItem = (setup) => {
+      const node = normalizeAnchorItem(setup);
+      node.track(current);
+      return node;
     };
 
     api.ariaLabel = (content) => {
@@ -293,27 +322,29 @@ export function VAnchor({
 
     api.active = (value) => {
       if (value === undefined) {
-        return activeValue.value;
+        return currentValue.value;
       }
 
-      activeState.value = value || null;
-      pushActive(itemState.value, activeValue.value);
+      current.value = value || null;
       return api;
     };
 
     api.activeHref = (value) => api.active(value);
 
-    /**
-     * 容器态是**句柄** props 时（`vAnchor({ activeHref: 句柄 })`），写入不经过命令——
-     * 订阅一次，让"当前项"照样推给各项（命令路径已经推过一次，重复推是幂等的）。
-     * 退订走 `whenDestroy`，与 `VLink` 的订阅同一口径。
-     */
-    const stopTrackingActive = activeState.subscribe(() => {
-      pushActive(itemState.value, activeValue.value);
-    });
+    /** 追加一份项：只写数据，结构交给 `keyed` 对账。 */
+    api.vAnchorItem = (setup) => {
+      itemNodes.value = [...itemNodes.value, wireItem(setup)];
+      return api;
+    };
 
-    api.whenDestroy = () => {
-      stopTrackingActive();
+    /** 项整批替换：写一份新数组（留下来的项按身份键复用，离场的销毁）。 */
+    api.items = (value) => {
+      if (value === undefined) {
+        return itemNodes.value.slice();
+      }
+
+      itemNodes.value = asList(value).map(wireItem);
+      return api;
     };
 
     /** 字符串 / 数字 = 一条锚点项（只有标题，没有地址）。 */
@@ -425,29 +456,29 @@ export function VAnchor({
       let next = null;
       let found = false;
 
-      itemState.value.forEach((item) => {
-        const href = item.href();
+      // 扫描自己的项（含嵌套层：项自己把句柄传下去，所以整棵树都按同一个当前值比对）
+      const scan = (nodes) => {
+        nodes.forEach((item) => {
+          const href = item.href();
+          const targetElement = href ? resolveAnchorTarget(href) : null;
 
-        if (!href) {
-          return;
-        }
+          if (targetElement) {
+            found = true;
+            const rect = targetElement.getBoundingClientRect();
+            const top = containerRect ? rect.top - containerRect.top : rect.top;
 
-        const targetElement = resolveAnchorTarget(href);
+            if (top - threshold <= 0) {
+              next = href;
+            }
+          }
 
-        if (!targetElement) {
-          return;
-        }
+          scan(item.items());
+        });
+      };
 
-        found = true;
-        const rect = targetElement.getBoundingClientRect();
-        const top = containerRect ? rect.top - containerRect.top : rect.top;
+      scan(itemNodes.value);
 
-        if (top - threshold <= 0) {
-          next = href;
-        }
-      });
-
-      if (found && next !== activeValue.value) {
+      if (found && next !== currentValue.value) {
         api.active(next);
       }
     };
@@ -476,11 +507,17 @@ export function VAnchor({
       activeFromScroll();
     };
 
+    const initialItems = items ?? itemOptions;
+
+    if (initialItems !== undefined) {
+      api.items(initialItems);
+    }
+
     return nav(
       {
         ...elementConfig,
         attrs: { ...restAttrs, 'aria-label': ariaLabelText },
-        'data-active-href': activeValue,
+        'data-active-href': currentValue,
         'data-item-count': itemCount,
         'data-offset': offsetText,
         vn: 'VAnchor'
@@ -488,33 +525,10 @@ export function VAnchor({
       (root) => {
         root.on('click', handleClick);
         root.child(
-          // 列表位（常驻）：导航的项命令就地定义在它自己的构建回调里
-          ul({ vn: 'VAnchorList', vn_slot: '' }, (list) => {
-            api.vAnchorItem = (setup) => {
-              const item = normalizeAnchorItem(setup);
-              list.child(item);
-              itemState.value = [...itemState.value, item];
-              pushActive([item], activeValue.value);
-              return api;
-            };
-
-            api.items = (value) => {
-              if (value === undefined) {
-                return itemState.value.slice();
-              }
-
-              itemState.value.forEach((item) => item.destroy());
-              itemState.value = [];
-              normalizeChildren(value).forEach((entry) => api.vAnchorItem(entry));
-              return api;
-            };
-
-            const initialItems = items ?? itemOptions;
-
-            if (initialItems !== undefined) {
-              api.items(initialItems);
-            }
-          })
+          // 列表位（常驻）：项从 itemNodes 对账（增删改排序不重建、不搬结构）
+          ul({ vn: 'VAnchorList', vn_slot: '' }, (list) =>
+            list.keyed(itemNodes, keyOfItem, (node) => node)
+          )
         );
       }
     );
