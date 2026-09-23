@@ -780,7 +780,7 @@ function createNavigationDocsDefinition(config) {
     apiRows: Object.freeze(config.apiRows ?? []),
     apiSignature: config.apiSignature ?? '',
     examples: Object.freeze(config.examples ?? []),
-    examplesIntro: config.examplesIntro ?? '下面的示例可以直接复制到自己的对象组件中。',
+    examplesIntro: config.examplesIntro ?? '下面的示例可以直接复制到自己的组件里使用。',
     heading: config.heading,
     intro: config.intro,
     key: config.key,

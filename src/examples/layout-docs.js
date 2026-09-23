@@ -407,8 +407,7 @@ const layoutDocsDefinitions = Object.freeze({
     ],
     examplesIntro: '三个示例分别展示按钮触发、状态控制和弹窗内 vForm 表单。',
     heading: 'vDialog 弹窗',
-    intro:
-      'vDialog 让弹窗成为一个独立的对象组件，外层按钮负责触发，内层内容负责确认、取消和临时表单。',
+    intro: 'vDialog 让弹窗成为一个独立组件，外层按钮负责触发，内层内容负责确认、取消和临时表单。',
     key: 'popup',
     routeItem: 'layout:dialog',
     title: '弹窗',
@@ -628,7 +627,7 @@ function createLayoutDocsDefinition(config) {
     apiRows: Object.freeze(config.apiRows ?? []),
     apiSignature: config.apiSignature ?? '',
     examples: Object.freeze(config.examples ?? []),
-    examplesIntro: config.examplesIntro ?? '下面的示例可以直接复制到自己的对象组件中。',
+    examplesIntro: config.examplesIntro ?? '下面的示例可以直接复制到自己的组件里使用。',
     heading: config.heading,
     intro: config.intro,
     key: config.key,

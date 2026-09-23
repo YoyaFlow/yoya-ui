@@ -41,7 +41,7 @@ function StateMethodsDemo() {
         card.vCardHeader('自定义方法');
         card.vCardBody((body) => {
           body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('组件对象上暴露操作方法，内部写 ref，文本绑定自动同步。');
+            stack.p('组件用 vNode 把操作方法挂在 api 上，内部写 ref，文本绑定自动同步。');
             stack.child(counter);
           });
         });
@@ -111,7 +111,7 @@ const stateDemoDefinitions = Object.freeze([
   {
     id: 'methods',
     title: '自定义方法',
-    description: '组件对象暴露操作方法，方法内写 ref，计数文本通过值绑定自动同步。',
+    description: 'vNode 组件把操作方法收在 api 上，方法内写 ref，计数文本通过值绑定自动同步。',
     component: StateMethodsDemo,
     sourceComponent: StateMethodsExample,
     imports: ['div', 'ref', 'vNode', 'vText'],

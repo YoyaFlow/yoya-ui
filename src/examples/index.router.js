@@ -26,7 +26,7 @@ const componentMenuSections = [
       { key: 'overview', label: '概述', details: 'Overview' },
       { key: 'installation', label: '安装方式', details: 'Installation' },
       { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
-      { key: 'component', label: '组件', details: 'A 薄工厂 / B 对象组件' },
+      { key: 'component', label: '组件', details: 'A 薄工厂 / B vNode 组件' },
       {
         key: 'lifecycle',
         label: '组件生命周期',
@@ -698,7 +698,7 @@ function createOverviewView() {
           {
             label: '组件',
             path: '/components/guides/component',
-            details: 'A 薄工厂 / B 对象组件'
+            details: 'A 薄工厂 / B vNode 组件'
           },
           {
             label: '组件生命周期',

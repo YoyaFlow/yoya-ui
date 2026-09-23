@@ -51,14 +51,11 @@ export function RegionRebuildExample() {
 }
 
 /**
- * 区域演示 2：谓词门禁——为假时只刷值并记 pending，恢复后补一次重建。
- * 区域节点与状态行都在 render 之外建好，方法里直接改它们；
- * 状态行持有文本节点句柄，重复同步才是替换内容（元素 .text() 是追加子节点）。
- */
-/**
  * 区域演示 2：时机门禁。忙碌（编辑 / 拖拽）时谓词拦截结构重建：
  * 区域内值绑定照常刷新，列表结构不动并记为 rebuildPending()；
  * 恢复空闲后一次 rebuild() 补齐全部挂起的结构变更。
+ * 区域节点与状态行在 setup 之外建好，命令里直接改它们；
+ * 状态行持有文本节点句柄，重复同步才是替换内容（元素 .text() 是追加子节点）。
  */
 export function RegionGateExample() {
   const rows = ref(['任务 1']);

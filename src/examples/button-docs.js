@@ -116,7 +116,7 @@ export function ButtonDocumentationPage() {
         page.section((examples) => {
           examples.className('components-button-docs-examples');
           examples.h2('代码演示');
-          examples.p('每个示例都可以直接复制源码，在自己的对象组件中使用。');
+          examples.p('每个示例都可以直接复制源码，在自己的组件里使用。');
           buttonDemoDefinitions.forEach((demo) => examples.child(ButtonExampleSection(demo)));
         });
       });

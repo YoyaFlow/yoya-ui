@@ -10,7 +10,9 @@ function DefineComponentExample1() {
     card.vCardBody((body) => {
       body.vstack((content) => {
         content.style('gap', '14px');
-        content.p('组件是参数函数 + render() 对象，最后返回 ViewNode。');
+        content.p(
+          '组件是参数函数：无行为直接返回 ViewNode（形态 A），有状态 / 命令用 vNode 包一层（形态 B）。'
+        );
         content.hstack((row) => {
           row.style({ alignItems: 'center', gap: '10px' });
           row.span('状态');
@@ -284,7 +286,7 @@ export function ComponentDefinitionDocumentationPage() {
     page.p('组件的四个阶段（声明 / 挂载 / 更新 / 销毁）见「开发指南 → 组件生命周期」。');
     page.p(
       'yoya-ui 支持两种组件定义形态，按场景选用：没有额外行为要定义就用 A 薄工厂，' +
-        '有内部状态或对外命令方法才用 B 对象组件。'
+        '有内部状态或对外命令方法才用 B（vNode）。'
     );
     page.p(
       'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
