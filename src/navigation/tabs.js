@@ -1,256 +1,249 @@
 import { allocateNumber } from '../core/id.js';
+import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
+import { ViewNode, vText } from '../core/index.js';
 import { button, div, section, span } from '../html/index.js';
-import { vSlot } from '../layout/v-slot.js';
 import {
   createComponentShortcut,
-  replaceChildren,
+  createListItemKey,
   resolveTextValue
 } from '../components/shared.js';
 
 /**
- * 页签（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
+ * 页签（票 15 §4；2026-09-23 按「容器组件」口径重写，参考实现 `VTable` / `VAnchor` / `VSteps`）。
  *
- * - 结构：`div[VTabs] > div[VTabsNav](role=tablist) + div[VTabsPanels]`；
- *   页签项 `VTab` 的视图根是**触发器** `button[VTabTrigger]`，面板 `section[VTabPanel]` 由项自己的
- *   `panel()` 命令按需建、建过复用——容器取走半边的**内容**分别落进导航与面板容器；
- * - 触发器里的**标签 / 图标**是固定内容位：结构里 `vSlot('label')` / `vSlot('icon')` 声明占位，
- *   内容（`VTabLabel` / `VTabIcon`）自带 `vn_slot` 标记，命令投递即落位（`VCard` 同一口径，替换语义自带）；
- * - 不在视图里的部件（面板）才「用到才建、建过复用」（与 `VTable` 段命令同一口径），不预建、不按身份查找；
- * - 命令**直接写快照**（`attr` / `replaceChildren`）：首屏就是构建期快照，没有"写完再刷一遍"；
- * - 容器只把「你是不是当前项」交给每一项（`tab.active(…)`），项自己写自己的触发器 / 面板快照。
+ * - **结构一次写清、两个容器常驻**：`div[VTabs] > div[VTabsNav](role=tablist) + div[VTabsPanels]`；
+ *   页签 `VTab` 的视图根是**触发器** `button[VTabTrigger]`，面板 `section[VTabPanel]` 在构建期就建好
+ *   （不再是 `panelPart === null` 哨兵、也不在命令里现造零件）——两个部件由容器分别投递；
+ * - **一项两个父节点 → 两段 `keyed` 用同一份 `ref`**：触发器进 `VTabsNav`、面板进 `VTabsPanels`
+ *   （`(tab) => tab` / `(tab) => tab.panel()`），增删改排序由引擎各段对账——不 rebuild、不整段重建；
+ * - **选中态是句柄**：容器持有选中下标，项 `track(context)` 拿到后按身份查自己的下标（`indexOf`），
+ *   自己派生 `aria-selected` / `data-active` / `tabindex` / 面板 `hidden`——容器不遍历每一项推快照；
+ * - **标签 / 图标是内部块**（R11 / R12）：位置归触发器自己，内容全是活值（节点 props 在构建期落位、
+ *   文本 / 句柄走读值绑定）；空图标由 `[vn~='VTabIcon']:empty` 规则隐掉（原先两处行内 `display` 退场）；
+ * - 命令只写状态 / 内容，`api.setupObject` 退场；点击 / 键盘委托挂在常驻的 `VTabsNav` 上
+ *   （`event.currentTarget` 就是它，不再 `let navPart` 捕获）。
  */
 
 /** 项标记：模块内自有子实例判定（不导出类型，也不按组件名分支）。 */
 const TAB_ITEM = Symbol('yoya.tabItem');
 
-/** 页签导航（形态 A）。 */
-function TabsNav() {
-  return div({
-    'aria-label': '标签页',
-    'aria-orientation': 'horizontal',
-    role: 'tablist',
-    vn: 'VTabsNav'
-  });
-}
+const VARIANTS = new Set(['card', 'line', 'pills']);
+const SIZES = new Set(['default', 'large', 'small']);
 
-/** 面板容器（形态 A）。 */
-function TabsPanels() {
-  return div({ vn: 'VTabsPanels' });
-}
+/** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
+const textOf = (value) => resolveTextValue(value);
 
-/** 标签内容（形态 A）：`vn_slot` 标记 = 它在触发器里的位置。 */
-export function VTabLabel() {
-  return span({ vn: 'VTabLabel', vn_slot: 'label' });
-}
-
-/** 图标内容（形态 A）：默认隐藏，投递图标后由内容自己决定显隐。 */
-export function VTabIcon() {
-  return span({ 'aria-hidden': 'true', vn: 'VTabIcon', vn_slot: 'icon' }).style('display', 'none');
-}
-
-export const vTabLabel = createComponentShortcut(VTabLabel);
-export const vTabIcon = createComponentShortcut(VTabIcon);
+/** 列表归一：数组原样、空值成空表、其余单值成一项。 */
+const asList = (value) =>
+  value === null || value === undefined ? [] : Array.isArray(value) ? value : [value];
 
 /**
- * 页签项：触发器是视图根（进导航），面板走 `panel()` 内容通道（进面板容器）。
- * 字符串 = 标签；对象 = props；`active / disabled / index` 由容器 `active(…)` 驱动。
+ * 页签项：触发器是视图根（进导航），面板在构建期建好（进面板容器）。
+ * 字符串 = 标签；props 见 `TabItemOptions`；选中态由容器 `track(context)` 进来。
  */
-export function VTab() {
+export function VTab({
+  active = false,
+  children: contentOption,
+  content,
+  disabled = false,
+  icon = null,
+  key,
+  label,
+  text,
+  title,
+  value,
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+
+  const sequence = allocateNumber();
+  // id 前缀去 `yoya-v`（全局名只留中性前缀，与 `yoya-timer-range-*` / `yoya-progress-*` 同一口径）
+  const triggerId = `yoya-tab-trigger-${sequence}`;
+  const panelId = `yoya-tab-panel-${sequence}`;
+
+  // 标签 / 图标：节点在构建期落位；文本 / 句柄是活值（`label` / `text` / `title` 三键同义）
+  const initialLabel = label ?? text ?? title ?? null;
+  const labelNode = initialLabel instanceof ViewNode ? initialLabel : null;
+  const iconNode = icon instanceof ViewNode ? icon : null;
+  const labelState = asSignal(labelNode === null ? initialLabel : null);
+  const iconState = asSignal(iconNode === null ? icon : null);
+  const labelText = computed(() => textOf(labelState.value));
+  const iconText = computed(() => textOf(iconState.value));
+
+  // 标识：`key` / `value` 同义；归一（字符串 / 空）放在读时
+  const keyState = asSignal(key ?? value ?? null);
+  const keyValue = computed(() => {
+    const raw = keyState.value;
+    return raw === null || raw === undefined ? null : textOf(raw);
+  });
+
+  const activeState = asSignal(active);
+  const disabledState = asSignal(disabled);
+  const disabledValue = computed(() => Boolean(disabledState.value));
+
+  /** 容器给的容器态（选中下标 + 按身份查下标）；脱离容器时回落到自己的显式位。 */
+  const context = ref(null);
+
   return vNode((api, self) => {
-    const state = { active: false, disabled: false, key: null };
-    const sequence = allocateNumber();
-    // id 前缀去 `yoya-v`（全局名只留中性前缀，与 `yoya-timer-range-*` / `yoya-progress-*` 同一口径）
-    const triggerId = `yoya-tab-trigger-${sequence}`;
-    const panelId = `yoya-tab-panel-${sequence}`;
+    const isActive = computed(() => {
+      const container = context.value;
+      const on = container
+        ? container.indexOf(self.node()) === container.activeIndex.value
+        : Boolean(activeState.value);
 
-    let panelPart = null;
+      return on && !disabledValue.value;
+    });
+    const activeAttr = computed(() => (isActive.value ? 'true' : null));
+    const selectedAttr = computed(() => (isActive.value ? 'true' : 'false'));
+    const tabIndexValue = computed(() => (isActive.value ? '0' : '-1'));
 
-    /** 写这一项的快照：触发器与面板的选中态。 */
-    const writeTab = () => {
-      const active = state.active && !state.disabled;
+    // 面板：构建期就建好（挂载由容器的面板段投递）；选中态 / 可聚焦性都是读值绑定
+    const panel = section({
+      attrs: {
+        'aria-labelledby': triggerId,
+        'data-active': activeAttr,
+        hidden: computed(() => (isActive.value ? null : true)),
+        id: panelId,
+        role: 'tabpanel',
+        tabindex: tabIndexValue
+      },
+      vn: 'VTabPanel'
+    });
 
-      self.node().attr({
-        'aria-selected': active ? 'true' : 'false',
-        'data-active': active ? 'true' : null,
-        tabindex: active ? '0' : '-1'
-      });
-
-      if (panelPart) {
-        panelPart.attr({
-          'data-active': active ? 'true' : null,
-          hidden: active ? null : true,
-          tabindex: active ? '0' : '-1'
-        });
+    api.key = (next) => {
+      if (next === undefined) {
+        return keyValue.value;
       }
 
+      keyState.value = next ?? null;
       return api;
     };
 
-    /** 面板（内容通道）：容器把它落进 `VTabsPanels`；用到才建、建过复用。 */
-    api.panel = () => {
-      if (!panelPart) {
-        panelPart = section({
-          'aria-labelledby': triggerId,
-          hidden: true,
-          id: panelId,
-          role: 'tabpanel',
-          tabindex: '-1',
-          vn: 'VTabPanel'
-        });
-        writeTab();
+    api.value = (next) => (next === undefined ? keyValue.value : api.key(next));
+
+    api.label = (next) => {
+      if (next === undefined) {
+        return labelText.value;
       }
 
-      return panelPart;
-    };
-
-    /** 触发器（视图根）：容器把它落进 `VTabsNav`。 */
-    api.trigger = () => self.node();
-
-    api.key = (value) => {
-      if (value === undefined) {
-        return state.key;
+      if (next instanceof ViewNode) {
+        throw new TypeError(
+          'vTab.label(node)：标签命令只收文本，节点标签请在构建期用 props.label 给。'
+        );
       }
 
-      state.key = value === null || value === undefined ? null : String(resolveTextValue(value));
+      labelState.value = next ?? null;
       return api;
     };
 
-    api.value = (value) => (value === undefined ? state.key : api.key(value));
+    api.text = (next) => (next === undefined ? labelText.value : api.label(next));
+    api.title = (next) => (next === undefined ? labelText.value : api.label(next));
 
-    api.label = (content) => {
-      if (content === undefined) {
-        return state.label == null ? '' : resolveTextValue(state.label);
+    api.icon = (next) => {
+      if (next === undefined) {
+        return iconText.value;
       }
 
-      state.label = content;
-      // 内容自带 `vn_slot`，投递即替换标签占位里的内容（VCard 口径）
-      self.node().child(vTabLabel(content));
+      if (next instanceof ViewNode) {
+        throw new TypeError(
+          'vTab.icon(node)：图标命令只收文本，节点图标请在构建期用 props.icon 给。'
+        );
+      }
+
+      iconState.value = next ?? null;
       return api;
     };
 
-    api.text = (content) => (content === undefined ? api.label() : api.label(content));
-    api.title = (content) => (content === undefined ? api.label() : api.label(content));
-
-    api.icon = (content) => {
-      state.icon = content;
-      const empty = content === null || content === undefined || content === '';
-
-      // 空图标保持隐藏（与旧实现一致）：内容自带 vn_slot，投递即替换图标占位里的内容
-      self.node().child(vTabIcon(content).style('display', empty ? 'none' : null));
-      return api;
-    };
-
+    /** 面板（内容通道）：无参 = 面板句柄；其余走面板自己的 setup 分派。 */
     api.content = (setup) => {
       if (setup === undefined) {
-        return panelPart ? panelPart : null;
+        return panel;
       }
 
-      api.panel().setup(setup);
+      panel.setup(setup);
       return api;
     };
 
-    api.disabled = (value) => {
-      if (value === undefined) {
-        return state.disabled;
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return disabledValue.value;
       }
 
-      state.disabled = Boolean(value);
-      self.node().attr({
-        'aria-disabled': state.disabled ? 'true' : null,
-        disabled: state.disabled ? true : null
-      });
-      return writeTab();
-    };
-
-    api.active = (value) => {
-      if (value === undefined) {
-        return state.active;
-      }
-
-      state.active = Boolean(value);
-      return writeTab();
-    };
-
-    /** props：`key / value / label / text / title / icon / content / children / disabled / active`。 */
-    api.setupObject = (config) => {
-      const {
-        active,
-        children,
-        content,
-        disabled,
-        icon,
-        key,
-        label,
-        text,
-        title,
-        value,
-        ...elementConfig
-      } = config;
-
-      if (Object.keys(elementConfig).length > 0) {
-        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
-        view.setup(elementConfig);
-      }
-
-      if (label !== undefined) {
-        api.label(label);
-      } else if (text !== undefined) {
-        api.label(text);
-      } else if (title !== undefined) {
-        api.label(title);
-      }
-
-      if (content !== undefined) {
-        api.content(content);
-      } else if (children !== undefined) {
-        api.content(children);
-      }
-
-      if (icon !== undefined) {
-        api.icon(icon);
-      }
-
-      if (key !== undefined) {
-        api.key(key);
-      } else if (value !== undefined) {
-        api.key(value);
-      }
-
-      if (disabled !== undefined) {
-        api.disabled(disabled);
-      }
-
-      if (active !== undefined) {
-        api.active(active);
-      }
-
+      disabledState.value = next;
       return api;
     };
+
+    /** 选中位：`true` 写入（容器路径由 `track` 决定，这里是脱离容器 / 命令控制的显式位）。 */
+    api.active = (next = true) => {
+      activeState.value = Boolean(next);
+      return api;
+    };
+
+    /** 面板句柄 / 触发器句柄：容器按自己造出来的项取用它们，投递进两个容器。 */
+    api.panel = () => panel;
+    api.trigger = () => self.node();
 
     /** 字符串 / 数字 = 标签。 */
-    api.setupString = (value) => api.label(value);
+    api.setupString = (next) => api.label(next);
 
-    const view = button(
+    /**
+     * 容器态：只收句柄（容器不替项写状态，项自己派生）。
+     */
+    api.track = (next) => {
+      context.value = next ?? null;
+      return api;
+    };
+
+    // props 里的面板内容与命令共用同一条通道
+    const initialContent = content ?? contentOption;
+
+    if (initialContent !== undefined) {
+      api.content(initialContent);
+    }
+
+    // 结构（R2）：一棵树写在 return 里；状态走读值绑定（R6）
+    return button(
       {
-        'aria-controls': panelId,
-        'aria-selected': 'false',
-        id: triggerId,
-        role: 'tab',
-        tabindex: '-1',
+        ...elementConfig,
+        attrs: {
+          ...restAttrs,
+          'aria-controls': panelId,
+          'aria-disabled': computed(() => (disabledValue.value ? 'true' : null)),
+          'aria-selected': selectedAttr,
+          id: triggerId,
+          role: 'tab',
+          tabindex: tabIndexValue
+        },
+        'data-active': activeAttr,
+        disabled: computed(() => (disabledValue.value ? true : null)),
+        style: restStyle,
         type: 'button',
         vn: 'VTabTrigger'
       },
-      (trigger) => {
-        trigger.child(vSlot('icon'), vSlot('label'));
-      }
-    );
+      (trigger) =>
+        trigger.child(
+          // 图标位 / 标签位都是内部块：内容全是活值，空图标由 `:empty` 规则隐掉
+          span({ vn: 'VTabIcon' }, (box) => {
+            if (iconNode !== null) {
+              box.child(iconNode);
+            }
 
-    return view;
+            box.child(vText(iconText).mountable(computed(() => iconText.value !== '')));
+          }),
+          span({ vn: 'VTabLabel' }, (box) => {
+            if (labelNode !== null) {
+              box.child(labelNode);
+            }
+
+            box.child(vText(labelText).mountable(computed(() => labelText.value !== '')));
+          })
+        )
+    );
   });
 }
 
-const tabShortcut = createComponentShortcut(VTab);
+const tabShortcut = createComponentShortcut(VTab, { props: true });
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
 export function vTab(...args) {
@@ -261,111 +254,129 @@ export function vTab(...args) {
 }
 
 /**
- * 页签容器：`div[VTabs]` + 导航 / 面板容器（用到才建）。
- * 对象 = props，字符串 = 一条页签，函数 = 构建回调（默认落组件节点构建帧）。
+ * 页签容器：`div[VTabs]` + 常驻的导航 / 面板容器。
+ * props 见 `TabsOptions`（`children` 是页签列表的兼容别名），页签只从 `items` / `vTab` 来。
  */
-export function VTabs() {
-  return vNode((api, self) => {
-    const state = {
-      activeIndex: 0,
-      ariaLabel: '标签页',
-      change: null,
-      orientation: 'horizontal',
-      size: 'default',
-      variant: 'line'
+export function VTabs({
+  active,
+  ariaLabel = '标签页',
+  change,
+  children: itemOptions,
+  items,
+  onChange,
+  onTabChange,
+  orientation = 'horizontal',
+  size = 'default',
+  variant = 'line',
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
+
+  // props 全是**数据**：句柄原样收下，归一（合法值 / 默认值）放在读时的派生上
+  const ariaLabelState = asSignal(ariaLabel);
+  const ariaLabelText = computed(() => textOf(ariaLabelState.value) || '标签页');
+  const orientationState = asSignal(orientation);
+  const orientationValue = computed(() =>
+    orientationState.value === 'vertical' ? 'vertical' : 'horizontal'
+  );
+  const variantState = asSignal(variant);
+  const variantValue = computed(() =>
+    VARIANTS.has(variantState.value) ? variantState.value : 'line'
+  );
+  const sizeState = asSignal(size);
+  const sizeValue = computed(() => (SIZES.has(sizeState.value) ? sizeState.value : 'default'));
+
+  /** 选中态：key 或下标都收（句柄就是活值），下标在**读时**按当前项归一。 */
+  const activeState = asSignal(active ?? 0);
+  const activeIndexValue = computed(() => resolveIndex(activeState.value));
+  const activeIndexText = computed(() => String(activeIndexValue.value));
+  const activeKeyValue = computed(() => {
+    const tab = tabNodes.value[activeIndexValue.value];
+    return tab ? tab.key() : null;
+  });
+
+  const clampIndex = (value) => {
+    if (!Number.isFinite(Number(value))) {
+      return 0;
+    }
+
+    const index = Math.max(0, Math.floor(Number(value)));
+    return tabNodes.value.length === 0 ? 0 : Math.min(index, tabNodes.value.length - 1);
+  };
+
+  /** key → 下标；不是 key 就按数字算（数字 / 数字串都收）。 */
+  const resolveIndex = (value) => {
+    if (typeof value === 'number') {
+      return clampIndex(value);
+    }
+
+    const text = textOf(value);
+    const keyIndex = tabNodes.value.findIndex((tab) => String(tab.key()) === String(text));
+
+    if (keyIndex >= 0) {
+      return keyIndex;
+    }
+
+    const numeric = Number(text);
+    return clampIndex(Number.isFinite(numeric) ? numeric : 0);
+  };
+
+  /** 项：一份数据源，两段 `keyed` 都从它对账（触发器 / 面板各一段）。 */
+  const tabNodes = ref([]);
+  const tabCount = computed(() => String(tabNodes.value.length));
+  const keyOfTab = createListItemKey('tab-item');
+
+  /** 变更回调：外面拿不到，命令只改这份引用。 */
+  let changeHandler =
+    typeof change === 'function'
+      ? change
+      : typeof onChange === 'function'
+        ? onChange
+        : typeof onTabChange === 'function'
+          ? onTabChange
+          : null;
+
+  return vNode((api) => {
+    /**
+     * 容器态句柄：项 `track(context)` 拿到后自己按下标比对；
+     * `indexOf` 只在本容器自己造出来的项里查（16 号清单第 15 / 22 条），不遍历结构找节点。
+     */
+    const context = {
+      activeIndex: activeIndexValue,
+      indexOf: (tab) => tabNodes.value.indexOf(tab)
     };
 
-    let navPart = null;
-    let panelsPart = null;
-    let tabs = [];
-
-    /** 导航容器：用到才建、建过复用；点击 / 键盘委托挂在它自己身上。 */
-    const navOf = () => {
-      if (!navPart) {
-        navPart = TabsNav();
-        navPart.attr({ 'aria-label': state.ariaLabel, 'aria-orientation': state.orientation });
-        navPart.on('click', handleNavClick);
-        navPart.on('keydown', handleKeydown);
-        self.node().child(navPart);
-      }
-
-      return navPart;
+    const wireTab = (setup) => {
+      const tab = normalizeTabItem(setup);
+      tab.track(context);
+      return tab;
     };
 
-    /** 面板容器：用到才建、建过复用。 */
-    const panelsOf = () => {
-      if (!panelsPart) {
-        panelsPart = TabsPanels();
-        self.node().child(panelsPart);
-      }
+    const enabledTabs = () => tabNodes.value.filter((tab) => !tab.disabled());
 
-      return panelsPart;
-    };
-
-    const enabledTabs = () => tabs.filter((tab) => !tab.disabled());
-
-    /** 容器态 → 每一项：容器只说「你是不是当前项 / 第几个」，项自己写自己的快照。 */
-    const deliverSelection = () => {
-      self.node().attr({
-        'data-active-index': String(state.activeIndex),
-        'data-active-key':
-          tabs[state.activeIndex]?.key() != null ? String(tabs[state.activeIndex].key()) : null,
-        'data-tab-count': String(tabs.length)
-      });
-
-      tabs.forEach((tab, index) => tab.active(index === state.activeIndex && !tab.disabled()));
-      return api;
-    };
-
-    const clampIndex = (value) => {
-      if (!Number.isFinite(Number(value))) {
-        return 0;
-      }
-
-      const index = Math.max(0, Math.floor(Number(value)));
-      return tabs.length === 0 ? 0 : Math.min(index, tabs.length - 1);
-    };
-
-    const resolveIndex = (value) => {
-      if (typeof value === 'number') {
-        return clampIndex(value);
-      }
-
-      const text = resolveTextValue(value);
-      const keyIndex = tabs.findIndex((tab) => String(tab.key()) === String(text));
-
-      if (keyIndex >= 0) {
-        return keyIndex;
-      }
-
-      const numeric = Number(text);
-      return clampIndex(Number.isFinite(numeric) ? numeric : 0);
-    };
-
-    /** 选中某一项：只动容器自己的状态与属性，项由 `deliverSelection` 通知。 */
+    /** 选中某一项：只动容器自己的状态，项由句柄自己跟上。 */
     const selectIndex = (index, emit = true) => {
-      if (tabs.length === 0) {
-        state.activeIndex = 0;
-        return deliverSelection();
+      if (tabNodes.value.length === 0) {
+        activeState.value = 0;
+        return api;
       }
 
       let next = clampIndex(index);
 
-      if (tabs[next]?.disabled()) {
-        const firstEnabled = tabs.findIndex((tab) => !tab.disabled());
-        next = firstEnabled >= 0 ? firstEnabled : state.activeIndex;
+      if (tabNodes.value[next]?.disabled()) {
+        const firstEnabled = tabNodes.value.findIndex((tab) => !tab.disabled());
+        next = firstEnabled >= 0 ? firstEnabled : activeIndexValue.value;
       }
 
-      const changed = next !== state.activeIndex;
-      state.activeIndex = next >= 0 ? next : state.activeIndex;
-      deliverSelection();
+      const changed = next !== activeIndexValue.value;
+      activeState.value = next >= 0 ? next : activeIndexValue.value;
 
-      if (emit && changed && typeof state.change === 'function') {
-        const tab = tabs[state.activeIndex];
+      if (emit && changed && typeof changeHandler === 'function') {
+        const tab = tabNodes.value[activeIndexValue.value];
 
-        state.change({
-          active: tab.key() ?? state.activeIndex,
-          index: state.activeIndex,
+        changeHandler({
+          active: tab.key() ?? activeIndexValue.value,
+          index: activeIndexValue.value,
           item: tab,
           key: tab.key()
         });
@@ -376,26 +387,27 @@ export function VTabs() {
 
     /** 触发器元素 → 项：容器按自己造出来的项找（不遍历结构）。 */
     const tabFromTrigger = (trigger) =>
-      tabs.find((tab) => tab.trigger().renderDom() === trigger) ?? null;
+      tabNodes.value.find((tab) => tab.trigger().renderDom() === trigger) ?? null;
 
     const handleNavClick = (event) => {
       const trigger = event.target.closest?.('[vn~="VTabTrigger"]');
 
-      if (!trigger || !navPart?.renderDom()?.contains(trigger)) {
+      // 委托挂在常驻的导航容器上：`currentTarget` 就是它
+      if (!trigger || !event.currentTarget?.contains(trigger)) {
         return;
       }
 
       const tab = tabFromTrigger(trigger);
 
       if (tab && !tab.disabled()) {
-        selectIndex(tabs.indexOf(tab), true);
+        selectIndex(tabNodes.value.indexOf(tab), true);
       }
     };
 
     const handleKeydown = (event) => {
       const trigger = event.target.closest?.('[vn~="VTabTrigger"]');
 
-      if (!trigger || !navPart?.renderDom()?.contains(trigger)) {
+      if (!trigger || !event.currentTarget?.contains(trigger)) {
         return;
       }
 
@@ -407,12 +419,12 @@ export function VTabs() {
 
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        selectIndex(tabs.indexOf(current), true);
+        selectIndex(tabNodes.value.indexOf(current), true);
         return;
       }
 
       const step =
-        state.orientation === 'vertical'
+        orientationValue.value === 'vertical'
           ? { ArrowDown: 1, ArrowUp: -1 }
           : { ArrowLeft: -1, ArrowRight: 1 };
       const enabled = enabledTabs();
@@ -443,43 +455,30 @@ export function VTabs() {
         return;
       }
 
-      selectIndex(tabs.indexOf(nextTab), true);
+      selectIndex(tabNodes.value.indexOf(nextTab), true);
       nextTab.trigger().renderDom()?.focus?.();
     };
 
-    api.items = (value) => {
-      if (value === undefined) {
-        return tabs.slice();
-      }
-
-      tabs.forEach((tab) => tab.destroy());
-      tabs = [];
-
-      if (navPart) {
-        replaceChildren(navPart, []);
-      }
-
-      if (panelsPart) {
-        replaceChildren(panelsPart, []);
-      }
-
-      (Array.isArray(value) ? value : []).forEach((item) => api.vTab(item));
-      return deliverSelection();
+    /** 追加一份页签：只写数据，结构（触发器 / 面板两端）交给 `keyed` 对账。 */
+    api.vTab = (setup) => {
+      tabNodes.value = [...tabNodes.value, wireTab(setup)];
+      return api;
     };
 
-    /** 项投递：触发器落进导航、面板落进面板容器，项记在自己账上。 */
-    api.vTab = (setup) => {
-      const tab = normalizeTabItem(setup);
-      tabs = [...tabs, tab];
-      navOf().child(tab);
-      panelsOf().child(tab.panel());
-      return deliverSelection();
+    /** 页签整批替换：写一份新数组（留下来的项按身份键复用，离场的销毁）。 */
+    api.items = (value) => {
+      if (value === undefined) {
+        return tabNodes.value.slice();
+      }
+
+      tabNodes.value = asList(value).map(wireTab);
+      return api;
     };
 
     api.active = (value) => {
       if (value === undefined) {
-        const tab = tabs[state.activeIndex];
-        return tab ? (tab.key() ?? state.activeIndex) : null;
+        const tab = tabNodes.value[activeIndexValue.value];
+        return tab ? (tab.key() ?? activeIndexValue.value) : null;
       }
 
       return selectIndex(resolveIndex(value), false);
@@ -487,7 +486,7 @@ export function VTabs() {
 
     api.activeIndex = (value) => {
       if (value === undefined) {
-        return state.activeIndex;
+        return activeIndexValue.value;
       }
 
       return selectIndex(value, false);
@@ -495,59 +494,46 @@ export function VTabs() {
 
     api.ariaLabel = (content) => {
       if (content === undefined) {
-        return state.ariaLabel;
+        return ariaLabelText.value;
       }
 
-      state.ariaLabel = resolveTextValue(content) || '标签页';
-
-      if (navPart) {
-        navPart.attr('aria-label', state.ariaLabel);
-      }
-
+      ariaLabelState.value = content;
       return api;
     };
 
     api.orientation = (value) => {
       if (value === undefined) {
-        return state.orientation;
+        return orientationValue.value;
       }
 
-      state.orientation = value === 'vertical' ? 'vertical' : 'horizontal';
-      self.node().attr('data-orientation', state.orientation);
-
-      if (navPart) {
-        navPart.attr('aria-orientation', state.orientation);
-      }
-
+      orientationState.value = value;
       return api;
     };
 
     api.variant = (value) => {
       if (value === undefined) {
-        return state.variant;
+        return variantValue.value;
       }
 
-      state.variant = ['card', 'line', 'pills'].includes(value) ? value : 'line';
-      self.node().attr('data-variant', state.variant);
+      variantState.value = value;
       return api;
     };
 
     api.size = (value) => {
       if (value === undefined) {
-        return state.size;
+        return sizeValue.value;
       }
 
-      state.size = ['default', 'large', 'small'].includes(value) ? value : 'default';
-      self.node().attr('data-size', state.size);
+      sizeState.value = value;
       return api;
     };
 
     api.change = (handler) => {
       if (handler === undefined) {
-        return state.change;
+        return changeHandler;
       }
 
-      state.change = typeof handler === 'function' ? handler : null;
+      changeHandler = typeof handler === 'function' ? handler : null;
       return api;
     };
 
@@ -555,11 +541,11 @@ export function VTabs() {
 
     api.next = () => {
       const enabled = enabledTabs();
-      const currentEnabled = enabled.indexOf(tabs[state.activeIndex]);
+      const currentEnabled = enabled.indexOf(tabNodes.value[activeIndexValue.value]);
       const nextTab = enabled[(currentEnabled + 1 + enabled.length) % enabled.length];
 
       if (enabled.length > 0 && nextTab) {
-        selectIndex(tabs.indexOf(nextTab), true);
+        selectIndex(tabNodes.value.indexOf(nextTab), true);
       }
 
       return api;
@@ -567,69 +553,11 @@ export function VTabs() {
 
     api.prev = () => {
       const enabled = enabledTabs();
-      const currentEnabled = enabled.indexOf(tabs[state.activeIndex]);
+      const currentEnabled = enabled.indexOf(tabNodes.value[activeIndexValue.value]);
       const prevTab = enabled[(currentEnabled - 1 + enabled.length) % enabled.length];
 
       if (enabled.length > 0 && prevTab) {
-        selectIndex(tabs.indexOf(prevTab), true);
-      }
-
-      return api;
-    };
-
-    /** props：`items / children / active / ariaLabel / orientation / variant / size / change / onChange`。 */
-    api.setupObject = (config) => {
-      const {
-        active,
-        ariaLabel,
-        change,
-        children,
-        items,
-        onChange,
-        onTabChange,
-        orientation,
-        size,
-        variant,
-        ...elementConfig
-      } = config;
-
-      if (Object.keys(elementConfig).length > 0) {
-        // 其余键落**视图根元素**：`self.node()` 是组件节点，它的 `setup()` 会再进一次本方法（自递归）
-        view.setup(elementConfig);
-      }
-
-      if (ariaLabel !== undefined) {
-        api.ariaLabel(ariaLabel);
-      }
-
-      if (orientation !== undefined) {
-        api.orientation(orientation);
-      }
-
-      if (variant !== undefined) {
-        api.variant(variant);
-      }
-
-      if (size !== undefined) {
-        api.size(size);
-      }
-
-      if (typeof change === 'function') {
-        api.change(change);
-      } else if (typeof onChange === 'function') {
-        api.change(onChange);
-      } else if (typeof onTabChange === 'function') {
-        api.change(onTabChange);
-      }
-
-      const itemsSetup = items ?? children;
-
-      if (itemsSetup !== undefined) {
-        api.items(itemsSetup);
-      }
-
-      if (active !== undefined) {
-        api.active(active);
+        selectIndex(tabNodes.value.indexOf(prevTab), true);
       }
 
       return api;
@@ -641,21 +569,59 @@ export function VTabs() {
       return api;
     };
 
-    // 结构里就带默认快照（命令只覆盖自己那一项）
-    const view = div({
-      'data-active-index': '0',
-      'data-orientation': 'horizontal',
-      'data-size': 'default',
-      'data-tab-count': '0',
-      'data-variant': 'line',
-      vn: 'VTabs'
-    });
+    const initialItems = items ?? itemOptions;
 
-    return view;
+    if (initialItems !== undefined) {
+      api.items(initialItems);
+    }
+
+    // 初始选中项按 key / 下标归一（放在 items 之后：按 key 找得到项）
+    if (active !== undefined) {
+      api.active(active);
+    }
+
+    return div(
+      {
+        ...elementConfig,
+        attrs: restAttrs,
+        'data-active-index': activeIndexText,
+        'data-active-key': activeKeyValue,
+        'data-orientation': orientationValue,
+        'data-size': sizeValue,
+        'data-tab-count': tabCount,
+        'data-variant': variantValue,
+        style: restStyle,
+        vn: 'VTabs'
+      },
+      (root) =>
+        root.child(
+          // 导航容器（常驻）：触发器段 + 点击 / 键盘委托
+          div(
+            {
+              attrs: {
+                'aria-label': ariaLabelText,
+                'aria-orientation': orientationValue,
+                role: 'tablist'
+              },
+              vn: 'VTabsNav'
+            },
+            (nav) => {
+              nav.on('click', handleNavClick);
+              nav.on('keydown', handleKeydown);
+              nav.keyed(tabNodes, keyOfTab, (tab) => tab);
+            }
+          ),
+
+          // 面板容器（常驻）：同一份项数据的另一段对账
+          div({ vn: 'VTabsPanels' }, (panels) =>
+            panels.keyed(tabNodes, keyOfTab, (tab) => tab.panel())
+          )
+        )
+    );
   });
 }
 
-export const vTabs = createComponentShortcut(VTabs);
+export const vTabs = createComponentShortcut(VTabs, { props: true });
 
 /** 项归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */
 function normalizeTabItem(item) {

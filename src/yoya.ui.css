@@ -2076,6 +2076,11 @@ body {
     display: inline-flex;
   }
 
+  /* 空图标块不占触发器的 gap（图标 / 标签都是常驻内部块，没内容时靠 `:empty` 隐掉） */
+  [vn~='VTabs'] [vn~='VTabIcon']:empty {
+    display: none;
+  }
+
   [vn~='VTabs'] [vn~='VTabLabel'] {
     min-width: 0;
   }

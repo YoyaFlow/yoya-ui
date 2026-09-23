@@ -180,6 +180,7 @@ const navigationSelectors = [
   "[vn~='VTabs'][data-orientation='vertical']",
   "[vn~='VTabsNav']",
   "[vn~='VTabsPanels']",
+  "[vn~='VTabs'] [vn~='VTabIcon']:empty",
   "[vn~='VTabTrigger']",
   "[vn~='VTabTrigger'][data-active='true']",
   "[vn~='VTabTrigger'][disabled]",

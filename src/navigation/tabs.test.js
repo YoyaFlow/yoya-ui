@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { div, vTab, vTabs } from '../index.js';
+import { div, ref, span, vTab, vTabs } from '../index.js';
+
+const TRIGGER = "[vn~='VTabTrigger']";
+const PANEL = "[vn~='VTabPanel']";
 
 describe('vTabs', () => {
   it('renders semantic tabs and exposes the active panel', () => {
@@ -158,5 +161,85 @@ describe('vTabs', () => {
 
     expect(tab.label()).toBe('标签');
     expect(tab.panel().textContent()).toBe('内容');
+  });
+
+  it('keeps prop handles live and derives every trigger / panel from the selection', () => {
+    const active = ref(0);
+    const tabs = vTabs({
+      active,
+      items: [
+        { content: 'A 面板', key: 'a', label: 'A' },
+        { content: 'B 面板', key: 'b', label: 'B' }
+      ]
+    });
+    const element = tabs.renderDom();
+    const triggers = element.querySelectorAll(TRIGGER);
+    const panels = element.querySelectorAll(PANEL);
+
+    expect(element.dataset.activeKey).toBe('a');
+    expect(triggers[0].getAttribute('aria-selected')).toBe('true');
+    expect(panels[1].hidden).toBe(true);
+
+    // 句柄 props 是活值：写状态就落 DOM（触发器与面板都跟着走）
+    active.value = 'b';
+
+    expect(tabs.active()).toBe('b');
+    expect(tabs.activeIndex()).toBe(1);
+    expect(element.dataset.activeKey).toBe('b');
+    expect(triggers[0].getAttribute('aria-selected')).toBe('false');
+    expect(triggers[1].getAttribute('tabindex')).toBe('0');
+    expect(panels[0].hidden).toBe(true);
+    expect(panels[1].hidden).toBe(false);
+
+    tabs.destroy();
+  });
+
+  it('reconciles triggers and panels by identity instead of rebuilding them', () => {
+    const first = vTab({ content: 'A 面板', label: 'A' });
+    const second = vTab({ content: 'B 面板', label: 'B' });
+    const tabs = vTabs({ items: [first] });
+    const element = tabs.renderDom();
+    const firstTrigger = element.querySelector(TRIGGER);
+    const firstPanel = element.querySelector(PANEL);
+
+    first.label('A2');
+    tabs.vTab(second);
+
+    const items = tabs.items();
+
+    // 留下来的项还挂在原来的节点与 DOM 上（触发器 / 面板两段各自复用）
+    expect(items[0]).toBe(first);
+    expect(items[1]).toBe(second);
+    expect(element.querySelectorAll(TRIGGER)[0]).toBe(firstTrigger);
+    expect(element.querySelectorAll(PANEL)[0]).toBe(firstPanel);
+    expect(firstTrigger.querySelector("[vn~='VTabLabel']").textContent).toBe('A2');
+    expect(element.dataset.tabCount).toBe('2');
+    expect(firstPanel.textContent).toContain('A 面板');
+
+    // 整批替换：同一个项实例复用（两段一起），离场的销毁
+    tabs.items([first]);
+
+    expect(tabs.items()).toHaveLength(1);
+    expect(element.querySelector(TRIGGER)).toBe(firstTrigger);
+    expect(element.querySelector(PANEL)).toBe(firstPanel);
+    expect(element.dataset.tabCount).toBe('1');
+
+    tabs.destroy();
+  });
+
+  it('takes node label / icon from props and rejects them in the content commands', () => {
+    const tab = vTab({
+      content: '面板',
+      icon: span('★'),
+      label: span('节点标签')
+    });
+    const element = tab.renderDom();
+
+    expect(element.querySelector("[vn~='VTabLabel']").textContent).toBe('节点标签');
+    expect(element.querySelector("[vn~='VTabIcon']").textContent).toBe('★');
+    expect(() => tab.label(span('其它'))).toThrow(/props\.label/);
+    expect(() => tab.icon(span('其它'))).toThrow(/props\.icon/);
+
+    tab.destroy();
   });
 });

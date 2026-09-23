@@ -245,38 +245,91 @@ export class VSteps extends HtmlElementNode {
   child(...children: ChildInput[]): this;
 }
 
+/**
+ * 页签输入：字符串 / 数字 = 标签，其余按项的标准分派。
+ */
+export type TabItemInput = string | number | VTab | TabItemOptions;
+
 export interface TabItemOptions {
   key?: string;
+  /** `key` 的兼容别名。 */
+  value?: string;
+  /** 标签：文本 / 句柄 / 节点（节点在构建期落位；`label()` 命令只收文本）。 */
   label?: ChildInput;
+  /** `label` 的兼容别名（`title` 同义）。 */
+  text?: ChildInput;
+  title?: ChildInput;
+  /** 图标：文本 / 句柄 / 节点（节点在构建期落位）。 */
+  icon?: ChildInput;
+  /** 面板内容（内容通道：节点 / 文本 / 构建回调）。 */
   content?: ChildInput | SetupCallback<HtmlElementNode>;
+  /** `content` 的兼容别名。 */
+  children?: ChildInput | SetupCallback<HtmlElementNode>;
   disabled?: boolean;
+  active?: boolean;
   [key: string]: any;
 }
 
 /** Single tab. */
 export class VTab extends HtmlElementNode {
-  key(): string;
+  key(): string | null;
   key(value: string): VTab;
-  value(): unknown;
-  value(value: unknown): VTab;
+  value(): string | null;
+  value(value: string): VTab;
   label(content?: ChildInput): this;
   text(content?: ChildInput): this;
   title(content?: ChildInput): this;
+  icon(): ChildInput;
   icon(content: ChildInput): VTab;
   content(setup: ChildInput | SetupCallback<HtmlElementNode>): VTab;
+  /** 面板句柄（容器投递进 `VTabsPanels`）。 */
+  panel(): HtmlElementNode;
+  /** 触发器句柄（容器投递进 `VTabsNav`）。 */
+  trigger(): HtmlElementNode;
+  disabled(): boolean;
   disabled(value: boolean): VTab;
-  active(value: boolean): VTab;
+  active(value?: boolean): VTab;
+}
+
+/**
+ * `vTabs({ … })` 的 props——只收数据 + 元素选项；页签从 `items`（或命令 `tabs.vTab(…)`）来，
+ * `children` 是 `items` 的兼容别名。
+ */
+export interface TabsOptions {
+  /** key 或下标。 */
+  active?: string | number;
+  ariaLabel?: ChildInput;
+  items?: TabItemInput[];
+  /** `items` 的兼容别名。 */
+  children?: TabItemInput[];
+  orientation?: TabsOrientation;
+  variant?: TabsVariant;
+  size?: TabsSize;
+  change?: (payload: TabChangePayload) => void;
+  onChange?: (payload: TabChangePayload) => void;
+  onTabChange?: (payload: TabChangePayload) => void;
+  [key: string]: unknown;
+}
+
+/** 变更回调的载荷（与运行期一致）。 */
+export interface TabChangePayload {
+  active: string | number;
+  index: number;
+  item: VTab;
+  key: string | null;
 }
 
 /** Tab group with selection state. */
 export class VTabs extends HtmlElementNode {
   children(): HtmlElementNode[];
-  items(value: Array<string | VTab | TabItemOptions>): VTabs;
+  items(): VTab[];
+  items(value: TabItemInput | TabItemInput[]): VTabs;
   child(...children: ChildInput[]): this;
   active(): string | number;
   active(value: string | number): VTabs;
   activeIndex(): number;
   activeIndex(value: number): VTabs;
+  ariaLabel(): string;
   ariaLabel(content: ChildInput): VTabs;
   orientation(): TabsOrientation;
   orientation(value: TabsOrientation): VTabs;
@@ -284,9 +337,9 @@ export class VTabs extends HtmlElementNode {
   variant(value: TabsVariant): VTabs;
   size(): TabsSize;
   size(value: TabsSize): VTabs;
-  change(): ((key: string | number, index: number) => void) | null;
-  change(handler: ((key: string | number, index: number) => void) | null): VTabs;
-  onChange(handler: ((key: string | number, index: number) => void) | null): VTabs;
+  change(): ((payload: TabChangePayload) => void) | null;
+  change(handler: ((payload: TabChangePayload) => void) | null): VTabs;
+  onChange(handler: ((payload: TabChangePayload) => void) | null): VTabs;
   next(): VTabs;
   prev(): VTabs;
 }
@@ -318,8 +371,12 @@ export const vSteps: {
   (first?: StepsOptions | SetupCallback<VSteps> | null, callback?: SetupCallback<VSteps>): VSteps;
 } & ElementFactory<VSteps>;
 export const vSubMenu: ElementFactory<VSubMenu>;
-export const vTab: ElementFactory<VTab>;
-export const vTabs: ElementFactory<VTabs>;
+export const vTab: {
+  (first?: TabItemOptions | SetupInput<VTab> | null, callback?: SetupCallback<VTab>): VTab;
+} & ElementFactory<VTab>;
+export const vTabs: {
+  (first?: TabsOptions | SetupCallback<VTabs> | null, callback?: SetupCallback<VTabs>): VTabs;
+} & ElementFactory<VTabs>;
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface NavigationParentShortcuts {
@@ -357,8 +414,8 @@ export interface NavigationParentShortcuts {
     callback?: SetupCallback<VSteps>
   ): VSteps;
   vSubMenu(first?: SetupInput<VSubMenu> | null, callback?: SetupCallback<VSubMenu>): VSubMenu;
-  vTab(first?: SetupInput<VTab> | null, callback?: SetupCallback<VTab>): VTab;
-  vTabs(first?: SetupInput<VTabs> | null, callback?: SetupCallback<VTabs>): VTabs;
+  vTab(first?: TabItemOptions | SetupInput<VTab> | null, callback?: SetupCallback<VTab>): VTab;
+  vTabs(first?: TabsOptions | SetupCallback<VTabs> | null, callback?: SetupCallback<VTabs>): VTabs;
 }
 
 export type { ElementOptions };
