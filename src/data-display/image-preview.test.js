@@ -22,7 +22,7 @@ describe('vImagePreview', () => {
     preview.open();
     const overlay = document.querySelector('[vn~="VImagePreviewOverlay"]');
     expect(overlay).not.toBeNull();
-    expect(overlay.querySelector('.yoya-vlazyimage')).not.toBeNull();
+    expect(overlay.querySelector('[vn~="VLazyImage"]')).not.toBeNull();
     expect(overlay.querySelector('img').getAttribute('src')).toBe('/big.png');
 
     preview.close();

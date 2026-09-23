@@ -104,6 +104,16 @@ const menuR5Selectors = [
   "[data-sidebar-hidden='true']"
 ];
 
+const lazyImageSelectors = [
+  "[vn~='VLazyImage']",
+  "[vn~='VLazyImage'] [vn~='VLazyImageImg']",
+  "[vn~='VLazyImage'][data-state='loaded'] [vn~='VLazyImageImg']",
+  "[vn~='VLazyImage'] [vn~='VLazyImagePlaceholder']",
+  "[vn~='VLazyImage'][data-state='loading'] [vn~='VLazyImagePlaceholder']",
+  "[vn~='VLazyImage'] [vn~='VLazyImageRetry']",
+  "[vn~='VLazyImage'][data-state='error'] [vn~='VLazyImageRetry']"
+];
+
 const treeRangerSelectors = [
   "[vn~='VTreeRanger']",
   "[vn~='VTreeRangerColumn']",
@@ -425,6 +435,12 @@ describe('CSS style contract', () => {
 
   it('covers the tree ranger selectors', () => {
     treeRangerSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the lazy image state selectors', () => {
+    lazyImageSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VLazyImage, vLazyImage } from '../index.js';
+import { hasComponentIdentity, vLazyImage } from '../index.js';
 
 describe('vLazyImage', () => {
   it('renders a lazy image with alt text and loading state', () => {
@@ -7,8 +7,8 @@ describe('vLazyImage', () => {
     const element = image.renderDom();
     const img = element.querySelector('img');
 
-    expect(image).toBeInstanceOf(VLazyImage);
-    expect(element.classList.contains('yoya-vlazyimage')).toBe(true);
+    expect(hasComponentIdentity(image, 'VLazyImage')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VLazyImage');
     expect(img.getAttribute('src')).toBe('/pic.png');
     expect(img.getAttribute('alt')).toBe('示例图片');
     expect(img.getAttribute('loading')).toBe('lazy');
@@ -45,7 +45,7 @@ describe('vLazyImage', () => {
   it('serializes deterministically for SSR', () => {
     const html = vLazyImage({ src: '/pic.png', alt: '示例' }).toHTML();
 
-    expect(html).toContain('yoya-vlazyimage');
+    expect(html).toContain('vn="VLazyImage"');
     expect(html).toContain('loading="lazy"');
     expect(html).toContain('/pic.png');
   });

@@ -5,7 +5,6 @@
     "src/actions/dropdown-menu.js": 1,
     "src/feedback/message.js": 6,
     "src/feedback/tooltip.js": 1,
-    "src/async/lazy-image.js": 3,
     "src/async/skeleton.js": 5,
     "src/effects/transition.js": 8
   },
@@ -17,16 +16,12 @@
     "yoya-vskeleton-avatar": 3,
     "yoya-vskeleton-block": 3,
     "yoya-vskeleton-shimmer": 2,
-    "yoya-vlazyimage": 6,
-    "yoya-vlazyimage-placeholder": 1,
-    "yoya-vlazyimage-retry": 2,
     "yoya-vtransition": 5,
     "yoya-vtransition-enter": 2,
     "yoya-vtransition-duration": 2,
     "yoya-vtransition-leave": 2
   },
   "identity": [
-    "src/async/lazy-image.js",
     "src/async/skeleton.js",
     "src/components/component-shell.js",
     "src/feedback/message-manager.js",

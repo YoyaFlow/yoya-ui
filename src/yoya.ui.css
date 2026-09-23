@@ -3912,7 +3912,7 @@ body {
     }
   }
 
-  :where(.yoya-vlazyimage) {
+  :where([vn~='VLazyImage']) {
     box-sizing: border-box;
     display: inline-block;
     max-width: 100%;
@@ -3922,13 +3922,13 @@ body {
     position: relative;
   }
 
-  .yoya-vlazyimage .yoya-vlazyimage-placeholder {
+  [vn~='VLazyImage'] [vn~='VLazyImagePlaceholder'] {
     background: var(--yoya-color-surface-muted, #f5f5f5);
     inset: 0;
     position: absolute;
   }
 
-  .yoya-vlazyimage img {
+  [vn~='VLazyImage'] [vn~='VLazyImageImg'] {
     display: block;
     height: 100%;
     object-fit: cover;
@@ -3937,7 +3937,7 @@ body {
     width: 100%;
   }
 
-  .yoya-vlazyimage .yoya-vlazyimage-retry {
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry'] {
     align-items: center;
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
@@ -3954,9 +3954,34 @@ body {
     transform: translate(-50%, -50%);
   }
 
-  .yoya-vlazyimage .yoya-vlazyimage-retry:hover {
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry']:hover {
     border-color: var(--yoya-color-primary, #2563eb);
     color: var(--yoya-color-primary, #2563eb);
+  }
+
+  /* 懒加载图片的三个部件显隐 / 透明度由根上的 `data-state` 决定（原来写在 JS 行内，R5 搬进来） */
+  [vn~='VLazyImage'] [vn~='VLazyImageImg'] {
+    opacity: 0;
+  }
+
+  [vn~='VLazyImage'][data-state='loaded'] [vn~='VLazyImageImg'] {
+    opacity: 1;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImagePlaceholder'] {
+    display: none;
+  }
+
+  [vn~='VLazyImage'][data-state='loading'] [vn~='VLazyImagePlaceholder'] {
+    display: inline-flex;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry'] {
+    display: none;
+  }
+
+  [vn~='VLazyImage'][data-state='error'] [vn~='VLazyImageRetry'] {
+    display: inline-flex;
   }
 
   :where(.yoya-vtransition) {
@@ -4060,7 +4085,7 @@ body {
     z-index: 1;
   }
 
-  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] .yoya-vlazyimage {
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] [vn~='VLazyImage'] {
     max-height: 86vh;
     max-width: 90vw;
   }

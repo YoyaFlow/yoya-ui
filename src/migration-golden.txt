@@ -379,8 +379,8 @@ probe:    {"data":[1,2,3],"height":180,"options":{"theme":"light"},"width":320}
 residue:  (空)
 
 ### vLazyImage / 延迟加载
-dom:      <div aria-label=缩略图 class=yoya-component yoya-vlazyimage data-state=loading role=img style=box-sizing: border-box; display: inline-block; max-width: 100%; min-height: 48px; min-width: 48px; overflow: hidden; position: relative;><span class=yoya-vlazyimage-placeholder><img alt=缩略图 loading=lazy src=/img/a.png style=opacity: 0;><button class=yoya-vlazyimage-retry style=display: none; type=button>#text:加载失败，点击重试
-toHTML:   <div aria-label="缩略图" class="yoya-component yoya-vlazyimage" data-state="loading" role="img" style="box-sizing:border-box;display:inline-block;max-width:100%;min-height:48px;min-width:48px;overflow:hidden;position:relative"><span class="yoya-vlazyimage-placeholder"></span><img alt="缩略图" loading="lazy" src="/img/a.png" style="opacity:0"><button class="yoya-vlazyimage-retry" style="display:none" type="button">加载失败，点击重试</button></div>
+dom:      <div aria-label=缩略图 data-state=loading role=img vn=VLazyImage><span vn=VLazyImagePlaceholder><img alt=缩略图 loading=lazy src=/img/a.png vn=VLazyImageImg><button type=button vn=VLazyImageRetry>#text:加载失败，点击重试
+toHTML:   <div aria-label="缩略图" data-state="loading" role="img" vn="VLazyImage"><span vn="VLazyImagePlaceholder"></span><img alt="缩略图" loading="lazy" src="/img/a.png" vn="VLazyImageImg"><button type="button" vn="VLazyImageRetry">加载失败，点击重试</button></div>
 probe:    {"alt":"缩略图","defer":true,"state":"loading"}
 residue:  (空)
 

@@ -1,14 +1,16 @@
 import { HtmlElementNode } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
-import { componentClass, isPlainObject } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import {
+  createComponentShortcut,
+  delegateNodeCommands,
+  isPlainObject
+} from '../components/shared.js';
 
 /** 懒加载图片的节点类型（不导出到包入口）；公开组件 `vLazyImage` 是 vNode 外壳。 */
 export class LazyImageNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VLazyImage';
+    super('div', { vn: 'VLazyImage' });
     this._src = null;
     this._alt = '';
     this._defer = false;
@@ -16,25 +18,15 @@ export class LazyImageNode extends HtmlElementNode {
     this._state = ref('loading');
     this._observer = null;
 
-    this._img = new HtmlElementNode('img').attr({ loading: 'lazy' });
-    this._placeholder = new HtmlElementNode('span').className('yoya-vlazyimage-placeholder');
-    this._retryButton = new HtmlElementNode('button')
-      .className('yoya-vlazyimage-retry')
+    this._img = new HtmlElementNode('img', { vn: 'VLazyImageImg' }).attr({ loading: 'lazy' });
+    this._placeholder = new HtmlElementNode('span', { vn: 'VLazyImagePlaceholder' });
+    this._retryButton = new HtmlElementNode('button', { vn: 'VLazyImageRetry' })
       .attr({ type: 'button' })
       .child('加载失败，点击重试')
       .on('click', () => this.retry());
 
-    this.className(componentClass, 'yoya-vlazyimage');
+    // 静态样式在 `yoya.ui.css` 的 `[vn~='VLazyImage*']` 规则里（R5）
     this.attr({ 'data-state': 'loading', role: 'img' });
-    this.styles({
-      boxSizing: 'border-box',
-      display: 'inline-block',
-      maxWidth: '100%',
-      minWidth: '48px',
-      minHeight: '48px',
-      overflow: 'hidden',
-      position: 'relative'
-    });
     this.child(this._placeholder, this._img, this._retryButton);
 
     this._setupLazyImage(setup);
@@ -147,13 +139,8 @@ export class LazyImageNode extends HtmlElementNode {
   }
 
   _syncState() {
-    const state = this._state.value;
-    const loaded = state === 'loaded';
-
-    this.attr('data-state', state);
-    this._img.style('opacity', loaded ? '1' : '0');
-    this._placeholder.style('display', state === 'loading' ? null : 'none');
-    this._retryButton.style('display', state === 'error' ? 'inline-flex' : 'none');
+    // 状态只落一个属性：图片透明度 / 占位与重试按钮的显隐都由 CSS 的 `[data-state]` 规则给（R5）
+    this.attr('data-state', this._state.value);
   }
 
   _setupLazyImage(setup) {
@@ -186,14 +173,17 @@ export class LazyImageNode extends HtmlElementNode {
   }
 }
 
-export function vLazyImage(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VLazyImage',
-    createNode: (setup) => new LazyImageNode(setup),
-    commands: ['src', 'alt', 'defer', 'loadState', 'retry'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 懒加载图片（形态 B）：视图根是节点类型扩展 `LazyImageNode`（IntersectionObserver / 加载 / 失败重试
+ * 都归它），外层 `vNode` 用 `delegateNodeCommands` 补齐命令面（`src` / `alt` / `defer` / `loadState` /
+ * `retry`）与元素 DSL；三块部件（占位 / 图片 / 重试）常驻，显隐与透明度由 `[data-state]` 规则给。
+ */
+export function VLazyImage(props = {}) {
+  return vNode((api) => {
+    const node = new LazyImageNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export const VLazyImage = vLazyImage;
-defineComponentIdentity(VLazyImage, 'VLazyImage');
+export const vLazyImage = createComponentShortcut(VLazyImage, { props: true });
