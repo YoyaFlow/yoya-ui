@@ -51,7 +51,7 @@ describe('AG Grid scenario showcase demos', () => {
 
   it('performance reloads row and column counts through the grid api', () => {
     const demo = AgGridPerformanceExample(1200, 4);
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     expect(gridInstances[0].options.rowData).toHaveLength(1200);
     expect(gridInstances[0].options.columnDefs).toHaveLength(6);
@@ -71,7 +71,7 @@ describe('AG Grid scenario showcase demos', () => {
 
   it('finance renders sparkline and pushes price ticks via transactions', () => {
     const demo = AgGridFinanceExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     const api = gridInstances[0];
     const columns = api.options.columnDefs;
 
@@ -102,7 +102,7 @@ describe('AG Grid scenario showcase demos', () => {
 
   it('hr rebuilds visible flat rows when org nodes expand or collapse', () => {
     const demo = AgGridHrExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     expect(gridInstances[0].options.rowData).toHaveLength(34);
 
@@ -118,7 +118,7 @@ describe('AG Grid scenario showcase demos', () => {
 
   it('inventory shows variant rows in a second grid and filters master rows', () => {
     const demo = AgGridInventoryExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     const master = gridInstances[0];
     const detail = gridInstances[1];

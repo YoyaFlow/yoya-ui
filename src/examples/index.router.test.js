@@ -920,9 +920,10 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(count.textContent).toBe('0');
 
     const sourceText = demo.querySelector('[data-source-example]').textContent;
-    expect(sourceText).toContain('increment()');
-    expect(sourceText).toContain('decrement()');
-    expect(sourceText).toContain('reset()');
+    // 形态 B：命令挂在 setup 的 api 上（不再写 { render(), increment() } 对象）
+    expect(sourceText).toContain('api.increment');
+    expect(sourceText).toContain('api.decrement');
+    expect(sourceText).toContain('api.reset');
   });
 
   it('drives the fragment, keyed and event-overwrite state demos', async () => {
@@ -1243,7 +1244,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     inputElement.dispatchEvent(new Event('input'));
     htmlDemo.querySelector('button').click();
     expect(htmlDemo.querySelector('output').textContent).toBe('原生输入：yoya');
-    expect(page.querySelector('[data-source-example]').textContent).toContain('render()');
+    // 形态 A：演示直接返回视图节点，面板里不再有 { render() ... } 包装
+    expect(page.querySelector('[data-source-example]').textContent).not.toContain('render()');
     expect(page.querySelector('[data-source-example]').textContent).not.toContain('document.');
 
     const keyedDemo = page.querySelector('[data-native-demo="keyed"]');
@@ -2413,8 +2415,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     expect(source).toContain("import { vButton } from '@yoyaflow/yoya-ui';");
     expect(source).toContain('export function ButtonExample1()');
-    expect(source).toContain('return {');
-    expect(source).toContain('render()');
+    // 形态 A：直接返回视图节点，不再包一层 { render() }
+    expect(source).not.toContain('render()');
     expect(source).toContain("return vButton('OK')");
     expect(source).toContain(".variant('primary')");
     expect(source).toContain(".on('click', () => {");
@@ -2447,8 +2449,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       expect(source.querySelector('[data-source-example]').textContent).toMatch(
         /export function Button(?:[A-Za-z]+)?Example1\(\)/
       );
-      expect(source.querySelector('[data-source-example]').textContent).toContain('return {');
-      expect(source.querySelector('[data-source-example]').textContent).toContain('render()');
+      expect(source.querySelector('[data-source-example]').textContent).not.toContain('render()');
     });
 
     const loadingButton = page.querySelector(

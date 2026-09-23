@@ -1,4 +1,4 @@
-import { section, vCard, vText } from '../index.js';
+import { section, vCard, vNode, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 
@@ -33,25 +33,21 @@ function DefineComponentExample1() {
 
 function ComposeComponentExample1() {
   const MemberCard = ({ name, role, status }) => {
-    return {
-      render() {
-        return vCard((card) => {
-          card.vCardBody((body) => {
-            body.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '12px' });
-              row.vAvatar({ text: name.slice(0, 1) });
-              row.vstack((info) => {
-                info.style('gap', '2px');
-                info.strong(name);
-                info.span(role);
-              });
-              row.spacer();
-              row.vBadge({ status, text: status });
-            });
+    return vCard((card) => {
+      card.vCardBody((body) => {
+        body.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '12px' });
+          row.vAvatar({ text: name.slice(0, 1) });
+          row.vstack((info) => {
+            info.style('gap', '2px');
+            info.strong(name);
+            info.span(role);
           });
+          row.spacer();
+          row.vBadge({ status, text: status });
         });
-      }
-    };
+      });
+    });
   };
 
   return vCard((card) => {
@@ -84,50 +80,47 @@ function InteractiveComposeExample1() {
       status.textContent(`第 ${step} 步`);
     };
 
-    return {
-      next() {
+    return vNode((api) => {
+      api.next = () => {
         if (step < 3) {
           update(step + 1);
         } else {
           onFinish?.(step);
         }
-      },
-      prev() {
+      };
+      api.prev = () => {
         if (step > 1) {
           update(step - 1);
         } else {
           onCancel?.(step);
         }
-      },
-      reset() {
+      };
+      api.reset = () => {
         update(1);
-      },
-      setStep(value) {
+      };
+      api.setStep = (value) => {
         update(Math.min(3, Math.max(1, value)));
-      },
-      step() {
-        return step;
-      },
-      render() {
-        return section((panel) => {
-          panel.className('wizard-child-panel');
-          panel.strong(title);
-          panel.p(status);
-          panel.hstack((actions) => {
-            actions.style({ alignItems: 'center', gap: '10px' });
-            actions.vButton('上一步', (btn) => {
-              btn.size('small').on('click', () => this.prev());
-            });
-            actions.vButton('下一步', (btn) =>
-              btn
-                .size('small')
-                .variant('primary')
-                .on('click', () => this.next())
-            );
+      };
+      api.step = () => step;
+
+      return section((panel) => {
+        panel.className('wizard-child-panel');
+        panel.strong(title);
+        panel.p(status);
+        panel.hstack((actions) => {
+          actions.style({ alignItems: 'center', gap: '10px' });
+          actions.vButton('上一步', (btn) => {
+            btn.size('small').on('click', () => api.prev());
           });
+          actions.vButton('下一步', (btn) =>
+            btn
+              .size('small')
+              .variant('primary')
+              .on('click', () => api.next())
+          );
         });
-      }
-    };
+      });
+    });
   };
 
   const child = WizardChild({
@@ -247,7 +240,7 @@ const componentDefinitionDemos = [
   {
     component: InteractiveComposeExample1,
     id: 'interactive-compose',
-    imports: ['section', 'vCard', 'vText'],
+    imports: ['section', 'vCard', 'vNode', 'vText'],
     sourceTitle: '组合组件交互源码',
     title: '组合组件交互'
   },

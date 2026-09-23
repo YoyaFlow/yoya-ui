@@ -36,7 +36,7 @@ describe('Leaflet map interop demo', () => {
 
   it('initializes the map with tile layer and a marker on the container', () => {
     const demo = LeafletMapExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     expect(el.dataset.leafletHost).toBe('true');
     expect(fakeMap.map).toHaveBeenCalledWith(
@@ -50,7 +50,7 @@ describe('Leaflet map interop demo', () => {
 
   it('delegates flyTo to the map instance', () => {
     const demo = LeafletMapExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     demo.flyTo([31.23, 121.47], 12);
 
@@ -60,7 +60,7 @@ describe('Leaflet map interop demo', () => {
 
   it('does not initialize the map twice when renderDom runs again', () => {
     const demo = LeafletMapExample();
-    const node = demo.render();
+    const node = demo;
 
     node.renderDom();
     node.renderDom();
@@ -70,7 +70,7 @@ describe('Leaflet map interop demo', () => {
 
   it('removes the map instance on destroy', () => {
     const demo = LeafletMapExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     document.body.appendChild(el);
 
     demo.destroy();

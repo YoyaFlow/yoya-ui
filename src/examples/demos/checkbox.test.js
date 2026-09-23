@@ -4,7 +4,7 @@ import { CheckboxColumnsExample } from './checkbox.js';
 describe('vCheckboxes layout demo', () => {
   it('renders options in 2 columns and switches column count', () => {
     const demo = CheckboxColumnsExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     const boxes = el.querySelector('[vn~="VCheckboxes"]');
     expect(el.querySelectorAll('[vn~="VCheckboxes"] input[type="checkbox"]')).toHaveLength(6);

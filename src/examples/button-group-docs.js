@@ -24,18 +24,14 @@ function ButtonGroupSelectExample() {
     });
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(group);
-        body.div((row) => {
-          row.span('当前筛选');
-          row.spacer();
-          row.output((el) => el.attr('data-button-group-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(group);
+    body.div((row) => {
+      row.span('当前筛选');
+      row.spacer();
+      row.output((el) => el.attr('data-button-group-output', 'true').child(output));
+    });
+  });
 }
 
 function ButtonGroupJoinedExample() {
@@ -54,18 +50,14 @@ function ButtonGroupJoinedExample() {
     });
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(group);
-        body.div((row) => {
-          row.span('当前视图');
-          row.spacer();
-          row.output((el) => el.attr('data-button-group-joined-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(group);
+    body.div((row) => {
+      row.span('当前视图');
+      row.spacer();
+      row.output((el) => el.attr('data-button-group-joined-output', 'true').child(output));
+    });
+  });
 }
 
 // 页面壳：负责 Card 和说明文字，不进入演示源码面板。

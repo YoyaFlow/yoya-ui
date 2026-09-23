@@ -1,4 +1,4 @@
-import { div, ref, vText } from '../../index.js';
+import { div, ref, vNode, vText } from '../../index.js';
 import '../devtools-inspector.css';
 import {
   disableDevtools,
@@ -563,9 +563,8 @@ export function DevtoolsInspectorDemo() {
     });
   }
 
-  return {
-    render,
-    destroy() {
+  return vNode((api) => {
+    api.whenDestroy = () => {
       if (stopSubscription) {
         stopSubscription();
       }
@@ -574,6 +573,7 @@ export function DevtoolsInspectorDemo() {
         disableDevtools();
       }
       state.enabled = false;
-    }
-  };
+    };
+    return render();
+  });
 }

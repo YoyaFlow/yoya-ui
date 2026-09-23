@@ -31,28 +31,24 @@ export function RouterNavigationCard() {
     );
   });
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.hstack((nav) => {
-          nav.className('router-demo-navigation');
-          nav.styles({ flexWrap: 'wrap', gap: '10px' });
-          nav.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
-          nav.vLink(appRouter, {
-            label: '用户详情',
-            params: { id: 42 },
-            query: { tab: 'profile' },
-            replace: true,
-            to: '/users/:id'
-          });
-          nav.vLink(appRouter, { label: '未匹配', replace: true, to: '/missing' });
-        });
-        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-        appRouter.navigate('/overview', { replace: true });
+  return vstack((stack) => {
+    stack.style('gap', '14px');
+    stack.hstack((nav) => {
+      nav.className('router-demo-navigation');
+      nav.styles({ flexWrap: 'wrap', gap: '10px' });
+      nav.vLink(appRouter, { label: '概览', replace: true, to: '/overview' });
+      nav.vLink(appRouter, {
+        label: '用户详情',
+        params: { id: 42 },
+        query: { tab: 'profile' },
+        replace: true,
+        to: '/users/:id'
       });
-    }
-  };
+      nav.vLink(appRouter, { label: '未匹配', replace: true, to: '/missing' });
+    });
+    stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+    appRouter.navigate('/overview', { replace: true });
+  });
 }
 
 export function DeclarativeRouterCard() {
@@ -67,21 +63,17 @@ export function DeclarativeRouterCard() {
     ]
   });
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.vLink(appRouter, {
-          label: '项目 42',
-          params: { id: 42 },
-          query: { tab: 'tasks' },
-          to: '/projects/:id'
-        });
-        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-        appRouter.navigate('/overview', { replace: true });
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.style('gap', '14px');
+    stack.vLink(appRouter, {
+      label: '项目 42',
+      params: { id: 42 },
+      query: { tab: 'tasks' },
+      to: '/projects/:id'
+    });
+    stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+    appRouter.navigate('/overview', { replace: true });
+  });
 }
 
 export function RouterHistoryCard() {
@@ -106,32 +98,28 @@ export function RouterHistoryCard() {
   const currentPath = vText('');
   appRouter.subscribe(({ path }) => currentPath.textContent(`当前地址：${path}`));
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.hstack((nav) => {
-          nav.className('router-demo-navigation');
-          nav.styles({ flexWrap: 'wrap', gap: '10px' });
-          nav.vLink(appRouter, { label: '概览', to: '/overview' });
-          nav.vLink(appRouter, {
-            label: '项目 42',
-            params: { id: 42 },
-            query: { tab: 'tasks' },
-            to: '/projects/:id'
-          });
-          nav.vLink(appRouter, { label: '未匹配', to: '/missing' });
-        });
-        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-        stack.output((output) => {
-          output.className('history-url-output');
-          output.child(currentPath);
-        });
-        appRouter.navigate('/home', { replace: true });
-        appRouter.start();
+  return vstack((stack) => {
+    stack.style('gap', '14px');
+    stack.hstack((nav) => {
+      nav.className('router-demo-navigation');
+      nav.styles({ flexWrap: 'wrap', gap: '10px' });
+      nav.vLink(appRouter, { label: '概览', to: '/overview' });
+      nav.vLink(appRouter, {
+        label: '项目 42',
+        params: { id: 42 },
+        query: { tab: 'tasks' },
+        to: '/projects/:id'
       });
-    }
-  };
+      nav.vLink(appRouter, { label: '未匹配', to: '/missing' });
+    });
+    stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+    stack.output((output) => {
+      output.className('history-url-output');
+      output.child(currentPath);
+    });
+    appRouter.navigate('/home', { replace: true });
+    appRouter.start();
+  });
 }
 
 export function RouterViewsEditorStandalone() {
@@ -174,11 +162,7 @@ export function RouterViewsEditorStandalone() {
   });
   appRouter.navigate('/overview', { replace: true });
 
-  return {
-    render() {
-      return root;
-    }
-  };
+  return root;
 }
 
 export function RouterViewsTopStandalone() {
@@ -222,9 +206,5 @@ export function RouterViewsTopStandalone() {
   });
   appRouter.navigate('/overview', { replace: true });
 
-  return {
-    render() {
-      return root;
-    }
-  };
+  return root;
 }

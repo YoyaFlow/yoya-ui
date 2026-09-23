@@ -17,25 +17,21 @@ export function CheckboxColumnsExample() {
     counter.textContent(`${columns} 列`);
   };
 
-  return {
-    render() {
-      return div((panel) => {
-        panel.vstack({ gap: '12px' }, (stack) => {
-          stack.hstack({ gap: '8px' }, (row) => {
-            row.vButton('1 列', (b) => b.on('click', () => apply(1)));
-            row.vButton('2 列', (b) => b.on('click', () => apply(2)));
-            row.vButton('3 列', (b) => b.on('click', () => apply(3)));
-            counter = vText('2 列');
-            row.child(counter);
-          });
-          stack.vCheckboxes((b) => {
-            boxes = b;
-            b.options(options);
-            b.columns(2);
-            b.value(['monitor']);
-          });
-        });
+  return div((panel) => {
+    panel.vstack({ gap: '12px' }, (stack) => {
+      stack.hstack({ gap: '8px' }, (row) => {
+        row.vButton('1 列', (b) => b.on('click', () => apply(1)));
+        row.vButton('2 列', (b) => b.on('click', () => apply(2)));
+        row.vButton('3 列', (b) => b.on('click', () => apply(3)));
+        counter = vText('2 列');
+        row.child(counter);
       });
-    }
-  };
+      stack.vCheckboxes((b) => {
+        boxes = b;
+        b.options(options);
+        b.columns(2);
+        b.value(['monitor']);
+      });
+    });
+  });
 }

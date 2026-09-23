@@ -1,4 +1,15 @@
-import { div, section, vBadge, vCard, vDetail, vField, vForm, vText, vstack } from '../index.js';
+import {
+  div,
+  section,
+  vBadge,
+  vCard,
+  vDetail,
+  vField,
+  vForm,
+  vNode,
+  vText,
+  vstack
+} from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 const formDocsDefinition = Object.freeze({
@@ -64,7 +75,7 @@ const formDocsDefinition = Object.freeze({
       component: CustomCollectCard,
       description: '非标准组件通过 collectValue 注册取值函数，vForm 可以像标准控件一样读取。',
       id: 'collect-value',
-      imports: ['div', 'vForm', 'vFormItem', 'vText'],
+      imports: ['div', 'vForm', 'vFormItem', 'vNode', 'vText'],
       sourceComponent: FormExample3,
       sourceTitle: '自定义取值核心源码',
       title: '自定义取值'
@@ -341,119 +352,111 @@ function FormExample1() {
     status: '运行中'
   });
 
-  return {
-    render() {
-      return vForm((form) => {
-        form.style('gap', '14px');
-        form.div((row) => {
-          row.style({ display: 'grid', gap: '6px' });
-          row.label('服务名');
-          row.vInput({
-            name: 'name',
-            placeholder: '请输入服务名',
-            value: 'api-gateway'
-          });
-        });
-        form.div((row) => {
-          row.style({ display: 'grid', gap: '6px' });
-          row.label('状态');
-          row.vSelect({ name: 'status', options: ['运行中', '停止'], value: '运行中' });
-        });
-        form.div((row) => {
-          row.style({ display: 'grid', gap: '6px' });
-          row.label('备注');
-          row.vTextarea({
-            name: 'notes',
-            value: '初始说明'
-          });
-        });
-        form.hstack((row) => {
-          row.style({ flexWrap: 'wrap', gap: '16px' });
-          row.vCheckbox({ checked: true, label: '启用服务', name: 'enabled' });
-          row.vSwitch({ checked: true, label: '自动部署', name: 'autoDeploy' });
-        });
-        form.vCheckboxes({
-          name: 'regions',
-          options: [
-            { checked: true, label: '上海', value: 'sh' },
-            { label: '杭州', value: 'hz' }
-          ]
-        });
-        form.hstack((actions) => {
-          actions.style('justifyContent', 'flex-end');
-          actions.vButton('提交表单', (button) => {
-            button.variant('primary');
-            button.formType('submit');
-          });
-          actions.vButton('重置', (button) => {
-            button.on('click', () => {
-              form.values(defaults());
-              snapshot.textContent('表单已重置');
-            });
-          });
-        });
-        form.output((output) => {
-          output.style('fontSize', '12px');
-          output.child(snapshot);
-        });
-        form.on('submit', (event) => {
-          event.preventDefault();
-          snapshot.textContent(JSON.stringify(form.values()));
-        });
-        form.values(defaults());
+  return vForm((form) => {
+    form.style('gap', '14px');
+    form.div((row) => {
+      row.style({ display: 'grid', gap: '6px' });
+      row.label('服务名');
+      row.vInput({
+        name: 'name',
+        placeholder: '请输入服务名',
+        value: 'api-gateway'
       });
-    }
-  };
+    });
+    form.div((row) => {
+      row.style({ display: 'grid', gap: '6px' });
+      row.label('状态');
+      row.vSelect({ name: 'status', options: ['运行中', '停止'], value: '运行中' });
+    });
+    form.div((row) => {
+      row.style({ display: 'grid', gap: '6px' });
+      row.label('备注');
+      row.vTextarea({
+        name: 'notes',
+        value: '初始说明'
+      });
+    });
+    form.hstack((row) => {
+      row.style({ flexWrap: 'wrap', gap: '16px' });
+      row.vCheckbox({ checked: true, label: '启用服务', name: 'enabled' });
+      row.vSwitch({ checked: true, label: '自动部署', name: 'autoDeploy' });
+    });
+    form.vCheckboxes({
+      name: 'regions',
+      options: [
+        { checked: true, label: '上海', value: 'sh' },
+        { label: '杭州', value: 'hz' }
+      ]
+    });
+    form.hstack((actions) => {
+      actions.style('justifyContent', 'flex-end');
+      actions.vButton('提交表单', (button) => {
+        button.variant('primary');
+        button.formType('submit');
+      });
+      actions.vButton('重置', (button) => {
+        button.on('click', () => {
+          form.values(defaults());
+          snapshot.textContent('表单已重置');
+        });
+      });
+    });
+    form.output((output) => {
+      output.style('fontSize', '12px');
+      output.child(snapshot);
+    });
+    form.on('submit', (event) => {
+      event.preventDefault();
+      snapshot.textContent(JSON.stringify(form.values()));
+    });
+    form.values(defaults());
+  });
 }
 
 function FormExample2() {
   const result = vText('等待提交');
 
-  return {
-    render() {
-      return vForm((form) => {
-        form.style('gap', '14px');
-        form.vFormItem((item) => {
-          item.name('projectName').label('项目名称').hint('请输入项目名称');
-          item.required({ message: '项目名称不能为空', indicator: '*' });
-          item.validate((value) => (value && value.length >= 2 ? null : '至少输入 2 个字符'));
-          item.control((editor) => {
-            editor.vInput({ name: 'projectName', placeholder: '请输入项目名称' });
-          });
-        });
-        form.vFormItem((item) => {
-          item.name('role').label('负责人角色').hint('请选择负责人角色');
-          item.required({ message: '请选择负责人角色', indicator: '*' });
-          item.control((editor) => {
-            editor.vSelect({
-              name: 'role',
-              options: ['开发', '测试', '运维'],
-              placeholder: '请选择角色'
-            });
-          });
-        });
-        form.hstack((actions) => {
-          actions.style('justifyContent', 'flex-end');
-          actions.vButton('提交', (button) => {
-            button.variant('primary');
-            button.formType('submit');
-          });
-        });
-        form.output((output) => {
-          output.style('fontSize', '12px');
-          output.child(result);
-        });
-        form.on('submit', (event) => {
-          event.preventDefault();
-          if (!form.validate()) {
-            result.textContent('请检查必填项');
-            return;
-          }
-          result.textContent(JSON.stringify(form.values()));
+  return vForm((form) => {
+    form.style('gap', '14px');
+    form.vFormItem((item) => {
+      item.name('projectName').label('项目名称').hint('请输入项目名称');
+      item.required({ message: '项目名称不能为空', indicator: '*' });
+      item.validate((value) => (value && value.length >= 2 ? null : '至少输入 2 个字符'));
+      item.control((editor) => {
+        editor.vInput({ name: 'projectName', placeholder: '请输入项目名称' });
+      });
+    });
+    form.vFormItem((item) => {
+      item.name('role').label('负责人角色').hint('请选择负责人角色');
+      item.required({ message: '请选择负责人角色', indicator: '*' });
+      item.control((editor) => {
+        editor.vSelect({
+          name: 'role',
+          options: ['开发', '测试', '运维'],
+          placeholder: '请选择角色'
         });
       });
-    }
-  };
+    });
+    form.hstack((actions) => {
+      actions.style('justifyContent', 'flex-end');
+      actions.vButton('提交', (button) => {
+        button.variant('primary');
+        button.formType('submit');
+      });
+    });
+    form.output((output) => {
+      output.style('fontSize', '12px');
+      output.child(result);
+    });
+    form.on('submit', (event) => {
+      event.preventDefault();
+      if (!form.validate()) {
+        result.textContent('请检查必填项');
+        return;
+      }
+      result.textContent(JSON.stringify(form.values()));
+    });
+  });
 }
 
 function FormExample3() {
@@ -462,66 +465,59 @@ function FormExample3() {
     let value = 'SRE Team';
     const status = vText(value);
 
-    return {
-      value() {
-        return value;
-      },
-      render() {
-        return div((node) => {
-          node.styles({ alignItems: 'center', display: 'flex', gap: '8px' });
-          node.output((output) => {
-            output.style('fontWeight', '600');
-            output.child(status);
-          });
-          ['SRE Team', 'Platform'].forEach((name) => {
-            node.vButton(name, (button) => {
-              button.variant('secondary');
-              button.on('click', () => {
-                value = name;
-                status.textContent(name);
-              });
+    return vNode((api) => {
+      api.value = () => value;
+
+      return div((node) => {
+        node.styles({ alignItems: 'center', display: 'flex', gap: '8px' });
+        node.output((output) => {
+          output.style('fontWeight', '600');
+          output.child(status);
+        });
+        ['SRE Team', 'Platform'].forEach((name) => {
+          node.vButton(name, (button) => {
+            button.variant('secondary');
+            button.on('click', () => {
+              value = name;
+              status.textContent(name);
             });
           });
         });
-      }
-    };
+      });
+    });
   };
 
-  return {
-    render() {
-      return vForm((form) => {
-        form.style('gap', '14px');
-        form.vFormItem((item) => {
-          item.name('owner').label('负责人').hint('自定义组件通过 collectValue 提供值');
-          item.validate((value) => (value ? null : '请选择负责人'));
-          item.control((editor) => {
-            const custom = CustomOwnerPicker();
-            editor.collectValue(() => custom.value());
-            editor.child(custom);
-          });
-        });
-        form.hstack((actions) => {
-          actions.style('justifyContent', 'flex-end');
-          actions.vButton('读取值', (button) => {
-            button.variant('primary');
-            button.formType('submit');
-          });
-        });
-        form.output((output) => {
-          output.style('fontSize', '12px');
-          output.child(result);
-        });
-        form.on('submit', (event) => {
-          event.preventDefault();
-          if (!form.validate()) {
-            result.textContent('请选择负责人');
-            return;
-          }
-          result.textContent(`负责人：${form.values().owner}`);
-        });
+  return vForm((form) => {
+    form.style('gap', '14px');
+    form.vFormItem((item) => {
+      item.name('owner').label('负责人').hint('自定义组件通过 collectValue 提供值');
+      item.validate((value) => (value ? null : '请选择负责人'));
+      item.control((editor) => {
+        const custom = CustomOwnerPicker();
+        editor.collectValue(() => custom.value());
+        editor.child(custom);
       });
-    }
-  };
+    });
+    form.hstack((actions) => {
+      actions.style('justifyContent', 'flex-end');
+      actions.vButton('读取值', (button) => {
+        button.variant('primary');
+        button.formType('submit');
+      });
+    });
+    form.output((output) => {
+      output.style('fontSize', '12px');
+      output.child(result);
+    });
+    form.on('submit', (event) => {
+      event.preventDefault();
+      if (!form.validate()) {
+        result.textContent('请选择负责人');
+        return;
+      }
+      result.textContent(`负责人：${form.values().owner}`);
+    });
+  });
 }
 
 function FieldDetailExample1() {
@@ -557,22 +553,18 @@ function FieldDetailExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('vField 作为 vDetail 的值节点，悬停字段后点击编辑即可切换输入控件。');
-        content.child(
-          vDetail((detail) => {
-            detail.columns(2);
-            detail.vDetailItem({ value: serviceName });
-            detail.vDetailItem({ value: owner });
-            detail.vDetailItem({ value: status });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('vField 作为 vDetail 的值节点，悬停字段后点击编辑即可切换输入控件。');
+    content.child(
+      vDetail((detail) => {
+        detail.columns(2);
+        detail.vDetailItem({ value: serviceName });
+        detail.vDetailItem({ value: owner });
+        detail.vDetailItem({ value: status });
+      })
+    );
+  });
 }
 
 function FieldSaveExample1() {
@@ -603,44 +595,40 @@ function FieldSaveExample1() {
     saveStatus.textContent(`已保存：${serviceName.value()} / ${owner.value()}`);
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vDetail((detail) => {
-            detail.columns(2);
-            detail.vDetailItem({ value: serviceName });
-            detail.vDetailItem({ value: owner });
-          })
-        );
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('保存状态');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-field-save-status', 'true');
-            output.child(saveStatus);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('编辑', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              serviceName.mode('edit');
-              owner.mode('edit');
-              saveStatus.textContent('编辑中');
-            });
-          });
-          actions.vButton('保存', (button) => {
-            button.variant('primary');
-            button.on('click', save);
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vDetail((detail) => {
+        detail.columns(2);
+        detail.vDetailItem({ value: serviceName });
+        detail.vDetailItem({ value: owner });
+      })
+    );
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('保存状态');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-field-save-status', 'true');
+        output.child(saveStatus);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('编辑', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          serviceName.mode('edit');
+          owner.mode('edit');
+          saveStatus.textContent('编辑中');
         });
       });
-    }
-  };
+      actions.vButton('保存', (button) => {
+        button.variant('primary');
+        button.on('click', save);
+      });
+    });
+  });
 }
 
 function FieldValidationExample1() {
@@ -669,43 +657,39 @@ function FieldValidationExample1() {
     validationStatus.textContent('校验通过');
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vDetail((detail) => {
-            detail.vDetailItem({ value: serviceName });
-          })
-        );
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('校验状态');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-field-validation-status', 'true');
-            output.child(validationStatus);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('清空', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              serviceName.mode('edit');
-              serviceName.value('');
-              serviceName.error('');
-              validationStatus.textContent('等待校验');
-            });
-          });
-          actions.vButton('校验', (button) => {
-            button.variant('primary');
-            button.on('click', validate);
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vDetail((detail) => {
+        detail.vDetailItem({ value: serviceName });
+      })
+    );
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('校验状态');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-field-validation-status', 'true');
+        output.child(validationStatus);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('清空', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          serviceName.mode('edit');
+          serviceName.value('');
+          serviceName.error('');
+          validationStatus.textContent('等待校验');
         });
       });
-    }
-  };
+      actions.vButton('校验', (button) => {
+        button.variant('primary');
+        button.on('click', validate);
+      });
+    });
+  });
 }
 
 function FieldTextareaExample1() {
@@ -726,15 +710,11 @@ function FieldTextareaExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('查看态用 displayStyle 撑高到与 textarea 一致，双击进入多行编辑，浮层不挤布局。');
-        content.child(notes);
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('查看态用 displayStyle 撑高到与 textarea 一致，双击进入多行编辑，浮层不挤布局。');
+    content.child(notes);
+  });
 }
 
 function FieldCustomExample1() {
@@ -777,15 +757,9 @@ function FieldCustomExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p(
-          '查看态用 formatter 把多选值渲染成一排徽标；编辑态用复选框多选，悬浮编辑不挤布局。'
-        );
-        content.child(capabilities);
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('查看态用 formatter 把多选值渲染成一排徽标；编辑态用复选框多选，悬浮编辑不挤布局。');
+    content.child(capabilities);
+  });
 }

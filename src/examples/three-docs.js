@@ -8,70 +8,62 @@ const THREE_EXTRA_SOURCE = "import * as THREE from 'three';";
 function ThreeCubeDemo() {
   const cube = { mesh: null };
 
-  return {
-    render() {
-      return vThree((three) => {
-        three.height('320px');
-        three.threeLib(THREE);
-        three.onReady(({ camera, scene, threeLib }) => {
-          camera.position.set(2.2, 1.8, 4);
-          camera.lookAt(0, 0, 0);
-          const geometry = new threeLib.BoxGeometry(1.4, 1.4, 1.4);
-          const material = new threeLib.MeshStandardMaterial({
-            color: 0x2563eb,
-            roughness: 0.35
-          });
-          cube.mesh = new threeLib.Mesh(geometry, material);
-          scene.add(cube.mesh);
-          scene.add(new threeLib.AmbientLight(0xffffff, 1.6));
-          const light = new threeLib.DirectionalLight(0xffffff, 2.2);
-          light.position.set(3, 4, 5);
-          scene.add(light);
-          scene.add(new threeLib.GridHelper(6, 12, 0x64748b, 0xe2e8f0));
-        });
-        three.onFrame(() => {
-          if (cube.mesh) {
-            cube.mesh.rotation.y += 0.012;
-          }
-        });
+  return vThree((three) => {
+    three.height('320px');
+    three.threeLib(THREE);
+    three.onReady(({ camera, scene, threeLib }) => {
+      camera.position.set(2.2, 1.8, 4);
+      camera.lookAt(0, 0, 0);
+      const geometry = new threeLib.BoxGeometry(1.4, 1.4, 1.4);
+      const material = new threeLib.MeshStandardMaterial({
+        color: 0x2563eb,
+        roughness: 0.35
       });
-    }
-  };
+      cube.mesh = new threeLib.Mesh(geometry, material);
+      scene.add(cube.mesh);
+      scene.add(new threeLib.AmbientLight(0xffffff, 1.6));
+      const light = new threeLib.DirectionalLight(0xffffff, 2.2);
+      light.position.set(3, 4, 5);
+      scene.add(light);
+      scene.add(new threeLib.GridHelper(6, 12, 0x64748b, 0xe2e8f0));
+    });
+    three.onFrame(() => {
+      if (cube.mesh) {
+        cube.mesh.rotation.y += 0.012;
+      }
+    });
+  });
 }
 
 function ThreeSphereDemo() {
   const sphere = { mesh: null };
 
-  return {
-    render() {
-      return vThree((three) => {
-        three.height('320px');
-        three.threeLib(THREE);
-        three.onReady(({ camera, scene, threeLib }) => {
-          camera.position.set(3, 1.6, 4);
-          camera.lookAt(0, 0, 0);
-          const geometry = new threeLib.SphereGeometry(1.15, 32, 32);
-          const material = new threeLib.MeshStandardMaterial({
-            color: 0x0d9488,
-            roughness: 0.28
-          });
-          sphere.mesh = new threeLib.Mesh(geometry, material);
-          scene.add(sphere.mesh);
-          scene.add(new threeLib.AmbientLight(0xffffff, 1.6));
-          const light = new threeLib.DirectionalLight(0xffffff, 2.2);
-          light.position.set(-3, 4, 5);
-          scene.add(light);
-          scene.add(new threeLib.GridHelper(6, 12, 0x64748b, 0xe2e8f0));
-        });
-        three.onFrame(() => {
-          if (sphere.mesh) {
-            sphere.mesh.rotation.x += 0.008;
-            sphere.mesh.rotation.y += 0.01;
-          }
-        });
+  return vThree((three) => {
+    three.height('320px');
+    three.threeLib(THREE);
+    three.onReady(({ camera, scene, threeLib }) => {
+      camera.position.set(3, 1.6, 4);
+      camera.lookAt(0, 0, 0);
+      const geometry = new threeLib.SphereGeometry(1.15, 32, 32);
+      const material = new threeLib.MeshStandardMaterial({
+        color: 0x0d9488,
+        roughness: 0.28
       });
-    }
-  };
+      sphere.mesh = new threeLib.Mesh(geometry, material);
+      scene.add(sphere.mesh);
+      scene.add(new threeLib.AmbientLight(0xffffff, 1.6));
+      const light = new threeLib.DirectionalLight(0xffffff, 2.2);
+      light.position.set(-3, 4, 5);
+      scene.add(light);
+      scene.add(new threeLib.GridHelper(6, 12, 0x64748b, 0xe2e8f0));
+    });
+    three.onFrame(() => {
+      if (sphere.mesh) {
+        sphere.mesh.rotation.x += 0.008;
+        sphere.mesh.rotation.y += 0.01;
+      }
+    });
+  });
 }
 
 const threeDemos = [

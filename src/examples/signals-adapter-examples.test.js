@@ -44,7 +44,7 @@ describe('documentation example adapters', () => {
     installSignalsEngine();
 
     const counter = SignalsCounter();
-    const element = counter.render().renderDom();
+    const element = counter.renderDom();
 
     expect(element.textContent).toBe('0 × 2 = 0');
 

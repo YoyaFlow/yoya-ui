@@ -1,4 +1,4 @@
-import { HtmlElementNode } from '../../index.js';
+import { HtmlElementNode, vNode } from '../../index.js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -69,19 +69,10 @@ export class LeafletMapDemoNode extends HtmlElementNode {
 }
 
 export function LeafletMapExample(center = SHANGHAI, zoom = 12) {
-  let node = null;
+  return vNode((api) => {
+    const node = new LeafletMapDemoNode(center, zoom);
+    api.flyTo = (next, nextZoom) => node.flyTo(next, nextZoom);
 
-  return {
-    render() {
-      node = new LeafletMapDemoNode(center, zoom);
-      return node;
-    },
-    flyTo(next, nextZoom) {
-      node?.flyTo(next, nextZoom);
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+    return node;
+  });
 }

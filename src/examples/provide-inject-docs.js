@@ -13,7 +13,7 @@ const provideInjectDemoDefinitions = Object.freeze([
     description:
       '工作区组件 provide 一次，两层消费组件各自 inject，中间没有 props 透传；值里放句柄，写入后视图原地更新。',
     component: ProvideInjectWorkspaceExample,
-    imports: ['computed', 'div', 'inject', 'provide', 'ref', 'vText', 'vstack'],
+    imports: ['computed', 'div', 'inject', 'provide', 'ref', 'vNode', 'vText', 'vstack'],
     sourceTitle: '跨层共享核心源码',
     actions: [
       { label: '改名为 yoya-flow', method: 'rename', args: ['yoya-flow'] },
@@ -26,7 +26,7 @@ const provideInjectDemoDefinitions = Object.freeze([
     description:
       '同一个 key 在内层重新声明，只作用于那一块子树：内层读到 dark，两个外层兄弟照旧读外层句柄。',
     component: ProvideInjectOverrideExample,
-    imports: ['div', 'inject', 'provide', 'ref', 'vstack'],
+    imports: ['div', 'inject', 'provide', 'ref', 'vNode', 'vstack'],
     sourceTitle: '就近覆盖核心源码',
     actions: [{ label: '切换外层主题', method: 'toggle', args: [] }]
   },
@@ -36,7 +36,7 @@ const provideInjectDemoDefinitions = Object.freeze([
     description:
       'vDynamicLoader 的视图在挂到树上之前就构建完了，inject 仍沿父链读到祖先声明；句柄更新后角标跟着走。',
     component: ProvideInjectAsyncExample,
-    imports: ['div', 'inject', 'provide', 'ref', 'vDynamicLoader', 'vstack'],
+    imports: ['div', 'inject', 'provide', 'ref', 'vDynamicLoader', 'vNode', 'vstack'],
     sourceTitle: '异步视图核心源码',
     actions: [
       { label: '加载视图', method: 'load', args: [] },

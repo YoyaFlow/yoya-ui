@@ -17,18 +17,14 @@ function RadioGroupExample() {
     }
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(radios);
-        body.div((row) => {
-          row.span('当前环境');
-          row.spacer();
-          row.output((el) => el.attr('data-radio-group-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(radios);
+    body.div((row) => {
+      row.span('当前环境');
+      row.spacer();
+      row.output((el) => el.attr('data-radio-group-output', 'true').child(output));
+    });
+  });
 }
 
 function RadioSingleExample() {
@@ -73,41 +69,37 @@ function RadioFormExample() {
     radios.value('rolling');
   });
 
-  return {
-    render() {
-      const form = vForm((form) => {
-        form.on('submit', (event) => {
-          event.preventDefault();
-          const valid = form.validate();
-          result.textContent(valid ? `已提交：${form.values().plan}` : '校验未通过');
-        });
-        form.p('发布方案');
-        form.child(radios);
-        form.hstack((actions) => {
-          actions.style('justifyContent', 'flex-end');
-          actions.vButton('提交', (button) => {
-            button.variant('primary');
-            button.formType('submit');
-          });
-          actions.vButton('清空', (button) => {
-            button.on('click', () => {
-              radios.clear();
-              result.textContent('已清空选择');
-            });
-          });
+  const form = vForm((form) => {
+    form.on('submit', (event) => {
+      event.preventDefault();
+      const valid = form.validate();
+      result.textContent(valid ? `已提交：${form.values().plan}` : '校验未通过');
+    });
+    form.p('发布方案');
+    form.child(radios);
+    form.hstack((actions) => {
+      actions.style('justifyContent', 'flex-end');
+      actions.vButton('提交', (button) => {
+        button.variant('primary');
+        button.formType('submit');
+      });
+      actions.vButton('清空', (button) => {
+        button.on('click', () => {
+          radios.clear();
+          result.textContent('已清空选择');
         });
       });
+    });
+  });
 
-      return div((body) => {
-        body.child(form);
-        body.div((row) => {
-          row.span('提交结果');
-          row.spacer();
-          row.output((el) => el.attr('data-radio-form-output', 'true').child(result));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(form);
+    body.div((row) => {
+      row.span('提交结果');
+      row.spacer();
+      row.output((el) => el.attr('data-radio-form-output', 'true').child(result));
+    });
+  });
 }
 
 // 页面壳：负责 Card 和说明文字，不进入演示源码面板。

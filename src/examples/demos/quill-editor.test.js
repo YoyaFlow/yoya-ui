@@ -40,7 +40,7 @@ describe('Quill editor interop demo', () => {
 
   it('mounts Quill on the rendered container with a rich toolbar', () => {
     const demo = QuillEditorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     const editorEl = el.querySelector('[data-quill-editor]');
     const toolbar = quillInstances[0].options.modules.toolbar;
     const flat = toolbar.flat(Infinity).map((item) =>
@@ -62,7 +62,7 @@ describe('Quill editor interop demo', () => {
 
   it('exposes html and text from the editor instance', () => {
     const demo = QuillEditorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     quillInstances[0].htmlValue = '<p>updated</p>';
     quillInstances[0].textValue = 'updated';
 
@@ -73,7 +73,7 @@ describe('Quill editor interop demo', () => {
 
   it('does not re-initialize Quill when renderDom runs again', () => {
     const demo = QuillEditorExample();
-    const node = demo.render();
+    const node = demo;
 
     node.renderDom();
     node.renderDom();
@@ -85,7 +85,7 @@ describe('Quill editor interop demo', () => {
     const root = document.documentElement;
     root.dataset.yoyaMode = 'dark';
     const demo = QuillEditorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     try {
       expect(el.classList.contains('quill-dark')).toBe(true);
@@ -99,7 +99,7 @@ describe('Quill editor interop demo', () => {
 
   it('clears the editor reference after destroy', () => {
     const demo = QuillEditorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     document.body.appendChild(el);
 
     demo.destroy();

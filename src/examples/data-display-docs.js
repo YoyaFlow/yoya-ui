@@ -1028,104 +1028,88 @@ function BadgeCountExample1() {
   });
   const status = vText('当前 0');
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.child(badge);
-          row.child(vBadge({ children: '通知', count: 8 }));
-          row.child(vBadge({ children: '告警', count: 128, overflowCount: 99 }));
-          row.child(vBadge({ children: '默认隐藏零', count: 0 }));
-        });
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前计数');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-badge-count-status', 'true');
-            output.child(status);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('加 1', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              badge.count(badge.count() + 1);
-              status.textContent(`当前 ${badge.count()}`);
-            });
-          });
-          actions.vButton('清零', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              badge.count(0);
-              status.textContent('当前 0');
-            });
-          });
-          actions.vButton('切换显示零', (button) => {
-            button.variant('ghost');
-            button.on('click', () => {
-              badge.showZero(!badge.showZero());
-              status.textContent(badge.showZero() ? '显示零值' : '隐藏零值');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.child(badge);
+      row.child(vBadge({ children: '通知', count: 8 }));
+      row.child(vBadge({ children: '告警', count: 128, overflowCount: 99 }));
+      row.child(vBadge({ children: '默认隐藏零', count: 0 }));
+    });
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前计数');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-badge-count-status', 'true');
+        output.child(status);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('加 1', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          badge.count(badge.count() + 1);
+          status.textContent(`当前 ${badge.count()}`);
         });
       });
-    }
-  };
+      actions.vButton('清零', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          badge.count(0);
+          status.textContent('当前 0');
+        });
+      });
+      actions.vButton('切换显示零', (button) => {
+        button.variant('ghost');
+        button.on('click', () => {
+          badge.showZero(!badge.showZero());
+          status.textContent(badge.showZero() ? '显示零值' : '隐藏零值');
+        });
+      });
+    });
+  });
 }
 
 function BadgeDotExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.child(vBadge({ children: '通知', dot: true }));
-          row.child(vBadge({ children: vButton('构建'), dot: true, color: '#0f766e' }));
-          row.child(vBadge({ children: vButton('部署'), dot: true, color: '#d97706' }));
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.child(vBadge({ children: '通知', dot: true }));
+      row.child(vBadge({ children: vButton('构建'), dot: true, color: '#0f766e' }));
+      row.child(vBadge({ children: vButton('部署'), dot: true, color: '#d97706' }));
+    });
+  });
 }
 
 function BadgeStatusExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.child(vBadge({ status: 'success', text: '运行中' }));
-          row.child(vBadge({ status: 'processing', text: '同步中' }));
-          row.child(vBadge({ status: 'warning', text: '待确认' }));
-          row.child(vBadge({ status: 'error', text: '故障' }));
-          row.child(vBadge({ color: '#7c3aed', status: 'default', text: '自定义色' }));
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.child(vBadge({ status: 'success', text: '运行中' }));
+      row.child(vBadge({ status: 'processing', text: '同步中' }));
+      row.child(vBadge({ status: 'warning', text: '待确认' }));
+      row.child(vBadge({ status: 'error', text: '故障' }));
+      row.child(vBadge({ color: '#7c3aed', status: 'default', text: '自定义色' }));
+    });
+  });
 }
 
 function AvatarBasicExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.vAvatar('A');
-          row.vAvatar({ color: '#0f766e', text: 'UI' });
-          row.vAvatar({ icon: '★', shape: 'square' });
-          row.vAvatar({ color: '#7c3aed', size: 'large', text: 'API' });
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.vAvatar('A');
+      row.vAvatar({ color: '#0f766e', text: 'UI' });
+      row.vAvatar({ icon: '★', shape: 'square' });
+      row.vAvatar({ color: '#7c3aed', size: 'large', text: 'API' });
+    });
+  });
 }
 
 function AvatarImageExample1() {
@@ -1133,55 +1117,47 @@ function AvatarImageExample1() {
   const opsImage = new URL('./assets/avatar-ops.svg', import.meta.url).href;
   const gatewayImage = new URL('./assets/avatar-gateway.svg', import.meta.url).href;
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.vAvatar({
-            alt: 'Alice',
-            size: 'xlarge',
-            src: aliceImage,
-            status: 'online'
-          });
-          row.vAvatar({
-            alt: 'Ops',
-            shape: 'square',
-            src: opsImage
-          });
-          row.vAvatar({
-            alt: 'Gateway',
-            size: 'large',
-            src: gatewayImage,
-            status: 'busy'
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.vAvatar({
+        alt: 'Alice',
+        size: 'xlarge',
+        src: aliceImage,
+        status: 'online'
       });
-    }
-  };
+      row.vAvatar({
+        alt: 'Ops',
+        shape: 'square',
+        src: opsImage
+      });
+      row.vAvatar({
+        alt: 'Gateway',
+        size: 'large',
+        src: gatewayImage,
+        status: 'busy'
+      });
+    });
+  });
 }
 
 function AvatarStatusExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
-          row.vAvatar({ status: 'online', text: 'A' });
-          row.vAvatar({ color: '#0f766e', status: 'busy', text: 'B' });
-          row.vAvatar({ color: '#b45309', status: 'away', text: 'C' });
-          row.vAvatar({
-            color: '#64748b',
-            size: 'large',
-            status: 'offline',
-            text: 'D'
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '18px' });
+      row.vAvatar({ status: 'online', text: 'A' });
+      row.vAvatar({ color: '#0f766e', status: 'busy', text: 'B' });
+      row.vAvatar({ color: '#b45309', status: 'away', text: 'C' });
+      row.vAvatar({
+        color: '#64748b',
+        size: 'large',
+        status: 'offline',
+        text: 'D'
       });
-    }
-  };
+    });
+  });
 }
 
 function AvatarInteractiveExample1() {
@@ -1195,59 +1171,55 @@ function AvatarInteractiveExample1() {
   const avatar = vAvatar({ status: 'online', text: 'A' });
   const statusText = vText('online');
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '18px' });
-          row.child(avatar);
-          row.vstack((info) => {
-            info.style('gap', '4px');
-            info.span('当前状态');
-            info.output((output) => {
-              output.attr('data-avatar-demo-status', 'true');
-              output.child(statusText);
-            });
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('切换状态', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              statusIndex = (statusIndex + 1) % statuses.length;
-              avatar.status(statuses[statusIndex]);
-              statusText.textContent(statuses[statusIndex]);
-            });
-          });
-          actions.vButton('切换形状', (button) => {
-            button.on('click', () => {
-              avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
-            });
-          });
-          actions.vButton('切换尺寸', (button) => {
-            button.on('click', () => {
-              sizeIndex = (sizeIndex + 1) % sizes.length;
-              avatar.size(sizes[sizeIndex]);
-            });
-          });
-          actions.vButton('切换颜色', (button) => {
-            button.on('click', () => {
-              colorIndex = (colorIndex + 1) % colors.length;
-              avatar.color(colors[colorIndex]);
-            });
-          });
-          actions.vButton('切换文字', (button) => {
-            button.on('click', () => {
-              label = label === 'A' ? 'B' : 'A';
-              avatar.text(label);
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '18px' });
+      row.child(avatar);
+      row.vstack((info) => {
+        info.style('gap', '4px');
+        info.span('当前状态');
+        info.output((output) => {
+          output.attr('data-avatar-demo-status', 'true');
+          output.child(statusText);
         });
       });
-    }
-  };
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('切换状态', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          statusIndex = (statusIndex + 1) % statuses.length;
+          avatar.status(statuses[statusIndex]);
+          statusText.textContent(statuses[statusIndex]);
+        });
+      });
+      actions.vButton('切换形状', (button) => {
+        button.on('click', () => {
+          avatar.shape(avatar.shape() === 'circle' ? 'square' : 'circle');
+        });
+      });
+      actions.vButton('切换尺寸', (button) => {
+        button.on('click', () => {
+          sizeIndex = (sizeIndex + 1) % sizes.length;
+          avatar.size(sizes[sizeIndex]);
+        });
+      });
+      actions.vButton('切换颜色', (button) => {
+        button.on('click', () => {
+          colorIndex = (colorIndex + 1) % colors.length;
+          avatar.color(colors[colorIndex]);
+        });
+      });
+      actions.vButton('切换文字', (button) => {
+        button.on('click', () => {
+          label = label === 'A' ? 'B' : 'A';
+          avatar.text(label);
+        });
+      });
+    });
+  });
 }
 
 function AvatarUploadExample1() {
@@ -1259,45 +1231,37 @@ function AvatarUploadExample1() {
     status.textContent(file ? `已选择：${file.name}` : '未选择头像');
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '18px' });
-          row.child(avatar);
-          row.vstack((info) => {
-            info.style('gap', '4px');
-            info.span('当前状态');
-            info.output((output) => {
-              output.attr('data-avatar-upload-status', 'true');
-              output.child(status);
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '18px' });
+      row.child(avatar);
+      row.vstack((info) => {
+        info.style('gap', '4px');
+        info.span('当前状态');
+        info.output((output) => {
+          output.attr('data-avatar-upload-status', 'true');
+          output.child(status);
         });
       });
-    }
-  };
+    });
+  });
 }
 
 function DetailBasicExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vDetail({
-            items: [
-              ['服务名称', 'api-gateway'],
-              { label: '状态', value: '运行中' },
-              { label: '负责人', value: 'SRE 团队' },
-              ['最近发布', 'v1.4.2']
-            ]
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vDetail({
+        items: [
+          ['服务名称', 'api-gateway'],
+          { label: '状态', value: '运行中' },
+          { label: '负责人', value: 'SRE 团队' },
+          ['最近发布', 'v1.4.2']
+        ]
+      })
+    );
+  });
 }
 
 function DetailColumnsExample1() {
@@ -1312,71 +1276,63 @@ function DetailColumnsExample1() {
     detail.vDetailItem({ label: '部署区域', value: '华东 1' });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(detail);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前列数');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-detail-columns-status', 'true');
-            output.child(status);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          [1, 2, 3].forEach((count) => {
-            actions.vButton(`${count} 列`, (button) => {
-              button.variant(count === 2 ? 'primary' : 'secondary');
-              button.on('click', () => {
-                detail.columns(count);
-                status.textContent(`当前 ${count} 列`);
-              });
-            });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(detail);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前列数');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-detail-columns-status', 'true');
+        output.child(status);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      [1, 2, 3].forEach((count) => {
+        actions.vButton(`${count} 列`, (button) => {
+          button.variant(count === 2 ? 'primary' : 'secondary');
+          button.on('click', () => {
+            detail.columns(count);
+            status.textContent(`当前 ${count} 列`);
           });
         });
       });
-    }
-  };
+    });
+  });
 }
 
 function DetailCustomExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vDetail((detail) => {
-            detail.vDetailItem((item) => {
-              item.label('运行状态');
-              item.value(
-                vBadge((badge) => {
-                  badge.status('success');
-                  badge.text('运行中');
-                })
-              );
-            });
-            detail.vDetailItem((item) => {
-              item.label('负责人');
-              item.value(
-                vButton('SRE 团队', (button) => {
-                  button.variant('ghost');
-                  button.size('small');
-                })
-              );
-            });
-            detail.vDetailItem((item) => {
-              item.label('访问地址');
-              item.value('https://api.example.com');
-            });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vDetail((detail) => {
+        detail.vDetailItem((item) => {
+          item.label('运行状态');
+          item.value(
+            vBadge((badge) => {
+              badge.status('success');
+              badge.text('运行中');
+            })
+          );
+        });
+        detail.vDetailItem((item) => {
+          item.label('负责人');
+          item.value(
+            vButton('SRE 团队', (button) => {
+              button.variant('ghost');
+              button.size('small');
+            })
+          );
+        });
+        detail.vDetailItem((item) => {
+          item.label('访问地址');
+          item.value('https://api.example.com');
+        });
+      })
+    );
+  });
 }
 
 function DetailDynamicExample1() {
@@ -1398,27 +1354,23 @@ function DetailDynamicExample1() {
     version.textContent(next === 'worker' ? 'v2.0.1' : 'v1.4.2');
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(detail);
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('切换服务', (button) => {
-            button.variant('primary');
-            button.on('click', switchService);
-          });
-          actions.vButton('切换状态', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(detail);
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('切换服务', (button) => {
+        button.variant('primary');
+        button.on('click', switchService);
+      });
+      actions.vButton('切换状态', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
         });
       });
-    }
-  };
+    });
+  });
 }
 
 function TableBasicExample1() {
@@ -1435,45 +1387,41 @@ function TableBasicExample1() {
     { id: 'web', name: 'web', status: '维护中', owner: 'Web', updatedAt: '16 分钟前' }
   ];
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.vTableWrapper({
-          caption: '服务列表',
-          columns: [
-            { key: 'name', label: '服务名称', minWidth: 160 },
-            { key: 'status', label: '状态', width: 110 },
-            { key: 'owner', label: '负责人', width: 110 },
-            { key: 'updatedAt', label: '更新时间', width: 120 },
-            {
-              key: 'actions',
-              label: '操作',
-              align: 'right',
-              width: 110,
-              render(row) {
-                return vButton('选择', (button) => {
-                  button.size('small');
-                  button.attr('data-table-row-action', row.id);
-                  button.on('click', () => status.textContent(`已选择 ${row.id}`));
-                });
-              }
-            }
-          ],
-          rows
-        });
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('最近操作');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-table-demo-status', 'true');
-            output.child(status);
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.vTableWrapper({
+      caption: '服务列表',
+      columns: [
+        { key: 'name', label: '服务名称', minWidth: 160 },
+        { key: 'status', label: '状态', width: 110 },
+        { key: 'owner', label: '负责人', width: 110 },
+        { key: 'updatedAt', label: '更新时间', width: 120 },
+        {
+          key: 'actions',
+          label: '操作',
+          align: 'right',
+          width: 110,
+          render(row) {
+            return vButton('选择', (button) => {
+              button.size('small');
+              button.attr('data-table-row-action', row.id);
+              button.on('click', () => status.textContent(`已选择 ${row.id}`));
+            });
+          }
+        }
+      ],
+      rows
+    });
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('最近操作');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-table-demo-status', 'true');
+        output.child(status);
       });
-    }
-  };
+    });
+  });
 }
 
 function TableEmptyExample1() {
@@ -1489,40 +1437,36 @@ function TableEmptyExample1() {
     rows: []
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(table);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('数据状态');
-          row.spacer();
-          row.output((output) => output.child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('填充数据', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              table.rows([
-                { id: 'cpu', name: 'CPU 使用率', level: 'warning', time: '刚刚' },
-                { id: 'queue', name: '队列堆积', level: 'info', time: '3 分钟前' }
-              ]);
-              status.textContent('已加载 2 条');
-            });
-          });
-          actions.vButton('清空', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              table.rows([]);
-              status.textContent('当前为空');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(table);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('数据状态');
+      row.spacer();
+      row.output((output) => output.child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('填充数据', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          table.rows([
+            { id: 'cpu', name: 'CPU 使用率', level: 'warning', time: '刚刚' },
+            { id: 'queue', name: '队列堆积', level: 'info', time: '3 分钟前' }
+          ]);
+          status.textContent('已加载 2 条');
         });
       });
-    }
-  };
+      actions.vButton('清空', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          table.rows([]);
+          status.textContent('当前为空');
+        });
+      });
+    });
+  });
 }
 
 function TablePaginationExample1() {
@@ -1555,74 +1499,66 @@ function TablePaginationExample1() {
     }
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(table);
-        content.child(pagination);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前页');
-          row.spacer();
-          row.output((output) => output.child(pageState));
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(table);
+    content.child(pagination);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前页');
+      row.spacer();
+      row.output((output) => output.child(pageState));
+    });
+  });
 }
 
 function TableDeclarativeExample1() {
   const status = vText('自定义表头已就绪');
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.vTable((table) => {
-          table.vThead((head) => {
-            head.vTr((row) => {
-              row.vTh('服务名称');
-              row.vTh('状态');
-              row.vTh('操作');
-            });
-          });
-          table.vTbody((tbody) => {
-            tbody.vTr((row) => {
-              row.vTd('api-gateway');
-              row.vTd('运行中');
-              row.vTd(
-                vButton('查看', (button) => {
-                  button.size('small');
-                  button.variant('secondary');
-                  button.on('click', () => status.textContent('已查看 api-gateway'));
-                })
-              );
-            });
-            tbody.vTr((row) => {
-              row.vTd('worker');
-              row.vTd('维护中');
-              row.vTd('处理');
-            });
-          });
-          table.vTfoot((foot) => {
-            foot.vTr((row) => {
-              row.vTd((cell) => {
-                cell.attr('colspan', 3);
-                cell.child('表尾单元格可以跨列');
-              });
-            });
-          });
-        });
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('操作反馈');
-          row.spacer();
-          row.output((output) => output.child(status));
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.vTable((table) => {
+      table.vThead((head) => {
+        head.vTr((row) => {
+          row.vTh('服务名称');
+          row.vTh('状态');
+          row.vTh('操作');
         });
       });
-    }
-  };
+      table.vTbody((tbody) => {
+        tbody.vTr((row) => {
+          row.vTd('api-gateway');
+          row.vTd('运行中');
+          row.vTd(
+            vButton('查看', (button) => {
+              button.size('small');
+              button.variant('secondary');
+              button.on('click', () => status.textContent('已查看 api-gateway'));
+            })
+          );
+        });
+        tbody.vTr((row) => {
+          row.vTd('worker');
+          row.vTd('维护中');
+          row.vTd('处理');
+        });
+      });
+      table.vTfoot((foot) => {
+        foot.vTr((row) => {
+          row.vTd((cell) => {
+            cell.attr('colspan', 3);
+            cell.child('表尾单元格可以跨列');
+          });
+        });
+      });
+    });
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('操作反馈');
+      row.spacer();
+      row.output((output) => output.child(status));
+    });
+  });
 }
 
 function TreeBasicExample1() {
@@ -1667,40 +1603,36 @@ function TreeBasicExample1() {
     );
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(tree).hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前选择');
-          row.spacer();
-          row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('展开全部', (button) =>
-            button.variant('secondary').on('click', () => {
-              tree.expandAll();
-              status.textContent('已展开全部节点');
-            })
-          );
-          actions.vButton('收起全部', (button) =>
-            button.variant('secondary').on('click', () => {
-              tree.collapseAll();
-              status.textContent('已收起全部节点');
-            })
-          );
-          actions.vButton('清除选择', (button) =>
-            button.variant('ghost').on('click', () => {
-              tree.selectedKeys([]);
-              status.textContent('当前：未选择');
-            })
-          );
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(tree).hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前选择');
+      row.spacer();
+      row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('展开全部', (button) =>
+        button.variant('secondary').on('click', () => {
+          tree.expandAll();
+          status.textContent('已展开全部节点');
+        })
+      );
+      actions.vButton('收起全部', (button) =>
+        button.variant('secondary').on('click', () => {
+          tree.collapseAll();
+          status.textContent('已收起全部节点');
+        })
+      );
+      actions.vButton('清除选择', (button) =>
+        button.variant('ghost').on('click', () => {
+          tree.selectedKeys([]);
+          status.textContent('当前：未选择');
+        })
+      );
+    });
+  });
 }
 
 function TreeCheckableExample1() {
@@ -1750,28 +1682,24 @@ function TreeCheckableExample1() {
     );
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(tree).hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('勾选状态');
-          row.spacer();
-          row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('全选', (button) =>
-            button.variant('primary').on('click', () => tree.checkAll(true))
-          );
-          actions.vButton('清空', (button) =>
-            button.variant('secondary').on('click', () => tree.checkAll(false))
-          );
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(tree).hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('勾选状态');
+      row.spacer();
+      row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('全选', (button) =>
+        button.variant('primary').on('click', () => tree.checkAll(true))
+      );
+      actions.vButton('清空', (button) =>
+        button.variant('secondary').on('click', () => tree.checkAll(false))
+      );
+    });
+  });
 }
 
 function TreeFileManagerExample1() {
@@ -1847,79 +1775,75 @@ function TreeFileManagerExample1() {
     );
   });
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.hstack((layout) => {
-          layout.style({ alignItems: 'stretch', flexWrap: 'wrap', gap: '16px' });
-          layout.div((column) => {
-            column.style({ flex: '1 1 280px', maxWidth: '100%', minWidth: '0' });
-            column.child(tree);
-          });
-          layout.div((panel) => {
-            panel.style({
-              background: 'var(--yoya-color-surface-muted, #fbfcfe)',
-              border: '1px solid var(--yoya-color-border, #e2e8f0)',
-              borderRadius: '8px',
-              flex: '2 1 320px',
-              minWidth: '0',
-              padding: '16px'
-            });
-            panel.h3((heading) => {
-              heading.attr('data-tree-file-name', 'true').child(fileName);
-            });
-            panel.p((description) => {
-              description.attr('data-tree-file-status', 'true').child(status);
-            });
-            panel.div((metaRow) => {
-              metaRow.style({
-                display: 'grid',
-                gap: '12px',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                marginTop: '14px'
-              });
-              metaRow.div((item) => {
-                item.style({ display: 'grid', gap: '2px' });
-                item.span('类型');
-                item.strong((value) => {
-                  value.attr('data-tree-file-type', 'true').child(fileType);
-                });
-              });
-              metaRow.div((item) => {
-                item.style({ display: 'grid', gap: '2px' });
-                item.span('大小');
-                item.strong((value) => {
-                  value.attr('data-tree-file-size', 'true').child(fileSize);
-                });
-              });
-              metaRow.div((item) => {
-                item.style({ display: 'grid', gap: '2px' });
-                item.span('更新时间');
-                item.strong((value) => {
-                  value.attr('data-tree-file-updated', 'true').child(fileUpdated);
-                });
-              });
-            });
-          });
+  return vstack((body) => {
+    body.hstack((layout) => {
+      layout.style({ alignItems: 'stretch', flexWrap: 'wrap', gap: '16px' });
+      layout.div((column) => {
+        column.style({ flex: '1 1 280px', maxWidth: '100%', minWidth: '0' });
+        column.child(tree);
+      });
+      layout.div((panel) => {
+        panel.style({
+          background: 'var(--yoya-color-surface-muted, #fbfcfe)',
+          border: '1px solid var(--yoya-color-border, #e2e8f0)',
+          borderRadius: '8px',
+          flex: '2 1 320px',
+          minWidth: '0',
+          padding: '16px'
         });
-        body.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('新建文件夹', (button) => {
-            button.variant('secondary');
-            button.on('click', () => status.textContent('已创建新文件夹'));
+        panel.h3((heading) => {
+          heading.attr('data-tree-file-name', 'true').child(fileName);
+        });
+        panel.p((description) => {
+          description.attr('data-tree-file-status', 'true').child(status);
+        });
+        panel.div((metaRow) => {
+          metaRow.style({
+            display: 'grid',
+            gap: '12px',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            marginTop: '14px'
           });
-          actions.vButton('上传文件', (button) => {
-            button.variant('primary');
-            button.on('click', () => status.textContent('已开始上传文件'));
+          metaRow.div((item) => {
+            item.style({ display: 'grid', gap: '2px' });
+            item.span('类型');
+            item.strong((value) => {
+              value.attr('data-tree-file-type', 'true').child(fileType);
+            });
           });
-          actions.vButton('刷新', (button) => {
-            button.variant('ghost');
-            button.on('click', () => status.textContent('目录已刷新'));
+          metaRow.div((item) => {
+            item.style({ display: 'grid', gap: '2px' });
+            item.span('大小');
+            item.strong((value) => {
+              value.attr('data-tree-file-size', 'true').child(fileSize);
+            });
+          });
+          metaRow.div((item) => {
+            item.style({ display: 'grid', gap: '2px' });
+            item.span('更新时间');
+            item.strong((value) => {
+              value.attr('data-tree-file-updated', 'true').child(fileUpdated);
+            });
           });
         });
       });
-    }
-  };
+    });
+    body.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('新建文件夹', (button) => {
+        button.variant('secondary');
+        button.on('click', () => status.textContent('已创建新文件夹'));
+      });
+      actions.vButton('上传文件', (button) => {
+        button.variant('primary');
+        button.on('click', () => status.textContent('已开始上传文件'));
+      });
+      actions.vButton('刷新', (button) => {
+        button.variant('ghost');
+        button.on('click', () => status.textContent('目录已刷新'));
+      });
+    });
+  });
 }
 
 function TreeBuilderExample1() {
@@ -1998,89 +1922,77 @@ function TreeBuilderExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(tree).hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前选择');
-          row.spacer();
-          row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('展开全部', (button) =>
-            button.variant('secondary').on('click', () => tree.expandAll())
-          );
-          actions.vButton('收起全部', (button) =>
-            button.variant('secondary').on('click', () => tree.collapseAll())
-          );
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(tree).hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前选择');
+      row.spacer();
+      row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('展开全部', (button) =>
+        button.variant('secondary').on('click', () => tree.expandAll())
+      );
+      actions.vButton('收起全部', (button) =>
+        button.variant('secondary').on('click', () => tree.collapseAll())
+      );
+    });
+  });
 }
 
 function ProgressBasicExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vProgress((progress) => {
-            progress.label('部署进度');
-            progress.value(64);
-          })
-        );
-        content.child(
-          vProgress((progress) => {
-            progress.format((value, percent) => `${value} / 200（${Math.round(percent)}%）`);
-            progress.max(200);
-            progress.value(136);
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vProgress((progress) => {
+        progress.label('部署进度');
+        progress.value(64);
+      })
+    );
+    content.child(
+      vProgress((progress) => {
+        progress.format((value, percent) => `${value} / 200（${Math.round(percent)}%）`);
+        progress.max(200);
+        progress.value(136);
+      })
+    );
+  });
 }
 
 function ProgressStatusExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vProgress((progress) => {
-            progress.label('构建');
-            progress.status('success');
-            progress.value(80);
-          })
-        );
-        content.child(
-          vProgress((progress) => {
-            progress.label('同步');
-            progress.status('processing');
-            progress.value(55);
-          })
-        );
-        content.child(
-          vProgress((progress) => {
-            progress.label('告警');
-            progress.status('warning');
-            progress.value(72);
-          })
-        );
-        content.child(
-          vProgress((progress) => {
-            progress.label('发布');
-            progress.status('error');
-            progress.value(34);
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vProgress((progress) => {
+        progress.label('构建');
+        progress.status('success');
+        progress.value(80);
+      })
+    );
+    content.child(
+      vProgress((progress) => {
+        progress.label('同步');
+        progress.status('processing');
+        progress.value(55);
+      })
+    );
+    content.child(
+      vProgress((progress) => {
+        progress.label('告警');
+        progress.status('warning');
+        progress.value(72);
+      })
+    );
+    content.child(
+      vProgress((progress) => {
+        progress.label('发布');
+        progress.status('error');
+        progress.value(34);
+      })
+    );
+  });
 }
 
 function ProgressDynamicExample1() {
@@ -2096,65 +2008,57 @@ function ProgressDynamicExample1() {
     status.textContent(`当前 ${Math.round(progress.percent())}%`);
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(progress);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前进度');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-progress-dynamic-status', 'true');
-            output.child(status);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('减 10', (button) => {
-            button.variant('secondary');
-            button.on('click', () => update(progress.value() - 10));
-          });
-          actions.vButton('加 10', (button) => {
-            button.variant('primary');
-            button.on('click', () => update(progress.value() + 10));
-          });
-          actions.vButton('重置', (button) => {
-            button.variant('ghost');
-            button.on('click', () => update(0));
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(progress);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前进度');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-progress-dynamic-status', 'true');
+        output.child(status);
       });
-    }
-  };
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('减 10', (button) => {
+        button.variant('secondary');
+        button.on('click', () => update(progress.value() - 10));
+      });
+      actions.vButton('加 10', (button) => {
+        button.variant('primary');
+        button.on('click', () => update(progress.value() + 10));
+      });
+      actions.vButton('重置', (button) => {
+        button.variant('ghost');
+        button.on('click', () => update(0));
+      });
+    });
+  });
 }
 
 function ScrollBasicExample1() {
   const source = Array.from({ length: 30 }, (_, index) => `日志 ${index + 1}`);
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vScroll((scroll) => {
-            scroll.style('height', '280px');
-            scroll.items(source.slice(0, 6), (item) => div(item));
-            scroll.loadMore(({ append, block, page }) => {
-              const start = page * 6;
-              const next = source.slice(start, start + 6);
-              append(next);
-              if (start + next.length >= source.length) {
-                block(true);
-              }
-            });
-            scroll.threshold(48);
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vScroll((scroll) => {
+        scroll.style('height', '280px');
+        scroll.items(source.slice(0, 6), (item) => div(item));
+        scroll.loadMore(({ append, block, page }) => {
+          const start = page * 6;
+          const next = source.slice(start, start + 6);
+          append(next);
+          if (start + next.length >= source.length) {
+            block(true);
+          }
+        });
+        scroll.threshold(48);
+      })
+    );
+  });
 }
 
 function ScrollLoopBlockExample1() {
@@ -2181,48 +2085,44 @@ function ScrollLoopBlockExample1() {
     scroll.block(true);
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(scroll);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前模式');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-scroll-loop-status', 'true');
-            output.child(status);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('开启循环', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              scroll.loop(true);
-              status.textContent('loop：循环加载');
-              scroll.check();
-            });
-          });
-          actions.vButton('阻止加载', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              scroll.block(true);
-              status.textContent('block：停止加载');
-            });
-          });
-          actions.vButton('重置', (button) => {
-            button.variant('ghost');
-            button.on('click', () => {
-              scroll.reset().loop(false).check();
-              status.textContent('已重置');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(scroll);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前模式');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-scroll-loop-status', 'true');
+        output.child(status);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('开启循环', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          scroll.loop(true);
+          status.textContent('loop：循环加载');
+          scroll.check();
         });
       });
-    }
-  };
+      actions.vButton('阻止加载', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          scroll.block(true);
+          status.textContent('block：停止加载');
+        });
+      });
+      actions.vButton('重置', (button) => {
+        button.variant('ghost');
+        button.on('click', () => {
+          scroll.reset().loop(false).check();
+          status.textContent('已重置');
+        });
+      });
+    });
+  });
 }
 
 function ScrollAsyncExample1() {
@@ -2250,20 +2150,16 @@ function ScrollAsyncExample1() {
     scroll.threshold(40);
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(scroll);
-        content.vButton('重新加载', (button) => {
-          button.on('click', () => {
-            // 重置回第 1 页，check() 触发一次异步加载
-            scroll.reset().check();
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(scroll);
+    content.vButton('重新加载', (button) => {
+      button.on('click', () => {
+        // 重置回第 1 页，check() 触发一次异步加载
+        scroll.reset().check();
       });
-    }
-  };
+    });
+  });
 }
 
 function ScrollVirtualExample1() {
@@ -2273,36 +2169,32 @@ function ScrollVirtualExample1() {
     status: index % 4 === 0 ? '运行中' : index % 4 === 1 ? '告警' : '已停止'
   }));
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vScroll((scroll) => {
-            scroll.style('height', '320px');
-            scroll.itemHeight(52);
-            scroll.overscan(4);
-            scroll.items(rows, (row) =>
-              div((item) => {
-                item.styles({
-                  alignItems: 'center',
-                  borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
-                  boxSizing: 'border-box',
-                  display: 'flex',
-                  gap: '10px',
-                  height: '100%',
-                  justifyContent: 'space-between',
-                  padding: '0 4px'
-                });
-                item.strong(row.name);
-                item.span(row.status);
-              })
-            );
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vScroll((scroll) => {
+        scroll.style('height', '320px');
+        scroll.itemHeight(52);
+        scroll.overscan(4);
+        scroll.items(rows, (row) =>
+          div((item) => {
+            item.styles({
+              alignItems: 'center',
+              borderBottom: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+              boxSizing: 'border-box',
+              display: 'flex',
+              gap: '10px',
+              height: '100%',
+              justifyContent: 'space-between',
+              padding: '0 4px'
+            });
+            item.strong(row.name);
+            item.span(row.status);
           })
         );
-      });
-    }
-  };
+      })
+    );
+  });
 }
 
 function CarouselBasicExample1() {
@@ -2318,35 +2210,31 @@ function CarouselBasicExample1() {
     { text: '汇总健康检查、指标和告警状态。', title: '运行监控' }
   ];
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(
-          vCarousel((carousel) => {
-            carousel.height('240px');
-            carousel.slides(slides, (item, index) =>
-              div((block) => {
-                block.className('carousel-demo-slide');
-                block.styles({
-                  background: colors[index % colors.length],
-                  borderRadius: '8px',
-                  boxSizing: 'border-box',
-                  display: 'grid',
-                  alignContent: 'center',
-                  gap: '8px',
-                  height: '100%',
-                  padding: '24px'
-                });
-                block.h3(item.title);
-                block.p(item.text);
-              })
-            );
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(
+      vCarousel((carousel) => {
+        carousel.height('240px');
+        carousel.slides(slides, (item, index) =>
+          div((block) => {
+            block.className('carousel-demo-slide');
+            block.styles({
+              background: colors[index % colors.length],
+              borderRadius: '8px',
+              boxSizing: 'border-box',
+              display: 'grid',
+              alignContent: 'center',
+              gap: '8px',
+              height: '100%',
+              padding: '24px'
+            });
+            block.h3(item.title);
+            block.p(item.text);
           })
         );
-      });
-    }
-  };
+      })
+    );
+  });
 }
 
 function CarouselAutoplayExample1() {
@@ -2382,32 +2270,26 @@ function CarouselAutoplayExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(carousel);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前项');
-          row.spacer();
-          row.output((output) =>
-            output.attr('data-carousel-autoplay-status', 'true').child(status)
-          );
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', gap: '10px' });
-          actions.vButton('上一项', (button) => {
-            button.on('click', () => carousel.prev());
-          });
-          actions.vButton('下一项', (button) => {
-            button.variant('primary');
-            button.on('click', () => carousel.next());
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(carousel);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前项');
+      row.spacer();
+      row.output((output) => output.attr('data-carousel-autoplay-status', 'true').child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', gap: '10px' });
+      actions.vButton('上一项', (button) => {
+        button.on('click', () => carousel.prev());
       });
-    }
-  };
+      actions.vButton('下一项', (button) => {
+        button.variant('primary');
+        button.on('click', () => carousel.next());
+      });
+    });
+  });
 }
 
 function CarouselLoopExample1() {
@@ -2443,37 +2325,33 @@ function CarouselLoopExample1() {
     );
   }
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(carousel);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前状态');
-          row.spacer();
-          row.output((output) => output.attr('data-carousel-loop-status', 'true').child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('切换循环', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              carousel.loop(!carousel.loop());
-              syncStatus();
-            });
-          });
-          actions.vButton('上一项', (button) => {
-            button.on('click', () => carousel.prev());
-          });
-          actions.vButton('下一项', (button) => {
-            button.variant('primary');
-            button.on('click', () => carousel.next());
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(carousel);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前状态');
+      row.spacer();
+      row.output((output) => output.attr('data-carousel-loop-status', 'true').child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('切换循环', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          carousel.loop(!carousel.loop());
+          syncStatus();
         });
       });
-    }
-  };
+      actions.vButton('上一项', (button) => {
+        button.on('click', () => carousel.prev());
+      });
+      actions.vButton('下一项', (button) => {
+        button.variant('primary');
+        button.on('click', () => carousel.next());
+      });
+    });
+  });
 }
 
 function CarouselSwipeExample1() {
@@ -2501,12 +2379,8 @@ function CarouselSwipeExample1() {
     );
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(carousel);
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(carousel);
+  });
 }

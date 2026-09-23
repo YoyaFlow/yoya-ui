@@ -24,17 +24,12 @@ const columns = [
 ];
 
 export function TreeTableExample() {
-  return {
-    render() {
-      return div((panel) => {
-        panel.vTreeTable({
-          columns,
-          nodes,
-          rowSelection: true,
-          expandedKeys: ['server']
-        });
-      });
-    }
-  };
+  return div((panel) => {
+    panel.vTreeTable({
+      columns,
+      nodes,
+      rowSelection: true,
+      expandedKeys: ['server']
+    });
+  });
 }
-

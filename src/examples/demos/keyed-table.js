@@ -1,4 +1,4 @@
-import { ref, th, tr, vstack } from '../../index.js';
+import { ref, th, tr, vNode, vstack } from '../../index.js';
 
 /**
  * HTML 原生元素页的 keyed 演示：任务表按 key 对账——
@@ -13,50 +13,47 @@ export function KeyedTableExample() {
     { id: 3, title: '表格虚拟滚动', owner: 'Mo', status: ref('进行中') }
   ]);
 
-  const api = {
-    addRow() {
+  return vNode((api) => {
+    api.addRow = () => {
       serial += 1;
       const row = { id: serial, title: `任务 ${serial}`, owner: '未分配', status: ref('进行中') };
       rows.value = [...rows.value, row];
       return api;
-    },
-    toggle(row) {
+    };
+    api.toggle = (row) => {
       row.status.value = row.status.value === '进行中' ? '已完成' : '进行中';
       return api;
-    },
-    reverse() {
+    };
+    api.reverse = () => {
       rows.value = [...rows.value].reverse();
       return api;
-    },
-    render() {
-      return vstack({ gap: '10px' }, (stack) => {
-        stack.table((grid) => {
-          grid.className('demo-keyed-table').attr('data-keyed-table', 'true');
-          grid.thead((head) => {
-            head.tr((line) => line.child(columns.map((text) => th(text))));
-          });
-          grid.tbody((body) => {
-            body.keyed(rows, (row) => row.id, (row) =>
-              tr((line) => {
-                line.attr('data-row-id', row.id);
-                line.td(row.title);
-                line.td(row.owner);
-                line.td((cell) => {
-                  cell.button(row.status, (act) => act.on('click', () => api.toggle(row)));
-                });
-              })
-            );
-          });
+    };
+
+    return vstack({ gap: '10px' }, (stack) => {
+      stack.table((grid) => {
+        grid.className('demo-keyed-table').attr('data-keyed-table', 'true');
+        grid.thead((head) => {
+          head.tr((line) => line.child(columns.map((text) => th(text))));
         });
-        stack.button('追加任务', (add) => {
-          add.attr('data-keyed-add', 'true').on('click', () => api.addRow());
-        });
-        stack.button('反转', (reverse) => {
-          reverse.attr('data-keyed-reverse', 'true').on('click', () => api.reverse());
+        grid.tbody((body) => {
+          body.keyed(rows, (row) => row.id, (row) =>
+            tr((line) => {
+              line.attr('data-row-id', row.id);
+              line.td(row.title);
+              line.td(row.owner);
+              line.td((cell) => {
+                cell.button(row.status, (act) => act.on('click', () => api.toggle(row)));
+              });
+            })
+          );
         });
       });
-    }
-  };
-
-  return api;
+      stack.button('追加任务', (add) => {
+        add.attr('data-keyed-add', 'true').on('click', () => api.addRow());
+      });
+      stack.button('反转', (reverse) => {
+        reverse.attr('data-keyed-reverse', 'true').on('click', () => api.reverse());
+      });
+    });
+  });
 }

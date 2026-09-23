@@ -1,4 +1,4 @@
-import { HtmlElementNode } from '../../index.js';
+import { HtmlElementNode, vNode } from '../../index.js';
 import { AgGridDemoNode } from './ag-grid-glue.js';
 
 export function AgGridInventoryExample() {
@@ -255,58 +255,51 @@ export function AgGridInventoryExample() {
     { field: 'country', headerName: '销售区域', width: 130 }
   ];
 
-  return {
-    render() {
-      master = new AgGridDemoNode({
-        columnDefs: masterColumns(),
-        height: '330px',
-        gridOptions: {
-          defaultColDef: { resizable: true, sortable: true },
-          getRowId: (params) => String(params.data.id),
-          onRowClicked: (params) => showDetail(params.data),
-          pagination: true,
-          paginationPageSize: 10,
-          paginationPageSizeSelector: [10, 20, 50],
-          rowHeight: 64
-        },
-        rowData: filteredRows()
-      });
-      detail = new AgGridDemoNode({
-        columnDefs: detailColumns(),
-        height: '210px',
-        gridOptions: { defaultColDef: { resizable: true } },
-        hidden: true,
-        rowData: []
-      });
+  return vNode((api) => {
+    master = new AgGridDemoNode({
+      columnDefs: masterColumns(),
+      height: '330px',
+      gridOptions: {
+        defaultColDef: { resizable: true, sortable: true },
+        getRowId: (params) => String(params.data.id),
+        onRowClicked: (params) => showDetail(params.data),
+        pagination: true,
+        paginationPageSize: 10,
+        paginationPageSizeSelector: [10, 20, 50],
+        rowHeight: 64
+      },
+      rowData: filteredRows()
+    });
+    detail = new AgGridDemoNode({
+      columnDefs: detailColumns(),
+      height: '210px',
+      gridOptions: { defaultColDef: { resizable: true } },
+      hidden: true,
+      rowData: []
+    });
 
-      const host = new HtmlElementNode('div');
-      host.styles({
-        display: 'grid',
-        gap: '10px',
-        minWidth: '0',
-        width: '100%'
-      });
-      host.child(master, detail);
-      return host;
-    },
-    setStatus(status) {
+    const host = new HtmlElementNode('div');
+    host.styles({
+      display: 'grid',
+      gap: '10px',
+      minWidth: '0',
+      width: '100%'
+    });
+    host.child(master, detail);
+
+    api.setStatus = (status) => {
       state.status = status;
       refreshMaster();
-    },
-    countOf(status) {
+      return api;
+    };
+    api.countOf = (status) => {
       if (status === '全部') {
         return products.length;
       }
       return products.filter((item) => item.status === status).length;
-    },
-    status() {
-      return state.status;
-    },
-    destroy() {
-      master?.destroy();
-      master = null;
-      detail?.destroy();
-      detail = null;
-    }
-  };
+    };
+    api.status = () => state.status;
+
+    return host;
+  });
 }

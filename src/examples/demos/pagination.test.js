@@ -3,15 +3,15 @@ import { ViewNode } from '../../core/node.js';
 import { PaginationExample1 } from './pagination.js';
 
 describe('PaginationExample1', () => {
-  it('render() returns a ViewNode so the docs shell can resolve it', () => {
+  it('returns a ViewNode the docs shell can resolve', () => {
     const example = PaginationExample1();
 
-    expect(example.render()).toBeInstanceOf(ViewNode);
+    expect(example).toBeInstanceOf(ViewNode);
   });
 
   it('tracks the current page in its status line', () => {
     const demo = PaginationExample1();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const status = element.querySelector('[data-pagination-status]');
 
     expect(status.textContent).toBe('第 1 页，每页 10 条');

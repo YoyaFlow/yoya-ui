@@ -10,17 +10,13 @@ function GlowButtonBasicExample() {
     output.textContent('已启动部署');
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.hstack({ gap: '14px' }, (row) => {
-          row.style('alignItems', 'center');
-          row.child(button);
-          row.span((el) => el.attr('data-glow-button-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.hstack({ gap: '14px' }, (row) => {
+      row.style('alignItems', 'center');
+      row.child(button);
+      row.span((el) => el.attr('data-glow-button-output', 'true').child(output));
+    });
+  });
 }
 
 function GlowButtonSpeedDirectionExample() {

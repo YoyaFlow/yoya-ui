@@ -7,42 +7,38 @@ function HtmlNativeExample1() {
   const saved = ref('等待');
   const outputText = computed(() => `原生输入：${saved.value || '空'}`);
 
-  return {
-    render() {
-      return section((page) => {
-        page.className('html-native-demo');
-        page.h3('HTML 原生元素');
-        page.p(
-          'button、input、output 等原生元素可以直接组合，状态用 ref 持有、值位置直接传句柄，适合底层自由拼装。'
-        );
-        page.div((box) => {
-          box.className('html-native-box');
-          box.input((field) => {
-            field.id('html-native-name');
-            field.attr({ placeholder: '输入名称', type: 'text' });
-            // 视图 → 信号：事件回调里写回，不查 document
-            field.on('input', (event) => {
-              draft.value = event.target.value;
-            });
-          });
-          box.button((button) => {
-            button.className('html-native-button');
-            button.child('更新');
-            // 属性也接句柄：输入为空时按钮禁用
-            button.attr(
-              'disabled',
-              computed(() => !draft.value.trim())
-            );
-            button.on('click', () => {
-              saved.value = draft.value.trim();
-            });
-          });
-          // 信号 → 视图：computed 派生文本，写入信号即原地更新
-          box.output((output) => output.child(vText(outputText)));
+  return section((page) => {
+    page.className('html-native-demo');
+    page.h3('HTML 原生元素');
+    page.p(
+      'button、input、output 等原生元素可以直接组合，状态用 ref 持有、值位置直接传句柄，适合底层自由拼装。'
+    );
+    page.div((box) => {
+      box.className('html-native-box');
+      box.input((field) => {
+        field.id('html-native-name');
+        field.attr({ placeholder: '输入名称', type: 'text' });
+        // 视图 → 信号：事件回调里写回，不查 document
+        field.on('input', (event) => {
+          draft.value = event.target.value;
         });
       });
-    }
-  };
+      box.button((button) => {
+        button.className('html-native-button');
+        button.child('更新');
+        // 属性也接句柄：输入为空时按钮禁用
+        button.attr(
+          'disabled',
+          computed(() => !draft.value.trim())
+        );
+        button.on('click', () => {
+          saved.value = draft.value.trim();
+        });
+      });
+      // 信号 → 视图：computed 派生文本，写入信号即原地更新
+      box.output((output) => output.child(vText(outputText)));
+    });
+  });
 }
 
 const htmlNativeNotes = [
@@ -433,7 +429,7 @@ function KeyedTableDemoSection() {
   const liveDemo = KeyedTableExample();
   const sourcePanel = ComponentSource({
     component: KeyedTableExample,
-    imports: ['ref', 'th', 'tr', 'vstack'],
+    imports: ['ref', 'th', 'tr', 'vNode', 'vstack'],
     sourceComponent: KeyedTableExample,
     title: 'keyed 表格协调源码'
   });

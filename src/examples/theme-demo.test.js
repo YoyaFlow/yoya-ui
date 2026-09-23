@@ -11,7 +11,7 @@ afterEach(() => {
 
 describe('theme playground demo', () => {
   it('renders mode, density and accent controls', () => {
-    const element = renderThemeDemo().render().renderDom();
+    const element = renderThemeDemo().renderDom();
 
     expect(element.querySelector("[data-theme-mode='light']")).toBeTruthy();
     expect(element.querySelector("[data-theme-mode='dark']")).toBeTruthy();
@@ -21,7 +21,7 @@ describe('theme playground demo', () => {
   });
 
   it('switches the document mode from the demo buttons', () => {
-    const element = renderThemeDemo().render().renderDom();
+    const element = renderThemeDemo().renderDom();
 
     element.querySelector("[data-theme-mode='dark']").click();
 
@@ -33,7 +33,7 @@ describe('theme playground demo', () => {
   });
 
   it('toggles compact density on the document root', () => {
-    const element = renderThemeDemo().render().renderDom();
+    const element = renderThemeDemo().renderDom();
     const toggle = element.querySelector('[data-theme-density]');
 
     toggle.click();
@@ -44,7 +44,7 @@ describe('theme playground demo', () => {
   });
 
   it('applies a raw accent color override through the color picker', () => {
-    const element = renderThemeDemo().render().renderDom();
+    const element = renderThemeDemo().renderDom();
     const picker = element.querySelector('[data-theme-accent]');
 
     picker.querySelector('[data-vcolor-trigger]').click();

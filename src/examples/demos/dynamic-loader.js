@@ -83,37 +83,33 @@ export function DynamicLoaderExample1() {
     }
   });
 
-  return {
-    render() {
-      return vstack({ gap: '14px' }, (stack) => {
-        stack.child(loader);
-        stack.output((out) => {
-          out.attr('data-loader-status-line', 'true');
-          out.child(vText(statusText));
-        });
-        stack.hstack({ gap: '10px' }, (actions) => {
-          actions.vButton('开始加载', (button) => {
-            button.id('dynamic-load');
-            button.on('click', () => loader.load().catch(() => {}));
-          });
-          actions.vButton('重试', (button) => {
-            button.id('dynamic-retry');
-            button.variant('secondary');
-            button.on('click', () => loader.retry().catch(() => {}));
-          });
-          actions.vButton('再次加载', (button) => {
-            button.id('dynamic-cache');
-            button.variant('secondary');
-            button.on('click', () => {
-              if (loader.status() === 'loaded') {
-                statusText.value = '缓存命中：直接返回已加载模块，不发起网络请求';
-                return;
-              }
-              loader.load().catch(() => {});
-            });
-          });
+  return vstack({ gap: '14px' }, (stack) => {
+    stack.child(loader);
+    stack.output((out) => {
+      out.attr('data-loader-status-line', 'true');
+      out.child(vText(statusText));
+    });
+    stack.hstack({ gap: '10px' }, (actions) => {
+      actions.vButton('开始加载', (button) => {
+        button.id('dynamic-load');
+        button.on('click', () => loader.load().catch(() => {}));
+      });
+      actions.vButton('重试', (button) => {
+        button.id('dynamic-retry');
+        button.variant('secondary');
+        button.on('click', () => loader.retry().catch(() => {}));
+      });
+      actions.vButton('再次加载', (button) => {
+        button.id('dynamic-cache');
+        button.variant('secondary');
+        button.on('click', () => {
+          if (loader.status() === 'loaded') {
+            statusText.value = '缓存命中：直接返回已加载模块，不发起网络请求';
+            return;
+          }
+          loader.load().catch(() => {});
         });
       });
-    }
-  };
+    });
+  });
 }

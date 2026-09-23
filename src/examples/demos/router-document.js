@@ -30,25 +30,21 @@ export function RouterDocumentCard() {
   const currentPath = vText('');
   appRouter.subscribe(({ path }) => currentPath.textContent(`当前 SPA 路径：${path}`));
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.style('gap', '14px');
-        stack.hstack((nav) => {
-          nav.styles({ flexWrap: 'wrap', gap: '10px' });
-          nav.vLink(appRouter, { label: '概览（SPA）', replace: true, to: '/overview' });
-          nav.vLink(appRouter, { label: '旧报表（HTML 整页跳转）', to: '/legacy/report.html' });
-          nav.vLink(appRouter, { label: '在线文档（外链）', to: '/docs' });
-        });
-        stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
-        stack.output((output) => {
-          output.className('router-document-status');
-          output.child(currentPath);
-        });
-        appRouter.navigate('/overview', { replace: true });
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.style('gap', '14px');
+    stack.hstack((nav) => {
+      nav.styles({ flexWrap: 'wrap', gap: '10px' });
+      nav.vLink(appRouter, { label: '概览（SPA）', replace: true, to: '/overview' });
+      nav.vLink(appRouter, { label: '旧报表（HTML 整页跳转）', to: '/legacy/report.html' });
+      nav.vLink(appRouter, { label: '在线文档（外链）', to: '/docs' });
+    });
+    stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
+    stack.output((output) => {
+      output.className('router-document-status');
+      output.child(currentPath);
+    });
+    appRouter.navigate('/overview', { replace: true });
+  });
 }
 
 /**
@@ -104,9 +100,5 @@ export function RouterViewsDocumentStandalone() {
   });
   appRouter.navigate('/overview', { replace: true });
 
-  return {
-    render() {
-      return root;
-    }
-  };
+  return root;
 }

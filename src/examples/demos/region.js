@@ -1,4 +1,4 @@
-import { computed, div, ul, ref, vText, vstack } from '../../index.js';
+import { computed, div, ul, ref, vNode, vText, vstack } from '../../index.js';
 import { componentSource } from '../component-source.js';
 
 /**
@@ -14,43 +14,40 @@ export function RegionRebuildExample() {
     data.rows.forEach((row) => box.li(row));
   });
 
-  const api = {
-    add() {
+  return vNode((api) => {
+    api.add = () => {
       data.rows.push(`任务 ${data.rows.length + 1}`);
       list.rebuild();
       return api;
-    },
-    clear() {
+    };
+    api.clear = () => {
       data.rows.length = 0;
       list.rebuild();
       return api;
-    },
-    render() {
-      return vstack({ gap: '12px' }, (stack) => {
-        stack.input((field) => {
-          field.attr({
-            'data-region-outside': 'true',
-            placeholder: '区域外的输入框：重建后依然在',
-            type: 'text'
-          });
-        });
-        stack.child(list);
-        stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton('追加一行', (button) => {
-            button.variant('primary');
-            button.attr('data-region-add', 'true');
-            button.on('click', () => api.add());
-          });
-          row.vButton('清空', (button) => {
-            button.attr('data-region-clear', 'true');
-            button.on('click', () => api.clear());
-          });
+    };
+
+    return vstack({ gap: '12px' }, (stack) => {
+      stack.input((field) => {
+        field.attr({
+          'data-region-outside': 'true',
+          placeholder: '区域外的输入框：重建后依然在',
+          type: 'text'
         });
       });
-    }
-  };
-
-  return api;
+      stack.child(list);
+      stack.hstack({ gap: '8px' }, (row) => {
+        row.vButton('追加一行', (button) => {
+          button.variant('primary');
+          button.attr('data-region-add', 'true');
+          button.on('click', () => api.add());
+        });
+        row.vButton('清空', (button) => {
+          button.attr('data-region-clear', 'true');
+          button.on('click', () => api.clear());
+        });
+      });
+    });
+  });
 }
 
 /**
@@ -81,46 +78,43 @@ export function RegionGateExample() {
   });
   const status = div((line) => line.attr('data-region-pending', 'true').child(statusText));
 
-  const api = {
-    addRow() {
+  return vNode((api) => {
+    api.addRow = () => {
       rows.value = [...rows.value, `任务 ${rows.value.length + 1}`];
       syncStatus();
       return api;
-    },
-    toggleBusy() {
+    };
+    api.toggleBusy = () => {
       busy.value = !busy.value;
       if (!busy.value && list.rebuildPending()) {
         list.rebuild();
       }
       syncStatus();
       return api;
-    },
-    render() {
-      return vstack({ gap: '12px' }, (stack) => {
-        stack.child(list).child(status);
-        stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton('添加一行', (button) => {
-            button.variant('primary');
-            button.attr('data-region-next', 'true');
-            button.on('click', () => api.addRow());
-          });
-          row.vButton('忙碌 / 空闲', (button) => {
-            button.attr('data-region-lock', 'true');
-            button.on('click', () => api.toggleBusy());
-          });
+    };
+
+    function syncStatus() {
+      const pending = list.rebuildPending() ? '是' : '否';
+      statusText.textContent(
+        busy.value ? `状态：忙碌，结构锁定；待重建：${pending}` : '状态：空闲，结构随信号自动重建'
+      );
+    }
+
+    return vstack({ gap: '12px' }, (stack) => {
+      stack.child(list).child(status);
+      stack.hstack({ gap: '8px' }, (row) => {
+        row.vButton('添加一行', (button) => {
+          button.variant('primary');
+          button.attr('data-region-next', 'true');
+          button.on('click', () => api.addRow());
+        });
+        row.vButton('忙碌 / 空闲', (button) => {
+          button.attr('data-region-lock', 'true');
+          button.on('click', () => api.toggleBusy());
         });
       });
-    }
-  };
-
-  function syncStatus() {
-    const pending = list.rebuildPending() ? '是' : '否';
-    statusText.textContent(
-      busy.value ? `状态：忙碌，结构锁定；待重建：${pending}` : '状态：空闲，结构随信号自动重建'
-    );
-  }
-
-  return api;
+    });
+  });
 }
 /**
  * 区域演示 3：独立子树的零参闭包直接读外部数据，改动后手动 flush。
@@ -135,30 +129,30 @@ export function RegionScopeExample() {
     ele.span((line) => line.child(vText(() => `共 ${data.count} 条`)));
   });
 
-  const api = {
-    add() {
+  return vNode((api) => {
+    api.add = () => {
       data.count += 1;
       box.flush(); // 只刷值：结构没变，不需要 rebuild()
       return api;
-    },
-    render() {
-      return vstack({ gap: '12px' }, (stack) => {
-        stack.child(box);
-        stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton('增加一条', (button) => {
-            button.variant('primary');
-            button.attr('data-region-source-add', 'true');
-            button.on('click', () => api.add());
-          });
+    };
+
+    return vstack({ gap: '12px' }, (stack) => {
+      stack.child(box);
+      stack.hstack({ gap: '8px' }, (row) => {
+        row.vButton('增加一条', (button) => {
+          button.variant('primary');
+          button.attr('data-region-source-add', 'true');
+          button.on('click', () => api.add());
         });
       });
-    }
-  };
-
-  return api;
+    });
+  });
 }
 
-/** 区域演示 4：flush 只刷值（元素不变），rebuild 才换结构——对照看差别。 */
+/**
+ * 区域演示 4：flush 只刷值（元素不变），rebuild 才换结构——对照看差别。
+ * 命令名不叫 flush：那是节点自己的方法，命令挂上去会撞名（vNode 直接报错）。
+ */
 export function RegionFlushExample() {
   const data = { label: 'A' };
   const box = div((ele) => {
@@ -171,35 +165,32 @@ export function RegionFlushExample() {
     });
   });
 
-  const api = {
-    flush() {
+  return vNode((api) => {
+    api.refreshValue = () => {
       data.label = data.label === 'A' ? 'B' : 'A';
       box.flush();
       return api;
-    },
-    rebuild() {
+    };
+    api.rebuildStructure = () => {
       box.rebuild();
       return api;
-    },
-    render() {
-      return vstack({ gap: '12px' }, (stack) => {
-        stack.child(box);
-        stack.hstack({ gap: '8px' }, (row) => {
-          row.vButton('flush：只刷值', (button) => {
-            button.variant('primary');
-            button.attr('data-region-flush-next', 'true');
-            button.on('click', () => api.flush());
-          });
-          row.vButton('rebuild：重建结构', (button) => {
-            button.attr('data-region-flush-rebuild', 'true');
-            button.on('click', () => api.rebuild());
-          });
+    };
+
+    return vstack({ gap: '12px' }, (stack) => {
+      stack.child(box);
+      stack.hstack({ gap: '8px' }, (row) => {
+        row.vButton('flush：只刷值', (button) => {
+          button.variant('primary');
+          button.attr('data-region-flush-next', 'true');
+          button.on('click', () => api.refreshValue());
+        });
+        row.vButton('rebuild：重建结构', (button) => {
+          button.attr('data-region-flush-rebuild', 'true');
+          button.on('click', () => api.rebuildStructure());
         });
       });
-    }
-  };
-
-  return api;
+    });
+  });
 }
 
 /**
@@ -222,64 +213,52 @@ export function RegionStateVsSourceExample() {
 function ComponentStatePanel() {
   const count = ref(0);
 
-  return {
-    render() {
-      return div((panel) => {
-        panel.className('demo-region-compare-panel');
-        panel.attr('data-region-state', 'true');
-        panel.span((line) => line.child(vText(computed(() => `组件状态：${count.value}`))));
-        panel.vButton('+1（组件状态）', (button) => {
-          button.attr('data-region-state-add', 'true');
-          button.on('click', () => {
-            count.value += 1;
-          });
-        });
+  return div((panel) => {
+    panel.className('demo-region-compare-panel');
+    panel.attr('data-region-state', 'true');
+    panel.span((line) => line.child(vText(computed(() => `组件状态：${count.value}`))));
+    panel.vButton('+1（组件状态）', (button) => {
+      button.attr('data-region-state-add', 'true');
+      button.on('click', () => {
+        count.value += 1;
       });
-    }
-  };
+    });
+  });
 }
 
 /** ② 组件外 ref：数据在组件外创建（可跨组件共享），绑定自动写回，无需手动 flush。 */
 function ExternalDataSourcePanel() {
   const data = { count: ref(0) };
 
-  return {
-    render() {
-      return div((panel) => {
-        panel.className('demo-region-compare-panel');
-        panel.attr('data-region-source', 'true');
-        panel.span((line) => line.child(vText(computed(() => `外部数据源：${data.count.value}`))));
-        panel.vButton('+1（外部数据）', (button) => {
-          button.attr('data-region-source-add', 'true');
-          button.on('click', () => {
-            data.count.value += 1; // 写入即写回，不需要 flush()
-          });
-        });
+  return div((panel) => {
+    panel.className('demo-region-compare-panel');
+    panel.attr('data-region-source', 'true');
+    panel.span((line) => line.child(vText(computed(() => `外部数据源：${data.count.value}`))));
+    panel.vButton('+1（外部数据）', (button) => {
+      button.attr('data-region-source-add', 'true');
+      button.on('click', () => {
+        data.count.value += 1; // 写入即写回，不需要 flush()
       });
-    }
-  };
+    });
+  });
 }
 
 /** ③ 区域依赖：区域构建期直读 ref，写入触发重建；值绑定覆盖不到的结构变化走这里。 */
 function RegionSignalPanel() {
   const count = ref(0);
 
-  return {
-    render() {
-      return div((panel) => {
-        panel.className('demo-region-compare-panel');
-        panel.attr('data-region-local', 'true');
-        panel.rebuildable(() => true);
-        panel.span((line) => line.child(vText(`区域信号：${count.value}`)));
-        panel.vButton('+1（区域信号）', (button) => {
-          button.attr('data-region-local-add', 'true');
-          button.on('click', () => {
-            count.value += 1; // 区域读到过 count，写入即重建子树
-          });
-        });
+  return div((panel) => {
+    panel.className('demo-region-compare-panel');
+    panel.attr('data-region-local', 'true');
+    panel.rebuildable(() => true);
+    panel.span((line) => line.child(vText(`区域信号：${count.value}`)));
+    panel.vButton('+1（区域信号）', (button) => {
+      button.attr('data-region-local-add', 'true');
+      button.on('click', () => {
+        count.value += 1; // 区域读到过 count，写入即重建子树
       });
-    }
-  };
+    });
+  });
 }
 
 /** 源码面板用：三块面板的函数按文件顺序展示，再展示入口组件。 */

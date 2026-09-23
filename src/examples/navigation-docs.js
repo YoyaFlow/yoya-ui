@@ -304,7 +304,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-params.html',
         id: 'params',
-        imports: ['div', 'router', 'vRouterView', 'vText', 'vstack'],
+        imports: ['div', 'router', 'vNode', 'vRouterView', 'vText', 'vstack'],
         sourceComponent: RouterParamsCard,
         sourceTitle: '参数传递路由核心源码',
         title: '参数传递路由'
@@ -913,57 +913,53 @@ function NavbarShellExample1() {
     status.textContent(`已触发：${label}`);
   };
 
-  return {
-    render() {
-      return vstack((shell) => {
-        shell.style('gap', '14px');
-        shell.vNavbar((navbar) => {
-          navbar.ariaLabel('产品主导航');
-          navbar.title('yoya-ui');
-          navbar.subtitle('设计系统');
-          navbar.menuContent((menu) => {
-            ['概览', '组件', '文档'].forEach((label, index) => {
-              menu.vMenuItem((item) => {
-                item.text(label);
-                item.active(index === 0);
-                item.on('click', () => setActive(label, index));
-                menuItems[index] = item;
-              });
-            });
+  return vstack((shell) => {
+    shell.style('gap', '14px');
+    shell.vNavbar((navbar) => {
+      navbar.ariaLabel('产品主导航');
+      navbar.title('yoya-ui');
+      navbar.subtitle('设计系统');
+      navbar.menuContent((menu) => {
+        ['概览', '组件', '文档'].forEach((label, index) => {
+          menu.vMenuItem((item) => {
+            item.text(label);
+            item.active(index === 0);
+            item.on('click', () => setActive(label, index));
+            menuItems[index] = item;
           });
-          navbar.actions((actions) => {
-            actions.output((output) => {
-              output.className('components-route-note');
-              output.attr('data-navbar-demo-status', 'true');
-              output.child(status);
+        });
+      });
+      navbar.actions((actions) => {
+        actions.output((output) => {
+          output.className('components-route-note');
+          output.attr('data-navbar-demo-status', 'true');
+          output.child(status);
+        });
+        actions.span((badge) => {
+          badge.className('components-route-note');
+          badge.child('在线');
+        });
+        actions.vButton('登录', (button) => {
+          button.variant('primary');
+          button.on('click', () => showAction('登录'));
+        });
+        actions.vDropdownMenu((dropdown) => {
+          dropdown.trigger('更多');
+          dropdown.menuContent((commands) => {
+            commands.vMenuItem((item) => {
+              item.text('设置');
+              item.on('click', () => showAction('设置'));
             });
-            actions.span((badge) => {
-              badge.className('components-route-note');
-              badge.child('在线');
-            });
-            actions.vButton('登录', (button) => {
-              button.variant('primary');
-              button.on('click', () => showAction('登录'));
-            });
-            actions.vDropdownMenu((dropdown) => {
-              dropdown.trigger('更多');
-              dropdown.menuContent((commands) => {
-                commands.vMenuItem((item) => {
-                  item.text('设置');
-                  item.on('click', () => showAction('设置'));
-                });
-                commands.vMenuItem((item) => {
-                  item.text('退出');
-                  item.on('click', () => showAction('退出'));
-                });
-              });
+            commands.vMenuItem((item) => {
+              item.text('退出');
+              item.on('click', () => showAction('退出'));
             });
           });
         });
-        shell.p('品牌、主导航和动作按钮都在同一条顶栏里。');
       });
-    }
-  };
+    });
+    shell.p('品牌、主导航和动作按钮都在同一条顶栏里。');
+  });
 }
 
 function NavbarBrandExample1() {
@@ -974,16 +970,59 @@ function NavbarBrandExample1() {
     status.textContent(`当前：${label}`);
   };
 
-  return {
-    render() {
-      return vNavbar((navbar) => {
-        navbar.ariaLabel('运维主导航');
-        navbar.brand((brand) => {
-          brand.strong('运维中心');
-          brand.span('Workspace');
+  return vNavbar((navbar) => {
+    navbar.ariaLabel('运维主导航');
+    navbar.brand((brand) => {
+      brand.strong('运维中心');
+      brand.span('Workspace');
+    });
+    navbar.menuContent((menu) => {
+      ['服务', '任务', '审计'].forEach((label, index) => {
+        menu.vMenuItem((item) => {
+          item.text(label);
+          item.active(index === 0);
+          item.on('click', () => setActive(label, index));
+          menuItems[index] = item;
         });
+      });
+    });
+    navbar.actions((actions) => {
+      actions.output((output) => {
+        output.className('components-route-note');
+        output.child(status);
+      });
+      actions.vButton('同步', (button) => {
+        button.variant('secondary');
+        button.on('click', () => status.textContent('同步完成'));
+      });
+      actions.vButton('新建', (button) => {
+        button.variant('primary');
+        button.on('click', () => status.textContent('已进入新建流程'));
+      });
+    });
+  });
+}
+
+function NavbarWrapExample1() {
+  const status = vText('当前：概览');
+  const menuItems = [];
+  const setActive = (label, activeIndex) => {
+    menuItems.forEach((item, index) => item.active(index === activeIndex));
+    status.textContent(`当前：${label}`);
+  };
+
+  return div((frame) => {
+    frame.style('maxWidth', '720px');
+    frame.vstack((shell) => {
+      shell.style('gap', '14px');
+      shell.vNavbar((navbar) => {
+        navbar.title('yoya-ui');
         navbar.menuContent((menu) => {
-          ['服务', '任务', '审计'].forEach((label, index) => {
+          ['概览', '配置', '日志', '审计'].forEach((label, index) => {
+            if (index === 2) {
+              menu.vMenuDivider();
+            }
+
             menu.vMenuItem((item) => {
               item.text(label);
               item.active(index === 0);
@@ -1001,66 +1040,15 @@ function NavbarBrandExample1() {
             button.variant('secondary');
             button.on('click', () => status.textContent('同步完成'));
           });
-          actions.vButton('新建', (button) => {
+          actions.vButton('发布', (button) => {
             button.variant('primary');
-            button.on('click', () => status.textContent('已进入新建流程'));
+            button.on('click', () => status.textContent('发布已提交'));
           });
         });
       });
-    }
-  };
-}
-
-function NavbarWrapExample1() {
-  const status = vText('当前：概览');
-  const menuItems = [];
-  const setActive = (label, activeIndex) => {
-    menuItems.forEach((item, index) => item.active(index === activeIndex));
-    status.textContent(`当前：${label}`);
-  };
-
-  return {
-    render() {
-      return div((frame) => {
-        frame.style('maxWidth', '720px');
-        frame.vstack((shell) => {
-          shell.style('gap', '14px');
-          shell.vNavbar((navbar) => {
-            navbar.title('yoya-ui');
-            navbar.menuContent((menu) => {
-              ['概览', '配置', '日志', '审计'].forEach((label, index) => {
-                if (index === 2) {
-                  menu.vMenuDivider();
-                }
-
-                menu.vMenuItem((item) => {
-                  item.text(label);
-                  item.active(index === 0);
-                  item.on('click', () => setActive(label, index));
-                  menuItems[index] = item;
-                });
-              });
-            });
-            navbar.actions((actions) => {
-              actions.output((output) => {
-                output.className('components-route-note');
-                output.child(status);
-              });
-              actions.vButton('同步', (button) => {
-                button.variant('secondary');
-                button.on('click', () => status.textContent('同步完成'));
-              });
-              actions.vButton('发布', (button) => {
-                button.variant('primary');
-                button.on('click', () => status.textContent('发布已提交'));
-              });
-            });
-          });
-          shell.p('空间变窄时，动作区会自然换行。');
-        });
-      });
-    }
-  };
+      shell.p('空间变窄时，动作区会自然换行。');
+    });
+  });
 }
 
 function StepsBasicExample1() {
@@ -1085,188 +1073,168 @@ function StepsBasicExample1() {
     status.textContent(`当前第 ${steps.current() + 1} 步：${step.title()}`);
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(steps);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前步骤');
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-steps-basic-status', 'true');
-            output.child(status);
-          });
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('上一步', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              steps.prev();
-              syncStatus();
-            });
-          });
-          actions.vButton('下一步', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              steps.next();
-              syncStatus();
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(steps);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前步骤');
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-steps-basic-status', 'true');
+        output.child(status);
+      });
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('上一步', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          steps.prev();
+          syncStatus();
         });
       });
-    }
-  };
+      actions.vButton('下一步', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          steps.next();
+          syncStatus();
+        });
+      });
+    });
+  });
 }
 
 function StepsVerticalExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('纵向布局适合表单、审批详情等需要逐条阅读流程的场景。');
-        content.child(
-          vSteps((steps) => {
-            steps.direction('vertical');
-            steps.current(1);
-            steps.status('error');
-            steps.vStep((step) => {
-              step.title('提交申请');
-              step.description('填写申请单');
-            });
-            steps.vStep((step) => {
-              step.title('审批');
-              step.description('当前审批失败');
-            });
-            steps.vStep((step) => {
-              step.title('完成');
-              step.description('等待重新提交');
-            });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('纵向布局适合表单、审批详情等需要逐条阅读流程的场景。');
+    content.child(
+      vSteps((steps) => {
+        steps.direction('vertical');
+        steps.current(1);
+        steps.status('error');
+        steps.vStep((step) => {
+          step.title('提交申请');
+          step.description('填写申请单');
+        });
+        steps.vStep((step) => {
+          step.title('审批');
+          step.description('当前审批失败');
+        });
+        steps.vStep((step) => {
+          step.title('完成');
+          step.description('等待重新提交');
+        });
+      })
+    );
+  });
 }
 
 function StepsCustomExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('small 尺寸和自定义图标适合卡片摘要、状态面板等紧凑区域。');
-        content.child(
-          vSteps((steps) => {
-            steps.current(2);
-            steps.size('small');
-            steps.vStep((step) => {
-              step.title('基础信息');
-              step.description('已填写');
-              step.icon('✓');
-            });
-            steps.vStep((step) => {
-              step.title('资源检查');
-              step.description('通过');
-              step.icon('✓');
-            });
-            steps.vStep((step) => {
-              step.title('发布');
-              step.description('准备上线');
-              step.icon('3');
-            });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('small 尺寸和自定义图标适合卡片摘要、状态面板等紧凑区域。');
+    content.child(
+      vSteps((steps) => {
+        steps.current(2);
+        steps.size('small');
+        steps.vStep((step) => {
+          step.title('基础信息');
+          step.description('已填写');
+          step.icon('✓');
+        });
+        steps.vStep((step) => {
+          step.title('资源检查');
+          step.description('通过');
+          step.icon('✓');
+        });
+        steps.vStep((step) => {
+          step.title('发布');
+          step.description('准备上线');
+          step.icon('3');
+        });
+      })
+    );
+  });
 }
 
 function TabsBasicExample1() {
   const status = vText('当前：概览');
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('key 驱动当前标签，点击或方向键切换后同步状态文案。');
-        content.child(
-          vTabs((tabs) => {
-            tabs.ariaLabel('服务详情标签');
-            tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
-            tabs.vTab((tab) => {
-              tab.key('overview');
-              tab.label('概览');
-              tab.content((panel) => {
-                panel.p('服务概览');
-                panel.p('展示核心指标和近期变更。');
-              });
-            });
-            tabs.vTab((tab) => {
-              tab.key('logs');
-              tab.label('日志');
-              tab.content((panel) => panel.p('最近运行日志会显示在这里。'));
-            });
-            tabs.vTab((tab) => {
-              tab.key('audit');
-              tab.label('审计');
-              tab.content((panel) => panel.p('审计记录和操作历史。'));
-            });
-          })
-        );
-        content.div((row) => {
-          row.style('alignItems', 'center');
-          row.style('display', 'flex');
-          row.style('justifyContent', 'space-between');
-          row.span('当前标签');
-          row.output((output) => {
-            output.attr('data-tabs-basic-status', 'true');
-            output.child(status);
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('key 驱动当前标签，点击或方向键切换后同步状态文案。');
+    content.child(
+      vTabs((tabs) => {
+        tabs.ariaLabel('服务详情标签');
+        tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
+        tabs.vTab((tab) => {
+          tab.key('overview');
+          tab.label('概览');
+          tab.content((panel) => {
+            panel.p('服务概览');
+            panel.p('展示核心指标和近期变更。');
           });
         });
+        tabs.vTab((tab) => {
+          tab.key('logs');
+          tab.label('日志');
+          tab.content((panel) => panel.p('最近运行日志会显示在这里。'));
+        });
+        tabs.vTab((tab) => {
+          tab.key('audit');
+          tab.label('审计');
+          tab.content((panel) => panel.p('审计记录和操作历史。'));
+        });
+      })
+    );
+    content.div((row) => {
+      row.style('alignItems', 'center');
+      row.style('display', 'flex');
+      row.style('justifyContent', 'space-between');
+      row.span('当前标签');
+      row.output((output) => {
+        output.attr('data-tabs-basic-status', 'true');
+        output.child(status);
       });
-    }
-  };
+    });
+  });
 }
 
 function TabsVerticalExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('vertical 模式把标签放在左侧，适合详情页或设置页。');
-        content.child(
-          vTabs((tabs) => {
-            tabs.ariaLabel('设置页导航');
-            tabs.orientation('vertical');
-            tabs.variant('pills');
-            tabs.vTab((tab) => {
-              tab.key('profile');
-              tab.label('基本信息');
-              tab.content((panel) => {
-                panel.p('服务名称、负责人和环境信息。');
-              });
-            });
-            tabs.vTab((tab) => {
-              tab.key('permissions');
-              tab.label('权限');
-              tab.content((panel) => {
-                panel.p('成员和角色权限设置。');
-              });
-            });
-            tabs.vTab((tab) => {
-              tab.key('notifications');
-              tab.label('通知');
-              tab.content((panel) => {
-                panel.p('消息通知偏好。');
-              });
-            });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('vertical 模式把标签放在左侧，适合详情页或设置页。');
+    content.child(
+      vTabs((tabs) => {
+        tabs.ariaLabel('设置页导航');
+        tabs.orientation('vertical');
+        tabs.variant('pills');
+        tabs.vTab((tab) => {
+          tab.key('profile');
+          tab.label('基本信息');
+          tab.content((panel) => {
+            panel.p('服务名称、负责人和环境信息。');
+          });
+        });
+        tabs.vTab((tab) => {
+          tab.key('permissions');
+          tab.label('权限');
+          tab.content((panel) => {
+            panel.p('成员和角色权限设置。');
+          });
+        });
+        tabs.vTab((tab) => {
+          tab.key('notifications');
+          tab.label('通知');
+          tab.content((panel) => {
+            panel.p('消息通知偏好。');
+          });
+        });
+      })
+    );
+  });
 }
 
 function TabsCustomExample1() {
@@ -1276,61 +1244,53 @@ function TabsCustomExample1() {
     label: '审计'
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('card 样式和 small 尺寸适合嵌入工具栏或详情卡片。');
-        content.child(
-          vTabs((tabs) => {
-            tabs.ariaLabel('服务标签');
-            tabs.size('small');
-            tabs.variant('card');
-            tabs.vTab((tab) => {
-              tab.key('overview');
-              tab.label('概览');
-              tab.content((panel) => panel.p('服务状态与核心指标。'));
-            });
-            tabs.vTab((tab) => {
-              tab.key('logs');
-              tab.label('日志');
-              tab.content((panel) => panel.p('查看最近日志。'));
-            });
-            tabs.child(auditTab);
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('card 样式和 small 尺寸适合嵌入工具栏或详情卡片。');
+    content.child(
+      vTabs((tabs) => {
+        tabs.ariaLabel('服务标签');
+        tabs.size('small');
+        tabs.variant('card');
+        tabs.vTab((tab) => {
+          tab.key('overview');
+          tab.label('概览');
+          tab.content((panel) => panel.p('服务状态与核心指标。'));
+        });
+        tabs.vTab((tab) => {
+          tab.key('logs');
+          tab.label('日志');
+          tab.content((panel) => panel.p('查看最近日志。'));
+        });
+        tabs.child(auditTab);
+      })
+    );
+  });
 }
 
 function BreadcrumbBasicExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('链接层级可以返回上级，最后一个节点作为当前页面。');
-        content.child(
-          vBreadcrumb((breadcrumb) => {
-            breadcrumb.ariaLabel('服务导航');
-            breadcrumb.separator('/');
-            breadcrumb.vBreadcrumbItem((item) => {
-              item.label('控制台');
-              item.href('#/console');
-            });
-            breadcrumb.vBreadcrumbItem((item) => {
-              item.label('服务列表');
-              item.href('#/services');
-            });
-            breadcrumb.vBreadcrumbItem((item) => {
-              item.label('api-gateway');
-              item.active(true);
-            });
-          })
-        );
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('链接层级可以返回上级，最后一个节点作为当前页面。');
+    content.child(
+      vBreadcrumb((breadcrumb) => {
+        breadcrumb.ariaLabel('服务导航');
+        breadcrumb.separator('/');
+        breadcrumb.vBreadcrumbItem((item) => {
+          item.label('控制台');
+          item.href('#/console');
+        });
+        breadcrumb.vBreadcrumbItem((item) => {
+          item.label('服务列表');
+          item.href('#/services');
+        });
+        breadcrumb.vBreadcrumbItem((item) => {
+          item.label('api-gateway');
+          item.active(true);
+        });
+      })
+    );
+  });
 }
 
 function BreadcrumbDynamicExample1() {
@@ -1345,33 +1305,29 @@ function BreadcrumbDynamicExample1() {
     status.textContent(`当前：${items[index].label()}`);
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('active 可以随时切换，当前项会从链接变成 aria-current 文本。');
-        content.child(
-          vBreadcrumb((breadcrumb) => {
-            breadcrumb.ariaLabel('动态服务导航');
-            breadcrumb.items(items);
-          })
-        );
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          ['控制台', '服务', '服务详情'].forEach((label, index) => {
-            row.vButton(label, (button) => {
-              button.size('small');
-              button.variant('secondary');
-              button.on('click', () => select(index));
-            });
-          });
-          row.spacer();
-          row.output((output) => {
-            output.attr('data-breadcrumb-demo-status', 'true');
-            output.child(status);
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('active 可以随时切换，当前项会从链接变成 aria-current 文本。');
+    content.child(
+      vBreadcrumb((breadcrumb) => {
+        breadcrumb.ariaLabel('动态服务导航');
+        breadcrumb.items(items);
+      })
+    );
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      ['控制台', '服务', '服务详情'].forEach((label, index) => {
+        row.vButton(label, (button) => {
+          button.size('small');
+          button.variant('secondary');
+          button.on('click', () => select(index));
         });
       });
-    }
-  };
+      row.spacer();
+      row.output((output) => {
+        output.attr('data-breadcrumb-demo-status', 'true');
+        output.child(status);
+      });
+    });
+  });
 }

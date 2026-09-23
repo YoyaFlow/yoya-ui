@@ -1,3 +1,4 @@
+import { vNode } from '../../index.js';
 import { AgGridDemoNode } from './ag-grid-glue.js';
 
 /** 行内富文本：元素 + textContent 组装，避免用 innerHTML 拼数据。 */
@@ -217,43 +218,40 @@ export function AgGridHrExample() {
     }
   ];
 
-  return {
-    render() {
-      node = new AgGridDemoNode({
-        columnDefs: columns(),
-        height: '520px',
-        gridOptions: {
-          defaultColDef: { resizable: true, sortable: true },
-          getRowHeight: () => 52,
-          getRowId: (params) => String(params.data.id),
-          getRowStyle: (params) => {
-            if (params.data.kind === 'group') {
-              return { background: 'var(--ag-header-background-color)' };
-            }
-            return undefined;
+  return vNode((api) => {
+    node = new AgGridDemoNode({
+      columnDefs: columns(),
+      height: '520px',
+      gridOptions: {
+        defaultColDef: { resizable: true, sortable: true },
+        getRowHeight: () => 52,
+        getRowId: (params) => String(params.data.id),
+        getRowStyle: (params) => {
+          if (params.data.kind === 'group') {
+            return { background: 'var(--ag-header-background-color)' };
           }
-        },
-        rowData: visibleRows()
-      });
-      return node;
-    },
-    toggleGroup(id) {
+          return undefined;
+        }
+      },
+      rowData: visibleRows()
+    });
+
+    api.toggleGroup = (id) => {
       toggle(id);
-    },
-    expandAll() {
+      return api;
+    };
+    api.expandAll = () => {
       visitGroups((item) => expanded.add(item.id));
-      node?.setRows(visibleRows());
-    },
-    collapseAll() {
+      node.setRows(visibleRows());
+      return api;
+    };
+    api.collapseAll = () => {
       expanded.clear();
-      node?.setRows(visibleRows());
-    },
-    visibleCount() {
-      return visibleRows().length;
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+      node.setRows(visibleRows());
+      return api;
+    };
+    api.visibleCount = () => visibleRows().length;
+
+    return node;
+  });
 }

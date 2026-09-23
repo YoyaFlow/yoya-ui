@@ -43,18 +43,14 @@ function SliderBasicExample() {
     value: 40
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(slider);
-        body.div((row) => {
-          row.span('当前值');
-          row.spacer();
-          row.code((el) => el.attr('data-slider-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(slider);
+    body.div((row) => {
+      row.span('当前值');
+      row.spacer();
+      row.code((el) => el.attr('data-slider-output', 'true').child(output));
+    });
+  });
 }
 
 function SliderStateExample() {
@@ -63,21 +59,17 @@ function SliderStateExample() {
     el.step(10).value(60);
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(slider);
-        body.div((row) => {
-          row.button('禁用 / 启用', (btn) =>
-            btn.on('click', () => slider.disabled(!slider.disabled()))
-          );
-          row.button('显示 / 隐藏数值', (btn) =>
-            btn.on('click', () => slider.showValue(!slider.showValue()))
-          );
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(slider);
+    body.div((row) => {
+      row.button('禁用 / 启用', (btn) =>
+        btn.on('click', () => slider.disabled(!slider.disabled()))
+      );
+      row.button('显示 / 隐藏数值', (btn) =>
+        btn.on('click', () => slider.showValue(!slider.showValue()))
+      );
+    });
+  });
 }
 
 function SliderVerticalExample() {
@@ -92,18 +84,14 @@ function SliderVerticalExample() {
     vertical: true
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.hstack((row) => {
-          row.child(slider);
-          row.span('当前值');
-          row.spacer();
-          row.code((el) => el.attr('data-slider-vertical-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.hstack((row) => {
+      row.child(slider);
+      row.span('当前值');
+      row.spacer();
+      row.code((el) => el.attr('data-slider-vertical-output', 'true').child(output));
+    });
+  });
 }
 
 function SliderBasicDemo() {
@@ -184,38 +172,30 @@ function CascaderBasicExample() {
     value: ['zhejiang', 'hangzhou']
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(cascader);
-        body.div((row) => {
-          row.span('已选路径');
-          row.spacer();
-          row.code((el) => el.attr('data-cascader-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(cascader);
+    body.div((row) => {
+      row.span('已选路径');
+      row.spacer();
+      row.code((el) => el.attr('data-cascader-output', 'true').child(output));
+    });
+  });
 }
 
 function CascaderStateExample() {
   const cascader = vCascader((el) => el.options(regionOptions));
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(cascader);
-        body.div((row) => {
-          row.button('禁用 / 启用', (btn) =>
-            btn.on('click', () => cascader.disabled(!cascader.disabled()))
-          );
-          row.button('回填广东', (btn) =>
-            btn.on('click', () => cascader.value(['guangdong', 'shenzhen']))
-          );
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(cascader);
+    body.div((row) => {
+      row.button('禁用 / 启用', (btn) =>
+        btn.on('click', () => cascader.disabled(!cascader.disabled()))
+      );
+      row.button('回填广东', (btn) =>
+        btn.on('click', () => cascader.value(['guangdong', 'shenzhen']))
+      );
+    });
+  });
 }
 
 function CascaderBasicDemo() {
@@ -273,31 +253,23 @@ function TagsBasicExample() {
     }
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(tags);
-        body.div((row) => {
-          row.span('已添加');
-          row.spacer();
-          row.code((el) => el.attr('data-tags-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(tags);
+    body.div((row) => {
+      row.span('已添加');
+      row.spacer();
+      row.code((el) => el.attr('data-tags-output', 'true').child(output));
+    });
+  });
 }
 
 function TagsPresetExample() {
   const tags = vTagsInput((el) => el.value(['vue', 'react']));
 
-  return {
-    render() {
-      return div((body) => {
-        body.p('回车或逗号添加，退格或点击 × 移除，已存在的标签自动去重。');
-        body.child(tags);
-      });
-    }
-  };
+  return div((body) => {
+    body.p('回车或逗号添加，退格或点击 × 移除，已存在的标签自动去重。');
+    body.child(tags);
+  });
 }
 
 function TagsBasicDemo() {
@@ -355,18 +327,14 @@ function AutocompleteBasicExample() {
     source: frameworkSource
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(autocomplete);
-        body.div((row) => {
-          row.span('已选择');
-          row.spacer();
-          row.code((el) => el.attr('data-autocomplete-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(autocomplete);
+    body.div((row) => {
+      row.span('已选择');
+      row.spacer();
+      row.code((el) => el.attr('data-autocomplete-output', 'true').child(output));
+    });
+  });
 }
 
 function AutocompleteFilterExample() {
@@ -377,14 +345,10 @@ function AutocompleteFilterExample() {
     });
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.p('source 也支持过滤函数，适合远程数据在本地预过滤的场景。');
-        body.child(autocomplete);
-      });
-    }
-  };
+  return div((body) => {
+    body.p('source 也支持过滤函数，适合远程数据在本地预过滤的场景。');
+    body.child(autocomplete);
+  });
 }
 
 function AutocompleteBasicDemo() {

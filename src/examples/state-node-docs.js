@@ -104,7 +104,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '区域只依赖类型 ref：切换类型重建字段，输入值变化只收集不重建。',
     component: StateDynamicFormDemo,
     sourceComponent: StateDynamicFormExample,
-    imports: ['div', 'ref', 'vForm', 'vFormItem', 'vInput', 'vSelect'],
+    imports: ['div', 'ref', 'vForm', 'vFormItem', 'vInput', 'vNode', 'vSelect'],
     sourceTitle: '动态表单核心源码',
     extraSource: dynamicFormFieldsSource
   },
@@ -114,7 +114,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '组件对象暴露操作方法，方法内写 ref，计数文本通过值绑定自动同步。',
     component: StateMethodsDemo,
     sourceComponent: StateMethodsExample,
-    imports: ['div', 'ref', 'vText'],
+    imports: ['div', 'ref', 'vNode', 'vText'],
     sourceTitle: '自定义方法核心源码'
   },
   {
@@ -132,7 +132,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'addChild(key, node) 登记唯一 key，元素子节点自动带 data-row-key。',
     component: StateKeyedExample1,
     sourceComponent: StateKeyedExample1,
-    imports: ['div', 'vstack'],
+    imports: ['div', 'vNode', 'vstack'],
     sourceTitle: 'Keyed 子节点核心源码'
   },
   {
@@ -141,7 +141,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '同一节点重复 on() 覆盖上次 handler，不会叠加触发。',
     component: StateEventOverwriteExample1,
     sourceComponent: StateEventOverwriteExample1,
-    imports: ['vstack', 'vText'],
+    imports: ['vNode', 'vstack', 'vText'],
     sourceTitle: '事件覆盖核心源码'
   },
   {
@@ -150,7 +150,7 @@ const stateDemoDefinitions = Object.freeze([
     description: 'attr / style 接收 ref / computed，随写入自动更新；返回 null 时移除属性或样式。',
     component: StateDynamicAttrsExample1,
     sourceComponent: StateDynamicAttrsExample1,
-    imports: ['computed', 'ref', 'vText', 'vstack'],
+    imports: ['computed', 'ref', 'vNode', 'vText', 'vstack'],
     sourceTitle: '动态属性绑定核心源码'
   }
 ]);

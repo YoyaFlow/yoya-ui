@@ -36,14 +36,10 @@ export function TreeRangerExample() {
     ]
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('height', '360px');
-        root.child(browser);
-      });
-    }
-  };
+  return div((root) => {
+    root.style('height', '360px');
+    root.child(browser);
+  });
 }
 
 export function TreeRangerFileExample() {
@@ -92,14 +88,10 @@ export function TreeRangerFileExample() {
     ]);
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('height', '360px');
-        root.child(browser);
-      });
-    }
-  };
+  return div((root) => {
+    root.style('height', '360px');
+    root.child(browser);
+  });
 }
 
 export function TreeRangerActionsExample() {
@@ -163,14 +155,10 @@ export function TreeRangerActionsExample() {
     ]
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('height', '360px');
-        root.child(browser);
-      });
-    }
-  };
+  return div((root) => {
+    root.style('height', '360px');
+    root.child(browser);
+  });
 }
 
 export function TreeRangerLazyExample() {
@@ -207,12 +195,8 @@ export function TreeRangerLazyExample() {
     ]);
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('height', '360px');
-        root.child(browser);
-      });
-    }
-  };
+  return div((root) => {
+    root.style('height', '360px');
+    root.child(browser);
+  });
 }

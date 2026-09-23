@@ -716,7 +716,7 @@ function createLayoutDocumentationPage(definition) {
 }
 
 function LayoutExampleSection(demo) {
-  const liveDemo = demo.component().render();
+  const liveDemo = demo.component();
   const sourcePanel = ComponentSource({
     component: demo.component,
     sourceComponent: demo.sourceComponent ?? demo.component,
@@ -807,180 +807,148 @@ function mountLayoutDemoInFrame(frameNode, demoNode) {
 }
 
 function DividerSectionExample1() {
-  return {
-    render() {
-      return stack((content) => {
-        content.style('gap', '12px');
-        content.p('divider 适合把说明拆成两个语义区块。');
-        content.p('上方是背景说明，下面是补充说明。');
-        content.divider();
-        content.p('这种分隔不会改变层级，只是让阅读节奏更清楚。');
-      });
-    }
-  };
+  return stack((content) => {
+    content.style('gap', '12px');
+    content.p('divider 适合把说明拆成两个语义区块。');
+    content.p('上方是背景说明，下面是补充说明。');
+    content.divider();
+    content.p('这种分隔不会改变层级，只是让阅读节奏更清楚。');
+  });
 }
 
 function SplitHorizontalExample1() {
-  return {
-    render() {
-      return vSplitPanel((panel) => {
-        panel.styles({ height: '260px' });
-        panel.first((left) => {
-          left.styles({
-            background: 'var(--yoya-color-surface-muted, #f5f5f5)',
-            padding: '12px'
-          });
-          left.strong('导航区');
-          left.p('拖拽中间分隔条调整两侧宽度。');
-        });
-        panel.second((right) => {
-          right.styles({ padding: '12px' });
-          right.strong('内容区');
-          right.p('次面板占满剩余空间。');
-        });
+  return vSplitPanel((panel) => {
+    panel.styles({ height: '260px' });
+    panel.first((left) => {
+      left.styles({
+        background: 'var(--yoya-color-surface-muted, #f5f5f5)',
+        padding: '12px'
       });
-    }
-  };
+      left.strong('导航区');
+      left.p('拖拽中间分隔条调整两侧宽度。');
+    });
+    panel.second((right) => {
+      right.styles({ padding: '12px' });
+      right.strong('内容区');
+      right.p('次面板占满剩余空间。');
+    });
+  });
 }
 
 function SplitVerticalExample1() {
-  return {
-    render() {
-      return vSplitPanel({ direction: 'vertical', size: '40%' }, (panel) => {
-        panel.styles({ height: '260px' });
-        panel.first((top) => {
-          top.styles({
-            background: 'var(--yoya-color-surface-muted, #f5f5f5)',
-            padding: '12px'
-          });
-          top.strong('上部');
-          top.p('上下拖拽分隔条调整高度。');
-        });
-        panel.second((bottom) => {
-          bottom.styles({ padding: '12px' });
-          bottom.strong('下部');
-          bottom.p('双击分隔条恢复 50%。');
-        });
+  return vSplitPanel({ direction: 'vertical', size: '40%' }, (panel) => {
+    panel.styles({ height: '260px' });
+    panel.first((top) => {
+      top.styles({
+        background: 'var(--yoya-color-surface-muted, #f5f5f5)',
+        padding: '12px'
       });
-    }
-  };
+      top.strong('上部');
+      top.p('上下拖拽分隔条调整高度。');
+    });
+    panel.second((bottom) => {
+      bottom.styles({ padding: '12px' });
+      bottom.strong('下部');
+      bottom.p('双击分隔条恢复 50%。');
+    });
+  });
 }
 
 function DividerToolbarExample1() {
-  return {
-    render() {
-      return hstack((row) => {
-        row.style({ alignItems: 'center', gap: '10px' });
-        row.strong('服务列表');
-        row.spacer();
-        row.span('已同步');
-        row.divider({ orientation: 'vertical' });
-        row.vButton('刷新', (button) => {
-          button.variant('secondary');
-        });
-        row.vButton('新建', (button) => {
-          button.variant('primary');
-        });
-      });
-    }
-  };
+  return hstack((row) => {
+    row.style({ alignItems: 'center', gap: '10px' });
+    row.strong('服务列表');
+    row.spacer();
+    row.span('已同步');
+    row.divider({ orientation: 'vertical' });
+    row.vButton('刷新', (button) => {
+      button.variant('secondary');
+    });
+    row.vButton('新建', (button) => {
+      button.variant('primary');
+    });
+  });
 }
 
 function FlexToolbarExample1() {
-  return {
-    render() {
-      return flex((toolbar) => {
-        toolbar.styles({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
-        ['全部', '在线', '异常', '慢请求'].forEach((label) => {
-          toolbar.span((pill) => {
-            pill.className('components-route-note');
-            pill.child(label);
-          });
-        });
-        toolbar.spacer();
-        toolbar.span('3 个筛选已启用');
-        toolbar.vButton('清空', (button) => {
-          button.variant('secondary');
-        });
+  return flex((toolbar) => {
+    toolbar.styles({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
+    ['全部', '在线', '异常', '慢请求'].forEach((label) => {
+      toolbar.span((pill) => {
+        pill.className('components-route-note');
+        pill.child(label);
       });
-    }
-  };
+    });
+    toolbar.spacer();
+    toolbar.span('3 个筛选已启用');
+    toolbar.vButton('清空', (button) => {
+      button.variant('secondary');
+    });
+  });
 }
 
 function FlexStackExample1() {
-  return {
-    render() {
-      return stack((content) => {
-        content.style('gap', '12px');
-        content.p('stack 和 vstack 适合从上到下摆放标题、说明和状态。');
-        content.vstack((steps) => {
-          steps.style('gap', '8px');
-          ['准备', '执行', '完成'].forEach((label, index) => {
-            steps.div((step) => {
-              step.className('detail-grid-cell');
-              step.strong(`${index + 1}. ${label}`);
-              step.span('按自然顺序展开内容。');
-            });
-          });
-        });
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('当前阶段');
-          row.spacer();
-          row.span((status) => {
-            status.className('components-route-note');
-            status.child('执行中');
-          });
+  return stack((content) => {
+    content.style('gap', '12px');
+    content.p('stack 和 vstack 适合从上到下摆放标题、说明和状态。');
+    content.vstack((steps) => {
+      steps.style('gap', '8px');
+      ['准备', '执行', '完成'].forEach((label, index) => {
+        steps.div((step) => {
+          step.className('detail-grid-cell');
+          step.strong(`${index + 1}. ${label}`);
+          step.span('按自然顺序展开内容。');
         });
       });
-    }
-  };
+    });
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('当前阶段');
+      row.spacer();
+      row.span((status) => {
+        status.className('components-route-note');
+        status.child('执行中');
+      });
+    });
+  });
 }
 
 function FlexCenterExample1() {
-  return {
-    render() {
-      return center((empty) => {
-        empty.styles({ minHeight: '220px', textAlign: 'center' });
-        empty.stack((content) => {
-          content.style('gap', '10px');
-          content.h2('暂无内容');
-          content.p('center 适合空状态、加载态和确认页。');
-          content.vButton('返回', (button) => {
-            button.variant('secondary');
-          });
-        });
+  return center((empty) => {
+    empty.styles({ minHeight: '220px', textAlign: 'center' });
+    empty.stack((content) => {
+      content.style('gap', '10px');
+      content.h2('暂无内容');
+      content.p('center 适合空状态、加载态和确认页。');
+      content.vButton('返回', (button) => {
+        button.variant('secondary');
       });
-    }
-  };
+    });
+  });
 }
 
 function GridFixedExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('grid 适合固定列数和明确轨道。');
-        content.grid((matrix) => {
-          matrix.styles({ gap: '12px', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' });
-          [
-            ['请求量', '128k'],
-            ['成功率', '99.92%'],
-            ['队列积压', '42'],
-            ['告警', '3'],
-            ['P99 延迟', '82ms'],
-            ['实例', '12']
-          ].forEach(([label, value]) => {
-            matrix.article((cell) => {
-              cell.className('detail-grid-cell');
-              cell.strong(label);
-              cell.span(value);
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('grid 适合固定列数和明确轨道。');
+    content.grid((matrix) => {
+      matrix.styles({ gap: '12px', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' });
+      [
+        ['请求量', '128k'],
+        ['成功率', '99.92%'],
+        ['队列积压', '42'],
+        ['告警', '3'],
+        ['P99 延迟', '82ms'],
+        ['实例', '12']
+      ].forEach(([label, value]) => {
+        matrix.article((cell) => {
+          cell.className('detail-grid-cell');
+          cell.strong(label);
+          cell.span(value);
         });
       });
-    }
-  };
+    });
+  });
 }
 
 function GridResponsiveExample1() {
@@ -995,199 +963,183 @@ function GridResponsiveExample1() {
     }
   };
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('拖动宽度滑杆或点预设宽度，iframe 内同一套内容会自动换列。');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
-          row.span('容器宽度');
-          row.input((slider) => {
-            slider.attr({
-              'data-grid-responsive-width': 'true',
-              max: '1200',
-              min: '280',
-              step: '20',
-              type: 'range',
-              value: '768'
-            });
-            slider.style({ width: '160px' });
-            slider.on('input', (event) => setWidth(event.target.value));
-          });
-          [480, 768, 1100].forEach((preset) => {
-            row.vButton(String(preset), (button) => {
-              button.attr('data-grid-responsive-preset', String(preset));
-              button.size('small');
-              button.variant('secondary');
-              button.on('click', () => {
-                const slider = document.querySelector('[data-grid-responsive-width]');
-                if (slider) {
-                  slider.value = String(preset);
-                }
-                setWidth(preset);
-              });
-            });
-          });
-          row.span((text) => {
-            text.className('components-route-note');
-            text.attr('data-grid-responsive-width-text', 'true');
-            text.child(widthText);
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('拖动宽度滑杆或点预设宽度，iframe 内同一套内容会自动换列。');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
+      row.span('容器宽度');
+      row.input((slider) => {
+        slider.attr({
+          'data-grid-responsive-width': 'true',
+          max: '1200',
+          min: '280',
+          step: '20',
+          type: 'range',
+          value: '768'
         });
-        content.iframe((iframe) => {
-          frame = iframe;
-          iframe.className('components-grid-responsive-frame');
-          iframe.attr({
-            'data-grid-responsive-frame': 'true',
-            src: './grid-responsive.html',
-            title: '响应式栅格演示'
-          });
-          iframe.styles({
-            background: 'var(--yoya-color-surface, #ffffff)',
-            border: '1px solid var(--yoya-color-border, #d8dee8)',
-            borderRadius: '8px',
-            boxSizing: 'border-box',
-            height: '280px',
-            width: '768px'
-          });
-        });
-        content.p('断点：<640px 1 列，640–960px 2 列，≥960px 3 列。');
+        slider.style({ width: '160px' });
+        slider.on('input', (event) => setWidth(event.target.value));
       });
-    }
-  };
+      [480, 768, 1100].forEach((preset) => {
+        row.vButton(String(preset), (button) => {
+          button.attr('data-grid-responsive-preset', String(preset));
+          button.size('small');
+          button.variant('secondary');
+          button.on('click', () => {
+            const slider = document.querySelector('[data-grid-responsive-width]');
+            if (slider) {
+              slider.value = String(preset);
+            }
+            setWidth(preset);
+          });
+        });
+      });
+      row.span((text) => {
+        text.className('components-route-note');
+        text.attr('data-grid-responsive-width-text', 'true');
+        text.child(widthText);
+      });
+    });
+    content.iframe((iframe) => {
+      frame = iframe;
+      iframe.className('components-grid-responsive-frame');
+      iframe.attr({
+        'data-grid-responsive-frame': 'true',
+        src: './grid-responsive.html',
+        title: '响应式栅格演示'
+      });
+      iframe.styles({
+        background: 'var(--yoya-color-surface, #ffffff)',
+        border: '1px solid var(--yoya-color-border, #d8dee8)',
+        borderRadius: '8px',
+        boxSizing: 'border-box',
+        height: '280px',
+        width: '768px'
+      });
+    });
+    content.p('断点：<640px 1 列，640–960px 2 列，≥960px 3 列。');
+  });
 }
 
 function GridRowColExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('vRow / vCol 按 24 等分控制列宽，支持 gutter、offset、push / pull。');
-        content.vRow({ gutter: 12 }, (row) => {
-          [6, 6, 6, 6].forEach((span) => {
-            row.vCol({ span }, (cell) => {
-              cell.className('detail-grid-cell');
-              cell.strong(String(span));
-              cell.span(`${(span / 24) * 100}%`);
-            });
-          });
-        });
-        content.vRow({ gutter: 12 }, (row) => {
-          row.vCol({ span: 8, offset: 4 }, (cell) => {
-            cell.className('detail-grid-cell');
-            cell.strong('8');
-            cell.span('offset 4');
-          });
-          row.vCol({ span: 6 }, (cell) => {
-            cell.className('detail-grid-cell');
-            cell.strong('6');
-            cell.span('右侧');
-          });
-        });
-        content.vRow({ gutter: 12 }, (row) => {
-          row.vCol({ span: 6, push: 6 }, (cell) => {
-            cell.className('detail-grid-cell');
-            cell.strong('6');
-            cell.span('push 6');
-          });
-          row.vCol({ span: 6, pull: 6 }, (cell) => {
-            cell.className('detail-grid-cell');
-            cell.strong('6');
-            cell.span('pull 6');
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('vRow / vCol 按 24 等分控制列宽，支持 gutter、offset、push / pull。');
+    content.vRow({ gutter: 12 }, (row) => {
+      [6, 6, 6, 6].forEach((span) => {
+        row.vCol({ span }, (cell) => {
+          cell.className('detail-grid-cell');
+          cell.strong(String(span));
+          cell.span(`${(span / 24) * 100}%`);
         });
       });
-    }
-  };
+    });
+    content.vRow({ gutter: 12 }, (row) => {
+      row.vCol({ span: 8, offset: 4 }, (cell) => {
+        cell.className('detail-grid-cell');
+        cell.strong('8');
+        cell.span('offset 4');
+      });
+      row.vCol({ span: 6 }, (cell) => {
+        cell.className('detail-grid-cell');
+        cell.strong('6');
+        cell.span('右侧');
+      });
+    });
+    content.vRow({ gutter: 12 }, (row) => {
+      row.vCol({ span: 6, push: 6 }, (cell) => {
+        cell.className('detail-grid-cell');
+        cell.strong('6');
+        cell.span('push 6');
+      });
+      row.vCol({ span: 6, pull: 6 }, (cell) => {
+        cell.className('detail-grid-cell');
+        cell.strong('6');
+        cell.span('pull 6');
+      });
+    });
+  });
 }
 
 function MobileLayoutExample1() {
-  return {
-    render() {
-      return mobileLayout(
-        { breakpoint: 680, asideWidth: 220, mobileGap: 0, viewport: true },
-        (shell) => {
-          shell.vHeader({ height: 48 }, (header) => {
-            header.className('components-mobile-shell-header');
-            header.style('paddingLeft', '56px');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', paddingRight: '14px' });
-              row.strong('移动工作台');
-              row.spacer();
-              row.span('已同步');
-            });
-          });
+  return mobileLayout(
+    { breakpoint: 680, asideWidth: 220, mobileGap: 0, viewport: true },
+    (shell) => {
+      shell.vHeader({ height: 48 }, (header) => {
+        header.className('components-mobile-shell-header');
+        header.style('paddingLeft', '56px');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', paddingRight: '14px' });
+          row.strong('移动工作台');
+          row.spacer();
+          row.span('已同步');
+        });
+      });
 
-          shell.vAside({ width: 220 }, (aside) => {
-            aside.className('components-mobile-drawer');
-            aside.vstack((nav) => {
-              nav.style('gap', '8px');
-              nav.strong('导航');
-              nav.vMenu((menu) => {
-                menu.style('gap', '6px');
-                ['概览', '工作台', '审批', '设置'].forEach((label) => {
-                  menu.vMenuItem((item) => item.text(label));
-                });
-              });
-            });
-          });
-
-          shell.vMain((main) => {
-            main.className('components-mobile-main');
-            main.vstack((content) => {
-              content.style('gap', '12px');
-              content.h2('今天的工作');
-              content.p('手机端侧栏会收进抽屉，点击左上角菜单按钮即可打开。');
-              content.vCard((card) => {
-                card.vCardHeader('待办');
-                card.vCardBody((body) => {
-                  body.p('4 项待处理，2 项需要审批。');
-                });
-              });
-            });
-          });
-
-          shell.vFooter({ height: 52 }, (footer) => {
-            footer.className('components-mobile-tabbar');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%' });
-              ['首页', '工作台', '我的'].forEach((label) => {
-                row.span((item) => {
-                  item.className('components-mobile-tab');
-                  item.child(label);
-                });
-              });
-            });
-          });
-        }
-      );
-    }
-  };
-}
-
-function MobileFlexExample1() {
-  return {
-    render() {
-      return mobileLayout({ breakpoint: 720, gap: 12, mobileGap: 12 }, (content) => {
-        content.vCard((card) => {
-          card.vCardHeader('横向内容');
-          card.vCardBody((body) => {
-            body.p('宽屏时与另一张卡片并排，手机端自动纵向排列。');
-            body.vButton('查看', (button) => {
-              button.variant('secondary');
+      shell.vAside({ width: 220 }, (aside) => {
+        aside.className('components-mobile-drawer');
+        aside.vstack((nav) => {
+          nav.style('gap', '8px');
+          nav.strong('导航');
+          nav.vMenu((menu) => {
+            menu.style('gap', '6px');
+            ['概览', '工作台', '审批', '设置'].forEach((label) => {
+              menu.vMenuItem((item) => item.text(label));
             });
           });
         });
-        content.vCard((card) => {
-          card.vCardHeader('详情');
-          card.vCardBody((body) => {
-            body.p('mobileLayout 也可以用于普通内容区，不限定页面骨架。');
+      });
+
+      shell.vMain((main) => {
+        main.className('components-mobile-main');
+        main.vstack((content) => {
+          content.style('gap', '12px');
+          content.h2('今天的工作');
+          content.p('手机端侧栏会收进抽屉，点击左上角菜单按钮即可打开。');
+          content.vCard((card) => {
+            card.vCardHeader('待办');
+            card.vCardBody((body) => {
+              body.p('4 项待处理，2 项需要审批。');
+            });
+          });
+        });
+      });
+
+      shell.vFooter({ height: 52 }, (footer) => {
+        footer.className('components-mobile-tabbar');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%' });
+          ['首页', '工作台', '我的'].forEach((label) => {
+            row.span((item) => {
+              item.className('components-mobile-tab');
+              item.child(label);
+            });
           });
         });
       });
     }
-  };
+  );
+}
+
+function MobileFlexExample1() {
+  return mobileLayout({ breakpoint: 720, gap: 12, mobileGap: 12 }, (content) => {
+    content.vCard((card) => {
+      card.vCardHeader('横向内容');
+      card.vCardBody((body) => {
+        body.p('宽屏时与另一张卡片并排，手机端自动纵向排列。');
+        body.vButton('查看', (button) => {
+          button.variant('secondary');
+        });
+      });
+    });
+    content.vCard((card) => {
+      card.vCardHeader('详情');
+      card.vCardBody((body) => {
+        body.p('mobileLayout 也可以用于普通内容区，不限定页面骨架。');
+      });
+    });
+  });
 }
 
 function BodyShellExample1() {
@@ -1215,242 +1167,222 @@ function BodyShellExample1() {
     statusText.textContent(compact ? '当前：两列指标' : '当前：四列指标');
   };
 
-  return {
-    render() {
-      const page = vBody((shell) => {
-        shell.maxWidth(1000);
-        shell.padding('clamp(16px, 4vw, 28px)');
-        shell.gap(18);
+  const page = vBody((shell) => {
+    shell.maxWidth(1000);
+    shell.padding('clamp(16px, 4vw, 28px)');
+    shell.gap(18);
 
-        shell.container({ maxWidth: 920, paddingInline: 0 }, (content) => {
-          content.vstack((stackNode) => {
-            stackNode.style('gap', '18px');
+    shell.container({ maxWidth: 920, paddingInline: 0 }, (content) => {
+      content.vstack((stackNode) => {
+        stackNode.style('gap', '18px');
 
-            stackNode.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '12px' });
-              row.div((title) => {
-                title.style('gap', '6px');
-                title.h2('服务工作台');
-                title.p(
-                  'vBody 统一页面背景、内容宽度与留白，内部再继续用 container、grid 和 center 组织内容。'
-                );
+        stackNode.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '12px' });
+          row.div((title) => {
+            title.style('gap', '6px');
+            title.h2('服务工作台');
+            title.p(
+              'vBody 统一页面背景、内容宽度与留白，内部再继续用 container、grid 和 center 组织内容。'
+            );
+          });
+          row.spacer();
+          row.output((output) => output.child(statusText));
+          row.vButton('切换列数', (button) => {
+            densityButton = button;
+            button.variant('secondary');
+            button.on('click', () => {
+              compact = !compact;
+              applyDensity();
+            });
+          });
+        });
+
+        stackNode.grid((metrics) => {
+          metricsGrid = metrics;
+          metrics.styles({ gap: '12px', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' });
+          metricCards.forEach(([label, value, hint]) => {
+            metrics.article((card) => {
+              card.className('detail-grid-cell');
+              card.h3(label);
+              card.strong(value);
+              card.p(hint);
+            });
+          });
+        });
+
+        stackNode.divider();
+
+        stackNode.grid((workspace) => {
+          workspace.styles({
+            gap: '16px',
+            gridTemplateColumns: 'minmax(0, 1.3fr) minmax(280px, 0.7fr)'
+          });
+
+          workspace.section((panel) => {
+            panel.className('detail-grid-cell');
+            panel.h3('flex / hstack / spacer');
+            panel.p('工具条、筛选和状态行常用这组组合。');
+            panel.flex((toolbar) => {
+              toolbar.styles({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
+              ['全部', '异常', '慢请求'].forEach((label, index) => {
+                toolbar.vButton(label, (button) => {
+                  button.variant(index === 0 ? 'primary' : 'secondary');
+                });
               });
+            });
+            panel.divider();
+            panel.hstack((row) => {
+              row.styles({ alignItems: 'center', gap: '10px' });
+              row.span('最近更新时间');
               row.spacer();
-              row.output((output) => output.child(statusText));
-              row.vButton('切换列数', (button) => {
-                densityButton = button;
-                button.variant('secondary');
-                button.on('click', () => {
-                  compact = !compact;
-                  applyDensity();
-                });
-              });
+              row.span('2 分钟前');
+              row.divider({ orientation: 'vertical' });
+              row.span('已同步');
             });
+          });
 
-            stackNode.grid((metrics) => {
-              metricsGrid = metrics;
-              metrics.styles({ gap: '12px', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' });
-              metricCards.forEach(([label, value, hint]) => {
-                metrics.article((card) => {
-                  card.className('detail-grid-cell');
-                  card.h3(label);
-                  card.strong(value);
-                  card.p(hint);
-                });
-              });
-            });
-
-            stackNode.divider();
-
-            stackNode.grid((workspace) => {
-              workspace.styles({
-                gap: '16px',
-                gridTemplateColumns: 'minmax(0, 1.3fr) minmax(280px, 0.7fr)'
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('flex / hstack / spacer');
-                panel.p('工具条、筛选和状态行常用这组组合。');
-                panel.flex((toolbar) => {
-                  toolbar.styles({ alignItems: 'center', gap: '8px', flexWrap: 'wrap' });
-                  ['全部', '异常', '慢请求'].forEach((label, index) => {
-                    toolbar.vButton(label, (button) => {
-                      button.variant(index === 0 ? 'primary' : 'secondary');
-                    });
-                  });
-                });
-                panel.divider();
-                panel.hstack((row) => {
-                  row.styles({ alignItems: 'center', gap: '10px' });
-                  row.span('最近更新时间');
-                  row.spacer();
-                  row.span('2 分钟前');
-                  row.divider({ orientation: 'vertical' });
-                  row.span('已同步');
-                });
-              });
-
-              workspace.section((panel) => {
-                panel.className('detail-grid-cell');
-                panel.h3('center + stack');
-                panel.center((empty) => {
-                  empty.styles({ minHeight: '220px', textAlign: 'center' });
-                  empty.stack((content) => {
-                    content.style('gap', '10px');
-                    content.h2('空状态');
-                    content.p('适合加载中、无数据和局部占位。');
-                    content.vButton('刷新', (button) => {
-                      button.variant('secondary');
-                    });
-                  });
+          workspace.section((panel) => {
+            panel.className('detail-grid-cell');
+            panel.h3('center + stack');
+            panel.center((empty) => {
+              empty.styles({ minHeight: '220px', textAlign: 'center' });
+              empty.stack((content) => {
+                content.style('gap', '10px');
+                content.h2('空状态');
+                content.p('适合加载中、无数据和局部占位。');
+                content.vButton('刷新', (button) => {
+                  button.variant('secondary');
                 });
               });
             });
           });
         });
       });
+    });
+  });
 
-      applyDensity();
-      return page;
-    }
-  };
+  applyDensity();
+  return page;
 }
 
 function BodyContainerExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('container 适合在局部区域收窄内容宽度。');
-        content.container({ maxWidth: 720, paddingInline: 0 }, (shell) => {
-          shell.vstack((stackNode) => {
-            stackNode.style('gap', '12px');
-            stackNode.hstack((row) => {
-              row.style({ alignItems: 'center', gap: '10px' });
-              row.strong('文档区');
-              row.spacer();
-              row.span('720px');
-            });
-            stackNode.responsiveGrid(
-              {
-                breakpoints: [
-                  { minWidth: 640, columns: 2 },
-                  { minWidth: 960, columns: 3 }
-                ],
-                minColumnWidth: 160
-              },
-              (cards) => {
-                cards.style('gap', '12px');
-                [
-                  ['在线服务', '24'],
-                  ['待发布', '6'],
-                  ['告警', '2']
-                ].forEach(([label, value]) => {
-                  cards.article((cell) => {
-                    cell.className('detail-grid-cell');
-                    cell.strong(label);
-                    cell.span(value);
-                  });
-                });
-              }
-            );
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('container 适合在局部区域收窄内容宽度。');
+    content.container({ maxWidth: 720, paddingInline: 0 }, (shell) => {
+      shell.vstack((stackNode) => {
+        stackNode.style('gap', '12px');
+        stackNode.hstack((row) => {
+          row.style({ alignItems: 'center', gap: '10px' });
+          row.strong('文档区');
+          row.spacer();
+          row.span('720px');
         });
+        stackNode.responsiveGrid(
+          {
+            breakpoints: [
+              { minWidth: 640, columns: 2 },
+              { minWidth: 960, columns: 3 }
+            ],
+            minColumnWidth: 160
+          },
+          (cards) => {
+            cards.style('gap', '12px');
+            [
+              ['在线服务', '24'],
+              ['待发布', '6'],
+              ['告警', '2']
+            ].forEach(([label, value]) => {
+              cards.article((cell) => {
+                cell.className('detail-grid-cell');
+                cell.strong(label);
+                cell.span(value);
+              });
+            });
+          }
+        );
       });
-    }
-  };
+    });
+  });
 }
 
 function BodyShellRegionsExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('vContainer 根据 header / footer 自动使用纵向布局，也可以显式指定 direction。');
-        content.vContainer((shell) => {
-          shell.style('minHeight', '260px');
-          shell.vHeader({ height: 48 }, (header) => {
-            header.className('detail-grid-cell');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
-              row.strong('Header');
-              row.spacer();
-              row.span('48px');
-            });
-          });
-          shell.vMain((main) => {
-            main.className('detail-grid-cell');
-            main.p('Main 区域会自动吸收剩余空间。');
-          });
-          shell.vFooter({ height: 40 }, (footer) => {
-            footer.className('detail-grid-cell');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
-              row.strong('Footer');
-              row.spacer();
-              row.span('40px');
-            });
-          });
-        });
-        content.vContainer({ direction: 'row' }, (shell) => {
-          shell.style('minHeight', '140px');
-          shell.vAside({ width: 140 }, (aside) => {
-            aside.className('detail-grid-cell');
-            aside.p('Aside 140px');
-          });
-          shell.vMain((main) => {
-            main.className('detail-grid-cell');
-            main.p('Main');
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('vContainer 根据 header / footer 自动使用纵向布局，也可以显式指定 direction。');
+    content.vContainer((shell) => {
+      shell.style('minHeight', '260px');
+      shell.vHeader({ height: 48 }, (header) => {
+        header.className('detail-grid-cell');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
+          row.strong('Header');
+          row.spacer();
+          row.span('48px');
         });
       });
-    }
-  };
+      shell.vMain((main) => {
+        main.className('detail-grid-cell');
+        main.p('Main 区域会自动吸收剩余空间。');
+      });
+      shell.vFooter({ height: 40 }, (footer) => {
+        footer.className('detail-grid-cell');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 12px' });
+          row.strong('Footer');
+          row.spacer();
+          row.span('40px');
+        });
+      });
+    });
+    content.vContainer({ direction: 'row' }, (shell) => {
+      shell.style('minHeight', '140px');
+      shell.vAside({ width: 140 }, (aside) => {
+        aside.className('detail-grid-cell');
+        aside.p('Aside 140px');
+      });
+      shell.vMain((main) => {
+        main.className('detail-grid-cell');
+        main.p('Main');
+      });
+    });
+  });
 }
 
 function SpacerToolbarExample1() {
-  return {
-    render() {
-      return hstack((row) => {
-        row.style({ alignItems: 'center', gap: '10px' });
-        row.strong('服务列表');
-        row.spacer();
-        row.span('已同步');
-        row.vButton('刷新', (button) => {
-          button.variant('secondary');
-        });
-        row.vButton('新建', (button) => {
-          button.variant('primary');
-        });
-      });
-    }
-  };
+  return hstack((row) => {
+    row.style({ alignItems: 'center', gap: '10px' });
+    row.strong('服务列表');
+    row.spacer();
+    row.span('已同步');
+    row.vButton('刷新', (button) => {
+      button.variant('secondary');
+    });
+    row.vButton('新建', (button) => {
+      button.variant('primary');
+    });
+  });
 }
 
 function SpacerSummaryExample1() {
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '12px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('最近更新时间');
-          row.spacer();
-          row.code('2 分钟前');
-        });
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('负责人');
-          row.spacer();
-          row.span((badge) => {
-            badge.className('components-route-note');
-            badge.child('SRE Team');
-          });
-        });
+  return vstack((content) => {
+    content.style('gap', '12px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('最近更新时间');
+      row.spacer();
+      row.code('2 分钟前');
+    });
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('负责人');
+      row.spacer();
+      row.span((badge) => {
+        badge.className('components-route-note');
+        badge.child('SRE Team');
       });
-    }
-  };
+    });
+  });
 }
 
 function PopupLaunchExample1() {
@@ -1502,26 +1434,22 @@ function PopupLaunchExample1() {
     }
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('点击按钮后打开原生 dialog，适合遮住当前页面并让用户完成一次确认。');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton('打开弹窗', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              status.textContent('弹窗已打开');
-              dialog.open(true);
-            });
-          });
-          row.span('支持 Esc 关闭和确认/取消回收。');
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('点击按钮后打开原生 dialog，适合遮住当前页面并让用户完成一次确认。');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.vButton('打开弹窗', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          status.textContent('弹窗已打开');
+          dialog.open(true);
         });
-        content.child(dialog);
       });
-    }
-  };
+      row.span('支持 Esc 关闭和确认/取消回收。');
+    });
+    content.child(dialog);
+  });
 }
 
 function PopupStateExample1() {
@@ -1566,26 +1494,22 @@ function PopupStateExample1() {
     }
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('把弹窗保持为关闭状态，等用户主动触发时再打开。');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton('打开提醒', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              status.textContent('提醒已打开');
-              dialog.open(true);
-            });
-          });
-          row.span('适合提醒、确认和临时表单。');
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('把弹窗保持为关闭状态，等用户主动触发时再打开。');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.vButton('打开提醒', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          status.textContent('提醒已打开');
+          dialog.open(true);
         });
-        content.child(dialog);
       });
-    }
-  };
+      row.span('适合提醒、确认和临时表单。');
+    });
+    content.child(dialog);
+  });
 }
 
 function PopupFormExample1() {
@@ -1646,310 +1570,290 @@ function PopupFormExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.p('把 vForm 放进 vDialog，适合新建、编辑等需要临时收集字段的流程。');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.vButton('新建发布', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              status.textContent('弹窗已打开');
-              dialog.open(true);
-            });
-          });
-          row.output((output) => output.child(status));
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.p('把 vForm 放进 vDialog，适合新建、编辑等需要临时收集字段的流程。');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.vButton('新建发布', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          status.textContent('弹窗已打开');
+          dialog.open(true);
         });
-        content.child(dialog);
       });
-    }
-  };
+      row.output((output) => output.child(status));
+    });
+    content.child(dialog);
+  });
 }
 
 function AdminTemplateExample1() {
-  return {
-    render() {
-      return vBody((shell) => {
-        shell.className('components-layout-template-shell');
-        shell.background('#f5f7fa');
-        shell.maxWidth(1200);
-        shell.padding('16px');
-        shell.gap(16);
+  return vBody((shell) => {
+    shell.className('components-layout-template-shell');
+    shell.background('#f5f7fa');
+    shell.maxWidth(1200);
+    shell.padding('16px');
+    shell.gap(16);
 
-        shell.vContainer((frame) => {
-          frame.className('components-layout-template-frame');
-          frame.style('minHeight', '540px');
+    shell.vContainer((frame) => {
+      frame.className('components-layout-template-frame');
+      frame.style('minHeight', '540px');
 
-          frame.vHeader({ height: 56 }, (header) => {
-            header.className('structure-region structure-header');
-            header.attr('data-structure-role', 'header');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.strong('顶部导航区');
-            });
-          });
+      frame.vHeader({ height: 56 }, (header) => {
+        header.className('structure-region structure-header');
+        header.attr('data-structure-role', 'header');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.strong('顶部导航区');
+        });
+      });
 
-          frame.vContainer((body) => {
-            body.vAside({ width: 200 }, (aside) => {
-              aside.className('structure-region structure-aside');
-              aside.attr('data-structure-role', 'aside');
-              aside.vstack((nav) => {
-                nav.style('gap', '8px');
-                ['左侧菜单区', '菜单项 1', '菜单项 2', '菜单项 3'].forEach((label) => {
-                  nav.span((item) => {
-                    item.className('structure-label');
-                    item.child(label);
-                  });
-                });
-              });
-            });
-
-            body.vMain((main) => {
-              main.className('structure-region structure-main');
-              main.attr('data-structure-role', 'main');
-              main.vstack((content) => {
-                content.style('gap', '12px');
-                content.h2('主内容区');
-                content.div((placeholder) => {
-                  placeholder.className('structure-placeholder');
-                  placeholder.child('内容占位区');
-                });
+      frame.vContainer((body) => {
+        body.vAside({ width: 200 }, (aside) => {
+          aside.className('structure-region structure-aside');
+          aside.attr('data-structure-role', 'aside');
+          aside.vstack((nav) => {
+            nav.style('gap', '8px');
+            ['左侧菜单区', '菜单项 1', '菜单项 2', '菜单项 3'].forEach((label) => {
+              nav.span((item) => {
+                item.className('structure-label');
+                item.child(label);
               });
             });
           });
+        });
 
-          frame.vFooter({ height: 40 }, (footer) => {
-            footer.className('structure-region structure-footer');
-            footer.attr('data-structure-role', 'footer');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.span('页脚区');
+        body.vMain((main) => {
+          main.className('structure-region structure-main');
+          main.attr('data-structure-role', 'main');
+          main.vstack((content) => {
+            content.style('gap', '12px');
+            content.h2('主内容区');
+            content.div((placeholder) => {
+              placeholder.className('structure-placeholder');
+              placeholder.child('内容占位区');
             });
           });
         });
       });
-    }
-  };
+
+      frame.vFooter({ height: 40 }, (footer) => {
+        footer.className('structure-region structure-footer');
+        footer.attr('data-structure-role', 'footer');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.span('页脚区');
+        });
+      });
+    });
+  });
 }
 
 function CloudWorkspaceTemplateExample1() {
-  return {
-    render() {
-      return vBody((shell) => {
-        shell.className('components-layout-template-shell');
-        shell.background('#f5f7fa');
-        shell.maxWidth(1200);
-        shell.padding('16px');
-        shell.gap(16);
+  return vBody((shell) => {
+    shell.className('components-layout-template-shell');
+    shell.background('#f5f7fa');
+    shell.maxWidth(1200);
+    shell.padding('16px');
+    shell.gap(16);
 
-        shell.vContainer((frame) => {
-          frame.className('components-layout-template-frame');
-          frame.style('minHeight', '540px');
+    shell.vContainer((frame) => {
+      frame.className('components-layout-template-frame');
+      frame.style('minHeight', '540px');
 
-          frame.vHeader({ height: 56 }, (header) => {
-            header.className('structure-region structure-header');
-            header.attr('data-structure-role', 'header');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.strong('顶部导航区');
-              row.spacer();
-              row.span('云工作台');
-            });
-          });
+      frame.vHeader({ height: 56 }, (header) => {
+        header.className('structure-region structure-header');
+        header.attr('data-structure-role', 'header');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.strong('顶部导航区');
+          row.spacer();
+          row.span('云工作台');
+        });
+      });
 
-          frame.vContainer((body) => {
-            body.vAside({ width: 180 }, (aside) => {
-              aside.className('structure-region structure-aside');
-              aside.attr('data-structure-role', 'aside');
-              aside.vstack((nav) => {
-                nav.style('gap', '8px');
-                ['左侧资源菜单', '资源组 1', '资源组 2', '资源组 3'].forEach((label) => {
-                  nav.span((item) => {
-                    item.className('structure-label');
-                    item.child(label);
-                  });
-                });
-              });
-            });
-
-            body.vMain((main) => {
-              main.className('structure-region structure-main');
-              main.attr('data-structure-role', 'main');
-              main.vstack((content) => {
-                content.style('gap', '12px');
-                content.h2('工作台主体区');
-                content.vRow({ gutter: 8 }, (row) => {
-                  [8, 8, 8].forEach((span) => {
-                    row.vCol({ span, xs: 12, md: span }, (cell) => {
-                      cell.className('structure-placeholder');
-                      cell.child('指标占位区');
-                    });
-                  });
-                });
-                content.div((placeholder) => {
-                  placeholder.className('structure-placeholder');
-                  placeholder.child('资源列表区');
-                });
+      frame.vContainer((body) => {
+        body.vAside({ width: 180 }, (aside) => {
+          aside.className('structure-region structure-aside');
+          aside.attr('data-structure-role', 'aside');
+          aside.vstack((nav) => {
+            nav.style('gap', '8px');
+            ['左侧资源菜单', '资源组 1', '资源组 2', '资源组 3'].forEach((label) => {
+              nav.span((item) => {
+                item.className('structure-label');
+                item.child(label);
               });
             });
           });
+        });
 
-          frame.vFooter({ height: 40 }, (footer) => {
-            footer.className('structure-region structure-footer');
-            footer.attr('data-structure-role', 'footer');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.span('底部状态区');
+        body.vMain((main) => {
+          main.className('structure-region structure-main');
+          main.attr('data-structure-role', 'main');
+          main.vstack((content) => {
+            content.style('gap', '12px');
+            content.h2('工作台主体区');
+            content.vRow({ gutter: 8 }, (row) => {
+              [8, 8, 8].forEach((span) => {
+                row.vCol({ span, xs: 12, md: span }, (cell) => {
+                  cell.className('structure-placeholder');
+                  cell.child('指标占位区');
+                });
+              });
+            });
+            content.div((placeholder) => {
+              placeholder.className('structure-placeholder');
+              placeholder.child('资源列表区');
             });
           });
         });
       });
-    }
-  };
+
+      frame.vFooter({ height: 40 }, (footer) => {
+        footer.className('structure-region structure-footer');
+        footer.attr('data-structure-role', 'footer');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.span('底部状态区');
+        });
+      });
+    });
+  });
 }
 
 function ProfileTemplateExample1() {
-  return {
-    render() {
-      return vBody((shell) => {
-        shell.className('components-layout-template-shell');
-        shell.background('#f5f7fa');
-        shell.maxWidth(1200);
-        shell.padding('16px');
-        shell.gap(16);
+  return vBody((shell) => {
+    shell.className('components-layout-template-shell');
+    shell.background('#f5f7fa');
+    shell.maxWidth(1200);
+    shell.padding('16px');
+    shell.gap(16);
 
-        shell.vContainer((frame) => {
-          frame.className('components-layout-template-frame');
-          frame.style('minHeight', '540px');
+    shell.vContainer((frame) => {
+      frame.className('components-layout-template-frame');
+      frame.style('minHeight', '540px');
 
-          frame.vHeader({ height: 64 }, (header) => {
-            header.className('structure-region structure-header');
-            header.attr('data-structure-role', 'header');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.strong('顶部个人区');
-            });
-          });
+      frame.vHeader({ height: 64 }, (header) => {
+        header.className('structure-region structure-header');
+        header.attr('data-structure-role', 'header');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.strong('顶部个人区');
+        });
+      });
 
-          frame.vContainer((body) => {
-            body.vAside({ width: 240 }, (aside) => {
-              aside.className('structure-region structure-aside');
-              aside.attr('data-structure-role', 'aside');
-              aside.vstack((nav) => {
-                nav.style('gap', '8px');
-                ['个人侧栏区', '简介', '作品', '动态'].forEach((label) => {
-                  nav.span((item) => {
-                    item.className('structure-label');
-                    item.child(label);
-                  });
-                });
-              });
-            });
-
-            body.vMain((main) => {
-              main.className('structure-region structure-main');
-              main.attr('data-structure-role', 'main');
-              main.vstack((content) => {
-                content.style('gap', '12px');
-                content.h2('内容展示区');
-                content.vRow({ gutter: 8 }, (row) => {
-                  row.vCol({ span: 8, xs: 24, md: 8 }, (cell) => {
-                    cell.className('structure-placeholder');
-                    cell.child('个人资料区');
-                  });
-                  row.vCol({ span: 16, xs: 24, md: 16 }, (cell) => {
-                    cell.className('structure-placeholder');
-                    cell.child('作品动态区');
-                  });
-                });
+      frame.vContainer((body) => {
+        body.vAside({ width: 240 }, (aside) => {
+          aside.className('structure-region structure-aside');
+          aside.attr('data-structure-role', 'aside');
+          aside.vstack((nav) => {
+            nav.style('gap', '8px');
+            ['个人侧栏区', '简介', '作品', '动态'].forEach((label) => {
+              nav.span((item) => {
+                item.className('structure-label');
+                item.child(label);
               });
             });
           });
+        });
 
-          frame.vFooter({ height: 40 }, (footer) => {
-            footer.className('structure-region structure-footer');
-            footer.attr('data-structure-role', 'footer');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.span('页脚区');
+        body.vMain((main) => {
+          main.className('structure-region structure-main');
+          main.attr('data-structure-role', 'main');
+          main.vstack((content) => {
+            content.style('gap', '12px');
+            content.h2('内容展示区');
+            content.vRow({ gutter: 8 }, (row) => {
+              row.vCol({ span: 8, xs: 24, md: 8 }, (cell) => {
+                cell.className('structure-placeholder');
+                cell.child('个人资料区');
+              });
+              row.vCol({ span: 16, xs: 24, md: 16 }, (cell) => {
+                cell.className('structure-placeholder');
+                cell.child('作品动态区');
+              });
             });
           });
         });
       });
-    }
-  };
+
+      frame.vFooter({ height: 40 }, (footer) => {
+        footer.className('structure-region structure-footer');
+        footer.attr('data-structure-role', 'footer');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.span('页脚区');
+        });
+      });
+    });
+  });
 }
 
 function DocsTemplateExample1() {
-  return {
-    render() {
-      return vBody((shell) => {
-        shell.className('components-layout-template-shell');
-        shell.background('#f5f7fa');
-        shell.maxWidth(1200);
-        shell.padding('16px');
-        shell.gap(16);
+  return vBody((shell) => {
+    shell.className('components-layout-template-shell');
+    shell.background('#f5f7fa');
+    shell.maxWidth(1200);
+    shell.padding('16px');
+    shell.gap(16);
 
-        shell.vContainer((frame) => {
-          frame.className('components-layout-template-frame');
-          frame.style('minHeight', '540px');
+    shell.vContainer((frame) => {
+      frame.className('components-layout-template-frame');
+      frame.style('minHeight', '540px');
 
-          frame.vHeader({ height: 52 }, (header) => {
-            header.className('structure-region structure-header');
-            header.attr('data-structure-role', 'header');
-            header.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.strong('顶部导航区');
-              row.spacer();
-              row.span('技术文档');
-            });
-          });
+      frame.vHeader({ height: 52 }, (header) => {
+        header.className('structure-region structure-header');
+        header.attr('data-structure-role', 'header');
+        header.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.strong('顶部导航区');
+          row.spacer();
+          row.span('技术文档');
+        });
+      });
 
-          frame.vContainer((body) => {
-            body.vAside({ width: 220 }, (aside) => {
-              aside.className('structure-region structure-aside');
-              aside.attr('data-structure-role', 'aside');
-              aside.vstack((nav) => {
-                nav.style('gap', '8px');
-                ['文档目录区', '快速开始', '布局组件', 'API 参考'].forEach((label) => {
-                  nav.span((item) => {
-                    item.className('structure-label');
-                    item.child(label);
-                  });
-                });
-              });
-            });
-
-            body.vMain((main) => {
-              main.className('structure-region structure-main');
-              main.attr('data-structure-role', 'main');
-              main.vstack((article) => {
-                article.style('gap', '12px');
-                article.h2('文章内容区');
-                article.div((placeholder) => {
-                  placeholder.className('structure-placeholder');
-                  placeholder.child('正文占位区');
-                });
-                article.div((placeholder) => {
-                  placeholder.className('structure-placeholder');
-                  placeholder.child('代码块占位区');
-                });
+      frame.vContainer((body) => {
+        body.vAside({ width: 220 }, (aside) => {
+          aside.className('structure-region structure-aside');
+          aside.attr('data-structure-role', 'aside');
+          aside.vstack((nav) => {
+            nav.style('gap', '8px');
+            ['文档目录区', '快速开始', '布局组件', 'API 参考'].forEach((label) => {
+              nav.span((item) => {
+                item.className('structure-label');
+                item.child(label);
               });
             });
           });
+        });
 
-          frame.vFooter({ height: 40 }, (footer) => {
-            footer.className('structure-region structure-footer');
-            footer.attr('data-structure-role', 'footer');
-            footer.hstack((row) => {
-              row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
-              row.span('页脚区');
+        body.vMain((main) => {
+          main.className('structure-region structure-main');
+          main.attr('data-structure-role', 'main');
+          main.vstack((article) => {
+            article.style('gap', '12px');
+            article.h2('文章内容区');
+            article.div((placeholder) => {
+              placeholder.className('structure-placeholder');
+              placeholder.child('正文占位区');
+            });
+            article.div((placeholder) => {
+              placeholder.className('structure-placeholder');
+              placeholder.child('代码块占位区');
             });
           });
         });
       });
-    }
-  };
+
+      frame.vFooter({ height: 40 }, (footer) => {
+        footer.className('structure-region structure-footer');
+        footer.attr('data-structure-role', 'footer');
+        footer.hstack((row) => {
+          row.style({ alignItems: 'center', height: '100%', padding: '0 16px' });
+          row.span('页脚区');
+        });
+      });
+    });
+  });
 }

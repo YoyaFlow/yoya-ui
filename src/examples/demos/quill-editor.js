@@ -1,4 +1,4 @@
-import { HtmlElementNode, div } from '../../index.js';
+import { HtmlElementNode, div, vNode } from '../../index.js';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import '../quill-dark.css';
@@ -127,22 +127,11 @@ export class QuillEditorNode extends HtmlElementNode {
 }
 
 export function QuillEditorExample(content = '') {
-  let node = null;
+  return vNode((api) => {
+    const node = new QuillEditorNode(content);
+    api.html = () => node.html();
+    api.text = () => node.text();
 
-  return {
-    render() {
-      node = new QuillEditorNode(content);
-      return node;
-    },
-    html() {
-      return node ? node.html() : '';
-    },
-    text() {
-      return node ? node.text() : '';
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+    return node;
+  });
 }

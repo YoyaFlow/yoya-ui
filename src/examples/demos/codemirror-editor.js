@@ -1,4 +1,4 @@
-import { HtmlElementNode } from '../../index.js';
+import { HtmlElementNode, vNode } from '../../index.js';
 import { Compartment } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, basicSetup } from 'codemirror';
@@ -117,22 +117,11 @@ export class CodeMirrorDemoNode extends HtmlElementNode {
 }
 
 export function CodeMirrorExample(doc = INITIAL_DOC) {
-  let node = null;
+  return vNode((api) => {
+    const node = new CodeMirrorDemoNode(doc);
+    api.setValue = (next) => node.setValue(next);
+    api.value = () => node.value();
 
-  return {
-    render() {
-      node = new CodeMirrorDemoNode(doc);
-      return node;
-    },
-    setValue(next) {
-      node?.setValue(next);
-    },
-    value() {
-      return node ? node.value() : '';
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+    return node;
+  });
 }

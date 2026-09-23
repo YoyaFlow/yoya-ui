@@ -14,17 +14,13 @@ function FloatButtonBasicExample() {
     output.textContent('已触发新建操作');
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.hstack({ gap: '14px' }, (row) => {
-          row.style('alignItems', 'center');
-          row.child(fab);
-          row.span((el) => el.attr('data-float-button-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.hstack({ gap: '14px' }, (row) => {
+      row.style('alignItems', 'center');
+      row.child(fab);
+      row.span((el) => el.attr('data-float-button-output', 'true').child(output));
+    });
+  });
 }
 
 function FloatButtonExtendedExample() {

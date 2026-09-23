@@ -10,9 +10,13 @@ import { join, resolve } from 'node:path';
 import { parse } from '@babel/parser';
 import { describe, expect, it } from 'vitest';
 
-/** 当前基线（2026-09-21，票 03 盘点）。迁移把它推向 0，改小即可，改大即失败。 */
-const BASELINE_FACTORIES = 158;
-const BASELINE_FILES = 80;
+/**
+ * 当前基线（2026-09-23）：源码面板里的演示（`demos/` + 页面文件里的演示组件）已全部
+ * 迁成形态 A / B。剩下的 74 处是**页面壳**（`*DocumentationPage` / `*ExampleSection` /
+ * `*Demo` 包装），按票 03 阶段 3 的后续批次推进。迁移把它推向 0，改小即可，改大即失败。
+ */
+const BASELINE_FACTORIES = 74;
+const BASELINE_FILES = 40;
 
 const examplesDir = resolve(process.cwd(), 'src/examples');
 

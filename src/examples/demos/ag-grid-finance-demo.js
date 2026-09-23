@@ -1,3 +1,4 @@
+import { vNode } from '../../index.js';
 import { AgGridDemoNode } from './ag-grid-glue.js';
 
 const SPARK_WIDTH = 104;
@@ -239,40 +240,36 @@ export function AgGridFinanceExample() {
     running = false;
   };
 
-  return {
-    render() {
-      node = new AgGridDemoNode({
-        columnDefs: columns(),
-        height: '440px',
-        gridOptions: {
-          defaultColDef: { resizable: true, sortable: true },
-          getRowId: (params) => String(params.data.code),
-          pinnedBottomRowData: [summaryRow()]
-        },
-        rowData: rows
-      });
-      start();
-      return node;
-    },
-    start,
-    stop,
-    tick,
-    reset() {
-      this.stop();
+  return vNode((api) => {
+    node = new AgGridDemoNode({
+      columnDefs: columns(),
+      height: '440px',
+      gridOptions: {
+        defaultColDef: { resizable: true, sortable: true },
+        getRowId: (params) => String(params.data.code),
+        pinnedBottomRowData: [summaryRow()]
+      },
+      rowData: rows
+    });
+    start();
+
+    api.start = start;
+    api.stop = stop;
+    api.tick = tick;
+    api.reset = () => {
+      stop();
       rows = seedRows();
       tickCount = 0;
-      node?.setRows(rows);
-    },
-    tickCount() {
-      return tickCount;
-    },
-    running() {
-      return running;
-    },
-    destroy() {
-      this.stop();
-      node?.destroy();
+      node.setRows(rows);
+      return api;
+    };
+    api.tickCount = () => tickCount;
+    api.running = () => running;
+    api.whenDestroy = () => {
+      stop();
       node = null;
-    }
-  };
+    };
+
+    return node;
+  });
 }

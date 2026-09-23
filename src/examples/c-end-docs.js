@@ -7,7 +7,8 @@ import {
   vLazyImage,
   vMasonry,
   vSkeleton,
-  vTransition
+  vTransition,
+  vNode
 } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
@@ -41,14 +42,8 @@ function SkeletonToggleExample() {
   const skeleton = vSkeleton({ rows: 3 });
   let contentAttached = false;
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('width', '100%');
-        root.child(skeleton);
-      });
-    },
-    loaded() {
+  return vNode((api) => {
+    api.loaded = () => {
       if (contentAttached) {
         return;
       }
@@ -59,12 +54,17 @@ function SkeletonToggleExample() {
         stack.h3('订单 #1024');
         stack.p('数据加载完成，这里展示真实内容；再次点击回到骨架屏。');
       });
-    },
-    loading() {
+    };
+    api.loading = () => {
       contentAttached = false;
       skeleton.active(true);
-    }
-  };
+    };
+
+    return div((root) => {
+      root.style('width', '100%');
+      root.child(skeleton);
+    });
+  });
 }
 
 function LazyImageBasicExample() {
@@ -91,17 +91,16 @@ function TransitionToggleExample() {
     })
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('width', '100%');
-        root.child(transition);
-      });
-    },
-    toggle() {
+  return vNode((api) => {
+    api.toggle = () => {
       transition.toggle();
-    }
-  };
+    };
+
+    return div((root) => {
+      root.style('width', '100%');
+      root.child(transition);
+    });
+  });
 }
 
 function TransitionMotionExample() {
@@ -128,17 +127,16 @@ function TransitionForceExample() {
     motion: 'always'
   });
 
-  return {
-    render() {
-      return div((root) => {
-        root.style('width', '100%');
-        root.child(transition);
-      });
-    },
-    toggle() {
+  return vNode((api) => {
+    api.toggle = () => {
       transition.toggle();
-    }
-  };
+    };
+
+    return div((root) => {
+      root.style('width', '100%');
+      root.child(transition);
+    });
+  });
 }
 
 const masonryItems = [
@@ -525,7 +523,7 @@ const cEndDocsDefinitions = Object.freeze({
         component: SkeletonToggleDemo,
         description: 'active(false) 后挂载真实内容，active(true) 回到骨架屏。',
         id: 'toggle',
-        imports: ['div', 'vSkeleton'],
+        imports: ['div', 'vNode', 'vSkeleton'],
         sourceComponent: SkeletonToggleExample,
         sourceTitle: '加载完成切换核心源码',
         title: '加载完成切换'
@@ -617,7 +615,7 @@ const cEndDocsDefinitions = Object.freeze({
         component: TransitionToggleDemo,
         description: 'show(false) 播放离开动画后隐藏，show(true) 重新进入。',
         id: 'toggle',
-        imports: ['div', 'vTransition'],
+        imports: ['div', 'vNode', 'vTransition'],
         sourceComponent: TransitionToggleExample,
         sourceTitle: '进出场切换核心源码',
         title: '进出场切换'
@@ -635,7 +633,7 @@ const cEndDocsDefinitions = Object.freeze({
         component: TransitionForceDemo,
         description: 'motion: always 强制运行动画，不跟随系统减少动态效果偏好。',
         id: 'force',
-        imports: ['div', 'vTransition'],
+        imports: ['div', 'vNode', 'vTransition'],
         sourceComponent: TransitionForceExample,
         sourceTitle: '强制动画核心源码',
         title: '强制动画'

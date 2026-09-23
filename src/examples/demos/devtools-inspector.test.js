@@ -9,7 +9,7 @@ afterEach(() => {
 describe('devtools inspector demo', () => {
   it('opens a persistent overlay, reports events and preserves state on hide', () => {
     const demo = DevtoolsInspectorDemo();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const overlay = element.querySelector('[data-devtools-overlay]');
 
     expect(overlay.style.display).toBe('none');

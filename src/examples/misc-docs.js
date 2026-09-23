@@ -9,15 +9,11 @@ import { PaginationExample1 } from './demos/pagination.js';
 // vCard 自身就是页面壳组件，放进 demos/ 会被「页面壳进演示」检查拦截；
 // 本页演示对象即 vCard，因此与页面壳同文件定义，live 与源码面板仍只有一份实现。
 function CardExample1() {
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('服务总览');
-        card.vCardBody((body) => body.p('当前状态稳定。'));
-        card.vCardFooter((footer) => footer.vButton('查看详情'));
-      });
-    }
-  };
+  return vCard((card) => {
+    card.vCardHeader('服务总览');
+    card.vCardBody((body) => body.p('当前状态稳定。'));
+    card.vCardFooter((footer) => footer.vButton('查看详情'));
+  });
 }
 
 // 演示定义：一页一个 demo，live 与源码面板共用同一个组件（唯一渲染路径）。

@@ -218,7 +218,8 @@ function inventoryDemo() {
         from: './demos/ag-grid-glue.js',
         names: ['AgGridDemoNode']
       },
-      'HtmlElementNode'
+      'HtmlElementNode',
+      'vNode'
     ],
     usageTitle: 'Inventory 使用案例源码'
   });

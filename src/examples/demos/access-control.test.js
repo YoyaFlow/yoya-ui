@@ -4,7 +4,7 @@ import { AccessControlMembers } from './access-control.js';
 describe('access control demo', () => {
   it('shows editable / disabled / hidden inputs and buttons', () => {
     const demo = AccessControlMembers();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     // 输入控件：有权限可编辑、只读禁用、无权限隐藏
     const inputs = el.querySelectorAll('input');

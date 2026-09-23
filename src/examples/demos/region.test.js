@@ -10,7 +10,7 @@ import {
 describe('region demos', () => {
   it('rebuilds the list region while the outside input stays put', () => {
     const demo = RegionRebuildExample();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const list = element.querySelector('[data-region-list]');
     const outside = element.querySelector('[data-region-outside]');
 
@@ -27,7 +27,7 @@ describe('region demos', () => {
 
   it('keeps structure untouched while busy and applies pending rows once when idle', () => {
     const demo = RegionGateExample();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const status = element.querySelector('[data-region-pending]');
     const gate = element.querySelector('.demo-region-gate');
 
@@ -60,7 +60,7 @@ describe('region demos', () => {
 
   it('reads subtree data through a zero-argument closure', () => {
     const demo = RegionScopeExample();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const box = element.querySelector('[data-region-source]');
 
     expect(box.dataset.count).toBe('0');
@@ -73,7 +73,7 @@ describe('region demos', () => {
 
   it('flushes values in place and rebuilds structure on demand', () => {
     const demo = RegionFlushExample();
-    const element = demo.render().renderDom();
+    const element = demo.renderDom();
     const label = element.querySelector('[data-region-flush-label]');
 
     element.querySelector('[data-region-flush-next]').click();

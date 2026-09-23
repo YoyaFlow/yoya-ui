@@ -5,6 +5,7 @@ import {
   provide,
   ref,
   vDynamicLoader,
+  vNode,
   vText,
   vstack
 } from '../../index.js';
@@ -48,26 +49,25 @@ export function ProvideInjectWorkspaceExample() {
     });
   }
 
-  return {
-    render() {
-      provide('project', { name, owner, members, dirty });
-
-      return vstack({ gap: '10px' }, (stack) => {
-        stack.child(ProjectSummary());
-        stack.child(ProjectOwner());
-      });
-    },
-    rename(next) {
+  return vNode((api) => {
+    api.rename = (next) => {
       name.value = next;
       dirty.value = true;
-      return this;
-    },
-    transfer(next) {
+      return api;
+    };
+    api.transfer = (next) => {
       owner.value = next;
       dirty.value = true;
-      return this;
-    }
-  };
+      return api;
+    };
+
+    provide('project', { name, owner, members, dirty });
+
+    return vstack({ gap: '10px' }, (stack) => {
+      stack.child(ProjectSummary());
+      stack.child(ProjectOwner());
+    });
+  });
 }
 
 /** 就近覆盖：同一个 key，内层声明只作用于自己的子树，兄弟不受影响。 */
@@ -85,24 +85,23 @@ export function ProvideInjectOverrideExample() {
     });
   }
 
-  return {
-    render() {
-      provide('theme', theme);
-
-      return vstack({ gap: '8px' }, (stack) => {
-        stack.child(ThemeScope('外层'));
-        stack.div((panel) => {
-          provide('theme', 'dark');
-          panel.child(ThemeScope('内层'));
-        });
-        stack.child(ThemeScope('外层兄弟'));
-      });
-    },
-    toggle() {
+  return vNode((api) => {
+    api.toggle = () => {
       theme.value = theme.value === 'light' ? 'dark' : 'light';
-      return this;
-    }
-  };
+      return api;
+    };
+
+    provide('theme', theme);
+
+    return vstack({ gap: '8px' }, (stack) => {
+      stack.child(ThemeScope('外层'));
+      stack.div((panel) => {
+        provide('theme', 'dark');
+        panel.child(ThemeScope('内层'));
+      });
+      stack.child(ThemeScope('外层兄弟'));
+    });
+  });
 }
 
 /** 先挂后建：异步视图在挂到树上之前就构建完了，inject 仍沿父链读到祖先声明。 */
@@ -125,20 +124,17 @@ export function ProvideInjectAsyncExample() {
     views: { loaded: () => TenantBadge() }
   });
 
-  return {
-    render() {
-      provide('tenant', tenant);
-
-      return vstack({ gap: '10px' }, (stack) => {
-        stack.child(loader);
-      });
-    },
-    load() {
-      return loader.load().catch(() => loader);
-    },
-    setTenant(next) {
+  return vNode((api) => {
+    api.load = () => loader.load().catch(() => loader);
+    api.setTenant = (next) => {
       tenant.value = next;
-      return this;
-    }
-  };
+      return api;
+    };
+
+    provide('tenant', tenant);
+
+    return vstack({ gap: '10px' }, (stack) => {
+      stack.child(loader);
+    });
+  });
 }

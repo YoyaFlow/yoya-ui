@@ -45,7 +45,7 @@ describe('CodeMirror 6 interop demo', () => {
 
   it('creates the editor view with the document and extensions', () => {
     const demo = CodeMirrorExample('const greeting = "hi";');
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     expect(el.dataset.codemirrorHost).toBe('true');
     expect(editorViewInstances).toHaveLength(1);
@@ -57,7 +57,7 @@ describe('CodeMirror 6 interop demo', () => {
 
   it('exposes and replaces the document value', () => {
     const demo = CodeMirrorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     demo.setValue('export const mode = "prod";');
 
@@ -68,7 +68,7 @@ describe('CodeMirror 6 interop demo', () => {
 
   it('does not create a second EditorView on repeated renderDom', () => {
     const demo = CodeMirrorExample();
-    const node = demo.render();
+    const node = demo;
 
     node.renderDom();
     node.renderDom();
@@ -78,7 +78,7 @@ describe('CodeMirror 6 interop demo', () => {
 
   it('destroys the editor view on destroy', () => {
     const demo = CodeMirrorExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     document.body.appendChild(el);
 
     demo.destroy();

@@ -13,23 +13,19 @@ export function RouterAsyncCard() {
   const outlet = vRouterView(appRouter);
   appRouter.navigate('/home', { replace: true });
 
-  return {
-    render() {
-      return vstack((stack) => {
-            stack.style('gap', '12px');
-            stack.hstack((nav) => {
-              nav.styles({ flexWrap: 'wrap', gap: '10px' });
-              nav.vLink(appRouter, { label: '首页', replace: true, to: '/home' });
-              nav.vLink(appRouter, {
-                label: '分析面板',
-                params: { id: 42 },
-                query: { tab: 'stat' },
-                replace: true,
-                to: '/dashboard/:id'
-              });
-            });
-            stack.child(outlet);
-          });
-    }
-  };
+  return vstack((stack) => {
+    stack.style('gap', '12px');
+    stack.hstack((nav) => {
+      nav.styles({ flexWrap: 'wrap', gap: '10px' });
+      nav.vLink(appRouter, { label: '首页', replace: true, to: '/home' });
+      nav.vLink(appRouter, {
+        label: '分析面板',
+        params: { id: 42 },
+        query: { tab: 'stat' },
+        replace: true,
+        to: '/dashboard/:id'
+      });
+    });
+    stack.child(outlet);
+  });
 }

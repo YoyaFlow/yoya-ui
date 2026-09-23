@@ -39,15 +39,11 @@ export function DropdownMenuExample1() {
     });
   });
 
-  return {
-    render() {
-      return vstack({ gap: '12px' }, (stack) => {
-        stack.output((out) => {
-          out.attr('data-dropdown-demo-status', 'true');
-          out.child(vText(status));
-        });
-        stack.child(dropdown);
-      });
-    }
-  };
+  return vstack({ gap: '12px' }, (stack) => {
+    stack.output((out) => {
+      out.attr('data-dropdown-demo-status', 'true');
+      out.child(vText(status));
+    });
+    stack.child(dropdown);
+  });
 }

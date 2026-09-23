@@ -61,7 +61,7 @@ describe('Toast UI Markdown edit / view demo', () => {
 
   it('mounts editor and viewer side by side in edit mode', () => {
     const demo = MarkdownViewerExample('# 标题');
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     expect(el.dataset.markdownViewerHost).toBe('true');
     expect(editorInstances).toHaveLength(1);
@@ -77,7 +77,7 @@ describe('Toast UI Markdown edit / view demo', () => {
 
   it('syncs editor changes into the viewer preview', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     editorInstances[0].markdown = '## 更新后的内容';
     editorInstances[0].changeHandler();
@@ -90,7 +90,7 @@ describe('Toast UI Markdown edit / view demo', () => {
 
   it('switches between edit and readonly view modes', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     const editorPanel = el.children[0];
     const divider = el.children[1];
 
@@ -109,7 +109,7 @@ describe('Toast UI Markdown edit / view demo', () => {
     const root = document.documentElement;
     root.dataset.yoyaMode = 'dark';
     const demo = MarkdownViewerExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
 
     try {
       expect(editorInstances[0].config.theme).toBe('dark');
@@ -125,7 +125,7 @@ describe('Toast UI Markdown edit / view demo', () => {
 
   it('does not create instances twice on repeated renderDom', () => {
     const demo = MarkdownViewerExample();
-    const node = demo.render();
+    const node = demo;
 
     node.renderDom();
     node.renderDom();
@@ -136,7 +136,7 @@ describe('Toast UI Markdown edit / view demo', () => {
 
   it('destroys editor and viewer instances', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.render().renderDom();
+    const el = demo.renderDom();
     document.body.appendChild(el);
 
     demo.destroy();

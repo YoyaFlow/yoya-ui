@@ -11,18 +11,14 @@ function ColorPickerBasicExample() {
     value: '#2563eb'
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(picker);
-        body.div((row) => {
-          row.span('当前颜色');
-          row.spacer();
-          row.code((el) => el.attr('data-color-picker-output', 'true').child(vText(output)));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(picker);
+    body.div((row) => {
+      row.span('当前颜色');
+      row.spacer();
+      row.code((el) => el.attr('data-color-picker-output', 'true').child(vText(output)));
+    });
+  });
 }
 
 function ColorPickerAlphaExample() {
@@ -34,19 +30,15 @@ function ColorPickerAlphaExample() {
     });
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.p('右侧滑块调节透明度，棋盘格实时展示半透明效果。');
-        body.child(picker);
-        body.div((row) => {
-          row.span('当前 rgba');
-          row.spacer();
-          row.code((el) => el.attr('data-color-picker-alpha-output', 'true').child(vText(output)));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.p('右侧滑块调节透明度，棋盘格实时展示半透明效果。');
+    body.child(picker);
+    body.div((row) => {
+      row.span('当前 rgba');
+      row.spacer();
+      row.code((el) => el.attr('data-color-picker-alpha-output', 'true').child(vText(output)));
+    });
+  });
 }
 
 // 页面壳：负责 Card 和说明文字，不进入演示源码面板。

@@ -27,19 +27,15 @@ export function renderThemeDemo() {
       });
     });
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('主题切换');
-        card.vCardBody((body) => {
-          body.p('选择明暗模式后自动保存，刷新页面由 initYoyaTheme 恢复。');
-          body.child(vThemeModeSwitch({ persist: true }));
-          body.p(densityText);
-          body.child(densityButton());
-          body.p('品牌主色（覆盖 --yoya-raw-primary）');
-          body.child(accentInput());
-        });
-      });
-    }
-  };
+  return vCard((card) => {
+    card.vCardHeader('主题切换');
+    card.vCardBody((body) => {
+      body.p('选择明暗模式后自动保存，刷新页面由 initYoyaTheme 恢复。');
+      body.child(vThemeModeSwitch({ persist: true }));
+      body.p(densityText);
+      body.child(densityButton());
+      body.p('品牌主色（覆盖 --yoya-raw-primary）');
+      body.child(accentInput());
+    });
+  });
 }

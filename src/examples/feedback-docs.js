@@ -294,16 +294,12 @@ function MessageTypesExample1() {
     vMessage({ type: 'info', content: '任务已经进入队列，请稍后查看结果。', closable: false })
   ];
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '10px');
-        messages.forEach((message) => {
-          content.child(message);
-        });
-      });
-    }
-  };
+  return vstack((content) => {
+    content.style('gap', '10px');
+    messages.forEach((message) => {
+      content.child(message);
+    });
+  });
 }
 
 function MessageContainerExample1() {
@@ -312,85 +308,77 @@ function MessageContainerExample1() {
 
   host.inline();
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(host);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('最近动作');
-          row.spacer();
-          row.output((output) => output.child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('显示成功', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              host.success('保存成功', { id: 'local-status', duration: 0 });
-              status.textContent('显示成功消息');
-            });
-          });
-          actions.vButton('替换同 ID', (button) => {
-            button.on('click', () => {
-              host.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
-              status.textContent('替换为警告消息');
-            });
-          });
-          actions.vButton('清空', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              host.clear();
-              status.textContent('已清空');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(host);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('最近动作');
+      row.spacer();
+      row.output((output) => output.child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('显示成功', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          host.success('保存成功', { id: 'local-status', duration: 0 });
+          status.textContent('显示成功消息');
         });
       });
-    }
-  };
+      actions.vButton('替换同 ID', (button) => {
+        button.on('click', () => {
+          host.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
+          status.textContent('替换为警告消息');
+        });
+      });
+      actions.vButton('清空', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          host.clear();
+          status.textContent('已清空');
+        });
+      });
+    });
+  });
 }
 
 function ToastExample1() {
   const status = vText('尚未发送');
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('最近 toast');
-          row.spacer();
-          row.output((output) => output.child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('成功 toast', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              toast.success('全局保存成功', { duration: 0 });
-              status.textContent('已发送成功 toast');
-            });
-          });
-          actions.vButton('错误 toast', (button) => {
-            button.variant('danger');
-            button.on('click', () => {
-              toast.error('接口返回异常', { duration: 0 });
-              status.textContent('已发送错误 toast');
-            });
-          });
-          actions.vButton('清空 toast', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              toast.clear();
-              status.textContent('已清空全局 toast');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('最近 toast');
+      row.spacer();
+      row.output((output) => output.child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('成功 toast', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          toast.success('全局保存成功', { duration: 0 });
+          status.textContent('已发送成功 toast');
         });
       });
-    }
-  };
+      actions.vButton('错误 toast', (button) => {
+        button.variant('danger');
+        button.on('click', () => {
+          toast.error('接口返回异常', { duration: 0 });
+          status.textContent('已发送错误 toast');
+        });
+      });
+      actions.vButton('清空 toast', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          toast.clear();
+          status.textContent('已清空全局 toast');
+        });
+      });
+    });
+  });
 }
 
 function CountdownMessageExample1() {
@@ -399,57 +387,53 @@ function CountdownMessageExample1() {
 
   host.inline();
 
-  return {
-    render() {
-      return vstack((content) => {
-        content.style('gap', '14px');
-        content.child(host);
-        content.hstack((row) => {
-          row.style({ alignItems: 'center', gap: '10px' });
-          row.span('最近动作');
-          row.spacer();
-          row.output((output) => output.child(status));
-        });
-        content.hstack((actions) => {
-          actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
-          actions.vButton('3 秒成功', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              host.success('保存成功', { duration: 3000 });
-              status.textContent('已发送 3 秒成功消息');
-            });
-          });
-          actions.vButton('5 秒警告', (button) => {
-            button.on('click', () => {
-              host.warning('配额即将用完', { duration: 5000 });
-              status.textContent('已发送 5 秒警告消息');
-            });
-          });
-          actions.vButton('仅自动关闭', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              host.info('自动关闭但不显示倒计时', { countdown: false, duration: 3000 });
-              status.textContent('已发送隐藏倒计时的消息');
-            });
-          });
-          actions.vButton('常驻消息', (button) => {
-            button.variant('ghost');
-            button.on('click', () => {
-              host.show('常驻消息，点击关闭', { duration: 0 });
-              status.textContent('已发送常驻消息');
-            });
-          });
-          actions.vButton('清空', (button) => {
-            button.variant('secondary');
-            button.on('click', () => {
-              host.clear();
-              status.textContent('已清空计时消息');
-            });
-          });
+  return vstack((content) => {
+    content.style('gap', '14px');
+    content.child(host);
+    content.hstack((row) => {
+      row.style({ alignItems: 'center', gap: '10px' });
+      row.span('最近动作');
+      row.spacer();
+      row.output((output) => output.child(status));
+    });
+    content.hstack((actions) => {
+      actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
+      actions.vButton('3 秒成功', (button) => {
+        button.variant('primary');
+        button.on('click', () => {
+          host.success('保存成功', { duration: 3000 });
+          status.textContent('已发送 3 秒成功消息');
         });
       });
-    }
-  };
+      actions.vButton('5 秒警告', (button) => {
+        button.on('click', () => {
+          host.warning('配额即将用完', { duration: 5000 });
+          status.textContent('已发送 5 秒警告消息');
+        });
+      });
+      actions.vButton('仅自动关闭', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          host.info('自动关闭但不显示倒计时', { countdown: false, duration: 3000 });
+          status.textContent('已发送隐藏倒计时的消息');
+        });
+      });
+      actions.vButton('常驻消息', (button) => {
+        button.variant('ghost');
+        button.on('click', () => {
+          host.show('常驻消息，点击关闭', { duration: 0 });
+          status.textContent('已发送常驻消息');
+        });
+      });
+      actions.vButton('清空', (button) => {
+        button.variant('secondary');
+        button.on('click', () => {
+          host.clear();
+          status.textContent('已清空计时消息');
+        });
+      });
+    });
+  });
 }
 
 function TooltipPlacementExample1() {
@@ -464,52 +448,44 @@ function TooltipPlacementExample1() {
     ['left', '左侧']
   ];
 
-  return {
-    render() {
-      return section((content) => {
-        content.style({
-          alignItems: 'center',
-          display: 'grid',
-          gap: '16px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-          justifyItems: 'center'
-        });
-        items.forEach(([placement, label]) => {
-          content.child(
-            vTooltip((tooltip) =>
-              tooltip.placement(placement).target(label).content(`${placement} 方向说明`)
-            )
-          );
-        });
-      });
-    }
-  };
+  return section((content) => {
+    content.style({
+      alignItems: 'center',
+      display: 'grid',
+      gap: '16px',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+      justifyItems: 'center'
+    });
+    items.forEach(([placement, label]) => {
+      content.child(
+        vTooltip((tooltip) =>
+          tooltip.placement(placement).target(label).content(`${placement} 方向说明`)
+        )
+      );
+    });
+  });
 }
 
 function TooltipTriggerExample1() {
-  return {
-    render() {
-      return section((content) => {
-        content.style({
-          alignItems: 'center',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px'
-        });
-        content.p('点击目标查看触发说明');
-        content.child(
-          vTooltip((tooltip) =>
-            tooltip
-              .trigger('click')
-              .target(
-                vButton('查看规则', (button) => {
-                  button.variant('secondary');
-                })
-              )
-              .content('再次点击外部区域或按 Escape 关闭。')
+  return section((content) => {
+    content.style({
+      alignItems: 'center',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '12px'
+    });
+    content.p('点击目标查看触发说明');
+    content.child(
+      vTooltip((tooltip) =>
+        tooltip
+          .trigger('click')
+          .target(
+            vButton('查看规则', (button) => {
+              button.variant('secondary');
+            })
           )
-        );
-      });
-    }
-  };
+          .content('再次点击外部区域或按 Escape 关闭。')
+      )
+    );
+  });
 }

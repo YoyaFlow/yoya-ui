@@ -25,19 +25,15 @@ function SvgIconPickerBasicExample() {
     picker.onChange((name) => output.textContent(name || '未选择'));
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.child(picker);
-        body.div((row) => {
-          row.style('marginTop', '10px');
-          row.span('当前图标');
-          row.spacer();
-          row.code((el) => el.attr('data-svg-icon-picker-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.child(picker);
+    body.div((row) => {
+      row.style('marginTop', '10px');
+      row.span('当前图标');
+      row.spacer();
+      row.code((el) => el.attr('data-svg-icon-picker-output', 'true').child(output));
+    });
+  });
 }
 
 function SvgIconPickerCustomExample() {
@@ -53,20 +49,16 @@ function SvgIconPickerCustomExample() {
     picker.onChange((name) => output.textContent(name || '未选择'));
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.p('icons() 可限制候选图标，或传入 { name, icon } 使用自定义图标。');
-        body.child(picker);
-        body.div((row) => {
-          row.style('marginTop', '10px');
-          row.span('当前图标');
-          row.spacer();
-          row.code((el) => el.attr('data-svg-icon-picker-custom-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.p('icons() 可限制候选图标，或传入 { name, icon } 使用自定义图标。');
+    body.child(picker);
+    body.div((row) => {
+      row.style('marginTop', '10px');
+      row.span('当前图标');
+      row.spacer();
+      row.code((el) => el.attr('data-svg-icon-picker-custom-output', 'true').child(output));
+    });
+  });
 }
 
 function SvgIconPickerLazyExample() {
@@ -92,20 +84,16 @@ function SvgIconPickerLazyExample() {
     picker.onChange((name) => output.textContent(name || '未选择'));
   });
 
-  return {
-    render() {
-      return div((body) => {
-        body.p('图标数量较多时分批渲染：首批 24 个，滚动接近底部自动加载下一批。');
-        body.child(picker);
-        body.div((row) => {
-          row.style('marginTop', '10px');
-          row.span('当前图标');
-          row.spacer();
-          row.code((el) => el.attr('data-svg-icon-picker-lazy-output', 'true').child(output));
-        });
-      });
-    }
-  };
+  return div((body) => {
+    body.p('图标数量较多时分批渲染：首批 24 个，滚动接近底部自动加载下一批。');
+    body.child(picker);
+    body.div((row) => {
+      row.style('marginTop', '10px');
+      row.span('当前图标');
+      row.spacer();
+      row.code((el) => el.attr('data-svg-icon-picker-lazy-output', 'true').child(output));
+    });
+  });
 }
 
 // 页面壳：负责 Card 和说明文字，不进入演示源码面板。

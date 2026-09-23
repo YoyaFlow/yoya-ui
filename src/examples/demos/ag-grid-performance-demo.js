@@ -1,3 +1,4 @@
+import { vNode } from '../../index.js';
 import { AgGridDemoNode } from './ag-grid-glue.js';
 
 export function AgGridPerformanceExample(rowCount = 50000, colCount = 10) {
@@ -38,35 +39,25 @@ export function AgGridPerformanceExample(rowCount = 50000, colCount = 10) {
   };
 
   const state = { colCount, rowCount };
-  let node = null;
 
-  return {
-    render() {
-      node = new AgGridDemoNode({
-        columnDefs: makeColumns(state.colCount),
-        height: '480px',
-        rowData: makeRows(state.rowCount, state.colCount)
-      });
-      return node;
-    },
-    setSize(rows, cols) {
+  return vNode((api) => {
+    const node = new AgGridDemoNode({
+      columnDefs: makeColumns(state.colCount),
+      height: '480px',
+      rowData: makeRows(state.rowCount, state.colCount)
+    });
+
+    api.setSize = (rows, cols) => {
       state.rowCount = rows;
       state.colCount = cols;
-      node?.setGridOption('columnDefs', makeColumns(cols));
-      node?.setRows(makeRows(rows, cols));
-    },
-    rowCount() {
-      return state.rowCount;
-    },
-    colCount() {
-      return state.colCount;
-    },
-    cellCount() {
-      return state.rowCount * state.colCount;
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+      node.setGridOption('columnDefs', makeColumns(cols));
+      node.setRows(makeRows(rows, cols));
+      return api;
+    };
+    api.rowCount = () => state.rowCount;
+    api.colCount = () => state.colCount;
+    api.cellCount = () => state.rowCount * state.colCount;
+
+    return node;
+  });
 }

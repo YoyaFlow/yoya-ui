@@ -20,7 +20,7 @@ const regionDemos = [
     description:
       '节点用 rebuildable() 声明为区域；rebuild() 清空子节点并按当前数据重跑它自己的 setup。区域外的输入框完全不受影响。',
     id: 'rebuild',
-    imports: ['hstack', 'input', 'vButton', 'vstack', 'ul'],
+    imports: ['hstack', 'input', 'vButton', 'vNode', 'vstack', 'ul'],
     sourceTitle: '区域重建源码',
     title: '手动重建：rebuildable() + rebuild()'
   },
@@ -29,7 +29,7 @@ const regionDemos = [
     description:
       '忙碌（编辑 / 拖拽）时谓词拦截重建：区域内值绑定照常刷新、列表结构不动并记为待重建；恢复空闲后一次 rebuild() 补齐全部变更。',
     id: 'gate',
-    imports: ['computed', 'div', 'ref', 'vText', 'vstack'],
+    imports: ['computed', 'div', 'ref', 'vNode', 'vText', 'vstack'],
     sourceTitle: '谓词门禁源码',
     title: '时机门禁：忙碌时跳过结构重建'
   },
@@ -38,7 +38,7 @@ const regionDemos = [
     description:
       'scope() 给独立子树声明数据来源，带参值函数 (d) => value 每次求值都能拿到它；只刷值不需要 rebuildable()。',
     id: 'source',
-    imports: ['div', 'hstack', 'vButton', 'vText', 'vstack'],
+    imports: ['div', 'hstack', 'vButton', 'vNode', 'vText', 'vstack'],
     sourceTitle: '数据来源源码',
     title: '数据来源：scope()'
   },
@@ -47,7 +47,7 @@ const regionDemos = [
     description:
       'flush() 只把绑定求值写回，元素引用不变；换成 rebuild() 才会重建结构。值变化用 flush，结构变化用 rebuild。',
     id: 'flush',
-    imports: ['hstack', 'vButton', 'vText', 'vstack', 'div'],
+    imports: ['hstack', 'vButton', 'vNode', 'vText', 'vstack', 'div'],
     sourceTitle: '值级刷新源码',
     title: '值级刷新：flush()'
   },

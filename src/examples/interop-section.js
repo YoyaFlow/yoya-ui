@@ -6,7 +6,7 @@ export function InteropExampleSection(options) {
   const controls = options.controls ?? [];
   const live = options.component();
   const output = vText(options.outputText ?? '');
-  const clientOnlyHost = vClientOnly(() => live.render());
+  const clientOnlyHost = vClientOnly(() => live);
 
   return {
     render() {

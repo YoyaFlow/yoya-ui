@@ -1,4 +1,4 @@
-import { HtmlElementNode } from '../../index.js';
+import { HtmlElementNode, vNode } from '../../index.js';
 import Editor from '@toast-ui/editor';
 import Viewer from '@toast-ui/editor/viewer';
 import '@toast-ui/editor/dist/toastui-editor.css';
@@ -236,22 +236,11 @@ export class MarkdownViewerDemoNode extends HtmlElementNode {
 }
 
 export function MarkdownViewerExample(markdown = DEFAULT_MARKDOWN) {
-  let node = null;
+  return vNode((api) => {
+    const node = new MarkdownViewerDemoNode(markdown);
+    api.setMode = (mode) => node.setMode(mode);
+    api.mode = () => node.mode();
 
-  return {
-    render() {
-      node = new MarkdownViewerDemoNode(markdown);
-      return node;
-    },
-    setMode(mode) {
-      node?.setMode(mode);
-    },
-    mode() {
-      return node ? node.mode() : 'edit';
-    },
-    destroy() {
-      node?.destroy();
-      node = null;
-    }
-  };
+    return node;
+  });
 }
