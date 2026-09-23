@@ -7,7 +7,6 @@
     "src/feedback/dialog.js": 4,
     "src/feedback/message.js": 6,
     "src/feedback/tooltip.js": 4,
-    "src/feedback/vconfirm.js": 3,
     "src/async/lazy-image.js": 3,
     "src/async/skeleton.js": 5,
     "src/effects/transition.js": 8

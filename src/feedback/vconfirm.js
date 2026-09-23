@@ -75,12 +75,10 @@ export function vConfirm(options = {}) {
       button.on('click', () => finish(false));
     });
 
-    const message = new HtmlElementNode('div')
-      .className('yoya-vconfirm-content')
-      .child(
-        title ? new HtmlElementNode('div').className('yoya-vconfirm-title').child(title) : null
-      )
-      .child(new HtmlElementNode('div').className('yoya-vconfirm-message').child(content));
+    // 身份走 `vn`（类名退场）：内容块 / 标题块 / 正文块
+    const message = new HtmlElementNode('div', { vn: 'VConfirmContent' })
+      .child(title ? new HtmlElementNode('div', { vn: 'VConfirmTitle' }).child(title) : null)
+      .child(new HtmlElementNode('div', { vn: 'VConfirmMessage' }).child(content));
 
     const actions = vstack({ direction: 'row', gap: '8px', justify: 'flex-end' }, (row) => {
       row.child(confirmButton, cancelButton);
