@@ -16,7 +16,6 @@
     "src/async/lazy-image.js": 3,
     "src/async/skeleton.js": 5,
     "src/i18n/index.js": 1,
-    "src/theme/theme-mode-switch.js": 1,
     "src/effects/transition.js": 8
   },
   "css": {
@@ -63,7 +62,6 @@
     "src/layout/masonry.js",
     "src/layout/split-panel.js",
     "src/layout/theme-shell.js",
-    "src/theme/theme-mode-switch.js",
     "src/three/three.js"
   ]
 }

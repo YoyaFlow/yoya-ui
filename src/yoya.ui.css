@@ -2398,6 +2398,37 @@ body {
     padding: 5px 10px;
   }
 
+  /* 主题模式切换：容器与圆形按钮的静态样式、选中态配色（原来全在 JS 行内，R5 搬进来）。
+     按钮自身的变体规则在上面（同为两条属性选择器），这几条写在后面，同权重时它赢。 */
+  [vn~='VThemeModeSwitch'] {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  [vn~='VThemeModeSwitch'] > [vn~='VButton'] {
+    background: transparent;
+    border-color: transparent;
+    border-radius: 50%;
+    color: var(--yoya-color-text-secondary, #6f6f6f);
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0;
+    width: 32px;
+  }
+
+  [vn~='VThemeModeSwitch'] > [vn~='VButton'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary-border, #bfdbfe);
+    color: var(--yoya-color-text-active, #1d4ed8);
+  }
+
+  [vn~='VThemeModeSwitch'] svg {
+    height: 16px;
+    width: 16px;
+  }
+
   /* 卡片：静态样式（原在 JS 里那 4 块行内样式）。part 规则**不带祖先选择器**——part 可以
      脱离卡片单独用（`vCardBody(…)` 常当普通容器），身份自己就够定位。 */
   :where([vn~='VCard']) {

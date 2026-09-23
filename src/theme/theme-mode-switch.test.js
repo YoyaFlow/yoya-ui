@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { div, VThemeModeSwitch, vThemeModeSwitch } from '../index.js';
+import { div, hasComponentIdentity, vThemeModeSwitch } from '../index.js';
 
 afterEach(() => {
   delete document.documentElement.dataset.yoyaMode;
@@ -13,8 +13,11 @@ describe('VThemeModeSwitch', () => {
 
     expect(buttons).toHaveLength(3);
     buttons.forEach((button) => {
-      expect(button.style.borderRadius).toContain('50%');
-      expect(button.style.width).toBe('32px');
+      // 圆形 / 尺寸等静态样式在 `yoya.ui.css`（`[vn~='VThemeModeSwitch'] > [vn~='VButton']`），
+      // 这里只断言身份、图标与无障碍名称
+      expect(button.getAttribute('vn')).toContain('VButton');
+      expect(button.style.borderRadius).toBe('');
+      expect(button.style.width).toBe('');
       expect(button.querySelector('svg')).toBeTruthy();
       expect(button.getAttribute('aria-label')).toBeTruthy();
     });
@@ -67,7 +70,7 @@ describe('VThemeModeSwitch', () => {
     const root = div((page) => page.vThemeModeSwitch());
     const child = root.children()[0];
 
-    expect(child).toBeInstanceOf(VThemeModeSwitch);
+    expect(hasComponentIdentity(child, 'VThemeModeSwitch')).toBe(true);
     expect(root.renderDom().querySelector("[data-theme-mode='light']")).toBeTruthy();
   });
 });

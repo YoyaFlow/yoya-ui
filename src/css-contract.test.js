@@ -80,6 +80,13 @@ const selectSelectors = [
 
 const timerRangeSelectors = ["[vn~='VTimerRange']", "[vn~='VTimerRangeError']"];
 
+const themeSelectors = [
+  "[vn~='VThemeModeSwitch']",
+  "[vn~='VThemeModeSwitch'] > [vn~='VButton']",
+  "[vn~='VThemeModeSwitch'] > [vn~='VButton'][data-active='true']",
+  "[vn~='VThemeModeSwitch'] svg"
+];
+
 const rateSelectors = [
   "[vn~='VRate']",
   "[vn~='VRate'][data-disabled='true']",
@@ -354,6 +361,12 @@ describe('CSS style contract', () => {
 
   it('covers the timer range selectors', () => {
     timerRangeSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the theme mode switch selectors', () => {
+    themeSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });
