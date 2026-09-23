@@ -4,8 +4,6 @@ import {
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
-import { VCheckboxes } from './checkboxes.js';
-import { VRadios } from './radios.js';
 import { assignFormValue, isControlDisabled, isControlRequired } from './shared.js';
 
 /**
@@ -158,22 +156,8 @@ function collectFormValues(node, result) {
     return result;
   }
 
-  if (node instanceof VCheckboxes) {
-    const name = node.name();
-    if (name) {
-      assignFormValue(result, name, node.value());
-    }
-    return result;
-  }
-
-  if (node instanceof VRadios) {
-    const name = node.name();
-    if (name) {
-      assignFormValue(result, name, node.value());
-    }
-    return result;
-  }
-
+  // 布尔组（`VCheckboxes` / `VRadios`）也走**能力约定**：它们暴露 `value()`，所以上面那条
+  // `isControlCapable` 已经覆盖——不再按组件身份分支（票 15 §11.3 条 27 / 16 号第 32 条同口径）
   if (isControlCapable(node)) {
     const name = node.name();
     if (name) {
@@ -259,8 +243,6 @@ function validateFormControls(node, formValues = {}) {
     }
 
     const isControl =
-      current instanceof VCheckboxes ||
-      current instanceof VRadios ||
       isControlCapable(current) ||
       (typeof current.tagName === 'function' &&
         ['input', 'select', 'textarea'].includes(current.tagName()));

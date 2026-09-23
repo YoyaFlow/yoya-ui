@@ -4051,27 +4051,6 @@ export function viewRootOf(value) {
 }
 
 /**
- * 给组件定义装身份判定：`member instanceof definition` 先走身份（视图根上的 `vn`），
- * 原型链判定作为兜底保留（形态 C 组件 / `new` 出来的实例照旧成立）。
- */
-export function defineComponentIdentity(definition, name) {
-  if (typeof definition !== 'function' || typeof name !== 'string' || name === '') {
-    throw new TypeError(
-      'defineComponentIdentity(definition, name) requires a component factory function ' +
-        'and a non-empty component name.'
-    );
-  }
-
-  const prototypeHasInstance = Function.prototype[Symbol.hasInstance];
-  Object.defineProperty(definition, Symbol.hasInstance, {
-    value: (value) =>
-      hasComponentIdentity(value, name) || prototypeHasInstance.call(definition, value)
-  });
-
-  return definition;
-}
-
-/**
  * ElementNode 表示可渲染成真实 DOM Element 的视图节点。
  * 它负责属性、类名、样式、事件和子节点到 DOM 的同步。
  */

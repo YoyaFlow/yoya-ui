@@ -716,7 +716,6 @@ export function hasComponentIdentity(value: unknown, name: string): boolean;
  * Installs identity-based `instanceof` on a component definition: members whose view root
  * carries `vn: name` are instances, with the prototype check kept as a fallback.
  */
-export function defineComponentIdentity<T>(definition: T, name: string): T;
 
 /** Normalizes any child input into a ViewNode. */
 export function normalizeChild(child: ViewNode | ComponentLike | string | number): ViewNode;

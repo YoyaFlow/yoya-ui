@@ -7,7 +7,7 @@
 
 - **CSS file first**: component styles live in `yoya.ui.css` and follow native HTML authoring; inline styles are only for instance-level parameters.
 - **Small core = standard**: the core defines node lifecycle, attribute snapshots, component wrapping, and state. Styling and theming are carried by tokens and the CSS contract.
-- **Every predefined element has its own className**: the class name is the mount point of the "preset skin". Users can use `replaceClassName` to detach the preset and take over with their own CSS.
+- **Every predefined component carries its identity attribute**: the preset skin hangs off `[vn="VXxx"]` (the mount point). Users take over by replacing that identity with their own, or by writing their own rules for the same scope (see §6 / §7).
 - **Theming is a three-dimensional orthogonal matrix**: brand theme (`data-yoya-theme`) × light/dark mode (`data-yoya-mode`) × density (`data-yoya-density`).
 
 ## 2. Theming dimensions
@@ -108,18 +108,18 @@ vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 
 ## 6. Customization ladder
 
-| Level | Customization point     | How                                                                                            |
-| ----- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| L0    | token override (global) | redefine `--yoya-*` for site-wide theming                                                      |
-| L1    | scoped token override   | redefine `--yoya-*` on any container for local theming                                         |
-| L2    | detach preset skin      | `replaceClassName(old, next, tolerate)` + your own CSS file                                    |
-| L3    | fine override           | library rules live in `@layer yoya` and base rules use `:where()`, so unlayered user rules win |
-| L4    | instance level          | inline `styles()` / `style()`                                                                  |
-| L5    | business hook           | `className('my-x')` to append custom classes                                                   |
-| L6    | component API           | `type/size/disabled/...`; do not hard-change component variants with CSS                       |
-| L7    | full replacement        | build or wrap your own component to the standard                                               |
+| Level | Customization point     | How                                                                                                  |
+| ----- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| L0    | token override (global) | redefine `--yoya-*` for site-wide theming                                                            |
+| L1    | scoped token override   | redefine `--yoya-*` on any container for local theming                                               |
+| L2    | detach preset skin      | write your own rules for the identity scope (`[vn="VXxx"] …`), or replace the identity with your own |
+| L3    | fine override           | library rules live in `@layer yoya` and base rules use `:where()`, so unlayered user rules win       |
+| L4    | instance level          | inline `styles()` / `style()`                                                                        |
+| L5    | business hook           | `className('my-x')` to append custom classes                                                         |
+| L6    | component API           | `type/size/disabled/...`; do not hard-change component variants with CSS                             |
+| L7    | full replacement        | build or wrap your own component to the standard                                                     |
 
-### replaceClassName
+### replaceClassName (plain class utility)
 
 `ElementNode.replaceClassName(old, next, tolerate = false)`:
 
@@ -128,19 +128,19 @@ vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 - If `old === next`: no-op; returns `this` for chaining.
 
 ```js
-vCard((card) => card.replaceClassName('yoya-vcard', 'acme-card'));
+vCard((card) => card.replaceClassName('card-plain', 'card-raised'));
 ```
 
-Preset styles are all written from the root class scope (no orphan part selectors), so replacing the root class detaches the subtree from preset styles. Root-class state selectors such as `.yoya-vtabs .yoya-vtab-trigger[data-active]` stop applying too; state-hook styles need to be taken over by your CSS as well.
+Component identity no longer lives on class names (§7), so this is an ordinary class utility for **your own** classes — it does not detach preset styles any more. To take over a component's preset skin, write your own rules for its identity scope (`[vn="VXxx"] …`) or give your own component your own identity; whether `replaceClassName` stays in the public API is still open (ticket 15 §3-Q8).
 
-## 7. className contract
+## 7. Identity and class-name contract
 
-- Shared marker: every component root carries `yoya-component`.
-- Component and part classes: `yoya-v<name>`, `yoya-v<name>-<part>`, `yoya-v<name>--<modifier>`.
-- Shared/utility classes: `yoya-<feature>-<part>` (e.g. `yoya-icon`, `yoya-control-clear`).
+- **Identity is the `vn` attribute** on the component's view root: `vn="VCard"`. A wrapper sharing one root writes several names, space separated (`vn="VTimer VInput"`); any of them matches.
+- **Parts** carry their own name the same way (`vn="VCardHeader"`); caller-supplied content declares its position with `vn_slot` (see the authoring guide).
+- **Preset rules always start from the identity**: selectors in `yoya.ui.css` are `[vn~="VXxx"] …` (no orphan part selectors), so replacing the identity detaches the whole subtree from preset styles in one step — state hooks included (`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` stops applying).
+- **Class names are not identity**: the old `yoya-component` / `yoya-v*` families are retiring (the shared base rule is `[vn]` now; the leftovers go in ticket 15, wave 6). Cross-component capability classes stay: `yoya-<feature>` (`yoya-icon`, `yoya-layout`, `yoya-control-clear`).
 - State always uses kebab-case `data-*` attributes; class names do not carry state.
-- Dynamic class names only use the templates `yoya-v${name}-<part>` and `yoya-${kind}`.
-- Enforced by `src/className-contract.test.js` and `src/preset-scope.test.js`.
+- Guarded by `src/attribute-migration-baseline.test.js` (class-name stock can only shrink), `src/preset-scope.test.js` (preset rules must stay root-scoped) and `src/css-contract.test.js`; `src/className-contract.test.js` is replaced by the attribute-contract test when the migration closes.
 
 ### Theme switch JS API (optional)
 

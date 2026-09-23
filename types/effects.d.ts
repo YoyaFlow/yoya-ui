@@ -46,9 +46,9 @@ export interface VTransition extends HtmlElementNode {
 }
 
 /**
- * Component identity factory: the runtime value is the factory function registered through
- * `defineComponentIdentity` (no `new`-able class any more). The construct signature exists only so
- * `member instanceof VTransition` keeps type-checking.
+ * Component handle: the runtime value is the component node returned by the factory.
+ * Identity is the `vn` object fact + DOM attribute (`hasComponentIdentity` / `componentNameOf`);
+ * the construct signature exists only so `instanceof` keeps type-checking.
  */
 export const VTransition: {
   new (first?: SetupInput<VTransition> | null): VTransition;

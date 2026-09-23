@@ -6,5 +6,5 @@
     "yoya-vaside": 2,
     "yoya-vmain": 2
   },
-  "identity": ["src/components/component-shell.js", "src/feedback/message-manager.js"]
+  "identity": ["src/components/component-shell.js"]
 }

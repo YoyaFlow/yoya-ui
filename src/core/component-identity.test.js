@@ -1,32 +1,15 @@
 /**
- * 组件身份（`vn`）：三种组件形态共用同一条判定。
- *
- * 形态 A 的成员是元素节点、形态 B / vNode 的成员是 `child()` 包出来的 ComponentNode，
- * 判定统一落到**视图根上的身份标记**——票 07 之后它是**对象事实**（节点字段），不落 DOM：
- * `x instanceof VCard` 与形态无关，但 `outerHTML` / SSR 输出里没有 `vn`。
+ * 组件身份（`vn`）契约：**对象事实 + 真 DOM 属性**两处都有，判定走 `componentNameOf` /
+ * `hasComponentIdentity`——`defineComponentIdentity` 与 `instanceof VXxx` 都已在票 15 波 6 退场。
  */
 import { describe, expect, it } from 'vitest';
-import { div, span } from '../html/index.js';
-import {
-  ComponentNode,
-  componentNameOf,
-  defineComponentIdentity,
-  hasComponentIdentity
-} from './node.js';
+import { div, span, HtmlElementNode } from '../html/index.js';
+import { ComponentNode, componentNameOf, hasComponentIdentity, viewRootOf } from './node.js';
 import { vNode } from './v-node.js';
 
 /** 形态 A：薄工厂，直接返回 ViewNode。 */
 function ServiceTag() {
-  return span({ vn: 'ServiceTag', class: 'yoya-service-tag' }, 'tag');
-}
-
-/** 形态 B：组件对象。 */
-function RateCard() {
-  return {
-    render() {
-      return div({ vn: 'RateCard' }, 'rate');
-    }
-  };
+  return span({ class: 'yoya-service-tag', vn: 'ServiceTag' }, 'tag');
 }
 
 /** vNode：setup 里给视图根写身份。 */
@@ -34,23 +17,28 @@ function Chart() {
   return vNode(() => div({ vn: 'Chart' }, 'chart'));
 }
 
-/** 多根组件：任一视图根带身份即算命中。 */
-function SplitPanel() {
-  return {
-    render() {
-      return [div('left'), div({ vn: 'SplitPanel' }, 'right')];
-    }
-  };
+/** 包装型 / 多值身份：同时是 `VDropdownMenu`。 */
+function LanguageSwitch() {
+  return vNode(() => div({ vn: 'LanguageSwitch VDropdownMenu' }, 'switch'));
 }
 
-/** 形态 C（兼容路径）：类节点组件，身份靠原型链兜底。 */
-class LegacyBadge extends ComponentNode {
+/** 视图根是**节点类型扩展**（类节点自己写 `vn`）：判定要展开到视图根。 */
+class PanelNode extends HtmlElementNode {
   constructor() {
-    super({ render: () => span({ class: 'yoya-legacy-badge' }, 'legacy') });
+    super('div', { vn: 'Panel' });
   }
 }
 
-/** 不写身份、render 又会抛的组件：判定应当返回 false，而不是把调用方炸掉。 */
+function Panel() {
+  return vNode(() => new PanelNode());
+}
+
+/** 多根组件：任一视图根带身份即算命中。 */
+function SplitPanel() {
+  return vNode(() => [div('left'), div({ vn: 'SplitPanel' }, 'right')]);
+}
+
+/** render 又会抛的对象组件（票 03 的兼容路径）：判定应当返回 false，而不是把调用方炸掉。 */
 function Broken() {
   return {
     render() {
@@ -59,100 +47,93 @@ function Broken() {
   };
 }
 
-defineComponentIdentity(ServiceTag, 'ServiceTag');
-defineComponentIdentity(RateCard, 'RateCard');
-defineComponentIdentity(Chart, 'Chart');
-defineComponentIdentity(SplitPanel, 'SplitPanel');
-defineComponentIdentity(LegacyBadge, 'LegacyBadge');
-
 describe('component identity (vn)', () => {
-  it('answers the same way for form A, form B and vNode', () => {
-    const page = div((root) => {
-      root.child(ServiceTag());
-      root.child(RateCard());
-      root.child(Chart());
-      root.child(SplitPanel());
-      root.child(div('plain'));
-    });
+  it('身份是对象事实，同时落到真 DOM', () => {
+    const marked = div({ class: 'VCard', vn: 'VCard' }, 'x');
 
-    const children = page.children();
-    const pick = (definition) => children.filter((child) => child instanceof definition).length;
-
-    expect(children).toHaveLength(5);
-    expect(pick(ServiceTag)).toBe(1); // 形态 A：成员就是元素节点
-    expect(pick(RateCard)).toBe(1); // 形态 B：成员是 ComponentNode，展开到视图根
-    expect(pick(Chart)).toBe(1); // vNode：同上
-    expect(pick(SplitPanel)).toBe(1); // 多根：任一命中
-    expect(children[4] instanceof ServiceTag).toBe(false);
-    expect(children[1] instanceof Chart).toBe(false);
-    expect(children[2] instanceof RateCard).toBe(false);
-  });
-
-  it('keeps prototype identity as a fallback for class components', () => {
-    const legacy = new LegacyBadge();
-
-    expect(legacy instanceof LegacyBadge).toBe(true);
-    // 类组件没写 vn，兜底判定仍然认（迁移期老组件不会静默断）
-    expect(componentNameOf(legacy)).toBeNull();
-    expect(hasComponentIdentity(legacy, 'LegacyBadge')).toBe(false);
-  });
-
-  it('身份是对象事实，同时落到真 DOM（GenUI 可扫）', () => {
-    const marked = div({ vn: 'VCard', class: 'VCard' }, 'x');
-
-    // 对象上认得到
     expect(componentNameOf(marked)).toBe('VCard');
     expect(hasComponentIdentity(marked, 'VCard')).toBe(true);
 
     // 身份同时落到真 DOM：元素属性与 SSR 输出都带 `vn`（GenUI 可扫）
     const element = marked.renderDom();
+
     expect(element.getAttribute('vn')).toBe('VCard');
     expect(marked.toHTML()).toContain('vn="VCard"');
 
     // 反过来：只手写 DOM 属性不再是身份
     const raw = document.createElement('div');
+
     raw.setAttribute('vn', 'VCard');
     expect(componentNameOf(raw)).toBeNull();
+    expect(hasComponentIdentity(raw, 'VCard')).toBe(false);
+  });
+
+  it('形态 A / vNode / 多根 / 节点类型扩展视图根都认', () => {
+    const page = div((root) => {
+      root.child(ServiceTag());
+      root.child(Chart());
+      root.child(Panel());
+      root.child(SplitPanel());
+      root.child(div('plain'));
+    });
+    const children = page.children();
+    const count = (name) => children.filter((child) => hasComponentIdentity(child, name)).length;
+
+    expect(children).toHaveLength(5);
+    expect(count('ServiceTag')).toBe(1); // 形态 A：成员就是元素节点
+    expect(count('Chart')).toBe(1); // vNode：成员是 ComponentNode，展开到视图根
+    expect(count('Panel')).toBe(1); // 视图根是节点类型扩展（类节点自己写 vn）
+    expect(count('SplitPanel')).toBe(1); // 多根：任一命中
+    expect(count('VCard')).toBe(0);
+    expect(componentNameOf(children[4])).toBeNull();
+  });
+
+  it('多值身份每个名字都命中（包装型组件）', () => {
+    const wrapped = LanguageSwitch();
+
+    expect(hasComponentIdentity(wrapped, 'LanguageSwitch')).toBe(true);
+    expect(hasComponentIdentity(wrapped, 'VDropdownMenu')).toBe(true);
+    expect(hasComponentIdentity(wrapped, 'VTable')).toBe(false);
+
+    const root = div({ vn: 'VCard UserCard' }, 'x');
+
+    expect(hasComponentIdentity(root, 'VCard')).toBe(true);
+    expect(hasComponentIdentity(root, 'UserCard')).toBe(true);
+  });
+
+  it('类名与裸组件对象都不参与判定', () => {
+    // 只有 yoya-* 类名、没有 vn → 不算
+    expect(componentNameOf(div((node) => node.className('yoya-card')))).toBeNull();
+
+    // 裸对象不是节点 → 不算
+    expect(componentNameOf({ render: () => div('x') })).toBeNull();
+    expect(componentNameOf(null)).toBeNull();
+    expect(componentNameOf(undefined)).toBeNull();
+  });
+
+  it('render 抛错时不炸判定，也不误报身份', () => {
+    const broken = div((root) => root.child(new ComponentNode(Broken())));
+    const member = broken.children()[0];
+
+    expect(componentNameOf(member)).toBeNull();
+    expect(hasComponentIdentity(member, 'Chart')).toBe(false);
+    expect(viewRootOf(member)).toBeNull();
   });
 
   it('adopt / hydrate 之后仍然认（身份跟着客户端那棵树的节点走）', async () => {
-    const { renderToString, hydrate } = await import('./ssr.js');
+    const { hydrate, renderToString } = await import('./ssr.js');
     const page = () => div((root) => root.child(Chart()));
 
     const { html } = renderToString(page);
+
     expect(html).toContain('vn="Chart"');
 
     document.body.innerHTML = `<div id="app">${html}</div>`;
     const tree = hydrate(page, '#app');
-    expect(tree.children()[0] instanceof Chart).toBe(true);
+
+    expect(hasComponentIdentity(tree.children()[0], 'Chart')).toBe(true);
 
     tree.destroy();
     document.body.innerHTML = '';
-  });
-
-  it('matches every name listed in a multi-value identity', () => {
-    const wrapped = div({ vn: 'VCard UserCard' }, 'x');
-
-    expect(hasComponentIdentity(wrapped, 'VCard')).toBe(true);
-    expect(hasComponentIdentity(wrapped, 'UserCard')).toBe(true);
-    expect(hasComponentIdentity(wrapped, 'VTable')).toBe(false);
-  });
-
-  it('does not mistake class names, bare component objects or broken renders', () => {
-    // 类名不参与判定：只有 yoya-* 类名、没有 vn → 不算
-    expect(div((node) => node.className('yoya-card')) instanceof ServiceTag).toBe(false);
-
-    // 裸组件对象不是树成员 → 不算（判定针对 children() 里的成员）
-    expect(RateCard() instanceof RateCard).toBe(false);
-
-    // render 抛错 → false，不把判定炸掉
-    const broken = div((root) => root.child(new ComponentNode(Broken())));
-    expect(broken.children()[0] instanceof RateCard).toBe(false);
-    expect(componentNameOf(broken.children()[0])).toBeNull();
-  });
-
-  it('rejects a missing definition or name', () => {
-    expect(() => defineComponentIdentity(null, 'X')).toThrow(/component factory function/);
-    expect(() => defineComponentIdentity(() => {}, '')).toThrow(/component factory function/);
   });
 });

@@ -9,7 +9,6 @@ export {
   applyElementOptions,
   COMPONENT_IDENTITY_ATTR,
   componentNameOf,
-  defineComponentIdentity,
   elementAttrs,
   elementClassNames,
   elementFactoryTagOf,

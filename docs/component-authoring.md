@@ -15,20 +15,21 @@ yoya-ui's core is a small, stable "component standard" rather than a large runti
 
 Component developers only need `yoya-ui/core` (zero third-party dependencies, smallest size):
 
-| Category                  | API                                                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                                           |
-| Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget`                      |
-| Node internals            | `nodeChildren`, `appendNodeChild`, `EMPTY_CHILDREN`, `elementStyles`, `elementAttrs`, `elementClassNames`, `elementHasClass` (class-node components only, see §7.3) |
-| Component identity        | `vn: 'VCard'` on the view root, `defineComponentIdentity`, `componentNameOf`, `hasComponentIdentity` (one check for all three shapes, see §7.3)                     |
-| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                 |
-| i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                               |
+| Category                  | API                                                                                                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node classes              | `ViewNode`, `ElementNode`, `HtmlElementNode`, `SvgElementNode`, `ComponentNode`, `TextNode` (`VTextNode`)                                                                      |
+| Factories and composition | `vText`, `createElementFactory`, `registerChildFactories`, `applyElementOptions`, `normalizeChild`, `normalizeSetupArguments`, `resolveTarget`                                 |
+| Node internals            | `nodeChildren`, `appendNodeChild`, `EMPTY_CHILDREN`, `elementStyles`, `elementAttrs`, `elementClassNames`, `elementHasClass` (node-type extensions only, see §7.3)             |
+| Component identity        | `vn: 'VCard'` on the view root, `componentNameOf`, `hasComponentIdentity` (one check for both shapes; cross-module recognition goes through capability conventions — see §7.3) |
+| Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                            |
+| i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                                          |
 
 ## 3. The two component shapes
 
 **A component has exactly two shapes** (converged 2026-09-21): **A, the thin factory** (no behaviour) and
-**B, `vNode`** (behaviour). The object component (`return { render(), … }`) is retired (existing code only,
-ticket 03), and `class Xxx extends HtmlElementNode` is **not a component shape** — it is the engine's
+**B, `vNode`** (behaviour). The object component (`return { render(), … }`) is deprecated — do not write new
+ones (existing code only; the removal plan is ticket 03), and `class Xxx extends HtmlElementNode` is **not a
+component shape** — it is the engine's
 **node-type extension** (a component's view root / a custom element kind); see §7.3.
 
 ### Shape A: thin factory — no behaviour
@@ -90,8 +91,9 @@ export function CounterCard() {
 - `return api` inside a command is the same as returning the node; a component's own error boundary goes to `api.whenFailed = (error, info) => fallback` (same as `node.whenFailed(fn)`), and other node capabilities (`mountable()` / `rebuildable()`) chain on the returned node.
 - **State and commands go on `api`, not `this`** (`api` is in the setup's lexical scope); lifecycle hooks are
   `api.whenMount` / `api.whenDestroy`, the error boundary is `api.whenFailed`.
-- Identity: one line at the bottom of the module, `defineComponentIdentity(VXxx, 'VXxx')`; `member instanceof VXxx`
-  is the same check for shape A and shape B (an element node reads itself, a component node unfolds to its view root).
+- Identity: written in the structure on the view root (`vn: 'VXxx'`, §7.3) — there is no registration line at the
+  bottom of the module. `defineComponentIdentity` and `member instanceof VXxx` have retired (ticket 15, wave 6);
+  recognise members with `componentNameOf` / `hasComponentIdentity`, or through a capability convention.
 
 ### Component definition vs shortcut method
 
@@ -131,9 +133,9 @@ For the field-access rules see §7.3.
   - **Public slots**: `slot: 't-head'` (declaration on the structure side, envelope on the content side); the
     envelope never enters the DOM. `slot` and `vn_slot` are separate namespaces.
   - State always uses kebab-case `data-*` attributes (`data-variant`, `data-open`).
-  - **Class names retire**: `yoya-component` and `yoya-v*` (component and part) are removed; preset rules are
-    written as `[vn="VXxx"]`. Cross-component capability classes `yoya-<feature>` (`yoya-layout`, `yoya-icon`,
-    `yoya-control-clear`) stay.
+  - **Class names retire**: `yoya-component` and `yoya-v*` (component and part) are being removed — new rules
+    are written from `[vn="VXxx"]`, and the leftovers clear in ticket 15, wave 6. Cross-component capability
+    classes `yoya-<feature>` (`yoya-layout`, `yoya-icon`, `yoya-control-clear`) stay.
   - Preset rules must be scoped from the identity (`[vn="VXxx"] …`, no orphan part selectors), so swapping the
     identity detaches the whole subtree from preset styles.
 - Third-party components should use their own identity names and class prefix (e.g. `acme-status-badge`) to avoid conflicts with built-in styles.
@@ -435,11 +437,12 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **Split updates inside a block**: value changes use function-value bindings; structural changes use a region (the block declares `rebuildable()` on its own layer and calls the getter again).
 - Blocks use the same two shapes as exported components (shape A returning a ViewNode, or shape B `vNode((api) => view)`). Avoid anonymous fragments and positional names such as `renderTop` / `BlockA`; two or three levels are usually enough.
 
-### 7.3 Field access in class-node components (0.6.3 onwards)
+### 7.3 Field access in node-type extensions (0.6.3 onwards)
 
 The underscore fields `_children` / `_classText` / `_styles` / `_attrs` are **implementation details** (memory
-work changes how they are represented). Third-party or out-of-tree class-node components must not read or
-write them directly; use these helpers, which map one-to-one onto the old fields:
+work changes how they are represented). Third-party or out-of-tree node-type extensions (a custom element kind /
+a component's view root) must not read or write them directly; use these helpers, which map one-to-one onto the
+old fields:
 
 | Before                                                      | After                                                                          |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -453,7 +456,7 @@ Three things to keep in mind: the empty child list is a shared sentinel, so cach
 into it (`nodeChildren()` materialises a real array on the first write); class names live as text
 (`_classText` — the `_classes` Set no longer exists); `_styles` / `_attrs` are created on demand, so they are
 `undefined` on elements that never set a style or attribute and the helpers create them for you. Append
-children through `child()` / `addChild()` as usual — these helpers exist for class-node components that must
+children through `child()` / `addChild()` as usual — these helpers exist for node-type extensions that must
 touch the child list inside their own render path.
 
 ## 7.1 Slots: where content goes
@@ -633,10 +636,10 @@ Rules:
   (whitespace separated);
 - **Class names are not identity**: identity only reads `vn`, and preset styles are scoped by `[vn="VXxx"]`
   too — a hand-written class name cannot fake it;
-- **`instanceof VXxx` is no longer promised**: `defineComponentIdentity` has retired; cross-module
-  recognition goes through **capability conventions** (a control has `value()` / `_collectValue()`) or
-  `hasComponentIdentity`. A module checking its own sub-instances uses a module-local marker instead of
-  exporting the type;
+- **`instanceof VXxx` is no longer promised**: `defineComponentIdentity` has retired (ticket 15, wave 6);
+  cross-module recognition goes through
+  **capability conventions** (a control has `value()` / `_collectValue()`) or `hasComponentIdentity`. A module
+  checking its own sub-instances uses a module-local marker instead of exporting the type;
 - **Only tree members count**: a factory result is not a member until it is attached (`child()` / `keyed()`);
   the check targets `children()` members;
 - **Cost**: one extra `vn` attribute per component root (the byte cost the attribute migration accepts);

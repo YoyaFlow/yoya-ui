@@ -153,9 +153,15 @@ export function filesMissingIdentity() {
         continue;
       }
       const source = stripComments(readFileSync(file, 'utf8'));
-      const definesComponent =
-        source.includes('createComponentShell(') ||
-        /export\s+(?:function|const|class)\s+V[A-Z][A-Za-z0-9]*/.test(source);
+      // 豁免：`VMessageManager` 是**注册表 / 转发器**（自己不拥有视图，`renderDom()` 直接转发给容器），
+      // 给它写 `vn` 只会污染被转发的容器身份（见 16 号清单第 98 条）。
+      if (/export\s+class\s+VMessageManager\b/.test(source)) {
+        continue;
+      }
+      // `createComponentShell` 已随波 6 删掉（组件只有 A / B 两种写法），只按"导出 VXxx 定义"判
+      const definesComponent = /export\s+(?:function|const|class)\s+V[A-Z][A-Za-z0-9]*/.test(
+        source
+      );
       if (!definesComponent || /\bvn\s*:/.test(source)) {
         continue;
       }

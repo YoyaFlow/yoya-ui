@@ -86,7 +86,7 @@ div((page) => {
 }).bindTo('#app');
 ```
 
-- The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, component objects, strings, and numbers uniformly.
+- The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, components (a thin factory's result or a `vNode`), strings, and numbers uniformly.
 - `registerChildFactories` registers components as parent shortcuts (`card.vCardHeader`), so third-party components can extend the DSL too.
 - The real DOM is the view tree: the Elements panel shows the exact hierarchy, styles, and accessibility attributes — inspect and edit directly.
 - Events are native DOM events: the Event Listeners panel locates business handlers, and stack traces point to your source closures with no framework runtime in between.

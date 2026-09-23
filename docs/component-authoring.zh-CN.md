@@ -20,14 +20,14 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 | 节点类       | `ViewNode`、`ElementNode`、`HtmlElementNode`、`SvgElementNode`、`ComponentNode`、`TextNode`（`VTextNode`）                                            |
 | 工厂与组合   | `vText`、`createElementFactory`、`registerChildFactories`、`applyElementOptions`、`normalizeChild`、`normalizeSetupArguments`、`resolveTarget`        |
 | 节点内部集合 | `nodeChildren`、`appendNodeChild`、`EMPTY_CHILDREN`、`elementStyles`、`elementAttrs`、`elementClassNames`、`elementHasClass`（节点类型专用，见 §7.3） |
-| 组件身份     | 视图根上的 `vn: 'VCard'`、`defineComponentIdentity`、`componentNameOf`、`hasComponentIdentity`（三种形态同一条判定，见 §7.3）                         |
+| 组件身份     | 视图根上的 `vn: 'VCard'`、`componentNameOf`、`hasComponentIdentity`（两种形态同一条判定；跨模块识别走能力约定，见 §7.3）                              |
 | 信号         | `ref`、`computed`、`batch`、`isSignal`、`SignalHandle`、`installSignals`（值位置直接传句柄）                                                          |
 | 国际化       | `createI18n`、`I18nTextNode`、`i18nText`、`installI18nStringShortcut`                                                                                 |
 
 ## 3. 两种组件形态
 
 **组件只有两种形态**（2026-09-21 收敛）：**形态 A 薄工厂**（没有行为）与**形态 B `vNode`**（有行为）。
-对象组件（`return { render(), … }`）已退场（仅存量，票 03）；`class Xxx extends HtmlElementNode`
+对象组件（`return { render(), … }`）已弃用——不要新写（仅存量，退场计划见票 03）；`class Xxx extends HtmlElementNode`
 **不是组件形态**——它是引擎的**节点类型扩展**（组件的视图根 / 自定义元素种类），见 §7.3。
 
 ### 形态 A：薄工厂（没有行为）
@@ -84,7 +84,9 @@ export function CounterCard() {
   （VTree 就有 `api.node`），内部句柄占 api 的名会和真实命令撞。
 - 命令里 `return api` 等于 `return 节点`；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），其余节点级能力（`mountable()` / `rebuildable()`）链在返回的节点上。
 - **状态与命令写 `api`，不写 `this`**（`api` 在 setup 的词法作用域里）；生命周期钩子 `api.whenMount` / `api.whenDestroy`，错误边界 `api.whenFailed`。
-- 身份：模块底一行 `defineComponentIdentity(VXxx, 'VXxx')`；`member instanceof VXxx` 对 A / B 是同一条判定（元素节点读自己、组件节点展开到视图根）。
+- 身份：写在结构的视图根上（`vn: 'VXxx'`，见 §7.3），模块底没有注册行。`defineComponentIdentity` 与
+  `member instanceof VXxx` **都已退场**（票 15 波 6）；识别成员用 `componentNameOf` / `hasComponentIdentity`，
+  或走能力约定。
 
 ### 组件定义 vs 快捷方法
 
@@ -119,8 +121,8 @@ export function CounterCard() {
   - **部件（part）**：结构侧 `vSlot('name')` 零布局占位、内容侧 `vn_slot: 'name'` 标记，`child()` 进组件自动落位。
   - **公开槽位**：`slot: 't-head'`（结构侧声明 + 内容侧信封），信封本身不进 DOM。`slot` 与 `vn_slot` 是两个名空间。
   - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），属性不承载身份之外的语义。
-  - **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）删除，预设样式选择器写 `[vn="VXxx"]`；
-    跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
+  - **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）正在删除——新规则一律从 `[vn="VXxx"]` 起头，
+    存量在票 15 波 6 清空；跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
   - 组件预设规则必须从身份作用域书写（`[vn="VXxx"] …`，禁止孤儿部件选择器），保证换掉身份后整棵子树与预设样式脱钩。
 - 第三方组件建议使用自己的身份名与类名前缀（如 `acme-status-badge`），避免与内置样式冲突。
 - 颜色、间距等样式优先使用主题变量 `var(--yoya-<token>, fallback)`，主题根为 `:root, [data-yoya-theme]`（见 `yoya.ui.css`）。
@@ -406,10 +408,11 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 - **块内的更新分工**：值变化用函数值绑定，结构变化用区域（块在自己那层声明 `rebuildable()`，并在 builder 里重新调用 getter）。
 - 块组件用与导出组件同一套形态（无行为用形态 A 直接返回 ViewNode，有行为用形态 B `vNode((api) => 视图)`）；不要用匿名箭头片段或 `renderTop` / `BlockA` 这类位置式命名；深度 2–3 层通常足够。
 
-### 7.3 形态 C 组件的字段访问（0.6.3 起）
+### 7.3 节点类型扩展的字段访问（0.6.3 起）
 
 `_children` / `_classText` / `_styles` / `_attrs` 这些下划线字段是**实现细节**（内存优化会改它们的表示），
-第三方或库外形 C 组件不要直接读写；0.6.3 起改用下面这组 helper，语义与旧字段一一对应：
+第三方或库外的**节点类型扩展**（自定义元素种类 / 组件的视图根）不要直接读写；0.6.3 起改用下面这组 helper，
+语义与旧字段一一对应：
 
 | 旧写法                                                      | 新写法                                                   |
 | ----------------------------------------------------------- | -------------------------------------------------------- |
@@ -422,7 +425,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 注意三点：空子节点列表是共享哨兵，`nodeChildren()` 首次写入时才换成真数组（所以别缓存它、也别写哨兵）；
 类名的真身是文本（`_classText`，`_classes` 这个 Set 已不存在）；`_styles` / `_attrs` 按需创建，
 没写过样式或属性的元素上它们是 `undefined`，helper 会替你建好。追加子节点请走 `child()` / `addChild()`，
-helper 只用于"必须在自己的渲染路径里直接改节点名单"的形态 C 场景。
+helper 只用于"必须在自己的渲染路径里直接改节点名单"的节点类型扩展场景。
 
 ## 7.1 槽位：内容往哪里去
 
@@ -577,9 +580,9 @@ page.children().map((child) => componentNameOf(child)); // 多值原样返回（
   `adopt` / `hydrate` / 克隆片段一样认，不需要回读 DOM；
 - **多值**：包装型组件共用根时写 `vn: 'VCard UserCard'`，两个身份都命中（空格分隔）；
 - **类名不参与判定**：身份只认 `vn`；预设样式也从 `[vn="VXxx"]` 作用域书写，手搓同名类名不会误判；
-- **`instanceof VXxx` 不再承诺**：`defineComponentIdentity` 已退场，跨模块识别改**能力约定**
-  （控件 = 有 `value()` / `_collectValue()`）或 `hasComponentIdentity`；模块内判定自己的子实例时
-  用模块内标记（不导出类型）；
+- **`instanceof VXxx` 不再承诺**：`defineComponentIdentity` 已在票 15 波 6 退场，跨模块识别改**能力约定**
+  （控件 = 有 `value()` / `_collectValue()`）或
+  `hasComponentIdentity`；模块内判定自己的子实例时用模块内标记（不导出类型）；
 - **裸组件对象不算**：`RateCard()` 返回的对象还没进树；判定针对 `children()` 里的成员；
 - **代价**：每个组件根多一个 `vn` 属性（属性化迁移接受的字节）；改名等于改身份语义（判定与 CSS 认的都是名字）。
 
