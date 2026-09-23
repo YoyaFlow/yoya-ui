@@ -316,9 +316,19 @@ export class VRadio extends HtmlElementNode {
 
 /** Checkbox group. */
 export class VCheckboxes extends HtmlElementNode {
+  name(): string;
+  name(value: string | null): this;
+  multiple(): boolean;
   multiple(value: boolean): VCheckboxes;
+  required(): boolean;
   required(value: boolean): VCheckboxes;
+  disabled(): boolean;
   disabled(value: boolean): VCheckboxes;
+  isDisabled(): boolean;
+  /** 列数（几何走 CSS 变量 `--yoya-checkboxes-columns`）：`>= 1` 才算列数，其余等于"不设列"。 */
+  columns(): number | null;
+  columns(value: number | null): VCheckboxes;
+  options(): Array<string | number | CheckboxOption>;
   options(value: Array<string | number | CheckboxOption>): VCheckboxes;
   value(): unknown[];
   value(value: Array<unknown>): VCheckboxes;
@@ -328,9 +338,16 @@ export class VCheckboxes extends HtmlElementNode {
 
 /** Radio group. */
 export class VRadios extends HtmlElementNode {
+  name(): string;
+  name(value: string | null): this;
+  required(): boolean;
   required(value: boolean): VRadios;
+  disabled(): boolean;
   disabled(value: boolean): VRadios;
-  change(handler: (value: unknown) => void): VRadios;
+  isDisabled(): boolean;
+  /** 变更回调：第二参是**组件句柄**。 */
+  change(handler: (value: unknown, radios: VRadios) => void): VRadios;
+  options(): Array<string | number | RadioOption>;
   options(value: Array<string | number | RadioOption>): VRadios;
   value(): unknown;
   value(value: unknown): VRadios;

@@ -507,6 +507,25 @@ body {
     display: block;
   }
 
+  /* 布尔组（VRadios / VCheckboxes）：组的静态样式（原来写在 JS 行内，R5 搬进来）。
+     列数是可配置几何，走 CSS 变量（R10）：JS 只写 `--yoya-checkboxes-columns`，不拼模板字符串；
+     禁用组的观感读 `aria-disabled`（原来写行内 `opacity`）。 */
+  [vn~='VRadios'],
+  [vn~='VCheckboxes'] {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  [vn~='VCheckboxes'] {
+    grid-template-columns: repeat(var(--yoya-checkboxes-columns, 1), minmax(0, 1fr));
+  }
+
+  [vn~='VRadios'][aria-disabled='true'],
+  [vn~='VCheckboxes'][aria-disabled='true'] {
+    opacity: 0.64;
+  }
+
   /* 下拉选择：静态样式（原在 JS 里那 4 块行内样式）。随状态变的四样——清空留白 / 禁用 / 报错 /
      选中项——都读元素上的属性：`data-clearable`、`disabled`、`data-error`、`selected`。 */
   :where([vn~='VSelect']) {

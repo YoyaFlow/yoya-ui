@@ -8,13 +8,14 @@ describe('vCheckboxes layout demo', () => {
 
     const boxes = el.querySelector('[vn~="VCheckboxes"]');
     expect(el.querySelectorAll('[vn~="VCheckboxes"] input[type="checkbox"]')).toHaveLength(6);
-    expect(boxes.style.gridTemplateColumns).toContain('repeat(2');
+    // 列数是可配置几何，走 CSS 变量（R10）：JS 只写 `--yoya-checkboxes-columns`
+    expect(boxes.style.getPropertyValue('--yoya-checkboxes-columns')).toBe('2');
 
     const three = Array.from(el.querySelectorAll('button')).find(
       (b) => b.textContent === '3 列'
     );
     three.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    expect(boxes.style.gridTemplateColumns).toContain('repeat(3');
+    expect(boxes.style.getPropertyValue('--yoya-checkboxes-columns')).toBe('3');
     expect(el.textContent).toContain('3 列');
   });
 });

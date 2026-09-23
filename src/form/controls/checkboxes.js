@@ -1,280 +1,226 @@
+import { asSignal, computed, ref } from '../../core/signals/handle.js';
 import { vNode } from '../../core/v-node.js';
 import { ViewNode, hasComponentIdentity } from '../../core/node.js';
-import { HtmlElementNode } from '../../html/index.js';
+import { HtmlElementNode, div } from '../../html/index.js';
 import {
-  booleanMethod,
   createComponentShortcut,
-  delegateCommands,
-  delegateNodeCommands,
+  createListItemKey,
   isPlainObject,
-  replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
 import { VCheckbox, vCheckbox } from './checkbox.js';
 import { normalizeValueList } from './shared.js';
 
-/** 复选组的命令面（节点类型上的公开方法）。 */
-const CHECKBOXES_COMMANDS = [
-  'checkedValues',
-  'clear',
-  'columns',
-  'disabled',
-  'isDisabled',
-  'multiple',
-  'options',
-  'required',
-  'value'
-];
+/**
+ * 复选组（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * - **一个组件函数 = 一个边界**（R1）：状态与命令都在闭包里，视图由最后那个 `return` 一次写清（R2），
+ *   根上只留读值绑定（R4），静态样式全在 `yoya.ui.css`（R5）；
+ * - **props 都是数据**（R3 / R9）：`name` / `required` / `disabled` / `multiple` 走 `asSignal`（给句柄就是活值），
+ *   归一放在**读时**的 `computed` 上——构建期 `Boolean(…)` 会把传进来的句柄吃成常量；
+ * - **项是数据源**（R7）：一份 `ref([])`（项句柄）+ **`keyed` 对账**，`options(…)` 与位置参数都只写这份数据，
+ *   增删改排序交给引擎（不再 `replaceChildren` 整批重建）；
+ * - **选中态归项自己**（`VCheckbox.checked` 是项的内部状态）：组只做 `multiple` 约束与读写——命令遍历的是
+ *   **自己造出来的那些项**（不是遍历结构找节点），与迁移前 `_items` 的口径逐字一致；
+ * - **几何交给 CSS**（R10）：列数是可配置几何，走 `--yoya-checkboxes-columns`（`var(…, 1)` 兜默认单列），
+ *   JS 不拼 `grid-template-columns` 字符串；禁用组的观感同样归 CSS
+ *   （`[vn~='VCheckboxes'][aria-disabled='true']`），JS 不写行内 `opacity`；
+ * - 元素配置键（`attrs` / `style` / `on…`）走 `...rest` 摊进根元素工厂，"建好再 setup" 落视图根
+ *   （组件节点 `setupObject` 的默认回落就是视图根，不另写一层）。
+ */
+export function VCheckboxes({
+  children: childOptions,
+  columns,
+  disabled,
+  multiple,
+  name,
+  options,
+  required,
+  value,
+  ...rest
+} = {}) {
+  // props 全是数据：句柄原样收下，归一放在读时的派生上（R9）
+  const nameState = asSignal(name ?? '');
+  const requiredState = asSignal(required);
+  const disabledState = asSignal(disabled);
+  const multipleState = asSignal(multiple);
+  const columnsState = asSignal(columns);
 
-class CheckboxesNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VCheckboxes';
-    this._name = '';
-    this._multiple = true;
-    this._required = false;
-    this._items = [];
-    this._options = [];
+  const nameText = computed(() =>
+    nameState.value === null || nameState.value === undefined
+      ? ''
+      : resolveTextValue(nameState.value)
+  );
+  const requiredValue = computed(() => Boolean(requiredState.value));
+  const disabledValue = computed(() => Boolean(disabledState.value));
+  // 缺省是"多选"（迁移前 `_multiple = true` 的同口径）
+  const multipleValue = computed(() =>
+    multipleState.value === undefined ? true : Boolean(multipleState.value)
+  );
+  const columnsValue = computed(() => {
+    const columns = Number(columnsState.value);
+    return columns >= 1 ? String(columns) : null;
+  });
 
-    this._columns = null;
-    this.setup({ vn: 'VCheckboxes' });
-    this.styles({
-      display: 'grid',
-      gap: '8px',
-      minWidth: '0'
-    });
+  /** 项的数据源（R7：结构交给 `keyed` 对账）+ 一份原始选项快照（`options()` 读回同一份）。 */
+  const itemNodes = ref([]);
+  const optionEntries = ref([]);
+  const keyOfItem = createListItemKey('checkboxes-item');
 
-    // 内部状态用 ref 持有、对外只暴露方法（票 01 约定，见 booleanMethod）
-    this.disabled = booleanMethod(this, 'disabled', false, (enabled) => {
-      this.attr('aria-disabled', enabled ? 'true' : null);
-      this.style('opacity', enabled ? '0.64' : '1');
-      this._items.forEach((item) => item.disabled(enabled));
-    });
+  return vNode((api) => {
+    /** 建一份项：已经是复选组件就原样复用，否则按选项归一建一份；组名是容器态，建项时推一次。 */
+    const createItem = (entry, index) => {
+      const item = createCheckboxGroupItem(entry, index);
 
-    this._setupCheckboxes(setup);
-  }
+      item.on('change', () => handleItemChange(item));
 
-  name(value) {
-    if (value === undefined) {
-      return this._name;
-    }
-
-    this._name = resolveTextValue(value);
-    this.attr('data-name', this._name || null);
-    return this;
-  }
-
-  multiple(value) {
-    if (value === undefined) {
-      return this._multiple;
-    }
-
-    const selected = this.value();
-    this._multiple = Boolean(value);
-    if (!this._multiple) {
-      if (Array.isArray(selected)) {
-        this.value(selected[0] ?? null);
-      } else {
-        this.value(selected);
-      }
-    }
-    return this;
-  }
-
-  required(value) {
-    if (value === undefined) {
-      return this._required;
-    }
-
-    this._required = Boolean(value);
-    this.attr('data-required', this._required ? 'true' : null);
-    return this;
-  }
-
-  // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
-  isDisabled() {
-    return this._disabled.value;
-  }
-
-  options(value) {
-    if (value === undefined) {
-      return this._options.slice();
-    }
-
-    this._options = Array.isArray(value) ? value.slice() : [];
-    this._renderOptions();
-    return this;
-  }
-
-  value(value) {
-    if (value === undefined) {
-      const selected = this._items
-        .filter((item) => item.checked())
-        .map((item) => item.optionValue());
-
-      if (this._multiple) {
-        return selected;
+      if (nameText.value) {
+        item.attr('data-group-name', nameText.value);
       }
 
-      return selected[0] ?? null;
-    }
+      return item;
+    };
 
-    const values = normalizeValueList(value);
-    const selectedValues = this._multiple ? values : values.slice(0, 1);
-
-    this._items.forEach((item) => {
-      const itemValue = resolveTextValue(item.optionValue());
-      item.checked(selectedValues.includes(itemValue));
-    });
-
-    return this;
-  }
-
-  checkedValues(value) {
-    if (value === undefined) {
-      return this.value();
-    }
-
-    return this.value(value);
-  }
-
-  clear() {
-    return this.value(this._multiple ? [] : null);
-  }
-
-  columns(value) {
-    if (value === undefined) {
-      return this._columns;
-    }
-    this._columns = Number(value) >= 1 ? Number(value) : null;
-    this.style(
-      'gridTemplateColumns',
-      this._columns ? 'repeat(' + this._columns + ', minmax(0, 1fr))' : null
-    );
-    return this;
-  }
-
-  _renderOptions() {
-    const normalizedItems = this._options.map((option, index) =>
-      createCheckboxGroupItem(option, index)
-    );
-
-    this._items = normalizedItems;
-    replaceChildren(this, normalizedItems);
-    this._items.forEach((item) => {
-      item.on('change', () => this._handleItemChange(item));
-      if (this._name) {
-        item.attr('data-group-name', this._name);
+    /** `multiple(false)` 的组按单选处理（多选中某一项时把其余项摘掉，与迁移前同口径）。 */
+    const handleItemChange = (item) => {
+      if (multipleValue.value || !item.checked()) {
+        return;
       }
-    });
-    this.value(this.value());
-  }
 
-  _handleItemChange(item) {
-    if (!this._multiple && item.checked()) {
-      this._items.forEach((otherItem) => {
-        if (otherItem !== item) {
-          otherItem.checked(false);
+      itemNodes.value.forEach((other) => {
+        if (other !== item) {
+          other.checked(false);
         }
       });
-    }
-  }
-
-  _setupCheckboxes(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        children,
-        disabled,
-        multiple,
-        name,
-        options,
-        required,
-        value,
-        columns,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (name !== undefined) {
-        this.name(name);
-      }
-
-      if (multiple !== undefined) {
-        this.multiple(multiple);
-      }
-
-      if (options !== undefined) {
-        this.options(options);
-      } else if (children !== undefined) {
-        this.options(children);
-      }
-
-      if (columns !== undefined) {
-        this.columns(columns);
-      }
-
-      if (required !== undefined) {
-        this.required(required);
-      }
-
-      if (disabled !== undefined) {
-        this.disabled(disabled);
-      }
-
-      if (value !== undefined) {
-        this.value(value);
-      }
-
-      return;
-    }
-
-    if (Array.isArray(setup)) {
-      this.options(setup);
-      return;
-    }
-
-    this.options([setup]);
-  }
-}
-
-/**
- * 复选组（形态 B）：视图根是节点类型 `CheckboxesNode`（元素机制住在节点上），命令挂到 `api`。
- */
-export function VCheckboxes(props = {}) {
-  return vNode((api) => {
-    const root = new CheckboxesNode(props);
-
-    delegateCommands(api, root, CHECKBOXES_COMMANDS);
-    delegateNodeCommands(api, root);
-
-    /** 位置参数：字符串 = 一个选项；数组 = 一组选项（迁移前 `_setupCheckboxes` 的兜底分支同口径）。 */
-    api.setupObject = (config) => {
-      if (Array.isArray(config)) {
-        api.options(config);
-        return api;
-      }
-
-      root.setup(config);
-      return api;
     };
-    api.setupString = (value) => {
-      api.options([value]);
+
+    api.name = (next) => {
+      if (next === undefined) {
+        return nameText.value;
+      }
+
+      nameState.value = next;
       return api;
     };
 
-    return root;
+    api.required = (next) => {
+      if (next === undefined) {
+        return requiredValue.value;
+      }
+
+      requiredState.value = next;
+      return api;
+    };
+
+    api.multiple = (next) => {
+      if (next === undefined) {
+        return multipleValue.value;
+      }
+
+      const selected = api.value();
+      multipleState.value = next;
+
+      if (!multipleValue.value) {
+        // 单选化：多出来的选中项按迁移前的口径收成第一个
+        api.value(Array.isArray(selected) ? (selected[0] ?? null) : selected);
+      }
+
+      return api;
+    };
+
+    api.columns = (next) => {
+      if (next === undefined) {
+        return columnsValue.value === null ? null : Number(columnsValue.value);
+      }
+
+      columnsState.value = next;
+      return api;
+    };
+
+    api.disabled = (next) => {
+      if (next === undefined) {
+        return disabledValue.value;
+      }
+
+      disabledState.value = next;
+      itemNodes.value.forEach((item) => item.disabled(disabledValue.value));
+      return api;
+    };
+
+    // 读写分离：跨组件只读判断走这个入口（票 02 方案 c）
+    api.isDisabled = () => disabledValue.value;
+
+    api.options = (next) => {
+      if (next === undefined) {
+        return optionEntries.value.slice();
+      }
+
+      optionEntries.value = Array.isArray(next) ? next.slice() : [];
+      itemNodes.value = optionEntries.value.map(createItem);
+      api.value(api.value());
+      return api;
+    };
+
+    api.value = (next) => {
+      if (next === undefined) {
+        const selected = itemNodes.value
+          .filter((item) => item.checked())
+          .map((item) => item.optionValue());
+
+        return multipleValue.value ? selected : (selected[0] ?? null);
+      }
+
+      const values = normalizeValueList(next);
+      const selectedValues = multipleValue.value ? values : values.slice(0, 1);
+
+      itemNodes.value.forEach((item) => {
+        item.checked(selectedValues.includes(resolveTextValue(item.optionValue())));
+      });
+
+      return api;
+    };
+
+    api.checkedValues = (next) => api.value(next);
+    api.clear = () => api.value(multipleValue.value ? [] : null);
+
+    /** 位置参数：字符串 / 数字 = 一个选项（迁移前 `_setupCheckboxes` 的兜底分支同口径）。 */
+    api.setupString = (text) => {
+      api.options([text]);
+      return api;
+    };
+
+    const initialOptions = options ?? childOptions;
+
+    if (initialOptions !== undefined) {
+      api.options(initialOptions);
+    }
+
+    if (required !== undefined) {
+      api.required(required);
+    }
+
+    if (disabled !== undefined) {
+      api.disabled(disabled);
+    }
+
+    if (value !== undefined) {
+      api.value(value);
+    }
+
+    // 结构（R2）：整棵树写在 return 里；属性是读值绑定（R4），静态样式 / 几何在 yoya.ui.css（R5 / R10）
+    return div(
+      {
+        ...rest,
+        'aria-disabled': computed(() => (disabledValue.value ? 'true' : null)),
+        'data-name': computed(() => nameText.value || null),
+        'data-required': computed(() => (requiredValue.value ? 'true' : null)),
+        style: {
+          '--yoya-checkboxes-columns': columnsValue
+        },
+        vn: 'VCheckboxes'
+      },
+      (root) => root.keyed(itemNodes, keyOfItem, (item) => item)
+    );
   });
 }
 

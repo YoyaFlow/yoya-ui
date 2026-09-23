@@ -82,6 +82,13 @@ const selectSelectors = [
 
 const timerRangeSelectors = ["[vn~='VTimerRange']", "[vn~='VTimerRangeError']"];
 
+const booleanGroupSelectors = [
+  "[vn~='VRadios']",
+  "[vn~='VCheckboxes']",
+  "[vn~='VRadios'][aria-disabled='true']",
+  "[vn~='VCheckboxes'][aria-disabled='true']"
+];
+
 const themeSelectors = [
   "[vn~='VThemeModeSwitch']",
   "[vn~='VThemeModeSwitch'] > [vn~='VButton']",
@@ -609,5 +616,15 @@ describe('CSS style contract', () => {
     expect(css).toContain('--yoya-color-danger');
     expect(css).toContain('--yoya-color-surface');
     expect(css).toContain('--yoya-color-border');
+  });
+
+  it('covers the boolean group selectors (VRadios / VCheckboxes)', () => {
+    booleanGroupSelectors.forEach((selector) => {
+      expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+    // 列数是可配置几何，走 CSS 变量（R10）：JS 不拼 `grid-template-columns` 字符串
+    expect(css).toMatch(
+      /\[vn~='VCheckboxes'\] \{\s*grid-template-columns: repeat\(var\(--yoya-checkboxes-columns, 1\), minmax\(0, 1fr\)\);/
+    );
   });
 });
