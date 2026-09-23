@@ -278,10 +278,10 @@ npm run build   # 产出 dist/，末尾打印体积表
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
 | `yoya.router.full.js`            | 314.2 KB | 131.4 KB | 39.1 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 907.0 KB | 409.4 KB | 113.3 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 847.8 KB | 384.7 KB | 105.1 KB | core + 全部组件                |
+| `yoya.ui-router.full.js`（全量） | 906.8 KB | 409.2 KB | 113.3 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 847.5 KB | 384.5 KB | 105.0 KB | core + 全部组件                |
 
-组件皮肤 `yoya.ui.css`：97.5 KB raw / **16.6 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+组件皮肤 `yoya.ui.css`：98.0 KB raw / **16.8 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。
 
 `npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，

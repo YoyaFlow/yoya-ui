@@ -5,8 +5,7 @@ import { div, span } from '../../html/index.js';
 import {
   createComponentShortcut,
   isPlainObject,
-  resolveTextValue,
-  themeValue
+  resolveTextValue
 } from '../../components/shared.js';
 import { vTimer } from './timer.js';
 
@@ -41,16 +40,9 @@ export function VTimerRange() {
     const errorMessage = span({ vn: 'VTimerRangeError' })
       .id(errorId)
       .attr('aria-live', 'polite')
-      .style('color', themeValue('color-danger', '#dc2626'))
-      .style('fontSize', '0.875rem')
-      .style('gridColumn', '1 / -1')
       .child(errorText);
-    const node = div({ vn: 'VTimerRange' }).attr('role', 'group').styles({
-      alignItems: 'center',
-      display: 'grid',
-      gap: '8px',
-      gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'
-    });
+    // 静态样式（外壳网格 / 错误提示）在 `yoya.ui.css`（R5）；这里只留状态与内容
+    const node = div({ vn: 'VTimerRange' }).attr('role', 'group');
 
     const validate = () => {
       const { start, end } = api.value();

@@ -72,6 +72,8 @@ const selectSelectors = [
   "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true']"
 ];
 
+const timerRangeSelectors = ["[vn~='VTimerRange']", "[vn~='VTimerRangeError']"];
+
 const rateSelectors = [
   "[vn~='VRate']",
   "[vn~='VRate'][data-disabled='true']",
@@ -335,6 +337,12 @@ describe('CSS style contract', () => {
 
   it('covers the select selectors', () => {
     selectSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the timer range selectors', () => {
+    timerRangeSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

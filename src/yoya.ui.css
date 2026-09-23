@@ -554,6 +554,21 @@ body {
     color: var(--yoya-color-border-muted, #94a3b8);
   }
 
+  /* 时间范围：外壳的网格与错误提示的静态样式（原在 JS 里写行内，R5 搬进来）；
+     错误状态是根上的 `data-error` / `aria-invalid`，行内不再有任何样式。 */
+  [vn~='VTimerRange'] {
+    align-items: center;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  [vn~='VTimerRangeError'] {
+    color: var(--yoya-color-danger, #dc2626);
+    font-size: 0.875rem;
+    grid-column: 1 / -1;
+  }
+
   /* 级联选择：静态样式（原在 JS 里的那些行内样式）。面板显隐 / 选项高亮是状态（根上的 `data-open`、
      选项上的 `data-active`），行悬停交给 `:hover`；定位结果（left / top / position: fixed）仍写行内。 */
   :where([vn~='VCascader']) {
