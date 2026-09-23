@@ -1,14 +1,15 @@
-import { div, HtmlElementNode } from '../html/index.js';
+import { button, div, HtmlElementNode, span } from '../html/index.js';
 import { vButton } from '../actions/button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
-import { componentNameOf, viewRootOf } from '../core/node.js';
-import { ref } from '../core/signals/handle.js';
+import { componentNameOf, hasComponentIdentity, viewRootOf } from '../core/node.js';
+import { computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
 import {
   applyComponentSetup,
   createComponentShortcut,
   delegateChildFactories,
   delegateCommands,
+  delegateNodeCommands,
   elementHasIdentity,
   isPlainObject,
   normalizeChildren,
@@ -206,179 +207,203 @@ export class MenuNode extends HtmlElementNode {
 }
 
 /**
- * 菜单项的**节点类型**（不导出）：元素级机制（三个槽位盒、hover、槽位替换、朝向）留在这里，
- * 公开组件 `vMenuItem` 是 vNode 外壳（身份 + 命令委托给它）。族内 `VSubMenu` 也直接 `new` 它，
- * 所以 DOM 形状只有这一份真源。
+ * 菜单项（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * - **一个组件函数 = 一个边界**（R1）：`MenuItemNode` 那层节点类型退场，状态与命令都在闭包里，
+ *   视图由最后那个 `return` 一次写清（R2）；三个槽位盒（图标 / 标签 / 快捷键）常驻（R11 / R12：
+ *   位置归组件自己，调用方不按名投递）；
+ * - **匿名内容位 = 标签盒**：标签盒上写 `vn_slot: ''`（默认占位），调用方**未标记**的 `child(…)`
+ *   就落进它——与迁移前 `child()` 覆盖是**同一条落位路径**（票 16 第 7 条；面包屑的 `<ol>` 同款写法）；
+ * - 状态（`active` / `danger` / `disabled` / `hovered` / `hoverable`）都是读值绑定（R4 / R6），
+ *   命令只写状态；标签 / 图标 / 快捷键是**运行期可替换的内容位**，留取用器（16 号第 103 条）；
+ * - 朝向由父菜单写进来（族内协议：`applyMenuOrientation` 走身份表、子菜单走 `menuOrientation(…)`
+ *   命令——这一条与 roving tabindex 一样，等菜单容器一起收口时再改成"容器态句柄下推"）；
+ * - 元素级命令代委托（`attr` / `style` / `on` …）：族内（子菜单触发器、侧栏）就是按这套与项打交道的。
  */
-export class MenuItemNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('button', { vn: 'VMenuItem' });
-    // 内部状态用 ref 持有（票 01 约定）；active/danger/disabled 是「默认真」写方法，无参不是读
-    this._active = ref(false);
-    this._danger = ref(false);
-    this._disabled = ref(false);
-    this._iconBox = new HtmlElementNode('span', { vn: 'VMenuItemIcon' }).attr(
-      'aria-hidden',
-      'true'
+export function VMenuItem() {
+  const activeState = ref(false);
+  const dangerState = ref(false);
+  const disabledState = ref(false);
+  const hoverState = ref(false);
+  const hoverableState = ref(false);
+
+  let iconBox = null;
+  let labelBox = null;
+  let shortcutBox = null;
+  let view = null;
+
+  return vNode((api) => {
+    /** 空内容 = 真清空（`:empty` 规则负责不占地方，R5 不写行内 display）。 */
+    const fillBox = (box, content) => {
+      replaceChildren(box, isEmptyMenuContent(content) ? [] : normalizeChildren(content));
+    };
+
+    api.text = (content) => {
+      replaceChildren(labelBox, normalizeChildren(content));
+      return api;
+    };
+    api.label = (content) => api.text(content);
+    api.content = (content) => api.text(content);
+    api.icon = (content) => {
+      fillBox(iconBox, content);
+      return api;
+    };
+    api.shortcut = (content) => {
+      fillBox(shortcutBox, content);
+      return api;
+    };
+
+    api.active = (value = true) => {
+      activeState.value = Boolean(value);
+      return api;
+    };
+
+    api.danger = (value = true) => {
+      dangerState.value = Boolean(value);
+      return api;
+    };
+
+    /** 禁用：写方法（与迁移前同口径——`Boolean(value)`，所以 `disabled()` 是"启用"）。 */
+    api.disabled = (value) => {
+      disabledState.value = Boolean(value);
+
+      // 菜单的 roving tabindex 靠这条 DOM 事件重算（菜单容器那一刀会换成容器态下推）
+      if (view?._el) {
+        const EventClass = view._el.ownerDocument?.defaultView?.Event ?? Event;
+        view._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
+      }
+
+      return api;
+    };
+
+    api.hoverable = (value = true) => {
+      hoverableState.value = Boolean(value);
+      return api;
+    };
+
+    /** 侧栏折叠态：标签 / 快捷键位标记成"视觉隐藏"（照旧走 `data-sidebar-hidden`，显隐归 CSS）。 */
+    api.sidebarHidden = (hidden, { preserveShortcut = false } = {}) => {
+      labelBox?.attr('data-sidebar-hidden', hidden ? 'true' : null);
+      shortcutBox?.attr('data-sidebar-hidden', hidden && !preserveShortcut ? 'true' : null);
+      return api;
+    };
+
+    /** 族内协议：父菜单 / 子菜单把朝向写到项上（原来是节点类型上的 `_menuOrientation`）。 */
+    api.menuOrientation = (value) => {
+      view.attr('data-orientation', value);
+      return api;
+    };
+
+    // 调用方参数（对象 / 字符串）走标准分派：与迁移前 `_setupMenuItem` 的落位口径一致
+    api.setupObject = (config) => applyMenuItemProps(api, view, config);
+    api.setupString = (value) => applyMenuItemProps(api, view, value);
+
+    // 结构（R2）：整棵树写在 return 里；状态类属性是读值绑定（R4 / R6）
+    view = button(
+      {
+        attrs: {
+          'aria-current': computed(() => (activeState.value ? 'page' : null)),
+          'aria-disabled': computed(() => (disabledState.value ? 'true' : null)),
+          disabled: computed(() => (disabledState.value ? true : null)),
+          role: 'menuitem',
+          type: 'button'
+        },
+        'data-active': computed(() => (activeState.value ? 'true' : null)),
+        'data-danger': computed(() => (dangerState.value ? 'true' : null)),
+        'data-hoverable': computed(() => (hoverableState.value ? 'true' : null)),
+        'data-hovered': computed(() => (hoverState.value ? 'true' : null)),
+        vn: 'VMenuItem'
+      },
+      (root) => {
+        root.on('mouseenter', () => {
+          hoverState.value = true;
+        });
+        root.on('mouseleave', () => {
+          hoverState.value = false;
+        });
+
+        root.child(
+          span({ attrs: { 'aria-hidden': 'true' }, vn: 'VMenuItemIcon' }, (box) => {
+            iconBox = box;
+          }),
+          // 匿名占位：未标记的内容（`vMenuItem(vText(...))` / `item.child(node)`）落进标签盒
+          span({ vn: 'VMenuItemLabel', vn_slot: '' }, (box) => {
+            labelBox = box;
+          }),
+          span({ attrs: { 'aria-hidden': 'true' }, vn: 'VMenuItemShortcut' }, (box) => {
+            shortcutBox = box;
+          })
+        );
+      }
     );
-    this._labelBox = new HtmlElementNode('span', { vn: 'VMenuItemLabel' });
-    this._shortcutBox = new HtmlElementNode('span', { vn: 'VMenuItemShortcut' }).attr(
-      'aria-hidden',
-      'true'
-    );
 
-    this.attr({ role: 'menuitem', type: 'button' });
-    super.child(this._iconBox, this._labelBox, this._shortcutBox);
-    this.on('mouseenter', () => this._setHover(true));
-    this.on('mouseleave', () => this._setHover(false));
-    this._setupMenuItem(setup);
+    // 元素级命令代委托（族内按 `attr(…)` / `on(…)` 与项对话）
+    delegateNodeCommands(api, view);
+
+    return view;
+  });
+}
+
+/** 菜单项的 props 落位（迁移前 `_setupMenuItem` 的等价物）：文案 → 图标 → 快捷键 → 状态。 */
+function applyMenuItemProps(api, view, setup) {
+  if (setup === null || setup === undefined) {
+    return api;
   }
 
-  /**
-   * 匿名槽位：菜单项的内容位就是**标签盒**（与 `text()` 同一落点）。
-   * `vMenuItem(i18n 文本节点)` 这类"节点参数"因此与字符串写法表现一致；
-   * 三个槽位盒本身由构造函数用 `super.child()` 直接挂上。
-   */
-  child(...children) {
-    this._labelBox.child(...children);
-    return this;
+  if (typeof setup === 'function') {
+    setup(api);
+    return api;
   }
 
-  text(content) {
-    replaceChildren(this._labelBox, normalizeChildren(content));
-    return this;
+  if (!isPlainObject(setup)) {
+    api.text(setup);
+    return api;
   }
 
-  label(content) {
-    return this.text(content);
+  const {
+    active,
+    children,
+    content,
+    danger,
+    disabled,
+    icon,
+    label,
+    shortcut,
+    text,
+    ...elementConfig
+  } = setup;
+
+  if (Object.keys(elementConfig).length > 0) {
+    view.setup(elementConfig);
   }
 
-  content(content) {
-    return this.text(content);
+  if (label !== undefined) {
+    api.label(label);
+  } else if (text !== undefined) {
+    api.text(text);
+  } else if (content !== undefined) {
+    api.content(content);
+  } else if (children !== undefined) {
+    api.text(children);
   }
 
-  icon(content) {
-    // 空内容 = 真清空（`.yoya.ui.css` 的 `:empty` 规则负责不占地方，R5 不再写行内 display）
-    replaceChildren(this._iconBox, isEmptyMenuContent(content) ? [] : normalizeChildren(content));
-    return this;
+  if (icon !== undefined) {
+    api.icon(icon);
+  }
+  if (shortcut !== undefined) {
+    api.shortcut(shortcut);
+  }
+  if (active !== undefined) {
+    api.active(active);
+  }
+  if (danger !== undefined) {
+    api.danger(danger);
+  }
+  if (disabled !== undefined) {
+    api.disabled(disabled);
   }
 
-  shortcut(content) {
-    replaceChildren(
-      this._shortcutBox,
-      isEmptyMenuContent(content) ? [] : normalizeChildren(content)
-    );
-    return this;
-  }
-
-  active(value = true) {
-    const enabled = Boolean(value);
-
-    this._active.value = enabled;
-    this.attr('data-active', enabled ? 'true' : null);
-    this.attr('aria-current', enabled ? 'page' : null);
-    return this;
-  }
-
-  danger(value = true) {
-    const enabled = Boolean(value);
-
-    this._danger.value = enabled;
-    this.attr('data-danger', enabled ? 'true' : null);
-    return this;
-  }
-
-  _setHover(hovered) {
-    this.attr('data-hovered', hovered ? 'true' : null);
-    return this;
-  }
-
-  disabled(value) {
-    const enabled = Boolean(value);
-
-    this._disabled.value = enabled;
-    this.attr('disabled', enabled ? true : null);
-    this.attr('aria-disabled', enabled ? 'true' : null);
-    if (this._el) {
-      const EventClass = this._el.ownerDocument.defaultView.Event;
-      this._el.dispatchEvent(new EventClass('yoya:menuitem-statechange', { bubbles: true }));
-    }
-    return this;
-  }
-
-  hoverable(value = true) {
-    this.attr('data-hoverable', value ? 'true' : null);
-    return this;
-  }
-
-  _menuOrientation(orientation) {
-    this.attr('data-orientation', orientation);
-    return this;
-  }
-
-  _setupMenuItem(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        active,
-        children,
-        content,
-        danger,
-        disabled,
-        icon,
-        label,
-        shortcut,
-        text,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (label !== undefined) {
-        this.label(label);
-      } else if (text !== undefined) {
-        this.text(text);
-      } else if (content !== undefined) {
-        this.content(content);
-      } else if (children !== undefined) {
-        this.text(children);
-      }
-
-      if (icon !== undefined) {
-        this.icon(icon);
-      }
-
-      if (shortcut !== undefined) {
-        this.shortcut(shortcut);
-      }
-
-      if (active !== undefined) {
-        this.active(active);
-      }
-
-      if (danger !== undefined) {
-        this.danger(danger);
-      }
-
-      if (disabled !== undefined) {
-        this.disabled(disabled);
-      }
-
-      return;
-    }
-
-    this.text(setup);
-  }
+  return api;
 }
 
 /**
@@ -479,7 +504,7 @@ class SubMenuNode extends HtmlElementNode {
     this._disabled = ref(false);
     // 触发器是"一个菜单项 + 子菜单的 trigger"：多值身份（票 15 §1），父菜单的键盘漫游
     // 靠 `[vn~="VMenuItem"]` 把它算进来，点击处理靠 `VSubMenuTrigger` 把它排除。
-    this._trigger = new MenuItemNode({ vn: 'VSubMenuTrigger VMenuItem' })
+    this._trigger = applyComponentSetup(VMenuItem(), { vn: 'VSubMenuTrigger VMenuItem' })
       .attr({
         'aria-controls': panelId,
         'aria-expanded': 'false',
@@ -593,7 +618,7 @@ class SubMenuNode extends HtmlElementNode {
   _selectInlineItem(element) {
     const visit = (children) => {
       children.forEach((child) => {
-        if (viewRootOf(child) instanceof MenuItemNode) {
+        if (hasComponentIdentity(child, 'VMenuItem')) {
           child.active(child.renderDom() === element);
         } else if (typeof child.children === 'function') {
           visit(child.children());
@@ -611,7 +636,7 @@ class SubMenuNode extends HtmlElementNode {
 
   _menuOrientation(orientation) {
     this.attr('data-orientation', orientation);
-    this._trigger._menuOrientation(orientation);
+    this._trigger.menuOrientation(orientation);
     return this;
   }
 
@@ -851,7 +876,7 @@ class SidebarNode extends HtmlElementNode {
   _activateMenuItem(element) {
     const visit = (children) => {
       children.forEach((child) => {
-        if (viewRootOf(child) instanceof MenuItemNode) {
+        if (hasComponentIdentity(child, 'VMenuItem')) {
           child.active(child.renderDom() === element);
         } else if (typeof child.children === 'function') {
           visit(child.children());
@@ -999,9 +1024,9 @@ function setSidebarContentCollapsed(root, collapsed, sidebar) {
       unit._sidebarContentChangeCallback = contentChangeCallback;
     }
 
-    if (unit instanceof MenuItemNode) {
-      setSidebarVisuallyHidden(unit._labelBox, collapsed);
-      setSidebarVisuallyHidden(unit._shortcutBox, collapsed && !preserveShortcut);
+    if (hasComponentIdentity(node, 'VMenuItem')) {
+      // 菜单项是闭包组件了：标记落到它自己的槽位盒上（同一个 `data-sidebar-hidden` 口径）
+      node.sidebarHidden(collapsed, { preserveShortcut });
       return;
     }
 
@@ -1093,32 +1118,6 @@ export function VMenu() {
 }
 
 export const vMenu = createComponentShortcut(VMenu);
-
-export function VMenuItem() {
-  return vNode((api) => {
-    const element = new MenuItemNode();
-    delegateCommands(api, element, [
-      'text',
-      'label',
-      'content',
-      'icon',
-      'shortcut',
-      'active',
-      'danger',
-      'disabled',
-      'hoverable'
-    ]);
-    api.setupObject = (config) => {
-      element._setupMenuItem(config);
-      return api;
-    };
-    api.setupString = (value) => {
-      element._setupMenuItem(value);
-      return api;
-    };
-    return element;
-  });
-}
 
 export const vMenuItem = createComponentShortcut(VMenuItem);
 
