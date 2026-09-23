@@ -336,14 +336,13 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
  * - **props 在参数表里展开**：`caption` → 标题、`vThead` / `vTbody` / `vTfoot` → 三个段、`vTr` → 表体行，
  *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）；
- * - **标题与段都就地建、命令就地定义**：四个部件写进 `return` 的结构里，命令闭包直接抓那一处建出来的
- *   部件（部件在哪建、命令就在哪），`mountable(有没有)` 决定进不进 DOM——外面不留任何部件变量；
- *   DOM 顺序固定为 标题 → 表头 → 表体 → 表尾，与调用顺序无关。
- *   （"有没有"只能这么表达：**组件节点上的区域不会在信号写入时重建**，实测元素节点会，所以
- *   "段的声明也变成状态、用 `rebuildable()` 重建"这条路今天走不通；要给就得先补引擎。）
+ * - **段常驻、命令只往里填内容**：`caption + thead + tbody + tfoot` 在视图里一次写清（就地建、命令就地
+ *   定义，外面不留任何部件变量），`api.caption / vThead / vTbody / vTfoot / vTr` 只是往对应段里写
+ *   内容 / 配置——没有"有没有"这份状态，也没有预建再挑时机挂载的动作；空段不渲染任何行。
+ *   （标题的显隐由 `VTableCaption` 自己的 `data-has-text` 规则管。）
  * - 段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
  *   活值对账，都挂在真表体上；
- * - 没有预建节点、没有 `find`、不碰 `_el` / `_children`；
+ * - 没有 `find`（不按身份找节点）、不碰 `_el` / `_children`；
  * - **壳不装数据**：`columns` / `rows` / `emptyText` 那层在 `VTableWrapper` 上（壳只被它消费）。
  */
 export function VTable({
@@ -367,18 +366,11 @@ export function VTable({
         vTableScroll((scroll) =>
           scroll.child(
             vTableGrid({ vn_slot: '' }, (tableGrid) => {
-              /**
-               * 标题与四个段就地建、命令就地定义：命令闭包直接抓这一处建出来的部件（外面不留变量）。
-               * `mountable(有没有)` 决定进不进 DOM —— 命令只写内容 / 配置与这个状态位。
-               */
-              const hasCaption = ref(false);
-              const hasHead = ref(false);
-              const hasBody = ref(false);
-              const hasFoot = ref(false);
-              const captionPart = vTableCaption().mountable(hasCaption);
-              const headPart = vThead().mountable(hasHead);
-              const bodyPart = vTbody().mountable(hasBody);
-              const footPart = vTfoot().mountable(hasFoot);
+              /** 四个段就地建（常驻），命令就地定义：闭包直接抓这一处的部件，外面不留变量。 */
+              const captionPart = vTableCaption();
+              const headPart = vThead();
+              const bodyPart = vTbody();
+              const footPart = vTfoot();
 
               tableGrid.child(captionPart, headPart, bodyPart, footPart);
 
@@ -387,14 +379,12 @@ export function VTable({
                   return captionPart.text();
                 }
 
-                hasCaption.value = true;
                 captionPart.text(content);
                 return api;
               };
 
               api.vThead = (setup) => {
                 if (setup !== undefined) {
-                  hasHead.value = true;
                   headPart.setup(setup);
                 }
 
@@ -403,7 +393,6 @@ export function VTable({
 
               api.vTbody = (setup) => {
                 if (setup !== undefined) {
-                  hasBody.value = true;
                   bodyPart.setup(setup);
                 }
 
@@ -412,7 +401,6 @@ export function VTable({
 
               api.vTfoot = (setup) => {
                 if (setup !== undefined) {
-                  hasFoot.value = true;
                   footPart.setup(setup);
                 }
 
@@ -420,7 +408,6 @@ export function VTable({
               };
 
               api.vTr = (setup) => {
-                hasBody.value = true;
                 bodyPart.vTr(setup);
                 return api;
               };

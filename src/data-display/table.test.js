@@ -160,30 +160,37 @@ describe('vTable declarative sections', () => {
     });
     const grid = table.renderDom().querySelector(GRID);
 
-    // 段挂在 <table> 句柄上，匿名 child() 走组件的匿名占位（= 同一个 <table>），顺序按声明
+    // 四个段常驻 <table>，匿名 child() 走组件的匿名占位（= 同一个 <table>），追加在段之后
     expect([...grid.children].map((child) => child.getAttribute('vn'))).toEqual([
       'VTableCaption',
+      'VThead',
+      'VTbody',
+      'VTfoot',
       'VTr'
     ]);
   });
 
-  it('mounts sections on demand instead of building them inside commands', () => {
+  it('keeps the sections resident and fills them through commands', () => {
     const table = vTable();
-    const grid = table.renderDom().querySelector(GRID);
+    const element = table.renderDom();
+    const grid = element.querySelector(GRID);
 
-    // 没用到就不在 DOM 里（部件常驻视图树，`mountable` 决定挂不挂）
-    expect(table.renderDom().querySelector(CAPTION)).toBeNull();
-    expect(grid.querySelectorAll(':scope > thead, :scope > tbody, :scope > tfoot')).toHaveLength(0);
+    // 段常驻：空段不渲染行；标题由 `VTableCaption` 自己的 `data-has-text` 规则隐藏
+    expect([...grid.children].map((child) => child.getAttribute('vn'))).toEqual([
+      'VTableCaption',
+      'VThead',
+      'VTbody',
+      'VTfoot'
+    ]);
+    expect(grid.querySelector(`${HEAD} th`)).toBeNull();
+    expect(element.querySelector(CAPTION).hasAttribute('data-has-text')).toBe(false);
 
     table.vThead((head) => head.vTr((row) => row.vTh('名称')));
     expect(grid.querySelector(`${HEAD} th`).textContent).toBe('名称');
 
-    // 后写的标题仍然排在表头前面：位置由结构定，不看调用顺序
+    // 内容填进对应段；位置由结构定，不看调用顺序
     table.caption('报表');
-    expect([...grid.children].map((child) => child.getAttribute('vn'))).toEqual([
-      'VTableCaption',
-      'VThead'
-    ]);
+    expect(element.querySelector(CAPTION).textContent).toBe('报表');
   });
 
   it('takes a bare string as the caption', () => {
