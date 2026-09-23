@@ -13,10 +13,34 @@ export type ButtonSize = 'small' | 'medium' | 'large';
 export type ButtonFormType = 'button' | 'submit' | 'reset';
 export type DropdownPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
+/** 按钮 props：`label` / `text` / `children` 三键同义（节点在构建期落位到标签盒）。 */
+export interface ButtonOptions {
+  label?: ChildInput;
+  text?: ChildInput;
+  children?: ChildInput;
+  /** 变体：`type` / `variant` 两键同义。 */
+  type?: ButtonVariant;
+  variant?: ButtonVariant;
+  formType?: ButtonFormType;
+  size?: ButtonSize;
+  disabled?: boolean;
+  loading?: boolean;
+  /** 单选联动的值（`VButtons` 里用；不填按标签文本比对）。 */
+  value?: unknown;
+  [key: string]: any;
+}
+
 /** Compound button component. */
 export class VButton extends HtmlElementNode {
+  label(): string;
   label(content: ChildInput): VButton;
   content(content: ChildInput): VButton;
+  text(content: ChildInput): VButton;
+  /** 单选联动的值（`VButtons` 用）。 */
+  value(): string | null;
+  value(next: unknown): VButton;
+  /** 派生的比对值：显式 value 优先，否则标签文本。 */
+  valueText(): string;
   type(): ButtonVariant;
   type(value: ButtonVariant): VButton;
   variant(): ButtonVariant;
@@ -25,15 +49,35 @@ export class VButton extends HtmlElementNode {
   formType(value: ButtonFormType): VButton;
   size(): ButtonSize;
   size(value: ButtonSize): VButton;
-  disabled(): boolean;
+  /** 写方法（与迁移前同口径：无参 = 禁用）；读态用 `isDisabled()`。 */
   disabled(value: boolean): VButton;
-  loading(): boolean;
+  isDisabled(): boolean;
+  /** 写方法（无参 = 关闭）；读态用 `isLoading()`。 */
   loading(value: boolean): VButton;
+  isLoading(): boolean;
+  /** 把焦点交给按钮元素。 */
+  focus(): VButton;
+}
+
+/** `vButtons({ … })` 的 props：`options` / `children` 都是按钮数据。 */
+export interface ButtonsOptions {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  selectable?: boolean;
+  value?: unknown;
+  change?: (value: unknown, buttons: VButtons) => void;
+  joined?: boolean;
+  disabled?: boolean;
+  options?: ButtonOption | ButtonOption[];
+  children?: ButtonOption | ButtonOption[];
+  [key: string]: unknown;
 }
 
 /** Button group with selection state. */
 export class VButtons extends HtmlElementNode {
   child(...children: ChildInput[]): this;
+  /** 追加一份按钮，返回按钮句柄（`container.vButton(…)`）。 */
+  vButton(setup: ButtonOption | SetupInput<VButton>): VButton;
   variant(): ButtonVariant;
   variant(value: ButtonVariant): VButtons;
   size(): ButtonSize;
@@ -117,10 +161,13 @@ export class VContextMenu extends HtmlElementNode {
 }
 
 export const vButton: ElementFactory<VButton> & {
-  (first?: SetupInput<VButton> | null, callback?: SetupCallback<VButton>): VButton;
+  (first?: ButtonOptions | SetupInput<VButton> | null, callback?: SetupCallback<VButton>): VButton;
 };
 export const vButtons: ElementFactory<VButtons> & {
-  (first?: SetupInput<VButtons> | null, callback?: SetupCallback<VButtons>): VButtons;
+  (
+    first?: ButtonsOptions | SetupInput<VButtons> | null,
+    callback?: SetupCallback<VButtons>
+  ): VButtons;
 };
 export const vFloatButton: ElementFactory<VFloatButton> & {
   (first?: SetupInput<VFloatButton> | null, callback?: SetupCallback<VFloatButton>): VFloatButton;
@@ -143,8 +190,14 @@ export const vContextMenu: ElementFactory<VContextMenu> & {
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface ActionsParentShortcuts {
-  vButton(first?: SetupInput<VButton> | null, callback?: SetupCallback<VButton>): VButton;
-  vButtons(first?: SetupInput<VButtons> | null, callback?: SetupCallback<VButtons>): VButtons;
+  vButton(
+    first?: ButtonOptions | SetupInput<VButton> | null,
+    callback?: SetupCallback<VButton>
+  ): VButton;
+  vButtons(
+    first?: ButtonsOptions | SetupInput<VButtons> | null,
+    callback?: SetupCallback<VButtons>
+  ): VButtons;
   vFloatButton(
     first?: SetupInput<VFloatButton> | null,
     callback?: SetupCallback<VFloatButton>

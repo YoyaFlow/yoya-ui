@@ -2010,7 +2010,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(items[0].getAttribute('aria-current')).toBeNull();
     expect(items[1].getAttribute('aria-current')).toBe('page');
 
-    shellDemo.querySelector("[vn~='VNavbarActions'] .yoya-vbutton").click();
+    shellDemo.querySelector("[vn~='VNavbarActions'] [vn~='VButton']").click();
 
     expect(status.textContent).toBe('已触发：登录');
   });
@@ -2634,7 +2634,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(placementTargets[0].dataset.open).toBe('true');
 
     const triggerDemo = page.querySelector('[data-feedback-demo="trigger"]');
-    triggerDemo.querySelector('.yoya-vbutton').click();
+    triggerDemo.querySelector('[vn~="VButton"]').click();
     expect(triggerDemo.querySelector('.yoya-vtooltip').dataset.open).toBe('true');
 
     document
@@ -2666,7 +2666,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     ).toContain("import { vButtons } from '@yoyaflow/yoya-ui';");
 
     const selectDemo = page.querySelector('[data-button-group-demo="select"]');
-    const runningButton = [...selectDemo.querySelectorAll('.yoya-vbutton')].find((button) =>
+    const runningButton = [...selectDemo.querySelectorAll('[vn~="VButton"]')].find((button) =>
       button.textContent.includes('运行中')
     );
 
@@ -2675,7 +2675,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(selectDemo.querySelector('[data-button-group-output]').textContent).toBe('running');
 
     const joinedDemo = page.querySelector('[data-button-group-demo="joined"]');
-    const cardButton = [...joinedDemo.querySelectorAll('.yoya-vbutton')].find((button) =>
+    const cardButton = [...joinedDemo.querySelectorAll('[vn~="VButton"]')].find((button) =>
       button.textContent.includes('卡片')
     );
 
@@ -2858,9 +2858,9 @@ export function SampleCard() {
 
     const page = document.querySelector('[data-glow-button-docs]');
     expect(page).not.toBeNull();
-    expect(page.querySelectorAll('.yoya-vglow-button').length).toBeGreaterThan(0);
-    const glowButton = page.querySelector('.yoya-vglow-button');
-    expect(glowButton.classList.contains('yoya-vbutton')).toBe(true);
+    expect(page.querySelectorAll('[vn~="VGlowButton"]').length).toBeGreaterThan(0);
+    const glowButton = page.querySelector('[vn~="VGlowButton"]');
+    expect(glowButton.getAttribute('vn')).toContain('VButton');
     expect(glowButton.dataset.glowPlay).toBe('auto');
   });
 

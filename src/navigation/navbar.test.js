@@ -49,7 +49,7 @@ describe('vNavbar', () => {
     expect(items[0].getAttribute('aria-current')).toBe('page');
     expect(
       // 按钮族还没做属性化迁移（单独一刀），标签位暂时还是类名
-      element.querySelector("[vn~='VNavbarActions'] .yoya-vbutton-label").textContent
+      element.querySelector("[vn~='VNavbarActions'] [vn~='VButtonLabel']").textContent
     ).toBe('登录');
 
     element.querySelector("[vn~='VNavbarActions'] button").click();

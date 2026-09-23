@@ -1,372 +1,263 @@
-import { createComponentShell } from '../components/component-shell.js';
-import { defineComponentIdentity, normalizeChild, viewRootOf } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
-import { ButtonNode } from './button.js';
+import { asSignal, computed, ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { hasComponentIdentity } from '../core/node.js';
+import { div } from '../html/index.js';
 import {
-  applyElementOptions,
-  componentClass,
+  createComponentShortcut,
+  createListItemKey,
   isPlainObject,
-  replaceChildren,
   resolveTextValue
 } from '../components/shared.js';
-
-const baseVariants = new WeakMap();
+import { vButton } from './button.js';
 
 /**
- * vButtons 按钮组：把多个按钮收敛到同一容器，支持配置式创建和单选联动。
+ * 按钮组（票 15 §4；2026-09-23 按容器写法重写，参考实现 `VTable` / `VSteps`）。
+ *
+ * - **结构**：`div[VButtons](role=group, data-joined) > [vn~='VButton']…`——按钮由一份 `ref([])` + **`keyed` 对账**
+ *   渲染（`options` / `vButton(...)` 都只写那份数据，增删改排序交给引擎）；
+ * - **容器态走句柄下推**：组持有 `variant`（基准变体）/ `size` / `selectable` / `selected` / `disabled` 几个句柄，
+ *   按钮 `track(context)` 后自己派生 `data-selected` / `aria-pressed` / 生效 variant——容器**不遍历每一项**、
+ *   也不替按钮写状态（与 `VSteps` / `VTabs` 同口径）；
+ * - **R5**：容器的 `display / gap / flex-wrap / vertical-align` 与"拼接模式"（`gap: 0` / 首尾圆角 / 中间直角 /
+ *   `-1px` 叠边 / 选中项 `z-index`）全在 `yoya.ui.css` 的 `[vn~='VButtons'][data-joined='true']` 规则里，
+ *   JS 不写行内样式；
+ * - props 进参数表（`function VButtons({ ... })`），`...rest` 照 JSX 摊进根元素工厂；匿名 `child(button)` 渲染
+ *   但不进按钮账（与 16 号第 7 条同口径：一个容器只走一条投递通道）。
  */
-export class ButtonsNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VButtons';
-    this._variant = 'secondary';
-    this._size = 'medium';
-    this._selectable = false;
-    this._value = null;
-    this._buttons = [];
-    this._changeHandler = null;
 
-    this.className(componentClass, 'yoya-vbuttons');
-    this.attr('role', 'group');
-    this.styles({
-      display: 'inline-flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      minWidth: '0',
-      verticalAlign: 'middle'
-    });
+const DEFAULT_VARIANT = 'secondary';
+const DEFAULT_SIZE = 'medium';
 
-    this._setupButtons(setup);
-  }
+const asList = (value) =>
+  value === null || value === undefined ? [] : Array.isArray(value) ? value : [value];
 
-  child(...children) {
-    children.flat(Infinity).forEach((child) => {
-      if (child === null || child === undefined) {
-        return;
+/** 按钮组 props：`options` / `children` 都是按钮数据（字符串 / 按钮句柄 / 选项对象）。 */
+export function VButtons({
+  change,
+  children: childOptions,
+  disabled,
+  joined,
+  options,
+  selectable,
+  size,
+  value,
+  variant,
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, ...elementConfig } = rest;
+
+  // props 全是数据：句柄原样收下，归一放在读时的派生上
+  const variantState = asSignal(variant ?? null);
+  const sizeState = asSignal(size ?? null);
+  const selectableState = asSignal(selectable);
+  const selectedState = asSignal(value ?? null);
+  const joinedState = asSignal(joined);
+  const disabledState = asSignal(disabled);
+  const changeState = ref(null);
+
+  const variantValue = computed(() => variantState.value || DEFAULT_VARIANT);
+  const sizeValue = computed(() => sizeState.value || DEFAULT_SIZE);
+  const selectedValue = computed(() =>
+    selectedState.value === undefined ? null : selectedState.value
+  );
+  const joinedAttr = computed(() => (joinedState.value ? 'true' : null));
+
+  /** 按钮：一份数据源（结构由 keyed 对账；`options()` 读回同一份）。 */
+  const buttonNodes = ref([]);
+  const keyOfButton = createListItemKey('button-group-item');
+
+  return vNode((api, self) => {
+    /**
+     * 容器态句柄：按钮 `track(context)` 拿到它们，自己派生选中态 / 生效变体 / 尺寸 / 禁用
+     * （容器不遍历每一项，也不替按钮写状态）。
+     */
+    const context = {
+      baseVariant: variantValue,
+      disabled: disabledState,
+      selectable: selectableState,
+      selected: selectedValue,
+      size: sizeValue
+    };
+
+    /** 建 / 复用一份按钮，并把容器态句柄交给它、接上单选点击。 */
+    const wireButton = (node) => {
+      const button = normalizeButton(node);
+
+      if (buttonNodes.value.includes(button)) {
+        return button;
       }
 
-      const node = normalizeChild(child);
-      // 子单元可能是 vNode 组件（成员是 ComponentNode）：判定与操作都落到**视图根**（节点类型）上
-      const unit = viewRootOf(node) ?? node;
-      if (unit instanceof ButtonNode) {
-        this._registerButton(unit);
+      button.track?.(context);
+      button.on?.('click', () => {
+        if (!selectableState.value) {
+          return;
+        }
+
+        const next = button.valueText?.() ?? button.label?.();
+
+        if (next === selectedValue.value) {
+          return;
+        }
+
+        api.value(next);
+
+        if (typeof changeState.value === 'function') {
+          // 句柄交给使用方的是**组件节点**（与迁移前 `_componentHandle` 同口径）
+          changeState.value(next, self.node());
+        }
+      });
+
+      return button;
+    };
+
+    /** 追加一份按钮：只写数据，结构交给 keyed 对账；返回按钮句柄（与迁移前 `container.vButton(…)` 一致）。 */
+    const appendButton = (entry) => {
+      const button = createButton(entry);
+
+      if (!buttonNodes.value.includes(button)) {
+        buttonNodes.value = [...buttonNodes.value, button];
       }
 
-      super.child(node);
-    });
+      return button;
+    };
 
-    return this;
-  }
-
-  variant(value) {
-    if (value === undefined) {
-      return this._variant;
-    }
-
-    const previous = this._variant;
-    this._variant = value || 'secondary';
-
-    this._buttons.forEach((button) => {
-      if (baseVariants.get(button) === previous) {
-        baseVariants.set(button, this._variant);
+    /** 选项对象 → props（`value` / `variant` / `size` 是按钮自己的显式值，压过组里的基准）。 */
+    const createButton = (entry) => {
+      if (isButton(entry)) {
+        return wireButton(entry);
       }
-    });
 
-    this._syncSelection();
-    return this;
-  }
+      if (typeof entry === 'string' || typeof entry === 'number') {
+        return wireButton(vButton(entry));
+      }
 
-  size(value) {
-    if (value === undefined) {
-      return this._size;
+      if (isPlainObject(entry)) {
+        const {
+          children,
+          disabled: entryDisabled,
+          label,
+          size: entrySize,
+          text,
+          value: entryValue,
+          variant: entryVariant,
+          ...elementConfig
+        } = entry;
+
+        return wireButton(
+          vButton({
+            ...elementConfig,
+            children: label ?? text ?? children,
+            disabled: entryDisabled,
+            size: entrySize,
+            value: entryValue === undefined ? undefined : resolveTextValue(entryValue),
+            variant: entryVariant
+          })
+        );
+      }
+
+      return wireButton(vButton(entry));
+    };
+
+    api.vButton = (setup) => appendButton(setup);
+
+    api.options = (items) => {
+      if (items === undefined) {
+        return buttonNodes.value.slice();
+      }
+
+      buttonNodes.value = asList(items).map(createButton);
+      return api;
+    };
+
+    api.variant = (next) => {
+      if (next === undefined) {
+        return variantValue.value;
+      }
+
+      variantState.value = next || null;
+      return api;
+    };
+
+    api.size = (next) => {
+      if (next === undefined) {
+        return sizeValue.value;
+      }
+
+      sizeState.value = next || null;
+      return api;
+    };
+
+    /** 单选：`true` 写入（与迁移前同口径：无参 = 打开）。 */
+    api.selectable = (next = true) => {
+      selectableState.value = Boolean(next);
+      return api;
+    };
+
+    api.value = (next) => {
+      if (next === undefined) {
+        return selectedValue.value;
+      }
+
+      selectedState.value = next;
+      return api;
+    };
+
+    api.change = (handler) => {
+      if (handler === undefined) {
+        return changeState.value;
+      }
+
+      changeState.value = typeof handler === 'function' ? handler : null;
+      return api;
+    };
+
+    /** 拼接模式：`true` 写入（与迁移前同口径）；几何全在 CSS 规则里（R5）。 */
+    api.joined = (next = true) => {
+      joinedState.value = Boolean(next);
+      return api;
+    };
+
+    /** 整组禁用：写组状态，按钮自己派生（不遍历每一项）。 */
+    api.disabled = (next) => {
+      disabledState.value = Boolean(next);
+      return api;
+    };
+
+    api.setupString = (value) => {
+      api.options([value]);
+      return api;
+    };
+
+    if (change !== undefined) {
+      api.change(change);
     }
 
-    this._size = value || 'medium';
-    this._buttons.forEach((button) => button.size(this._size));
-    return this;
-  }
+    const initialOptions = options ?? childOptions;
 
-  selectable(value = true) {
-    this._selectable = Boolean(value);
-    this._syncSelection();
-    return this;
-  }
-
-  value(next) {
-    if (next === undefined) {
-      return this._value;
+    if (initialOptions !== undefined) {
+      api.options(initialOptions);
     }
 
-    this._value = next;
-    this._syncSelection();
-    return this;
-  }
-
-  change(handler) {
-    if (handler === undefined) {
-      return this._changeHandler;
-    }
-
-    this._changeHandler = typeof handler === 'function' ? handler : null;
-    return this;
-  }
-
-  joined(value = true) {
-    this._joined = Boolean(value);
-    this._applyJoinedLayout();
-    return this;
-  }
-
-  disabled(value) {
-    this._buttons.forEach((button) => button.disabled(Boolean(value)));
-    return this;
-  }
-
-  options(items) {
-    if (items === undefined) {
-      return this._buttons.slice();
-    }
-
-    this._buttons = [];
-    replaceChildren(
-      this,
-      (Array.isArray(items) ? items : [items]).map((entry) => this._createButton(entry))
+    return div(
+      {
+        ...elementConfig,
+        attrs: { ...restAttrs, role: 'group' },
+        'data-joined': joinedAttr,
+        vn: 'VButtons'
+      },
+      (root) => root.keyed(buttonNodes, keyOfButton, (node) => node)
     );
-    this._applyJoinedLayout();
-    return this;
-  }
-
-  _createButton(entry) {
-    const unit = viewRootOf(entry) ?? entry;
-    if (unit instanceof ButtonNode) {
-      return unit;
-    }
-
-    const button = new ButtonNode();
-    button.variant(this._variant);
-    button.size(this._size);
-
-    if (typeof entry === 'string' || typeof entry === 'number') {
-      button.label(entry);
-      baseVariants.set(button, this._variant);
-      return button;
-    }
-
-    if (isPlainObject(entry)) {
-      const { children, disabled, label, size, text, value, variant, ...elementConfig } = entry;
-
-      if (Object.keys(elementConfig).length > 0) {
-        button.setup(elementConfig);
-      }
-
-      if (label !== undefined) {
-        button.label(label);
-      } else if (text !== undefined) {
-        button.label(text);
-      } else if (children !== undefined) {
-        button.label(children);
-      }
-
-      if (variant !== undefined) {
-        button.variant(variant);
-      }
-
-      if (size !== undefined) {
-        button.size(size);
-      }
-
-      if (value !== undefined) {
-        button.attr('data-value', resolveTextValue(value));
-      }
-
-      if (disabled !== undefined) {
-        button.disabled(disabled);
-      }
-
-      baseVariants.set(button, variant || this._variant);
-      return button;
-    }
-
-    baseVariants.set(button, this._variant);
-    return button;
-  }
-
-  _registerButton(button) {
-    if (this._buttons.includes(button)) {
-      return;
-    }
-
-    if (!baseVariants.has(button)) {
-      baseVariants.set(button, button.type() || this._variant);
-    }
-
-    button.size(this._size);
-    button.on('click', () => {
-      if (!this._selectable) {
-        return;
-      }
-
-      const next = this._buttonValue(button);
-      if (next === this._value) {
-        return;
-      }
-
-      this.value(next);
-      if (typeof this._changeHandler === 'function') {
-        // 句柄交给使用方的是**组件节点**（外壳记在 `_componentHandle` 上），不是内部节点类型
-        this._changeHandler(next, this._componentHandle ?? this);
-      }
-    });
-
-    this._buttons.push(button);
-    this._applyJoinedLayout();
-  }
-
-  _buttonValue(button) {
-    const raw = button.attr('data-value');
-    if (raw !== null && raw !== undefined) {
-      return String(raw);
-    }
-
-    return String(button._labelBox?.textContent() ?? '');
-  }
-
-  _syncSelection() {
-    this._buttons.forEach((button) => {
-      const selected = this._selectable && this._buttonValue(button) === this._value;
-      button.variant(selected ? 'primary' : baseVariants.get(button) || this._variant);
-      button.attr('aria-pressed', selected ? 'true' : null);
-      button.attr('data-selected', selected ? 'true' : null);
-      button.style('zIndex', this._joined && selected ? '1' : null);
-    });
-
-    return this;
-  }
-
-  _applyJoinedLayout() {
-    this.style('gap', this._joined ? '0' : '8px');
-    this.style('flexWrap', this._joined ? 'nowrap' : 'wrap');
-
-    this._buttons.forEach((button, index) => {
-      if (!this._joined) {
-        button.style('borderRadius', null);
-        button.style('marginLeft', null);
-        return;
-      }
-
-      const radius = this._joinedRadius(index);
-      button.style('borderRadius', radius);
-      button.style('marginLeft', index === 0 ? null : '-1px');
-    });
-
-    this._syncSelection();
-    return this;
-  }
-
-  _joinedRadius(index) {
-    const count = this._buttons.length;
-
-    if (count <= 1) {
-      return null;
-    }
-
-    if (index === 0) {
-      return 'var(--yoya-radius-md, 6px) 0 0 var(--yoya-radius-md, 6px)';
-    }
-
-    if (index === count - 1) {
-      return '0 var(--yoya-radius-md, 6px) var(--yoya-radius-md, 6px) 0';
-    }
-
-    return '0';
-  }
-
-  _setupButtons(setup) {
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        attrs,
-        change,
-        children,
-        disabled,
-        joined,
-        options: items,
-        selectable,
-        size,
-        style,
-        value,
-        variant,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      applyElementOptions(this, { attrs, style });
-
-      if (variant !== undefined) {
-        this.variant(variant);
-      }
-
-      if (size !== undefined) {
-        this.size(size);
-      }
-
-      if (selectable !== undefined) {
-        this.selectable(selectable);
-      }
-
-      if (value !== undefined) {
-        this.value(value);
-      }
-
-      if (change !== undefined) {
-        this.change(change);
-      }
-
-      if (disabled !== undefined) {
-        this.disabled(disabled);
-      }
-
-      if (joined !== undefined) {
-        this.joined(joined);
-      }
-
-      if (items !== undefined) {
-        this.options(items);
-      }
-
-      if (children !== undefined) {
-        this.child(children);
-      }
-
-      return;
-    }
-
-    if (Array.isArray(setup)) {
-      this.options(setup);
-      return;
-    }
-
-    if (setup !== null && setup !== undefined) {
-      this.options([setup]);
-    }
-  }
-}
-
-export function vButtons(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VButtons',
-    createNode: (setup) => new ButtonsNode(setup),
-    commands: ['variant', 'size', 'selectable', 'value', 'change', 'joined', 'disabled', 'options'],
-    args: [first, second, third, ...[...arguments].slice(3)]
   });
 }
 
-export const VButtons = vButtons;
-defineComponentIdentity(VButtons, 'VButtons');
+export const vButtons = createComponentShortcut(VButtons, { props: true });
+
+/** 按钮判定走身份事实（多值身份也算：`VGlowButton VButton`）。 */
+function isButton(value) {
+  return Boolean(value) && hasComponentIdentity(value, 'VButton');
+}
+
+/** 按钮归一：已经是按钮组件就原样用，其余按按钮的分派建一份。 */
+function normalizeButton(value) {
+  return isButton(value) ? value : vButton(value);
+}

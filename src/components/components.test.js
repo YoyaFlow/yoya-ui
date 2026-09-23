@@ -74,8 +74,8 @@ describe('compound components', () => {
     expect(actionElement.dataset.variant).toBe('primary');
     expect(actionElement.dataset.size).toBe('small');
     expect(actionElement.getAttribute('aria-busy')).toBe('true');
-    expect(actionElement.classList.contains('yoya-vbutton')).toBe(true);
-    expect(actionElement.querySelector('.yoya-vbutton-label').textContent).toBe('保存');
+    expect(actionElement.getAttribute('vn')).toContain('VButton');
+    expect(actionElement.querySelector('[vn~="VButtonLabel"]').textContent).toBe('保存');
     expect(submitElement.type).toBe('submit');
     expect(submitElement.dataset.variant).toBe('primary');
     expect(resetElement.type).toBe('reset');
@@ -91,11 +91,11 @@ describe('compound components', () => {
 
     expect(element.tagName).toBe('DIV');
     expect(element.getAttribute('role')).toBe('group');
-    expect(element.classList.contains('yoya-vbuttons')).toBe(true);
-    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(3);
-    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('复制');
-    expect(element.querySelector('.yoya-vbutton').dataset.size).toBe('small');
-    expect(element.querySelector('.yoya-vbutton').dataset.variant).toBe('secondary');
+    expect(element.getAttribute('vn')).toContain('VButtons');
+    expect(element.querySelectorAll('[vn~="VButton"]')).toHaveLength(3);
+    expect(element.querySelector('[vn~="VButtonLabel"]').textContent).toBe('复制');
+    expect(element.querySelector('[vn~="VButton"]').dataset.size).toBe('small');
+    expect(element.querySelector('[vn~="VButton"]').dataset.variant).toBe('secondary');
   });
 
   it('supports exclusive selection with value and change', () => {
@@ -111,7 +111,7 @@ describe('compound components', () => {
       change
     });
     const element = group.renderDom();
-    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+    const buttons = [...element.querySelectorAll('[vn~="VButton"]')];
 
     expect(group.value()).toBe('all');
     expect(buttons[0].dataset.selected).toBe('true');
@@ -132,7 +132,7 @@ describe('compound components', () => {
       container.vButton('取消');
     });
     const element = group.renderDom();
-    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+    const buttons = [...element.querySelectorAll('[vn~="VButton"]')];
 
     expect(buttons).toHaveLength(2);
     expect(buttons[0].textContent).toBe('保存');
@@ -146,15 +146,15 @@ describe('compound components', () => {
       selectable: true
     });
     const element = group.renderDom();
-    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+    const buttons = [...element.querySelectorAll('[vn~="VButton"]')];
 
     group.disabled(true);
     expect(buttons.every((button) => button.disabled)).toBe(true);
 
     group.options([{ label: '刷新', value: 'refresh' }]);
 
-    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(1);
-    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('刷新');
+    expect(element.querySelectorAll('[vn~="VButton"]')).toHaveLength(1);
+    expect(element.querySelector('[vn~="VButtonLabel"]').textContent).toBe('刷新');
   });
 
   it('renders a joined segmented group with shared borders and outer radius', () => {
@@ -165,39 +165,30 @@ describe('compound components', () => {
       value: '列表'
     });
     const element = group.renderDom();
-    const buttons = [...element.querySelectorAll('.yoya-vbutton')];
+    const buttons = [...element.querySelectorAll('[vn~="VButton"]')];
 
-    expect(element.style.gap).toBe('0px');
-    expect(element.style.flexWrap).toBe('nowrap');
-    expect(buttons[0].style.borderRadius).toBe(
-      'var(--yoya-radius-md, 6px) 0 0 var(--yoya-radius-md, 6px)'
-    );
-    expect(buttons[1].style.borderRadius).toBe('0px');
-    expect(buttons[2].style.borderRadius).toBe(
-      '0 var(--yoya-radius-md, 6px) var(--yoya-radius-md, 6px) 0'
-    );
-    expect(buttons[0].style.marginLeft).toBe('');
-    expect(buttons[1].style.marginLeft).toBe('-1px');
-    expect(buttons[2].style.marginLeft).toBe('-1px');
+    // 拼接模式的几何全在 CSS 规则里（`[vn~='VButtons'][data-joined='true']` + 首 / 中 / 尾选择器，见 css-contract）：
+    // 这里只断言状态位与"按钮自身不再写行内样式"
+    expect(element.dataset.joined).toBe('true');
+    buttons.forEach((button) => {
+      expect(button.style.borderRadius).toBe('');
+      expect(button.style.marginLeft).toBe('');
+      expect(button.style.zIndex).toBe('');
+    });
     expect(buttons[0].dataset.selected).toBe('true');
-    expect(buttons[0].style.zIndex).toBe('1');
 
     group.joined(false);
 
-    expect(element.style.gap).toBe('8px');
-    expect(element.style.flexWrap).toBe('wrap');
-    expect(buttons[0].style.borderRadius).toBe('');
-    expect(buttons[1].style.marginLeft).toBe('');
-    expect(buttons[0].style.zIndex).toBe('');
+    expect(element.hasAttribute('data-joined')).toBe(false);
   });
 
   it('creates a button group through the parent shortcut', () => {
     const root = div((page) => {
-      page.vButtons(['复制', '粘贴']);
+      page.vButtons({ options: ['复制', '粘贴'] });
     });
     const element = root.renderDom();
 
-    expect(element.querySelectorAll('.yoya-vbutton')).toHaveLength(2);
+    expect(element.querySelectorAll('[vn~="VButton"]')).toHaveLength(2);
   });
 
   it('renders an exclusive radio group with value, selection and change', () => {
@@ -579,11 +570,11 @@ describe('compound components', () => {
     });
 
     const element = page.renderDom();
-    element.querySelector('.yoya-vbutton').click();
+    element.querySelector('[vn~="VButton"]').click();
 
     expect(element.querySelector('[vn="VCardHeader"]').textContent).toBe('账户');
     expect(element.querySelector('[vn="VCardBody"]').textContent).toBe('余额');
-    expect(element.querySelector('[vn="VCardFooter"] .yoya-vbutton-label').textContent).toBe(
+    expect(element.querySelector('[vn="VCardFooter"] [vn~="VButtonLabel"]').textContent).toBe(
       '刷新'
     );
     expect(clicked).toHaveBeenCalledTimes(1);
@@ -597,7 +588,8 @@ describe('compound components', () => {
     expect(card.toHTML()).toContain('vn="VCardHeader"');
     expect(card.toHTML()).toContain('vn="VCardBody"');
     expect(card.toHTML()).toContain('vn="VCardFooter"');
-    expect(card.textContent()).toBe('标题内容确认');
+    // 组件节点的 `textContent()` 只拼视图根的节点文本（`vText` 绑定要落地才求值），读渲染结果是准的
+    expect(card.renderDom().textContent).toBe('标题内容确认');
   });
 
   it('renders i18n text inside compound components without rebuilding the tree', () => {
@@ -1598,7 +1590,7 @@ describe('compound components', () => {
     }).closeOnSelect(false);
     const element = dropdown.renderDom();
 
-    element.querySelector('.yoya-vbutton').click();
+    element.querySelector('[vn~="VButton"]').click();
     element.querySelector('#dropdown-keep-open').click();
 
     expect(clicked).toHaveBeenCalledTimes(1);
@@ -1691,7 +1683,7 @@ describe('compound components', () => {
     const element = page.renderDom();
 
     expect(element.querySelector('.yoya-vdropdown-menu')).not.toBeNull();
-    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('操作');
+    expect(element.querySelector('[vn~="VButtonLabel"]').textContent).toBe('操作');
     expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('导出');
   });
 

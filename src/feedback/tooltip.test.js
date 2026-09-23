@@ -74,7 +74,7 @@ describe('vTooltip', () => {
       trigger: 'focus'
     });
     const element = tooltip.renderDom();
-    const button = element.querySelector('.yoya-vtooltip-target .yoya-vbutton');
+    const button = element.querySelector('.yoya-vtooltip-target [vn~="VButton"]');
 
     button.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     expect(element.dataset.open).toBe('true');

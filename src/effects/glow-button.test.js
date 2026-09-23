@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HtmlElementNode, VButton, div, vGlowButton, viewRootOf } from '../index.js';
+import { div, hasComponentIdentity, vGlowButton, viewRootOf } from '../index.js';
 
 describe('vGlowButton', () => {
   afterEach(() => {
@@ -10,14 +10,15 @@ describe('vGlowButton', () => {
     const button = vGlowButton('立即部署');
     const element = button.renderDom();
 
-    // 按钮是 vNode 外壳：公开句柄是组件节点，元素机制在视图根（不导出的节点类型）上
-    expect(viewRootOf(button)).toBeInstanceOf(HtmlElementNode);
+    // 包装型：视图根是内层 `vButton` 组件，元素机制在它的视图根上（见 16 号第 31 条）
+    expect(hasComponentIdentity(viewRootOf(button), 'VButton')).toBe(true);
     // 多值身份：流光按钮同时**是** VButton（旧类继承的语义）
-    expect(button).toBeInstanceOf(VButton);
+    expect(hasComponentIdentity(button, 'VGlowButton')).toBe(true);
+    expect(hasComponentIdentity(button, 'VButton')).toBe(true);
     expect(element.tagName).toBe('BUTTON');
-    expect(element.classList.contains('yoya-vbutton')).toBe(true);
-    expect(element.classList.contains('yoya-vglow-button')).toBe(true);
-    expect(element.querySelector('.yoya-vbutton-label').textContent).toBe('立即部署');
+    expect(element.getAttribute('vn')).toContain('VGlowButton');
+    expect(element.getAttribute('vn')).toContain('VButton');
+    expect(element.querySelector('[vn~="VButtonLabel"]').textContent).toBe('立即部署');
   });
 
   it('defaults to auto loop, auto motion, normal speed, ltr direction, strong strength and ripple on', () => {
@@ -90,12 +91,12 @@ describe('vGlowButton', () => {
 
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    const ripple = element.querySelector('.yoya-vglow-button-ripple');
+    const ripple = element.querySelector('[vn~="VGlowButtonRipple"]');
     expect(ripple).not.toBeNull();
     expect(ripple.getAttribute('aria-hidden')).toBe('true');
 
     ripple.dispatchEvent(new Event('animationend'));
-    expect(element.querySelector('.yoya-vglow-button-ripple')).toBeNull();
+    expect(element.querySelector('[vn~="VGlowButtonRipple"]')).toBeNull();
   });
 
   it('skips the click ripple when ripple is off', () => {
@@ -104,7 +105,7 @@ describe('vGlowButton', () => {
 
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(element.querySelector('.yoya-vglow-button-ripple')).toBeNull();
+    expect(element.querySelector('[vn~="VGlowButtonRipple"]')).toBeNull();
   });
 
   it('skips the click ripple when the inherited disabled state is on', () => {
@@ -114,12 +115,12 @@ describe('vGlowButton', () => {
     button.disabled(true);
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(element.querySelector('.yoya-vglow-button-ripple')).toBeNull();
+    expect(element.querySelector('[vn~="VGlowButtonRipple"]')).toBeNull();
 
     button.disabled(false);
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(element.querySelector('.yoya-vglow-button-ripple')).not.toBeNull();
+    expect(element.querySelector('[vn~="VGlowButtonRipple"]')).not.toBeNull();
   });
 
   it('registers vGlowButton as a child shortcut on containers', () => {
@@ -128,7 +129,7 @@ describe('vGlowButton', () => {
     });
     const element = root.renderDom();
 
-    expect(element.querySelector('.yoya-vglow-button .yoya-vbutton-label').textContent).toBe(
+    expect(element.querySelector('[vn~="VGlowButton"] [vn~="VButtonLabel"]').textContent).toBe(
       '快捷创建'
     );
   });

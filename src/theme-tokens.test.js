@@ -81,7 +81,7 @@ describe('non-color token contract', () => {
 
   it('lets components consume the tokens instead of hard-coded sizes', () => {
     expect(css).toMatch(
-      /\.yoya-vbutton\[data-size='medium'\] \{\s*font-size: var\(--yoya-font-size-base\);\s*min-height: var\(--yoya-control-height-md\);/
+      /\[vn~='VButton'\]\[data-size='medium'\] \{\s*font-size: var\(--yoya-font-size-base\);\s*min-height: var\(--yoya-control-height-md\);/
     );
   });
 
@@ -112,7 +112,7 @@ describe('density contract', () => {
   });
 
   it('wires vButton data-size rules to the control-size tokens', () => {
-    expect(css).toContain(".yoya-vbutton[data-size='small']");
+    expect(css).toContain("[vn~='VButton'][data-size='small']");
     expect(css).toContain('min-height: var(--yoya-control-height-sm);');
     expect(css).toContain('min-height: var(--yoya-control-height-md);');
     expect(css).toContain('min-height: var(--yoya-control-height-lg);');

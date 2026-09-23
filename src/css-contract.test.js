@@ -8,18 +8,24 @@ const css = readFileSync(resolve('src/yoya.ui.css'), 'utf8');
 const cssFlat = css.replace(/\s+/g, ' ');
 
 const sharedActionSelectors = [
-  '.yoya-vbutton',
-  ".yoya-vbutton[data-variant='primary']",
-  ".yoya-vbutton[data-variant='primary'][data-interaction='hover']",
-  ".yoya-vbutton[data-variant='primary'][data-interaction='active']",
-  ".yoya-vbutton[data-variant='primary'][data-interaction='focus']",
-  ".yoya-vbutton[data-variant='danger'][data-interaction='hover']",
-  ".yoya-vbutton[data-variant='ghost'][data-interaction='hover']",
-  ".yoya-vbutton[data-size='small']",
-  ".yoya-vbutton[data-size='large']",
-  '.yoya-vbutton[disabled]',
-  ".yoya-vbutton[data-loading='true']",
-  ".yoya-vbutton[data-loading='true'] .yoya-vbutton-spinner",
+  "[vn~='VButton']",
+  "[vn~='VButton'][data-variant='primary']",
+  "[vn~='VButton'][data-variant='primary'][data-interaction='hover']",
+  "[vn~='VButton'][data-variant='primary'][data-interaction='active']",
+  "[vn~='VButton'][data-variant='primary'][data-interaction='focus']",
+  "[vn~='VButton'][data-variant='danger'][data-interaction='hover']",
+  "[vn~='VButton'][data-variant='ghost'][data-interaction='hover']",
+  "[vn~='VButton'][data-size='small']",
+  "[vn~='VButton'][data-size='large']",
+  "[vn~='VButton'][disabled]",
+  "[vn~='VButton'][data-loading='true']",
+  "[vn~='VButton'][data-loading='true'] [vn~='VButtonSpinner']",
+  "[vn~='VButtons']",
+  "[vn~='VButtons'][data-joined='true']",
+  "[vn~='VButtons'][data-joined='true'] > [vn~='VButton']:first-child",
+  "[vn~='VButtons'][data-joined='true'] > [vn~='VButton']:last-child",
+  "[vn~='VButtons'][data-joined='true'] > [vn~='VButton']:only-child",
+  "[vn~='VButtons'][data-joined='true'] > [vn~='VButton'][data-selected='true']",
   '.yoya-vdropdown-menu',
   '.yoya-vdropdown-panel',
   ".yoya-vdropdown-menu[data-open='true'] > .yoya-vdropdown-panel",
@@ -309,20 +315,20 @@ const carouselSelectors = [
 ];
 
 const effectsSelectors = [
-  '.yoya-vglow-button',
-  '.yoya-vglow-button .yoya-vbutton-label',
-  '.yoya-vglow-button .yoya-vbutton-spinner',
-  '.yoya-vglow-button::before',
-  ".yoya-vglow-button[data-glow-play='hover']",
-  ".yoya-vglow-button[data-glow-play='hover']:hover::before",
-  ".yoya-vglow-button[data-glow-speed='slow']",
-  ".yoya-vglow-button[data-glow-speed='fast']",
-  ".yoya-vglow-button[data-glow-direction='rtl']",
-  ".yoya-vglow-button[data-glow-strength='soft']",
-  '.yoya-vglow-button[disabled]::before',
-  '.yoya-vglow-button .yoya-vglow-button-ripple',
-  ".yoya-vglow-button[data-glow-motion='always']::before",
-  ".yoya-vglow-button[data-glow-motion='always'] .yoya-vglow-button-ripple",
+  "[vn~='VGlowButton']",
+  "[vn~='VGlowButton'] [vn~='VButtonLabel']",
+  "[vn~='VGlowButton'] [vn~='VButtonSpinner']",
+  "[vn~='VGlowButton']::before",
+  "[vn~='VGlowButton'][data-glow-play='hover']",
+  "[vn~='VGlowButton'][data-glow-play='hover']:hover::before",
+  "[vn~='VGlowButton'][data-glow-speed='slow']",
+  "[vn~='VGlowButton'][data-glow-speed='fast']",
+  "[vn~='VGlowButton'][data-glow-direction='rtl']",
+  "[vn~='VGlowButton'][data-glow-strength='soft']",
+  "[vn~='VGlowButton'][disabled]::before",
+  "[vn~='VGlowButton'] [vn~='VGlowButtonRipple']",
+  "[vn~='VGlowButton'][data-glow-motion='always']::before",
+  "[vn~='VGlowButton'][data-glow-motion='always'] [vn~='VGlowButtonRipple']",
   '@keyframes yoya-glow-button-sweep',
   '@keyframes yoya-glow-button-ripple'
 ];
@@ -422,7 +428,7 @@ describe('CSS style contract', () => {
     const reducedBlocks =
       css.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g) ?? [];
     const glowBlock =
-      reducedBlocks.find((block) => block.includes('.yoya-vglow-button::before')) ?? '';
+      reducedBlocks.find((block) => block.includes("[vn~='VGlowButton']::before")) ?? '';
     const alwaysBlock =
       reducedBlocks.find((block) => block.includes("data-glow-motion='always'")) ?? '';
 

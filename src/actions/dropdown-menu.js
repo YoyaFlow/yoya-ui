@@ -2,7 +2,7 @@ import { defineComponentIdentity } from '../core/node.js';
 import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { MenuNode } from '../navigation/menu.js';
-import { ButtonNode } from './button.js';
+import { vButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
 import { allocateId } from '../core/id.js';
@@ -25,7 +25,7 @@ class DropdownMenuNode extends HtmlElementNode {
     this._panelId = allocateId('yoya-vdropdown-panel');
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
-    this._trigger = new ButtonNode('操作')
+    this._trigger = vButton('操作')
       .className('yoya-vdropdown-trigger')
       .attr({
         'aria-controls': this._panelId,

@@ -3,8 +3,6 @@
     "src/layout/index.js": 3,
     "src/layout/masonry.js": 1,
     "src/layout/theme-shell.js": 1,
-    "src/actions/button.js": 1,
-    "src/actions/buttons.js": 1,
     "src/navigation/menu.js": 1,
     "src/form/avatar-upload.js": 1,
     "src/form/cascader.js": 1,
