@@ -9,8 +9,11 @@ import {
 } from '../core/index.js';
 import { applySetupValue } from '../core/node.js';
 import { bindDocumentEvent, bindWindowEvent } from '../core/document-events.js';
-import { replaceChildren } from '../components/shared.js';
-import { createComponentFactory, createComponentShortcut } from '../components/shared.js';
+import {
+  applyComponentArguments,
+  createComponentShortcut,
+  replaceChildren
+} from '../components/shared.js';
 import { vSlot } from '../layout/v-slot.js';
 import { vNode } from '../core/v-node.js';
 import { a, button, div, header, span } from '../html/index.js';
@@ -496,7 +499,7 @@ export function VRouter() {
 
 export function createRouter(first = null, second = null, third = null) {
   const args = normalizeSetupArguments(first, second, third);
-  const node = createComponentFactory(VRouter);
+  const node = VRouter();
 
   applySetupValue(node, args.first);
   applyElementOptions(node, args.options);
@@ -515,7 +518,7 @@ export const Router = VRouter;
 
 export function vRouter(first = null, second = null, third = null) {
   const args = normalizeSetupArguments(first, second, third);
-  const node = createComponentFactory(VRouter);
+  const node = VRouter();
 
   applyDeclarativeRouterSetup(node, args.first);
   applyElementOptions(node, args.options);
@@ -677,7 +680,9 @@ export function VLink(routerInstance) {
 }
 
 export function vLink(routerInstance, setup = null, callback = null) {
-  return createComponentFactory(VLink, routerInstance, setup, callback, arguments);
+  // 定义函数吃的是**位置依赖**（router 句柄）而不是 props，所以不走 `createComponentShortcut`：
+  // 「定义 + 参数按序分派」就是新写法。
+  return applyComponentArguments(VLink(routerInstance), setup, callback);
 }
 
 /**
@@ -700,7 +705,7 @@ export function VRouterView(routerInstance) {
 }
 
 export function vRouterView(routerInstance, setup = null, callback = null) {
-  return createComponentFactory(VRouterView, routerInstance, setup, callback, arguments);
+  return applyComponentArguments(VRouterView(routerInstance), setup, callback);
 }
 
 /**
@@ -1341,7 +1346,7 @@ export function VRouterViews(routerInstance) {
 }
 
 export function vRouterViews(routerInstance, setup = null, callback = null) {
-  return createComponentFactory(VRouterViews, routerInstance, setup, callback, arguments);
+  return applyComponentArguments(VRouterViews(routerInstance), setup, callback);
 }
 
 registerChildFactories(ElementNode, { vLink, vRouter, vRouterView, vRouterViews });

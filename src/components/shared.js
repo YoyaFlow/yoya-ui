@@ -166,8 +166,13 @@ export function applyComponentArguments(node, options = null, callback = null) {
 }
 
 /**
- * 组件工厂：首个参数交给组件构造函数（组件自己的 setup / 特殊路由逻辑在这里），
- * 其余参数按出现顺序走统一分派；超过三个参数由工厂把 `arguments` 透传进来（见第五参数）。
+ * 组件工厂（**形态 C 的旧口径**）：首个参数交给组件构造函数（组件自己的 setup / 特殊路由逻辑
+ * 在这里），其余参数按出现顺序走统一分派；超过三个参数由工厂把 `arguments` 透传进来（见第五参数）。
+ *
+ * 库内组件已全部收敛成 A / B 两种写法，各自用「定义 + `createComponentShortcut`」或
+ * 「定义 + `applyComponentArguments`」建实例，所以这个助手**只留给第三方 / 编译侧的类组件**
+ * （编译器按「从库内导入的 `createComponentFactory`」识别形态 C 的编译单元，见票 18 / `docs/compiler`）。
+ * 新代码不要用它。
  */
 export function createComponentFactory(
   Component,
