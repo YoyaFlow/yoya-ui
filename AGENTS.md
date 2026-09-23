@@ -245,6 +245,9 @@ export function VXxx({ count = null, ...rest } = {}) {
   变量，也不为"看起来整齐"把每块提成函数（要**复用**或**自带行为**才提）。
 - **R3 参数**：props 在参数表里解构；`...rest` 照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VXxx' }`），
   `class` / `attrs` / `style` / `onXxx` 交给引擎的键分类表（`src/core/setup-keys.js`）；`vn` 写在最后。
+  **`children` 也从 props 里解构出来、由结构落位**（`function VXxx({ children, ...rest })` +
+  `node.child(children)`）：它归"内容"，位置由组件自己定，不该混进 `rest` 当值合并
+  （编译器两条通道都能按"内容在结构之前"落位，但显式解构最省事、也最不容易误读——见票 18 §2.2）。
 - **R4 属性 / 样式**：能进工厂参数就进参数（`attrs` / `style` 对象，或 `data-*` 这类顶层键），
   值位置可以放句柄 / 零参闭包 / `computed`；只有"要拿句柄、要多步"才在回调里写语句。
 - **R5 静态样式进 CSS**：静态（颜色 / 尺寸 / 字体 / 布局）写 `[vn~='VXxx'] …`，状态几何写

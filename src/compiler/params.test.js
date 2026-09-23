@@ -14,6 +14,7 @@ import * as core from '../yoya.core.js';
 import { tbody } from '../html/index.js';
 import { ref } from '../core/signals/handle.js';
 import { compileSource } from './index.js';
+import { componentUnits, wireComponentModule } from './plugin.js';
 
 const scratchRoot = join(process.cwd(), '.scratch');
 mkdirSync(scratchRoot, { recursive: true });
@@ -45,6 +46,18 @@ const write = (name, code) => {
   const path = join(workDir, name);
   writeFileSync(path, code, 'utf8');
   return import(pathToFileURL(path).href);
+};
+
+/** 顺序无关的 DOM 签名（属性排序后比较；属性的**书写顺序**见票 41 / 票 18 §8）。 */
+const signature = (element) => {
+  const attrs = [...element.attributes]
+    .map((item) => `${item.name}=${item.value}`)
+    .sort()
+    .join(' ');
+  const children = [...element.childNodes].map((child) =>
+    child.nodeType === 3 ? `#text:${child.textContent}` : signature(child)
+  );
+  return `<${element.tagName.toLowerCase()} ${attrs}>${children.join('')}`;
 };
 
 describe('parameter shapes (ticket 21)', () => {
@@ -217,5 +230,76 @@ describe('parameter shapes (ticket 21)', () => {
     const defaulted = rootOf(compiled.plan.html);
     generated.bind(defaulted, [{}]);
     expect(defaulted.outerHTML).toBe(generic({}).outerHTML);
+  });
+
+  // 就地替换（组件单元）的产物**按绑定名收参**：外层函数已经把默认值 / 解构 / rest 应用过了。
+  // 旧写法把**形参表原文**当实参传（`(label = "默认", size = 1)`），默认值会被重新求值
+  // （传进来的对象被 `{}` 顶掉），解构 / rest 形状还会变成对不存在变量的赋值（严格模式直接报错）。
+  it('in-place replacement passes the parameter bindings, not the parameter list', async () => {
+    const source = [
+      `import { div, vNode, vText } from ${JSON.stringify(coreUrl)};`,
+      '',
+      'export function ParamWidget({ label = "默认", size = 1 } = {}) {',
+      '  return vNode(() =>',
+      "    div({ class: 'w', 'data-size': size, vn: 'ParamWidget' }, (root) =>",
+      '      root.child(vText(label))',
+      '    )',
+      '  );',
+      '}',
+      '',
+      'export function RestWidget({ label = "默认", ...rest } = {}) {',
+      '  return vNode(() =>',
+      "    div({ ...rest, vn: 'RestWidget' }, (root) => root.child(vText(label)))",
+      '  );',
+      '}',
+      ''
+    ].join('\n');
+
+    const units = componentUnits(source, { core, file: 'param-widget.js' });
+    const wired = wireComponentModule({
+      source,
+      targets: units,
+      core,
+      runtime: runtimeUrl,
+      coreSpecifier: coreUrl
+    });
+    expect(wired, '两个组件都应该编出来').not.toBeNull();
+    // 调用点传的是绑定名；`...rest` 只有一个绑定（对象），不是展开
+    expect(wired.code).toContain(')(label, size)');
+    expect(wired.code).toContain(')(label, rest)');
+    expect(wired.code).not.toContain('= "默认", size = 1 } = {})(');
+
+    const generic = await write('param-widget.generic.js', source);
+    const replacements = new Map();
+    wired.units.forEach((unit, index) => {
+      const path = join(workDir, `param-widget.unit${index}.js`);
+      replacements.set(JSON.stringify(unit.virtual), JSON.stringify(pathToFileURL(path).href));
+      writeFileSync(path, unit.module, 'utf8');
+    });
+    let code = wired.code;
+    replacements.forEach((to, from) => {
+      code = code.replaceAll(from, to);
+    });
+    const wiredPath = join(workDir, 'param-widget.wired.js');
+    writeFileSync(wiredPath, code, 'utf8');
+    const compiled = await import(pathToFileURL(wiredPath).href);
+
+    const props = () => ({ label: ref('标签'), size: 3 });
+    // 比对用**顺序无关签名**：元素 / 节点通道的属性按 ops 顺序写，通用路径按引擎落盘顺序写
+    // （`class` 的位置），是票 41 / 票 18 §8 的既有口径，与本刀无关。
+    expect(signature(compiled.ParamWidget(props()).renderDom())).toBe(
+      signature(generic.ParamWidget(props()).renderDom())
+    );
+    // 默认值路径：绑定值就是源码默认值（旧写法在这里会拿到 `{}`，文本变成空）
+    expect(signature(compiled.ParamWidget().renderDom())).toBe(
+      signature(generic.ParamWidget().renderDom())
+    );
+    expect(compiled.ParamWidget().renderDom().textContent).toBe('默认');
+
+    const restProps = { label: ref('rest 标签'), class: 'from-rest', title: 't' };
+    expect(signature(compiled.RestWidget(restProps).renderDom())).toBe(
+      signature(generic.RestWidget(restProps).renderDom())
+    );
+    expect(compiled.RestWidget(restProps).renderDom().className).toBe('from-rest');
   });
 });

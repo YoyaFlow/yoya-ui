@@ -74,6 +74,13 @@ export function registryCandidates() {
       )
     ];
     names.forEach((name) => entries.push({ file, export: name }));
+    // 快捷名条目（票 15 §Q4）：`export const vXxx = createComponentShortcut(VXxx)` ——
+    // 调用点写快捷名，所以注册表也要有快捷名的键；编译的是它的定义。
+    [
+      ...source.matchAll(
+        /export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*createComponentShortcut\(\s*([A-Za-z_$][\w$]*)/g
+      )
+    ].forEach((match) => entries.push({ file, export: match[1], definition: match[2] }));
   }
   return entries;
 }

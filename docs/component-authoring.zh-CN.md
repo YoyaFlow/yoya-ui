@@ -606,6 +606,20 @@ import { vStatusBadge } from './status-badge.js';
 registerChildFactories(ViewNode, { vStatusBadge });
 ```
 
+自定义的**基础元素工厂**（自绘标签 / 自有宿主元素）用 `markElementFactory` 自报身份，
+这样编译器不必维护第二份名字表就能认出它是元素工厂（组件**不需要**标记：身份走 `vn` + 导出名）：
+
+```js
+import { markElementFactory } from '@yoyaflow/yoya-ui/core';
+
+export const myWidget = markElementFactory(function myWidget(setup) {
+  return div({ class: 'my-widget' }, setup);
+}, 'my-widget');
+```
+
+标记是**符号键 + 非枚举**（`Symbol.for('@yoyaflow/yoya-ui/element-factory')`），不污染名字空间、
+不进 `for…in`/spread；读它用 `isElementFactory(fn)` / `elementFactoryTagOf(fn)`。
+
 ## 9. 打包与发布建议
 
 - 以独立 npm 包发布，将 `yoya-ui/core`（或 `yoya-ui/ui`）声明为 `peerDependencies`。

@@ -141,6 +141,136 @@ describe('if / for…of 里的结构锚点（票 04）', () => {
     }
   });
 
+  it('条件 / 循环里的 child(…) 当洞：语句原样在产物节点上跑，新加的子节点按边界摆回', async () => {
+    const code = [
+      "import { div, span, vText } from '../../src/yoya.core.js';",
+      '',
+      'export function Cascade(props) {',
+      '  return div((root) => {',
+      "    root.className('cascade');",
+      "    root.span((head) => head.className('head').child('head'));",
+      '    if (props.extra) {',
+      '      root.child(props.extra);',
+      '    }',
+      '    for (const item of props.items) {',
+      '      root.child(item);',
+      '    }',
+      "    root.span((tail) => tail.className('tail').child(vText(props.tail)));",
+      '  });',
+      '}',
+      ''
+    ].join('\n');
+    const { wired, compiled, generic } = await setup('cascade', code);
+    expect(wired, '条件里的 child(…) 应该能编').not.toBeNull();
+    // 产物里是"原样跑这条调用 + 按边界摆位"，不是静默丢
+    expect(wired.units[0].module).toContain('mountRuntimeChildrenFrom');
+    expect(wired.units[0].module).toContain('node.child(props.extra)');
+
+    const propsWithExtra = () => ({
+      extra: core.strong('加'),
+      items: ['一', '二'],
+      tail: core.ref('尾')
+    });
+    const compiledEl = compiled.Cascade(propsWithExtra()).renderDom();
+    const genericEl = generic.Cascade(propsWithExtra()).renderDom();
+    expect(signature(compiledEl)).toBe(signature(genericEl));
+    // 位置：head → extra（节点）→ 循环里的两段文本 → tail（静态兄弟在后面，边界要对）
+    expect([...compiledEl.children].map((el) => el.tagName)).toEqual(['SPAN', 'STRONG', 'SPAN']);
+    expect(compiledEl.textContent).toBe('head加一二尾');
+
+    // 条件为假 + 空列表：只剩两个静态兄弟
+    const propsBare = () => ({ extra: null, items: [], tail: core.ref('尾') });
+    expect(signature(compiled.Cascade(propsBare()).renderDom())).toBe(
+      signature(generic.Cascade(propsBare()).renderDom())
+    );
+    expect(compiled.Cascade(propsBare()).renderDom().textContent).toBe('head尾');
+  });
+
+  it('控制流里的节点句柄名换成产物句柄（`if (body.attr(…))` 这类头部读）', async () => {
+    const code = [
+      "import { div, section, vText } from '../../src/yoya.core.js';",
+      '',
+      'export function Panel(props) {',
+      '  return div((root) => {',
+      "    root.className('nested-handle');",
+      '    root.section((body) => {',
+      "      body.attr('data-mode', props.mode);",
+      "      if (body.attr('data-mode') !== undefined) {",
+      '        body.child(vText(props.label));',
+      '      }',
+      '    });',
+      '  });',
+      '}',
+      ''
+    ].join('\n');
+    const { wired, compiled, generic } = await setup('nested-handle', code);
+    expect(wired, '嵌套结构里读句柄的控制流应该能编').not.toBeNull();
+    // 语句是原样搬的，但里面的句柄名已经换成产物句柄 `node`
+    const module = wired.units[0].module;
+    // 头部那句（原样搬）里的句柄名换成了 `node`；写属性那句走 op，本来就是 `node.attr(…)`
+    expect(module).toContain("if (node.attr('data-mode') !== undefined)");
+    expect(module).not.toContain('body.attr(');
+    expect(module).not.toContain('body.');
+    expect(module).toContain('data-mode');
+
+    const props = () => ({ mode: 'clip', label: core.ref('标签') });
+    expect(signature(compiled.Panel(props()).renderDom())).toBe(
+      signature(generic.Panel(props()).renderDom())
+    );
+  });
+
+  it('发现为 element 的行工厂要求节点产物 → 不接线（回落通用路径）', async () => {
+    const code = [
+      "import { ref, tbody, tr, vText } from '../../src/yoya.core.js';",
+      '',
+      'const rows = ref([]);',
+      '',
+      'export function Table() {',
+      '  return tbody((body) => body.keyed(rows, Row));',
+      '}',
+      '',
+      'export function Row(data) {',
+      '  return tr((line) => {',
+      '    if (data.extra) {',
+      '      line.child(data.extra);',
+      '    }',
+      '    line.td((cell) => cell.child(vText(data.label)));',
+      '  });',
+      '}',
+      ''
+    ].join('\n');
+    const file = join(workDir, 'keyed-child.js');
+    writeFileSync(file, code, 'utf8');
+    const units = componentUnits(code, { core, file });
+    const row = units.find((unit) => unit.component === 'Row');
+    expect(row.mode).toBe('element');
+
+    // element 行交回给 `keyedRows` 的必须是 `{ el, … }`；要求节点产物的形状 → 整形状回落
+    const wiredRow = wireComponentModule({
+      source: code,
+      targets: [row],
+      core,
+      runtime: runtimeUrl
+    });
+    expect(wiredRow, '行工厂不该被接成节点产物').toBeNull();
+
+    // 反向对照：同样声明成 element 的行工厂，只要不要求节点产物就照旧接线
+    const plain = code.replace('    if (data.extra) {\n      line.child(data.extra);\n    }\n', '');
+    const plainFile = join(workDir, 'keyed-plain.js');
+    writeFileSync(plainFile, plain, 'utf8');
+    const plainRow = componentUnits(plain, { core, file: plainFile }).find(
+      (unit) => unit.component === 'Row'
+    );
+    expect(plainRow.mode).toBe('element');
+    const wiredPlain = wireComponentModule({
+      source: plain,
+      targets: [plainRow],
+      core,
+      runtime: runtimeUrl
+    });
+    expect(wiredPlain, '普通 element 行仍然要接线').not.toBeNull();
+  });
+
   it('逻辑帧与位置写按源码顺序交织（改局部量 → 后续写读到新值）', async () => {
     const code = [
       "import { div } from '../../src/yoya.core.js';",

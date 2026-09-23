@@ -126,23 +126,23 @@ describe('节点变量（别名）', () => {
     }
   });
 
-  it('认不准的别名用法回落（不产半成品）', async () => {
-    const cases = {
-      别名当值用: source.replace("    body.attr('data-n', String(n));", '    props.onPick(body);')
-    };
-    Object.entries(cases).forEach(([name, code]) => {
-      const file = join(workDir, 'card-bail.js');
-      writeFileSync(file, code, 'utf8');
-      const result = compileSource({
-        source: code,
-        file,
-        fn: 'Card',
-        mode: 'element',
-        core,
-        runtime: runtimeUrl
-      });
-      expect(result.compiled, name).toBe(false);
-      expect(result.module, name).toBeNull();
+  it('别名当"值"交给助手（`props.onPick(body)`）→ 当洞：换节点产物，不再整块回落', () => {
+    // 口径更新（票 21 §2.1.8）：这句话不改变当前树的结构（只是把句柄交出去），所以当洞原样执行，
+    // 只把节点参数名换成产物里的句柄；产物必须是节点 ⇒ 自动切节点通道。
+    const code = source.replace("    body.attr('data-n', String(n));", '    props.onPick(body);');
+    const file = join(workDir, 'card-hole.js');
+    writeFileSync(file, code, 'utf8');
+    const result = compileSource({
+      source: code,
+      file,
+      fn: 'Card',
+      mode: 'element',
+      core,
+      runtime: runtimeUrl
     });
+    expect(result.compiled, JSON.stringify(result.bails)).toBe(true);
+    expect(result.plan.mode).toBe('node');
+    // 洞里那句用的还是同一个节点句柄（产物里的 `node`）
+    expect(result.module).toContain('props.onPick(node)');
   });
 });

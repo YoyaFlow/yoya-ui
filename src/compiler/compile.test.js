@@ -87,9 +87,13 @@ describe('compileSource', () => {
 
   it('falls back for every unsupported construct', () => {
     const cases = [
-      // 控制流本身现在能编（票 04 的结构锚点），但这两段里的"结构"不是加子元素 → 仍整形状回落
+      // 控制流本身现在能编（票 04 的结构锚点），但这两段里的"结构"不是"加一个子结构 / 运行期子节点"
+      // → 仍整形状回落
       ["if (item.id) {\n      line.attr('data-x', '1');\n    }", '只支持加结构'],
-      ['for (const dataItem of item.items) {\n      line.child(item);\n    }', '只支持加结构'],
+      [
+        'for (const dataItem of item.items) {\n      line.className("x").child(item);\n    }',
+        '不止一步'
+      ],
       ['line.attr(...item.attrs);', 'spread'],
       ["line.whenFailed('x');", '不是元素工厂'],
       ['line.td((cell) => cell.child(() => item.label));', '组件槽'],

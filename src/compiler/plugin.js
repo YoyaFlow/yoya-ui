@@ -40,7 +40,7 @@ import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 import { componentUnits, normalizePath, topLevelFunctions } from './discover.js';
-import { paramBoundNames } from './analyze.js';
+import { paramBoundNames, shortcutDefinitionsOf } from './analyze.js';
 import { sourceLabelOf } from './emit.js';
 import { componentKeyOf } from './component-key.js';
 
@@ -193,13 +193,35 @@ export function wireComponentModule({
     // 形状由分析器给出（唯一真源）。组件单元（形态 B / vNode）的产物要能当 ViewNode 用 →
     // 必须是 node 通道，而且**静态根也要建包装对象**（`nodeAlways`：纯静态的组件体在 node 通道里
     // 默认只返回片段元素，那会让 `render()` 返回一个 Element）。纯行工厂保持推断通道。
+    const params = declaration.node.params;
+    const paramsSource = params.map((item) => source.slice(item.start, item.end)).join(', ');
+    // 就地替换路径的产物**按绑定名收参**（票 21 §2.1.12）：外层函数已经把默认值 / 解构 / rest
+    // 应用过了，调用点只有这些绑定值可传。把形参表原文当实参传（`(props = {})`）会**重新求值默认值**
+    // （传进来的对象被 `{}` 顶掉），解构 / rest 形状还会变成对不存在变量的赋值（严格模式直接 ReferenceError）。
+    const paramBindings = [...paramBoundNames(params)].join(', ');
     const first = compiledByUnit.get(unit) ?? compileWith(unit, unit.mode ?? 'element');
     if (!first.compiled || !first.module) {
       return; // bail：这个组件整形状回落
     }
     const shape = first.structure?.shape ?? 'row';
-    const result = shape !== 'row' ? compileWith(unit, 'node', { nodeAlways: true }) : first;
+    const result =
+      shape !== 'row'
+        ? compileWith(unit, 'node', { nodeAlways: true, paramsSource: paramBindings })
+        : // 行形状但**通道是 node**（这个组件不是"只在 keyed 列表里用"）：包装函数直接交回产物，
+          // 而调用方（`createComponentShortcut(VXxx)` / `child(VXxx())` / 直接调用）要的是 ViewNode
+          // —— 纯静态结构在 node 通道默认只返回片段元素，会让 shortcut 的 `instanceof ViewNode` 校验
+          // 直接抛错（实测 `fixtures/shortcut-link.js` 的 `vThing()`）→ 这条路径也要 `nodeAlways`。
+          unit.mode === 'element'
+          ? first
+          : compileWith(unit, 'node', { nodeAlways: true });
     if (!result.compiled || !result.module) {
+      return;
+    }
+    // 发现口径是 **element**（这个组件只被 `keyed(rows, X)` 当行工厂用）→ 运行期拿它建行的是
+    // `keyedRows`，它要 `{ el, isMounted, destroy }`。可如果产物变成了 **node**（分析期要求节点：
+    // 运行期子节点 / 洞 / 被读的视图句柄），交回去的是 ViewNode，行就没法对账了 ——
+    // 这种单元**整形状回落**走通用路径，绝不塞半成品给列表。
+    if (unit.mode === 'element' && result.plan?.mode === 'node') {
       return;
     }
     const resolvedShape = result.structure?.shape ?? 'row';
@@ -233,10 +255,8 @@ export function wireComponentModule({
       });
     };
 
-    // 包装函数按源码参数表原样转发实参（票 21）：全是标识符时签名与转发都照抄（函数 length 不变），
-    // 解构 / 默认值 / rest 形状用 rest 转发——绝不在包装函数里重新拼实参对象，那会让默认值求值两次。
-    const params = declaration.node.params;
-    const paramsSource = params.map((item) => source.slice(item.start, item.end)).join(', ');
+    // 行工厂的包装函数按源码参数表原样转发实参（票 21）：全是标识符时签名与转发都照抄（函数 length
+    // 不变），解构 / 默认值 / rest 形状用 rest 转发——绝不在包装函数里重新拼实参对象，那会让默认值求值两次。
     const virtual = `${VIRTUAL_PREFIX}${name}-${result.plan.signature}`;
 
     // 组件单元：**就地替换结构表达式**——组件体、命令、状态、钩子一行不动，只把视图换成产物。
@@ -253,7 +273,7 @@ export function wireComponentModule({
       magic.overwrite(
         result.structure.start,
         result.structure.end,
-        `(${factoryExpr})(${paramsSource || ''})`
+        `(${factoryExpr})(${paramBindings})`
       );
       magic.append(
         [
@@ -386,6 +406,8 @@ export function compileModuleRegistry({
 
   /** 被 `child(<本地组件>(…))` 引用到的组件（分析器只在这一处认组件调用）。 */
   const referenced = referencedComponents(ast, declarations);
+  // 快捷名索引（票 15 §Q4）：`vXxx → VXxx`，注册表补别名条目用
+  const shortcuts = shortcutDefinitionsOf(ast);
   const pending = new Map(
     list.filter((unit) => referenced.has(unit.component)).map((unit) => [unit.component, unit])
   );
@@ -406,6 +428,13 @@ export function compileModuleRegistry({
         pending.delete(name); // 内部有 keyed 行子单元的组件：调用点内联还要接线行子单元，本轮不登记
         return;
       }
+      if ((compiled.perCallScope ?? []).length > 0) {
+        // 视图用到**组件体局部量**（实例变量）：链接到别的模块时那些名字不存在（编译产物只拿到值，
+        // 跨模块连值都拿不到），还会被调用点当"模块级名字"提升进自己的 scope（实测 docs 页面的
+        // `liveDemo is not defined`）→ 这个组件不登记，调用点照旧走通用路径。
+        pending.delete(name);
+        return;
+      }
       const declaration = declarations.get(name);
       // 产物类型决定调用点能不能**摊平**：`row` 是薄工厂（产物就是元素 / 节点本身），
       // 内联后与源码语义一致；`render` / `vNode` 的产物是**组件节点**，命令、钩子、身份都挂在
@@ -421,6 +450,22 @@ export function compileModuleRegistry({
         factory: compiled.factory,
         ops: compiled.ops,
         scope: compiled.scope
+      });
+      // 快捷名别名条目（票 15 §Q4）：调用点写 `child(vXxx(…))` 时按同一个键空间查表，
+      // 所以别名也要有权重相同的条目（形参表就是定义函数的形参表）。
+      shortcuts.forEach((definition, shortcut) => {
+        if (definition === name) {
+          registry.set(componentKeyOf(fileLabelOf(unit), shortcut), {
+            params: declaration.node.params
+              .map((param) => source.slice(param.start, param.end))
+              .join(', '),
+            paramNames: [...paramBoundNames(declaration.node.params)],
+            product: shape === 'row' ? 'element' : 'node',
+            factory: compiled.factory,
+            ops: compiled.ops,
+            scope: compiled.scope
+          });
+        }
       });
       pending.delete(name);
       progress = true;
@@ -456,6 +501,9 @@ function sourceMapForGenerated(generated, originalSnippet, file) {
  */
 function referencedComponents(ast, declarations) {
   const found = new Set();
+  // 快捷名索引（票 15 §Q4）：`const vXxx = createComponentShortcut(VXxx)`——
+  // 调用点写的是快捷名，登记/编译的却是定义名，先按索引换算过去。
+  const shortcuts = shortcutDefinitionsOf(ast);
   const visit = (node) => {
     if (!node || typeof node !== 'object') {
       return;
@@ -473,9 +521,11 @@ function referencedComponents(ast, declarations) {
       if (
         argument?.type === 'CallExpression' &&
         argument.callee?.type === 'Identifier' &&
-        declarations.has(argument.callee.name)
+        (declarations.has(argument.callee.name) ||
+          declarations.has(shortcuts.get(argument.callee.name)))
       ) {
-        found.add(argument.callee.name);
+        const callee = argument.callee.name;
+        found.add(declarations.has(callee) ? callee : shortcuts.get(callee));
       }
     }
     Object.keys(node).forEach((key) => {

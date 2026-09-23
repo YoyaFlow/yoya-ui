@@ -637,6 +637,24 @@ export function createElementFactory(
   NodeClass?: new (tagName: string, setup?: unknown) => ElementNode
 ): ElementFactory;
 
+/**
+ * Mark for **base element factories** (html / svg element shortcuts). Components are not marked —
+ * a component's identity is `vn` + its export name. `Symbol.for`-keyed and non-enumerable.
+ */
+export const ELEMENT_FACTORY_MARK: symbol;
+
+/** Marks a custom base element factory with its canonical tag name (opt-in). Returns the same function. */
+export function markElementFactory<T extends (...args: never[]) => unknown>(
+  factory: T,
+  tagName: string
+): T;
+
+/** Canonical tag name of a marked base element factory, or `null`. */
+export function elementFactoryTagOf(value: unknown): string | null;
+
+/** Whether the value is a base element factory (html / svg shortcut, or one marked by hand). */
+export function isElementFactory(value: unknown): boolean;
+
 /** Applies { attrs, style } options to a node (component object support). */
 export function applyElementOptions(
   node: ViewNode | ComponentLike,

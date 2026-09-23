@@ -9,6 +9,7 @@
  * 「哪些值算静态」。生成的模块只 import 运行期钩子，不含编译器本身。
  */
 import { freeIdentifiers, isBindableName } from './analyze.js';
+import { isElementFactory } from '../core/node.js';
 import { createHash } from 'node:crypto';
 import { isAbsolute, relative } from 'node:path';
 
@@ -29,6 +30,8 @@ const DIRECT_LIVE = [
   'dynamicAttr',
   'dynamicClass',
   'dynamicArg',
+  'dynamicOptions',
+  'holeCall',
   'childValue',
   'dynamicStyle',
   'liveClass',
@@ -57,8 +60,32 @@ const indentOf = (depth) => '  '.repeat(depth);
  * 但它们在白名单里是合法工厂——片段构建与节点物化都要能找到它们。
  */
 function elementFactoryOf(core, name) {
-  return core?.[name] ?? core?.htmls?.[name] ?? core?.svgs?.[name] ?? null;
+  const factory = core?.[name] ?? core?.htmls?.[name] ?? core?.svgs?.[name] ?? null;
+  if (factory === null) {
+    return null;
+  }
+  // 基础元素工厂标识（票 21）：这份核心"自报"了标记时，表里的名字必须真的是带标记的基础工厂——
+  // 表与标记不一致（漂移）就按"不是元素工厂"回落，绝不拿非工厂函数去搭片段。
+  // 旧核心 / 第三方 core 没有标记时不强制（那时仍按名字表工作）。
+  if (coreAdvertisesElementFactoryMark(core) && !isElementFactory(factory)) {
+    return null;
+  }
+  return factory;
 }
+
+/** 这份 core 是不是"带标记时代"的核心：表里任意一个是基础元素工厂即算。 */
+function coreAdvertisesElementFactoryMark(core) {
+  if (coreMarkCache.has(core)) {
+    return coreMarkCache.get(core);
+  }
+  const values = [...Object.values(core?.htmls ?? {}), ...Object.values(core?.svgs ?? {})];
+  const advertised = values.some((value) => isElementFactory(value));
+  coreMarkCache.set(core, advertised);
+  return advertised;
+}
+
+/** core → 是否带标记（每次编译只算一次；core 是模块级对象，缓存不会过期）。 */
+const coreMarkCache = new WeakMap();
 
 /** 生成代码里怎么写这个工厂：顶层导出直接写名字；只在 `svgs` 表里就写 `svgs.<名字>`。 */
 function factoryExpressionOf(core, name) {
@@ -134,9 +161,16 @@ function inlineComponentOps(ops, label) {
     if (label !== null && !op.key.startsWith(`${label}#`)) {
       return op;
     }
-    if (typeof op.params !== 'string' || op.params.length === 0) {
+    if (typeof op.params !== 'string') {
       throw new Error(
         `内联链接需要注册表条目提供 ${op.key} 的形参表（params）：这个形状走通用路径`
+      );
+    }
+    // 定义没有形参、调用点却传了实参：那些实参是"调用方 setup 值"（回调 / options / 文本…），
+    // 内联进产物无处安放（会静默丢）→ 整体回落，交给运行期按组件语义应用。
+    if (op.params.trim() === '' && op.args.length > 0) {
+      throw new Error(
+        `组件 ${op.key} 的定义没有形参，调用点却传了 ${op.args.length} 个 setup 实参：内联会丢，这个形状走通用路径`
       );
     }
     // 第二道保险：产物是**组件节点**（vNode / 形态 B）的条目一律不摊平——包装上挂着命令与钩子，
@@ -317,6 +351,31 @@ export function renderModule(options) {
   });
 
   /**
+   * 逻辑帧 / 洞 / 控制流里**直接写**了 `scope` 里的名字（组件体局部量 / 模块级名字）：
+   * 产物拿到的是**值**（`scope` 解构成 `const`），赋值要么抛错（Assignment to constant variable），
+   * 要么写不回外层（命令随后读到的还是旧值）→ 整形状回落。
+   *
+   * 成员写（`state.root = node`）不受影响：`state` 是同一个对象引用，写进去就生效。
+   * 放在发射**之后**：`scope` 到这里才是全集，顺序无关（实测 `VSymbolButton` 的 `rootNode = root`、
+   * `demos/checkbox.js` 洞里回调写的 `boxes = b`）。
+   */
+  const outerWrites = [];
+  const collectWrites = (ops) =>
+    (ops ?? []).forEach((op) => {
+      (op.writes ?? []).forEach((name) => outerWrites.push(name));
+      if (op.ops) {
+        collectWrites(op.ops);
+      }
+    });
+  collectWrites(entry.ops);
+  const writtenOuterName = outerWrites.find((name) => scope.has(name));
+  if (writtenOuterName) {
+    throw new Error(
+      `产物要写外层名字 ${writtenOuterName}：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径`
+    );
+  }
+
+  /**
    * 运行期 import 名单 = 通道基线（如 `cloneFragment`）+ **产物实际用到的钩子**。
    * 钩子名由各条发射分支在自己那一行登记（见 `emitElementMode` / `emitNodeMode` 的 hooks），
    * 所以加新 op 只改一处，产物也不会 import 用不到的东西。
@@ -466,7 +525,9 @@ export function renderModule(options) {
           : '') +
         planExport +
         `export function createRowFactory(scope) {\n${destructure}` +
-        `  return function ${fn}(${entry.builderParams ?? entry.builderParam}) {\n` +
+        // 参数表：默认按源码参数表复刻（行工厂按原实参调用）；就地替换的组件产物改按**绑定名**
+        // 收参（`paramsSource`），因为调用点只有绑定值（见 plugin.js 的 `paramBindings`）。
+        `  return function ${fn}(${paramsSource || entry.builderParams || entry.builderParam}) {\n` +
         `    const element = cloneFragment(plan.html, plan.signature);\n` +
         `${emitted.positionLines.map((line) => `    ${line}`).join('\n')}` +
         `${emitted.positionLines.length > 0 ? '\n' : ''}` +
@@ -525,8 +586,13 @@ function buildSample(core, factoryName, ops, mode = 'element', counter = null) {
         element.child(op.text);
       } else if (op.kind === 'dynamicAttr') {
         element.attr(op.name, '');
+      } else if (op.kind === 'dynamicOptions') {
+        // 带 `...rest` 的 options：构建期不 bake 任何键（键要运行期才知道，且 attrs / style
+        // 是整包覆盖）——片段里什么都不留，由运行期那条合并 op 落到元素上（票 18）
       } else if (op.kind === 'dynamicStyle') {
         // 动态样式不写占位：值由运行期写（节点模式的节点快照 / 绑定），片段里留空反而多一次对账
+      } else if (op.kind === 'holeCall') {
+        // 父方法调用的洞：片段里什么都不留（那棵子树运行期才建，按边界插回）
       } else if (op.kind === 'content') {
         // 调用方内容：片段里不留位置，带内容的用法由运行期回落通用路径
       } else if (
@@ -637,10 +703,27 @@ function emitElementMode({ entry, addExpression, withBound, controlFrames = [], 
       }
       if (op.kind === 'control') {
         // 控制语句：语句原样，里面的结构换成"实例化子单元 + 插到边界之前"
+        // 语句里的**自由标识符**（`definitions.forEach(…)` 里的模块级常量这类）照旧进 scope——
+        // 本层自己声明的名字（循环变量 / 块内声明）要按边界排除，否则会去外层找一个不存在的名字。
+        withBound([...(op.locals ?? []), ...(op.handles ?? [])], () =>
+          op.expressions.forEach(addExpression)
+        );
         const container = nodeRef(ownerPath);
         const boundary =
           fragmentIndex < fragmentTotal ? nodeRef([...ownerPath, fragmentIndex]) : 'null';
         const text = spliceControlSource(op, (edit) => {
+          // 节点句柄改名（票 21 §2.1.15）：这条语句里的句柄名换成产物句柄 `node`
+          if (edit.rename) {
+            return edit.rename;
+          }
+          // 条件 / 循环里的 `child(…)` 需要节点对象（核心 `child()` 的分派 + 边界摆位）→ 元素通道
+          // 撑不起：这条单元在分析期就已经要求节点产物，走到这里说明通道切换被关掉了（防重入）——
+          // 明确报错，绝不静默丢。
+          if (edit.hole) {
+            throw new Error(
+              '条件 / 循环里的 child(…) 只支持节点通道（元素通道没有节点对象，做不了核心 child() 的分派）'
+            );
+          }
           // 组件调用当结构：运行期按注册表实例化（片段克隆 + 位置写），父片段里不留
           if (edit.component) {
             edit.component.args.forEach(addExpression);
@@ -703,6 +786,16 @@ function emitElementMode({ entry, addExpression, withBound, controlFrames = [], 
           `    pushOff(offs, setAttr(${hostRef(op, ownerPath)}, ${JSON.stringify(op.name)}, ${
             op.expression
           }));`
+        );
+        liveCount += 1;
+      } else if (op.kind === 'dynamicOptions') {
+        // 带 `...rest` 的 options（票 18）：整段对象交给运行期那张分类表，键序照对象自身。
+        // 构建期不 bake 任何键，所以这里也不需要"清占位"这类对账。
+        addExpression(op.expression);
+        hooks.add('pushOff');
+        hooks.add('applyRuntimeOptions');
+        lines.push(
+          `    pushOff(offs, applyRuntimeOptions(${nodeRef(op.path)}, ${op.expression}));`
         );
         liveCount += 1;
       } else if (op.kind === 'slotText') {
@@ -923,6 +1016,9 @@ function emitNodeMode({
   /** 链接组件（跨模块）的实例化写进宿主节点的 setup 闭包 → 这个节点必须物化。 */
   const hostsComponent = (ops) => ops.some((op) => op.kind === 'component');
 
+  /** `dynamicOptions` 的临时名序号：同一个节点闭包里可能出现不止一条（内联 / 帧），不许重名。 */
+  let optionsCounter = 0;
+
   const isLiveNode = (ops) => {
     // 逻辑帧 / 锚点也要承载闭包（局部声明的可见范围、锚点的插入时机都在 setup 闭包里）→ 必须物化
     if (
@@ -1089,6 +1185,27 @@ function emitNodeMode({
         inner.push(
           `${indentOf(depth + 1)}node.attr(${JSON.stringify(child.name)}, ${child.expression});`
         );
+      } else if (child.kind === 'dynamicOptions') {
+        // 带 `...rest` 的 options（票 18）：节点通道直接复用核心的对象分派（`_setupObject`），
+        // 与元素通道共用 `src/core/setup-keys.js` 那张分类表——不新增第二套语义。
+        // `children` 若落在对象里，位置必须与通用路径一致（内容在结构之前）：取出来按
+        // "片段里第一个子节点"当边界摆位（与 `child(<表达式>)` 同一条 `mountRuntimeChildren` 通道）。
+        addExpression(child.expression);
+        const optionsPlaces = ensurePlaces(child);
+        const optionsBoundary = fragmentTotal > 0 ? pathExprOf([...op.path, 0]) : 'null';
+        optionsCounter += 1;
+        const childrenName = `__yoyaOptionsChildren${optionsCounter}`;
+        const restName = `__yoyaOptionsRest${optionsCounter}`;
+        inner.push(
+          `${indentOf(depth + 1)}const { children: ${childrenName}, ...${restName} } = ${
+            child.expression
+          };`,
+          `${indentOf(depth + 1)}node.setup(${restName});`,
+          `${indentOf(depth + 1)}if (${childrenName} !== undefined && ${childrenName} !== null) {`,
+          `${indentOf(depth + 2)}mountRuntimeChildren(node, ${childrenName}, ${optionsPlaces}, ${optionsBoundary});`,
+          `${indentOf(depth + 1)}}`
+        );
+        hooks.add('mountRuntimeChildren');
       } else if (child.kind === 'dynamicStyle') {
         addExpression(child.expression);
         inner.push(
@@ -1177,12 +1294,46 @@ function emitNodeMode({
         // 逻辑帧：源码原样搬进节点 setup 闭包（局部声明的可见范围就是它所在的 builder）
         child.expressions.forEach(addExpression);
         inner.push(`${indentOf(depth + 1)}${child.source}`);
+      } else if (child.kind === 'holeCall') {
+        // **父方法调用的洞**（票 21 §2.1.7）：这条调用原样在产物节点上跑（调的就是通用路径那个方法），
+        // 跑完把**新加的子节点**按"片段里它后面的那个兄弟"当边界摆回来。
+        const places = ensurePlaces(child);
+        const boundary =
+          fragmentIndex < fragmentTotal ? pathExprOf([...op.path, fragmentIndex]) : 'null';
+        child.args.forEach(addExpression);
+        hooks.add('mountRuntimeChildrenFrom');
+        inner.push(
+          `${indentOf(depth + 1)}mountRuntimeChildrenFrom(node, () => node.${child.method}(${child.args.join(
+            ', '
+          )}), ${places}, ${boundary});`
+        );
       } else if (child.kind === 'control') {
         // 控制流里的结构：进节点树（销毁 / `toHTML()` 都对），位置在 adopt 之后按边界摆回来
+        withBound([...(child.locals ?? []), ...(child.handles ?? [])], () =>
+          child.expressions.forEach(addExpression)
+        );
         ensurePlaces(child);
         const boundary =
           fragmentIndex < fragmentTotal ? pathExprOf([...op.path, fragmentIndex]) : 'null';
         const text = spliceControlSource(child, (edit) => {
+          // 节点句柄改名（票 21 §2.1.15）：这条语句里的句柄名换成产物句柄 `node`
+          if (edit.rename) {
+            return edit.rename;
+          }
+          // 条件 / 循环里的 `child(<认不出的值>)`（票 21 §2.1.14）：这条调用**原样在产物节点上跑**，
+          // 跑完把新加的子节点按边界摆回来（与无条件那条 `childValue` 同一套摆位）。
+          if (edit.hole) {
+            edit.hole.args.forEach(addExpression);
+            ensurePlaces(child);
+            hooks.add('mountRuntimeChildrenFrom');
+            return (
+              `{\n` +
+              `        mountRuntimeChildrenFrom(node, () => node.${edit.hole.method}(${edit.hole.args.join(
+                ', '
+              )}), ${placeArray}, ${boundary});\n` +
+              `      }`
+            );
+          }
           // 组件调用当结构（节点通道）：注册表条目的 `render` 就是原组件 → 拿到 ViewNode 收养
           if (edit.component) {
             edit.component.args.forEach(addExpression);

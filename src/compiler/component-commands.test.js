@@ -124,20 +124,16 @@ describe('组件的命令 / 状态保留（票 02）', () => {
     expect(instance.render().renderDom().textContent).toBe('1');
   });
 
-  it('结构不是单一表达式时不改写源码（整形状回落）', () => {
+  it('组件体有分支 / 多条 return 时不改写源码（整形状回落）', () => {
     const source = [
       "import { div } from '../../src/yoya.core.js';",
       '',
       'export function Loose(props) {',
-      '  return {',
-      '    render() {',
-      "      const box = div((root) => root.className('loose'));",
-      '      return box;',
-      '    },',
-      '    touch() {',
-      '      return props;',
-      '    }',
-      '  };',
+      '  if (props.dense) {',
+      "    return div((root) => root.className('dense'));",
+      '  }',
+      '',
+      "  return div((root) => root.className('loose'));",
       '}',
       ''
     ].join('\n');

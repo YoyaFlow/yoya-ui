@@ -155,7 +155,8 @@ describe('同一模块的组件调用点链接（票 07）', () => {
   it('子组件编不了 → 调用点原样保留（源码不动，走通用路径）', async () => {
     const broken = source.replace(
       "    chip.attr('data-tone', tone);",
-      "    chip.attr('data-tone', tone);\n    chip.slotText('nope');"
+      // 动态属性**名**：属性名必须是字符串字面量 → 这个子组件整形状编不出来（父调用点因此回落）
+      "    chip.attr('data-tone', tone);\n    chip.attr(tone, 'nope');"
     );
     const { wired } = await setup('broken-child', broken);
     // 子组件形状认不出 → 不进注册表；父组件因此也整形状回落（源码原样）

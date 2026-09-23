@@ -666,6 +666,22 @@ import { vStatusBadge } from './status-badge.js';
 registerChildFactories(ViewNode, { vStatusBadge });
 ```
 
+Custom **base element factories** (your own tag / host element) can declare themselves with
+`markElementFactory`, so the compiler recognises them without keeping a second name table
+(components need no marker: identity is `vn` + the export name):
+
+```js
+import { markElementFactory } from '@yoyaflow/yoya-ui/core';
+
+export const myWidget = markElementFactory(function myWidget(setup) {
+  return div({ class: 'my-widget' }, setup);
+}, 'my-widget');
+```
+
+The mark is a **symbol key, non-enumerable** (`Symbol.for('@yoyaflow/yoya-ui/element-factory')`): it does not
+pollute the name space or show up in `for…in`/spread. Read it with `isElementFactory(fn)` /
+`elementFactoryTagOf(fn)`.
+
 ## 9. Packaging and publishing suggestions
 
 - Publish as a standalone npm package with `yoya-ui/core` (or `yoya-ui/ui`) in `peerDependencies`.

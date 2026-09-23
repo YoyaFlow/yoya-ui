@@ -5,77 +5,91 @@
       "root": "src",
       "component": null,
       "mode": "element",
-      "files": 452,
-      "candidates": 100,
-      "compiled": 13,
-      "bailed": 87,
-      "skipped": 352,
+      "files": 501,
+      "candidates": 159,
+      "compiled": 43,
+      "bailed": 116,
+      "skipped": 342,
       "compiledFiles": [
+        "actions/float-button.js",
         "client-only.test.js",
+        "compiler/fixtures/factory-alias.js",
+        "compiler/fixtures/hole-call.js",
         "compiler/fixtures/item-fixture.js",
         "compiler/fixtures/panel-fixture.js",
+        "compiler/fixtures/shortcut-link.js",
         "compiler/fixtures/status-dot.js",
         "compiler/fixtures/theme-tag.js",
+        "compiler/fixtures/view-alias.js",
         "core/key-set.test.js",
         "core/node-commit-single-pass.test.js",
         "core/skeleton-plan.test.js",
+        "data-display/avatar.js",
+        "data-display/badge.js",
+        "data-display/carousel.js",
+        "data-display/chart.js",
+        "data-display/code.js",
+        "examples/access-control-docs.js",
         "examples/adapter-signals-usage.js",
         "examples/async-router-user.js",
+        "examples/button-docs.js",
+        "examples/checkbox-docs.js",
         "examples/component-source.js",
+        "examples/demos/access-control.js",
+        "examples/demos/definition-complex.js",
+        "examples/demos/vtreetable.js",
+        "examples/devtools-docs.js",
+        "examples/error-handling-docs.js",
+        "examples/i18n-docs.js",
         "examples/interop-docs.js",
+        "examples/signals-docs.js",
+        "examples/vconfirm-docs.js",
+        "examples/vtreetable-docs.js",
+        "form/cascader.js",
+        "form/controls/field.js",
+        "form/controls/form-item.js",
+        "form/controls/form.js",
+        "form/controls/input.js",
+        "form/controls/select.js",
+        "form/controls/textarea.js",
+        "form/rate.js",
         "svg/icons.js"
       ],
       "bails": [
         {
-          "reason": "调用链不是从 setup 参数出发",
-          "count": 35
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：hstack",
-          "count": 20
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardBody",
-          "count": 13
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardHeader",
-          "count": 13
-        },
-        {
           "reason": "函数体不是单个 return 工厂调用",
-          "count": 13
+          "count": 29
+        },
+        {
+          "reason": "入口工厂不是元素：vstack（根是组件调用 → 保持运行期）",
+          "count": 22
+        },
+        {
+          "reason": "入口工厂不是元素：vCard（根是组件调用 → 保持运行期）",
+          "count": 12
         },
         {
           "reason": "child() 里是组件调用（未编译）：vCard",
           "count": 9
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：vButton",
-          "count": 7
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vstack",
-          "count": 7
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：spacer",
-          "count": 6
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：rebuildable",
-          "count": 4
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardFooter",
-          "count": 4
-        },
-        {
-          "reason": "入口工厂不是元素：vstack",
-          "count": 4
-        },
-        {
           "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
+          "count": 4
+        },
+        {
+          "reason": "生成失败：动态样式只支持节点模式（node）：元素模式的动态样式会按 CSSOM 序列化，与片段里的紧凑格式不一致。可改用字面量、状态类用 toggleClass(name, 值)，或把这一行编成 --mode node",
+          "count": 4
+        },
+        {
+          "reason": "入口工厂不是元素：hstack（根是组件调用 → 保持运行期）",
+          "count": 3
+        },
+        {
+          "reason": "入口工厂不是元素：vContainer（根是组件调用 → 保持运行期）",
+          "count": 3
+        },
+        {
+          "reason": "入口工厂不是元素：vForm（根是组件调用 → 保持运行期）",
           "count": 3
         },
         {
@@ -83,7 +97,7 @@
           "count": 3
         },
         {
-          "reason": "条件 / 循环里只支持加结构（收到 child）",
+          "reason": "条件 / 循环里的语句含结构（本轮不编）",
           "count": 3
         },
         {
@@ -95,39 +109,19 @@
           "count": 3
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：ariaLabel",
+          "reason": "keyed() 的行工厂体不是单一 return 工厂调用",
+          "count": 3
+        },
+        {
+          "reason": "入口工厂不是元素：vInput（根是组件调用 → 保持运行期）",
           "count": 2
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：menuContent",
+          "reason": "入口工厂不是元素：vTable（根是组件调用 → 保持运行期）",
           "count": 2
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：vCard",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vContainer",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vFormItem",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vHeader",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vInput",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vRouterView",
-          "count": 2
-        },
-        {
-          "reason": "条件 / 循环里的语句含结构（本轮不编）",
+          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
           "count": 2
         },
         {
@@ -147,6 +141,10 @@
           "count": 2
         },
         {
+          "reason": "child() 里是组件调用（未编译）：vLink",
+          "count": 2
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：vPagination",
           "count": 2
         },
@@ -156,6 +154,10 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：vScroll",
+          "count": 2
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vSlot",
           "count": 2
         },
         {
@@ -175,187 +177,99 @@
           "count": 2
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：actions",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：background",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：brand",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：container",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：divider",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：first",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：gap",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：grid",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：height",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：id",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：maxWidth",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：onFrame",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：onReady",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：padding",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：responsive",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：second",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：stack",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：threeLib",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：values",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vAside",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCheckboxes",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vFooter",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：viewport",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vLink",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMain",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMasonry",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMenu",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vNavbar",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vRow",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vSelect",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vSidebar",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTable",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTbody",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTextarea",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTreeTable",
-          "count": 1
-        },
-        {
           "reason": "不是元素工厂（组件或未知 API）：whenFailed",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vCode",
+          "reason": "内容助手的参数不是构造参数（骨架只支持把内容交给调用方）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vInput",
+          "reason": "入口工厂不是元素：center（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vRate",
+          "reason": "入口工厂不是元素：flex（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vSelect",
+          "reason": "入口工厂不是元素：mobileLayout（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vSwitch",
+          "reason": "入口工厂不是元素：stack（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTextarea",
+          "reason": "入口工厂不是元素：vBody（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTimer",
+          "reason": "入口工厂不是元素：vCode（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTimerRange",
+          "reason": "入口工厂不是元素：vNavbar（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vUpload",
+          "reason": "入口工厂不是元素：vRate（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
+          "reason": "入口工厂不是元素：vSelect（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSidebar（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSplitPanel（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSwitch（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTextarea（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vThree（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimer（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimerRange（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vUpload（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 box：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 counter：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 rootNode：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 sourceDialog：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 liveDemo：产物不执行组件函数体，这个形状走通用路径",
           "count": 1
         },
         {
@@ -363,7 +277,11 @@
           "count": 1
         },
         {
-          "reason": "条件 / 循环里的结构不可编：不是元素工厂（组件或未知 API）：vSymbolButton",
+          "reason": "生成失败：值位置引用了局部变量 scopeRef：产物不执行组件函数体，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：局部声明的初始化表达式里出现节点对象 / 元素工厂",
           "count": 1
         },
         {
@@ -375,11 +293,31 @@
           "count": 1
         },
         {
+          "reason": "条件 / 循环里的结构不可编：子工厂 li 的 setup 没有参数",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：attr() 属性名不是字符串字面量",
+          "count": 1
+        },
+        {
           "reason": "条件 / 循环里只支持加结构（收到 table）",
           "count": 1
         },
         {
           "reason": "子工厂 button 的动态实参后面还有参数（顺序无法保证）",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 div 的动态实参后面还有参数（顺序无法保证）",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 span 的 setup 没有参数",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 span 的动态实参后面还有参数（顺序无法保证）",
           "count": 1
         },
         {
@@ -392,6 +330,10 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：ApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：buildTable",
           "count": 1
         },
         {
@@ -412,6 +354,14 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：HtmlNativeApiSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：HtmlNativeDemoSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：KeyedTableDemoSection",
           "count": 1
         },
         {
@@ -468,6 +418,10 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：vCheckbox",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vClientOnly",
           "count": 1
         },
         {
@@ -615,6 +569,10 @@
           "count": 1
         },
         {
+          "reason": "child() 里是组件调用（未编译）：vThead",
+          "count": 1
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：vTransition",
           "count": 1
         },
@@ -635,7 +593,19 @@
           "count": 1
         },
         {
+          "reason": "options 的 spread 只认绑定名（`...rest`），认不出就整体回落",
+          "count": 1
+        },
+        {
+          "reason": "options 里有非静态键",
+          "count": 1
+        },
+        {
           "reason": "styles() 只用对象字面量形式",
+          "count": 1
+        },
+        {
+          "reason": "vNode 组件的 setup 不是单一 return 视图",
           "count": 1
         }
       ]
@@ -644,109 +614,65 @@
       "root": "src/examples",
       "component": null,
       "mode": "element",
-      "files": 135,
-      "candidates": 80,
-      "compiled": 4,
-      "bailed": 76,
-      "skipped": 55,
+      "files": 136,
+      "candidates": 82,
+      "compiled": 16,
+      "bailed": 66,
+      "skipped": 54,
       "compiledFiles": [
+        "access-control-docs.js",
         "adapter-signals-usage.js",
         "async-router-user.js",
+        "button-docs.js",
+        "checkbox-docs.js",
         "component-source.js",
-        "interop-docs.js"
+        "demos/access-control.js",
+        "demos/definition-complex.js",
+        "demos/vtreetable.js",
+        "devtools-docs.js",
+        "error-handling-docs.js",
+        "i18n-docs.js",
+        "interop-docs.js",
+        "signals-docs.js",
+        "vconfirm-docs.js",
+        "vtreetable-docs.js"
       ],
       "bails": [
         {
-          "reason": "调用链不是从 setup 参数出发",
-          "count": 35
+          "reason": "入口工厂不是元素：vstack（根是组件调用 → 保持运行期）",
+          "count": 21
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：hstack",
-          "count": 20
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardBody",
-          "count": 13
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardHeader",
-          "count": 13
+          "reason": "入口工厂不是元素：vCard（根是组件调用 → 保持运行期）",
+          "count": 12
         },
         {
           "reason": "函数体不是单个 return 工厂调用",
-          "count": 12
+          "count": 9
         },
         {
           "reason": "child() 里是组件调用（未编译）：vCard",
           "count": 8
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：vstack",
-          "count": 7
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：spacer",
-          "count": 6
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vButton",
-          "count": 6
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCardFooter",
-          "count": 4
-        },
-        {
-          "reason": "入口工厂不是元素：vstack",
-          "count": 4
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：rebuildable",
-          "count": 3
-        },
-        {
           "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
           "count": 3
         },
         {
-          "reason": "条件 / 循环里只支持加结构（收到 child）",
+          "reason": "入口工厂不是元素：hstack（根是组件调用 → 保持运行期）",
+          "count": 3
+        },
+        {
+          "reason": "入口工厂不是元素：vContainer（根是组件调用 → 保持运行期）",
+          "count": 3
+        },
+        {
+          "reason": "入口工厂不是元素：vForm（根是组件调用 → 保持运行期）",
           "count": 3
         },
         {
           "reason": "attr() 属性名不是字符串字面量",
           "count": 3
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：ariaLabel",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：menuContent",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCard",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vContainer",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vFormItem",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vHeader",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vInput",
-          "count": 2
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vRouterView",
-          "count": 2
         },
         {
           "reason": "条件 / 循环里的语句含结构（本轮不编）",
@@ -765,187 +691,107 @@
           "count": 2
         },
         {
-          "reason": "不是元素工厂（组件或未知 API）：actions",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：background",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：brand",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：container",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：divider",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：first",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：gap",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：grid",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：height",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：id",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：maxWidth",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：onFrame",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：onReady",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：padding",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：responsive",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：second",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：stack",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：threeLib",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：values",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vAside",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vCheckboxes",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vFooter",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：viewport",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vLink",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMain",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMasonry",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vMenu",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vNavbar",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vRow",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vSelect",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vSidebar",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTable",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTbody",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTextarea",
-          "count": 1
-        },
-        {
-          "reason": "不是元素工厂（组件或未知 API）：vTreeTable",
-          "count": 1
-        },
-        {
           "reason": "不是元素工厂（组件或未知 API）：whenFailed",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vCode",
+          "reason": "入口工厂不是元素：center（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vInput",
+          "reason": "入口工厂不是元素：flex（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vRate",
+          "reason": "入口工厂不是元素：mobileLayout（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vSelect",
+          "reason": "入口工厂不是元素：stack（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vSwitch",
+          "reason": "入口工厂不是元素：vBody（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTextarea",
+          "reason": "入口工厂不是元素：vCode（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTimer",
+          "reason": "入口工厂不是元素：vInput（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vTimerRange",
+          "reason": "入口工厂不是元素：vNavbar（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vUpload",
+          "reason": "入口工厂不是元素：vRate（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
-          "reason": "条件 / 循环里的结构不可编：不是元素工厂（组件或未知 API）：vSymbolButton",
+          "reason": "入口工厂不是元素：vSelect（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSidebar（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSplitPanel（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vSwitch（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTable（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTextarea（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vThree（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimer（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vTimerRange（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vUpload（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 box：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 counter：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：产物要写外层名字 sourceDialog：产物拿到的是值（scope 解构），写不回去，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 liveDemo：产物不执行组件函数体，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：局部声明的初始化表达式里出现节点对象 / 元素工厂",
           "count": 1
         },
         {
@@ -954,6 +800,10 @@
         },
         {
           "reason": "条件 / 循环里的结构不可编：条件 / 循环里只支持加结构（收到 pre）",
+          "count": 1
+        },
+        {
+          "reason": "条件 / 循环里的结构不可编：attr() 属性名不是字符串字面量",
           "count": 1
         },
         {
@@ -977,6 +827,14 @@
           "count": 1
         },
         {
+          "reason": "child() 里是组件调用（未编译）：HtmlNativeDemoSection",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：KeyedTableDemoSection",
+          "count": 1
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：renderThemeDemo",
           "count": 1
         },
@@ -993,7 +851,15 @@
           "count": 1
         },
         {
+          "reason": "child() 里是组件调用（未编译）：vClientOnly",
+          "count": 1
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：vLanguageSwitch",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vLink",
           "count": 1
         },
         {

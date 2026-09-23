@@ -16,11 +16,13 @@
 import {
   ViewNode,
   applySetupValue,
+  applyInlineStyle,
   appendNodeChild as linkNodeChild,
   applyAttribute
 } from '../core/node.js';
 import { computed, isSignal } from '../core/signals/handle.js';
 import { isKeySet } from '../core/key-set.js';
+import { optionKindOf } from '../core/setup-keys.js';
 
 /**
  * 生成代码链接子节点：与 `child()` 同一口径——登记进父节点的 `_children`，**并**把子节点声明的
@@ -46,6 +48,16 @@ export function appendNodeChild(node, child) {
  * 多根组件（一次 fragment 落实的若干根）按 DOM 组整体搬，与核心的 `nodeDomGroup()` 同口径。
  */
 export function mountNodeAt(node, container, before) {
+  // **条件挂载**（`vText(x).mountable(cond)` 这类）：此刻不挂的子树不能摆——通用路径按状态决定
+  // 插不插（`_syncChildMounted` 自己会插 / 摘），硬摆就多出节点（实测多出空文本节点）。
+  // 与 `keyedRows.place()` 同一条规矩：已挂 → 摆到位置；没挂 → 摘掉（没插过就什么都不做）。
+  if (typeof node?.isMounted === 'function' && !node.isMounted()) {
+    const element = node._el;
+    if (element?.parentNode === container) {
+      element.remove();
+    }
+    return node;
+  }
   const group = node?._fragmentDom?.length ? node._fragmentDom : node?._el ? [node._el] : [];
   // 已经在位置上时 `insertBefore` 是等价的空操作（移动到自己原来的位置）
   group.forEach((element) => {
@@ -343,6 +355,33 @@ export function mountRuntimeChildren(node, value, places, before) {
   return places;
 }
 
+/**
+ * **运行期语句的"洞"**（票 21 §2.1.7）：把一条父方法调用（`node.hstack(…)` / `node.vTd(…)`）
+ * **原样在产物节点上跑**，跑完把**新加的子节点**按边界摆位。
+ *
+ * 为什么不认方法名：父方法就是通用路径那个注册过的快捷方法（`registerChildFactories`）——
+ * 调它就是调通用路径本身，语义天然同源；编译器只需要知道"它往当前节点加了子节点"，
+ * 于是按通用做法（`child()` 差集 + 边界摆位）把位置补回来。第三方注册的工厂同样适用。
+ */
+export function mountRuntimeChildrenFrom(node, run, places, before) {
+  const previous = node._children;
+  const start = previous ? previous.length : 0;
+  run();
+  const children = node._children;
+  if (!children || children.length === start) {
+    return places;
+  }
+
+  for (let index = start; index < children.length; index += 1) {
+    const child = children[index];
+    if (children.indexOf(child) < index) {
+      continue;
+    }
+    places.push([child, before]);
+  }
+  return places;
+}
+
 /** 值位置（元素模式）的取值语义：句柄直接用；零参 reader 折成派生信号（依赖自动收集）。 */
 function liveHandle(value) {
   if (typeof value === 'function') {
@@ -487,6 +526,117 @@ export function pushOff(offs, off) {
     offs.push(off);
   }
   return off;
+}
+
+/**
+ * 运行期 options 合并（票 18）：把**整段** options 对象（可能含 `...rest`）按核心那张键分类表
+ * （`src/core/setup-keys.js`）落到既有元素上，键序照对象自身的键序——与核心 `_setupObject` 同表同序。
+ *
+ * 为什么不做"构建期把 rest 与静态键拼成一份 JSON"：`rest` 的键要到运行期才知道，而且
+ * `attrs` / `style` 在通用路径里是**整包覆盖**（对象字面量语义），构建期自算必错。
+ * 所以这里只做"按对象自身逐键落位"，不新增语义。
+ *
+ * `children` 一档：编译单元的形参口径要求把 `children` 从 props 解构出来（票 18 §2.2），
+ * 所以正常不会走到；真走到就按通用路径的次序落在**结构之前**（内容在前、结构在后）。
+ *
+ * 返回退订函数（句柄值才有；普通值返回 null），由产物 `pushOff` 收口。
+ */
+export function applyRuntimeOptions(element, options) {
+  if (!element || !options || typeof options !== 'object') {
+    return null;
+  }
+
+  const offs = [];
+
+  for (const [key, value] of Object.entries(options)) {
+    const kind = optionKindOf(key);
+
+    if (kind === 'class') {
+      addClassText(element, value);
+      continue;
+    }
+
+    if (kind === 'attrs') {
+      Object.entries(value ?? {}).forEach(([name, attrValue]) => {
+        pushOff(offs, setAttr(element, name, attrValue));
+      });
+      continue;
+    }
+
+    if (kind === 'style') {
+      Object.entries(value ?? {}).forEach(([name, styleValue]) => {
+        pushOff(offs, setStyleValue(element, name, styleValue));
+      });
+      continue;
+    }
+
+    if (kind === 'children') {
+      insertOptionsChildren(element, value);
+      continue;
+    }
+
+    if (key.startsWith('on') && typeof value === 'function') {
+      element.addEventListener(key.slice(2).toLowerCase(), value);
+      continue;
+    }
+
+    if (key === 'mountable') {
+      mountableAt(element, value);
+      continue;
+    }
+
+    pushOff(offs, setAttr(element, key, value));
+  }
+
+  return offs.length > 0 ? () => offs.forEach((off) => off()) : null;
+}
+
+/**
+ * 元素通道的样式写：直接复用核心的 `applyInlineStyle`（`--x` 走 setProperty、其余按
+ * camelCase 索引写），不另写一套样式语义。
+ */
+function setStyleValue(element, name, value) {
+  const write = (next) => applyInlineStyle(element, name, next);
+  const handle = liveHandle(value);
+  if (!handle) {
+    write(value);
+    return null;
+  }
+
+  write(handle.value);
+  return handle.subscribe(write);
+}
+
+/**
+ * `options.children` 的元素通道落位：通用路径里 options 先应用 → 内容在**结构之前**。
+ * 只处理元素通道能承载的值（字符串 / 数字 / DOM 节点 / 视图节点 / 数组）；其余报错不静默。
+ */
+function insertOptionsChildren(element, value) {
+  const insert = (item) => {
+    if (item === null || item === undefined || item === false) {
+      return;
+    }
+    if (Array.isArray(item)) {
+      item.forEach(insert);
+      return;
+    }
+    if (typeof item === 'string' || typeof item === 'number') {
+      element.insertBefore(element.ownerDocument.createTextNode(String(item)), element.firstChild);
+      return;
+    }
+    if (item instanceof ViewNode) {
+      element.insertBefore(item.renderDom(), element.firstChild);
+      return;
+    }
+    if (item.nodeType) {
+      element.insertBefore(item, element.firstChild);
+      return;
+    }
+    throw new TypeError(
+      `compiled options.children received ${typeof item}: pass a string / number / node value`
+    );
+  };
+  insert(value);
 }
 
 /**

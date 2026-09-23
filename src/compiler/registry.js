@@ -15,7 +15,12 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, posix, relative, resolve } from 'node:path';
 import { parse } from '@babel/parser';
-import { collectImports, findBuilderFunction, paramBoundNames } from './analyze.js';
+import {
+  collectImports,
+  findBuilderFunction,
+  paramBoundNames,
+  resolveElementBlock
+} from './analyze.js';
 import { componentKeyOf, normalizeModulePath } from './component-key.js';
 import { compileSource, DEFAULT_RUNTIME } from './compile.js';
 import { isStaticLibraryModule } from './static-values.js';
@@ -49,7 +54,10 @@ export function findViewExpression(source, fn, imports = null) {
   const statements = fn.body.type === 'BlockStatement' ? fn.body.body : [];
   const returned =
     fn.body.type === 'BlockStatement'
-      ? statements.find((statement) => statement.type === 'ReturnStatement')?.argument
+      ? resolveElementBlock(
+          statements.find((statement) => statement.type === 'ReturnStatement')?.argument,
+          statements
+        )
       : fn.body;
   const paramsSource = fn.params.map((param) => source.slice(param.start, param.end)).join(', ');
 
@@ -74,12 +82,21 @@ export function findViewExpression(source, fn, imports = null) {
     if (setup?.type !== 'ArrowFunctionExpression') {
       return { error: 'vNode 组件只支持 `vNode((api) => …)` 箭头形式' };
     }
-    const setupReturn =
-      setup.body.type === 'BlockStatement'
-        ? setup.body.body.length === 1 && setup.body.body[0].type === 'ReturnStatement'
-          ? setup.body.body[0].argument
-          : null
-        : setup.body;
+    // setup 体：允许"声明 + 末尾一条 return"（`const view = …; return view;` 是叶子组件的常见写法，
+    // 票 21 §2.1 第 3 条）；命令赋值（`api.x = …`）仍然不认——那是"带命令的组件"，不由注册表链接。
+    let setupReturn = null;
+    if (setup.body.type === 'BlockStatement') {
+      const setupStatements = setup.body.body;
+      const last = setupStatements[setupStatements.length - 1];
+      const declarationsOnly = setupStatements
+        .slice(0, -1)
+        .every((statement) => statement.type === 'VariableDeclaration');
+      if (last?.type === 'ReturnStatement' && declarationsOnly) {
+        setupReturn = resolveElementBlock(last.argument, setupStatements);
+      }
+    } else {
+      setupReturn = resolveElementBlock(setup.body, []);
+    }
     if (!setupReturn) {
       return { error: 'vNode 组件只支持「setup 只 return 视图」（命令方法 / 额外语句本轮不编）' };
     }
@@ -171,7 +188,6 @@ export function compileComponent(options) {
   if (view.error) {
     return failed(file, exportName, view.error);
   }
-
   // 形态 C（类节点组件）：工厂只是把参数转发给类，编译单元是**类构造体** —— 直接在原模块上
   // 分析（import / const 都在手边，不用合成源码），`className` 让分析器去读构造体。
   // 形态 A / B / vNode：视图表达式原样搬进合成源码，**模块级的 import 与 const 一并带上**：
@@ -306,7 +322,9 @@ export function buildComponentRegistry(options) {
     const compiled = compileComponent({
       source,
       file,
-      export: entry.export,
+      // 快捷名条目（`vXxx`）编译的是它的**定义**（`VXxx`），但登记在快捷名的键上（票 15 §Q4）：
+      // 调用点写的是快捷名，注册表要能按它查到同一份产物。
+      export: entry.definition ?? entry.export,
       core,
       runtime,
       whitelist,
@@ -318,6 +336,32 @@ export function buildComponentRegistry(options) {
 
     if (!compiled.compiled) {
       skipped.push({ key, bails: compiled.bails });
+      return;
+    }
+    // 注册表条目是"片段 + 位置写"的实例化模块（导出 `bind` / `render`）——只有**元素产物**才有。
+    // 分析期要求节点产物的组件（运行期子节点 / 洞 / 条件里的 `child(…)`）发不出这两个导出：
+    // 不当条目登记（调用点不链接它，照旧走通用路径），绝不产出"编得过、跑起来缺 bind"的条目。
+    if (compiled.plan?.mode !== 'element') {
+      skipped.push({
+        key,
+        bails: [{ reason: '产物是节点（注册表链接要的是"片段 + 位置写"的实例化模块）', at: null }]
+      });
+      return;
+    }
+    // 视图用到**组件体局部量**（`const liveDemo = demo.component()` 这类实例变量）：条目模块只能
+    // `import` 原模块（拿不到组件自己的闭包），这些名字在条目里是 undefined，调用点还会把它们当
+    // "模块级名字"提升进自己的 scope（实测 docs 页面的 `liveDemo is not defined`）。
+    // 这种组件**不登记** → 调用点不链接它，照旧走通用路径。
+    if ((compiled.perCallScope ?? []).length > 0) {
+      skipped.push({
+        key,
+        bails: [
+          {
+            reason: `视图用到组件体局部量 ${compiled.perCallScope.join(', ')}：条目重建不了它（不登记）`,
+            at: null
+          }
+        ]
+      });
       return;
     }
 

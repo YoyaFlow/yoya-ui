@@ -1,4 +1,9 @@
-import { ElementNode, registerChildFactories, VTextNode } from '../core/node.js';
+import {
+  ElementNode,
+  markElementFactory,
+  registerChildFactories,
+  VTextNode
+} from '../core/node.js';
 import { isSignal } from '../core/signals/handle.js';
 import { HtmlElementNode } from '../html/index.js';
 
@@ -180,7 +185,7 @@ const svgChildElementDefinitions = [
  * 为 SVG 标签创建工厂函数。
  */
 function createSvgElementFactory(tagName) {
-  return function svgElementFactory(...setups) {
+  const factory = function svgElementFactory(...setups) {
     const node = new SvgElementNode(tagName);
     if (tagName === 'svg') {
       node.style('display', 'block');
@@ -194,6 +199,7 @@ function createSvgElementFactory(tagName) {
 
     return node;
   };
+  return markElementFactory(factory, tagName);
 }
 
 /**

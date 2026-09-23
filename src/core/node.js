@@ -1787,7 +1787,7 @@ export function toKebabStyleName(name) {
  * 它在 `CSSStyleDeclaration` 上不是索引属性，`el.style['--x'] = …` 只会写成 JS 属性、进不了 DOM。
  * （SSR 的 `serializeStyles` 不受影响：`toKebabStyleName` 不动 `--x` 这种键名。）
  */
-function applyInlineStyle(element, name, value) {
+export function applyInlineStyle(element, name, value) {
   if (String(name).startsWith('--')) {
     element.style.setProperty(name, value === null || value === undefined ? '' : String(value));
     return;
@@ -4735,11 +4735,45 @@ export class ElementNode extends ViewNode {
   }
 }
 
+// 基础元素工厂的标识（只有 html / svg 的基础元素快捷工厂带它，组件不带）：
+// "这个调用是不是基础元素工厂"由函数对象本身回答，不必查名字表 —— 别名导入
+// （`import { div as d }`）、入口再导出、第三方自建工厂都能自报身份；编译器因此能快速判断
+// "当前块是不是结构 / 需不需要编"。
+//
+// 口径：符号键 + 非枚举（不污染名字空间、不进 for…in / spread / 调试输出）；用 Symbol.for 注册，
+// 所以跨包副本也成立（属性跟着函数对象走，不依赖模块级表）；值 = 规范标签名（别名共享同一函数，
+// 拿到的也是规范标签）。组件不加：组件身份走 `vn` 属性契约 + 导出名。
+export const ELEMENT_FACTORY_MARK = Symbol.for('@yoyaflow/yoya-ui/element-factory');
+
+/** 给基础元素工厂打标记（第三方自建工厂走这条 opt-in）。返回同一个函数。 */
+export function markElementFactory(factory, tagName) {
+  Object.defineProperty(factory, ELEMENT_FACTORY_MARK, {
+    value: String(tagName),
+    enumerable: false,
+    configurable: true,
+    writable: false
+  });
+  return factory;
+}
+
+/** 读基础元素工厂的规范标签名；不是基础元素工厂返回 null。 */
+export function elementFactoryTagOf(value) {
+  if (typeof value !== 'function') {
+    return null;
+  }
+  return value[ELEMENT_FACTORY_MARK] ?? null;
+}
+
+/** 这个函数是不是基础元素工厂（html / svg 的基础元素快捷工厂，或第三方声明过的）。 */
+export function isElementFactory(value) {
+  return elementFactoryTagOf(value) !== null;
+}
+
 /**
  * 为标签创建工厂函数；默认使用 ElementNode，HTML/SVG 层可以传入自己的节点类。
  */
 export function createElementFactory(tagName, NodeClass = ElementNode) {
-  return function elementFactory(first = null, second = null, third = null) {
+  const factory = function elementFactory(first = null, second = null, third = null) {
     const node = new NodeClass(tagName);
     applySetupValue(node, first);
     applySetupValue(node, second);
@@ -4754,6 +4788,7 @@ export function createElementFactory(tagName, NodeClass = ElementNode) {
 
     return node;
   };
+  return markElementFactory(factory, tagName);
 }
 
 /**

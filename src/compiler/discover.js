@@ -12,25 +12,17 @@
 import { resolve } from 'node:path';
 import { parse } from '@babel/parser';
 import { elementWhitelistOf } from './compile.js';
-const PACKAGE_CORE = '@yoyaflow/yoya-ui/core';
+import { isCoreLikeSpecifier, resolveElementBlock } from './analyze.js';
 /** 统一的路径比较口径（打包器给的 id 可能是 Windows 分隔符）。 */
 export const normalizePath = (path) => resolve(path).replace(/\\/g, '/');
-
-/** 这个导入来源算不算「库的 core」：包路径、或仓库内的 yoya.core.js。 */
-function isCoreSpecifier(specifier) {
-  return (
-    typeof specifier === 'string' &&
-    (specifier === PACKAGE_CORE ||
-      specifier.endsWith('/yoya-ui/core') ||
-      specifier.endsWith('yoya.core.js'))
-  );
-}
 
 /** 收集模块里「从 core 导入的元素工厂 / `vNode`」等名字：判定「返回的是不是视图」用。 */
 function coreBindingsOf(ast, whitelist) {
   const bindings = new Map();
   ast.program.body.forEach((statement) => {
-    if (statement.type !== 'ImportDeclaration' || !isCoreSpecifier(statement.source.value)) {
+    // 与编译器本体**共用同一份** core 口径（票 21）：包入口、仓库内 `yoya.*.js` / `index.js`、
+    // 以及 `core/*.js` 子系统都算——各写一份判断迟早漂移（这里就漏过 `../core/v-node.js`）。
+    if (statement.type !== 'ImportDeclaration' || !isCoreLikeSpecifier(statement.source.value)) {
       return;
     }
     statement.specifiers.forEach((specifier) => {
@@ -71,7 +63,8 @@ export function topLevelFunctions(ast) {
  *
  * 允许 return 之前有**声明 / 表达式语句**——组件体里先把组件实例存进变量（
  * `const liveDemo = demo.component()`）再在 render 里当子节点用，是文档页那批的主流形状；
- * 视图本身仍要求是**单一条 return 的工厂调用**（多语句 / 分支的结构留给通用路径）。
+ * 视图本身要求是**单一条 return 的工厂调用**，或者"先存进变量再返回"（`const view = …; return view;`，
+ * 票 21 §2.1 第 3 条：按唯一声明的初始化表达式定位）；分支 / 多次赋值留给通用路径。
  * 控制流 / 嵌套函数声明一概不认：它们能让"那条 return 是不是唯一出口"变成运行期问题。
  */
 function returnedView(fn) {
@@ -89,7 +82,8 @@ function returnedView(fn) {
       (statement) =>
         statement.type === 'VariableDeclaration' || statement.type === 'ExpressionStatement'
     );
-  return plainLeading ? last.argument : null;
+  // 找"这个单元产出的那段基础元素组合块"（位置无关：直接产出 / 先存变量再产出都算）
+  return plainLeading ? resolveElementBlock(last.argument, statements) : null;
 }
 
 /**

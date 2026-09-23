@@ -63,6 +63,8 @@ export function compileSource(options) {
     nodeAlways = false,
     // 调用点链接的口径：`bind`（注册表 + bindComponent + 哈希回落）或 `inline`（同模块内联）
     linking = 'bind',
+    // 元素通道 → 节点通道的自动切换开关（内部用：换完这一遍就不再换，防重入）
+    allowChannelSwitch = true,
     // 额外的作用域名字（内联进来的子组件用到的模块级名字：调用方产物一并解构出来）
     scopeExtras: extraScope = []
   } = options;
@@ -109,6 +111,18 @@ export function compileSource(options) {
   result.bails = analysis.bails;
   if (!analysis.entry || result.bails.length > 0) {
     return result;
+  }
+
+  // 视图变量被读过（`view.attr(…)` 这类运行期操作）→ 产物必须是**节点**：
+  // 元素通道的产物是 `{ el, … }`，撑不起原文对它的用法。这不是"能不能编"的问题，
+  // 只是通道选择（票 21 §2.1.3）：换到节点通道重来一遍（`allowChannelSwitch` 防重入）。
+  if (mode === 'element' && analysis.needsNodeProduct && allowChannelSwitch) {
+    return compileSource({
+      ...options,
+      mode: 'node',
+      nodeAlways: true,
+      allowChannelSwitch: false
+    });
   }
 
   // `keyed` 的行工厂子单元：**先编译**（产物形态与普通行单元完全一致），再渲染主模块——
@@ -205,6 +219,20 @@ export function compileSource(options) {
     // 注意**不能**并进父产物的 scope：`item` 这类是父产物自己的局部量（在产物里声明）。
     controlFrames = controlResults.map((unit) => unit.scope ?? []);
     result.controls = controlResults;
+  }
+
+  // 子单元（行 / 锚点）自己需要节点产物时，父必须跟着换通道——元素通道的列表对账器只认
+  // `{ el, … }`，父用元素、子用节点就会错配。换通道后重跑一遍（防重入）。
+  const nestedNeedsNode = [...rowResults, ...controlResults].some(
+    (nested) => nested.compiled && nested.plan?.mode === 'node'
+  );
+  if (mode === 'element' && nestedNeedsNode && allowChannelSwitch) {
+    return compileSource({
+      ...options,
+      mode: 'node',
+      nodeAlways: true,
+      allowChannelSwitch: false
+    });
   }
 
   try {
