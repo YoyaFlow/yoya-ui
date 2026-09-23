@@ -39,7 +39,7 @@ export const buttonDemoDefinitions = Object.freeze([
     description: 'loading 适合异步操作，disabled 适合暂时不可执行的操作。',
     component: ButtonStatesExample1,
     sourceComponent: ButtonStatesExample1,
-    imports: ['hstack', 'vButton', 'vText']
+    imports: ['hstack', 'ref', 'vButton', 'vText']
   },
   {
     id: 'form',
@@ -47,7 +47,7 @@ export const buttonDemoDefinitions = Object.freeze([
     description: '通过 formType 指定 submit 或 reset，保持原生表单语义。',
     component: ButtonFormExample1,
     sourceComponent: ButtonFormExample1,
-    imports: ['hstack', 'vButton', 'vForm', 'vText']
+    imports: ['hstack', 'ref', 'vButton', 'vForm', 'vText']
   }
 ]);
 

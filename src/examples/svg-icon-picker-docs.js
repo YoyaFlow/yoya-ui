@@ -6,6 +6,7 @@ import {
   HeartOutlined,
   HomeOutlined,
   PlusOutlined,
+  ref,
   SearchOutlined,
   section,
   SettingsOutlined,
@@ -19,10 +20,10 @@ import { ComponentSource } from './component-source.js';
 
 // 核心演示：只包含选择器内容，不包含 Card。
 function SvgIconPickerBasicExample() {
-  const output = vText('StarOutlined');
+  const output = ref('StarOutlined');
   const picker = vSvgIconPicker((picker) => {
     picker.value('StarOutlined');
-    picker.onChange((name) => output.textContent(name || '未选择'));
+    picker.onChange((name) => (output.value = name || '未选择'));
   });
 
   return div((body) => {
@@ -31,13 +32,13 @@ function SvgIconPickerBasicExample() {
       row.style('marginTop', '10px');
       row.span('当前图标');
       row.spacer();
-      row.code((el) => el.attr('data-svg-icon-picker-output', 'true').child(output));
+      row.code((el) => el.attr('data-svg-icon-picker-output', 'true').child(vText(output)));
     });
   });
 }
 
 function SvgIconPickerCustomExample() {
-  const output = vText('未选择');
+  const output = ref('未选择');
   const picker = vSvgIconPicker((picker) => {
     picker.icons([
       'StarOutlined',
@@ -46,7 +47,7 @@ function SvgIconPickerCustomExample() {
       'BellOutlined',
       'HomeOutlined'
     ]);
-    picker.onChange((name) => output.textContent(name || '未选择'));
+    picker.onChange((name) => (output.value = name || '未选择'));
   });
 
   return div((body) => {
@@ -56,13 +57,13 @@ function SvgIconPickerCustomExample() {
       row.style('marginTop', '10px');
       row.span('当前图标');
       row.spacer();
-      row.code((el) => el.attr('data-svg-icon-picker-custom-output', 'true').child(output));
+      row.code((el) => el.attr('data-svg-icon-picker-custom-output', 'true').child(vText(output)));
     });
   });
 }
 
 function SvgIconPickerLazyExample() {
-  const output = vText('未选择');
+  const output = ref('未选择');
   const factories = [
     StarOutlined,
     HeartOutlined,
@@ -81,7 +82,7 @@ function SvgIconPickerLazyExample() {
   }));
   const picker = vSvgIconPicker((picker) => {
     picker.icons(many);
-    picker.onChange((name) => output.textContent(name || '未选择'));
+    picker.onChange((name) => (output.value = name || '未选择'));
   });
 
   return div((body) => {
@@ -91,7 +92,7 @@ function SvgIconPickerLazyExample() {
       row.style('marginTop', '10px');
       row.span('当前图标');
       row.spacer();
-      row.code((el) => el.attr('data-svg-icon-picker-lazy-output', 'true').child(output));
+      row.code((el) => el.attr('data-svg-icon-picker-lazy-output', 'true').child(vText(output)));
     });
   });
 }
@@ -155,7 +156,7 @@ const svgIconPickerDemos = [
   {
     component: SvgIconPickerBasicDemo,
     id: 'basic',
-    imports: ['div', 'vSvgIconPicker', 'vText'],
+    imports: ['div', 'ref', 'vSvgIconPicker', 'vText'],
     sourceComponent: SvgIconPickerBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'
@@ -163,7 +164,7 @@ const svgIconPickerDemos = [
   {
     component: SvgIconPickerCustomDemo,
     id: 'custom',
-    imports: ['div', 'vSvgIconPicker', 'vText'],
+    imports: ['div', 'ref', 'vSvgIconPicker', 'vText'],
     sourceComponent: SvgIconPickerCustomExample,
     sourceTitle: '自定义图标集源码',
     title: '自定义图标集'
@@ -173,6 +174,7 @@ const svgIconPickerDemos = [
     id: 'lazy',
     imports: [
       'div',
+      'ref',
       'vSvgIconPicker',
       'vText',
       'BellOutlined',

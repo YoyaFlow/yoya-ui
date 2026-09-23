@@ -1,5 +1,6 @@
 import {
   div,
+  ref,
   section,
   vBadge,
   vCard,
@@ -57,7 +58,7 @@ const formDocsDefinition = Object.freeze({
       component: BasicFormCard,
       description: '用 label 和控件直接组成字段，提交时统一读取 values。',
       id: 'basic',
-      imports: ['vForm', 'vText'],
+      imports: ['ref', 'vForm', 'vText'],
       sourceComponent: FormExample1,
       sourceTitle: '基础表单核心源码',
       title: '基础表单'
@@ -66,7 +67,7 @@ const formDocsDefinition = Object.freeze({
       component: ValidatedFormCard,
       description: '提交时校验必填字段，并通过 error 状态把问题反馈到控件上。',
       id: 'validated',
-      imports: ['vForm', 'vFormItem', 'vInput', 'vSelect', 'vText'],
+      imports: ['ref', 'vForm', 'vFormItem', 'vInput', 'vSelect', 'vText'],
       sourceComponent: FormExample2,
       sourceTitle: '表单校验核心源码',
       title: '表单校验'
@@ -75,7 +76,7 @@ const formDocsDefinition = Object.freeze({
       component: CustomCollectCard,
       description: '非标准组件通过 collectValue 注册取值函数，vForm 可以像标准控件一样读取。',
       id: 'collect-value',
-      imports: ['div', 'vForm', 'vFormItem', 'vNode', 'vText'],
+      imports: ['div', 'ref', 'vForm', 'vFormItem', 'vNode', 'vText'],
       sourceComponent: FormExample3,
       sourceTitle: '自定义取值核心源码',
       title: '自定义取值'
@@ -155,7 +156,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldSaveExample1,
       description: '从 vDetail 中读取多个 vField 的值，保存后统一回到查看态。',
       id: 'save',
-      imports: ['vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
+      imports: ['ref', 'vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
       sourceTitle: '保存回填核心源码',
       title: '保存回填'
     },
@@ -163,7 +164,7 @@ const fieldDocsDefinition = Object.freeze({
       component: FieldValidationExample1,
       description: '结合 vDetail 展示 hint 和 error，校验不通过时直接显示在字段下方。',
       id: 'validation',
-      imports: ['vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
+      imports: ['ref', 'vButton', 'vDetail', 'vField', 'vInput', 'vText', 'vstack'],
       sourceTitle: '校验提示核心源码',
       title: '校验提示'
     },
@@ -342,7 +343,7 @@ function CustomCollectCard() {
 }
 
 function FormExample1() {
-  const snapshot = vText('尚未提交');
+  const snapshot = ref('尚未提交');
   const defaults = () => ({
     autoDeploy: true,
     enabled: true,
@@ -397,24 +398,24 @@ function FormExample1() {
       actions.vButton('重置', (button) => {
         button.on('click', () => {
           form.values(defaults());
-          snapshot.textContent('表单已重置');
+          snapshot.value = '表单已重置';
         });
       });
     });
     form.output((output) => {
       output.style('fontSize', '12px');
-      output.child(snapshot);
+      output.child(vText(snapshot));
     });
     form.on('submit', (event) => {
       event.preventDefault();
-      snapshot.textContent(JSON.stringify(form.values()));
+      snapshot.value = JSON.stringify(form.values());
     });
     form.values(defaults());
   });
 }
 
 function FormExample2() {
-  const result = vText('等待提交');
+  const result = ref('等待提交');
 
   return vForm((form) => {
     form.style('gap', '14px');
@@ -446,40 +447,38 @@ function FormExample2() {
     });
     form.output((output) => {
       output.style('fontSize', '12px');
-      output.child(result);
+      output.child(vText(result));
     });
     form.on('submit', (event) => {
       event.preventDefault();
       if (!form.validate()) {
-        result.textContent('请检查必填项');
+        result.value = '请检查必填项';
         return;
       }
-      result.textContent(JSON.stringify(form.values()));
+      result.value = JSON.stringify(form.values());
     });
   });
 }
 
 function FormExample3() {
-  const result = vText('尚未读取');
+  const result = ref('尚未读取');
   const CustomOwnerPicker = () => {
-    let value = 'SRE Team';
-    const status = vText(value);
+    const value = ref('SRE Team');
 
     return vNode((api) => {
-      api.value = () => value;
+      api.value = () => value.value;
 
       return div((node) => {
         node.styles({ alignItems: 'center', display: 'flex', gap: '8px' });
         node.output((output) => {
           output.style('fontWeight', '600');
-          output.child(status);
+          output.child(vText(value));
         });
         ['SRE Team', 'Platform'].forEach((name) => {
           node.vButton(name, (button) => {
             button.variant('secondary');
             button.on('click', () => {
-              value = name;
-              status.textContent(name);
+              value.value = name;
             });
           });
         });
@@ -507,15 +506,15 @@ function FormExample3() {
     });
     form.output((output) => {
       output.style('fontSize', '12px');
-      output.child(result);
+      output.child(vText(result));
     });
     form.on('submit', (event) => {
       event.preventDefault();
       if (!form.validate()) {
-        result.textContent('请选择负责人');
+        result.value = '请选择负责人';
         return;
       }
-      result.textContent(`负责人：${form.values().owner}`);
+      result.value = `负责人：${form.values().owner}`;
     });
   });
 }
@@ -568,7 +567,7 @@ function FieldDetailExample1() {
 }
 
 function FieldSaveExample1() {
-  const saveStatus = vText('尚未保存');
+  const saveStatus = ref('尚未保存');
   const serviceName = vField((field) => {
     field.label('服务名称');
     field.display('api-gateway');
@@ -592,7 +591,7 @@ function FieldSaveExample1() {
   const save = () => {
     serviceName.mode('view');
     owner.mode('view');
-    saveStatus.textContent(`已保存：${serviceName.value()} / ${owner.value()}`);
+    saveStatus.value = `已保存：${serviceName.value()} / ${owner.value()}`;
   };
 
   return vstack((content) => {
@@ -610,7 +609,7 @@ function FieldSaveExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-field-save-status', 'true');
-        output.child(saveStatus);
+        output.child(vText(saveStatus));
       });
     });
     content.hstack((actions) => {
@@ -620,7 +619,7 @@ function FieldSaveExample1() {
         button.on('click', () => {
           serviceName.mode('edit');
           owner.mode('edit');
-          saveStatus.textContent('编辑中');
+          saveStatus.value = '编辑中';
         });
       });
       actions.vButton('保存', (button) => {
@@ -632,7 +631,7 @@ function FieldSaveExample1() {
 }
 
 function FieldValidationExample1() {
-  const validationStatus = vText('等待校验');
+  const validationStatus = ref('等待校验');
   const serviceName = vField((field) => {
     field.label('服务名称');
     field.display('api-gateway');
@@ -649,12 +648,12 @@ function FieldValidationExample1() {
 
     if (!value) {
       serviceName.error('服务名称不能为空');
-      validationStatus.textContent('校验未通过');
+      validationStatus.value = '校验未通过';
       return;
     }
 
     serviceName.error('');
-    validationStatus.textContent('校验通过');
+    validationStatus.value = '校验通过';
   };
 
   return vstack((content) => {
@@ -670,7 +669,7 @@ function FieldValidationExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-field-validation-status', 'true');
-        output.child(validationStatus);
+        output.child(vText(validationStatus));
       });
     });
     content.hstack((actions) => {
@@ -681,7 +680,7 @@ function FieldValidationExample1() {
           serviceName.mode('edit');
           serviceName.value('');
           serviceName.error('');
-          validationStatus.textContent('等待校验');
+          validationStatus.value = '等待校验';
         });
       });
       actions.vButton('校验', (button) => {

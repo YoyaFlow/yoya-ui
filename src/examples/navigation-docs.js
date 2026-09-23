@@ -1,5 +1,6 @@
 import {
   div,
+  ref,
   section,
   toast,
   vBreadcrumb,
@@ -151,7 +152,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: BreadcrumbDynamicExample1,
         description: 'active 可以动态切换，当前项会从链接变成 aria-current 文本。',
         id: 'dynamic',
-        imports: ['vBreadcrumb', 'vBreadcrumbItem', 'vButton', 'vText', 'vstack'],
+        imports: ['ref', 'vBreadcrumb', 'vBreadcrumbItem', 'vButton', 'vText', 'vstack'],
         sourceComponent: BreadcrumbDynamicExample1,
         sourceTitle: '动态当前项核心源码',
         title: '动态当前项'
@@ -280,7 +281,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-history.html',
         id: 'history',
-        imports: ['div', 'vRoute', 'vRouter', 'vText', 'vstack'],
+        imports: ['div', 'ref', 'vRoute', 'vRouter', 'vText', 'vstack'],
         sourceComponent: RouterHistoryCard,
         sourceTitle: 'History 路由核心源码',
         title: 'History 路由'
@@ -304,7 +305,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-params.html',
         id: 'params',
-        imports: ['div', 'router', 'vNode', 'vRouterView', 'vText', 'vstack'],
+        imports: ['div', 'ref', 'router', 'vNode', 'vRouterView', 'vText', 'vstack'],
         sourceComponent: RouterParamsCard,
         sourceTitle: '参数传递路由核心源码',
         title: '参数传递路由'
@@ -316,7 +317,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-document.html',
         id: 'document',
-        imports: ['div', 'vRoute', 'vRouter', 'vText', 'vstack'],
+        imports: ['div', 'ref', 'vRoute', 'vRouter', 'vText', 'vstack'],
         sourceComponent: RouterDocumentCard,
         sourceTitle: '文档路由核心源码',
         title: '文档路由（HTML / 外链）'
@@ -388,7 +389,7 @@ const navigationDocsDefinitions = Object.freeze({
         frame: true,
         frameSrc: './router-views-document.html',
         id: 'document',
-        imports: ['div', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews', 'vText'],
+        imports: ['div', 'ref', 'vContainer', 'vRoute', 'vRouter', 'vRouterViews', 'vText'],
         sourceComponent: RouterViewsDocumentStandalone,
         sourceTitle: '文档路由进标签页核心源码',
         title: '文档路由标签'
@@ -543,7 +544,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarShellExample1,
         description: '品牌、横向菜单和动作按钮一起放在顶栏里，适合产品首页和工作台。',
         id: 'shell',
-        imports: ['vButton', 'vDropdownMenu', 'vNavbar', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vDropdownMenu', 'vNavbar', 'vText', 'vstack'],
         sourceTitle: '产品顶栏核心源码',
         title: '产品顶栏'
       },
@@ -551,7 +552,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarBrandExample1,
         description: 'brand 槽可以放自定义品牌结构，适合带副标题的系统导航。',
         id: 'brand',
-        imports: ['vButton', 'vNavbar', 'vText'],
+        imports: ['ref', 'vButton', 'vNavbar', 'vText'],
         sourceTitle: '自定义品牌核心源码',
         title: '自定义品牌'
       },
@@ -559,7 +560,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: NavbarWrapExample1,
         description: '在窄宽度里让菜单和动作自然换行，适合响应式顶栏。',
         id: 'wrap',
-        imports: ['div', 'vButton', 'vNavbar', 'vText'],
+        imports: ['div', 'ref', 'vButton', 'vNavbar', 'vText'],
         sourceTitle: '响应式顶栏核心源码',
         title: '窄屏换行'
       }
@@ -620,7 +621,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: StepsBasicExample1,
         description: '通过 current 驱动完成、当前和等待状态，按钮可以前后移动步骤。',
         id: 'basic',
-        imports: ['vButton', 'vSteps', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vSteps', 'vText', 'vstack'],
         sourceTitle: '基础步骤核心源码',
         title: '基础步骤'
       },
@@ -706,7 +707,7 @@ const navigationDocsDefinitions = Object.freeze({
         component: TabsBasicExample1,
         description: 'key 驱动当前标签，点击或方向键切换后同步状态文案。',
         id: 'basic',
-        imports: ['vTabs', 'vText', 'vstack'],
+        imports: ['ref', 'vTabs', 'vText', 'vstack'],
         sourceTitle: '基础标签页核心源码',
         title: '基础标签页'
       },
@@ -903,14 +904,14 @@ function NavigationExampleSection(demo) {
 }
 
 function NavbarShellExample1() {
-  const status = vText('当前：概览');
+  const status = ref('当前：概览');
   const menuItems = [];
   const setActive = (label, activeIndex) => {
     menuItems.forEach((item, index) => item.active(index === activeIndex));
-    status.textContent(`当前：${label}`);
+    status.value = `当前：${label}`;
   };
   const showAction = (label) => {
-    status.textContent(`已触发：${label}`);
+    status.value = `已触发：${label}`;
   };
 
   return vstack((shell) => {
@@ -933,7 +934,7 @@ function NavbarShellExample1() {
         actions.output((output) => {
           output.className('components-route-note');
           output.attr('data-navbar-demo-status', 'true');
-          output.child(status);
+          output.child(vText(status));
         });
         actions.span((badge) => {
           badge.className('components-route-note');
@@ -963,11 +964,11 @@ function NavbarShellExample1() {
 }
 
 function NavbarBrandExample1() {
-  const status = vText('当前：服务');
+  const status = ref('当前：服务');
   const menuItems = [];
   const setActive = (label, activeIndex) => {
     menuItems.forEach((item, index) => item.active(index === activeIndex));
-    status.textContent(`当前：${label}`);
+    status.value = `当前：${label}`;
   };
 
   return vNavbar((navbar) => {
@@ -989,26 +990,26 @@ function NavbarBrandExample1() {
     navbar.actions((actions) => {
       actions.output((output) => {
         output.className('components-route-note');
-        output.child(status);
+        output.child(vText(status));
       });
       actions.vButton('同步', (button) => {
         button.variant('secondary');
-        button.on('click', () => status.textContent('同步完成'));
+        button.on('click', () => (status.value = '同步完成'));
       });
       actions.vButton('新建', (button) => {
         button.variant('primary');
-        button.on('click', () => status.textContent('已进入新建流程'));
+        button.on('click', () => (status.value = '已进入新建流程'));
       });
     });
   });
 }
 
 function NavbarWrapExample1() {
-  const status = vText('当前：概览');
+  const status = ref('当前：概览');
   const menuItems = [];
   const setActive = (label, activeIndex) => {
     menuItems.forEach((item, index) => item.active(index === activeIndex));
-    status.textContent(`当前：${label}`);
+    status.value = `当前：${label}`;
   };
 
   return div((frame) => {
@@ -1034,15 +1035,15 @@ function NavbarWrapExample1() {
         navbar.actions((actions) => {
           actions.output((output) => {
             output.className('components-route-note');
-            output.child(status);
+            output.child(vText(status));
           });
           actions.vButton('同步', (button) => {
             button.variant('secondary');
-            button.on('click', () => status.textContent('同步完成'));
+            button.on('click', () => (status.value = '同步完成'));
           });
           actions.vButton('发布', (button) => {
             button.variant('primary');
-            button.on('click', () => status.textContent('发布已提交'));
+            button.on('click', () => (status.value = '发布已提交'));
           });
         });
       });
@@ -1067,10 +1068,10 @@ function StepsBasicExample1() {
       step.description('确认并上线');
     });
   });
-  const status = vText('当前第 2 步：配置');
+  const status = ref('当前第 2 步：配置');
   const syncStatus = () => {
     const step = steps.items()[steps.current()];
-    status.textContent(`当前第 ${steps.current() + 1} 步：${step.title()}`);
+    status.value = `当前第 ${steps.current() + 1} 步：${step.title()}`;
   };
 
   return vstack((content) => {
@@ -1082,7 +1083,7 @@ function StepsBasicExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-steps-basic-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
     content.hstack((actions) => {
@@ -1160,7 +1161,7 @@ function StepsCustomExample1() {
 }
 
 function TabsBasicExample1() {
-  const status = vText('当前：概览');
+  const status = ref('当前：概览');
 
   return vstack((content) => {
     content.style('gap', '14px');
@@ -1168,7 +1169,7 @@ function TabsBasicExample1() {
     content.child(
       vTabs((tabs) => {
         tabs.ariaLabel('服务详情标签');
-        tabs.change(({ item }) => status.textContent(`当前：${item.label()}`));
+        tabs.change(({ item }) => (status.value = `当前：${item.label()}`));
         tabs.vTab((tab) => {
           tab.key('overview');
           tab.label('概览');
@@ -1196,7 +1197,7 @@ function TabsBasicExample1() {
       row.span('当前标签');
       row.output((output) => {
         output.attr('data-tabs-basic-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
   });
@@ -1294,7 +1295,7 @@ function BreadcrumbBasicExample1() {
 }
 
 function BreadcrumbDynamicExample1() {
-  const status = vText('当前：服务详情');
+  const status = ref('当前：服务详情');
   const items = [
     vBreadcrumbItem({ href: '/console', label: '控制台' }),
     vBreadcrumbItem({ href: '/services', label: '服务' }),
@@ -1302,7 +1303,7 @@ function BreadcrumbDynamicExample1() {
   ];
   const select = (index) => {
     items.forEach((item, itemIndex) => item.active(itemIndex === index));
-    status.textContent(`当前：${items[index].label()}`);
+    status.value = `当前：${items[index].label()}`;
   };
 
   return vstack((content) => {
@@ -1326,7 +1327,7 @@ function BreadcrumbDynamicExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-breadcrumb-demo-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
   });

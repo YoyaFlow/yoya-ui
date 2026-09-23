@@ -79,7 +79,9 @@ export function FactoryGameStandalone() {
     toolButtons.forEach((button, key) => {
       button.attr('data-tool-active', key === name ? 'true' : null);
     });
-    ui.selectionText?.textContent(toolLabel(name));
+    if (ui.selectionText) {
+      ui.selectionText.value = toolLabel(name);
+    }
     refreshGhost();
   }
 
@@ -93,7 +95,9 @@ export function FactoryGameStandalone() {
 
   function rotateDirection() {
     tool.direction = (tool.direction + 1) % DIRECTIONS.length;
-    ui.directionText?.textContent(`方向 ${DIRECTIONS[tool.direction].label}`);
+    if (ui.directionText) {
+      ui.directionText.value = `方向 ${DIRECTIONS[tool.direction].label}`;
+    }
     refreshGhost();
   }
 
@@ -373,8 +377,8 @@ export function FactoryGameStandalone() {
     render() {
       const stats = createStatsPanel();
       ui.stats = stats;
-      ui.directionText = vText(`方向 ${DIRECTIONS[tool.direction].label}`);
-      ui.selectionText = vText(toolLabel(tool.name));
+      ui.directionText = ref(`方向 ${DIRECTIONS[tool.direction].label}`);
+      ui.selectionText = ref(toolLabel(tool.name));
 
       return div((root) => {
         root.className('factory-game');
@@ -409,8 +413,8 @@ export function FactoryGameStandalone() {
           });
           toolbar.div((meta) => {
             meta.style({ display: 'flex', gap: '16px', marginLeft: 'auto' });
-            meta.span((text) => text.child(ui.selectionText));
-            meta.span((text) => text.child(ui.directionText));
+            meta.span((text) => text.child(vText(ui.selectionText)));
+            meta.span((text) => text.child(vText(ui.directionText)));
           });
         });
 

@@ -1,5 +1,6 @@
 import {
   div,
+  ref,
   vContainer,
   vRoute,
   vRouter,
@@ -27,8 +28,8 @@ export function RouterDocumentCard() {
       })
     ]
   });
-  const currentPath = vText('');
-  appRouter.subscribe(({ path }) => currentPath.textContent(`当前 SPA 路径：${path}`));
+const currentPath = ref('');
+appRouter.subscribe(({ path }) => (currentPath.value = `当前 SPA 路径：${path}`));
 
   return vstack((stack) => {
     stack.style('gap', '14px');
@@ -41,7 +42,7 @@ export function RouterDocumentCard() {
     stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
     stack.output((output) => {
       output.className('router-document-status');
-      output.child(currentPath);
+  output.child(vText(currentPath));
     });
     appRouter.navigate('/overview', { replace: true });
   });
@@ -65,9 +66,9 @@ export function RouterViewsDocumentStandalone() {
       })
     ]
   });
-  const status = vText('点「旧报表 / 在线文档」看整页跳转出口（示例已拦下）');
+const status = ref('点「旧报表 / 在线文档」看整页跳转出口（示例已拦下）');
   appRouter.navigateDocument = (url) => {
-    status.textContent(`整页跳转出口：${url}`);
+  status.value = `整页跳转出口：${url}`;
     return appRouter;
   };
 
@@ -90,7 +91,7 @@ export function RouterViewsDocumentStandalone() {
         );
         row.vButton('在线文档', (button) => button.on('click', () => appRouter.navigate('/docs')));
         row.spacer();
-        row.output((out) => out.child(status));
+  row.output((out) => out.child(vText(status)));
       });
     });
     page.vMain((main) => {

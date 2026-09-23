@@ -1,15 +1,13 @@
-import { div, vConfirm } from '../../index.js';
+import { div, ref, vConfirm, vText } from '../../index.js';
 
 export function ConfirmExample() {
-  let result = null;
-  let box = null;
+  const result = ref('尚未确认');
 
   return div((panel) => {
     panel.vstack({ gap: '12px' }, (stack) => {
       stack.div((b) => {
-        box = b;
         b.attr('data-confirm-result', 'true');
-        b.child(result ?? '尚未确认');
+        b.child(vText(result));
       });
       stack.vButton('删除服务', (b) => {
         b.variant('danger');
@@ -20,11 +18,9 @@ export function ConfirmExample() {
             confirmText: '删除',
             danger: true
           });
-          result = ok ? '已确认删除' : '已取消';
-          box.textContent(result);
+          result.value = ok ? '已确认删除' : '已取消';
         });
       });
     });
   });
 }
-

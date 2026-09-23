@@ -1,6 +1,6 @@
 # 业务模块组织规则
 
-面向 yoya-ui 使用方项目的业务代码组织方式，适配「ViewNode + 对象组件 + 手动更新」的模型。结构以 `create-yoya-ui` 的 admin 模板为准（模板内的 `RULES.md` 是同一套规则的完整版）。
+面向 yoya-ui 使用方项目的业务代码组织方式，适配「ViewNode + 组件（薄工厂 / vNode）+ 信号驱动的更新」的模型。结构以 `create-yoya-ui` 的 admin 模板为准（模板内的 `RULES.md` 是同一套规则的完整版）。
 
 ## 核心原则
 
@@ -26,7 +26,7 @@ src/
   features/                # 业务域 = 顶级菜单，下按菜单项分子模块
     <domain>/<menu-item>/
       pages/               # <名字>-page.js
-      components/          # 业务组件（形态 A 薄工厂 / 形态 B 对象组件）
+      components/          # 业务组件（形态 A 薄工厂 / 形态 B vNode）
       api/                 # <域>.mgr.js / .req.js / .views.js / .state.js / .mock.js（+ 同名 .d.ts）
       utils/               # 模块内小工具与常量
 ```
@@ -183,7 +183,7 @@ export default {
 
 ## 状态模块
 
-- **局部状态**：对象组件闭包或返回对象上的 `ref`；值位置直接传句柄，写入即写回（不要包 `computed(() => x.value)`，也别传 `x.value` 快照）
+- **局部状态**：组件闭包里的 `ref`（vNode 写在外层闭包、需要暴露就地挂到 `api` 上）；值位置直接传句柄，写入即写回（不要包 `computed(() => x.value)`，也别传 `x.value` 快照）
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法；**要驱动视图的字段用 `ref` 持有**（同模块的视图 / 组件直接绑句柄），`subscribe(listener)` 只留给非视图副作用
 - **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态——写入 `ref` 就完成通知；需要"结构随数据变化"时用可重建区域读信号（见 core.md）
@@ -250,7 +250,7 @@ export default class MembersPageState {
 ## 业务组件
 
 - **形态 A 薄工厂**：纯展示 / 配置化组合，直接返回 ViewNode；**确定没有额外行为要定义时就用它**，不要为预留能力先包成对象组件；演示代码同理——没有对外命令方法就直接返回节点，不包 `render()`
-- **vNode 组件**：确有内部状态或对外命令方法的业务组件用它（`vNode((api) => 视图)`）；形态 B 对象组件已弃用、仅存量
+- **vNode 组件**：确有内部状态或对外命令方法的业务组件用它（`vNode((api) => 视图)`）——它是形态 B；对象组件（`{ render() }`）已弃用、仅存量，不要写
 - **一个业务块一个文件**：`member-table.js`（表格与行操作）、`member-toolbar.js`（筛选栏）、`member-form-dialog.js`（新增/编辑弹窗）
 - 输入用 props 式参数与回调（`{ rows, onEdit, onRemove }`），**组件自己不请求数据**：数据由页面从状态取来传入
 - 命名用业务前缀（`MemberTable`），与库内 `v` 前缀区分；需要时可 `registerChildFactories` 注册为页面快捷方法
@@ -267,7 +267,7 @@ src/
     ui.buttons.js             # 通用 UI：按钮类（RowActionButton 等，无业务语义）
     ui.pages.js               # 通用 UI：页面类（PlaceholderPage 等）
     user-picker/
-      user-picker.js          # 组件（形态 B 对象组件）
+      user-picker.js          # 组件（形态 B vNode）
       user-picker-state.js    # 组件状态（查询/分页等，数据走所属域 req.js）
       user-picker.messages.js # 文案（可选）
 ```
@@ -310,7 +310,7 @@ page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 | 页面内部编排 / 回调  | 动词（不对外暴露为组件）          | `switchModule`、`syncPagination`                     |
 
 - 组件工厂不占 `v` 前缀（`v` 前缀保留给库组件），也不以动词/过程名命名；`pageView`、`tableNode`、`createMemberListPage` 这类产出 UI 却用动作名/工厂名的函数属于命名错误
-- 判定口诀：返回值是 ViewNode / 组件对象 → 组件工厂 → PascalCase 业务名；返回值是数据/状态 → `create` 或动词命名
+- 判定口诀：返回值是 ViewNode / 组件（薄工厂或 vNode 的返回值）→ 组件工厂 → PascalCase 业务名；返回值是数据/状态 → `create` 或动词命名
 - 组件按业务域落位 `features/<域>/components/`，页面在 `pages/`，请求 / 结果 / 状态都在 `api/`
 
 ### 结构块也用函数组件
@@ -354,7 +354,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 }
 ```
 
-- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名
+- 块组件用与导出组件同一套写法（形态 A 直接返回 ViewNode，或形态 B `vNode((api) => 视图)`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名
 - **活数据用 getter 传**：`MemberRows({ rows: () => state.members })` 而不是 `rows: state.members`——数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的还是旧值；回写一律走回调（`onSelect(id)`）。不要在块组件里隐式读取外层状态，这样它才能独立阅读、单独替换，必要时直接提升为可复用组件
 - **块内的更新分工**：值变化用值绑定（信号优先：`vText(signal)`、`attr(name, signal)`），结构变化用区域——块在自己那层声明 `rebuildable()`，并在 builder 里读当前数据；区域外的输入框等节点不会因此被重建
 - 一个块只负责自己那块的 DOM；跨块共享的状态、格式化与样式 token 放在模块级 helper 或组件入口

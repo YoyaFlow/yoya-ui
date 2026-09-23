@@ -64,6 +64,16 @@ export default [
     }
   },
   {
+    // 形状矩阵基准的页面脚本：在真机浏览器里跑（`benchmark/shapes/bench.js`），
+    // 与静态服务 / runner 分开——这里只认浏览器全局。
+    files: ['benchmark/shapes/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      globals: globals.browser,
+      sourceType: 'module'
+    }
+  },
+  {
     files: ['eslint.config.js', 'vite.config.js', 'vite.examples.config.js'],
     languageOptions: {
       globals: globals.node
@@ -73,6 +83,17 @@ export default [
     files: ['scripts/**/*.{js,mjs}'],
     languageOptions: {
       globals: globals.node
+    }
+  },
+  {
+    // 形状矩阵 runner：主体是 Node，但 `page.evaluate(…)` 里的回调**在浏览器里执行**，
+    // 所以这一支要同时认两边的全局。
+    files: ['scripts/benchmark-shapes.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.browser
+      }
     }
   }
 ];

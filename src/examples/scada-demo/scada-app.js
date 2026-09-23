@@ -232,7 +232,9 @@ export function ScadaTwinStandalone() {
     }
     updateMarker();
     const device = next ? DEVICE_DEFS.find((entry) => entry.id === next) : null;
-    ui.reticleText?.textContent(device ? `${device.id} ${device.name}` : '—');
+    if (ui.reticleText) {
+      ui.reticleText.value = device ? `${device.id} ${device.name}` : '—';
+    }
   }
 
   function focusDevice(deviceId) {
@@ -369,11 +371,10 @@ export function ScadaTwinStandalone() {
       return;
     }
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    ui.lockBannerText.textContent(
+    ui.lockBannerText.value =
       `当前预览环境不支持 FPS 指针锁定：未点击时光标可见、移动鼠标不会转动视角。` +
-        `请用 Edge / Chrome 新标签页打开：${url}，点击画面一次后即可进入标准 FPS（光标隐藏、视角跟手）。` +
-        `点击本提示关闭。`
-    );
+      `请用 Edge / Chrome 新标签页打开：${url}，点击画面一次后即可进入标准 FPS（光标隐藏、视角跟手）。` +
+      `点击本提示关闭。`;
   }
 
   function updateLockHint() {
@@ -381,37 +382,34 @@ export function ScadaTwinStandalone() {
       return;
     }
     if (runtime.statusOpen) {
-      ui.lockHint.textContent('状态窗口已打开（Tab 切换）· Alt 退出 FPS 并关闭');
+      ui.lockHint.value = '状态窗口已打开（Tab 切换）· Alt 退出 FPS 并关闭';
       updateLockBanner();
       return;
     }
     if (runtime.pointerLocked) {
-      ui.lockHint.textContent('FPS 已锁定：移动鼠标即转视角 · 左键选择设备 · Alt / Esc 退出');
+      ui.lockHint.value = 'FPS 已锁定：移动鼠标即转视角 · 左键选择设备 · Alt / Esc 退出';
       updateLockBanner();
       return;
     }
     const per100px = Math.round((lookSensitivity * 100 * 180) / Math.PI);
     if (runtime.lockDenied && canRequestLock() && !runtime.lockUnavailable) {
       if (runtime.lockEverEngaged) {
-        ui.lockHint.textContent('按 Esc 后约 1 秒才能重新锁定指针 · 请稍候再次点击画面');
+        ui.lockHint.value = '按 Esc 后约 1 秒才能重新锁定指针 · 请稍候再次点击画面';
       } else {
-        ui.lockHint.textContent('指针锁定请求被拒绝 · 请再次点击画面重试');
+        ui.lockHint.value = '指针锁定请求被拒绝 · 请再次点击画面重试';
       }
       updateLockBanner();
       return;
     }
     if (runtime.lockUnavailable && canRequestLock()) {
-      ui.lockHint.textContent(
-        '当前预览环境无法指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页'
-      );
+      ui.lockHint.value =
+        '当前预览环境无法指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页';
       updateLockBanner();
       return;
     }
-    ui.lockHint.textContent(
-      canRequestLock()
-        ? `未锁定：光标可见 · 移动鼠标不转动视角 · 点击画面进入 FPS · 灵敏度 ${per100px}°/100px（[ ] 调节）`
-        : '当前环境不支持指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页'
-    );
+    ui.lockHint.value = canRequestLock()
+      ? `未锁定：光标可见 · 移动鼠标不转动视角 · 点击画面进入 FPS · 灵敏度 ${per100px}°/100px（[ ] 调节）`
+      : '当前环境不支持指针锁定：点击无法进入 FPS · 请用 Edge / Chrome 新标签页打开本页';
     updateLockBanner();
   }
 
@@ -855,9 +853,9 @@ export function ScadaTwinStandalone() {
       ui.statsPanel = createStatsPanel();
       ui.detailPanel = createDetailPanel();
       ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = vText('未锁定：光标可见 · 点击画面进入 FPS · Tab 状态窗口');
-      ui.reticleText = vText('—');
-      ui.lockBannerText = vText('');
+      ui.lockHint = ref('未锁定：光标可见 · 点击画面进入 FPS · Tab 状态窗口');
+      ui.reticleText = ref('—');
+      ui.lockBannerText = ref('');
       ui.statusWindow = createStatusWindow();
 
       rootNode = div((root) => {
@@ -906,7 +904,7 @@ export function ScadaTwinStandalone() {
             topLeft.p((hint) => {
               hint.className('scada-lock-hint');
               hint.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
-              hint.child(ui.lockHint);
+              hint.child(vText(ui.lockHint));
             });
           });
 
@@ -991,7 +989,7 @@ export function ScadaTwinStandalone() {
             });
             reticleWrap.div((label) => {
               label.className('scada-reticle-label');
-              label.child(ui.reticleText);
+              label.child(vText(ui.reticleText));
             });
           });
 
@@ -1002,7 +1000,7 @@ export function ScadaTwinStandalone() {
               runtime.lockBannerDismissed = true;
               banner.style('display', 'none');
             });
-            banner.child(ui.lockBannerText);
+            banner.child(vText(ui.lockBannerText));
             ui.lockBanner = banner;
             updateLockBanner();
           });

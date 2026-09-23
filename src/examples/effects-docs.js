@@ -1,20 +1,20 @@
-import { div, hstack, section, vCard, vGlowButton, vText } from '../index.js';
+import { div, hstack, ref, section, vCard, vGlowButton, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含流光按钮内容，不包含 Card。
 function GlowButtonBasicExample() {
-  const output = vText('等待点击');
+  const output = ref('等待点击');
   const button = vGlowButton('立即部署').variant('primary').glow({ motion: 'always' });
 
   button.on('click', () => {
-    output.textContent('已启动部署');
+    output.value = '已启动部署';
   });
 
   return div((body) => {
     body.hstack({ gap: '14px' }, (row) => {
       row.style('alignItems', 'center');
       row.child(button);
-      row.span((el) => el.attr('data-glow-button-output', 'true').child(output));
+      row.span((el) => el.attr('data-glow-button-output', 'true').child(vText(output)));
     });
   });
 }
@@ -157,7 +157,7 @@ const glowButtonDemos = [
     title: '基础流光',
     component: GlowButtonBasicDemo,
     sourceComponent: GlowButtonBasicExample,
-    imports: ['div', 'vGlowButton', 'vText'],
+    imports: ['div', 'ref', 'vGlowButton', 'vText'],
     sourceTitle: '基础流光源码'
   },
   {

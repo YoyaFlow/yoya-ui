@@ -22,12 +22,12 @@ const CODE_DEMO = Object.freeze({
       label: '写入示例片段',
       run: (live, output) => {
         live.setValue('const api = "https://example.com";\nexport default api;');
-        output.textContent('已写入示例片段。');
+        output.value = '已写入示例片段。';
       }
     },
     {
       label: '导出内容',
-      run: (live, output) => output.textContent(live.value())
+      run: (live, output) => (output.value = live.value())
     }
   ]
 });

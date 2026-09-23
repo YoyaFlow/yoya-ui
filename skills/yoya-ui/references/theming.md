@@ -25,17 +25,17 @@
 
 ## 定制阶梯（按优先级）
 
-| 层级 | 手段                                                                            |
-| ---- | ------------------------------------------------------------------------------- |
-| L0   | 全局覆盖 `--yoya-*` token（整站换肤）                                           |
-| L1   | 任意容器局部重定义 `--yoya-*`（局部换肤）                                       |
-| L2   | `node.replaceClassName('yoya-v<name>', 'my-class')` 剥离预设，用自己的 CSS 接管 |
-| L3   | 未分层用户规则天然优先（库规则在 `@layer yoya` 内、基础规则用 `:where()`）      |
-| L4   | 实例级 `node.styles(...)`                                                       |
-| L5   | `className('my-x')` 追加自定义类                                                |
-| L6   | 组件 API（`variant`/`size`/`disabled`），不用 CSS 硬改变体                      |
+| 层级 | 手段                                                                       |
+| ---- | -------------------------------------------------------------------------- |
+| L0   | 全局覆盖 `--yoya-*` token（整站换肤）                                      |
+| L1   | 任意容器局部重定义 `--yoya-*`（局部换肤）                                  |
+| L2   | 为身份作用域写自己的规则（`[vn~="VXxx"] …`），或换掉身份让整棵子树脱离预设 |
+| L3   | 未分层用户规则天然优先（库规则在 `@layer yoya` 内、基础规则用 `:where()`） |
+| L4   | 实例级 `node.styles(...)`                                                  |
+| L5   | `className('my-x')` 追加自定义类                                           |
+| L6   | 组件 API（`variant`/`size`/`disabled`），不用 CSS 硬改变体                 |
 
-`replaceClassName(old, next, tolerate = false)`：`old` 存在则替换（支持多类空格分隔）；不存在时 `tolerate=true` 才添加；替换根类后整棵子树与预设样式脱钩。
+`replaceClassName(old, next, tolerate = false)`：`old` 存在则替换（支持多类空格分隔）；不存在时 `tolerate=true` 才添加。身份不再挂在类名上（见下方「身份契约」），所以它现在只是管理**自有类名**的普通工具，不再"剥离预设"。
 
 ## 主题切换 JS API（可选）
 
@@ -49,9 +49,9 @@ setYoyaTheme('violet'); // data-yoya-theme="violet"
 initYoyaTheme({ persist: true }); // 恢复上次 mode/theme
 ```
 
-## 类名契约
+## 身份契约
 
-组件根 `yoya-component yoya-v<name>`，部件 `yoya-v<name>-<part>`，修饰符 `yoya-v<name>--<modifier>`；状态一律 kebab-case `data-*` 属性，类名不承载状态。
+组件身份写在视图根的 `vn` 属性上（`vn="VXxx"`，多值空格分隔），部件的身份同样写在结构里（`vn="VXxxPart"`）；**预设样式一律从身份作用域书写**（`[vn~="VXxx"] …`，无孤儿部件选择器），所以换掉身份就一次性脱钩。旧的 `yoya-component` / `yoya-v*` 类名**已退场**（票 15 波 6 收口，基线清零）；跨组件能力类 `yoya-<feature>`（`yoya-icon`、`yoya-layout`、`yoya-control-clear`）保留。状态一律 kebab-case `data-*` 属性，类名不承载状态。
 
 ## 页面壳
 

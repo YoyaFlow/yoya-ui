@@ -2697,7 +2697,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelectorAll('[data-float-button-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-float-button-demo="basic"] [data-source-example]').textContent
-    ).toContain("import { PlusOutlined, div, vFloatButton, vText } from '@yoyaflow/yoya-ui';");
+    ).toContain("import { PlusOutlined, div, ref, vFloatButton, vText } from '@yoyaflow/yoya-ui';");
 
     const basicDemo = page.querySelector('[data-float-button-demo="basic"]');
     basicDemo.querySelector('[vn~="VFloatButton"]').click();
@@ -2721,7 +2721,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(page.querySelectorAll('[data-radio-demo] [data-source-example]')).toHaveLength(3);
     expect(
       page.querySelector('[data-radio-demo="group"] [data-source-example]').textContent
-    ).toContain("import { div, vRadios, vText } from '@yoyaflow/yoya-ui';");
+    ).toContain("import { div, ref, vRadios, vText } from '@yoyaflow/yoya-ui';");
 
     const groupDemo = page.querySelector('[data-radio-demo="group"]');
     const prodInput = [...groupDemo.querySelectorAll('input')][2];

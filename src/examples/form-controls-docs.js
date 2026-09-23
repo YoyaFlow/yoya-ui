@@ -1,5 +1,6 @@
 import {
   div,
+  ref,
   section,
   vAutocomplete,
   vCard,
@@ -32,12 +33,12 @@ const frameworkSource = ['Vue', 'React', 'Svelte', 'Solid', 'Angular'];
 // ---------- vSlider ----------
 
 function SliderBasicExample() {
-  const output = vText('40');
+  const output = ref('40');
   const slider = vSlider({
     max: 100,
     min: 0,
     onChange(value) {
-      output.textContent(String(value));
+      output.value = String(value);
     },
     step: 5,
     value: 40
@@ -48,7 +49,7 @@ function SliderBasicExample() {
     body.div((row) => {
       row.span('当前值');
       row.spacer();
-      row.code((el) => el.attr('data-slider-output', 'true').child(output));
+      row.code((el) => el.attr('data-slider-output', 'true').child(vText(output)));
     });
   });
 }
@@ -73,12 +74,12 @@ function SliderStateExample() {
 }
 
 function SliderVerticalExample() {
-  const output = vText('80');
+  const output = ref('80');
   const slider = vSlider({
     max: 100,
     min: 0,
     onChange(value) {
-      output.textContent(String(value));
+      output.value = String(value);
     },
     value: 80,
     vertical: true
@@ -89,7 +90,7 @@ function SliderVerticalExample() {
       row.child(slider);
       row.span('当前值');
       row.spacer();
-      row.code((el) => el.attr('data-slider-vertical-output', 'true').child(output));
+      row.code((el) => el.attr('data-slider-vertical-output', 'true').child(vText(output)));
     });
   });
 }
@@ -137,7 +138,7 @@ const sliderDemos = [
   {
     component: SliderBasicDemo,
     id: 'basic',
-    imports: ['div', 'vSlider', 'vText'],
+    imports: ['div', 'ref', 'vSlider', 'vText'],
     sourceComponent: SliderBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'
@@ -153,7 +154,7 @@ const sliderDemos = [
   {
     component: SliderVerticalDemo,
     id: 'vertical',
-    imports: ['div', 'vSlider', 'vText'],
+    imports: ['div', 'ref', 'vSlider', 'vText'],
     sourceComponent: SliderVerticalExample,
     sourceTitle: '竖向滑动条源码',
     title: '竖向滑动条'
@@ -163,10 +164,10 @@ const sliderDemos = [
 // ---------- vCascader ----------
 
 function CascaderBasicExample() {
-  const output = vText('浙江 / 杭州');
+  const output = ref('浙江 / 杭州');
   const cascader = vCascader({
     onChange(value) {
-      output.textContent(value.join(' / '));
+      output.value = value.join(' / ');
     },
     options: regionOptions,
     value: ['zhejiang', 'hangzhou']
@@ -177,7 +178,7 @@ function CascaderBasicExample() {
     body.div((row) => {
       row.span('已选路径');
       row.spacer();
-      row.code((el) => el.attr('data-cascader-output', 'true').child(output));
+      row.code((el) => el.attr('data-cascader-output', 'true').child(vText(output)));
     });
   });
 }
@@ -228,7 +229,7 @@ const cascaderDemos = [
   {
     component: CascaderBasicDemo,
     id: 'basic',
-    imports: ['div', 'vCascader', 'vText'],
+    imports: ['div', 'ref', 'vCascader', 'vText'],
     sourceComponent: CascaderBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'
@@ -246,10 +247,10 @@ const cascaderDemos = [
 // ---------- vTagsInput ----------
 
 function TagsBasicExample() {
-  const output = vText('');
+  const output = ref('');
   const tags = vTagsInput({
     onChange(value) {
-      output.textContent(value.join(', '));
+      output.value = value.join(', ');
     }
   });
 
@@ -258,7 +259,7 @@ function TagsBasicExample() {
     body.div((row) => {
       row.span('已添加');
       row.spacer();
-      row.code((el) => el.attr('data-tags-output', 'true').child(output));
+      row.code((el) => el.attr('data-tags-output', 'true').child(vText(output)));
     });
   });
 }
@@ -301,7 +302,7 @@ const tagsDemos = [
   {
     component: TagsBasicDemo,
     id: 'basic',
-    imports: ['div', 'vTagsInput', 'vText'],
+    imports: ['div', 'ref', 'vTagsInput', 'vText'],
     sourceComponent: TagsBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'
@@ -319,10 +320,10 @@ const tagsDemos = [
 // ---------- vAutocomplete ----------
 
 function AutocompleteBasicExample() {
-  const output = vText('');
+  const output = ref('');
   const autocomplete = vAutocomplete({
     onChange(value) {
-      output.textContent(value);
+      output.value = value;
     },
     source: frameworkSource
   });
@@ -332,7 +333,7 @@ function AutocompleteBasicExample() {
     body.div((row) => {
       row.span('已选择');
       row.spacer();
-      row.code((el) => el.attr('data-autocomplete-output', 'true').child(output));
+      row.code((el) => el.attr('data-autocomplete-output', 'true').child(vText(output)));
     });
   });
 }
@@ -380,7 +381,7 @@ const autocompleteDemos = [
   {
     component: AutocompleteBasicDemo,
     id: 'basic',
-    imports: ['div', 'vAutocomplete', 'vText'],
+    imports: ['div', 'ref', 'vAutocomplete', 'vText'],
     sourceComponent: AutocompleteBasicExample,
     sourceTitle: '基础用法源码',
     title: '基础用法'

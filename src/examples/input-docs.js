@@ -1,4 +1,4 @@
-import { section, vCard, vText, vstack } from '../index.js';
+import { ref, section, vCard, vText, vstack } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import { InputExample1 } from './demos/input.js';
 
@@ -75,7 +75,7 @@ export function InputDocumentationPage() {
 }
 
 function InputLiveDemo() {
-  const status = vText('yoya-ui');
+  const status = ref('yoya-ui');
 
   return {
     render() {
@@ -84,12 +84,12 @@ function InputLiveDemo() {
           input.attr('data-input-sync', 'true');
           input.placeholder('请输入服务名');
           input.value('yoya-ui');
-          input.on('input', (event) => status.textContent(event.target.value));
+          input.on('input', (event) => (status.value = event.target.value));
         });
         content.hstack((row) => {
           row.span('当前值');
           row.spacer();
-          row.code((code) => code.attr('data-input-sync-output', 'true').child(status));
+          row.code((code) => code.attr('data-input-sync-output', 'true').child(vText(status)));
         });
       });
     }

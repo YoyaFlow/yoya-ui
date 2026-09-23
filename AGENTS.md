@@ -126,18 +126,18 @@ function RateCard() {
 
 ### 属性契约：`vn` / `vn_slot`（属性化迁移，票 15）
 
-组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名退场（存量逐组件迁移，只减不增）。
+组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名**已退场**（票 15 波 6 收口，基线清零，只减不增）。
 方案与分波、单组件 DoD 见 `.scratch/vnode-convergence/issues/15-attribute-and-identity-migration-plan.md`。
 
 1. **身份 = `vn` 对象事实 + 真 DOM 属性**：视图根写 `vn: 'VXxx'`（值 = 导出名；包装型多值空格分隔，
    如 `'VTimer VInput'`）。`defineComponentIdentity`（`Symbol.hasInstance` 注册）与
-   `member instanceof VXxx` **不再对外承诺**；判定用 `componentNameOf` / `hasComponentIdentity`。
+   `member instanceof VXxx` **都已退场**；判定用 `componentNameOf` / `hasComponentIdentity`。
    模块内的自有子实例判定留在模块内（不导出类型时用模块内标记，如 `_isTreeRow`）。
 2. **跨模块识别用能力约定**：控件 = 有 `value()` / `_collectValue()`（`isControlCapable`）、
    可清空 = `clearable()`；**不按组件名分支**。
-3. **类名退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）都删，预设样式选择器改 `[vn="VXxx"]`；
+3. **类名已退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）都删完了，预设样式选择器只从 `[vn="VXxx"]` 起头；
    跨组件能力类 `yoya-<feature>`（`yoya-icon` / `yoya-layout` / `yoya-control-clear`）保留。
-   **同一刀里 JS 与 CSS 一起改**（组件没写 `vn` 就切 CSS = 掉样式），旧规则只减不增。
+   **JS 与 CSS 必须同一刀**（组件没写 `vn` 就切 CSS = 掉样式），类名只能减不能增。
 4. **组件只有两种写法**：A 薄工厂 / B `vNode((api) => 视图)`；`class XxxNode extends HtmlElementNode`
    只作为**节点类型扩展（视图根）**存在于引擎与组件内部，不导出成组件写法。
 5. **定义与快捷名分开**：`VXxx` 只负责定义（自己的 props / 结构 / 状态 / 命令），
@@ -151,9 +151,9 @@ function RateCard() {
    `child()` 进组件即自动落位（一个占位一份内容，重复投递即替换）；**没有 `vSlotInsert` 这类辅助函数**。
    `vn_slot`（部件）与 `slot`（公开槽位）是两个名空间，永不复用。
 
-CSS 迁移对照：`.yoya-component` → `[vn]`（收口时一次切）、`.yoya-vcard` → `[vn="VCard"]`、
+CSS 迁移对照（迁移已完成）：`.yoya-component` → `[vn]`、`.yoya-vcard` → `[vn="VCard"]`、
 `.yoya-vcard-header` → `[vn="VCardHeader"]`、`.yoya-vcarousel-arrow--prev` → `[vn="VCarouselArrow"][data-dir="prev"]`。
-过渡期 `.yoya-v*` 与 `[vn=…]` 并存不算违规，门禁在 `src/attribute-migration-baseline.test.js`（只减不增）。
+门禁仍在 `src/attribute-migration-baseline.test.js`（空基线，只减不增）：新代码写类名身份会当场红。
 
 ### 节点类型扩展（引擎内部，不是第三种组件形态）
 
@@ -335,13 +335,6 @@ export function VXxx({ count = null, ...rest } = {}) {
 
 - **结构默认用 setupFunction 嵌套**：`工厂(options, (node) => { node.child(…); })`——静态部分留在
   工厂参数里；不要写 `span({…}).style(…)` 这种挂在工厂调用之外的链式结构。
-- **参数从哪进来不改变边界**：基础库组件用 `setupObject` / `setupString`（给 `vXxx` 快捷方法留分派
-  入口），业务侧可以直接 `function XxxName(props)`；差别只是参数来源。
-- **props 走调用、嵌套走 `.setup()`**：定义函数收 props（`function VXxx(props = {})`），快捷方法写
-  `createComponentShortcut(VXxx, { props: true })`；父里继续嵌套写
-  `VXxx(props).setup((host) => host.child(…))` 或走位置参数 `vXxx(props, (host) => …)`。
-- **视图根留个名字**（要返回它）；命令里碰组件自己用 `self.node()`，子部件句柄只在"命令要写它"时
-  才在构建期取。
 - **参数从哪进来不改变边界**：基础库组件用 `setupObject` / `setupString`（为了给 `vXxx` 快捷方法
   留分派入口，支持 `card.vCardHeader(…)` 这类嵌套写法），业务侧可以直接 `function XxxName(props)`；
   差别只是参数来源。

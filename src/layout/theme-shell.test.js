@@ -36,11 +36,42 @@ describe('VThemeShell', () => {
     expect(shell.renderDom().style.overflow).toBe('visible');
   });
 
-  it('supports background opacity through color-mix', () => {
+  it('writes background opacity as data for the skin to compose', () => {
     const element = vThemeShell().backgroundOpacity(0.5).renderDom();
 
-    expect(element.style.background).toContain('color-mix');
-    expect(element.style.background).toContain('50%');
+    // 命令只写数据（基色 + 百分比），合成由预设皮肤算（规则由 css-contract 守）。
+    expect(element.style.getPropertyValue('--yoya-shell-bg')).toBe(
+      'var(--yoya-color-surface, #ffffff)'
+    );
+    expect(element.style.getPropertyValue('--yoya-shell-alpha')).toBe('50%');
+    expect(element.style.background).toBe(
+      'var(--yoya-shell-composed, var(--yoya-color-surface, #ffffff))'
+    );
+  });
+
+  it('keeps the configured base color and drops opacity when the base is reset', () => {
+    const shell = vThemeShell().background('#f5f5f5').backgroundOpacity(0.25);
+    const element = shell.renderDom();
+
+    expect(element.style.getPropertyValue('--yoya-shell-bg')).toBe('#f5f5f5');
+    expect(element.style.getPropertyValue('--yoya-shell-alpha')).toBe('25%');
+    expect(element.style.background).toBe('var(--yoya-shell-composed, #f5f5f5)');
+
+    // 重新设基色 = 之前的透明度数据作废，背景回到实色。
+    const reset = shell.background('#00f').renderDom();
+
+    expect(reset.style.background).toBe('rgb(0, 0, 255)');
+    expect(reset.style.getPropertyValue('--yoya-shell-alpha')).toBe('');
+  });
+
+  it('does not read its own composed expression as the base on repeated calls', () => {
+    const element = vThemeShell().backgroundOpacity(0.5).backgroundOpacity(0.8).renderDom();
+
+    // 第二次调用若把上次的 var() 表达式当基色，会自引用成环。
+    expect(element.style.getPropertyValue('--yoya-shell-bg')).toBe(
+      'var(--yoya-color-surface, #ffffff)'
+    );
+    expect(element.style.getPropertyValue('--yoya-shell-alpha')).toBe('80%');
   });
 
   it('supports children and the parent shortcut', () => {
@@ -81,6 +112,17 @@ describe('VThemeShell virtual mode', () => {
     expect(element.style.background).toBe('rgb(245, 245, 245)');
     expect(element.style.borderRadius).toBe('12px');
     expect(element.style.overflow).toBe('auto');
+  });
+
+  it('composes opacity inline when the target has no VThemeShell identity', () => {
+    const body = vBody('内容');
+    const shell = vThemeShell(body).virtual().backgroundOpacity(0.5);
+
+    // 虚拟模式把样式投影到别的身份上，皮肤的组合规则命中不了目标节点，所以这条路径
+    // 仍在 JS 侧组合——与改动前逐字节一致（含它在低基线浏览器里的退化）。
+    expect(shell.renderDom().style.background).toBe(
+      'color-mix(in srgb, var(--yoya-color-surface, #ffffff) 50%, transparent)'
+    );
   });
 
   it('serializes through the child node in virtual mode', () => {

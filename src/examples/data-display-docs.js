@@ -12,6 +12,7 @@ import {
   FolderOutlined,
   vPagination,
   vProgress,
+  ref,
   vScroll,
   vTableWrapper,
   vText,
@@ -84,7 +85,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarInteractiveExample1,
         description: '通过公开方法实时切换文字、尺寸、形状、颜色和在线状态。',
         id: 'interactive',
-        imports: ['vAvatar', 'vButton', 'vText', 'vstack'],
+        imports: ['ref', 'vAvatar', 'vButton', 'vText', 'vstack'],
         sourceTitle: '自定义头像源码',
         title: '自定义头像'
       },
@@ -92,7 +93,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: AvatarUploadExample1,
         description: '头像上传组件支持点击、拖拽、预览和移除，适合个人资料编辑。',
         id: 'upload',
-        imports: ['vAvatarUpload', 'vText', 'vstack'],
+        imports: ['ref', 'vAvatarUpload', 'vText', 'vstack'],
         sourceTitle: '头像上传源码',
         title: '头像上传'
       }
@@ -147,7 +148,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: BadgeCountExample1,
         description: 'count 管理数字，overflowCount 压缩大数值，showZero 控制零值是否可见。',
         id: 'count',
-        imports: ['vBadge', 'vButton', 'vText', 'vstack'],
+        imports: ['ref', 'vBadge', 'vButton', 'vText', 'vstack'],
         sourceTitle: '数字徽标核心源码',
         title: '数字徽标'
       },
@@ -238,7 +239,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailColumnsExample1,
         description: 'columns 决定每行条目数，切换后详情网格会立即重新排布。',
         id: 'columns',
-        imports: ['vButton', 'vDetail', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vDetail', 'vText', 'vstack'],
         sourceTitle: '多列详情核心源码',
         title: '多列详情'
       },
@@ -254,7 +255,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: DetailDynamicExample1,
         description: '持有 vText 引用后，切换服务或状态只需要更新值节点。',
         id: 'dynamic',
-        imports: ['vButton', 'vDetail', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vDetail', 'vText', 'vstack'],
         sourceTitle: '动态更新核心源码',
         title: '动态更新'
       }
@@ -331,7 +332,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableBasicExample1,
         description: '用 column.render 放入行操作按钮，点击后把当前行写回状态区。',
         id: 'basic',
-        imports: ['vButton', 'vTableWrapper', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '基础表格核心源码',
         title: '基础表格'
       },
@@ -339,7 +340,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TableEmptyExample1,
         description: '空数据时显示 emptyText，数据返回后直接 rows(nextRows) 替换内容。',
         id: 'empty',
-        imports: ['vButton', 'vTableWrapper', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '空状态核心源码',
         title: '空状态'
       },
@@ -347,7 +348,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TablePaginationExample1,
         description: '分页器只负责页码状态，表格根据 page 和 pageSize 切换当前页数据。',
         id: 'pagination',
-        imports: ['vPagination', 'vTableWrapper', 'vText', 'vstack'],
+        imports: ['ref', 'vPagination', 'vTableWrapper', 'vText', 'vstack'],
         sourceTitle: '分页表格核心源码',
         title: '分页联动'
       },
@@ -356,7 +357,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         description:
           'vThead / vTbody / vTr / vTh / vTd 支持逐层声明式控制，适合合并单元格和自定义表格结构。',
         id: 'declarative',
-        imports: ['vButton', 'vTable', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vTable', 'vText', 'vstack'],
         sourceTitle: '声明式表格源码',
         title: '声明式内部结构'
       }
@@ -435,7 +436,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeBasicExample1,
         description: '树形数据展示服务目录，点击节点后把当前选中项写回状态区。',
         id: 'basic',
-        imports: ['vButton', 'vText', 'vTree', 'vstack'],
+        imports: ['ref', 'vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '树形选择核心源码',
         title: '树形选择'
       },
@@ -443,7 +444,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeCheckableExample1,
         description: '开启 checkable 后可以用复选框批量选择资源，父节点会同步显示部分勾选状态。',
         id: 'checkable',
-        imports: ['vButton', 'vText', 'vTree', 'vstack'],
+        imports: ['ref', 'vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '复选框树核心源码',
         title: '复选框树'
       },
@@ -451,7 +452,15 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeFileManagerExample1,
         description: '目录树和文件详情并排展示，选择节点后显示类型、大小和更新时间。',
         id: 'file-manager',
-        imports: ['FolderOpenOutlined', 'FolderOutlined', 'vButton', 'vText', 'vTree', 'vstack'],
+        imports: [
+          'FolderOpenOutlined',
+          'FolderOutlined',
+          'ref',
+          'vButton',
+          'vText',
+          'vTree',
+          'vstack'
+        ],
         sourceTitle: '文件管理器核心源码',
         title: '文件管理器'
       },
@@ -459,7 +468,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: TreeBuilderExample1,
         description: '用 vTree 回调直接声明树节点，适合把结构和状态写在一起的场景。',
         id: 'builder',
-        imports: ['vButton', 'vText', 'vTree', 'vstack'],
+        imports: ['ref', 'vButton', 'vText', 'vTree', 'vstack'],
         sourceTitle: '声明式树核心源码',
         title: '声明式构建'
       }
@@ -634,7 +643,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ProgressDynamicExample1,
         description: '按钮驱动 value 更新，达到 max 后自动切换为 success。',
         id: 'dynamic',
-        imports: ['vButton', 'vProgress', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vProgress', 'vText', 'vstack'],
         sourceTitle: '动态进度条核心源码',
         title: '动态进度条'
       }
@@ -733,7 +742,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: ScrollLoopBlockExample1,
         description: 'loop 开启循环加载，block 阻止后续请求，按钮可以实时切换。',
         id: 'loop-block',
-        imports: ['div', 'vButton', 'vScroll', 'vText', 'vstack'],
+        imports: ['div', 'ref', 'vButton', 'vScroll', 'vText', 'vstack'],
         sourceTitle: '循环与阻止核心源码',
         title: '循环与阻止'
       },
@@ -824,7 +833,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselAutoplayExample1,
         description: 'autoplay 和 interval 控制自动轮播，悬停或聚焦时自动暂停。',
         id: 'autoplay',
-        imports: ['vCarousel', 'vText', 'vstack', 'div'],
+        imports: ['ref', 'vCarousel', 'vText', 'vstack', 'div'],
         sourceTitle: '自动播放核心源码',
         title: '自动播放'
       },
@@ -832,7 +841,7 @@ const dataDisplayDocsDefinitions = Object.freeze({
         component: CarouselLoopExample1,
         description: 'loop 开启时首尾循环，关闭后到达边界会禁用对应箭头。',
         id: 'loop',
-        imports: ['vButton', 'vCarousel', 'vText', 'vstack', 'div'],
+        imports: ['ref', 'vButton', 'vCarousel', 'vText', 'vstack', 'div'],
         sourceTitle: '循环切换核心源码',
         title: '循环切换'
       },
@@ -1026,7 +1035,7 @@ function BadgeCountExample1() {
     count: 0,
     showZero: true
   });
-  const status = vText('当前 0');
+  const status = ref('当前 0');
 
   return vstack((content) => {
     content.style('gap', '14px');
@@ -1043,7 +1052,7 @@ function BadgeCountExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-badge-count-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
     content.hstack((actions) => {
@@ -1052,21 +1061,21 @@ function BadgeCountExample1() {
         button.variant('primary');
         button.on('click', () => {
           badge.count(badge.count() + 1);
-          status.textContent(`当前 ${badge.count()}`);
+          status.value = `当前 ${badge.count()}`;
         });
       });
       actions.vButton('清零', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           badge.count(0);
-          status.textContent('当前 0');
+          status.value = '当前 0';
         });
       });
       actions.vButton('切换显示零', (button) => {
         button.variant('ghost');
         button.on('click', () => {
           badge.showZero(!badge.showZero());
-          status.textContent(badge.showZero() ? '显示零值' : '隐藏零值');
+          status.value = badge.showZero() ? '显示零值' : '隐藏零值';
         });
       });
     });
@@ -1169,7 +1178,7 @@ function AvatarInteractiveExample1() {
   let statusIndex = 0;
   let label = 'A';
   const avatar = vAvatar({ status: 'online', text: 'A' });
-  const statusText = vText('online');
+  const statusText = ref('online');
 
   return vstack((content) => {
     content.style('gap', '14px');
@@ -1181,7 +1190,7 @@ function AvatarInteractiveExample1() {
         info.span('当前状态');
         info.output((output) => {
           output.attr('data-avatar-demo-status', 'true');
-          output.child(statusText);
+          output.child(vText(statusText));
         });
       });
     });
@@ -1192,7 +1201,7 @@ function AvatarInteractiveExample1() {
         button.on('click', () => {
           statusIndex = (statusIndex + 1) % statuses.length;
           avatar.status(statuses[statusIndex]);
-          statusText.textContent(statuses[statusIndex]);
+          statusText.value = statuses[statusIndex];
         });
       });
       actions.vButton('切换形状', (button) => {
@@ -1224,11 +1233,11 @@ function AvatarInteractiveExample1() {
 
 function AvatarUploadExample1() {
   const avatar = vAvatarUpload({ size: 96 });
-  const status = vText('未选择头像');
+  const status = ref('未选择头像');
 
   avatar.on('change', () => {
     const file = avatar.value();
-    status.textContent(file ? `已选择：${file.name}` : '未选择头像');
+    status.value = file ? `已选择：${file.name}` : '未选择头像';
   });
 
   return vstack((content) => {
@@ -1241,7 +1250,7 @@ function AvatarUploadExample1() {
         info.span('当前状态');
         info.output((output) => {
           output.attr('data-avatar-upload-status', 'true');
-          output.child(status);
+          output.child(vText(status));
         });
       });
     });
@@ -1265,7 +1274,7 @@ function DetailBasicExample1() {
 }
 
 function DetailColumnsExample1() {
-  const status = vText('当前 2 列');
+  const status = ref('当前 2 列');
   const detail = vDetail((detail) => {
     detail.columns(2);
     detail.vDetailItem({ label: '服务名称', value: 'api-gateway' });
@@ -1285,7 +1294,7 @@ function DetailColumnsExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-detail-columns-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
     content.hstack((actions) => {
@@ -1295,7 +1304,7 @@ function DetailColumnsExample1() {
           button.variant(count === 2 ? 'primary' : 'secondary');
           button.on('click', () => {
             detail.columns(count);
-            status.textContent(`当前 ${count} 列`);
+            status.value = `当前 ${count} 列`;
           });
         });
       });
@@ -1336,22 +1345,22 @@ function DetailCustomExample1() {
 }
 
 function DetailDynamicExample1() {
-  const name = vText('api-gateway');
-  const status = vText('运行中');
-  const owner = vText('SRE 团队');
-  const version = vText('v1.4.2');
+  const name = ref('api-gateway');
+  const status = ref('运行中');
+  const owner = ref('SRE 团队');
+  const version = ref('v1.4.2');
   const detail = vDetail((detail) => {
-    detail.vDetailItem({ label: '服务名称', value: name });
-    detail.vDetailItem({ label: '状态', value: status });
-    detail.vDetailItem({ label: '负责人', value: owner });
-    detail.vDetailItem({ label: '最近发布', value: version });
+    detail.vDetailItem({ label: '服务名称', value: vText(name) });
+    detail.vDetailItem({ label: '状态', value: vText(status) });
+    detail.vDetailItem({ label: '负责人', value: vText(owner) });
+    detail.vDetailItem({ label: '最近发布', value: vText(version) });
   });
   const switchService = () => {
-    const next = name.textContent() === 'api-gateway' ? 'worker' : 'api-gateway';
-    name.textContent(next);
-    status.textContent(next === 'worker' ? '维护中' : '运行中');
-    owner.textContent(next === 'worker' ? 'Data 团队' : 'SRE 团队');
-    version.textContent(next === 'worker' ? 'v2.0.1' : 'v1.4.2');
+    const next = name.value === 'api-gateway' ? 'worker' : 'api-gateway';
+    name.value = next;
+    status.value = next === 'worker' ? '维护中' : '运行中';
+    owner.value = next === 'worker' ? 'Data 团队' : 'SRE 团队';
+    version.value = next === 'worker' ? 'v2.0.1' : 'v1.4.2';
   };
 
   return vstack((content) => {
@@ -1366,7 +1375,7 @@ function DetailDynamicExample1() {
       actions.vButton('切换状态', (button) => {
         button.variant('secondary');
         button.on('click', () => {
-          status.textContent(status.textContent() === '运行中' ? '维护中' : '运行中');
+          status.value = status.value === '运行中' ? '维护中' : '运行中';
         });
       });
     });
@@ -1374,7 +1383,7 @@ function DetailDynamicExample1() {
 }
 
 function TableBasicExample1() {
-  const status = vText('等待操作');
+  const status = ref('等待操作');
   const rows = [
     {
       id: 'api-gateway',
@@ -1405,7 +1414,9 @@ function TableBasicExample1() {
             return vButton('选择', (button) => {
               button.size('small');
               button.attr('data-table-row-action', row.id);
-              button.on('click', () => status.textContent(`已选择 ${row.id}`));
+              button.on('click', () => {
+                status.value = `已选择 ${row.id}`;
+              });
             });
           }
         }
@@ -1418,14 +1429,14 @@ function TableBasicExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-table-demo-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
   });
 }
 
 function TableEmptyExample1() {
-  const status = vText('当前为空');
+  const status = ref('当前为空');
   const table = vTableWrapper({
     caption: '告警记录',
     columns: [
@@ -1444,7 +1455,7 @@ function TableEmptyExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('数据状态');
       row.spacer();
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -1455,14 +1466,14 @@ function TableEmptyExample1() {
             { id: 'cpu', name: 'CPU 使用率', level: 'warning', time: '刚刚' },
             { id: 'queue', name: '队列堆积', level: 'info', time: '3 分钟前' }
           ]);
-          status.textContent('已加载 2 条');
+          status.value = '已加载 2 条';
         });
       });
       actions.vButton('清空', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           table.rows([]);
-          status.textContent('当前为空');
+          status.value = '当前为空';
         });
       });
     });
@@ -1477,7 +1488,7 @@ function TablePaginationExample1() {
     { id: 'scheduler', name: 'scheduler', status: '运行中', owner: 'Ops' },
     { id: 'billing', name: 'billing', status: '停止', owner: 'Finance' }
   ];
-  const pageState = vText('第 1 页');
+  const pageState = ref('第 1 页');
   const table = vTableWrapper({
     caption: '分页服务列表',
     columns: [
@@ -1495,7 +1506,7 @@ function TablePaginationExample1() {
     onChange({ page, pageSize }) {
       const start = (page - 1) * pageSize;
       table.rows(allRows.slice(start, start + pageSize));
-      pageState.textContent(`第 ${page} 页`);
+      pageState.value = `第 ${page} 页`;
     }
   });
 
@@ -1507,13 +1518,13 @@ function TablePaginationExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('当前页');
       row.spacer();
-      row.output((output) => output.child(pageState));
+      row.output((output) => output.child(vText(pageState)));
     });
   });
 }
 
 function TableDeclarativeExample1() {
-  const status = vText('自定义表头已就绪');
+  const status = ref('自定义表头已就绪');
 
   return vstack((content) => {
     content.style('gap', '14px');
@@ -1533,7 +1544,9 @@ function TableDeclarativeExample1() {
             vButton('查看', (button) => {
               button.size('small');
               button.variant('secondary');
-              button.on('click', () => status.textContent('已查看 api-gateway'));
+              button.on('click', () => {
+                status.value = '已查看 api-gateway';
+              });
             })
           );
         });
@@ -1556,17 +1569,17 @@ function TableDeclarativeExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('操作反馈');
       row.spacer();
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
   });
 }
 
 function TreeBasicExample1() {
-  const status = vText('当前：未选择');
+  const status = ref('当前：未选择');
   const tree = vTree((root) => {
     root.ariaLabel('服务目录').change(({ label, type }) => {
       if (type === 'select') {
-        status.textContent(`当前：${label}`);
+        status.value = `当前：${label}`;
       }
     });
     root.vTreeNode((node) =>
@@ -1609,26 +1622,26 @@ function TreeBasicExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('当前选择');
       row.spacer();
-      row.output((output) => output.attr('data-tree-demo-status', 'true').child(status));
+      row.output((output) => output.attr('data-tree-demo-status', 'true').child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
       actions.vButton('展开全部', (button) =>
         button.variant('secondary').on('click', () => {
           tree.expandAll();
-          status.textContent('已展开全部节点');
+          status.value = '已展开全部节点';
         })
       );
       actions.vButton('收起全部', (button) =>
         button.variant('secondary').on('click', () => {
           tree.collapseAll();
-          status.textContent('已收起全部节点');
+          status.value = '已收起全部节点';
         })
       );
       actions.vButton('清除选择', (button) =>
         button.variant('ghost').on('click', () => {
           tree.selectedKeys([]);
-          status.textContent('当前：未选择');
+          status.value = '当前：未选择';
         })
       );
     });
@@ -1636,14 +1649,14 @@ function TreeBasicExample1() {
 }
 
 function TreeCheckableExample1() {
-  const status = vText('已选 0 项');
+  const status = ref('已选 0 项');
   const tree = vTree((root) => {
     root
       .ariaLabel('资源选择')
       .checkable(true)
       .change(({ checkedKeys, type }) => {
         if (type === 'check') {
-          status.textContent(`已选 ${checkedKeys.length} 项`);
+          status.value = `已选 ${checkedKeys.length} 项`;
         }
       });
     root.vTreeNode((node) =>
@@ -1688,7 +1701,7 @@ function TreeCheckableExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('勾选状态');
       row.spacer();
-      row.output((output) => output.attr('data-tree-check-status', 'true').child(status));
+      row.output((output) => output.attr('data-tree-check-status', 'true').child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -1703,11 +1716,11 @@ function TreeCheckableExample1() {
 }
 
 function TreeFileManagerExample1() {
-  const fileName = vText('未选择文件');
-  const fileType = vText('--');
-  const fileSize = vText('--');
-  const fileUpdated = vText('--');
-  const status = vText('从左侧选择文件');
+  const fileName = ref('未选择文件');
+  const fileType = ref('--');
+  const fileSize = ref('--');
+  const fileUpdated = ref('--');
+  const status = ref('从左侧选择文件');
   const fileMeta = {
     'logo.svg': { size: '4 KB', type: 'SVG 图片', updated: '8 月 21 日' },
     'release-notes.md': { size: '8 KB', type: 'Markdown', updated: '8 月 22 日' },
@@ -1731,11 +1744,11 @@ function TreeFileManagerExample1() {
           updated: '--'
         };
 
-        fileName.textContent(label);
-        fileType.textContent(meta.type);
-        fileSize.textContent(meta.size);
-        fileUpdated.textContent(meta.updated);
-        status.textContent(`当前：${label}`);
+        fileName.value = label;
+        fileType.value = meta.type;
+        fileSize.value = meta.size;
+        fileUpdated.value = meta.updated;
+        status.value = `当前：${label}`;
       });
     root.vTreeNode((node) =>
       node
@@ -1792,10 +1805,10 @@ function TreeFileManagerExample1() {
           padding: '16px'
         });
         panel.h3((heading) => {
-          heading.attr('data-tree-file-name', 'true').child(fileName);
+          heading.attr('data-tree-file-name', 'true').child(vText(fileName));
         });
         panel.p((description) => {
-          description.attr('data-tree-file-status', 'true').child(status);
+          description.attr('data-tree-file-status', 'true').child(vText(status));
         });
         panel.div((metaRow) => {
           metaRow.style({
@@ -1808,21 +1821,21 @@ function TreeFileManagerExample1() {
             item.style({ display: 'grid', gap: '2px' });
             item.span('类型');
             item.strong((value) => {
-              value.attr('data-tree-file-type', 'true').child(fileType);
+              value.attr('data-tree-file-type', 'true').child(vText(fileType));
             });
           });
           metaRow.div((item) => {
             item.style({ display: 'grid', gap: '2px' });
             item.span('大小');
             item.strong((value) => {
-              value.attr('data-tree-file-size', 'true').child(fileSize);
+              value.attr('data-tree-file-size', 'true').child(vText(fileSize));
             });
           });
           metaRow.div((item) => {
             item.style({ display: 'grid', gap: '2px' });
             item.span('更新时间');
             item.strong((value) => {
-              value.attr('data-tree-file-updated', 'true').child(fileUpdated);
+              value.attr('data-tree-file-updated', 'true').child(vText(fileUpdated));
             });
           });
         });
@@ -1832,22 +1845,22 @@ function TreeFileManagerExample1() {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
       actions.vButton('新建文件夹', (button) => {
         button.variant('secondary');
-        button.on('click', () => status.textContent('已创建新文件夹'));
+        button.on('click', () => (status.value = '已创建新文件夹'));
       });
       actions.vButton('上传文件', (button) => {
         button.variant('primary');
-        button.on('click', () => status.textContent('已开始上传文件'));
+        button.on('click', () => (status.value = '已开始上传文件'));
       });
       actions.vButton('刷新', (button) => {
         button.variant('ghost');
-        button.on('click', () => status.textContent('目录已刷新'));
+        button.on('click', () => (status.value = '目录已刷新'));
       });
     });
   });
 }
 
 function TreeBuilderExample1() {
-  const status = vText('当前：未选择');
+  const status = ref('当前：未选择');
   const addRowAction = (node) =>
     node.actions((actions) =>
       actions.vButton('⋯', (button) =>
@@ -1858,7 +1871,7 @@ function TreeBuilderExample1() {
             'aria-label': `扩展操作：${node.label()}`,
             'data-tree-builder-action': node.id()
           })
-          .on('click', () => status.textContent(`操作：${node.label()}`))
+          .on('click', () => (status.value = `操作：${node.label()}`))
       )
     );
   const leaf =
@@ -1876,7 +1889,7 @@ function TreeBuilderExample1() {
   const tree = vTree((root) => {
     root.ariaLabel('权限目录').change(({ label, type }) => {
       if (type === 'select') {
-        status.textContent(`当前：${label}`);
+        status.value = `当前：${label}`;
       }
     });
     root.vTreeNode((node) => {
@@ -1928,7 +1941,7 @@ function TreeBuilderExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('当前选择');
       row.spacer();
-      row.output((output) => output.attr('data-tree-builder-status', 'true').child(status));
+      row.output((output) => output.attr('data-tree-builder-status', 'true').child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -2001,11 +2014,11 @@ function ProgressDynamicExample1() {
     progress.status('processing');
     progress.value(40);
   });
-  const status = vText('当前 40%');
+  const status = ref('当前 40%');
   const update = (value) => {
     progress.value(value);
     progress.status(value >= 100 ? 'success' : 'processing');
-    status.textContent(`当前 ${Math.round(progress.percent())}%`);
+    status.value = `当前 ${Math.round(progress.percent())}%`;
   };
 
   return vstack((content) => {
@@ -2017,7 +2030,7 @@ function ProgressDynamicExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-progress-dynamic-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
     content.hstack((actions) => {
@@ -2063,7 +2076,7 @@ function ScrollBasicExample1() {
 
 function ScrollLoopBlockExample1() {
   const source = Array.from({ length: 12 }, (_, index) => `任务 ${index + 1}`);
-  const status = vText('当前：block');
+  const status = ref('当前：block');
   const scroll = vScroll((scroll) => {
     scroll.style('height', '220px');
     scroll.items(source.slice(0, 4), (item) => div(item));
@@ -2094,7 +2107,7 @@ function ScrollLoopBlockExample1() {
       row.spacer();
       row.output((output) => {
         output.attr('data-scroll-loop-status', 'true');
-        output.child(status);
+        output.child(vText(status));
       });
     });
     content.hstack((actions) => {
@@ -2103,7 +2116,7 @@ function ScrollLoopBlockExample1() {
         button.variant('primary');
         button.on('click', () => {
           scroll.loop(true);
-          status.textContent('loop：循环加载');
+          status.value = 'loop：循环加载';
           scroll.check();
         });
       });
@@ -2111,14 +2124,14 @@ function ScrollLoopBlockExample1() {
         button.variant('secondary');
         button.on('click', () => {
           scroll.block(true);
-          status.textContent('block：停止加载');
+          status.value = 'block：停止加载';
         });
       });
       actions.vButton('重置', (button) => {
         button.variant('ghost');
         button.on('click', () => {
           scroll.reset().loop(false).check();
-          status.textContent('已重置');
+          status.value = '已重置';
         });
       });
     });
@@ -2238,7 +2251,7 @@ function CarouselBasicExample1() {
 }
 
 function CarouselAutoplayExample1() {
-  const status = vText('当前：1 / 3');
+  const status = ref('当前：1 / 3');
   const slides = ['自动播放 A', '自动播放 B', '自动播放 C'];
   const colors = [
     'var(--yoya-color-primary-subtle, #eef2ff)',
@@ -2266,7 +2279,7 @@ function CarouselAutoplayExample1() {
     );
     carousel.autoplay(true);
     carousel.on('change', (event) => {
-      status.textContent(`当前：${event.detail.index + 1} / ${event.detail.count}`);
+      status.value = `当前：${event.detail.index + 1} / ${event.detail.count}`;
     });
   });
 
@@ -2277,7 +2290,9 @@ function CarouselAutoplayExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('当前项');
       row.spacer();
-      row.output((output) => output.attr('data-carousel-autoplay-status', 'true').child(status));
+      row.output((output) => {
+        output.attr('data-carousel-autoplay-status', 'true').child(vText(status));
+      });
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', gap: '10px' });
@@ -2293,7 +2308,7 @@ function CarouselAutoplayExample1() {
 }
 
 function CarouselLoopExample1() {
-  const status = vText('loop：true');
+  const status = ref('loop：true');
   const slides = ['循环 A', '循环 B', '循环 C'];
   const carousel = vCarousel((carousel) => {
     carousel.height('220px');
@@ -2320,9 +2335,8 @@ function CarouselLoopExample1() {
   });
 
   function syncStatus() {
-    status.textContent(
-      `loop：${carousel.loop()}，当前 ${carousel.active() + 1} / ${carousel.slides().length}`
-    );
+    const position = `${carousel.active() + 1} / ${carousel.slides().length}`;
+    status.value = `loop：${carousel.loop()}，当前 ${position}`;
   }
 
   return vstack((content) => {
@@ -2332,7 +2346,7 @@ function CarouselLoopExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('当前状态');
       row.spacer();
-      row.output((output) => output.attr('data-carousel-loop-status', 'true').child(status));
+      row.output((output) => output.attr('data-carousel-loop-status', 'true').child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });

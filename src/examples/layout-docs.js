@@ -3,6 +3,7 @@ import {
   flex,
   hstack,
   mobileLayout,
+  ref,
   section,
   stack,
   vBody,
@@ -62,7 +63,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: BodyShellExample1,
         description: '用 vBody 统一页面背景、内容宽度和留白，再在内部拼出工作台布局。',
         id: 'shell',
-        imports: ['vBody', 'vButton', 'vText'],
+        imports: ['ref', 'vBody', 'vButton', 'vText'],
         sourceTitle: '页面容器核心源码',
         title: '页面工作台'
       },
@@ -283,7 +284,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: GridResponsiveExample1,
         description: '根据最小列宽和断点自动切换列数。',
         id: 'responsive',
-        imports: ['vstack', 'vText'],
+        imports: ['ref', 'vstack', 'vText'],
         sourceTitle: '响应式栅格核心源码',
         title: '响应式栅格'
       },
@@ -375,7 +376,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: PopupLaunchExample1,
         description: '按钮点击后打开弹窗，适合编辑、确认和提交前的临时焦点层。',
         id: 'launch',
-        imports: ['vButton', 'vCard', 'vDialog', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vCard', 'vDialog', 'vText', 'vstack'],
         sourceTitle: '按钮触发弹窗核心源码',
         title: '按钮触发'
       },
@@ -383,7 +384,7 @@ const layoutDocsDefinitions = Object.freeze({
         component: PopupStateExample1,
         description: '通过按钮控制提醒弹窗的打开和关闭，页面进入时不会自动占位。',
         id: 'state',
-        imports: ['vButton', 'vCard', 'vDialog', 'vText', 'vstack'],
+        imports: ['ref', 'vButton', 'vCard', 'vDialog', 'vText', 'vstack'],
         sourceTitle: '状态控制弹窗核心源码',
         title: '状态控制'
       },
@@ -392,6 +393,7 @@ const layoutDocsDefinitions = Object.freeze({
         description: '把 vForm 放进 vDialog，用必填校验和提交动作完成新建流程。',
         id: 'form',
         imports: [
+          'ref',
           'vButton',
           'vDialog',
           'vForm',
@@ -951,12 +953,12 @@ function GridFixedExample1() {
 }
 
 function GridResponsiveExample1() {
-  const widthText = vText('768px');
+  const widthText = ref('768px');
   let frame = null;
 
   const setWidth = (next) => {
     const width = Math.max(280, Math.min(1200, Number(next) || 768));
-    widthText.textContent(`${width}px`);
+    widthText.value = `${width}px`;
     if (frame) {
       frame.style('width', `${width}px`);
     }
@@ -997,7 +999,7 @@ function GridResponsiveExample1() {
       row.span((text) => {
         text.className('components-route-note');
         text.attr('data-grid-responsive-width-text', 'true');
-        text.child(widthText);
+        text.child(vText(widthText));
       });
     });
     content.iframe((iframe) => {
@@ -1142,7 +1144,7 @@ function MobileFlexExample1() {
 }
 
 function BodyShellExample1() {
-  const statusText = vText('当前：四列指标');
+  const statusText = ref('当前：四列指标');
   const metricCards = [
     ['请求量', '128k', '近 24 小时'],
     ['成功率', '99.92%', '接口稳定'],
@@ -1163,7 +1165,7 @@ function BodyShellExample1() {
       compact ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))'
     );
     densityButton.attr('aria-pressed', compact ? 'true' : 'false');
-    statusText.textContent(compact ? '当前：两列指标' : '当前：四列指标');
+    statusText.value = compact ? '当前：两列指标' : '当前：四列指标';
   };
 
   const page = vBody((shell) => {
@@ -1185,7 +1187,7 @@ function BodyShellExample1() {
             );
           });
           row.spacer();
-          row.output((output) => output.child(statusText));
+          row.output((output) => output.child(vText(statusText)));
           row.vButton('切换列数', (button) => {
             densityButton = button;
             button.variant('secondary');
@@ -1386,7 +1388,7 @@ function SpacerSummaryExample1() {
 
 function PopupLaunchExample1() {
   const dialog = vDialog({ open: false });
-  const status = vText('弹窗关闭');
+  const status = ref('弹窗关闭');
 
   dialog.content((sheet) => {
     sheet.className('components-layout-popup-sheet');
@@ -1398,7 +1400,7 @@ function PopupLaunchExample1() {
         row.style({ alignItems: 'center', gap: '10px' });
         row.span('当前状态');
         row.spacer();
-        row.output((output) => output.child(status));
+        row.output((output) => output.child(vText(status)));
       });
       content.vCard((card) => {
         card.vCardHeader('确认信息');
@@ -1411,14 +1413,14 @@ function PopupLaunchExample1() {
             actions.vButton('取消', (button) => {
               button.variant('secondary');
               button.on('click', () => {
-                status.textContent('已取消');
+                status.value = '已取消';
                 dialog.close();
               });
             });
             actions.vButton('确认发布', (button) => {
               button.variant('primary');
               button.on('click', () => {
-                status.textContent('已确认');
+                status.value = '已确认';
                 dialog.close();
               });
             });
@@ -1428,8 +1430,8 @@ function PopupLaunchExample1() {
     });
   });
   dialog.on('close', () => {
-    if (status.textContent() === '弹窗已打开') {
-      status.textContent('弹窗关闭');
+    if (status.value === '弹窗已打开') {
+      status.value = '弹窗关闭';
     }
   });
 
@@ -1441,7 +1443,7 @@ function PopupLaunchExample1() {
       row.vButton('打开弹窗', (button) => {
         button.variant('primary');
         button.on('click', () => {
-          status.textContent('弹窗已打开');
+          status.value = '弹窗已打开';
           dialog.open(true);
         });
       });
@@ -1453,7 +1455,7 @@ function PopupLaunchExample1() {
 
 function PopupStateExample1() {
   const dialog = vDialog({ open: false });
-  const status = vText('弹窗关闭');
+  const status = ref('弹窗关闭');
 
   dialog.content((sheet) => {
     sheet.className('components-layout-popup-sheet');
@@ -1465,7 +1467,7 @@ function PopupStateExample1() {
         row.style({ alignItems: 'center', gap: '10px' });
         row.span('当前状态');
         row.spacer();
-        row.output((output) => output.child(status));
+        row.output((output) => output.child(vText(status)));
       });
       content.vCard((card) => {
         card.vCardHeader('提醒内容');
@@ -1478,7 +1480,7 @@ function PopupStateExample1() {
             actions.vButton('知道了', (button) => {
               button.variant('secondary');
               button.on('click', () => {
-                status.textContent('已确认');
+                status.value = '已确认';
                 dialog.close();
               });
             });
@@ -1488,8 +1490,8 @@ function PopupStateExample1() {
     });
   });
   dialog.on('close', () => {
-    if (status.textContent() === '提醒已打开') {
-      status.textContent('弹窗关闭');
+    if (status.value === '提醒已打开') {
+      status.value = '弹窗关闭';
     }
   });
 
@@ -1501,7 +1503,7 @@ function PopupStateExample1() {
       row.vButton('打开提醒', (button) => {
         button.variant('secondary');
         button.on('click', () => {
-          status.textContent('提醒已打开');
+          status.value = '提醒已打开';
           dialog.open(true);
         });
       });
@@ -1513,7 +1515,7 @@ function PopupStateExample1() {
 
 function PopupFormExample1() {
   const dialog = vDialog({ open: false });
-  const status = vText('等待提交');
+  const status = ref('等待提交');
   const form = vForm((formNode) => {
     formNode.style('gap', '12px');
     formNode.vFormItem((item) => {
@@ -1539,7 +1541,7 @@ function PopupFormExample1() {
       actions.vButton('取消', (button) => {
         button.variant('secondary');
         button.on('click', () => {
-          status.textContent('已取消');
+          status.value = '已取消';
           dialog.close();
         });
       });
@@ -1551,10 +1553,10 @@ function PopupFormExample1() {
     formNode.on('submit', (event) => {
       event.preventDefault();
       if (!formNode.validate()) {
-        status.textContent('请检查必填项');
+        status.value = '请检查必填项';
         return;
       }
-      status.textContent(`已创建：${JSON.stringify(formNode.values())}`);
+      status.value = `已创建：${JSON.stringify(formNode.values())}`;
       dialog.close();
     });
   });
@@ -1577,11 +1579,11 @@ function PopupFormExample1() {
       row.vButton('新建发布', (button) => {
         button.variant('primary');
         button.on('click', () => {
-          status.textContent('弹窗已打开');
+          status.value = '弹窗已打开';
           dialog.open(true);
         });
       });
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
     content.child(dialog);
   });

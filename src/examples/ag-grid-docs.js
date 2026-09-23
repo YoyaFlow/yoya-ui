@@ -31,35 +31,35 @@ function performanceDemo() {
         label: '1 万行',
         run: (live, output) => {
           live.setSize(10000, live.colCount());
-          output.textContent(`已重载 1 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
+          output.value = `已重载 1 万行 × ${live.colCount()} 列，滚动与排序保持即时。`;
         }
       },
       {
         label: '5 万行',
         run: (live, output) => {
           live.setSize(50000, live.colCount());
-          output.textContent(`已重载 5 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
+          output.value = `已重载 5 万行 × ${live.colCount()} 列，滚动与排序保持即时。`;
         }
       },
       {
         label: '10 万行',
         run: (live, output) => {
           live.setSize(100000, live.colCount());
-          output.textContent(`已重载 10 万行 × ${live.colCount()} 列，滚动与排序保持即时。`);
+          output.value = `已重载 10 万行 × ${live.colCount()} 列，滚动与排序保持即时。`;
         }
       },
       {
         label: '6 列',
         run: (live, output) => {
           live.setSize(live.rowCount(), 6);
-          output.textContent(`已重载 ${live.rowCount()} 行 × 6 列。`);
+          output.value = `已重载 ${live.rowCount()} 行 × 6 列。`;
         }
       },
       {
         label: '16 列',
         run: (live, output) => {
           live.setSize(live.rowCount(), 16);
-          output.textContent(`已重载 ${live.rowCount()} 行 × 16 列。`);
+          output.value = `已重载 ${live.rowCount()} 行 × 16 列。`;
         }
       }
     ],
@@ -89,28 +89,28 @@ function financeDemo() {
         label: '启动行情',
         run: (live, output) => {
           live.start();
-          output.textContent('行情运行中：每 650ms 随机跳动 2~4 只证券。');
+          output.value = '行情运行中：每 650ms 随机跳动 2~4 只证券。';
         }
       },
       {
         label: '暂停行情',
         run: (live, output) => {
           live.stop();
-          output.textContent(`已暂停，本次共更新 ${live.tickCount()} 轮。`);
+          output.value = `已暂停，本次共更新 ${live.tickCount()} 轮。`;
         }
       },
       {
         label: '推进一步',
         run: (live, output) => {
           live.tick();
-          output.textContent(`手动更新 1 轮，累计 ${live.tickCount()} 轮。`);
+          output.value = `手动更新 1 轮，累计 ${live.tickCount()} 轮。`;
         }
       },
       {
         label: '重置行情',
         run: (live, output) => {
           live.reset();
-          output.textContent('已重置为初始行情。');
+          output.value = '已重置为初始行情。';
         }
       }
     ],
@@ -140,14 +140,14 @@ function hrDemo() {
         label: '全部展开',
         run: (live, output) => {
           live.expandAll();
-          output.textContent(`已展开完整组织树，当前可见 ${live.visibleCount()} 行。`);
+          output.value = `已展开完整组织树，当前可见 ${live.visibleCount()} 行。`;
         }
       },
       {
         label: '收起全部',
         run: (live, output) => {
           live.collapseAll();
-          output.textContent(`已收起到 4 个中心，当前可见 ${live.visibleCount()} 行。`);
+          output.value = `已收起到 4 个中心，当前可见 ${live.visibleCount()} 行。`;
         }
       }
     ],
@@ -177,31 +177,30 @@ function inventoryDemo() {
         label: '全部',
         run: (live, output) => {
           live.setStatus('全部');
-          output.textContent(
+          output.value =
             `显示全部商品：在售 ${live.countOf('在售')}、已暂停 ` +
-              `${live.countOf('已暂停')}、缺货 ${live.countOf('缺货')}。`
-          );
+            `${live.countOf('已暂停')}、缺货 ${live.countOf('缺货')}。`;
         }
       },
       {
         label: '在售',
         run: (live, output) => {
           live.setStatus('在售');
-          output.textContent(`仅显示在售商品，共 ${live.countOf('在售')} 个。`);
+          output.value = `仅显示在售商品，共 ${live.countOf('在售')} 个。`;
         }
       },
       {
         label: '已暂停',
         run: (live, output) => {
           live.setStatus('已暂停');
-          output.textContent(`仅显示暂停销售商品，共 ${live.countOf('已暂停')} 个。`);
+          output.value = `仅显示暂停销售商品，共 ${live.countOf('已暂停')} 个。`;
         }
       },
       {
         label: '缺货',
         run: (live, output) => {
           live.setStatus('缺货');
-          output.textContent(`仅显示缺货商品，共 ${live.countOf('缺货')} 个。`);
+          output.value = `仅显示缺货商品，共 ${live.countOf('缺货')} 个。`;
         }
       }
     ],

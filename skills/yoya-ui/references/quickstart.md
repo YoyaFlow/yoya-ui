@@ -47,9 +47,9 @@ npm run dev
 
 ## 组件定义（可选，面向第三方组件库）
 
-形态：薄工厂（函数返回 ViewNode）、vNode（`vNode((api) => 视图)`，有状态 / 命令 / 钩子时用它）、
-类节点组件（`class extends HtmlElementNode` + 成对工厂，只用于节点类型扩展）。**没有额外行为要定义就用薄工厂**；
-对象组件（`{ render() }`）**已弃用**、仅存量。详见 [core.md](core.md)。
+两种写法：薄工厂（函数返回 ViewNode，**没有额外行为要定义就用它**）、vNode（`vNode((api) => 视图)`，
+有状态 / 命令 / 钩子时用它）。`class extends HtmlElementNode` 只是引擎内部的**节点类型扩展**
+（组件的视图根 / 自定义元素种类），不是第三种写法；对象组件（`{ render() }`）**已弃用**、仅存量，不要写。详见 [core.md](core.md)。
 
 ## 权限控制
 

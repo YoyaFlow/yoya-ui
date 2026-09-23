@@ -36,7 +36,7 @@ export function ThemeDemonstrationPage() {
             ComponentSource({
               component: renderThemeDemo,
               sourceComponent: renderThemeDemo,
-              imports: ['vButton', 'vCard', 'vColorPicker', 'vText', 'vThemeModeSwitch'],
+              imports: ['ref', 'vButton', 'vCard', 'vColorPicker', 'vText', 'vThemeModeSwitch'],
               title: '主题切换演示源码'
             })
           );

@@ -1,12 +1,11 @@
-import { vText, vstack } from '../../index.js';
+import { computed, ref, vText, vstack } from '../../index.js';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 44;
 
 export function SvgProgressRingExample1() {
   let frame = 0;
-  let progress = 0;
+  const progress = ref(0);
   let ring = null;
-  let valueText = vText('0%');
 
   const schedule =
     typeof requestAnimationFrame === 'function'
@@ -22,7 +21,7 @@ export function SvgProgressRingExample1() {
       cancel(frame);
     }
 
-    const from = progress;
+    const from = progress.value;
     const startedAt = Date.now();
 
     const tick = () => {
@@ -33,9 +32,9 @@ export function SvgProgressRingExample1() {
 
       const ratio = Math.min(1, (Date.now() - startedAt) / 600);
       const eased = 1 - (1 - ratio) ** 3;
-      progress = from + (target - from) * eased;
-      ring.attr('stroke-dashoffset', String(RING_CIRCUMFERENCE * (1 - progress)));
-      valueText.textContent(`${Math.round(progress * 100)}%`);
+      progress.value = from + (target - from) * eased;
+      const offset = computed(() => String(RING_CIRCUMFERENCE * (1 - progress.value)));
+      ring.attr('stroke-dashoffset', offset);
       frame = ratio < 1 ? schedule(tick) : 0;
     };
 
@@ -77,7 +76,7 @@ export function SvgProgressRingExample1() {
             x: '60',
             y: '60'
           })
-          .child(valueText);
+          .child(vText(computed(() => `${Math.round(progress.value * 100)}%`)));
       });
     });
     stack.hstack({ gap: '8px' }, (row) => {

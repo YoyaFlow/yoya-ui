@@ -612,6 +612,41 @@ describe('CSS style contract', () => {
     );
   });
 
+  it('pairs every scrollbar-width: none with a ::-webkit-scrollbar counterpart', () => {
+    // `scrollbar-width` 要到 Safari/iOS 18.2 才有，WebKit 一侧必须配 `::-webkit-scrollbar`，
+    // 否则基线内（Safari 15.4+）这些区域会露出滚动条。判据按「目标元素」比：允许
+    // `[vn~='VTreeRanger'] [vn~='VTreeRangerList']` 与 `[vn~='VTreeRangerList']` 这样
+    // 宽严不同的祖先限定，但尾部那个复合选择器必须一致。
+    const rules = [...cssFlat.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+      selector: match[1].trim(),
+      body: match[2]
+    }));
+    /** 选择器的「目标元素」：去掉祖先与组合符，只留最后一个复合选择器。 */
+    const targetOf = (selector) =>
+      selector
+        .split(/[\s>+~]+/)
+        .pop()
+        .trim();
+
+    const targetsWithWebkitFallback = new Set(
+      rules
+        .flatMap((rule) => rule.selector.split(','))
+        .filter((selector) => selector.includes('::-webkit-scrollbar'))
+        .map((selector) => targetOf(selector.replace('::-webkit-scrollbar', '')))
+    );
+
+    const missing = rules
+      .filter((rule) => /scrollbar-width:\s*none/.test(rule.body))
+      .flatMap((rule) => rule.selector.split(','))
+      .map((selector) => selector.trim())
+      .filter((selector) => !targetsWithWebkitFallback.has(targetOf(selector)));
+
+    expect(
+      missing,
+      `这些选择器藏了 scrollbar-width 却没有 ::-webkit-scrollbar 配对：${missing.join(' / ')}`
+    ).toEqual([]);
+  });
+
   it('keeps theme variables available to the shared action batch', () => {
     expect(css).toContain('--yoya-color-primary');
     expect(css).toContain('--yoya-color-danger');
@@ -626,6 +661,21 @@ describe('CSS style contract', () => {
     // 列数是可配置几何，走 CSS 变量（R10）：JS 不拼 `grid-template-columns` 字符串
     expect(css).toMatch(
       /\[vn~='VCheckboxes'\] \{\s*grid-template-columns: repeat\(var\(--yoya-checkboxes-columns, 1\), minmax\(0, 1fr\)\);/
+    );
+  });
+
+  it('composes the theme shell background from the data the command writes', () => {
+    // 票 01 / D11：`backgroundOpacity()` 只写 `--yoya-shell-bg` / `--yoya-shell-alpha`，
+    // 合成（含默认 100% 的恒等情形）归皮肤。少了这条规则，行内 `background: var(…)` 就落空。
+    expect(css).toMatch(
+      /\[vn~='VThemeShell'\] \{\s*--yoya-shell-composed:\s*color-mix\(\s*in srgb,\s*var\(--yoya-shell-bg, var\(--yoya-color-surface, #ffffff\)\)\s*var\(--yoya-shell-alpha, 100%\),\s*transparent\s*\);\s*\}/
+    );
+  });
+
+  it('keeps the shell background correct where color-mix() is missing', () => {
+    // 兜底只丢透明度，不丢背景：低基线浏览器里外壳仍是不透明基色。
+    expect(css).toMatch(
+      /@supports not \(color: color-mix\(in srgb, #fff, #000\)\) \{\s*\[vn~='VThemeShell'\] \{\s*--yoya-shell-composed:\s*var\(--yoya-shell-bg, var\(--yoya-color-surface, #ffffff\)\);\s*\}\s*\}/
     );
   });
 });

@@ -1,4 +1,4 @@
-import { hstack, vButton, vForm, vText } from '../../index.js';
+import { hstack, ref, vButton, vForm, vText } from '../../index.js';
 
 export function ButtonExample1() {
   return vButton('OK')
@@ -28,28 +28,28 @@ export function ButtonSizesExample1() {
 }
 
 export function ButtonStatesExample1() {
-  const state = vText('等待点击');
+  const state = ref('等待点击');
 
   return hstack((row) => {
     row.style('gap', '10px');
     row.vButton('执行任务', (button) => {
       button.variant('primary');
       button.on('click', () => {
-        state.textContent('执行中');
+        state.value = '执行中';
         button.loading(true);
         setTimeout(() => {
           button.loading(false);
-          state.textContent('已完成');
+          state.value = '已完成';
         }, 600);
       });
     });
     row.vButton('不可用', (button) => button.disabled(true));
-    row.child(state);
+    row.child(vText(state));
   });
 }
 
 export function ButtonFormExample1() {
-  const result = vText('尚未提交');
+  const result = ref('尚未提交');
 
   return vForm((form) => {
     form.style('gap', '12px');
@@ -61,11 +61,11 @@ export function ButtonFormExample1() {
       });
       row.vButton('重置', (button) => button.formType('reset'));
     });
-    form.output((output) => output.child(result));
+    form.output((output) => output.child(vText(result)));
     form.on('submit', (event) => {
       event.preventDefault();
-      result.textContent('已提交');
+      result.value = '已提交';
     });
-    form.on('reset', () => result.textContent('已重置'));
+    form.on('reset', () => (result.value = '已重置'));
   });
 }

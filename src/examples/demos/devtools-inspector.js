@@ -1,4 +1,4 @@
-import { div, ref, vNode, vText } from '../../index.js';
+import { div, keySet, p, pre, ref, vNode, vText } from '../../index.js';
 import '../devtools-inspector.css';
 import {
   disableDevtools,
@@ -35,8 +35,11 @@ export function DevtoolsInspectorDemo() {
     tree: null
   };
   const signalValues = new Map();
+  /** 事件日志：keyed 列表（键 = event.seq），筛选 / 截断都只是换数据。 */
+  const eventLog = keySet([], (event) => event.seq);
+  /** 信号值列表：键 = signalId，值变化只换 data。 */
+  const signalRows = keySet([], (row) => row.id);
   let detailHost = null;
-  let eventHost = null;
   let highlighted = null;
   let inspectRoot = null;
   let overlay = null;
@@ -47,7 +50,6 @@ export function DevtoolsInspectorDemo() {
   let treePanel = null;
   let logPanel = null;
   let statePanel = null;
-  let stateHost = null;
   let treeTabButton = null;
   let logTabButton = null;
   let stateTabButton = null;
@@ -102,8 +104,7 @@ export function DevtoolsInspectorDemo() {
       renderDetail();
       renderStateList();
       if (treeHost) {
-        treeHost.clearChildren();
-        flushHost(treeHost);
+        treeHost.rebuild();
       }
       return;
     }
@@ -159,15 +160,7 @@ export function DevtoolsInspectorDemo() {
     if (!statusText) {
       return;
     }
-    statusText.textContent(
-      state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用'
-    );
-  }
-
-  function flushHost(host) {
-    if (host) {
-      host.commit();
-    }
+    statusText.value = state.enabled ? '状态：已启用，事件仅来自被检视卡片' : '状态：未启用';
   }
 
   function refreshTree() {
@@ -175,10 +168,7 @@ export function DevtoolsInspectorDemo() {
       return;
     }
     state.tree = getDevtoolsSnapshot(inspectRoot);
-    treeHost.clearChildren();
-    flushHost(treeHost);
-    treeHost.child(TreeBranch(state.tree, 0));
-    flushHost(treeHost);
+    treeHost.rebuild();
   }
 
   function TreeBranch(snapshot, depth) {
@@ -231,30 +221,7 @@ export function DevtoolsInspectorDemo() {
     if (!detailHost) {
       return;
     }
-    detailHost.clearChildren();
-    flushHost(detailHost);
-    if (state.selectedId === null) {
-      return;
-    }
-    const snapshot = findSnapshotNode(state.tree, state.selectedId);
-    detailHost.pre((pre) => {
-      pre.className('devtools-detail-code');
-      pre.code((block) => {
-        block.attr('data-devtools-detail', 'true');
-        block.child(
-          JSON.stringify(
-            {
-              node: snapshot,
-              scope: getDevtoolsScope(state.selectedId),
-              signals: readCardSignals(state.selectedId)
-            },
-            null,
-            2
-          )
-        );
-      });
-    });
-    flushHost(detailHost);
+    detailHost.rebuild();
   }
 
   /** 被检视卡片上的信号没有挂在节点上：选中卡片子树时按值展示最新状态。 */
@@ -284,22 +251,11 @@ export function DevtoolsInspectorDemo() {
   }
 
   function renderEvents() {
-    if (!eventHost) {
-      return;
-    }
-    eventHost.clearChildren();
-    flushHost(eventHost);
-    const visibleEvents = [...state.events]
-      .slice(-30)
-      .filter((event) => state.eventFilter === 'all' || event.type === state.eventFilter);
-    visibleEvents.forEach((event) => {
-      const text = `${event.seq}. ${describeEvent(event)}（#${event.nodeId}）`;
-      const row = eventHost.p(text);
-      row.className('devtools-event-row');
-      row.attr('data-devtools-event', 'true');
-      row.attr('data-devtools-event-type', event.type);
-    });
-    flushHost(eventHost);
+    eventLog.replaceAll(
+      state.events
+        .slice(-30)
+        .filter((event) => state.eventFilter === 'all' || event.type === state.eventFilter)
+    );
   }
 
   function formatLogValue(value) {
@@ -354,18 +310,7 @@ export function DevtoolsInspectorDemo() {
   }
 
   function renderStateList() {
-    if (!stateHost) {
-      return;
-    }
-    stateHost.clearChildren();
-    flushHost(stateHost);
-    signalValues.forEach((latest, signalId) => {
-      const row = stateHost.pre();
-      row.className('devtools-state-row');
-      row.attr('data-devtools-state-row', 'true');
-      row.child(`#${signalId}: ${JSON.stringify(latest)}`);
-    });
-    flushHost(stateHost);
+    signalRows.replaceAll([...signalValues].map(([id, value]) => ({ id, value })));
   }
 
   function switchTab(name) {
@@ -440,11 +385,10 @@ export function DevtoolsInspectorDemo() {
           dialog.div((header) => {
             header.className('devtools-dialog-header');
             header.h2('yoya-ui DevTools');
-            const statusLine = vText('状态：未启用');
-            statusText = statusLine;
+            statusText = ref('状态：未启用');
             header.p((node) => {
               node.attr('data-devtools-status', 'true');
-              node.child(statusLine);
+              node.child(vText(statusText));
             });
             header.vButton('启用 DevTools', (button) => {
               button.variant('primary');
@@ -506,13 +450,41 @@ export function DevtoolsInspectorDemo() {
               layout.className('devtools-tree-layout');
               layout.div((treeColumn) => {
                 treeColumn.h4('视图树');
-                const treeBox = div();
+                const treeBox = div((box) => {
+                  box.rebuildable();
+                  if (state.tree) {
+                    box.child(TreeBranch(state.tree, 0));
+                  }
+                });
                 treeColumn.child(treeBox);
                 treeHost = treeBox;
               });
               layout.div((detailColumn) => {
                 detailColumn.h4('选中详情');
-                const detailBox = div();
+                const detailBox = div((box) => {
+                  box.rebuildable();
+                  if (state.selectedId === null) {
+                    return;
+                  }
+                  const snapshot = findSnapshotNode(state.tree, state.selectedId);
+                  box.pre((pre) => {
+                    pre.className('devtools-detail-code');
+                    pre.code((block) => {
+                      block.attr('data-devtools-detail', 'true');
+                      block.child(
+                        JSON.stringify(
+                          {
+                            node: snapshot,
+                            scope: getDevtoolsScope(state.selectedId),
+                            signals: readCardSignals(state.selectedId)
+                          },
+                          null,
+                          2
+                        )
+                      );
+                    });
+                  });
+                });
                 detailColumn.child(detailBox);
                 detailHost = detailBox;
               });
@@ -539,9 +511,17 @@ export function DevtoolsInspectorDemo() {
                 });
               });
             });
-            const eventBox = div();
+            const eventBox = div((box) => {
+              box.keyed(eventLog, (item) => {
+                const event = item.data;
+                const row = p(`${event.seq}. ${describeEvent(event)}（#${event.nodeId}）`);
+                row.className('devtools-event-row');
+                row.attr('data-devtools-event', 'true');
+                row.attr('data-devtools-event-type', event.type);
+                return row;
+              });
+            });
             panel.child(eventBox);
-            eventHost = eventBox;
           });
           contentBox.child(logPanel);
 
@@ -551,9 +531,16 @@ export function DevtoolsInspectorDemo() {
             panel.attr('data-devtools-panel', 'state');
             panel.style('display', 'none');
             panel.h3('信号值');
-            const stateBox = div();
+            const stateBox = div((box) => {
+              box.keyed(signalRows, (item) => {
+                const row = pre();
+                row.className('devtools-state-row');
+                row.attr('data-devtools-state-row', 'true');
+                row.child(`#${item.data.id}: ${JSON.stringify(item.data.value)}`);
+                return row;
+              });
+            });
             panel.child(stateBox);
-            stateHost = stateBox;
             panel.p('在「对象结构」中选择节点可查看 access / Context / i18n 详情。');
           });
           contentBox.child(statePanel);

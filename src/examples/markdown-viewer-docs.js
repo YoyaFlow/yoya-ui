@@ -24,14 +24,14 @@ const MARKDOWN_DEMO = Object.freeze({
       label: '编辑模式',
       run: (live, output) => {
         live.setMode('edit');
-        output.textContent('编辑模式：左侧 Markdown 源码，右侧实时预览。');
+        output.value = '编辑模式：左侧 Markdown 源码，右侧实时预览。';
       }
     },
     {
       label: '查看模式',
       run: (live, output) => {
         live.setMode('view');
-        output.textContent('查看模式：只读渲染整篇 Markdown。');
+        output.value = '查看模式：只读渲染整篇 Markdown。';
       }
     }
   ]

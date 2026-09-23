@@ -1,4 +1,4 @@
-import { section, vButton, vCard, vText } from '../index.js';
+import { ref, section, vButton, vCard, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
@@ -129,9 +129,9 @@ function SsrLiveDemo() {
     path: '/home',
     renderMode: 'ssr'
   };
-  const htmlText = vText('');
-  const stateText = vText('');
-  const modeText = vText('');
+  const htmlText = ref('');
+  const stateText = ref('');
+  const modeText = ref('');
   let serverResult = null;
 
   const currentState = () => ({
@@ -145,15 +145,15 @@ function SsrLiveDemo() {
       state: currentState(),
       i18n: createLocale
     });
-    htmlText.textContent(serverResult.html);
-    stateText.textContent(serverResult.state);
-    modeText.textContent('当前模式：服务端渲染（renderToString → hydrate）');
+    htmlText.value = serverResult.html;
+    stateText.value = serverResult.state;
+    modeText.value = '当前模式：服务端渲染（renderToString → hydrate）';
   };
 
   const renderClient = () => {
-    htmlText.textContent('非 SSR 模式：页面由 mount() 直接客户端渲染，不经过服务端。');
-    stateText.textContent(JSON.stringify(currentState()));
-    modeText.textContent('当前模式：纯客户端渲染（mount）');
+    htmlText.value = '非 SSR 模式：页面由 mount() 直接客户端渲染，不经过服务端。';
+    stateText.value = JSON.stringify(currentState());
+    modeText.value = '当前模式：纯客户端渲染（mount）';
   };
 
   const renderLive = () => {
@@ -217,13 +217,13 @@ function SsrLiveDemo() {
             });
           });
 
-          body.p(modeText);
+          body.p(vText(modeText));
           body.h3('renderToString 输出的 HTML');
           body.pre((pre) => {
             pre.className('ssr-demo-output');
             pre.attr('data-ssr-live-output', 'true');
             pre.styles(outputStyles);
-            pre.code(htmlText);
+            pre.code(vText(htmlText));
           });
 
           body.h3('序列化状态 __YOYA_DATA__');
@@ -231,7 +231,7 @@ function SsrLiveDemo() {
             pre.className('ssr-demo-output');
             pre.attr('data-ssr-live-output', 'true');
             pre.styles(outputStyles);
-            pre.code(stateText);
+            pre.code(vText(stateText));
           });
 
           body.h3('Hydration 后的实时应用');

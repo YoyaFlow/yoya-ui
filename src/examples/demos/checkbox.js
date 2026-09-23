@@ -1,4 +1,4 @@
-import { div, vText } from '../../index.js';
+import { computed, div, ref, vText } from '../../index.js';
 
 const options = [
   { label: '监控告警', value: 'monitor' },
@@ -11,10 +11,10 @@ const options = [
 
 export function CheckboxColumnsExample() {
   let boxes = null;
-  let counter = null;
-  const apply = (columns) => {
-    boxes.columns(columns);
-    counter.textContent(`${columns} 列`);
+  const columns = ref(2);
+  const apply = (next) => {
+    columns.value = next;
+    boxes.columns(next);
   };
 
   return div((panel) => {
@@ -23,8 +23,7 @@ export function CheckboxColumnsExample() {
         row.vButton('1 列', (b) => b.on('click', () => apply(1)));
         row.vButton('2 列', (b) => b.on('click', () => apply(2)));
         row.vButton('3 列', (b) => b.on('click', () => apply(3)));
-        counter = vText('2 列');
-        row.child(counter);
+        row.child(vText(computed(() => `${columns.value} 列`)));
       });
       stack.vCheckboxes((b) => {
         boxes = b;

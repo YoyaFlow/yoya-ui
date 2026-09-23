@@ -21,8 +21,8 @@ const LIBRARY_NAMES = new Set(Object.keys(yoya));
  */
 const LONG_DEMO_BUDGET = Object.freeze({
   'async:dynamic-loader :: DynamicLoaderExample1': 106,
+  'board:digital-board :: DigitalBoardDemo': 101,
   'data-display:avatar :: AvatarInteractiveExample1': 61,
-  'data-display:carousel :: CarouselLoopExample1': 61,
   'data-display:scroll :: ScrollLoopBlockExample1': 63,
   'data-display:tree :: TreeBasicExample1': 73,
   'data-display:tree :: TreeBuilderExample1': 95,
@@ -31,9 +31,9 @@ const LONG_DEMO_BUDGET = Object.freeze({
   'data-display:tree-ranger :: TreeRangerActionsExample': 66,
   'form:field :: FieldSaveExample1': 63,
   'form:form :: FormExample1': 71,
-  'general:svg :: SvgProgressRingExample1': 85,
-  'guides:component :: InteractiveComposeExample1': 91,
-  'guides:devtools :: DevtoolsInspectorDemo': 552,
+  'general:svg :: SvgProgressRingExample1': 84,
+  'guides:component :: InteractiveComposeExample1': 86,
+  'guides:devtools :: DevtoolsInspectorDemo': 543,
   'guides:i18n :: I18nExtendExample1': 73,
   'guides:i18n :: I18nParamsExample1': 68,
   'guides:state-node :: StateDynamicAttrsExample1': 61,

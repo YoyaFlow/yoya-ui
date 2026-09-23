@@ -1,11 +1,11 @@
-import { section, vClientOnly, vText } from '../index.js';
+import { ref, section, vClientOnly, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import './interop-theme.css';
 
 export function InteropExampleSection(options) {
   const controls = options.controls ?? [];
   const live = options.component();
-  const output = vText(options.outputText ?? '');
+  const output = ref(options.outputText ?? '');
   const clientOnlyHost = vClientOnly(() => live);
 
   return {
@@ -32,7 +32,7 @@ export function InteropExampleSection(options) {
                 button.on('click', () => control.run(live, output));
               });
             });
-            toolbar.child(output);
+            toolbar.child(vText(output));
           });
         }
 

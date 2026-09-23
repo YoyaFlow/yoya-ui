@@ -210,8 +210,9 @@ vThemeModeSwitch((sw) => {
 
 ## 10. 契约测试
 
-- `src/css-contract.test.js`：组件 class / 状态钩子的静态 CSS 规则覆盖。
-- `src/className-contract.test.js`：类名命名族、动态模板、`data-*` kebab 校验。
-- `src/preset-scope.test.js`：预设规则根类作用域（无孤儿选择器）。
+- `src/css-contract.test.js`：组件身份（`[vn~="VXxx"] …`）/ 状态钩子的静态 CSS 规则覆盖。
+- `src/attribute-migration-baseline.test.js`：类名存量恒为 0、只减不增（`yoya-component` / `yoya-v*`）。
+- `src/className-contract.test.js`：类名字面量只能落在保留下来的族（能力类 `yoya-<feature>`）、动态模板、`data-*` kebab 校验。
+- `src/preset-scope.test.js`：预设规则必须从库内真实声明的身份起头（无孤儿选择器）。
 - `src/cascade-layer.test.js`：`@layer yoya` 层结构。
 - `src/theme-tokens.test.js`：raw 色板、变体派生、单定义、模式/密度开关、token 名稳定。

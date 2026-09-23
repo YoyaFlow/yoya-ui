@@ -1,5 +1,6 @@
 import {
   div,
+  ref,
   router,
   vContainer,
   vRoute,
@@ -95,8 +96,8 @@ export function RouterHistoryCard() {
       )
     ]
   });
-  const currentPath = vText('');
-  appRouter.subscribe(({ path }) => currentPath.textContent(`当前地址：${path}`));
+const currentPath = ref('');
+appRouter.subscribe(({ path }) => (currentPath.value = `当前地址：${path}`));
 
   return vstack((stack) => {
     stack.style('gap', '14px');
@@ -115,7 +116,7 @@ export function RouterHistoryCard() {
     stack.vRouterView(appRouter, (view) => view.className('router-demo-outlet'));
     stack.output((output) => {
       output.className('history-url-output');
-      output.child(currentPath);
+  output.child(vText(currentPath));
     });
     appRouter.navigate('/home', { replace: true });
     appRouter.start();

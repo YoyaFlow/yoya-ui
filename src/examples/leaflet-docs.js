@@ -17,14 +17,14 @@ const LEAF_DEMO = Object.freeze({
       label: '定位杭州',
       run: (live, output) => {
         live.flyTo([30.2741, 120.1551], 11);
-        output.textContent('已定位到杭州。');
+        output.value = '已定位到杭州。';
       }
     },
     {
       label: '回到上海',
       run: (live, output) => {
         live.flyTo([31.2304, 121.4737], 12);
-        output.textContent('已回到上海。');
+        output.value = '已回到上海。';
       }
     }
   ]

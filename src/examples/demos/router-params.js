@@ -1,4 +1,4 @@
-import { div, router, vNode, vRouterView, vText, vstack } from '../../index.js';
+import { div, ref, router, vNode, vRouterView, vText, vstack } from '../../index.js';
 
 export function RouterParamsCard() {
   const appRouter = router((routes) => {
@@ -7,9 +7,9 @@ export function RouterParamsCard() {
     routes.route('/users/:id', () => import('../async-router-user.js'));
   });
   const outlet = vRouterView(appRouter);
-  const status = vText('暂无导航');
+  const status = ref('暂无导航');
   const unsubscribe = appRouter.subscribe((context) => {
-    status.textContent(`当前 ${context.path} / 参数 ${JSON.stringify(context.params)}`);
+    status.value = `当前 ${context.path} / 参数 ${JSON.stringify(context.params)}`;
   });
   appRouter.navigate('/home', { replace: true });
 
@@ -36,7 +36,7 @@ export function RouterParamsCard() {
       stack.output((output) => {
         output.className('router-params-status');
         output.attr('data-router-params-status', 'true');
-        output.child(status);
+    output.child(vText(status));
       });
     });
   });

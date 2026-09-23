@@ -9,7 +9,7 @@ const demoDefinitions = Object.freeze([
     description: '命令式确认操作，支持 danger 与异步确认。',
     component: ConfirmExample,
     sourceComponent: ConfirmExample,
-    imports: ['div', 'vConfirm'],
+    imports: ['div', 'ref', 'vConfirm', 'vText'],
     sourceTitle: 'vConfirm 使用源码'
   }
 ]);

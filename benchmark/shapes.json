@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "date": "2026-09-23",
+    "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+    "executable": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "runner": "scripts/benchmark-shapes.mjs",
+    "machine": "win32 10.0.26200 · Intel(R) Core(TM) i7-14700HX",
+    "fixture": "benchmark/shapes/row.fixture.js",
+    "fragment": {
+      "bytes": 194,
+      "liveNodes": 2
+    },
+    "note": "同一份行源码两列对照（通用 vs 真编译产物）；数字随机器变，比值方向可用，绝对值只作参考。"
+  },
+  "ops": [
+    {
+      "id": "create 1k",
+      "runtimeMs": 11.099999999860302,
+      "compiledMs": 5.7999999998137355,
+      "ratio": 0.5225225225123181
+    },
+    {
+      "id": "replace 1k",
+      "runtimeMs": 13.100000000093132,
+      "compiledMs": 6.5,
+      "ratio": 0.4961832061033427
+    },
+    {
+      "id": "update every 10th ×16",
+      "runtimeMs": 0.5249999999650754,
+      "compiledMs": 0.47499999997671694,
+      "ratio": 0.9047619047777435
+    },
+    {
+      "id": "select one（交替写）",
+      "runtimeMs": 0.0009999999997671693,
+      "compiledMs": 0.0005000000004656613,
+      "ratio": 0.5000000005820766
+    },
+    {
+      "id": "swap two",
+      "runtimeMs": 0.28399999999906866,
+      "compiledMs": 0.24600000000093133,
+      "ratio": 0.8661971831047115
+    },
+    {
+      "id": "remove one",
+      "runtimeMs": 0.08499999999767169,
+      "compiledMs": 0.0900000000023283,
+      "ratio": 1.0588235294681596
+    },
+    {
+      "id": "append 1k",
+      "runtimeMs": 10.900000000139698,
+      "compiledMs": 6.5,
+      "ratio": 0.596330275221715
+    },
+    {
+      "id": "clear 1k",
+      "runtimeMs": 1.5,
+      "compiledMs": 0.8000000000465661,
+      "ratio": 0.5333333333643774
+    },
+    {
+      "id": "create 10k",
+      "runtimeMs": 139.10000000009313,
+      "compiledMs": 75.39999999990687,
+      "ratio": 0.5420560747653227
+    }
+  ],
+  "sizeSweep": [
+    {
+      "columns": 4,
+      "bytes": 163,
+      "runtimeMs": 9.5,
+      "templateMs": 4.300000000046566,
+      "ratio": 0.45263157895227013,
+      "equal": true
+    },
+    {
+      "columns": 8,
+      "bytes": 287,
+      "runtimeMs": 15.399999999906868,
+      "templateMs": 5.199999999953434,
+      "ratio": 0.3376623376613559,
+      "equal": true
+    },
+    {
+      "columns": 16,
+      "bytes": 547,
+      "runtimeMs": 29.399999999906868,
+      "templateMs": 7,
+      "ratio": 0.2380952380959923,
+      "equal": true
+    },
+    {
+      "columns": 32,
+      "bytes": 1075,
+      "runtimeMs": 54.89999999990687,
+      "templateMs": 9.5,
+      "ratio": 0.17304189435366332,
+      "equal": true
+    }
+  ],
+  "restMerge": {
+    "runtimeMs": 12.300000000046566,
+    "templateMs": 5.400000000139698,
+    "ratio": 0.43902439025359796,
+    "equal": true,
+    "sample": "<div><div class=\"row\" data-kind=\"demo\" data-row-key=\"1\" data-tone=\"warn\"><span class=\"col c-0\">row-1</span><span class=\"col c-1\">c1</span><span class=\"col c-2\">c2</span><span class=\"col c-3\">c3</span><span class=\"col c-4\">c4</span></div><div class=\"row\" data-kind=\"demo\" data-row-key=\"2\" data-tone=\"warn\"><span class=\"col c-0\">row-2</span><span class=\"col c-1\">c1</span><span class=\"col c-2\">c2</span><span class=\"col c-3\">c3</span><span class=\"col c-4\">c4</span></div></div>"
+  },
+  "verdict": {
+    "positiveShapes": [
+      "每行 4 列（0.45×）",
+      "每行 8 列（0.34×）",
+      "每行 16 列（0.24×）",
+      "每行 32 列（0.17×）"
+    ],
+    "domEqual": true
+  }
+}

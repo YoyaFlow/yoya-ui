@@ -9,7 +9,7 @@ const demoDefinitions = Object.freeze([
     description: 'vCheckboxes 通过 columns(n) 一行排成 n 列，按钮可动态切换列数。',
     component: CheckboxColumnsExample,
     sourceComponent: CheckboxColumnsExample,
-    imports: ['div', 'vText'],
+    imports: ['computed', 'div', 'ref', 'vText'],
     sourceTitle: 'vCheckboxes 布局使用源码'
   }
 ]);

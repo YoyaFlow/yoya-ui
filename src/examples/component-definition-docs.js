@@ -1,9 +1,10 @@
-import { section, vCard, vNode, vText } from '../index.js';
+import { computed, ref, section, vCard, vNode, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 
 function DefineComponentExample1() {
-  const status = vText('待发布');
+  const published = ref(false);
+  const status = computed(() => (published.value ? '已发布' : '待发布'));
 
   return vCard((card) => {
     card.vCardHeader('定义一个组件');
@@ -17,7 +18,7 @@ function DefineComponentExample1() {
           row.style({ alignItems: 'center', gap: '10px' });
           row.span('状态');
           row.spacer();
-          row.output((output) => output.child(status));
+          row.output((output) => output.child(vText(status)));
         });
       });
     });
@@ -26,7 +27,9 @@ function DefineComponentExample1() {
         actions.style({ alignItems: 'center', gap: '10px' });
         actions.vButton('发布', (button) => {
           button.variant('primary');
-          button.on('click', () => status.textContent('已发布'));
+          button.on('click', () => {
+            published.value = true; // 数据驱动：只改状态，视图自己跟上
+          });
         });
       });
     });
@@ -72,43 +75,38 @@ function ComposeComponentExample1() {
 }
 
 function InteractiveComposeExample1() {
-  const parentLog = vText('等待子组件回调');
+  const parentLog = ref('等待子组件回调');
   const WizardChild = ({ onCancel, onFinish, title }) => {
-    let step = 1;
-    const status = vText('第 1 步');
-
-    const update = (nextStep) => {
-      step = nextStep;
-      status.textContent(`第 ${step} 步`);
-    };
+    const step = ref(1);
+    const clampStep = (value) => Math.min(3, Math.max(1, value));
 
     return vNode((api) => {
       api.next = () => {
-        if (step < 3) {
-          update(step + 1);
+        if (step.value < 3) {
+          step.value = clampStep(step.value + 1);
         } else {
-          onFinish?.(step);
+          onFinish?.(step.value);
         }
       };
       api.prev = () => {
-        if (step > 1) {
-          update(step - 1);
+        if (step.value > 1) {
+          step.value = clampStep(step.value - 1);
         } else {
-          onCancel?.(step);
+          onCancel?.(step.value);
         }
       };
       api.reset = () => {
-        update(1);
+        step.value = 1;
       };
       api.setStep = (value) => {
-        update(Math.min(3, Math.max(1, value)));
+        step.value = clampStep(value);
       };
-      api.step = () => step;
+      api.step = () => step.value;
 
       return section((panel) => {
         panel.className('wizard-child-panel');
         panel.strong(title);
-        panel.p(status);
+        panel.p(vText(computed(() => `第 ${step.value} 步`))); // 数据驱动：文本跟着状态走
         panel.hstack((actions) => {
           actions.style({ alignItems: 'center', gap: '10px' });
           actions.vButton('上一步', (btn) => {
@@ -127,10 +125,10 @@ function InteractiveComposeExample1() {
 
   const child = WizardChild({
     onCancel(step) {
-      parentLog.textContent(`父组件收到：取消第 ${step} 步`);
+      parentLog.value = `父组件收到：取消第 ${step} 步`;
     },
     onFinish(step) {
-      parentLog.textContent(`父组件收到：第 ${step} 步完成`);
+      parentLog.value = `父组件收到：第 ${step} 步完成`;
     },
     title: '部署向导'
   });
@@ -155,7 +153,7 @@ function InteractiveComposeExample1() {
           row.spacer();
           row.output((output) => {
             output.attr('data-parent-log', 'true');
-            output.child(parentLog);
+            output.child(vText(parentLog));
           });
         });
       });
@@ -228,7 +226,7 @@ const componentDefinitionDemos = [
   {
     component: DefineComponentExample1,
     id: 'define',
-    imports: ['vButton', 'vCard', 'vText'],
+    imports: ['computed', 'ref', 'vButton', 'vCard', 'vText'],
     sourceTitle: '定义组件源码',
     title: '定义一个组件'
   },
@@ -242,7 +240,7 @@ const componentDefinitionDemos = [
   {
     component: InteractiveComposeExample1,
     id: 'interactive-compose',
-    imports: ['section', 'vCard', 'vNode', 'vText'],
+    imports: ['computed', 'ref', 'section', 'vCard', 'vNode', 'vText'],
     sourceTitle: '组合组件交互源码',
     title: '组合组件交互'
   },
@@ -286,10 +284,11 @@ export function ComponentDefinitionDocumentationPage() {
     page.p('组件的四个阶段（声明 / 挂载 / 更新 / 销毁）见「开发指南 → 组件生命周期」。');
     page.p(
       'yoya-ui 支持两种组件定义形态，按场景选用：没有额外行为要定义就用 A 薄工厂，' +
-        '有内部状态或对外命令方法才用 B（vNode）。'
+        '有内部状态或对外命令方法才用 B（vNode）。状态用 ref 驱动视图（数据驱动）：' +
+        '事件里只改状态，不在事件里直接改文本 / DOM。'
     );
     page.p(
-      'child() 接受 ViewNode、组件对象（自动包装为 ComponentNode 并缓存 render() 结果）或' +
+      'child() 接受 ViewNode、组件（薄工厂的返回值或 vNode，自动包装为 ComponentNode）或' +
         '字符串/数字，两种形态均可作为子节点传入页面组合。'
     );
     page.p(

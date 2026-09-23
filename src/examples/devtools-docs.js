@@ -9,7 +9,7 @@ const devtoolsDemoDefinitions = Object.freeze([
     description: '视图树、选中详情、事件时间线与 DOM 高亮，只消费 devtools 公开入口。',
     component: DevtoolsInspectorDemo,
     sourceComponent: DevtoolsInspectorDemo,
-    imports: ['div', 'ref', 'vNode', 'vText'],
+    imports: ['div', 'keySet', 'p', 'pre', 'ref', 'vNode', 'vText'],
     extraImports: {
       names: [
         'disableDevtools',

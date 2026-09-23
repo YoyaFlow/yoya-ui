@@ -1,5 +1,6 @@
 import {
   section,
+  ref,
   toast,
   vButton,
   vCard,
@@ -64,7 +65,7 @@ toast.use(host);`,
         component: MessageContainerExample1,
         description: '局部容器把消息限制在当前区域内，可用 id 替换同一条业务状态。',
         id: 'container',
-        imports: ['vMessageContainer', 'vText', 'vstack'],
+        imports: ['ref', 'vMessageContainer', 'vText', 'vstack'],
         sourceTitle: '局部消息容器核心源码',
         title: '局部容器'
       },
@@ -72,7 +73,7 @@ toast.use(host);`,
         component: ToastExample1,
         description: 'toast 适合页面级反馈，不需要把消息容器一层层传给业务组件。',
         id: 'toast',
-        imports: ['toast', 'vText', 'vstack'],
+        imports: ['ref', 'toast', 'vText', 'vstack'],
         sourceTitle: '全局 toast 核心源码',
         title: '全局 toast'
       },
@@ -80,7 +81,7 @@ toast.use(host);`,
         component: CountdownMessageExample1,
         description: '默认显示倒计时和进度条，计时结束自动关闭；也可以只保留自动关闭。',
         id: 'countdown',
-        imports: ['vMessageContainer', 'vText', 'vstack'],
+        imports: ['ref', 'vMessageContainer', 'vText', 'vstack'],
         sourceTitle: '计时消息核心源码',
         title: '计时消息'
       }
@@ -304,7 +305,7 @@ function MessageTypesExample1() {
 
 function MessageContainerExample1() {
   const host = vMessageContainer({ placement: 'top-right' });
-  const status = vText('等待消息');
+  const status = ref('等待消息');
 
   host.inline();
 
@@ -315,7 +316,7 @@ function MessageContainerExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('最近动作');
       row.spacer();
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -323,20 +324,20 @@ function MessageContainerExample1() {
         button.variant('primary');
         button.on('click', () => {
           host.success('保存成功', { id: 'local-status', duration: 0 });
-          status.textContent('显示成功消息');
+          status.value = '显示成功消息';
         });
       });
       actions.vButton('替换同 ID', (button) => {
         button.on('click', () => {
           host.warning('同 ID 消息已替换', { id: 'local-status', duration: 0 });
-          status.textContent('替换为警告消息');
+          status.value = '替换为警告消息';
         });
       });
       actions.vButton('清空', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           host.clear();
-          status.textContent('已清空');
+          status.value = '已清空';
         });
       });
     });
@@ -344,7 +345,7 @@ function MessageContainerExample1() {
 }
 
 function ToastExample1() {
-  const status = vText('尚未发送');
+  const status = ref('尚未发送');
 
   return vstack((content) => {
     content.style('gap', '14px');
@@ -352,7 +353,7 @@ function ToastExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('最近 toast');
       row.spacer();
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -360,21 +361,21 @@ function ToastExample1() {
         button.variant('primary');
         button.on('click', () => {
           toast.success('全局保存成功', { duration: 0 });
-          status.textContent('已发送成功 toast');
+          status.value = '已发送成功 toast';
         });
       });
       actions.vButton('错误 toast', (button) => {
         button.variant('danger');
         button.on('click', () => {
           toast.error('接口返回异常', { duration: 0 });
-          status.textContent('已发送错误 toast');
+          status.value = '已发送错误 toast';
         });
       });
       actions.vButton('清空 toast', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           toast.clear();
-          status.textContent('已清空全局 toast');
+          status.value = '已清空全局 toast';
         });
       });
     });
@@ -383,7 +384,7 @@ function ToastExample1() {
 
 function CountdownMessageExample1() {
   const host = vMessageContainer({ placement: 'top-right' });
-  const status = vText('等待计时消息');
+  const status = ref('等待计时消息');
 
   host.inline();
 
@@ -394,7 +395,7 @@ function CountdownMessageExample1() {
       row.style({ alignItems: 'center', gap: '10px' });
       row.span('最近动作');
       row.spacer();
-      row.output((output) => output.child(status));
+      row.output((output) => output.child(vText(status)));
     });
     content.hstack((actions) => {
       actions.style({ alignItems: 'center', flexWrap: 'wrap', gap: '10px' });
@@ -402,34 +403,34 @@ function CountdownMessageExample1() {
         button.variant('primary');
         button.on('click', () => {
           host.success('保存成功', { duration: 3000 });
-          status.textContent('已发送 3 秒成功消息');
+          status.value = '已发送 3 秒成功消息';
         });
       });
       actions.vButton('5 秒警告', (button) => {
         button.on('click', () => {
           host.warning('配额即将用完', { duration: 5000 });
-          status.textContent('已发送 5 秒警告消息');
+          status.value = '已发送 5 秒警告消息';
         });
       });
       actions.vButton('仅自动关闭', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           host.info('自动关闭但不显示倒计时', { countdown: false, duration: 3000 });
-          status.textContent('已发送隐藏倒计时的消息');
+          status.value = '已发送隐藏倒计时的消息';
         });
       });
       actions.vButton('常驻消息', (button) => {
         button.variant('ghost');
         button.on('click', () => {
           host.show('常驻消息，点击关闭', { duration: 0 });
-          status.textContent('已发送常驻消息');
+          status.value = '已发送常驻消息';
         });
       });
       actions.vButton('清空', (button) => {
         button.variant('secondary');
         button.on('click', () => {
           host.clear();
-          status.textContent('已清空计时消息');
+          status.value = '已清空计时消息';
         });
       });
     });

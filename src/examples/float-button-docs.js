@@ -1,24 +1,24 @@
 import { ArrowUpOutlined, PlusOutlined } from '../svg/icons.js';
-import { div, hstack, section, vCard, vFloatButton, vText } from '../index.js';
+import { div, hstack, ref, section, vCard, vFloatButton, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含悬浮按钮内容，不包含 Card。
 function FloatButtonBasicExample() {
-  const output = vText('等待点击');
+  const output = ref('等待点击');
   const fab = vFloatButton({
     icon: PlusOutlined(),
     variant: 'primary'
   });
 
   fab.on('click', () => {
-    output.textContent('已触发新建操作');
+    output.value = '已触发新建操作';
   });
 
   return div((body) => {
     body.hstack({ gap: '14px' }, (row) => {
       row.style('alignItems', 'center');
       row.child(fab);
-      row.span((el) => el.attr('data-float-button-output', 'true').child(output));
+      row.span((el) => el.attr('data-float-button-output', 'true').child(vText(output)));
     });
   });
 }
@@ -101,7 +101,7 @@ const floatButtonDemos = [
     title: '图标按钮',
     component: FloatButtonBasicDemo,
     sourceComponent: FloatButtonBasicExample,
-    imports: ['PlusOutlined', 'div', 'vFloatButton', 'vText'],
+    imports: ['PlusOutlined', 'div', 'ref', 'vFloatButton', 'vText'],
     sourceTitle: '图标按钮源码'
   },
   {

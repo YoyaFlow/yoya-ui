@@ -269,21 +269,21 @@ export function StateKeyedExample1() {
 
 export function StateEventOverwriteExample1() {
   let target = null;
-  let outputElement = null;
-  let textNode = null;
+  const message = ref('尚无处理器');
+  const tone = ref('#475569');
 
   return vNode((api) => {
     api.registerA = () => {
       target.on('click', () => {
-        outputElement.style('color', '#2563eb');
-        textNode.textContent('A 处理器已响应');
+        tone.value = '#2563eb';
+        message.value = 'A 处理器已响应';
       });
       return api;
     };
     api.registerB = () => {
       target.on('click', () => {
-        outputElement.style('color', '#dc2626');
-        textNode.textContent('B 处理器已响应');
+        tone.value = '#dc2626';
+        message.value = 'B 处理器已响应';
       });
       return api;
     };
@@ -304,14 +304,13 @@ export function StateEventOverwriteExample1() {
         area.child('点击区域');
       });
       stack.output((out) => {
-        outputElement = out;
         out.attr('data-event-output', 'true');
         out.styles({
           fontWeight: '600',
           minHeight: '1.4em'
         });
-        textNode = vText('尚无处理器');
-        out.child(textNode);
+        out.style('color', tone);
+        out.child(vText(message));
       });
       stack.hstack({ gap: '8px' }, (row) => {
         row.vButton('注册 A', (button) => {

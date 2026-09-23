@@ -1,9 +1,9 @@
-import { div, section, vCard, vForm, vRadio, vRadios, vText } from '../index.js';
+import { div, ref, section, vCard, vForm, vRadio, vRadios, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含单选框内容，不包含 Card。
 function RadioGroupExample() {
-  const output = vText('staging');
+  const output = ref('staging');
   const radios = vRadios({
     name: 'env',
     options: [
@@ -13,7 +13,7 @@ function RadioGroupExample() {
     ],
     value: 'staging',
     change(next) {
-      output.textContent(next);
+      output.value = next;
     }
   });
 
@@ -22,7 +22,7 @@ function RadioGroupExample() {
     body.div((row) => {
       row.span('当前环境');
       row.spacer();
-      row.output((el) => el.attr('data-radio-group-output', 'true').child(output));
+      row.output((el) => el.attr('data-radio-group-output', 'true').child(vText(output)));
     });
   });
 }
@@ -58,7 +58,7 @@ function RadioSingleExample() {
 }
 
 function RadioFormExample() {
-  const result = vText('等待提交');
+  const result = ref('等待提交');
   const radios = vRadios((radios) => {
     radios.name('plan');
     radios.required(true);
@@ -73,7 +73,7 @@ function RadioFormExample() {
     form.on('submit', (event) => {
       event.preventDefault();
       const valid = form.validate();
-      result.textContent(valid ? `已提交：${form.values().plan}` : '校验未通过');
+      result.value = valid ? `已提交：${form.values().plan}` : '校验未通过';
     });
     form.p('发布方案');
     form.child(radios);
@@ -86,7 +86,7 @@ function RadioFormExample() {
       actions.vButton('清空', (button) => {
         button.on('click', () => {
           radios.clear();
-          result.textContent('已清空选择');
+          result.value = '已清空选择';
         });
       });
     });
@@ -97,7 +97,7 @@ function RadioFormExample() {
     body.div((row) => {
       row.span('提交结果');
       row.spacer();
-      row.output((el) => el.attr('data-radio-form-output', 'true').child(result));
+      row.output((el) => el.attr('data-radio-form-output', 'true').child(vText(result)));
     });
   });
 }
@@ -163,7 +163,7 @@ const radioDemos = [
     title: '单选组',
     component: RadioGroupDemo,
     sourceComponent: RadioGroupExample,
-    imports: ['div', 'vRadios', 'vText'],
+    imports: ['div', 'ref', 'vRadios', 'vText'],
     sourceTitle: '单选组源码'
   },
   {
@@ -179,7 +179,7 @@ const radioDemos = [
     title: '表单集成',
     component: RadioFormDemo,
     sourceComponent: RadioFormExample,
-    imports: ['div', 'vForm', 'vRadios', 'vText'],
+    imports: ['div', 'ref', 'vForm', 'vRadios', 'vText'],
     sourceTitle: '表单集成源码'
   }
 ];

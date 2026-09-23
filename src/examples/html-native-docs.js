@@ -99,7 +99,11 @@ const htmlNativeApiGroups = [
         "list.replaceChild('row-2', row)"
       ],
       ['node.children()', '返回子节点数组快照，改快照不影响内部结构。', 'node.children().length'],
-      ['node.clearChildren()', '清空子节点，旧节点在下一次提交时销毁。', 'box.clearChildren()']
+      [
+        'node.clearChildren()',
+        '低层写法：清空子节点，旧节点在下一次提交时销毁。结构随数据变化优先用 rebuildable() 区域重建。',
+        'box.clearChildren()'
+      ]
     ]
   },
   {
@@ -122,7 +126,7 @@ const htmlNativeApiGroups = [
       ],
       [
         'textNode.textContent(value)',
-        '读写并原地替换文本：同一处文案反复同步，用它的替换语义。',
+        '低层写法：持有文本节点句柄时读写并原地替换；数据驱动优先用上一行的句柄值位置。',
         "label.textContent('B')"
       ],
       [
@@ -131,11 +135,16 @@ const htmlNativeApiGroups = [
         'line.child(count)'
       ]
     ],
-    sample: `// 追加：child() 每次都加一个子节点，反复同步会堆叠（节点级 text() 已移除）
+    sample: `// 数据驱动（推荐）：句柄挂在值位置，写状态就更新
+const status = ref('状态：已同步');
+p.child(vText(status));
+status.value = '状态：已跳过';
+
+// 追加：child() 每次都加一个子节点，反复同步会堆叠（节点级 text() 已移除）
 p.child('状态：已同步');
 p.child('状态：已跳过'); // 结果是两段文案拼在一起
 
-// 替换：持有文本节点句柄，textContent(value) 原地更新
+// 低层写法：持有文本节点句柄，textContent(value) 原地替换
 const statusText = vText('状态：已同步');
 p.child(statusText);
 statusText.textContent('状态：已跳过');`

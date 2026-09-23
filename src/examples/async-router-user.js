@@ -1,4 +1,4 @@
-import { div, vText } from '../index.js';
+import { div, ref, vText } from '../index.js';
 
 function UserCard({ userId, tab }) {
   return {
@@ -9,7 +9,7 @@ function UserCard({ userId, tab }) {
 }
 
 export default function AsyncUserPage({ params, query, router }) {
-  const latest = vText('尚未读取');
+  const latest = ref('尚未读取');
 
   return {
     render() {
@@ -20,12 +20,12 @@ export default function AsyncUserPage({ params, query, router }) {
         page.vButton('读取最新参数', (button) => {
           button.on('click', () => {
             const current = router.currentParams();
-            latest.textContent(`currentParams() = ${JSON.stringify(current)}`);
+            latest.value = `currentParams() = ${JSON.stringify(current)}`;
           });
         });
         page.output((output) => {
           output.attr('data-router-params-live', 'true');
-          output.child(latest);
+          output.child(vText(latest));
         });
       });
     }

@@ -1,4 +1,4 @@
-import { div, section, vButtons, vCard, vText } from '../index.js';
+import { div, ref, section, vButtons, vCard, vText } from '../index.js';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含按钮组内容，不包含 Card。
@@ -10,7 +10,7 @@ function ButtonGroupBasicExample() {
 }
 
 function ButtonGroupSelectExample() {
-  const output = vText('all');
+  const output = ref('all');
   const group = vButtons((group) => {
     group.selectable(true);
     group.value('all');
@@ -20,7 +20,7 @@ function ButtonGroupSelectExample() {
       { label: '已停止', value: 'stopped' }
     ]);
     group.change((next) => {
-      output.textContent(next);
+      output.value = next;
     });
   });
 
@@ -29,13 +29,13 @@ function ButtonGroupSelectExample() {
     body.div((row) => {
       row.span('当前筛选');
       row.spacer();
-      row.output((el) => el.attr('data-button-group-output', 'true').child(output));
+      row.output((el) => el.attr('data-button-group-output', 'true').child(vText(output)));
     });
   });
 }
 
 function ButtonGroupJoinedExample() {
-  const output = vText('list');
+  const output = ref('list');
   const group = vButtons((group) => {
     group.joined(true);
     group.selectable(true);
@@ -46,7 +46,7 @@ function ButtonGroupJoinedExample() {
       { label: '看板', value: 'board' }
     ]);
     group.change((next) => {
-      output.textContent(next);
+      output.value = next;
     });
   });
 
@@ -55,7 +55,7 @@ function ButtonGroupJoinedExample() {
     body.div((row) => {
       row.span('当前视图');
       row.spacer();
-      row.output((el) => el.attr('data-button-group-joined-output', 'true').child(output));
+      row.output((el) => el.attr('data-button-group-joined-output', 'true').child(vText(output)));
     });
   });
 }
@@ -129,7 +129,7 @@ const buttonGroupDemos = [
     title: '单选分组',
     component: ButtonGroupSelectDemo,
     sourceComponent: ButtonGroupSelectExample,
-    imports: ['div', 'vButtons', 'vText'],
+    imports: ['div', 'ref', 'vButtons', 'vText'],
     sourceTitle: '单选分组源码'
   },
   {
@@ -137,7 +137,7 @@ const buttonGroupDemos = [
     title: '拼接形态',
     component: ButtonGroupJoinedDemo,
     sourceComponent: ButtonGroupJoinedExample,
-    imports: ['div', 'vButtons', 'vText'],
+    imports: ['div', 'ref', 'vButtons', 'vText'],
     sourceTitle: '拼接形态源码'
   }
 ];

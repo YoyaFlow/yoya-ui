@@ -1,4 +1,4 @@
-import { ElementNode, elementStyles, registerChildFactories } from '../core/node.js';
+import { ElementNode, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { vNode } from '../core/v-node.js';
 import {
@@ -7,6 +7,15 @@ import {
   delegateNodeCommands,
   themeValue
 } from '../components/shared.js';
+
+/**
+ * 背景的「基色 + 不透明度」两段数据：命令只写数据，**合成交给预设皮肤**
+ * （票 01 / D11）——`--yoya-shell-composed` 由皮肤算出来，主层用 `color-mix()`，
+ * 不认它的浏览器由兜底规则退回不透明基色。
+ */
+const SHELL_BG = '--yoya-shell-bg';
+const SHELL_ALPHA = '--yoya-shell-alpha';
+const SHELL_COMPOSED = '--yoya-shell-composed';
 
 /**
  * VThemeShell 是主题化的通用容器：默认提供背景、边框、圆角与文字色
@@ -47,7 +56,7 @@ class ThemeShellNode extends HtmlElementNode {
       return;
     }
     target.styles({
-      background: this._styles?.background,
+      background: this._projectedBackground(),
       border: this._styles?.border,
       borderColor: this._styles?.borderColor,
       borderRadius: this._styles?.borderRadius,
@@ -56,6 +65,19 @@ class ThemeShellNode extends HtmlElementNode {
       minWidth: this._styles?.minWidth,
       overflow: this._styles?.overflow
     });
+  }
+
+  /**
+   * 投影给虚拟节点的背景：目标不是 `VThemeShell`（没有身份给皮肤挂组合规则），
+   * 所以这条路径仍在 JS 侧组合——与改动前逐字节一致。
+   */
+  _projectedBackground() {
+    const base = this._styles?.[SHELL_BG];
+    if (base === undefined) {
+      return this._styles?.background;
+    }
+    const alpha = this._styles?.[SHELL_ALPHA] ?? '100%';
+    return `color-mix(in srgb, ${base} ${alpha}, transparent)`;
   }
 
   /**
@@ -97,20 +119,28 @@ class ThemeShellNode extends HtmlElementNode {
     if (value === null) {
       return this;
     }
-    elementStyles(this).background = String(value);
-    if (this._el) {
-      this._el.style.background = String(value);
-    }
-    return this;
+    // 显式设了基色，之前记下的透明度数据就作废（否则再调 backgroundOpacity() 会拿旧基色）。
+    this.style(SHELL_BG, null);
+    this.style(SHELL_ALPHA, null);
+    return this.style('background', String(value));
   }
 
   /**
    * 背景透明度（0-1）：在现有背景上按百分比混入透明。
+   *
+   * 只写两段数据（基色 + 百分比），不拼颜色字符串：合成由预设皮肤完成，
+   * 于是低基线浏览器里的背景仍然正确（只丢了透明度），而不是整块透明。
    */
   backgroundOpacity(alpha) {
-    const current = this.background() || themeValue('color-surface', '#ffffff');
     const pct = Math.max(0, Math.min(1, Number(alpha) || 0));
-    return this.background(`color-mix(in srgb, ${current} ${Math.round(pct * 100)}%, transparent)`);
+    const base =
+      this._styles?.[SHELL_BG] ??
+      this._styles?.background ??
+      themeValue('color-surface', '#ffffff');
+
+    this.style(SHELL_BG, base);
+    this.style(SHELL_ALPHA, `${Math.round(pct * 100)}%`);
+    return this.style('background', `var(${SHELL_COMPOSED}, ${base})`);
   }
 
   radius(value) {

@@ -8,3 +8,5 @@ src/examples/demos/
 src/core/signals/vendor/
 # 生成物：benchmark/results.json → scripts/benchmark-report-html.mjs --write
 benchmark/report.html
+# 生成物：benchmark/shapes.json → scripts/benchmark-shapes.mjs（对比报告）
+benchmark/shapes-report.md

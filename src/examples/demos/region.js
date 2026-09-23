@@ -61,7 +61,6 @@ export function RegionGateExample() {
   const rows = ref(['任务 1']);
   const busy = ref(false);
   const count = computed(() => `值绑定行数：${rows.value.length}`);
-  const statusText = vText('状态：空闲，结构随信号自动重建');
 
   const list = div((ele) => {
     ele.className('demo-region-gate');
@@ -73,12 +72,21 @@ export function RegionGateExample() {
     });
     ele.span((line) => line.attr('data-region-count', 'true').child(vText(count)));
   });
-  const status = div((line) => line.attr('data-region-pending', 'true').child(statusText));
+  const status = div((line) =>
+    line.attr('data-region-pending', 'true').child(
+      vText(() => {
+        const pending = list.rebuildPending() ? '是' : '否';
+        return busy.value
+          ? `状态：忙碌，结构锁定；待重建：${pending}`
+          : '状态：空闲，结构随信号自动重建';
+      })
+    )
+  );
 
   return vNode((api) => {
     api.addRow = () => {
       rows.value = [...rows.value, `任务 ${rows.value.length + 1}`];
-      syncStatus();
+      status.flush();
       return api;
     };
     api.toggleBusy = () => {
@@ -86,16 +94,9 @@ export function RegionGateExample() {
       if (!busy.value && list.rebuildPending()) {
         list.rebuild();
       }
-      syncStatus();
+      status.flush();
       return api;
     };
-
-    function syncStatus() {
-      const pending = list.rebuildPending() ? '是' : '否';
-      statusText.textContent(
-        busy.value ? `状态：忙碌，结构锁定；待重建：${pending}` : '状态：空闲，结构随信号自动重建'
-      );
-    }
 
     return vstack({ gap: '12px' }, (stack) => {
       stack.child(list).child(status);

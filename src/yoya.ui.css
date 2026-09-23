@@ -297,6 +297,231 @@ body {
   --yoya-control-height-md: 30px;
   --yoya-control-height-lg: 34px;
 }
+/* 兼容兜底层（票 01 / D4–D5）：不认 light-dark() 或 color-mix() 的浏览器改走这一层。
+   值由默认原始调色板烘焙而来（不跟随 --yoya-raw-* 覆写，见 D12）；其余 token 无需兜底。
+   门禁：src/theme-tokens.test.js（层内唯一 + 兜底键集相等 + 兜底值必须为纯值）。 */
+@supports not ((color: light-dark(#000, #fff)) and (color: color-mix(in srgb, #fff, #000))) {
+  :root,
+  [data-yoya-theme] {
+    --yoya-color-bg: #f9f9f9;
+    --yoya-color-border: #e5e5e5;
+    --yoya-color-border-faint: #efefef;
+    --yoya-color-border-muted: #b3b3b3;
+    --yoya-color-border-ring: rgba(13, 13, 13, 0.14);
+    --yoya-color-border-strong: #d9d9d9;
+    --yoya-color-code-badge: #ececec;
+    --yoya-color-code-badge-text: #4b4b4b;
+    --yoya-color-code-bg: #f7f7f8;
+    --yoya-color-code-border: #ececec;
+    --yoya-color-code-header: #fafafa;
+    --yoya-color-surface: #ffffff;
+    --yoya-color-surface-active: #e9e9e9;
+    --yoya-color-surface-hover: #f3f3f3;
+    --yoya-color-surface-muted: #f5f5f5;
+    --yoya-color-text: #0d0d0d;
+    --yoya-color-text-active: rgba(30, 79, 188, 1);
+    --yoya-color-text-danger: #b91c1c;
+    --yoya-color-text-inverse: #ffffff;
+    --yoya-color-text-muted: #8f8f8f;
+    --yoya-color-text-secondary: #6f6f6f;
+    --yoya-color-text-strong: #0a0a0a;
+    --yoya-color-success-text: rgba(14, 106, 48, 1);
+    --yoya-color-danger-text: rgba(143, 25, 25, 1);
+    --yoya-color-warning-text: rgba(159, 103, 7, 1);
+    --yoya-color-info-text: rgba(1, 86, 129, 1);
+    --yoya-color-primary: #2563eb;
+    --yoya-color-primary-hover: rgba(33, 87, 207, 1);
+    --yoya-color-primary-active: rgba(29, 77, 183, 1);
+    --yoya-color-primary-deep: rgba(24, 63, 150, 1);
+    --yoya-color-primary-subtle: rgba(229, 236, 253, 1);
+    --yoya-color-primary-active-subtle: rgba(211, 224, 251, 1);
+    --yoya-color-primary-border: rgba(190, 208, 249, 1);
+    --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+    --yoya-color-success: #16a34a;
+    --yoya-color-success-hover: rgba(19, 143, 65, 1);
+    --yoya-color-success-active: rgba(17, 127, 58, 1);
+    --yoya-color-success-deep: rgba(14, 104, 47, 1);
+    --yoya-color-success-subtle: rgba(227, 244, 233, 1);
+    --yoya-color-success-active-subtle: rgba(208, 237, 219, 1);
+    --yoya-color-success-border: rgba(185, 227, 201, 1);
+    --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+    --yoya-color-danger: #dc2626;
+    --yoya-color-danger-hover: rgba(194, 33, 33, 1);
+    --yoya-color-danger-active: rgba(172, 30, 30, 1);
+    --yoya-color-danger-deep: rgba(141, 24, 24, 1);
+    --yoya-color-danger-subtle: rgba(251, 229, 229, 1);
+    --yoya-color-danger-active-subtle: rgba(248, 212, 212, 1);
+    --yoya-color-danger-border: rgba(245, 190, 190, 1);
+    --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+    --yoya-color-warning: #f59e0b;
+    --yoya-color-warning-hover: rgba(216, 139, 10, 1);
+    --yoya-color-warning-active: rgba(191, 123, 9, 1);
+    --yoya-color-warning-deep: rgba(157, 101, 7, 1);
+    --yoya-color-warning-subtle: rgba(254, 243, 226, 1);
+    --yoya-color-warning-active-subtle: rgba(253, 236, 206, 1);
+    --yoya-color-warning-border: rgba(252, 226, 182, 1);
+    --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+    --yoya-color-info: #0284c7;
+    --yoya-color-info-hover: rgba(2, 116, 175, 1);
+    --yoya-color-info-active: rgba(2, 103, 155, 1);
+    --yoya-color-info-deep: rgba(1, 84, 127, 1);
+    --yoya-color-info-subtle: rgba(225, 240, 248, 1);
+    --yoya-color-info-active-subtle: rgba(204, 230, 244, 1);
+    --yoya-color-info-border: rgba(179, 218, 238, 1);
+    --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+    --yoya-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+    --yoya-shadow-md: 0 8px 18px rgba(15, 23, 42, 0.1);
+    --yoya-shadow-lg: 0 24px 72px rgba(15, 23, 42, 0.2);
+  }
+
+  [data-yoya-mode='dark'] {
+    --yoya-color-bg: #171717;
+    --yoya-color-border: #3c3c3c;
+    --yoya-color-border-faint: #2a2a2a;
+    --yoya-color-border-muted: #5c5c5c;
+    --yoya-color-border-ring: rgba(255, 255, 255, 0.22);
+    --yoya-color-border-strong: #484848;
+    --yoya-color-code-badge: #2e2e2e;
+    --yoya-color-code-badge-text: #b9b9b9;
+    --yoya-color-code-bg: #0f0f0f;
+    --yoya-color-code-border: #2c2c2c;
+    --yoya-color-code-header: #191919;
+    --yoya-color-surface: #212121;
+    --yoya-color-surface-active: #2b2b2b;
+    --yoya-color-surface-hover: #262626;
+    --yoya-color-surface-muted: #1c1c1c;
+    --yoya-color-text: #ececec;
+    --yoya-color-text-active: rgba(124, 161, 243, 1);
+    --yoya-color-text-danger: #f87171;
+    --yoya-color-text-inverse: #ffffff;
+    --yoya-color-text-muted: #8a8a8a;
+    --yoya-color-text-secondary: #a6a6a6;
+    --yoya-color-text-strong: #f5f5f5;
+    --yoya-color-success-text: rgba(139, 209, 165, 1);
+    --yoya-color-danger-text: rgba(238, 147, 147, 1);
+    --yoya-color-warning-text: rgba(250, 207, 133, 1);
+    --yoya-color-info-text: rgba(129, 194, 227, 1);
+    --yoya-color-primary: rgba(72, 124, 238, 1);
+    --yoya-color-primary-hover: rgba(98, 143, 241, 1);
+    --yoya-color-primary-active: rgba(54, 111, 237, 1);
+    --yoya-color-primary-deep: rgba(22, 59, 141, 1);
+    --yoya-color-primary-subtle: rgba(10, 26, 61, 1);
+    --yoya-color-primary-active-subtle: rgba(13, 34, 80, 1);
+    --yoya-color-primary-border: rgba(15, 40, 94, 1);
+    --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+    --yoya-color-success: rgba(59, 178, 103, 1);
+    --yoya-color-success-hover: rgba(87, 189, 125, 1);
+    --yoya-color-success-active: rgba(41, 170, 88, 1);
+    --yoya-color-success-deep: rgba(13, 98, 44, 1);
+    --yoya-color-success-subtle: rgba(6, 42, 19, 1);
+    --yoya-color-success-active-subtle: rgba(7, 55, 25, 1);
+    --yoya-color-success-border: rgba(9, 65, 30, 1);
+    --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+    --yoya-color-danger: rgba(226, 73, 73, 1);
+    --yoya-color-danger-hover: rgba(230, 99, 99, 1);
+    --yoya-color-danger-active: rgba(223, 55, 55, 1);
+    --yoya-color-danger-deep: rgba(132, 23, 23, 1);
+    --yoya-color-danger-subtle: rgba(57, 10, 10, 1);
+    --yoya-color-danger-active-subtle: rgba(75, 13, 13, 1);
+    --yoya-color-danger-border: rgba(88, 15, 15, 1);
+    --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+    --yoya-color-warning: rgba(247, 174, 50, 1);
+    --yoya-color-warning-hover: rgba(248, 185, 79, 1);
+    --yoya-color-warning-active: rgba(246, 166, 31, 1);
+    --yoya-color-warning-deep: rgba(147, 95, 7, 1);
+    --yoya-color-warning-subtle: rgba(64, 41, 3, 1);
+    --yoya-color-warning-active-subtle: rgba(83, 54, 4, 1);
+    --yoya-color-warning-border: rgba(98, 63, 4, 1);
+    --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+    --yoya-color-info: rgba(42, 152, 208, 1);
+    --yoya-color-info-hover: rgba(73, 166, 215, 1);
+    --yoya-color-info-active: rgba(22, 142, 203, 1);
+    --yoya-color-info-deep: rgba(1, 79, 119, 1);
+    --yoya-color-info-subtle: rgba(1, 34, 52, 1);
+    --yoya-color-info-active-subtle: rgba(1, 45, 68, 1);
+    --yoya-color-info-border: rgba(1, 53, 80, 1);
+    --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+    --yoya-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --yoya-shadow-md: 0 8px 18px rgba(0, 0, 0, 0.36);
+    --yoya-shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.5);
+  }
+
+  /* system 模式：没有 light-dark() 就只能靠媒体查询表达。 */
+  @media (prefers-color-scheme: dark) {
+    [data-yoya-mode='system'] {
+      --yoya-color-bg: #171717;
+      --yoya-color-border: #3c3c3c;
+      --yoya-color-border-faint: #2a2a2a;
+      --yoya-color-border-muted: #5c5c5c;
+      --yoya-color-border-ring: rgba(255, 255, 255, 0.22);
+      --yoya-color-border-strong: #484848;
+      --yoya-color-code-badge: #2e2e2e;
+      --yoya-color-code-badge-text: #b9b9b9;
+      --yoya-color-code-bg: #0f0f0f;
+      --yoya-color-code-border: #2c2c2c;
+      --yoya-color-code-header: #191919;
+      --yoya-color-surface: #212121;
+      --yoya-color-surface-active: #2b2b2b;
+      --yoya-color-surface-hover: #262626;
+      --yoya-color-surface-muted: #1c1c1c;
+      --yoya-color-text: #ececec;
+      --yoya-color-text-active: rgba(124, 161, 243, 1);
+      --yoya-color-text-danger: #f87171;
+      --yoya-color-text-inverse: #ffffff;
+      --yoya-color-text-muted: #8a8a8a;
+      --yoya-color-text-secondary: #a6a6a6;
+      --yoya-color-text-strong: #f5f5f5;
+      --yoya-color-success-text: rgba(139, 209, 165, 1);
+      --yoya-color-danger-text: rgba(238, 147, 147, 1);
+      --yoya-color-warning-text: rgba(250, 207, 133, 1);
+      --yoya-color-info-text: rgba(129, 194, 227, 1);
+      --yoya-color-primary: rgba(72, 124, 238, 1);
+      --yoya-color-primary-hover: rgba(98, 143, 241, 1);
+      --yoya-color-primary-active: rgba(54, 111, 237, 1);
+      --yoya-color-primary-deep: rgba(22, 59, 141, 1);
+      --yoya-color-primary-subtle: rgba(10, 26, 61, 1);
+      --yoya-color-primary-active-subtle: rgba(13, 34, 80, 1);
+      --yoya-color-primary-border: rgba(15, 40, 94, 1);
+      --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+      --yoya-color-success: rgba(59, 178, 103, 1);
+      --yoya-color-success-hover: rgba(87, 189, 125, 1);
+      --yoya-color-success-active: rgba(41, 170, 88, 1);
+      --yoya-color-success-deep: rgba(13, 98, 44, 1);
+      --yoya-color-success-subtle: rgba(6, 42, 19, 1);
+      --yoya-color-success-active-subtle: rgba(7, 55, 25, 1);
+      --yoya-color-success-border: rgba(9, 65, 30, 1);
+      --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+      --yoya-color-danger: rgba(226, 73, 73, 1);
+      --yoya-color-danger-hover: rgba(230, 99, 99, 1);
+      --yoya-color-danger-active: rgba(223, 55, 55, 1);
+      --yoya-color-danger-deep: rgba(132, 23, 23, 1);
+      --yoya-color-danger-subtle: rgba(57, 10, 10, 1);
+      --yoya-color-danger-active-subtle: rgba(75, 13, 13, 1);
+      --yoya-color-danger-border: rgba(88, 15, 15, 1);
+      --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+      --yoya-color-warning: rgba(247, 174, 50, 1);
+      --yoya-color-warning-hover: rgba(248, 185, 79, 1);
+      --yoya-color-warning-active: rgba(246, 166, 31, 1);
+      --yoya-color-warning-deep: rgba(147, 95, 7, 1);
+      --yoya-color-warning-subtle: rgba(64, 41, 3, 1);
+      --yoya-color-warning-active-subtle: rgba(83, 54, 4, 1);
+      --yoya-color-warning-border: rgba(98, 63, 4, 1);
+      --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+      --yoya-color-info: rgba(42, 152, 208, 1);
+      --yoya-color-info-hover: rgba(73, 166, 215, 1);
+      --yoya-color-info-active: rgba(22, 142, 203, 1);
+      --yoya-color-info-deep: rgba(1, 79, 119, 1);
+      --yoya-color-info-subtle: rgba(1, 34, 52, 1);
+      --yoya-color-info-active-subtle: rgba(1, 45, 68, 1);
+      --yoya-color-info-border: rgba(1, 53, 80, 1);
+      --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+      --yoya-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --yoya-shadow-md: 0 8px 18px rgba(0, 0, 0, 0.36);
+      --yoya-shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
 /* 属性化迁移收口（票 15 波 6）：组件身份与部件位置一律走 `vn` / `vn_slot` 属性，
    类名一侧（`yoya-component` / `yoya-v*`）已全部退场——预设规则的起点只有身份作用域
    `[vn~='VXxx']` 与跨组件能力类 `yoya-<feature>`。
@@ -320,6 +545,24 @@ body {
     height: 0;
     width: 0;
   }
+
+  /* VThemeShell：背景的「基色 × 不透明度」由这里组合（票 01 / D11）。
+     命令只写 `--yoya-shell-bg` / `--yoya-shell-alpha` 两段数据，不认 color-mix() 的浏览器
+     走下面那条兜底——背景仍然正确，只丢掉透明度。 */
+  [vn~='VThemeShell'] {
+    --yoya-shell-composed: color-mix(
+      in srgb,
+      var(--yoya-shell-bg, var(--yoya-color-surface, #ffffff)) var(--yoya-shell-alpha, 100%),
+      transparent
+    );
+  }
+
+  @supports not (color: color-mix(in srgb, #fff, #000)) {
+    [vn~='VThemeShell'] {
+      --yoya-shell-composed: var(--yoya-shell-bg, var(--yoya-color-surface, #ffffff));
+    }
+  }
+
   :where([vn~='VField']) {
     display: grid;
     gap: 8px;
@@ -2522,6 +2765,12 @@ body {
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  [vn~='VTabs'] [vn~='VTabsNav']::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
   }
 
   [vn~='VTabs'][data-orientation='vertical'] [vn~='VTabsNav'] {

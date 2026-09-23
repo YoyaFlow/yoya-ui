@@ -20,11 +20,11 @@ const quillDemo = Object.freeze({
   controls: [
     {
       label: '导出 HTML',
-      run: (live, output) => output.textContent(live.html() || '（内容为空）')
+      run: (live, output) => (output.value = live.html() || '（内容为空）')
     },
     {
       label: '导出纯文本',
-      run: (live, output) => output.textContent(live.text().trim() || '（内容为空）')
+      run: (live, output) => (output.value = live.text().trim() || '（内容为空）')
     }
   ]
 });

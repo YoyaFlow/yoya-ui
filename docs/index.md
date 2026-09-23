@@ -23,6 +23,7 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`devtools.md`](devtools.md)                                                   | DevTools guide                                               | Rebuilt                       |
 | [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                       |
 | [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
+| [`browser-support.md`](browser-support.md)                                     | Browser baseline, degradation ledger, older-browser recipes  | New                           |
 | [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators            | Moved from `README.md`        |
 | [`performance.md`](performance.md)                                             | Official js-framework-benchmark numbers vs `vanillajs`       | Generated tables + gate       |
 | [`compiler.md`](compiler.md)                                                   | Optional build-time compile path: compiler + runtime hooks   | New                           |
@@ -37,6 +38,8 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 3. Pick the guide that matches your task: `access-control.md`, `ssr.md`, `theme.md`, or `devtools.md`.
    When a list is long enough that per-row cost matters, read `compiler.md` for the optional
    build-time compile path.
+   To check whether your target browsers are in range — or when a user reports "all styling is gone" —
+   read `browser-support.md` first.
 4. Read `component-authoring.md` when you want to build components for the ecosystem, and `interop.md`
    when you are plugging an existing library in.
 5. Read `agents.md` before generating or evaluating code for this repository with an AI assistant.

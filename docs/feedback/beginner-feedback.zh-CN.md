@@ -223,8 +223,8 @@
 ### 27. CSS 怎么隔离？没有 scoped style、没有 CSS Modules，类名撞了怎么办？
 
 - 分类：③（有缓解）
-- 现状：无 scoped / Modules；库侧契约是 `yoya-` 前缀 BEM 类名 + `--yoya-*` token + `data-yoya-mode` / `data-yoya-density`，且有 className-contract / css-contract 测试锁定不漂移；业务样式完全自主，库不做运行时 CSS 注入。
-- 文档动作：theme 文档已写类名契约，FAQ 加「为什么不需要 scoped」条目。
+- 现状（2026-09-24 更新）：无 scoped / Modules；库侧契约是**身份属性 `vn`**（预设规则只从 `[vn~="VXxx"]` 起头）+ `--yoya-*` token + `data-yoya-mode` / `data-yoya-density`，类名一侧只剩能力类 `yoya-<feature>`（`yoya-component` / `yoya-v*` 随票 15 波 6 退场，基线与 CSS 均已清零）；由 attribute-migration / className-contract / css-contract 三个门禁锁定不漂移；业务样式完全自主，库不做运行时 CSS 注入。
+- 文档动作：theme 文档已写「身份与类名契约」，FAQ 加「为什么不需要 scoped」条目。
 - 优先级：P2 ☐
 
 ### 28. 路由用什么？没有 vue-router / react-router 的对应物？

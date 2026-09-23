@@ -207,14 +207,15 @@ Toast UI Viewer 与 `vThree` 工厂沙盘）。扩展写法与跨库对照见
 
 Star 数说明关注度，不说明正确性，所以下面这些都可以直接查：
 
-| 信号       | 当前值                                                       | 怎么验证                                                               |
-| ---------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| 运行时依赖 | **0**                                                        | `package.json` 无 `dependencies` 字段                                  |
-| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）       | `npm test`                                                             |
-| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试 | `npm run typecheck`                                                    |
-| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM            | `src/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)            |
-| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表          | `npm run build && npm run verify:dist`                                 |
-| 契约文档   | 组件形态、值位置、生命周期已写成规范                         | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md) |
+| 信号       | 当前值                                                            | 怎么验证                                                                       |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                          |
+| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                     |
+| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                            |
+| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `src/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)                    |
+| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表               | `npm run build && npm run verify:dist`                                         |
+| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md) |
+| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)         |
 
 这是一个早期项目：Star 少、没有历史生态包袱，优先级仍然可以影响。评估它时请看仓库本身——测试、
 规范文档、与 Web 标准对齐的 API。更完整的说明（包括我们接受的取舍）见
@@ -267,7 +268,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `yoya.core.js`                     | 2.6 KB ~ **30.1 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly                                                                                                                            |
 | `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                                                                                                                                      |
-| `yoya.ui.js`（全部分类）           | 5.3 KB ~ **98.0 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                                                                                                        |
+| `yoya.ui.js`（全部分类）           | 5.3 KB ~ **98.4 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                                                                                                        |
 | `yoya.router.js`                   | 9.0 KB ~ **31.0 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）                                                                                                                    |
 | `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.3 KB**              | 编译产物的运行期钩子，导出面 = 发射器能写出的钩子全集（`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …）；主入口不含这些钩子 |
 | `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                   |
@@ -278,10 +279,10 @@ npm run build   # 产出 dist/，末尾打印体积表
 | 产物                             | raw      | min      | min+gzip | 包含内容                       |
 | -------------------------------- | -------- | -------- | -------- | ------------------------------ |
 | `yoya.router.full.js`            | 313.0 KB | 130.9 KB | 38.9 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 906.1 KB | 383.9 KB | 109.2 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 847.0 KB | 359.1 KB | 101.0 KB | core + 全部组件                |
+| `yoya.ui-router.full.js`（全量） | 916.2 KB | 380.4 KB | 109.7 KB | core + 全部组件 + router / SSR |
+| `yoya.ui.full.js`                | 857.0 KB | 355.7 KB | 101.4 KB | core + 全部组件                |
 
-组件皮肤 `yoya.ui.css`：115.1 KB raw / **20.2 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+组件皮肤 `yoya.ui.css`：126.6 KB raw / **22.2 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。
 
 `npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，
@@ -292,6 +293,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 - [文档索引](docs/index.zh-CN.md) · [为什么是 yoya-ui](docs/why-yoya-ui.zh-CN.md) · [特性亮点](docs/highlights.zh-CN.md)
 - [AI 代码助手阅读指南](docs/agents.zh-CN.md) · [Codex Skill](skills/yoya-ui/README.md)
 - [SSR 指南](docs/ssr.zh-CN.md) · [请求辅助](docs/api.zh-CN.md) · [主题规范](docs/theme.zh-CN.md) · [权限控制](docs/access-control.zh-CN.md) · [DevTools](docs/devtools.zh-CN.md)
+- [浏览器基线与降级口径](docs/browser-support.zh-CN.md)
 - [组件开发指南](docs/component-authoring.zh-CN.md) · [第三方库接入](docs/interop.zh-CN.md) · [跨库对照](docs/component-comparison.zh-CN.md)
 - [性能基准](docs/performance.zh-CN.md)（官方 js-framework-benchmark，数字由脚本生成并受门禁校验）
 - [路线图](ROADMAP.zh-CN.md)

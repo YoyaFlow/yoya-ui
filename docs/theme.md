@@ -210,8 +210,9 @@ vThemeModeSwitch((sw) => {
 
 ## 10. Contract tests
 
-- `src/css-contract.test.js`: static CSS rule coverage for component class/state hooks.
-- `src/className-contract.test.js`: class naming families, dynamic templates, and kebab-case `data-*` validation.
-- `src/preset-scope.test.js`: preset rules scoped to root classes (no orphan selectors).
+- `src/css-contract.test.js`: static CSS rule coverage for component identity (`[vn~="VXxx"] …`) and state hooks.
+- `src/attribute-migration-baseline.test.js`: class-name stock is zero and can never grow (`yoya-component` / `yoya-v*`).
+- `src/className-contract.test.js`: className literals must stay inside the surviving families (capability classes `yoya-<feature>`), dynamic templates, and kebab-case `data-*` validation.
+- `src/preset-scope.test.js`: every preset rule is scoped to an identity the library really declares (no orphan selectors).
 - `src/cascade-layer.test.js`: `@layer yoya` structure.
 - `src/theme-tokens.test.js`: raw palette, variant derivation, single definitions, mode/density switches, and stable token names.

@@ -141,7 +141,7 @@ const stateDemoDefinitions = Object.freeze([
     description: '同一节点重复 on() 覆盖上次 handler，不会叠加触发。',
     component: StateEventOverwriteExample1,
     sourceComponent: StateEventOverwriteExample1,
-    imports: ['vNode', 'vstack', 'vText'],
+    imports: ['ref', 'vNode', 'vstack', 'vText'],
     sourceTitle: '事件覆盖核心源码'
   },
   {
