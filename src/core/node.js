@@ -3009,6 +3009,44 @@ export class ViewNode {
     return this._rebuildable ? this.rebuild() : this.flush();
   }
 
+  /**
+   * 元素级**操作 API**（组件代码碰 DOM 的唯一口子，票 16 第 114 / 115 条）：
+   * 组件里不再出现 `_el` / `renderDom()`——节点自己知道元素建没建，操作也由它收口。
+   */
+
+  /** 把焦点交给这个元素（未落地 / 已销毁 = 无事发生）。 */
+  focus() {
+    if (!this._deleted) {
+      this._el?.focus?.();
+    }
+
+    return this;
+  }
+
+  /** 这个元素是否**包含**给定目标（"点外面关掉"、事件命中判定用；未落地 = false）。 */
+  owns(target) {
+    return Boolean(this._el?.contains?.(target));
+  }
+
+  /**
+   * 读写**DOM property**：写不成属性 / 需要实时值的那些（`indeterminate`、hydration 回读的
+   * `value` / `checked`、`files`…）。`prop(name)` = 读（未落地读不到 → `undefined`）。
+   */
+  prop(name, value) {
+    const element = this._el;
+
+    if (!element) {
+      return value === undefined ? undefined : this;
+    }
+
+    if (value === undefined) {
+      return element[name];
+    }
+
+    element[name] = value;
+    return this;
+  }
+
   renderDom() {
     return null;
   }
@@ -3638,6 +3676,11 @@ export class ComponentNode extends ViewNode {
  */
 const DELEGATED_ELEMENT_METHODS = [
   'attr',
+  // 元素级**操作 API**（组件碰 DOM 的唯一口子，见票 16 第 114 / 115 条）：组件代码里不出现
+  // `_el` / `renderDom()`，需要聚焦 / 包含判定 / 写 DOM property 就用这三条
+  'focus',
+  'owns',
+  'prop',
   'id',
   'name',
   'className',

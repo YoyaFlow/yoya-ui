@@ -536,6 +536,16 @@ export class ElementNode extends ViewNode {
   /** Aggregated text content of this element and its children. */
   textContent(): string;
 
+  /**
+   * Element-level **operation APIs** — components touch the DOM only through these
+   * (no `_el` / no `renderDom()` in component code): focus the element,
+   * test containment, read/write a DOM property (things that have no attribute form).
+   */
+  focus(): this;
+  owns(target: unknown): boolean;
+  prop(name: string): any;
+  prop(name: string, value: unknown): this;
+
   /** Reads an attribute value. */
   attr(name: string): AttrValue | undefined;
   /** Sets a single attribute; null/undefined/false remove it. */

@@ -308,7 +308,8 @@ export function VMenuItem() {
 
     /** 把焦点交给项：容器漫游 / 下拉菜单都用它，不再从外面碰元素。 */
     api.focus = () => {
-      view?._el?.focus?.();
+      // 引擎的元素级操作 API（组件代码里不碰 `_el` / `renderDom()`，见票 16 第 114 条）
+      view.focus();
       return api;
     };
 
