@@ -153,6 +153,19 @@ describe('vTable declarative sections', () => {
     expect(element.querySelector(CAPTION).textContent).toBe('报表');
     expect(element.querySelector(`${BODY} td`).textContent).toBe('api-gateway');
   });
+
+  it('keeps the props parts and the anonymous child() content in declaration order', () => {
+    const table = vTable({ caption: '报表' }, (table) => {
+      table.child(vTr((row) => row.vTd('api-gateway')));
+    });
+    const grid = table.renderDom().querySelector(GRID);
+
+    // 段挂在 <table> 句柄上，匿名 child() 走组件的匿名占位（= 同一个 <table>），顺序按声明
+    expect([...grid.children].map((child) => child.getAttribute('vn'))).toEqual([
+      'VTableCaption',
+      'VTr'
+    ]);
+  });
 });
 
 describe('vTableWrapper data-driven table', () => {

@@ -335,9 +335,9 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
  *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
  * - **props 在参数表里展开**：`caption` → 标题、`vThead` / `vTbody` / `vTfoot` → 三个段、`vTr` → 表体行，
- *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）。props 里的段在**定义体的结构声明**里
- *   落位，与运行期命令（`table.caption(…)` / `table.vThead(…)` / …）**共用同一份按需建的段**——
- *   先 props 后命令不会建出两份；
+ *   其余键照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VTable' }`）。props 里的段与运行期命令
+ *   （`table.caption(…)` / `table.vThead(…)` / …）**共用同一份按需建的段**——都挂在 `<table>`
+ *   自己的句柄上，先 props 后命令不会建出两份，也不需要"再找一遍"；
  * - 段命令把 setup **直接落在真段上**（不建临时段再搬行）：行是声明式投递还是 `keyed`
  *   活值对账，都挂在真表体上；
  * - 没有预建节点、没有 `find`、不碰 `_el` / `_children`；
@@ -355,48 +355,49 @@ export function VTable({
 } = {}) {
   assertVTableStructure(rest);
 
-  return vNode((api, self) => {
+  return vNode((api) => {
     let captionPart = null;
     let headPart = null;
     let bodyPart = null;
     let footPart = null;
 
     /**
-     * 按需建段：用到才建，建过就复用（不是预建，也不靠身份在结构里找）。
-     * **宿主由调用方给**：props 路径（定义体的结构声明）是 `<table>` 那个句柄，运行期命令是组件节点
-     * ——两条路都落进表格的匿名占位（`vn_slot: ''`），并且共用 `captionPart` 这些实例。
+     * 段挂在 `<table>` **自己的句柄**上：props 路径（定义体）与运行期命令都走这一份宿主，
+     * 于是"用到才建、建过就复用"只需要一处判断；也不用 `self.node()`（那是组件节点，不是内容位）。
      */
-    const captionOf = (host = self.node()) => {
+    const tableGrid = vTableGrid({ vn_slot: '' });
+
+    const captionOf = () => {
       if (!captionPart) {
         captionPart = vTableCaption();
-        host.child(captionPart);
+        tableGrid.child(captionPart);
       }
 
       return captionPart;
     };
 
-    const headOf = (host = self.node()) => {
+    const headOf = () => {
       if (!headPart) {
         headPart = vThead();
-        host.child(headPart);
+        tableGrid.child(headPart);
       }
 
       return headPart;
     };
 
-    const bodyOf = (host = self.node()) => {
+    const bodyOf = () => {
       if (!bodyPart) {
         bodyPart = vTbody();
-        host.child(bodyPart);
+        tableGrid.child(bodyPart);
       }
 
       return bodyPart;
     };
 
-    const footOf = (host = self.node()) => {
+    const footOf = () => {
       if (!footPart) {
         footPart = vTfoot();
-        host.child(footPart);
+        tableGrid.child(footPart);
       }
 
       return footPart;
@@ -445,21 +446,15 @@ export function VTable({
     /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
+    // props 里的段：用到才建，落进 `<table>`；顺序 = 标题 → 表头 → 表体 → 表尾
+    if (caption !== undefined) captionOf().text(caption);
+    if (headSetup !== undefined) headOf().setup(headSetup);
+    if (bodySetup !== undefined) bodyOf().setup(bodySetup);
+    if (footSetup !== undefined) footOf().setup(footSetup);
+    if (rowSetup !== undefined) bodyOf().vTr(rowSetup);
+
     const view = div({ ...rest, vn: 'VTable' }, (shell) =>
-      shell.child(
-        vTableScroll((scroll) =>
-          scroll.child(
-            vTableGrid({ vn_slot: '' }, (tableGrid) => {
-              // props 里的段：在结构声明里落位（没给就不建）；顺序 = 标题 → 表头 → 表体 → 表尾
-              if (caption !== undefined) captionOf(tableGrid).text(caption);
-              if (headSetup !== undefined) headOf(tableGrid).setup(headSetup);
-              if (bodySetup !== undefined) bodyOf(tableGrid).setup(bodySetup);
-              if (footSetup !== undefined) footOf(tableGrid).setup(footSetup);
-              if (rowSetup !== undefined) bodyOf(tableGrid).vTr(rowSetup);
-            })
-          )
-        )
-      )
+      shell.child(vTableScroll((scroll) => scroll.child(tableGrid)))
     );
 
     return view;
