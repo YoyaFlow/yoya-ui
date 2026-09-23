@@ -153,6 +153,34 @@ export class VMenu extends HtmlElementNode {
   child(...children: ChildInput[]): this;
   horizontal(): VMenu;
   vertical(): VMenu;
+  /** 可聚焦的菜单项（跳过禁用项）：族内 / 下拉菜单用它做打开后的首个 / 末个聚焦。 */
+  enabledItems(): HTMLElement[];
+  /** 行通道（结构性收口）：把菜单根本身交给数据层在上面 `keyed(…)` 对账（`vMenuWrapper` 就这么用）。 */
+  items(builder: (root: HtmlElementNode) => void): VMenu;
+}
+
+/** 数据驱动外壳（同 `VTableWrapper` 的位置）：`items` 数据 + `keyed` 对账 + `active` / `onSelect`。 */
+export interface MenuWrapperItem {
+  key?: unknown;
+  id?: unknown;
+  label?: ChildInput;
+  text?: ChildInput;
+  icon?: ChildInput;
+  shortcut?: ChildInput;
+  danger?: boolean;
+  disabled?: boolean;
+  [key: string]: any;
+}
+
+export class VMenuWrapper extends HtmlElementNode {
+  items(): Array<MenuWrapperItem | string | number>;
+  items(value: Array<MenuWrapperItem | string | number>): VMenuWrapper;
+  active(): unknown;
+  active(value: unknown): VMenuWrapper;
+  orientation(): MenuOrientation | null;
+  orientation(value: MenuOrientation): VMenuWrapper;
+  onSelect(): ((key: unknown, entry: MenuWrapperItem, index: number) => void) | null;
+  onSelect(handler: (key: unknown, entry: MenuWrapperItem, index: number) => void): VMenuWrapper;
 }
 
 /** Menu group label. */
@@ -440,6 +468,7 @@ export const vMenu: ElementFactory<VMenu>;
 export const vMenuDivider: ElementFactory<VMenuDivider>;
 export const vMenuGroup: ElementFactory<VMenuGroup>;
 export const vMenuItem: ElementFactory<VMenuItem>;
+export const vMenuWrapper: ElementFactory<VMenuWrapper>;
 export const vNavbar: {
   (
     first?: NavbarOptions | SetupCallback<VNavbar> | null,

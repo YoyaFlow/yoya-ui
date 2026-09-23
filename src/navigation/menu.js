@@ -100,6 +100,19 @@ export class MenuNode extends HtmlElementNode {
     return this._menuItems().filter((item) => !item.disabled);
   }
 
+  /**
+   * **行通道**（结构性收口，票 16 第 110 条的 ②+③）：把菜单的根本身交给数据层，
+   * 让 `vMenuWrapper` 这类数据驱动外壳能在它上面 `keyed(…)` 对账——与 `VTable` 的段命令同一角色：
+   * 数据层只认这条命令，不碰私有字段、也不自己解包视图根（票 16 第 27 条）。
+   */
+  items(builder) {
+    if (typeof builder === 'function') {
+      builder(this);
+    }
+
+    return this;
+  }
+
   _menuItems() {
     if (!this._el) {
       return [];
@@ -285,12 +298,6 @@ export function VMenuItem() {
     api.sidebarHidden = (hidden, { preserveShortcut = false } = {}) => {
       labelBox?.attr('data-sidebar-hidden', hidden ? 'true' : null);
       shortcutBox?.attr('data-sidebar-hidden', hidden && !preserveShortcut ? 'true' : null);
-      return api;
-    };
-
-    /** 族内协议：父菜单 / 子菜单把朝向写到项上（原来是节点类型上的 `_menuOrientation`）。 */
-    api.menuOrientation = (value) => {
-      view.attr('data-orientation', value);
       return api;
     };
 
@@ -636,7 +643,6 @@ class SubMenuNode extends HtmlElementNode {
 
   _menuOrientation(orientation) {
     this.attr('data-orientation', orientation);
-    this._trigger.menuOrientation(orientation);
     return this;
   }
 
@@ -786,14 +792,16 @@ class SubMenuNode extends HtmlElementNode {
 }
 
 /**
- * 菜单单元的朝向契约：**父菜单把朝向写到子单元的视图根**。
+ * 菜单单元的朝向契约：**朝向归菜单本身，样式按菜单作用域写**（②）。
  *
- * - 已迁移的 vNode 单元：根上带组件身份（`componentNameOf`），按表写属性——这些写发生在挂载前，
- *   必须落到根的属性快照（挂载前改 `ref` 不会进首帧，实测踩过）；
- * - 未迁移的类单元：仍走原来的 `_menuOrientation()`（迁移完成后这段可删）。
+ * `yoya.ui.css` 里的朝向规则一律从 `[vn~='VMenu'][data-orientation='…']` 起头（如
+ * `[vn~='VMenu'][data-orientation='horizontal'] [vn~='VMenuItem']`），所以**菜单项不再持有
+ * `data-orientation`**——这条推写路径整条去掉（`MenuItemNode` 那一刀之后项是闭包，本来就只认 CSS）。
+ *
+ * 仍需要写属性的是"自身也要带朝向位"的单元：分隔线要把 `aria-orientation` 反过来写（竖菜单里的横线）、
+ * 分组与子菜单要带自己的 `data-orientation`（它们要么继续往下传、要么自己还要用）。
  */
 const MENU_UNIT_ORIENTATION = {
-  VMenuItem: (orientation) => ({ 'data-orientation': orientation }),
   // 分隔线：`aria-orientation` 与父菜单朝向相反（竖菜单里的横线）
   VMenuDivider: (orientation) => ({
     'data-orientation': orientation,
@@ -1103,7 +1111,8 @@ function setSidebarVisuallyHidden(node, hidden) {
 export function VMenu() {
   return vNode((api) => {
     const element = new MenuNode();
-    delegateCommands(api, element, ['orientation', 'horizontal', 'vertical']);
+    // 结构层命令：朝向 + **行通道**（数据驱动外壳在 `items(builder)` 里对账自己的行）
+    delegateCommands(api, element, ['orientation', 'horizontal', 'vertical', 'items']);
     delegateChildFactories(api, element, MENU_CHILD_FACTORIES);
     api.setupObject = (config) => {
       element._setupMenu(config);
@@ -1195,3 +1204,156 @@ export function VSidebar() {
 }
 
 export const vSidebar = createComponentShortcut(VSidebar);
+
+/**
+ * **数据驱动的菜单外壳**（票 16 第 110 条 ②+③，位置同 `VTableWrapper`）。
+ *
+ * 分工与表格族一致：**结构层**（`MenuNode` 那一层：roving tabindex / 键盘漫游 / 子工厂）只做结构，
+ * 数据这一层在这里——
+ *
+ * - `items` 是纯数据（字符串 / 数字 = 标签；对象认 `key` / `id` / `label` / `text` / `icon` /
+ *   `shortcut` / `danger` / `disabled`），通过结构层的 `items(builder)` 交出的**行通道**走 `keyed` 对账：
+ *   改一条只动那一行，顺序由数据定（行键镜像成 `data-row-key`，与 `VTableWrapper` 同口径）；
+ * - `active` 是**项的键**（不填则点谁亮谁）；点击回 `onSelect(key, entry, index)`；
+ * - 嵌套子菜单 / 分组这类结构走结构层的 `vMenuGroup` / `vSubMenu`（数据外壳只覆盖一维列表）。
+ */
+export function VMenuWrapper() {
+  const itemsState = ref([]);
+  const activeState = ref(null);
+  const orientationState = ref(null);
+  let selectHandler = null;
+  let menuBox = null;
+
+  /** 数据行的账（键 → 项句柄）：只给"点谁亮谁"推状态用，数据真源仍是 `itemsState`。 */
+  const itemNodes = new Map();
+  /** 没声明 `key` / `id` 的对象行按对象身份发键（同一个对象反复写入保持同一个键）。 */
+  const autoKeys = new WeakMap();
+  let autoSerial = 0;
+
+  const rowKeyOf = (entry) => {
+    if (entry === null || typeof entry !== 'object') {
+      return `item:${String(entry)}`;
+    }
+
+    const declared = entry.key ?? entry.id;
+
+    if (declared !== undefined && declared !== null) {
+      return declared;
+    }
+
+    let key = autoKeys.get(entry);
+
+    if (key === undefined) {
+      key = `item:auto-${autoSerial++}`;
+      autoKeys.set(entry, key);
+    }
+
+    return key;
+  };
+
+  const labelOf = (entry) =>
+    entry === null || typeof entry !== 'object'
+      ? resolveTextValue(entry)
+      : (entry.label ?? entry.text ?? '');
+
+  return vNode((api) => {
+    /** 一项：数据 → 菜单项（`active` 由这一层的状态派生）。 */
+    const buildItem = (entry) => {
+      const key = rowKeyOf(entry);
+      const entryObject = typeof entry === 'object' && entry !== null ? entry : {};
+      const item = VMenuItem();
+
+      applyComponentSetup(item, {
+        danger: entryObject.danger,
+        disabled: entryObject.disabled,
+        icon: entryObject.icon,
+        label: labelOf(entry),
+        shortcut: entryObject.shortcut
+      });
+
+      item.active(activeState.value !== null && activeState.value === key);
+      item.on('click', () => {
+        activeState.value = key;
+        itemNodes.forEach((otherItem, otherKey) => otherItem.active(otherKey === key));
+
+        if (typeof selectHandler === 'function') {
+          const index = itemsState.value.indexOf(entry);
+          selectHandler(key, entry, index < 0 ? undefined : index);
+        }
+      });
+
+      itemNodes.set(key, item);
+      return item;
+    };
+
+    api.items = (next) => {
+      if (next === undefined) {
+        return itemsState.value.slice();
+      }
+
+      itemNodes.clear();
+      itemsState.value = Array.isArray(next) ? next.slice() : [];
+      return api;
+    };
+
+    api.active = (next) => {
+      if (next === undefined) {
+        return activeState.value;
+      }
+
+      activeState.value = next ?? null;
+      itemNodes.forEach((item, key) => item.active(key === activeState.value));
+      return api;
+    };
+
+    api.orientation = (next) => {
+      if (next === undefined) {
+        return orientationState.value;
+      }
+
+      orientationState.value = next;
+      menuBox?.orientation(next);
+      return api;
+    };
+
+    api.onSelect = (handler) => {
+      if (handler === undefined) {
+        return selectHandler;
+      }
+
+      selectHandler = typeof handler === 'function' ? handler : null;
+      return api;
+    };
+
+    api.setupObject = (config) => {
+      const { active, items, onSelect, orientation, ...elementConfig } = config ?? {};
+
+      if (Object.keys(elementConfig).length > 0) {
+        menuBox?.setup(elementConfig);
+      }
+      if (items !== undefined) {
+        api.items(items);
+      }
+      if (active !== undefined) {
+        api.active(active);
+      }
+      if (orientation !== undefined) {
+        api.orientation(orientation);
+      }
+      if (onSelect !== undefined) {
+        api.onSelect(onSelect);
+      }
+
+      return api;
+    };
+
+    // 结构层：菜单本身；`items(builder)` 把根的行通道交给这一层做 `keyed` 对账
+    menuBox = vMenu((menu) => {
+      menu.items((root) => root.keyed(itemsState, rowKeyOf, (entry) => buildItem(entry)));
+    });
+
+    return menuBox;
+  });
+}
+
+export const vMenuWrapper = createComponentShortcut(VMenuWrapper);
