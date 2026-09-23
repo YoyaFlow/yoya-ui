@@ -362,6 +362,24 @@ export function VXxx({ count = null, ...rest } = {}) {
 
 参考实现：`src/data-display/badge.js`（`VBadge` + `VBadgeContent` / `VBadgeCount` / `VBadgeText`）。
 
+### 容器组件：props 只收数据、结构一次写清、命令写在部件回调里（2026-09-23 定稿，参考实现 `VTable`）
+
+有"结构键"（键名与命令 / 工厂同名，如表格的 `vThead` / `vTbody` / `vTfoot` / `vTr`）的容器组件按这套写：
+
+- **props 只收数据 + 元素选项**：`function VXxx({ 数据键, ...rest })`，`...rest` 照 JSX 摊进根元素工厂。
+  **结构键写进 props 直接报错**（守卫见 `src/data-display/table.js` 的 `assertVTableStructure`：不报错就会
+  被当成同名 DOM 属性静默写下去），报错消息里指路"结构走命令"。
+- **部件常驻、结构一次写清**：容器自己该有的部件（表格的 `caption` / `thead` / `tbody` / `tfoot`）在视图里
+  一次写清，不"用过才建"、也不用 `mountable` 表达"有没有"——空部件不渲染内容即可（标题那类靠自己的
+  `data-has-text` 规则显隐）。**段 / 行只从命令来**：`vTable((table) => table.vThead(…))` 或运行期
+  `table.vThead(…)`；`api.setupString` 这类纯转发命令留在外面。
+- **命令写在部件自己的构建回调里**：`vTableCaption((part) => { api.caption = (…) => … part.text(…) })` ——
+  回调参数就是那个部件、闭包直接抓它，**外面不留部件变量**；props 的落位写在对应命令旁边。
+- **props 键名与同名工厂撞了就是信号**：`vThead: headSetup` 这种解构换绑名说明这个键不该出现在 props 里
+  （要么照上面收窄 props，要么把工厂换成别名——前者优先）。
+- 实测记录（别再试）：**组件节点上的区域 `rebuildable()` 不会在信号写入时重建**（元素节点会），所以
+  "把部件声明存成状态、用区域重建"这条路走不通；`resolveTextValue()` 也不解析信号句柄（别拿它包状态 ref）。
+
 ## State → View: Read-Value Bindings First
 
 **新代码（含迁移中的每个文件）状态到视图一律优先走读值绑定**，不要新增"集中快照函数"。
