@@ -1,22 +1,10 @@
-import {
-  ViewNode,
-  applySetupValue,
-  defineComponentIdentity,
-  hasComponentIdentity,
-  registerChildFactories
-} from '../core/node.js';
+import { ViewNode, registerChildFactories } from '../core/node.js';
 import { i18n } from '../core/i18n.js';
 import { HtmlElementNode } from '../html/index.js';
 import { vNode } from '../core/v-node.js';
 import { vDropdownMenu } from '../actions/dropdown-menu.js';
 import { vMenuItem } from '../navigation/menu.js';
-import {
-  applyComponentArguments,
-  applyElementOptions,
-  isPlainObject,
-  normalizeComponentArguments,
-  resolveTextValue
-} from '../components/shared.js';
+import { createComponentShortcut, isPlainObject, resolveTextValue } from '../components/shared.js';
 
 const defaultLanguages = Object.freeze([
   { label: '中文', value: 'zh-CN' },
@@ -24,32 +12,41 @@ const defaultLanguages = Object.freeze([
 ]);
 
 /**
- * vLanguageSwitch 是预制的语言切换按钮组，绑定 I18n 实例后自动同步语言。
+ * 语言切换（形态 B，包装型）：**定义函数吃 props**、快捷方法按标准分派；
+ * 视图根是内层 `vDropdownMenu`（多值身份 `VLanguageSwitch VDropdownMenu`），
+ * 语言变化通过 `locale.subscribe()` 订阅、`whenDestroy` 退订。
+ *
+ * props：`{ locale, languages, ariaLabel, size, variant, onChange, ...元素选项 }`；
+ * 位置参数里的函数 = 构建回调（句柄就是本组件）、对象 = 元素级配置（与旧第二参同口径）。
  */
-export function vLanguageSwitch(first = null, second = null, third = null) {
-  const args = normalizeComponentArguments(first, second, third);
+export function VLanguageSwitch({
+  ariaLabel,
+  languages,
+  locale,
+  onChange,
+  size,
+  variant,
+  ...elementOptions
+} = {}) {
+  // 与旧实现同序：state.locale 先用全局 `i18n` 起，再 `setLocale(props.locale)`
+  // （`setLocale` 只在"不同实例"时才订阅，所以这里刻意不把 props.locale 直接写进 state）
+  const state = {
+    ariaLabel: resolveTextValue(ariaLabel) || '切换语言',
+    languages: languages === undefined ? defaultLanguages : normalizeLanguages(languages),
+    locale: i18n,
+    onChange: typeof onChange === 'function' ? onChange : null,
+    size: normalizeSize(size ?? 'medium'),
+    variant: normalizeVariant(variant ?? 'secondary')
+  };
+  const initialLocale = locale ?? i18n;
 
-  if (hasComponentIdentity(args.first, 'VLanguageSwitch')) {
-    // 复用同类实例：把 options / callback 补上就返回（与 `vTree` 同一口径）
-    return applyComponentArguments(args.first, args.options, args.callback);
-  }
-
-  let root = null;
+  let unsubscribe = null;
   const node = vNode((api) => {
-    const state = {
-      ariaLabel: '切换语言',
-      locale: i18n,
-      languages: defaultLanguages,
-      onChange: null,
-      size: 'medium',
-      variant: 'secondary'
-    };
-    let unsubscribe = null;
-
     // 多值身份：外面认 `VLanguageSwitch`，下拉语义仍认 `VDropdownMenu`（包装型组件共用视图）
-    root = vDropdownMenu({
+    const root = vDropdownMenu({
       closeOnSelect: true,
-      placement: 'bottom-start'
+      placement: 'bottom-start',
+      ...elementOptions
     }).setup({ vn: 'VLanguageSwitch VDropdownMenu' });
 
     Object.assign(api, {
@@ -122,75 +119,10 @@ export function vLanguageSwitch(first = null, second = null, third = null) {
       }
     };
 
-    setLocale(state.locale);
-
-    if (typeof args.first === 'function') {
-      args.first(api);
-    } else {
-      applyOptions(args.first);
-    }
-
+    setLocale(initialLocale);
     sync();
+
     return root;
-
-    function applyOptions(options) {
-      if (!isPlainObject(options)) {
-        return;
-      }
-
-      const {
-        ariaLabel,
-        attrs,
-        className,
-        languages,
-        locale,
-        onChange,
-        size,
-        style,
-        variant,
-        ...elementConfig
-      } = options;
-
-      if (Object.keys(elementConfig).length > 0) {
-        root.setup(elementConfig);
-      }
-
-      if (attrs) {
-        applyElementOptions(root, { attrs });
-      }
-
-      if (style) {
-        applyElementOptions(root, { style });
-      }
-
-      if (className !== undefined) {
-        root.className(className);
-      }
-
-      if (ariaLabel !== undefined) {
-        state.ariaLabel = resolveTextValue(ariaLabel) || state.ariaLabel;
-      }
-
-      if (locale !== undefined) {
-        setLocale(locale);
-      }
-
-      if (languages !== undefined) {
-        state.languages = normalizeLanguages(languages);
-      }
-
-      if (onChange !== undefined) {
-        state.onChange = typeof onChange === 'function' ? onChange : null;
-      }
-
-      if (size !== undefined) {
-        state.size = normalizeSize(size);
-      }
-
-      if (variant !== undefined) {
-        state.variant = normalizeVariant(variant);
-      }
-    }
 
     function selectLanguage(option) {
       if (option.disabled || !state.locale || option.value === state.locale.getLanguage()) {
@@ -266,17 +198,13 @@ export function vLanguageSwitch(first = null, second = null, third = null) {
     }
   });
 
-  applySetupValue(node, args.callback);
-  if (root && args.options) {
-    // 第二参 options 与旧口径一致：只落元素级配置（attrs / style）
-    applyElementOptions(root, args.options);
-  }
   return node;
 }
 
+export const vLanguageSwitch = createComponentShortcut(VLanguageSwitch, { props: true });
+
+/** 旧别名（无 `v` 前缀的写法）：与快捷方法同一个函数。 */
 export const LanguageSwitch = vLanguageSwitch;
-export const VLanguageSwitch = vLanguageSwitch;
-defineComponentIdentity(VLanguageSwitch, 'VLanguageSwitch');
 
 registerChildFactories(HtmlElementNode, { vLanguageSwitch });
 
