@@ -15,25 +15,56 @@ export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsVariant = 'line' | 'card' | 'pills';
 export type TabsSize = 'default' | 'large' | 'small';
 
+/**
+ * 锚点项输入：字符串 / 数字 = 标题，其余按项的标准分派。
+ */
+export type AnchorItemInput = string | number | VAnchorItem | AnchorItemOptions;
+
+/**
+ * `vAnchor({ … })` 的 props——只收数据 + 元素选项；锚点项从 `items`（或命令
+ * `anchor.vAnchorItem(…)`）来，`children` 是 `items` 的兼容别名。
+ */
+export interface AnchorOptions {
+  active?: string | null;
+  activeHref?: string | null;
+  ariaLabel?: ChildInput;
+  /** `items` 的兼容别名。 */
+  children?: AnchorItemInput[];
+  items?: AnchorItemInput[];
+  offset?: number | string;
+  target?: string | Element;
+  [key: string]: unknown;
+}
+
 /** Anchor navigation with scroll tracking. */
 export class VAnchor extends HtmlElementNode {
-  ariaLabel(content: ChildInput): VAnchor;
+  ariaLabel(content?: ChildInput): VAnchor;
   offset(): number;
-  offset(value: number): VAnchor;
-  target(): string;
+  offset(value: number | string): VAnchor;
+  target(): string | Element | null;
   target(value: string | Element): VAnchor;
-  items(value: Array<string | VAnchorItem | AnchorItemOptions>): VAnchor;
+  items(): VAnchorItem[];
+  items(value: AnchorItemInput | AnchorItemInput[]): VAnchor;
   child(...children: ChildInput[]): this;
-  active(): string;
-  active(value: string): VAnchor;
-  activeHref(): string;
-  activeHref(value: string): VAnchor;
+  active(): string | null;
+  active(value: string | null): VAnchor;
+  activeHref(): string | null;
+  activeHref(value: string | null): VAnchor;
 }
 
 export interface AnchorItemOptions {
+  /** 标题：文本 / 句柄 / 节点（节点在构建期落位；`title()` 命令只收文本）。 */
   title?: ChildInput;
-  href?: string;
-  children?: Array<string | VAnchorItem | AnchorItemOptions>;
+  text?: ChildInput;
+  label?: ChildInput;
+  content?: ChildInput;
+  href?: string | null;
+  active?: boolean;
+  items?: AnchorItemInput[];
+  /** 子项列表：数组 = 整批替换，函数 = 替换后声明（回调句柄是项句柄）。 */
+  nested?: AnchorItemInput[] | SetupCallback<VAnchorItem>;
+  /** `items` 的兼容别名。 */
+  children?: AnchorItemInput[];
   [key: string]: any;
 }
 
@@ -41,9 +72,15 @@ export class VAnchorItem extends HtmlElementNode {
   title(content?: ChildInput): this;
   text(content?: ChildInput): this;
   label(content?: ChildInput): this;
-  href(value: string): VAnchorItem;
-  nested(setup: SetupInput<HtmlElementNode>): VAnchorItem;
-  subItems(setup: SetupInput<HtmlElementNode>): VAnchorItem;
+  href(): string | null;
+  href(value: string | null): VAnchorItem;
+  items(): VAnchorItem[];
+  items(value: AnchorItemInput | AnchorItemInput[]): VAnchorItem;
+  vAnchorItem(setup: SetupInput<VAnchorItem>): VAnchorItem;
+  nested(): HtmlElementNode[];
+  nested(setup: AnchorItemInput | AnchorItemInput[] | SetupCallback<VAnchorItem>): VAnchorItem;
+  nestedItems(value: AnchorItemInput | AnchorItemInput[]): VAnchorItem;
+  subItems(setup?: AnchorItemInput | AnchorItemInput[] | SetupCallback<VAnchorItem>): VAnchorItem;
   active(value?: boolean): VAnchorItem;
 }
 
@@ -222,8 +259,18 @@ export class VTabs extends HtmlElementNode {
   prev(): VTabs;
 }
 
-export const vAnchor: ElementFactory<VAnchor>;
-export const vAnchorItem: ElementFactory<VAnchorItem>;
+export const vAnchor: {
+  (
+    first?: AnchorOptions | SetupCallback<VAnchor> | null,
+    callback?: SetupCallback<VAnchor>
+  ): VAnchor;
+} & ElementFactory<VAnchor>;
+export const vAnchorItem: {
+  (
+    first?: AnchorItemOptions | SetupInput<VAnchorItem> | null,
+    callback?: SetupCallback<VAnchorItem>
+  ): VAnchorItem;
+} & ElementFactory<VAnchorItem>;
 export const vBreadcrumb: ElementFactory<VBreadcrumb>;
 export const vBreadcrumbItem: ElementFactory<VBreadcrumbItem>;
 export const vMenu: ElementFactory<VMenu>;
@@ -240,9 +287,12 @@ export const vTabs: ElementFactory<VTabs>;
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface NavigationParentShortcuts {
-  vAnchor(first?: SetupInput<VAnchor> | null, callback?: SetupCallback<VAnchor>): VAnchor;
+  vAnchor(
+    first?: AnchorOptions | SetupInput<VAnchor> | null,
+    callback?: SetupCallback<VAnchor>
+  ): VAnchor;
   vAnchorItem(
-    first?: SetupInput<VAnchorItem> | null,
+    first?: AnchorItemOptions | SetupInput<VAnchorItem> | null,
     callback?: SetupCallback<VAnchorItem>
   ): VAnchorItem;
   vBreadcrumb(

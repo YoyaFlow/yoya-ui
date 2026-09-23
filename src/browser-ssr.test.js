@@ -27,7 +27,7 @@ describe('browser-only components server render', () => {
       ['vMessageManager', vMessageManager()],
       ['vUpload', vUpload({ label: '上传' })],
       ['vAvatarUpload', vAvatarUpload()],
-      ['vAnchor', vAnchor((anchor) => anchor.vAnchorItem('锚点', '#section'))],
+      ['vAnchor', vAnchor((anchor) => anchor.vAnchorItem({ href: '#section', title: '锚点' }))],
       ['vMenu', vMenu((menu) => menu.vMenuItem('菜单项'))],
       ['vNavbar', vNavbar({ title: '导航' })]
     ];
