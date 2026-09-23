@@ -2487,15 +2487,19 @@ describe('compound components', () => {
     expect(element.querySelectorAll('[vn~="VFormItem"][data-error="true"]')).toHaveLength(2);
     expect(element.textContent).toContain('项目名称不能为空');
     expect(element.textContent).toContain('运维角色必须选择');
-    element.querySelectorAll('[vn~="VFormItemHint"]').forEach((hint) => {
-      expect(hint.style.display).toBe('none');
+    // 提示 / 报错的显隐归 CSS（`[data-hint='true']:not([data-error='true'])`）：报错态下提示让位，
+    // 状态真源是根上的 `data-hint` / `data-error`
+    element.querySelectorAll('[vn~="VFormItem"]').forEach((item) => {
+      expect(item.dataset.hint).toBe('true');
+      expect(item.dataset.error).toBe('true');
     });
 
     form.values({ projectName: '网关', role: '运维' });
     expect(form.validate()).toBe(true);
     expect(element.querySelectorAll('[vn~="VFormItem"][data-error="true"]')).toHaveLength(0);
-    element.querySelectorAll('[vn~="VFormItemHint"]').forEach((hint) => {
-      expect(hint.style.display).not.toBe('none');
+    element.querySelectorAll('[vn~="VFormItem"]').forEach((item) => {
+      expect(item.dataset.hint).toBe('true');
+      expect(item.dataset.error).toBeUndefined();
     });
   });
 
@@ -2540,12 +2544,14 @@ describe('compound components', () => {
       });
     });
     const element = form.renderDom();
+    const items = element.querySelectorAll('[vn~="VFormItem"]');
     const indicators = element.querySelectorAll('[vn~="VFormItemRequiredIndicator"]');
 
-    expect(indicators[0].style.display).toBe('none');
-    expect(indicators[1].style.display).not.toBe('none');
+    // 显隐归 CSS（`[data-indicator='true']` 规则）：根上的状态属性才是真源
+    expect(items[0].dataset.indicator).toBeUndefined();
+    expect(items[1].dataset.indicator).toBe('true');
     expect(indicators[1].textContent).toBe('*');
-    expect(indicators[2].style.display).not.toBe('none');
+    expect(items[2].dataset.indicator).toBe('true');
     expect(indicators[2].textContent).toBe('必填');
   });
 });

@@ -6,8 +6,7 @@ import {
   normalizeChildren,
   replaceChildren,
   resolveTextValue,
-  setupContentSlot,
-  themeValue
+  setupContentSlot
 } from '../../components/shared.js';
 import { isEmptyFormValue } from './shared.js';
 import { applyControlValue, findFieldControl, readControlValue } from './form-values.js';
@@ -15,7 +14,9 @@ import { applyControlValue, findFieldControl, readControlValue } from './form-va
 /**
  * 表单项：名称 / 标签 / 必填标记 + 编辑面 + 提示 / 错误（形态 B）。
  *
- * - 状态（名称、必填、提示可见、校验器、取值回调）与命令都在闭包里，身份写在结构里。
+ * - 状态（名称、必填、校验器、取值回调）与命令都在闭包里，身份写在结构里。
+ * - 各块的静态样式在 `yoya.ui.css`（R5）；显隐是状态，走根上的 `data-required` /
+ *   `data-indicator`（必填标记）/ `data-hint` / `data-error` 属性规则，JS 只写状态。
  * - 编辑面自己带 `collectValue(callback)` 与 `_collectValue` 能力：非标准组件靠它参与表单取值
  *   （`findFieldControl` / `readControlValue` 只认能力，不认组件身份）。
  * - `_validate(formValues)` 是 form 族内的校验协议（`form-values.js` 调它，见 16 号清单）。
@@ -25,7 +26,6 @@ export function VFormItem() {
     const state = {
       collectValue: null,
       fallbackMessage: '校验未通过',
-      hintVisible: false,
       name: '',
       required: false,
       requiredIndicatorContent: null,
@@ -33,54 +33,16 @@ export function VFormItem() {
       validators: []
     };
 
-    const labelBox = labelElement({
-      style: {
-        color: themeValue('color-text-strong', '#111827'),
-        fontWeight: '700',
-        lineHeight: '1.35'
-      },
-      vn: 'VFormItemLabel'
-    });
-    const requiredIndicator = span({
-      style: {
-        color: themeValue('color-danger', '#dc2626'),
-        display: 'none',
-        fontWeight: '700',
-        lineHeight: '1.35'
-      },
-      vn: 'VFormItemRequiredIndicator'
-    });
-    const labelRow = div({
-      style: { alignItems: 'center', display: 'flex', gap: '4px', minWidth: '0' },
-      vn: 'VFormItemLabelRow'
-    });
-    const editorBox = div({ style: { minWidth: '0' }, vn: 'VFormItemEditor' });
-    const hintBox = div({
-      style: {
-        color: themeValue('color-text-muted', '#64748b'),
-        display: 'none',
-        fontSize: '12px',
-        lineHeight: '1.45'
-      },
-      vn: 'VFormItemHint'
-    });
-    const errorBox = div({
-      style: {
-        color: themeValue('color-text-danger', '#b91c1c'),
-        display: 'none',
-        fontSize: '12px',
-        lineHeight: '1.45'
-      },
-      vn: 'VFormItemError'
-    });
+    // 静态样式全在 `yoya.ui.css`（R5）：JS 里只有状态属性与内容
+    const labelBox = labelElement({ vn: 'VFormItemLabel' });
+    const requiredIndicator = span({ vn: 'VFormItemRequiredIndicator' });
+    const labelRow = div({ vn: 'VFormItemLabelRow' });
+    const editorBox = div({ vn: 'VFormItemEditor' });
+    const hintBox = div({ vn: 'VFormItemHint' });
+    const errorBox = div({ vn: 'VFormItemError' });
 
-    const node = div(
-      {
-        style: { display: 'grid', gap: '6px', minWidth: '0' },
-        vn: 'VFormItem'
-      },
-      (root) =>
-        root.child(labelRow.child(requiredIndicator, labelBox), editorBox, hintBox, errorBox)
+    const node = div({ vn: 'VFormItem' }, (root) =>
+      root.child(labelRow.child(requiredIndicator, labelBox), editorBox, hintBox, errorBox)
     );
 
     // 编辑面即「值载体」：非标准组件通过 collectValue 注册取值函数，表单按能力读它
@@ -100,7 +62,8 @@ export function VFormItem() {
       const content = state.requiredIndicatorContent;
       const hasIndicator = content !== null && content !== undefined && content !== '';
 
-      requiredIndicator.style('display', hasIndicator ? null : 'none');
+      // 显隐归 CSS（`[data-indicator='true']` 规则）
+      node.attr('data-indicator', hasIndicator ? 'true' : null);
       replaceChildren(requiredIndicator, hasIndicator ? normalizeChildren(content) : []);
       return api;
     };
@@ -130,8 +93,7 @@ export function VFormItem() {
 
       const hasContent = value !== null && value !== undefined && value !== '';
 
-      state.hintVisible = hasContent;
-      hintBox.style('display', hasContent ? null : 'none');
+      node.attr('data-hint', hasContent ? 'true' : null);
       replaceChildren(hintBox, hasContent ? normalizeChildren(value) : []);
       return api;
     };
@@ -143,9 +105,8 @@ export function VFormItem() {
 
       const hasContent = value !== null && value !== undefined && value !== '';
 
-      errorBox.style('display', hasContent ? null : 'none');
+      // 报错与提示互斥：两个状态都在根上，CSS 规则决定谁显示
       node.attr('data-error', hasContent ? 'true' : null);
-      hintBox.style('display', hasContent ? 'none' : state.hintVisible ? null : 'none');
       replaceChildren(errorBox, hasContent ? normalizeChildren(value) : []);
       return api;
     };

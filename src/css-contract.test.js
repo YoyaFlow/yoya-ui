@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(resolve('src/yoya.ui.css'), 'utf8');
 
+/** 选择器可能被 prettier 折行：断言时先压平空白，避免写法（换行位置）影响契约。 */
+const cssFlat = css.replace(/\s+/g, ' ');
+
 const sharedActionSelectors = [
   '.yoya-vbutton',
   ".yoya-vbutton[data-variant='primary']",
@@ -44,6 +47,19 @@ const sharedActionSelectors = [
   "[vn~='VFloatButton'][disabled]",
   "[vn~='VFloatButton'][data-fixed='true']",
   "[vn~='VFloatButton'][data-position='bottom-right']"
+];
+
+const formItemSelectors = [
+  "[vn~='VFormItem']",
+  "[vn~='VFormItem'] > [vn~='VFormItemLabelRow']",
+  "[vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemLabel']",
+  "[vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemRequiredIndicator']",
+  "[vn~='VFormItem'][data-indicator='true'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemRequiredIndicator']",
+  "[vn~='VFormItem'] > [vn~='VFormItemEditor']",
+  "[vn~='VFormItem'] > [vn~='VFormItemHint']",
+  "[vn~='VFormItem'][data-hint='true']:not([data-error='true']) > [vn~='VFormItemHint']",
+  "[vn~='VFormItem'] > [vn~='VFormItemError']",
+  "[vn~='VFormItem'][data-error='true'] > [vn~='VFormItemError']"
 ];
 
 const navigationSelectors = [
@@ -208,6 +224,12 @@ describe('CSS style contract', () => {
   it('covers the shared action batch selectors', () => {
     sharedActionSelectors.forEach((selector) => {
       expect(css, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the form item selectors', () => {
+    formItemSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });
 

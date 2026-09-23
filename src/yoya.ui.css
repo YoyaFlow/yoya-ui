@@ -445,6 +445,69 @@ body {
     pointer-events: auto;
   }
 
+  /* 表单项：静态样式（原在 JS 里那 7 块行内样式）。三处显隐都是状态——
+     必填标记 / 提示 / 报错"有内容才显示"，真源是根上的 `data-indicator` / `data-hint` /
+     `data-error`。部件都是视图根的**直接子**（标签行的两个在标签行里），所以用子选择器：
+     表单项嵌表单项时，外层的状态不会串到里层的部件上。 */
+  :where([vn~='VFormItem']) {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemLabel'] {
+    color: var(--yoya-color-text-strong, #111827);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemRequiredIndicator'] {
+    color: var(--yoya-color-danger, #dc2626);
+    display: none;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VFormItem'][data-indicator='true']
+    > [vn~='VFormItemLabelRow']
+    > [vn~='VFormItemRequiredIndicator'] {
+    display: inline;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemEditor'] {
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* 提示与报错互斥：有内容才显示 */
+  [vn~='VFormItem'][data-hint='true']:not([data-error='true']) > [vn~='VFormItemHint'] {
+    display: block;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemError'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  [vn~='VFormItem'][data-error='true'] > [vn~='VFormItemError'] {
+    display: block;
+  }
+
   :where([vn~='VSymbolButton']) {
     align-items: center;
     background: transparent;
