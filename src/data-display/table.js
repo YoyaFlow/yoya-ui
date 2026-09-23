@@ -6,9 +6,7 @@ import {
   createComponentShortcut,
   isPlainObject,
   normalizeChildren,
-  replaceChildren,
-  themeBorder,
-  themeValue
+  replaceChildren
 } from '../components/shared.js';
 
 /**
@@ -19,6 +17,8 @@ import {
  * - 段与行各有命令通道（`api.vThead` / `api.vTbody` / `api.vTfoot` / `api.vTr`）：
  *   `table.vTr(…)` 进表体、`section.vTr(…)` 进该段——同一张表里**不要和匿名 `child()` 混用**。
  * - **数据驱动（列 / 行 / 空态）在 `VTableWrapper` 上**：表格壳只认结构，数据层只消费它。
+ * - 静态样式（壳 / 滚动壳 / 表体 / 标题 / 单元格预设）全在 `yoya.ui.css`（R5）；列定义带来的
+ *   对齐 / 换行 / 宽高 / `style` 是**数据**，仍旧写行内。
  */
 
 /** 没声明列、也推断不出列时的兜底列：整行当一格显示（`column.key === '__value'`）。 */
@@ -33,24 +33,18 @@ const columnKeyOf = (column, index) => column?.key ?? index;
  */
 const TABLE_DATA_KEYS = new Set(['columns', 'rows', 'data', 'empty', 'emptyText']);
 
-/** 单元格预设样式（列头 / 正文两套，与迁移前 applyTableCellStyles 同口径）。 */
-function applyCellStyles(node, column = {}, section) {
-  const isHead = section === 'head';
+/**
+ * 单元格的**数据**样式（列头 / 正文共用）：预设样式（边框 / 内边距 / 字重 / 垂直对齐 / 配色）在
+ * `yoya.ui.css` 的 `[vn~='VTh']` / `[vn~='VTd']` 规则里（R5）；这里只写列定义带来的对齐 / 换行 /
+ * 宽高，以及调用方自己给的 `className` / `style`（`style` 放在对齐之后，用户写的压过列配置）。
+ */
+function applyCellStyles(node, column = {}) {
+  if (column.align) {
+    node.style('textAlign', column.align);
+  }
 
-  node.styles({
-    borderBottom: themeBorder('color-border-faint', '#e2e8f0'),
-    fontWeight: isHead ? '700' : '400',
-    padding: 'var(--yoya-space-3, 12px) var(--yoya-space-3, 12px)',
-    textAlign: column.align || 'left',
-    verticalAlign: 'top',
-    whiteSpace: column.wrap === false ? 'nowrap' : 'normal'
-  });
-
-  if (isHead) {
-    node.style('background', themeValue('color-surface-hover', '#f8fafc'));
-    node.style('color', themeValue('color-text-secondary', '#334155'));
-  } else {
-    node.style('color', themeValue('color-text', '#172033'));
+  if (column.wrap === false) {
+    node.style('whiteSpace', 'nowrap');
   }
 
   if (column.className !== undefined) {
@@ -255,7 +249,6 @@ export const vTr = createComponentShortcut(VTr);
 export function VTh() {
   const element = th({ vn: 'VTh' });
   element.attr('scope', 'col');
-  applyCellStyles(element, {}, 'head');
   return element;
 }
 
@@ -263,9 +256,7 @@ export const vTh = createComponentShortcut(VTh);
 
 /** 正文单元格（形态 A 薄工厂）。 */
 export function VTd() {
-  const element = td({ vn: 'VTd' });
-  applyCellStyles(element, {}, 'body');
-  return element;
+  return td({ vn: 'VTd' });
 }
 
 export const vTd = createComponentShortcut(VTd);
@@ -275,15 +266,7 @@ export const vTd = createComponentShortcut(VTd);
  * 供 `VTable` 组合；用户一般不直接用。
  */
 export function VTableScroll() {
-  return div({
-    style: {
-      background: themeValue('color-surface', '#ffffff'),
-      border: themeBorder('color-border', '#d8dee8'),
-      borderRadius: '8px',
-      overflowX: 'auto'
-    },
-    vn: 'VTableScroll'
-  });
+  return div({ vn: 'VTableScroll' });
 }
 
 export const vTableScroll = createComponentShortcut(VTableScroll);
@@ -293,14 +276,7 @@ export const vTableScroll = createComponentShortcut(VTableScroll);
  * 谁要用它当插槽，就在**使用处**指定（`vTableGrid({ vn_slot: '' })`）——定义侧不预设槽位。
  */
 export function VTableGrid() {
-  return table({
-    style: {
-      borderCollapse: 'collapse',
-      color: themeValue('color-text', '#172033'),
-      width: '100%'
-    },
-    vn: 'VTableGrid'
-  });
+  return table({ vn: 'VTableGrid' });
 }
 
 export const vTableGrid = createComponentShortcut(VTableGrid);
@@ -322,27 +298,20 @@ export function VTableCaption() {
       // 活值（句柄 / 零参闭包）：文本与「空则隐藏」一起跟着值走——
       // 只绑文本的话，先空后有的标题会一直带着建时的 hidden 态。
       if (typeof content === 'function' || isSignal(content)) {
-        self.node().style('display', () => (hasCaptionText(content) ? null : 'none'));
+        // 显隐归 CSS（`[data-has-text='true']` 规则）：这里是读值绑定，跟着值走
+        self.node().attr('data-has-text', () => (hasCaptionText(content) ? 'true' : null));
         replaceChildren(self.node(), [content]);
         return api;
       }
 
       const hasContent = hasCaptionText(content);
-      self.node().style('display', hasContent ? null : 'none');
+      self.node().attr('data-has-text', hasContent ? 'true' : null);
       replaceChildren(self.node(), hasContent ? normalizeChildren(content) : []);
       return api;
     };
 
-    return caption({
-      style: {
-        captionSide: 'top',
-        color: themeValue('color-text-strong', '#111827'),
-        fontWeight: '700',
-        padding: '0 0 12px',
-        textAlign: 'left'
-      },
-      vn: 'VTableCaption'
-    }).style('display', 'none');
+    // 默认隐藏（没有内容就不占位）由 CSS 的 `[vn~='VTableCaption']` 规则给
+    return caption({ vn: 'VTableCaption' });
   });
 }
 
@@ -473,7 +442,7 @@ export function VTable() {
     /** 字符串 / 数字 = 表格标题。 */
     api.setupString = (value) => api.caption(value);
 
-    return div({ style: { display: 'block', minWidth: '0' }, vn: 'VTable' }, (root) =>
+    return div({ vn: 'VTable' }, (root) =>
       root.child(vTableScroll((scroll) => scroll.child(vTableGrid({ vn_slot: '' }))))
     );
   });
@@ -678,7 +647,7 @@ export function VTableWrapper() {
           headRow.keyed(resolvedColumns, columnKeyOf, (column) =>
             vTh((cell) => {
               cell.attr('data-key', String(column.key));
-              applyCellStyles(cell, column, 'head');
+              applyCellStyles(cell, column);
               appendCellContent(cell, column.label ?? column.key ?? '');
             })
           );
@@ -694,7 +663,7 @@ export function VTableWrapper() {
             bodyRow.keyed(bodyColumns, columnKeyOf, (column) =>
               vTd((cell) => {
                 cell.attr('data-key', String(column.key));
-                applyCellStyles(cell, column, 'body');
+                applyCellStyles(cell, column);
                 appendCellContent(cell, resolveTableCellContent(column, row, rowIndex));
               })
             );
@@ -704,12 +673,8 @@ export function VTableWrapper() {
         body.vTr((emptyRow) => {
           emptyRow.mountable(isEmpty);
           emptyRow.vTd((cell) => {
-            cell.attr('colspan', emptySpan);
-            cell.styles({
-              color: themeValue('color-text-muted', '#64748b'),
-              padding: 'var(--yoya-space-4, 16px) var(--yoya-space-3, 12px)',
-              textAlign: 'center'
-            });
+            // 空态格的压暗 / 居中 / 大内边距归 CSS（`[data-empty='true']` 规则）
+            cell.attr({ colspan: emptySpan, 'data-empty': 'true' });
             cell.child(emptyText);
           });
         });

@@ -72,6 +72,17 @@ const selectSelectors = [
   "[vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true']"
 ];
 
+const tableSelectors = [
+  "[vn~='VTable']",
+  "[vn~='VTableScroll']",
+  "[vn~='VTableGrid']",
+  "[vn~='VTableCaption']",
+  "[vn~='VTableCaption'][data-has-text='true']",
+  "[vn~='VTh']",
+  "[vn~='VTd']",
+  "[vn~='VTd'][data-empty='true']"
+];
+
 const navigationSelectors = [
   "[vn~='VMenu']",
   "[vn~='VMenu'][data-orientation='horizontal']",
@@ -245,6 +256,12 @@ describe('CSS style contract', () => {
 
   it('covers the select selectors', () => {
     selectSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the table selectors', () => {
+    tableSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

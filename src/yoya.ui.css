@@ -1900,6 +1900,67 @@ body {
     padding: 5px 10px;
   }
 
+  /* 表格：静态样式（原在 JS 里那 4 块行内样式 + 单元格预设）。单元格只留列定义带来的数据
+     （对齐 / 换行 / 宽高 / `style`），预设的边框 / 内边距 / 字重 / 垂直对齐 / 配色都在这里。 */
+  :where([vn~='VTable']) {
+    display: block;
+    min-width: 0;
+  }
+
+  :where([vn~='VTableScroll']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  :where([vn~='VTableGrid']) {
+    border-collapse: collapse;
+    color: var(--yoya-color-text, #172033);
+    width: 100%;
+  }
+
+  /* 标题：没有内容就整条隐藏（`data-has-text` 是这份状态的真源） */
+  :where([vn~='VTableCaption']) {
+    caption-side: top;
+    color: var(--yoya-color-text-strong, #111827);
+    display: none;
+    font-weight: 700;
+    padding: 0 0 12px;
+    text-align: left;
+  }
+
+  [vn~='VTableCaption'][data-has-text='true'] {
+    display: table-caption;
+  }
+
+  [vn~='VTh'],
+  [vn~='VTd'] {
+    border-bottom: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    padding: var(--yoya-space-3, 12px) var(--yoya-space-3, 12px);
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+  }
+
+  [vn~='VTh'] {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    color: var(--yoya-color-text-secondary, #334155);
+    font-weight: 700;
+  }
+
+  [vn~='VTd'] {
+    color: var(--yoya-color-text, #172033);
+    font-weight: 400;
+  }
+
+  /* 空态格（`data-empty` 标记）：压暗 + 居中 + 更大的内边距 */
+  [vn~='VTd'][data-empty='true'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    padding: var(--yoya-space-4, 16px) var(--yoya-space-3, 12px);
+    text-align: center;
+  }
+
   :where([vn~='VAvatar']) {
     align-items: center;
     background: var(--yoya-avatar-color, var(--yoya-color-primary-subtle, #eff6ff));
