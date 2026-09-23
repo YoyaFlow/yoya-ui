@@ -54,8 +54,9 @@ describe('vAnchor', () => {
       root.vAnchorItem({ href: '#custom', title: '自定义' });
     });
     const element = anchor.renderDom();
-    const visibleChildren = [...element.querySelectorAll(CHILDREN)].filter(
-      (node) => node.style.display !== 'none'
+    // 子列表显隐归 CSS：根上的 `data-has-children` 才是真源
+    const visibleChildren = element.querySelectorAll(
+      `${ITEM}[data-has-children="true"] > ${CHILDREN}`
     );
 
     expect(element.querySelectorAll(ITEM)).toHaveLength(4);
