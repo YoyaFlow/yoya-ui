@@ -319,6 +319,12 @@ export function VMessage(props = {}) {
   return vNode((api) => {
     const node = new MessageNode(props);
     delegateNodeCommands(api, node);
+    // 位置参数里的字符串 / 数字：迁移前走 `_setupMessage(setup)` 的兜底分支 = 内容位
+    // （组件化后位置参数会回落到"视图根的 setup 分派"，不回构造函数，所以要显式补这一条）
+    api.setupString = (value) => {
+      node.content(value);
+      return api;
+    };
     return node;
   });
 }

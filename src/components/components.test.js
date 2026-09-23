@@ -1578,6 +1578,18 @@ describe('compound components', () => {
     expect(element.dataset.open).toBeUndefined();
   });
 
+  it('routes positional strings into the trigger / target (迁移前 `_setupDropdownMenu` / `_setupContextMenu` 的兜底分支)', () => {
+    const dropdown = vDropdownMenu('操作');
+    const context = vContextMenu('右键区域');
+
+    expect(dropdown.renderDom().querySelector('[vn~="VDropdownTrigger"]').textContent).toContain(
+      '操作'
+    );
+    expect(context.renderDom().querySelector('[vn~="VContextTarget"]').textContent).toBe(
+      '右键区域'
+    );
+  });
+
   it('can keep dropdown menus open after selecting an item', () => {
     const clicked = vi.fn();
     const dropdown = vDropdownMenu((menu) => {

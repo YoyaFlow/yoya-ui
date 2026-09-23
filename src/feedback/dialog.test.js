@@ -84,6 +84,12 @@ describe('vDialog', () => {
     expect(element.dataset.closable).toBe('false');
   });
 
+  it('routes a positional string into the content box (迁移前 `_setupDialog` 的兜底分支)', () => {
+    const element = vDialog('确认发布').renderDom();
+
+    expect(element.querySelector('[vn~="VDialogContent"]').textContent).toBe('确认发布');
+  });
+
   it('invokes onClose when the dialog closes and not on repeat close', () => {
     const onClose = vi.fn();
     const dialog = vDialog({ onClose });

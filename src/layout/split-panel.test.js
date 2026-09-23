@@ -29,6 +29,12 @@ describe('vSplitPanel', () => {
     expect(divider.style.background).toBe('');
   });
 
+  it('routes a positional string into the first panel (迁移前 `_setupSplitPanel` 的兜底分支)', () => {
+    const element = vSplitPanel('左').renderDom();
+
+    expect(element.querySelector('[vn~="VSplitPanelFirst"]').textContent).toBe('左');
+  });
+
   it('sets direction, size, minSize and panel contents', () => {
     const panel = vSplitPanel((panel) => {
       panel.direction('vertical');

@@ -268,6 +268,12 @@ export function VDropdownMenu(props = {}) {
   return vNode((api) => {
     const node = new DropdownMenuNode(props);
     delegateNodeCommands(api, node);
+    // 位置参数里的字符串 / 数字：迁移前走 `_setupDropdownMenu(setup)` 的兜底分支 = 触发器文案
+    // （组件化后位置参数回落到"视图根的 setup 分派"，不回构造函数，所以要显式补这一条）
+    api.setupString = (value) => {
+      node.trigger(value);
+      return api;
+    };
     return node;
   });
 }

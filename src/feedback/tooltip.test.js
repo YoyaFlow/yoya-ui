@@ -26,6 +26,12 @@ describe('vTooltip', () => {
     expect(panel.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('routes a positional string into the target area (迁移前 `_setupTooltip` 的兜底分支)', () => {
+    const element = vTooltip('悬停区域').renderDom();
+
+    expect(element.querySelector('[vn~="VTooltipTarget"]').textContent).toBe('悬停区域');
+  });
+
   it('opens on hover and closes when the pointer leaves', () => {
     const tooltip = vTooltip({
       content: '悬停说明',

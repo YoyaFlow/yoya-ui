@@ -53,6 +53,14 @@ describe('VMessage countdown', () => {
     expect(document.querySelector('[vn~="VMessage"]')).toBeNull();
   });
 
+  it('routes a positional string into the content box (迁移前 `_setupMessage` 的兜底分支)', () => {
+    const message = vMessage('保存成功');
+
+    expect(message.renderDom().querySelector('[vn~="VMessageContent"]').textContent).toBe(
+      '保存成功'
+    );
+  });
+
   it('supports inline mode for local embedding and restores the floating layout', () => {
     const host = vMessageContainer({ inline: true, placement: 'top-right' });
     const element = host.renderDom();
