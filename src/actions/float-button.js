@@ -86,6 +86,10 @@ export function VFloatButton({
     api.content = (content) => api.label(content);
     api.text = (content) => api.label(content);
 
+    // 位置参数里的字符串 / 数字：迁移前走 `_setupFloatButton(setup)` 的兜底分支 = 标签
+    // （组件化后位置参数回落到"视图根的 setup 分派"，不回构造函数，所以要显式补这一条）
+    api.setupString = (value) => api.label(value);
+
     api.variant = (next) => {
       if (next === undefined) {
         return variantValue.value;

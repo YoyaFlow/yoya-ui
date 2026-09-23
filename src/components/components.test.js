@@ -302,6 +302,14 @@ describe('compound components', () => {
     expect(element.style.paddingLeft).toBe('');
   });
 
+  it('routes a positional string into the label (迁移前 `_setupFloatButton` 的兜底分支)', () => {
+    const action = vFloatButton('新建任务');
+
+    expect(action.renderDom().querySelector('[vn~="VFloatButtonLabel"]').textContent).toBe(
+      '新建任务'
+    );
+  });
+
   it('keeps an icon-only float button round without label padding', () => {
     const action = vFloatButton({ icon: '＋' });
     const element = action.renderDom();
