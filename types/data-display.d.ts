@@ -244,19 +244,53 @@ export interface PaginationComponent {
   [key: string]: any;
 }
 
+/**
+ * `vScroll({ … })` 的 props——只收数据 + 元素选项；本组件的键走命令，其余按引擎的元素分派落视图根。
+ */
+export interface ScrollOptions {
+  /** 列表数据（`items` / `append` 的数据口径）。 */
+  items?: Array<unknown>;
+  /** 静态内容通道（与 `items` 互斥，`items` 覆盖它）。 */
+  content?: ChildInput | SetupCallback<HtmlElementNode>;
+  /** `content` 的兼容别名。 */
+  children?: ChildInput | SetupCallback<HtmlElementNode>;
+  renderItem?: (item: unknown, index: number, scroll?: unknown) => ChildInput;
+  loadMore?: (context: unknown) => unknown;
+  onLoadMore?: (context: unknown) => unknown;
+  virtual?: boolean | null;
+  itemHeight?: number;
+  overscan?: number;
+  threshold?: number;
+  page?: number;
+  block?: boolean;
+  blocked?: boolean;
+  loop?: boolean;
+  loading?: boolean;
+  loadingText?: ChildInput;
+  endText?: ChildInput;
+  reset?: boolean;
+  [key: string]: unknown;
+}
+
 export class VScroll extends HtmlElementNode {
   content(setup: ChildInput | SetupCallback<HtmlElementNode>): VScroll;
+  items(): Array<unknown>;
   items(value: Array<unknown>, render?: (item: unknown, index: number) => ChildInput): VScroll;
   append(value: Array<unknown>, render?: (item: unknown, index: number) => ChildInput): VScroll;
   renderItem(handler: (item: unknown, index: number) => ChildInput): VScroll;
   loadMore(handler: () => void): VScroll;
   onLoadMore(handler: () => void): VScroll;
+  loop(): boolean;
   loop(value: boolean): VScroll;
+  block(): boolean;
   block(value: boolean): VScroll;
+  blocked(): boolean;
   blocked(value: boolean): VScroll;
+  loading(): boolean;
   loading(value: boolean): VScroll;
   threshold(): number;
   threshold(value: number): VScroll;
+  virtual(): boolean;
   virtual(value: boolean): VScroll;
   virtualize(value: boolean): VScroll;
   itemHeight(): number;
@@ -265,7 +299,9 @@ export class VScroll extends HtmlElementNode {
   overscan(value: number): VScroll;
   page(): number;
   page(value: number): VScroll;
+  loadingText(): ChildInput;
   loadingText(content: ChildInput): VScroll;
+  endText(): ChildInput;
   endText(content: ChildInput): VScroll;
   reset(): VScroll;
   clear(): VScroll;
@@ -586,7 +622,9 @@ export const vPagination: ElementFactory<PaginationComponent> & {
 };
 export const vProgress: ElementFactory<VProgress>;
 export const vRingStat: ElementFactory<VRingStat>;
-export const vScroll: ElementFactory<VScroll>;
+export const vScroll: {
+  (first?: ScrollOptions | SetupInput<VScroll> | null, callback?: SetupCallback<VScroll>): VScroll;
+} & ElementFactory<VScroll>;
 export const vSparkline: ElementFactory<VSparkline>;
 export interface TreeTableColumn {
   key?: string;
@@ -708,7 +746,10 @@ export interface DataDisplayParentShortcuts {
   ): PaginationComponent;
   vProgress(first?: SetupInput<VProgress> | null, callback?: SetupCallback<VProgress>): VProgress;
   vRingStat(first?: SetupInput<VRingStat> | null, callback?: SetupCallback<VRingStat>): VRingStat;
-  vScroll(first?: SetupInput<VScroll> | null, callback?: SetupCallback<VScroll>): VScroll;
+  vScroll(
+    first?: ScrollOptions | SetupInput<VScroll> | null,
+    callback?: SetupCallback<VScroll>
+  ): VScroll;
   vSparkline(
     first?: SetupInput<VSparkline> | null,
     callback?: SetupCallback<VSparkline>

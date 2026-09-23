@@ -26,7 +26,6 @@
     "src/data-display/table.js": 1,
     "src/data-display/tree-ranger.js": 1,
     "src/data-display/tree-table.js": 3,
-    "src/data-display/vscroll.js": 2,
     "src/three/three.js": 1,
     "src/async/lazy-image.js": 1,
     "src/async/skeleton.js": 1,

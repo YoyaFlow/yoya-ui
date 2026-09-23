@@ -1,238 +1,275 @@
+import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
+import { vText } from '../core/index.js';
 import { div, span } from '../html/index.js';
 import {
   createComponentShortcut,
-  isPlainObject,
-  normalizeChildren,
-  replaceChildren,
-  setupContentSlot
+  setupContentSlot,
+  resolveTextValue
 } from '../components/shared.js';
 
 const VIRTUAL_GAP = 8;
 const VIRTUAL_PADDING = 12;
 const AUTO_VIRTUAL_THRESHOLD = 100;
 
+/** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
+const textOf = (value) => resolveTextValue(value);
+
+/** 列表归一：数组原样、空值成空表、其余单值成一项。 */
+const asList = (value) =>
+  value === null || value === undefined ? [] : Array.isArray(value) ? value.slice() : [value];
+
 /**
- * 滚动容器（形态 B，票 15 §4）：视图根是滚动容器 `div` + 列表 + 加载 / 结束页脚。
+ * 滚动容器（形态 B，票 15 §4；2026-09-23 按「组件写法」口径重写 + R5）。
  *
- * - 身份写在结构里：根 `vn: 'VScroll'`、列表 `VScrollList`、页脚 `VScrollFooter`
- *   （状态位 `VScrollStatus`）、虚拟行 `VScrollVirtualItem`；
- * - 状态与命令收进 `vNode` 闭包；`renderItem(item, index, scroll)` 的第三参交给使用方的是
- *   **组件句柄**（`self.node()`，与其它组件的回调口径一致）、`loadMore` 上下文里的 `scroll` 同此；
- * - 元素级时机：旧 `renderDom()` / `destroy()` 猴补换 `whenMount` / `whenDestroy`
- *   （首屏按真实尺寸重算窗口 + 订阅尺寸变化 / 解绑观察者）；读元素只读 `_el` 判定"建没建"；
- * - 虚拟窗口不靠临时换视图树：`renderItems()` 每次都把"当前窗口"刷进列表（首屏 = 确定性初始窗口），
- *   `toHTML()` 直接序列化即可（服务端没有 `_el`，窗口与视口无关）；
- * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupScroll` 同口径）。
+ * - 结构一次写清：`div[VScroll] > div[VScrollList] + div[VScrollFooter](> span[VScrollStatus])`；
+ * - **项走一份 `ref([])` + `keyed` 对账**：非虚拟模式渲染全部项、虚拟模式渲染当前窗口，
+ *   两种情况都只把"这一轮该有的行"写成数据——滚动 / 追加时引擎按行键（`模式:下标`）复用、
+ *   增删、搬动，不再 `replaceChildren` 整段重建（旧 `renderItems()` 的整段重建退场）；
+ *   静态内容通道（`content(setup)`）仍是内容通道，两条通道互斥（切回行数据时清一次列表）；
+ * - **状态 → 视图全是读值绑定**：根上的 `data-*` / `aria-busy`、列表的虚拟高度、页脚状态文本
+ *   都从状态派生——`syncFooter()` 集中快照退场；`syncVirtualState()` 只剩"订阅 / 解绑尺寸观察者"
+ *   这件副作用（改名 `applySizeObserver`）；
+ * - **静态样式全在 `yoya.ui.css`**（R5）：根 / 列表 / 虚拟行 / 页脚本来就有规则，这刀把 JS 里
+ *   重复的行内样式删掉；虚拟行的几何（高度 / 位置）走 `--yoya-scroll-item-height` +
+ *   每行的 `--yoya-scroll-index`（CSS 用 `calc()` 算，JS 只写变量）；
+ * - 元素级时机：`whenMount` 按落地收口（按真实尺寸重算窗口 + 订阅尺寸变化 + 补一次触底检查）、
+ *   `whenDestroy` 解绑观察者；读元素只读 `_el` 判定"建没建"；props 进参数表（`api.setupObject` 退场）。
  */
-export function VScroll() {
-  return vNode((api, self) => {
-    const state = {
-      blocked: false,
-      checkScheduled: false,
-      endContent: '没有更多了',
-      itemHeight: 48,
-      itemsData: [],
-      loadMoreHandler: null,
-      loading: false,
-      loadingContent: '加载中…',
-      loop: false,
-      overscan: 5,
-      page: 0,
-      renderItem: null,
-      resizeObserver: null,
-      threshold: 80,
-      virtual: null
-    };
+export function VScroll({
+  block,
+  blocked,
+  children,
+  content,
+  endText = '没有更多了',
+  itemHeight = 48,
+  items,
+  loadMore,
+  onLoadMore,
+  loading = false,
+  loadingText = '加载中…',
+  loop = false,
+  overscan = 5,
+  page = 0,
+  renderItem,
+  reset = false,
+  threshold = 80,
+  virtual = null,
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
 
-    const list = div({ vn: 'VScrollList' });
-    const statusBox = span({ vn: 'VScrollStatus' });
-    const footer = div({ vn: 'VScrollFooter' }).child(statusBox);
-    const node = div({ vn: 'VScroll' })
-      .attr({
-        'aria-busy': 'false',
-        'aria-live': 'polite',
-        'data-item-height': '48',
-        'data-overscan': '5',
-        'data-page': '0',
-        'data-threshold': '80',
-        role: 'feed'
-      })
-      .styles({
-        boxSizing: 'border-box',
-        minWidth: '0',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
-        position: 'relative'
-      });
+  // 状态：句柄原样收下（props 给句柄就是活值），归一全部放在读时的派生上
+  const itemsState = ref(asList(items));
+  const itemHeightState = asSignal(itemHeight);
+  const overscanState = asSignal(overscan);
+  const thresholdState = asSignal(threshold);
+  const pageState = asSignal(page);
+  const virtualState = asSignal(virtual ?? null);
+  const loadingState = asSignal(loading);
+  const blockedState = asSignal(blocked ?? block ?? false);
+  const loopState = asSignal(loop);
+  const loadingTextState = asSignal(loadingText);
+  const endTextState = asSignal(endText);
 
-    node.child(list, footer);
+  /** 使用方回调与"静态内容"标记：都是命令的落点，不进视图绑定。 */
+  let renderHandler = typeof renderItem === 'function' ? renderItem : null;
+  let loadMoreHandler =
+    typeof loadMore === 'function'
+      ? loadMore
+      : typeof onLoadMore === 'function'
+        ? onLoadMore
+        : null;
+  let staticContent = false;
+  let sizeObserver = null;
 
-    const isVirtualEnabled = () =>
-      state.virtual === true ||
-      (state.virtual === null && state.itemsData.length >= AUTO_VIRTUAL_THRESHOLD);
+  const itemHeightValue = computed(() => {
+    const parsed = Number(itemHeightState.value);
+    return Number.isFinite(parsed) && parsed > 0 ? Math.max(1, parsed) : 48;
+  });
+  const itemHeightText = computed(() => `${itemHeightValue.value}px`);
+  const overscanValue = computed(() => {
+    const parsed = Number(overscanState.value);
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 5;
+  });
+  const thresholdValue = computed(() => {
+    const parsed = Number(thresholdState.value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 80;
+  });
+  const pageValue = computed(() => {
+    const parsed = Number(pageState.value);
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
+  });
+  const countValue = computed(() => itemsState.value.length);
+  const countText = computed(() => String(countValue.value));
 
-    const virtualListHeight = (count) => {
-      if (count === 0) {
-        return 0;
-      }
+  const virtualMode = computed(
+    () =>
+      virtualState.value === true ||
+      (virtualState.value === null && countValue.value >= AUTO_VIRTUAL_THRESHOLD)
+  );
+  const virtualActive = computed(() => virtualMode.value && countValue.value > 0);
+  /** 虚拟模式下列表要撑起真实滚动高度（非虚拟交给内容撑）。 */
+  const listHeightText = computed(() => {
+    if (!virtualActive.value) {
+      return null;
+    }
 
-      return VIRTUAL_PADDING * 2 + count * state.itemHeight + (count - 1) * VIRTUAL_GAP;
-    };
+    const count = countValue.value;
+    const virtualHeight =
+      count === 0
+        ? 0
+        : VIRTUAL_PADDING * 2 + count * itemHeightValue.value + (count - 1) * VIRTUAL_GAP;
+    return `${virtualHeight}px`;
+  });
+
+  /** 页脚状态文本：加载中优先，其次"没有更多了"。 */
+  const statusText = computed(() => {
+    if (loadingState.value) {
+      return textOf(loadingTextState.value);
+    }
+
+    return blockedState.value ? textOf(endTextState.value) : '';
+  });
+  const hasStatus = computed(() => statusText.value !== '');
+
+  /** 行数据：非虚拟 = 全部项，虚拟 = 当前窗口（滚动时重算，只写这一份数据）。 */
+  const rows = ref([]);
+
+  const node = vNode((api, self) => {
+    const renderEntry = (item, index) =>
+      renderHandler ? renderHandler(item, index, self.node()) : item;
 
     const visibleRange = (count) => {
-      const pitch = state.itemHeight + VIRTUAL_GAP;
-      const scrollTop = node._el ? Number(node._el.scrollTop) || 0 : 0;
-      const clientHeight = node._el ? Number(node._el.clientHeight) || 0 : 0;
-      const start = Math.max(0, Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - state.overscan);
+      const pitch = itemHeightValue.value + VIRTUAL_GAP;
+      const scrollTop = view._el ? Number(view._el.scrollTop) || 0 : 0;
+      const clientHeight = view._el ? Number(view._el.clientHeight) || 0 : 0;
+      const start = Math.max(
+        0,
+        Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - overscanValue.value
+      );
       const end = Math.min(
         count,
         Math.max(
           0,
-          Math.ceil((scrollTop + clientHeight - VIRTUAL_PADDING) / pitch) + state.overscan
+          Math.ceil((scrollTop + clientHeight - VIRTUAL_PADDING) / pitch) + overscanValue.value
         )
       );
 
       return { end, start };
     };
 
-    const renderEntry = (item, index) =>
-      state.renderItem ? state.renderItem(item, index, self.node()) : item;
+    /** 行键：`模式:下标`——模式切换（虚拟 ↔ 非虚拟）与项增删都会走各自的对账。 */
+    const keyOfRow = (row) => `${row.mode}:${row.index}`;
 
-    const createVirtualItem = (content, index, count) => {
-      const pitch = state.itemHeight + VIRTUAL_GAP;
-      const top = VIRTUAL_PADDING + index * pitch;
+    /** 行产物：虚拟行多一层 `VScrollVirtualItem`（位置 / 尺寸归 CSS 变量）。 */
+    const buildRow = (row) => {
+      const entry = renderEntry(row.item, row.index);
 
-      return div({ vn: 'VScrollVirtualItem' })
-        .attr({
-          'aria-posinset': String(index + 1),
-          'aria-setsize': String(count),
-          'data-index': String(index)
-        })
-        .styles({
-          boxSizing: 'border-box',
-          height: `${state.itemHeight}px`,
-          left: '0',
-          minWidth: '0',
-          overflow: 'visible',
-          position: 'absolute',
-          right: '0',
-          top: `${top}px`,
-          width: '100%'
-        })
-        .child(content);
-    };
-
-    const disconnectSizeObserver = () => {
-      if (state.resizeObserver) {
-        state.resizeObserver.disconnect();
-        state.resizeObserver = null;
+      if (row.mode !== 'window') {
+        return entry;
       }
+
+      return div(
+        {
+          attrs: {
+            'aria-posinset': String(row.index + 1),
+            'aria-setsize': countText,
+            'data-index': String(row.index)
+          },
+          style: { '--yoya-scroll-index': String(row.index) },
+          vn: 'VScrollVirtualItem'
+        },
+        (box) => box.child(entry)
+      );
     };
 
-    const observeSize = () => {
-      if (!node._el || typeof ResizeObserver !== 'function' || state.resizeObserver) {
+    /** 尺寸观察者：只在"虚拟且已落地"时订阅（副作用，不是快照）。 */
+    const applySizeObserver = () => {
+      const wanted = virtualActive.value && typeof ResizeObserver === 'function';
+
+      if (!wanted) {
+        if (sizeObserver) {
+          sizeObserver.disconnect();
+          sizeObserver = null;
+        }
         return;
       }
 
-      state.resizeObserver = new ResizeObserver(() => {
-        if (node._deleted || !isVirtualEnabled() || state.itemsData.length === 0) {
-          return;
-        }
-        renderItems();
-      });
-      state.resizeObserver.observe(node._el);
-    };
-
-    const syncVirtualState = () => {
-      const enabled = isVirtualEnabled() && state.itemsData.length > 0;
-
-      node.attr('data-virtual', enabled ? 'true' : null);
-
-      if (enabled) {
-        list.styles({
-          display: 'block',
-          gap: '0',
-          padding: '0',
-          position: 'relative'
+      if (!sizeObserver && view._el) {
+        sizeObserver = new ResizeObserver(() => {
+          if (view._deleted || !virtualActive.value) {
+            return;
+          }
+          renderItems();
         });
-        observeSize();
-      } else {
-        list.styles({
-          display: null,
-          gap: null,
-          height: null,
-          padding: null,
-          position: null
-        });
-        disconnectSizeObserver();
+        sizeObserver.observe(view._el);
       }
     };
 
+    /** 把"这一轮该有的行"写成数据（结构交给 `keyed`，这里不碰 DOM）。 */
     const renderItems = () => {
-      syncVirtualState();
+      applySizeObserver();
 
-      const count = state.itemsData.length;
+      // 从静态内容切回行数据：清一次列表（静态子节点与行是两条互斥通道）
+      if (staticContent) {
+        list.clearChildren();
+        staticContent = false;
+      }
 
-      if (!isVirtualEnabled() || count === 0) {
-        replaceChildren(
-          list,
-          state.itemsData.map((item, index) => renderEntry(item, index))
-        );
+      const count = itemsState.value.length;
+
+      if (!virtualActive.value) {
+        rows.value = itemsState.value.map((item, index) => ({
+          index,
+          item,
+          mode: 'row',
+          render: renderHandler
+        }));
         return;
       }
 
       const { end, start } = visibleRange(count);
-      const nodes = [];
+      const next = [];
 
       for (let index = start; index < end; index += 1) {
-        nodes.push(createVirtualItem(renderEntry(state.itemsData[index], index), index, count));
+        next.push({ index, item: itemsState.value[index], mode: 'window', render: renderHandler });
       }
 
-      replaceChildren(list, nodes);
-      list.style('height', `${virtualListHeight(count)}px`);
-    };
+      rows.value = next;
 
-    const syncFooter = () => {
-      if (state.loading) {
-        replaceChildren(statusBox, normalizeChildren(state.loadingContent));
-        footer.style('display', 'flex');
-        return;
+      // 命令自收口（「构建 → 落地」窗口里写进来的数据要手动刷一次）：行的对账登记在列表上、
+      // 首评发生在构建期，落地前写完必须求值一次——SSR（没有落地）才拿得到确定性的初始窗口。
+      if (!view._el) {
+        list.flush();
       }
-
-      if (state.blocked) {
-        replaceChildren(statusBox, normalizeChildren(state.endContent));
-        footer.style('display', 'flex');
-        return;
-      }
-
-      replaceChildren(statusBox, []);
-      footer.style('display', 'none');
     };
 
     const checkLoad = () => {
-      if (state.loading || state.blocked || !node._el) {
+      if (loadingState.value || blockedState.value || !view._el) {
         return api;
       }
 
       const distance =
-        (node._el.scrollHeight || 0) - (node._el.scrollTop || 0) - (node._el.clientHeight || 0);
+        (view._el.scrollHeight || 0) - (view._el.scrollTop || 0) - (view._el.clientHeight || 0);
 
-      if (distance <= state.threshold) {
+      if (distance <= thresholdValue.value) {
         api.load();
       }
 
       return api;
     };
 
+    let checkScheduled = false;
+
     const scheduleCheck = () => {
-      if (state.checkScheduled || node._deleted || typeof queueMicrotask !== 'function') {
+      if (checkScheduled || view._deleted || typeof queueMicrotask !== 'function') {
         return api;
       }
 
-      state.checkScheduled = true;
+      checkScheduled = true;
       queueMicrotask(() => {
-        state.checkScheduled = false;
+        checkScheduled = false;
         checkLoad();
       });
       return api;
@@ -240,29 +277,29 @@ export function VScroll() {
 
     const load = () => {
       if (
-        node._deleted ||
-        state.loading ||
-        state.blocked ||
-        typeof state.loadMoreHandler !== 'function'
+        view._deleted ||
+        loadingState.value ||
+        blockedState.value ||
+        typeof loadMoreHandler !== 'function'
       ) {
         return Promise.resolve(false);
       }
 
-      api.page(state.page + 1);
+      api.page(pageValue.value + 1);
       api.loading(true);
 
       const context = {
         append: (value, render) => api.append(value, render),
         block: (value = true) => api.block(value),
         done: () => api.block(true),
-        page: state.page,
+        page: pageValue.value,
         scroll: self.node()
       };
 
       let result;
 
       try {
-        result = state.loadMoreHandler(context);
+        result = loadMoreHandler(context);
       } catch (error) {
         api.loading(false);
         return Promise.reject(error);
@@ -292,13 +329,12 @@ export function VScroll() {
     };
 
     const handleScroll = () => {
-      if (isVirtualEnabled() && state.itemsData.length > 0) {
+      if (virtualActive.value) {
         renderItems();
       }
+
       checkLoad();
     };
-
-    node.on('scroll', () => handleScroll());
 
     /** 读写列表内容（静态内容口径；`items` 走数据口径）。 */
     api.content = (setup) => {
@@ -306,65 +342,73 @@ export function VScroll() {
         return list.children();
       }
 
-      state.itemsData = [];
-      state.renderItem = null;
+      itemsState.value = [];
+      renderHandler = null;
+      rows.value = [];
       setupContentSlot(list, setup);
-      syncVirtualState();
+      staticContent = true;
+      applySizeObserver();
       scheduleCheck();
       return api;
     };
 
     api.items = (value, render = null) => {
       if (value === undefined) {
-        return state.itemsData.slice();
+        return itemsState.value.slice();
       }
 
       if (typeof render === 'function') {
-        state.renderItem = render;
+        renderHandler = render;
       }
 
-      state.itemsData = Array.isArray(value) ? value.slice() : [value];
+      itemsState.value = asList(value);
       renderItems();
       scheduleCheck();
       return api;
     };
 
     api.append = (value, render = null) => {
-      const incoming = Array.isArray(value) ? value : [value];
+      const incoming = asList(value);
 
       if (typeof render === 'function') {
-        state.renderItem = render;
+        renderHandler = render;
       }
 
-      state.itemsData = state.itemsData.concat(incoming);
+      itemsState.value = [...itemsState.value, ...incoming];
       renderItems();
+
       if (incoming.length > 0) {
         scheduleCheck();
       }
+
       return api;
     };
 
     api.renderItem = (handler) => {
       if (handler === undefined) {
-        return state.renderItem;
+        return renderHandler;
       }
 
-      state.renderItem = typeof handler === 'function' ? handler : null;
-      if (state.itemsData.length > 0) {
+      renderHandler = typeof handler === 'function' ? handler : null;
+
+      if (itemsState.value.length > 0) {
         renderItems();
       }
+
       return api;
     };
 
     api.loadMore = (handler) => {
       if (handler === undefined) {
-        return state.loadMoreHandler;
+        return loadMoreHandler;
       }
 
-      state.loadMoreHandler = typeof handler === 'function' ? handler : null;
-      if (state.loadMoreHandler) {
+      loadMoreHandler = typeof handler === 'function' ? handler : null;
+
+      if (loadMoreHandler) {
         scheduleCheck();
       }
+
       return api;
     };
 
@@ -372,31 +416,29 @@ export function VScroll() {
 
     api.loop = (value) => {
       if (value === undefined) {
-        return state.loop;
+        return Boolean(loopState.value);
       }
 
-      state.loop = Boolean(value);
-      if (state.loop) {
-        state.blocked = false;
+      loopState.value = Boolean(value);
+
+      if (loopState.value) {
+        blockedState.value = false;
       }
-      node.attr('data-loop', state.loop ? 'true' : null);
-      node.attr('data-blocked', state.blocked ? 'true' : null);
-      syncFooter();
+
       return api;
     };
 
     api.block = (value) => {
       if (value === undefined) {
-        return state.blocked;
+        return Boolean(blockedState.value);
       }
 
-      state.blocked = Boolean(value);
-      if (state.blocked) {
-        state.loop = false;
+      blockedState.value = Boolean(value);
+
+      if (blockedState.value) {
+        loopState.value = false;
       }
-      node.attr('data-blocked', state.blocked ? 'true' : null);
-      node.attr('data-loop', state.loop ? 'true' : null);
-      syncFooter();
+
       return api;
     };
 
@@ -404,38 +446,29 @@ export function VScroll() {
 
     api.loading = (value) => {
       if (value === undefined) {
-        return state.loading;
+        return Boolean(loadingState.value);
       }
 
-      state.loading = Boolean(value);
-      node.attr('data-loading', state.loading ? 'true' : null);
-      node.attr('aria-busy', state.loading ? 'true' : 'false');
-      syncFooter();
+      loadingState.value = Boolean(value);
       return api;
     };
 
     api.threshold = (value) => {
       if (value === undefined) {
-        return state.threshold;
+        return thresholdValue.value;
       }
 
-      const parsed = Number(value);
-
-      state.threshold = Number.isFinite(parsed) && parsed >= 0 ? parsed : 80;
-      node.attr('data-threshold', String(state.threshold));
+      thresholdState.value = value;
       return api;
     };
 
     api.virtual = (value) => {
       if (value === undefined) {
-        return isVirtualEnabled();
+        return virtualMode.value;
       }
 
-      state.virtual = Boolean(value);
-      syncVirtualState();
-      if (state.itemsData.length > 0) {
-        renderItems();
-      }
+      virtualState.value = Boolean(value);
+      renderItems();
       return api;
     };
 
@@ -443,195 +476,161 @@ export function VScroll() {
 
     api.itemHeight = (value) => {
       if (value === undefined) {
-        return state.itemHeight;
+        return itemHeightValue.value;
       }
 
-      const parsed = Number(value);
-
-      state.itemHeight = Number.isFinite(parsed) && parsed > 0 ? Math.max(1, parsed) : 48;
-      node.attr('data-item-height', String(state.itemHeight));
-      if (state.itemsData.length > 0) {
-        renderItems();
-      }
+      itemHeightState.value = value;
+      // 虚拟行的几何走 CSS 变量：改高度只要让窗口重算一次（行本身不重建）
+      renderItems();
       return api;
     };
 
     api.overscan = (value) => {
       if (value === undefined) {
-        return state.overscan;
+        return overscanValue.value;
       }
 
-      const parsed = Number(value);
-
-      state.overscan = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 5;
-      node.attr('data-overscan', String(state.overscan));
-      if (state.itemsData.length > 0) {
-        renderItems();
-      }
+      overscanState.value = value;
+      renderItems();
       return api;
     };
 
     api.page = (value) => {
       if (value === undefined) {
-        return state.page;
+        return pageValue.value;
       }
 
-      const parsed = Number(value);
-
-      state.page = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0;
-      node.attr('data-page', String(state.page));
+      pageState.value = value;
       return api;
     };
 
     api.loadingText = (content) => {
       if (content === undefined) {
-        return state.loadingContent;
+        return loadingTextState.value;
       }
 
-      state.loadingContent = content;
-      syncFooter();
+      loadingTextState.value = content;
       return api;
     };
 
     api.endText = (content) => {
       if (content === undefined) {
-        return state.endContent;
+        return endTextState.value;
       }
 
-      state.endContent = content;
-      syncFooter();
+      endTextState.value = content;
       return api;
     };
 
     api.reset = () => {
-      state.itemsData = [];
-      state.page = 0;
-      state.blocked = false;
-      state.loading = false;
-      node.attr('data-blocked', null);
-      node.attr('data-loading', null);
-      node.attr('data-page', '0');
-      node.attr('aria-busy', 'false');
-      replaceChildren(list, []);
-      syncVirtualState();
-      syncFooter();
+      itemsState.value = [];
+      pageState.value = 0;
+      blockedState.value = false;
+      loadingState.value = false;
+      rows.value = [];
+
+      if (staticContent) {
+        list.clearChildren();
+        staticContent = false;
+      }
+
+      applySizeObserver();
       return api;
     };
 
     api.clear = () => api.reset();
-
     api.load = () => load();
-
     api.check = () => checkLoad();
 
     /** 字符串 / 节点 / 数组 = 列表内容（旧 `_setupScroll` 的兜底分支）。 */
     api.setupString = (next) => api.content(next);
 
-    /** props：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupScroll` 同口径）。 */
-    api.setupObject = (setup) => {
-      if (!isPlainObject(setup)) {
-        return api;
-      }
+    const list = div(
+      {
+        style: { height: listHeightText },
+        vn: 'VScrollList'
+      },
+      (box) =>
+        box.keyed(rows, keyOfRow, buildRow, {
+          equals: (prev, next) => prev.item === next.item && prev.render === next.render
+        })
+    );
+    const statusBox = span({ vn: 'VScrollStatus' }, (box) =>
+      box.child(vText(statusText).mountable(hasStatus))
+    );
+    const footer = div({ vn: 'VScrollFooter' }, (box) => box.child(statusBox));
 
-      const {
-        block,
-        blocked,
-        children,
-        content,
-        endText,
-        itemHeight,
-        items,
-        loadMore,
-        loading,
-        loadingText,
-        loop,
-        onLoadMore,
-        overscan,
-        page,
-        renderItem,
-        reset,
-        threshold,
-        virtual,
-        ...elementConfig
-      } = setup;
+    const view = div(
+      {
+        ...elementConfig,
+        attrs: {
+          ...restAttrs,
+          'aria-busy': computed(() => (loadingState.value ? 'true' : 'false')),
+          'aria-live': 'polite',
+          role: 'feed'
+        },
+        'data-blocked': computed(() => (blockedState.value ? 'true' : null)),
+        'data-item-height': computed(() => String(itemHeightValue.value)),
+        'data-loading': computed(() => (loadingState.value ? 'true' : null)),
+        'data-loop': computed(() => (loopState.value ? 'true' : null)),
+        'data-overscan': computed(() => String(overscanValue.value)),
+        'data-page': computed(() => String(pageValue.value)),
+        'data-threshold': computed(() => String(thresholdValue.value)),
+        'data-virtual': computed(() => (virtualActive.value ? 'true' : null)),
+        style: { ...restStyle, '--yoya-scroll-item-height': itemHeightText },
+        vn: 'VScroll'
+      },
+      (root) => {
+        root.on('scroll', handleScroll);
+        root.child(list, footer);
+      }
+    );
 
-      if (Object.keys(elementConfig).length > 0) {
-        node.setup(elementConfig);
-      }
-
-      if (renderItem !== undefined) {
-        api.renderItem(renderItem);
-      }
-      if (virtual !== undefined) {
-        api.virtual(virtual);
-      }
-      if (itemHeight !== undefined) {
-        api.itemHeight(itemHeight);
-      }
-      if (overscan !== undefined) {
-        api.overscan(overscan);
-      }
-      if (content !== undefined) {
-        api.content(content);
-      } else if (children !== undefined) {
-        api.content(children);
-      }
-      if (items !== undefined) {
-        api.items(items);
-      }
-      if (loadMore !== undefined) {
-        api.loadMore(loadMore);
-      } else if (onLoadMore !== undefined) {
-        api.loadMore(onLoadMore);
-      }
-      if (loop !== undefined) {
-        api.loop(loop);
-      }
-      if (block !== undefined) {
-        api.block(block);
-      } else if (blocked !== undefined) {
-        api.block(blocked);
-      }
-      if (loading !== undefined) {
-        api.loading(loading);
-      }
-      if (threshold !== undefined) {
-        api.threshold(threshold);
-      }
-      if (page !== undefined) {
-        api.page(page);
-      }
-      if (loadingText !== undefined) {
-        api.loadingText(loadingText);
-      }
-      if (endText !== undefined) {
-        api.endText(endText);
-      }
-      if (reset !== undefined && reset) {
-        api.reset();
-      }
-
-      return api;
-    };
-
-    // 旧 `renderDom()` 猴补的等价物：落地后按真实尺寸重算窗口、订阅尺寸变化、补一次触底检查
+    /** 落地后按真实尺寸重算窗口、订阅尺寸变化、补一次触底检查。 */
     api.whenMount = () => {
-      if (isVirtualEnabled() && state.itemsData.length > 0) {
+      if (virtualActive.value) {
         renderItems();
-        observeSize();
       }
+
+      applySizeObserver();
       scheduleCheck();
     };
 
-    // 旧 `destroy()` 猴补的等价物：解绑尺寸观察者
+    /** 解绑尺寸观察者。 */
     api.whenDestroy = () => {
-      disconnectSizeObserver();
+      applySizeObserver();
+
+      if (!virtualActive.value && sizeObserver) {
+        sizeObserver.disconnect();
+        sizeObserver = null;
+      }
     };
 
-    syncVirtualState();
-    syncFooter();
-    return node;
+    return view;
   });
+
+  /**
+   * 数据 props 在**节点建好之后**才落位：`renderItem(item, index, scroll)` 的第三参是组件句柄，
+   * 而 `self.node()` 在 setup 期间直接报错（引擎口径：节点要等 setup 返回后才建）——于是
+   * `items` / `content` / `children` / `reset` 走「建好还没落地就用命令配置」这条窗口
+   * （AGENTS「构建 → 落地」）。配置类 props（`itemHeight` / `virtual` / `threshold` …）仍按参数表
+   * 在构建期一次到位。顺序与旧 `_setupScroll` 同：内容通道优先、`items` 覆盖它、`reset` 最后。
+   */
+  const initialContent = content ?? children;
+
+  if (initialContent !== undefined) {
+    node.content(initialContent);
+  }
+
+  if (items !== undefined) {
+    node.items(items);
+  }
+
+  if (reset) {
+    node.reset();
+  }
+
+  return node;
 }
 
-export const vScroll = createComponentShortcut(VScroll);
+export const vScroll = createComponentShortcut(VScroll, { props: true });

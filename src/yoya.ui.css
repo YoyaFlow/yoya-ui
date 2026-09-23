@@ -3075,11 +3075,13 @@ body {
 
   [vn~='VScroll'] [vn~='VScrollVirtualItem'] {
     box-sizing: border-box;
+    height: var(--yoya-scroll-item-height, 48px);
     left: 0;
     min-width: 0;
     overflow: visible;
     position: absolute;
     right: 0;
+    top: calc(12px + var(--yoya-scroll-index, 0) * (var(--yoya-scroll-item-height, 48px) + 8px));
     width: 100%;
   }
 

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { div, hasComponentIdentity, vScroll } from '../index.js';
+import { div, hasComponentIdentity, ref, vScroll } from '../index.js';
+
+const VIRTUAL_ITEM = '[vn~="VScrollVirtualItem"]';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -231,5 +233,92 @@ describe('vScroll', () => {
 
     expect(element.querySelector('[vn~="VScroll"]')).not.toBeNull();
     expect(element.querySelector('[vn~="VScrollList"] > div').textContent).toBe('A');
+  });
+
+  it('keeps state handles live', () => {
+    const loading = ref(false);
+    const loadingText = ref('载入中');
+    const threshold = ref(20);
+    const loadMore = vi.fn();
+    const scroll = vScroll({
+      items: ['A'],
+      loading,
+      loadingText,
+      loadMore,
+      renderItem: (item) => div(item),
+      threshold
+    });
+    const element = scroll.renderDom();
+    const status = element.querySelector('[vn~="VScrollStatus"]');
+
+    expect(element.dataset.loading).toBeUndefined();
+    expect(status.textContent).toBe('');
+
+    // 句柄 props 是活值：写状态就落 DOM（页脚显隐靠 CSS 规则读 data-loading / data-blocked）
+    loading.value = true;
+
+    expect(element.dataset.loading).toBe('true');
+    expect(element.getAttribute('aria-busy')).toBe('true');
+    expect(status.textContent).toBe('载入中');
+
+    loadingText.value = '正在载入';
+
+    expect(status.textContent).toBe('正在载入');
+
+    // 阈值也是活值：写大阈值后同一次触底检查就会触发加载
+    threshold.value = 999999;
+    Object.defineProperty(element, 'scrollHeight', { configurable: true, value: 100 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 100 });
+    scroll.loading(false);
+    scroll.check();
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+
+    scroll.destroy();
+  });
+
+  it('reuses the window rows that stay in view while scrolling', () => {
+    const items = Array.from({ length: 1000 }, (_, index) => `项目 ${index}`);
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 40,
+      items,
+      overscan: 2,
+      renderItem: (item) => div(item),
+      virtual: true
+    });
+    const element = scroll.renderDom();
+
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const before = new Map(
+      [...element.querySelectorAll(VIRTUAL_ITEM)].map((node) => [Number(node.dataset.index), node])
+    );
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 100 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const after = new Map(
+      [...element.querySelectorAll(VIRTUAL_ITEM)].map((node) => [Number(node.dataset.index), node])
+    );
+    const overlap = [...before.keys()].filter((index) => after.has(index));
+
+    // 窗口下移：重叠的行还是原来那个节点（只有进出窗口的行增删）
+    expect(overlap.length).toBeGreaterThan(0);
+    overlap.forEach((index) => expect(after.get(index)).toBe(before.get(index)));
+    expect([...after.keys()].some((index) => !before.has(index))).toBe(true);
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 400 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const later = element.querySelectorAll(VIRTUAL_ITEM);
+
+    expect(later).toHaveLength(9);
+    expect(later[0].dataset.index).toBe('6');
+
+    scroll.destroy();
   });
 });
