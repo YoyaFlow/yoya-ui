@@ -3996,19 +3996,19 @@ body {
     opacity: 1 !important;
   }
 
-  :where(.yoya-vskeleton) {
+  :where([vn~='VSkeleton']) {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--yoya-skeleton-gap, 10px);
     max-width: 100%;
     width: 100%;
   }
 
-  .yoya-vskeleton .yoya-vskeleton-bar,
-  .yoya-vskeleton .yoya-vskeleton-avatar,
-  .yoya-vskeleton .yoya-vskeleton-block {
-    animation: yoya-vskeleton-shimmer 1.4s ease-in-out infinite;
+  [vn~='VSkeleton'] [vn~='VSkeletonBar'],
+  [vn~='VSkeleton'] [vn~='VSkeletonAvatar'],
+  [vn~='VSkeleton'] [vn~='VSkeletonBlock'] {
+    animation: yoya-skeleton-shimmer 1.4s ease-in-out infinite;
     background: linear-gradient(
       90deg,
       var(--yoya-color-surface-muted, #f5f5f5) 25%,
@@ -4018,22 +4018,25 @@ body {
     background-size: 400% 100%;
   }
 
-  .yoya-vskeleton .yoya-vskeleton-bar {
+  [vn~='VSkeleton'] [vn~='VSkeletonBar'] {
     border-radius: 4px;
-    height: 20px;
+    height: var(--yoya-skeleton-bar-height, 20px);
+    width: var(--yoya-skeleton-bar-width, 100%);
   }
 
-  .yoya-vskeleton .yoya-vskeleton-avatar {
+  [vn~='VSkeleton'] [vn~='VSkeletonAvatar'] {
     border-radius: 50%;
     flex: 0 0 auto;
+    height: var(--yoya-skeleton-avatar-size, 40px);
+    width: var(--yoya-skeleton-avatar-size, 40px);
   }
 
-  .yoya-vskeleton .yoya-vskeleton-block {
+  [vn~='VSkeleton'] [vn~='VSkeletonBlock'] {
     border-radius: 8px;
     height: 96px;
   }
 
-  @keyframes yoya-vskeleton-shimmer {
+  @keyframes yoya-skeleton-shimmer {
     from {
       background-position: 100% 50%;
     }
@@ -4044,9 +4047,9 @@ body {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .yoya-vskeleton[data-motion='auto'] .yoya-vskeleton-bar,
-    .yoya-vskeleton[data-motion='auto'] .yoya-vskeleton-avatar,
-    .yoya-vskeleton[data-motion='auto'] .yoya-vskeleton-block {
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonBar'],
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonAvatar'],
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonBlock'] {
       animation: none;
     }
   }

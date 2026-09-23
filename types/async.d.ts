@@ -61,6 +61,19 @@ export function clearDynamicModuleCache(cacheKey?: string | null): void;
 
 export type SkeletonVariant = 'paragraph' | 'avatar' | 'block';
 
+/** `vSkeleton({ … })` 的 props：占位形态与几何（句柄 props 是活值）。 */
+export interface SkeletonOptions {
+  variant?: SkeletonVariant;
+  rows?: number;
+  barHeight?: number;
+  gap?: number;
+  avatarSize?: number;
+  /** `false` = 不建占位块（展示真实内容）。 */
+  active?: boolean;
+  motion?: 'auto' | 'always';
+  [key: string]: unknown;
+}
+
 /** Loading placeholder with paragraph / avatar / block variants. */
 export class VSkeleton extends HtmlElementNode {
   variant(): SkeletonVariant;
@@ -79,7 +92,12 @@ export class VSkeleton extends HtmlElementNode {
   motion(value: string): VSkeleton;
 }
 
-export const vSkeleton: ElementFactory<VSkeleton>;
+export const vSkeleton: {
+  (
+    first?: SkeletonOptions | SetupInput<VSkeleton> | null,
+    callback?: SetupCallback<VSkeleton>
+  ): VSkeleton;
+} & ElementFactory<VSkeleton>;
 
 /** Lazy image with native lazy loading and loading / loaded / error states. */
 export class VLazyImage extends HtmlElementNode {
@@ -100,7 +118,10 @@ export const vLazyImage: ElementFactory<VLazyImage>;
  * registered on ElementNode and inherited, so it is declared there.
  */
 export interface AsyncParentShortcuts {
-  vSkeleton(first?: SetupInput<VSkeleton> | null, callback?: SetupCallback<VSkeleton>): VSkeleton;
+  vSkeleton(
+    first?: SkeletonOptions | SetupInput<VSkeleton> | null,
+    callback?: SetupCallback<VSkeleton>
+  ): VSkeleton;
   vLazyImage(
     first?: SetupInput<VLazyImage> | null,
     callback?: SetupCallback<VLazyImage>

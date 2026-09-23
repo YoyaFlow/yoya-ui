@@ -749,7 +749,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
 
     const skeletonPage = document.querySelector('[data-c-end-docs="skeleton"]');
     expect(skeletonPage.querySelector('h1').textContent).toBe('vSkeleton 骨架屏');
-    expect(skeletonPage.querySelector('.yoya-vskeleton')).not.toBeNull();
+    expect(skeletonPage.querySelector('[vn~="VSkeleton"]')).not.toBeNull();
     expect(skeletonPage.querySelectorAll('[data-c-end-demo]').length).toBeGreaterThan(0);
 
     const toggleDemo = skeletonPage.querySelector('[data-c-end-demo="toggle"]');

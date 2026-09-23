@@ -1,20 +1,10 @@
 {
   "js": {
-    "src/layout/index.js": 14,
-    "src/async/skeleton.js": 5
+    "src/layout/index.js": 14
   },
   "css": {
     "yoya-vaside": 2,
-    "yoya-vmain": 2,
-    "yoya-vskeleton": 10,
-    "yoya-vskeleton-bar": 3,
-    "yoya-vskeleton-avatar": 3,
-    "yoya-vskeleton-block": 3,
-    "yoya-vskeleton-shimmer": 2
+    "yoya-vmain": 2
   },
-  "identity": [
-    "src/async/skeleton.js",
-    "src/components/component-shell.js",
-    "src/feedback/message-manager.js"
-  ]
+  "identity": ["src/components/component-shell.js", "src/feedback/message-manager.js"]
 }

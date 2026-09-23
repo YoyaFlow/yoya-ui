@@ -23,7 +23,6 @@
     "src/data-display/tree-table.js": 3,
     "src/three/three.js": 1,
     "src/async/lazy-image.js": 1,
-    "src/async/skeleton.js": 1,
     "src/effects/transition.js": 1
   }
 }

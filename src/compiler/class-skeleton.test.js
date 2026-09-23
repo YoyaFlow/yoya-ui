@@ -22,6 +22,8 @@ afterAll(() => rmSync(workDir, { recursive: true, force: true }));
 
 const runtimeUrl = pathToFileURL(join(process.cwd(), 'src/compiler/runtime.js')).href;
 const surfaceFile = posix.join('src/compiler/fixtures/card-skeleton.js');
+/** 「读不懂的构造体」夹具（与 `card-skeleton.js` 配对）——中性形状，不随包发布。 */
+const COMPILER_FIXTURE_FILE = posix.join('src/compiler/fixtures/unreadable-constructor.js');
 const surfaceSource = readFileSync(surfaceFile, 'utf8');
 const callerFile = posix.join('src/compiler/fixtures/item-with-card.js');
 const callerSource =
@@ -53,15 +55,14 @@ describe('form C skeletons', () => {
   });
 
   it('records an actionable reason for a constructor it cannot read', () => {
-    // 形态 C 的构造体读不懂时要有可定位的原因（表格 / 进度条 / 数字看板 / 导航栏都迁到 vNode 了，
-    // 这里换成仍在形态 C 的骨架屏：构造体里有动态接线，调用链不是从 setup 参数出发）。
-    // 换样例前先跑一遍 `compileComponent` 打印 bails，确认理由串一致（`createComponentShell` 家族
-    // 会给出"入口工厂不是元素"，当不了样例）；下一次换样例的时机是 `vSkeleton` 迁到 §4 时。
-    const file = posix.join('src/async/skeleton.js');
+    // 「构造体读不懂」要用**夹具**而不是库内组件：库内组件正在全部收敛到 A（薄工厂）/ B（vNode），
+    // 没有一个会长期停留在"读不懂的形态 C"，拿库内组件当样例会让这条用例跟着每次迁移反复换
+    // （导航栏 / 骨架屏都当过样例）。夹具是中性形状（WidgetSkeleton / CardSkeleton），只存在于测试里。
+    const file = posix.join(COMPILER_FIXTURE_FILE);
     const result = compileComponent({
       source: readFileSync(file, 'utf8'),
       file,
-      export: 'vSkeleton',
+      export: 'widgetSkeleton',
       core
     });
 

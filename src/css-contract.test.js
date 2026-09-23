@@ -140,6 +140,15 @@ const messageSelectors = [
   "[vn~='VMessageContainer'][data-inline='true']"
 ];
 
+const skeletonSelectors = [
+  "[vn~='VSkeleton']",
+  "[vn~='VSkeleton'] [vn~='VSkeletonBar']",
+  "[vn~='VSkeleton'] [vn~='VSkeletonAvatar']",
+  "[vn~='VSkeleton'] [vn~='VSkeletonBlock']",
+  "[vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonBar']",
+  '@keyframes yoya-skeleton-shimmer'
+];
+
 const lazyImageSelectors = [
   "[vn~='VLazyImage']",
   "[vn~='VLazyImage'] [vn~='VLazyImageImg']",
@@ -471,6 +480,12 @@ describe('CSS style contract', () => {
 
   it('covers the tree ranger selectors', () => {
     treeRangerSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the skeleton selectors', () => {
+    skeletonSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });
