@@ -1,7 +1,6 @@
 {
   "js": {
     "src/layout/index.js": 14,
-    "src/layout/split-panel.js": 4,
     "src/async/skeleton.js": 5,
     "src/effects/transition.js": 8
   },
@@ -21,7 +20,6 @@
   "identity": [
     "src/async/skeleton.js",
     "src/components/component-shell.js",
-    "src/feedback/message-manager.js",
-    "src/layout/split-panel.js"
+    "src/feedback/message-manager.js"
   ]
 }

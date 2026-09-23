@@ -10,7 +10,7 @@ describe('vSplitPanel', () => {
     const panel = vSplitPanel();
     const element = panel.renderDom();
 
-    expect(element.className).toContain('yoya-vsplit-panel');
+    expect(element.getAttribute('vn')).toContain('VSplitPanel');
     expect(element.querySelector('[data-vsplit-first]')).not.toBeNull();
     expect(element.querySelector('[data-vsplit-second]')).not.toBeNull();
     const divider = element.querySelector('[data-vsplit-divider]');
@@ -19,18 +19,14 @@ describe('vSplitPanel', () => {
     expect(divider.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
-  it('keeps the divider transparent when idle and highlights it on hover', () => {
+  it('keeps the divider styling in the stylesheet (idle transparent, hover highlight)', () => {
     const panel = vSplitPanel();
     const element = panel.renderDom();
     const divider = element.querySelector('[data-vsplit-divider]');
 
-    expect(divider.style.background).toBe('transparent');
-
-    divider.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-    expect(divider.style.background).toContain('var(--yoya-color-primary-subtle');
-
-    divider.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-    expect(divider.style.background).toBe('transparent');
+    // 待机透明 / 悬停高亮都在 CSS（`[vn~='VSplitPanelDivider']` 与 `:hover`），JS 不再写 background
+    expect(divider.getAttribute('vn')).toContain('VSplitPanelDivider');
+    expect(divider.style.background).toBe('');
   });
 
   it('sets direction, size, minSize and panel contents', () => {
@@ -46,7 +42,10 @@ describe('vSplitPanel', () => {
     expect(panel.direction()).toBe('vertical');
     expect(panel.size()).toBe('40%');
     expect(panel.minSize()).toBe(80);
-    expect(element.style.flexDirection).toBe('column');
+    expect(element.dataset.direction).toBe('vertical');
+    expect(
+      element.querySelector('[data-vsplit-first]').style.getPropertyValue('--yoya-split-first-size')
+    ).toBe('40%');
     expect(element.querySelector('[data-vsplit-first]').textContent).toBe('左');
     expect(element.querySelector('[data-vsplit-second]').textContent).toBe('右');
     expect(element.querySelector('[data-vsplit-divider]').getAttribute('aria-orientation')).toBe(
@@ -87,6 +86,6 @@ describe('vSplitPanel', () => {
 
   it('registers as a parent shortcut', () => {
     const root = div((page) => page.vSplitPanel());
-    expect(root.renderDom().querySelector('.yoya-vsplit-panel')).not.toBeNull();
+    expect(root.renderDom().querySelector('[vn~="VSplitPanel"]')).not.toBeNull();
   });
 });

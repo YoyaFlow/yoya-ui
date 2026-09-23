@@ -1,14 +1,14 @@
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
-import { registerChildFactories, defineComponentIdentity } from '../core/node.js';
+import { registerChildFactories } from '../core/node.js';
 import { bindDocumentEvent } from '../core/document-events.js';
+import { vNode } from '../core/v-node.js';
 import {
   applyComponentArguments,
-  componentClass,
+  createComponentShortcut,
+  delegateNodeCommands,
   isPlainObject,
   normalizeChildren,
-  replaceChildren,
-  themeValue
+  replaceChildren
 } from '../components/shared.js';
 
 /**
@@ -18,17 +18,8 @@ import {
 /** VSplitPanel 的节点类型（不导出）；公开组件 `vSplitPanel` 是 vNode 外壳。 */
 class SplitPanelNode extends HtmlElementNode {
   constructor(setup = null, options = null, callback = null) {
-    super('div', null);
-    this._identity = 'VSplitPanel';
-    this.className(componentClass, 'yoya-vsplit-panel');
-    this.styles({
-      boxSizing: 'border-box',
-      display: 'flex',
-      minHeight: '0',
-      minWidth: '0',
-      overflow: 'hidden',
-      width: '100%'
-    });
+    super('div', { vn: 'VSplitPanel' });
+    // 静态样式与"按方向走的几何"都在 `yoya.ui.css`（R5）；方向 / 首面板尺寸是状态位与 CSS 变量
 
     this._direction = 'horizontal';
     this._firstSize = '50%';
@@ -37,29 +28,17 @@ class SplitPanelNode extends HtmlElementNode {
     this._dragMove = null;
     this._dragUp = null;
 
-    this._first = new HtmlElementNode('div')
-      .className('yoya-vsplit-panel-first')
-      .attr('data-vsplit-first', 'true')
-      .styles({
-        boxSizing: 'border-box',
-        minHeight: '0',
-        minWidth: '0',
-        overflow: 'auto'
-      });
+    this._first = new HtmlElementNode('div', { vn: 'VSplitPanelFirst' }).attr(
+      'data-vsplit-first',
+      'true'
+    );
 
-    this._second = new HtmlElementNode('div')
-      .className('yoya-vsplit-panel-second')
-      .attr('data-vsplit-second', 'true')
-      .styles({
-        boxSizing: 'border-box',
-        flex: '1 1 auto',
-        minHeight: '0',
-        minWidth: '0',
-        overflow: 'auto'
-      });
+    this._second = new HtmlElementNode('div', { vn: 'VSplitPanelSecond' }).attr(
+      'data-vsplit-second',
+      'true'
+    );
 
-    this._divider = new HtmlElementNode('div')
-      .className('yoya-vsplit-panel-divider')
+    this._divider = new HtmlElementNode('div', { vn: 'VSplitPanelDivider' })
       .attr({
         'aria-orientation': 'horizontal',
         'data-vsplit-divider': 'true',
@@ -67,16 +46,9 @@ class SplitPanelNode extends HtmlElementNode {
         tabindex: '0',
         title: '拖拽调整面板大小，双击恢复 50%'
       })
-      .styles({
-        background: 'transparent',
-        boxSizing: 'border-box',
-        flex: '0 0 auto'
-      })
       .on('mousedown', (event) => this._startDrag(event))
       .on('dblclick', () => this.reset())
-      .on('keydown', (event) => this._handleKeydown(event))
-      .on('mouseenter', () => this._hoverDivider(true))
-      .on('mouseleave', () => this._hoverDivider(false));
+      .on('keydown', (event) => this._handleKeydown(event));
 
     this.child(this._first, this._divider, this._second);
     this._sync();
@@ -151,26 +123,11 @@ class SplitPanelNode extends HtmlElementNode {
 
   _sync() {
     const horizontal = this._direction === 'horizontal';
-    this.style('flexDirection', horizontal ? 'row' : 'column');
-    this._first.styles({
-      flex: '0 0 auto',
-      height: horizontal ? '100%' : this._firstSize,
-      width: horizontal ? this._firstSize : '100%'
-    });
-    this._divider.styles(
-      horizontal
-        ? { cursor: 'col-resize', height: '100%', width: '6px' }
-        : { cursor: 'row-resize', height: '6px', width: '100%' }
-    );
+    // 方向与首面板尺寸都走状态位 / CSS 变量（映射在样式表里，R5）
+    this.attr('data-direction', horizontal ? null : 'vertical');
+    this._first.style('--yoya-split-first-size', this._firstSize);
     this._divider.attr('aria-orientation', horizontal ? 'horizontal' : 'vertical');
     return this;
-  }
-
-  _hoverDivider(hovered) {
-    this._divider.style(
-      'background',
-      hovered ? themeValue('color-primary-subtle', '#eff6ff') : 'transparent'
-    );
   }
 
   _startDrag(event) {
@@ -279,14 +236,20 @@ class SplitPanelNode extends HtmlElementNode {
   }
 }
 
-export function vSplitPanel(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VSplitPanel',
-    createNode: (setup) => new SplitPanelNode(setup),
-    commands: ['direction', 'size', 'minSize', 'reset', 'first', 'second'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 可拖拽分隔条的面板（形态 B）：视图根是节点类型扩展 `SplitPanelNode`（拖拽 / 键盘调整 / 双击复位
+ * 都归它），外层 `vNode` 用 `delegateNodeCommands` 补齐命令面与元素 DSL。方向与首面板尺寸走
+ * `data-direction` + `--yoya-split-first-size`（几何映射在 `yoya.ui.css`，R5）。
+ */
+export function VSplitPanel(props = {}) {
+  return vNode((api) => {
+    const node = new SplitPanelNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
+
+export const vSplitPanel = createComponentShortcut(VSplitPanel, { props: true });
 
 registerChildFactories(HtmlElementNode, { vSplitPanel });
 
@@ -300,6 +263,3 @@ function clampSize(value, min, max) {
   }
   return Math.min(Math.max(value, min), Math.max(max, min));
 }
-
-export const VSplitPanel = vSplitPanel;
-defineComponentIdentity(VSplitPanel, 'VSplitPanel');

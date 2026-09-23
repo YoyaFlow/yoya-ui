@@ -104,6 +104,17 @@ const menuR5Selectors = [
   "[data-sidebar-hidden='true']"
 ];
 
+const splitPanelSelectors = [
+  "[vn~='VSplitPanel']",
+  "[vn~='VSplitPanel'][data-direction='vertical']",
+  "[vn~='VSplitPanelFirst']",
+  "[vn~='VSplitPanelSecond']",
+  "[vn~='VSplitPanel'][data-direction='horizontal'] > [vn~='VSplitPanelFirst']",
+  "[vn~='VSplitPanelDivider']",
+  "[vn~='VSplitPanelDivider']:hover",
+  "[vn~='VSplitPanel'][data-direction='vertical'] > [vn~='VSplitPanelDivider']"
+];
+
 const messageSelectors = [
   "[vn~='VMessage']",
   "[vn~='VMessage'][data-type='success']",
@@ -456,6 +467,12 @@ describe('CSS style contract', () => {
 
   it('covers the lazy image state selectors', () => {
     lazyImageSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the split panel selectors', () => {
+    splitPanelSelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

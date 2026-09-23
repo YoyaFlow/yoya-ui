@@ -137,7 +137,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     // 锁定态的几何（内容区自滚）归 CSS 的 `[data-title-locked='true']` 规则
     expect(document.querySelector('[vn~="VRouterViewsContent"]')).not.toBeNull();
     expect(document.querySelector('.components-workspace')).not.toBeNull();
-    expect(document.querySelector('.yoya-vsplit-panel')).not.toBeNull();
+    expect(document.querySelector('[vn~="VSplitPanel"]')).not.toBeNull();
     expect(document.querySelector('[data-components-menu]')).not.toBeNull();
     expect(document.querySelector('[data-components-router-views]')).not.toBeNull();
     expect(document.querySelector('.components-route-page--overview')).not.toBeNull();

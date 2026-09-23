@@ -4285,3 +4285,66 @@ body {
     background: rgba(255, 255, 255, 0.26);
   }
 }
+/* 分隔面板：容器 / 两块面板 / 分隔条（原来都写在 JS 行内，R5 搬进来）。
+     方向走 `data-direction='vertical'`（默认横向），首面板尺寸走 `--yoya-split-first-size`。 */
+[vn~='VSplitPanel'] {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] {
+  flex-direction: column;
+}
+
+[vn~='VSplitPanelFirst'],
+[vn~='VSplitPanelSecond'] {
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+[vn~='VSplitPanelFirst'] {
+  flex: 0 0 auto;
+}
+
+[vn~='VSplitPanelSecond'] {
+  flex: 1 1 auto;
+}
+
+[vn~='VSplitPanel'][data-direction='horizontal'] > [vn~='VSplitPanelFirst'] {
+  height: 100%;
+  width: var(--yoya-split-first-size, 50%);
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] > [vn~='VSplitPanelFirst'] {
+  height: var(--yoya-split-first-size, 50%);
+  width: 100%;
+}
+
+[vn~='VSplitPanelDivider'] {
+  background: transparent;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+[vn~='VSplitPanel'][data-direction='horizontal'] > [vn~='VSplitPanelDivider'] {
+  cursor: col-resize;
+  height: 100%;
+  width: 6px;
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] > [vn~='VSplitPanelDivider'] {
+  cursor: row-resize;
+  height: 6px;
+  width: 100%;
+}
+
+[vn~='VSplitPanelDivider']:hover {
+  background: var(--yoya-color-primary-subtle, #eff6ff);
+}
