@@ -56,7 +56,8 @@ export class VButton extends HtmlElementNode {
   loading(value: boolean): VButton;
   isLoading(): boolean;
   /** 把焦点交给按钮元素。 */
-  focus(): VButton;
+  /** 元素级操作 API（`ElementNode.focus()`），返回 `this` 以满足基类签名。 */
+  focus(): this;
 }
 
 /** `vButtons({ … })` 的 props：`options` / `children` 都是按钮数据。 */

@@ -1,383 +1,366 @@
 import { registerChildFactories } from '../core/node.js';
-import { HtmlElementNode } from '../html/index.js';
+import { HtmlElementNode, div } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { vNode } from '../core/v-node.js';
-import {
-  createComponentShortcut,
-  delegateNodeCommands,
-  isPlainObject
-} from '../components/shared.js';
-
-/** ECharts 宿主容器的**节点类型**（不导出）：适配器初始化 / 尺寸观察 / 销毁都留在这里。 */
-class EchartNode extends HtmlElementNode {
-  constructor(setup = null) {
-    super('div', { vn: 'VEChart' });
-    this._autoResize = true;
-    this._chartInstance = null;
-    this._devicePixelRatio = null;
-    this._echartsLib = null;
-    this._height = '400px';
-    this._loading = false;
-    this._loadingText = '加载中...';
-    this._onReadyCallbacks = [];
-    this._onResizeCallbacks = [];
-    this._option = null;
-    this._renderer = 'canvas';
-    this._resizeObserver = null;
-    this._theme = null;
-    this._width = '100%';
-
-    // `overflow` / `position` 在样式表里（R5）；`height` / `width` 是状态 → 行内值
-    this.style('height', this._height);
-    this.style('width', this._width);
-    this._setupEchart(setup);
-  }
-
-  echartsLib(lib) {
-    if (lib) {
-      this._echartsLib = lib;
-    } else if (typeof window !== 'undefined' && window.echarts) {
-      this._echartsLib = window.echarts;
-    }
-    return this;
-  }
-
-  option(value) {
-    if (value === undefined) {
-      return this._option;
-    }
-
-    this._option = value || null;
-    if (this._chartInstance && this._echartsLib) {
-      this._chartInstance.setOption(this._option, true);
-    }
-    return this;
-  }
-
-  width(value) {
-    if (value === undefined) {
-      return this._width;
-    }
-
-    this._width = value;
-    this.style('width', value);
-    return this;
-  }
-
-  height(value) {
-    if (value === undefined) {
-      return this._height;
-    }
-
-    this._height = value;
-    this.style('height', value);
-    return this;
-  }
-
-  theme(value) {
-    if (value === undefined) {
-      return this._theme;
-    }
-
-    this._theme = value;
-    return this;
-  }
-
-  renderer(value) {
-    if (value === undefined) {
-      return this._renderer;
-    }
-
-    this._renderer = value === 'svg' ? 'svg' : 'canvas';
-    return this;
-  }
-
-  devicePixelRatio(value) {
-    if (value === undefined) {
-      return this._devicePixelRatio;
-    }
-
-    this._devicePixelRatio = value;
-    return this;
-  }
-
-  autoResize(value) {
-    if (value === undefined) {
-      return this._autoResize;
-    }
-
-    this._autoResize = Boolean(value);
-    return this;
-  }
-
-  loading(value, text = '加载中...') {
-    this._loading = Boolean(value);
-    this._loadingText = text;
-
-    if (this._chartInstance) {
-      if (this._loading) {
-        this._chartInstance.showLoading({
-          color: 'var(--yoya-color-primary, #2563eb)',
-          lineWidth: 2,
-          maskColor: 'rgba(255, 255, 255, 0.8)',
-          text,
-          textColor: 'var(--yoya-color-text, #172033)'
-        });
-      } else {
-        this._chartInstance.hideLoading();
-      }
-    }
-
-    return this;
-  }
-
-  onChartReady(callback) {
-    if (typeof callback === 'function') {
-      if (this._chartInstance) {
-        callback(this._chartInstance);
-      } else {
-        this._onReadyCallbacks.push(callback);
-      }
-    }
-    return this;
-  }
-
-  onChartResize(callback) {
-    if (typeof callback === 'function') {
-      this._onResizeCallbacks.push(callback);
-    }
-    return this;
-  }
-
-  getChartInstance() {
-    return this._chartInstance;
-  }
-
-  resize(opts = {}) {
-    if (this._chartInstance) {
-      this._chartInstance.resize(opts);
-    }
-    return this;
-  }
-
-  clear() {
-    if (this._chartInstance) {
-      this._chartInstance.clear();
-    }
-    return this;
-  }
-
-  dispose() {
-    this._disposeChart();
-    return this;
-  }
-
-  destroy() {
-    this._disposeChart();
-    return super.destroy();
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (element && !this._chartInstance) {
-      requestAnimationFrame(() => this._initChart());
-    }
-    return element;
-  }
-
-  _setupEchart(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        autoResize,
-        devicePixelRatio,
-        echartsLib,
-        height,
-        loading,
-        loadingText,
-        onChartReady,
-        onChartResize,
-        option,
-        renderer,
-        theme,
-        width,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        this.setup(elementConfig);
-      }
-
-      if (echartsLib !== undefined) {
-        this.echartsLib(echartsLib);
-      }
-      if (width !== undefined) {
-        this.width(width);
-      }
-      if (height !== undefined) {
-        this.height(height);
-      }
-      if (theme !== undefined) {
-        this.theme(theme);
-      }
-      if (renderer !== undefined) {
-        this.renderer(renderer);
-      }
-      if (devicePixelRatio !== undefined) {
-        this.devicePixelRatio(devicePixelRatio);
-      }
-      if (autoResize !== undefined) {
-        this.autoResize(autoResize);
-      }
-      if (loadingText !== undefined) {
-        this._loadingText = loadingText;
-      }
-      if (onChartReady !== undefined) {
-        this.onChartReady(onChartReady);
-      }
-      if (onChartResize !== undefined) {
-        this.onChartResize(onChartResize);
-      }
-      if (option !== undefined) {
-        this.option(option);
-      }
-      if (loading !== undefined) {
-        this.loading(loading, this._loadingText);
-      }
-
-      return;
-    }
-
-    this.child(setup);
-  }
-
-  _initChart() {
-    if (this._deleted) {
-      return;
-    }
-
-    if (!this._echartsLib) {
-      this.echartsLib();
-    }
-    if (!this._echartsLib) {
-      console.warn('[VEchart] ECharts library not provided. Call echartsLib() first.');
-      return;
-    }
-    if (this._chartInstance || !this._el) {
-      return;
-    }
-
-    try {
-      this._chartInstance = this._echartsLib.init(this._el, this._theme, {
-        devicePixelRatio: this._devicePixelRatio,
-        renderer: this._renderer
-      });
-      if (this._option) {
-        this._chartInstance.setOption(this._option, true);
-      }
-      if (this._loading) {
-        this.loading(true, this._loadingText);
-      }
-      setTimeout(() => {
-        if (this._chartInstance && !this._chartInstance.isDisposed()) {
-          this._chartInstance.resize();
-        }
-      }, 100);
-      this._executeReadyCallbacks();
-      if (this._autoResize) {
-        this._initResizeObserver();
-      }
-    } catch (error) {
-      console.error('[VEchart] Failed to initialize chart:', error);
-    }
-  }
-
-  _executeReadyCallbacks() {
-    if (!this._chartInstance) {
-      return;
-    }
-
-    this._onReadyCallbacks.forEach((callback) => {
-      try {
-        callback(this._chartInstance);
-      } catch (error) {
-        console.error('[VEchart] Error in onChartReady callback:', error);
-      }
-    });
-    this._onReadyCallbacks = [];
-  }
-
-  _initResizeObserver() {
-    if (typeof ResizeObserver !== 'undefined') {
-      this._resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { height, width } = entry.contentRect;
-          this._handleResize(width, height);
-        }
-      });
-      if (this._el) {
-        this._resizeObserver.observe(this._el);
-      }
-      return;
-    }
-
-    this._resizeHandler = () => this._handleResize();
-    this._resizeUnbind = bindWindowEvent('resize', this._resizeHandler);
-  }
-
-  _handleResize(width, height) {
-    if (!this._chartInstance) {
-      return;
-    }
-
-    this._chartInstance.resize();
-    this._onResizeCallbacks.forEach((callback) => {
-      try {
-        callback({ height, width });
-      } catch (error) {
-        console.error('[VEchart] Error in onChartResize callback:', error);
-      }
-    });
-  }
-
-  _disposeChart() {
-    if (this._resizeObserver) {
-      this._resizeObserver.disconnect();
-      this._resizeObserver = null;
-    }
-    if (this._resizeHandler) {
-      this._resizeUnbind?.();
-      this._resizeHandler = null;
-      this._resizeUnbind = null;
-    }
-    if (this._chartInstance) {
-      this._chartInstance.dispose();
-      this._chartInstance = null;
-    }
-  }
-}
+import { createComponentShortcut, delegateNodeCommands } from '../components/shared.js';
 
 /**
- * ECharts 宿主（形态 B）：视图根是节点类型扩展 `EchartNode`（适配器初始化 / 尺寸观察 / 销毁都在它上面），
- * 外层 `vNode` 用 `delegateNodeCommands` 把节点类型的公开方法整体补齐——`vEchart` 拿到的是组件句柄，
- * 命令面（`echartsLib` / `option` / `data` / `width` / `height` / `loading` / `onChartReady`…）照旧。
+ * ECharts 宿主（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
+ *
+ * **组件不继承基础元素**（票 16 第 112 / 114 条）：`EchartNode` 那层节点类型退场，视图根就是普通
+ * 元素节点；适配器的生命周期改挂**组件钩子**——
+ *
+ * - `whenMount(host)`：拿到落地元素（`host.element()`，`core/hooks.js` 的既有口子，不再用
+ *   `renderDom()` / `_el`），排一帧后 `echartsLib.init(element, …)`；尺寸观察器也在这里挂；
+ * - `whenDestroy()`：断开观察器、`dispose()` 掉图表实例；
+ * - 状态（`option` / `width` / `height` / `renderer` / `theme` / `loading` …）都在闭包里，命令只写状态；
+ *   `width` / `height` 是**行内值**（随状态变，R5 只管静态样式），`overflow` / `position` 在样式表里。
  */
-export function VEchart(props = {}) {
+export function VEChart({
+  autoResize,
+  devicePixelRatio,
+  echartsLib,
+  height,
+  loading,
+  loadingText,
+  onChartReady,
+  onChartResize,
+  option,
+  renderer,
+  theme,
+  width,
+  ...rest
+} = {}) {
+  const state = {
+    autoResize: autoResize === undefined ? true : Boolean(autoResize),
+    chartInstance: null,
+    devicePixelRatio: devicePixelRatio ?? null,
+    destroyed: false,
+    echartsLib: echartsLib ?? null,
+    element: null,
+    height: height ?? '400px',
+    loading: Boolean(loading),
+    loadingText: loadingText ?? '加载中...',
+    onReadyCallbacks: [],
+    onResizeCallbacks: [],
+    option: option ?? null,
+    renderer: renderer === 'svg' ? 'svg' : 'canvas',
+    resizeObserver: null,
+    resizeUnbind: null,
+    theme: theme ?? null,
+    width: width ?? '100%'
+  };
+
+  const resolveLib = () => {
+    if (!state.echartsLib && typeof window !== 'undefined' && window.echarts) {
+      state.echartsLib = window.echarts;
+    }
+
+    return state.echartsLib;
+  };
+
   return vNode((api) => {
-    const node = new EchartNode(props);
-    delegateNodeCommands(api, node);
-    return node;
+    const executeReadyCallbacks = () => {
+      if (!state.chartInstance) {
+        return;
+      }
+
+      state.onReadyCallbacks.forEach((callback) => {
+        try {
+          callback(state.chartInstance);
+        } catch (error) {
+          console.error('[VEchart] Error in onChartReady callback:', error);
+        }
+      });
+      state.onReadyCallbacks = [];
+    };
+
+    const handleResize = (nextWidth, nextHeight) => {
+      if (!state.chartInstance) {
+        return;
+      }
+
+      state.chartInstance.resize();
+      state.onResizeCallbacks.forEach((callback) => {
+        try {
+          callback({ height: nextHeight, width: nextWidth });
+        } catch (error) {
+          console.error('[VEchart] Error in onChartResize callback:', error);
+        }
+      });
+    };
+
+    const initResizeObserver = () => {
+      const element = state.element;
+
+      if (typeof ResizeObserver !== 'undefined') {
+        state.resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const { height: boxHeight, width: boxWidth } = entry.contentRect;
+            handleResize(boxWidth, boxHeight);
+          }
+        });
+
+        if (element) {
+          state.resizeObserver.observe(element);
+        }
+
+        return;
+      }
+
+      state.resizeUnbind = bindWindowEvent('resize', () => handleResize());
+    };
+
+    /** 适配器初始化：落地后才做（`whenMount` 里排一帧，等布局稳定）。 */
+    const initChart = () => {
+      // 拍一帧的窗口里可能已经被销毁：这时不再初始化（迁移前 `_initChart` 开头就查 `_deleted` 的同口径）
+      if (state.destroyed) {
+        return;
+      }
+
+      const lib = resolveLib();
+
+      if (!lib) {
+        console.warn('[VEchart] ECharts library not provided. Call echartsLib() first.');
+        return;
+      }
+
+      if (state.chartInstance || !state.element) {
+        return;
+      }
+
+      try {
+        state.chartInstance = lib.init(state.element, state.theme, {
+          devicePixelRatio: state.devicePixelRatio,
+          renderer: state.renderer
+        });
+
+        if (state.option) {
+          state.chartInstance.setOption(state.option, true);
+        }
+        if (state.loading) {
+          api.loading(true, state.loadingText);
+        }
+
+        setTimeout(() => {
+          if (state.chartInstance && !state.chartInstance.isDisposed()) {
+            state.chartInstance.resize();
+          }
+        }, 100);
+
+        executeReadyCallbacks();
+
+        if (state.autoResize) {
+          initResizeObserver();
+        }
+      } catch (error) {
+        console.error('[VEchart] Failed to initialize chart:', error);
+      }
+    };
+
+    const disposeChart = () => {
+      if (state.resizeObserver) {
+        state.resizeObserver.disconnect();
+        state.resizeObserver = null;
+      }
+      if (state.resizeUnbind) {
+        state.resizeUnbind();
+        state.resizeUnbind = null;
+      }
+      if (state.chartInstance) {
+        state.chartInstance.dispose();
+        state.chartInstance = null;
+      }
+    };
+
+    api.echartsLib = (lib) => {
+      if (lib !== undefined) {
+        state.echartsLib = lib ?? null;
+      }
+
+      return api;
+    };
+
+    api.option = (value) => {
+      if (value === undefined) {
+        return state.option;
+      }
+
+      state.option = value || null;
+
+      if (state.chartInstance && resolveLib()) {
+        state.chartInstance.setOption(state.option, true);
+      }
+
+      return api;
+    };
+
+    api.width = (value) => {
+      if (value === undefined) {
+        return state.width;
+      }
+
+      state.width = value;
+      return api;
+    };
+
+    api.height = (value) => {
+      if (value === undefined) {
+        return state.height;
+      }
+
+      state.height = value;
+      return api;
+    };
+
+    api.theme = (value) => {
+      if (value === undefined) {
+        return state.theme;
+      }
+
+      state.theme = value ?? null;
+      return api;
+    };
+
+    api.renderer = (value) => {
+      if (value === undefined) {
+        return state.renderer;
+      }
+
+      state.renderer = value === 'svg' ? 'svg' : 'canvas';
+      return api;
+    };
+
+    api.devicePixelRatio = (value) => {
+      if (value === undefined) {
+        return state.devicePixelRatio;
+      }
+
+      state.devicePixelRatio = value;
+      return api;
+    };
+
+    api.autoResize = (value) => {
+      if (value === undefined) {
+        return state.autoResize;
+      }
+
+      state.autoResize = Boolean(value);
+      return api;
+    };
+
+    api.loading = (value, text = '加载中...') => {
+      state.loading = Boolean(value);
+      state.loadingText = text;
+
+      if (state.chartInstance) {
+        if (state.loading) {
+          state.chartInstance.showLoading({
+            color: 'var(--yoya-color-primary, #2563eb)',
+            lineWidth: 2,
+            maskColor: 'rgba(255, 255, 255, 0.8)',
+            text,
+            textColor: 'var(--yoya-color-text, #172033)'
+          });
+        } else {
+          state.chartInstance.hideLoading();
+        }
+      }
+
+      return api;
+    };
+
+    api.onChartReady = (callback) => {
+      if (typeof callback === 'function') {
+        if (state.chartInstance) {
+          callback(state.chartInstance);
+        } else {
+          state.onReadyCallbacks.push(callback);
+        }
+      }
+
+      return api;
+    };
+
+    api.onChartResize = (callback) => {
+      if (typeof callback === 'function') {
+        state.onResizeCallbacks.push(callback);
+      }
+
+      return api;
+    };
+
+    api.getChartInstance = () => state.chartInstance;
+    api.resize = (opts = {}) => {
+      state.chartInstance?.resize(opts);
+      return api;
+    };
+    api.clear = () => {
+      state.chartInstance?.clear();
+      return api;
+    };
+    api.dispose = () => {
+      disposeChart();
+      return api;
+    };
+
+    // 结构（R2）：宿主是普通元素节点；尺寸是随状态变的行内值（静态样式在样式表里）
+    const view = div({
+      ...rest,
+      style: { height: state.height, width: state.width },
+      vn: 'VEChart'
+    });
+
+    // 适配器生命周期（不再用 `renderDom()` / `_el`：落地元素由钩子上下文给）
+    api.whenMount = (host) => {
+      state.element = host?.element?.() ?? null;
+      requestAnimationFrame(() => initChart());
+    };
+
+    api.whenDestroy = () => {
+      state.destroyed = true;
+      disposeChart();
+    };
+
+    // props：库 / 尺寸 / 主题 / 渲染器 / 观察 / 选项 / 加载态 / 回调（迁移前 `_setupEchart` 的顺序）
+    if (echartsLib !== undefined) {
+      api.echartsLib(echartsLib);
+    }
+    if (width !== undefined) {
+      api.width(width);
+    }
+    if (height !== undefined) {
+      api.height(height);
+    }
+    if (autoResize !== undefined) {
+      api.autoResize(autoResize);
+    }
+    if (loadingText !== undefined) {
+      state.loadingText = loadingText;
+    }
+    if (onChartReady !== undefined) {
+      api.onChartReady(onChartReady);
+    }
+    if (onChartResize !== undefined) {
+      api.onChartResize(onChartResize);
+    }
+    if (option !== undefined) {
+      api.option(option);
+    }
+    if (loading !== undefined) {
+      api.loading(loading, state.loadingText);
+    }
+
+    // 元素级命令代委托（第三方仍可用 `chart.attr(…)` / `chart.on(…)`）
+    delegateNodeCommands(api, view);
+
+    return view;
   });
 }
 
-export const vEchart = createComponentShortcut(VEchart, { props: true });
+export const vEchart = createComponentShortcut(VEChart, { props: true });
+
+// 旧名（导出名 = 身份名）：`VEChart` 是定义函数，`vEchart` 是快捷方法
+export { VEChart as VEchart };
 
 registerChildFactories(HtmlElementNode, { vEchart });
