@@ -2,9 +2,7 @@
   "js": {
     "src/layout/index.js": 14,
     "src/layout/split-panel.js": 4,
-    "src/actions/dropdown-menu.js": 1,
     "src/feedback/message.js": 6,
-    "src/feedback/tooltip.js": 1,
     "src/async/skeleton.js": 5,
     "src/effects/transition.js": 8
   },

@@ -37,7 +37,7 @@ class TooltipNode extends HtmlElementNode {
     super('div', { vn: 'VTooltip' });
     this._triggerMode = 'hover';
     this._globalCloseCleanup = null;
-    this._panelId = allocateId('yoya-vtooltip-panel');
+    this._panelId = allocateId('yoya-tooltip-panel');
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
 

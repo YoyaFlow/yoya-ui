@@ -20,7 +20,7 @@ class DropdownMenuNode extends HtmlElementNode {
     super('div', { vn: 'VDropdownMenu' });
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
-    this._panelId = allocateId('yoya-vdropdown-panel');
+    this._panelId = allocateId('yoya-dropdown-panel');
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
     this._trigger = vButton('操作')
