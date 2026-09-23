@@ -798,6 +798,19 @@ const CASES = [
     name: 'vDetailItem / 标签 + 值',
     build: () => api.vDetailItem({ label: '版本', value: '0.6.13' }),
     probe: (item) => ({ label: item.label(), value: item.value() })
+  },
+  {
+    name: 'vBreadcrumb / 链接 + 当前项',
+    build: () =>
+      api.vBreadcrumb({ ariaLabel: '服务导航', separator: '/' }, (breadcrumb) => {
+        breadcrumb.vBreadcrumbItem({ href: '#/console', label: '控制台' });
+        breadcrumb.vBreadcrumbItem({ href: '#/services', label: '服务列表' });
+        breadcrumb.vBreadcrumbItem({ active: true, label: 'api-gateway' });
+      }),
+    probe: (breadcrumb) => ({
+      separator: breadcrumb.separator(),
+      items: breadcrumb.items().length
+    })
   }
 ];
 

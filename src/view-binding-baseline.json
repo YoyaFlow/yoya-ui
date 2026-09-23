@@ -5,7 +5,6 @@
     "src/layout/theme-shell.js": 1,
     "src/actions/button.js": 1,
     "src/actions/buttons.js": 1,
-    "src/navigation/breadcrumb.js": 2,
     "src/navigation/menu.js": 1,
     "src/navigation/navbar.js": 1,
     "src/form/avatar-upload.js": 1,

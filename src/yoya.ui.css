@@ -2163,14 +2163,14 @@ body {
     border-color: var(--yoya-color-border-strong, #cbd5e1);
   }
 
-  :where(.yoya-vbreadcrumb) {
+  [vn~='VBreadcrumb'] {
     box-sizing: border-box;
     display: flex;
     min-width: 0;
     padding: 0;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-list {
+  [vn~='VBreadcrumb'] [vn~='VBreadcrumbList'] {
     align-items: center;
     display: flex;
     flex-wrap: wrap;
@@ -2181,14 +2181,14 @@ body {
     padding: 0;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-item {
+  [vn~='VBreadcrumbItem'] {
     align-items: center;
     display: inline-flex;
     min-width: 0;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-link,
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-current {
+  [vn~='VBreadcrumbLink'],
+  [vn~='VBreadcrumbCurrent'] {
     border-radius: 5px;
     box-sizing: border-box;
     color: var(--yoya-color-text-secondary, #475569);
@@ -2197,7 +2197,7 @@ body {
     text-decoration: none;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-link {
+  [vn~='VBreadcrumbLink'] {
     font-weight: 500;
     padding: 3px 4px;
     transition:
@@ -2205,17 +2205,17 @@ body {
       color 140ms ease;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-link:hover {
+  [vn~='VBreadcrumbLink']:hover {
     background: var(--yoya-color-primary-subtle, #eff6ff);
     color: var(--yoya-color-primary-hover, #1d4ed8);
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-link:focus-visible {
+  [vn~='VBreadcrumbLink']:focus-visible {
     outline: 2px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.24));
     outline-offset: 1px;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-current {
+  [vn~='VBreadcrumbCurrent'] {
     color: var(--yoya-color-text, #172033);
     font-weight: 700;
     max-width: min(260px, 100%);
@@ -2223,11 +2223,28 @@ body {
     padding: 3px 4px;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-item[data-current='true'] .yoya-vbreadcrumb-current {
+  [vn~='VBreadcrumbItem'][data-current='true'] > [vn~='VBreadcrumbCurrent'] {
     color: var(--yoya-color-text-strong, #0f172a);
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-separator {
+  /* 链接位 / 当前位二选一（原来这两条 display 写在行内）：有地址且不是当前项才是链接 */
+  [vn~='VBreadcrumbItem'] > [vn~='VBreadcrumbLink'] {
+    display: none;
+  }
+
+  [vn~='VBreadcrumbItem'] > [vn~='VBreadcrumbCurrent'] {
+    display: none;
+  }
+
+  [vn~='VBreadcrumbItem'][data-mode='link'] > [vn~='VBreadcrumbLink'] {
+    display: inline;
+  }
+
+  [vn~='VBreadcrumbItem'][data-mode='text'] > [vn~='VBreadcrumbCurrent'] {
+    display: inline;
+  }
+
+  [vn~='VBreadcrumbSeparator'] {
     color: var(--yoya-color-text-muted, #94a3b8);
     flex: 0 0 auto;
     font-size: 13px;
@@ -2236,7 +2253,7 @@ body {
     user-select: none;
   }
 
-  .yoya-vbreadcrumb .yoya-vbreadcrumb-item:last-child .yoya-vbreadcrumb-separator {
+  [vn~='VBreadcrumbItem']:last-child > [vn~='VBreadcrumbSeparator'] {
     display: none;
   }
 

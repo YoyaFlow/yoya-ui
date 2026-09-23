@@ -1353,7 +1353,7 @@ function BreadcrumbDynamicExample1() {
         content.child(
           vBreadcrumb((breadcrumb) => {
             breadcrumb.ariaLabel('动态服务导航');
-            breadcrumb.child(items);
+            breadcrumb.items(items);
           })
         );
         content.hstack((row) => {

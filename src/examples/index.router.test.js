@@ -2076,16 +2076,16 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     );
 
     expect(status.textContent).toBe('当前：服务详情');
-    expect(demo.querySelector('.yoya-vbreadcrumb-item[data-current="true"]').textContent).toContain(
-      '服务详情'
-    );
+    expect(
+      demo.querySelector("[vn~='VBreadcrumbItem'][data-current='true']").textContent
+    ).toContain('服务详情');
 
     consoleButton.click();
 
     expect(status.textContent).toBe('当前：控制台');
-    expect(demo.querySelector('.yoya-vbreadcrumb-item[data-current="true"]').textContent).toContain(
-      '控制台'
-    );
+    expect(
+      demo.querySelector("[vn~='VBreadcrumbItem'][data-current='true']").textContent
+    ).toContain('控制台');
   });
 
   it('shows tree selection and checkbox state changes in the tree docs demos', async () => {

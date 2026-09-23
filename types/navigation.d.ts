@@ -85,27 +85,63 @@ export class VAnchorItem extends HtmlElementNode {
   active(value?: boolean): VAnchorItem;
 }
 
-/** Breadcrumb navigation. */
-export class VBreadcrumb extends HtmlElementNode {
-  ariaLabel(content: ChildInput): VBreadcrumb;
-  separator(content: ChildInput): VBreadcrumb;
-  items(value: Array<string | VBreadcrumbItem | BreadcrumbItemOptions>): VBreadcrumb;
-  child(...children: ChildInput[]): this;
-}
+/** 面包屑层级输入：字符串 / 数字 = 文案，其余按项的标准分派。 */
+export type BreadcrumbItemInput = string | number | VBreadcrumbItem | BreadcrumbItemOptions;
 
 export interface BreadcrumbItemOptions {
+  /** 文案：文本 / 句柄 / 节点（节点在构建期落位到当时可见的那个盒；`label()` 命令只收文本）。 */
   label?: ChildInput;
-  href?: string;
+  /** `label` 的兼容别名。 */
+  text?: ChildInput;
+  content?: ChildInput;
+  children?: ChildInput;
+  /** 链接地址；没有地址（或空串）就是当前文本位。 */
+  href?: string | null;
+  /** `href` 的兼容别名。 */
+  to?: string | null;
+  /** 当前项：`aria-current="page"` + 文本位。 */
   active?: boolean;
+  /** `active` 的兼容别名。 */
+  current?: boolean;
   [key: string]: any;
 }
 
+/**
+ * `vBreadcrumb({ … })` 的 props——只收数据 + 元素选项；层级从 `items`（或命令 `breadcrumb.vBreadcrumbItem(…)`）
+ * 来，`children` 是 `items` 的兼容别名。
+ */
+export interface BreadcrumbOptions {
+  /** 导航地标名称（`aria-label`）。 */
+  ariaLabel?: ChildInput;
+  /** 层级之间的分隔符；`null` / 空串回落到默认分隔符。 */
+  separator?: ChildInput;
+  items?: BreadcrumbItemInput | BreadcrumbItemInput[];
+  /** `items` 的兼容别名。 */
+  children?: BreadcrumbItemInput | BreadcrumbItemInput[];
+  [key: string]: unknown;
+}
+
+/** Breadcrumb navigation. */
+export class VBreadcrumb extends HtmlElementNode {
+  ariaLabel(): string;
+  ariaLabel(content: ChildInput): VBreadcrumb;
+  separator(): ChildInput;
+  separator(content: ChildInput): VBreadcrumb;
+  items(): VBreadcrumbItem[];
+  items(value: BreadcrumbItemInput | BreadcrumbItemInput[]): VBreadcrumb;
+  child(...children: ChildInput[]): this;
+}
+
 export class VBreadcrumbItem extends HtmlElementNode {
-  label(content?: ChildInput): this;
-  text(content?: ChildInput): this;
+  label(): string;
+  label(content: ChildInput): VBreadcrumbItem;
+  text(): string;
+  text(content: ChildInput): VBreadcrumbItem;
+  content(): string;
   content(content: ChildInput): VBreadcrumbItem;
-  href(value: string): VBreadcrumbItem;
-  to(value: string): VBreadcrumbItem;
+  href(): string | null;
+  href(value: string | null): VBreadcrumbItem;
+  to(value: string | null): VBreadcrumbItem;
   active(value?: boolean): VBreadcrumbItem;
   current(value?: boolean): VBreadcrumbItem;
 }
@@ -356,8 +392,18 @@ export const vAnchorItem: {
     callback?: SetupCallback<VAnchorItem>
   ): VAnchorItem;
 } & ElementFactory<VAnchorItem>;
-export const vBreadcrumb: ElementFactory<VBreadcrumb>;
-export const vBreadcrumbItem: ElementFactory<VBreadcrumbItem>;
+export const vBreadcrumb: {
+  (
+    first?: BreadcrumbOptions | SetupCallback<VBreadcrumb> | null,
+    callback?: SetupCallback<VBreadcrumb>
+  ): VBreadcrumb;
+} & ElementFactory<VBreadcrumb>;
+export const vBreadcrumbItem: {
+  (
+    first?: BreadcrumbItemOptions | SetupInput<VBreadcrumbItem> | null,
+    callback?: SetupCallback<VBreadcrumbItem>
+  ): VBreadcrumbItem;
+} & ElementFactory<VBreadcrumbItem>;
 export const vMenu: ElementFactory<VMenu>;
 export const vMenuDivider: ElementFactory<VMenuDivider>;
 export const vMenuGroup: ElementFactory<VMenuGroup>;
@@ -389,11 +435,11 @@ export interface NavigationParentShortcuts {
     callback?: SetupCallback<VAnchorItem>
   ): VAnchorItem;
   vBreadcrumb(
-    first?: SetupInput<VBreadcrumb> | null,
+    first?: BreadcrumbOptions | SetupCallback<VBreadcrumb> | null,
     callback?: SetupCallback<VBreadcrumb>
   ): VBreadcrumb;
   vBreadcrumbItem(
-    first?: SetupInput<VBreadcrumbItem> | null,
+    first?: BreadcrumbItemOptions | SetupInput<VBreadcrumbItem> | null,
     callback?: SetupCallback<VBreadcrumbItem>
   ): VBreadcrumbItem;
   vMenu(first?: SetupInput<VMenu> | null, callback?: SetupCallback<VMenu>): VMenu;
