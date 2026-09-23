@@ -38,9 +38,9 @@ function AnchorLink() {
   return a({ vn: 'VAnchorLink' });
 }
 
-/** 子列表（形态 A）：没有子项时隐藏，显隐由项自己的命令收口。 */
+/** 子列表（形态 A）：空列表不显示（CSS `:empty` 规则），显隐不再由命令写样式。 */
 function AnchorChildren() {
-  return ul({ vn: 'VAnchorChildren' }).style('display', 'none');
+  return ul({ vn: 'VAnchorChildren' });
 }
 
 /**
@@ -71,13 +71,15 @@ export function VAnchorItem() {
       return { children: childrenPart, link: linkPart };
     };
 
-    /** 地址 / 子列表显隐 / 有子项标记：改一处收口一次（写的都是快照，首屏直接读得到）。 */
+    /**
+     * 地址 / 有子项标记：改一处收口一次（写的都是快照，首屏直接读得到）。
+     * 子列表显隐归 CSS 的 `:empty` 规则（空列表不显示），命令不再写样式。
+     */
     const syncItem = () => {
       const { children, link } = partsOf();
       const hasChildren = children.children().length > 0;
 
       link.attr('href', state.href || null);
-      children.style('display', hasChildren ? null : 'none');
       self.node().attr('data-has-children', hasChildren ? 'true' : null);
       return api;
     };

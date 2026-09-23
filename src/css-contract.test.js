@@ -202,6 +202,7 @@ const navigationSelectors = [
   "[vn~='VAnchor'] [vn~='VAnchorLink']:hover",
   "[vn~='VAnchor'] [vn~='VAnchorItem'][data-active='true'] > [vn~='VAnchorLink']",
   "[vn~='VAnchor'] [vn~='VAnchorChildren']",
+  "[vn~='VAnchorItem'] > [vn~='VAnchorChildren']:empty",
   "[vn~='VUpload']",
   "[vn~='VUploadDropzone']",
   "[vn~='VUploadDropzone'][data-dragging='true']",

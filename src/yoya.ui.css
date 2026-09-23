@@ -2297,6 +2297,11 @@ body {
     padding: 2px 0 2px 14px;
   }
 
+  /* 空子列表不显示：位置归结构（`:empty`），不需要状态位、也不需要"恢复值" */
+  [vn~='VAnchorItem'] > [vn~='VAnchorChildren']:empty {
+    display: none;
+  }
+
   [vn~='VAnchor'] [vn~='VAnchorChildren'] [vn~='VAnchorLink'] {
     font-size: 13px;
     padding: 5px 10px;

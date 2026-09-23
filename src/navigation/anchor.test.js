@@ -54,8 +54,9 @@ describe('vAnchor', () => {
       root.vAnchorItem({ href: '#custom', title: '自定义' });
     });
     const element = anchor.renderDom();
+    // 空子列表由 CSS `:empty` 规则隐藏，这里按"有没有子项"数
     const visibleChildren = [...element.querySelectorAll(CHILDREN)].filter(
-      (node) => node.style.display !== 'none'
+      (node) => node.childElementCount > 0
     );
 
     expect(element.querySelectorAll(ITEM)).toHaveLength(4);
