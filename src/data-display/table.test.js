@@ -185,6 +185,12 @@ describe('vTable declarative sections', () => {
       'VThead'
     ]);
   });
+
+  it('takes a bare string as the caption', () => {
+    const table = vTable('季度报表');
+
+    expect(table.renderDom().querySelector(CAPTION).textContent).toBe('季度报表');
+  });
 });
 
 describe('vTableWrapper data-driven table', () => {
