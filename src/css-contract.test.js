@@ -87,6 +87,12 @@ const themeSelectors = [
   "[vn~='VThemeModeSwitch'] svg"
 ];
 
+const masonrySelectors = [
+  "[vn~='VMasonry']",
+  "[vn~='VMasonry'][data-column-mode='responsive']",
+  "[vn~='VMasonry'] > *"
+];
+
 const rateSelectors = [
   "[vn~='VRate']",
   "[vn~='VRate'][data-disabled='true']",
@@ -367,6 +373,12 @@ describe('CSS style contract', () => {
 
   it('covers the theme mode switch selectors', () => {
     themeSelectors.forEach((selector) => {
+      expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
+    });
+  });
+
+  it('covers the masonry selectors', () => {
+    masonrySelectors.forEach((selector) => {
       expect(cssFlat, `missing CSS rule for ${selector}`).toContain(selector);
     });
   });

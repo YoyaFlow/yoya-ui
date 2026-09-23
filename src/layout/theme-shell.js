@@ -1,12 +1,12 @@
-import {
-  ElementNode,
-  defineComponentIdentity,
-  elementStyles,
-  registerChildFactories
-} from '../core/node.js';
+import { ElementNode, elementStyles, registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
-import { createComponentShell } from '../components/component-shell.js';
-import { applyComponentSetup, themeValue } from '../components/shared.js';
+import { vNode } from '../core/v-node.js';
+import {
+  applyComponentSetup,
+  createComponentShortcut,
+  delegateNodeCommands,
+  themeValue
+} from '../components/shared.js';
 
 /**
  * VThemeShell 是主题化的通用容器：默认提供背景、边框、圆角与文字色
@@ -15,9 +15,8 @@ import { applyComponentSetup, themeValue } from '../components/shared.js';
  */
 class ThemeShellNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
+    super('div', { vn: 'VThemeShell' });
     this._identity = 'VThemeShell';
-    this.className('yoya-component', 'yoya-vtheme-shell');
     this.styles({
       background: themeValue('color-surface', '#ffffff'),
       border: `1px solid ${themeValue('color-border', '#d8dee8')}`,
@@ -140,24 +139,20 @@ class ThemeShellNode extends HtmlElementNode {
   }
 }
 
-export function vThemeShell(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VThemeShell',
-    createNode: (setup) => new ThemeShellNode(setup),
-    commands: [
-      'virtual',
-      'background',
-      'backgroundOpacity',
-      'radius',
-      'border',
-      'borderColor',
-      'scrollable'
-    ],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 主题化通用容器（形态 B）：视图根是**节点类型扩展** `ThemeShellNode`（虚拟节点模式要覆盖
+ * `renderDom` / `toHTML`，元素机制归它）；组件 api 用 `delegateNodeCommands` 把节点类型上的
+ * 公开方法（`virtual` / `background` / `radius` / `scrollable`… 以及元素 DSL）整体补齐——
+ * 于是 `vThemeShell((shell) => shell.p('文本'))` 这类写法照旧。
+ */
+export function VThemeShell(props = {}) {
+  return vNode((api) => {
+    const node = new ThemeShellNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export const VThemeShell = vThemeShell;
-defineComponentIdentity(VThemeShell, 'VThemeShell');
+export const vThemeShell = createComponentShortcut(VThemeShell, { props: true });
 
 registerChildFactories(ElementNode, { vThemeShell });

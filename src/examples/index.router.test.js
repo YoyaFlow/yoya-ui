@@ -795,7 +795,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const masonryPage = document.querySelector('[data-c-end-docs="masonry"]');
     const scrollDemo = masonryPage.querySelector('[data-c-end-demo="scroll"]');
     const scrollBox = scrollDemo.querySelector('[data-masonry-scroll]');
-    expect(scrollDemo.querySelectorAll('.yoya-vmasonry > *')).toHaveLength(24);
+    expect(scrollDemo.querySelectorAll("[vn~='VMasonry'] > *")).toHaveLength(24);
     expect(scrollBox.style.overflow).toBe('auto');
   });
 

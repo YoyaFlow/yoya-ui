@@ -339,6 +339,14 @@ export const vSplitPanel: ElementFactory<VSplitPanel> & {
   (first?: SetupInput<VSplitPanel> | null, callback?: SetupCallback<VSplitPanel>): VSplitPanel;
 };
 
+/** `vMasonry({ … })` 的 props：列数 / 间距 / 最小列宽（句柄 props 是活值）。 */
+export interface MasonryOptions {
+  columns?: number;
+  gap?: number;
+  minColumnWidth?: number | null;
+  [key: string]: unknown;
+}
+
 /** Masonry layout built on CSS multi-columns with configurable columns and gap. */
 export class VMasonry extends HtmlElementNode {
   columns(): number;
@@ -350,7 +358,10 @@ export class VMasonry extends HtmlElementNode {
 }
 
 export const vMasonry: ElementFactory<VMasonry> & {
-  (first?: SetupInput<VMasonry> | null, callback?: SetupCallback<VMasonry>): VMasonry;
+  (
+    first?: MasonryOptions | SetupInput<VMasonry> | null,
+    callback?: SetupCallback<VMasonry>
+  ): VMasonry;
 };
 
 // ---------------------------------------------------------------------------
@@ -438,7 +449,10 @@ export interface LayoutParentShortcuts {
     first?: SetupInput<VSplitPanel> | null,
     callback?: SetupCallback<VSplitPanel>
   ): VSplitPanel;
-  vMasonry(first?: SetupInput<VMasonry> | null, callback?: SetupCallback<VMasonry>): VMasonry;
+  vMasonry(
+    first?: MasonryOptions | SetupInput<VMasonry> | null,
+    callback?: SetupCallback<VMasonry>
+  ): VMasonry;
 }
 
 export type { ElementOptions, SetupInput };

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { div, vBody, VThemeShell, vThemeShell } from '../index.js';
+import { div, hasComponentIdentity, vBody, vThemeShell } from '../index.js';
 
 describe('VThemeShell', () => {
   it('applies themed container defaults', () => {
     const element = vThemeShell().renderDom();
 
-    expect(element.classList.contains('yoya-vtheme-shell')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VThemeShell');
     expect(element.style.background).toBe('var(--yoya-color-surface, #ffffff)');
     expect(element.style.border).toBe('1px solid var(--yoya-color-border, #d8dee8)');
     expect(element.style.borderRadius).toBe('var(--yoya-radius-md, 6px)');
@@ -47,7 +47,7 @@ describe('VThemeShell', () => {
     const root = div((page) => page.vThemeShell('Inside'));
     const child = root.children()[0];
 
-    expect(child).toBeInstanceOf(VThemeShell);
+    expect(hasComponentIdentity(child, 'VThemeShell')).toBe(true);
     expect(root.renderDom().textContent).toBe('Inside');
 
     const direct = vThemeShell((shell) => {
@@ -123,6 +123,6 @@ describe('VThemeShell virtual mode', () => {
     const element = shell.renderDom();
 
     expect(element).not.toBe(body.renderDom());
-    expect(element.classList.contains('yoya-vtheme-shell')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VThemeShell');
   });
 });

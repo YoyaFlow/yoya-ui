@@ -385,8 +385,8 @@ probe:    {"alt":"缩略图","defer":true,"state":"loading"}
 residue:  (空)
 
 ### vThemeShell / 常规容器
-dom:      <div class=yoya-component yoya-vtheme-shell style=background: rgb(15, 23, 42); border: 1px solid var(--yoya-color-border, #d8dee8); border-radius: 10px; box-sizing: border-box; color: var(--yoya-color-text, #172033); min-width: 0px; overflow: auto;><p >#text:内容
-toHTML:   <div class="yoya-component yoya-vtheme-shell" style="background:#0f172a;border-radius:10px;border:1px solid var(--yoya-color-border, #d8dee8);box-sizing:border-box;color:var(--yoya-color-text, #172033);min-width:0;overflow:auto"><p>内容</p></div>
+dom:      <div style=background: rgb(15, 23, 42); border: 1px solid var(--yoya-color-border, #d8dee8); border-radius: 10px; box-sizing: border-box; color: var(--yoya-color-text, #172033); min-width: 0px; overflow: auto; vn=VThemeShell><p >#text:内容
+toHTML:   <div style="background:#0f172a;border-radius:10px;border:1px solid var(--yoya-color-border, #d8dee8);box-sizing:border-box;color:var(--yoya-color-text, #172033);min-width:0;overflow:auto" vn="VThemeShell"><p>内容</p></div>
 probe:    {"background":"#0f172a","radius":"10px"}
 residue:  (空)
 

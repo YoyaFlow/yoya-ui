@@ -1,9 +1,7 @@
 {
   "js": {
     "src/layout/index.js": 14,
-    "src/layout/masonry.js": 1,
     "src/layout/split-panel.js": 4,
-    "src/layout/theme-shell.js": 1,
     "src/actions/context-menu.js": 4,
     "src/actions/dropdown-menu.js": 5,
     "src/feedback/dialog.js": 4,
@@ -44,8 +42,7 @@
     "yoya-vtransition": 5,
     "yoya-vtransition-enter": 2,
     "yoya-vtransition-duration": 2,
-    "yoya-vtransition-leave": 2,
-    "yoya-vmasonry": 2
+    "yoya-vtransition-leave": 2
   },
   "identity": [
     "src/actions/context-menu.js",
@@ -59,9 +56,7 @@
     "src/feedback/message.js",
     "src/feedback/tooltip.js",
     "src/i18n/index.js",
-    "src/layout/masonry.js",
     "src/layout/split-panel.js",
-    "src/layout/theme-shell.js",
     "src/three/three.js"
   ]
 }

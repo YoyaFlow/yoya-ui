@@ -3720,12 +3720,21 @@ body {
     }
   }
 
-  :where(.yoya-vmasonry) {
+  /* 瀑布流：静态样式与列几何（列数 / 间距 / 最小列宽走 CSS 变量，JS 只写变量） */
+  :where([vn~='VMasonry']) {
     box-sizing: border-box;
+    column-count: var(--yoya-masonry-columns, 3);
+    column-gap: var(--yoya-masonry-gap, 16px);
+    column-width: auto;
     width: 100%;
   }
 
-  .yoya-vmasonry > * {
+  [vn~='VMasonry'][data-column-mode='responsive'] {
+    column-count: auto;
+    column-width: var(--yoya-masonry-column-width, 240px);
+  }
+
+  [vn~='VMasonry'] > * {
     break-inside: avoid;
     box-sizing: border-box;
     margin-bottom: var(--yoya-masonry-gap, 16px);
