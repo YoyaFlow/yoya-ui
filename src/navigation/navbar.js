@@ -1,214 +1,234 @@
-import { HtmlElementNode } from '../html/index.js';
-import { MenuNode } from './menu.js';
-import {
-  applyComponentSetup,
-  componentClass,
-  createComponentFactory,
-  isPlainObject,
-  normalizeChildren,
-  replaceChildren,
-  resolveTextValue,
-  setupContentSlot,
-  themeBorder
-} from '../components/shared.js';
-
+import { asSignal, computed, ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
+import { ViewNode, vText } from '../core/index.js';
+import { div, nav, span, strong } from '../html/index.js';
 import { allocateId } from '../core/id.js';
+import {
+  createComponentShortcut,
+  resolveTextValue,
+  setupContentSlot
+} from '../components/shared.js';
+import { vMenu } from './menu.js';
 
-export class VNavbar extends HtmlElementNode {
-  constructor(setup = null) {
-    super('nav', null);
-    const menuId = allocateId('yoya-vnavbar-menu');
+/**
+ * 顶栏导航（票 15 §4；2026-09-23 按「容器组件」口径重写，参考实现 `VTable` / `VBreadcrumb`）。
+ *
+ * - **结构一次写清、部件常驻**：
+ *   `nav[VNavbar] > div[VNavbarBrand](= div[VNavbarBrandDefault](strong[VNavbarBrandTitle] + span[VNavbarBrandSubtitle])
+ *   + div[VNavbarBrandCustom]) + div[VNavbarMenuSlot](> vMenu) + div[VNavbarActions]`；
+ *   内层菜单是**复用组件** `vMenu()`（水平模式 + 自己的身份 `VMenu`），导航栏只负责把它摆进菜单位；
+ * - **品牌区两态走条件挂载**（R7）：默认品牌盒与自定义品牌盒各挂 `mountable(句柄)`，标题 / 副标题同样按"有没有
+ *   内容"挂载——迁移前是"两个盒都常驻 + 行内 `display` 切换"（且 CSS 里还各写了一条 `display: none` 的默认值，
+ *   于是设了标题反而看不见，见 16 号第 85 条），现在没有行内样式、也没有会被 CSS 抢走的默认值；
+ * - **命令只写状态 / 只投递内容**：`title` / `subtitle` / `sticky` / `ariaLabel` 写句柄，`brand` / `menuContent` /
+ *   `actions` 是内容投递口（函数 = 回调句柄就是那个部件）；分割线（`data-divider`）与吸顶（`data-sticky`）都是
+ *   派生状态，样式在 `yoya.ui.css`（R5）；命令写在各自部件的构建回调里（与 `VTable` 段同一写法）；
+ * - props 进参数表（`function VNavbar({ ... })`），`...rest` 照 JSX 摊进根元素工厂。
+ */
 
-    this._brandTitle = new HtmlElementNode('strong').className('yoya-vnavbar-brand-title');
-    this._brandSubtitle = new HtmlElementNode('span').className('yoya-vnavbar-brand-subtitle');
-    this._brandDefault = new HtmlElementNode('div')
-      .className('yoya-vnavbar-brand-default')
-      .child(this._brandTitle, this._brandSubtitle);
-    this._brandCustom = new HtmlElementNode('div').className('yoya-vnavbar-brand-custom');
-    this._brandBox = new HtmlElementNode('div')
-      .className('yoya-vnavbar-brand')
-      .child(this._brandDefault, this._brandCustom);
+const DEFAULT_ARIA_LABEL = '导航栏';
 
-    this._menu = new MenuNode()
-      .id(menuId)
-      .className('yoya-vnavbar-menu')
-      .attr('aria-label', '导航菜单');
-    this._menu.horizontal();
-    this._menuWrapper = new HtmlElementNode('div')
-      .className('yoya-vnavbar-menu-slot')
-      .styles({
-        boxSizing: 'border-box',
-        minWidth: '0',
-        overflowX: 'auto'
-      })
-      .child(this._menu);
-    this._actionsBox = new HtmlElementNode('div').className('yoya-vnavbar-actions');
+/** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
+const textOf = (value) => resolveTextValue(value);
 
-    this.className(componentClass, 'yoya-vnavbar');
-    this.attr({ 'aria-label': '导航栏', role: 'navigation' });
-    this.child(this._brandBox, this._menuWrapper, this._actionsBox);
-    this._setupNavbar(setup);
-  }
+/**
+ * 顶栏导航：品牌区 / 横向菜单 / 右侧动作区三块。props 见 `NavbarOptions`；
+ * 菜单内容也支持 `menu` / `content` / `children` 三个兼容键。
+ */
+export function VNavbar({
+  actions,
+  ariaLabel,
+  brand,
+  children: contentOption,
+  content,
+  menu,
+  menuContent,
+  sticky = false,
+  subtitle,
+  title,
+  ...rest
+} = {}) {
+  const { attrs: restAttrs, ...elementConfig } = rest;
 
-  ariaLabel(content) {
-    const label = resolveTextValue(content) || '导航栏';
-    this.attr('aria-label', label);
-    this._menu.attr('aria-label', `${label}菜单`);
-    return this;
-  }
+  // props 全是**数据**：句柄原样收下，归一（默认值 / 空）放在读时的派生上
+  const ariaLabelState = asSignal(ariaLabel ?? DEFAULT_ARIA_LABEL);
+  const ariaLabelText = computed(() => textOf(ariaLabelState.value) || DEFAULT_ARIA_LABEL);
+  const menuLabelText = computed(() => `${ariaLabelText.value}菜单`);
 
-  sticky(value = true) {
-    if (value === undefined) return this.style('position') === 'sticky';
-    const enabled = Boolean(value);
-    this.styles({
-      position: enabled ? 'sticky' : null,
-      top: enabled ? '0' : null,
-      zIndex: enabled ? '20' : null
-    });
-    return this;
-  }
+  const titleState = asSignal(title ?? null);
+  const subtitleState = asSignal(subtitle ?? null);
+  const titleText = computed(() => textOf(titleState.value));
+  const subtitleText = computed(() => textOf(subtitleState.value));
+  const hasTitle = computed(() => titleText.value !== '');
+  const hasSubtitle = computed(() => subtitleText.value !== '');
 
-  title(content) {
-    this._showDefaultBrand();
-    replaceChildren(this._brandTitle, normalizeChildren(content));
-    this._brandTitle.style('display', resolveTextValue(content) ? null : 'none');
-    this._syncBrandDivider();
-    return this;
-  }
+  const stickyState = asSignal(sticky);
+  const stickyAttr = computed(() => (stickyState.value ? 'true' : null));
 
-  subtitle(content) {
-    this._showDefaultBrand();
-    replaceChildren(this._brandSubtitle, normalizeChildren(content));
-    this._brandSubtitle.style('display', resolveTextValue(content) ? null : 'none');
-    this._syncBrandDivider();
-    return this;
-  }
+  /** 品牌区两态：默认（标题 + 副标题）/ 自定义（`brand(setup)` 投递进来的内容）。 */
+  const brandMode = ref('default');
+  const hasCustomBrand = ref(false);
+  const isCustomBrand = computed(() => brandMode.value === 'custom');
+  const hasBrandContent = computed(() =>
+    isCustomBrand.value ? hasCustomBrand.value : hasTitle.value || hasSubtitle.value
+  );
+  const dividerAttr = computed(() => (hasBrandContent.value ? 'true' : null));
 
-  brand(setup) {
-    if (setup === undefined) {
-      return this._brandBox;
-    }
+  /** 内层菜单：复用组件（水平模式 + 自己的身份），导航栏只管摆位与无障碍名称。 */
+  const menuNode = vMenu();
 
-    if (setup === null) {
-      this._showDefaultBrand();
-      this._syncBrandDivider();
-      return this;
-    }
+  menuNode.attr({ 'aria-label': menuLabelText, id: allocateId('yoya-navbar-menu') });
+  menuNode.horizontal();
 
-    this._showCustomBrand();
-    setupContentSlot(this._brandCustom, setup);
-    this._syncBrandDivider();
-    return this;
-  }
+  return vNode((api) => {
+    api.ariaLabel = (content) => {
+      if (content === undefined) {
+        return ariaLabelText.value;
+      }
 
-  menuContent(setup) {
-    if (setup === undefined) {
-      return this._menu;
-    }
+      ariaLabelState.value = content ?? null;
+      return api;
+    };
 
-    setupContentSlot(this._menu, setup);
-    return this;
-  }
+    /** 标题：只收文本（节点内容走 props.title）；与迁移前同口径——设置标题回到默认品牌。 */
+    api.title = (content) => {
+      if (content === undefined) {
+        return titleText.value;
+      }
 
-  actions(setup) {
-    if (setup === undefined) {
-      return this._actionsBox;
-    }
+      if (content instanceof ViewNode) {
+        throw new TypeError(
+          'vNavbar.title(node)：标题命令只收文本，节点内容请在构建期用 props.title 给。'
+        );
+      }
 
-    setupContentSlot(this._actionsBox, setup);
-    return this;
-  }
+      titleState.value = content ?? null;
+      brandMode.value = 'default';
+      return api;
+    };
 
-  _showDefaultBrand() {
-    setupContentSlot(this._brandCustom, null);
-    this._brandCustom.style('display', 'none');
-    this._brandDefault.style('display', null);
-    return this;
-  }
+    api.subtitle = (content) => {
+      if (content === undefined) {
+        return subtitleText.value;
+      }
 
-  _showCustomBrand() {
-    this._brandDefault.style('display', 'none');
-    this._brandCustom.style('display', 'grid');
-    return this;
-  }
+      if (content instanceof ViewNode) {
+        throw new TypeError(
+          'vNavbar.subtitle(node)：副标题命令只收文本，节点内容请在构建期用 props.subtitle 给。'
+        );
+      }
 
-  _syncBrandDivider() {
-    const hasBrandContent = Boolean(
-      this._brandDefault.textContent().trim() || this._brandCustom.textContent().trim()
+      subtitleState.value = content ?? null;
+      brandMode.value = 'default';
+      return api;
+    };
+
+    /** 吸顶：`true` 写入（与迁移前同口径：无参 = 打开）；显隐与几何在 CSS 的 `data-sticky` 规则里。 */
+    api.sticky = (value = true) => {
+      if (value === undefined) {
+        return Boolean(stickyState.value);
+      }
+
+      stickyState.value = Boolean(value);
+      return api;
+    };
+
+    const initialMenu = menuContent ?? menu ?? content ?? contentOption;
+    const initialBrand = brand;
+
+    return nav(
+      {
+        ...elementConfig,
+        attrs: { ...restAttrs, 'aria-label': ariaLabelText, role: 'navigation' },
+        'data-sticky': stickyAttr,
+        vn: 'VNavbar'
+      },
+      (root) =>
+        root.child(
+          // 品牌位：分割线与"有没有内容"都是派生状态（原来那两条 border / padding 写在行内）
+          div({ 'data-divider': dividerAttr, vn: 'VNavbarBrand' }, (brandBox) =>
+            brandBox.child(
+              div({ vn: 'VNavbarBrandDefault' }, (defaultBox) => {
+                defaultBox.mountable(computed(() => !isCustomBrand.value));
+                defaultBox.child(
+                  strong({ vn: 'VNavbarBrandTitle' }, (box) => {
+                    box.mountable(hasTitle);
+                    box.child(vText(titleText));
+                  }),
+                  span({ vn: 'VNavbarBrandSubtitle' }, (box) => {
+                    box.mountable(hasSubtitle);
+                    box.child(vText(subtitleText));
+                  })
+                );
+              }),
+              div({ vn: 'VNavbarBrandCustom' }, (customBox) => {
+                customBox.mountable(isCustomBrand);
+
+                /** 自定义品牌：`undefined` = 读回品牌盒（取用器），`null` = 回默认品牌，其余 = 投递内容。 */
+                api.brand = (setup) => {
+                  if (setup === undefined) {
+                    return customBox;
+                  }
+
+                  if (setup === null) {
+                    brandMode.value = 'default';
+                    return api;
+                  }
+
+                  brandMode.value = 'custom';
+                  hasCustomBrand.value = true;
+                  setupContentSlot(customBox, setup);
+                  return api;
+                };
+
+                if (initialBrand !== undefined) {
+                  api.brand(initialBrand);
+                }
+              })
+            )
+          ),
+
+          // 菜单位：内层是复用组件 `vMenu`，内容投递走 `menuContent`（回调句柄 = 菜单）
+          div({ vn: 'VNavbarMenuSlot' }, (slot) => {
+            slot.child(menuNode);
+
+            api.menuContent = (setup) => {
+              if (setup === undefined) {
+                return menuNode;
+              }
+
+              if (typeof setup === 'function') {
+                menuNode.setup(setup);
+                return api;
+              }
+
+              menuNode.child(setup);
+              return api;
+            };
+
+            if (initialMenu !== undefined) {
+              api.menuContent(initialMenu);
+            }
+          }),
+
+          // 动作位：调用方投递按钮 / 开关等内容
+          div({ vn: 'VNavbarActions' }, (actionsBox) => {
+            api.actions = (setup) => {
+              if (setup === undefined) {
+                return actionsBox;
+              }
+
+              setupContentSlot(actionsBox, setup);
+              return api;
+            };
+
+            if (actions !== undefined) {
+              api.actions(actions);
+            }
+          })
+        )
     );
-
-    this._brandBox.styles({
-      borderRight: hasBrandContent ? themeBorder('color-border-faint', '#e2e8f0') : null,
-      paddingRight: hasBrandContent ? '14px' : null
-    });
-    return this;
-  }
-
-  _setupNavbar(setup) {
-    if (setup === null || setup === undefined) {
-      return;
-    }
-
-    if (typeof setup === 'function') {
-      setup(this);
-      return;
-    }
-
-    if (isPlainObject(setup)) {
-      const {
-        actions,
-        ariaLabel,
-        brand,
-        children,
-        content,
-        menu,
-        menuContent,
-        sticky,
-        subtitle,
-        title,
-        ...elementConfig
-      } = setup;
-
-      if (Object.keys(elementConfig).length > 0) {
-        super._setupObject(elementConfig);
-      }
-
-      const hasCustomBrand = brand !== undefined && brand !== null;
-
-      if (brand !== undefined) {
-        this.brand(brand);
-      } else if (title !== undefined) {
-        this.title(title);
-      }
-
-      if (subtitle !== undefined && !hasCustomBrand) {
-        this.subtitle(subtitle);
-      }
-
-      const navigation = menuContent ?? menu ?? content ?? children;
-      if (navigation !== undefined) {
-        this.menuContent(navigation);
-      }
-
-      if (actions !== undefined) {
-        this.actions(actions);
-      }
-
-      if (ariaLabel !== undefined) {
-        this.ariaLabel(ariaLabel);
-      }
-
-      if (sticky !== undefined) {
-        this.sticky(sticky);
-      }
-
-      return;
-    }
-
-    applyComponentSetup(this, setup);
-  }
+  });
 }
 
-export function vNavbar(first = null, second = null, third = null) {
-  return createComponentFactory(VNavbar, first, second, third, arguments);
-}
+export const vNavbar = createComponentShortcut(VNavbar, { props: true });

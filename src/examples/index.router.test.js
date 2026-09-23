@@ -121,7 +121,8 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(document.querySelector('.components-demo-shell').style.gap).toBe('0px');
     expect(document.querySelector('.components-demo-shell').style.background).toBe('');
     expect(document.querySelector('.components-demo-shell').style.height).toContain('100');
-    expect(document.querySelector('[data-components-top-nav]').style.position).toBe('sticky');
+    // 吸顶现在是根上的状态位（样式在 `yoya.ui.css` 的 `[data-sticky='true']` 规则里）
+    expect(document.querySelector('[data-components-top-nav]').dataset.sticky).toBe('true');
     expect(document.querySelector('[data-components-top-nav]').style.background).toBe('');
     expect(document.querySelector('[data-components-top-nav]').style.minHeight).toBe('');
     expect(document.querySelector('[data-components-menu]').style.borderRadius).toBe('');
@@ -1998,7 +1999,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(shellDemo).not.toBeNull();
 
     const status = shellDemo.querySelector('[data-navbar-demo-status]');
-    const items = shellDemo.querySelectorAll('.yoya-vnavbar-menu [vn~="VMenuItem"]');
+    const items = shellDemo.querySelectorAll("[vn~='VNavbarMenuSlot'] [vn~='VMenuItem']");
 
     expect(status.textContent).toBe('当前：概览');
     expect(items[0].getAttribute('aria-current')).toBe('page');
@@ -2009,7 +2010,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(items[0].getAttribute('aria-current')).toBeNull();
     expect(items[1].getAttribute('aria-current')).toBe('page');
 
-    shellDemo.querySelector('.yoya-vnavbar-actions .yoya-vbutton').click();
+    shellDemo.querySelector("[vn~='VNavbarActions'] .yoya-vbutton").click();
 
     expect(status.textContent).toBe('已触发：登录');
   });

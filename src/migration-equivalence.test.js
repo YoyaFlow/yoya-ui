@@ -811,6 +811,21 @@ const CASES = [
       separator: breadcrumb.separator(),
       items: breadcrumb.items().length
     })
+  },
+  {
+    name: 'vNavbar / 品牌 + 菜单 + 动作',
+    build: () =>
+      api.vNavbar({
+        actions: (actions) => actions.vButton('登录'),
+        ariaLabel: '产品主导航',
+        menuContent: (menu) => menu.vMenuItem('概览').vMenuItem('组件'),
+        subtitle: '设计系统',
+        title: 'yoya-ui'
+      }),
+    probe: (navbar) => ({
+      // 探针只用两版实现都成立的口径（菜单项账 + 根上的无障碍名称）
+      items: navbar.menuContent().children().length
+    })
   }
 ];
 

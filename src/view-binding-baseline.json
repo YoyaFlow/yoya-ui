@@ -6,7 +6,6 @@
     "src/actions/button.js": 1,
     "src/actions/buttons.js": 1,
     "src/navigation/menu.js": 1,
-    "src/navigation/navbar.js": 1,
     "src/form/avatar-upload.js": 1,
     "src/form/cascader.js": 1,
     "src/form/controls/checkbox.js": 1,

@@ -53,13 +53,15 @@ describe('form C skeletons', () => {
   });
 
   it('records an actionable reason for a constructor it cannot read', () => {
-    // 形态 C 的构造体读不懂时要有可定位的原因（表格 / 进度条 / 数字看板都迁到 vNode 了，
-    // 这里换成仍在形态 C 的导航栏：`applyComponentSetup(this, setup)` 之前有动态接线）
-    const file = posix.join('src/navigation/navbar.js');
+    // 形态 C 的构造体读不懂时要有可定位的原因（表格 / 进度条 / 数字看板 / 导航栏都迁到 vNode 了，
+    // 这里换成仍在形态 C 的骨架屏：构造体里有动态接线，调用链不是从 setup 参数出发）。
+    // 换样例前先跑一遍 `compileComponent` 打印 bails，确认理由串一致（`createComponentShell` 家族
+    // 会给出"入口工厂不是元素"，当不了样例）；下一次换样例的时机是 `vSkeleton` 迁到 §4 时。
+    const file = posix.join('src/async/skeleton.js');
     const result = compileComponent({
       source: readFileSync(file, 'utf8'),
       file,
-      export: 'vNavbar',
+      export: 'vSkeleton',
       core
     });
 

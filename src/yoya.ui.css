@@ -1791,7 +1791,7 @@ body {
     width: 1%;
   }
 
-  :where(.yoya-vnavbar) {
+  [vn~='VNavbar'] {
     align-items: center;
     background: transparent;
     border-radius: 8px;
@@ -1805,7 +1805,14 @@ body {
     width: 100%;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-brand {
+  /* 吸顶：原来 position / top / z-index 三条写在 JS 行内 */
+  [vn~='VNavbar'][data-sticky='true'] {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  [vn~='VNavbarBrand'] {
     align-content: center;
     display: grid;
     flex: 0 0 auto;
@@ -1813,40 +1820,44 @@ body {
     min-width: 0;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-brand-title {
+  /* 品牌分割线：有品牌内容才画（原来 border-right / padding-right 写在 JS 行内） */
+  [vn~='VNavbarBrand'][data-divider='true'] {
+    border-right: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    padding-right: 14px;
+  }
+
+  /* 标题 / 副标题以前是"CSS 默认 display: none + JS 摘掉行内 display"，于是设了内容也看不见；
+     现在按"有没有内容"条件挂载（`mountable`），默认值不再跟 JS 抢。 */
+  [vn~='VNavbarBrandTitle'] {
     color: var(--yoya-color-text-strong, #0f172a);
-    display: none;
     font-size: 1.02rem;
     font-weight: 700;
     line-height: 1.2;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-brand-subtitle {
+  [vn~='VNavbarBrandSubtitle'] {
     color: var(--yoya-color-text-muted, #64748b);
-    display: none;
     font-size: 0.78rem;
     line-height: 1.2;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-brand-default,
-  .yoya-vnavbar .yoya-vnavbar-brand-custom {
+  [vn~='VNavbarBrandDefault'],
+  [vn~='VNavbarBrandCustom'] {
     display: grid;
     gap: 2px;
     min-width: 0;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-brand-custom {
-    display: none;
-  }
-
-  .yoya-vnavbar .yoya-vnavbar-menu-slot {
+  [vn~='VNavbarMenuSlot'] {
     align-items: center;
+    box-sizing: border-box;
     display: flex;
     flex: 1 1 320px;
     min-width: 0;
+    overflow-x: auto;
   }
 
-  .yoya-vnavbar .yoya-vnavbar-actions {
+  [vn~='VNavbarActions'] {
     align-items: center;
     display: flex;
     flex-wrap: wrap;

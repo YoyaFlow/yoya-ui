@@ -204,13 +204,45 @@ export class VSidebar extends HtmlElementNode {
   responsive(query?: string): VSidebar;
 }
 
+/**
+ * `vNavbar({ … })` 的 props——只收数据 + 元素选项；品牌 / 菜单 / 动作三块内容走命令
+ * （`menu` / `content` / `children` 都是 `menuContent` 的兼容键）。
+ */
+export interface NavbarOptions {
+  /** 导航地标名称（`aria-label`；内层菜单跟一句 `${label}菜单`）。 */
+  ariaLabel?: ChildInput;
+  /** 品牌标题：文本 / 句柄（节点内容请在构建期给；`title()` 命令只收文本）。 */
+  title?: ChildInput;
+  /** 品牌副标题：同上。 */
+  subtitle?: ChildInput;
+  /** 自定义品牌内容（内容通道：节点 / 文本 / 构建回调，回调句柄 = 品牌盒）；`null` = 回默认品牌。 */
+  brand?: SetupInput<HtmlElementNode> | null;
+  /** 横向菜单内容（回调句柄 = 内层菜单）。 */
+  menuContent?: SetupInput<HtmlElementNode>;
+  /** `menuContent` 的兼容别名。 */
+  menu?: SetupInput<HtmlElementNode>;
+  /** `menuContent` 的兼容别名。 */
+  content?: SetupInput<HtmlElementNode>;
+  /** `menuContent` 的兼容别名。 */
+  children?: SetupInput<HtmlElementNode>;
+  /** 右侧动作区内容（回调句柄 = 动作盒）。 */
+  actions?: SetupInput<HtmlElementNode>;
+  /** 吸顶（默认 false；样式在 CSS 的 `data-sticky` 规则里）。 */
+  sticky?: boolean;
+  [key: string]: unknown;
+}
+
 /** Top navigation bar. */
 export class VNavbar extends HtmlElementNode {
+  ariaLabel(): string;
   ariaLabel(content: ChildInput): VNavbar;
   sticky(value?: boolean): VNavbar;
-  title(content?: ChildInput): this;
+  title(): string;
+  title(content: ChildInput): VNavbar;
+  subtitle(): string;
   subtitle(content: ChildInput): VNavbar;
-  brand(setup: SetupInput<HtmlElementNode>): VNavbar;
+  brand(setup: SetupInput<HtmlElementNode> | null): VNavbar;
+  menuContent(): VMenu;
   menuContent(setup: SetupInput<HtmlElementNode>): VNavbar;
   actions(setup: SetupInput<HtmlElementNode>): VNavbar;
 }
@@ -408,7 +440,12 @@ export const vMenu: ElementFactory<VMenu>;
 export const vMenuDivider: ElementFactory<VMenuDivider>;
 export const vMenuGroup: ElementFactory<VMenuGroup>;
 export const vMenuItem: ElementFactory<VMenuItem>;
-export const vNavbar: ElementFactory<VNavbar>;
+export const vNavbar: {
+  (
+    first?: NavbarOptions | SetupCallback<VNavbar> | null,
+    callback?: SetupCallback<VNavbar>
+  ): VNavbar;
+} & ElementFactory<VNavbar>;
 export const vSidebar: ElementFactory<VSidebar>;
 export const vStep: {
   (first?: StepItemOptions | SetupInput<VStep> | null, callback?: SetupCallback<VStep>): VStep;
@@ -452,7 +489,10 @@ export interface NavigationParentShortcuts {
     callback?: SetupCallback<VMenuGroup>
   ): VMenuGroup;
   vMenuItem(first?: SetupInput<VMenuItem> | null, callback?: SetupCallback<VMenuItem>): VMenuItem;
-  vNavbar(first?: SetupInput<VNavbar> | null, callback?: SetupCallback<VNavbar>): VNavbar;
+  vNavbar(
+    first?: NavbarOptions | SetupCallback<VNavbar> | null,
+    callback?: SetupCallback<VNavbar>
+  ): VNavbar;
   vSidebar(first?: SetupInput<VSidebar> | null, callback?: SetupCallback<VSidebar>): VSidebar;
   vStep(first?: StepItemOptions | SetupInput<VStep> | null, callback?: SetupCallback<VStep>): VStep;
   vSteps(
