@@ -21,7 +21,7 @@ describe('SSR example page', () => {
     expect(document.querySelector('#app').textContent).toContain('欢迎使用服务端渲染');
     expect(document.querySelector('#app [data-error]')).not.toBeNull();
     expect(document.querySelector('#app').textContent).not.toContain('图表页');
-    expect(document.querySelector('#app .yoya-vechart')).not.toBeNull();
+    expect(document.querySelector('#app [vn~="VEChart"]')).not.toBeNull();
 
     const input = document.querySelector('#app input[name="email"]');
     input.value = 'user@example.com';

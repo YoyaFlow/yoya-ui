@@ -273,8 +273,8 @@ const navigationSelectors = [
   "[vn~='VProgress'][data-size='large'] [vn~='VProgressTrack']",
   "[vn~='VProgress'][data-indeterminate='true'] [vn~='VProgressBar']",
   '@keyframes yoya-progress-indeterminate',
-  '.yoya-vechart',
-  '.yoya-vthree'
+  "[vn~='VEChart']",
+  "[vn~='VThree']"
 ];
 
 const avatarSelectors = [

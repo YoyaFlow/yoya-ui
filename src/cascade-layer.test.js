@@ -35,7 +35,8 @@ describe('cascade layer contract', () => {
   });
 
   it('applies low-specificity :where() to base component rules', () => {
-    const whereCount = (css.match(/:where\(\.yoya-/g) || []).length;
+    // 属性化迁移把 `:where(.yoya-xxx)` 换成 `:where([vn~='VXxx'])`，两种写法都算低特异度基规则
+    const whereCount = (css.match(/:where\((?:\.yoya-|\[vn~=)/g) || []).length;
     expect(whereCount).toBeGreaterThan(10);
   });
 });

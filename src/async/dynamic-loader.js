@@ -18,14 +18,13 @@ const defaultViews = {
 export function vDynamicLoader(first = {}, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const options = normalizeOptions(args.first);
-  const node = new ElementNode('div');
+  const node = new ElementNode('div', { vn: 'VDynamicLoader' });
   applyElementOptions(node, args.first);
   let status = 'pending';
   let moduleValue = null;
   let loadError = null;
   let generation = 0;
 
-  node.className('yoya-vdynamic-loader');
   node.attr({ 'aria-live': 'polite', 'data-loader-state': status });
   node.status = () => status;
   node.loadState = () => status;

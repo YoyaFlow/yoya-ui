@@ -1,11 +1,11 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
-import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
+import { createComponentFactory, isPlainObject } from '../components/shared.js';
 
 export class VEchart extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
+    super('div', { vn: 'VEChart' });
     this._autoResize = true;
     this._chartInstance = null;
     this._devicePixelRatio = null;
@@ -21,7 +21,6 @@ export class VEchart extends HtmlElementNode {
     this._theme = null;
     this._width = '100%';
 
-    this.className(componentClass, 'yoya-vechart');
     this.styles({
       height: this._height,
       overflow: 'hidden',

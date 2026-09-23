@@ -21,7 +21,7 @@ describe('vLanguageSwitch', () => {
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
     const englishItem = element.querySelector('[vn~="VMenuItem"][data-language="en"]');
 
-    expect(element.classList.contains('yoya-vlanguage-switch')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VLanguageSwitch');
     expect(element.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(2);
     expect(trigger.textContent).toContain('中文');
 
@@ -46,7 +46,7 @@ describe('vLanguageSwitch', () => {
       root.vLanguageSwitch((control) => control.locale(locale).size('small'));
     });
     const element = page.renderDom();
-    const switchElement = element.querySelector('.yoya-vlanguage-switch');
+    const switchElement = element.querySelector('[vn~="VLanguageSwitch"]');
 
     expect(switchElement).not.toBeNull();
     expect(switchElement.dataset.size).toBe('small');
@@ -111,7 +111,7 @@ describe('vLanguageSwitch', () => {
     const element = card.renderDom();
     const trigger = element.querySelector('.yoya-vdropdown-trigger');
 
-    expect(element.querySelectorAll('.yoya-vlanguage-switch')).toHaveLength(1);
+    expect(element.querySelectorAll('[vn~="VLanguageSwitch"]')).toHaveLength(1);
     expect(element.querySelectorAll('[vn~="VMenuItem"]')).toHaveLength(2);
     expect(component.languages().map((item) => item.value)).toEqual(['zh-CN', 'en']);
 

@@ -810,7 +810,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const page = document.querySelector('[data-echarts-page]');
     expect(page.querySelector('h1').textContent).toBe('ECharts 图表');
     expect(page.querySelectorAll('.components-echarts-grid [vn="VCard"]')).toHaveLength(3);
-    expect(page.querySelectorAll('.yoya-vechart')).toHaveLength(3);
+    expect(page.querySelectorAll('[vn~="VEChart"]')).toHaveLength(3);
     expect(page.querySelectorAll('[data-echarts-demo]')).toHaveLength(3);
     expect(page.querySelectorAll('[data-echarts-demo] [data-source-example]')).toHaveLength(3);
     expect(
@@ -1744,7 +1744,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     const reactive = page.querySelector('[data-i18n-demo="reactive"] .components-i18n-demo-live');
     expect(reactive.textContent).toContain('服务控制台');
     expect(reactive.textContent).toContain('你好，Ada');
-    expect(reactive.querySelector('.yoya-vlanguage-switch')).not.toBeNull();
+    expect(reactive.querySelector('[vn~="VLanguageSwitch"]')).not.toBeNull();
 
     reactive.querySelector('.yoya-vdropdown-trigger').click();
     const reactiveEnglish = reactive.querySelector('[vn~="VMenuItem"][data-language="en"]');

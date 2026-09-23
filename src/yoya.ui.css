@@ -3514,12 +3514,12 @@ body {
     color: var(--yoya-color-text-danger, #b91c1c);
   }
 
-  :where(.yoya-vechart) {
+  :where([vn~='VEChart']) {
     box-sizing: border-box;
     min-width: 0;
   }
 
-  :where(.yoya-vthree) {
+  :where([vn~='VThree']) {
     box-sizing: border-box;
     min-width: 0;
 

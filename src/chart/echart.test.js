@@ -55,7 +55,7 @@ describe('VEchart', () => {
     });
     const chart = page.children()[0];
 
-    expect(chart.className()).toContain('yoya-vechart');
+    expect(chart.attr('vn')).toContain('VEChart');
     expect(chart.height()).toBe('240px');
   });
 

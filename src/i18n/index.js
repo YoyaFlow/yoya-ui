@@ -13,7 +13,6 @@ import { vMenuItem } from '../navigation/menu.js';
 import {
   applyComponentArguments,
   applyElementOptions,
-  componentClass,
   isPlainObject,
   normalizeComponentArguments,
   resolveTextValue
@@ -47,12 +46,11 @@ export function vLanguageSwitch(first = null, second = null, third = null) {
     };
     let unsubscribe = null;
 
+    // 多值身份：外面认 `VLanguageSwitch`，下拉语义仍认 `VDropdownMenu`（包装型组件共用视图）
     root = vDropdownMenu({
       closeOnSelect: true,
       placement: 'bottom-start'
-    }).className(componentClass, 'yoya-vlanguage-switch');
-    // 多值身份：外面认 `VLanguageSwitch`，下拉语义仍认 `VDropdownMenu`（包装型组件共用视图）
-    root._identity = 'VLanguageSwitch VDropdownMenu';
+    }).setup({ vn: 'VLanguageSwitch VDropdownMenu' });
 
     Object.assign(api, {
       activeLanguage() {

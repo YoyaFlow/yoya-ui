@@ -76,7 +76,7 @@ describe('VThree', () => {
     expect(renderers).toHaveLength(1);
 
     const renderer = renderers[0];
-    expect(node.className()).toContain('yoya-vthree');
+    expect(node.attr('vn')).toContain('VThree');
     expect(node.getRenderer()).toBe(renderer);
     expect(node.getScene()).toBeInstanceOf(lib.Scene);
     expect(node.getCamera()).toBeInstanceOf(lib.PerspectiveCamera);
@@ -84,7 +84,7 @@ describe('VThree', () => {
     expect(renderer.options).toEqual({ antialias: true });
     expect(renderer.setPixelRatio).toHaveBeenCalledWith(1);
     expect(renderer.setSize).toHaveBeenCalledWith(600, 300);
-    expect(renderer.domElement.parentNode).toBe(document.querySelector('.yoya-vthree'));
+    expect(renderer.domElement.parentNode).toBe(document.querySelector('[vn~="VThree"]'));
     expect(renderer.render).toHaveBeenCalledWith(node.getScene(), node.getCamera());
 
     node.dispose();
@@ -130,7 +130,7 @@ describe('VThree', () => {
     const three = page.children()[0];
 
     expect(three).toBeInstanceOf(VThree);
-    expect(three.className()).toContain('yoya-vthree');
+    expect(three.attr('vn')).toContain('VThree');
     expect(three.height()).toBe('240px');
   });
 
@@ -219,7 +219,7 @@ describe('VThree', () => {
     const html = vThree({ height: '300px', threeLib: lib }).toHTML();
 
     expect(renderers).toHaveLength(0);
-    expect(html).toContain('yoya-vthree');
+    expect(html).toContain('vn="VThree"');
     expect(html).not.toContain('<canvas');
   });
 });

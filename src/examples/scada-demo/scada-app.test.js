@@ -194,7 +194,7 @@ describe('scada twin standalone', () => {
     expect(element.querySelectorAll('.scada-viewport')).toHaveLength(1);
     expect(element.textContent).toContain('设备详情');
     expect(element.textContent).toContain('T-101 储水罐');
-    const host = element.querySelector('.yoya-vthree');
+    const host = element.querySelector('[vn~="VThree"]');
     expect(host.style.height).toBe('100%');
 
     frames.shift()();
@@ -277,7 +277,7 @@ describe('scada twin standalone', () => {
     frames.shift()();
     frames.shift()();
 
-    const host = element.querySelector('.yoya-vthree');
+    const host = element.querySelector('[vn~="VThree"]');
     host.dispatchEvent(
       new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 120, clientY: 100 })
     );
@@ -309,7 +309,7 @@ describe('scada twin standalone', () => {
     frames.shift()();
     frames.shift()();
 
-    const canvas = element.querySelector('.yoya-vthree canvas');
+    const canvas = element.querySelector('[vn~="VThree"] canvas');
     Object.defineProperty(document, 'pointerLockElement', {
       configurable: true,
       value: canvas

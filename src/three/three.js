@@ -1,7 +1,7 @@
 import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
-import { componentClass, createComponentFactory, isPlainObject } from '../components/shared.js';
+import { createComponentFactory, isPlainObject } from '../components/shared.js';
 
 const DEFAULT_RENDERER_OPTIONS = Object.freeze({ antialias: true });
 
@@ -13,7 +13,7 @@ const DEFAULT_RENDERER_OPTIONS = Object.freeze({ antialias: true });
  */
 export class VThree extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
+    super('div', { vn: 'VThree' });
     this._autoRender = true;
     this._autoResize = true;
     this._camera = null;
@@ -34,7 +34,6 @@ export class VThree extends HtmlElementNode {
     this._threeLib = null;
     this._width = '100%';
 
-    this.className(componentClass, 'yoya-vthree');
     this.styles({
       height: this._height,
       overflow: 'hidden',

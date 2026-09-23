@@ -196,7 +196,7 @@ describe('factory game standalone', () => {
     expect(element.textContent).toContain('tick 1');
     expect(element.textContent).toContain('矿石');
 
-    const host = element.querySelector('.yoya-vthree');
+    const host = element.querySelector('[vn~="VThree"]');
     host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2 }));
     host.dispatchEvent(
       new MouseEvent('pointermove', { bubbles: true, button: 2, clientX: 130, clientY: 90 })

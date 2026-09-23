@@ -816,7 +816,7 @@ const thirdPartyExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-echarts-demo .yoya-vechart', { minWidth: '0' }]
+  ['.components-echarts-demo [vn~="VEChart"]', { minWidth: '0' }]
 ];
 
 const threeExtraRules = [
@@ -840,7 +840,7 @@ const threeExtraRules = [
       padding: '16px'
     }
   ],
-  ['.components-three-demo-live .yoya-vthree', { minWidth: '0' }]
+  ['.components-three-demo-live [vn~="VThree"]', { minWidth: '0' }]
 ];
 
 const signalsExtraRules = [

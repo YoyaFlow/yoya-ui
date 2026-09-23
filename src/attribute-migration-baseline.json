@@ -8,12 +8,8 @@
     "src/feedback/message.js": 6,
     "src/feedback/tooltip.js": 4,
     "src/feedback/vconfirm.js": 3,
-    "src/chart/echart.js": 1,
-    "src/three/three.js": 1,
-    "src/async/dynamic-loader.js": 1,
     "src/async/lazy-image.js": 3,
     "src/async/skeleton.js": 5,
-    "src/i18n/index.js": 1,
     "src/effects/transition.js": 8
   },
   "css": {
@@ -29,8 +25,6 @@
     "yoya-vtooltip": 29,
     "yoya-vtooltip-target": 1,
     "yoya-vtooltip-panel": 27,
-    "yoya-vechart": 1,
-    "yoya-vthree": 1,
     "yoya-vskeleton": 10,
     "yoya-vskeleton-bar": 3,
     "yoya-vskeleton-avatar": 3,
@@ -49,14 +43,11 @@
     "src/actions/dropdown-menu.js",
     "src/async/lazy-image.js",
     "src/async/skeleton.js",
-    "src/chart/echart.js",
     "src/components/component-shell.js",
     "src/feedback/dialog.js",
     "src/feedback/message-manager.js",
     "src/feedback/message.js",
     "src/feedback/tooltip.js",
-    "src/i18n/index.js",
-    "src/layout/split-panel.js",
-    "src/three/three.js"
+    "src/layout/split-panel.js"
   ]
 }
