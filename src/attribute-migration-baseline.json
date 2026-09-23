@@ -2,8 +2,7 @@
   "js": {
     "src/layout/index.js": 14,
     "src/layout/split-panel.js": 4,
-    "src/actions/context-menu.js": 4,
-    "src/actions/dropdown-menu.js": 5,
+    "src/actions/dropdown-menu.js": 1,
     "src/feedback/dialog.js": 4,
     "src/feedback/message.js": 6,
     "src/feedback/tooltip.js": 4,
@@ -14,11 +13,6 @@
   "css": {
     "yoya-vaside": 2,
     "yoya-vmain": 2,
-    "yoya-vdropdown-menu": 3,
-    "yoya-vdropdown-panel": 2,
-    "yoya-vcontext-menu": 4,
-    "yoya-vcontext-target": 1,
-    "yoya-vcontext-panel": 2,
     "yoya-vdialog": 1,
     "yoya-vdialog-close": 1,
     "yoya-vtooltip": 29,
@@ -38,8 +32,6 @@
     "yoya-vtransition-leave": 2
   },
   "identity": [
-    "src/actions/context-menu.js",
-    "src/actions/dropdown-menu.js",
     "src/async/lazy-image.js",
     "src/async/skeleton.js",
     "src/components/component-shell.js",

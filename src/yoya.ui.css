@@ -1391,12 +1391,12 @@ body {
     }
   }
 
-  :where(.yoya-vdropdown-menu) {
+  :where([vn~='VDropdownMenu']) {
     display: inline-flex;
     position: relative;
   }
 
-  .yoya-vdropdown-menu .yoya-vdropdown-panel {
+  [vn~='VDropdownMenu'] [vn~='VDropdownPanel'] {
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border, #dbe3ef);
     border-radius: 10px;
@@ -1409,20 +1409,41 @@ body {
     z-index: var(--yoya-z-popover);
   }
 
-  .yoya-vdropdown-menu[data-open='true'] > .yoya-vdropdown-panel {
+  [vn~='VDropdownMenu'][data-open='true'] > [vn~='VDropdownPanel'] {
     display: block;
   }
 
-  :where(.yoya-vcontext-menu) {
+  /* 面板定位由 `data-placement` 决定（原来在 JS 里写行内 placement 样式，R5 搬成规则） */
+  [vn~='VDropdownMenu'][data-placement='bottom-start'] > [vn~='VDropdownPanel'] {
+    left: 0;
+    top: calc(100% + 6px);
+  }
+
+  [vn~='VDropdownMenu'][data-placement='bottom-end'] > [vn~='VDropdownPanel'] {
+    right: 0;
+    top: calc(100% + 6px);
+  }
+
+  [vn~='VDropdownMenu'][data-placement='top-start'] > [vn~='VDropdownPanel'] {
+    bottom: calc(100% + 6px);
+    left: 0;
+  }
+
+  [vn~='VDropdownMenu'][data-placement='top-end'] > [vn~='VDropdownPanel'] {
+    bottom: calc(100% + 6px);
+    right: 0;
+  }
+
+  :where([vn~='VContextMenu']) {
     display: block;
     min-width: 0;
   }
 
-  .yoya-vcontext-menu .yoya-vcontext-target {
+  [vn~='VContextMenu'] [vn~='VContextTarget'] {
     min-width: 0;
   }
 
-  .yoya-vcontext-menu .yoya-vcontext-panel {
+  [vn~='VContextMenu'] [vn~='VContextPanel'] {
     background: var(--yoya-color-surface, #ffffff);
     border: 1px solid var(--yoya-color-border, #d8dee8);
     border-radius: 8px;
@@ -1433,7 +1454,7 @@ body {
     z-index: var(--yoya-z-popover);
   }
 
-  .yoya-vcontext-menu[data-open='true'] > .yoya-vcontext-panel {
+  [vn~='VContextMenu'][data-open='true'] > [vn~='VContextPanel'] {
     display: block;
   }
 

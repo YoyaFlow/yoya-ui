@@ -1533,12 +1533,12 @@ describe('compound components', () => {
 
     const element = dropdown.renderDom();
     const trigger = element.querySelector('#more-actions');
-    const panel = element.querySelector('.yoya-vdropdown-panel');
+    const panel = element.querySelector('[vn~="VDropdownPanel"]');
 
-    expect(element.classList.contains('yoya-vdropdown-menu')).toBe(true);
+    expect(element.getAttribute('vn')).toContain('VDropdownMenu');
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(panel.classList.contains('yoya-vdropdown-panel')).toBe(true);
+    expect(panel.getAttribute('vn')).toContain('VDropdownPanel');
     expect(panel.getAttribute('aria-hidden')).toBe('true');
     expect(element.dataset.placement).toBe('bottom-end');
 
@@ -1683,7 +1683,7 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vdropdown-menu')).not.toBeNull();
+    expect(element.querySelector('[vn~="VDropdownMenu"]')).not.toBeNull();
     expect(element.querySelector('[vn~="VButtonLabel"]').textContent).toBe('操作');
     expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('导出');
   });
@@ -1706,7 +1706,7 @@ describe('compound components', () => {
 
     const element = contextMenu.renderDom();
     const target = element.querySelector('#service-row');
-    const panel = element.querySelector('.yoya-vcontext-panel');
+    const panel = element.querySelector('[vn~="VContextPanel"]');
     const event = new MouseEvent('contextmenu', {
       bubbles: true,
       cancelable: true,
@@ -1773,8 +1773,8 @@ describe('compound components', () => {
     });
     const element = page.renderDom();
 
-    expect(element.querySelector('.yoya-vcontext-menu')).not.toBeNull();
-    expect(element.querySelector('.yoya-vcontext-target').textContent).toBe('右键区域');
+    expect(element.querySelector('[vn~="VContextMenu"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VContextTarget"]').textContent).toBe('右键区域');
     expect(element.querySelector('[vn~="VMenuItemLabel"]').textContent).toBe('查看详情');
   });
 

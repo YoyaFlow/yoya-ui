@@ -1746,7 +1746,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(reactive.textContent).toContain('你好，Ada');
     expect(reactive.querySelector('[vn~="VLanguageSwitch"]')).not.toBeNull();
 
-    reactive.querySelector('.yoya-vdropdown-trigger').click();
+    reactive.querySelector('[vn~="VDropdownTrigger"]').click();
     const reactiveEnglish = reactive.querySelector('[vn~="VMenuItem"][data-language="en"]');
     reactiveEnglish.click();
 
@@ -1836,7 +1836,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     japaneseItem.click();
 
     expect(extend.textContent).toContain('こんにちは、Ada');
-    expect(extend.querySelector('.yoya-vdropdown-trigger').textContent).toContain('日本語');
+    expect(extend.querySelector('[vn~="VDropdownTrigger"]').textContent).toContain('日本語');
   });
 
   it('runs state node demos with update and rebuild modes', async () => {

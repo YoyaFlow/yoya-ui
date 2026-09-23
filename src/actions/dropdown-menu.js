@@ -1,14 +1,13 @@
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { MenuNode } from '../navigation/menu.js';
 import { vButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import { allocateId } from '../core/id.js';
 import {
-  componentClass,
-  dropdownPlacementStyles,
+  createComponentShortcut,
+  delegateNodeCommands,
   elementHasIdentity,
   isPlainObject,
   setupButtonSlot,
@@ -18,15 +17,14 @@ import {
 /** VDropdownMenu 的节点类型（不导出）；公开组件 `vDropdownMenu` 是 vNode 外壳。 */
 class DropdownMenuNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VDropdownMenu';
+    super('div', { vn: 'VDropdownMenu' });
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
     this._panelId = allocateId('yoya-vdropdown-panel');
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
     this._trigger = vButton('操作')
-      .className('yoya-vdropdown-trigger')
+      .setup({ vn: 'VDropdownTrigger VButton' })
       .attr({
         'aria-controls': this._panelId,
         'aria-expanded': 'false',
@@ -40,14 +38,13 @@ class DropdownMenuNode extends HtmlElementNode {
         }
       });
     this._trigger.on('keydown', (event) => this._handleTriggerKeydown(event));
-    this._menu = new MenuNode().className('yoya-vdropdown-content');
+    this._menu = new MenuNode().setup({ vn: 'VDropdownContent VMenu' });
     this._panel = new HtmlElementNode('div')
       .id(this._panelId)
-      .className('yoya-vdropdown-panel')
+      .setup({ vn: 'VDropdownPanel' })
       .attr('aria-hidden', 'true')
       .child(this._menu);
 
-    this.className(componentClass, 'yoya-vdropdown-menu');
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
       if (
@@ -90,7 +87,6 @@ class DropdownMenuNode extends HtmlElementNode {
 
     const placement = value || 'bottom-start';
     this.attr('data-placement', placement);
-    this._panel.styles(dropdownPlacementStyles(placement));
     return this;
   }
 
@@ -198,7 +194,7 @@ class DropdownMenuNode extends HtmlElementNode {
   }
 
   _focusTrigger() {
-    this._trigger._el?.focus();
+    this._trigger.focus?.();
   }
 
   _setupDropdownMenu(setup) {
@@ -262,14 +258,18 @@ class DropdownMenuNode extends HtmlElementNode {
   }
 }
 
-export function vDropdownMenu(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VDropdownMenu',
-    createNode: (setup) => new DropdownMenuNode(setup),
-    commands: ['trigger', 'menuContent', 'placement', 'closeOnSelect', 'open', 'close', 'toggle'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 下拉菜单（形态 B）：视图根是节点类型扩展 `DropdownMenuNode`（触发器 / 面板 / 内层菜单都是它的子节点、
+ * 全局关闭监听挂在它的 `destroy()` 上），外层 `vNode` 用 `delegateNodeCommands` 把节点类型的公开方法
+ * （`trigger` / `menuContent` / `placement` / `closeOnSelect` / `open` / `close` / `toggle`）与元素 DSL
+ * 整体补齐。面板定位按 `data-placement` 交给 CSS 规则（R5，不再写行内 placement 样式）。
+ */
+export function VDropdownMenu(props = {}) {
+  return vNode((api) => {
+    const node = new DropdownMenuNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export const VDropdownMenu = vDropdownMenu;
-defineComponentIdentity(VDropdownMenu, 'VDropdownMenu');
+export const vDropdownMenu = createComponentShortcut(VDropdownMenu, { props: true });

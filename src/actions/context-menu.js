@@ -1,11 +1,11 @@
-import { defineComponentIdentity } from '../core/node.js';
-import { createComponentShell } from '../components/component-shell.js';
 import { HtmlElementNode } from '../html/index.js';
 import { MenuNode } from '../navigation/menu.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { ref } from '../core/signals/handle.js';
+import { vNode } from '../core/v-node.js';
 import {
-  componentClass,
+  createComponentShortcut,
+  delegateNodeCommands,
   elementHasIdentity,
   isPlainObject,
   normalizePoint,
@@ -15,22 +15,21 @@ import {
 /** VContextMenu 的节点类型（不导出）；公开组件 `vContextMenu` 是 vNode 外壳。 */
 class ContextMenuNode extends HtmlElementNode {
   constructor(setup = null) {
-    super('div', null);
-    this._identity = 'VContextMenu';
+    super('div', { vn: 'VContextMenu' });
     this._closeOnSelect = true;
     this._globalCloseCleanup = null;
     // 内部状态用 ref 持有（票 01 约定）；open 是「默认真」写方法，无参不是读
     this._open = ref(false);
-    this._target = new HtmlElementNode('div')
-      .className('yoya-vcontext-target')
-      .on('contextmenu', (event) => {
+    this._target = new HtmlElementNode('div', { vn: 'VContextTarget' }).on(
+      'contextmenu',
+      (event) => {
         event.preventDefault();
         this.openAt(event);
-      });
-    this._menu = new MenuNode().className('yoya-vcontext-content');
-    this._panel = new HtmlElementNode('div').className('yoya-vcontext-panel').child(this._menu);
+      }
+    );
+    this._menu = new MenuNode().setup({ vn: 'VContextContent VMenu' });
+    this._panel = new HtmlElementNode('div', { vn: 'VContextPanel' }).child(this._menu);
 
-    this.className(componentClass, 'yoya-vcontext-menu');
     this._menu.on('click', (event) => {
       const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
       if (
@@ -190,14 +189,17 @@ class ContextMenuNode extends HtmlElementNode {
   }
 }
 
-export function vContextMenu(first = null, second = null, third = null) {
-  return createComponentShell({
-    identity: 'VContextMenu',
-    createNode: (setup) => new ContextMenuNode(setup),
-    commands: ['target', 'menuContent', 'closeOnSelect', 'openAt', 'open', 'close'],
-    args: [first, second, third, ...[...arguments].slice(3)]
+/**
+ * 右键菜单（形态 B）：视图根是节点类型扩展 `ContextMenuNode`（目标区 / 面板 / 内层菜单是它的子节点、
+ * 全局关闭监听挂在它的 `destroy()` 上）；外层 `vNode` 用 `delegateNodeCommands` 补齐命令面与元素 DSL。
+ * 面板坐标是**量测出来的**（`openAt` 的 `left` / `top`），仍写行内。
+ */
+export function VContextMenu(props = {}) {
+  return vNode((api) => {
+    const node = new ContextMenuNode(props);
+    delegateNodeCommands(api, node);
+    return node;
   });
 }
 
-export const VContextMenu = vContextMenu;
-defineComponentIdentity(VContextMenu, 'VContextMenu');
+export const vContextMenu = createComponentShortcut(VContextMenu, { props: true });
