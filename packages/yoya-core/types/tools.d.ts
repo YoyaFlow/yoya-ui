@@ -168,3 +168,6 @@ export function initYoyaTheme(options?: InitYoyaThemeOptions): {
 // ---------------------------------------------------------------------------
 // 这一族（`createComponentShortcut` / `applyComponentSetup` / `themeValue` …）在 0.8 之前
 // 没有单独的类型声明，运行期从本入口导出；类型面待补。
+
+// 唯一有类型的一条：实现与声明都在主入口，这里只是同一绑定的再导出。
+export { applyElementOptions } from './core.js';

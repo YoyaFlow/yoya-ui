@@ -4,6 +4,9 @@
 // `@yoyaflow/yoya-core`（票 06 §一）：第三方组件作者只装 core 就能写组件；这里把它们
 // 再导出一次，官方组件继续从 `../components/shared.js` 一处导入。
 export * from '@yoyaflow/yoya-core/internal/core/component-authoring.js';
+// `applyElementOptions` 的实现只在 core 的节点层（同绑定再导出，见 core 侧注释），
+// component-authoring 的聚合面不含它，所以这里显式补一条。
+export { applyElementOptions } from '@yoyaflow/yoya-core/internal/core/node.js';
 // 同模块内部助手（ui 保留下来的槽位装配要用它）
 import { runBuilder } from '@yoyaflow/yoya-core/internal/core/component-authoring.js';
 import {
