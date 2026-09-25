@@ -1,6 +1,6 @@
 # src 目录重组迁移方案（cut 1 已在目标仓建成并验证）
 
-**状态**：cut 1 完成并全绿（2026-09-25）；Transplant 待执行（方案 A）。
+**状态**：cut 1 完成并全绿，**已按方案 A 搬回主仓**（2026-09-25）。
 **配套票**：`.scratch/src-layout/README.md`、`issues/01`–`07`。
 **工具**：`.scratch/src-layout/tools/`（`target-migrate.mjs` / `target-cut1-config.mjs` / `check-move.mjs` / `fix-path-drift.mjs`）。
 
@@ -13,8 +13,8 @@
    `lint` / `format:check` / `tsc` / **225 测试文件 · 1766 条** / `build` / `verify:dist` 全通过。
 2. **搬迁不改语义**：目标仓与主仓的 82 个 `dist` 产物逐字节对比，**81 个完全相同**；唯一差异是
    `yoya.ui.css` 里两行注释的路径（迁移补刀）。DOM / 迁移金标 / 体积表 / 编译覆盖度基线全部不变。
-3. 搬回主仓走**方案 A：主仓开分支 `refactor/src-layout-v2` 分层搬迁**——保留可 bisect 的历史。
-   主仓 `release/0.7.0` 与工作区不受影响，随时可丢弃分支回退。
+3. 搬回主仓走**方案 A：主仓开分支 `refactor/src-layout-v2` 整树搬迁**——保留可 bisect 的历史。
+   主仓 `release/0.7.0` 不动，随时可丢弃分支回退。执行结果见 §7。
 4. 目标仓的价值有二：**先验证**（新模式全量门禁在独立目录跑通，主仓零风险）+ **生成清单**
    （`check-move.mjs` 的文件映射即搬迁清单）。
 
@@ -178,6 +178,18 @@ node .scratch/src-layout/tools/fix-path-drift.mjs --target <目标仓> [--check]
 `yoya.ui.css` 126.1 KB / 预算 128（gzip 22.1，因两行注释变长 +0.1）。
 
 ## 7. Transplant（方案 A：源码搬回主仓，保历史）
+
+**本次执行结果（2026-09-25）**：
+
+| 项            | 值                                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| 分支          | `refactor/src-layout-v2`（未合并；`release/0.7.0` 停在 `1b8df0c`）                                            |
+| C1 迁移前基线 | `58e6aca`（cut 1 前的全部未提交改动 + 本方案文档）；tag `backup/pre-src-layout`                               |
+| C2 搬迁       | `77fd517`：210 个 rename + 38 M + 3 A/3 D                                                                     |
+| 逐文件校验    | 对应目标仓的 **759 个文件 MD5 全部相同**；`dist` 82 个产物逐一相同                                            |
+| 门禁          | 搬迁前 / 搬迁后同口径：lint ✓、format:check ✓、tsc ✓、vitest **225 文件 / 1766 条** ✓、build ✓、verify:dist ✓ |
+
+命令序列（可复跑）：
 
 ```bash
 cd D:\code\yoyaflow\yoya-ui
