@@ -55,8 +55,8 @@ function scopeEntryOf(file) {
     return `${PACKAGE_NAME}/${CATEGORY_ENTRIES[category]}`;
   }
   if (category === 'svg') {
-    // 0.8 起图标集在 core 的 `/svg` 子入口（主入口只留渲染原语）
-    return `${CORE_SPECIFIER}/svg`;
+    // 图标集随 core 发布（主入口含 svg 元素面）
+    return CORE_SPECIFIER;
   }
   return `${PACKAGE_NAME}/ui`;
 }

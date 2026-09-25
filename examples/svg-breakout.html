@@ -6,7 +6,7 @@
     <title>yoya-ui SVG 打砖块</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.2/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.css"
     />
     <style>
       * {
@@ -277,6 +277,7 @@
   <body>
     <main id="app"></main>
     <script type="module">
+      // 单文件自包含入口：一个文件 = 一份 core 实例（含 HTML/SVG 元素面）。
       import {
         computed,
         div,
@@ -285,8 +286,7 @@
         svgs,
         vNode,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.2/dist/yoya.core.min.js';
-
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.core.min.js';
       /* 注意：不可证伪的怀疑是偏见，可证伪的怀疑才是风控， 本项目不是做一个游戏，而是为了验证 YoyaUI的能力和代码使用是否舒服
        * 分层与项目 features 模块同构，单文件演示把三层放在一起：
        * - BreakoutPageState：状态与动作（真实项目放 features/breakout/api/breakout.state.js，默认导出）

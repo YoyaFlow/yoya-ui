@@ -260,9 +260,10 @@ describe('foundation module structure', { timeout: 30000 }, () => {
     expect(api.vTd).toBe(components.vTd);
     expect(coreEntry.div).toBe(html.div);
     // 0.8 起：svg 与 i18n/a11y/theme 不再挂 core 主入口（主入口只留渲染必需的原语）
-    expect(coreEntry.svg).toBeUndefined();
-    expect(coreEntry.svgs).toBeUndefined();
-    expect(coreEntry.SearchOutlined).toBeUndefined();
+    // svg 元素面仍在 core 主入口（与 html 工厂同口径）；i18n / a11y / theme 走 `/tools`
+    expect(coreEntry.svg).toBe(svg.svg);
+    expect(coreEntry.svgs).toBe(svg.svgs);
+    expect(coreEntry.SearchOutlined).toBeTypeOf('function');
     expect(coreEntry.createI18n).toBeUndefined();
     expect(coreEntry.initYoyaTheme).toBeUndefined();
     expect(coreEntry.HtmlElementNode).toBeTypeOf('function');

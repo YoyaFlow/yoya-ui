@@ -251,8 +251,6 @@ export function renderModule(options) {
     // 节点通道要给活结点建包装对象（tr / td / a …）：产物**自己 import**这些元素工厂，
     // 不再让调用方塞进 scope（票 13 / R4：编译产物不是业务接口）。
     coreSpecifier = '@yoyaflow/yoya-core',
-    // SVG 元素工厂的入口（0.8 起 `svg` / `svgs` / 图标集不在 core 主入口上）
-    svgSpecifier = '@yoyaflow/yoya-core/svg',
     contentGuard = false
   } = options;
 
@@ -402,15 +400,13 @@ export function renderModule(options) {
   const runtimeImport = (names) =>
     `import { ${names.join(', ')} } from ${JSON.stringify(runtime)};\n`;
   const planExport = `\nexport const plan = ${JSON.stringify(plan, null, 2)};\n\n`;
-  // 元素工厂分布在两个入口：HTML 工厂在 core 主入口，SVG 工厂在 `/svg`（0.8 起的入口面）。
-  // 产物自己 import 它们（票 13 / R4），所以这里要按名字分流到正确的说明符。
-  // `svgs` 本身（工厂表）也属于 svg 入口；其余按各自工厂名分流
-  const svgFactoryNames = new Set([...Object.keys(core?.svgs ?? {}), 'svgs']);
-  const coreNames = [...coreImportNames].filter((name) => !svgFactoryNames.has(name)).sort();
-  const svgNames = [...coreImportNames].filter((name) => svgFactoryNames.has(name)).sort();
-  const importLine = (names, specifier) =>
-    names.length > 0 ? `import { ${names.join(', ')} } from ${JSON.stringify(specifier)};\n` : '';
-  const coreImport = importLine(coreNames, coreSpecifier) + importLine(svgNames, svgSpecifier);
+  // 产物自己 import 元素工厂（票 13 / R4）。HTML 与 SVG 工厂都在 core 主入口（含 svg 元素面）。
+  const coreImport =
+    coreImportNames.size > 0
+      ? `import { ${[...coreImportNames].sort().join(', ')} } from ${JSON.stringify(
+          coreSpecifier
+        )};\n`
+      : '';
 
   // 组件产物：绑定函数写进已有的占位子树（调用方片段里嵌进来的那一棵），
   // scope 是组件原模块的命名空间（只允许 import 绑定的自由标识符）。

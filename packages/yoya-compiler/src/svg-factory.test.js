@@ -26,8 +26,7 @@ const runtimeUrl = pathToFileURL(
 ).href;
 
 const source = [
-  "import { svg } from '@yoyaflow/yoya-core/svg';",
-  "import { vText } from '@yoyaflow/yoya-core';",
+  "import { svg, vText } from '@yoyaflow/yoya-core';",
   '',
   'export function Icon(props) {',
   '  return svg((root) => {',
@@ -108,9 +107,7 @@ describe('SVG 工厂与 attr 对象形式', () => {
       if (mode === 'node') {
         expect(result.module).toContain('svgs.path');
         // 0.8 起 svg 工厂表与 svg 工厂都来自 `/svg` 子入口
-        expect(result.module).toMatch(
-          /import \{[^}]*\bsvgs\b[^}]*\} from "@yoyaflow\/yoya-core\/svg"/
-        );
+        expect(result.module).toMatch(/import \{[^}]*\bsvgs\b[^}]*\} from "@yoyaflow\/yoya-core"/);
       }
       const product =
         mode === 'element'

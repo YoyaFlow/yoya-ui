@@ -182,7 +182,7 @@ describe('端到端：业务源码链接库内组件', () => {
   // （带内容的容器组件见下一条用例：内容内联不了就整体回落，不产半成品。）
   const source = [
     "import { div, vText } from '@yoyaflow/yoya-core';",
-    "import { ArrowDownOutlined } from '@yoyaflow/yoya-core/svg';",
+    "import { ArrowDownOutlined } from '@yoyaflow/yoya-core';",
     '',
     'export function Panel(props) {',
     '  return div((root) => {',

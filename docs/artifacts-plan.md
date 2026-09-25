@@ -183,18 +183,23 @@ tarball 估算：1956 kB → 约 1 MB（压缩对重复代码更敏感，实际�
 
 做法（每条都为了「用不到的子系统不进 bundle」）：
 
-- core 主入口（`src/core/index.js`）不再 re-export i18n / a11y / theme / 组件作者助手，`src/index.js`
-  也不再 re-export svg。新入口：`./tools`（a11y + i18n + **theme** + **component-authoring**）、
-  `./dev`（devtools）；svg 走既有的 `./svg`（工厂 + 图标集）。**`vText` 与 `slot` 仍在 core**：
+- core 主入口（`src/core/index.js`）不再 re-export i18n / a11y / theme / 组件作者助手。新入口：
+  `./tools`（a11y + i18n + **theme** + **component-authoring**）、`./dev`（devtools）。
+  **svg 元素面（工厂 + 图标集）留在 core 主入口**（2026-09-25 决定：与 `html` 工厂同口径，
+  拆出去只省 ≈2 kB，却让「CDN 单文件」与深引路径同时失去 svg，不划算）；`./svg` 仍保留为显式子入口。
+  **`vText` 与 `slot` 也仍在 core**：
   `slot.js` 只被 `node.js` 内部使用，`vText` 是元素/节点通道的基础原语。
 - ui 侧：根入口（`ui-router.js` / `ui-full.js` / 仓内 `index.js`）保持**全量面**（core + svg + tools +
   组件 + router），组件库用户照旧一个入口拿全；新增 `./svg` 子入口与 `yoya.svg.js` 转发壳。
+- **CDN 单文件必须自带完整元素面**：`yoya.core.js`（打 core 主入口）与 `yoya.router.full.js` 都含
+  html + svg 工厂与图标集，这样一个 `<script type="module">` 就能画 HTML 与 SVG、且全页只有一份 core。
+  反过来，`yoya.svg.js` / `yoya.tools.js` / `yoya.dev.js` 是**转发壳**（内部裸包名），CDN 直用需要
+  import map；打包器用户无需关心。
 - `./internal/*` 通配 → **白名单**（15 条 core / svg 内部路径 + `internal/types/*`）；
   `skeleton-plan.js` 迁出生产图（`src/testing/`，只有自己的测试引用）。
 - 编译器跟着入口面走：`static-values.js` 改从 `/tools` 取 `themeValue` / `themeBorder`（并把
-  `@yoyaflow/yoya-core/tools` 纳入可折叠来源）；产物发射按名字分流——HTML 工厂来自 core 主入口、
-  SVG 工厂来自 `/svg`（新增 `svgSpecifier` 选项，默认 `@yoyaflow/yoya-core/svg`）；注册表的图标 scope
-  也改指 `/svg`。
+  `@yoyaflow/yoya-core/tools` 纳入可折叠来源）；元素工厂（HTML + SVG）都仍从 core 主入口发射，
+  注册表的图标 scope 也仍是 core（svg 回到主入口后不需要分流）。
 - ui 侧新增 `src/tools.js` / `src/dev.js`（转发 core），并在构建的 legacy 列表里产出
   `dist/yoya.tools.js` / `dist/yoya.dev.js`（+ `.min.js`）转发壳；老 `./devtools` 路径保留。
 - 类型面同步拆分：`types/tools.d.ts`（a11y + i18n 声明从 `types/core.d.ts` 迁出）、`types/dev.d.ts`；

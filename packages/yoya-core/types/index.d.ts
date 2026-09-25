@@ -3,3 +3,4 @@
  */
 export * from './core.js';
 export * from './html.js';
+export * from './svg.js';

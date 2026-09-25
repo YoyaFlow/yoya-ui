@@ -25,8 +25,8 @@
 ## 运行期形态：两选一
 
 ```js
-// 只要引擎（含 HTML/SVG/信号/SSR/authoring/slot）
-import { div, vNode } from '@yoyaflow/yoya-core';
+// 只要引擎（含 HTML/SVG 元素面、信号、SSR、authoring、slot）
+import { div, svg, vNode } from '@yoyaflow/yoya-core';
 
 // 辅助工具（a11y + i18n）单独走工具入口——不进主入口，打包器才不会把它拖进每个应用
 import { createI18n, announce } from '@yoyaflow/yoya-core/tools';
@@ -59,9 +59,13 @@ npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
 - **自包含入口**（`yoya.core.js` / `yoya.api.js` / `yoya.ui.full.js` / `yoya.router.full.js` /
   `yoya.ui-router.full.js`）：core **内联**成单文件（"full 就是全包含"），适合 CDN 直用；
   **不要与 `@yoyaflow/yoya-core` 混用**（双副本会让 `instanceof` / 身份判定失配，见 `docs/ssr.md`）。
+  其中 `yoya.core.js` = core 原语 **+ svg 元素面**（html / svg 工厂与图标集），这样一个 `<script>` 就能
+  拿到全部元素原语、且全页只有一份 core；增量入口 `yoya.svg.js` / `yoya.tools.js` / `yoya.dev.js`
+  是**转发壳**（内部是裸包名），CDN 直用需要 import map，打包器用户无需关心。
 
-**入口面**（0.8 起）：主入口只留渲染必需的原语（节点 / 元素与 SVG 工厂 / 信号 / keyed / `vText` /
-`slot` / 组件作者契约）；`/tools` 放 a11y + i18n；`/dev` 放 devtools。旧路径
+**入口面**（0.7.2 起）：主入口 = 渲染原语 + 元素面（节点 / HTML 与 **SVG 工厂 + 图标集** / 信号 /
+`keyed` / `vText` / `slot`）；`/tools` 放 a11y + i18n + theme + 组件作者契约；`/dev` 放 devtools；
+`/svg` 仍是显式子入口（与主入口同一份实现）。旧路径
 `@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools` 仍是可用别名。
 
 ## 常用命令

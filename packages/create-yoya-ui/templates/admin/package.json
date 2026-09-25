@@ -17,8 +17,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@yoyaflow/yoya-core": "0.7.2",
-    "@yoyaflow/yoya-ui": "0.7.2"
+    "@yoyaflow/yoya-core": "0.7.3",
+    "@yoyaflow/yoya-ui": "0.7.3"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

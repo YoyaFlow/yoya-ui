@@ -126,6 +126,7 @@ for (const [legacy, target] of LEGACY_INCREMENTAL) {
 // 关键：走 workspace 解析插件（`@yoyaflow/yoya-core*` → `packages/yoya-core/src/*`）。
 // 否则裸包名会被解析到 core 的 **dist 镜像**，同一份 bundle 里就出现两份 core（单例失配）。
 const SELF_CONTAINED = [
+  // core 主入口本身含 svg 元素面，CDN 单文件按它打即可（核心入口 = 元素原语全家）
   ['yoya.core.js', 'packages/yoya-core/src/index.js'],
   ['yoya.api.js', 'packages/yoya-core/src/api.js'],
   ['yoya.ui.full.js', 'packages/yoya-ui/src/ui-full.js'],
