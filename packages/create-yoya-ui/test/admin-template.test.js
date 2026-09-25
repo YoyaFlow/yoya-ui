@@ -104,12 +104,19 @@ describe('create-yoya-ui admin template', () => {
 
       // 模板的 vite 配置：仓库内跑时把子入口指到 `packages/yoya-ui/src/yoya.<子入口>.js`
       // （少了别名就是 `Failed to resolve import "@yoyaflow/yoya-core/api"`，模板直接白屏）
-      const templateDir = file.slice(0, file.indexOf('\\src\\'));
+      //
+      // 路径分隔符要**先归一化**：CI 在 Linux 上跑，写死 `\src\` 会让 indexOf 返回 -1，
+      // slice(0, -1) 会把文件名砍掉一个字符（曾报 `templates/ssr/src/client.j/vite.config.js`）。
+      const posixFile = file.replace(/\\/g, '/');
+      const templateDir = posixFile.slice(0, posixFile.indexOf('/src/'));
       const config = readFileSync(join(templateDir, 'vite.config.js'), 'utf8');
 
       if (!/find:\s*\/\^@yoyaflow\\\/yoya-ui\\\/\(\[\\w\.-\]\+\)\$\//.test(config)) {
         failures.push(
-          `${relative}: 模板用了子入口 ${[...used].join(' / ')}，但 ${templateDir.replace(`${TEMPLATES}\\`, '')}/vite.config.js 没有子入口本地别名`
+          `${relative}: 模板用了子入口 ${[...used].join(' / ')}，但 ${templateDir.replace(
+            `${TEMPLATES.replace(/\\/g, '/')}/`,
+            ''
+          )}/vite.config.js 没有子入口本地别名`
         );
       }
     });
