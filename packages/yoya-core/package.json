@@ -41,6 +41,7 @@
   "files": [
     "dist",
     "types",
+    "!types/*.test-d.ts",
     "LICENSES",
     "THIRD-PARTY-NOTICES.md"
   ],
