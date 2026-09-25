@@ -1,4 +1,4 @@
-import { section, vCard } from '../src/index.js';
+import { section, vCard } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import { CodeExample1 } from './demos/code.js';
 import { DropdownMenuExample1 } from './demos/dropdown-menu.js';

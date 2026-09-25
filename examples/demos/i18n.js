@@ -8,7 +8,7 @@ import {
   unregisterI18n,
   vLanguageSwitch,
   vstack
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 export function I18nReactiveExample1() {
   const locale = createI18n({

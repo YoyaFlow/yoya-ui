@@ -10,7 +10,7 @@ import {
   SvgElementNode,
   vNode,
   vText
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 /**
  * 三个单文件 SVG 演示是自包含 HTML：内联模块从 CDN 引库，因此测试抽出台本，

@@ -1,4 +1,4 @@
-import { section, vCard } from '../src/index.js';
+import { section, vCard } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import {
   DigitalBoardDemo,

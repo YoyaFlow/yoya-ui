@@ -1,0 +1,61 @@
+{
+  "name": "@yoyaflow/yoya-compiler",
+  "version": "0.7.0",
+  "description": "yoya-ui build-time compiler: shape-only analysis and emission for the yoya-ui DSL. It knows no component names — it consumes @yoyaflow/yoya-core interface tables and an optional component registry.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./bin": "./dist/bin.js",
+    "./plugin": "./dist/plugin.js",
+    "./registry": "./dist/registry.js",
+    "./report": "./dist/report.js",
+    "./internal/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "yoya-compiler": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-packages.mjs compiler",
+    "test": "vitest run packages/yoya-compiler",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "vite",
+    "compiler",
+    "build-time",
+    "yoya-ui"
+  ],
+  "author": "zhanglj",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoyaflow/yoya-ui.git"
+  },
+  "homepage": "https://github.com/yoyaflow/yoya-ui#readme",
+  "bugs": {
+    "url": "https://github.com/yoyaflow/yoya-ui/issues"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "peerDependencies": {
+    "@yoyaflow/yoya-core": "^0.7.0",
+    "@babel/parser": "^7.29.0",
+    "@yoyaflow/yoya-ui": "^0.7.0"
+  },
+  "peerDependenciesMeta": {
+    "@babel/parser": {
+      "optional": true
+    },
+    "@yoyaflow/yoya-ui": {
+      "optional": true
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { renderToString } from '../src/core/ssr.js';
-import * as yoya from '../src/index.js';
+import { renderToString } from '@yoyaflow/yoya-core/ssr';
+import * as yoya from '@yoyaflow/yoya-ui';
 import { docsRouteLoaders } from './index.router.js';
 
 /**

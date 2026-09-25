@@ -1,4 +1,4 @@
-import { div, ref, vDynamicLoader, vText, vstack } from '../../src/index.js';
+import { div, ref, vDynamicLoader, vText, vstack } from '@yoyaflow/yoya-ui';
 
 const STATE_LABELS = {
   error: '加载失败',

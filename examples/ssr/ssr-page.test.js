@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hydrate, parseState, renderToString } from '../../src/yoya.ssr.js';
+import { hydrate, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
 import { createLocale, createSsrPage } from './page.js';
 
 describe('SSR example page', () => {

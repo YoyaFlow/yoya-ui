@@ -13,8 +13,8 @@ import {
   vSplitPanel,
   vThemeModeSwitch,
   vTree
-} from '../src/index.js';
-import '../src/yoya.ui.css';
+} from '@yoyaflow/yoya-ui';
+import '@yoyaflow/yoya-ui/internal/yoya.ui.css';
 import { applyDemoStyles } from './demo-styles.js';
 
 const componentMenuSections = [

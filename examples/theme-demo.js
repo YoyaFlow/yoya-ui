@@ -1,4 +1,4 @@
-import { ref, vButton, vCard, vColorPicker, vText, vThemeModeSwitch } from '../src/index.js';
+import { ref, vButton, vCard, vColorPicker, vText, vThemeModeSwitch } from '@yoyaflow/yoya-ui';
 
 /**
  * 主题切换演示：明暗模式、紧凑密度、品牌主色（raw 覆盖）。

@@ -1,4 +1,4 @@
-import { computed, div, ul, ref, vNode, vText, vstack } from '../../src/index.js';
+import { computed, div, ul, ref, vNode, vText, vstack } from '@yoyaflow/yoya-ui';
 import { componentSource } from '../component-source.js';
 
 /**

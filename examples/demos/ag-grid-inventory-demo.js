@@ -1,4 +1,4 @@
-import { div, vNode } from '../../src/index.js';
+import { div, vNode } from '@yoyaflow/yoya-ui';
 import { vAgGrid } from './ag-grid-glue.js';
 
 export function AgGridInventoryExample() {

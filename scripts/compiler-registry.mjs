@@ -22,13 +22,18 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rolldown } from 'rolldown';
-import { buildComponentRegistry } from '../src/compiler/registry.js';
-import { componentKeyOf } from '../src/compiler/component-key.js';
-import * as core from '../src/yoya.core.js';
+import { ensureWorkspaceLinks } from './workspace-links.mjs';
 
-const PACKAGE_NAME = JSON.parse(readFileSync('package.json', 'utf8')).name;
+ensureWorkspaceLinks();
+// 仓库侧工具直接用**源码**路径：注册表生成不该依赖"先构建过编译器包"
+import { buildComponentRegistry } from '../packages/yoya-compiler/src/registry.js';
+import { componentKeyOf } from '../packages/yoya-compiler/src/component-key.js';
+import * as core from '@yoyaflow/yoya-core';
+
+// 注册表的键按**组件包**（快线）归口：根 package.json 现在是 workspace 根，名字不是包名。
+const PACKAGE_NAME = JSON.parse(readFileSync('packages/yoya-ui/package.json', 'utf8')).name;
 const RUNTIME_SPECIFIER = `${PACKAGE_NAME}/compiler-runtime`;
-const CORE_SPECIFIER = `${PACKAGE_NAME}/core`;
+const CORE_SPECIFIER = '@yoyaflow/yoya-core';
 /** 分类目录 → 包内入口（组件都从分类入口再导出；这份表只描述打包路径，不认识组件名）。 */
 const CATEGORY_ENTRIES = {
   actions: 'actions',
@@ -41,7 +46,7 @@ const CATEGORY_ENTRIES = {
 
 /** 组件文件 → scope 模块的来源：分类入口优先，`svg`（图标）走 core，其余回落 `/ui`。 */
 function scopeEntryOf(file) {
-  const category = file.replace(/^src[\\/]/, '').split(/[\\/]/)[0];
+  const category = file.replace(/^packages[\\/][^\\/]+[\\/]src[\\/]/, '').split(/[\\/]/)[0];
   if (CATEGORY_ENTRIES[category]) {
     return `${PACKAGE_NAME}/${CATEGORY_ENTRIES[category]}`;
   }
@@ -51,14 +56,24 @@ function scopeEntryOf(file) {
   return `${PACKAGE_NAME}/ui`;
 }
 
+/** 条目归属于哪个包：core 里的组件（图标集）记 `@yoyaflow/yoya-core`，其余记组件包。 */
+function packageOfFile(file) {
+  return /^packages[\\/]yoya-core[\\/]/.test(file) ? CORE_SPECIFIER : PACKAGE_NAME;
+}
+
+// 拆包后库源码分散在两个包；扫描根按包列（顺序稳定，产物可比对）。
+const SOURCE_ROOTS = ['packages/yoya-core/src', 'packages/yoya-ui/src'];
+
 /** 扫描目录里的候选组件（顶层导出函数 / 类），排除测试、示例与编译工具本身。 */
 function candidateFiles() {
-  return readdirSync('src', { recursive: true })
-    .filter((file) => file.endsWith('.js'))
-    .filter((file) => !file.includes('.test.'))
-    .filter((file) => !file.split(/[\\/]/)[0].includes('compiler'))
-    .filter((file) => !file.split(/[\\/]/)[0].includes('examples'))
-    .map((file) => join('src', file));
+  return SOURCE_ROOTS.flatMap((root) =>
+    readdirSync(root, { recursive: true })
+      .filter((file) => file.endsWith('.js'))
+      .filter((file) => !file.includes('.test.'))
+      .filter((file) => !file.split(/[\\/]/)[0].includes('compiler'))
+      .filter((file) => !file.split(/[\\/]/)[0].includes('examples'))
+      .map((file) => join(root, file))
+  );
 }
 
 /** 形状扫描：`src` 里所有顶层导出函数 / 类都是候选（编不出来就跳过，不写组件名单）。 */
@@ -109,7 +124,7 @@ export async function buildPackagedRegistry({
     registryName: 'components.registry.js',
     dataName: 'components.registry.json',
     // 键与 scope 都按打包口径（不是"相对项目根的文件路径"）
-    keyOf: (entry) => componentKeyOf(PACKAGE_NAME, entry.export),
+    keyOf: (entry) => componentKeyOf(packageOfFile(entry.file), entry.export),
     scopeSpecifierOf: (entry) => scopeEntryOf(entry.file)
   });
 
@@ -126,7 +141,8 @@ export async function buildPackagedRegistry({
   writeFileSync(join(tmpDir, 'entry.js'), entryModule, 'utf8');
 
   // 打成单文件入口（`@yoyaflow/yoya-ui/*` 保持 external：由使用者那一侧解析、tree-shake）
-  const isExternal = (id) => id.startsWith(`${PACKAGE_NAME}/`);
+  const isExternal = (id) =>
+    id.startsWith(`${PACKAGE_NAME}/`) || id.startsWith(`${CORE_SPECIFIER}/`);
   // rolldown 的 input 走**绝对路径 + 正斜杠**：相对路径在 Windows 上会给反斜杠，
   // 以 `.` 开头的目录（`.scratch/...`）还会被当成裸模块说明符
   const entryPath = resolve(tmpDir, 'entry.js').replaceAll('\\', '/');
@@ -135,15 +151,6 @@ export async function buildPackagedRegistry({
     dir: outDir,
     format: 'es',
     entryFileNames: 'yoya.compiled-registry.js',
-    codeSplitting: false
-  });
-
-  const minBundle = await rolldown({ input: entryPath, external: isExternal });
-  await minBundle.write({
-    dir: outDir,
-    format: 'es',
-    entryFileNames: 'yoya.compiled-registry.min.js',
-    minify: true,
     codeSplitting: false
   });
 
@@ -187,7 +194,6 @@ export async function buildPackagedRegistry({
     candidates: entries.length,
     files: {
       module: join(outDir, 'yoya.compiled-registry.js'),
-      minModule: join(outDir, 'yoya.compiled-registry.min.js'),
       data: join(outDir, 'yoya.compiled-registry.json')
     }
   };
@@ -195,17 +201,20 @@ export async function buildPackagedRegistry({
 
 /** 直接跑（`node scripts/compiler-registry.mjs` / `npm run build:registry`）时打印摘要。 */
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-  const result = await buildPackagedRegistry();
+  // 产物的归宿是**组件包**（@yoyaflow/yoya-ui 的 ./compiled-registry 子入口）
+  const result = await buildPackagedRegistry({
+    outDir: 'packages/yoya-ui/dist',
+    tmpDir: 'build/compiled-registry'
+  });
   const size = (path) => (readFileSync(path).length / 1024).toFixed(1);
   console.log(
     `库内组件注册表：候选 ${result.candidates} · 可编 ${result.compiled.length} · 跳过 ${result.skipped.length}`
   );
   console.log(
     `  ${result.files.module} ${size(result.files.module)} KB` +
-      ` · .min.js ${size(result.files.minModule)} KB` +
       ` · .json ${size(result.files.data)} KB`
   );
   console.log(
-    '  导入面：@yoyaflow/yoya-ui/core（图标）/ /ui / /<分类>（组件）+ /compiler-runtime——不引用 src 路径'
+    '  导入面：@yoyaflow/yoya-core（图标）/ /ui / /<分类>（组件）+ /compiler-runtime——不引用 src 路径'
   );
 }

@@ -1,4 +1,4 @@
-import { computed, ref, section, vCard, vNode, vText } from '../src/index.js';
+import { computed, ref, section, vCard, vNode, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import { ComplexWorkbenchExample, complexBlocksSource } from './demos/definition-complex.js';
 

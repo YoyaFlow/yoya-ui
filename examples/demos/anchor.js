@@ -1,4 +1,4 @@
-import { section, vContainer } from '../../src/index.js';
+import { section, vContainer } from '@yoyaflow/yoya-ui';
 
 export function AnchorStandaloneDemo() {
   const addSection = (id, title, text) =>

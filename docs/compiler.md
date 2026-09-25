@@ -160,8 +160,8 @@ Compiles (constant structure, classifiable values):
 
 **Build-time constant folding**: a static value is not limited to a literal. Three shapes that
 "compute to the same value at build time" also fold — a module-level `const X = 'literal'`
-(including template concatenation), the library constant `componentClass`, and the library theme
-helpers `themeValue()` / `themeBorder()` (their arguments must be static too). Folding calls the
+(including template concatenation) and the library theme helpers `themeValue()` / `themeBorder()`
+(their arguments must be static too). Folding calls the
 **same implementation**, it does not copy the formula; and only these names imported from
 `components/shared.js` fold — a local function of the same name, or an imported name shadowed by a
 parameter, is left alone (it bails as before), because guessing a value is exactly how an unknown
@@ -511,7 +511,7 @@ branching, components using module-private helpers (non-import bindings), cross-
 
 A component compile unit carries the original module's `import` declarations and module-level `const`
 declarations into the synthetic source: build-time constant folding (module literals,
-`componentClass`, `themeValue` / `themeBorder` — see §3) reads them, otherwise only hard-coded
+`themeValue` / `themeBorder` — see §3) reads them, otherwise only hard-coded
 literals inside a component could ever compile. Functions and classes outside the view are not
 analysed.
 

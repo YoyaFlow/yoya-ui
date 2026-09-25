@@ -9,7 +9,7 @@ import {
   vText,
   vTr,
   vstack
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { componentSource } from '../component-source.js';
 
 export function StateCounterExample1() {

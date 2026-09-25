@@ -1,4 +1,4 @@
-import { div, ref, section, vButtons, vCard, vText } from '../src/index.js';
+import { div, ref, section, vButtons, vCard, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含按钮组内容，不包含 Card。

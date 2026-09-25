@@ -1,4 +1,4 @@
-import { aside } from '../src/index.js';
+import { aside } from '@yoyaflow/yoya-ui';
 
 function buildImportBlock(imports = []) {
   const yoyaNames = imports.filter((entry) => typeof entry === 'string').join(', ');

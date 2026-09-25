@@ -1,4 +1,4 @@
-import { div, vNode } from '../../src/index.js';
+import { div, vNode } from '@yoyaflow/yoya-ui';
 import { Compartment } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, basicSetup } from 'codemirror';

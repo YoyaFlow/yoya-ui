@@ -17,8 +17,8 @@ import { cpSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from
 import { cpus, platform, release } from 'node:os';
 import { extname, join, normalize, relative, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
-import * as core from '../src/yoya.core.js';
-import { compileSource, elementWhitelistOf } from '../src/compiler/index.js';
+import * as core from '@yoyaflow/yoya-core';
+import { compileSource, elementWhitelistOf } from '../packages/yoya-compiler/src/index.js';
 
 const root = resolve(import.meta.dirname, '..');
 const shapesDir = join(root, 'benchmark/shapes');
@@ -51,8 +51,8 @@ function buildCompiledRow() {
     mode: 'node',
     core,
     whitelist: elementWhitelistOf(core),
-    runtime: '/src/compiler/runtime.js',
-    coreSpecifier: '/src/yoya.core.js'
+    runtime: '/packages/yoya-core/src/core/compiler-runtime.js',
+    coreSpecifier: '/packages/yoya-core/src/index.js'
   });
   if (!result.compiled) {
     throw new Error(`行夹具编不出来：${result.bails.map((bail) => bail.reason).join(' | ')}`);

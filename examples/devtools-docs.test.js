@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { disableDevtools } from '../src/yoya.devtools.js';
+import { disableDevtools } from '@yoyaflow/yoya-ui/devtools';
 import { DevtoolsDocumentationPage } from './devtools-docs.js';
 
 describe('devtools documentation page', () => {

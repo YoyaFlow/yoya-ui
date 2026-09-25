@@ -1,4 +1,4 @@
-import { computed, ref, section, vText } from '../src/index.js';
+import { computed, ref, section, vText } from '@yoyaflow/yoya-ui';
 import { KeyedTableExample } from './demos/keyed-table.js';
 import { ComponentSource } from './component-source.js';
 

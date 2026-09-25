@@ -7,8 +7,8 @@ import {
   vFormItem,
   vInput,
   vLink
-} from '../../src/index.js';
-import { vEchart } from '../../src/yoya.echart.js';
+} from '@yoyaflow/yoya-ui';
+import { vEchart } from '@yoyaflow/yoya-ui/echart';
 
 const messages = {
   'zh-CN': {

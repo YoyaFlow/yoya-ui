@@ -1,4 +1,4 @@
-import { div, ref, vConfirm, vText } from '../../src/index.js';
+import { div, ref, vConfirm, vText } from '@yoyaflow/yoya-ui';
 
 export function ConfirmExample() {
   const result = ref('尚未确认');

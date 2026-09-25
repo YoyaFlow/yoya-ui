@@ -1,4 +1,4 @@
-import { hstack, vSidebar, vstack } from '../../src/index.js';
+import { hstack, vSidebar, vstack } from '@yoyaflow/yoya-ui';
 
 export function CommandMenuCard({ toast }) {
   return vstack((stack) => {

@@ -1,4 +1,4 @@
-import { ref, vCard, vText } from '../src/index.js';
+import { ref, vCard, vText } from '@yoyaflow/yoya-ui';
 
 const breakpoints = [
   { minWidth: 0, columns: 1 },

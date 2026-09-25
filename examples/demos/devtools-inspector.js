@@ -1,4 +1,4 @@
-import { div, keySet, p, pre, ref, vNode, vText } from '../../src/index.js';
+import { div, keySet, p, pre, ref, vNode, vText } from '@yoyaflow/yoya-ui';
 import '../devtools-inspector.css';
 import {
   disableDevtools,
@@ -7,7 +7,7 @@ import {
   getDevtoolsScope,
   getDevtoolsSnapshot,
   subscribeDevtools
-} from '../../src/yoya.devtools.js';
+} from '@yoyaflow/yoya-ui/devtools';
 
 /** 日志面板的事件筛选选项：与 devtools 事件契约保持同序。 */
 const EVENT_FILTERS = [

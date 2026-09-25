@@ -1,4 +1,4 @@
-import { div, ref, section, vCard, vForm, vRadio, vRadios, vText } from '../src/index.js';
+import { div, ref, section, vCard, vForm, vRadio, vRadios, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含单选框内容，不包含 Card。

@@ -1,4 +1,4 @@
-import { section } from '../src/index.js';
+import { section } from '@yoyaflow/yoya-ui';
 
 const INTEROP_DEMOS = Object.freeze([
   ['quill', 'Quill 富文本编辑', '需要富文本输入与 HTML/纯文本导出时直接嵌入 Quill。'],

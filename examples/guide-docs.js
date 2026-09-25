@@ -1,4 +1,4 @@
-import { section } from '../src/index.js';
+import { section } from '@yoyaflow/yoya-ui';
 
 function createGuidePage(config) {
   return section((page) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ViewNode } from '../../src/core/node.js';
+import { ViewNode } from '@yoyaflow/yoya-core/internal/core/node.js';
 import { PaginationExample1 } from './pagination.js';
 
 describe('PaginationExample1', () => {

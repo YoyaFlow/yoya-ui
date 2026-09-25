@@ -1,4 +1,4 @@
-import { vNode } from '../../src/index.js';
+import { vNode } from '@yoyaflow/yoya-ui';
 import { vAgGrid } from './ag-grid-glue.js';
 
 /** 行内富文本：元素 + textContent 组装，避免用 innerHTML 拼数据。 */

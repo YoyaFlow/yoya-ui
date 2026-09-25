@@ -9,7 +9,7 @@ import {
   vText,
   vTooltip,
   vstack
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 const feedbackDocsDefinitions = Object.freeze({

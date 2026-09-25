@@ -9,7 +9,7 @@ import {
   vSkeleton,
   vTransition,
   vNode
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 const SVG_SMALL =

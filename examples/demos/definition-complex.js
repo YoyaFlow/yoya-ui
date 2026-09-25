@@ -1,4 +1,4 @@
-import { computed, hstack, input, li, ref, ul, vText, vstack } from '../../src/index.js';
+import { computed, hstack, input, li, ref, ul, vText, vstack } from '@yoyaflow/yoya-ui';
 import { componentSource } from '../component-source.js';
 
 const initialTasks = [

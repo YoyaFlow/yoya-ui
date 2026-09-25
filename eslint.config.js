@@ -10,13 +10,18 @@ export default [
       // `create-yoya-ui/templates/<模板>/dist`，它们是压缩产物、不该进 lint）
       '**/dist/**',
       'node_modules/**',
-      'src/chart/echarts.min.js',
-      'src/core/signals/vendor/**'
+      'packages/yoya-ui/src/chart/echarts.min.js',
+      'packages/yoya-core/src/core/signals/vendor/**'
     ]
   },
   js.configs.recommended,
   {
-    files: ['src/**/*.js', 'examples/**/*.js'],
+    files: [
+      'packages/*/src/**/*.js',
+      'packages/*/tests/**/*.js',
+      'packages/*/test/**/*.js',
+      'examples/**/*.js'
+    ],
     languageOptions: {
       ecmaVersion: 'latest',
       globals: globals.browser,
@@ -41,7 +46,11 @@ export default [
   },
   {
     // 构建期编译器只在 Node 里跑（读文件、走 CLI），不是浏览器代码。
-    files: ['src/compiler/**/*.js', 'src/yoya.compiler.js'],
+    files: [
+      'packages/yoya-compiler/src/**/*.js',
+      'packages/yoya-ui/src/compiler.js',
+      'packages/yoya-ui/src/compiler/runtime.js'
+    ],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node }
     }
@@ -57,7 +66,7 @@ export default [
     }
   },
   {
-    files: ['create-yoya-ui/**/*.{js,mjs}'],
+    files: ['packages/create-yoya-ui/**/*.{js,mjs}'],
     languageOptions: {
       globals: {
         ...globals.browser,

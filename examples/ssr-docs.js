@@ -1,6 +1,6 @@
-import { ref, section, vButton, vCard, vNode, vText } from '../src/index.js';
-import { hydrate, mount, parseState, renderToString } from '../src/yoya.ssr.js';
-import { echarts } from '../src/chart/echarts-loader.js';
+import { ref, section, vButton, vCard, vNode, vText } from '@yoyaflow/yoya-ui';
+import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { echarts } from '@yoyaflow/yoya-ui/internal/chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
 import {
   clientSnippet,

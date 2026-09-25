@@ -8,7 +8,7 @@ import {
   vNode,
   vText,
   vstack
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 /**
  * 跨层共享：工作区声明一次，两层消费组件直接 inject，中间组件不透传 props。

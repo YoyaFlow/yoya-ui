@@ -1,0 +1,20 @@
+{
+  // core 包的**独立性门禁**（票 06 硬点 1）：这个 program 只包含 core 自己的声明，
+  // 没有指向组件包的 paths / node_modules 兜底——core 的声明一旦回头 import 组件，
+  // 这里立刻红。`types/core-boundary.test-d.ts` 里的 `@ts-expect-error` 也由它把关：
+  // 只装 core 时，节点上**没有**组件快捷方法。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": []
+  },
+  "include": ["types/**/*.d.ts"]
+}

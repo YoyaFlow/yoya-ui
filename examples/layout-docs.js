@@ -12,7 +12,7 @@ import {
   vSplitPanel,
   vText,
   vstack
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { applyDemoStyles } from './demo-styles.js';
 import { ComponentSource } from './component-source.js';
 

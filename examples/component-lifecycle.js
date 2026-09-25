@@ -1,4 +1,4 @@
-import { svg } from '../src/index.js';
+import { svg } from '@yoyaflow/yoya-ui';
 
 const stroke = 'var(--yoya-color-border, #d8dee8)';
 const surface = 'var(--yoya-color-surface, #ffffff)';

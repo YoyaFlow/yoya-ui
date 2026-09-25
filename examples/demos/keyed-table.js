@@ -1,4 +1,4 @@
-import { ref, th, tr, vNode, vstack } from '../../src/index.js';
+import { ref, th, tr, vNode, vstack } from '@yoyaflow/yoya-ui';
 
 /**
  * HTML 原生元素页的 keyed 演示：任务表按 key 对账——

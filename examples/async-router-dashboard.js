@@ -1,4 +1,4 @@
-import { div } from '../src/index.js';
+import { div } from '@yoyaflow/yoya-ui';
 
 export default function AsyncDashboardPage({ params, query }) {
   return div((page) => {

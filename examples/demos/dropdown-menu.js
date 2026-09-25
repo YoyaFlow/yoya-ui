@@ -1,4 +1,4 @@
-import { ref, vDropdownMenu, vText, vstack } from '../../src/index.js';
+import { ref, vDropdownMenu, vText, vstack } from '@yoyaflow/yoya-ui';
 
 export function DropdownMenuExample1() {
   const status = ref('当前：未选择');

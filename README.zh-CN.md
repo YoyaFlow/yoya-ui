@@ -255,38 +255,42 @@ Star 数说明关注度，不说明正确性，所以下面这些都可以直接
 ## 构建产物与体积
 
 ```bash
-npm run build   # 产出 dist/，末尾打印体积表
+npm run build        # packages/*/dist（模块镜像）+ dist/examples/ + 体积表
+npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟、README 体积表
 ```
 
-无后缀与 `.min` 是增量 ESM 入口（不含 core，运行时会自动加载共享块）；`.full` 是自包含文件
-（core 已内联），适合 CDN 与免构建单文件直用。
+两个包的产物都是 **preserveModules 的模块镜像**（`dist` 就是 `src` 的模块结构），不预压缩——
+压缩交给使用者的打包器。`@yoyaflow/yoya-ui` 的产物里 `@yoyaflow/yoya-core/*` 一律是外部依赖，
+**不内联 core**；单例由 peerDependency 保证（双副本会让 `instanceof` / 身份判定失配）。
 
-增量入口给两个数：**入口文件本身**与**实际下载量**（入口 + 它引用的公共 chunk）。只看入口文件会
-以为 core 只有几 KB——按实际下载量估算首屏。最后一列说明每个入口到底包含什么。
+下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
+ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
 
-| 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                                                                                                                                                 |
-| ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `yoya.core.js`                     | 2.5 KB ~ **30.1 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly                                                                                                                            |
-| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                                                                                                                                      |
-| `yoya.ui.js`（全部分类）           | 5.3 KB ~ **97.7 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                                                                                                                                        |
-| `yoya.router.js`                   | 8.9 KB ~ **31.3 KB**              | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）                                                                                                                    |
-| `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.4 KB**              | 编译产物的运行期钩子，导出面 = 发射器能写出的钩子全集（`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …）；主入口不含这些钩子 |
-| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                   |
-| `yoya.echart.js` / `yoya.three.js` | 1.4 / 1.9 KB ~ 21.8 / 22.3 KB     | `vEchart` / `vThree` 封装                                                                                                                                                                                                                                                |
+<!-- bundle-sizes:start -->
 
-自包含入口（core 已内联，单文件直用）：
+| 入口                                 | 内容                                                                                | min+gzip |
+| ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
+| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
+| `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
+| `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
+| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
+| `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 22.9 KB  |
+| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
+| `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 封装，自备 echarts）                                               | 3.3 KB   |
+| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 封装，自备 three）                                                 | 3.8 KB   |
+| `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 
-| 产物                             | raw      | min      | min+gzip | 包含内容                       |
-| -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 316.8 KB | 131.3 KB | 39.2 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 927.5 KB | 376.4 KB | 109.2 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 862.0 KB | 351.6 KB | 100.8 KB | core + 全部组件                |
+<!-- bundle-sizes:end -->
 
-组件皮肤 `yoya.ui.css`：126.1 KB raw / **22.1 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
-只用 core 不需要引它。
+组件皮肤：`yoya.ui.css` 126.1 KB raw / 22.1 KB gzip（core 层无皮肤）。
 
-`npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，
-`npm run report:bundle:write` 按当前产物刷新中英两张表。
+> 自包含全量包（旧的 `yoya.ui.full.min.js` 等）已退场：拆包后 core 由 peerDependency 提供，
+> 再发一份内联副本会把"双副本失配"重新引进来。
 
 ## 文档与版本策略
 

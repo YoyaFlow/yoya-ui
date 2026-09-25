@@ -1,4 +1,4 @@
-import { div, ref, vNode } from '../../src/index.js';
+import { div, ref, vNode } from '@yoyaflow/yoya-ui';
 import Editor from '@toast-ui/editor';
 import Viewer from '@toast-ui/editor/viewer';
 import '@toast-ui/editor/dist/toastui-editor.css';

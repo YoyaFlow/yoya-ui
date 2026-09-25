@@ -1,4 +1,4 @@
-import { ref, section, vCard, vText, vstack } from '../src/index.js';
+import { ref, section, vCard, vText, vstack } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import { InputExample1 } from './demos/input.js';
 

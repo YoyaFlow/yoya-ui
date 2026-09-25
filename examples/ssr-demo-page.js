@@ -12,8 +12,8 @@ import {
   vNode,
   vText,
   vThemeModeSwitch
-} from '../src/index.js';
-import { hydrate, mount, parseState, renderToString } from '../src/yoya.ssr.js';
+} from '@yoyaflow/yoya-ui';
+import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
 
 const messages = {
   'zh-CN': {

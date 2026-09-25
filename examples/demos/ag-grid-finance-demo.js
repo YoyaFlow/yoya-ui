@@ -1,4 +1,4 @@
-import { vNode } from '../../src/index.js';
+import { vNode } from '@yoyaflow/yoya-ui';
 import { vAgGrid } from './ag-grid-glue.js';
 
 const SPARK_WIDTH = 104;

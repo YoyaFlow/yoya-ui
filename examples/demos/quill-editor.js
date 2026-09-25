@@ -1,4 +1,4 @@
-import { div, vNode } from '../../src/index.js';
+import { div, vNode } from '@yoyaflow/yoya-ui';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import '../quill-dark.css';

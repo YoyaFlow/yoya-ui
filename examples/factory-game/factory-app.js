@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { div, ref, vButton, vNode, vText } from '../../src/index.js';
-import { vThree } from '../../src/yoya.three.js';
+import { div, ref, vButton, vNode, vText } from '@yoyaflow/yoya-ui';
+import { vThree } from '@yoyaflow/yoya-ui/three';
 import {
   ASSEMBLER,
   BELT,

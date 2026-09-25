@@ -9,7 +9,7 @@ import {
   vTagsInput,
   vText,
   vstack
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 const regionOptions = [

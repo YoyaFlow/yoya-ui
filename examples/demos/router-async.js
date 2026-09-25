@@ -1,4 +1,4 @@
-import { div, router, vRouterView, vstack } from '../../src/index.js';
+import { div, router, vRouterView, vstack } from '@yoyaflow/yoya-ui';
 
 export function RouterAsyncCard() {
   const appRouter = router((routes) => {

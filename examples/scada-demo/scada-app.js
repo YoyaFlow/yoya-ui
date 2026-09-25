@@ -1,7 +1,10 @@
 import * as THREE from 'three';
-import { bindDocumentEvent, bindWindowEvent } from '../../src/core/document-events.js';
-import { computed, div, ref, vButton, vNode, vText } from '../../src/index.js';
-import { vThree } from '../../src/yoya.three.js';
+import {
+  bindDocumentEvent,
+  bindWindowEvent
+} from '@yoyaflow/yoya-core/internal/core/document-events.js';
+import { computed, div, ref, vButton, vNode, vText } from '@yoyaflow/yoya-ui';
+import { vThree } from '@yoyaflow/yoya-ui/three';
 import {
   DEVICE_DEFS,
   TICK_RATE,

@@ -1,4 +1,4 @@
-import { div, ref, vNode } from '../../src/index.js';
+import { div, ref, vNode } from '@yoyaflow/yoya-ui';
 import {
   AllCommunityModule,
   colorSchemeDark,

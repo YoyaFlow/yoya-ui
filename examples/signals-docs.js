@@ -1,4 +1,4 @@
-import { section } from '../src/index.js';
+import { section } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 // 插件由使用者自己写：这里只给模板，源码直接取文件原文，避免两份拷贝。
 import adapterTemplateSource from './adapter-template.js?raw';

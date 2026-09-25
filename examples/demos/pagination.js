@@ -1,4 +1,4 @@
-import { computed, ref, vPagination, vText, vstack } from '../../src/index.js';
+import { computed, ref, vPagination, vText, vstack } from '@yoyaflow/yoya-ui';
 
 export function PaginationExample1() {
   const currentPage = ref(1);

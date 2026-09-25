@@ -1,7 +1,7 @@
-import { section, vCard } from '../src/index.js';
+import { section, vCard } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
-import { vEchart } from '../src/yoya.echart.js';
-import '../src/chart/echarts-loader.js';
+import { vEchart } from '@yoyaflow/yoya-ui/echart';
+import '@yoyaflow/yoya-ui/internal/chart/echarts-loader.js';
 
 function EchartsBarExample1() {
   return vCard((card) => {

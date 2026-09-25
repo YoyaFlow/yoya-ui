@@ -7,7 +7,7 @@ import {
   MoreHorizontalOutlined,
   TrashOutlined,
   vTreeRanger
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 export function TreeRangerExample() {
   const delay = (ms = 120) => new Promise((resolve) => setTimeout(resolve, ms));

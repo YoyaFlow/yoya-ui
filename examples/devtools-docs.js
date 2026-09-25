@@ -1,4 +1,4 @@
-import { section } from '../src/index.js';
+import { section } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import { DevtoolsInspectorDemo } from './demos/devtools-inspector.js';
 

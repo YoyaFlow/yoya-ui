@@ -274,39 +274,44 @@ Execution (nine standard operations) and memory, read from the official
 ## Build output and size
 
 ```bash
-npm run build   # entries in dist/, then a size report
+npm run build        # packages/*/dist (module mirrors) + dist/examples/ + size table
+npm run verify:dist  # artifact completeness, no cross-package inlining, host singleton smoke, README table
 ```
 
-No suffix and `.min` are incremental ESM entries (no core inside, the shared chunk loads
-automatically); `.full` is self-contained (core inlined) for CDN and no-build single-file usage.
+Both packages ship **preserveModules module mirrors** (the `dist` tree mirrors `src`), unminified —
+minification is the consumer bundler's job. Inside `@yoyaflow/yoya-ui`, every
+`@yoyaflow/yoya-core/*` import stays external: core is **never inlined**, and the singleton is
+guaranteed by the peer dependency (a second copy breaks `instanceof` / identity checks).
 
-Incremental entries report two numbers: **the entry file itself** and **what a page actually
-downloads** (entry plus the shared chunks it imports). Reading only the entry file overstates how
-small core is — budget against the download column. The last column says what each entry contains.
+The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
+again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
+core, so the real download is core + that row.
 
-| Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                                                                                                                       |
-| ---------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `yoya.core.js`                     | 2.5 KB ~ **30.1 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly                                                                                         |
-| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                                                                                           |
-| `yoya.ui.js` (all categories)      | 5.3 KB ~ **97.7 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                                                                                                         |
-| `yoya.router.js`                   | 8.9 KB ~ **31.3 KB**                    | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                                                                                                     |
-| `yoya.compiler-runtime.js`         | 3.5 KB ~ **21.4 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindChildText` / `mountRuntimeChildren` / `mountNodeAt` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `keyedRows` / `createElementList` …); the main entry never includes them |
-| `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                                                                                                         |
-| `yoya.echart.js` / `yoya.three.js` | 1.4 / 1.9 KB ~ 21.8 / 22.3 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                                                                                                  |
+<!-- bundle-sizes:start -->
 
-Self-contained entries (core inlined, single file):
+| 入口                                 | 内容                                                                                | min+gzip |
+| ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
+| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
+| `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
+| `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
+| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
+| `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 22.9 KB  |
+| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
+| `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 封装，自备 echarts）                                               | 3.3 KB   |
+| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 封装，自备 three）                                                 | 3.8 KB   |
+| `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 
-| Artifact                              | raw      | min      | min+gzip | Contents                             |
-| ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 316.8 KB | 131.3 KB | 39.2 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 927.5 KB | 376.4 KB | 109.2 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 862.0 KB | 351.6 KB | 100.8 KB | core + all components                |
+<!-- bundle-sizes:end -->
 
-Component skin `yoya.ui.css`: 126.1 KB raw / **22.1 KB gzip**. The core layer ships no skin of its own
-(it behaves like plain HTML), so core-only pages do not load it.
+Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no skin).
 
-`npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the
-tables here drift from the artifacts, and `npm run report:bundle:write` refreshes them.
+> The self-contained full bundles (the old `yoya.ui.full.min.js` and friends) are gone: with core
+> delivered as a peer dependency, shipping an inlined copy would reintroduce the "two copies" hazard.
 
 ## Documentation and versioning
 

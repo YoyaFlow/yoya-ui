@@ -15,7 +15,7 @@ import {
   vCard,
   vSvgIconPicker,
   vText
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心演示：只包含选择器内容，不包含 Card。

@@ -1,4 +1,4 @@
-import { computed, div, ref, span, vNode, vstack } from '../../src/index.js';
+import { computed, div, ref, span, vNode, vstack } from '@yoyaflow/yoya-ui';
 
 /**
  * 错误边界演示 1：报告模式。handler 返回 null 只上报，不替换结构；

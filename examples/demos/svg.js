@@ -1,4 +1,4 @@
-import { computed, ref, vText, vstack } from '../../src/index.js';
+import { computed, ref, vText, vstack } from '@yoyaflow/yoya-ui';
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 44;
 

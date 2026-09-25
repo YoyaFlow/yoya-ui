@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .vite/
+# 库内组件注册表的中间产物（scripts/compiler-registry.mjs 的 tmpDir）
+build/
 coverage/
 .idea/
 .scratch/

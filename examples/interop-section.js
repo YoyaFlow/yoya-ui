@@ -1,4 +1,4 @@
-import { ref, section, vClientOnly, vText } from '../src/index.js';
+import { ref, section, vClientOnly, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 import './interop-theme.css';
 

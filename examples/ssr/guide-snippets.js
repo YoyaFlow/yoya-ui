@@ -4,7 +4,7 @@
  */
 
 export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
-import { div } from '@yoyaflow/yoya-ui/core';
+import { div } from '@yoyaflow/yoya-core';
 import { createRouter } from '@yoyaflow/yoya-ui/router';
 
 export const messages = {

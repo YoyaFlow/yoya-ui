@@ -1,4 +1,4 @@
-import { div, hstack, ref, section, vCard, vGlowButton, vText } from '../src/index.js';
+import { div, hstack, ref, section, vCard, vGlowButton, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含流光按钮内容，不包含 Card。

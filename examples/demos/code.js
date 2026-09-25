@@ -1,4 +1,4 @@
-import { vCode } from '../../src/index.js';
+import { vCode } from '@yoyaflow/yoya-ui';
 
 export function CodeExample1() {
   return vCode({

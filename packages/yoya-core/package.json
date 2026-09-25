@@ -1,0 +1,79 @@
+{
+  "name": "@yoyaflow/yoya-core",
+  "version": "0.7.0",
+  "description": "yoya-ui core (slow line): node/signals/HTML/SVG primitives, SSR helpers, i18n / access / context / theme primitives. Ships no components and depends on none.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./html": {
+      "types": "./types/html.d.ts",
+      "import": "./dist/html/index.js"
+    },
+    "./svg": {
+      "types": "./types/svg.d.ts",
+      "import": "./dist/svg/index.js"
+    },
+    "./api": {
+      "types": "./types/api.d.ts",
+      "import": "./dist/api.js"
+    },
+    "./ssr": {
+      "types": "./types/ssr.d.ts",
+      "import": "./dist/core/ssr.js"
+    },
+    "./devtools": {
+      "types": "./types/devtools.d.ts",
+      "import": "./dist/core/devtools.js"
+    },
+    "./compiler-runtime": {
+      "import": "./dist/core/compiler-runtime.js"
+    },
+    "./internal/*": "./dist/*",
+    "./internal/types/*": "./types/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "types",
+    "LICENSES",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-packages.mjs core",
+    "test": "vitest run --project core",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "vite",
+    "vanilla-js",
+    "ui",
+    "web-components",
+    "frontend"
+  ],
+  "author": "zhanglj",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoyaflow/yoya-ui.git"
+  },
+  "homepage": "https://github.com/yoyaflow/yoya-ui#readme",
+  "bugs": {
+    "url": "https://github.com/yoyaflow/yoya-ui/issues"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "browserslist": [
+    "chrome >= 123",
+    "edge >= 123",
+    "firefox >= 120",
+    "safari >= 17.5",
+    "ios_saf >= 17.5"
+  ]
+}

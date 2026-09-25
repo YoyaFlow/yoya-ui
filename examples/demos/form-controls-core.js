@@ -6,7 +6,7 @@ import {
   vTimer,
   vTimerRange,
   vUpload
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 export function SelectExample1() {
   return vSelect({

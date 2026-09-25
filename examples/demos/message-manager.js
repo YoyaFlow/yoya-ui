@@ -1,4 +1,4 @@
-import { vMessageManager, vstack } from '../../src/index.js';
+import { vMessageManager, vstack } from '@yoyaflow/yoya-ui';
 
 export function MessageManagerExample1() {
   const manager = vMessageManager();

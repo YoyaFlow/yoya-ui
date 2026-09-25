@@ -1,4 +1,4 @@
-import { computed, div, ref, vText } from '../../src/index.js';
+import { computed, div, ref, vText } from '@yoyaflow/yoya-ui';
 
 const options = [
   { label: '监控告警', value: 'monitor' },

@@ -1,4 +1,4 @@
-import { div, ref, vText } from '../src/index.js';
+import { div, ref, vText } from '@yoyaflow/yoya-ui';
 
 function UserCard({ userId, tab }) {
   return div(`用户卡片：${userId} / ${tab}`);

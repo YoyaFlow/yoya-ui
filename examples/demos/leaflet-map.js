@@ -1,4 +1,4 @@
-import { div, vNode } from '../../src/index.js';
+import { div, vNode } from '@yoyaflow/yoya-ui';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 

@@ -8,7 +8,7 @@ import {
   vRouterViews,
   vText,
   vstack
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 export function RouterNavigationCard() {
   const appRouter = router((routes) => {

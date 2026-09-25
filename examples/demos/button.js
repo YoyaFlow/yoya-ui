@@ -1,4 +1,4 @@
-import { hstack, ref, vButton, vForm, vText } from '../../src/index.js';
+import { hstack, ref, vButton, vForm, vText } from '@yoyaflow/yoya-ui';
 
 export function ButtonExample1() {
   return vButton('OK')

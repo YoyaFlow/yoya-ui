@@ -1,0 +1,138 @@
+{
+  "name": "@yoyaflow/yoya-ui",
+  "version": "0.7.0",
+  "description": "yoya-ui (fast line): official components, layout, router, i18n, theming, charts and 3D adapters. Consumes @yoyaflow/yoya-core as a peer dependency; never bundles it.",
+  "type": "module",
+  "main": "./dist/yoya.ui-router.full.js",
+  "module": "./dist/yoya.ui-router.full.js",
+  "style": "./dist/yoya.ui.css",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/yoya.ui-router.full.js"
+    },
+    "./core": {
+      "types": "./types/yoya.core.d.ts",
+      "import": "./dist/yoya.core.js"
+    },
+    "./api": {
+      "types": "./types/yoya.api.d.ts",
+      "import": "./dist/yoya.api.js"
+    },
+    "./ui": {
+      "types": "./types/yoya.ui.d.ts",
+      "import": "./dist/yoya.ui.js"
+    },
+    "./actions": {
+      "types": "./types/yoya.actions.d.ts",
+      "import": "./dist/yoya.actions.js"
+    },
+    "./navigation": {
+      "types": "./types/yoya.navigation.d.ts",
+      "import": "./dist/yoya.navigation.js"
+    },
+    "./feedback": {
+      "types": "./types/yoya.feedback.d.ts",
+      "import": "./dist/yoya.feedback.js"
+    },
+    "./form": {
+      "types": "./types/yoya.form.d.ts",
+      "import": "./dist/yoya.form.js"
+    },
+    "./data-display": {
+      "types": "./types/yoya.data-display.d.ts",
+      "import": "./dist/yoya.data-display.js"
+    },
+    "./async": {
+      "types": "./types/yoya.async.d.ts",
+      "import": "./dist/yoya.async.js"
+    },
+    "./router": {
+      "types": "./types/yoya.router.d.ts",
+      "import": "./dist/yoya.router.js"
+    },
+    "./compiler-runtime": {
+      "types": "./types/yoya.compiler-runtime.d.ts",
+      "import": "./dist/yoya.compiler-runtime.js"
+    },
+    "./compiled-registry": {
+      "types": "./types/yoya.compiled-registry.d.ts",
+      "import": "./dist/yoya.compiled-registry.js"
+    },
+    "./compiler": {
+      "types": "./types/yoya.compiler.d.ts",
+      "import": "./dist/yoya.compiler.js"
+    },
+    "./echart": {
+      "types": "./types/yoya.echart.d.ts",
+      "import": "./dist/yoya.echart.js"
+    },
+    "./three": {
+      "types": "./types/yoya.three.d.ts",
+      "import": "./dist/yoya.three.js"
+    },
+    "./devtools": {
+      "types": "./types/yoya.devtools.d.ts",
+      "import": "./dist/yoya.devtools.js"
+    },
+    "./ui.css": "./dist/yoya.ui.css",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "yoya-compiler": "./dist/yoya.compiler.js"
+  },
+  "files": [
+    "dist",
+    "types",
+    "!types/tests",
+    "!dist/examples",
+    "LICENSES",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-packages.mjs ui",
+    "test": "vitest run --project ui",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "vite",
+    "vanilla-js",
+    "ui",
+    "web-components",
+    "frontend"
+  ],
+  "author": "zhanglj",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoyaflow/yoya-ui.git"
+  },
+  "homepage": "https://github.com/yoyaflow/yoya-ui#readme",
+  "bugs": {
+    "url": "https://github.com/yoyaflow/yoya-ui/issues"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "browserslist": [
+    "chrome >= 123",
+    "edge >= 123",
+    "firefox >= 120",
+    "safari >= 17.5",
+    "ios_saf >= 17.5"
+  ],
+  "peerDependencies": {
+    "@yoyaflow/yoya-core": "^0.7.0",
+    "@yoyaflow/yoya-compiler": "^0.7.0",
+    "@babel/parser": "^7.29.0"
+  },
+  "peerDependenciesMeta": {
+    "@babel/parser": {
+      "optional": true
+    },
+    "@yoyaflow/yoya-compiler": {
+      "optional": true
+    }
+  }
+}

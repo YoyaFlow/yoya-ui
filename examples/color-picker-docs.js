@@ -1,4 +1,4 @@
-import { div, ref, section, vCard, vColorPicker, vText } from '../src/index.js';
+import { div, ref, section, vCard, vColorPicker, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心演示：只包含取色器内容，不包含 Card。

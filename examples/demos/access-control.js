@@ -1,4 +1,4 @@
-import { createAccess, div, installAccess, vInput } from '../../src/index.js';
+import { createAccess, div, installAccess, vInput } from '@yoyaflow/yoya-ui';
 
 // 全局初始化权限（一次）：裸码 = 可读可写，r. = 只读。
 installAccess(

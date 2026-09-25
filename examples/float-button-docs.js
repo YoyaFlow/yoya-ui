@@ -1,5 +1,5 @@
-import { ArrowUpOutlined, PlusOutlined } from '../src/svg/icons.js';
-import { div, hstack, ref, section, vCard, vFloatButton, vText } from '../src/index.js';
+import { ArrowUpOutlined, PlusOutlined } from '@yoyaflow/yoya-core/internal/svg/icons.js';
+import { div, hstack, ref, section, vCard, vFloatButton, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 
 // 核心组件：只包含悬浮按钮内容，不包含 Card。

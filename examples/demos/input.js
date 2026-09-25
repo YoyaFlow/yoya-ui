@@ -1,4 +1,4 @@
-import { vInput } from '../../src/index.js';
+import { vInput } from '@yoyaflow/yoya-ui';
 
 export function InputExample1() {
   return vInput({

@@ -13,28 +13,67 @@
     "forceConsistentCasingInFileNames": true,
     "types": [],
     "paths": {
-      "yoya-ui": ["./types/index.d.ts"],
-      "yoya-ui/core": ["./types/entries/yoya.core.d.ts"],
-      "yoya-ui/api": ["./types/entries/yoya.api.d.ts"],
-      "yoya-ui/actions": ["./types/entries/yoya.actions.d.ts"],
-      "yoya-ui/navigation": ["./types/entries/yoya.navigation.d.ts"],
-      "yoya-ui/feedback": ["./types/entries/yoya.feedback.d.ts"],
-      "yoya-ui/form": ["./types/entries/yoya.form.d.ts"],
-      "yoya-ui/data-display": ["./types/entries/yoya.data-display.d.ts"],
-      "yoya-ui/async": ["./types/entries/yoya.async.d.ts"],
-      "yoya-ui/devtools": ["./types/entries/yoya.devtools.d.ts"],
-      "yoya-ui/echart": ["./types/entries/yoya.echart.d.ts"],
-      "yoya-ui/three": ["./types/entries/yoya.three.d.ts"],
-      "yoya-ui/router": ["./types/entries/yoya.router.d.ts"],
-      "yoya-ui/compiler": ["./types/entries/yoya.compiler.d.ts"],
-      "yoya-ui/compiler-runtime": ["./types/entries/yoya.compiler-runtime.d.ts"],
-      // 脚手架模板按使用者的写法 import '@yoyaflow/yoya-ui'，这里映射到本包类型
-      "@yoyaflow/yoya-ui": ["./types/index.d.ts"],
-      "@yoyaflow/yoya-ui/core": ["./types/entries/yoya.core.d.ts"],
-      "@yoyaflow/yoya-ui/api": ["./types/entries/yoya.api.d.ts"],
-      "@yoyaflow/yoya-ui/compiler": ["./types/entries/yoya.compiler.d.ts"],
-      "@yoyaflow/yoya-ui/compiler-runtime": ["./types/entries/yoya.compiler-runtime.d.ts"]
+      // 消费方类型测试用的**不带 scope** 别名（与 @yoyaflow/* 指向同一份声明）
+      "yoya-ui": ["./packages/yoya-ui/types/index.d.ts"],
+      "yoya-ui/core": ["./packages/yoya-core/types/index.d.ts"],
+      "yoya-ui/api": ["./packages/yoya-core/types/api.d.ts"],
+      "yoya-ui/html": ["./packages/yoya-core/types/html.d.ts"],
+      "yoya-ui/svg": ["./packages/yoya-core/types/svg.d.ts"],
+      "yoya-ui/actions": ["./packages/yoya-ui/types/yoya.actions.d.ts"],
+      "yoya-ui/navigation": ["./packages/yoya-ui/types/yoya.navigation.d.ts"],
+      "yoya-ui/feedback": ["./packages/yoya-ui/types/yoya.feedback.d.ts"],
+      "yoya-ui/form": ["./packages/yoya-ui/types/yoya.form.d.ts"],
+      "yoya-ui/data-display": ["./packages/yoya-ui/types/yoya.data-display.d.ts"],
+      "yoya-ui/async": ["./packages/yoya-ui/types/yoya.async.d.ts"],
+      "yoya-ui/devtools": ["./packages/yoya-core/types/devtools.d.ts"],
+      "yoya-ui/echart": ["./packages/yoya-ui/types/yoya.echart.d.ts"],
+      "yoya-ui/three": ["./packages/yoya-ui/types/yoya.three.d.ts"],
+      "yoya-ui/router": ["./packages/yoya-ui/types/yoya.router.d.ts"],
+      "yoya-ui/compiler": ["./packages/yoya-ui/types/yoya.compiler.d.ts"],
+      "yoya-ui/compiler-runtime": ["./packages/yoya-ui/types/yoya.compiler-runtime.d.ts"],
+      // 包名 → 各自包内的声明（示例、模板、契约测试都按使用者写法 import 包名）
+      "@yoyaflow/yoya-core": ["./packages/yoya-core/types/index.d.ts"],
+      "@yoyaflow/yoya-core/html": ["./packages/yoya-core/types/html.d.ts"],
+      "@yoyaflow/yoya-core/svg": ["./packages/yoya-core/types/svg.d.ts"],
+      "@yoyaflow/yoya-core/api": ["./packages/yoya-core/types/api.d.ts"],
+      "@yoyaflow/yoya-core/ssr": ["./packages/yoya-core/types/ssr.d.ts"],
+      "@yoyaflow/yoya-core/devtools": ["./packages/yoya-core/types/devtools.d.ts"],
+      "@yoyaflow/yoya-core/internal/*": ["./packages/yoya-core/*"],
+      "@yoyaflow/yoya-compiler": ["./packages/yoya-ui/types/compiler.d.ts"],
+      "@yoyaflow/yoya-compiler/internal/*": ["./packages/yoya-compiler/src/*"],
+      "@yoyaflow/yoya-ui": ["./packages/yoya-ui/types/index.d.ts"],
+      "@yoyaflow/yoya-ui/ui": ["./packages/yoya-ui/types/yoya.ui.d.ts"],
+      "@yoyaflow/yoya-ui/ui-full": ["./packages/yoya-ui/types/yoya.ui-router.d.ts"],
+      "@yoyaflow/yoya-ui/ui-router": ["./packages/yoya-ui/types/yoya.ui-router.d.ts"],
+      "@yoyaflow/yoya-ui/router": ["./packages/yoya-ui/types/yoya.router.d.ts"],
+      "@yoyaflow/yoya-ui/router-full": ["./packages/yoya-ui/types/yoya.router.d.ts"],
+      "@yoyaflow/yoya-ui/ssr": ["./packages/yoya-ui/types/ssr.d.ts"],
+      "@yoyaflow/yoya-ui/actions": ["./packages/yoya-ui/types/yoya.actions.d.ts"],
+      "@yoyaflow/yoya-ui/navigation": ["./packages/yoya-ui/types/yoya.navigation.d.ts"],
+      "@yoyaflow/yoya-ui/feedback": ["./packages/yoya-ui/types/yoya.feedback.d.ts"],
+      "@yoyaflow/yoya-ui/form": ["./packages/yoya-ui/types/yoya.form.d.ts"],
+      "@yoyaflow/yoya-ui/data-display": ["./packages/yoya-ui/types/yoya.data-display.d.ts"],
+      "@yoyaflow/yoya-ui/async": ["./packages/yoya-ui/types/yoya.async.d.ts"],
+      "@yoyaflow/yoya-ui/echart": ["./packages/yoya-ui/types/yoya.echart.d.ts"],
+      "@yoyaflow/yoya-ui/three": ["./packages/yoya-ui/types/yoya.three.d.ts"],
+      "@yoyaflow/yoya-ui/devtools": ["./packages/yoya-ui/types/devtools.d.ts"],
+      "@yoyaflow/yoya-ui/compiler": ["./packages/yoya-ui/types/yoya.compiler.d.ts"],
+      "@yoyaflow/yoya-ui/compiler-runtime": ["./packages/yoya-ui/types/yoya.compiler-runtime.d.ts"],
+      "@yoyaflow/yoya-ui/compiled-registry": [
+        "./packages/yoya-ui/types/yoya.compiled-registry.d.ts"
+      ],
+      "@yoyaflow/yoya-ui/internal/*": ["./packages/yoya-ui/*"]
     }
   },
-  "include": ["types/**/*.d.ts", "types/**/*.ts", "create-yoya-ui/templates/**/*.d.ts"]
+  "include": [
+    "packages/*/types/**/*.d.ts",
+    "packages/*/types/**/*.ts",
+    "packages/contract/tests/**/*.ts",
+    "packages/create-yoya-ui/templates/**/*.d.ts"
+  ],
+  "exclude": [
+    // 只装 core 的边界断言由 `packages/yoya-core/tsconfig.json` 单独跑（这个 program 里
+    // 组件包的增强在场，`@ts-expect-error` 会变成"没有错误"而误报）。
+    "packages/yoya-core/types/core-boundary.test-d.ts"
+  ]
 }

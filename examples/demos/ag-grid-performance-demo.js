@@ -1,4 +1,4 @@
-import { vNode } from '../../src/index.js';
+import { vNode } from '@yoyaflow/yoya-ui';
 import { vAgGrid } from './ag-grid-glue.js';
 
 export function AgGridPerformanceExample(rowCount = 50000, colCount = 10) {

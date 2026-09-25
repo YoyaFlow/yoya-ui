@@ -231,3 +231,263 @@ IDE、脚本里的绝对路径）要跟着改。A 的代价只是"移动在主�
   需先拍板 core 边界（i18n / access / context / theme helper 算 core 还是共享工具）与是否加 workspaces。
 - 仍待拍板：M 档位（M0 只修模板漂移 / **M1 加 workspaces 零路径改动** / M2 `packages/*`）、
   模板档（A 清模板 `dist` / B 模板出 `src` / C 独立仓）。
+
+---
+
+# M2：拆成 monorepo（`packages/*`）—— 已在目标仓落地
+
+**状态**：workspace 骨架 + 目录/依赖拆分完成，`lint` / `format:check` / `tsc` /
+**225 测试文件 · 1766 条**全绿（与拆包前逐条一致）。构建与体积报表仍是**旧单包口径**，见 §10。
+
+## 10. 包划分与依赖方向
+
+```
+packages/yoya-core/        # 慢线；**不依赖任何组件**
+  src/{core,html,svg}/**   #   节点 / 信号 / HTML / SVG / SSR 原语 + i18n·access·context·a11y·theme helper
+  src/index.js             #   = 原 src/yoya.core.js（core + html + svg）
+  src/api.js               #   = 原 src/yoya.api.js
+  types/{index,core,html,svg,api,ssr,devtools}.d.ts + types/entries/**
+packages/yoya-ui/          # 快线；peerDependencies: { "@yoyaflow/yoya-core": "^0.7.0" }
+  src/{layout,actions,navigation,feedback,form,data-display,async,i18n,theme,effects,router,chart,three,compiler}/**
+  src/{index,ui,ui-full,router,router-full,ui-router,ssr,actions,…}.js + src/yoya.ui.css
+  types/** + types/entries/**
+packages/contract/         # 跨包契约：core ⇄ ui 的边界用例 + 全仓门禁（不进包）
+  tests/{core,integration,gates,types}/**  baselines/**
+packages/create-yoya-ui/   # 脚手架；模板依赖**钉死当前版本**（0.7.0 + core 0.7.0）
+```
+
+依赖方向（可门禁）：
+
+- **core → ui：0 处**（源码级）。`references-ui` 检查写进了拆分工具：core 的**源码**若引用组件域直接报错；
+- **ui → core**：库内深引用统一走 `@yoyaflow/yoya-ui`/`@yoyaflow/yoya-core` 的 **`/internal/*`**
+  子路径（`@yoyaflow/yoya-core/internal/core/node.js`），公开面只有 `.` / `/html` / `/svg` / `/api` /
+  `/ssr` / `/devtools`（core）与 `.` / `/ui` / `/router` / `/ssr` / 各分类（ui）；
+- **契约包**是唯一同时 import 两个包的地方（`@yoyaflow/yoya-ui` 侧会注册组件快捷方法）。
+
+### 测试归属怎么定的（机械规则，不是拍脑袋）
+
+1. 先按**领域归属**搬（core/html/svg → core，其余 → ui）；
+2. core 里的**测试**再按内容改判：引用了具体组件域 → `packages/contract/tests/`；只从聚合出口进、
+   且用到的名字**全在 core 的导出集里**（把 core 聚合 import 进来读 key，静态解析抓不到
+   `export const { div, … } = createHtmlFactories(…)`）→ 留 core 但说明符改成 `@yoyaflow/yoya-core`；
+3. 结果：**core 留 60 个测试文件**（core 面自成一套），**15 个"从聚合出口进、用到组件"的用例 +
+   13 个 SSR/hydrate 集成 + 3 条全仓门禁 + 消费方类型测试**进 contract。
+
+> 这条规则就是票 06 硬点 2 说的"验收标准三分"：core 的慢线验收不再需要组件参与。
+
+## 11. 本轮踩到的坑（都已修，工具留在 `.scratch/src-layout/tools/`）
+
+| 坑                                   | 症状                                                                                             | 处理                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| jsdom 下全局 `URL` 被替换            | `new URL('../../..', import.meta.url)` 解析到 `http://localhost:3000/@fs/…`                      | 用例一律用 `node:path` + `node:url` 显式计算仓库根                                                                      |
+| Vite 的 `resolve.alias` + 预解析路径 | 子入口解析成 `/packages/...` 或落在目录上                                                        | 改成 `resolveId` 插件（`scripts/vite-workspace-plugin.mjs`），只认**文件**、按候选顺序探测                              |
+| "路径字面量"两义                     | `'src/rows/item.js'` 是**夹具数据**，`'packages/yoya-ui/src/compiler/runtime.js'` 是**布局引用** | 归一化规则：能解析到真实文件的才改布局，否则还原成 `src/…`                                                              |
+| 编译器把包名当语义                   | `isCoreLikeSpecifier` 只认 `@yoyaflow/yoya-ui` → 拆包后夹具全部 bail                             | 同时认 `@yoyaflow/yoya-core`；注册表 `keyOf` / `scopeEntryOf` / `isExternal` 按**文件所属包**归口（图标集随 core 发布） |
+| 注册表包名来自根 `package.json`      | 键变成 `yoya-ui-monorepo/ui`                                                                     | 读 `packages/yoya-ui/package.json` 的名字，core 面显式写 `@yoyaflow/yoya-core`                                          |
+| `.d.ts` 别名目录深度                 | `types-split` 把 entry 别名里的 `'../x.js'` 算成 `'./x.js'`                                      | `types-entries-repair.mjs` 退一层 / 换跨包 internal 路径                                                                |
+
+## 12. 还没做的（下一步，按优先级）
+
+1. ~~**构建与产物口径**~~ → **已完成**，见 §15。
+2. **包各自的 `npm test` / 发布**：现在是根 `vitest run`（可 `--dir packages/<pkg>` 跑子集）；
+   `packages/*/package.json` 的 `test` 已经指向根脚本，真要"包内独立跑"，还需要把门禁里的
+   `process.cwd()` 依赖彻底去掉（本轮已去掉大部分）。
+3. **单例与发布门禁**：`npm pack --dry-run` 断言 core 包里没有组件文件、ui 包里没有 core 源码；
+   两包各装一次时 `instanceof` / 身份判定仍成立（`docs/ssr.md` 的"双副本失配"禁忌）。
+
+## 13. 类型层解耦（票 06 硬点 1）—— 已落地
+
+core 的声明**不再 import 任何组件**（`grep '@yoyaflow/yoya-ui' packages/yoya-core/types/**` = 0），
+组件域的父快捷方法反过来由组件包**增强**进去：
+
+```ts
+// packages/yoya-ui/types/actions.d.ts（组件包侧）
+declare module '@yoyaflow/yoya-core/html' {
+  interface HtmlElementNode extends ActionsParentShortcuts {}
+}
+
+// packages/yoya-ui/types/router.d.ts（返回类型属于本域的那几个方法）
+declare module '@yoyaflow/yoya-core' {
+  interface ElementNode {
+    vRouter(first?: import('@yoyaflow/yoya-core').SetupInput<VRouter> | null, …): VRouter;
+    vLink(routerInstance: VRouter, …): import('@yoyaflow/yoya-core').HtmlElementNode;
+    …
+  }
+}
+```
+
+12 个组件域各写一条 `HtmlElementNode` 增强；`vDynamicLoader` / `codeBlock` /
+`vThemeModeSwitch` / 4 个 router 方法从 core 的 `ElementNode` 搬到各自的域里（core 的声明里不再有
+组件句柄这个类型依赖）。这与运行期**同向**：运行期也是"组件包被 import 时
+`registerChildFactories(HtmlElementNode, { vXxx })`"。
+
+### 先红后绿的门禁（`npm run typecheck` 里的第二段）
+
+`packages/yoya-core/tsconfig.json` 是一个**只有 core 声明的 program**（没有指向组件包的 paths /
+node_modules 兜底）。core 的声明一旦回头引用组件，它立刻红。里面的
+`types/core-boundary.test-d.ts` 就是票 06 §二的用例：
+
+```ts
+const page: HtmlElementNode = div();
+page.className('page'); // core 面：在
+// @ts-expect-error 只装 core 时节点上没有组件快捷方法
+page.vButton('提交');
+// @ts-expect-error 布局快捷方法也属于快线
+page.flex({ gap: 8 });
+```
+
+只装 core 时 `vButton` **类型报错**（`@ts-expect-error` 正好吃掉它）；加上组件包后同一行通过
+（`types/consumer.test-d.ts` 里是正例）。根 program 用 `exclude` 把这份文件排除，避免两套程序互相干扰。
+
+## 14. 包边界门禁（`npm run verify:packages`）
+
+不构建、只看源码与包元数据的四条断言（`scripts/verify-packages.mjs`）：
+
+1. core 源码 0 处引用 `@yoyaflow/yoya-ui`（`Symbol.for('@yoyaflow/yoya-ui/element-factory')`
+   这个全局符号键刻意保留，判定前先抹掉）；core 的 `exports` 里没有任何组件子入口；
+2. 组件包的 `peerDependencies` 有 `@yoyaflow/yoya-core ^0.7.0`，且**没有**把它列进 `dependencies`；
+3. `packages/yoya-core/src` 下不存在任何组件域目录；
+4. 库源码里只有**契约层**与**编译器**同时认得两个包名（编译器必须认得，才能把"从哪个入口导的"
+   归口到注册表键——它认的是包名，不是组件名）。
+
+## 15. 构建与产物口径（已按拆包后形态重做）
+
+> **2026-09-25 追加决议**：产物命名以**发布路径与旧包一致**为准，见 §16；§15 的"模块镜像"
+> 只是内部实现，`dist` 里**对发布可见的文件名**按 §16 收敛。
+
+```bash
+npm run build         # 两个包各建一份 dist + 注册表 + 示例站 + 体积表 + 编译覆盖度
+npm run verify:dist   # 产物门禁（六条）
+npm run report:bundle:write   # 刷新 README 体积表的生成块
+```
+
+**产物形态：`preserveModules` 的模块镜像**（`dist` 的结构 = `src` 的结构），不预压缩——
+压缩交给使用者的打包器。这么定有三个理由：库内深引用 `@yoyaflow/yoya-core/internal/*` 必须有稳定落点；
+**不产生"core 被内联进 ui 产物"的副本**（单例禁忌）；dist 可读、可 diff。
+
+`scripts/build-packages.mjs` 把它落成两件事：
+
+- `packages/yoya-core/dist` —— 34 个模块（core / html / svg / api / ssr / devtools 原语）；
+- `packages/yoya-ui/dist` —— 138 个模块 + `yoya.ui.css` + `chart/echarts.min.js` + `compiled-registry.js`；
+  ui 侧 `@yoyaflow/yoya-core*` **全部 external**。
+
+`scripts/verify-dist.mjs` 六条：exports↔dist 对应、两包互不内联、ui 只通过裸包名引 core、
+**宿主单例冒烟**（两包各装一次，core 原语 + 组件一起渲染成 HTML，且 `componentNameOf(vCard) = 'VCard'`）、
+compiler bin 可执行（验 shebang）、README 体积表 + 基准表一致。
+
+体积口径重写（`scripts/bundle-metrics.mjs`）：一行 = 一个公开入口的**传递闭包 min+gzip**
+（跟着 dist 的 import 图重打一次并压缩）。core 行自包含；ui 各行把 core 当 external，
+量的是"在 core 之上再加多少"。README 的体积表改成**生成块**（`<!-- bundle-sizes:start -->` … `end`），
+`report:bundle:write` 刷新数字，`verify:dist` 按同一份口径核对。
+
+> 自包含全量包（`yoya.ui.full.min.js` / `yoya.router.full.min.js` / `yoya.ui-router.full.min.js`）**退场**：
+> core 由 peerDependency 提供之后，再发一份内联副本会把"双副本失配"重新引进来。
+
+**（该条已被 §16 推翻：按用户裁决，`.full` 保持全包含。）**
+
+## 16. 发布产物路径兼容（决议：`.full` 保持全包含）
+
+**硬要求**：`@yoyaflow/yoya-ui` 的 tarball **文件路径与 `exports` 子路径必须与 0.7.0 一致**——
+`main`/`module` = `./dist/yoya.ui-router.full.js`、`style` = `./dist/yoya.ui.css`、
+`types` = `./types/index.d.ts`、`bin` = `./dist/yoya.compiler.js`；18 个子入口一律指向
+`./dist/yoya.<name>.js` 与 `./types/yoya.<name>.d.ts`；类型是**扁平** `types/*.d.ts`（不是 `types/entries/`）。
+
+**内容口径（自包含 vs 增量两类）**：
+
+| 产物                                                                                                  | 内容                         | 理由                                                                                   |
+| ----------------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| `dist/yoya.core.js`、`yoya.api.js`（+`.min`）                                                         | **内联 core**（自包含）      | core 的门面产物，CDN 直用照旧；`@yoyaflow/yoya-core` 是它的单源                        |
+| `dist/yoya.ui.full.js`、`yoya.router.full.js`、`yoya.ui-router.full.js`（+`.min`）                    | **内联 core**（自包含）      | 用户裁决："full 就是用来全包含的"——免构建单文件是它的存在理由                          |
+| `dist/yoya.ui.js`、各分类、`router.js`、`compiler-runtime.js`、`echart.js`、`three.js`、`devtools.js` | **core external**（走 peer） | 旧版这层是"增量入口 + 公共 chunk"；拆包后公共 chunk 的角色由 core 包承担，不再复制实现 |
+| `dist/yoya.compiled-registry.js` / `.json`                                                            | 保持旧名                     | 注册表由 `scripts/compiler-registry.mjs` 生成                                          |
+| `types/*.d.ts`                                                                                        | 扁平                         | 与旧 `exports.types` 一一对应                                                          |
+
+**已知代价（写在明处）**：自包含产物内联 core ⇒ ui 的 tarball 里存在 core 副本；消费者同时用
+`.`（或 `/core`）与 `@yoyaflow/yoya-core` 时会双副本——与旧包同类隐患，`docs/ssr.md` 的禁忌照旧适用。
+
+**落地顺序**（一刀落齐，见 §17）。
+
+## 17. 落地清单（发布路径兼容 —— 已完成，见 §20）
+
+## 20. 发布路径兼容 + 运行期钩子进 core（已落地）
+
+**发布面恢复旧形状**（`packages/yoya-ui`）：`main`/`module` = `./dist/yoya.ui-router.full.js`、
+`style` = `./dist/yoya.ui.css`、`types` = `./types/index.d.ts`、`bin` = `{ "yoya-compiler": "./dist/yoya.compiler.js" }`；
+`exports` 是旧面 17 个子入口（`.` `/core` `/api` `/ui` `/actions` … `/compiler` `/echart` `/three` `/devtools` `/ui.css`），
+`types` 指向**扁平**的 `./types/yoya.<entry>.d.ts`；`files` 恢复 `!types/tests` / `!dist/examples` 那套。
+
+**dist 里怎么产出旧命名**（`scripts/build-packages.mjs`；模块镜像保留给 `/internal/*` 深引用）：
+
+- **增量入口**（`yoya.ui.js` / `yoya.actions.js` … 13 个）→ 一行 `export * from './<name>.js'`（core 走 peer，不内联）+ `.min.js`；
+- **自包含入口**（`yoya.core.js` / `yoya.api.js` / 三个 `.full`）→ **真捆绑**、core 内联成单文件。打捆**必须走 workspace 解析插件**，否则裸包名会解析到 core 的 dist 镜像 ⇒ 同一份 bundle 里两份 core（`verify:dist` 的 `.full` 冒烟正是抓这个的）；
+- 注册表旧名 `yoya.compiled-registry.js` / `.json` / `.min.js`；补位 `dist/yoya.compiler.js`（转发壳）与 `dist/echarts.min.js`；
+- 类型扁平化：`types/entries/yoya.*.d.ts` → `types/yoya.*.d.ts`（`entries/` 删除），`tsconfig paths` 随之改扁平。
+
+**运行期钩子进 core**（`packages/yoya-core/src/core/compiler-runtime.js`）：实现搬进 core（依赖只有 core 的
+4 个原语模块），新增子入口 `@yoyaflow/yoya-core/compiler-runtime`；ui 的 `compiler-runtime.js` 变**转发壳**、
+ui 的 `src/compiler/` **整目录删除**。于是「只装 core + 只加编译器」的项目也能跑编译产物；
+`verify-packages` §5 断言 core 有钩子、钩子不 import ui、ui 侧已无 compiler 目录。
+
+**`verify:dist` 的单例口径**：跨包冒烟走 **`/ui`（增量）+ core**（全应用一份 core）；`.full` 另有一条
+"自己单独能跑"的冒烟——两条都过，才说明"`.full` 自包含、但不与 core 包混用"这条口径成立。
+
+> **2026-09-25 追加**：编译器先独立成包了（§18），发布路径兼容那一刀仍然待做（§17 六步不变）。
+
+## 18. 编译器独立成包（`packages/yoya-compiler/`，已落地）
+
+判据（见本轮讨论）：**"知道形状"的可以独立，"知道本库有哪些组件 / 在哪个入口"的必须留在库里。**
+
+| 去处                               | 内容                                                                                                                                                             |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **新包 `packages/yoya-compiler/`** | `analyze` / `discover` / `emit` / `compile` / `cli` / `plugin` / `component-key` / `registry`（通用构建器）/ `report` + 全部测试与夹具；`bin: yoya-compiler`     |
+| **留在 ui**                        | `src/compiler/runtime.js`（编译产物的**运行期**钩子，出去会让运行期被迫装编译器）+ `compiled-registry` 数据（库内组件注册表）                                    |
+| **留在库侧脚本**                   | `CATEGORY_ENTRIES` / `scopeEntryOf` / `packageOfFile`（"哪个文件属于哪个子入口"）——继续在根 `scripts/compiler-registry.mjs` 里，通过参数注入编译器包的通用构建器 |
+
+依赖面（写进 `package.json`，由门禁守）：
+
+- 编译器包的 **peer**：`@yoyaflow/yoya-core`（必需）、`@babel/parser`（可选）、`@yoyaflow/yoya-ui`（可选，只为注册表数据）；
+- 编译器包 **没有 dependencies**；
+- ui 把 `@yoyaflow/yoya-compiler` 声明成**可选 peer**，`src/compiler.js` 变成**转发壳**（老子路径 `@yoyaflow/yoya-ui/compiler` 照旧可用，`node dist/yoya.compiler.js …` 会转发到新包的 bin）；
+- 根 `scripts/*` 直接引用**源码**（`../packages/yoya-compiler/src/…`），注册表生成不依赖"先构建过编译器包"。
+
+收益与代价：
+
+- ui 的运行期产物从 **138 → 114** 个模块（引擎已不在里面）；编译器有自己的构建/测试/发布节奏；
+- **代价（已知债）**：`static-values.js` 仍 import ui 的 `components/shared.js`（组件作者助手的两个主题助手）——这是编译器包目前唯一一条 ui 依赖，下一刀（作者助手进 core）消掉；老项目的 `@yoyaflow/yoya-ui/compiler` 用法现在需要额外装 `@yoyaflow/yoya-compiler`（可选 peer 声明 + README 说明）。
+
+新增门禁：
+
+- `verify:packages` §5：编译器包源码不 import 任何组件域、没有 dependencies、ui 只剩 `compiler/runtime.js`、ui 对编译器包是可选 peer；
+- `verify:dist`：编译器包也做 exports↔dist 校验；ui 的 dist 里不得出现编译器引擎文件（`analyze/emit/plugin/registry/discover`）。
+
+## 19. 组件作者助手进 core（已落地）
+
+判据：**第三方组件作者只装 core 时必须能写出一个合法组件**。于是把 `components/shared.js` 一分为二：
+
+| 去处                                                                | 内容                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **进 core**（`packages/yoya-core/src/core/component-authoring.js`） | 16 个契约助手：`createComponentShortcut` / `createComponentFactory` / `normalizeComponentArguments` / `applyComponentArguments` / `applyComponentSetup` / `booleanMethod` / `delegateCommands` / `delegateChildFactories` / `delegateNodeCommands` / `elementHasIdentity` / `isPlainObject` / `resolveTextValue` / `normalizeChildren` / `themeValue` / `themeBorder`（+ 内部 `runBuilder`，模块级导出、走 `/internal/*`，不进聚合面） |
+| **留 ui**（`components/shared.js`）                                 | 13 个**按族的实现细节**：按钮/消息/下拉的样式构造、槽位装配（`setupButtonSlot` / `setupContentSlot`）、列表键、几何助手 + `export * from` core 的契约助手（40 个组件文件的相对 import 零改动）                                                                                                                                                                                                                                         |
+
+口径与证据：
+
+- core 聚合用**显式名单**导出这些助手；`applyElementOptions` 与 `node.js` 的同名导出冲突，聚合里**只保留 node.js 那一个**（旧面不变），契约侧那个包装走 `/internal/...` 深引用；
+- 编译器改成从 `@yoyaflow/yoya-core` 取助手；`isStaticLibraryModule` 认三种写法（旧的 `…/components/shared.js`、新的 `…/core/component-authoring.js`、公开的 `@yoyaflow/yoya-core`）⇒ **编译器包对 ui 的依赖归零**（`verify:packages` §5 新增断言）；
+- 体积账：core +0.9 KB（29.9 → 30.8 min+gzip）、ui 相应 +1.2，README 体积表已由 `report:bundle:write` 刷新——这是"契约搬到慢线"的合理代价。
+
+**踩坑记录**：拆模块时若把"紧贴导出的 JSDoc"挪到下一个块，会把一个注释块切两半、产出孤儿 `*/` 直接语法错（本次先撞了一次）；正确做法是**块边界只认顶层 `export`，注释不搬**。
+
+1. `packages/yoya-ui/package.json`：`main`/`module`/`style`/`types`/`bin`/`exports`/`files` 原样恢复 0.7.0；
+2. `scripts/build-packages.mjs` 的 ui 侧改为**按旧入口表打包**：`yoya.<entry>.js` + `.min.js`、
+   公共 chunk、三个 `.full`（内联 core）、`yoya.compiler.js`（node + shebang）、
+   `yoya.compiled-registry.js`/`.json`、`echarts.min.js`、`yoya.ui.css`；
+3. `yoya.core.js` / `yoya.api.js`：由 `packages/yoya-ui/src/core-shim.js` / `api-shim.js`
+   两个源文件承担（自包含打包，内容来自 core）；
+4. ui 类型扁平化：`types/entries/yoya.*.d.ts` → `types/yoya.*.d.ts`（内部 `../x.js` → `./x.js`）；
+5. `bundle-metrics.mjs` 的入口清单与 README 生成块回到旧文件名（顺带恢复 `yoya.*.min.js` 与
+   `.full` 的行），`report:bundle:write` 重刷；
+6. `verify-dist.mjs` 的 exports↔dist 检查按恢复后的元数据自动覆盖；跑 build / verify:dist /
+   verify:packages / typecheck / 1766 条测试。
+
+`scripts/workspace-links.mjs` 给 `node_modules/@yoyaflow/*` 建幂等链接（正常由 `npm install` 建，
+但构建与产物门禁不该依赖一次 install——它们都要按**包名** import）。

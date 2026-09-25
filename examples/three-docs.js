@@ -1,6 +1,6 @@
-import { section, vCard } from '../src/index.js';
+import { section, vCard } from '@yoyaflow/yoya-ui';
 import * as THREE from 'three';
-import { vThree } from '../src/yoya.three.js';
+import { vThree } from '@yoyaflow/yoya-ui/three';
 import { ComponentSource } from './component-source.js';
 
 const THREE_EXTRA_SOURCE = "import * as THREE from 'three';";

@@ -7,9 +7,9 @@ import {
   toast,
   vCard,
   vDialog
-} from '../src/index.js';
+} from '@yoyaflow/yoya-ui';
 import { applyDemoStyles } from './demo-styles.js';
-import * as icons from '../src/index.js';
+import * as icons from '@yoyaflow/yoya-ui';
 
 const iconDescriptions = Object.freeze({
   ArrowDownOutlined: '向下箭头',

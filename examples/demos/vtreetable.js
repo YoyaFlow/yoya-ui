@@ -1,4 +1,4 @@
-import { div } from '../../src/index.js';
+import { div } from '@yoyaflow/yoya-ui';
 
 const nodes = [
   {

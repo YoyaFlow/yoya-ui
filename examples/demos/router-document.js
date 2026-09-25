@@ -7,7 +7,7 @@ import {
   vRouterViews,
   vText,
   vstack
-} from '../../src/index.js';
+} from '@yoyaflow/yoya-ui';
 
 /**
  * 文档路由：内部 HTML 页面与外部链接注册成路由，进入即整页跳转。
