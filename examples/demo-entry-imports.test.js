@@ -38,15 +38,15 @@ const isAllowed = (specifier) =>
   allowed.has(specifier) || allowedPatterns.some((pattern) => pattern.test(specifier));
 
 const files = [];
-const walk = (path) => {
-  const stat = statSync(join(REPO, path));
+const walk = (relative) => {
+  const stat = statSync(join(REPO, relative));
   if (stat.isDirectory()) {
-    for (const name of readdirSync(join(REPO, path))) walk(`${path}${name}/`);
+    for (const name of readdirSync(join(REPO, relative))) walk(`${relative}/${name}`);
     return;
   }
-  if (/\.(js|mjs)$/.test(path) && !/\.test\.js$/.test(path)) files.push(path);
+  if (/\.(js|mjs)$/.test(relative) && !/\.test\.js$/.test(relative)) files.push(relative);
 };
-walk('examples/');
+walk('examples');
 
 const IMPORT =
   /import\s+(?:(?:type\s+)?(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"](@yoyaflow\/[^'"]+)['"]/g;
