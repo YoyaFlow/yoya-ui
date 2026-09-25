@@ -59,6 +59,12 @@ export const BUNDLE_ENTRIES = [
     contents: 'router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount）'
   },
   {
+    label: '@yoyaflow/yoya-ui/ssr',
+    pkg: 'ui',
+    file: 'ssr.js',
+    contents: '服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）'
+  },
+  {
     label: '@yoyaflow/yoya-ui/svg',
     pkg: 'ui',
     file: 'svg.js',

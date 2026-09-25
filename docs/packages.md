@@ -65,7 +65,9 @@ npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
 
 **入口面**（0.7.2 起）：主入口 = 渲染原语 + 元素面（节点 / HTML 与 **SVG 工厂 + 图标集** / 信号 /
 `keyed` / `vText` / `slot`）；`/tools` 放 a11y + i18n + theme + 组件作者契约；`/dev` 放 devtools；
-`/svg` 仍是显式子入口（与主入口同一份实现）。旧路径
+`/svg` 仍是显式子入口（与主入口同一份实现）；`/ssr` 是服务端完整入口（core + html + layout +
+router/SSR，服务端页面只引它一个）。模块镜像 `dist/**` 通过 `./internal/*` 暴露（core 是白名单
+子路径，ui 是 `dist/*` 镜像），与 README 的「`/internal/*` 深引用」口径一致。旧路径
 `@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools` 仍是可用别名。
 
 每个入口的导入写法（含 CDN 与 import map、常见错误对照）见 [install.zh-CN.md](install.zh-CN.md) /

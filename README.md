@@ -303,8 +303,9 @@ be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/
 Entry surface (0.7.2 onwards): the main entry is the rendering primitives plus the whole element
 surface — nodes, HTML and **SVG factories + icon set**, signals, `keyed`, `vText`, `slot`. `/tools`
 carries a11y + i18n + theme + the component-authoring contract, `/dev` carries DevTools, and `/svg`
-stays an explicit alias for the element surface. The older `@yoyaflow/yoya-core/devtools` and
-`@yoyaflow/yoya-ui/devtools` paths still resolve.
+stays an explicit alias for the element surface. `/ssr` is the complete server entry (core + html +
+layout + router/SSR), and the module mirrors under `dist/**` are reachable through `./internal/*`.
+The older `@yoyaflow/yoya-core/devtools` and `@yoyaflow/yoya-ui/devtools` paths still resolve.
 
 The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
 again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
@@ -320,6 +321,7 @@ core, so the real download is core + that row.
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
 | `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
 | `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
 | `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |

@@ -69,22 +69,24 @@ import { enableDevtools } from '@yoyaflow/yoya-core/dev'; // DevTools
 
 ## 3. `@yoyaflow/yoya-ui`：组件、路由与扩展
 
-| 导入路径                                                                  | 内容                                                                                                   |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `@yoyaflow/yoya-ui`                                                       | 根入口 = 全量面：core + tools + 全部组件 + 布局 + 主题 + 路由/SSR（树摇按需）                          |
-| `@yoyaflow/yoya-ui/core`                                                  | 转发到 `@yoyaflow/yoya-core`（**同一份实例**，不会拿不到 `instanceof`）                                |
-| `@yoyaflow/yoya-ui/ui`                                                    | 组件 + layout + theme（不含 router / SSR）                                                             |
-| `@yoyaflow/yoya-ui/router`                                                | 路由 + SSR：`createRouter` / `Router` / `renderPage` / `hydrateOrMount` / `renderToString` / `mount` … |
-| `@yoyaflow/yoya-ui/{actions,navigation,feedback,form,data-display,async}` | 组件分类子入口（与 `/ui` 同一批组件，只是切法不同）                                                    |
-| `@yoyaflow/yoya-ui/tools`                                                 | 转发到 `@yoyaflow/yoya-core/tools`（i18n / 主题 / a11y / 作者契约）                                    |
-| `@yoyaflow/yoya-ui/svg`                                                   | SVG 元素面（与 core 同一份实现）                                                                       |
-| `@yoyaflow/yoya-ui/dev`                                                   | 模块转发到 core 的 DevTools；旧路径 `/devtools` 仍可用                                                 |
-| `@yoyaflow/yoya-ui/api`                                                   | = `@yoyaflow/yoya-core/api`                                                                            |
-| `@yoyaflow/yoya-ui/echart`                                                | `vEchart`（自备 `echarts`，用 `chart.echartsLib(echarts)` 传入）                                       |
-| `@yoyaflow/yoya-ui/three`                                                 | `vThree`（自备 `three`）                                                                               |
-| `@yoyaflow/yoya-ui/compiler`                                              | 转发到 `@yoyaflow/yoya-compiler`                                                                       |
-| `@yoyaflow/yoya-ui/compiler-runtime` / `/compiled-registry`               | 编译运行期钩子与预生成注册表数据                                                                       |
-| `@yoyaflow/yoya-ui/ui.css`                                                | 组件皮肤与主题变量（无运行时注入，必须引）                                                             |
+| 导入路径                                                                  | 内容                                                                                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `@yoyaflow/yoya-ui`                                                       | 根入口 = 全量面：core + tools + 全部组件 + 布局 + 主题 + 路由/SSR（树摇按需）                                        |
+| `@yoyaflow/yoya-ui/core`                                                  | 转发到 `@yoyaflow/yoya-core`（**同一份实例**，不会拿不到 `instanceof`）                                              |
+| `@yoyaflow/yoya-ui/ui`                                                    | 组件 + layout + theme（不含 router / SSR）                                                                           |
+| `@yoyaflow/yoya-ui/router`                                                | 路由 + SSR：`createRouter` / `Router` / `renderPage` / `hydrateOrMount` / `renderToString` / `mount` …               |
+| `@yoyaflow/yoya-ui/ssr`                                                   | **服务端完整入口**：core 原语 + html + layout + router / SSR；服务端页面只引它一个（`vBody` 等 layout 组件也在里面） |
+| `@yoyaflow/yoya-ui/{actions,navigation,feedback,form,data-display,async}` | 组件分类子入口（与 `/ui` 同一批组件，只是切法不同）                                                                  |
+| `@yoyaflow/yoya-ui/tools`                                                 | 转发到 `@yoyaflow/yoya-core/tools`（i18n / 主题 / a11y / 作者契约）                                                  |
+| `@yoyaflow/yoya-ui/svg`                                                   | SVG 元素面（与 core 同一份实现）                                                                                     |
+| `@yoyaflow/yoya-ui/dev`                                                   | 模块转发到 core 的 DevTools；旧路径 `/devtools` 仍可用                                                               |
+| `@yoyaflow/yoya-ui/api`                                                   | = `@yoyaflow/yoya-core/api`                                                                                          |
+| `@yoyaflow/yoya-ui/echart`                                                | `vEchart`（自备 `echarts`，用 `chart.echartsLib(echarts)` 传入）                                                     |
+| `@yoyaflow/yoya-ui/three`                                                 | `vThree`（自备 `three`）                                                                                             |
+| `@yoyaflow/yoya-ui/compiler`                                              | 转发到 `@yoyaflow/yoya-compiler`                                                                                     |
+| `@yoyaflow/yoya-ui/compiler-runtime` / `/compiled-registry`               | 编译运行期钩子与预生成注册表数据                                                                                     |
+| `@yoyaflow/yoya-ui/ui.css`                                                | 组件皮肤与主题变量（无运行时注入，必须引）                                                                           |
+| `@yoyaflow/yoya-ui/internal/*`                                            | 模块镜像（`dist/**`）：库内深引用的稳定落点，业务代码优先用上面的公开入口                                            |
 
 ```js
 // 最省事：根入口一次引全（打包器会按需树摇）
@@ -105,6 +107,9 @@ import '@yoyaflow/yoya-ui/ui.css';
 import { div, ref, vText } from '@yoyaflow/yoya-core';
 import { vButton, vCard } from '@yoyaflow/yoya-ui/ui';
 import { createRouter, renderPage } from '@yoyaflow/yoya-ui/router';
+
+// 服务端：一个入口拿齐页面渲染需要的东西（layout 的 vBody 也在）
+import { renderPage, renderToString, vBody } from '@yoyaflow/yoya-ui/ssr';
 
 // 扩展与工具
 import { vEchart } from '@yoyaflow/yoya-ui/echart';
@@ -189,7 +194,6 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
 | -------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `does not provide an export named 'createI18n'`（从 core / ui 主入口引）   | 0.7.2 起 i18n / 主题 / a11y 移到 `/tools`                     | 改成 `from '@yoyaflow/yoya-core/tools'`（或 `@yoyaflow/yoya-ui/tools`） |
 | `Failed to resolve module specifier "@yoyaflow/yoya-core"`（浏览器控制台） | 从 CDN 直接 import 了**增量入口**（单行转发、core 走 peer）   | 换成自包含单文件，或加 `importmap`                                      |
-| `Failed to resolve module specifier "@yoyaflow/yoya-ui/ssr"`               | `/ssr` 不是公开入口                                           | SSR 原语用 `@yoyaflow/yoya-ui/router` 或 `@yoyaflow/yoya-core/ssr`      |
 | `[NAMESPACE_CONFLICT]` 告警 / 某个符号 import 不到                         | barrel 里同名符号有两份实现（0.7.2 的 `applyElementOptions`） | 升级到 0.7.4+；跨入口同名符号必须是同一绑定                             |
 | `instanceof` 判定失败、信号更新不到视图                                    | 装了两份 core（既引了 `.full` 又引了 core 包）                | 二选一；非 `.full` 入口之间共用同一份 peer core                         |
 

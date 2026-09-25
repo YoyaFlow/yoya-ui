@@ -64,6 +64,10 @@
       "types": "./types/yoya.router.d.ts",
       "import": "./dist/yoya.router.js"
     },
+    "./ssr": {
+      "types": "./types/yoya.ssr.d.ts",
+      "import": "./dist/yoya.ssr.js"
+    },
     "./compiler-runtime": {
       "types": "./types/yoya.compiler-runtime.d.ts",
       "import": "./dist/yoya.compiler-runtime.js"
@@ -89,6 +93,7 @@
       "import": "./dist/devtools.js"
     },
     "./ui.css": "./dist/yoya.ui.css",
+    "./internal/*": "./dist/*",
     "./package.json": "./package.json"
   },
   "bin": {

@@ -72,22 +72,24 @@ import { enableDevtools } from '@yoyaflow/yoya-core/dev'; // DevTools
 
 ## 3. `@yoyaflow/yoya-ui`: components, router and extensions
 
-| Import path                                                               | Contents                                                                                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `@yoyaflow/yoya-ui`                                                       | Root entry = the full face: core + tools + all components + layout + theme + router/SSR (tree-shaken)    |
-| `@yoyaflow/yoya-ui/core`                                                  | Forwards to `@yoyaflow/yoya-core` (**same instance**, so `instanceof` keeps working)                     |
-| `@yoyaflow/yoya-ui/ui`                                                    | Components + layout + theme (no router / SSR)                                                            |
-| `@yoyaflow/yoya-ui/router`                                                | Router + SSR: `createRouter` / `Router` / `renderPage` / `hydrateOrMount` / `renderToString` / `mount` … |
-| `@yoyaflow/yoya-ui/{actions,navigation,feedback,form,data-display,async}` | Component category entries (same components as `/ui`, sliced differently)                                |
-| `@yoyaflow/yoya-ui/tools`                                                 | Forwards to `@yoyaflow/yoya-core/tools` (i18n / theme / a11y / authoring)                                |
-| `@yoyaflow/yoya-ui/svg`                                                   | SVG element surface (same implementation as core)                                                        |
-| `@yoyaflow/yoya-ui/dev`                                                   | DevTools (forwards to core); the old `/devtools` path still resolves                                     |
-| `@yoyaflow/yoya-ui/api`                                                   | = `@yoyaflow/yoya-core/api`                                                                              |
-| `@yoyaflow/yoya-ui/echart`                                                | `vEchart` (bring your own `echarts`; pass it with `chart.echartsLib(echarts)`)                           |
-| `@yoyaflow/yoya-ui/three`                                                 | `vThree` (bring your own `three`)                                                                        |
-| `@yoyaflow/yoya-ui/compiler`                                              | Forwards to `@yoyaflow/yoya-compiler`                                                                    |
-| `@yoyaflow/yoya-ui/compiler-runtime` / `/compiled-registry`               | Compile runtime hooks and prebuilt registry data                                                         |
-| `@yoyaflow/yoya-ui/ui.css`                                                | Component skin and theme variables (no runtime injection — always link it)                               |
+| Import path                                                               | Contents                                                                                                                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@yoyaflow/yoya-ui`                                                       | Root entry = the full face: core + tools + all components + layout + theme + router/SSR (tree-shaken)                                                    |
+| `@yoyaflow/yoya-ui/core`                                                  | Forwards to `@yoyaflow/yoya-core` (**same instance**, so `instanceof` keeps working)                                                                     |
+| `@yoyaflow/yoya-ui/ui`                                                    | Components + layout + theme (no router / SSR)                                                                                                            |
+| `@yoyaflow/yoya-ui/router`                                                | Router + SSR: `createRouter` / `Router` / `renderPage` / `hydrateOrMount` / `renderToString` / `mount` …                                                 |
+| `@yoyaflow/yoya-ui/ssr`                                                   | **Complete server entry**: core primitives + html + layout + router / SSR — import this one on the server (`vBody` and other layout components included) |
+| `@yoyaflow/yoya-ui/{actions,navigation,feedback,form,data-display,async}` | Component category entries (same components as `/ui`, sliced differently)                                                                                |
+| `@yoyaflow/yoya-ui/tools`                                                 | Forwards to `@yoyaflow/yoya-core/tools` (i18n / theme / a11y / authoring)                                                                                |
+| `@yoyaflow/yoya-ui/svg`                                                   | SVG element surface (same implementation as core)                                                                                                        |
+| `@yoyaflow/yoya-ui/dev`                                                   | DevTools (forwards to core); the old `/devtools` path still resolves                                                                                     |
+| `@yoyaflow/yoya-ui/api`                                                   | = `@yoyaflow/yoya-core/api`                                                                                                                              |
+| `@yoyaflow/yoya-ui/echart`                                                | `vEchart` (bring your own `echarts`; pass it with `chart.echartsLib(echarts)`)                                                                           |
+| `@yoyaflow/yoya-ui/three`                                                 | `vThree` (bring your own `three`)                                                                                                                        |
+| `@yoyaflow/yoya-ui/compiler`                                              | Forwards to `@yoyaflow/yoya-compiler`                                                                                                                    |
+| `@yoyaflow/yoya-ui/compiler-runtime` / `/compiled-registry`               | Compile runtime hooks and prebuilt registry data                                                                                                         |
+| `@yoyaflow/yoya-ui/ui.css`                                                | Component skin and theme variables (no runtime injection — always link it)                                                                               |
+| `@yoyaflow/yoya-ui/internal/*`                                            | Module mirror (`dist/**`): the stable target for library-internal deep imports; prefer the public entries above in application code                      |
 
 ```js
 // Simplest: pull everything from the root entry (bundlers tree-shake it)
@@ -108,6 +110,9 @@ import '@yoyaflow/yoya-ui/ui.css';
 import { div, ref, vText } from '@yoyaflow/yoya-core';
 import { vButton, vCard } from '@yoyaflow/yoya-ui/ui';
 import { createRouter, renderPage } from '@yoyaflow/yoya-ui/router';
+
+// Server: one entry gives you everything page rendering needs (including layout's vBody)
+import { renderPage, renderToString, vBody } from '@yoyaflow/yoya-ui/ssr';
 
 // Extensions and tools
 import { vEchart } from '@yoyaflow/yoya-ui/echart';
@@ -195,7 +200,6 @@ All three CDN prefixes use identical paths, only the domain differs: `cdn.jsdeli
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `does not provide an export named 'createI18n'` (from a root/core entry)  | Since 0.7.2 i18n / theme / a11y live in `/tools`                                     | Import from `@yoyaflow/yoya-core/tools` (or `@yoyaflow/yoya-ui/tools`) |
 | `Failed to resolve module specifier "@yoyaflow/yoya-core"` in the console | Imported an **incremental entry** from a CDN URL                                     | Use a self-contained file, or add an `importmap`                       |
-| `Failed to resolve module specifier "@yoyaflow/yoya-ui/ssr"`              | `/ssr` is not a public entry                                                         | Use `@yoyaflow/yoya-ui/router` or `@yoyaflow/yoya-core/ssr`            |
 | `[NAMESPACE_CONFLICT]` warning / a symbol refuses to import               | A barrel re-exported two implementations of one name (0.7.2's `applyElementOptions`) | Upgrade to 0.7.4+; one name across entries must be one binding         |
 | `instanceof` checks fail, signal writes never reach the DOM               | Two copies of core (`*.full` plus the core package)                                  | Pick one; non-`.full` entries share a single peer core                 |
 

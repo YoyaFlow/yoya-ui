@@ -174,6 +174,7 @@ import { vDialog, vTooltip } from '@yoyaflow/yoya-ui/feedback';
 import { vInput, vSelect, vForm as vFormTag } from '@yoyaflow/yoya-ui/form';
 import { vTable as vTableTag, vTree } from '@yoyaflow/yoya-ui/data-display';
 import { createRouter, Router, renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router';      // 路由 + SSR
+import { renderPage as renderOnServer, vBody } from '@yoyaflow/yoya-ui/ssr';                      // 服务端完整入口（core + html + layout + router）
 import { createI18n, initYoyaTheme, announce } from '@yoyaflow/yoya-ui/tools';                   // i18n / 主题 / a11y / 作者契约
 import { vEchart } from '@yoyaflow/yoya-ui/echart';                    // 自备 echarts（chart.echartsLib(echarts)）
 import { vThree } from '@yoyaflow/yoya-ui/three';                      // 自备 three

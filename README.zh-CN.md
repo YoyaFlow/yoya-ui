@@ -278,8 +278,9 @@ npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟
 
 入口面（0.7.2 起）：主入口是渲染原语 + 整个元素面（节点、HTML 与 **SVG 工厂 + 图标集**、信号、
 `keyed`、`vText`、`slot`）；`/tools` 放 a11y + i18n + 主题 + 组件作者契约，`/dev` 放 DevTools，
-`/svg` 仍是元素面的显式别名。旧的 `@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools`
-仍可解析。
+`/svg` 仍是元素面的显式别名；`/ssr` 是服务端完整入口（core + html + layout + router/SSR），模块镜像
+`dist/**` 经 `./internal/*` 可达。旧的 `@yoyaflow/yoya-core/devtools` 与
+`@yoyaflow/yoya-ui/devtools` 仍可解析。
 
 下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
 ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
@@ -294,6 +295,7 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
 | `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
 | `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
 | `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
