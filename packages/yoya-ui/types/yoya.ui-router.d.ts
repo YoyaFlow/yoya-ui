@@ -5,6 +5,8 @@
 export * from '@yoyaflow/yoya-core/internal/types/core.js';
 export * from '@yoyaflow/yoya-core/internal/types/html.js';
 export * from '@yoyaflow/yoya-core/internal/types/svg.js';
+// 根入口的运行期面含 tools（a11y / i18n / theme），类型面照同一口径转出
+export * from '@yoyaflow/yoya-core/internal/types/tools.js';
 export * from './layout.js';
 export * from './actions.js';
 export * from './navigation.js';

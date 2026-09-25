@@ -2,10 +2,11 @@
 // 让"这个调用是不是基础元素工厂"由函数对象本身回答，编译器据此快速判断"当前块要不要编"。
 import { describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
 import { VBadge, vBadge } from '@yoyaflow/yoya-ui/internal/data-display/badge.js';
 import { VTable, vTable } from '@yoyaflow/yoya-ui/internal/data-display/table.js';
 
-const tableEntries = () => [...Object.entries(core.htmls), ...Object.entries(core.svgs)];
+const tableEntries = () => [...Object.entries(core.htmls), ...Object.entries(svg.svgs)];
 
 describe('基础元素工厂标识', () => {
   it('html / svg 表里的每个基础工厂都带标记（标记值 = 规范标签名）', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { LanguageSwitch, createI18n, div, vCard, vLanguageSwitch } from '../index.js';
+import { LanguageSwitch, div, vCard, vLanguageSwitch } from '../index.js';
+import { createI18n } from '@yoyaflow/yoya-core/tools';
 
 describe('vLanguageSwitch', () => {
   it('renders a language dropdown and switches the locale', () => {

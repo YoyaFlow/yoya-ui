@@ -29,6 +29,10 @@ ensureWorkspaceLinks();
 import { buildComponentRegistry } from '../packages/yoya-compiler/src/registry.js';
 import { componentKeyOf } from '../packages/yoya-compiler/src/component-key.js';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
+
+// 0.8 起 svg 工厂（`svgs`）不再挂在 core 主入口上；编译器推导元素白名单要两份都拿到。
+const coreNamespace = { ...core, ...svg };
 
 // 注册表的键按**组件包**（快线）归口：根 package.json 现在是 workspace 根，名字不是包名。
 const PACKAGE_NAME = JSON.parse(readFileSync('packages/yoya-ui/package.json', 'utf8')).name;
@@ -51,7 +55,8 @@ function scopeEntryOf(file) {
     return `${PACKAGE_NAME}/${CATEGORY_ENTRIES[category]}`;
   }
   if (category === 'svg') {
-    return CORE_SPECIFIER;
+    // 0.8 起图标集在 core 的 `/svg` 子入口（主入口只留渲染原语）
+    return `${CORE_SPECIFIER}/svg`;
   }
   return `${PACKAGE_NAME}/ui`;
 }
@@ -119,7 +124,7 @@ export async function buildPackagedRegistry({
   const built = buildComponentRegistry({
     entries,
     dir: tmpDir,
-    core,
+    core: coreNamespace,
     runtime: RUNTIME_SPECIFIER,
     registryName: 'components.registry.js',
     dataName: 'components.registry.json',

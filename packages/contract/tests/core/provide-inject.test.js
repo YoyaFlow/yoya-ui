@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   clearInstalledContext,
-  createI18n,
   currentContext,
   div,
   inject,
@@ -12,9 +11,9 @@ import {
   vCardBody,
   vDynamicLoader,
   vNode,
-  withContext,
-  withI18nStringShortcut
+  withContext
 } from '@yoyaflow/yoya-ui';
+import { createI18n, withI18nStringShortcut } from '@yoyaflow/yoya-ui/tools';
 import { renderToString } from '@yoyaflow/yoya-core/ssr';
 
 const html = (node, options = {}) => renderToString(node, { state: {}, ...options }).html;

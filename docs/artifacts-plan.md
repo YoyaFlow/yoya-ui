@@ -141,14 +141,14 @@ tarball 估算：1956 kB → 约 1 MB（压缩对重复代码更敏感，实际�
 
 ## 4. 迁移分期
 
-| 期                           | 内容                                                                                                                 | 验收                                                                                                           | 风险                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| **P0（已完成）**             | 清导入泄漏（core 的 vitest、compiler 的 unplugin/magic-string）+ 两条门禁（发布源码第三方 import / dist 无依赖副本） | `verify:packages`、`verify:dist` 全绿；core 0.96→0.42 MB，compiler 0.40→0.22 MB                                | 无（已消除）                                                           |
-| **P1（已完成，待发布生效）** | 入口薄化：ui 的 `.` / `./core` / `./api` 与 `main` / `module` 改指薄入口；补 3 个缺失类型入口                        | bundler 侧导入 ui 不再内联 core（§4.5 实测）；benchmark 条目撤掉 `yoya-share-core` alias 后数据不变（±0.1 kB） | 低：`.full` 语义从「根入口」退到「CDN 专属」，需要文档与 examples 同步 |
-| **P2**                       | CDN 收敛：只在 `dist/cdn/` 产 3 个 min 产物；旧 `.full` 名转壳；echarts 只留一份                                     | `npm pack` 文件数 / 体积达到 §3.4；CDN 冒烟（jsDelivr 路径可加载）                                             | 中等：老 CDN 链接要靠壳保活                                            |
-| **P3（已完成）**             | 注册表引裸 core（external 判断漏了裸包名，core 的 18 个 dist 模块曾被内联）                                          | 注册表 268.8 → 64.4 kB；`verify:dist` [1b] 入口零内联检查通过                                                  | 低                                                                     |
-| **P4**                       | barrel 纯化 + `sideEffects` + `internal` 白名单 + 死模块出包                                                         | 打包体积再降 ≈8.8 kB（实测口径同上一轮探针）；`verify:packages` 新增「barrel 无副作用」断言                    | 中等：i18n 短路安装要改成显式入口（行为变化需写进 changelog）          |
-| **P5**                       | 兼容壳清理（0.9）                                                                                                    | 33 个 `yoya.*` 壳删除，保留一张「旧名 → 新名」映射表                                                           | 低（一个 minor 的 deprecation 窗口）                                   |
+| 期                           | 内容                                                                                                                               | 验收                                                                                                           | 风险                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **P0（已完成）**             | 清导入泄漏（core 的 vitest、compiler 的 unplugin/magic-string）+ 两条门禁（发布源码第三方 import / dist 无依赖副本）               | `verify:packages`、`verify:dist` 全绿；core 0.96→0.42 MB，compiler 0.40→0.22 MB                                | 无（已消除）                                                           |
+| **P1（已完成，待发布生效）** | 入口薄化：ui 的 `.` / `./core` / `./api` 与 `main` / `module` 改指薄入口；补 3 个缺失类型入口                                      | bundler 侧导入 ui 不再内联 core（§4.5 实测）；benchmark 条目撤掉 `yoya-share-core` alias 后数据不变（±0.1 kB） | 低：`.full` 语义从「根入口」退到「CDN 专属」，需要文档与 examples 同步 |
+| **P2**                       | CDN 收敛：只在 `dist/cdn/` 产 3 个 min 产物；旧 `.full` 名转壳；echarts 只留一份                                                   | `npm pack` 文件数 / 体积达到 §3.4；CDN 冒烟（jsDelivr 路径可加载）                                             | 中等：老 CDN 链接要靠壳保活                                            |
+| **P3（已完成）**             | 注册表引裸 core（external 判断漏了裸包名，core 的 18 个 dist 模块曾被内联）                                                        | 注册表 268.8 → 64.4 kB；`verify:dist` [1b] 入口零内联检查通过                                                  | 低                                                                     |
+| **P4（进行中）**             | barrel 纯化：i18n + a11y → `/tools`，devtools → `/dev`（**已完成**，见 §4.6）；余下 `sideEffects` + `internal` 白名单 + 死模块出包 | 打包体积 −6.7 kB（实测 78.6 → 71.9 kB）；余下项目做完可达 ≈−8.8 kB                                             | 中等：i18n 短路安装要改成显式入口（行为变化需写进 changelog）          |
+| **P5**                       | 兼容壳清理（0.9）                                                                                                                  | 33 个 `yoya.*` 壳删除，保留一张「旧名 → 新名」映射表                                                           | 低（一个 minor 的 deprecation 窗口）                                   |
 
 ## 5. 门禁
 
@@ -179,6 +179,52 @@ tarball 估算：1956 kB → 约 1 MB（压缩对重复代码更敏感，实际�
 同一轮验证：`npm test` 225 文件 / 1766 用例、`verify:packages`、`verify:dist`、`lint`、`typecheck`、`prettier` 全绿；
 **已发布的 10 个自包含 CDN 文件与 33 个兼容壳一个未动**（P2 的收敛与旧名转壳留给版本窗口）。
 
+### 4.6 入口面拆分（P4 主体，2026-09-25）
+
+做法（每条都为了「用不到的子系统不进 bundle」）：
+
+- core 主入口（`src/core/index.js`）不再 re-export i18n / a11y / theme / 组件作者助手，`src/index.js`
+  也不再 re-export svg。新入口：`./tools`（a11y + i18n + **theme** + **component-authoring**）、
+  `./dev`（devtools）；svg 走既有的 `./svg`（工厂 + 图标集）。**`vText` 与 `slot` 仍在 core**：
+  `slot.js` 只被 `node.js` 内部使用，`vText` 是元素/节点通道的基础原语。
+- ui 侧：根入口（`ui-router.js` / `ui-full.js` / 仓内 `index.js`）保持**全量面**（core + svg + tools +
+  组件 + router），组件库用户照旧一个入口拿全；新增 `./svg` 子入口与 `yoya.svg.js` 转发壳。
+- `./internal/*` 通配 → **白名单**（15 条 core / svg 内部路径 + `internal/types/*`）；
+  `skeleton-plan.js` 迁出生产图（`src/testing/`，只有自己的测试引用）。
+- 编译器跟着入口面走：`static-values.js` 改从 `/tools` 取 `themeValue` / `themeBorder`（并把
+  `@yoyaflow/yoya-core/tools` 纳入可折叠来源）；产物发射按名字分流——HTML 工厂来自 core 主入口、
+  SVG 工厂来自 `/svg`（新增 `svgSpecifier` 选项，默认 `@yoyaflow/yoya-core/svg`）；注册表的图标 scope
+  也改指 `/svg`。
+- ui 侧新增 `src/tools.js` / `src/dev.js`（转发 core），并在构建的 legacy 列表里产出
+  `dist/yoya.tools.js` / `dist/yoya.dev.js`（+ `.min.js`）转发壳；老 `./devtools` 路径保留。
+- 类型面同步拆分：`types/tools.d.ts`（a11y + i18n 声明从 `types/core.d.ts` 迁出）、`types/dev.d.ts`；
+  `core.d.ts` / `ssr.d.ts` / ui 的 `i18n.d.ts` 改为从 tools 取 `I18n` 类型；tsconfig 加
+  `yoya-ui/tools` / `yoya-ui/dev` 的 paths。
+- 消费点同步：core 侧 4 个测试、ui 侧 4 个测试、2 个 examples、`consumer.test-d.ts`。
+
+实测（同一份 benchmark runtime 条目源码，esbuild minify；用 junction 把 `@yoyaflow/*` 指到本地包）：
+
+| 探针                                       | 已发布 0.7.1 | 本地（P4 主体完成） |              差 |
+| ------------------------------------------ | -----------: | ------------------: | --------------: |
+| benchmark runtime 条目（`…/yoya-ui/core`） |      78.6 kB |         **69.8 kB** | −8.8 kB（−11%） |
+| 同上，只 import `@yoyaflow/yoya-ui/core`   |      73.9 kB |         **65.1 kB** |         −8.8 kB |
+| `41 体积未压缩` 预期                       |      80.6 kB |        **≈71.8 kB** |         −8.8 kB |
+
+**`sideEffects` 的实测与结论**：临时把 `"sideEffects": false` 加到 core / ui 后，_根入口_（全量面）
+的产物从 **375.7 kB → 65.0 kB（−83%）**——组件库未用部分终于能摇掉；但条目（`/core` 面）**一个字节没变**
+（69.8 kB，说明 P4 之后主入口已经没有可摇的副作用）。因为 ui / core 的 dist 里仍有顶层注册
+（`registerChildFactories(...)` 等），贸然声明 `false` 会让压缩器把注册一起删——**先做「注册惰性化」
+审计再声明**，登记为独立跟进项（不在本轮）。
+验证：`npm test` 225 文件 / 1766 用例、`verify:packages`、`verify:dist`、`lint`、`typecheck`、
+`prettier` 全绿。
+
+**兼容性**：这是**入口面变更**——`import { createI18n } from '@yoyaflow/yoya-core'` 不再有效，
+改用 `@yoyaflow/yoya-core/tools`（或 `@yoyaflow/yoya-ui/tools`），同一条路径也承接 theme 与
+组件作者助手（`createComponentShortcut` / `themeValue` / `themeBorder` …）；svg 工厂与图标集走
+`@yoyaflow/yoya-core/svg`（或 `@yoyaflow/yoya-ui/svg`）；devtools 走 `/dev`（老 `/devtools` 保留）。
+**ui 包根入口不受影响**（全量面），examples / 模板照旧。自包含 CDN 产物（`yoya.core.js` /
+`yoya.ui.full*.js` 等）**路径与格式不变，但内容随之变化**——建议随 **0.8.0** 发布。
+
 ## 6. 影响面
 
 - **benchmark（js-framework-benchmark 仓库）**：P1 落地后 `keyed/yoya-ui-*` 两套条目可以撤掉
@@ -198,4 +244,3 @@ tarball 估算：1956 kB → 约 1 MB（压缩对重复代码更敏感，实际�
    （换来 −8.8 kB 与 `sideEffects` 声明），还是保持现状？
 4. **`./internal/*` 白名单列哪些**：编译器运行期钩子入口是公开承诺，其余内部模块建议不承诺。
 5. **兼容壳的移除版本**：0.9 还是 1.0？
-   | **P0（已完成）** | 清导入泄漏（core 的 vitest、compiler 的 unplugin/magic-string）+ 两条门禁（发布源码第三方 import / dist 无依赖副本） | `verify:packages`、`verify:dist` 全绿；core 0.96→0.42 MB，compiler 0.40→0.22 MB | 无（已消除） |

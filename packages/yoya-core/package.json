@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-core",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "yoya-ui core (slow line): node/signals/HTML/SVG primitives, SSR helpers, i18n / access / context / theme primitives. Ships no components and depends on none.",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,6 +23,14 @@
       "types": "./types/api.d.ts",
       "import": "./dist/api.js"
     },
+    "./tools": {
+      "types": "./types/tools.d.ts",
+      "import": "./dist/tools.js"
+    },
+    "./dev": {
+      "types": "./types/dev.d.ts",
+      "import": "./dist/dev.js"
+    },
     "./ssr": {
       "types": "./types/ssr.d.ts",
       "import": "./dist/core/ssr.js"
@@ -34,7 +42,23 @@
     "./compiler-runtime": {
       "import": "./dist/core/compiler-runtime.js"
     },
-    "./internal/*": "./dist/*",
+    "./internal/core/index.js": "./dist/core/index.js",
+    "./internal/core/node.js": "./dist/core/node.js",
+    "./internal/core/v-node.js": "./dist/core/v-node.js",
+    "./internal/core/id.js": "./dist/core/id.js",
+    "./internal/core/context.js": "./dist/core/context.js",
+    "./internal/core/access.js": "./dist/core/access.js",
+    "./internal/core/a11y.js": "./dist/core/a11y.js",
+    "./internal/core/i18n.js": "./dist/core/i18n.js",
+    "./internal/core/theme.js": "./dist/core/theme.js",
+    "./internal/core/slot.js": "./dist/core/slot.js",
+    "./internal/core/key-set.js": "./dist/core/key-set.js",
+    "./internal/core/setup-keys.js": "./dist/core/setup-keys.js",
+    "./internal/core/document-events.js": "./dist/core/document-events.js",
+    "./internal/core/component-authoring.js": "./dist/core/component-authoring.js",
+    "./internal/core/signals/handle.js": "./dist/core/signals/handle.js",
+    "./internal/svg/icons.js": "./dist/svg/icons.js",
+    "./internal/types/*": "./types/*",
     "./internal/types/*": "./types/*",
     "./package.json": "./package.json"
   },

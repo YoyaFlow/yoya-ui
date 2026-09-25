@@ -98,6 +98,9 @@ console.log('assets: yoya.ui.css + chart/echarts.min.js');
 // 模块镜像（preserveModules）保留：那是 `/internal/*` 深引用的稳定落点。
 const LEGACY_INCREMENTAL = [
   ['yoya.ui.js', 'ui.js'],
+  ['yoya.tools.js', 'tools.js'],
+  ['yoya.dev.js', 'dev.js'],
+  ['yoya.svg.js', 'svg.js'],
   ['yoya.actions.js', 'actions.js'],
   ['yoya.navigation.js', 'navigation.js'],
   ['yoya.feedback.js', 'feedback.js'],

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computed, createI18n, div, ref, vText } from '@yoyaflow/yoya-ui';
+import { computed, div, ref, vText } from '@yoyaflow/yoya-ui';
+import { createI18n } from '@yoyaflow/yoya-ui/tools';
 import { mount, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
 
 function createCounterPage(initialState = { count: 0 }) {

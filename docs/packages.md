@@ -25,8 +25,14 @@
 ## 运行期形态：两选一
 
 ```js
-// 只要引擎（含 HTML/SVG/信号/SSR/i18n/theme/authoring）
-import { div, vNode, createI18n } from '@yoyaflow/yoya-core';
+// 只要引擎（含 HTML/SVG/信号/SSR/authoring/slot）
+import { div, vNode } from '@yoyaflow/yoya-core';
+
+// 辅助工具（a11y + i18n）单独走工具入口——不进主入口，打包器才不会把它拖进每个应用
+import { createI18n, announce } from '@yoyaflow/yoya-core/tools';
+
+// 开发工具（视图树快照 / 生命周期事件流，默认关闭）
+import { enableDevtools } from '@yoyaflow/yoya-core/dev';
 
 // 要用组件（core 由 peer 自动带上）
 import { vButton, vCard } from '@yoyaflow/yoya-ui/ui';
@@ -45,13 +51,18 @@ npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
 
 ## 发布面
 
-`@yoyaflow/yoya-ui` 的 tarball 路径与 0.7.0 一致（`dist/yoya.*.js`、扁平 `types/yoya.*.d.ts`、
-`exports` 旧面 17 个子入口）。产物分两类：
+`@yoyaflow/yoya-ui` 的 tarball 路径与 0.7.0 一致（`dist/yoya.*.js`、扁平 `types/yoya.*.d.ts`），
+并新增 `./tools`、`./dev` 两个子入口（对应 `dist/tools.js` / `dist/dev.js`，以及老命名风格的
+`dist/yoya.tools.js` / `dist/yoya.dev.js` 转发壳）。产物分两类：
 
 - **增量入口**（`yoya.ui.js` / `yoya.actions.js` …）：单行转发，core 走 peer，**不内联**；
 - **自包含入口**（`yoya.core.js` / `yoya.api.js` / `yoya.ui.full.js` / `yoya.router.full.js` /
   `yoya.ui-router.full.js`）：core **内联**成单文件（"full 就是全包含"），适合 CDN 直用；
   **不要与 `@yoyaflow/yoya-core` 混用**（双副本会让 `instanceof` / 身份判定失配，见 `docs/ssr.md`）。
+
+**入口面**（0.8 起）：主入口只留渲染必需的原语（节点 / 元素与 SVG 工厂 / 信号 / keyed / `vText` /
+`slot` / 组件作者契约）；`/tools` 放 a11y + i18n；`/dev` 放 devtools。旧路径
+`@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools` 仍是可用别名。
 
 ## 常用命令
 

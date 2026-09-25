@@ -10,7 +10,11 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
 import { compileSource } from './compile.js';
+
+// 元素白名单 = core 主入口 + svg 子入口（0.8 起 svg 不再挂主入口）
+const coreNamespace = { ...core, ...svg };
 
 const scratchRoot = join(process.cwd(), '.scratch');
 mkdirSync(scratchRoot, { recursive: true });
@@ -22,7 +26,8 @@ const runtimeUrl = pathToFileURL(
 ).href;
 
 const source = [
-  "import { svg, vText } from '@yoyaflow/yoya-core';",
+  "import { svg } from '@yoyaflow/yoya-core/svg';",
+  "import { vText } from '@yoyaflow/yoya-core';",
   '',
   'export function Icon(props) {',
   '  return svg((root) => {',
@@ -76,7 +81,7 @@ const load = async (mode) => {
     file,
     fn: 'Icon',
     mode,
-    core,
+    core: coreNamespace,
     runtime: runtimeUrl
   });
   expect(result.bails, mode).toEqual([]);
@@ -102,7 +107,10 @@ describe('SVG 工厂与 attr 对象形式', () => {
       // SVG 子标签工厂：节点通道产物 import `svgs` 命名空间，写成 `svgs.path(...)`
       if (mode === 'node') {
         expect(result.module).toContain('svgs.path');
-        expect(result.module).toMatch(/import \{[^}]*\bsvgs\b[^}]*\} from "@yoyaflow\/yoya-core"/);
+        // 0.8 起 svg 工厂表与 svg 工厂都来自 `/svg` 子入口
+        expect(result.module).toMatch(
+          /import \{[^}]*\bsvgs\b[^}]*\} from "@yoyaflow\/yoya-core\/svg"/
+        );
       }
       const product =
         mode === 'element'
@@ -140,7 +148,7 @@ describe('SVG 工厂与 attr 对象形式', () => {
         file,
         fn: 'Box',
         mode: 'element',
-        core,
+        core: coreNamespace,
         runtime: runtimeUrl
       });
       expect(result.bails, label).toEqual([]);

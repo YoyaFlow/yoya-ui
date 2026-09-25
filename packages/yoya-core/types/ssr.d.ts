@@ -1,5 +1,6 @@
-import type { AccessContext, ContextProviders, ElementNode, I18n, ViewNode } from './core.js';
+import type { AccessContext, ContextProviders, ElementNode, ViewNode } from './core.js';
 import type { HtmlElementNode } from './html.js';
+import type { I18n } from './tools.js';
 
 export type PageFactory<S = unknown> = (state: S) => ViewNode | PageFactory<S>;
 

@@ -4,7 +4,7 @@
  * 不是演示代码、也不随包发布。
  */
 import { span, vText } from '@yoyaflow/yoya-core';
-import { themeBorder, themeValue } from '@yoyaflow/yoya-core';
+import { themeBorder, themeValue } from '@yoyaflow/yoya-core/tools';
 
 const TAG_CLASS = 'yoya-theme-tag';
 

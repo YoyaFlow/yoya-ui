@@ -1,14 +1,16 @@
 import {
   computed,
-  createI18n,
-  getI18n,
-  installI18nStringShortcut,
   ref,
-  registerI18n,
-  unregisterI18n,
   vLanguageSwitch,
   vstack
 } from '@yoyaflow/yoya-ui';
+import {
+  createI18n,
+  getI18n,
+  installI18nStringShortcut,
+  registerI18n,
+  unregisterI18n
+} from '@yoyaflow/yoya-ui/tools';
 
 export function I18nReactiveExample1() {
   const locale = createI18n({

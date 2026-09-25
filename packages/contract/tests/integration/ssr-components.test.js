@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from '@yoyaflow/yoya-ui/ssr';
 import {
   codeBlock,
-  createI18n,
   createRouter,
   div,
   hstack,
@@ -71,6 +70,7 @@ import {
   vTreeRanger,
   vUpload
 } from '@yoyaflow/yoya-ui';
+import { createI18n } from '@yoyaflow/yoya-ui/tools';
 
 function buildAllComponentsPage() {
   const router = createRouter();

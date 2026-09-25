@@ -7,7 +7,7 @@ import {
   resolveSkeleton,
   skeletonShapeSignature,
   skeletonStats
-} from './skeleton-plan.js';
+} from '../testing/skeleton-plan.js';
 
 const selectedId = ref(null);
 

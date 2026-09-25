@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HtmlElementNode,
   button,
-  createI18n,
   div,
   hasComponentIdentity,
   toast,
@@ -45,6 +44,7 @@ import {
   vTimerRange,
   vPagination
 } from '../index.js';
+import { createI18n } from '@yoyaflow/yoya-core/tools';
 import { applyComponentArguments } from './shared.js';
 
 describe('compound components', () => {

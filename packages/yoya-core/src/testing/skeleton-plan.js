@@ -17,7 +17,9 @@
  * 不可折叠的情况（`foldable: false`，附 `reason`）：子树里有组件节点、区域、挂载条件或多根片段；
  * 这些形态的结构在实例间不保证一致，折叠交给更上层的策略决定（票 28）。
  */
-import { ComponentNode, ElementNode, EMPTY_CHILDREN, VTextNode } from './node.js';
+// 顶层门禁：`src/testing/**` 不进 dist（`scripts/build-packages.mjs` 排除），
+// 这里放的是**测试辅助**，可以依赖内部模块；相对路径指向 `src/core/`。
+import { ComponentNode, ElementNode, EMPTY_CHILDREN, VTextNode } from '../core/node.js';
 
 export const SKELETON_PLAN_VERSION = 1;
 
