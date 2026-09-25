@@ -1,0 +1,797 @@
+import {
+  FolderOpenOutlined,
+  FolderOutlined,
+  initYoyaTheme,
+  router,
+  section,
+  toast,
+  vBody,
+  vContainer,
+  vMessageContainer,
+  vNavbar,
+  vRouterViews,
+  vSplitPanel,
+  vThemeModeSwitch,
+  vTree
+} from '../src/index.js';
+import '../src/yoya.ui.css';
+import { applyDemoStyles } from './demo-styles.js';
+
+const componentMenuSections = [
+  {
+    id: 'guides',
+    title: '开发指南',
+    items: [
+      { key: 'overview', label: '概述', details: 'Overview' },
+      { key: 'installation', label: '安装方式', details: 'Installation' },
+      { key: 'html-native', label: 'HTML 原生元素', details: 'div / button / input / output' },
+      { key: 'component', label: '组件', details: 'A 薄工厂 / B vNode 组件' },
+      {
+        key: 'lifecycle',
+        label: '组件生命周期',
+        details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
+      },
+      { key: 'i18n', label: '国际化', details: 'I18n / createI18n / i18nText' },
+      { key: 'state-node', label: '状态节点', details: 'ref / computed / 区域' },
+      {
+        key: 'provide-inject',
+        label: '跨组件共享',
+        details: 'provide / inject / withContext'
+      },
+      { key: 'access-control', label: '权限控制', details: 'createAccess / withAccess / access' },
+      { key: 'devtools', label: 'DevTools（Beta）', details: 'enableDevtools / 快照 / 事件流' },
+      { key: 'ssr', label: '服务端渲染', details: 'renderToString / hydrate / mount' },
+      { key: 'error-handling', label: '错误处理', details: 'whenFailed / 边界 / 降级' }
+    ]
+  },
+  {
+    id: 'general',
+    title: '通用',
+    items: [
+      { key: 'button', label: '按钮', details: 'vButton' },
+      { key: 'button-group', label: '按钮组', details: 'vButtons' },
+      { key: 'float-button', label: '悬浮按钮', details: 'vFloatButton' },
+      { key: 'icons', label: '图标', details: 'SearchOutlined / UploadOutlined' },
+      { key: 'svg', label: 'SVG 动画', details: 'requestAnimationFrame / stroke-dashoffset' }
+    ]
+  },
+  {
+    id: 'effects',
+    title: '特效组件',
+    items: [{ key: 'glow-button', label: '按钮', details: 'vGlowButton' }]
+  },
+  {
+    id: 'layout',
+    title: '布局',
+    items: [
+      { key: 'divider', label: '分割线', details: 'divider' },
+      { key: 'flex', label: '弹性布局', details: 'flex / stack / hstack / vstack / center' },
+      { key: 'grid', label: '栅格', details: 'grid / responsiveGrid' },
+      { key: 'body', label: '页面容器', details: 'vBody / container / grid / responsiveGrid' },
+      { key: 'spacer', label: '间距', details: 'spacer' },
+      { key: 'dialog', label: '弹窗', details: 'vDialog' },
+      { key: 'templates', label: '布局模板', details: 'admin / cloud / profile / docs' },
+      { key: 'mobile', label: '移动布局', details: 'mobileLayout / vMobileLayout', hidden: true },
+      { key: 'split-panel', label: '分隔面板', details: 'vSplitPanel' }
+    ]
+  },
+  {
+    id: 'navigation',
+    title: '导航',
+    items: [
+      { key: 'anchor', label: '锚点', details: 'vAnchor / vAnchorItem' },
+      { key: 'breadcrumb', label: '面包屑', details: 'vBreadcrumb / vBreadcrumbItem' },
+      { key: 'dropdown', label: '下拉菜单', details: 'vDropdownMenu / vContextMenu' },
+      {
+        key: 'menu',
+        label: '菜单',
+        details:
+          'vMenu / vMenuItem / vMenuGroup / vMenuDivider / vSubMenu / vSidebar / vDropdownMenu / vContextMenu'
+      },
+      { key: 'pagination', label: '分页', details: 'vPagination' },
+      { key: 'steps', label: '步骤条', details: 'vSteps / vStep' },
+      { key: 'tabs', label: '标签页', details: 'vTabs / vTab' },
+      { key: 'router', label: '路由', details: 'Router / vRouter / vLink / vRoute' },
+      { key: 'router-views', label: '路由视图', details: 'vRouterView / vRouterViews' },
+      { key: 'navbar', label: '导航栏', details: 'vNavbar / vMenu / vButton' }
+    ]
+  },
+  {
+    id: 'form',
+    title: '表单与数据录入',
+    items: [
+      { key: 'form', label: '表单', details: 'vForm' },
+      { key: 'input', label: '输入框', details: 'vInput' },
+      { key: 'select', label: '选择框', details: 'vSelect' },
+      { key: 'checkbox', label: '多选框', details: 'vCheckbox / vCheckboxes' },
+      { key: 'radio', label: '单选框', details: 'vRadio' },
+      { key: 'textarea', label: '文本域', details: 'vTextarea' },
+      { key: 'switch', label: '开关', details: 'vSwitch' },
+      { key: 'field', label: '字段', details: 'vField' },
+      { key: 'timer', label: '日期时间', details: 'vTimer' },
+      { key: 'timer-range', label: '日期范围', details: 'vTimerRange' },
+      { key: 'upload', label: '文件上传', details: 'vUpload' },
+      { key: 'rate', label: '评分', details: 'vRate' },
+      { key: 'color-picker', label: '颜色选择器', details: 'vColorPicker' },
+      { key: 'slider', label: '滑动条', details: 'vSlider' },
+      { key: 'cascader', label: '级联选择', details: 'vCascader' },
+      { key: 'tags-input', label: '标签输入', details: 'vTagsInput' },
+      { key: 'autocomplete', label: '自动完成', details: 'vAutocomplete' },
+      { key: 'svg-icon-picker', label: '图标选择器', details: 'vSvgIconPicker' }
+    ]
+  },
+  {
+    id: 'data-display',
+    title: '数据展示',
+    items: [
+      { key: 'avatar', label: '头像', details: 'vAvatar' },
+      { key: 'badge', label: '徽标数', details: 'vBadge' },
+      { key: 'detail', label: '详情', details: 'vDetail / vDetailItem' },
+      { key: 'code', label: '代码', details: 'vCode / codeBlock' },
+      { key: 'table', label: '表格', details: 'vTable' },
+      { key: 'tree-table', label: '树形表格', details: 'vTreeTable 树形层级 / 懒加载' },
+      { key: 'tree', label: '树形控件', details: 'vTree' },
+      { key: 'card', label: '卡片', details: 'vCard / vCardHeader / vCardBody / vCardFooter' },
+      { key: 'progress', label: '进度条', details: 'vProgress' },
+      { key: 'scroll', label: '滚动组件', details: 'vScroll' },
+      { key: 'carousel', label: '走马灯', details: 'vCarousel' },
+      { key: 'tree-ranger', label: '多列浏览器', details: 'vTreeRanger' }
+    ]
+  },
+  {
+    id: 'board',
+    title: '看板',
+    items: [
+      { key: 'digital-board', label: '数字看板', details: 'vDigitalBoard / vDigitalBoardItem' },
+      { key: 'trend-card', label: '趋势卡', details: 'vTrendCard' },
+      { key: 'sparkline', label: '迷你走势', details: 'vSparkline' },
+      { key: 'ring-stat', label: '环形统计', details: 'vRingStat' },
+      { key: 'gauge', label: '仪表盘', details: 'vGauge' },
+      { key: 'timeline', label: '时间线', details: 'vTimeline / vTimelineItem' }
+    ]
+  },
+  {
+    id: 'async',
+    title: '异步',
+    items: [{ key: 'dynamic-loader', label: '动态加载', details: 'vDynamicLoader' }]
+  },
+  {
+    id: 'c-end',
+    title: 'C 端体验',
+    items: [
+      { key: 'skeleton', label: '骨架屏', details: 'vSkeleton' },
+      { key: 'lazy-image', label: '懒加载图片', details: 'vLazyImage' },
+      { key: 'transition', label: '过渡动效', details: 'vTransition' },
+      { key: 'masonry', label: '瀑布流', details: 'vMasonry' },
+      { key: 'image-preview', label: '图片预览', details: 'vImagePreview' }
+    ]
+  },
+  {
+    id: 'feedback',
+    title: '反馈',
+    items: [
+      { key: 'message', label: '消息', details: 'vMessage / vMessageContainer / toast' },
+      { key: 'message-manager', label: '消息管理器', details: 'vMessageManager' },
+      { key: 'tooltip', label: '提示', details: 'vTooltip' },
+      { key: 'confirm', label: '确认弹窗', details: 'vConfirm 命令式确认' }
+    ]
+  },
+  {
+    id: 'third-party',
+    title: '第三方扩展',
+    items: [
+      { key: 'overview', label: '互操作概览', details: '真实 DOM 互操作演示与约束' },
+      { key: 'quill', label: 'Quill 富文本', details: 'Quill 富文本编辑器' },
+      { key: 'ag-grid', label: 'AG Grid 表格', details: 'AG Grid Community' },
+      { key: 'leaflet', label: 'Leaflet 地图', details: 'Leaflet' },
+      { key: 'codemirror', label: 'CodeMirror 编辑', details: 'CodeMirror 6' },
+      { key: 'markdown-viewer', label: 'Markdown 查看', details: 'Toast UI Viewer' },
+      { key: 'three', label: 'Three.js 场景', details: 'vThree / VThree' },
+      { key: 'echarts', label: 'ECharts 图表', details: 'vEchart / VEchart' },
+      { key: 'signals', label: 'Signals 状态管理', details: '适配器 / 更换引擎' }
+    ]
+  },
+  {
+    id: 'theme',
+    title: '主题',
+    items: [
+      { key: 'theme', label: '主题切换', details: 'light / dark / system / compact / raw-primary' }
+    ]
+  }
+];
+
+const componentMenuStats = {
+  categories: componentMenuSections.length,
+  items: countComponentMenuItems(componentMenuSections),
+  planned: countComponentMenuItems(componentMenuSections, 'planned')
+};
+
+function getTopNavigationItems() {
+  return [
+    { categoryId: 'overview', label: '概述', path: '/components' },
+    ...componentMenuSections.map((category) => {
+      const firstReadyItem = category.items.find(
+        (item) => item.status !== 'planned' && !item.hidden
+      );
+      return {
+        categoryId: category.id,
+        label: category.title,
+        path: buildComponentItemPath(category.id, firstReadyItem?.key ?? category.items[0].key)
+      };
+    })
+  ];
+}
+
+/** 文档页路由注册表：路由键为 `category:key`，测试用它枚举并校验全部源码面板。 */
+export const docsRouteLoaders = Object.freeze({
+  'guides:overview': () => import('./guide-docs.js').then((m) => m.GuideOverviewPage()),
+  'guides:installation': () => import('./guide-docs.js').then((m) => m.GuideInstallationPage()),
+  'guides:html-native': () =>
+    import('./html-native-docs.js').then((m) => m.HtmlNativeDocumentationPage()),
+  'guides:component': () =>
+    import('./component-definition-docs.js').then((m) => m.ComponentDefinitionDocumentationPage()),
+  'guides:lifecycle': () =>
+    import('./component-lifecycle-docs.js').then((m) => m.ComponentLifecycleDocumentationPage()),
+  'guides:i18n': () => import('./i18n-docs.js').then((m) => m.I18nDocumentationPage()),
+  'guides:state-node': () =>
+    import('./state-node-docs.js').then((m) => m.StateNodeDocumentationPage()),
+  'guides:provide-inject': () =>
+    import('./provide-inject-docs.js').then((m) => m.ProvideInjectDocumentationPage()),
+  'guides:access-control': () =>
+    import('./access-control-docs.js').then((m) => m.AccessControlDocumentationPage()),
+  'guides:devtools': () => import('./devtools-docs.js').then((m) => m.DevtoolsDocumentationPage()),
+  'data-display:tree-table': () =>
+    import('./vtreetable-docs.js').then((m) => m.TreeTableDocumentationPage()),
+  'guides:ssr': () => import('./ssr-docs.js').then((m) => m.SsrDocumentationPage()),
+  'guides:error-handling': () =>
+    import('./error-handling-docs.js').then((m) => m.ErrorHandlingDocumentationPage()),
+  'feedback:confirm': () => import('./vconfirm-docs.js').then((m) => m.ConfirmDocumentationPage()),
+  'general:button': () => import('./button-docs.js').then((m) => m.ButtonDocumentationPage()),
+  'general:button-group': () =>
+    import('./button-group-docs.js').then((m) => m.ButtonGroupDocumentationPage()),
+  'general:float-button': () =>
+    import('./float-button-docs.js').then((m) => m.FloatButtonDocumentationPage()),
+  'general:icons': () => import('./icons-docs.js').then((m) => m.IconsDocumentationPage()),
+  'general:svg': () => import('./svg-docs.js').then((m) => m.SvgDocumentationPage()),
+  'effects:glow-button': () =>
+    import('./effects-docs.js').then((m) => m.GlowButtonDocumentationPage()),
+  'layout:divider': () => import('./layout-docs.js').then((m) => m.DividerDocumentationPage()),
+  'layout:flex': () => import('./layout-docs.js').then((m) => m.FlexDocumentationPage()),
+  'layout:grid': () => import('./layout-docs.js').then((m) => m.GridDocumentationPage()),
+  'layout:body': () => import('./layout-docs.js').then((m) => m.BodyDocumentationPage()),
+  'layout:spacer': () => import('./layout-docs.js').then((m) => m.SpacerDocumentationPage()),
+  'layout:dialog': () => import('./layout-docs.js').then((m) => m.PopupDocumentationPage()),
+  'layout:templates': () => import('./layout-docs.js').then((m) => m.TemplateDocumentationPage()),
+  'layout:mobile': () => import('./layout-docs.js').then((m) => m.MobileDocumentationPage()),
+  'layout:split-panel': () =>
+    import('./layout-docs.js').then((m) => m.SplitPanelDocumentationPage()),
+  'navigation:anchor': () =>
+    import('./navigation-docs.js').then((m) => m.AnchorDocumentationPage()),
+  'navigation:breadcrumb': () =>
+    import('./navigation-docs.js').then((m) => m.BreadcrumbDocumentationPage()),
+  'navigation:menu': () => import('./navigation-docs.js').then((m) => m.MenuDocumentationPage()),
+  'navigation:steps': () => import('./navigation-docs.js').then((m) => m.StepsDocumentationPage()),
+  'navigation:tabs': () => import('./navigation-docs.js').then((m) => m.TabsDocumentationPage()),
+  'navigation:router': () =>
+    import('./navigation-docs.js').then((m) => m.RouterDocumentationPage()),
+  'navigation:router-views': () =>
+    import('./navigation-docs.js').then((m) => m.RouterViewsDocumentationPage()),
+  'navigation:navbar': () =>
+    import('./navigation-docs.js').then((m) => m.NavbarDocumentationPage()),
+  'feedback:message': () => import('./feedback-docs.js').then((m) => m.MessageDocumentationPage()),
+  'feedback:tooltip': () => import('./feedback-docs.js').then((m) => m.TooltipDocumentationPage()),
+  'form:form': () => import('./form-docs.js').then((m) => m.FormDocumentationPage()),
+  'form:input': () => import('./input-docs.js').then((m) => m.InputDocumentationPage()),
+  'form:select': () => import('./form-misc-docs.js').then((m) => m.SelectDocumentationPage()),
+  'form:textarea': () => import('./form-misc-docs.js').then((m) => m.TextareaDocumentationPage()),
+  'form:switch': () => import('./form-misc-docs.js').then((m) => m.SwitchDocumentationPage()),
+  'form:timer': () => import('./form-misc-docs.js').then((m) => m.TimerDocumentationPage()),
+  'form:timer-range': () =>
+    import('./form-misc-docs.js').then((m) => m.TimerRangeDocumentationPage()),
+  'form:upload': () => import('./form-misc-docs.js').then((m) => m.UploadDocumentationPage()),
+  'form:rate': () => import('./form-misc-docs.js').then((m) => m.RateDocumentationPage()),
+  'form:checkbox': () => import('./checkbox-docs.js').then((m) => m.CheckboxDocumentationPage()),
+  'form:field': () => import('./form-docs.js').then((m) => m.FieldDocumentationPage()),
+  'form:radio': () => import('./radio-docs.js').then((m) => m.RadioDocumentationPage()),
+  'form:color-picker': () =>
+    import('./color-picker-docs.js').then((m) => m.ColorPickerDocumentationPage()),
+  'form:slider': () => import('./form-controls-docs.js').then((m) => m.SliderDocumentationPage()),
+  'form:cascader': () =>
+    import('./form-controls-docs.js').then((m) => m.CascaderDocumentationPage()),
+  'form:tags-input': () =>
+    import('./form-controls-docs.js').then((m) => m.TagsInputDocumentationPage()),
+  'form:autocomplete': () =>
+    import('./form-controls-docs.js').then((m) => m.AutocompleteDocumentationPage()),
+  'form:svg-icon-picker': () =>
+    import('./svg-icon-picker-docs.js').then((m) => m.SvgIconPickerDocumentationPage()),
+  'data-display:avatar': () =>
+    import('./data-display-docs.js').then((m) => m.AvatarDocumentationPage()),
+  'data-display:badge': () =>
+    import('./data-display-docs.js').then((m) => m.BadgeDocumentationPage()),
+  'data-display:detail': () =>
+    import('./data-display-docs.js').then((m) => m.DetailDocumentationPage()),
+  'data-display:table': () =>
+    import('./data-display-docs.js').then((m) => m.TableDocumentationPage()),
+  'data-display:tree': () =>
+    import('./data-display-docs.js').then((m) => m.TreeDocumentationPage()),
+  'data-display:progress': () =>
+    import('./data-display-docs.js').then((m) => m.ProgressDocumentationPage()),
+  'data-display:scroll': () =>
+    import('./data-display-docs.js').then((m) => m.ScrollDocumentationPage()),
+  'data-display:carousel': () =>
+    import('./data-display-docs.js').then((m) => m.CarouselDocumentationPage()),
+  'data-display:tree-ranger': () =>
+    import('./data-display-docs.js').then((m) => m.TreeRangerDocumentationPage()),
+  'c-end:skeleton': () => import('./c-end-docs.js').then((m) => m.SkeletonDocumentationPage()),
+  'c-end:lazy-image': () => import('./c-end-docs.js').then((m) => m.LazyImageDocumentationPage()),
+  'c-end:transition': () => import('./c-end-docs.js').then((m) => m.TransitionDocumentationPage()),
+  'c-end:masonry': () => import('./c-end-docs.js').then((m) => m.MasonryDocumentationPage()),
+  'c-end:image-preview': () =>
+    import('./c-end-docs.js').then((m) => m.ImagePreviewDocumentationPage()),
+  'third-party:echarts': () =>
+    import('./echarts-docs.js').then((m) => m.EchartsDocumentationPage()),
+  'third-party:signals': () =>
+    import('./signals-docs.js').then((m) => m.SignalsDocumentationPage()),
+  'third-party:overview': () => import('./interop-docs.js').then((m) => m.InteropOverviewPage()),
+  'third-party:quill': () => import('./quill-docs.js').then((m) => m.QuillDocumentationPage()),
+  'third-party:ag-grid': () => import('./ag-grid-docs.js').then((m) => m.AgGridDocumentationPage()),
+  'third-party:leaflet': () =>
+    import('./leaflet-docs.js').then((m) => m.LeafletDocumentationPage()),
+  'third-party:codemirror': () =>
+    import('./codemirror-docs.js').then((m) => m.CodeMirrorDocumentationPage()),
+  'third-party:markdown-viewer': () =>
+    import('./markdown-viewer-docs.js').then((m) => m.MarkdownViewerDocumentationPage()),
+  'third-party:three': () => import('./three-docs.js').then((m) => m.ThreeDocumentationPage()),
+  'theme:theme': () => import('./theme-docs.js').then((m) => m.ThemeDemonstrationPage()),
+  'board:digital-board': () =>
+    import('./board-docs.js').then((m) => m.DigitalBoardDocumentationPage()),
+  'board:trend-card': () => import('./board-docs.js').then((m) => m.TrendCardDocumentationPage()),
+  'board:sparkline': () => import('./board-docs.js').then((m) => m.SparklineDocumentationPage()),
+  'board:ring-stat': () => import('./board-docs.js').then((m) => m.RingStatDocumentationPage()),
+  'board:gauge': () => import('./board-docs.js').then((m) => m.GaugeDocumentationPage()),
+  'board:timeline': () => import('./board-docs.js').then((m) => m.TimelineDocumentationPage()),
+  'navigation:dropdown': () => import('./misc-docs.js').then((m) => m.DropdownDocumentationPage()),
+  'navigation:pagination': () =>
+    import('./misc-docs.js').then((m) => m.PaginationDocumentationPage()),
+  'data-display:code': () => import('./misc-docs.js').then((m) => m.CodeDocumentationPage()),
+  'data-display:card': () => import('./misc-docs.js').then((m) => m.CardDocumentationPage()),
+  'async:dynamic-loader': () =>
+    import('./misc-docs.js').then((m) => m.DynamicLoaderDocumentationPage()),
+  'feedback:message-manager': () =>
+    import('./misc-docs.js').then((m) => m.MessageManagerDocumentationPage())
+});
+
+export function renderExamplesIndex(target = '#app') {
+  initYoyaTheme({ persist: true });
+  const previousToastContainer = toast._container ?? null;
+  const messageHost = vMessageContainer({ placement: 'top-right' }).bindTo(document.body);
+  toast.use(messageHost);
+
+  let appRouter = null;
+
+  appRouter = router((r) => {
+    r.default('/components');
+    r.route('/components', {
+      title: '概述',
+      view: () => createOverviewView()
+    });
+    r.route('/components/overview', {
+      title: '概述',
+      view: () => createOverviewView()
+    });
+    r.route('/components/intro', {
+      title: '概述',
+      view: () => createOverviewView()
+    });
+
+    registerComponentsWorkspaceRoutes(r);
+
+    r.notFound(({ path }) => createNotFoundView(path));
+  });
+
+  const root = createComponentsView(appRouter);
+  const mediaQuery =
+    typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 960px)') : null;
+  const applyStyles = () => applyDemoStyles(root);
+
+  mediaQuery?.addEventListener?.('change', applyStyles);
+  root.bindTo(target);
+  appRouter.start();
+  applyStyles();
+
+  const destroy = root.destroy.bind(root);
+  root.destroy = () => {
+    mediaQuery?.removeEventListener?.('change', applyStyles);
+    toast.use(previousToastContainer);
+    messageHost.destroy?.();
+    appRouter.stop?.();
+    return destroy();
+  };
+
+  return root;
+}
+
+function registerComponentsWorkspaceRoutes(routerInstance) {
+  componentMenuSections.forEach((category) => {
+    category.items.forEach((item) => {
+      routerInstance.route(buildComponentItemPath(category.id, item.key), {
+        title: item.label,
+        view: () => createComponentItemView(category, item)
+      });
+    });
+  });
+}
+
+function createComponentsView(appRouter) {
+  const topNavItemRefs = [];
+  const routerViews = vRouterViews(appRouter, { lockTitle: true, title: '组件目录' });
+
+  const syncSelection = () => {
+    const currentPath = appRouter.currentPath();
+
+    const activeCategory = componentMenuSections.find((category) =>
+      category.items.some(
+        (item) => !item.hidden && buildComponentItemPath(category.id, item.key) === currentPath
+      )
+    );
+    if (activeCategory && menuTree) {
+      menuTree.expandedKeys([...menuTree.expandedKeys(), activeCategory.id]);
+      menuTree.selectedKeys([currentPath]);
+    }
+
+    topNavItemRefs.forEach(({ node, entry }) => {
+      const active =
+        entry.categoryId === 'overview'
+          ? currentPath === '/components' ||
+            currentPath === '/components/overview' ||
+            currentPath === '/components/intro'
+          : currentPath.startsWith(`/components/${entry.categoryId}/`);
+      node.active(active);
+      node.attr('data-active-path', active ? 'true' : null);
+    });
+
+    applyStyles();
+  };
+
+  const topNavigationItems = getTopNavigationItems();
+  const topNav = vNavbar((navbar) => {
+    navbar.attr('data-components-top-nav', 'true');
+    navbar.ariaLabel('演示页面导航');
+    navbar.title('yoya-ui');
+    navbar.subtitle('组件演示');
+
+    navbar.actions((actions) => {
+      actions.child(vThemeModeSwitch());
+    });
+
+    navbar.menuContent((menu) => {
+      topNavigationItems.forEach((entry) => {
+        menu.vMenuItem((entryView) => {
+          entryView.attr({
+            'data-top-nav-item': entry.categoryId,
+            'data-top-nav-path': entry.path
+          });
+          entryView.child(entry.label);
+          entryView.on('click', () => appRouter.navigate(entry.path));
+          topNavItemRefs.push({ entry, node: entryView });
+        });
+      });
+    });
+  });
+  topNav.sticky();
+
+  const menuTree = vTree({
+    ariaLabel: '组件菜单',
+    className: 'components-menu-tree',
+    nodes: componentMenuSections.map((category, categoryIndex) => ({
+      children: category.items
+        .filter((item) => !item.hidden)
+        .map((item) => ({
+          id: buildComponentItemPath(category.id, item.key),
+          label: item.status === 'planned' ? `${item.label}（待开发）` : item.label
+        })),
+      expanded: categoryIndex === 0,
+      id: category.id,
+      label: category.title
+    })),
+    onSelect: ({ id }) => {
+      const path = String(id);
+      if (path.startsWith('/components/')) {
+        appRouter.navigate(path);
+      }
+    },
+    selectable: true,
+    toggleIcon: {
+      collapsed: FolderOutlined().styles({ height: '16px', width: '16px' }),
+      expanded: FolderOpenOutlined().styles({ height: '16px', width: '16px' })
+    }
+  });
+
+  const workspace = vSplitPanel((panel) => {
+    panel.className('components-workspace');
+    panel.style('flex', '1 1 auto');
+    panel.style('minHeight', '0');
+    panel.size('280px');
+    panel.minSize(180);
+
+    panel.first((sidebar) => {
+      sidebar.style('overflow', 'hidden');
+      sidebar.div((menuBox) => {
+        menuBox.className('components-menu');
+        menuBox.attr('data-components-menu', 'true');
+        menuBox.attr('aria-label', '组件菜单');
+        menuBox.div((intro) => {
+          intro.className('components-menu-intro');
+          intro.h2('组件菜单');
+        });
+        menuBox.child(menuTree);
+      });
+    });
+
+    panel.second((content) => {
+      content.style('overflow', 'hidden');
+      content.div((routerBox) => {
+        routerBox.className('components-router-panel');
+        routerBox.attr('data-components-router-views', 'true');
+        routerBox.child(routerViews);
+      });
+    });
+  });
+
+  const appShell = vContainer((view) => {
+    view.className('components-demo-shell');
+    view.attr('data-components-demo-shell', 'true');
+    view.viewport();
+    view.child(topNav);
+    view.child(workspace);
+  });
+
+  // 根就是普通的 vBody：演示站自己的"外壳"外观（面底色 / 边框 / 圆角 / 视口高）
+  // 写在 `demo-styles.js` 的 `.components-demo-shell` 上——那是恰好视口高、又 border-box
+  // 的那一层，边框算在 100dvh 里面，不会溢出成最外层滚动条
+  const root = vBody({ children: [appShell], gap: 0, maxWidth: '100%', padding: 0 });
+
+  const applyStyles = () => applyDemoStyles(root);
+
+  appRouter.subscribe(syncSelection);
+  syncSelection();
+
+  return root;
+}
+
+function createOverviewView() {
+  return section((view) => {
+    view.className('components-route-page components-route-page--overview');
+    view.attr('data-overview-page', 'true');
+    view.h2('概述');
+    view.p(
+      'yoya-ui 是基于浏览器原生 Web 技术的声明式 UI 基础库：普通 JS DSL 构建真实 DOM，无需构建即可运行；可独立搭建整站，也可嵌入 HTML、PHP、JSP、Vue、React 等既有页面做局部增强。'
+    );
+    view.p('左侧菜单查看组件分类，右侧页面包含实时演示、源码面板和开发指南。');
+
+    view.section((highlights) => {
+      highlights.className('components-overview-principles');
+      highlights.h3('为什么选择 yoya-ui');
+      highlights.div((grid) => {
+        grid.className('components-overview-grid components-overview-principles-grid');
+        [
+          {
+            title: '长期维护',
+            points: [
+              'API 构建于稳定的原生 Web 标准之上，一套代码长期可用，无需维护多框架版本并存的项目。'
+            ]
+          },
+          {
+            title: '接入方式自由',
+            points: ['script 标签、npm ESM、Vite/webpack、SSR 与脚手架均可接入，能力按需引入。']
+          },
+          {
+            title: '声明式直观灵活',
+            points: ['普通 JS 声明式 DSL、setup 回调与父节点快捷方法，结构清晰、组合自由。']
+          },
+          {
+            title: '多场景、全栈统一',
+            points: ['同一套界面逻辑覆盖整站 SPA、服务端模板与 SSR，Web 界面开发一套写法。']
+          },
+          {
+            title: '原生 JS 适应性高',
+            points: ['无虚拟 DOM 与框架运行时，产出原生 HTML/DOM/JS，长期运行不过时。']
+          },
+          {
+            title: '浏览器原生调试',
+            points: [
+              '无虚拟 DOM 与构建链路，Elements、断点、Console 即查即用；故障定位与业务调试通常无需额外插件或工具。'
+            ]
+          },
+          {
+            title: '可嵌入局部增强',
+            points: ['bindTo() 可挂载进 HTML、PHP、JSP、Vue、React 等既有页面，渐进增强。']
+          },
+          {
+            title: 'AI 编程亲和',
+            points: ['声明式纯 JS、无框架上下文，AI 生成组件可直接运行，返工率低。']
+          }
+        ].forEach((highlight) => {
+          grid.article((card) => {
+            card.className('components-overview-card components-overview-principle-card');
+            card.attr('data-overview-principle', highlight.title);
+            card.h3(highlight.title);
+            card.ul((list) => {
+              highlight.points.forEach((point) => list.li(point));
+            });
+          });
+        });
+      });
+    });
+
+    view.div((metaGrid) => {
+      metaGrid.className('components-route-meta-grid');
+
+      metaGrid.article((meta) => {
+        meta.className('components-route-meta');
+        meta.h3('分类');
+        meta.strong(String(componentMenuStats.categories));
+      });
+
+      metaGrid.article((meta) => {
+        meta.className('components-route-meta');
+        meta.h3('条目');
+        meta.strong(String(componentMenuStats.items));
+      });
+
+      metaGrid.article((meta) => {
+        meta.className('components-route-meta');
+        meta.h3('待开发');
+        meta.strong(String(componentMenuStats.planned));
+      });
+    });
+
+    view.section((categories) => {
+      categories.className('components-overview-section');
+      categories.h3('分类导航');
+      categories.div((grid) => {
+        grid.className('components-overview-grid');
+        componentMenuSections.forEach((category) => {
+          const firstReadyItem = category.items.find(
+            (item) => item.status !== 'planned' && !item.hidden
+          );
+          const path = buildComponentItemPath(
+            category.id,
+            firstReadyItem?.key ?? category.items[0].key
+          );
+          const readyItems = category.items.filter(
+            (item) => !item.hidden && item.status !== 'planned'
+          );
+
+          grid.a((card) => {
+            card.className('components-overview-card');
+            card.attr({
+              'data-overview-category': category.id,
+              href: `#${path}`
+            });
+            card.h3(category.title);
+            card.p(`${readyItems.length} 个可用演示`);
+            card.p(
+              readyItems
+                .slice(0, 4)
+                .map((item) => item.label)
+                .join(' / ')
+            );
+            card.strong('查看分类');
+          });
+        });
+      });
+    });
+
+    view.section((guides) => {
+      guides.className('components-overview-guides');
+      guides.h3('开发指南');
+      guides.div((grid) => {
+        grid.className('components-overview-grid');
+        [
+          {
+            label: 'HTML 原生元素',
+            path: '/components/guides/html-native',
+            details: 'div / button / input / output'
+          },
+          {
+            label: '组件',
+            path: '/components/guides/component',
+            details: 'A 薄工厂 / B vNode 组件'
+          },
+          {
+            label: '组件生命周期',
+            path: '/components/guides/lifecycle',
+            details: '声明 / 挂载 / 更新 / 销毁 + 可重建区域'
+          },
+          { label: '国际化', path: '/components/guides/i18n', details: 'I18n / createI18n / .s()' },
+          {
+            label: '状态节点',
+            path: '/components/guides/state-node',
+            details: 'ref / computed / 区域'
+          },
+          {
+            label: '跨组件共享',
+            path: '/components/guides/provide-inject',
+            details: 'provide / inject / withContext'
+          },
+          {
+            label: '权限控制',
+            path: '/components/guides/access-control',
+            details: 'createAccess / withAccess / access'
+          },
+          {
+            label: '服务端渲染',
+            path: '/components/guides/ssr',
+            details: 'renderToString / hydrate / mount'
+          },
+          {
+            label: '错误处理',
+            path: '/components/guides/error-handling',
+            details: 'whenFailed / 边界 / 降级'
+          }
+        ].forEach((guide) => {
+          grid.a((card) => {
+            card.className('components-overview-card components-overview-guide-card');
+            card.attr({
+              'data-overview-guide': guide.path,
+              href: `#${guide.path}`
+            });
+            card.h3(guide.label);
+            card.p(guide.details);
+            card.strong('打开指南');
+          });
+        });
+      });
+    });
+  });
+}
+
+function createComponentItemView(category, item) {
+  const loadDocsView = docsRouteLoaders[`${category.id}:${item.key}`];
+
+  if (loadDocsView) {
+    return loadDocsView();
+  }
+
+  return Promise.resolve(createNotFoundView(buildComponentItemPath(category.id, item.key)));
+}
+
+function buildComponentItemPath(categoryId, itemKey) {
+  return `/components/${categoryId}/${itemKey}`;
+}
+
+function countComponentMenuItems(sections, status = null) {
+  return sections.reduce((total, sectionEntry) => {
+    const sectionCount = sectionEntry.items.filter((item) => {
+      if (item.hidden) {
+        return false;
+      }
+
+      if (status === null) {
+        return true;
+      }
+
+      return (item.status ?? 'ready') === status;
+    }).length;
+
+    return total + sectionCount;
+  }, 0);
+}
+
+function createNotFoundView(path) {
+  return section((view) => {
+    view.className('components-not-found');
+    view.h2('未找到该示例');
+    view.p(`路径：${path}`);
+
+    view.a((link) => {
+      link.attr({ href: '#/components' });
+      link.child('返回组件目录');
+    });
+  });
+}
+
+if (typeof document !== 'undefined' && document.querySelector('#app')) {
+  renderExamplesIndex('#app');
+}

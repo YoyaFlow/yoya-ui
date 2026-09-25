@@ -177,7 +177,7 @@ yoya-ui 的节点即真实 DOM，可直接操作。三方在这件事上的差�
 | PDF.js（PDF 预览）                     | react-pdf                    | vue-pdf-embed            | 渲染到 canvas 节点                                                         | —          |
 
 「示例站演示：有」的五项（ECharts、Three.js、AG Grid、CodeMirror、Quill）在
-`src/examples/` 有可运行源码，可作为接入新库的参考模板。表中未列出的库同理可接，
+`examples/` 有可运行源码，可作为接入新库的参考模板。表中未列出的库同理可接，
 不设白名单——React / Vue 侧则每个库都要各自找一套封装。
 
 > **来源说明**：本节的分析框架基于 DOM 可操作性，表格与结论由 AI 辅助整理

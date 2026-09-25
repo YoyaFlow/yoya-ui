@@ -167,7 +167,7 @@ The library does not depend on any framework; `node:http`, Express, Hono, or Koa
 
 ### 3.1 Minimal HTTP server
 
-See `src/examples/ssr/server-http.mjs` for a runnable example (`node src/examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
+See `examples/ssr/server-http.mjs` for a runnable example (`node examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
 
 ```js
 import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
@@ -298,8 +298,8 @@ div((root) => {
 
 ## 7. Example references
 
-- `node src/examples/ssr/server.mjs`: prints page HTML to stdout for inspecting the output.
-- `node src/examples/ssr/server-http.mjs`: full HTTP service (minimal no-bundler demo) showing request parsing, SSR rendering, static assets, and the client hydrate/mount branch. Run `npm run build` first.
+- `node examples/ssr/server.mjs`: prints page HTML to stdout for inspecting the output.
+- `node examples/ssr/server-http.mjs`: full HTTP service (minimal no-bundler demo) showing request parsing, SSR rendering, static assets, and the client hydrate/mount branch. Run `npm run build` first.
 - `dist/examples/ssr-demo.html` (after building examples): standalone SSR demo page that runs renderToString -> hydrate in the browser, exercising buttons, dialogs, forms, and zh/en switching.
 - Examples site (`npm run build:examples` + `npx vite preview`): Guides -> Server-Side Rendering page with SSR / non-SSR mode-switching demos.
 

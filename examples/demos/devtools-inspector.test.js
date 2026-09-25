@@ -1,0 +1,95 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { disableDevtools, getDevtoolsDom } from '../../src/yoya.devtools.js';
+import { DevtoolsInspectorDemo } from './devtools-inspector.js';
+
+afterEach(() => {
+  disableDevtools();
+});
+
+describe('devtools inspector demo', () => {
+  it('opens a persistent overlay, reports events and preserves state on hide', () => {
+    const demo = DevtoolsInspectorDemo();
+    const element = demo.renderDom();
+    const overlay = element.querySelector('[data-devtools-overlay]');
+
+    expect(overlay.style.display).toBe('none');
+    element.querySelector('[data-devtools-open]').click();
+
+    expect(overlay.style.display).not.toBe('none');
+    expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBeGreaterThan(1);
+    const treeRowsAfterOpen = element.querySelectorAll('[data-devtools-tree-row]').length;
+
+    element.querySelector('[data-devtools-refresh]').click();
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
+
+    element.querySelector('[data-devtools-toggle]').click();
+    element.querySelector('[data-devtools-toggle]').click();
+    expect(element.querySelectorAll('[data-devtools-tree-row]').length).toBe(treeRowsAfterOpen);
+    // 状态行只有一个文本节点：反复切换是替换文案，不是追加文案
+    const statusLine = element.querySelector('[data-devtools-status]');
+    expect(statusLine.childNodes).toHaveLength(1);
+    expect(statusLine.textContent).toBe('状态：已启用，事件仅来自被检视卡片');
+
+    const plusButton = [...element.querySelectorAll('button')].find((button) =>
+      button.textContent.includes('+1')
+    );
+    plusButton.click();
+
+    const eventText = [...element.querySelectorAll('[data-devtools-event]')].map((node) =>
+      node.textContent
+    );
+    // 状态迁移到信号后，写入以 signal-write 事件呈现在日志里
+    expect(eventText.some((text) => text.includes('信号') && text.includes('写入'))).toBe(true);
+    expect(
+      eventText.some((text) => text.includes('文本') && text.includes('0 → 1'))
+    ).toBe(true);
+
+    const stateTab = element.querySelector('[data-devtools-tab="state"]');
+    stateTab.click();
+    const stateRows = [...element.querySelectorAll('[data-devtools-state-row]')].map((node) =>
+      node.textContent
+    );
+    // 信号与作用域标签页按信号 id 展示最新写入值
+    expect(stateRows.some((text) => /#\d+: 1/.test(text))).toBe(true);
+
+    const treeTab = element.querySelector('[data-devtools-tab="tree"]');
+    treeTab.click();
+    const componentButton = [...element.querySelectorAll('.devtools-tree-button')].find((button) =>
+      button.textContent.includes('component')
+    );
+    componentButton.click();
+    expect(
+      JSON.parse(element.querySelector('[data-devtools-detail]').textContent).signals
+    ).toEqual({
+      count: 1,
+      mode: 'normal'
+    });
+
+    const filter = element.querySelector('[data-devtools-filter]');
+    filter.value = 'text';
+    filter.dispatchEvent(new Event('change'));
+    const filteredEvents = [...element.querySelectorAll('[data-devtools-event]')];
+    expect(filteredEvents.length).toBeGreaterThan(0);
+    expect(filteredEvents.every((node) => node.dataset.devtoolsEventType === 'text')).toBe(true);
+    filter.value = 'all';
+    filter.dispatchEvent(new Event('change'));
+
+    const treeButton = element.querySelector('.devtools-tree-button');
+    const treeDomId = Number(treeButton.dataset.devtoolsTreeId);
+    treeButton.click();
+    expect(element.querySelector('[data-devtools-detail]')).toBeTruthy();
+    expect(getDevtoolsDom(treeDomId).style.outline).toContain('2px');
+
+    const eventsBeforeHide = element.querySelectorAll('[data-devtools-event]').length;
+    element.querySelector('[data-devtools-close]').click();
+    expect(overlay.style.display).toBe('none');
+
+    element.querySelector('[data-devtools-open]').click();
+    expect(overlay.style.display).not.toBe('none');
+    expect(element.querySelectorAll('[data-devtools-event]').length).toBe(eventsBeforeHide);
+    expect(element.querySelector('[data-devtools-status]').textContent).toContain('已启用');
+
+    demo.destroy();
+  });
+});

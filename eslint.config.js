@@ -34,7 +34,7 @@ export default [
     }
   },
   {
-    files: ['src/examples/demos/**/*.js'],
+    files: ['examples/demos/**/*.js'],
     rules: {
       'max-len': ['error', { code: 100, ignoreUrls: true }]
     }

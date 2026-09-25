@@ -70,9 +70,9 @@ is a plain DOM container that the underlying library fills on the client.
 
 Two further standalone prototypes build on the same pattern:
 
-- [industrial-automation prototype](../src/examples/factory-game.html) uses `vThree` as its 3D
+- [industrial-automation prototype](../examples/factory-game.html) uses `vThree` as its 3D
   viewport: a grid-based factory simulation with miners, belts and assemblers, plus yoya-ui widgets
   for the toolbar and production stats;
-- [SCADA digital-twin demo](../src/examples/scada-demo.html) presents the same stack from an operator
+- [SCADA digital-twin demo](../examples/scada-demo.html) presents the same stack from an operator
   perspective in a fullscreen first-person walk: fake-data tank levels, pump states, pipe flow and
   alarms, with a game-style HUD and hotkeys built from yoya-ui.

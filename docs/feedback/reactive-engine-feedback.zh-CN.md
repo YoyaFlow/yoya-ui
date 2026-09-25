@@ -110,7 +110,7 @@ list.removeChild('r1'); // 删除单个子节点（增量，不碰兄弟）
 
 「预制节点挂载」是保身份的正解：节点先创建、句柄先持有，再挂进主结构——
 节点身份跟着 JS 对象走，与声明位置解耦。这套用法在演示与测试中都有体积：
-`StateKeyedExample1`（[state-node.js](../../src/examples/demos/state-node.js)）演示
+`StateKeyedExample1`（[state-node.js](../../examples/demos/state-node.js)）演示
 追加 / 移除的完整交互，`definition-complex.js` 用 `task.id` 做 key 组装任务行，
 core 侧 keyed / region / devtools 测试均覆盖。
 

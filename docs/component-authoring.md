@@ -124,7 +124,7 @@ For the field-access rules see §7.3.
 
 - Keep native names for basic HTML elements: `button()`, `div()`, `input()`.
 - Compound component factories use the `v` prefix with PascalCase names: `vButton`, `vCard`, `vStatusBadge`.
-- **Attribute contract** (the attribute migration; enforced as a shrink-only baseline by `src/attribute-migration-baseline.test.js`):
+- **Attribute contract** (the attribute migration; enforced as a shrink-only baseline by `src/testing/gates/attribute-migration-baseline.test.js`):
   - **Identity**: the component's view root writes `vn: 'VXxx'` (the export name); internal blocks write their
     own `vn: 'VXxxPart'`. A wrapper sharing one root writes several names (`vn: 'VTimer VInput'`, whitespace
     separated — any name matches). Identity is an **object fact** (the check reads it) that also **reaches the
@@ -170,7 +170,7 @@ yoya-ui state is driven by the built-in Signals: a component holds state in `ref
 
 #### 6.0 Two shapes side by side: centralised snapshot (legacy) vs read-value binding (target)
 
-The 0.6 → 0.7 attribute migration was an **equivalence migration**: the old "state + `_syncXxx()` writes snapshots" shape was moved over as-is, so the golden file (`src/migration-equivalence.test.js`) could prove byte for byte that only class names / identity changed. **Do not copy that shape in new code** — state → view goes through read-value bindings:
+The 0.6 → 0.7 attribute migration was an **equivalence migration**: the old "state + `_syncXxx()` writes snapshots" shape was moved over as-is, so the golden file (`src/testing/gates/migration-equivalence.test.js`) could prove byte for byte that only class names / identity changed. **Do not copy that shape in new code** — state → view goes through read-value bindings:
 
 ```js
 // legacy shape (migration stock, only-decrease): state in a closure, mapping centralised in one function
@@ -232,7 +232,7 @@ function ServiceBadge() {
 
 Reading props at build time initialises state in one go (the first evaluation is already the final value). Everything dispatched **after** the build — positional arguments, the `.setup()` callback, a command called before the view lands — falls inside the "build → landing" window described above: the engine closes it once at the end of a component's build frame, and a component closes it for its own commands (`if (!self.node()._el) self.node().flush()`). One more consequence: bindings that read **structure** (does this component have content?) must be zero-argument readers, not `computed(…)` — a computed caches on its reactive inputs only, so a structural read would stay stale, while a reader is re-read on every flush.
 
-Gate: `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
+Gate: `src/testing/gates/view-binding-baseline.test.js` + `src/testing/baselines/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/testing/gates/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
 
 ### 6.1 Rebuildable regions
 
@@ -463,7 +463,7 @@ touch the child list inside their own render path.
 ### Element-level ops: how component code touches the DOM
 
 Component code never reads `_el` and never calls `renderDom()` (`renderDom()` is the **build** entry — it
-creates DOM, and on the SSR path it touches `document`). The gate `src/dom-access-baseline.test.js` freezes
+creates DOM, and on the SSR path it touches `document`). The gate `src/testing/gates/dom-access-baseline.test.js` freezes
 both at zero for library code and keeps a written allow-list for the node-type extensions whose element really
 is their product. Everything else goes through these ops (declared on `ViewNode`, delegated to the view root on
 component nodes, shadowable by component commands):
@@ -751,7 +751,7 @@ Four rules:
    positions take `SignalHandle<T>` / `ChildInput`, command signatures are copied from the handle;
 2. Turn `class VXxx` into `interface VXxx extends ComponentNode` (keep the method signatures);
 3. Add `const VXxx: { (props?: XxxOptions): VXxx }` and extend the first argument of `vXxx` with `XxxOptions`;
-4. Add one positive and one `@ts-expect-error` negative case to `types/tests/consumer.ts` (`npm run typecheck`).
+4. Add one positive and one `@ts-expect-error` negative case to `types/consumer.test-d.ts` (`npm run typecheck`).
 5. Keep `npm run typecheck` green.
 
 ## 8. Registering parent shortcuts

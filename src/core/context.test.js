@@ -6,7 +6,7 @@ import {
   installContext,
   withContext
 } from '../index.js';
-import { renderToString } from '../core/ssr.js';
+import { renderToString } from './ssr.js';
 
 describe('generic context (core)', () => {
   it('withContext provides values and restores the outer scope', () => {

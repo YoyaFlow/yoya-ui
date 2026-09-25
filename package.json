@@ -86,7 +86,7 @@
   "files": [
     "dist",
     "types",
-    "!types/tests",
+    "!types/*.test-d.ts",
     "!dist/examples",
     "LICENSES",
     "THIRD-PARTY-NOTICES.md"

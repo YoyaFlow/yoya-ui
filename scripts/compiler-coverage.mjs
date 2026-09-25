@@ -20,7 +20,7 @@ const root = resolve(import.meta.dirname, '..');
 const baselineFile = resolve(root, 'scripts/compiler-coverage.baseline.json');
 
 /** 扫描目标：库源码与示例各留一条基线（相对路径写进基线，换机器还能比）。 */
-const TARGETS = ['src', 'src/examples'];
+const TARGETS = ['src', 'examples'];
 
 const mode = process.argv[2];
 if (mode && mode !== '--write') {

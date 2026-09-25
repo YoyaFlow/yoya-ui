@@ -4,10 +4,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import * as yoyaRouter from '../../src/yoya.router.js';
-import * as yoyaApi from '../../src/yoya.api.js';
-import * as yoyaCore from '../../src/yoya.core.js';
-import * as yoyaUi from '../../src/index.js';
+import * as yoyaRouter from '../yoya.router.js';
+import * as yoyaApi from '../yoya.api.js';
+import * as yoyaCore from '../yoya.core.js';
+import * as yoyaUi from '../index.js';
 import '../../create-yoya-ui/templates/admin/src/api/domain.api.js';
 import '../../create-yoya-ui/templates/admin/src/features/system/members/api/member.mock.js';
 import '../../create-yoya-ui/templates/admin/src/features/system/dicts/api/dict.mock.js';

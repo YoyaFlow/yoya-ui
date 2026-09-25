@@ -5,11 +5,11 @@
       "root": "src",
       "component": null,
       "mode": "element",
-      "files": 504,
-      "candidates": 160,
-      "compiled": 40,
-      "bailed": 120,
-      "skipped": 344,
+      "files": 366,
+      "candidates": 95,
+      "compiled": 31,
+      "bailed": 64,
+      "skipped": 271,
       "compiledFiles": [
         "actions/button.js",
         "actions/float-button.js",
@@ -30,15 +30,6 @@
         "data-display/carousel.js",
         "data-display/chart.js",
         "data-display/code.js",
-        "examples/adapter-signals-usage.js",
-        "examples/async-router-user.js",
-        "examples/demos/access-control.js",
-        "examples/demos/ag-grid-inventory-demo.js",
-        "examples/demos/definition-complex.js",
-        "examples/demos/vtreetable.js",
-        "examples/interop-docs.js",
-        "examples/signals-docs.js",
-        "examples/three-docs.js",
         "form/cascader.js",
         "form/controls/field.js",
         "form/controls/form-item.js",
@@ -54,43 +45,23 @@
       ],
       "bails": [
         {
-          "reason": "生成失败：值位置引用了局部变量 liveDemo：产物不执行组件函数体，这个形状走通用路径",
-          "count": 19
-        },
-        {
           "reason": "函数体不是单个 return 工厂调用",
           "count": 14
-        },
-        {
-          "reason": "vNode 组件的 setup 不是单一 return 视图",
-          "count": 10
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：vCard",
-          "count": 9
         },
         {
           "reason": "keyed() 的行工厂体不是单一 return 工厂调用",
           "count": 9
         },
         {
-          "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
-          "count": 5
-        },
-        {
-          "reason": "入口工厂不是元素：vstack（根是组件调用 → 保持运行期）",
-          "count": 5
-        },
-        {
           "reason": "生成失败：动态样式只支持节点模式（node）：元素模式的动态样式会按 CSSOM 序列化，与片段里的紧凑格式不一致。可改用字面量、状态类用 toggleClass(name, 值)，或把这一行编成 --mode node",
-          "count": 5
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 count：产物不执行组件函数体，这个形状走通用路径",
           "count": 4
         },
         {
-          "reason": "条件 / 循环里的语句含结构（本轮不编）",
+          "reason": "vNode 组件的 setup 不是单一 return 视图",
+          "count": 4
+        },
+        {
+          "reason": "生成失败：值位置引用了局部变量 count：产物不执行组件函数体，这个形状走通用路径",
           "count": 3
         },
         {
@@ -98,39 +69,11 @@
           "count": 3
         },
         {
-          "reason": "attr() 属性名不是字符串字面量",
-          "count": 3
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
-          "count": 2
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 picker：产物不执行组件函数体，这个形状走通用路径",
-          "count": 2
-        },
-        {
-          "reason": "子工厂 div 的动态实参后面还有参数（顺序无法保证）",
-          "count": 2
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：ComponentSource",
-          "count": 2
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：DemoSection",
-          "count": 2
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：vLink",
+          "reason": "局部声明的初始化表达式里出现节点对象 / 元素工厂",
           "count": 2
         },
         {
           "reason": "child() 里是组件调用（未编译）：vSlot",
-          "count": 2
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：vTooltip",
           "count": 2
         },
         {
@@ -142,15 +85,15 @@
           "count": 1
         },
         {
-          "reason": "入口工厂不是元素：vAgGrid（根是组件调用 → 保持运行期）",
-          "count": 1
-        },
-        {
           "reason": "入口工厂不是元素：vButton（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
           "reason": "入口工厂不是元素：vInput（根是组件调用 → 保持运行期）",
+          "count": 1
+        },
+        {
+          "reason": "入口工厂不是元素：vstack（根是组件调用 → 保持运行期）",
           "count": 1
         },
         {
@@ -174,59 +117,7 @@
           "count": 1
         },
         {
-          "reason": "生成失败：值位置引用了局部变量 apply：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 autocomplete：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 button：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 cascader：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 controls：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 data：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 draft：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 fab：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 form：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 fullSource：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 group：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 items：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 radios：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 result：产物不执行组件函数体，这个形状走通用路径",
+          "reason": "生成失败：值位置引用了局部变量 locale：产物不执行组件函数体，这个形状走通用路径",
           "count": 1
         },
         {
@@ -238,39 +129,7 @@
           "count": 1
         },
         {
-          "reason": "生成失败：值位置引用了局部变量 setActive：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 slider：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 sourceDialog：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 sourcePanel：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "生成失败：值位置引用了局部变量 tags：产物不执行组件函数体，这个形状走通用路径",
-          "count": 1
-        },
-        {
           "reason": "生成失败：值位置引用了嵌套 setup 的节点参数 box：节点对象不是一段值，这个形状走通用路径",
-          "count": 1
-        },
-        {
-          "reason": "条件 / 循环里的结构不可编：局部声明的初始化表达式里出现节点对象 / 元素工厂",
-          "count": 1
-        },
-        {
-          "reason": "条件 / 循环里的结构不可编：条件 / 循环里的语句含结构（本轮不编）",
-          "count": 1
-        },
-        {
-          "reason": "条件 / 循环里的结构不可编：条件 / 循环里只支持加结构（收到 pre）",
           "count": 1
         },
         {
@@ -278,15 +137,15 @@
           "count": 1
         },
         {
-          "reason": "条件 / 循环里的结构不可编：attr() 属性名不是字符串字面量",
-          "count": 1
-        },
-        {
-          "reason": "条件 / 循环里只支持加结构（收到 table）",
+          "reason": "条件 / 循环里的语句含结构（本轮不编）",
           "count": 1
         },
         {
           "reason": "子工厂 button 的动态实参后面还有参数（顺序无法保证）",
+          "count": 1
+        },
+        {
+          "reason": "子工厂 div 的动态实参后面还有参数（顺序无法保证）",
           "count": 1
         },
         {
@@ -302,10 +161,6 @@
           "count": 1
         },
         {
-          "reason": "child() 里是组件调用（未编译）：ApiSection",
-          "count": 1
-        },
-        {
           "reason": "child() 里是组件调用（未编译）：buildTable",
           "count": 1
         },
@@ -318,35 +173,11 @@
           "count": 1
         },
         {
-          "reason": "child() 里是组件调用（未编译）：ComponentLifecycleDiagram",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：DataUpdateFlowDiagram",
-          "count": 1
-        },
-        {
           "reason": "child() 里是组件调用（未编译）：hstack",
           "count": 1
         },
         {
-          "reason": "child() 里是组件调用（未编译）：HtmlNativeApiSection",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：HtmlNativeDemoSection",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：KeyedTableDemoSection",
-          "count": 1
-        },
-        {
           "reason": "child() 里是组件调用（未编译）：mobileLayout",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：renderThemeDemo",
           "count": 1
         },
         {
@@ -359,10 +190,6 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：StatusTag",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：SvgProgressRingExample1",
           "count": 1
         },
         {
@@ -390,6 +217,10 @@
           "count": 1
         },
         {
+          "reason": "child() 里是组件调用（未编译）：vCard",
+          "count": 1
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：vCarousel",
           "count": 1
         },
@@ -403,10 +234,6 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：vCheckbox",
-          "count": 1
-        },
-        {
-          "reason": "child() 里是组件调用（未编译）：vClientOnly",
           "count": 1
         },
         {
@@ -471,6 +298,10 @@
         },
         {
           "reason": "child() 里是组件调用（未编译）：vLazyImage",
+          "count": 1
+        },
+        {
+          "reason": "child() 里是组件调用（未编译）：vLink",
           "count": 1
         },
         {
@@ -582,6 +413,10 @@
           "count": 1
         },
         {
+          "reason": "child() 里是组件调用（未编译）：vTooltip",
+          "count": 1
+        },
+        {
           "reason": "child() 里是组件调用（未编译）：vTransition",
           "count": 1
         },
@@ -610,21 +445,13 @@
           "count": 1
         },
         {
-          "reason": "options 的键 style 需要动态分派",
-          "count": 1
-        },
-        {
           "reason": "options 里有非静态键",
-          "count": 1
-        },
-        {
-          "reason": "styles() 只用对象字面量形式",
           "count": 1
         }
       ]
     },
     {
-      "root": "src/examples",
+      "root": "examples",
       "component": null,
       "mode": "element",
       "files": 138,

@@ -9,7 +9,7 @@ import {
   withAccess
 } from '../index.js';
 import { vInput } from '../form/index.js';
-import { renderToString } from '../core/ssr.js';
+import { renderToString } from './ssr.js';
 
 describe('access control (core)', () => {
   it('createAccess honors bare (full) / r. (read-only) / w. (write)', () => {

@@ -115,7 +115,7 @@ export function CounterCard() {
 
 - 基础 HTML 元素保持原生标签名：`button()`、`div()`、`input()`。
 - 复合组件工厂统一 `v` 前缀（PascalCase）：`vButton`、`vCard`、`vStatusBadge`。
-- **属性契约**（属性化迁移，票 15；门禁 `src/attribute-migration-baseline.test.js` 只减不增）：
+- **属性契约**（属性化迁移，票 15；门禁 `src/testing/gates/attribute-migration-baseline.test.js` 只减不增）：
   - **身份**：组件视图根写 `vn: 'VXxx'`（值 = 导出名），内部块各写自己的 `vn: 'VXxxPart'`；
     包装型共用同一根时写多值（`vn: 'VTimer VInput'`，空格分隔，任一名字命中即命中）。
     身份既是**对象事实**（判定读它），也**落到真 DOM**（`vn="VXxx"`，GenUI 扫描与 CSS 作用域读它）。
@@ -156,7 +156,7 @@ yoya-ui 的状态由内置 Signals 驱动：组件用 `ref` 持有状态、值�
 
 #### 6.0 写法对照：集中快照（历史）与读值绑定（目标）
 
-0.6 → 0.7 的属性化迁移是**等价迁移**：老组件里的"状态 + `_syncXxx()` 集中写快照"原样搬了过来，为的是让金标（`src/migration-equivalence.test.js`）逐字节证明"只换了类名 / 身份"。**新代码不要照抄这个形状**——状态 → 视图请走读值绑定：
+0.6 → 0.7 的属性化迁移是**等价迁移**：老组件里的"状态 + `_syncXxx()` 集中写快照"原样搬了过来，为的是让金标（`src/testing/gates/migration-equivalence.test.js`）逐字节证明"只换了类名 / 身份"。**新代码不要照抄这个形状**——状态 → 视图请走读值绑定：
 
 ```js
 // 历史形状（迁移期存量，只减不增）：状态在闭包里，视图映射集中在一个函数里，命令同步调它
@@ -218,7 +218,7 @@ function ServiceBadge() {
 
 props 在构建期读到，状态一次初始化到位（绑定首评即终值）。**构建之后**才落位的东西——位置参数、`.setup()` 回调、以及"建好还没落地就用命令配置"——都掉在上面那条「构建 → 落地」窗口里：引擎在**组件构建帧末**收口一次，组件自己的命令要自收口（`if (!self.node()._el) self.node().flush()`）。还有一个推论：读**结构**的绑定（"这个组件有没有内容"）要写零参闭包，**别预存 `computed`**——`computed` 只在响应式输入变化时失效重算，读结构会缓存住旧值，闭包每次收口都会重新读。
 
-门禁：`src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结"集中快照函数"存量（**只减不增**，新文件一个都不许有）。迁移一刀之后跑 `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/view-binding-baseline.test.js` 下调基线。较真的理由不止可读性：指令式写快照**编译路径吃不到**，只要不是"静态结构 + 活值 + 条件/列表"，编译器就整块回落通用路径。
+门禁：`src/testing/gates/view-binding-baseline.test.js` + `src/testing/baselines/view-binding-baseline.json` 冻结"集中快照函数"存量（**只减不增**，新文件一个都不许有）。迁移一刀之后跑 `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/testing/gates/view-binding-baseline.test.js` 下调基线。较真的理由不止可读性：指令式写快照**编译路径吃不到**，只要不是"静态结构 + 活值 + 条件/列表"，编译器就整块回落通用路径。
 
 ### 6.1 可重建区域
 
@@ -660,7 +660,7 @@ export const vStatusTag: ElementFactory<VStatusTag> & {
    `SignalHandle<T>` / `ChildInput`，命令面的读写签名照抄句柄；
 2. `class VXxx` 改成 `interface VXxx extends ComponentNode`（保留方法签名）；
 3. 加 `const VXxx: { (props?: XxxOptions): VXxx }`，并给 `vXxx` 首参补上 `XxxOptions`；
-4. 在 `types/tests/consumer.ts` 补一条正例 + 一条 `@ts-expect-error` 负例；
+4. 在 `types/consumer.test-d.ts` 补一条正例 + 一条 `@ts-expect-error` 负例；
 5. `npm run typecheck` 绿。
 
 ## 8. 注册父节点快捷方法

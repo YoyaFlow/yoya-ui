@@ -31,18 +31,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.js'],
+    include: ['src/**/*.test.js', 'examples/**/*.test.js'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['src/**/*.js'],
-      exclude: [
-        'src/examples/**',
-        'src/**/*.test.js',
-        'src/**/*.min.js',
-        'src/core/signals/vendor/**'
-      ]
+      exclude: ['examples/**', 'src/**/*.test.js', 'src/**/*.min.js', 'src/core/signals/vendor/**']
     }
   }
 });

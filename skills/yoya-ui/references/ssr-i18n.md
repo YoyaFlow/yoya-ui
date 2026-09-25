@@ -265,7 +265,7 @@ if (app.firstElementChild) {
 }
 ```
 
-仓库里的 `src/examples/ssr/server-http.mjs` 就是这条不打包路线：服务端直接返回 `clientBoot` 字符串作为 `/client.js`，从 `/vendor/*` 提供 dist 产物。
+仓库里的 `examples/ssr/server-http.mjs` 就是这条不打包路线：服务端直接返回 `clientBoot` 字符串作为 `/client.js`，从 `/vendor/*` 提供 dist 产物。
 
 语言切换写 cookie（如 `document.cookie = 'yoya-lang=en; path=/'`），之后请求自动带上；页面级缓存需 `Vary: Cookie` 或按语言拆缓存。
 

@@ -11,7 +11,7 @@
 | 分支     | `release/0.7.0`（从 `feat/vnode-convergence` 的 `65500fe` 开出）                                                                                                                                                                                                                                                   |
 | 最新提交 | `1b8df0c`（本文档）+ **工作区里未提交的菜单族收口那一刀**（`VMenu` / `VSubMenu` / `VSidebar` 收成闭包，见下方「3.1」）                                                                                                                                                                                             |
 | 存档标签 | `vnode-migration-20260924` → `65500fe`（只含本会话的迁移，不含并行会话在飞改动）                                                                                                                                                                                                                                   |
-| 工作区   | **有未提交的一刀**：`src/navigation/menu.js` / `src/core/node.js` / `src/actions/{dropdown,context}-menu.js` / `types/navigation.d.ts` / `src/migration-golden.txt` / `src/dom-access-baseline.test.js` / `README*.md`（其余干净；`dist/` / `node_modules/` / `.scratch/` 已忽略）                                 |
+| 工作区   | **有未提交的一刀**：`src/navigation/menu.js` / `src/core/node.js` / `src/actions/{dropdown,context}-menu.js` / `types/navigation.d.ts` / `src/testing/baselines/migration-golden.txt` / `src/testing/gates/dom-access-baseline.test.js` / `README*.md`（其余干净；`dist/` / `node_modules/` / `.scratch/` 已忽略） |
 | 细账票   | `.scratch/vnode-convergence/issues/17`（现场）、`19`（写法规则 R1–R12）、`18` / `20` / `21`（编译器侧）。**方案与逐刀台账（15 / 16）、审计脚本、WIP 补丁已在 2026-09-25 的 `.scratch` 清理里删除**；目录表见 `.scratch/README.md`，仍然适用的口径都在本文件 + `AGENTS.md` + `docs/component-authoring{,.zh-CN}.md` |
 
 ## 1. 这一版定了什么口径（下一刀直接照用）
@@ -26,7 +26,7 @@
    `reset` / `requestSubmit` / `remove`）/ `focusFirst()` / `replaceChildren(…)`（节点方法）/
    `reorderChildren(ordered)`；全部可被组件命令遮蔽。
    **挂载期**需要真元素（观察器、渲染器宿主、焦点陷阱）用 `whenMount(host)` 的 `host.element()`；
-   门禁 `src/dom-access-baseline.test.js` 把 `_el` + `renderDom()` 一起冻在零（允许清单只剩三处节点类型扩展）。
+   门禁 `src/testing/gates/dom-access-baseline.test.js` 把 `_el` + `renderDom()` 一起冻在零（允许清单只剩三处节点类型扩展）。
 3. **写法规格照 `VBadge`**（`src/data-display/badge.js`）：props 在参数表解构 + `...rest` 摊进根元素工厂；
    状态用 `asSignal` / `ref`，归一放**读时** `computed`；静态样式进 `yoya.ui.css`（`[vn~='VXxx'] …`）；
    几何走 CSS 变量；列表用 `ref` + `keyed`；命令只写状态、不搬结构。逐条判据见票 19。
@@ -40,7 +40,7 @@
    要落在视图根上**（`view.setupFunction(() => builder(self.node()))`，句柄仍是组件节点）——区域
    `rebuildable()` 只由元素节点订阅依赖，声明在组件节点上的区域不随信号重建。
 6. **属性化已收口**：`yoya-v*` / `yoya-component` 类名清零；皮肤只从 `[vn~='VXxx']` 起头；
-   门禁 `src/attribute-migration-baseline.test.js` 改成"必须保持空"，`src/preset-scope.test.js` 守身份作用域。
+   门禁 `src/testing/gates/attribute-migration-baseline.test.js` 改成"必须保持空"，`src/testing/gates/preset-scope.test.js` 守身份作用域。
    跨组件能力类 `yoya-<feature>`（`yoya-icon` / `yoya-layout` / `yoya-control-clear`）保留。
 7. **编译路径的四条硬约束见 `AGENTS.md`**（运行期优先 / 不为编译牺牲运行期 / 不引运行期错误 / 编译器只懂形状），
    验收动作也在那一节。
@@ -82,7 +82,7 @@
 - **类型线收口（2026-09-25，`.scratch/component-typing/` 票 01–06）**：`types/*.d.ts` 每个组件按同一形状写——
   `interface VXxx extends ComponentNode` + `interface XxxOptions`（定义函数的直接参数，逐键类型，末尾
   `[key: string]: unknown` 保元素级透传）+ `const VXxx: { (props?: XxxOptions): VXxx }`（**不给 `new`**）+
-  快捷方法首参 `XxxOptions | SetupInput<VXxx> | null`；`types/tests/consumer.ts` 逐组件补了正例 + 负例。
+  快捷方法首参 `XxxOptions | SetupInput<VXxx> | null`；`types/consumer.test-d.ts` 逐组件补了正例 + 负例。
   四条口径：**运行期定义函数没有 props 参数时类型也写 `()`**（实参运行期会被静默丢掉）、**构造签名退场**
   （`new VXxx()` / `instanceof VXxx` 收窄不到句柄）、**对象组件协议退场**（`ComponentLike` 降 `@deprecated`，
   不再进 `ChildInput` / `KeyedRowProduct` / `PageFactory` 等联合分支）、**同名命令 vs HTML 子工厂按并集声明**。
@@ -95,7 +95,7 @@
   路由页面对象全部抛错（`src/core/node.js` / `v-node.js` / `ssr.js` / `client-only.js` / `router.js` /
   `components/shared.js`），弃用提示模块 `src/core/deprecations.js` 删除；编译器形态 B 分支
   （`analyze` / `registry` / `runtime` / `discover`）退场，认不出整体回落。
-  `src/examples/**` 40 文件 / 74 个形态 B 工厂迁到 **0**（含 4 个单文件 SVG 演示的内联台本），
+  `examples/**` 40 文件 / 74 个形态 B 工厂迁到 **0**（含 4 个单文件 SVG 演示的内联台本），
   `shape-b-baseline.test.js` 基线归零（从"只减不增"变成"必须为空"）。两条迁移经验写进 `AGENTS.md`：
   **页面壳缓存工厂不缓存节点**、**`get x()` 改读值命令 `api.x = () => …`**。
   门禁：全量 **1766 条** / `lint` / `format:check` / `typecheck` / `build`（编译覆盖度无回退）/ `verify:dist` 全绿。
@@ -117,7 +117,7 @@
 ### 3.1b `_el` / `renderDom()` 存量清扫（**已收口**，票 16 第 123 条）
 
 - 组件侧 **`_el` 105 → 0、`renderDom()` 17 → 0**；新增元素级口子见 §1 第 2 条；门禁换成
-  `src/dom-access-baseline.test.js`（双禁令 + 允许清单）。
+  `src/testing/gates/dom-access-baseline.test.js`（双禁令 + 允许清单）。
 - **允许清单里只剩两处，都是节点类型扩展**（不是组件写法）：`feedback/message-manager.js`
   （管理器节点转发 `renderDom` / `toHTML`）、`data-display/tree.js` 的 `SerializedIconNode`（自绘片段）。
 
@@ -143,7 +143,7 @@
   （下拉 / tooltip / 右键菜单"点外面关掉"、菜单命中判定、侧栏走查）；`prop` → 布尔控件 `indeterminate`、
   `input` / `select` / `textarea` / 布尔控件的 hydration 回读、`upload` / `avatar-upload` 的 `files`；
   **挂载期**（观察器 / `showModal` / three·echart 宿主 / 焦点陷阱）→ `whenMount(host).element()`。
-- ~~扫完把 `src/render-dom-baseline.test.js` 扩成 **"`_el` + `renderDom()` 双禁令 + 允许清单（只留引擎自身）"**~~ → **已收口**（见 §3.1b：门禁是 `src/dom-access-baseline.test.js`）。
+- ~~扫完把 `src/render-dom-baseline.test.js` 扩成 **"`_el` + `renderDom()` 双禁令 + 允许清单（只留引擎自身）"**~~ → **已收口**（见 §3.1b：门禁是 `src/testing/gates/dom-access-baseline.test.js`）。
 
 ### 3.4 判定为"不是组件、保留"的
 
@@ -151,23 +151,23 @@
   `src/core/ssr.js`（`PageDocumentNode` / `PageBodyNode`）。
 - 引擎级自定义节点种类：`data-display/tree.js` 的 `SerializedIconNode`（自绘 `renderDom` / `toHTML`）。
 - 编译夹具：`src/compiler/fixtures/*`（形态 C 的"读不懂构造体"标本，必须保持类）。
-- 演示与文档示例：`src/examples/component-definition-docs.js` 与 `src/examples/demos/*-glue.js`（并行会话在改）。
+- 演示与文档示例：`examples/component-definition-docs.js` 与 `examples/demos/*-glue.js`（并行会话在改）。
 
 ## 4. 开工流程（每刀照抄）
 
-1. 改实现 → 2. 修 / 补该组件的契约用例（`src/css-contract.test.js` 补选择器组）→ 3. 刷新迁移金标
-   （`$env:UPDATE_MIGRATION_GOLDEN='1'; npx vitest run src/migration-equivalence.test.js`，跑完清环境变量）→
+1. 改实现 → 2. 修 / 补该组件的契约用例（`src/testing/gates/css-contract.test.js` 补选择器组）→ 3. 刷新迁移金标
+   （`$env:UPDATE_MIGRATION_GOLDEN='1'; npx vitest run src/testing/gates/migration-equivalence.test.js`，跑完清环境变量）→
 2. 下调基线（`UPDATE_ATTR_BASELINE=1` / `UPDATE_VIEW_BINDING_BASELINE=1`，只能减）→
 3. 六道门禁：`npx eslint .` / `npx prettier --check .` / `npx tsc -p tsconfig.json` /
-   `npx vitest run --exclude "src/examples/**"` / `npm run build`（编译覆盖度无回退）/ `npm run verify:dist` →
+   `npx vitest run --exclude "examples/**"` / `npm run build`（编译覆盖度无回退）/ `npm run verify:dist` →
 4. **按显式文件清单** `git add`（**绝不 `git add -A`**）→ 7. 中文提交信息写清"影响面"→ 8. 更新票 15 / 16 / 17。
 
 ## 5. 协作纪律（本仓库有并行会话）
 
 - 并行会话常在改：`docs/compiler*`、`docs/theme*`、`docs/highlights*`、`docs/browser-support*`、
   `skills/yoya-ui/**`、`benchmark/**`、`package.json`、`eslint.config.js`、`src/compiler/**`、
-  **`src/examples/**`**、以及近期的 `src/yoya.ui.css`（`theme-shell.*` 已删除）。
-- 提交一律按显式清单；跑门禁时若 `src/examples/**` 或 `verify:dist` 报错，先看 `git status` 与失败原因判断归属，
+  **`examples/**`**、以及近期的 `src/yoya.ui.css`（`theme-shell.*` 已删除）。
+- 提交一律按显式清单；跑门禁时若 `examples/**` 或 `verify:dist` 报错，先看 `git status` 与失败原因判断归属，
   别顺手"替他们修"。
 - `yoya.ui.css` 有体积门限（当前 116 KB，实测已到 125.8 KB——并行会话那批主题兜底层的收尾项）。
 - 误把自己的提交扫进别人文件时：`git reset --soft HEAD~1` + 定向 `git restore --staged` 退回（工作区不动）。

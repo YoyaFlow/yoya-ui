@@ -299,7 +299,7 @@ body {
 }
 /* 兼容兜底层（票 01 / D4–D5）：不认 light-dark() 或 color-mix() 的浏览器改走这一层。
    值由默认原始调色板烘焙而来（不跟随 --yoya-raw-* 覆写，见 D12）；其余 token 无需兜底。
-   门禁：src/theme-tokens.test.js（层内唯一 + 兜底键集相等 + 兜底值必须为纯值）。 */
+   门禁：src/testing/gates/theme-tokens.test.js（层内唯一 + 兜底键集相等 + 兜底值必须为纯值）。 */
 @supports not ((color: light-dark(#000, #fff)) and (color: color-mix(in srgb, #fff, #000))) {
   :root,
   [data-yoya-theme] {
@@ -525,7 +525,7 @@ body {
 /* 属性化迁移收口（票 15 波 6）：组件身份与部件位置一律走 `vn` / `vn_slot` 属性，
    类名一侧（`yoya-component` / `yoya-v*`）已全部退场——预设规则的起点只有身份作用域
    `[vn~='VXxx']` 与跨组件能力类 `yoya-<feature>`。
-   门禁：src/preset-scope.test.js（身份作用域）+ src/attribute-migration-baseline.test.js（只减不增）。 */
+   门禁：src/testing/gates/preset-scope.test.js（身份作用域）+ src/testing/gates/attribute-migration-baseline.test.js（只减不增）。 */
 @layer yoya {
   [vn] {
     box-sizing: border-box;

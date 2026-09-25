@@ -32,7 +32,7 @@ export const vXxx: ElementFactory<VXxx> & {
 - **没有 `new` 签名**：`instanceof VXxx` 不是承诺用法，身份判定用 `componentNameOf` /
   `hasComponentIdentity`（`x instanceof VXxx` 收窄不到句柄，写了就红）；对象组件协议（`{ render() }`）
   的类型联合分支也已退场。
-- 自己写组件时对应给 `XxxOptions` + 定义函数签名，并在 `types/tests/consumer.ts` 补正/负例
+- 自己写组件时对应给 `XxxOptions` + 定义函数签名，并在 `types/consumer.test-d.ts` 补正/负例
   （每个组件至少一条正例 + 一条 `@ts-expect-error` 负例）。
 
 ## 按钮与操作

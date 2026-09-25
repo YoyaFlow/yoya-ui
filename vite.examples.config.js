@@ -25,7 +25,7 @@ const injectEchartsScript = {
       return html;
     }
 
-    // dev 下 root 是 src/examples，echarts 文件在 root 之外，用 /@fs/ 绝对路径提供
+    // dev 下 root 是 examples，echarts 文件在 root 之外，用 /@fs/ 绝对路径提供
     const src = ctx.server ? `/@fs/${echartsSource.replace(/\\/g, '/')}` : './echarts.min.js';
     return html.replace('</head>', `    <script src="${src}"></script>\n  </head>`);
   },
@@ -35,7 +35,7 @@ const injectEchartsScript = {
 };
 
 export default defineConfig({
-  root: 'src/examples',
+  root: 'examples',
   base: './',
   resolve: {
     alias: packageAlias
@@ -43,7 +43,7 @@ export default defineConfig({
   build: {
     emptyOutDir: true,
     minify: false,
-    outDir: '../../dist/examples',
+    outDir: '../dist/examples',
     rollupOptions: {
       input: {
         anchor: 'anchor.html',

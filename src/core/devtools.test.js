@@ -9,7 +9,7 @@ import {
   getDevtoolsSnapshot,
   isDevtoolsEnabled,
   subscribeDevtools
-} from '../core/devtools.js';
+} from './devtools.js';
 
 describe('devtools hook (core)', () => {
   it('is disabled by default and toggles on/off', () => {

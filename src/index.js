@@ -1,3 +1,4 @@
+// 由 .scratch/src-layout/tools/target-migrate.mjs 生成：只导出当前已迁到目标仓的域。
 export * from './core/index.js';
 export * from './html/index.js';
 export * from './svg/index.js';

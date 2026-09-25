@@ -140,7 +140,7 @@ vCard((card) => card.replaceClassName('card-plain', 'card-raised'));
 - **预设规则一律从身份作用域起头**：`yoya.ui.css` 里的选择器都是 `[vn~="VXxx"] …`（无孤儿部件选择器），所以换掉身份就一次性把整棵子树从预设样式里摘出来——状态钩子同样失效（`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` 不再命中）。
 - **类名不是身份**：旧的 `yoya-component` / `yoya-v*` 两族已随票 15 波 6 全部退场，共享基规则只认 `[vn]`；跨组件能力类保留：`yoya-<feature>`（`yoya-icon`、`yoya-layout`、`yoya-control-clear`）。
 - 状态一律 kebab-case 的 `data-*` 属性，类名不承载状态。
-- 由 `src/attribute-migration-baseline.test.js`（类名存量已清零、只减不增）与 `src/preset-scope.test.js`（皮肤里每条规则都从库内真实声明的身份起头）把关，`src/css-contract.test.js` 逐条守具体规则。
+- 由 `src/testing/gates/attribute-migration-baseline.test.js`（类名存量已清零、只减不增）与 `src/testing/gates/preset-scope.test.js`（皮肤里每条规则都从库内真实声明的身份起头）把关，`src/testing/gates/css-contract.test.js` 逐条守具体规则。
 
 ### 主题切换 JS API（可选）
 
@@ -194,7 +194,7 @@ vThemeModeSwitch((sw) => {
 
 - `modes([...])`：可用模式，默认 `['light', 'dark', 'system']`；字符串会映射内置标签与图标，也支持传入 `{ mode, label, icon }` 自定义。
 - `persist(true | false)`：是否写入 localStorage，默认 `true`。
-- 每个按钮带 `aria-label` / `title` 与当前激活态，键盘可操作；完整交互演示见示例站主题页（`src/examples/theme-demo.js`）。
+- 每个按钮带 `aria-label` / `title` 与当前激活态，键盘可操作；完整交互演示见示例站主题页（`examples/theme-demo.js`）。
 
 ## 8. 层叠与覆盖保障
 
@@ -210,9 +210,9 @@ vThemeModeSwitch((sw) => {
 
 ## 10. 契约测试
 
-- `src/css-contract.test.js`：组件身份（`[vn~="VXxx"] …`）/ 状态钩子的静态 CSS 规则覆盖。
-- `src/attribute-migration-baseline.test.js`：类名存量恒为 0、只减不增（`yoya-component` / `yoya-v*`）。
-- `src/className-contract.test.js`：类名字面量只能落在保留下来的族（能力类 `yoya-<feature>`）、动态模板、`data-*` kebab 校验。
-- `src/preset-scope.test.js`：预设规则必须从库内真实声明的身份起头（无孤儿选择器）。
-- `src/cascade-layer.test.js`：`@layer yoya` 层结构。
-- `src/theme-tokens.test.js`：raw 色板、变体派生、单定义、模式/密度开关、token 名稳定。
+- `src/testing/gates/css-contract.test.js`：组件身份（`[vn~="VXxx"] …`）/ 状态钩子的静态 CSS 规则覆盖。
+- `src/testing/gates/attribute-migration-baseline.test.js`：类名存量恒为 0、只减不增（`yoya-component` / `yoya-v*`）。
+- `src/testing/gates/className-contract.test.js`：类名字面量只能落在保留下来的族（能力类 `yoya-<feature>`）、动态模板、`data-*` kebab 校验。
+- `src/testing/gates/preset-scope.test.js`：预设规则必须从库内真实声明的身份起头（无孤儿选择器）。
+- `src/testing/gates/cascade-layer.test.js`：`@layer yoya` 层结构。
+- `src/testing/gates/theme-tokens.test.js`：raw 色板、变体派生、单定义、模式/密度开关、token 名稳定。

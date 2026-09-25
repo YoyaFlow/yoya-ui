@@ -72,7 +72,7 @@ useful signals are the ones you can verify in the repository:
 | Runtime dependencies | `package.json` — no `dependencies` block                               |
 | Test suite           | `npm test`                                                             |
 | Type declarations    | `npm run typecheck` (declarations plus consumer type tests)            |
-| SSR determinism      | `src/*.ssr.test.js`, [ssr.md](ssr.md)                                  |
+| SSR determinism      | `src/testing/integration/*.ssr.test.js`, [ssr.md](ssr.md)              |
 | Distribution formats | `npm run build` → `dist/`                                              |
 | Dist verification    | `npm run build && npm run verify:dist`                                 |
 | Contract documents   | [component-authoring.md](component-authoring.md), [theme.md](theme.md) |

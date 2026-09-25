@@ -67,7 +67,7 @@ npm run examples:html   # 打开 http://localhost:5173/#/components
 
 另外两个独立原型同样建立在这套范式上：
 
-- [工业自动化原型](../src/examples/factory-game.html)用 `vThree` 作为 3D 视口：基于网格的工厂
+- [工业自动化原型](../examples/factory-game.html)用 `vThree` 作为 3D 视口：基于网格的工厂
   模拟（矿机、传送带、组装机），工具栏与产量统计由 yoya-ui 组件承担；
-- [SCADA 数字孪生演示](../src/examples/scada-demo.html)从操作员视角呈现同一套技术栈：全屏第一
+- [SCADA 数字孪生演示](../examples/scada-demo.html)从操作员视角呈现同一套技术栈：全屏第一
   人称行走巡厂，假数据驱动的罐体液位、泵状态、管线流量与报警，配合 yoya-ui 的游戏化 HUD 与快捷键。

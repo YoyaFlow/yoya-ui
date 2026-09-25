@@ -224,15 +224,15 @@ cross-library comparison: [docs/interop.md](docs/interop.md).
 
 Star counts measure attention, not correctness, so here is what can be checked directly:
 
-| Signal               | Value                                                                           | How to verify                                                      |
-| -------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Runtime dependencies | **0**                                                                           | `package.json` — no `dependencies` block                           |
-| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                   | `npm test`                                                         |
-| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests    | `npm run typecheck`                                                |
-| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                            | `src/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md)                    |
-| Dist verification    | Category isolation, SSR single-core smoke, size budgets, README size tables     | `npm run build && npm run verify:dist`                             |
-| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor | `browserslist`, [docs/browser-support.md](docs/browser-support.md) |
-| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                  | [docs/component-authoring.md](docs/component-authoring.md)         |
+| Signal               | Value                                                                           | How to verify                                                       |
+| -------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Runtime dependencies | **0**                                                                           | `package.json` — no `dependencies` block                            |
+| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                   | `npm test`                                                          |
+| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests    | `npm run typecheck`                                                 |
+| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                            | `src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
+| Dist verification    | Category isolation, SSR single-core smoke, size budgets, README size tables     | `npm run build && npm run verify:dist`                              |
+| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor | `browserslist`, [docs/browser-support.md](docs/browser-support.md)  |
+| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                  | [docs/component-authoring.md](docs/component-authoring.md)          |
 
 This is an early project: few stars, no legacy ecosystem to drag forward, and priorities are still
 shapeable. If you are evaluating it, evaluate the repository — tests, spec docs, API alignment with
@@ -302,7 +302,7 @@ Self-contained entries (core inlined, single file):
 | `yoya.ui-router.full.js` (everything) | 927.5 KB | 376.4 KB | 109.2 KB | core + all components + router / SSR |
 | `yoya.ui.full.js`                     | 862.0 KB | 351.6 KB | 100.8 KB | core + all components                |
 
-Component skin `yoya.ui.css`: 126.1 KB raw / **22.0 KB gzip**. The core layer ships no skin of its own
+Component skin `yoya.ui.css`: 126.1 KB raw / **22.1 KB gzip**. The core layer ships no skin of its own
 (it behaves like plain HTML), so core-only pages do not load it.
 
 `npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the
@@ -345,8 +345,9 @@ src/
   actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
                official component categories
   components/  component aggregation and shared logic
-  examples/    example site (SSR demos and copy-paste guides)
+  testing/     cross-module integration tests, gates, baselines
   index.js     dev aggregate entry
+examples/      example site (SSR demos and copy-paste guides)
 scripts/       entry build and size report
 types/         shipped TypeScript declarations for all entries
 docs/          public guides (SSR, theme, access control, devtools, authoring, interop)

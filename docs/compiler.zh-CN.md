@@ -188,7 +188,7 @@ export default defineConfig({
 没有"太小所以别编"的规模线**；小形状只是绝对收益小。
 
 覆盖率数字（`--report`，本机刷新跑 `npm run report:compile`）：库内 `src` 503 文件 /
-候选 161 / 可编 **44**；`src/examples` 136 / 82 / 16。这些数字由 §4.1 的覆盖率基线**逐文件**
+候选 161 / 可编 **44**；`examples` 136 / 82 / 16。这些数字由 §4.1 的覆盖率基线**逐文件**
 盯着（基线里可编、现在回落即失败），但它只是"形状覆盖面"的体检，**不作为收益门槛**。
 
 ## 4. 用法
@@ -219,7 +219,7 @@ node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --report src --json
 ```
 
 覆盖率基线在仓库里是这样落地的：`npm run build` 末尾跑 `scripts/compiler-coverage.mjs`，把
-`src` 与 `src/examples` 的候选 / 可编 / bail 直方图打进构建日志，再对照
+`src` 与 `examples` 的候选 / 可编 / bail 直方图打进构建日志，再对照
 `scripts/compiler-coverage.baseline.json` **禁回退**——口径是逐文件的「可编」集合：新增候选、
 新增可编形状都不拦（覆盖率只许涨），基线里编得出来的文件一旦回落就失败（回落原因一起打出来）；
 形状是有意改的，就 `npm run report:compile:write` 刷新基线，并在提交信息里写清为什么。
@@ -394,7 +394,7 @@ export function createRowFactory(scope) {
   结构常量；它们出现的名字只来自构建期读到的业务模块（`plan.source`）。工具自带的夹具只用中性形状，
   而且只存在于测试目录、不随包发布（`files: [dist, types]`）。
 - **区域 / 组件槽**：属于动态结构，一律 bail，避免语义漂移（行内 `keyed` 自票 03 起可编，见上）。
-- **覆盖率基线门禁**：`src` / `src/examples` 两条基线进构建日志，逐文件禁回退（见 §4.1）。
+- **覆盖率基线门禁**：`src` / `examples` 两条基线进构建日志，逐文件禁回退（见 §4.1）。
 
 ## 7. 组件级片段链接（第一档：叶子组件）
 
@@ -497,7 +497,7 @@ buildComponentRegistry({
 （`yoya-ui/compiled-registry`），插件在调用方没传 `components` 时**默认加载**它——
 `child(vCard(…))` / `child(ArrowDownOutlined())` 这类库内组件调用开箱即用。
 
-- **形状推导，不写名单**：`scripts/compiler-registry.mjs` 扫 `src`（排除 `src/examples`、测试与
+- **形状推导，不写名单**：`scripts/compiler-registry.mjs` 扫 `src`（排除 `examples`、测试与
   `src/compiler`）的顶层导出并**逐个试着编**，编得出来就进注册表；编译器仍然不认识任何组件名；
 - **键按包名**：条目键是 `@yoyaflow/yoya-ui#<导出名>`，所以从 `.` / `/ui` / `/data-display` 哪个入口
   import 都命中同一条目（`component-key.js` 的 `packageNameOf`）；

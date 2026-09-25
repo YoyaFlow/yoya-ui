@@ -207,15 +207,15 @@ Toast UI Viewer 与 `vThree` 工厂沙盘）。扩展写法与跨库对照见
 
 Star 数说明关注度，不说明正确性，所以下面这些都可以直接查：
 
-| 信号       | 当前值                                                            | 怎么验证                                                                       |
-| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                          |
-| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                     |
-| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                            |
-| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `src/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)                    |
-| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表               | `npm run build && npm run verify:dist`                                         |
-| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md) |
-| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)         |
+| 信号       | 当前值                                                            | 怎么验证                                                                        |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                           |
+| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                      |
+| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                             |
+| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `src/testing/integration/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) |
+| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表               | `npm run build && npm run verify:dist`                                          |
+| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md)  |
+| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)          |
 
 这是一个早期项目：Star 少、没有历史生态包袱，优先级仍然可以影响。评估它时请看仓库本身——测试、
 规范文档、与 Web 标准对齐的 API。更完整的说明（包括我们接受的取舍）见
@@ -282,7 +282,7 @@ npm run build   # 产出 dist/，末尾打印体积表
 | `yoya.ui-router.full.js`（全量） | 927.5 KB | 376.4 KB | 109.2 KB | core + 全部组件 + router / SSR |
 | `yoya.ui.full.js`                | 862.0 KB | 351.6 KB | 100.8 KB | core + 全部组件                |
 
-组件皮肤 `yoya.ui.css`：126.1 KB raw / **22.0 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
+组件皮肤 `yoya.ui.css`：126.1 KB raw / **22.1 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
 只用 core 不需要引它。
 
 `npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，
@@ -322,8 +322,9 @@ src/
   actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
                官方组件分类
   components/  组件聚合与共享逻辑
-  examples/    示例站（SSR 演示与可复制指南）
+  testing/     跨模块集成测试、口径门禁、基线
   index.js     开发期聚合入口
+examples/      示例站（SSR 演示与可复制指南）
 scripts/       入口构建、体积报表
 types/         随包发布的全部入口 TypeScript 声明
 docs/          公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）

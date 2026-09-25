@@ -1,0 +1,8 @@
+import { vInput } from '../../src/index.js';
+
+export function InputExample1() {
+  return vInput({
+    placeholder: '请输入服务名',
+    value: 'yoya-ui'
+  });
+}

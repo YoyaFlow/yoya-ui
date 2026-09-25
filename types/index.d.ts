@@ -1,4 +1,4 @@
 /**
  * Default entry types for the `yoya-ui` package root.
  */
-export * from './yoya.ui-router.js';
+export * from './entries/yoya.ui-router.js';

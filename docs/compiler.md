@@ -219,7 +219,7 @@ is very low on a real machine (4 columns is already 0.44×) and there is no "too
 line**; small shapes only win less in absolute terms.
 
 Coverage numbers (`--report`; refresh with `npm run report:compile`): `src` is 503 files /
-161 candidates / **44** compiled, `src/examples` 136 / 82 / 16. They are watched per file by the
+161 candidates / **44** compiled, `examples` 136 / 82 / 16. They are watched per file by the
 coverage baseline in §4.1 (a file that compiled in the baseline and falls back now fails the build),
 but that baseline is a shape-coverage health check, **not** a profit threshold.
 
@@ -254,7 +254,7 @@ npx yoya-compiler --report src --json
 
 That is how the coverage baseline is wired in this repo: `npm run build` ends with
 `scripts/compiler-coverage.mjs`, which prints the candidate / compiled / bail histogram for `src` and
-`src/examples` into the build log and then compares it against
+`examples` into the build log and then compares it against
 `scripts/compiler-coverage.baseline.json`. The gate is **per file**: new candidates and newly
 compilable shapes are never blocked (coverage may only grow), while a file that compiled when the
 baseline was taken must not fall back — the bail reason is printed with it. When a shape changes on
@@ -467,7 +467,7 @@ dispatch table), and only the position comes from the artifact.
   use neutral shapes and live in the test tree only (never published — `files: [dist, types]`).
 - **Regions / component slots**: dynamic structure, always bails to avoid semantic drift (row-level
   `keyed` compiles since ticket 03, see above).
-- **Coverage baseline gate**: the `src` / `src/examples` baselines go into the build log and are
+- **Coverage baseline gate**: the `src` / `examples` baselines go into the build log and are
   enforced per file (see §4.1).
 
 ## 7. Component-level fragment linking (tier 1: leaf components)
@@ -566,7 +566,7 @@ prebuilt one at `yoya-ui/compiled-registry`, and the plugin loads it by default 
 not pass its own `components`. `child(vCard(…))` / `child(ArrowDownOutlined())` therefore link out of the
 box.
 
-- **Shape-derived, no roster**: `scripts/compiler-registry.mjs` scans `src` (excluding `src/examples`,
+- **Shape-derived, no roster**: `scripts/compiler-registry.mjs` scans `src` (excluding `examples`,
   tests and the compiler) and _tries to compile_ every top-level export — whatever compiles becomes an
   entry. The compiler still knows no component names.
 - **Package-level keys**: an entry is keyed `@yoyaflow/yoya-ui#<export>`, so importing it from `.`, `/ui`

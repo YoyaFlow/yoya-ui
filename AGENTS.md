@@ -131,7 +131,7 @@ function RateCard() {
 ### 属性契约：`vn` / `vn_slot`（属性化迁移，票 15）
 
 组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名**已退场**（属性化迁移收口，基线清零、只减不增）。
-门禁在 `src/attribute-migration-baseline.test.js`；口径细则见 `docs/component-authoring{,.zh-CN}.md` §7.3 与
+门禁在 `src/testing/gates/attribute-migration-baseline.test.js`；口径细则见 `docs/component-authoring{,.zh-CN}.md` §7.3 与
 `.scratch/vnode-convergence/issues/19-component-writing-rules.md`。
 
 1. **身份 = `vn` 对象事实 + 真 DOM 属性**：视图根写 `vn: 'VXxx'`（值 = 导出名；包装型多值空格分隔，
@@ -158,7 +158,7 @@ function RateCard() {
 
 CSS 迁移对照（迁移已完成）：`.yoya-component` → `[vn]`、`.yoya-vcard` → `[vn="VCard"]`、
 `.yoya-vcard-header` → `[vn="VCardHeader"]`、`.yoya-vcarousel-arrow--prev` → `[vn="VCarouselArrow"][data-dir="prev"]`。
-门禁仍在 `src/attribute-migration-baseline.test.js`（空基线，只减不增）：新代码写类名身份会当场红。
+门禁仍在 `src/testing/gates/attribute-migration-baseline.test.js`（空基线，只减不增）：新代码写类名身份会当场红。
 
 ### 节点类型扩展（引擎内部，不是第三种组件形态）
 
@@ -200,7 +200,7 @@ B 形态里需要元素级行为的组件，视图根就是这样一个节点类
 - **页面壳缓存工厂、不缓存节点**（票 07 迁移踩到的）：A / B 工厂返回的是**节点**，一个节点只能挂一处；
   `const pages = { upload: createPage(definition) }` 这种模块级缓存会让第二次进同一路由拿到**已销毁的实例**
   （表现为"第一次进页面正常、第二次空白"）。要缓存就缓存 `() => createPage(definition)`，用的时候再调用。
-- 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
+- 演示源码面板复用 ComponentSource（examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
 - 「源码演示」细则（单文件内聚 / 初始化与使用分离 / 源码面板自洽 / 注册三步等）见上文「Demo Code Readability Rule」与演示示例约定。
@@ -408,17 +408,17 @@ export function VXxx({ count = null, ...rest } = {}) {
   确实必须重建"，见上文「状态与列表」）。落地之后订阅接管，命令写状态即可。
 - 迁移期存量的历史写法（`syncXxx()` / `_syncXxx()` 把多处 `attr` / `style` / `replaceChildren`
   收在一个函数里、由命令同步调用）**不是错**，但**只减不增**：
-  `src/view-binding-baseline.test.js` + `src/view-binding-baseline.json` 冻结存量，
+  `src/testing/gates/view-binding-baseline.test.js` + `src/testing/baselines/view-binding-baseline.json` 冻结存量，
   新文件一个都不许有；迁移一刀之后用 `UPDATE_VIEW_BINDING_BASELINE=1` 下调。
 - 为什么较真：集中快照把"状态"和"状态→视图的映射"拆到两处（读代码要跳），而且指令式写快照
   **编译路径吃不到**，只能整体回落通用路径——按仓库「编译路径为打榜曝光服务」的定位，
   模板式写法（结构一次写清 + 活值）才是能给编译器接住的形状。
-  `src/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
+  `src/testing/gates/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
 
 ## TypeScript 配套（0.7.0 起，票 `.scratch/component-typing/`）
 
 `types/*.d.ts` 是**随包发布的对外契约**，与运行期同口径：改组件 API 就**同一刀**改类型，
-并在类型门禁里补正/负例（`types/tests/consumer.ts`，`npm run typecheck` 跑）。
+并在类型门禁里补正/负例（`types/consumer.test-d.ts`，`npm run typecheck` 跑）。
 
 每个组件的声明按**同一个形状**写（参考实现 `VBadge`，`types/data-display.d.ts`）：
 
@@ -452,7 +452,7 @@ export const vXxx: ElementFactory<VXxx> & {
   只有**组件定义函数**走上面这一对（`interface` + 可调用的 `const`）。
 - **接口合并只在同一模块生效**：给一个组件补类型就改它自己那份 `.d.ts`，别在别的文件里"再声明一个同名接口"。
 - **新组件必须带类型**：A / B 两种形态都要有 `XxxOptions` + 定义函数签名 + 快捷方法首参，
-  并在 `types/tests/consumer.ts` 补一条正例 + 一条 `@ts-expect-error` 负例（取值类型写错）。
+  并在 `types/consumer.test-d.ts` 补一条正例 + 一条 `@ts-expect-error` 负例（取值类型写错）。
 
 ## Setup 回调节点命名规则
 
@@ -485,9 +485,9 @@ form.vFormItem((itemOfLabel) => {
 - 链式调用只合并简单、同层级的设置，不把嵌套 setup、条件分支或长参数塞进同一条链。
 - `.on()` 等带回调内容的方法，回调逻辑较大或单行接近 100 字符时，在 `.on()` 前换行，回调内容独立成行。
 - 同一节点需要设置多个属性时，优先合并为 `node.attr({ ... })` 对象写法；动态属性、条件赋值或运行时计算值可以继续使用 `attr()`。
-- `src/examples/demos/` 已加入 `.prettierignore`，演示代码的换行格式不被 Prettier 自动合并。
+- `examples/demos/` 已加入 `.prettierignore`，演示代码的换行格式不被 Prettier 自动合并。
 - i18n 演示优先使用 `"默认语言内容".s("key", locale?)` 字符串快捷写法；未指定 locale 时使用默认 locale，未注册的语言内容使用默认语言内容。
-- `src/examples/demos/*.js` 由 `demo-readability.test.js` 自动检查点式链数量，`npm test` 会拦截违规。
+- `examples/demos/*.js` 由 `demo-readability.test.js` 自动检查点式链数量，`npm test` 会拦截违规。
 - 页面壳分层由 `demo-layering.test.js` 自动检查：演示源码禁止出现 `vCard(` / `vCardHeader(` / `vCardBody(` / `vCardFooter(`；存量文件以迁移基线放行，shell token 只减不增，清零后删除白名单条目。
 
 ## SSR 开发纪律

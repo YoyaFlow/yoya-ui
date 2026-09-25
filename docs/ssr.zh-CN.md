@@ -167,7 +167,7 @@ page.head((head) => {
 
 ### 3.1 最小 HTTP 服务
 
-完整可运行示例见 `src/examples/ssr/server-http.mjs`（`node src/examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
+完整可运行示例见 `examples/ssr/server-http.mjs`（`node examples/ssr/server-http.mjs`，需先 `npm run build`）。核心逻辑：
 
 ```js
 import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
@@ -298,8 +298,8 @@ div((root) => {
 
 ## 7. 示例对照
 
-- `node src/examples/ssr/server.mjs`：直接把页面 HTML 输出到 stdout，看产物用；
-- `node src/examples/ssr/server-http.mjs`：完整 HTTP 服务（无打包最小演示），演示请求解析、SSR 渲染、静态资源提供、客户端 hydrate/mount 分支。先运行 `npm run build`。
+- `node examples/ssr/server.mjs`：直接把页面 HTML 输出到 stdout，看产物用；
+- `node examples/ssr/server-http.mjs`：完整 HTTP 服务（无打包最小演示），演示请求解析、SSR 渲染、静态资源提供、客户端 hydrate/mount 分支。先运行 `npm run build`。
 - `dist/examples/ssr-demo.html`（构建 examples 后）：独立 SSR 演示页，浏览器内 renderToString → hydrate，演示按钮、弹窗、表单与中英文切换。
 - 示例站（`npm run build:examples` + `npx vite preview`）：开发指南 → 服务端渲染页，含 SSR/非 SSR 模式切换交互演示。
 

@@ -55,7 +55,7 @@ Safari 只是因为更新被系统版本锁住，**受害人群最大、持续�
 
 - **颜色 token 兜底层**：预设皮肤里用
   `@supports not ((color: light-dark(…)) and (color: color-mix(…)))` 包住一份**纯值** token 表，
-  键集与主层里依赖这两个函数的 token **逐个相等**——新增 token 忘了补兜底，`src/theme-tokens.test.js` 会当场红。
+  键集与主层里依赖这两个函数的 token **逐个相等**——新增 token 忘了补兜底，`src/testing/gates/theme-tokens.test.js` 会当场红。
   块内三个模式块：浅色、`[data-yoya-mode='dark']`、以及 `system` 的夜间（`@media (prefers-color-scheme: dark)`）。
 - **不要把 `var(--token, 兜底)` 当成降级手段**：CSS 变量的 fallback **只在变量未被定义时**生效。
   这里的 token 是被定义了的（只是值在替换时才非法），所以那些 fallback 一次都不会被采用——库内 JS 侧有 140 多处行内样式、
@@ -114,8 +114,8 @@ CSS.supports('color', 'light-dark(#000, #fff)') &&
 
 看观感就直接打开 `dist/examples/` 里的演示页，切换 `data-yoya-mode` 的 light / dark / system：三个模式都不该出现「背景透明、文字变默认黑」。
 
-仓库侧，这条线由三处守着：`package.json` 的 `browserslist`（声明）、`src/theme-tokens.test.js`（兜底层键集与纯值不变量）、
-`src/css-contract.test.js`（主题壳的合成规则与它的兜底规则）。
+仓库侧，这条线由三处守着：`package.json` 的 `browserslist`（声明）、`src/testing/gates/theme-tokens.test.js`（兜底层键集与纯值不变量）、
+`src/testing/gates/css-contract.test.js`（主题壳的合成规则与它的兜底规则）。
 
 ## 7. 基线怎么往上抬
 
@@ -139,5 +139,5 @@ CSS.supports('color', 'light-dark(#000, #fff)') &&
 | 主题壳透明度 | 真实组件渲染后读计算背景：半透明 / 100% / 自定义基色 / 深色跟随 token | 四条正确；强制兜底四条退成不透明基色 |
 
 复跑的最小做法就是 §6：一句能力探测判断当前浏览器走哪条分支，再打开 `dist/examples/` 的演示页切一遍 light / dark / system。
-仓库侧的不变量由三处守着（`browserslist`、`src/theme-tokens.test.js`、`src/css-contract.test.js`），其中
+仓库侧的不变量由三处守着（`browserslist`、`src/testing/gates/theme-tokens.test.js`、`src/testing/gates/css-contract.test.js`），其中
 `css-contract` 里那条「每条 `scrollbar-width: none` 都要有 `::-webkit-scrollbar` 配对」就是这次收尾补上的。
