@@ -32,13 +32,13 @@ export const BUNDLE_ENTRIES = [
     label: '@yoyaflow/yoya-core/api',
     pkg: 'core',
     file: 'api.js',
-    contents: '通讯辅助约束：RequestBase / Result / configureRequest'
+    contents: '请求辅助：RequestBase / Result / configureRequest'
   },
   {
     label: '@yoyaflow/yoya-core/tools',
     pkg: 'core',
     file: 'tools.js',
-    contents: 'a11y / i18n / theme / 组件作者契约原语（core 自包含）'
+    contents: 'a11y / i18n / theme / 组件写作规范（core 自包含）'
   },
   {
     label: '@yoyaflow/yoya-ui',
@@ -74,7 +74,7 @@ export const BUNDLE_ENTRIES = [
     label: '@yoyaflow/yoya-ui/tools',
     pkg: 'ui',
     file: 'tools.js',
-    contents: 'a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）'
+    contents: 'a11y / i18n / theme / 组件写作规范（转发到 core，peer 提供）'
   },
   {
     label: '@yoyaflow/yoya-ui/dev',
@@ -122,13 +122,13 @@ export const BUNDLE_ENTRIES = [
     label: '@yoyaflow/yoya-ui/echart',
     pkg: 'ui',
     file: 'echart.js',
-    contents: 'vEchart（ECharts 封装，自备 echarts）'
+    contents: 'vEchart（ECharts 适配器，自备 echarts）'
   },
   {
     label: '@yoyaflow/yoya-ui/three',
     pkg: 'ui',
     file: 'three.js',
-    contents: 'vThree（Three.js 封装，自备 three）'
+    contents: 'vThree（Three.js 适配器，自备 three）'
   },
   {
     label: '@yoyaflow/yoya-ui/compiler-runtime',

@@ -1,6 +1,6 @@
 # yoya-ui
 
-**A browser-native extension library: truly progressive — no virtual DOM, no build step, declarative UI in plain JavaScript.**
+**A progressive, browser-native UI library: no virtual DOM, no build step — declarative interfaces in plain JavaScript.**
 
 **English** | [简体中文](./README.zh-CN.md)
 
@@ -11,29 +11,28 @@
 
 ## What it is
 
-It is not another framework runtime layered on top of the browser. It **extends the HTML and DOM
-you already have**: views are plain JavaScript functions, every node in the view tree is the handle
-for a real DOM element, and writing state updates the bound spots in place — no virtual DOM, no JSX
-or template compiler, no mandatory build step.
+yoya-ui works directly on the real DOM: views are plain JavaScript functions, every node in the
+view tree maps to a real DOM element, and writing state updates the bound spots in place. No virtual
+DOM, no JSX or template compiler, no build step required.
 
 Component library, router, i18n, theme, access control and state management ship with it, but none
-of them takes over your build chain: use one import or all of them, and fall back to native DOM
-whenever you want. Positioning notes and the full rationale: [Why yoya-ui](docs/why-yoya-ui.md).
+of them takes over your build chain: use one entry or all of them, and fall back to native DOM
+whenever you want. Why it is built this way: [Why yoya-ui](docs/why-yoya-ui.md).
 
 ## Who it is for
 
-- **Teams that do not want to be bound by build tooling** — the shipped ESM files run in a plain
-  page, and an existing bundler setup is equally welcome.
-- **Delivery and long-term maintenance teams** — one stable API on Web standards, instead of
+- **Teams that do not want to be tied to build tooling** — the shipped ESM files run in a plain
+  page, and an existing bundler setup keeps working.
+- **Projects that need long-term maintenance** — one API built on Web standards, instead of
   rewriting for a framework's next major version.
 - **Legacy systems and existing pages** — drop declarative interaction into an existing
   PHP / JSP / Vue / React page, block by block, with no migration.
-- **AI-generated code that has to run as-is** — no framework context or build magic between the
-  generated code and the browser.
+- **Teams using AI-generated code** — no framework context and no build magic between the
+  generated code and the browser, so it runs as soon as it is saved.
 
 **Who it is not for:** teams that are already committed to a framework ecosystem (React / Vue /
-Angular) and want that ecosystem's component market, conventions and tooling. yoya-ui deliberately
-does not re-package those libraries — it hands them a real DOM element instead.
+Angular) and want that ecosystem's component market, conventions and tooling. yoya-ui does not
+re-package those libraries; it hands them a real DOM element instead.
 
 ## Quick start: a counter in one file
 
@@ -88,8 +87,9 @@ come from a CDN.
 </html>
 ```
 
-One tree, three layers: native elements (`p`), an official component (`vCard` / `vButton`) and a
-state handle (`ref`) — the version in the URLs is the latest release when this was written.
+The example uses all three layers at once: native elements (`p`), official components
+(`vCard` / `vButton`) and a state handle (`ref`). The version in the URLs is the latest release as of
+writing.
 
 **Behind a CDN that is slow in China?** All three prefixes have identical paths: replace the domain
 and keep the rest, and swap `<version>` for a released version number.
@@ -102,7 +102,7 @@ and keep the rest, and swap `<version>` for a released version number.
 
 Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yoya.core.js`, …
 
-## Progressive by design: four levels
+## Four levels of progressive adoption
 
 1. **A script tag.** The quick start above: CDN, real page, zero tooling.
 2. **Progressive enhancement.** `bindTo()` mounts one interactive block into an existing page — a
@@ -117,25 +117,25 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring echarts)
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring three)
    import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
-   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // transport helpers
+   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // request helpers
    import '@yoyaflow/yoya-ui/ui.css'; // component skin and theme variables
    ```
 
-   > For the build-time compiler: `npm i -D @yoyaflow/yoya-compiler @babel/parser`. The runtime hooks used
-   > by compiled artifacts live in `@yoyaflow/yoya-core/compiler-runtime` (loaded only by projects that
-   > actually compiled).
+   > If you want build-time compilation, install it then:
+   > `npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string`. See the
+   > [compiler guide](docs/compiler.md).
 
-4. **A full application: SPA or SSR.** A single-page app needs no extra layer — the built-in router
+4. **A full application: SPA or SSR.** A single-page app needs no extra layer: the built-in router
    (`history` / `hash` modes, params, guards, 404, `vLink`, `vRouterViews`) plus the component
-   categories and `ref` state, still without a mandatory build step. Server rendering reuses the same
-   page factory instead:
+   categories and `ref` state are enough, still without a build step. For server rendering, reuse the
+   same page factory:
 
    ```bash
    npm install -g create-yoya-ui
    create-yoya-ui my-app --template admin   # SPA shell (admin / basic) or SSR (ssr)
    ```
 
-   On the server, `renderPage()` renders that factory and the browser reuses it with
+   On the server, `renderPage()` renders that factory and the browser takes over with
    `hydrateOrMount()` — one codebase, no second rendering model. Guide: [docs/ssr.md](docs/ssr.md).
 
 ## What's in the box
@@ -150,107 +150,69 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
 | Theme                  | Design tokens, light/dark, `@layer` CSS architecture                                                                             |
 | Access control         | Declarative resource codes; hidden / read-only / disabled derived automatically                                                  |
 | Errors & performance   | `whenFailed()` subtree boundaries; `vScroll` auto-virtualization for long lists                                                  |
-| Extensions             | `vEchart`, `vThree` entries; any DOM-mountable library composes through the same lifecycle contract                              |
+| Extensions             | `vEchart`, `vThree` entries; any DOM-mountable library plugs in through the same lifecycle                                       |
 | DevTools (beta)        | Separate `devtools` entry for signal writes, region rebuilds, hydration mismatches                                               |
-| Compile path (beta)    | Build-time compiler + `compiler-runtime` hooks: constant-structure rows / items become a static fragment plus positional writes  |
+| Compile path (beta)    | Optional build-time compiler: constant-structure list and table rows become a static fragment; see the compiler guide            |
 
-Only `ref` and `computed` are needed for state; there is no deep proxy and no proxy store. Details
-per feature: [docs/highlights.md](docs/highlights.md).
+State needs only `ref` and `computed`; there is no deep proxy and no proxy store. Details per
+feature: [docs/highlights.md](docs/highlights.md).
 
-### Compile path (beta)
+### Compile path (beta, optional)
 
-A build-time tool for **repeated units** (table rows, list items, tree nodes): the compiler reads the
-builder at build time and emits a module that clones a static fragment and writes only the live values.
-Its hooks live in a separate subpath (`@yoyaflow/yoya-ui/compiler-runtime`); the main entry never includes
-the compiler.
-
-```bash
-# Install: the compiler ships inside the package; bring your own @babel/parser (optional peer, not auto-installed)
-npm i -D @yoyaflow/yoya-ui @babel/parser
-```
+When the same structure is created over and over (list rows, tree nodes, table cells), a build-time
+step can compile the row factory into a module that clones a static fragment and writes only the live
+values, saving the per-row node objects and binding registrations. The compiler is not part of the
+runtime: installing and running it changes no existing code.
 
 ```bash
-npx yoya-compiler --file src/Row.js --component Row --mode element --out src/generated/row.js
-# Equivalent without the bin:
-# node node_modules/@yoyaflow/yoya-ui/dist/yoya.compiler.js --file … --component Row --out …
+npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
 ```
 
-The recommended wiring is the **build-time plugin** — written once with
-[unplugin](https://unplugin.unjs.io/), so Vite / Rollup / Webpack / esbuild / Rspack / Rolldown / Farm
-each get their entry (`yoyaCompile.vite(...)` / `.rollup(...)` / `.esbuild(...)` …) and you add one
-line to the build config you already have. Your source stays untouched (the plugin renames `Row`
-to `RowSource`, appends a same-name wrapper that delegates to the compiled factory, and keeps
-the artifact in a virtual module; business code imports no generated file):
-
-```js
-import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
-
-plugins: [yoyaCompile.vite({ core })]; // compile units = component boundary (view-returning factories)
-```
-
-Lists keep their declarative form — `tbody((body) => body.keyed(rows, Row))` — because `keyed()`
-accepts both element rows (`{ el, destroy }`) and node rows and picks the reconciler from the row
-product. Targets are located by **AST symbol identity**, and anything unclear leaves the source alone
-(no target, two same-name declarations, or an unbuildable shape all fall back to the generic path).
-The rewrite keeps a hires source map, so stack traces still point at your source. See
-[skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md).
-
-```js
-import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
-```
-
-**No configuration needed**: `--core` defaults to the core that ships with the package (pass it only to
-point at another copy) and `--runtime` defaults to `./compiler-runtime.js` (switch it to
-`@yoyaflow/yoya-ui/compiler-runtime` when a bundler resolves imports). The artifact is a plain ESM module
-and nothing on the runtime side changes. Anything it cannot classify falls back to the generic path for
-that whole shape.
-
-Status: **beta** — flags and artifact shapes may still change in a minor release, and not using it
-changes nothing. Full contract (two channels, component registry, page `<template>` fragments,
-`--report`): [docs/compiler.md](docs/compiler.md).
+Command-line usage, the build-plugin wiring, the shapes it can compile, the fallback rules and the
+runtime hooks: [docs/compiler.md](docs/compiler.md).
 
 ## Everything is real DOM, so third-party libraries just plug in
 
 The view tree is the DOM tree. A library that mounts into an element — charts, editors,
-spreadsheets, maps — needs one shape-B component with a documented lifecycle
-(a `vNode` closure: `whenMount(host)` → init, option update → forward, `whenDestroy` → dispose)
-and then composes with `child()` like a built-in. `vEchart` is the reference implementation:
+spreadsheets, maps — plugs in through the same lifecycle (a `vNode` closure: `whenMount(host)` to
+initialise, option updates forwarded, `whenDestroy` to dispose) and then composes with `child()`
+like a built-in. `vEchart` is the official adapter:
 
-- the library instance is handed over in one call (`chart.echartsLib(echarts)`);
-- no wrapper, no adapter layer, no re-packaged dependency;
+- the adapter is one thin component — `vEchart` only bridges the lifecycle and ships no echarts code;
+- you hand over the library instance (`chart.echartsLib(echarts)`); options are forwarded as-is, with no
+  reactive wrapper, and the dependency is never re-packaged;
 - `registerChildFactories` exposes your component as a parent shortcut (`page.vEchart(…)`);
 - browser-only widgets wrap in `vClientOnly()` so SSR emits a placeholder.
 
 Live demos: `npm run examples:html` (component catalog plus Quill, AG Grid Community, Leaflet,
-CodeMirror 6, Toast UI Viewer, and a `vThree` factory simulation). The extension pattern and the
+CodeMirror 6, Toast UI Viewer, and a `vThree` demo). The extension pattern and the
 cross-library comparison: [docs/interop.md](docs/interop.md).
 
-## Engineering signals you can verify
+## Engineering quality you can check
 
-Star counts measure attention, not correctness, so here is what can be checked directly:
+Star counts only measure attention; everything below can be checked in the repository:
 
-| Signal               | Value                                                                                              | How to verify                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Runtime dependencies | **0**                                                                                              | `package.json` — no `dependencies` block                                             |
-| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                                      | `npm test`                                                                           |
-| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests                       | `npm run typecheck`                                                                  |
-| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                                               | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
-| Dist verification    | exports↔dist, no cross-package inlining, host singleton smoke, `.full` self-contained, size tables | `npm run build && npm run verify:dist`                                               |
-| Package boundaries   | core depends on no component; the fast line treats core as a peer; the compiler knows no component | `npm run verify:packages`                                                            |
-| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor                    | `browserslist`, [docs/browser-support.md](docs/browser-support.md)                   |
-| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                                     | [docs/component-authoring.md](docs/component-authoring.md)                           |
+| Item                 | Current value                                                                                                  | How to verify                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Runtime dependencies | **0**                                                                                                          | `package.json` has no `dependencies` block                                           |
+| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                                                  | `npm test`                                                                           |
+| Type declarations    | Root / core / api / ui / router / extension entries, checked by consumer type tests                            | `npm run typecheck`                                                                  |
+| SSR determinism      | Render / hydrate / mount covered, no DOM on the server                                                         | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
+| Dist verification    | entries match dist, one copy of core, `.full` self-contained, size tables match the artifacts                  | `npm run build && npm run verify:dist`                                               |
+| Package boundaries   | core depends on no component package; yoya-ui takes core as a peer; the compiler branches on no component name | `npm run verify:packages`                                                            |
+| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor                                | `browserslist`, [docs/browser-support.md](docs/browser-support.md)                   |
+| Component spec       | Component shapes, value positions and lifecycle written down                                                   | [docs/component-authoring.md](docs/component-authoring.md)                           |
 
-This is an early project: few stars, no legacy ecosystem to drag forward, and priorities are still
-shapeable. If you are evaluating it, evaluate the repository — tests, spec docs, API alignment with
-Web standards. Longer version, including the limitations we accept:
+This is an early project: not many people know about it yet, no legacy baggage, and priorities can
+still be influenced. If you are evaluating it, look at the repository itself: tests, spec documents,
+and an API aligned with Web standards. The limitations we accept are written up in
 [docs/why-yoya-ui.md](docs/why-yoya-ui.md).
 
 ## Benchmark against other frameworks
 
-Execution (nine standard operations) and memory, read from the official
-[js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) runner — measured in a
-**local test environment** (see the note above the table), not on the official site:
+Below are timings for the nine standard operations and memory use, measured with the official
+[js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) runner in a **local test
+environment**, not on the official site:
 
 <!-- benchmark:readme:start 由 scripts/benchmark-report.mjs 生成 -->
 
@@ -281,49 +243,51 @@ Execution (nine standard operations) and memory, read from the official
 ## Build output and size
 
 ```bash
-npm run build        # packages/*/dist (publish face + module mirrors) + dist/examples/ + size table
-npm run verify:dist  # artifact completeness, no cross-package inlining, host singleton smoke, .full smoke, README table
+npm run build        # packages/*/dist, the example build and the size table
+npm run verify:dist  # entries match dist, one copy of core, .full self-contained, README size table
 ```
 
-The repo is a **five-package monorepo** (`packages/*`): `yoya-core` (slow line: primitives + the
-component-authoring contract), `yoya-ui` (fast line: components / layout / router / theme /
-extensions), `yoya-compiler` (build-time compiler), `contract` (cross-package contract tests) and
-`create-yoya-ui` (scaffold). The published packages ship two layers:
+The repo is a **five-package monorepo** (`packages/*`): `yoya-core` holds the engine and the
+foundations (nodes, signals, SSR primitives, HTML/SVG factories, i18n, theme, access control, the
+component-authoring spec); `yoya-ui` holds components and page features (components, layout, router,
+theme, extensions); `yoya-compiler` is the optional build-time compiler; `contract` holds
+cross-package tests; `create-yoya-ui` is the scaffold. Published packages ship two layers:
 
-- **publish face**: legacy entry names + `.min` (`dist/yoya.ui.js`, `dist/yoya.ui-router.full.js`, …).
-  Incremental entries are one-line re-exports with core as a **peer**; `yoya.core.js` / `yoya.api.js` /
-  the three `.full` bundles are **self-contained** (core inlined into a single file);
-- **module mirrors**: `dist/core/**`, `dist/actions/**`, … (preserveModules) — the stable target for the
+- **common entries**: `dist/yoya.ui.js`, `dist/yoya.ui-router.full.js` and their `.min` variants.
+  Incremental entries are one-line re-exports that share core through the peer dependency;
+  `yoya.core.js`, `yoya.api.js` and the three `.full` bundles are **self-contained** (core inlined
+  into a single file).
+- **module directories**: `dist/core/**`, `dist/actions/**`, … (preserveModules), used for the
   library-internal `/internal/*` deep imports.
 
-Singleton rules: **non-full entries** share exactly one core through the peer dependency (a second copy
-breaks `instanceof` / identity checks); a `.full` bundle is a self-contained single file and **must not
-be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/ssr.md](docs/ssr.md)).
+Non-`.full` entries share exactly one core (a second copy breaks identity checks such as
+`instanceof`); a `.full` bundle is a self-contained single file and **must not be mixed with the
+`@yoyaflow/yoya-core` package**. The reason is in [docs/ssr.md](docs/ssr.md).
 
-Entry surface (0.7.2 onwards): the main entry is the rendering primitives plus the whole element
-surface — nodes, HTML and **SVG factories + icon set**, signals, `keyed`, `vText`, `slot`. `/tools`
-carries a11y + i18n + theme + the component-authoring contract, `/dev` carries DevTools, and `/svg`
-stays an explicit alias for the element surface. `/ssr` is the complete server entry (core + html +
-layout + router/SSR), and the module mirrors under `dist/**` are reachable through `./internal/*`.
-The older `@yoyaflow/yoya-core/devtools` and `@yoyaflow/yoya-ui/devtools` paths still resolve.
+Since 0.7.2 the entries are split by purpose: the main entry is the rendering primitives plus the
+whole element table (nodes, HTML and **SVG factories + icon set**, signals, `keyed`, `vText`, `slot`);
+`/tools` carries a11y, i18n, theme and the component-authoring spec, `/dev` carries DevTools, `/svg`
+is an explicit alias for the element table, and `/ssr` is the complete server entry (core + html +
+layout + router/SSR). Modules under `dist/**` are reachable through `./internal/*`; the older
+`@yoyaflow/yoya-core/devtools` and `@yoyaflow/yoya-ui/devtools` paths still resolve.
 
-The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
-again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
-core, so the real download is core + that row.
+The table below lists each entry's min+gzip size (its transitive closure: the dist import graph
+bundled again and compressed). The core row is self-contained; each yoya-ui row measures only what it
+adds _on top of_ core, so the real download is core + that row.
 
 <!-- bundle-sizes:start -->
 
 | 入口                                 | 内容                                                                                | min+gzip |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
 | `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 26.5 KB  |
-| `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
-| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件作者契约原语（core 自包含）                               | 22.8 KB  |
+| `@yoyaflow/yoya-core/api`            | 请求辅助：RequestBase / Result / configureRequest                                   | 0.6 KB   |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件写作规范（core 自包含）                                   | 22.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
 | `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
 | `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
-| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
+| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件写作规范（转发到 core，peer 提供）                        | 0.1 KB   |
 | `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
 | `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
@@ -331,8 +295,8 @@ core, so the real download is core + that row.
 | `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 22.9 KB  |
 | `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
 | `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
-| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 封装，自备 echarts）                                               | 3.3 KB   |
-| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 封装，自备 three）                                                 | 3.8 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 适配器，自备 echarts）                                             | 3.3 KB   |
+| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 适配器，自备 three）                                               | 3.8 KB   |
 | `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 
 <!-- bundle-sizes:end -->
@@ -341,10 +305,10 @@ Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no
 
 > A `.full` bundle such as `yoya.ui.full.min.js` is a **self-contained single file** (core inlined) —
 > the CDN path used by the quick start above. Never mix it with the `@yoyaflow/yoya-core` package: a
-> second copy of core breaks `instanceof` / identity checks (see the prohibition in
-> [docs/ssr.md](docs/ssr.md)). The incremental entries (`yoya.ui.js`, `yoya.actions.js`, …) are one-line
-> re-exports that take core as a **peer dependency**, so importing those straight from a CDN URL needs
-> an import map.
+> second copy of core breaks identity checks such as `instanceof` (see the notes in
+> [docs/ssr.md](docs/ssr.md)). The incremental entries (`yoya.ui.js`, `yoya.actions.js`, …) are
+> one-line re-exports that take core as a **peer dependency**, so importing those straight from a CDN
+> URL needs an import map.
 
 ## Documentation and versioning
 
@@ -355,14 +319,14 @@ Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no
 - [Browser baseline and degradation](docs/browser-support.md)
 - [Component authoring](docs/component-authoring.md) · [Third-party interop](docs/interop.md)
   (cross-library comparison: [component-comparison.zh-CN.md](docs/component-comparison.zh-CN.md), Chinese)
-- [Performance benchmark](docs/performance.md) (official js-framework-benchmark, numbers generated and gated)
+- [Performance benchmark](docs/performance.md) (official js-framework-benchmark, numbers generated and checked at build time)
 - [Roadmap](ROADMAP.zh-CN.md) (Chinese)
 
-Migration guides are written for **major** versions only, so there is deliberately no 0.4 → 0.5
-guide: before 1.0 the API is still settling, and the commit history plus the roadmap are the record.
-Stability here comes from the platform rather than from a release train, so **after 1.0 there is no
-further major version** — releases are numbered `1.<year>.<patch>` (`1.2026.0`, `1.2026.1`, …) and
-the core API is frozen.
+Migration guides are written for **major** versions only, so there is no 0.4 → 0.5 guide: before 1.0
+the API is still settling, and the commit history plus the roadmap are the record. The API is built
+on Web standards, so stability comes from the platform itself: **after 1.0 there is no further major
+version** — releases are numbered `1.<year>.<patch>` (`1.2026.0`, `1.2026.1`, …) and the core API is
+frozen.
 
 ## Development
 
@@ -371,22 +335,22 @@ npm install
 npm test              # Vitest suite
 npm run lint          # ESLint
 npm run typecheck     # declarations + consumer type tests
-npm run build         # entries + size report
-npm run verify:dist   # isolation, SSR smoke, size budgets, README size tables
+npm run build         # package output, example build and size table
+npm run verify:dist   # entries match dist, SSR smoke, size budgets, README size table
 npm run examples:html # example site (http://localhost:5173)
 ```
 
 ```text
 packages/
-  yoya-core/      slow line: core (nodes/signals/SSR/i18n/theme/access/context/a11y) + html + svg + authoring contract
-  yoya-ui/        fast line: layout / actions / navigation / feedback / form / data-display / async /
-                  i18n / theme / router / chart / three + skin (yoya.ui.css) + types
-  yoya-compiler/  build-time compiler (shape-driven, knows no component; bin: yoya-compiler)
-  contract/       cross-package contract tests + repo-wide gates (not published)
+  yoya-core/      engine and foundations: nodes, signals, SSR, i18n, theme, access, HTML/SVG, authoring spec
+  yoya-ui/        components and page features: layout / actions / navigation / feedback / form /
+                  data-display / async / i18n / theme / router / chart / three + skin + types
+  yoya-compiler/  build-time compiler (optional tool; bin: yoya-compiler)
+  contract/       cross-package tests and repo-wide checks (not published)
   create-yoya-ui/ scaffold (templates pin the current version)
 examples/         example site (SSR demos and copy-paste guides)
-scripts/          build, size report, package-boundary / artifact gates
-docs/             public guides (SSR, theme, access control, devtools, authoring, interop)
+scripts/          build, size report, package-boundary and artifact checks
+docs/             public docs (SSR, theme, access control, devtools, authoring, interop, …)
 benchmark/        benchmark and size data sources
 skills/           Codex skill (kept in sync with the docs)
 ```

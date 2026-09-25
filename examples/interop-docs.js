@@ -16,7 +16,7 @@ const INTEROP_POLICY = Object.freeze([
   '第三方库不需要支持服务端渲染：集成组件包一层 vClientOnly，服务端只输出占位，客户端落地后才初始化。',
   '集成本身就是一个组件（vCodeMirror / vLeafletMap / vQuillEditor / vMarkdownViewer / vAgGrid，形态 B 闭包）：' +
     '库只拿到真实 DOM 容器，初始化与清理挂在 whenMount / whenDestroy，不继承基础元素。',
-  '第三方库的初始化、更新与销毁都走它自己的原生 API；yoya-ui 不代理，也不改写第三方内部配色与结构。',
+  '接入只需要一个薄组件：初始化、更新与销毁都走第三方库自己的原生 API，yoya-ui 不做代理层，也不改写第三方内部配色与结构。',
   '第三方依赖只作为示例站 devDependency，不进入 yoya-ui 运行时依赖。'
 ]);
 
