@@ -48,7 +48,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -60,7 +60,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 
@@ -111,7 +111,8 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
    `npm install @yoyaflow/yoya-core` when you only want the engine primitives. Then import per entry:
 
    ```js
-   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
+   import { div, svg, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
+   import { createI18n, initYoyaTheme } from '@yoyaflow/yoya-core/tools'; // i18n / theme / a11y / authoring
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring echarts)
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring three)
@@ -299,6 +300,12 @@ Singleton rules: **non-full entries** share exactly one core through the peer de
 breaks `instanceof` / identity checks); a `.full` bundle is a self-contained single file and **must not
 be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/ssr.md](docs/ssr.md)).
 
+Entry surface (0.7.2 onwards): the main entry is the rendering primitives plus the whole element
+surface — nodes, HTML and **SVG factories + icon set**, signals, `keyed`, `vText`, `slot`. `/tools`
+carries a11y + i18n + theme + the component-authoring contract, `/dev` carries DevTools, and `/svg`
+stays an explicit alias for the element surface. The older `@yoyaflow/yoya-core/devtools` and
+`@yoyaflow/yoya-ui/devtools` paths still resolve.
+
 The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
 again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
 core, so the real download is core + that row.
@@ -309,9 +316,13 @@ core, so the real download is core + that row.
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
 | `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 26.5 KB  |
 | `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件作者契约原语（core 自包含）                               | 22.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
+| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
+| `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
 | `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
 | `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
@@ -326,8 +337,12 @@ core, so the real download is core + that row.
 
 Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no skin).
 
-> The self-contained full bundles (the old `yoya.ui.full.min.js` and friends) are gone: with core
-> delivered as a peer dependency, shipping an inlined copy would reintroduce the "two copies" hazard.
+> A `.full` bundle such as `yoya.ui.full.min.js` is a **self-contained single file** (core inlined) —
+> the CDN path used by the quick start above. Never mix it with the `@yoyaflow/yoya-core` package: a
+> second copy of core breaks `instanceof` / identity checks (see the prohibition in
+> [docs/ssr.md](docs/ssr.md)). The incremental entries (`yoya.ui.js`, `yoya.actions.js`, …) are one-line
+> re-exports that take core as a **peer dependency**, so importing those straight from a CDN URL needs
+> an import map.
 
 ## Documentation and versioning
 

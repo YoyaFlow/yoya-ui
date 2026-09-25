@@ -154,7 +154,7 @@ import {
   setYoyaTheme,
   getYoyaTheme,
   initYoyaTheme
-} from '@yoyaflow/yoya-ui/core';
+} from '@yoyaflow/yoya-ui/tools';
 
 setYoyaMode('dark'); // data-yoya-mode="dark"
 setYoyaMode('system', { persist: true }); // 持久化，下次 initYoyaTheme() 自动恢复

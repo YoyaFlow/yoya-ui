@@ -35,6 +35,12 @@ export const BUNDLE_ENTRIES = [
     contents: '通讯辅助约束：RequestBase / Result / configureRequest'
   },
   {
+    label: '@yoyaflow/yoya-core/tools',
+    pkg: 'core',
+    file: 'tools.js',
+    contents: 'a11y / i18n / theme / 组件作者契约原语（core 自包含）'
+  },
+  {
     label: '@yoyaflow/yoya-ui',
     pkg: 'ui',
     file: 'index.js',
@@ -51,6 +57,24 @@ export const BUNDLE_ENTRIES = [
     pkg: 'ui',
     file: 'router.js',
     contents: 'router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount）'
+  },
+  {
+    label: '@yoyaflow/yoya-ui/svg',
+    pkg: 'ui',
+    file: 'svg.js',
+    contents: 'SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）'
+  },
+  {
+    label: '@yoyaflow/yoya-ui/tools',
+    pkg: 'ui',
+    file: 'tools.js',
+    contents: 'a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）'
+  },
+  {
+    label: '@yoyaflow/yoya-ui/dev',
+    pkg: 'ui',
+    file: 'dev.js',
+    contents: 'devtools（转发到 core，peer 提供）'
   },
   {
     label: '@yoyaflow/yoya-ui/actions',

@@ -41,7 +41,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
     <title>yoya-ui 计数器</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
+      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -53,7 +53,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // 状态就是句柄：写入即更新绑定位置
 
@@ -103,7 +103,8 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
    只要引擎原语就 `npm install @yoyaflow/yoya-core`。再按入口按需引入：
 
    ```js
-   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
+   import { div, svg, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
+   import { createI18n, initYoyaTheme } from '@yoyaflow/yoya-core/tools'; // i18n / 主题 / a11y / 组件作者契约
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自备 echarts）
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自备 three）
@@ -275,6 +276,11 @@ npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟
 单例口径：**非-full 入口**只通过 peerDependency 共享一份 core（双副本会让 `instanceof` / 身份判定失配）；
 `.full` 是自包含单文件，**不与 core 包混用**（详见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) 的禁忌）。
 
+入口面（0.7.2 起）：主入口是渲染原语 + 整个元素面（节点、HTML 与 **SVG 工厂 + 图标集**、信号、
+`keyed`、`vText`、`slot`）；`/tools` 放 a11y + i18n + 主题 + 组件作者契约，`/dev` 放 DevTools，
+`/svg` 仍是元素面的显式别名。旧的 `@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools`
+仍可解析。
+
 下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
 ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
 
@@ -284,9 +290,13 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
 | `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 26.5 KB  |
 | `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件作者契约原语（core 自包含）                               | 22.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
+| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
+| `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
 | `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
 | `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
@@ -301,8 +311,10 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 
 组件皮肤：`yoya.ui.css` 126.1 KB raw / 22.1 KB gzip（core 层无皮肤）。
 
-> 自包含全量包（旧的 `yoya.ui.full.min.js` 等）已退场：拆包后 core 由 peerDependency 提供，
-> 再发一份内联副本会把"双副本失配"重新引进来。
+> `yoya.ui.full.min.js` 这类 `.full` 是**自包含单文件**（core 内联），也就是上面 30 秒上手用的
+> CDN 路径；它**不能与 `@yoyaflow/yoya-core` 包混用**——第二份 core 会让 `instanceof` / 身份判定
+> 失配（禁忌见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)）。增量入口（`yoya.ui.js`、`yoya.actions.js` …）
+> 是单行转发、core 走 peerDependency，因此**直接从 CDN 地址 import 它们需要 import map**。
 
 ## 文档与版本策略
 
