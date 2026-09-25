@@ -23,12 +23,16 @@ keyed/vanillajs keyed/vue keyed/react-hooks keyed/solid keyed/svelte --runner pl
 `keyed/yoya-ui-runtime` = 对照列（同一份实现的运行期版本，不走编译器）。Solid / Svelte 条目需要
 先 `npm install && npm run build-prod`（它们不提交 `dist`）。
 
-两套条目都把业务代码的核心入口 `@yoyaflow/yoya-ui/core` 别名到 `@yoyaflow/yoya-core`
-（rollup 侧是 `rollup.config.js` 里的 `yoya-share-core` 插件，esbuild 侧是 `--alias:`）。原因：
-0.7.0 起编译产物的运行期钩子与元素工厂都走 core 包，而 `yoya-ui/core` 是自包含产物（core 内联）
-——不对齐的话同一个 bundle 里会带**两份运行期**：体积翻倍，而且编译出来的行代码与业务代码活在
-两个信号实例上（删行 / 改文案 / 交换这些增量操作会退到比运行期版更慢）。两套都用同一个 core
-入口，才对得上「只差一个编译器」的对照口径。
+**两套条目都不改业务源码、也不改构建配置来对齐 core**（0.7.1 起不再需要 alias）：
+`@yoyaflow/yoya-ui/core` 本身就是**转发入口**（转发到 `@yoyaflow/yoya-core`），业务代码与编译产物
+天然共用同一份运行期实例。历史背景：0.7.0 时 `yoya-ui/core` 还是自包含产物（core 内联），与编译产物
+用的模块化 core 是两个模块图，同一个 bundle 里会带**两份运行期**（体积翻倍，且编译出来的行订阅在
+第二个信号实例上，删行 / 改文案 / 交换会退到比运行期版更慢）；当时靠条目侧 alias 顶住，现在由包自身
+的入口面封住。
+
+跑之前提醒两点：编译器包 0.7.1 起把 `unplugin` / `magic-string` 也列为 **optional peer**，条目里要装
+（`npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string`），否则 `build-prod` 会静默
+失败、留下旧产物；Solid / Svelte 条目同样要先 `npm install && npm run build-prod`。
 
 ## 报告页（`benchmark/report.html`）
 
@@ -57,15 +61,15 @@ node scripts/benchmark-report-html.mjs --write \
 
 ```bash
 node scripts/benchmark-report.mjs --import D:\code\yoyaflow\js-framework-benchmark\webdriver-ts\results \
-  --yoya yoya-ui-ast-v0.7.0-keyed \
+  --yoya yoya-ui-ast-v0.7.3-keyed \
   --baseline vanillajs-keyed \
-  --compare "yoya-ui-runtime-v0.7.0-keyed:yoya runtime（无编译）" \
+  --compare "yoya-ui-runtime-v0.7.3-keyed:yoya runtime（无编译）" \
   --compare "vue-v3.5.39-keyed:Vue 3.5.39" \
   --compare "react-hooks-v19.2.0-keyed:React 19.2.0" \
   --compare "solid-v1.9.3-keyed:Solid 1.9.3" \
   --compare "svelte-v5.42.1-keyed:Svelte 5.42.1" \
   --runner playwright --mode headless --browser "Chrome for Testing 152.0.7977.64" \
-  --cpu-iterations 15 --commit <提交> --version 0.7.0
+  --cpu-iterations 15 --commit <提交> --version 0.7.3
 ```
 
 对照条目的数据落在 `results.json` 的 `compare` 段（提交进仓库），因此报告页在 CI 上照样能校验。
