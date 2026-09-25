@@ -14,7 +14,7 @@ import {
   vThemeModeSwitch,
   vTree
 } from '@yoyaflow/yoya-ui';
-import '@yoyaflow/yoya-ui/internal/yoya.ui.css';
+import '@yoyaflow/yoya-ui/ui.css';
 import { applyDemoStyles } from './demo-styles.js';
 
 const componentMenuSections = [

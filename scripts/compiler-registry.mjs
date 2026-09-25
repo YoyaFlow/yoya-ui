@@ -29,6 +29,10 @@ ensureWorkspaceLinks();
 import { buildComponentRegistry } from '../packages/yoya-compiler/src/registry.js';
 import { componentKeyOf } from '../packages/yoya-compiler/src/component-key.js';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
+
+// 0.8 起 svg 工厂（`svgs`）不再挂在 core 主入口上；编译器推导元素白名单要两份都拿到。
+const coreNamespace = { ...core, ...svg };
 
 // 注册表的键按**组件包**（快线）归口：根 package.json 现在是 workspace 根，名字不是包名。
 const PACKAGE_NAME = JSON.parse(readFileSync('packages/yoya-ui/package.json', 'utf8')).name;
@@ -51,6 +55,7 @@ function scopeEntryOf(file) {
     return `${PACKAGE_NAME}/${CATEGORY_ENTRIES[category]}`;
   }
   if (category === 'svg') {
+    // 图标集随 core 发布（主入口含 svg 元素面）
     return CORE_SPECIFIER;
   }
   return `${PACKAGE_NAME}/ui`;
@@ -119,7 +124,7 @@ export async function buildPackagedRegistry({
   const built = buildComponentRegistry({
     entries,
     dir: tmpDir,
-    core,
+    core: coreNamespace,
     runtime: RUNTIME_SPECIFIER,
     registryName: 'components.registry.js',
     dataName: 'components.registry.json',
@@ -140,9 +145,18 @@ export async function buildPackagedRegistry({
   ].join('\n');
   writeFileSync(join(tmpDir, 'entry.js'), entryModule, 'utf8');
 
-  // 打成单文件入口（`@yoyaflow/yoya-ui/*` 保持 external：由使用者那一侧解析、tree-shake）
+  // 打成单文件入口（`@yoyaflow/yoya-ui` 与 `@yoyaflow/yoya-core` 都保持 external：
+  // 由使用者那一侧解析、tree-shake）。
+  //
+  // 注意**裸包名也要匹配**：`scopeEntryOf` 给 `src/svg/*`（core 里的图标集）返回的就是裸的
+  // `@yoyaflow/yoya-core`。只判 `${CORE_SPECIFIER}/`（带斜杠）会漏掉它，rolldown 于是把 core 的
+  // 18 个 dist 模块内联进注册表——注册表因此自带第二份 core（体积 +~70 kB，且与使用者的 peer core
+  // 构成双实例风险）。包内入口一律 external 才是这里的口径。
   const isExternal = (id) =>
-    id.startsWith(`${PACKAGE_NAME}/`) || id.startsWith(`${CORE_SPECIFIER}/`);
+    id === PACKAGE_NAME ||
+    id.startsWith(`${PACKAGE_NAME}/`) ||
+    id === CORE_SPECIFIER ||
+    id.startsWith(`${CORE_SPECIFIER}/`);
   // rolldown 的 input 走**绝对路径 + 正斜杠**：相对路径在 Windows 上会给反斜杠，
   // 以 `.` 开头的目录（`.scratch/...`）还会被当成裸模块说明符
   const entryPath = resolve(tmpDir, 'entry.js').replaceAll('\\', '/');

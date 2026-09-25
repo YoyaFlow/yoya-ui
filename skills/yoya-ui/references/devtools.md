@@ -10,10 +10,11 @@ import {
   getDevtoolsSnapshot,
   getDevtoolsDom,
   getDevtoolsScope
-} from '@yoyaflow/yoya-ui/devtools';
+} from '@yoyaflow/yoya-ui/dev';
 ```
 
-主入口与 `core` 不导出这些符号；devtools 只从独立子路径加载，默认关闭。
+主入口与 `core` 不导出这些符号；devtools 只从独立子路径加载，默认关闭。旧路径
+`@yoyaflow/yoya-ui/devtools`（以及 core 侧的 `@yoyaflow/yoya-core/devtools`）仍是可用别名。
 
 ## 快速开始
 

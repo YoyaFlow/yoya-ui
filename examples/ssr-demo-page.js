@@ -1,6 +1,5 @@
 import {
   computed,
-  createI18n,
   div,
   initYoyaTheme,
   ref,
@@ -13,7 +12,8 @@ import {
   vText,
   vThemeModeSwitch
 } from '@yoyaflow/yoya-ui';
-import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { createI18n } from '@yoyaflow/yoya-ui/tools';
+import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/router';
 
 const messages = {
   'zh-CN': {

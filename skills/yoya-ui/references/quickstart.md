@@ -13,9 +13,20 @@ npm run dev
 
 ## 导入入口
 
-- `yoya-ui`：组件与全部能力（core、html、svg、layout、actions、navigation、feedback、form、data-display、async、i18n、theme、router、effects）
-- `yoya-ui/core`：第三方组件标准（`ViewNode`、`HtmlElementNode`、`createElementFactory`、`registerChildFactories`、内置 Signals 的 `ref` / `computed` / `installSignals` 等，零第三方依赖）
-- `yoya-ui/router`：router + SSR：`createRouter`/`Router`、`renderToString`、`hydrate`、`mount`、`renderPage`、`resolveLocale`、`serializeState`
+包名带 scope（`@yoyaflow/...`），主入口只留渲染原语，辅助能力在子入口：
+
+```js
+import { div, ref, vText, vButton, vCard, createRouter, renderPage } from '@yoyaflow/yoya-ui'; // 根入口全量面
+import '@yoyaflow/yoya-ui/ui.css'; // 皮肤（必引）
+import { div, ref, vText } from '@yoyaflow/yoya-core'; // 引擎 + 元素面
+import { createI18n, initYoyaTheme, announce } from '@yoyaflow/yoya-core/tools'; // i18n / 主题 / a11y / 作者契约
+import { createRouter, renderPage } from '@yoyaflow/yoya-ui/router'; // 路由 + SSR
+import { enableDevtools } from '@yoyaflow/yoya-ui/dev'; // DevTools
+```
+
+要点：`@yoyaflow/yoya-ui/core` 就是 `@yoyaflow/yoya-core` 的转发（同一实例）；`/ssr` **不是**公开入口，
+SSR 原语走 `/router` 或 `@yoyaflow/yoya-core/ssr`；自包含 CDN 单文件（`yoya.core.min.js` / `*.full.min.js`）
+不要与 core 包混用。**完整导出物清单（含 CDN 与 import map、报错对照）见 [install.md](install.md)。**
 
 ## 挂载方式
 

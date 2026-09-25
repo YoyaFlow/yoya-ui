@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
 import { compileSource, elementWhitelistOf } from './index.js';
+
+// 0.8 起 svg 工厂在 `/svg`：编译器的元素白名单要吃两份命名空间
+const coreNamespace = { ...core, ...svg };
 
 const fixture = readFileSync(join(import.meta.dirname, 'fixtures/item-fixture.js'), 'utf8');
 
@@ -23,7 +27,7 @@ const sourceOf = (body) => `function Item(item) {\n${body}\n}\n`;
 
 describe('element registry', () => {
   it('derives the element whitelist from the core factories', () => {
-    const whitelist = elementWhitelistOf(core);
+    const whitelist = elementWhitelistOf(coreNamespace);
 
     for (const name of ['div', 'span', 'tr', 'td', 'table', 'svg', 'path']) {
       expect(whitelist.has(name), name).toBe(true);

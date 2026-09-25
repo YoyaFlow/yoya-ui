@@ -22,7 +22,7 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 | Node internals            | `nodeChildren`, `appendNodeChild`, `EMPTY_CHILDREN`, `elementStyles`, `elementAttrs`, `elementClassNames`, `elementHasClass` (node-type extensions only, see §7.3)             |
 | Component identity        | `vn: 'VCard'` on the view root, `componentNameOf`, `hasComponentIdentity` (one check for both shapes; cross-module recognition goes through capability conventions — see §7.3) |
 | Signals                   | `ref`, `computed`, `batch`, `isSignal`, `SignalHandle`, `installSignals` (handles go straight into value positions)                                                            |
-| i18n                      | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut`                                                                                                          |
+| i18n (via `/tools`)       | `createI18n`, `I18nTextNode`, `i18nText`, `installI18nStringShortcut` — import from `yoya-ui/core/tools`                                                                       |
 
 ## 3. The two component shapes
 

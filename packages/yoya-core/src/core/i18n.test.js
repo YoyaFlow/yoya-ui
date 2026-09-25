@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import * as yoya from '@yoyaflow/yoya-core';
+import * as core from '@yoyaflow/yoya-core';
+import * as tools from '@yoyaflow/yoya-core/tools';
+
+// i18n 已从核心入口拆到工具子系统（`/tools`）；这里合起来用，保持用例体不变。
+const yoya = { ...core, ...tools };
 
 describe('I18n', () => {
   it('creates reactive text nodes backed by VTextNode', () => {

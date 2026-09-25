@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { disableDevtools, getDevtoolsDom } from '@yoyaflow/yoya-ui/devtools';
+import { disableDevtools, getDevtoolsDom } from '@yoyaflow/yoya-ui/dev';
 import { DevtoolsInspectorDemo } from './devtools-inspector.js';
 
 afterEach(() => {

@@ -1,8 +1,5 @@
 import * as THREE from 'three';
-import {
-  bindDocumentEvent,
-  bindWindowEvent
-} from '@yoyaflow/yoya-core/internal/core/document-events.js';
+import { bindDocumentEvent, bindWindowEvent } from '@yoyaflow/yoya-core';
 import { computed, div, ref, vButton, vNode, vText } from '@yoyaflow/yoya-ui';
 import { vThree } from '@yoyaflow/yoya-ui/three';
 import {

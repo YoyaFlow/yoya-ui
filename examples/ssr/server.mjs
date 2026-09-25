@@ -1,4 +1,5 @@
 import { createSsrPage } from './page.js';
+// 服务端用完整服务端入口：core 原语 + html + layout + router / SSR 都在里面
 import { renderToString } from '@yoyaflow/yoya-ui/ssr';
 
 const initial = {

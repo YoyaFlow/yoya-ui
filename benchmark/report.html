@@ -54,8 +54,8 @@
 <p class="meta">
   官方 runner <code>playwright</code>（headless）+ Chrome for Testing 152.0.7977.64；
   CPU 项取 15 个样本的中位数（单轮 15 次迭代；多轮合并后取中位）；
-  内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-20，
-  yoya 版本 <code>0.6.13</code>（<code>fd7ed2d</code>）。
+  内存 / 体积 / 首屏各 1 次采样；测量日期 2026-09-25，
+  yoya 版本 <code>0.7.3</code>（<code>e21f35d</code>）。
   <br />非原生条目的单元格分两层：<b>上方是实测值，下方是「÷ 原生」的归一系数</b>
   （绿 ≤1.00×、灰 ≤1.25×、琥珀 ≤1.50×、红 &gt;1.50×）。
   对照条目 yoya runtime（无编译） / Vue 3.5.39 / React 19.2.0 / Solid 1.9.3 / Svelte 5.42.1 与 yoya / 原生取自**同一轮**测量。
@@ -66,26 +66,26 @@
   >
 </p>
 <section class="cards">
-  <div class="card behind"><span>九项几何平均 ÷ 原生</span><b>1.11×</b></div>
+  <div class="card behind"><span>九项几何平均 ÷ 原生</span><b>1.10×</b></div>
   
-  <div class="card behind"><span>22 建 1000 行后内存</span><b>4.07 MB</b></div>
-  <div class="card behind"><span>42 体积（brotli）</span><b>21.2 KB</b></div>
-  <div class="card behind"><span>09 清空 ×8</span><b>24.7 ms</b></div>
+  <div class="card behind"><span>22 建 1000 行后内存</span><b>4.12 MB</b></div>
+  <div class="card behind"><span>42 体积（brotli）</span><b>20.6 KB</b></div>
+  <div class="card behind"><span>09 清空 ×8</span><b>20.6 ms</b></div>
 </section>
 
 <h2>九项标准操作（ms，中位数；下行 = 归一系数）</h2>
 <table>
-  <thead><tr><th>操作</th><th>yoya 0.6.13</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
+  <thead><tr><th>操作</th><th>yoya 0.7.3</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
   <tbody>
-<tr><td>01 创建 1000 行</td><td class="stack"><b>34.6 ms</b><span class="coef-ok">1.11×</span></td><td>31.2 ms</td><td class="stack ahead"><b>44.8 ms</b><span class="coef-warn">1.44×</span></td><td class="stack ahead"><b>37.4 ms</b><span class="coef-ok">1.20×</span></td><td class="stack ahead"><b>40.7 ms</b><span class="coef-warn">1.30×</span></td><td class="stack tie"><b>33.1 ms</b><span class="coef-ok">1.06×</span></td><td class="stack tie"><b>33.2 ms</b><span class="coef-ok">1.06×</span></td></tr>
-<tr><td>02 替换 1000 行</td><td class="stack"><b>37.9 ms</b><span class="coef-ok">1.16×</span></td><td>32.6 ms</td><td class="stack ahead"><b>47.1 ms</b><span class="coef-warn">1.44×</span></td><td class="stack ahead"><b>41.5 ms</b><span class="coef-warn">1.27×</span></td><td class="stack ahead"><b>43.8 ms</b><span class="coef-warn">1.34×</span></td><td class="stack behind"><b>35.5 ms</b><span class="coef-ok">1.09×</span></td><td class="stack tie"><b>37.1 ms</b><span class="coef-ok">1.14×</span></td></tr>
-<tr><td>03 每 10 行改文案</td><td class="stack"><b>26.5 ms</b><span class="coef-ok">1.06×</span></td><td>24.9 ms</td><td class="stack tie"><b>26.5 ms</b><span class="coef-ok">1.06×</span></td><td class="stack ahead"><b>28.7 ms</b><span class="coef-ok">1.15×</span></td><td class="stack ahead"><b>29.5 ms</b><span class="coef-ok">1.18×</span></td><td class="stack behind"><b>23.8 ms</b><span class="coef-good">0.96×</span></td><td class="stack tie"><b>26.7 ms</b><span class="coef-ok">1.07×</span></td></tr>
-<tr><td>04 选中一行</td><td class="stack"><b>7.5 ms</b><span class="coef-good">0.88×</span></td><td>8.5 ms</td><td class="stack tie"><b>7.5 ms</b><span class="coef-good">0.88×</span></td><td class="stack ahead"><b>10.1 ms</b><span class="coef-ok">1.19×</span></td><td class="stack ahead"><b>11.7 ms</b><span class="coef-warn">1.38×</span></td><td class="stack ahead"><b>9.5 ms</b><span class="coef-ok">1.12×</span></td><td class="stack ahead"><b>12.2 ms</b><span class="coef-warn">1.44×</span></td></tr>
-<tr><td>05 交换两行</td><td class="stack"><b>28.1 ms</b><span class="coef-ok">1.15×</span></td><td>24.5 ms</td><td class="stack ahead"><b>30.3 ms</b><span class="coef-ok">1.24×</span></td><td class="stack tie"><b>27.9 ms</b><span class="coef-ok">1.14×</span></td><td class="stack ahead"><b>186.3 ms</b><span class="coef-bad">7.60×</span></td><td class="stack behind"><b>26.3 ms</b><span class="coef-ok">1.07×</span></td><td class="stack behind"><b>25.7 ms</b><span class="coef-ok">1.05×</span></td></tr>
-<tr><td>06 删除一行</td><td class="stack"><b>21.9 ms</b><span class="coef-ok">1.07×</span></td><td>20.4 ms</td><td class="stack behind"><b>20.6 ms</b><span class="coef-ok">1.01×</span></td><td class="stack ahead"><b>23.4 ms</b><span class="coef-ok">1.15×</span></td><td class="stack tie"><b>22.2 ms</b><span class="coef-ok">1.09×</span></td><td class="stack tie"><b>21.6 ms</b><span class="coef-ok">1.06×</span></td><td class="stack tie"><b>21.2 ms</b><span class="coef-ok">1.04×</span></td></tr>
-<tr><td>07 创建 10000 行</td><td class="stack"><b>400.4 ms</b><span class="coef-ok">1.12×</span></td><td>356.0 ms</td><td class="stack ahead"><b>523.3 ms</b><span class="coef-warn">1.47×</span></td><td class="stack ahead"><b>426.8 ms</b><span class="coef-ok">1.20×</span></td><td class="stack ahead"><b>604.6 ms</b><span class="coef-bad">1.70×</span></td><td class="stack behind"><b>379.9 ms</b><span class="coef-ok">1.07×</span></td><td class="stack behind"><b>381.2 ms</b><span class="coef-ok">1.07×</span></td></tr>
-<tr><td>08 追加 1000 行</td><td class="stack"><b>43.3 ms</b><span class="coef-ok">1.14×</span></td><td>38.0 ms</td><td class="stack ahead"><b>55.1 ms</b><span class="coef-warn">1.45×</span></td><td class="stack tie"><b>45.0 ms</b><span class="coef-ok">1.18×</span></td><td class="stack ahead"><b>48.8 ms</b><span class="coef-warn">1.28×</span></td><td class="stack behind"><b>41.2 ms</b><span class="coef-ok">1.08×</span></td><td class="stack tie"><b>44.2 ms</b><span class="coef-ok">1.16×</span></td></tr>
-<tr><td>09 清空 ×8</td><td class="stack"><b>24.7 ms</b><span class="coef-warn">1.39×</span></td><td>17.8 ms</td><td class="stack ahead"><b>27.9 ms</b><span class="coef-bad">1.57×</span></td><td class="stack tie"><b>23.9 ms</b><span class="coef-warn">1.34×</span></td><td class="stack ahead"><b>31.6 ms</b><span class="coef-bad">1.78×</span></td><td class="stack behind"><b>20.7 ms</b><span class="coef-ok">1.16×</span></td><td class="stack behind"><b>20.4 ms</b><span class="coef-ok">1.15×</span></td></tr>
+<tr><td>01 创建 1000 行</td><td class="stack"><b>35.3 ms</b><span class="coef-ok">1.16×</span></td><td>30.5 ms</td><td class="stack ahead"><b>44.9 ms</b><span class="coef-warn">1.47×</span></td><td class="stack tie"><b>36.8 ms</b><span class="coef-ok">1.21×</span></td><td class="stack ahead"><b>38.3 ms</b><span class="coef-warn">1.26×</span></td><td class="stack behind"><b>33.6 ms</b><span class="coef-ok">1.10×</span></td><td class="stack behind"><b>32.7 ms</b><span class="coef-ok">1.07×</span></td></tr>
+<tr><td>02 替换 1000 行</td><td class="stack"><b>38.5 ms</b><span class="coef-ok">1.17×</span></td><td>32.8 ms</td><td class="stack ahead"><b>46.1 ms</b><span class="coef-warn">1.41×</span></td><td class="stack ahead"><b>40.7 ms</b><span class="coef-ok">1.24×</span></td><td class="stack ahead"><b>43.9 ms</b><span class="coef-warn">1.34×</span></td><td class="stack behind"><b>35.9 ms</b><span class="coef-ok">1.09×</span></td><td class="stack behind"><b>36.4 ms</b><span class="coef-ok">1.11×</span></td></tr>
+<tr><td>03 每 10 行改文案</td><td class="stack"><b>20.5 ms</b><span class="coef-good">0.92×</span></td><td>22.4 ms</td><td class="stack ahead"><b>23.2 ms</b><span class="coef-ok">1.04×</span></td><td class="stack ahead"><b>26.3 ms</b><span class="coef-ok">1.17×</span></td><td class="stack ahead"><b>27.0 ms</b><span class="coef-ok">1.21×</span></td><td class="stack ahead"><b>22.8 ms</b><span class="coef-ok">1.02×</span></td><td class="stack ahead"><b>22.3 ms</b><span class="coef-good">1.00×</span></td></tr>
+<tr><td>04 选中一行</td><td class="stack"><b>5.8 ms</b><span class="coef-good">0.79×</span></td><td>7.3 ms</td><td class="stack ahead"><b>6.2 ms</b><span class="coef-good">0.85×</span></td><td class="stack ahead"><b>7.6 ms</b><span class="coef-ok">1.04×</span></td><td class="stack ahead"><b>10.5 ms</b><span class="coef-warn">1.44×</span></td><td class="stack ahead"><b>9.1 ms</b><span class="coef-ok">1.25×</span></td><td class="stack ahead"><b>10.6 ms</b><span class="coef-warn">1.45×</span></td></tr>
+<tr><td>05 交换两行</td><td class="stack"><b>26.9 ms</b><span class="coef-ok">1.22×</span></td><td>22.1 ms</td><td class="stack tie"><b>28.0 ms</b><span class="coef-warn">1.27×</span></td><td class="stack behind"><b>24.8 ms</b><span class="coef-ok">1.12×</span></td><td class="stack ahead"><b>157.3 ms</b><span class="coef-bad">7.12×</span></td><td class="stack behind"><b>24.5 ms</b><span class="coef-ok">1.11×</span></td><td class="stack behind"><b>25.6 ms</b><span class="coef-ok">1.16×</span></td></tr>
+<tr><td>06 删除一行</td><td class="stack"><b>18.0 ms</b><span class="coef-ok">1.07×</span></td><td>16.8 ms</td><td class="stack ahead"><b>19.1 ms</b><span class="coef-ok">1.14×</span></td><td class="stack ahead"><b>19.2 ms</b><span class="coef-ok">1.14×</span></td><td class="stack tie"><b>18.4 ms</b><span class="coef-ok">1.10×</span></td><td class="stack tie"><b>18.2 ms</b><span class="coef-ok">1.08×</span></td><td class="stack tie"><b>17.9 ms</b><span class="coef-ok">1.07×</span></td></tr>
+<tr><td>07 创建 10000 行</td><td class="stack"><b>395.7 ms</b><span class="coef-ok">1.20×</span></td><td>330.4 ms</td><td class="stack ahead"><b>539.3 ms</b><span class="coef-bad">1.63×</span></td><td class="stack tie"><b>406.7 ms</b><span class="coef-ok">1.23×</span></td><td class="stack ahead"><b>585.5 ms</b><span class="coef-bad">1.77×</span></td><td class="stack behind"><b>350.7 ms</b><span class="coef-ok">1.06×</span></td><td class="stack behind"><b>371.7 ms</b><span class="coef-ok">1.13×</span></td></tr>
+<tr><td>08 追加 1000 行</td><td class="stack"><b>39.7 ms</b><span class="coef-ok">1.15×</span></td><td>34.4 ms</td><td class="stack ahead"><b>48.9 ms</b><span class="coef-warn">1.42×</span></td><td class="stack tie"><b>41.6 ms</b><span class="coef-ok">1.21×</span></td><td class="stack ahead"><b>50.4 ms</b><span class="coef-warn">1.47×</span></td><td class="stack behind"><b>37.3 ms</b><span class="coef-ok">1.08×</span></td><td class="stack behind"><b>36.8 ms</b><span class="coef-ok">1.07×</span></td></tr>
+<tr><td>09 清空 ×8</td><td class="stack"><b>20.6 ms</b><span class="coef-warn">1.35×</span></td><td>15.3 ms</td><td class="stack ahead"><b>23.3 ms</b><span class="coef-bad">1.52×</span></td><td class="stack tie"><b>20.1 ms</b><span class="coef-warn">1.31×</span></td><td class="stack ahead"><b>27.2 ms</b><span class="coef-bad">1.78×</span></td><td class="stack behind"><b>17.6 ms</b><span class="coef-ok">1.15×</span></td><td class="stack behind"><b>17.1 ms</b><span class="coef-ok">1.12×</span></td></tr>
   </tbody>
 </table>
 
@@ -93,28 +93,28 @@
 <table>
   <thead><tr><th>操作</th><th>yoya script</th><th>yoya paint</th><th>原生 script</th><th>原生 paint</th></tr></thead>
   <tbody>
-<tr><td>01 创建 1000 行</td><td>5.2 ms</td><td>28.6 ms</td><td>2.2 ms</td><td>28.6 ms</td></tr>
-<tr><td>02 替换 1000 行</td><td>8.1 ms</td><td>29.0 ms</td><td>4.3 ms</td><td>27.9 ms</td></tr>
-<tr><td>03 每 10 行改文案</td><td>1.8 ms</td><td>22.5 ms</td><td>0.8 ms</td><td>21.4 ms</td></tr>
-<tr><td>04 选中一行</td><td>1.0 ms</td><td>5.6 ms</td><td>0.4 ms</td><td>6.9 ms</td></tr>
-<tr><td>05 交换两行</td><td>3.4 ms</td><td>22.3 ms</td><td>0.4 ms</td><td>21.7 ms</td></tr>
-<tr><td>06 删除一行</td><td>1.5 ms</td><td>19.2 ms</td><td>0.4 ms</td><td>18.9 ms</td></tr>
-<tr><td>07 创建 10000 行</td><td>58.4 ms</td><td>337.7 ms</td><td>25.3 ms</td><td>324.7 ms</td></tr>
-<tr><td>08 追加 1000 行</td><td>6.0 ms</td><td>36.2 ms</td><td>2.3 ms</td><td>34.9 ms</td></tr>
-<tr><td>09 清空 ×8</td><td>20.4 ms</td><td>2.6 ms</td><td>13.5 ms</td><td>2.1 ms</td></tr>
+<tr><td>01 创建 1000 行</td><td>5.5 ms</td><td>29.2 ms</td><td>2.2 ms</td><td>27.8 ms</td></tr>
+<tr><td>02 替换 1000 行</td><td>8.6 ms</td><td>29.1 ms</td><td>4.3 ms</td><td>27.6 ms</td></tr>
+<tr><td>03 每 10 行改文案</td><td>1.6 ms</td><td>17.5 ms</td><td>0.8 ms</td><td>19.1 ms</td></tr>
+<tr><td>04 选中一行</td><td>0.8 ms</td><td>4.1 ms</td><td>0.4 ms</td><td>5.6 ms</td></tr>
+<tr><td>05 交换两行</td><td>3.0 ms</td><td>20.9 ms</td><td>0.4 ms</td><td>19.9 ms</td></tr>
+<tr><td>06 删除一行</td><td>1.4 ms</td><td>15.3 ms</td><td>0.4 ms</td><td>15.3 ms</td></tr>
+<tr><td>07 创建 10000 行</td><td>62.4 ms</td><td>329.4 ms</td><td>23.7 ms</td><td>301.1 ms</td></tr>
+<tr><td>08 追加 1000 行</td><td>6.2 ms</td><td>32.3 ms</td><td>2.2 ms</td><td>31.5 ms</td></tr>
+<tr><td>09 清空 ×8</td><td>17.1 ms</td><td>2.0 ms</td><td>11.6 ms</td><td>1.8 ms</td></tr>
   </tbody>
 </table>
 
 <h2>内存 / 体积 / 首屏</h2>
 <table>
-  <thead><tr><th>操作</th><th>yoya 0.6.13</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
+  <thead><tr><th>操作</th><th>yoya 0.7.3</th><th>原生</th><th>yoya runtime（无编译）</th><th>Vue 3.5.39</th><th>React 19.2.0</th><th>Solid 1.9.3</th><th>Svelte 5.42.1</th></tr></thead>
   <tbody>
-<tr><td>21 就绪内存（MB）</td><td class="stack"><b>1.35 MB</b><span class="coef-warn">1.29×</span></td><td>1.05 MB</td><td class="stack tie"><b>1.28 MB</b><span class="coef-ok">1.23×</span></td><td class="stack tie"><b>1.33 MB</b><span class="coef-warn">1.27×</span></td><td class="stack ahead"><b>1.66 MB</b><span class="coef-bad">1.59×</span></td><td class="stack behind"><b>1.08 MB</b><span class="coef-ok">1.03×</span></td><td class="stack behind"><b>1.15 MB</b><span class="coef-ok">1.10×</span></td></tr>
-<tr><td>22 建 1000 行后内存（MB）</td><td class="stack"><b>4.07 MB</b><span class="coef-bad">1.67×</span></td><td>2.45 MB</td><td class="stack ahead"><b>5.46 MB</b><span class="coef-bad">2.23×</span></td><td class="stack ahead"><b>4.59 MB</b><span class="coef-bad">1.88×</span></td><td class="stack ahead"><b>5.09 MB</b><span class="coef-bad">2.08×</span></td><td class="stack behind"><b>3.33 MB</b><span class="coef-warn">1.36×</span></td><td class="stack behind"><b>3.52 MB</b><span class="coef-warn">1.44×</span></td></tr>
-<tr><td>25 建+清空后内存（MB）</td><td class="stack"><b>1.69 MB</b><span class="coef-warn">1.45×</span></td><td>1.16 MB</td><td class="stack ahead"><b>1.79 MB</b><span class="coef-bad">1.54×</span></td><td class="stack tie"><b>1.71 MB</b><span class="coef-warn">1.48×</span></td><td class="stack ahead"><b>2.49 MB</b><span class="coef-bad">2.15×</span></td><td class="stack behind"><b>1.26 MB</b><span class="coef-ok">1.09×</span></td><td class="stack behind"><b>1.44 MB</b><span class="coef-ok">1.24×</span></td></tr>
-<tr><td>41 体积未压缩（KB）</td><td class="stack"><b>78.3 KB</b><span class="coef-bad">6.69×</span></td><td>11.7 KB</td><td class="stack tie"><b>75.9 KB</b><span class="coef-bad">6.49×</span></td><td class="stack behind"><b>64.4 KB</b><span class="coef-bad">5.50×</span></td><td class="stack ahead"><b>190.3 KB</b><span class="coef-bad">16.26×</span></td><td class="stack behind"><b>11.5 KB</b><span class="coef-good">0.98×</span></td><td class="stack behind"><b>26.6 KB</b><span class="coef-bad">2.27×</span></td></tr>
-<tr><td>42 体积 brotli（KB）</td><td class="stack"><b>21.2 KB</b><span class="coef-bad">8.48×</span></td><td>2.5 KB</td><td class="stack tie"><b>21.2 KB</b><span class="coef-bad">8.48×</span></td><td class="stack ahead"><b>23.3 KB</b><span class="coef-bad">9.32×</span></td><td class="stack ahead"><b>51.4 KB</b><span class="coef-bad">20.56×</span></td><td class="stack behind"><b>4.5 KB</b><span class="coef-bad">1.80×</span></td><td class="stack behind"><b>9.7 KB</b><span class="coef-bad">3.88×</span></td></tr>
-<tr><td>43 首屏绘制（ms）</td><td class="stack"><b>403.5 ms</b><span class="coef-ok">1.18×</span></td><td>342.8 ms</td><td class="stack ahead"><b>441.6 ms</b><span class="coef-warn">1.29×</span></td><td class="stack behind"><b>369.4 ms</b><span class="coef-ok">1.08×</span></td><td class="stack ahead"><b>434.1 ms</b><span class="coef-warn">1.27×</span></td><td class="stack behind"><b>310.0 ms</b><span class="coef-good">0.90×</span></td><td class="stack behind"><b>334.4 ms</b><span class="coef-good">0.98×</span></td></tr>
+<tr><td>21 就绪内存（MB）</td><td class="stack"><b>1.33 MB</b><span class="coef-warn">1.31×</span></td><td>1.02 MB</td><td class="stack tie"><b>1.29 MB</b><span class="coef-warn">1.26×</span></td><td class="stack tie"><b>1.33 MB</b><span class="coef-warn">1.30×</span></td><td class="stack ahead"><b>1.64 MB</b><span class="coef-bad">1.60×</span></td><td class="stack behind"><b>1.05 MB</b><span class="coef-ok">1.03×</span></td><td class="stack behind"><b>1.14 MB</b><span class="coef-ok">1.11×</span></td></tr>
+<tr><td>22 建 1000 行后内存（MB）</td><td class="stack"><b>4.12 MB</b><span class="coef-bad">1.69×</span></td><td>2.44 MB</td><td class="stack ahead"><b>5.48 MB</b><span class="coef-bad">2.24×</span></td><td class="stack ahead"><b>4.58 MB</b><span class="coef-bad">1.88×</span></td><td class="stack ahead"><b>5.09 MB</b><span class="coef-bad">2.08×</span></td><td class="stack behind"><b>3.33 MB</b><span class="coef-warn">1.36×</span></td><td class="stack behind"><b>3.52 MB</b><span class="coef-warn">1.44×</span></td></tr>
+<tr><td>25 建+清空后内存（MB）</td><td class="stack"><b>1.64 MB</b><span class="coef-warn">1.41×</span></td><td>1.16 MB</td><td class="stack ahead"><b>1.82 MB</b><span class="coef-bad">1.57×</span></td><td class="stack tie"><b>1.70 MB</b><span class="coef-warn">1.47×</span></td><td class="stack ahead"><b>2.48 MB</b><span class="coef-bad">2.14×</span></td><td class="stack behind"><b>1.29 MB</b><span class="coef-ok">1.11×</span></td><td class="stack behind"><b>1.49 MB</b><span class="coef-warn">1.29×</span></td></tr>
+<tr><td>41 体积未压缩（KB）</td><td class="stack"><b>76.6 KB</b><span class="coef-bad">6.55×</span></td><td>11.7 KB</td><td class="stack tie"><b>73.9 KB</b><span class="coef-bad">6.32×</span></td><td class="stack behind"><b>64.4 KB</b><span class="coef-bad">5.50×</span></td><td class="stack ahead"><b>190.3 KB</b><span class="coef-bad">16.26×</span></td><td class="stack behind"><b>11.5 KB</b><span class="coef-good">0.98×</span></td><td class="stack behind"><b>26.6 KB</b><span class="coef-bad">2.27×</span></td></tr>
+<tr><td>42 体积 brotli（KB）</td><td class="stack"><b>20.6 KB</b><span class="coef-bad">8.24×</span></td><td>2.5 KB</td><td class="stack tie"><b>20.5 KB</b><span class="coef-bad">8.20×</span></td><td class="stack ahead"><b>23.3 KB</b><span class="coef-bad">9.32×</span></td><td class="stack ahead"><b>51.4 KB</b><span class="coef-bad">20.56×</span></td><td class="stack behind"><b>4.5 KB</b><span class="coef-bad">1.80×</span></td><td class="stack behind"><b>9.7 KB</b><span class="coef-bad">3.88×</span></td></tr>
+<tr><td>43 首屏绘制（ms）</td><td class="stack"><b>382.5 ms</b><span class="coef-warn">1.44×</span></td><td>265.4 ms</td><td class="stack ahead"><b>487.3 ms</b><span class="coef-bad">1.84×</span></td><td class="stack ahead"><b>427.6 ms</b><span class="coef-bad">1.61×</span></td><td class="stack ahead"><b>425.1 ms</b><span class="coef-bad">1.60×</span></td><td class="stack behind"><b>286.4 ms</b><span class="coef-ok">1.08×</span></td><td class="stack behind"><b>261.6 ms</b><span class="coef-good">0.99×</span></td></tr>
   </tbody>
 </table>
 

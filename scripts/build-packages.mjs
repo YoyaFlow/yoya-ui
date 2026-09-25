@@ -31,17 +31,35 @@ const PACKAGES = [
   {
     name: 'compiler',
     root: 'packages/yoya-compiler',
-    // 编译器是**构建期工具**：`@babel/parser` 与 ui 的组件作者助手（下一步搬进 core）都保持 external
-    external: [NODE_BUILTINS, CORE_SPECIFIER, /^@babel\/parser$/, /^@yoyaflow\/yoya-ui(\/|$)/]
+    // 编译器是**构建期工具**：`@babel/parser` 与 ui 的组件作者助手（下一步搬进 core）都保持 external；
+    // `unplugin`（打包器插件外壳）与 `magic-string`（源码改写）是 plugin 入口的**运行期依赖**，同样 external
+    // ——不 external 的话它们（连同 picomatch / @jridgewell/*）会被打进 `dist/node_modules/` 一起发布。
+    external: [
+      NODE_BUILTINS,
+      CORE_SPECIFIER,
+      /^@babel\/parser$/,
+      /^@yoyaflow\/yoya-ui(\/|$)/,
+      /^unplugin$/,
+      /^magic-string$/
+    ]
   }
 ];
 
-/** 包内每个源码模块都作为 input：preserveModules 下 dist 就是 src 的镜像。 */
+/**
+ * 包内每个源码模块都作为 input：preserveModules 下 dist 就是 src 的镜像。
+ *
+ * **`src/testing/**` 不进镜像**：那里是测试辅助模块（可以 import vitest 之类的测试框架），
+ * 一旦进 dist 就会被 `files: ["dist"]` 一起发布（0.7.0 的 `conformance.js` 就是这么把
+ * vitest 连同 chai / @vitest/* 共 0.54 MB 带进包里的）。同一条口径也在
+ * `scripts/verify-packages.mjs` 里做了门禁。
+ */
 function moduleEntries(root) {
   return readdirSync(join(root, 'src'), { recursive: true })
     .filter((file) => file.endsWith('.js'))
     .filter((file) => !file.includes('.test.'))
-    .filter((file) => !file.split(/[\\/]/).some((part) => part === 'node_modules'))
+    .filter(
+      (file) => !file.split(/[\\/]/).some((part) => part === 'node_modules' || part === 'testing')
+    )
     .map((file) => join(root, 'src', file).replaceAll('\\', '/'));
 }
 
@@ -80,6 +98,9 @@ console.log('assets: yoya.ui.css + chart/echarts.min.js');
 // 模块镜像（preserveModules）保留：那是 `/internal/*` 深引用的稳定落点。
 const LEGACY_INCREMENTAL = [
   ['yoya.ui.js', 'ui.js'],
+  ['yoya.tools.js', 'tools.js'],
+  ['yoya.dev.js', 'dev.js'],
+  ['yoya.svg.js', 'svg.js'],
   ['yoya.actions.js', 'actions.js'],
   ['yoya.navigation.js', 'navigation.js'],
   ['yoya.feedback.js', 'feedback.js'],
@@ -105,6 +126,7 @@ for (const [legacy, target] of LEGACY_INCREMENTAL) {
 // 关键：走 workspace 解析插件（`@yoyaflow/yoya-core*` → `packages/yoya-core/src/*`）。
 // 否则裸包名会被解析到 core 的 **dist 镜像**，同一份 bundle 里就出现两份 core（单例失配）。
 const SELF_CONTAINED = [
+  // core 主入口本身含 svg 元素面，CDN 单文件按它打即可（核心入口 = 元素原语全家）
   ['yoya.core.js', 'packages/yoya-core/src/index.js'],
   ['yoya.api.js', 'packages/yoya-core/src/api.js'],
   ['yoya.ui.full.js', 'packages/yoya-ui/src/ui-full.js'],

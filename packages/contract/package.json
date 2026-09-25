@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-ui-contract",
-  "version": "0.7.0",
+  "version": "0.7.4",
   "private": true,
   "description": "Cross-package contract tests: core ⇄ yoya-ui boundaries (identity, singleton, keyed protocol, SSR byte-equality, compile channels) plus the whole-repo gates that neither line owns alone.",
   "type": "module",

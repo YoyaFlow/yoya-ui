@@ -11,30 +11,33 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 
 ## Document set
 
-| File                                                                           | Content                                                      | Source / status               |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------- |
-| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)            | New                           |
-| [`why-yoya-ui.md`](why-yoya-ui.md)                                             | Positioning, the nine reasons, trade-offs, how to evaluate   | Moved from `README.md`        |
-| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms            | Rebuilt from `index.zh-CN.md` |
-| [`access-control.md`](access-control.md)                                       | Access control guide                                         | Rebuilt                       |
-| [`api.md`](api.md)                                                             | Request commands, transport registration, and Result mapping | New                           |
-| [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                      | Rebuilt                       |
-| [`theme.md`](theme.md)                                                         | Theme and styling spec                                       | Rebuilt                       |
-| [`devtools.md`](devtools.md)                                                   | DevTools guide                                               | Rebuilt                       |
-| [`packages.md`](packages.md)                                                   | Monorepo layout: five packages, boundaries, publish face     | New                           |
-| [`src-layout-migration-plan.md`](src-layout-migration-plan.md)                 | src-layout / monorepo migration plan and ledger              | New                           |
-| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                       |
-| [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
-| [`browser-support.md`](browser-support.md)                                     | Browser baseline, degradation ledger, older-browser recipes  | New                           |
-| [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators            | Moved from `README.md`        |
-| [`performance.md`](performance.md)                                             | Official js-framework-benchmark numbers vs `vanillajs`       | Generated tables + gate       |
-| [`compiler.md`](compiler.md)                                                   | Optional build-time compile path: compiler + runtime hooks   | New                           |
-| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                           | New                           |
-| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not      | New                           |
+| File                                                                           | Content                                                                                               | Source / status               |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ----------------------------- |
+| [`index.md`](index.md)                                                         | Documentation navigation and planning (this page)                                                     | New                           |
+| [`why-yoya-ui.md`](why-yoya-ui.md)                                             | Positioning, the nine reasons, trade-offs, how to evaluate                                            | Moved from `README.md`        |
+| [`highlights.md`](highlights.md)                                               | Feature highlights: DSL, i18n, access, SSR, forms                                                     | Rebuilt from `index.zh-CN.md` |
+| [`install.md`](install.md)                                                     | Installation and imports: routes in, per-package export inventory, CDN and import maps, common errors | New                           |
+| [`access-control.md`](access-control.md)                                       | Access control guide                                                                                  | Rebuilt                       |
+| [`api.md`](api.md)                                                             | Request commands, transport registration, and Result mapping                                          | New                           |
+| [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                                                               | Rebuilt                       |
+| [`theme.md`](theme.md)                                                         | Theme and styling spec                                                                                | Rebuilt                       |
+| [`devtools.md`](devtools.md)                                                   | DevTools guide                                                                                        | Rebuilt                       |
+| [`packages.md`](packages.md)                                                   | Monorepo layout: five packages, boundaries, publish face                                              | New                           |
+| [`src-layout-migration-plan.md`](src-layout-migration-plan.md)                 | src-layout / monorepo migration plan and ledger                                                       | New                           |
+| [`artifacts-plan.md`](artifacts-plan.md)                                       | Publish-face plan: what ships, under which name, for which consumer                                   | New                           |
+| [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)                                               | Rebuilt                       |
+| [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element                                                     | Moved from `README.md`        |
+| [`browser-support.md`](browser-support.md)                                     | Browser baseline, degradation ledger, older-browser recipes                                           | New                           |
+| [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators                                                     | Moved from `README.md`        |
+| [`performance.md`](performance.md)                                             | Official js-framework-benchmark numbers vs `vanillajs`                                                | Generated tables + gate       |
+| [`compiler.md`](compiler.md)                                                   | Optional build-time compile path: compiler + runtime hooks                                            | New                           |
+| [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)               | Cross-library comparison (Chinese)                                                                    | New                           |
+| [`feedback/security-review-feedback.md`](feedback/security-review-feedback.md) | Answers to a security review: what holds, what does not                                               | New                           |
 
 ## Suggested reading path
 
-1. Start with the repository root `README.md` for positioning, target users and the quick start.
+1. Start with the repository root `README.md` for positioning, target users and the quick start; read
+   `install.md` for getting the library into a project and importing each export.
 2. Read `why-yoya-ui.md` for the long-form positioning and `highlights.md` for the feature overview.
    The component catalog is maintained in the examples site rather than a separate document.
 3. Pick the guide that matches your task: `access-control.md`, `ssr.md`, `theme.md`, or `devtools.md`.

@@ -143,6 +143,11 @@ describe('foundation module structure', { timeout: 30000 }, () => {
     const routerModule = await importFromSrc('packages/yoya-ui/src/router/index.js');
     const components = await importFromSrc('packages/yoya-ui/src/components/index.js');
     const coreEntry = await importFromSrc('packages/yoya-core/src/index.js');
+    const coreTools = await importFromSrc('packages/yoya-core/src/tools.js');
+    const coreDev = await importFromSrc('packages/yoya-core/src/dev.js');
+    const uiSvgEntry = await importFromSrc('packages/yoya-ui/src/svg.js');
+    const uiToolsEntry = await importFromSrc('packages/yoya-ui/src/tools.js');
+    const uiDevEntry = await importFromSrc('packages/yoya-ui/src/dev.js');
     const uiEntry = await importFromSrc('packages/yoya-ui/src/ui.js');
     const actionsEntry = await importFromSrc('packages/yoya-ui/src/actions.js');
     const navigationEntry = await importFromSrc('packages/yoya-ui/src/navigation.js');
@@ -254,10 +259,23 @@ describe('foundation module structure', { timeout: 30000 }, () => {
     expect(api.vTh).toBe(components.vTh);
     expect(api.vTd).toBe(components.vTd);
     expect(coreEntry.div).toBe(html.div);
+    // 0.8 起：svg 与 i18n/a11y/theme 不再挂 core 主入口（主入口只留渲染必需的原语）
+    // svg 元素面仍在 core 主入口（与 html 工厂同口径）；i18n / a11y / theme 走 `/tools`
     expect(coreEntry.svg).toBe(svg.svg);
     expect(coreEntry.svgs).toBe(svg.svgs);
-    expect(coreEntry.HtmlElementNode).toBeTypeOf('function');
     expect(coreEntry.SearchOutlined).toBeTypeOf('function');
+    expect(coreEntry.createI18n).toBeUndefined();
+    expect(coreEntry.initYoyaTheme).toBeUndefined();
+    expect(coreEntry.HtmlElementNode).toBeTypeOf('function');
+    // 新入口面：svg / tools / dev 各自成入口，且与实现同源
+    expect(coreTools.createI18n).toBeTypeOf('function');
+    expect(coreTools.initYoyaTheme).toBeTypeOf('function');
+    expect(coreTools.announce).toBeTypeOf('function');
+    expect(coreDev.enableDevtools).toBeTypeOf('function');
+    expect(uiSvgEntry.svgs).toBe(svg.svgs);
+    expect(uiSvgEntry.SearchOutlined).toBeTypeOf('function');
+    expect(uiToolsEntry.createI18n).toBe(coreTools.createI18n);
+    expect(uiDevEntry.enableDevtools).toBe(coreDev.enableDevtools);
     expect(coreEntry.vButton).toBeUndefined();
     expect(coreEntry.vButtons).toBeUndefined();
     expect(coreEntry.vFloatButton).toBeUndefined();

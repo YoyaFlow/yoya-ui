@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import * as yoya from '@yoyaflow/yoya-core';
+// 0.8 起图标集挂在 `/svg` 子入口（不再从 core 主入口导出）；`div` 等原语仍在 core。
+import * as core from '@yoyaflow/yoya-core';
+import * as svgEntry from '@yoyaflow/yoya-core/svg';
+
+const yoya = { ...core, ...svgEntry };
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

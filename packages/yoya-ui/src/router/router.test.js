@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  createI18n,
   div,
   inject,
   provide,
@@ -12,6 +11,7 @@ import {
   vRouterViews,
   vText
 } from '../index.js';
+import { createI18n } from '@yoyaflow/yoya-core/tools';
 
 const flush = async () => {};
 function openTabMenu(path) {

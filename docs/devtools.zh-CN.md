@@ -14,12 +14,13 @@ import {
   getDevtoolsSnapshot,
   isDevtoolsEnabled,
   subscribeDevtools
-} from '@yoyaflow/yoya-ui/devtools';
+} from '@yoyaflow/yoya-ui/dev';
 ```
 
 主入口（`@yoyaflow/yoya-ui`、`@yoyaflow/yoya-ui/core`）不导出这些符号；devtools
 运行时逻辑只随独立子路径加载，主包渲染路径仅保留默认关闭的 bridge 守卫，
-未导入 devtools 时不影响渲染行为。
+未导入 devtools 时不影响渲染行为。旧路径 `@yoyaflow/yoya-ui/devtools`
+（以及 core 侧的 `@yoyaflow/yoya-core/devtools`）仍是可用别名。
 
 ## 快速开始
 

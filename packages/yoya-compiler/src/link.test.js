@@ -7,6 +7,11 @@ import { join, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
+import * as tools from '@yoyaflow/yoya-core/tools';
+
+// 0.8 起的入口面：白名单要 core + svg，静态助手在 tools
+const coreNamespace = { ...core, ...svg, ...tools };
 import { Item as buildGenericItem } from './fixtures/item-with-component.js';
 import { buildComponentRegistry, compileSource } from './index.js';
 
@@ -32,7 +37,7 @@ const built = buildComponentRegistry({
     { file: componentFile, export: 'StatusBox' }
   ],
   dir: registryDir,
-  core,
+  core: coreNamespace,
   runtime: runtimeUrl
 });
 
@@ -45,7 +50,7 @@ const compileCaller = (options) =>
     source: callerSource,
     file: callerFile,
     fn: 'Item',
-    core,
+    core: coreNamespace,
     runtime: runtimeUrl,
     components: built.registry,
     componentsSpecifier: './components.registry.js',
@@ -113,7 +118,7 @@ describe('component registry', () => {
       source,
       file: callerFile,
       fn: 'Item',
-      core,
+      core: coreNamespace,
       runtime: runtimeUrl,
       components: built.registry,
       componentsSpecifier: './components.registry.js'
@@ -221,7 +226,7 @@ describe('static values in linked components', () => {
     const registry = buildComponentRegistry({
       entries: [{ file: themeFile, export: 'ThemeTag' }],
       dir: join(workDir, 'theme'),
-      core,
+      core: coreNamespace,
       runtime: runtimeUrl
     }).registry;
 

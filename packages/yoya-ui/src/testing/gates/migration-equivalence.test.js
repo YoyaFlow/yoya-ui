@@ -15,9 +15,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as tools from '@yoyaflow/yoya-core/tools';
 import * as ui from '../../ui.js';
 
-const api = { ...core, ...ui };
+const api = { ...core, ...tools, ...ui };
 
 /** 与迁移前快照同一口径：属性按名排序、文本节点显式标出。 */
 const signature = (node) => {

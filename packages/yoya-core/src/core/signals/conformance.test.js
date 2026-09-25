@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { computed, div, installSignals, ref } from '@yoyaflow/yoya-core';
-import { describeSignalsAdapter } from './conformance.js';
+import { describeSignalsAdapter } from '../../testing/signals-conformance.js';
 import { defaultAdapter } from './engine.js';
 
 /**

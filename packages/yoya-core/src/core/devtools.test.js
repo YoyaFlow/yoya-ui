@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createAccess,
-  div,
-  i18nText,
-  ref,
-  vText,
-  withAccess,
-  withContext
-} from '@yoyaflow/yoya-core';
+import { createAccess, div, ref, vText, withAccess, withContext } from '@yoyaflow/yoya-core';
+import { i18nText } from '@yoyaflow/yoya-core/tools';
 import {
   disableDevtools,
   emitDevtools,

@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-compiler",
-  "version": "0.7.0",
+  "version": "0.7.4",
   "description": "yoya-ui build-time compiler: shape-only analysis and emission for the yoya-ui DSL. It knows no component names — it consumes @yoyaflow/yoya-core interface tables and an optional component registry.",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,6 +19,7 @@
   },
   "files": [
     "dist",
+    "!dist/node_modules",
     "README.md"
   ],
   "scripts": {
@@ -48,13 +49,21 @@
   "peerDependencies": {
     "@yoyaflow/yoya-core": "^0.7.0",
     "@babel/parser": "^7.29.0",
-    "@yoyaflow/yoya-ui": "^0.7.0"
+    "@yoyaflow/yoya-ui": "^0.7.0",
+    "magic-string": "^1.4.1",
+    "unplugin": "^3.4.0"
   },
   "peerDependenciesMeta": {
     "@babel/parser": {
       "optional": true
     },
     "@yoyaflow/yoya-ui": {
+      "optional": true
+    },
+    "magic-string": {
+      "optional": true
+    },
+    "unplugin": {
       "optional": true
     }
   }

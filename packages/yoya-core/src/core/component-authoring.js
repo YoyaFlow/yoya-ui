@@ -4,11 +4,15 @@ import {
   ComponentNode,
   ViewNode,
   applySetupValue,
-  applyElementOptions as applyCoreElementOptions,
   hasComponentIdentity,
   normalizeSetupArguments
 } from './node.js';
 import { ref } from './signals/handle.js';
+
+// 元素选项落地属于节点/元素面，实现只有 `node.js` 一份（类型声明在 types/core.d.ts）。
+// 这里**再导出同一绑定**：作者从主入口或本入口 import 都拿得到同一个函数；如果两处各自
+// 实现同名函数，barrel 的 `export *` 会把它判成命名空间冲突、静默丢掉这个名字。
+export { applyElementOptions } from './node.js';
 
 export function booleanMethod(target, key, initial, apply) {
   const state = ref(Boolean(initial));
@@ -130,14 +134,6 @@ export function themeBorder(token, fallback, width = '1px') {
 
 export function normalizeComponentArguments(first = null, second = null, third = null) {
   return normalizeSetupArguments(first, second, third);
-}
-
-export function applyElementOptions(node, options) {
-  if (typeof node.attr === 'function' || typeof node.styles === 'function') {
-    return applyCoreElementOptions(node, options);
-  }
-
-  return node;
 }
 
 /**

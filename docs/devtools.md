@@ -13,10 +13,10 @@ import {
   getDevtoolsSnapshot,
   isDevtoolsEnabled,
   subscribeDevtools
-} from '@yoyaflow/yoya-ui/devtools';
+} from '@yoyaflow/yoya-ui/dev';
 ```
 
-The main entries (`@yoyaflow/yoya-ui`, `@yoyaflow/yoya-ui/core`) do not export these symbols. DevTools runtime logic only loads with the separate subpath; the main package render path keeps only a disabled-by-default bridge guard, so rendering is unaffected when devtools is not imported.
+The main entries (`@yoyaflow/yoya-ui`, `@yoyaflow/yoya-ui/core`) do not export these symbols. DevTools runtime logic only loads with the separate subpath; the main package render path keeps only a disabled-by-default bridge guard, so rendering is unaffected when devtools is not imported. The older `@yoyaflow/yoya-ui/devtools` (and `@yoyaflow/yoya-core/devtools`) paths stay valid as aliases.
 
 ## Quick start
 

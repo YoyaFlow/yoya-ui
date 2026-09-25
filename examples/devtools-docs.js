@@ -84,7 +84,7 @@ export function DevtoolsDocumentationPage() {
       setup.pre((pre) => {
         pre.className('devtools-api-signature');
         pre.code(
-          "import { enableDevtools, subscribeDevtools } from '@yoyaflow/yoya-ui/devtools';\n\nenableDevtools();\nsubscribeDevtools((event) => {\n  console.log(event.seq, event.type, event.nodeId);\n});"
+          "import { enableDevtools, subscribeDevtools } from '@yoyaflow/yoya-ui/dev';\n\nenableDevtools();\nsubscribeDevtools((event) => {\n  console.log(event.seq, event.type, event.nodeId);\n});"
         );
       });
     });

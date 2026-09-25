@@ -1,7 +1,8 @@
 // @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
-import { createI18n, div, i18n, withI18nStringShortcut } from '@yoyaflow/yoya-ui';
+import { div } from '@yoyaflow/yoya-ui';
+import { createI18n, i18n, withI18nStringShortcut } from '@yoyaflow/yoya-ui/tools';
 import { renderToString, resolveLocale } from '@yoyaflow/yoya-ui/ssr';
 
 const messages = {

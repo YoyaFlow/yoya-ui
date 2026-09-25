@@ -176,6 +176,53 @@ if (existsSync(join(ROOT, coreHooks))) {
 }
 
 console.log('');
+// 6) 发布源码的第三方依赖口径
+console.log('\n[6] 发布源码的第三方 import');
+const TEST_LIBS =
+  /^(vitest|chai|tinyrainbow|jsdom|playwright-core|@vitest\/|@playwright\/|@testing-library\/)/;
+const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const thirdPartySpecifiers = (text) => {
+  const out = [];
+  for (const match of stripComments(text).matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)) {
+    const spec = match[1];
+    if (spec.startsWith('.') || spec.startsWith('node:') || spec.startsWith('@yoyaflow/')) continue;
+    out.push(spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
+  }
+  return out;
+};
+for (const dir of [CORE, UI, COMPILER]) {
+  const pkg = readJson(`${dir}/package.json`);
+  const declared = new Set([
+    ...Object.keys(pkg.dependencies ?? {}),
+    ...Object.keys(pkg.peerDependencies ?? {})
+  ]);
+  // 只查**会发布**的源码：测试文件与 `src/testing/**`（构建脚本已排除，允许 import 测试框架）
+  const shipped = listJs(`${dir}/src`).filter(
+    (file) => !file.includes('.test.') && !file.includes('/testing/')
+  );
+  const testLibImports = [];
+  const undeclared = [];
+  for (const file of shipped) {
+    for (const spec of thirdPartySpecifiers(readFileSync(join(ROOT, file), 'utf8'))) {
+      if (TEST_LIBS.test(spec)) testLibImports.push(`${file} → ${spec}`);
+      else if (!declared.has(spec)) undeclared.push(`${file} → ${spec}`);
+    }
+  }
+  if (testLibImports.length === 0) ok(`${dir}: 发布源码 0 处 import 测试框架`);
+  else
+    bad(
+      `${dir}: 发布源码 import 了测试框架（会被打进 dist 一起发布）：` +
+        testLibImports.slice(0, 3).join(' | ')
+    );
+  if (undeclared.length === 0) ok(`${dir}: 第三方 import 都在 dependencies / peerDependencies 里`);
+  else
+    bad(
+      `${dir}: 有未声明的第三方依赖（external 名单也得跟着改）：` +
+        [...new Set(undeclared)].slice(0, 5).join(' | ')
+    );
+}
+
+console.log('');
 if (failures.length) {
   console.log(`verify-packages: ${failures.length} 条不通过`);
   process.exitCode = 1;

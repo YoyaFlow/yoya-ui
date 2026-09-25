@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createI18n } from '@yoyaflow/yoya-core';
+import { createI18n } from '@yoyaflow/yoya-core/tools';
 
 describe('i18n depth (core)', () => {
   it('resolves ICU plural selection with Intl rules and fallback', () => {

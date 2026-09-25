@@ -6,7 +6,7 @@ import {
   resolveYoyaMode,
   setYoyaMode,
   setYoyaTheme
-} from '@yoyaflow/yoya-core';
+} from '@yoyaflow/yoya-core/tools';
 
 afterEach(() => {
   delete document.documentElement.dataset.yoyaMode;

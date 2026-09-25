@@ -35,7 +35,6 @@ import {
   vTree,
   vText,
   computed,
-  createI18n,
   EMPTY_CHILDREN,
   appendNodeChild,
   elementAttrs,
@@ -57,6 +56,7 @@ import {
 } from 'yoya-ui';
 import { ComponentNode, ElementNode, HtmlElementNode, ViewNode } from 'yoya-ui/core';
 import { configureRequest, RequestBase, Result } from 'yoya-ui/api';
+import { createI18n, i18nText } from 'yoya-ui/tools';
 import {
   VButton as ActionsVButton,
   VButtons as ActionsVButtons,
@@ -169,12 +169,7 @@ import { VThree, vThree } from 'yoya-ui/three';
 import { vLink, vRoute, vRouter } from 'yoya-ui/router';
 import type { SignalsAdapter } from 'yoya-ui/core';
 import { hydrate, mount, parseState, renderToString as ssrRender } from 'yoya-ui/router';
-import {
-  disableDevtools,
-  enableDevtools,
-  isDevtoolsEnabled,
-  subscribeDevtools
-} from 'yoya-ui/devtools';
+import { disableDevtools, enableDevtools, isDevtoolsEnabled, subscribeDevtools } from 'yoya-ui/dev';
 import 'yoya-ui/ui.css';
 
 // Element factories accept callback/text/object forms.
@@ -838,6 +833,7 @@ const i18n = createI18n({
 i18n.setLanguage('en');
 const translated = i18n.t('hello');
 void translated;
+void i18nText;
 
 // Router.
 router((r) => {

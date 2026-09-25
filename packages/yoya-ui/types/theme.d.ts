@@ -5,10 +5,10 @@ import type {
   ElementOptions,
   PropValue,
   SetupCallback,
-  SetupInput,
-  YoyaMode
+  SetupInput
 } from '@yoyaflow/yoya-core/internal/types/core.js';
 import type { HtmlElementNode } from '@yoyaflow/yoya-core/internal/types/html.js';
+import type { YoyaMode } from '@yoyaflow/yoya-core/internal/types/tools.js';
 
 export interface ThemeModeEntry {
   mode: YoyaMode;

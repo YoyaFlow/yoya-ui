@@ -197,11 +197,12 @@ export default defineConfig({
 
 编译器是**独立的包**：`@yoyaflow/yoya-compiler`（`yoya-compiler` bin + `/plugin`、`/registry` 子路径）。
 老的 `@yoyaflow/yoya-ui/compiler` 子路径仍可用，但已经变成**转发壳** —— 要编译的项目请装编译器包。
-它把构建期依赖 `@babel/parser` 外置了（浏览器产物不含它），而它是 **optional peer**、不会自动安装，
-所以本地要装一次：
+它把构建期依赖 `@babel/parser`、`unplugin`、`magic-string` 都外置了（浏览器产物不含它们），
+而它们是 **optional peer**、不会自动安装，所以本地要装一次：
 
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser   # 报 Cannot find package '@babel/parser' 就是漏了这条
+npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
+# 报 Cannot find package '@babel/parser' / 'unplugin' / 'magic-string' 就是漏了这条
 ```
 
 **不需要配置**：`--core` 默认就是 `@yoyaflow/yoya-core`；`--runtime` 默认写 `./compiler-runtime.js`

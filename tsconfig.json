@@ -17,6 +17,8 @@
       "yoya-ui": ["./packages/yoya-ui/types/index.d.ts"],
       "yoya-ui/core": ["./packages/yoya-core/types/index.d.ts"],
       "yoya-ui/api": ["./packages/yoya-core/types/api.d.ts"],
+      "yoya-ui/tools": ["./packages/yoya-core/types/tools.d.ts"],
+      "yoya-ui/dev": ["./packages/yoya-core/types/dev.d.ts"],
       "yoya-ui/html": ["./packages/yoya-core/types/html.d.ts"],
       "yoya-ui/svg": ["./packages/yoya-core/types/svg.d.ts"],
       "yoya-ui/actions": ["./packages/yoya-ui/types/yoya.actions.d.ts"],

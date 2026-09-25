@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { createAccess, currentContext, div, withAccess, withContext } from '@yoyaflow/yoya-core';
 import {
-  createAccess,
   createI18n,
-  currentContext,
-  div,
   installI18nStringShortcut,
-  withAccess,
-  withContext,
   withI18nStringShortcut
-} from '@yoyaflow/yoya-core';
+} from '@yoyaflow/yoya-core/tools';
 
 describe('rebuildable region environment', () => {
   it('keeps inherited access state after rebuild', () => {

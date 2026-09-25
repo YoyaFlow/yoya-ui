@@ -1,28 +1,40 @@
 {
   "name": "@yoyaflow/yoya-ui",
-  "version": "0.7.0",
+  "version": "0.7.4",
   "description": "yoya-ui (fast line): official components, layout, router, i18n, theming, charts and 3D adapters. Consumes @yoyaflow/yoya-core as a peer dependency; never bundles it.",
   "type": "module",
-  "main": "./dist/yoya.ui-router.full.js",
-  "module": "./dist/yoya.ui-router.full.js",
+  "main": "./dist/ui-router.js",
+  "module": "./dist/ui-router.js",
   "style": "./dist/yoya.ui.css",
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "import": "./dist/yoya.ui-router.full.js"
+      "import": "./dist/ui-router.js"
     },
     "./core": {
       "types": "./types/yoya.core.d.ts",
-      "import": "./dist/yoya.core.js"
+      "import": "./dist/core.js"
     },
     "./api": {
       "types": "./types/yoya.api.d.ts",
-      "import": "./dist/yoya.api.js"
+      "import": "./dist/api.js"
     },
     "./ui": {
       "types": "./types/yoya.ui.d.ts",
       "import": "./dist/yoya.ui.js"
+    },
+    "./tools": {
+      "types": "./types/yoya.tools.d.ts",
+      "import": "./dist/tools.js"
+    },
+    "./svg": {
+      "types": "./types/yoya.svg.d.ts",
+      "import": "./dist/svg.js"
+    },
+    "./dev": {
+      "types": "./types/yoya.dev.d.ts",
+      "import": "./dist/dev.js"
     },
     "./actions": {
       "types": "./types/yoya.actions.d.ts",
@@ -52,6 +64,10 @@
       "types": "./types/yoya.router.d.ts",
       "import": "./dist/yoya.router.js"
     },
+    "./ssr": {
+      "types": "./types/yoya.ssr.d.ts",
+      "import": "./dist/yoya.ssr.js"
+    },
     "./compiler-runtime": {
       "types": "./types/yoya.compiler-runtime.d.ts",
       "import": "./dist/yoya.compiler-runtime.js"
@@ -74,9 +90,10 @@
     },
     "./devtools": {
       "types": "./types/yoya.devtools.d.ts",
-      "import": "./dist/yoya.devtools.js"
+      "import": "./dist/devtools.js"
     },
     "./ui.css": "./dist/yoya.ui.css",
+    "./internal/*": "./dist/*",
     "./package.json": "./package.json"
   },
   "bin": {

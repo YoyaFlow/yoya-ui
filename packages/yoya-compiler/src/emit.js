@@ -400,6 +400,7 @@ export function renderModule(options) {
   const runtimeImport = (names) =>
     `import { ${names.join(', ')} } from ${JSON.stringify(runtime)};\n`;
   const planExport = `\nexport const plan = ${JSON.stringify(plan, null, 2)};\n\n`;
+  // 产物自己 import 元素工厂（票 13 / R4）。HTML 与 SVG 工厂都在 core 主入口（含 svg 元素面）。
   const coreImport =
     coreImportNames.size > 0
       ? `import { ${[...coreImportNames].sort().join(', ')} } from ${JSON.stringify(

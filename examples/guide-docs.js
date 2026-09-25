@@ -111,57 +111,130 @@ export function GuideInstallationPage() {
   return createGuidePage({
     id: 'installation',
     title: '安装方式',
-    intro: '安装 create-yoya-ui 脚手架快速体验，或通过 ES Module 直接引入构建产物。',
+    intro:
+      '三条路：脚手架起项目、经过打包器按需 import、或 CDN 直接引入自包含单文件。下面把 yoya-ui 的导出物（每个公开入口）逐条列清，照抄即可。',
     sections: [
       {
-        title: '快速体验',
-        paragraphs: ['create-yoya-ui 提供 admin 后台管理模板，可直接作为管理后台起点。'],
-        code: `# 安装脚手架
-npm install -g create-yoya-ui
-
-# 使用 admin 模板创建项目
-create-yoya-ui my-app --template admin
-cd my-app
-npm install
-npm run dev
-
-# admin 模板包含：顶部导航 + 左侧菜单 + RouterViews 内容区，
-# 以及数据概览看板、成员/角色/权限/字典管理等业务域示例`
-      },
-      {
-        title: 'admin 模板（推荐）',
+        title: '1. 脚手架',
         paragraphs: [
-          'yoya-ui 拥有自己独特的开发范式：声明式节点 DSL、页面编排、feature 模块组织与 api 分层。推荐使用 admin 模板创建项目来了解这些范式。',
-          'admin 模板开箱即用：顶部导航 + 左侧菜单 + RouterViews 内容区，内置数据概览看板与图表，以及成员 / 角色 / 权限 / 字典管理等业务域示例。'
+          '三个模板：basic（最小 SPA）、admin（后台管理，推荐）、ssr（renderPage + hydrate 整页渲染）。模板依赖钉在当前发布版本。'
         ],
-        code: `create-yoya-ui my-app --template admin
+        code: `npm create yoya-ui@latest my-app          # 等价于 npx create-yoya-ui my-app
+# 也可以全局安装：npm install -g create-yoya-ui
+
+create-yoya-ui my-app --template admin     # admin | basic | ssr
 cd my-app
 npm install
-npm run dev`
+npm run dev                                # build 构建；SSR 模板另有 npm start`
       },
       {
-        title: '构建产物',
-        paragraphs: [
-          'dist 目录提供 yoya.core.js / yoya.ui.js / yoya.router.js 增量入口，自包含的 yoya.ui-router.full.js / yoya.ui.full.js / yoya.router.full.js，以及 yoya.echart.js / yoya.three.js 扩展和 yoya.ui.css。'
-        ]
-      },
-      {
-        title: '模块引入',
-        code: `import { section } from 'basepath/yoya.core.js';
-import { vButton } from 'basepath/yoya.ui.js';
+        title: '2. npm 模块（经过打包器）',
+        points: [
+          '只要组件：npm install @yoyaflow/yoya-ui —— @yoyaflow/yoya-core 作为 peer 依赖一起装上，两包共用同一份 core 实例。',
+          '只要引擎：npm install @yoyaflow/yoya-core（写自己的组件库，零第三方依赖）。',
+          '样式必引：没有运行时 CSS 注入，组件皮肤与主题变量要自己引入。'
+        ],
+        code: `// 最省事：根入口（引擎 + 元素面 + 全部组件 + 路由/SSR），按需 tree-shake
+import { div, ref, vText, vButton, vCard, createRouter, renderPage } from '@yoyaflow/yoya-ui';
+import '@yoyaflow/yoya-ui/ui.css';
 
-section((page) => {
-  page.child(vButton('Ready'));
-}).bindTo('#app');`
+// 想更薄：引擎走 core，组件走 /ui，路由走 /router（同一份 core，不会有双副本）
+import { div, ref, vText } from '@yoyaflow/yoya-core';
+import { vButton, vCard } from '@yoyaflow/yoya-ui/ui';
+import { createRouter, renderPage } from '@yoyaflow/yoya-ui/router';`
       },
       {
-        title: '按需扩展',
-        code: `import { vEchart } from 'basepath/yoya.echart.js';
-import { vThree } from 'basepath/yoya.three.js';`
+        title: '3. 导出物（一）@yoyaflow/yoya-core —— 引擎与元素面',
+        paragraphs: [
+          '主入口 = 渲染原语 + 整个元素面（节点、HTML 与 SVG 工厂 + 图标集、信号、vText、slot、权限/Context 原语）。i18n、主题、a11y 与组件作者契约放在 /tools：它们是辅助能力，不进每个应用的下载量。'
+        ],
+        code: `import { body, div, svg, svgs, ref, computed, vNode, vText, slot } from '@yoyaflow/yoya-core';      // 主入口
+import { createAccess, installAccess, withContext, inject, provide } from '@yoyaflow/yoya-core';  // 权限 / Context
+import { bindWindowEvent, bindDocumentEvent } from '@yoyaflow/yoya-core';                         // 文档/窗口事件
+import { createI18n, i18nText } from '@yoyaflow/yoya-core/tools';                                 // i18n
+import { initYoyaTheme, setYoyaMode, setYoyaTheme } from '@yoyaflow/yoya-core/tools';             // 主题 token 开关
+import { announce, createFocusTrap, moveByKey } from '@yoyaflow/yoya-core/tools';                 // a11y 原语
+import { applyElementOptions, themeValue, runBuilder } from '@yoyaflow/yoya-core/tools';          // 组件作者契约
+import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api';                  // 通讯辅助
+import { renderToString, hydrate, mount, parseState, serializeState } from '@yoyaflow/yoya-core/ssr'; // SSR 原语
+import { enableDevtools, subscribeDevtools } from '@yoyaflow/yoya-core/dev';                      // DevTools（旧名 /devtools 仍可用）
+import { head, htmls } from '@yoyaflow/yoya-core/html';                                           // HTML 工厂（与主入口同一份）
+import { svg as svgTag, svgs as svgNs, ArrowUpOutlined } from '@yoyaflow/yoya-core/svg';         // SVG 工厂 + 图标集（同一份）
+import '@yoyaflow/yoya-core/compiler-runtime';                                                    // 编译产物的运行期钩子（自动引入即可）`
       },
       {
-        title: '样式',
-        code: `<link rel="stylesheet" href="basepath/yoya.ui.css" />`
+        title: '4. 导出物（二）@yoyaflow/yoya-ui —— 组件、路由与扩展',
+        paragraphs: [
+          '根入口是全量面（组件 + 布局 + 主题 + 路由/SSR + core + tools）；分类子入口与根入口是同一批组件的不同切法，只为控制下载量，写法完全一致。'
+        ],
+        code: `import { vButton, vCard, vForm, vTable, vBody, vstack, toast } from '@yoyaflow/yoya-ui';  // 根入口（全量面）
+import { vButton, vCard } from '@yoyaflow/yoya-ui/ui';                 // 只要组件（不含 router/SSR）
+import { vMenu, vSidebar, vTabs, vSteps } from '@yoyaflow/yoya-ui/navigation';   // 分类切法
+import { vDialog, vTooltip } from '@yoyaflow/yoya-ui/feedback';
+import { vInput, vSelect, vForm as vFormTag } from '@yoyaflow/yoya-ui/form';
+import { vTable as vTableTag, vTree } from '@yoyaflow/yoya-ui/data-display';
+import { createRouter, Router, renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router';      // 路由 + SSR
+import { renderPage as renderOnServer, vBody } from '@yoyaflow/yoya-ui/ssr';                      // 服务端完整入口（core + html + layout + router）
+import { createI18n, initYoyaTheme, announce } from '@yoyaflow/yoya-ui/tools';                   // i18n / 主题 / a11y / 作者契约
+import { vEchart } from '@yoyaflow/yoya-ui/echart';                    // 自备 echarts（chart.echartsLib(echarts)）
+import { vThree } from '@yoyaflow/yoya-ui/three';                      // 自备 three
+import { RequestBase, Result } from '@yoyaflow/yoya-ui/api';           // 通讯辅助（= core/api）
+import { enableDevtools } from '@yoyaflow/yoya-ui/dev';                // DevTools（旧名 /devtools 仍可用）
+import { svg, svgs, ArrowUpOutlined } from '@yoyaflow/yoya-ui/svg';    // SVG 元素面（= core 那一份）
+import { div, ref, vText } from '@yoyaflow/yoya-ui/core';              // 引擎原语转发（与 core 共用实例）
+import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';              // 构建期编译器（= 下面的 compiler 包）
+import '@yoyaflow/yoya-ui/ui.css';                                     // 组件皮肤（必引）`
+      },
+      {
+        title: '5. 导出物（三）@yoyaflow/yoya-compiler —— 可选编译路径',
+        paragraphs: [
+          '编译器把重复单元（表格行、列表项、树节点）在构建期编成「静态片段 + 位置寻址的写操作」。它是可选包，运行期钩子由产物自动从 core 引入。'
+        ],
+        code: `import { yoyaCompile } from '@yoyaflow/yoya-compiler';   // unplugin 插件：yoyaCompile.vite({ core }) / .rollup() / .esbuild() …
+import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler'; // 程序化 API 与覆盖率报告
+
+# npm i -D @yoyaflow/yoya-compiler @babel/parser`
+      },
+      {
+        title: '6. CDN —— 免构建，直接引入',
+        paragraphs: [
+          'CDN 上直接可用的是**自包含单文件**（core 内联在里面）；下面的增量入口是单行转发、core 走 peer，从 URL 直接 import 需要 import map。'
+        ],
+        code: `<!-- 自包含：core 单文件（引擎 + 元素面 + 图标集，≈95 kB min） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css" />
+<script type="module">
+  import { div, svg, ref, vText } from
+    'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.core.min.js';
+  // 全量（core + 组件 + 路由/SSR，≈349 kB min）：      dist/yoya.ui.full.min.js
+  // 全量 + 路由（≈377 kB min）：                      dist/yoya.ui-router.full.min.js
+</script>
+
+<!-- 想在 CDN 上用包名写法（含组件子入口）：加一张 import map -->
+<script type="importmap">
+{
+  "imports": {
+    "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/ui.js",
+    "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.4/dist/index.js"
+  }
+}
+</script>`
+      },
+      {
+        title: '7. 样式与类型',
+        code: `import '@yoyaflow/yoya-ui/ui.css';   // 打包器：组件皮肤与主题变量
+<link rel="stylesheet" href=".../dist/yoya.ui.css" />   // CDN：同一个文件
+
+# 类型：每个入口都有对应声明（types/*.d.ts），随包发布，打包器/编辑器自动生效
+# 发布内容只有 dist/ 与 types/ —— 不含 docs/ 与源码`
+      },
+      {
+        title: '8. 命名与兼容口径',
+        points: [
+          '旧命名入口（dist/yoya.ui.js、*.min.js 等）保留且内容即当前版本；模块镜像 dist/core/**、dist/actions/** 是旧深引用的落点。',
+          '@yoyaflow/yoya-ui/core 是 @yoyaflow/yoya-core 的转发入口，两者共用同一实例；/devtools 是 /dev 的别名（core 与 ui 都一样）。',
+          '自包含单文件（yoya.core.min.js / *.full.min.js）不要与 @yoyaflow/yoya-core 包混用：两份 core 会让 instanceof / 身份判定失配。',
+          '业务代码请用公开入口；/internal/* 深引用只面向库内（core 另有白名单子路径）。'
+        ]
       }
     ]
   });

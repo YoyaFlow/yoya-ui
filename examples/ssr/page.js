@@ -1,13 +1,5 @@
-import {
-  createI18n,
-  createRouter,
-  div,
-  vClientOnly,
-  vForm,
-  vFormItem,
-  vInput,
-  vLink
-} from '@yoyaflow/yoya-ui';
+import { createRouter, div, vClientOnly, vForm, vFormItem, vInput, vLink } from '@yoyaflow/yoya-ui';
+import { createI18n } from '@yoyaflow/yoya-ui/tools';
 import { vEchart } from '@yoyaflow/yoya-ui/echart';
 
 const messages = {

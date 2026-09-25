@@ -8,21 +8,26 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
+import * as tools from '@yoyaflow/yoya-core/tools';
 import { div } from '@yoyaflow/yoya-core/html';
-import { themeBorder, themeValue } from '@yoyaflow/yoya-core';
+import { themeBorder, themeValue } from '@yoyaflow/yoya-core/tools';
+
+// 元素白名单与静态助手分散在 core / svg / tools 三个入口（0.8 起的入口面）
+const coreNamespace = { ...core, ...svg, ...tools };
 import { ThemeTag } from './fixtures/theme-tag.js';
 import { compileComponent, compileSource } from './index.js';
 
 const fixtureFile = 'packages/yoya-ui/src/compiler/fixtures/theme-tag.js';
 const fixtureSource = readFileSync(join(import.meta.dirname, 'fixtures/theme-tag.js'), 'utf8');
-const helpers = "import { themeBorder, themeValue } from '@yoyaflow/yoya-core';\n";
+const helpers = "import { themeBorder, themeValue } from '@yoyaflow/yoya-core/tools';\n";
 
 const compileRow = (body, extra = '') =>
   compileSource({
     source: `import { div } from '../../../../yoya.core.js';\n${extra}export function Item(item) {\n  return ${body};\n}\n`,
     file: 'item-fixture.js',
     fn: 'Item',
-    core
+    core: coreNamespace
   });
 
 describe('build-time static values', () => {

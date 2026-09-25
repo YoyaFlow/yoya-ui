@@ -9,6 +9,11 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
+import * as svg from '@yoyaflow/yoya-core/svg';
+import * as tools from '@yoyaflow/yoya-core/tools';
+
+// 0.8 起的入口面：注册表/白名单需要 core + svg，静态助手在 tools
+const coreNamespace = { ...core, ...svg, ...tools };
 import { resolveComponentKey, packageNameOf } from './component-key.js';
 import { componentUnits, loadPackagedRegistry, wireComponentModule } from './plugin.js';
 import { buildPackagedRegistry } from '../../../scripts/compiler-registry.mjs';
@@ -203,8 +208,8 @@ describe('端到端：业务源码链接库内组件', () => {
 
     const wired = wireComponentModule({
       source,
-      targets: componentUnits(source, { core, file }),
-      core,
+      targets: componentUnits(source, { core: coreNamespace, file }),
+      core: coreNamespace,
       runtime: runtimeUrl,
       components: loaded.components,
       componentsSpecifier: loaded.componentsSpecifier

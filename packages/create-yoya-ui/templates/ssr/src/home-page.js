@@ -12,7 +12,8 @@ export function HomePage(state) {
   router.mode(state.mode || 'history');
   router.route('/home', '首页'.s('home'));
   router.notFound('未找到');
-  router.renderPath(state.path || '/home');
+  // 首页同时挂在 '/'：不然默认请求（path === '/'）落到 notFound，首屏直接显示「未找到」
+  router.renderPath(!state.path || state.path === '/' ? '/home' : state.path);
 
   return div((root) => {
     root.h1('SSR 示例'.s('title'));

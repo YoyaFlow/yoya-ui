@@ -41,7 +41,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
     <title>yoya-ui 计数器</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
+      href="https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -53,7 +53,7 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdmirror.com/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // 状态就是句柄：写入即更新绑定位置
 
@@ -103,7 +103,8 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
    只要引擎原语就 `npm install @yoyaflow/yoya-core`。再按入口按需引入：
 
    ```js
-   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
+   import { div, svg, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
+   import { createI18n, initYoyaTheme } from '@yoyaflow/yoya-core/tools'; // i18n / 主题 / a11y / 组件作者契约
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自备 echarts）
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自备 three）
@@ -239,21 +240,21 @@ Star 数说明关注度，不说明正确性，所以下面这些都可以直接
 > 单元格格式为 `测量值（÷ 原生）`，执行项单位 ms、内存项 MB。**不是官方站点数字**，
 > 横向对比只在同一轮内有效；体积、首屏与逐项明细（含 9 项 script / paint 分解）见 [`benchmark/report.html`](benchmark/report.html)。
 
-| 基准                      | 原生 vanillajs | yoya-**0.6.13**（编译） | yoya-**0.6.13**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
-| ------------------------- | -------------- | ----------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
-| 01 创建 1000 行           | 31.2           | 34.6 (1.11×)            | 44.8 (1.44×)              | 37.4 (1.20×)  | 40.7 (1.30×)  | 33.1 (1.06×)  | 33.2 (1.06×)  |
-| 02 替换 1000 行           | 32.6           | 37.9 (1.16×)            | 47.1 (1.44×)              | 41.5 (1.27×)  | 43.8 (1.34×)  | 35.5 (1.09×)  | 37.1 (1.14×)  |
-| 03 每 10 行改文案         | 24.9           | 26.5 (1.06×)            | 26.5 (1.06×)              | 28.7 (1.15×)  | 29.5 (1.18×)  | 23.8 (0.96×)  | 26.7 (1.07×)  |
-| 04 选中一行               | 8.5            | 7.5 (0.88×)             | 7.5 (0.88×)               | 10.1 (1.19×)  | 11.7 (1.38×)  | 9.5 (1.12×)   | 12.2 (1.44×)  |
-| 05 交换两行               | 24.5           | 28.1 (1.15×)            | 30.3 (1.24×)              | 27.9 (1.14×)  | 186.3 (7.60×) | 26.3 (1.07×)  | 25.7 (1.05×)  |
-| 06 删除一行               | 20.4           | 21.9 (1.07×)            | 20.6 (1.01×)              | 23.4 (1.15×)  | 22.2 (1.09×)  | 21.6 (1.06×)  | 21.2 (1.04×)  |
-| 07 创建 10000 行          | 356.0          | 400.4 (1.12×)           | 523.3 (1.47×)             | 426.8 (1.20×) | 604.6 (1.70×) | 379.9 (1.07×) | 381.2 (1.07×) |
-| 08 追加 1000 行           | 38.0           | 43.3 (1.14×)            | 55.1 (1.45×)              | 45.0 (1.18×)  | 48.8 (1.28×)  | 41.2 (1.08×)  | 44.2 (1.16×)  |
-| 09 清空 ×8                | 17.8           | 24.7 (1.39×)            | 27.9 (1.57×)              | 23.9 (1.34×)  | 31.6 (1.78×)  | 20.7 (1.16×)  | 20.4 (1.15×)  |
-| 九项几何平均（综合指标）  | 30.93          | 34.47 (1.11×)           | 39.04 (1.26×)             | 37.15 (1.20×) | 51.09 (1.65×) | 33.19 (1.07×) | 34.81 (1.13×) |
-| 21 就绪内存（MB）         | 1.05           | 1.35 (1.29×)            | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.66 (1.59×)  | 1.08 (1.03×)  | 1.15 (1.10×)  |
-| 22 建 1000 行后内存（MB） | 2.45           | 4.07 (1.67×)            | 5.46 (2.23×)              | 4.59 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
-| 25 建+清空后内存（MB）    | 1.16           | 1.69 (1.45×)            | 1.79 (1.54×)              | 1.71 (1.48×)  | 2.49 (2.15×)  | 1.26 (1.09×)  | 1.44 (1.24×)  |
+| 基准                      | 原生 vanillajs | yoya-**0.7.3**（编译） | yoya-**0.7.3**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| ------------------------- | -------------- | ---------------------- | ------------------------ | ------------- | ------------- | ------------- | ------------- |
+| 01 创建 1000 行           | 30.5           | 35.3 (1.16×)           | 44.9 (1.47×)             | 36.8 (1.21×)  | 38.3 (1.26×)  | 33.6 (1.10×)  | 32.7 (1.07×)  |
+| 02 替换 1000 行           | 32.8           | 38.5 (1.17×)           | 46.1 (1.41×)             | 40.7 (1.24×)  | 43.9 (1.34×)  | 35.9 (1.09×)  | 36.4 (1.11×)  |
+| 03 每 10 行改文案         | 22.4           | 20.5 (0.92×)           | 23.2 (1.04×)             | 26.3 (1.17×)  | 27.0 (1.21×)  | 22.8 (1.02×)  | 22.3 (1.00×)  |
+| 04 选中一行               | 7.3            | 5.8 (0.79×)            | 6.2 (0.85×)              | 7.6 (1.04×)   | 10.5 (1.44×)  | 9.1 (1.25×)   | 10.6 (1.45×)  |
+| 05 交换两行               | 22.1           | 26.9 (1.22×)           | 28.0 (1.27×)             | 24.8 (1.12×)  | 157.3 (7.12×) | 24.5 (1.11×)  | 25.6 (1.16×)  |
+| 06 删除一行               | 16.8           | 18.0 (1.07×)           | 19.1 (1.14×)             | 19.2 (1.14×)  | 18.4 (1.10×)  | 18.2 (1.08×)  | 17.9 (1.07×)  |
+| 07 创建 10000 行          | 330.4          | 395.7 (1.20×)          | 539.3 (1.63×)            | 406.7 (1.23×) | 585.5 (1.77×) | 350.7 (1.06×) | 371.7 (1.13×) |
+| 08 追加 1000 行           | 34.4           | 39.7 (1.15×)           | 48.9 (1.42×)             | 41.6 (1.21×)  | 50.4 (1.47×)  | 37.3 (1.08×)  | 36.8 (1.07×)  |
+| 09 清空 ×8                | 15.3           | 20.6 (1.35×)           | 23.3 (1.52×)             | 20.1 (1.31×)  | 27.2 (1.78×)  | 17.6 (1.15×)  | 17.1 (1.12×)  |
+| 九项几何平均（综合指标）  | 28.00          | 30.85 (1.10×)          | 35.85 (1.28×)            | 33.16 (1.18×) | 46.94 (1.68×) | 30.90 (1.10×) | 31.46 (1.12×) |
+| 21 就绪内存（MB）         | 1.02           | 1.33 (1.31×)           | 1.29 (1.26×)             | 1.33 (1.30×)  | 1.64 (1.60×)  | 1.05 (1.03×)  | 1.14 (1.11×)  |
+| 22 建 1000 行后内存（MB） | 2.44           | 4.12 (1.69×)           | 5.48 (2.24×)             | 4.58 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
+| 25 建+清空后内存（MB）    | 1.16           | 1.64 (1.41×)           | 1.82 (1.57×)             | 1.70 (1.47×)  | 2.48 (2.14×)  | 1.29 (1.11×)  | 1.49 (1.29×)  |
 
 <!-- benchmark:readme:end -->
 
@@ -275,6 +276,12 @@ npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟
 单例口径：**非-full 入口**只通过 peerDependency 共享一份 core（双副本会让 `instanceof` / 身份判定失配）；
 `.full` 是自包含单文件，**不与 core 包混用**（详见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) 的禁忌）。
 
+入口面（0.7.2 起）：主入口是渲染原语 + 整个元素面（节点、HTML 与 **SVG 工厂 + 图标集**、信号、
+`keyed`、`vText`、`slot`）；`/tools` 放 a11y + i18n + 主题 + 组件作者契约，`/dev` 放 DevTools，
+`/svg` 仍是元素面的显式别名；`/ssr` 是服务端完整入口（core + html + layout + router/SSR），模块镜像
+`dist/**` 经 `./internal/*` 可达。旧的 `@yoyaflow/yoya-core/devtools` 与
+`@yoyaflow/yoya-ui/devtools` 仍可解析。
+
 下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
 ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
 
@@ -282,11 +289,16 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 
 | 入口                                 | 内容                                                                                | min+gzip |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
-| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 26.5 KB  |
 | `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件作者契约原语（core 自包含）                               | 22.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
+| `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
+| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
+| `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
 | `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
 | `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
@@ -301,12 +313,15 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 
 组件皮肤：`yoya.ui.css` 126.1 KB raw / 22.1 KB gzip（core 层无皮肤）。
 
-> 自包含全量包（旧的 `yoya.ui.full.min.js` 等）已退场：拆包后 core 由 peerDependency 提供，
-> 再发一份内联副本会把"双副本失配"重新引进来。
+> `yoya.ui.full.min.js` 这类 `.full` 是**自包含单文件**（core 内联），也就是上面 30 秒上手用的
+> CDN 路径；它**不能与 `@yoyaflow/yoya-core` 包混用**——第二份 core 会让 `instanceof` / 身份判定
+> 失配（禁忌见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)）。增量入口（`yoya.ui.js`、`yoya.actions.js` …）
+> 是单行转发、core 走 peerDependency，因此**直接从 CDN 地址 import 它们需要 import map**。
 
 ## 文档与版本策略
 
 - [文档索引](docs/index.zh-CN.md) · [为什么是 yoya-ui](docs/why-yoya-ui.zh-CN.md) · [特性亮点](docs/highlights.zh-CN.md)
+- [安装与导入](docs/install.zh-CN.md)（三种接入方式、各包导出物、CDN 与 import map）
 - [AI 代码助手阅读指南](docs/agents.zh-CN.md) · [Codex Skill](skills/yoya-ui/README.md)
 - [SSR 指南](docs/ssr.zh-CN.md) · [请求辅助](docs/api.zh-CN.md) · [主题规范](docs/theme.zh-CN.md) · [权限控制](docs/access-control.zh-CN.md) · [DevTools](docs/devtools.zh-CN.md)
 - [浏览器基线与降级口径](docs/browser-support.zh-CN.md)

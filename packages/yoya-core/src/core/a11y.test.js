@@ -1,5 +1,10 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { announce, createFocusTrap, getFocusableElements, moveByKey } from '@yoyaflow/yoya-core';
+import {
+  announce,
+  createFocusTrap,
+  getFocusableElements,
+  moveByKey
+} from '@yoyaflow/yoya-core/tools';
 
 function container() {
   const root = document.createElement('div');

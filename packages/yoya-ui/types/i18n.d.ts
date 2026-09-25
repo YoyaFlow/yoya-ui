@@ -3,11 +3,11 @@ import type {
   ChildInput,
   ElementFactory,
   ElementOptions,
-  I18n,
   PropValue,
   SetupCallback,
   SetupInput
 } from '@yoyaflow/yoya-core/internal/types/core.js';
+import type { I18n } from '@yoyaflow/yoya-core/internal/types/tools.js';
 import type { VDropdownMenu } from './actions.js';
 
 export interface LanguageOption {

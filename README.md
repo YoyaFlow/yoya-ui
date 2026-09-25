@@ -48,7 +48,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -60,7 +60,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 
@@ -111,7 +111,8 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
    `npm install @yoyaflow/yoya-core` when you only want the engine primitives. Then import per entry:
 
    ```js
-   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
+   import { div, svg, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
+   import { createI18n, initYoyaTheme } from '@yoyaflow/yoya-core/tools'; // i18n / theme / a11y / authoring
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring echarts)
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring three)
@@ -259,21 +260,21 @@ Execution (nine standard operations) and memory, read from the official
 > **These are not the official site numbers** — only compare within the same round; size, first paint and the
 > per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                        | vanillajs | yoya-**0.6.13** (compiled) | yoya-**0.6.13** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
-| -------------------------------- | --------- | -------------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
-| 01 create 1k rows                | 31.2      | 34.6 (1.11×)               | 44.8 (1.44×)              | 37.4 (1.20×)  | 40.7 (1.30×)  | 33.1 (1.06×)  | 33.2 (1.06×)  |
-| 02 replace 1k rows               | 32.6      | 37.9 (1.16×)               | 47.1 (1.44×)              | 41.5 (1.27×)  | 43.8 (1.34×)  | 35.5 (1.09×)  | 37.1 (1.14×)  |
-| 03 update every 10th row         | 24.9      | 26.5 (1.06×)               | 26.5 (1.06×)              | 28.7 (1.15×)  | 29.5 (1.18×)  | 23.8 (0.96×)  | 26.7 (1.07×)  |
-| 04 select row                    | 8.5       | 7.5 (0.88×)                | 7.5 (0.88×)               | 10.1 (1.19×)  | 11.7 (1.38×)  | 9.5 (1.12×)   | 12.2 (1.44×)  |
-| 05 swap rows                     | 24.5      | 28.1 (1.15×)               | 30.3 (1.24×)              | 27.9 (1.14×)  | 186.3 (7.60×) | 26.3 (1.07×)  | 25.7 (1.05×)  |
-| 06 remove one row                | 20.4      | 21.9 (1.07×)               | 20.6 (1.01×)              | 23.4 (1.15×)  | 22.2 (1.09×)  | 21.6 (1.06×)  | 21.2 (1.04×)  |
-| 07 create 10k rows               | 356.0     | 400.4 (1.12×)              | 523.3 (1.47×)             | 426.8 (1.20×) | 604.6 (1.70×) | 379.9 (1.07×) | 381.2 (1.07×) |
-| 08 append 1k rows                | 38.0      | 43.3 (1.14×)               | 55.1 (1.45×)              | 45.0 (1.18×)  | 48.8 (1.28×)  | 41.2 (1.08×)  | 44.2 (1.16×)  |
-| 09 clear x8                      | 17.8      | 24.7 (1.39×)               | 27.9 (1.57×)              | 23.9 (1.34×)  | 31.6 (1.78×)  | 20.7 (1.16×)  | 20.4 (1.15×)  |
-| Nine-op geometric mean (overall) | 30.93     | 34.47 (1.11×)              | 39.04 (1.26×)             | 37.15 (1.20×) | 51.09 (1.65×) | 33.19 (1.07×) | 34.81 (1.13×) |
-| 21 ready memory (MB)             | 1.05      | 1.35 (1.29×)               | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.66 (1.59×)  | 1.08 (1.03×)  | 1.15 (1.10×)  |
-| 22 run memory (MB)               | 2.45      | 4.07 (1.67×)               | 5.46 (2.23×)              | 4.59 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
-| 25 run+clear memory (MB)         | 1.16      | 1.69 (1.45×)               | 1.79 (1.54×)              | 1.71 (1.48×)  | 2.49 (2.15×)  | 1.26 (1.09×)  | 1.44 (1.24×)  |
+| Benchmark                        | vanillajs | yoya-**0.7.3** (compiled) | yoya-**0.7.3** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| -------------------------------- | --------- | ------------------------- | ------------------------ | ------------- | ------------- | ------------- | ------------- |
+| 01 create 1k rows                | 30.5      | 35.3 (1.16×)              | 44.9 (1.47×)             | 36.8 (1.21×)  | 38.3 (1.26×)  | 33.6 (1.10×)  | 32.7 (1.07×)  |
+| 02 replace 1k rows               | 32.8      | 38.5 (1.17×)              | 46.1 (1.41×)             | 40.7 (1.24×)  | 43.9 (1.34×)  | 35.9 (1.09×)  | 36.4 (1.11×)  |
+| 03 update every 10th row         | 22.4      | 20.5 (0.92×)              | 23.2 (1.04×)             | 26.3 (1.17×)  | 27.0 (1.21×)  | 22.8 (1.02×)  | 22.3 (1.00×)  |
+| 04 select row                    | 7.3       | 5.8 (0.79×)               | 6.2 (0.85×)              | 7.6 (1.04×)   | 10.5 (1.44×)  | 9.1 (1.25×)   | 10.6 (1.45×)  |
+| 05 swap rows                     | 22.1      | 26.9 (1.22×)              | 28.0 (1.27×)             | 24.8 (1.12×)  | 157.3 (7.12×) | 24.5 (1.11×)  | 25.6 (1.16×)  |
+| 06 remove one row                | 16.8      | 18.0 (1.07×)              | 19.1 (1.14×)             | 19.2 (1.14×)  | 18.4 (1.10×)  | 18.2 (1.08×)  | 17.9 (1.07×)  |
+| 07 create 10k rows               | 330.4     | 395.7 (1.20×)             | 539.3 (1.63×)            | 406.7 (1.23×) | 585.5 (1.77×) | 350.7 (1.06×) | 371.7 (1.13×) |
+| 08 append 1k rows                | 34.4      | 39.7 (1.15×)              | 48.9 (1.42×)             | 41.6 (1.21×)  | 50.4 (1.47×)  | 37.3 (1.08×)  | 36.8 (1.07×)  |
+| 09 clear x8                      | 15.3      | 20.6 (1.35×)              | 23.3 (1.52×)             | 20.1 (1.31×)  | 27.2 (1.78×)  | 17.6 (1.15×)  | 17.1 (1.12×)  |
+| Nine-op geometric mean (overall) | 28.00     | 30.85 (1.10×)             | 35.85 (1.28×)            | 33.16 (1.18×) | 46.94 (1.68×) | 30.90 (1.10×) | 31.46 (1.12×) |
+| 21 ready memory (MB)             | 1.02      | 1.33 (1.31×)              | 1.29 (1.26×)             | 1.33 (1.30×)  | 1.64 (1.60×)  | 1.05 (1.03×)  | 1.14 (1.11×)  |
+| 22 run memory (MB)               | 2.44      | 4.12 (1.69×)              | 5.48 (2.24×)             | 4.58 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
+| 25 run+clear memory (MB)         | 1.16      | 1.64 (1.41×)              | 1.82 (1.57×)             | 1.70 (1.47×)  | 2.48 (2.14×)  | 1.29 (1.11×)  | 1.49 (1.29×)  |
 
 <!-- benchmark:readme:end -->
 
@@ -299,6 +300,13 @@ Singleton rules: **non-full entries** share exactly one core through the peer de
 breaks `instanceof` / identity checks); a `.full` bundle is a self-contained single file and **must not
 be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/ssr.md](docs/ssr.md)).
 
+Entry surface (0.7.2 onwards): the main entry is the rendering primitives plus the whole element
+surface — nodes, HTML and **SVG factories + icon set**, signals, `keyed`, `vText`, `slot`. `/tools`
+carries a11y + i18n + theme + the component-authoring contract, `/dev` carries DevTools, and `/svg`
+stays an explicit alias for the element surface. `/ssr` is the complete server entry (core + html +
+layout + router/SSR), and the module mirrors under `dist/**` are reachable through `./internal/*`.
+The older `@yoyaflow/yoya-core/devtools` and `@yoyaflow/yoya-ui/devtools` paths still resolve.
+
 The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
 again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
 core, so the real download is core + that row.
@@ -307,11 +315,16 @@ core, so the real download is core + that row.
 
 | 入口                                 | 内容                                                                                | min+gzip |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
-| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 26.5 KB  |
 | `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件作者契约原语（core 自包含）                               | 22.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
+| `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
+| `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件作者契约（转发到 core，peer 提供）                        | 0.1 KB   |
+| `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
 | `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
 | `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
@@ -326,12 +339,17 @@ core, so the real download is core + that row.
 
 Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no skin).
 
-> The self-contained full bundles (the old `yoya.ui.full.min.js` and friends) are gone: with core
-> delivered as a peer dependency, shipping an inlined copy would reintroduce the "two copies" hazard.
+> A `.full` bundle such as `yoya.ui.full.min.js` is a **self-contained single file** (core inlined) —
+> the CDN path used by the quick start above. Never mix it with the `@yoyaflow/yoya-core` package: a
+> second copy of core breaks `instanceof` / identity checks (see the prohibition in
+> [docs/ssr.md](docs/ssr.md)). The incremental entries (`yoya.ui.js`, `yoya.actions.js`, …) are one-line
+> re-exports that take core as a **peer dependency**, so importing those straight from a CDN URL needs
+> an import map.
 
 ## Documentation and versioning
 
 - [Documentation index](docs/index.md) · [Why yoya-ui](docs/why-yoya-ui.md) · [Feature highlights](docs/highlights.md)
+- [Install and imports](docs/install.md) (entries, CDN, import maps)
 - [AI coding-agent guide](docs/agents.md) · [Codex skill](skills/yoya-ui/README.md)
 - [SSR guide](docs/ssr.md) · [Request helpers](docs/api.md) · [Theme spec](docs/theme.md) · [Access control](docs/access-control.md) · [DevTools](docs/devtools.md)
 - [Browser baseline and degradation](docs/browser-support.md)

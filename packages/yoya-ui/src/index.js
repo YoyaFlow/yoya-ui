@@ -2,6 +2,9 @@
 export * from '@yoyaflow/yoya-core/internal/core/index.js';
 export * from '@yoyaflow/yoya-core/html';
 export * from '@yoyaflow/yoya-core/svg';
+// 0.8 起 i18n / a11y / theme / 组件作者助手在 `/tools`，svg 在 `/svg`；
+// 这个仓内 bar（测试与示例用）保持"全量面"，与 `src/ui-router.js` 同口径。
+export * from '@yoyaflow/yoya-core/tools';
 export * from './layout/index.js';
 export * from './actions/index.js';
 export * from './navigation/index.js';
