@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-compiler",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "yoya-ui build-time compiler: shape-only analysis and emission for the yoya-ui DSL. It knows no component names — it consumes @yoyaflow/yoya-core interface tables and an optional component registry.",
   "type": "module",
   "main": "./dist/index.js",

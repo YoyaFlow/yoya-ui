@@ -4,7 +4,7 @@
 （脚手架 / 打包器 / CDN）的边界。入口面的取舍理由见 [packages.md](packages.md)，产物清单与命名口径见
 [artifacts-plan.md](artifacts-plan.md)。
 
-当前版本：`@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` 均为 **0.7.3**
+当前版本：`@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` 均为 **0.7.4**
 （Node `^20.19.0 || ^22.13.0 || >=24.0.0`；浏览器基线见 [browser-support.zh-CN.md](browser-support.zh-CN.md)）。
 
 ## 1. 三种接入方式
@@ -150,7 +150,7 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
 <!-- 自包含：免构建，直接可用 -->
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.ui.css"
+  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
 />
 <script type="module">
   import {
@@ -158,7 +158,7 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.core.min.js';
 </script>
 ```
 
@@ -167,8 +167,8 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.3/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.3/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.4/dist/index.js"
     }
   }
 </script>

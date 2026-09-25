@@ -9,8 +9,8 @@
     "preview": "npm run build && npm start"
   },
   "dependencies": {
-    "@yoyaflow/yoya-core": "0.7.3",
-    "@yoyaflow/yoya-ui": "0.7.3"
+    "@yoyaflow/yoya-core": "0.7.4",
+    "@yoyaflow/yoya-ui": "0.7.4"
   },
   "devDependencies": {
     "vite": "^8.2.0"

@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-core",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "yoya-ui core (slow line): node/signals/HTML/SVG primitives, SSR helpers, i18n / access / context / theme primitives. Ships no components and depends on none.",
   "type": "module",
   "main": "./dist/index.js",
