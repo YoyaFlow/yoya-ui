@@ -1,3 +1,5 @@
+// 测试辅助（**不进产物**）：`src/testing/**` 被 `scripts/build-packages.mjs` 排除在
+// dist 镜像之外——本目录的文件可以 import 测试框架，生产代码不行。
 import { expect, it } from 'vitest';
 
 /**

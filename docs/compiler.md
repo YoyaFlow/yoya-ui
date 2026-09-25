@@ -230,11 +230,12 @@ but that baseline is a shape-coverage health check, **not** a profit threshold.
 The compiler is its **own package** — `@yoyaflow/yoya-compiler` (bin `yoya-compiler`, plus the
 `@yoyaflow/yoya-compiler/plugin` / `/registry` subpaths). The old `@yoyaflow/yoya-ui/compiler` subpath
 still works, but it is now a **forwarding shell**: install the compiler package in projects that compile.
-`@babel/parser` is an **optional peer** of the compiler package (browser artifacts never contain it) and
-npm will not install it for you:
+`@babel/parser`, `unplugin` and `magic-string` are **optional peers** of the compiler package (browser
+artifacts never contain them) and npm will not install them for you:
 
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser   # "Cannot find package '@babel/parser'" means this line is missing
+npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
+# "Cannot find package '@babel/parser' / 'unplugin' / 'magic-string'" means this line is missing
 ```
 
 **No configuration needed**: `--core` defaults to `@yoyaflow/yoya-core` and `--runtime` defaults to

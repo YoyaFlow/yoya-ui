@@ -31,17 +31,35 @@ const PACKAGES = [
   {
     name: 'compiler',
     root: 'packages/yoya-compiler',
-    // 编译器是**构建期工具**：`@babel/parser` 与 ui 的组件作者助手（下一步搬进 core）都保持 external
-    external: [NODE_BUILTINS, CORE_SPECIFIER, /^@babel\/parser$/, /^@yoyaflow\/yoya-ui(\/|$)/]
+    // 编译器是**构建期工具**：`@babel/parser` 与 ui 的组件作者助手（下一步搬进 core）都保持 external；
+    // `unplugin`（打包器插件外壳）与 `magic-string`（源码改写）是 plugin 入口的**运行期依赖**，同样 external
+    // ——不 external 的话它们（连同 picomatch / @jridgewell/*）会被打进 `dist/node_modules/` 一起发布。
+    external: [
+      NODE_BUILTINS,
+      CORE_SPECIFIER,
+      /^@babel\/parser$/,
+      /^@yoyaflow\/yoya-ui(\/|$)/,
+      /^unplugin$/,
+      /^magic-string$/
+    ]
   }
 ];
 
-/** 包内每个源码模块都作为 input：preserveModules 下 dist 就是 src 的镜像。 */
+/**
+ * 包内每个源码模块都作为 input：preserveModules 下 dist 就是 src 的镜像。
+ *
+ * **`src/testing/**` 不进镜像**：那里是测试辅助模块（可以 import vitest 之类的测试框架），
+ * 一旦进 dist 就会被 `files: ["dist"]` 一起发布（0.7.0 的 `conformance.js` 就是这么把
+ * vitest 连同 chai / @vitest/* 共 0.54 MB 带进包里的）。同一条口径也在
+ * `scripts/verify-packages.mjs` 里做了门禁。
+ */
 function moduleEntries(root) {
   return readdirSync(join(root, 'src'), { recursive: true })
     .filter((file) => file.endsWith('.js'))
     .filter((file) => !file.includes('.test.'))
-    .filter((file) => !file.split(/[\\/]/).some((part) => part === 'node_modules'))
+    .filter(
+      (file) => !file.split(/[\\/]/).some((part) => part === 'node_modules' || part === 'testing')
+    )
     .map((file) => join(root, 'src', file).replaceAll('\\', '/'));
 }
 

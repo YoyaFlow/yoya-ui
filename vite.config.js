@@ -31,6 +31,7 @@ export default defineConfig({
         'examples/**',
         '**/*.test.js',
         '**/*.min.js',
+        'packages/*/src/testing/**',
         'packages/yoya-core/src/core/signals/vendor/**'
       ]
     }

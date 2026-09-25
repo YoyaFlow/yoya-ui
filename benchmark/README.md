@@ -23,6 +23,13 @@ keyed/vanillajs keyed/vue keyed/react-hooks keyed/solid keyed/svelte --runner pl
 `keyed/yoya-ui-runtime` = 对照列（同一份实现的运行期版本，不走编译器）。Solid / Svelte 条目需要
 先 `npm install && npm run build-prod`（它们不提交 `dist`）。
 
+两套条目都把业务代码的核心入口 `@yoyaflow/yoya-ui/core` 别名到 `@yoyaflow/yoya-core`
+（rollup 侧是 `rollup.config.js` 里的 `yoya-share-core` 插件，esbuild 侧是 `--alias:`）。原因：
+0.7.0 起编译产物的运行期钩子与元素工厂都走 core 包，而 `yoya-ui/core` 是自包含产物（core 内联）
+——不对齐的话同一个 bundle 里会带**两份运行期**：体积翻倍，而且编译出来的行代码与业务代码活在
+两个信号实例上（删行 / 改文案 / 交换这些增量操作会退到比运行期版更慢）。两套都用同一个 core
+入口，才对得上「只差一个编译器」的对照口径。
+
 ## 报告页（`benchmark/report.html`）
 
 `benchmark/report.html` 是**生成物**，数据源同样是 `benchmark/results.json`——页面里的数字全部由它渲染，
@@ -50,15 +57,15 @@ node scripts/benchmark-report-html.mjs --write \
 
 ```bash
 node scripts/benchmark-report.mjs --import D:\code\yoyaflow\js-framework-benchmark\webdriver-ts\results \
-  --yoya yoya-ui-ast-v0.6.13-keyed \
+  --yoya yoya-ui-ast-v0.7.0-keyed \
   --baseline vanillajs-keyed \
-  --compare "yoya-ui-runtime-v0.6.13-keyed:yoya runtime（无编译）" \
+  --compare "yoya-ui-runtime-v0.7.0-keyed:yoya runtime（无编译）" \
   --compare "vue-v3.5.39-keyed:Vue 3.5.39" \
   --compare "react-hooks-v19.2.0-keyed:React 19.2.0" \
   --compare "solid-v1.9.3-keyed:Solid 1.9.3" \
   --compare "svelte-v5.42.1-keyed:Svelte 5.42.1" \
   --runner playwright --mode headless --browser "Chrome for Testing 152.0.7977.64" \
-  --cpu-iterations 15 --commit <提交> --version 0.6.13
+  --cpu-iterations 15 --commit <提交> --version 0.7.0
 ```
 
 对照条目的数据落在 `results.json` 的 `compare` 段（提交进仓库），因此报告页在 CI 上照样能校验。

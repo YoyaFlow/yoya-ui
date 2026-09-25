@@ -27,6 +27,7 @@
 | [`performance.zh-CN.md`](performance.zh-CN.md)                                             | 官方 js-framework-benchmark 实测：对比原生 `vanillajs`                                 | 表格生成 + 门禁 |
 | [`compiler.zh-CN.md`](compiler.zh-CN.md)                                                   | 可选的构建期编译路径：编译器 + 运行期钩子                                              | 新增            |
 | [`component-comparison.zh-CN.md`](component-comparison.zh-CN.md)                           | 组件对照：Ant Design / Element Plus ↔ yoya-ui；扩展库接入对比（React / Vue / yoya-ui） | 新建            |
+| [`artifacts-plan.md`](artifacts-plan.md)                                                   | 产物方案：发什么、用什么名字发、谁在哪个口径用（发布面重排）                           | 新建            |
 | [`feedback/security-review-feedback.zh-CN.md`](feedback/security-review-feedback.zh-CN.md) | 安全评审反馈：哪些成立、哪些不成立                                                     | 新建            |
 | [`feedback/beginner-feedback.zh-CN.md`](feedback/beginner-feedback.zh-CN.md)               | 初级开发者 44 问质疑清单：三分类复盘 + 文档改进 backlog                                | 新建            |
 | [`feedback/reactive-engine-feedback.zh-CN.md`](feedback/reactive-engine-feedback.zh-CN.md) | 响应式引擎生产评审反馈：区域重建、信号传播、错误边界等 7.5 问逐条回应                  | 新建            |

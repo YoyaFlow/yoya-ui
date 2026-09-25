@@ -1,24 +1,24 @@
 {
   "name": "@yoyaflow/yoya-ui",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "yoya-ui (fast line): official components, layout, router, i18n, theming, charts and 3D adapters. Consumes @yoyaflow/yoya-core as a peer dependency; never bundles it.",
   "type": "module",
-  "main": "./dist/yoya.ui-router.full.js",
-  "module": "./dist/yoya.ui-router.full.js",
+  "main": "./dist/ui-router.js",
+  "module": "./dist/ui-router.js",
   "style": "./dist/yoya.ui.css",
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "import": "./dist/yoya.ui-router.full.js"
+      "import": "./dist/ui-router.js"
     },
     "./core": {
       "types": "./types/yoya.core.d.ts",
-      "import": "./dist/yoya.core.js"
+      "import": "./dist/core.js"
     },
     "./api": {
       "types": "./types/yoya.api.d.ts",
-      "import": "./dist/yoya.api.js"
+      "import": "./dist/api.js"
     },
     "./ui": {
       "types": "./types/yoya.ui.d.ts",
@@ -74,7 +74,7 @@
     },
     "./devtools": {
       "types": "./types/yoya.devtools.d.ts",
-      "import": "./dist/yoya.devtools.js"
+      "import": "./dist/devtools.js"
     },
     "./ui.css": "./dist/yoya.ui.css",
     "./package.json": "./package.json"

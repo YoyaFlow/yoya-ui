@@ -58,6 +58,51 @@ for (const [name, dir] of Object.entries(PACKAGES)) {
 }
 
 // 2) 边界
+// 1b) 入口口径：exports / main / module 指向的入口必须是**薄入口**
+//
+// 自包含（core 内联）只允许出现在 CDN 口径的独立文件里（`dist/yoya.*.full*.js`、
+// `dist/yoya.core*.js`、`dist/yoya.api.js`）——**入口一律不得指向它们**：
+// 指向 full 会让每个打包器用户都内联一份 core，而应用又按 peer 引 core ⇒ 一个 bundle 两份 core。
+console.log('\n[1b] 入口口径（不得内联 core）');
+// 反向也查：core 的入口不得内联快线（与 [1] 的边界口径同源）
+const INLINED_REGION = {
+  'yoya-ui': /\/\/#region packages\/yoya-core\//,
+  'yoya-compiler': /\/\/#region packages\/yoya-core\//,
+  'yoya-core': /\/\/#region packages\/yoya-ui\//
+};
+const entryTargets = [];
+for (const [name, dir] of Object.entries(PACKAGES)) {
+  const pkg = JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8'));
+  for (const field of ['main', 'module']) {
+    if (typeof pkg[field] === 'string')
+      entryTargets.push([`${name} ${field}`, join(dir, pkg[field])]);
+  }
+  for (const [key, value] of Object.entries(pkg.exports ?? {})) {
+    if (typeof value === 'string') continue;
+    const target = value.import ?? value.default;
+    if (!target) continue;
+    entryTargets.push([`${name} exports["${key}"].import`, join(dir, target)]);
+    if (value.types && !existsSync(join(ROOT, dir, value.types))) {
+      bad(`${name} exports["${key}"].types 指向不存在的文件：${value.types}`);
+    }
+  }
+}
+const inlinedEntries = [];
+for (const [label, rel] of entryTargets) {
+  if (!existsSync(join(ROOT, rel))) {
+    bad(`入口文件缺失：${label} → ${rel}`);
+    continue;
+  }
+  const pkgName = label.split(' ')[0];
+  const pattern = INLINED_REGION[pkgName];
+  if (pattern?.test(readFileSync(join(ROOT, rel), 'utf8'))) inlinedEntries.push(label);
+}
+if (inlinedEntries.length === 0) {
+  ok(`${entryTargets.length} 个入口（main / module / exports.*.import）都没有内联另一个包`);
+} else {
+  bad(`这些入口内联了另一个包（应改指薄入口）：${inlinedEntries.join(' | ')}`);
+}
+
 console.log('\n[2] 两个包的 dist 互不内联');
 const uiDomains = [
   'layout',
@@ -95,6 +140,24 @@ const engineFiles = ['analyze.js', 'emit.js', 'plugin.js', 'registry.js', 'disco
 const engineLeft = engineFiles.filter((file) => existsSync(join(uiDist, 'compiler', file)));
 if (engineLeft.length === 0) ok('ui 的 dist 里没有编译器引擎（只在 @yoyaflow/yoya-compiler）');
 else bad(`ui 的 dist 里出现编译器引擎文件：${engineLeft.join(', ')}`);
+// 依赖副本不许进 dist：`files: ["dist"]` 会把 dist 里的任何东西一起发布，
+// 0.7.0 的 `dist/node_modules/vitest/**`（0.54 MB）就是这么发出去的。
+const forVendored = [coreDist, uiDist, join(ROOT, PACKAGES['yoya-compiler'], 'dist')];
+const vendored = [];
+for (const distDir of forVendored) {
+  if (existsSync(join(distDir, 'node_modules'))) {
+    vendored.push(`${relative(ROOT, join(distDir, 'node_modules')).split('\\').join('/')}/`);
+  }
+  for (const file of walk(distDir)) {
+    if (!file.endsWith('.js')) continue;
+    const text = readFileSync(join(ROOT, file), 'utf8');
+    if (/(?:from|import)\s*['"][^'"]*node_modules\//.test(text)) {
+      vendored.push(`${file} → import node_modules/…`);
+    }
+  }
+}
+if (vendored.length === 0) ok('三个包的 dist 里没有依赖副本（node_modules / 指向它的 import）');
+else bad(`dist 里出现依赖副本：${[...new Set(vendored)].slice(0, 5).join(' | ')}`);
 
 // 3) ui → core 只走裸包名
 console.log('\n[3] ui 只通过裸包名引 core');
