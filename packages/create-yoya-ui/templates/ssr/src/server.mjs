@@ -1,6 +1,9 @@
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
+// 加载 ui 组件域：`body.vBody(...)` 这类 child factory 由该入口注册，
+// 只引 `/router` 时 body 上不存在 vBody（服务端首请求会 TypeError）。
+import '@yoyaflow/yoya-ui/ui';
 import { renderPage } from '@yoyaflow/yoya-ui/router';
 import { HomePage, messages } from './home-page.js';
 
