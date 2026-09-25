@@ -1,5 +1,5 @@
 import { createSsrPage } from './page.js';
-import { renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString } from '@yoyaflow/yoya-ui/router';
 
 const initial = {
   locale: globalThis.process.env.SSR_LOCALE || 'zh-CN',

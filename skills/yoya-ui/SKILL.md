@@ -120,7 +120,8 @@ div((root) => {
 
 ## 参考文件（按需读取）
 
-- [references/quickstart.md](references/quickstart.md)：安装导入、语法与挂载、常用组件 API 速查
+- [references/install.md](references/install.md)：安装与导入——三种接入方式、各包导出物清单、CDN 与 import map、报错对照
+- [references/quickstart.md](references/quickstart.md)：语法与挂载、常用组件 API 速查
 - [references/components.md](references/components.md)：每种组件的用途、最小示例与关键 API
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制

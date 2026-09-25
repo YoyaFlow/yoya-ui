@@ -68,6 +68,9 @@ npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
 `/svg` 仍是显式子入口（与主入口同一份实现）。旧路径
 `@yoyaflow/yoya-core/devtools` 与 `@yoyaflow/yoya-ui/devtools` 仍是可用别名。
 
+每个入口的导入写法（含 CDN 与 import map、常见错误对照）见 [install.zh-CN.md](install.zh-CN.md) /
+[install.md](install.md)。
+
 ## 常用命令
 
 ```bash

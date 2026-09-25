@@ -347,6 +347,7 @@ Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no
 ## Documentation and versioning
 
 - [Documentation index](docs/index.md) · [Why yoya-ui](docs/why-yoya-ui.md) · [Feature highlights](docs/highlights.md)
+- [Install and imports](docs/install.md) (entries, CDN, import maps)
 - [AI coding-agent guide](docs/agents.md) · [Codex skill](skills/yoya-ui/README.md)
 - [SSR guide](docs/ssr.md) · [Request helpers](docs/api.md) · [Theme spec](docs/theme.md) · [Access control](docs/access-control.md) · [DevTools](docs/devtools.md)
 - [Browser baseline and degradation](docs/browser-support.md)

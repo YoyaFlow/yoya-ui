@@ -319,6 +319,7 @@ ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core �
 ## 文档与版本策略
 
 - [文档索引](docs/index.zh-CN.md) · [为什么是 yoya-ui](docs/why-yoya-ui.zh-CN.md) · [特性亮点](docs/highlights.zh-CN.md)
+- [安装与导入](docs/install.zh-CN.md)（三种接入方式、各包导出物、CDN 与 import map）
 - [AI 代码助手阅读指南](docs/agents.zh-CN.md) · [Codex Skill](skills/yoya-ui/README.md)
 - [SSR 指南](docs/ssr.zh-CN.md) · [请求辅助](docs/api.zh-CN.md) · [主题规范](docs/theme.zh-CN.md) · [权限控制](docs/access-control.zh-CN.md) · [DevTools](docs/devtools.zh-CN.md)
 - [浏览器基线与降级口径](docs/browser-support.zh-CN.md)

@@ -15,6 +15,7 @@
 | [`index.zh-CN.md`](index.zh-CN.md)                                                         | 文档导航与内容规划（本页）                                                             | 新建            |
 | [`why-yoya-ui.zh-CN.md`](why-yoya-ui.zh-CN.md)                                             | 定位长文：九点理由、与框架的差异、取舍与评估方式                                       | 从 README 迁入  |
 | [`highlights.zh-CN.md`](highlights.zh-CN.md)                                               | 特性亮点：DSL、i18n、权限、SSR 双模式、表单等                                          | 重建            |
+| [`install.zh-CN.md`](install.zh-CN.md)                                                     | 安装与导入：三种接入方式、各包导出物清单、CDN 与 import map、常见错误                  | 新建            |
 | [`access-control.zh-CN.md`](access-control.zh-CN.md)                                       | 权限控制使用指南                                                                       | 重建            |
 | [`api.zh-CN.md`](api.zh-CN.md)                                                             | 请求命令、传输注册与 Result 映射                                                       | 新建            |
 | [`ssr.zh-CN.md`](ssr.zh-CN.md)                                                             | 服务端渲染集成指南                                                                     | 重建            |
@@ -34,7 +35,7 @@
 
 ## 阅读路径建议
 
-1. 先读根目录 `README.zh-CN.md` 了解定位、适用人群与快速上手；
+1. 先读根目录 `README.zh-CN.md` 了解定位、适用人群与快速上手；装进项目、按入口导入（含各包导出物清单）看 `install.zh-CN.md`；
 2. 定位长文看 `why-yoya-ui.zh-CN.md`；特性总览看 `highlights.zh-CN.md`；组件清单以示例站组件目录与源码为准，不维护独立清单文档，跨库对照（Ant Design / Element Plus ↔ yoya-ui、扩展库接入）见 `component-comparison.zh-CN.md`；
 3. 按场景查阅 `access-control.zh-CN.md` / `ssr.zh-CN.md` / `theme.zh-CN.md` / `devtools.zh-CN.md`；列表长到「每行成本」开始显眼时，读 `compiler.zh-CN.md` 了解可选的构建期编译路径；
    要确认目标浏览器是否在支持范围内、或用户反馈「样式全丢」，先读 `browser-support.zh-CN.md`；

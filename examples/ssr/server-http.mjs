@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { createLocale, createSsrPage } from './page.js';
-import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/ssr';
+import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
 
 const PORT = Number(globalThis.process.env.SSR_PORT || 3000);
 const DIST = join(import.meta.dirname, '../../../dist');

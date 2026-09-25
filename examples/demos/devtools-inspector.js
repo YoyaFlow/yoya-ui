@@ -7,7 +7,7 @@ import {
   getDevtoolsScope,
   getDevtoolsSnapshot,
   subscribeDevtools
-} from '@yoyaflow/yoya-ui/devtools';
+} from '@yoyaflow/yoya-ui/dev';
 
 /** 日志面板的事件筛选选项：与 devtools 事件契约保持同序。 */
 const EVENT_FILTERS = [

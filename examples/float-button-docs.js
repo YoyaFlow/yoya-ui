@@ -1,4 +1,4 @@
-import { ArrowUpOutlined, PlusOutlined } from '@yoyaflow/yoya-core/internal/svg/icons.js';
+import { ArrowUpOutlined, PlusOutlined } from '@yoyaflow/yoya-core';
 import { div, hstack, ref, section, vCard, vFloatButton, vText } from '@yoyaflow/yoya-ui';
 import { ComponentSource } from './component-source.js';
 

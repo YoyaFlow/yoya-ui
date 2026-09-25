@@ -13,7 +13,7 @@ import {
   vThemeModeSwitch
 } from '@yoyaflow/yoya-ui';
 import { createI18n } from '@yoyaflow/yoya-ui/tools';
-import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/ssr';
+import { hydrate, mount, parseState, renderToString } from '@yoyaflow/yoya-ui/router';
 
 const messages = {
   'zh-CN': {
