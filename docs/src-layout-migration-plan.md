@@ -33,25 +33,25 @@
 
 `src/` 共 **538 文件 / 5.2 MB**：18 个域目录 + 根目录 48 文件。
 
-| 位置                                  | 规模                                                                                      | 问题                                                                                                                                     |
-| ------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/` 根**测试**                     | **24 个** `.test.js`                                                                      | 混三类：① SSR/hydrate 跨模块集成（12）；② 口径门禁（10，含基线）；③ 模块内（2）                                                          |
-| `src/` 根**入口**                     | 19 个 `yoya.*.js` façade + `index.js` + `yoya.ui.css`                                     | 入口表在 **5 处**重复（src façade / `scripts/build-entries.mjs` / `package.json exports` / `types/yoya.*.d.ts` / `tsconfig.json paths`） |
-| `src/` 根**基线**                     | `attribute-migration-baseline.json`、`view-binding-baseline.json`、`migration-golden.txt` | 数据与代码混放，被根目录测试用 `import.meta.url` 就近读取                                                                                |
-| `src/examples/`                       | **168 文件 / 1.2 MB（31%）**、31 个测试                                                   | 演示站住在库源码树里                                                                                                                     |
-| `src/core/`                           | 100 文件 / **71 测试**                                                                    | 测试与源码同目录（当前事实标准，但规则未成文）                                                                                           |
-| `src/compiler/`                       | 60 文件 / 35 测试                                                                         | 工具链与库源码同级                                                                                                                       |
-| `src/components/`                     | 6 文件                                                                                    | 名字像"组件分类"，实际是**内核共享实现**，与 `actions`/`form` 这类分类同级容易误导                                                       |
-| `src/scaffold/admin-template.test.js` | 1 文件                                                                                    | 测的是**另一个包**（`create-yoya-ui/templates`）的产物                                                                                   |
+| 位置                                                   | 规模                                                                                      | 问题                                                                                                                                     |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/` 根**测试**                                      | **24 个** `.test.js`                                                                      | 混三类：① SSR/hydrate 跨模块集成（12）；② 口径门禁（10，含基线）；③ 模块内（2）                                                          |
+| `src/` 根**入口**                                      | 19 个 `yoya.*.js` façade + `index.js` + `yoya.ui.css`                                     | 入口表在 **5 处**重复（src façade / `scripts/build-entries.mjs` / `package.json exports` / `types/yoya.*.d.ts` / `tsconfig.json paths`） |
+| `src/` 根**基线**                                      | `attribute-migration-baseline.json`、`view-binding-baseline.json`、`migration-golden.txt` | 数据与代码混放，被根目录测试用 `import.meta.url` 就近读取                                                                                |
+| `packages/yoya-ui/src/examples/`                       | **168 文件 / 1.2 MB（31%）**、31 个测试                                                   | 演示站住在库源码树里                                                                                                                     |
+| `packages/yoya-core/src/core/`                         | 100 文件 / **71 测试**                                                                    | 测试与源码同目录（当前事实标准，但规则未成文）                                                                                           |
+| `packages/yoya-ui/src/compiler/`                       | 60 文件 / 35 测试                                                                         | 工具链与库源码同级                                                                                                                       |
+| `packages/yoya-ui/src/components/`                     | 6 文件                                                                                    | 名字像"组件分类"，实际是**内核共享实现**，与 `actions`/`form` 这类分类同级容易误导                                                       |
+| `packages/yoya-ui/src/scaffold/admin-template.test.js` | 1 文件                                                                                    | 测的是**另一个包**（`create-yoya-ui/templates`）的产物                                                                                   |
 
 ### 已经漂移的口径（入口表重复的代价）
 
 - `package.json exports` 有 `./ui`、`./compiled-registry`，但 `tsconfig.json paths` 没有；
 - `types/{ssr,i18n,layout,theme,effects,svg}.d.ts` 存在，但既没有 `types/yoya.*.d.ts` 别名，也没有导出入口；
-- `src/yoya.ssr.js` 是内部 façade（22 处引用），不在 `exports` 里；
-- 两个"根入口"并存：`src/index.js`（14 个域聚合）与 `src/yoya.ui-router.js`（`exports["."]` 指向它的产物）；
+- `packages/yoya-ui/src/ssr.js` 是内部 façade（22 处引用），不在 `exports` 里；
+- 两个"根入口"并存：`packages/yoya-ui/src/index.js`（14 个域聚合）与 `packages/yoya-ui/src/ui-router.js`（`exports["."]` 指向它的产物）；
 - 库内 import 风格混杂：91 处 import `../index.js`，31 处走 `../core/index.js`；
-- 文档 / skill 有 **153 处** `src/<dir>/` 路径引用（19 个文件），路径一动就得同步。
+- 文档 / skill 有 **153 处** `packages/yoya-ui/src/<dir>/` 路径引用（19 个文件），路径一动就得同步。
 
 ## 3. 目标结构（cut 1 已达成）
 
@@ -75,14 +75,14 @@ yoya-ui-target/
 
 搬了什么（cut 1 = 票 01 + 03 + 04）：
 
-| 规则           | 从                                                 | 到                                                       |
-| -------------- | -------------------------------------------------- | -------------------------------------------------------- |
-| 跨模块集成测试 | `src/<12 个>.test.js`、`src/yoya.devtools.test.js` | `src/testing/integration/**`（`devtools-entry.test.js`） |
-| 口径门禁       | `src/<10 个>.test.js`                              | `src/testing/gates/**`                                   |
-| 门禁数据       | `src/*-baseline.json`、`src/migration-golden.txt`  | `src/testing/baselines/**`                               |
-| 模块内测试     | `src/client-only.test.js`                          | `src/core/client-only.test.js`（就地）                   |
-| 演示站         | `src/examples/**`                                  | `examples/**`                                            |
-| 类型           | `types/yoya.*.d.ts`、`types/tests/consumer.ts`     | `types/entries/*.d.ts`、`types/consumer.test-d.ts`       |
+| 规则           | 从                                                                                  | 到                                                                        |
+| -------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 跨模块集成测试 | `src/<12 个>.test.js`、`packages/yoya-ui/src/devtools-test.js`                      | `packages/yoya-ui/src/testing/integration/**`（`devtools-entry.test.js`） |
+| 口径门禁       | `src/<10 个>.test.js`                                                               | `packages/yoya-ui/src/testing/gates/**`                                   |
+| 门禁数据       | `packages/yoya-ui/src/*-baseline.json`、`packages/yoya-ui/src/migration-golden.txt` | `packages/yoya-ui/src/testing/baselines/**`                               |
+| 模块内测试     | `packages/yoya-ui/src/client-only.test.js`                                          | `packages/yoya-core/src/core/client-only.test.js`（就地）                 |
+| 演示站         | `packages/yoya-ui/src/examples/**`                                                  | `examples/**`                                                             |
+| 类型           | `types/yoya.*.d.ts`、`types/tests/consumer.ts`                                      | `types/entries/*.d.ts`、`types/consumer.test-d.ts`                        |
 
 ## 4. 迁移机制：按依赖闭包分层（不是按目录硬切）
 
@@ -96,14 +96,14 @@ node .scratch/src-layout/tools/fix-path-drift.mjs --target <目标仓> [--check]
 1. **层 = 一组种子**（域目录 / 测试文件）；计算种子的**相对 import 传递闭包**（跨域也带上，
    `import` 与 `import()` 都算）。
 2. 按票 01/03/04 的移动规则把闭包写进目标仓，**同时按新深度重算文件内的相对 import**。
-3. **每层后重生成目标仓 `src/index.js`**：只 `export *` 当前已存在的域 → 中间态自洽，
+3. **每层后重生成目标仓 `packages/yoya-ui/src/index.js`**：只 `export *` 当前已存在的域 → 中间态自洽，
    能跑"已迁文件自己的测试"（L0 就把 core 套件跑绿：73 文件 / 596 条）。
 4. 每层后跑 `lint`（搬迁会改变相对路径长度，可能触发 `max-len 100`）与该层测试。
 5. 最后一层做**文件集对比**（`check-move.mjs`）：源仓 ↔ 目标仓，确认不漏文件。
 
 **为什么必须按闭包分层**（实测事实，决定了方案形状）：
 
-- 测试习惯是"**从聚合出口进**"：`src/core/**` 75 个测试里 57 处 import `../index.js`；
+- 测试习惯是"**从聚合出口进**"：`packages/yoya-core/src/core/**` 75 个测试里 57 处 import `../index.js`；
 - 域依赖有**两个环（SCC）**：`core ⇄ html`（`core/ssr.js` → `HtmlElementNode`）、
   `actions ⇄ navigation`（`context-menu`/`dropdown-menu` → `VMenu`；`menu.js` → `vButton`）；
 - 门禁是**整树口径**：5 个门禁扫整棵 `src` + 金标 + 编译覆盖率 → **只有最后一层之后才能全绿**，
@@ -125,20 +125,20 @@ node .scratch/src-layout/tools/fix-path-drift.mjs --target <目标仓> [--check]
 | L6  | `router`                                                             | 同上                                              |
 | L7  | 入口 façade + `types/`（含票 04 的 `types/entries/`）                | `tsc` + 消费方体检                                |
 | L8  | `compiler`（含 fixtures）                                            | 编译器套件绿                                      |
-| L9  | `src/testing/**`（票 01）+ 基线                                      | **全量 1766 条** + 6 个整树门禁 + 金标            |
+| L9  | `packages/yoya-ui/src/testing/**`（票 01）+ 基线                     | **全量 1766 条** + 6 个整树门禁 + 金标            |
 | L10 | `examples/`（票 03，搬出 `src`）                                     | 演示 226 条 + `examples` 构建                     |
 | L11 | 文档 / skill / CI / 脚本路径常量                                     | `lint` + `format:check` + `build` + `verify:dist` |
 
 ## 5. 路径重写：四类 + 两条教训 + 一次补刀
 
-| 类别          | 例子                                            | 处理                   |
-| ------------- | ----------------------------------------------- | ---------------------- |
-| import 说明符 | `import x from '../core/node.js'`               | AST 定位后按新位置重算 |
-| URL 相对路径  | `new URL('./core/index.js', import.meta.url)`   | 字符串字面量解析后重算 |
-| 字符串常量    | `'src/examples'` / `resolve('src/yoya.ui.css')` | 按搬迁规则替换         |
-| HTML 内联脚本 | `<script type="module">import '../yoya.ui.css'` | 该行按新层级重算       |
+| 类别          | 例子                                                                              | 处理                   |
+| ------------- | --------------------------------------------------------------------------------- | ---------------------- |
+| import 说明符 | `import x from '../core/node.js'`                                                 | AST 定位后按新位置重算 |
+| URL 相对路径  | `new URL('./core/index.js', import.meta.url)`                                     | 字符串字面量解析后重算 |
+| 字符串常量    | `'packages/yoya-ui/src/examples'` / `resolve('packages/yoya-ui/src/yoya.ui.css')` | 按搬迁规则替换         |
+| HTML 内联脚本 | `<script type="module">import '../yoya.ui.css'`                                   | 该行按新层级重算       |
 
-1. **不能用正则扫全文改 import**：`src/compiler/*.test.js` 把夹具源码写在字符串里，正则会改坏字符串里的
+1. **不能用正则扫全文改 import**：`packages/yoya-ui/src/compiler/*.test.js` 把夹具源码写在字符串里，正则会改坏字符串里的
    `import … from '../yoya.core.js'`（表现：编译器测试 `UNRESOLVED_IMPORT`）。
 2. **`.d.ts` 要用 TS 插件解析**：`export declare const …` 用 `jsx` 插件解析失败 → 静默不改
    （表现：`types/entries/*.d.ts` 没改路径，`tsc` 报 TS2307）。
@@ -146,15 +146,15 @@ node .scratch/src-layout/tools/fix-path-drift.mjs --target <目标仓> [--check]
 **补刀（`fix-path-drift.mjs`，19 处）**：工具只改代码里的 import 与路径常量，**改不到散文**。
 目标仓跑完门禁后仍有旧路径残留，已逐条修：
 
-- `src/view-binding-baseline.json` → `src/testing/baselines/view-binding-baseline.json`
+- `packages/yoya-ui/src/view-binding-baseline.json` → `packages/yoya-ui/src/testing/baselines/view-binding-baseline.json`
   （`AGENTS.md`、`docs/component-authoring{,.zh-CN}.md`）；
 - `types/tests/consumer.ts` → `types/consumer.test-d.ts`
   （`AGENTS.md` ×2、`docs/component-authoring{,.zh-CN}.md`、`docs/handoff-*.md`、
   `skills/yoya-ui/references/components.md`、`package.json` 的 `files` 排除项）；
-- `src/*.ssr.test.js` → `src/testing/integration/*.ssr.test.js`（`README{,.zh-CN}.md`、`docs/why-yoya-ui{,.zh-CN}.md`）；
-- `src/{theme-tokens,preset-scope,attribute-migration-baseline}.test.js` → 加 `src/testing/gates/` 前缀
-  （`src/yoya.ui.css` 注释 ×2）；
-- `README{,.zh-CN}.md` 的目录树块：`examples/` 从 `src/` 里挪到顶层，补 `src/testing/`。
+- `packages/yoya-ui/src/*.ssr.test.js` → `packages/yoya-ui/src/testing/integration/*.ssr.test.js`（`README{,.zh-CN}.md`、`docs/why-yoya-ui{,.zh-CN}.md`）；
+- `packages/yoya-ui/src/{theme-tokens,preset-scope,attribute-migration-baseline}.test.js` → 加 `packages/yoya-ui/src/testing/gates/` 前缀
+  （`packages/yoya-ui/src/yoya.ui.css` 注释 ×2）；
+- `README{,.zh-CN}.md` 的目录树块：`examples/` 从 `src/` 里挪到顶层，补 `packages/yoya-ui/src/testing/`。
 
 > 教训：**"路径引用"不只活在 import 里**。下一次重组（cut 2 / cut 3）要么把散文引用写进同一张表，
 > 要么在门禁里加一条"仓库内引用的路径必须存在"的检查。
@@ -225,7 +225,7 @@ IDE、脚本里的绝对路径）要跟着改。A 的代价只是"移动在主�
 
 ## 9. 后续 cut 与待拍板
 
-- **cut 2**：票 02 入口单一真源（`src/entries/` + `scripts/entries.mjs` 表 + 别名生成 + 入口门禁），
+- **cut 2**：票 02 入口单一真源（`packages/yoya-ui/src/entries/` + `scripts/entries.mjs` 表 + 别名生成 + 入口门禁），
   顺手修掉 3 处已漂移的入口表。
 - **cut 3**：票 05 分层（`dom/`、`ui/` 嵌套，~150 文件路径改动）/ 票 06 core 拆包——
   需先拍板 core 边界（i18n / access / context / theme helper 算 core 还是共享工具）与是否加 workspaces。
@@ -277,14 +277,14 @@ packages/create-yoya-ui/   # 脚手架；模板依赖**钉死当前版本**（0.
 
 ## 11. 本轮踩到的坑（都已修，工具留在 `.scratch/src-layout/tools/`）
 
-| 坑                                   | 症状                                                                                             | 处理                                                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| jsdom 下全局 `URL` 被替换            | `new URL('../../..', import.meta.url)` 解析到 `http://localhost:3000/@fs/…`                      | 用例一律用 `node:path` + `node:url` 显式计算仓库根                                                                      |
-| Vite 的 `resolve.alias` + 预解析路径 | 子入口解析成 `/packages/...` 或落在目录上                                                        | 改成 `resolveId` 插件（`scripts/vite-workspace-plugin.mjs`），只认**文件**、按候选顺序探测                              |
-| "路径字面量"两义                     | `'src/rows/item.js'` 是**夹具数据**，`'packages/yoya-ui/src/compiler/runtime.js'` 是**布局引用** | 归一化规则：能解析到真实文件的才改布局，否则还原成 `src/…`                                                              |
-| 编译器把包名当语义                   | `isCoreLikeSpecifier` 只认 `@yoyaflow/yoya-ui` → 拆包后夹具全部 bail                             | 同时认 `@yoyaflow/yoya-core`；注册表 `keyOf` / `scopeEntryOf` / `isExternal` 按**文件所属包**归口（图标集随 core 发布） |
-| 注册表包名来自根 `package.json`      | 键变成 `yoya-ui-monorepo/ui`                                                                     | 读 `packages/yoya-ui/package.json` 的名字，core 面显式写 `@yoyaflow/yoya-core`                                          |
-| `.d.ts` 别名目录深度                 | `types-split` 把 entry 别名里的 `'../x.js'` 算成 `'./x.js'`                                      | `types-entries-repair.mjs` 退一层 / 换跨包 internal 路径                                                                |
+| 坑                                   | 症状                                                                                                              | 处理                                                                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| jsdom 下全局 `URL` 被替换            | `new URL('../../..', import.meta.url)` 解析到 `http://localhost:3000/@fs/…`                                       | 用例一律用 `node:path` + `node:url` 显式计算仓库根                                                                      |
+| Vite 的 `resolve.alias` + 预解析路径 | 子入口解析成 `/packages/...` 或落在目录上                                                                         | 改成 `resolveId` 插件（`scripts/vite-workspace-plugin.mjs`），只认**文件**、按候选顺序探测                              |
+| "路径字面量"两义                     | `'packages/yoya-ui/src/rows/item.js'` 是**夹具数据**，`'packages/yoya-ui/src/compiler/runtime.js'` 是**布局引用** | 归一化规则：能解析到真实文件的才改布局，否则还原成 `packages/yoya-ui/src/…`                                             |
+| 编译器把包名当语义                   | `isCoreLikeSpecifier` 只认 `@yoyaflow/yoya-ui` → 拆包后夹具全部 bail                                              | 同时认 `@yoyaflow/yoya-core`；注册表 `keyOf` / `scopeEntryOf` / `isExternal` 按**文件所属包**归口（图标集随 core 发布） |
+| 注册表包名来自根 `package.json`      | 键变成 `yoya-ui-monorepo/ui`                                                                                      | 读 `packages/yoya-ui/package.json` 的名字，core 面显式写 `@yoyaflow/yoya-core`                                          |
+| `.d.ts` 别名目录深度                 | `types-split` 把 entry 别名里的 `'../x.js'` 算成 `'./x.js'`                                                       | `types-entries-repair.mjs` 退一层 / 换跨包 internal 路径                                                                |
 
 ## 12. 还没做的（下一步，按优先级）
 
@@ -425,7 +425,7 @@ compiler bin 可执行（验 shebang）、README 体积表 + 基准表一致。
 
 **运行期钩子进 core**（`packages/yoya-core/src/core/compiler-runtime.js`）：实现搬进 core（依赖只有 core 的
 4 个原语模块），新增子入口 `@yoyaflow/yoya-core/compiler-runtime`；ui 的 `compiler-runtime.js` 变**转发壳**、
-ui 的 `src/compiler/` **整目录删除**。于是「只装 core + 只加编译器」的项目也能跑编译产物；
+ui 的 `packages/yoya-ui/src/compiler/` **整目录删除**。于是「只装 core + 只加编译器」的项目也能跑编译产物；
 `verify-packages` §5 断言 core 有钩子、钩子不 import ui、ui 侧已无 compiler 目录。
 
 **`verify:dist` 的单例口径**：跨包冒烟走 **`/ui`（增量）+ core**（全应用一份 core）；`.full` 另有一条
@@ -440,14 +440,14 @@ ui 的 `src/compiler/` **整目录删除**。于是「只装 core + 只加编译
 | 去处                               | 内容                                                                                                                                                             |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **新包 `packages/yoya-compiler/`** | `analyze` / `discover` / `emit` / `compile` / `cli` / `plugin` / `component-key` / `registry`（通用构建器）/ `report` + 全部测试与夹具；`bin: yoya-compiler`     |
-| **留在 ui**                        | `src/compiler/runtime.js`（编译产物的**运行期**钩子，出去会让运行期被迫装编译器）+ `compiled-registry` 数据（库内组件注册表）                                    |
+| **留在 ui**                        | `packages/yoya-ui/src/compiler/runtime.js`（编译产物的**运行期**钩子，出去会让运行期被迫装编译器）+ `compiled-registry` 数据（库内组件注册表）                   |
 | **留在库侧脚本**                   | `CATEGORY_ENTRIES` / `scopeEntryOf` / `packageOfFile`（"哪个文件属于哪个子入口"）——继续在根 `scripts/compiler-registry.mjs` 里，通过参数注入编译器包的通用构建器 |
 
 依赖面（写进 `package.json`，由门禁守）：
 
 - 编译器包的 **peer**：`@yoyaflow/yoya-core`（必需）、`@babel/parser`（可选）、`@yoyaflow/yoya-ui`（可选，只为注册表数据）；
 - 编译器包 **没有 dependencies**；
-- ui 把 `@yoyaflow/yoya-compiler` 声明成**可选 peer**，`src/compiler.js` 变成**转发壳**（老子路径 `@yoyaflow/yoya-ui/compiler` 照旧可用，`node dist/yoya.compiler.js …` 会转发到新包的 bin）；
+- ui 把 `@yoyaflow/yoya-compiler` 声明成**可选 peer**，`packages/yoya-ui/src/compiler.js` 变成**转发壳**（老子路径 `@yoyaflow/yoya-ui/compiler` 照旧可用，`node dist/yoya.compiler.js …` 会转发到新包的 bin）；
 - 根 `scripts/*` 直接引用**源码**（`../packages/yoya-compiler/src/…`），注册表生成不依赖"先构建过编译器包"。
 
 收益与代价：

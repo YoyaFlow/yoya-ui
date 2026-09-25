@@ -227,18 +227,19 @@ but that baseline is a shape-coverage health check, **not** a profit threshold.
 
 ### 4.1 Command line
 
-The compiler ships inside `@yoyaflow/yoya-ui` (the `yoya-compiler` bin plus the `yoya-ui/compiler` subpath),
-so there is no extra library to install — but it keeps its build-time dependency `@babel/parser` external
-(browser artifacts never contain it) and that dependency is an **optional peer** that npm will not install
-for you:
+The compiler is its **own package** — `@yoyaflow/yoya-compiler` (bin `yoya-compiler`, plus the
+`@yoyaflow/yoya-compiler/plugin` / `/registry` subpaths). The old `@yoyaflow/yoya-ui/compiler` subpath
+still works, but it is now a **forwarding shell**: install the compiler package in projects that compile.
+`@babel/parser` is an **optional peer** of the compiler package (browser artifacts never contain it) and
+npm will not install it for you:
 
 ```bash
-npm i -D @yoyaflow/yoya-ui @babel/parser   # "Cannot find package '@babel/parser'" means this line is missing
+npm i -D @yoyaflow/yoya-compiler @babel/parser   # "Cannot find package '@babel/parser'" means this line is missing
 ```
 
-**No configuration needed**: `--core` defaults to the core that ships with the package and `--runtime`
-defaults to `./compiler-runtime.js` (point it at `@yoyaflow/yoya-ui/compiler-runtime` when a bundler
-resolves imports).
+**No configuration needed**: `--core` defaults to `@yoyaflow/yoya-core` and `--runtime` defaults to
+`./compiler-runtime.js` (point it at `@yoyaflow/yoya-ui/compiler-runtime` when a bundler resolves imports;
+that subpath is a shell over `@yoyaflow/yoya-core/compiler-runtime`).
 
 ```bash
 # Compile one shape (writes src/generated/row.js)
@@ -271,10 +272,10 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 import * as core from '@yoyaflow/yoya-ui/core';
 
 const result = compileFile({
-  file: 'src/Row.js',
+  file: 'packages/yoya-ui/src/Row.js',
   component: 'Row',
   mode: 'element',
-  out: 'src/generated/row.js',
+  out: 'packages/yoya-ui/src/generated/row.js',
   core,
   runtime: '@yoyaflow/yoya-ui/compiler-runtime'
 });
@@ -483,10 +484,10 @@ import { buildComponentRegistry } from '@yoyaflow/yoya-ui/compiler';
 
 buildComponentRegistry({
   entries: [
-    { file: 'src/components/status-dot.js', export: 'StatusDot' },
-    { file: 'src/components/status-tag.js', export: 'StatusTag' }
+    { file: 'packages/yoya-ui/src/components/status-dot.js', export: 'StatusDot' },
+    { file: 'packages/yoya-ui/src/components/status-tag.js', export: 'StatusTag' }
   ],
-  dir: 'src/generated/components',
+  dir: 'packages/yoya-ui/src/generated/components',
   core
 });
 ```

@@ -6,13 +6,13 @@
 
 ## 0. 当前状态
 
-| 项       | 值                                                                                                                                                                                                                                                                                                                 |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 分支     | `release/0.7.0`（从 `feat/vnode-convergence` 的 `65500fe` 开出）                                                                                                                                                                                                                                                   |
-| 最新提交 | `1b8df0c`（本文档）+ **工作区里未提交的菜单族收口那一刀**（`VMenu` / `VSubMenu` / `VSidebar` 收成闭包，见下方「3.1」）                                                                                                                                                                                             |
-| 存档标签 | `vnode-migration-20260924` → `65500fe`（只含本会话的迁移，不含并行会话在飞改动）                                                                                                                                                                                                                                   |
-| 工作区   | **有未提交的一刀**：`src/navigation/menu.js` / `src/core/node.js` / `src/actions/{dropdown,context}-menu.js` / `types/navigation.d.ts` / `src/testing/baselines/migration-golden.txt` / `src/testing/gates/dom-access-baseline.test.js` / `README*.md`（其余干净；`dist/` / `node_modules/` / `.scratch/` 已忽略） |
-| 细账票   | `.scratch/vnode-convergence/issues/17`（现场）、`19`（写法规则 R1–R12）、`18` / `20` / `21`（编译器侧）。**方案与逐刀台账（15 / 16）、审计脚本、WIP 补丁已在 2026-09-25 的 `.scratch` 清理里删除**；目录表见 `.scratch/README.md`，仍然适用的口径都在本文件 + `AGENTS.md` + `docs/component-authoring{,.zh-CN}.md` |
+| 项       | 值                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 分支     | `release/0.7.0`（从 `feat/vnode-convergence` 的 `65500fe` 开出）                                                                                                                                                                                                                                                                                                                                          |
+| 最新提交 | `1b8df0c`（本文档）+ **工作区里未提交的菜单族收口那一刀**（`VMenu` / `VSubMenu` / `VSidebar` 收成闭包，见下方「3.1」）                                                                                                                                                                                                                                                                                    |
+| 存档标签 | `vnode-migration-20260924` → `65500fe`（只含本会话的迁移，不含并行会话在飞改动）                                                                                                                                                                                                                                                                                                                          |
+| 工作区   | **有未提交的一刀**：`packages/yoya-ui/src/navigation/menu.js` / `packages/yoya-core/src/core/node.js` / `packages/yoya-ui/src/actions/{dropdown,context}-menu.js` / `types/navigation.d.ts` / `packages/yoya-ui/src/testing/baselines/migration-golden.txt` / `packages/yoya-ui/src/testing/gates/dom-access-baseline.test.js` / `README*.md`（其余干净；`dist/` / `node_modules/` / `.scratch/` 已忽略） |
+| 细账票   | `.scratch/vnode-convergence/issues/17`（现场）、`19`（写法规则 R1–R12）、`18` / `20` / `21`（编译器侧）。**方案与逐刀台账（15 / 16）、审计脚本、WIP 补丁已在 2026-09-25 的 `.scratch` 清理里删除**；目录表见 `.scratch/README.md`，仍然适用的口径都在本文件 + `AGENTS.md` + `docs/component-authoring{,.zh-CN}.md`                                                                                        |
 
 ## 1. 这一版定了什么口径（下一刀直接照用）
 
@@ -26,13 +26,13 @@
    `reset` / `requestSubmit` / `remove`）/ `focusFirst()` / `replaceChildren(…)`（节点方法）/
    `reorderChildren(ordered)`；全部可被组件命令遮蔽。
    **挂载期**需要真元素（观察器、渲染器宿主、焦点陷阱）用 `whenMount(host)` 的 `host.element()`；
-   门禁 `src/testing/gates/dom-access-baseline.test.js` 把 `_el` + `renderDom()` 一起冻在零（允许清单只剩三处节点类型扩展）。
-3. **写法规格照 `VBadge`**（`src/data-display/badge.js`）：props 在参数表解构 + `...rest` 摊进根元素工厂；
+   门禁 `packages/yoya-ui/src/testing/gates/dom-access-baseline.test.js` 把 `_el` + `renderDom()` 一起冻在零（允许清单只剩三处节点类型扩展）。
+3. **写法规格照 `VBadge`**（`packages/yoya-ui/src/data-display/badge.js`）：props 在参数表解构 + `...rest` 摊进根元素工厂；
    状态用 `asSignal` / `ref`，归一放**读时** `computed`；静态样式进 `yoya.ui.css`（`[vn~='VXxx'] …`）；
    几何走 CSS 变量；列表用 `ref` + `keyed`；命令只写状态、不搬结构。逐条判据见票 19。
-4. **容器组件的两层分工照 `VTable`**（`src/data-display/table.js`）：结构层（视图根 / 段命令 / 行通道）
+4. **容器组件的两层分工照 `VTable`**（`packages/yoya-ui/src/data-display/table.js`）：结构层（视图根 / 段命令 / 行通道）
    与数据层（`vTableWrapper` 那类外壳）分开——要"细粒度结构操作"给结构层命令，要"数据驱动"给外壳。
-5. **容器的容器态下推照 `VSteps`**（`src/navigation/steps.js`）：`track(context)` 把容器句柄交给单元，
+5. **容器的容器态下推照 `VSteps`**（`packages/yoya-ui/src/navigation/steps.js`）：`track(context)` 把容器句柄交给单元，
    单元自己派生（不遍历结构、不写别人的 DOM）。
    **菜单族是例外口径（2026-09-24 菜单容器那一刀）**：协议名写 **`trackState(context)`**——
    单元里 `track` 是 HTML `<track>` 的短名，对没在自己 api 上定义它的单元（分隔线这类薄工厂）
@@ -40,7 +40,7 @@
    要落在视图根上**（`view.setupFunction(() => builder(self.node()))`，句柄仍是组件节点）——区域
    `rebuildable()` 只由元素节点订阅依赖，声明在组件节点上的区域不随信号重建。
 6. **属性化已收口**：`yoya-v*` / `yoya-component` 类名清零；皮肤只从 `[vn~='VXxx']` 起头；
-   门禁 `src/testing/gates/attribute-migration-baseline.test.js` 改成"必须保持空"，`src/testing/gates/preset-scope.test.js` 守身份作用域。
+   门禁 `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js` 改成"必须保持空"，`packages/yoya-ui/src/testing/gates/preset-scope.test.js` 守身份作用域。
    跨组件能力类 `yoya-<feature>`（`yoya-icon` / `yoya-layout` / `yoya-control-clear`）保留。
 7. **编译路径的四条硬约束见 `AGENTS.md`**（运行期优先 / 不为编译牺牲运行期 / 不引运行期错误 / 编译器只懂形状），
    验收动作也在那一节。
@@ -73,8 +73,8 @@
 - **宿主机**：`VEChart`（`whenMount(host)` + `host.element()` 初始化适配器、`whenDestroy` dispose）、
   `VThree`（同款；渲染循环 / 像素比 / 尺寸量测；手动渲染一帧仍走 `renderFrame()`）。
 - **树**：`VTreeCheckbox` 薄组件（`indeterminate` 这个 DOM property 走 `whenMount` + `prop` 补设）。
-- **引擎**：`ElementNode.focus()` / `owns(target)` / `prop(name[, value])` + 可遮蔽清单（`src/core/node.js`；
-  用例 `src/core/element-ops.test.js`）；本刀再把 `rebuildable` / `rebuild` 加进同一份可遮蔽清单（容器把
+- **引擎**：`ElementNode.focus()` / `owns(target)` / `prop(name[, value])` + 可遮蔽清单（`packages/yoya-core/src/core/node.js`；
+  用例 `packages/yoya-core/src/core/element-ops.test.js`）；本刀再把 `rebuildable` / `rebuild` 加进同一份可遮蔽清单（容器把
   区域转发到自己的视图根）；**存量清扫那一刀**补齐 `isLanded` / `measure` / `emit` / `invoke` / `focusFirst` /
   `replaceChildren` / `reorderChildren`（组件侧 `_el` 105 → 0、`renderDom()` 17 → 0），`createFocusTrap(root)`
   同时收节点或元素；`delegateNodeCommands` / `whenMount` / `whenDestroy` / `track`（菜单族写 `trackState`）
@@ -92,8 +92,8 @@
   （`.scratch/component-typing/props-inventory.md`）已随 2026-09-25 的清理删除——**真源就是 `types/*.d.ts` 本身**。
 - **对象组件运行期退场（2026-09-25，票 07 = 票 03 阶段 4）**：`{ render(), … }` 不再被接受——
   `child(对象)` / `ComponentNode(对象)` / `renderToString|mount|hydrate(页面对象)` / `vClientOnly(() => 对象)` /
-  路由页面对象全部抛错（`src/core/node.js` / `v-node.js` / `ssr.js` / `client-only.js` / `router.js` /
-  `components/shared.js`），弃用提示模块 `src/core/deprecations.js` 删除；编译器形态 B 分支
+  路由页面对象全部抛错（`packages/yoya-core/src/core/node.js` / `v-node.js` / `ssr.js` / `client-only.js` / `router.js` /
+  `components/shared.js`），弃用提示模块 `packages/yoya-core/src/core/deprecations.js` 删除；编译器形态 B 分支
   （`analyze` / `registry` / `runtime` / `discover`）退场，认不出整体回落。
   `examples/**` 40 文件 / 74 个形态 B 工厂迁到 **0**（含 4 个单文件 SVG 演示的内联台本），
   `shape-b-baseline.test.js` 基线归零（从"只减不增"变成"必须为空"）。两条迁移经验写进 `AGENTS.md`：
@@ -105,8 +105,8 @@
 ### 3.1 菜单族 → 闭包（**已收完**）
 
 - **已完成（工作区，未提交）**：`MenuNode` / `SubMenuNode` / `SidebarNode` 三个节点类型全部退场，换成
-  `VMenu` / `VSubMenu` / `VSidebar` 闭包；调用点 `src/actions/dropdown-menu.js` /
-  `src/actions/context-menu.js`、族内内层菜单、侧栏的单元变化监听全部改到位。
+  `VMenu` / `VSubMenu` / `VSidebar` 闭包；调用点 `packages/yoya-ui/src/actions/dropdown-menu.js` /
+  `packages/yoya-ui/src/actions/context-menu.js`、族内内层菜单、侧栏的单元变化监听全部改到位。
   台账见票 16 第 121 / 122 条（含金标那一处有意变更、三条踩坑、README 体积表刷新）。
 - **已核对**：当时的审计脚本（含 `HtmlElementNode` 子类的文件）里 `navigation/**` 清零（全库 12 → 11，剩下的是
   引擎基底 / 编译夹具 / 并行会话的 examples；`layout/theme-shell.js` 随后也整体删除，见 3.2）；
@@ -117,7 +117,7 @@
 ### 3.1b `_el` / `renderDom()` 存量清扫（**已收口**，票 16 第 123 条）
 
 - 组件侧 **`_el` 105 → 0、`renderDom()` 17 → 0**；新增元素级口子见 §1 第 2 条；门禁换成
-  `src/testing/gates/dom-access-baseline.test.js`（双禁令 + 允许清单）。
+  `packages/yoya-ui/src/testing/gates/dom-access-baseline.test.js`（双禁令 + 允许清单）。
 - **允许清单里只剩两处，都是节点类型扩展**（不是组件写法）：`feedback/message-manager.js`
   （管理器节点转发 `renderDom` / `toHTML`）、`data-display/tree.js` 的 `SerializedIconNode`（自绘片段）。
 
@@ -143,19 +143,19 @@
   （下拉 / tooltip / 右键菜单"点外面关掉"、菜单命中判定、侧栏走查）；`prop` → 布尔控件 `indeterminate`、
   `input` / `select` / `textarea` / 布尔控件的 hydration 回读、`upload` / `avatar-upload` 的 `files`；
   **挂载期**（观察器 / `showModal` / three·echart 宿主 / 焦点陷阱）→ `whenMount(host).element()`。
-- ~~扫完把 `src/render-dom-baseline.test.js` 扩成 **"`_el` + `renderDom()` 双禁令 + 允许清单（只留引擎自身）"**~~ → **已收口**（见 §3.1b：门禁是 `src/testing/gates/dom-access-baseline.test.js`）。
+- ~~扫完把 `packages/yoya-ui/src/render-dom-baseline.test.js` 扩成 **"`_el` + `renderDom()` 双禁令 + 允许清单（只留引擎自身）"**~~ → **已收口**（见 §3.1b：门禁是 `packages/yoya-ui/src/testing/gates/dom-access-baseline.test.js`）。
 
 ### 3.4 判定为"不是组件、保留"的
 
-- 引擎基底与引擎内部：`src/html/index.js`（`HtmlElementNode` 本身）、`src/svg/index.js`（`SvgElementNode`）、
-  `src/core/ssr.js`（`PageDocumentNode` / `PageBodyNode`）。
+- 引擎基底与引擎内部：`packages/yoya-core/src/html/index.js`（`HtmlElementNode` 本身）、`packages/yoya-core/src/svg/index.js`（`SvgElementNode`）、
+  `packages/yoya-core/src/core/ssr.js`（`PageDocumentNode` / `PageBodyNode`）。
 - 引擎级自定义节点种类：`data-display/tree.js` 的 `SerializedIconNode`（自绘 `renderDom` / `toHTML`）。
-- 编译夹具：`src/compiler/fixtures/*`（形态 C 的"读不懂构造体"标本，必须保持类）。
+- 编译夹具：`packages/yoya-ui/src/compiler/fixtures/*`（形态 C 的"读不懂构造体"标本，必须保持类）。
 - 演示与文档示例：`examples/component-definition-docs.js` 与 `examples/demos/*-glue.js`（并行会话在改）。
 
 ## 4. 开工流程（每刀照抄）
 
-1. 改实现 → 2. 修 / 补该组件的契约用例（`src/testing/gates/css-contract.test.js` 补选择器组）→ 3. 刷新迁移金标
+1. 改实现 → 2. 修 / 补该组件的契约用例（`packages/yoya-ui/src/testing/gates/css-contract.test.js` 补选择器组）→ 3. 刷新迁移金标
    （`$env:UPDATE_MIGRATION_GOLDEN='1'; npx vitest run src/testing/gates/migration-equivalence.test.js`，跑完清环境变量）→
 2. 下调基线（`UPDATE_ATTR_BASELINE=1` / `UPDATE_VIEW_BINDING_BASELINE=1`，只能减）→
 3. 六道门禁：`npx eslint .` / `npx prettier --check .` / `npx tsc -p tsconfig.json` /
@@ -165,8 +165,8 @@
 ## 5. 协作纪律（本仓库有并行会话）
 
 - 并行会话常在改：`docs/compiler*`、`docs/theme*`、`docs/highlights*`、`docs/browser-support*`、
-  `skills/yoya-ui/**`、`benchmark/**`、`package.json`、`eslint.config.js`、`src/compiler/**`、
-  **`examples/**`**、以及近期的 `src/yoya.ui.css`（`theme-shell.*` 已删除）。
+  `skills/yoya-ui/**`、`benchmark/**`、`package.json`、`eslint.config.js`、`packages/yoya-ui/src/compiler/**`、
+  **`examples/**`**、以及近期的 `packages/yoya-ui/src/yoya.ui.css`（`theme-shell.*` 已删除）。
 - 提交一律按显式清单；跑门禁时若 `examples/**` 或 `verify:dist` 报错，先看 `git status` 与失败原因判断归属，
   别顺手"替他们修"。
 - `yoya.ui.css` 有体积门限（当前 116 KB，实测已到 125.8 KB——并行会话那批主题兜底层的收尾项）。
@@ -174,13 +174,13 @@
 
 ## 6. 参考实现索引
 
-| 要写什么                           | 看哪个文件                                                                         |
-| ---------------------------------- | ---------------------------------------------------------------------------------- |
-| 组件写法规格（R1–R12）             | `src/data-display/badge.js`（`VBadge`）+ 本文 §1                                   |
-| 容器两层分工（结构层 + 数据外壳）  | `src/data-display/table.js`（`VTable` / `VTableWrapper`）                          |
-| 容器态下推（`track(context)`）     | `src/navigation/steps.js`（`VSteps` / `VStep`）                                    |
-| 共用闭包工厂（一组组件同构）       | `src/form/controls/shared.js`（`createBooleanControl`）                            |
-| 宿主机 + 适配器生命周期            | `src/chart/echart.js`（`VEChart`）/ `src/three/three.js`（`VThree`）               |
-| 原生 API / 文档级监听 / 取用器     | `src/feedback/dialog.js` / `tooltip.js` / `actions/dropdown-menu.js`               |
-| 数据驱动列表（`keyed` + 行键镜像） | `src/actions/buttons.js`（`VButtons`）、`src/navigation/menu.js`（`vMenuWrapper`） |
-| 引擎元素级操作口子                 | `src/core/node.js`（`focus` / `owns` / `prop`）+ `src/core/element-ops.test.js`    |
+| 要写什么                           | 看哪个文件                                                                                                            |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 组件写法规格（R1–R12）             | `packages/yoya-ui/src/data-display/badge.js`（`VBadge`）+ 本文 §1                                                     |
+| 容器两层分工（结构层 + 数据外壳）  | `packages/yoya-ui/src/data-display/table.js`（`VTable` / `VTableWrapper`）                                            |
+| 容器态下推（`track(context)`）     | `packages/yoya-ui/src/navigation/steps.js`（`VSteps` / `VStep`）                                                      |
+| 共用闭包工厂（一组组件同构）       | `packages/yoya-ui/src/form/controls/shared.js`（`createBooleanControl`）                                              |
+| 宿主机 + 适配器生命周期            | `packages/yoya-ui/src/chart/echart.js`（`VEChart`）/ `packages/yoya-ui/src/three/three.js`（`VThree`）                |
+| 原生 API / 文档级监听 / 取用器     | `packages/yoya-ui/src/feedback/dialog.js` / `tooltip.js` / `actions/dropdown-menu.js`                                 |
+| 数据驱动列表（`keyed` + 行键镜像） | `packages/yoya-ui/src/actions/buttons.js`（`VButtons`）、`packages/yoya-ui/src/navigation/menu.js`（`vMenuWrapper`）  |
+| 引擎元素级操作口子                 | `packages/yoya-core/src/core/node.js`（`focus` / `owns` / `prop`）+ `packages/yoya-core/src/core/element-ops.test.js` |

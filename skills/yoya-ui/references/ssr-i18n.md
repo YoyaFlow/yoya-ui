@@ -34,7 +34,7 @@ client.js 执行          → hydrateOrMount(HomePage, { messages })
                             └─ #app 是空壳（maxNodes 回退 / 纯客户端）→ mount（全量渲染）
 ```
 
-**`hydrateOrMount(...)` 写在 `src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；你在服务端页面的 head DSL 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。路径、位置、前面还要不要执行别的脚本都是你的工程决策，`renderPage` 只输出 head/body DSL 与状态脚本，不猜客户端入口。
+**`hydrateOrMount(...)` 写在 `packages/yoya-ui/src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；你在服务端页面的 head DSL 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。路径、位置、前面还要不要执行别的脚本都是你的工程决策，`renderPage` 只输出 head/body DSL 与状态脚本，不猜客户端入口。
 
 下面四份文件复制到自己的工程即可跑通。
 
@@ -196,7 +196,7 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: 'dist',
     rollupOptions: {
-      input: 'src/client.js',
+      input: 'packages/yoya-ui/src/client.js',
       output: {
         assetFileNames: (assetInfo) =>
           assetInfo.name?.endsWith('.css') ? 'assets/yoya.ui.css' : 'assets/[name][extname]',

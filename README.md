@@ -107,17 +107,22 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
 1. **A script tag.** The quick start above: CDN, real page, zero tooling.
 2. **Progressive enhancement.** `bindTo()` mounts one interactive block into an existing page — a
    static HTML file, a PHP / JSP page, or a Vue / React app. Add a block, keep the rest as it is.
-3. **npm and modules.** `npm install @yoyaflow/yoya-ui`, then import per entry point:
+3. **npm and modules.** `npm install @yoyaflow/yoya-ui` (pulls in `@yoyaflow/yoya-core`), or
+   `npm install @yoyaflow/yoya-core` when you only want the engine primitives. Then import per entry:
 
    ```js
-   import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // engine, HTML/SVG, signals
+   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring echarts)
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring three)
    import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
-   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // transport helpers
+   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // transport helpers
    import '@yoyaflow/yoya-ui/ui.css'; // component skin and theme variables
    ```
+
+   > For the build-time compiler: `npm i -D @yoyaflow/yoya-compiler @babel/parser`. The runtime hooks used
+   > by compiled artifacts live in `@yoyaflow/yoya-core/compiler-runtime` (loaded only by projects that
+   > actually compiled).
 
 4. **A full application: SPA or SSR.** A single-page app needs no extra layer — the built-in router
    (`history` / `hash` modes, params, guards, 404, `vLink`, `vRouterViews`) plus the component
@@ -224,15 +229,16 @@ cross-library comparison: [docs/interop.md](docs/interop.md).
 
 Star counts measure attention, not correctness, so here is what can be checked directly:
 
-| Signal               | Value                                                                           | How to verify                                                       |
-| -------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Runtime dependencies | **0**                                                                           | `package.json` — no `dependencies` block                            |
-| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                   | `npm test`                                                          |
-| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests    | `npm run typecheck`                                                 |
-| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                            | `src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
-| Dist verification    | Category isolation, SSR single-core smoke, size budgets, README size tables     | `npm run build && npm run verify:dist`                              |
-| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor | `browserslist`, [docs/browser-support.md](docs/browser-support.md)  |
-| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                  | [docs/component-authoring.md](docs/component-authoring.md)          |
+| Signal               | Value                                                                                              | How to verify                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Runtime dependencies | **0**                                                                                              | `package.json` — no `dependencies` block                                             |
+| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                                      | `npm test`                                                                           |
+| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests                       | `npm run typecheck`                                                                  |
+| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                                               | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
+| Dist verification    | exports↔dist, no cross-package inlining, host singleton smoke, `.full` self-contained, size tables | `npm run build && npm run verify:dist`                                               |
+| Package boundaries   | core depends on no component; the fast line treats core as a peer; the compiler knows no component | `npm run verify:packages`                                                            |
+| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor                    | `browserslist`, [docs/browser-support.md](docs/browser-support.md)                   |
+| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                                     | [docs/component-authoring.md](docs/component-authoring.md)                           |
 
 This is an early project: few stars, no legacy ecosystem to drag forward, and priorities are still
 shapeable. If you are evaluating it, evaluate the repository — tests, spec docs, API alignment with
@@ -274,14 +280,24 @@ Execution (nine standard operations) and memory, read from the official
 ## Build output and size
 
 ```bash
-npm run build        # packages/*/dist (module mirrors) + dist/examples/ + size table
-npm run verify:dist  # artifact completeness, no cross-package inlining, host singleton smoke, README table
+npm run build        # packages/*/dist (publish face + module mirrors) + dist/examples/ + size table
+npm run verify:dist  # artifact completeness, no cross-package inlining, host singleton smoke, .full smoke, README table
 ```
 
-Both packages ship **preserveModules module mirrors** (the `dist` tree mirrors `src`), unminified —
-minification is the consumer bundler's job. Inside `@yoyaflow/yoya-ui`, every
-`@yoyaflow/yoya-core/*` import stays external: core is **never inlined**, and the singleton is
-guaranteed by the peer dependency (a second copy breaks `instanceof` / identity checks).
+The repo is a **five-package monorepo** (`packages/*`): `yoya-core` (slow line: primitives + the
+component-authoring contract), `yoya-ui` (fast line: components / layout / router / theme /
+extensions), `yoya-compiler` (build-time compiler), `contract` (cross-package contract tests) and
+`create-yoya-ui` (scaffold). The published packages ship two layers:
+
+- **publish face**: legacy entry names + `.min` (`dist/yoya.ui.js`, `dist/yoya.ui-router.full.js`, …).
+  Incremental entries are one-line re-exports with core as a **peer**; `yoya.core.js` / `yoya.api.js` /
+  the three `.full` bundles are **self-contained** (core inlined into a single file);
+- **module mirrors**: `dist/core/**`, `dist/actions/**`, … (preserveModules) — the stable target for the
+  library-internal `/internal/*` deep imports.
+
+Singleton rules: **non-full entries** share exactly one core through the peer dependency (a second copy
+breaks `instanceof` / identity checks); a `.full` bundle is a self-contained single file and **must not
+be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/ssr.md](docs/ssr.md)).
 
 The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
 again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
@@ -343,19 +359,18 @@ npm run examples:html # example site (http://localhost:5173)
 ```
 
 ```text
-src/
-  core/        ViewNode/ElementNode core, signals, i18n, theme, id allocator, SSR helpers
-  html/ svg/   HTML/SVG element factories
-  layout/      layout factories
-  actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
-               official component categories
-  components/  component aggregation and shared logic
-  testing/     cross-module integration tests, gates, baselines
-  index.js     dev aggregate entry
-examples/      example site (SSR demos and copy-paste guides)
-scripts/       entry build and size report
-types/         shipped TypeScript declarations for all entries
-docs/          public guides (SSR, theme, access control, devtools, authoring, interop)
+packages/
+  yoya-core/      slow line: core (nodes/signals/SSR/i18n/theme/access/context/a11y) + html + svg + authoring contract
+  yoya-ui/        fast line: layout / actions / navigation / feedback / form / data-display / async /
+                  i18n / theme / router / chart / three + skin (yoya.ui.css) + types
+  yoya-compiler/  build-time compiler (shape-driven, knows no component; bin: yoya-compiler)
+  contract/       cross-package contract tests + repo-wide gates (not published)
+  create-yoya-ui/ scaffold (templates pin the current version)
+examples/         example site (SSR demos and copy-paste guides)
+scripts/          build, size report, package-boundary / artifact gates
+docs/             public guides (SSR, theme, access control, devtools, authoring, interop)
+benchmark/        benchmark and size data sources
+skills/           Codex skill (kept in sync with the docs)
 ```
 
 ## License

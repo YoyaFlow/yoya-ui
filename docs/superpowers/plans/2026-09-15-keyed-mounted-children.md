@@ -4,13 +4,13 @@
 
 > **更名记录（2026-09-15）**：本文写作时的条件挂载 API 名 `mounted()` 已更名为
 > `mountable()`（避免与 Vue 生命周期钩子同名导致的静默误用），测试文件同步由
-> `src/core/node-mounted.test.js` 改名为 `src/core/node-mountable.test.js`。
+> `packages/yoya-core/src/core/node-mounted.test.js` 改名为 `packages/yoya-core/src/core/node-mountable.test.js`。
 > 本文按当时的规格原样保留，**以下代码与签名里的 `mounted` 一律读作 `mountable`**；
 > 当前口径以 `docs/`、`types/core.d.ts` 与 `src/` 为准。
 
 **Goal:** 补齐显式列表协调与条件挂载：keyed 插入/移动原语、`keyed()` 信号驱动子项绑定、`mounted()` 条件挂载（DOM 隔离但状态保留）。
 
-**Architecture:** 全部实现收敛在 `src/core/node.js`（沿用现有绑定管线 `registerNodeBinding` 与区域机制，不新建并行体系）。原语先行（Task 1-4：insertBefore / insertAfter / moveBefore / moveAfter / replaceChild），`keyed()` 是薄编排层（Task 5），`mounted()` 采用子声明 + 父收养、不引入 `_parent` 指针（Task 6），类型与文档最后收口（Task 7）。
+**Architecture:** 全部实现收敛在 `packages/yoya-core/src/core/node.js`（沿用现有绑定管线 `registerNodeBinding` 与区域机制，不新建并行体系）。原语先行（Task 1-4：insertBefore / insertAfter / moveBefore / moveAfter / replaceChild），`keyed()` 是薄编排层（Task 5），`mounted()` 采用子声明 + 父收养、不引入 `_parent` 指针（Task 6），类型与文档最后收口（Task 7）。
 
 **Tech Stack:** 纯 JS（无新依赖）、Vitest、现有 signals/binding/region 机制。
 
@@ -30,8 +30,8 @@
 
 **Files:**
 
-- Modify: `src/core/node.js`（ViewNode 类，放在 `addChild` 之后）
-- Test: `src/core/keyed-child.test.js`（追加用例）
+- Modify: `packages/yoya-core/src/core/node.js`（ViewNode 类，放在 `addChild` 之后）
+- Test: `packages/yoya-core/src/core/keyed-child.test.js`（追加用例）
 
 **Interfaces:**
 
@@ -39,7 +39,7 @@
 
 - [x] **Step 1: 写失败测试**
 
-在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
+在 `packages/yoya-core/src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
 it('inserts a keyed child before an existing key', () => {
@@ -82,7 +82,7 @@ Expected: FAIL，`list.insertBefore is not a function`。
 
 - [x] **Step 3: 最小实现**
 
-在 `src/core/node.js` 的 `addChild` 方法后插入：
+在 `packages/yoya-core/src/core/node.js` 的 `addChild` 方法后插入：
 
 ```js
   /** 在 beforeKey 对应子节点之前插入 keyed 子节点；beforeKey 为空时追加到末尾。 */
@@ -152,8 +152,8 @@ git commit -m "feat(core): add insertBefore keyed primitive"
 
 **Files:**
 
-- Modify: `src/core/node.js`（ViewNode 类，放在 `insertBefore` 之后）
-- Test: `src/core/keyed-child.test.js`
+- Modify: `packages/yoya-core/src/core/node.js`（ViewNode 类，放在 `insertBefore` 之后）
+- Test: `packages/yoya-core/src/core/keyed-child.test.js`
 
 **Interfaces:**
 
@@ -161,7 +161,7 @@ git commit -m "feat(core): add insertBefore keyed primitive"
 
 - [x] **Step 1: 写失败测试**
 
-在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
+在 `packages/yoya-core/src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
 it('inserts a keyed child after an existing key', () => {
@@ -287,8 +287,8 @@ git commit -m "feat(core): add insertAfter keyed primitive"
 
 **Files:**
 
-- Modify: `src/core/node.js`（ViewNode 类，放在 `insertAfter` 之后）
-- Test: `src/core/keyed-child.test.js`
+- Modify: `packages/yoya-core/src/core/node.js`（ViewNode 类，放在 `insertAfter` 之后）
+- Test: `packages/yoya-core/src/core/keyed-child.test.js`
 
 **Interfaces:**
 
@@ -299,7 +299,7 @@ git commit -m "feat(core): add insertAfter keyed primitive"
 
 - [x] **Step 1: 写失败测试**
 
-在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
+在 `packages/yoya-core/src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
 it('moves a keyed child before a reference with identity preserved', () => {
@@ -482,8 +482,8 @@ git commit -m "feat(core): add moveBefore and moveAfter keyed primitives"
 
 **Files:**
 
-- Modify: `src/core/node.js`（ViewNode 类，放在 `moveAfter` 之后）
-- Test: `src/core/keyed-child.test.js`
+- Modify: `packages/yoya-core/src/core/node.js`（ViewNode 类，放在 `moveAfter` 之后）
+- Test: `packages/yoya-core/src/core/keyed-child.test.js`
 
 **Interfaces:**
 
@@ -492,7 +492,7 @@ git commit -m "feat(core): add moveBefore and moveAfter keyed primitives"
 
 - [x] **Step 1: 写失败测试**
 
-在 `src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
+在 `packages/yoya-core/src/core/keyed-child.test.js` 的 `describe('keyed children', ...)` 内追加：
 
 ```js
 it('replaces a keyed child at the same slot without disturbing siblings', () => {
@@ -603,8 +603,8 @@ git commit -m "feat(core): add replaceChild keyed primitive"
 
 **Files:**
 
-- Create: `src/core/keyed-children.test.js`
-- Modify: `src/core/node.js`（构造器 `_keyedSegments` 初始化、ViewNode 新增 `keyed()` 方法、模块级 sync 辅助函数放在 `registerRegionCleanup` 附近）
+- Create: `packages/yoya-core/src/core/keyed-children.test.js`
+- Modify: `packages/yoya-core/src/core/node.js`（构造器 `_keyedSegments` 初始化、ViewNode 新增 `keyed()` 方法、模块级 sync 辅助函数放在 `registerRegionCleanup` 附近）
 
 **Interfaces:**
 
@@ -616,7 +616,7 @@ git commit -m "feat(core): add replaceChild keyed primitive"
 
 - [x] **Step 1: 写失败测试**
 
-创建 `src/core/keyed-children.test.js`：
+创建 `packages/yoya-core/src/core/keyed-children.test.js`：
 
 ```js
 import { describe, expect, it } from 'vitest';
@@ -766,7 +766,7 @@ Expected: FAIL，`node.keyed is not a function`。
 
 - [x] **Step 3: 实现**
 
-`src/core/node.js` 构造器 `_pendingRemovals` 附近追加：
+`packages/yoya-core/src/core/node.js` 构造器 `_pendingRemovals` 附近追加：
 
 ```js
 this._keyedSegments = [];
@@ -960,8 +960,8 @@ git commit -m "feat(core): add keyed children binding"
 
 **Files:**
 
-- Create: `src/core/node-mounted.test.js`
-- Modify: `src/core/node.js`（构造器 `_childMountStates`/`_mountCondition`/`_isMounted`、ViewNode 新增 `mounted()` / `isMounted()` 与私有 `_adoptMountCondition()` / `_syncChildMounted()`、`_setupObject` 特判、ElementNode `toHTML()` 挂点、父节点 renderDom 追加循环挂点）
+- Create: `packages/yoya-core/src/core/node-mounted.test.js`
+- Modify: `packages/yoya-core/src/core/node.js`（构造器 `_childMountStates`/`_mountCondition`/`_isMounted`、ViewNode 新增 `mounted()` / `isMounted()` 与私有 `_adoptMountCondition()` / `_syncChildMounted()`、`_setupObject` 特判、ElementNode `toHTML()` 挂点、父节点 renderDom 追加循环挂点）
 
 **Interfaces:**
 
@@ -973,7 +973,7 @@ git commit -m "feat(core): add keyed children binding"
   - 子节点 ViewNode 树与控件状态跨显隐保留；SSR 条件假时父节点 `toHTML()` 跳过该子节点。**不引入 `_parent` 指针**——挂载拓扑知识单侧归父节点。
 - [x] **Step 1: 写失败测试**
 
-创建 `src/core/node-mounted.test.js`：
+创建 `packages/yoya-core/src/core/node-mounted.test.js`：
 
 ```js
 import { describe, expect, it } from 'vitest';
@@ -1371,7 +1371,7 @@ git push -u origin feat/keyed-mounted-children
 计划内 Task 1-7 全部落地后，同一分支上继续补齐了两块内容：
 
 - **子树错误边界**：`node.whenFailed(handler)` 与组件对象 `whenFailed` 成员（`ComponentNode`
-  自动挂载）、devtools `error` 事件，测试见 `src/core/node-when-failed.test.js`；
+  自动挂载）、devtools `error` 事件，测试见 `packages/yoya-core/src/core/node-when-failed.test.js`；
   示例站新增独立「错误处理」页（报告模式 / 组件协议降级）。
 - **文档与 skill 回填**：`docs/highlights` §5、`docs/component-authoring` §6、README 能力一览、
   `docs/beginner-feedback.zh-CN.md` 回填记录、示例站原生页 API 表，以及

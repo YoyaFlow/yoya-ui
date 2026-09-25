@@ -56,16 +56,16 @@ TypeScript、CI/CD 与 SSR 等现代工程能力全部一等支持——去掉�
 Star 数衡量的是关注度，不是正确性。在这个项目赢得社交信号之前，真正有用的是能在仓库里直接查证的
 信号：
 
-| 信号       | 如何验证                                                              |
-| ---------- | --------------------------------------------------------------------- |
-| 运行时依赖 | `package.json` 没有 `dependencies` 块                                 |
-| 测试套件   | `npm test`                                                            |
-| 类型声明   | `npm run typecheck`（类型声明 + 消费方类型测试）                      |
-| SSR 确定性 | `src/testing/integration/*.ssr.test.js`、[ssr.zh-CN.md](ssr.zh-CN.md) |
-| 分发格式   | `npm run build` → `dist/`                                             |
-| 产物校验   | `npm run build && npm run verify:dist`                                |
-| 契约文档   | [component-authoring.zh-CN.md](component-authoring.zh-CN.md)          |
-| 公开路线图 | [ROADMAP.zh-CN.md](../ROADMAP.zh-CN.md)                               |
+| 信号       | 如何验证                                                                               |
+| ---------- | -------------------------------------------------------------------------------------- |
+| 运行时依赖 | `package.json` 没有 `dependencies` 块                                                  |
+| 测试套件   | `npm test`                                                                             |
+| 类型声明   | `npm run typecheck`（类型声明 + 消费方类型测试）                                       |
+| SSR 确定性 | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`、[ssr.zh-CN.md](ssr.zh-CN.md) |
+| 分发格式   | `npm run build` → `dist/`                                                              |
+| 产物校验   | `npm run build && npm run verify:dist`                                                 |
+| 契约文档   | [component-authoring.zh-CN.md](component-authoring.zh-CN.md)                           |
+| 公开路线图 | [ROADMAP.zh-CN.md](../ROADMAP.zh-CN.md)                                                |
 
 README 中的 CI 徽章由 GitHub Actions 工作流实时驱动。覆盖率由 coverage 任务度量（Vitest v8、LCOV）
 并上传到 Codecov，上传获得授权后启用徽章；release 徽章直接读 npm 上已发布的版本，不会过期。

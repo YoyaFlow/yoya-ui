@@ -195,16 +195,18 @@ export default defineConfig({
 
 ### 4.1 命令行
 
-编译器就在 `@yoyaflow/yoya-ui` 包里（`yoya-compiler` bin + `yoya-ui/compiler` 子路径），**不用额外装库**；
-但它把构建期依赖 `@babel/parser` 外置了（浏览器产物不含它），而它是 **optional peer**、不会自动安装，
+编译器是**独立的包**：`@yoyaflow/yoya-compiler`（`yoya-compiler` bin + `/plugin`、`/registry` 子路径）。
+老的 `@yoyaflow/yoya-ui/compiler` 子路径仍可用，但已经变成**转发壳** —— 要编译的项目请装编译器包。
+它把构建期依赖 `@babel/parser` 外置了（浏览器产物不含它），而它是 **optional peer**、不会自动安装，
 所以本地要装一次：
 
 ```bash
-npm i -D @yoyaflow/yoya-ui @babel/parser   # 报 Cannot find package '@babel/parser' 就是漏了这条
+npm i -D @yoyaflow/yoya-compiler @babel/parser   # 报 Cannot find package '@babel/parser' 就是漏了这条
 ```
 
-**不需要配置**：`--core` 默认就是包自带的 core；`--runtime` 默认写 `./compiler-runtime.js`（用打包器时
-指到 `@yoyaflow/yoya-ui/compiler-runtime`）。
+**不需要配置**：`--core` 默认就是 `@yoyaflow/yoya-core`；`--runtime` 默认写 `./compiler-runtime.js`
+（用打包器时指到 `@yoyaflow/yoya-ui/compiler-runtime`；那个子路径是
+`@yoyaflow/yoya-core/compiler-runtime` 的转发壳）。
 
 ```bash
 # 编译一个形状（落在 src/generated/row.js）
@@ -234,10 +236,10 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 import * as core from '@yoyaflow/yoya-ui/core';
 
 const result = compileFile({
-  file: 'src/Row.js',
+  file: 'packages/yoya-ui/src/Row.js',
   component: 'Row',
   mode: 'element',
-  out: 'src/generated/row.js',
+  out: 'packages/yoya-ui/src/generated/row.js',
   core,
   runtime: '@yoyaflow/yoya-ui/compiler-runtime'
 });
@@ -407,10 +409,10 @@ import { buildComponentRegistry } from '@yoyaflow/yoya-ui/compiler';
 
 buildComponentRegistry({
   entries: [
-    { file: 'src/components/status-dot.js', export: 'StatusDot' },
-    { file: 'src/components/status-tag.js', export: 'StatusTag' }
+    { file: 'packages/yoya-ui/src/components/status-dot.js', export: 'StatusDot' },
+    { file: 'packages/yoya-ui/src/components/status-tag.js', export: 'StatusTag' }
   ],
-  dir: 'src/generated/components',
+  dir: 'packages/yoya-ui/src/generated/components',
   core
 });
 ```
@@ -498,7 +500,7 @@ buildComponentRegistry({
 `child(vCard(…))` / `child(ArrowDownOutlined())` 这类库内组件调用开箱即用。
 
 - **形状推导，不写名单**：`scripts/compiler-registry.mjs` 扫 `src`（排除 `examples`、测试与
-  `src/compiler`）的顶层导出并**逐个试着编**，编得出来就进注册表；编译器仍然不认识任何组件名；
+  `packages/yoya-ui/src/compiler`）的顶层导出并**逐个试着编**，编得出来就进注册表；编译器仍然不认识任何组件名；
 - **键按包名**：条目键是 `@yoyaflow/yoya-ui#<导出名>`，所以从 `.` / `/ui` / `/data-display` 哪个入口
   import 都命中同一条目（`component-key.js` 的 `packageNameOf`）；
 - **两个文件各司其职**：`dist/yoya.compiled-registry.js` 是运行期面（`bind` / `render` / `hash` /

@@ -124,7 +124,7 @@ For the field-access rules see §7.3.
 
 - Keep native names for basic HTML elements: `button()`, `div()`, `input()`.
 - Compound component factories use the `v` prefix with PascalCase names: `vButton`, `vCard`, `vStatusBadge`.
-- **Attribute contract** (the attribute migration; enforced as a shrink-only baseline by `src/testing/gates/attribute-migration-baseline.test.js`):
+- **Attribute contract** (the attribute migration; enforced as a shrink-only baseline by `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`):
   - **Identity**: the component's view root writes `vn: 'VXxx'` (the export name); internal blocks write their
     own `vn: 'VXxxPart'`. A wrapper sharing one root writes several names (`vn: 'VTimer VInput'`, whitespace
     separated — any name matches). Identity is an **object fact** (the check reads it) that also **reaches the
@@ -170,7 +170,7 @@ yoya-ui state is driven by the built-in Signals: a component holds state in `ref
 
 #### 6.0 Two shapes side by side: centralised snapshot (legacy) vs read-value binding (target)
 
-The 0.6 → 0.7 attribute migration was an **equivalence migration**: the old "state + `_syncXxx()` writes snapshots" shape was moved over as-is, so the golden file (`src/testing/gates/migration-equivalence.test.js`) could prove byte for byte that only class names / identity changed. **Do not copy that shape in new code** — state → view goes through read-value bindings:
+The 0.6 → 0.7 attribute migration was an **equivalence migration**: the old "state + `_syncXxx()` writes snapshots" shape was moved over as-is, so the golden file (`packages/yoya-ui/src/testing/gates/migration-equivalence.test.js`) could prove byte for byte that only class names / identity changed. **Do not copy that shape in new code** — state → view goes through read-value bindings:
 
 ```js
 // legacy shape (migration stock, only-decrease): state in a closure, mapping centralised in one function
@@ -203,19 +203,19 @@ Three hard rules:
 2. **"Only written once touched" attributes** use an `xxxSet` flag plus a read-value binding (keeps the byte-for-byte "untouched means no DOM attribute" semantics).
 3. **No write-then-flush batch**: nothing beyond `flush()` on a region, no `markDirty()` + rAF deferred writes; after a command runs, the DOM is correct on the same tick.
 
-**A boundary that is easy to hit** (engine contract, covered by `src/core/binding-landing.test.js`): a binding is **evaluated once at build time** and only **subscribes on landing** — so writes made between build and landing do not reach the first paint, and **component props land exactly in that window** (props are applied after the build). Components written with read-value bindings must therefore close the loop where they write state: call `node.flush()` on the view root for **values** (idempotent, no DOM write when unchanged). For **structure, prefer not to rebuild**: `mountable()` for conditional presence, `keyed()` for lists, `replaceChildren()` to swap content — `rebuildable()` is reserved for "the whole block really must be rebuilt" (see §6.1). After landing the subscriptions take over. Note also that bindings registered on a region node itself are released together with that region's run — register them on the parent/sibling instead, or re-register inside the region builder.
+**A boundary that is easy to hit** (engine contract, covered by `packages/yoya-core/src/core/binding-landing.test.js`): a binding is **evaluated once at build time** and only **subscribes on landing** — so writes made between build and landing do not reach the first paint, and **component props land exactly in that window** (props are applied after the build). Components written with read-value bindings must therefore close the loop where they write state: call `node.flush()` on the view root for **values** (idempotent, no DOM write when unchanged). For **structure, prefer not to rebuild**: `mountable()` for conditional presence, `keyed()` for lists, `replaceChildren()` to swap content — `rebuildable()` is reserved for "the whole block really must be rebuilt" (see §6.1). After landing the subscriptions take over. Note also that bindings registered on a region node itself are released together with that region's run — register them on the parent/sibling instead, or re-register inside the region builder.
 
 **How a component is written (settled 2026-09-22)**: components are always defined with a **named function declaration** — **one business component function = one component boundary** (`function VXxx() { return vNode((api) => …) }`) — and the **whole tree lives in that final `return`**; do not split every block into its own function (reading the structure then means jumping around). Only lift a block into a named function when it is **reused elsewhere or carries behaviour of its own** (shape A thin factory / shape B vNode). Structure is **nested through setupFunction** by default: `factory(options, (node) => { node.style(binding); node.child(…); })` — statics in the factory options, bindings and children in the callback; do not chain `span({…}).style(…)` outside the factory call.
 
 **Props, attributes and styles**:
 
-- **Destructure in the parameter list, spread the rest like JSX**: `function VXxx({ count, ...rest } = {})`, then `factory({ ...rest, vn: 'VXxx' }, …)` — `class` / `attrs` / `style` / `onXxx` are classified by the engine's key table (`src/core/setup-keys.js`), so there is no manual split and no second forwarding step.
+- **Destructure in the parameter list, spread the rest like JSX**: `function VXxx({ count, ...rest } = {})`, then `factory({ ...rest, vn: 'VXxx' }, …)` — `class` / `attrs` / `style` / `onXxx` are classified by the engine's key table (`packages/yoya-core/src/core/setup-keys.js`), so there is no manual split and no second forwarding step.
 - **Attributes and styles are written as JSON objects**: `node.attr({ … })` / `node.style({ … })` (value positions still take handles and zero-argument readers).
-- **Static styles live in `src/yoya.ui.css`** (`[vn~='VXxx'] …`, state-dependent geometry as `[data-*]` rules); the component's JS keeps only the bindings that follow state.
+- **Static styles live in `packages/yoya-ui/src/yoya.ui.css`** (`[vn~='VXxx'] …`, state-dependent geometry as `[data-*]` rules); the component's JS keeps only the bindings that follow state.
 - **Content and text are data too**: a plain prop value is a snapshot, a handle is live (normalise with the core helper `asSignal(value)`); strings/handles go straight into a value position (`child(value)`), while **node content is placed at build time** (swapping nodes at runtime means rebuilding the component). Commands only write data — no part handles, no `replaceChildren`.
 - **"Is there content?" becomes a data-driven attribute** (`data-standalone` and friends) that CSS uses as a switch; **do not use `:has(> … > *)` for it** — that selector only matches element children, so plain-text content never matches.
 
-Reference implementation: `src/data-display/badge.js` plus the VBadge block in `src/yoya.ui.css`.
+Reference implementation: `packages/yoya-ui/src/data-display/badge.js` plus the VBadge block in `packages/yoya-ui/src/yoya.ui.css`.
 
 **Rule quick-list (from the VBadge cut; full text in `AGENTS.md` → Component Writing Rules)**: R1 one business component function = one boundary · R2 the whole tree in that final `return` (no intermediate node variables, no per-block functions unless reused or stateful) · R3 destructure props in the parameter list and spread `...rest` into the root factory · R4 attributes/styles go into the factory options (`attrs` / `style` / top-level `data-*`) whenever possible · R5 static styles live in `yoya.ui.css`, JS keeps only state-driven bindings · R6 `computed` for ref-derived values, zero-argument readers for anything that reads structure · R7 `mountable()` / `cond ? null : node` / `keyed()` instead of rebuilding · R8 close the build → landing window for post-build writes · R9 prefer handle props over new commands · R10 configurable geometry goes through CSS variables · R11 use `vSlot` parts (the `VCardHeader` shape) only when callers can deliver into **two or more** insertion points; a component with a single content position (VBadge) pins the position instead · R12 part identity is the caller's writing surface — internal blocks the component computes itself (`VBadgeCount`) are not a delivery API. Per-component choices (content channel, keeping commands, `:has()`) are listed in the same section — do not copy them blindly.
 
@@ -232,7 +232,7 @@ function ServiceBadge() {
 
 Reading props at build time initialises state in one go (the first evaluation is already the final value). Everything dispatched **after** the build — positional arguments, the `.setup()` callback, a command called before the view lands — falls inside the "build → landing" window described above: the engine closes it once at the end of a component's build frame, and a component closes it for its own commands (`if (!self.node()._el) self.node().flush()`). One more consequence: bindings that read **structure** (does this component have content?) must be zero-argument readers, not `computed(…)` — a computed caches on its reactive inputs only, so a structural read would stay stale, while a reader is re-read on every flush.
 
-Gate: `src/testing/gates/view-binding-baseline.test.js` + `src/testing/baselines/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/testing/gates/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
+Gate: `packages/yoya-ui/src/testing/gates/view-binding-baseline.test.js` + `packages/yoya-ui/src/testing/baselines/view-binding-baseline.json` freeze the remaining "centralised snapshot functions" (**only-decrease**; new files must have none). After each migration cut run `UPDATE_VIEW_BINDING_BASELINE=1 npx vitest run src/testing/gates/view-binding-baseline.test.js`. The reason is not only readability: imperative snapshot writing **cannot be compiled** — anything that is not "static structure + live values + conditionals/lists" falls back to the general path.
 
 ### 6.1 Rebuildable regions
 
@@ -463,7 +463,7 @@ touch the child list inside their own render path.
 ### Element-level ops: how component code touches the DOM
 
 Component code never reads `_el` and never calls `renderDom()` (`renderDom()` is the **build** entry — it
-creates DOM, and on the SSR path it touches `document`). The gate `src/testing/gates/dom-access-baseline.test.js` freezes
+creates DOM, and on the SSR path it touches `document`). The gate `packages/yoya-ui/src/testing/gates/dom-access-baseline.test.js` freezes
 both at zero for library code and keeps a written allow-list for the node-type extensions whose element really
 is their product. Everything else goes through these ops (declared on `ViewNode`, delegated to the view root on
 component nodes, shadowable by component commands):

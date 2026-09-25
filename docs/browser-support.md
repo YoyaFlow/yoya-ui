@@ -62,7 +62,7 @@ but not `light-dark()`** the interface is complete; only the palette drops back 
 
 - **Color token fallback layer**: the preset skin wraps a **plain-value** token table in
   `@supports not ((color: light-dark(…)) and (color: color-mix(…)))`, with a key set **exactly equal** to the tokens
-  whose primary value needs those two functions — forget to cover a new token and `src/testing/gates/theme-tokens.test.js` fails on
+  whose primary value needs those two functions — forget to cover a new token and `packages/yoya-ui/src/testing/gates/theme-tokens.test.js` fails on
   the spot. Inside there are three mode blocks: light, `[data-yoya-mode='dark']`, and `system` at night
   (`@media (prefers-color-scheme: dark)`).
 - **Do not treat `var(--token, fallback)` as a degradation strategy**: a CSS variable fallback only applies when the
@@ -130,7 +130,7 @@ For the visual check, open a demo page under `dist/examples/` and switch `data-y
 none of the three should show "transparent backgrounds, default-black text".
 
 In the repository this line is held by three things: `browserslist` in `package.json` (the declaration),
-`src/testing/gates/theme-tokens.test.js` (key-set and plain-value invariants of the fallback layer), and `src/testing/gates/css-contract.test.js`
+`packages/yoya-ui/src/testing/gates/theme-tokens.test.js` (key-set and plain-value invariants of the fallback layer), and `packages/yoya-ui/src/testing/gates/css-contract.test.js`
 (the shell composition rule and its fallback).
 
 ## 7. Raising the baseline
@@ -161,5 +161,5 @@ through a canvas before comparison; 2026-09-24):
 
 The smallest way to re-run this is §6: one capability probe to see which branch you are on, then a demo page under
 `dist/examples/` with `data-yoya-mode` cycled through light / dark / system. In the repository the invariants are held by
-`browserslist`, `src/testing/gates/theme-tokens.test.js` and `src/testing/gates/css-contract.test.js` — the last of which now also asserts that every
+`browserslist`, `packages/yoya-ui/src/testing/gates/theme-tokens.test.js` and `packages/yoya-ui/src/testing/gates/css-contract.test.js` — the last of which now also asserts that every
 `scrollbar-width: none` has a `::-webkit-scrollbar` counterpart.

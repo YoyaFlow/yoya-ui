@@ -31,7 +31,7 @@ src/
       utils/               # 模块内小工具与常量
 ```
 
-- **两层 `api/` 含义不同**：`src/api/` 是全局传输层；`features/**/api/` 是域内请求命令、结果结构与状态。这是最容易看混的一处。
+- **两层 `api/` 含义不同**：`packages/yoya-ui/src/api/` 是全局传输层；`features/**/api/` 是域内请求命令、结果结构与状态。这是最容易看混的一处。
 - **模块自包含**：叶子模块只依赖自己的 api / components / pages / utils。
 - **依赖方向**：跨模块唯一允许的引用是对方的 `api/<域>.req.js`；`shared → features/<域>/api/req.js` 是允许的公开单向依赖，不 import 别域的 pages / components / state 内部。
 - **简单页只放一个文件**：无数据交互的简单/占位页只放 `pages/<名字>-page.js`（可复用 shared 的占位页组件）；有数据交互的页面才展开 api / components / pages / utils 四件套。
@@ -131,7 +131,7 @@ export function MemberListPage() {
 
 判据：有管理动作用 `mgr.js`；只对外提供查询/能力用 `req.js`；两者可并存（`member.mgr.js` + `member.req.js`）。
 
-通讯契约从独立入口 `@yoyaflow/yoya-ui/api` 导出（root / core 不再导出）。传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
+通讯契约从独立入口 `@yoyaflow/yoya-ui/api` 导出（root / core 不再导出）。传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`packages/yoya-ui/src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
 
 ## 请求命令范式
 

@@ -140,7 +140,7 @@ Component identity no longer lives on class names (§7), so this is an ordinary 
 - **Preset rules always start from the identity**: selectors in `yoya.ui.css` are `[vn~="VXxx"] …` (no orphan part selectors), so replacing the identity detaches the whole subtree from preset styles in one step — state hooks included (`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` stops applying).
 - **Class names are not identity**: the old `yoya-component` / `yoya-v*` families are gone (ticket 15, wave 6); the shared base rule is `[vn]`. Cross-component capability classes stay: `yoya-<feature>` (`yoya-icon`, `yoya-layout`, `yoya-control-clear`).
 - State always uses kebab-case `data-*` attributes; class names do not carry state.
-- Guarded by `src/testing/gates/attribute-migration-baseline.test.js` (the class-name stock is zero and can never grow) and `src/testing/gates/preset-scope.test.js` (every rule in the skin starts from an identity the library really declares), plus `src/testing/gates/css-contract.test.js` for the concrete rules.
+- Guarded by `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js` (the class-name stock is zero and can never grow) and `packages/yoya-ui/src/testing/gates/preset-scope.test.js` (every rule in the skin starts from an identity the library really declares), plus `packages/yoya-ui/src/testing/gates/css-contract.test.js` for the concrete rules.
 
 ### Theme switch JS API (optional)
 
@@ -210,9 +210,9 @@ vThemeModeSwitch((sw) => {
 
 ## 10. Contract tests
 
-- `src/testing/gates/css-contract.test.js`: static CSS rule coverage for component identity (`[vn~="VXxx"] …`) and state hooks.
-- `src/testing/gates/attribute-migration-baseline.test.js`: class-name stock is zero and can never grow (`yoya-component` / `yoya-v*`).
-- `src/testing/gates/className-contract.test.js`: className literals must stay inside the surviving families (capability classes `yoya-<feature>`), dynamic templates, and kebab-case `data-*` validation.
-- `src/testing/gates/preset-scope.test.js`: every preset rule is scoped to an identity the library really declares (no orphan selectors).
-- `src/testing/gates/cascade-layer.test.js`: `@layer yoya` structure.
-- `src/testing/gates/theme-tokens.test.js`: raw palette, variant derivation, single definitions, mode/density switches, and stable token names.
+- `packages/yoya-ui/src/testing/gates/css-contract.test.js`: static CSS rule coverage for component identity (`[vn~="VXxx"] …`) and state hooks.
+- `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`: class-name stock is zero and can never grow (`yoya-component` / `yoya-v*`).
+- `packages/yoya-ui/src/testing/gates/className-contract.test.js`: className literals must stay inside the surviving families (capability classes `yoya-<feature>`), dynamic templates, and kebab-case `data-*` validation.
+- `packages/yoya-ui/src/testing/gates/preset-scope.test.js`: every preset rule is scoped to an identity the library really declares (no orphan selectors).
+- `packages/yoya-ui/src/testing/gates/cascade-layer.test.js`: `@layer yoya` structure.
+- `packages/yoya-ui/src/testing/gates/theme-tokens.test.js`: raw palette, variant derivation, single definitions, mode/density switches, and stable token names.

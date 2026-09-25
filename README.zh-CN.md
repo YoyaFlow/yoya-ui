@@ -99,17 +99,21 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
 1. **一个 script 标签。** 就是上面的快速开始：CDN、真实页面、零工具链。
 2. **渐进式增强。** `bindTo()` 把一块交互挂进已有页面 —— 静态 HTML、PHP / JSP 页面、Vue / React
    应用都行。加一块，其余部分原样不动。
-3. **npm 与模块化。** `npm install @yoyaflow/yoya-ui`，再按入口按需引入：
+3. **npm 与模块化。** `npm install @yoyaflow/yoya-ui`（会自动带上 `@yoyaflow/yoya-core`）；
+   只要引擎原语就 `npm install @yoyaflow/yoya-core`。再按入口按需引入：
 
    ```js
-   import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 引擎、HTML/SVG、信号
+   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自备 echarts）
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自备 three）
    import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // 路由 + SSR
-   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // 通讯辅助
+   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // 通讯辅助
    import '@yoyaflow/yoya-ui/ui.css'; // 组件皮肤与主题变量
    ```
+
+   > 要用构建期编译器：`npm i -D @yoyaflow/yoya-compiler @babel/parser`。编译产物的运行期钩子在
+   > `@yoyaflow/yoya-core/compiler-runtime`（只有编译过的项目才会加载它）。
 
 4. **完整应用：SPA 或 SSR。** 整站单页应用不需要额外一层——内置路由（`history` / `hash` 模式、
    参数、守卫、404、`vLink`、`vRouterViews`）加上组件分类与 `ref` 状态，同样不强制构建步骤；
@@ -207,15 +211,16 @@ Toast UI Viewer 与 `vThree` 工厂沙盘）。扩展写法与跨库对照见
 
 Star 数说明关注度，不说明正确性，所以下面这些都可以直接查：
 
-| 信号       | 当前值                                                            | 怎么验证                                                                        |
-| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                           |
-| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                      |
-| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                             |
-| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `src/testing/integration/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) |
-| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表               | `npm run build && npm run verify:dist`                                          |
-| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md)  |
-| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)          |
+| 信号       | 当前值                                                            | 怎么验证                                                                                         |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                                            |
+| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                                       |
+| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                                              |
+| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) |
+| 产物校验   | exports↔dist、两包互不内联、宿主单例冒烟、`.full` 自包含、体积表  | `npm run build && npm run verify:dist`                                                           |
+| 包边界     | core 不依赖组件；快线把 core 当 peer；编译器不认识组件            | `npm run verify:packages`                                                                        |
+| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md)                   |
+| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)                           |
 
 这是一个早期项目：Star 少、没有历史生态包袱，优先级仍然可以影响。评估它时请看仓库本身——测试、
 规范文档、与 Web 标准对齐的 API。更完整的说明（包括我们接受的取舍）见
@@ -255,13 +260,20 @@ Star 数说明关注度，不说明正确性，所以下面这些都可以直接
 ## 构建产物与体积
 
 ```bash
-npm run build        # packages/*/dist（模块镜像）+ dist/examples/ + 体积表
-npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟、README 体积表
+npm run build        # packages/*/dist（发布面 + 模块镜像）+ dist/examples/ + 体积表
+npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟、`.full` 自包含冒烟、README 体积表
 ```
 
-两个包的产物都是 **preserveModules 的模块镜像**（`dist` 就是 `src` 的模块结构），不预压缩——
-压缩交给使用者的打包器。`@yoyaflow/yoya-ui` 的产物里 `@yoyaflow/yoya-core/*` 一律是外部依赖，
-**不内联 core**；单例由 peerDependency 保证（双副本会让 `instanceof` / 身份判定失配）。
+仓库是 **五个包的 monorepo**（`packages/*`）：`yoya-core`（慢线：原语 + 组件作者契约）、
+`yoya-ui`（快线：组件 / layout / router / 主题 / 扩展）、`yoya-compiler`（构建期编译器）、
+`contract`（跨包契约测试）、`create-yoya-ui`（脚手架）。产物有两层：
+
+- **发布面**：旧命名入口 + `.min`（`dist/yoya.ui.js`、`dist/yoya.ui-router.full.js` …）。增量入口是
+  "单行转发、core 走 peer"；`yoya.core.js` / `yoya.api.js` / 三个 `.full` 是**自包含**（core 内联成单文件）；
+- **模块镜像**：`dist/core/**`、`dist/actions/**` …（preserveModules）—— 这是 `/internal/*` 深引用的稳定落点。
+
+单例口径：**非-full 入口**只通过 peerDependency 共享一份 core（双副本会让 `instanceof` / 身份判定失配）；
+`.full` 是自包含单文件，**不与 core 包混用**（详见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) 的禁忌）。
 
 下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
 ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
@@ -319,19 +331,18 @@ npm run examples:html # 示例站（http://localhost:5173）
 ```
 
 ```text
-src/
-  core/        ViewNode/ElementNode 核心、signals、i18n、theme、id 分配、SSR 辅助
-  html/ svg/   HTML/SVG 元素工厂
-  layout/      布局工厂
-  actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
-               官方组件分类
-  components/  组件聚合与共享逻辑
-  testing/     跨模块集成测试、口径门禁、基线
-  index.js     开发期聚合入口
-examples/      示例站（SSR 演示与可复制指南）
-scripts/       入口构建、体积报表
-types/         随包发布的全部入口 TypeScript 声明
-docs/          公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）
+packages/
+  yoya-core/      慢线：core（节点/信号/SSR/i18n/theme/access/context/a11y）+ html + svg + 组件作者契约
+  yoya-ui/        快线：layout / actions / navigation / feedback / form / data-display / async /
+                  i18n / theme / router / chart / three + 皮肤（yoya.ui.css）+ 类型
+  yoya-compiler/  构建期编译器（形状驱动、不认识组件；bin: yoya-compiler）
+  contract/       跨包契约测试 + 全仓门禁（不进包）
+  create-yoya-ui/ 脚手架（模板依赖钉当前版本）
+examples/         示例站（SSR 演示与可复制指南）
+scripts/          构建、体积报表、包边界 / 产物门禁
+docs/             公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）
+benchmark/        基准与体积数据源
+skills/           Codex 技能（与仓库文档同步）
 ```
 
 ## 许可证

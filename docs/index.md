@@ -21,6 +21,8 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`ssr.md`](ssr.md)                                                             | Server-side rendering integration guide                      | Rebuilt                       |
 | [`theme.md`](theme.md)                                                         | Theme and styling spec                                       | Rebuilt                       |
 | [`devtools.md`](devtools.md)                                                   | DevTools guide                                               | Rebuilt                       |
+| [`packages.md`](packages.md)                                                   | Monorepo layout: five packages, boundaries, publish face     | New                           |
+| [`src-layout-migration-plan.md`](src-layout-migration-plan.md)                 | src-layout / monorepo migration plan and ledger              | New                           |
 | [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)      | Rebuilt                       |
 | [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element            | Moved from `README.md`        |
 | [`browser-support.md`](browser-support.md)                                     | Browser baseline, degradation ledger, older-browser recipes  | New                           |

@@ -15,6 +15,33 @@ Fall back to text search for string literals, configuration, non-code files, or 
 
 ## Local Work Tickets
 
+## 仓库结构（五包 monorepo，2026-09-25 起）
+
+`packages/*` + 两个非发布包：
+
+| 位置                                                  | 内容                                                                                                                                                                               |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/yoya-core/`                                 | **慢线**：节点 / 元素 / 信号 / 调度、`html/` `svg/` 工厂、SSR 原语、i18n·access·context·a11y·theme 原语、**组件作者契约**（`src/core/component-authoring.js`）；**不依赖任何组件** |
+| `packages/yoya-ui/`                                   | **快线**：`layout/ actions/ navigation/ feedback/ form/ data-display/ async/ i18n/ theme/ router/ chart/ three/` + 皮肤 `yoya.ui.css` + `types/`；core 是它的 peer                 |
+| `packages/yoya-compiler/`                             | 构建期编译器（形状驱动、**不认识组件**）；`bin: yoya-compiler`                                                                                                                     |
+| `packages/contract/`                                  | 跨包契约测试 + 全仓门禁（结构 / DOM 访问 / 视图绑定基线）；**不进包**                                                                                                              |
+| `packages/create-yoya-ui/`                            | 脚手架与模板                                                                                                                                                                       |
+| `examples/` `scripts/` `docs/` `skills/` `benchmark/` | 示例站 / 构建与报表脚本 / 公开指南 / Codex 技能 / 基准数据源                                                                                                                       |
+
+动代码前记住四条（都有门禁，跑 `npm run verify:packages`）：
+
+1. **core 不依赖组件**：`packages/yoya-core/src` 里没有组件域、也不 import 快线；
+2. **快线把 core 当 peer**（不写进 `dependencies`，否则带副本破坏单例）；
+3. **编译器不认识组件**：不允许按组件名分支 / 组件清单；库内知识只有三张接口表（元素白名单**由 core 工厂推导**、
+   库内纯值 / 助手、内容助手），注册表是**数据**；
+4. **运行期两选一**：只装 `core`，或装 `ui`（带 core peer）。编译产物的运行期钩子在
+   `@yoyaflow/yoya-core/compiler-runtime`；`@yoyaflow/yoya-ui/compiler{,-runtime}` 与 `/compiled-registry`
+   是**转发壳**（发布路径兼容）。
+
+发布面（`@yoyaflow/yoya-ui`）与 0.7.0 保持同路径：`dist/yoya.*.js` + 扁平 `types/yoya.*.d.ts`；
+增量入口不内联 core，`yoya.core.js` / `yoya.api.js` / 三个 `.full` 自包含（core 内联）。
+详见 `docs/packages.md` 与 `docs/src-layout-migration-plan.md`。
+
 Local tickets are the source of truth for pending tracer-bullet work. They live under
 `.scratch/<feature-slug>/issues/*.md` (one ticket per file); `.scratch/` is intentionally
 git-ignored. When the user asks about “工作票” or remaining tasks, inspect the newest ticket
@@ -23,7 +50,8 @@ set by directory modification time before answering.
 `.scratch/` 在 2026-09-25 清理过一轮：**已完成的过程类票、探针脚本、一次性 patch、命令输出全部删除**，
 目录表与清理口径见 `.scratch/README.md`。仍然保留的入口：
 
-- `.scratch/vnode-convergence/issues/17-handoff.md`：**交接现场**（当前状态、硬口径、每刀执行清单）；
+- `.scratch/src-layout/`：**当前活跃票集**（`README.md` + `issues/01`–`07` + `MIGRATION-NOTES.md` + `tools/`）；
+- `.scratch/vnode-convergence/issues/17-handoff.md`：vnode 收敛的**历史交接现场**（口径仍有效）；
 - `.scratch/vnode-convergence/issues/19-component-writing-rules.md`：写法规则 R1–R12 / 四维度判据怎么逐条查；
 - `.scratch/vnode-convergence/issues/18`–`24` + `.scratch/compiler-landing/issues/`：还没做完的编译器 / 视图根 / 页面壳 / 自定义节点票；
 - `.scratch/component-typing/issues/08-vnode-command-surface-inference.md`：`vNode` 命令面推断（**暂不实现**）；
@@ -51,7 +79,7 @@ set by directory modification time before answering.
    接口表——元素白名单（由 core 工厂推导）、库内纯值 / 助手（按导入来源识别）、内容助手（同）；
    其它一律靠形状规则读，读不出就回落。表变大必须显式说明"为什么这是接口，不是组件"。
 5. **双向隔离**：编译器逻辑不入侵业务代码，**业务代码也不得被搬进编译工具**。工具侧
-   （`src/compiler`、`scripts/compiler-*`、插件 / CLI / 覆盖率脚本、`types`）里不允许出现业务侧的
+   （`packages/yoya-ui/src/compiler`、`scripts/compiler-*`、插件 / CLI / 覆盖率脚本、`types`）里不允许出现业务侧的
    函数名 / 组件名 / 路径 / 表名 / 选择器 / 结构常量，也不允许把某个应用的实现整份搬来做"真源"或夹具；
    夹具只能用**中性形状**（`Card` / `Item` 这类），而且只存在于测试里、绝不随包发布。
    反向同样成立：业务代码里不得出现编译产物的名字（生成模块、工厂名、scope）——见第 1 条。
@@ -131,7 +159,7 @@ function RateCard() {
 ### 属性契约：`vn` / `vn_slot`（属性化迁移，票 15）
 
 组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名**已退场**（属性化迁移收口，基线清零、只减不增）。
-门禁在 `src/testing/gates/attribute-migration-baseline.test.js`；口径细则见 `docs/component-authoring{,.zh-CN}.md` §7.3 与
+门禁在 `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`；口径细则见 `docs/component-authoring{,.zh-CN}.md` §7.3 与
 `.scratch/vnode-convergence/issues/19-component-writing-rules.md`。
 
 1. **身份 = `vn` 对象事实 + 真 DOM 属性**：视图根写 `vn: 'VXxx'`（值 = 导出名；包装型多值空格分隔，
@@ -158,7 +186,7 @@ function RateCard() {
 
 CSS 迁移对照（迁移已完成）：`.yoya-component` → `[vn]`、`.yoya-vcard` → `[vn="VCard"]`、
 `.yoya-vcard-header` → `[vn="VCardHeader"]`、`.yoya-vcarousel-arrow--prev` → `[vn="VCarouselArrow"][data-dir="prev"]`。
-门禁仍在 `src/testing/gates/attribute-migration-baseline.test.js`（空基线，只减不增）：新代码写类名身份会当场红。
+门禁仍在 `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`（空基线，只减不增）：新代码写类名身份会当场红。
 
 ### 节点类型扩展（引擎内部，不是第三种组件形态）
 
@@ -183,7 +211,7 @@ B 形态里需要元素级行为的组件，视图根就是这样一个节点类
   数组 = 子节点列表、对象 = options、同类实例 = 复用；`Factory(options, setup)` 与变参都合法。
 - **options 里子工厂不参与分派**：与子工厂同名的键按**属性**写（`div({ slot: 't-head' })` 是属性，
   不是创建 `<slot>` 子元素）；组件自有方法照旧调用（`vDialog({ title })` 是 props）；`attrs` / `style`
-  是显式通道。键分类的唯一真源是 `src/core/setup-keys.js`。
+  是显式通道。键分类的唯一真源是 `packages/yoya-core/src/core/setup-keys.js`。
 - **内容与槽位**：未标记的 `child(...)` 进组件根元素内部（普通元素语义）；带 `slot` 标记的内容按
   **就近作用域**进直接父组件的同名槽位，一个槽一份内容，找不到槽位不 mount；多根组件不接受未标记内容。
 - **部件（part）**：位置归组件自己的多处插入点（卡片头 / 体 / 尾等）用 `vSlot('name')` 零布局占位声明
@@ -252,7 +280,7 @@ export function VXxx({ count = null, ...rest } = {}) {
 - **R2 一棵树**：整棵树写在最后那个 `return` 里，子节点用回调往下嵌；不往 `return` 外面提中间节点
   变量，也不为"看起来整齐"把每块提成函数（要**复用**或**自带行为**才提）。
 - **R3 参数**：props 在参数表里解构；`...rest` 照 JSX 摊进根元素工厂（`{ ...rest, vn: 'VXxx' }`），
-  `class` / `attrs` / `style` / `onXxx` 交给引擎的键分类表（`src/core/setup-keys.js`）；`vn` 写在最后。
+  `class` / `attrs` / `style` / `onXxx` 交给引擎的键分类表（`packages/yoya-core/src/core/setup-keys.js`）；`vn` 写在最后。
   **`children` 也从 props 里解构出来、由结构落位**（`function VXxx({ children, ...rest })` +
   `node.child(children)`）：它归"内容"，位置由组件自己定，不该混进 `rest` 当值合并
   （编译器两条通道都能按"内容在结构之前"落位，但显式解构最省事、也最不容易误读——见票 18 §2.2）。
@@ -273,7 +301,7 @@ export function VXxx({ count = null, ...rest } = {}) {
   不重复求值"的契约照旧（`binding-ownership.test.js`）；这类绑定写完数据要自己 `flush()`，
   结构变化走区域 `rebuild()`。
 - **R9 数据驱动优先**：props 给句柄就是活值（核心助手 `asSignal(value)`：句柄原样返回、普通值包
-  `ref`，见 `src/core/signals/handle.js`）。**归一化要放在"读"的时候**：`Boolean(prop)` /
+  `ref`，见 `packages/yoya-core/src/core/signals/handle.js`）。**归一化要放在"读"的时候**：`Boolean(prop)` /
   `Number(prop)` / `prop || 默认值` 写在构建期会把传进来的句柄**吃成常量**（静默丢活值）——
   状态存"句柄原样 / 普通值包 `ref`"，映射写成 `computed(() => …)`，命令写这份状态句柄。
   能靠句柄表达的更新就不要新加命令；有命令的组件，命令**只改状态 / 只写数据**，不搬结构
@@ -337,7 +365,7 @@ export function VXxx({ count = null, ...rest } = {}) {
 - **节点内容只在构建期落位**：要运行期换的是文本（传句柄 / 走 `text()`）；要换节点就重建组件。
   这样组件里没有部件句柄、也没有 `replaceChildren`。
 
-参考实现：`src/data-display/badge.js` + `src/yoya.ui.css` 的 VBadge 段。
+参考实现：`packages/yoya-ui/src/data-display/badge.js` + `packages/yoya-ui/src/yoya.ui.css` 的 VBadge 段。
 
 **其余既有口径仍然适用**：
 
@@ -354,7 +382,7 @@ export function VXxx({ count = null, ...rest } = {}) {
   （定义里给根留个名字，`view.setup(elementConfig)`）。**别写 `self.node().setup(elementConfig)`**：
   `self.node()` 是组件节点，它的 `setup()` 会再进一次 `api.setupObject` → 自递归（栈溢出）。
   `self.node()` 的用途只有两个：`child()`（部件投影）与元素级委派（`attr` / `style` / `on` …）。
-  回归用例：`src/components/component-props-dispatch.test.js`（10 个组件逐个验非命令键）。
+  回归用例：`packages/yoya-ui/src/components/component-props-dispatch.test.js`（10 个组件逐个验非命令键）。
 - **构建之后落位的写入要收口**：props 在构建期就读到（绑定首评即终值）；位置参数、`.setup()` 回调、
   以及"建好还没落地就用命令配置"都落在「构建 → 落地」窗口里（那里绑定只求值一次、落地才订阅）。
   引擎在**组件构建帧末**收口一次；组件自己的命令要自收口：
@@ -364,14 +392,14 @@ export function VXxx({ count = null, ...rest } = {}) {
 - 视图根要留个名字（要返回它、props 里的元素级配置也落在它上面）；命令里碰组件自己用 `self.node()`，
   子部件句柄只在"命令要写它"时才在构建期取。
 
-参考实现：`src/data-display/badge.js`（`VBadge` + `VBadgeContent` / `VBadgeCount` / `VBadgeText`）。
+参考实现：`packages/yoya-ui/src/data-display/badge.js`（`VBadge` + `VBadgeContent` / `VBadgeCount` / `VBadgeText`）。
 
 ### 容器组件：props 只收数据、结构一次写清、命令写在部件回调里（2026-09-23 定稿，参考实现 `VTable`）
 
 有"结构键"（键名与命令 / 工厂同名，如表格的 `vThead` / `vTbody` / `vTfoot` / `vTr`）的容器组件按这套写：
 
 - **props 只收数据 + 元素选项**：`function VXxx({ 数据键, ...rest })`，`...rest` 照 JSX 摊进根元素工厂。
-  **结构键写进 props 直接报错**（守卫见 `src/data-display/table.js` 的 `assertVTableStructure`：不报错就会
+  **结构键写进 props 直接报错**（守卫见 `packages/yoya-ui/src/data-display/table.js` 的 `assertVTableStructure`：不报错就会
   被当成同名 DOM 属性静默写下去），报错消息里指路"结构走命令"。
 - **部件常驻、结构一次写清**：容器自己该有的部件（表格的 `caption` / `thead` / `tbody` / `tfoot`）在视图里
   一次写清，不"用过才建"、也不用 `mountable` 表达"有没有"——空部件不渲染内容即可（标题那类靠自己的
@@ -388,7 +416,7 @@ export function VXxx({ count = null, ...rest } = {}) {
 
 **新代码（含迁移中的每个文件）状态到视图一律优先走读值绑定**，不要新增"集中快照函数"。
 
-- 状态放 `ref`（`src/core/signals/handle.js`），结构里挂**读值绑定**：
+- 状态放 `ref`（`packages/yoya-core/src/core/signals/handle.js`），结构里挂**读值绑定**：
   `attr(name, () => …)` / `style(name, () => …)` / `toggleClass(name, () => …)` /
   `child(vText(() => …))`；命令只改状态，**不搬 DOM**。
 - 值位置白名单：`attr` / `style` / `styles` / `toggleClass` / `vText` / `mountable`（函数或句柄 = 活值）。
@@ -399,7 +427,7 @@ export function VXxx({ count = null, ...rest } = {}) {
 - 例外（票 15 §4）："只在调用过才写"的属性用 `xxxSet` 标记 + 读值绑定，保持逐字节一致。
 - 仍然禁止：写完再集中刷（`flush()` / `markDirty()` / rAF 批量写）、构造之后按身份查找再写
   （`querySelector('[vn~=…]')`）、组件里直接操作 `_el` / `_children`。
-- **构建 → 落地窗口要自己收口**（引擎契约，`src/core/binding-landing.test.js` 固化成用例）：
+- **构建 → 落地窗口要自己收口**（引擎契约，`packages/yoya-core/src/core/binding-landing.test.js` 固化成用例）：
   绑定**构建期只求值一次**（`binding-ownership.test.js` 有用例守着"后续渲染不重复求值"），
   **落地时才订阅**依赖；而组件 props 正好落在这个窗口里（props 在 build 之后才应用）。
   所以"props → 命令 → ref"的写法必须由组件自己收口一次：**值** 调视图根的 `node.flush()`
@@ -408,12 +436,12 @@ export function VXxx({ count = null, ...rest } = {}) {
   确实必须重建"，见上文「状态与列表」）。落地之后订阅接管，命令写状态即可。
 - 迁移期存量的历史写法（`syncXxx()` / `_syncXxx()` 把多处 `attr` / `style` / `replaceChildren`
   收在一个函数里、由命令同步调用）**不是错**，但**只减不增**：
-  `src/testing/gates/view-binding-baseline.test.js` + `src/testing/baselines/view-binding-baseline.json` 冻结存量，
+  `packages/yoya-ui/src/testing/gates/view-binding-baseline.test.js` + `packages/yoya-ui/src/testing/baselines/view-binding-baseline.json` 冻结存量，
   新文件一个都不许有；迁移一刀之后用 `UPDATE_VIEW_BINDING_BASELINE=1` 下调。
 - 为什么较真：集中快照把"状态"和"状态→视图的映射"拆到两处（读代码要跳），而且指令式写快照
   **编译路径吃不到**，只能整体回落通用路径——按仓库「编译路径为打榜曝光服务」的定位，
   模板式写法（结构一次写清 + 活值）才是能给编译器接住的形状。
-  `src/testing/gates/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
+  `packages/yoya-ui/src/testing/gates/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
 
 ## TypeScript 配套（0.7.0 起，票 `.scratch/component-typing/`）
 
