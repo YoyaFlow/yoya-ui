@@ -107,17 +107,22 @@ Prefix plus file name is the full URL: `yoya.ui.full.min.js`, `yoya.ui.css`, `yo
 1. **A script tag.** The quick start above: CDN, real page, zero tooling.
 2. **Progressive enhancement.** `bindTo()` mounts one interactive block into an existing page — a
    static HTML file, a PHP / JSP page, or a Vue / React app. Add a block, keep the rest as it is.
-3. **npm and modules.** `npm install @yoyaflow/yoya-ui`, then import per entry point:
+3. **npm and modules.** `npm install @yoyaflow/yoya-ui` (pulls in `@yoyaflow/yoya-core`), or
+   `npm install @yoyaflow/yoya-core` when you only want the engine primitives. Then import per entry:
 
    ```js
-   import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // engine, HTML/SVG, signals
+   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // engine, HTML/SVG, signals
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // official components
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts extension (bring echarts)
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js extension (bring three)
    import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // router + SSR
-   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // transport helpers
+   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // transport helpers
    import '@yoyaflow/yoya-ui/ui.css'; // component skin and theme variables
    ```
+
+   > For the build-time compiler: `npm i -D @yoyaflow/yoya-compiler @babel/parser`. The runtime hooks used
+   > by compiled artifacts live in `@yoyaflow/yoya-core/compiler-runtime` (loaded only by projects that
+   > actually compiled).
 
 4. **A full application: SPA or SSR.** A single-page app needs no extra layer — the built-in router
    (`history` / `hash` modes, params, guards, 404, `vLink`, `vRouterViews`) plus the component
@@ -186,9 +191,8 @@ plugins: [yoyaCompile.vite({ core })]; // compile units = component boundary (vi
 Lists keep their declarative form — `tbody((body) => body.keyed(rows, Row))` — because `keyed()`
 accepts both element rows (`{ el, destroy }`) and node rows and picks the reconciler from the row
 product. Targets are located by **AST symbol identity**, and anything unclear leaves the source alone
-(no target, two same-name declarations, a parameter that is not a single identifier, or an
-unbuildable shape all fall back to the generic path). The rewrite keeps a hires source map, so stack
-traces still point at your source. See
+(no target, two same-name declarations, or an unbuildable shape all fall back to the generic path).
+The rewrite keeps a hires source map, so stack traces still point at your source. See
 [skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md).
 
 ```js
@@ -208,9 +212,9 @@ changes nothing. Full contract (two channels, component registry, page `<templat
 ## Everything is real DOM, so third-party libraries just plug in
 
 The view tree is the DOM tree. A library that mounts into an element — charts, editors,
-spreadsheets, maps — needs one thin node class with a documented lifecycle
-(`renderDom` → init, option update → forward, `destroy` → dispose) and then composes with
-`child()` like a built-in. `vEchart` is the reference implementation:
+spreadsheets, maps — needs one shape-B component with a documented lifecycle
+(a `vNode` closure: `whenMount(host)` → init, option update → forward, `whenDestroy` → dispose)
+and then composes with `child()` like a built-in. `vEchart` is the reference implementation:
 
 - the library instance is handed over in one call (`chart.echartsLib(echarts)`);
 - no wrapper, no adapter layer, no re-packaged dependency;
@@ -225,14 +229,16 @@ cross-library comparison: [docs/interop.md](docs/interop.md).
 
 Star counts measure attention, not correctness, so here is what can be checked directly:
 
-| Signal               | Value                                                                        | How to verify                                              |
-| -------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Runtime dependencies | **0**                                                                        | `package.json` — no `dependencies` block                   |
-| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                | `npm test`                                                 |
-| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests | `npm run typecheck`                                        |
-| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                         | `src/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md)            |
-| Dist verification    | Category isolation, SSR single-core smoke, size budgets, README size tables  | `npm run build && npm run verify:dist`                     |
-| Contract documents   | Component shapes, value positions, lifecycle frozen in writing               | [docs/component-authoring.md](docs/component-authoring.md) |
+| Signal               | Value                                                                                              | How to verify                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Runtime dependencies | **0**                                                                                              | `package.json` — no `dependencies` block                                             |
+| Test suite           | 1000+ cases (DOM, state, router, i18n, access, SSR/hydration)                                      | `npm test`                                                                           |
+| Type declarations    | Root / core / api / ui / router / extensions, checked by consumer type tests                       | `npm run typecheck`                                                                  |
+| SSR determinism      | Render / hydrate / mount covered, DOM-free by design                                               | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`, [docs/ssr.md](docs/ssr.md) |
+| Dist verification    | exports↔dist, no cross-package inlining, host singleton smoke, `.full` self-contained, size tables | `npm run build && npm run verify:dist`                                               |
+| Package boundaries   | core depends on no component; the fast line treats core as a peer; the compiler knows no component | `npm run verify:packages`                                                            |
+| Browser baseline     | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5, with a degradation floor                    | `browserslist`, [docs/browser-support.md](docs/browser-support.md)                   |
+| Contract documents   | Component shapes, value positions, lifecycle frozen in writing                                     | [docs/component-authoring.md](docs/component-authoring.md)                           |
 
 This is an early project: few stars, no legacy ecosystem to drag forward, and priorities are still
 shapeable. If you are evaluating it, evaluate the repository — tests, spec docs, API alignment with
@@ -253,66 +259,82 @@ Execution (nine standard operations) and memory, read from the official
 > **These are not the official site numbers** — only compare within the same round; size, first paint and the
 > per-row detail (including the script / paint split) live in [`benchmark/report.html`](benchmark/report.html).
 
-| Benchmark                        | vanillajs | yoya-**0.6.12** (compiled) | yoya-**0.6.12** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| Benchmark                        | vanillajs | yoya-**0.6.13** (compiled) | yoya-**0.6.13** (runtime) | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
 | -------------------------------- | --------- | -------------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
-| 01 create 1k rows                | 30.5      | 35.0 (1.15×)               | 49.7 (1.63×)              | 36.7 (1.20×)  | 37.3 (1.22×)  | 32.8 (1.08×)  | 33.4 (1.10×)  |
-| 02 replace 1k rows               | 33.4      | 37.0 (1.11×)               | 46.6 (1.40×)              | 39.7 (1.19×)  | 45.3 (1.36×)  | 36.0 (1.08×)  | 36.6 (1.10×)  |
-| 03 update every 10th row         | 23.0      | 21.9 (0.95×)               | 23.0 (1.00×)              | 25.8 (1.12×)  | 28.4 (1.23×)  | 23.1 (1.00×)  | 24.2 (1.05×)  |
-| 04 select row                    | 7.5       | 7.4 (0.99×)                | 6.4 (0.85×)               | 9.0 (1.20×)   | 9.8 (1.31×)   | 8.0 (1.07×)   | 9.7 (1.29×)   |
-| 05 swap rows                     | 24.1      | 27.4 (1.14×)               | 27.1 (1.12×)              | 25.9 (1.07×)  | 162.6 (6.75×) | 24.5 (1.02×)  | 25.5 (1.06×)  |
-| 06 remove one row                | 20.0      | 20.8 (1.04×)               | 18.3 (0.92×)              | 22.2 (1.11×)  | 20.1 (1.01×)  | 17.9 (0.89×)  | 18.0 (0.90×)  |
-| 07 create 10k rows               | 337.1     | 393.5 (1.17×)              | 504.4 (1.50×)             | 415.0 (1.23×) | 572.4 (1.70×) | 360.3 (1.07×) | 368.3 (1.09×) |
-| 08 append 1k rows                | 38.7      | 41.3 (1.07×)               | 49.3 (1.27×)              | 46.2 (1.19×)  | 42.6 (1.10×)  | 36.4 (0.94×)  | 36.2 (0.94×)  |
-| 09 clear x8                      | 15.5      | 22.1 (1.43×)               | 30.2 (1.95×)              | 20.6 (1.33×)  | 29.2 (1.88×)  | 22.9 (1.48×)  | 17.1 (1.10×)  |
-| Nine-op geometric mean (overall) | 29.54     | 32.72 (1.11×)              | 36.90 (1.25×)             | 34.90 (1.18×) | 46.88 (1.59×) | 31.29 (1.06×) | 31.44 (1.06×) |
-| 21 ready memory (MB)             | 1.06      | 1.36 (1.28×)               | 1.27 (1.20×)              | 1.33 (1.25×)  | 1.63 (1.54×)  | 1.09 (1.03×)  | 1.15 (1.09×)  |
-| 22 run memory (MB)               | 2.45      | 4.08 (1.66×)               | 5.47 (2.23×)              | 4.59 (1.87×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
-| 25 run+clear memory (MB)         | 1.09      | 1.69 (1.55×)               | 1.79 (1.64×)              | 1.60 (1.47×)  | 2.49 (2.29×)  | 1.28 (1.18×)  | 1.50 (1.38×)  |
+| 01 create 1k rows                | 31.2      | 34.6 (1.11×)               | 44.8 (1.44×)              | 37.4 (1.20×)  | 40.7 (1.30×)  | 33.1 (1.06×)  | 33.2 (1.06×)  |
+| 02 replace 1k rows               | 32.6      | 37.9 (1.16×)               | 47.1 (1.44×)              | 41.5 (1.27×)  | 43.8 (1.34×)  | 35.5 (1.09×)  | 37.1 (1.14×)  |
+| 03 update every 10th row         | 24.9      | 26.5 (1.06×)               | 26.5 (1.06×)              | 28.7 (1.15×)  | 29.5 (1.18×)  | 23.8 (0.96×)  | 26.7 (1.07×)  |
+| 04 select row                    | 8.5       | 7.5 (0.88×)                | 7.5 (0.88×)               | 10.1 (1.19×)  | 11.7 (1.38×)  | 9.5 (1.12×)   | 12.2 (1.44×)  |
+| 05 swap rows                     | 24.5      | 28.1 (1.15×)               | 30.3 (1.24×)              | 27.9 (1.14×)  | 186.3 (7.60×) | 26.3 (1.07×)  | 25.7 (1.05×)  |
+| 06 remove one row                | 20.4      | 21.9 (1.07×)               | 20.6 (1.01×)              | 23.4 (1.15×)  | 22.2 (1.09×)  | 21.6 (1.06×)  | 21.2 (1.04×)  |
+| 07 create 10k rows               | 356.0     | 400.4 (1.12×)              | 523.3 (1.47×)             | 426.8 (1.20×) | 604.6 (1.70×) | 379.9 (1.07×) | 381.2 (1.07×) |
+| 08 append 1k rows                | 38.0      | 43.3 (1.14×)               | 55.1 (1.45×)              | 45.0 (1.18×)  | 48.8 (1.28×)  | 41.2 (1.08×)  | 44.2 (1.16×)  |
+| 09 clear x8                      | 17.8      | 24.7 (1.39×)               | 27.9 (1.57×)              | 23.9 (1.34×)  | 31.6 (1.78×)  | 20.7 (1.16×)  | 20.4 (1.15×)  |
+| Nine-op geometric mean (overall) | 30.93     | 34.47 (1.11×)              | 39.04 (1.26×)             | 37.15 (1.20×) | 51.09 (1.65×) | 33.19 (1.07×) | 34.81 (1.13×) |
+| 21 ready memory (MB)             | 1.05      | 1.35 (1.29×)               | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.66 (1.59×)  | 1.08 (1.03×)  | 1.15 (1.10×)  |
+| 22 run memory (MB)               | 2.45      | 4.07 (1.67×)               | 5.46 (2.23×)              | 4.59 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
+| 25 run+clear memory (MB)         | 1.16      | 1.69 (1.45×)               | 1.79 (1.54×)              | 1.71 (1.48×)  | 2.49 (2.15×)  | 1.26 (1.09×)  | 1.44 (1.24×)  |
 
 <!-- benchmark:readme:end -->
 
 ## Build output and size
 
 ```bash
-npm run build   # entries in dist/, then a size report
+npm run build        # packages/*/dist (publish face + module mirrors) + dist/examples/ + size table
+npm run verify:dist  # artifact completeness, no cross-package inlining, host singleton smoke, .full smoke, README table
 ```
 
-No suffix and `.min` are incremental ESM entries (no core inside, the shared chunk loads
-automatically); `.full` is self-contained (core inlined) for CDN and no-build single-file usage.
+The repo is a **five-package monorepo** (`packages/*`): `yoya-core` (slow line: primitives + the
+component-authoring contract), `yoya-ui` (fast line: components / layout / router / theme /
+extensions), `yoya-compiler` (build-time compiler), `contract` (cross-package contract tests) and
+`create-yoya-ui` (scaffold). The published packages ship two layers:
 
-Incremental entries report two numbers: **the entry file itself** and **what a page actually
-downloads** (entry plus the shared chunks it imports). Reading only the entry file overstates how
-small core is — budget against the download column. The last column says what each entry contains.
+- **publish face**: legacy entry names + `.min` (`dist/yoya.ui.js`, `dist/yoya.ui-router.full.js`, …).
+  Incremental entries are one-line re-exports with core as a **peer**; `yoya.core.js` / `yoya.api.js` /
+  the three `.full` bundles are **self-contained** (core inlined into a single file);
+- **module mirrors**: `dist/core/**`, `dist/actions/**`, … (preserveModules) — the stable target for the
+  library-internal `/internal/*` deep imports.
 
-| Entry                              | min+gzip (entry file ~ actual download) | Contents                                                                                                                                                                                            |
-| ---------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `yoya.core.js`                     | 2.5 KB ~ **28.9 KB**                    | Core node definitions, HTML primitives, SVG primitives + built-in icon set, Signals definitions and engine, **i18n runtime**, access control, context, a11y, theme helpers, ClientOnly              |
-| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**                     | Communication helpers: `RequestBase` / `Result` / `configureRequest` (optional, independent from the rendering core)                                                                                |
-| `yoya.ui.js` (all categories)      | 5.6 KB ~ **99.6 KB**                    | Components: layout / actions / navigation / feedback / form / data-display / async / effects + language switch + theme                                                                              |
-| `yoya.router.js`                   | 10.4 KB ~ **30.6 KB**                   | Router (`createRouter` / `vRouter` / `vLink` / `vRouterViews`) + SSR primitives (`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`)                                          |
-| `yoya.compiler-runtime.js`         | 1.6 KB ~ **18.4 KB**                    | Runtime hooks for compiler-generated modules (`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`); the main entry never includes them |
-| `yoya.devtools.js` (dev only)      | 0.1 KB ~ 1.6 KB                         | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                                                              |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 19.6 / 20.1 KB           | `vEchart` / `vThree` wrappers                                                                                                                                                                       |
+Singleton rules: **non-full entries** share exactly one core through the peer dependency (a second copy
+breaks `instanceof` / identity checks); a `.full` bundle is a self-contained single file and **must not
+be mixed with the `@yoyaflow/yoya-core` package** (see the prohibition in [docs/ssr.md](docs/ssr.md)).
 
-Self-contained entries (core inlined, single file):
+The table below is each entry's **transitive closure, min+gzip** (the dist import graph is bundled
+again and compressed). The core row is self-contained; each ui row measures what it adds _on top of_
+core, so the real download is core + that row.
 
-| Artifact                              | raw      | min      | min+gzip | Contents                             |
-| ------------------------------------- | -------- | -------- | -------- | ------------------------------------ |
-| `yoya.router.full.js`                 | 294.3 KB | 132.5 KB | 38.9 KB  | core + router / SSR                  |
-| `yoya.ui-router.full.js` (everything) | 829.4 KB | 465.7 KB | 114.1 KB | core + all components + router / SSR |
-| `yoya.ui.full.js`                     | 760.2 KB | 433.6 KB | 104.3 KB | core + all components                |
+<!-- bundle-sizes:start -->
 
-Component skin `yoya.ui.css`: 60.3 KB raw / **8.7 KB gzip**. The core layer ships no skin of its own
-(it behaves like plain HTML), so core-only pages do not load it.
+| 入口                                 | 内容                                                                                | min+gzip |
+| ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
+| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
+| `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
+| `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
+| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
+| `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 22.9 KB  |
+| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
+| `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 封装，自备 echarts）                                               | 3.3 KB   |
+| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 封装，自备 three）                                                 | 3.8 KB   |
+| `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 
-`npm run build` prints the same table plus every shared chunk; `npm run verify:dist` fails when the
-tables here drift from the artifacts, and `npm run report:bundle:write` refreshes them.
+<!-- bundle-sizes:end -->
+
+Component skin: `yoya.ui.css` 126.1 KB raw / 22.1 KB gzip (the core layer has no skin).
+
+> The self-contained full bundles (the old `yoya.ui.full.min.js` and friends) are gone: with core
+> delivered as a peer dependency, shipping an inlined copy would reintroduce the "two copies" hazard.
 
 ## Documentation and versioning
 
 - [Documentation index](docs/index.md) · [Why yoya-ui](docs/why-yoya-ui.md) · [Feature highlights](docs/highlights.md)
 - [AI coding-agent guide](docs/agents.md) · [Codex skill](skills/yoya-ui/README.md)
 - [SSR guide](docs/ssr.md) · [Request helpers](docs/api.md) · [Theme spec](docs/theme.md) · [Access control](docs/access-control.md) · [DevTools](docs/devtools.md)
+- [Browser baseline and degradation](docs/browser-support.md)
 - [Component authoring](docs/component-authoring.md) · [Third-party interop](docs/interop.md)
   (cross-library comparison: [component-comparison.zh-CN.md](docs/component-comparison.zh-CN.md), Chinese)
 - [Performance benchmark](docs/performance.md) (official js-framework-benchmark, numbers generated and gated)
@@ -337,18 +359,18 @@ npm run examples:html # example site (http://localhost:5173)
 ```
 
 ```text
-src/
-  core/        ViewNode/ElementNode core, signals, i18n, theme, id allocator, SSR helpers
-  html/ svg/   HTML/SVG element factories
-  layout/      layout factories
-  actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
-               official component categories
-  components/  component aggregation and shared logic
-  examples/    example site (SSR demos and copy-paste guides)
-  index.js     dev aggregate entry
-scripts/       entry build and size report
-types/         shipped TypeScript declarations for all entries
-docs/          public guides (SSR, theme, access control, devtools, authoring, interop)
+packages/
+  yoya-core/      slow line: core (nodes/signals/SSR/i18n/theme/access/context/a11y) + html + svg + authoring contract
+  yoya-ui/        fast line: layout / actions / navigation / feedback / form / data-display / async /
+                  i18n / theme / router / chart / three + skin (yoya.ui.css) + types
+  yoya-compiler/  build-time compiler (shape-driven, knows no component; bin: yoya-compiler)
+  contract/       cross-package contract tests + repo-wide gates (not published)
+  create-yoya-ui/ scaffold (templates pin the current version)
+examples/         example site (SSR demos and copy-paste guides)
+scripts/          build, size report, package-boundary / artifact gates
+docs/             public guides (SSR, theme, access control, devtools, authoring, interop)
+benchmark/        benchmark and size data sources
+skills/           Codex skill (kept in sync with the docs)
 ```
 
 ## License

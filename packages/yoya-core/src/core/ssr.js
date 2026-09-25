@@ -1,0 +1,619 @@
+import { ComponentNode, resolveTarget, ViewNode, VTextNode } from './node.js';
+import { createIdAllocator, withIdAllocator } from './id.js';
+import { createI18n, withI18nStringShortcut } from './i18n.js';
+import { adoptProvides, createProviderFrame, withContext, withProviderScope } from './context.js';
+import { withAccess } from './access.js';
+import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
+import { HtmlElementNode } from '../html/index.js';
+import { beginLanding, endLanding, fireWhenMount } from './hooks.js';
+
+/**
+ * 从已取好的请求字段解析语言标识，优先级：cookie > query > Accept-Language > 默认值。
+ * 不依赖具体请求对象形态：cookie / url / acceptLanguage 由调用方按框架自行提取
+ * （Node 系取 req.headers.cookie，Fetch 系取 request.headers.get('cookie') 等）。
+ */
+export function resolveLocale(input = {}, options = {}) {
+  const { cookie = '', url = '', acceptLanguage = '' } = input || {};
+  const { cookieKey = 'yoya-lang', queryKey = 'locale', defaultLanguage = 'zh-CN' } = options;
+
+  const cookieLocale = readCookieValue(cookie, cookieKey);
+  if (cookieLocale) {
+    return cookieLocale;
+  }
+
+  const queryLocale = readQueryValue(url, queryKey);
+  if (queryLocale) {
+    return queryLocale;
+  }
+
+  const acceptLocale = readAcceptLanguage(acceptLanguage);
+  if (acceptLocale) {
+    return acceptLocale;
+  }
+
+  return defaultLanguage;
+}
+
+function readCookieValue(cookieHeader, key) {
+  if (!cookieHeader || !key) {
+    return null;
+  }
+
+  for (const part of String(cookieHeader).split(';')) {
+    const separator = part.indexOf('=');
+    if (separator === -1) continue;
+
+    if (part.slice(0, separator).trim() !== key) continue;
+
+    const raw = part.slice(separator + 1).trim();
+    if (!raw) return null;
+
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  return null;
+}
+
+function readQueryValue(url, key) {
+  if (!url || !key) {
+    return null;
+  }
+
+  const queryStart = String(url).indexOf('?');
+  if (queryStart === -1) {
+    return null;
+  }
+
+  return new URLSearchParams(String(url).slice(queryStart + 1)).get(key) || null;
+}
+
+function readAcceptLanguage(header) {
+  if (!header) {
+    return null;
+  }
+
+  const first = String(header).split(',')[0];
+  if (!first) {
+    return null;
+  }
+
+  return first.split(';')[0].trim() || null;
+}
+
+/**
+ * 有 i18n 配置时，在构建期间把 ".s()" 快捷方式作用域到指定 I18n 实例；
+ * i18n 可传 createI18n 工厂（接收 state）或直接传实例，构建结束后恢复外层实例。
+ */
+function scopeAccessBuild(access, build) {
+  if (!access) {
+    return build();
+  }
+
+  const ctx = typeof access === 'function' ? access() : access;
+  return withAccess(ctx, build);
+}
+
+function scopeBuild(access, context, i18n, state, build) {
+  return scopeAccessBuild(access, () =>
+    scopeContextBuild(context, state, () => scopeI18nBuild(i18n, state, build))
+  );
+}
+
+function scopeContextBuild(context, state, build) {
+  if (!context) {
+    return build();
+  }
+
+  const providers = typeof context === 'function' ? context(state) : context;
+  return withContext(providers, build);
+}
+
+function scopeI18nBuild(i18n, state, build) {
+  if (!i18n) {
+    return build();
+  }
+
+  const locale = typeof i18n === 'function' ? i18n(state) : i18n;
+  return withI18nStringShortcut(locale, build);
+}
+
+/**
+ * 统一解析组件为 ViewNode，支持两种形态：
+ * 函数工厂（接收 initialState）与 ViewNode 实例（票 07：对象组件退场）。
+ */
+function createRootNode(component, state = null) {
+  const resolve = (target) => {
+    if (target instanceof ViewNode) {
+      return target;
+    }
+
+    if (typeof target === 'function') {
+      return resolve(target(state));
+    }
+
+    throw new TypeError(
+      'renderToString/mount requires a ViewNode or a factory function ' +
+        '(object components retired in 0.7.0)'
+    );
+  };
+
+  // 页面工厂里声明的 provide 归属根节点：整棵子树（含懒解析的组件）都能读到，
+  // 根节点自己的声明在内层，同名时覆盖工厂层。
+  const frame = createProviderFrame();
+  const node = withProviderScope(frame, () => resolve(component));
+  return adoptProvides(frame, node);
+}
+
+/**
+ * 统计视图树节点数，供服务端输出上限策略使用。
+ */
+function countNodes(node) {
+  // 组件节点先展开到视图根：包装本身不是 DOM 节点，预算算的是**渲染出来的节点数**
+  // （迁移成 vNode 的组件若在这里只数到包装，`maxNodes` 这道安全阀会静默失效）
+  if (node instanceof ComponentNode) {
+    let total = 0;
+    (node._resolveList() ?? []).forEach((root) => {
+      total += countNodes(root);
+    });
+    return total;
+  }
+
+  let count = 1;
+
+  if (typeof node.children === 'function') {
+    node.children().forEach((child) => {
+      count += countNodes(child);
+    });
+  }
+
+  return count;
+}
+
+/**
+ * 服务端把组件渲染成 HTML 字符串，并把初始状态序列化（安全内联到 script）。
+ * maxNodes 超限时返回 exceeded，服务端可回退客户端渲染。
+ */
+export function renderToString(component, options = {}) {
+  const {
+    access = null,
+    context = null,
+    maxNodes = Infinity,
+    state = null,
+    i18n = null
+  } = options || {};
+  const serialized = serializeState(state);
+
+  return withIdAllocator(createIdAllocator(), () => {
+    const build = () => {
+      const ownsTree = typeof component === 'function';
+      const node = createRootNode(component, state);
+      let result;
+
+      try {
+        if (countNodes(node) > maxNodes) {
+          result = { exceeded: true, html: '', state: serialized };
+        } else {
+          result = { exceeded: false, html: node.toHTML(), state: serialized };
+        }
+      } finally {
+        if (ownsTree) {
+          node.destroy();
+        }
+      }
+
+      return result;
+    };
+
+    return scopeBuild(access, context, i18n, state, build);
+  });
+}
+
+/**
+ * 页面文档构建节点：暴露 head(cb) / body(cb) 两个结构方法与 vBody 快捷写法。
+ * 只用于 renderPage 内部，不直接渲染为 DOM 元素。
+ */
+export class PageDocumentNode extends HtmlElementNode {
+  constructor() {
+    super('html', null);
+    this._headCallback = null;
+    this._bodyCallback = null;
+  }
+
+  head(callback) {
+    this._headCallback = typeof callback === 'function' ? callback : null;
+    return this;
+  }
+
+  body(callback) {
+    this._bodyCallback = typeof callback === 'function' ? callback : null;
+    return this;
+  }
+
+  /** vBody 快捷写法：等价 page.body((body) => body.vBody(...))。 */
+  vBody(...args) {
+    return this.body((body) => body.vBody(...args));
+  }
+}
+
+/**
+ * body DSL 宿主节点：只序列化子节点，不输出 <body> 标签本身。
+ * 外层模板已经有真正的 <body>，再嵌一层会让 #app 里出现非法的嵌套 body。
+ */
+class PageBodyNode extends HtmlElementNode {
+  constructor() {
+    super('body', null);
+  }
+
+  toHTML() {
+    if (this._deleted || this._permissionState() === 'hidden') {
+      return '';
+    }
+
+    return this.children()
+      .map((child) => child.toHTML())
+      .join('');
+  }
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * 渲染整个 HTML 文档：page.head / page.body 分别用 DSL 定义，状态序列化进
+ * 可自定义 id 的 script（默认 __YOYA_DATA__）。
+ *
+ * 客户端入口不由这里输出：脚本路径、放在 head 还是 body、前面还要不要执行别的，
+ * 都是使用方工程的决策，由使用者在 head DSL 里自己加（如 head.script({ type: 'module', src: '/client.js' })）。
+ * state 是唯一请求状态来源，回调签名 (node, state)；options.messages 或 i18n
+ * 二选一用于按 state.lang 建每请求实例。
+ */
+export function renderPage(pageConfig, state = {}, options = {}) {
+  const {
+    containerId = 'app',
+    access = null,
+    context = null,
+    i18n = null,
+    maxNodes = Infinity,
+    messages,
+    stateId = '__YOYA_DATA__',
+    fragments = []
+  } = options || {};
+  const pageState = state || {};
+
+  if (!pageConfig || typeof pageConfig.page !== 'function') {
+    throw new TypeError('renderPage requires { page: (page, state) => {} }');
+  }
+
+  const i18nFactory =
+    i18n || (messages ? () => createI18n({ language: pageState.lang || 'zh-CN', messages }) : null);
+  const serialized = serializeState(pageState);
+
+  return withIdAllocator(createIdAllocator(), () =>
+    scopeBuild(access, context, i18nFactory, pageState, () => {
+      const page = new PageDocumentNode();
+      pageConfig.page(page, pageState);
+
+      const headNode = new HtmlElementNode('head');
+      if (page._headCallback) {
+        page._headCallback(headNode, pageState);
+      }
+
+      const bodyNode = new PageBodyNode();
+      if (page._bodyCallback) {
+        page._bodyCallback(bodyNode, pageState);
+      }
+
+      const bodyExceeded = countNodes(bodyNode) > maxNodes;
+      const headHtml = headNode.toHTML();
+      const appContainer = `<div id="${escapeHtmlAttribute(containerId)}">`;
+      const bodyHtml = bodyExceeded
+        ? `${appContainer}</div>`
+        : `${appContainer}${bodyNode.toHTML()}</div>`;
+      const stateScript = `<script type="application/json" id="${escapeHtmlAttribute(stateId)}">${serialized}</script>`;
+
+      // 票 45：编译产物的模板块（inert）放在 **app 容器之外** —— 运行期按签名克隆，
+      // hydrate 的根内收养因此不会把它当内容节点。
+      const fragmentsHtml = (Array.isArray(fragments) ? fragments : [])
+        .filter(
+          (item) => item && typeof item.signature === 'string' && typeof item.html === 'string'
+        )
+        .map(
+          (item) =>
+            `<template data-yoya-fragment="${escapeHtmlAttribute(item.signature)}">${item.html}</template>`
+        )
+        .join('\n');
+
+      headNode.destroy();
+      bodyNode.destroy();
+
+      return `<!doctype html>
+<html lang="${escapeHtmlAttribute(pageState.lang || 'zh-CN')}">
+${headHtml}
+<body>
+${bodyHtml}
+${stateScript}
+${fragmentsHtml ? `${fragmentsHtml}\n` : ''}</body>
+</html>`;
+    })
+  );
+}
+
+/**
+ * 客户端一行接入：读取 stateId 对应的序列化状态，目标容器有服务端 HTML 时
+ * hydrate（收养 DOM、绑事件），否则 mount（全量客户端渲染）。
+ * options：{ messages?, i18n?, stateId = '__YOYA_DATA__', target = '#app' }。
+ */
+export function hydrateOrMount(component, options = {}) {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const { messages, i18n = null, stateId = '__YOYA_DATA__', target = '#app' } = options || {};
+  const stateElement = document.getElementById(stateId);
+  const state = parseState(stateElement ? stateElement.textContent : '');
+  const i18nOption =
+    i18n || (messages ? () => createI18n({ language: state?.lang || 'zh-CN', messages }) : null);
+  const parent = resolveTarget(target);
+
+  if (parent && parent.firstElementChild) {
+    return hydrate(component, target, state, {
+      access: options.access,
+      context: options.context,
+      i18n: i18nOption
+    });
+  }
+
+  return mount(component, target, state, {
+    access: options.access,
+    context: options.context,
+    i18n: i18nOption
+  });
+}
+
+/**
+ * 序列化首屏状态为 JSON 字符串，`<` 转义为 \u003c，可安全嵌入 <script>。
+ */
+export function serializeState(state) {
+  if (state === null || state === undefined) {
+    return null;
+  }
+
+  return JSON.stringify(state).replace(/</g, '\\u003c');
+}
+
+/**
+ * 解析序列化状态；null/空串返回 null。
+ */
+export function parseState(serialized) {
+  if (serialized === null || serialized === undefined || serialized === '') {
+    return null;
+  }
+
+  return JSON.parse(serialized);
+}
+
+/**
+ * 客户端全量重建挂载：以 initialState 创建组件树，替换目标容器内容并绑定事件。
+ */
+export function mount(component, target, state = null, options = {}) {
+  return withIdAllocator(createIdAllocator(), () => {
+    const build = () => {
+      const node = createRootNode(component, state);
+      const parent = resolveTarget(target);
+
+      if (parent) {
+        // 与 `bindTo` 同一条落地收口：整趟建树 + append 之后统一触发钩子（票 02 / 方案 A）
+        beginLanding();
+        try {
+          parent.replaceChildren();
+          parent.appendChild(node.renderDom());
+          fireWhenMount(node);
+        } finally {
+          endLanding();
+        }
+      }
+
+      return node;
+    };
+
+    return scopeBuild(options.access, options.context, options.i18n, state, build);
+  });
+}
+
+/**
+ * 客户端 hydration：收养服务端生成的 DOM（不重建元素），绑定 pending 事件，
+ * 并让属性/文本按客户端树对齐。渲染确定性的前提下，节点身份保持不变。
+ */
+export function hydrate(component, target, state = null, options = {}) {
+  return withIdAllocator(createIdAllocator(), () => {
+    const build = () => {
+      const node = createRootNode(component, state);
+      const parent = resolveTarget(target);
+
+      if (parent) {
+        // 收养路径同样收口：元素本来就在文档里，钩子统一在收口时触发
+        beginLanding();
+        try {
+          const rootElement = parent.firstElementChild;
+          if (rootElement) {
+            adoptElement(node, rootElement);
+            syncSnapshots(node);
+            bindElement(node);
+            node.renderDom();
+            fireHydratedHooks(node);
+          } else {
+            parent.appendChild(node.renderDom());
+            fireWhenMount(node);
+          }
+        } finally {
+          endLanding();
+        }
+      }
+
+      return node;
+    };
+
+    return scopeBuild(options.access, options.context, options.i18n, state, build);
+  });
+}
+
+/**
+ * hydrate 收口：收养路径不会走"新元素 append 到父元素"那条埋点（元素本来就在父元素里，
+ * 子节点循环里的 `placedInElement` 为真、直接跳过 `fireWhenMount`），组件钩子因此一次都不触发
+ * ——SSR 页面上的第三方集成（初始化写在 `whenMount` 里）会静默不工作（票 01）。
+ *
+ * 这里按**后序**补一次（子组件先、父组件后，与通用路径的落地顺序一致），只对"元素确实挂在
+ * 树上"的组件触发；`fireWhenMount` 自带幂等（`hooks.mounted`），别处触发过的不再重复。
+ */
+function fireHydratedHooks(node) {
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  // 透明包装 / 组件嵌组件：钩子挂在**内层视图根**上（与落地路径同一条归属链，见 `core/hooks.js`）
+  if (typeof node.viewRoots === 'function') {
+    node.viewRoots().forEach(fireHydratedHooks);
+  }
+
+  if (node instanceof ComponentNode) {
+    node.children().forEach(fireHydratedHooks);
+    // 触发条件（"确实挂在树上"）由 `fireWhenMount` 自己把关，这里只负责按后序登记
+    fireWhenMount(node);
+    return;
+  }
+
+  node.children().forEach(fireHydratedHooks);
+}
+
+function adoptElement(node, existing) {
+  if (node instanceof ComponentNode) {
+    const roots = node._resolveList();
+    if (roots.length === 1) {
+      adoptElement(roots[0], existing);
+      return;
+    }
+
+    const childNodes = existing ? Array.from(existing.childNodes) : [];
+    roots.forEach((root, index) => adoptElement(root, childNodes[index]));
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    if (existing && existing.nodeType === 3) {
+      node._textNode = existing;
+      node._el = existing;
+      if (existing.textContent !== node._content) {
+        existing.textContent = node._content;
+      }
+    } else {
+      replaceExisting(existing, node.renderDom(), node);
+    }
+    return;
+  }
+
+  if (existing && existing.nodeType === 1 && existing.tagName.toLowerCase() === node._tagName) {
+    node._el = existing;
+    node._hydrated = true;
+    const childNodes = Array.from(existing.childNodes);
+    let cursor = 0;
+    node.children().forEach((child) => {
+      const roots = child instanceof ComponentNode ? child._resolveList() : [child];
+      roots.forEach((root) => {
+        adoptElement(root, childNodes[cursor]);
+        cursor += 1;
+      });
+    });
+    return;
+  }
+
+  replaceExisting(existing, node.renderDom(), node);
+}
+
+function bindElement(node) {
+  if (node instanceof ComponentNode) {
+    node._resolveList().forEach((root) => bindElement(root));
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  if (node._el && node._hydrated) {
+    node._applyBindingsToElement();
+  }
+
+  node.children().forEach(bindElement);
+}
+
+function syncSnapshots(node) {
+  if (node instanceof ComponentNode) {
+    node._resolveList().forEach((root) => syncSnapshots(root));
+    return;
+  }
+
+  if (node instanceof VTextNode) {
+    return;
+  }
+
+  node.children().forEach(syncSnapshots);
+
+  if (typeof node.hydrateSnapshot === 'function') {
+    node.hydrateSnapshot();
+  }
+}
+
+/** 用可读名字描述参与对齐的两端，供结构错位告警定位。 */
+function describeHydrationNode(value) {
+  if (!value) {
+    return 'none';
+  }
+
+  if (value.nodeType === 3) {
+    return '#text';
+  }
+
+  if (value.nodeType === 1) {
+    return String(value.tagName).toLowerCase();
+  }
+
+  if (typeof value._tagName === 'string') {
+    return value._tagName;
+  }
+
+  return 'unknown';
+}
+
+/**
+ * 结构错位告警：两端结构不一致时对齐方式只能替换节点，会静默丢掉节点身份。
+ * 只在 devtools 开启（开发期）上报，生产路径零开销。
+ */
+function reportHydrationMismatch(node, existing, created) {
+  if (!isDevtoolsEnabled()) {
+    return;
+  }
+
+  emitDevtools({
+    type: 'hydrate-mismatch',
+    node,
+    expected: describeHydrationNode(created),
+    existing: describeHydrationNode(existing)
+  });
+}
+
+function replaceExisting(existing, created, node = null) {
+  if (node) {
+    reportHydrationMismatch(node, existing, created);
+  }
+
+  if (existing && existing.parentNode) {
+    existing.parentNode.replaceChild(created, existing);
+  }
+}

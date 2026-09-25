@@ -41,7 +41,7 @@ for (const key of Object.getOwnPropertyNames(dom.window)) {
   }
 }
 
-const { computed, ref, table, tr } = await import('../src/yoya.core.js');
+const { computed, ref, table, tr } = await import('@yoyaflow/yoya-core');
 
 const { document, Element } = dom.window;
 let evaluations = 0;

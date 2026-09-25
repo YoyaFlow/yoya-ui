@@ -1,0 +1,27 @@
+{
+  "snapshotFunctions": {
+    "packages/yoya-ui/src/layout/index.js": 3,
+    "packages/yoya-ui/src/navigation/menu.js": 1,
+    "packages/yoya-ui/src/form/avatar-upload.js": 1,
+    "packages/yoya-ui/src/form/cascader.js": 1,
+    "packages/yoya-ui/src/form/controls/checkbox.js": 1,
+    "packages/yoya-ui/src/form/controls/field.js": 3,
+    "packages/yoya-ui/src/form/controls/form-item.js": 1,
+    "packages/yoya-ui/src/form/controls/input.js": 2,
+    "packages/yoya-ui/src/form/controls/radio.js": 1,
+    "packages/yoya-ui/src/form/controls/select.js": 1,
+    "packages/yoya-ui/src/form/controls/shared.js": 2,
+    "packages/yoya-ui/src/form/controls/switch.js": 1,
+    "packages/yoya-ui/src/form/controls/textarea.js": 2,
+    "packages/yoya-ui/src/form/upload.js": 1,
+    "packages/yoya-ui/src/data-display/detail.js": 1,
+    "packages/yoya-ui/src/data-display/image-preview.js": 2,
+    "packages/yoya-ui/src/data-display/progress.js": 1,
+    "packages/yoya-ui/src/data-display/table.js": 1,
+    "packages/yoya-ui/src/data-display/tree-ranger.js": 1,
+    "packages/yoya-ui/src/data-display/tree-table.js": 3,
+    "packages/yoya-ui/src/three/three.js": 1,
+    "packages/yoya-ui/src/async/lazy-image.js": 1,
+    "packages/yoya-ui/src/effects/transition.js": 1
+  }
+}

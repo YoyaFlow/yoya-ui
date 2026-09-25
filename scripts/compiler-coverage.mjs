@@ -8,19 +8,19 @@
 // `npm run build` 末尾会跑本脚本（与体积表同一位置），所以 CI 日志里能直接看到覆盖率。
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import * as core from '../src/yoya.core.js';
+import * as core from '@yoyaflow/yoya-core';
 import {
   compareCoverageBaseline,
   coverageBaselineOf,
   formatCoverage,
   reportCoverage
-} from '../src/compiler/report.js';
+} from '../packages/yoya-compiler/src/report.js';
 
 const root = resolve(import.meta.dirname, '..');
 const baselineFile = resolve(root, 'scripts/compiler-coverage.baseline.json');
 
 /** 扫描目标：库源码与示例各留一条基线（相对路径写进基线，换机器还能比）。 */
-const TARGETS = ['src', 'src/examples'];
+const TARGETS = ['packages', 'examples'];
 
 const mode = process.argv[2];
 if (mode && mode !== '--write') {

@@ -86,7 +86,7 @@ div((page) => {
 }).bindTo('#app');
 ```
 
-- The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, component objects, strings, and numbers uniformly.
+- The same code runs in the browser via `.bindTo()` or on the server via `toHTML()` / SSR; `child()` accepts ViewNodes, components (a thin factory's result or a `vNode`), strings, and numbers uniformly.
 - `registerChildFactories` registers components as parent shortcuts (`card.vCardHeader`), so third-party components can extend the DSL too.
 - The real DOM is the view tree: the Elements panel shows the exact hierarchy, styles, and accessibility attributes — inspect and edit directly.
 - Events are native DOM events: the Event Listeners panel locates business handlers, and stack traces point to your source closures with no framework runtime in between.
@@ -115,7 +115,7 @@ rows.value = [...rows.value].reverse(); // auto diff: add/remove/move with ident
 
 - `keyed(rows, keyFn, build)`: rows whose key and reference are unchanged keep their nodes (build does not rerun), changed rows rebuild in place, and reorders move nodes with identity preserved; custom strategies use the `insertBefore` / `insertAfter` / `moveBefore` / `moveAfter` / `replaceChild` primitives.
 - `panel.mountable(cond)`: conditional attachment — false detaches the element from the document while the ViewNode and its state stay alive, true reattaches at its child slot (`display` toggling, `mountable` absent-but-alive, and `rebuildable` destroy-and-rebuild form three tiers); `isMounted()` reports the condition state.
-- `box.whenFailed(handler)`: subtree error boundary — returning a node degrades, returning null only reports; component objects may define a `whenFailed` member next to `render()` that mounts automatically; captures always console.error and never stay silent.
+- `box.whenFailed(handler)`: subtree error boundary — returning a node degrades, returning null only reports; a vNode component may set `api.whenFailed = (error, info) => fallback` and it mounts automatically; captures always console.error and never stay silent.
 
 ## 6. Forms: one collection point, view/edit built in
 

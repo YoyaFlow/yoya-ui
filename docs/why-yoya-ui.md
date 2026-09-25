@@ -67,16 +67,16 @@ standards and is locked down by spec documents and the test suite.
 Star counts measure attention, not correctness. Until this project earns that social signal, the
 useful signals are the ones you can verify in the repository:
 
-| Signal               | How to check it                                                        |
-| -------------------- | ---------------------------------------------------------------------- |
-| Runtime dependencies | `package.json` — no `dependencies` block                               |
-| Test suite           | `npm test`                                                             |
-| Type declarations    | `npm run typecheck` (declarations plus consumer type tests)            |
-| SSR determinism      | `src/*.ssr.test.js`, [ssr.md](ssr.md)                                  |
-| Distribution formats | `npm run build` → `dist/`                                              |
-| Dist verification    | `npm run build && npm run verify:dist`                                 |
-| Contract documents   | [component-authoring.md](component-authoring.md), [theme.md](theme.md) |
-| Public roadmap       | [ROADMAP.zh-CN.md](../ROADMAP.zh-CN.md) (Chinese)                      |
+| Signal               | How to check it                                                            |
+| -------------------- | -------------------------------------------------------------------------- |
+| Runtime dependencies | `package.json` — no `dependencies` block                                   |
+| Test suite           | `npm test`                                                                 |
+| Type declarations    | `npm run typecheck` (declarations plus consumer type tests)                |
+| SSR determinism      | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`, [ssr.md](ssr.md) |
+| Distribution formats | `npm run build` → `dist/`                                                  |
+| Dist verification    | `npm run build && npm run verify:dist`                                     |
+| Contract documents   | [component-authoring.md](component-authoring.md), [theme.md](theme.md)     |
+| Public roadmap       | [ROADMAP.zh-CN.md](../ROADMAP.zh-CN.md) (Chinese)                          |
 
 The CI badge in the README is live from the GitHub Actions workflow. Coverage is measured by the
 coverage job (Vitest v8, LCOV) and uploaded to Codecov; the badge is enabled once that upload is

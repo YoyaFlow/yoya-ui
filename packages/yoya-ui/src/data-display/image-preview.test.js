@@ -1,0 +1,66 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { hasComponentIdentity, vImagePreview } from '../index.js';
+
+describe('vImagePreview', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('renders a thumbnail trigger', () => {
+    const preview = vImagePreview({ src: '/big.png', thumb: '/small.png', alt: '示例' });
+    const element = preview.renderDom();
+
+    expect(hasComponentIdentity(preview, 'VImagePreview')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VImagePreview');
+    expect(element.querySelector('img').getAttribute('src')).toBe('/small.png');
+  });
+
+  it('opens a lightbox with a lazy large image and closes it', () => {
+    const preview = vImagePreview({ src: '/big.png', thumb: '/small.png' });
+    document.body.appendChild(preview.renderDom());
+
+    preview.open();
+    const overlay = document.querySelector('[vn~="VImagePreviewOverlay"]');
+    expect(overlay).not.toBeNull();
+    expect(overlay.querySelector('[vn~="VLazyImage"]')).not.toBeNull();
+    expect(overlay.querySelector('img').getAttribute('src')).toBe('/big.png');
+
+    preview.close();
+    expect(document.querySelector('[vn~="VImagePreviewOverlay"]')).toBeNull();
+  });
+
+  it('opens on thumbnail click', () => {
+    const preview = vImagePreview({ src: '/big.png', thumb: '/small.png' });
+    const element = preview.renderDom();
+    document.body.appendChild(element);
+
+    element.querySelector('img').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(document.querySelector('[vn~="VImagePreviewOverlay"]')).not.toBeNull();
+  });
+
+  it('closes on Escape', () => {
+    const preview = vImagePreview({ src: '/big.png' });
+    document.body.appendChild(preview.renderDom());
+
+    preview.open();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(document.querySelector('[vn~="VImagePreviewOverlay"]')).toBeNull();
+  });
+
+  it('zooms the stage', () => {
+    const preview = vImagePreview({ src: '/big.png' });
+    document.body.appendChild(preview.renderDom());
+
+    preview.open();
+    preview.zoom(2);
+    const stage = document.querySelector('[vn~="VImagePreviewStage"]');
+    expect(stage.style.transform).toContain('scale(2)');
+  });
+
+  it('serializes deterministically for SSR', () => {
+    const html = vImagePreview({ src: '/big.png', thumb: '/small.png' }).toHTML();
+
+    expect(html).toContain('VImagePreview');
+    expect(html).not.toContain('VImagePreviewOverlay');
+  });
+});

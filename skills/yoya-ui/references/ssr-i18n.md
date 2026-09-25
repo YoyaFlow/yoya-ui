@@ -34,7 +34,7 @@ client.js 执行          → hydrateOrMount(HomePage, { messages })
                             └─ #app 是空壳（maxNodes 回退 / 纯客户端）→ mount（全量渲染）
 ```
 
-**`hydrateOrMount(...)` 写在 `src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；你在服务端页面的 head DSL 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。路径、位置、前面还要不要执行别的脚本都是你的工程决策，`renderPage` 只输出 head/body DSL 与状态脚本，不猜客户端入口。
+**`hydrateOrMount(...)` 写在 `packages/yoya-ui/src/client.js`**：它不是内联在 HTML 里的脚本，也不是服务端返回的内容；你在服务端页面的 head DSL 里放一个 `<script type="module" src="/client.js">`，浏览器再去请求这个文件——拿到的就是构建好的 `dist/client.js`。路径、位置、前面还要不要执行别的脚本都是你的工程决策，`renderPage` 只输出 head/body DSL 与状态脚本，不猜客户端入口。
 
 下面四份文件复制到自己的工程即可跑通。
 
@@ -196,7 +196,7 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: 'dist',
     rollupOptions: {
-      input: 'src/client.js',
+      input: 'packages/yoya-ui/src/client.js',
       output: {
         assetFileNames: (assetInfo) =>
           assetInfo.name?.endsWith('.css') ? 'assets/yoya.ui.css' : 'assets/[name][extname]',
@@ -265,7 +265,7 @@ if (app.firstElementChild) {
 }
 ```
 
-仓库里的 `src/examples/ssr/server-http.mjs` 就是这条不打包路线：服务端直接返回 `clientBoot` 字符串作为 `/client.js`，从 `/vendor/*` 提供 dist 产物。
+仓库里的 `examples/ssr/server-http.mjs` 就是这条不打包路线：服务端直接返回 `clientBoot` 字符串作为 `/client.js`，从 `/vendor/*` 提供 dist 产物。
 
 语言切换写 cookie（如 `document.cookie = 'yoya-lang=en; path=/'`），之后请求自动带上；页面级缓存需 `Vary: Cookie` 或按语言拆缓存。
 
@@ -284,7 +284,7 @@ if (app.firstElementChild) {
 
 | 避免                                                                                 | 应该                                                                                                                | 原因                                                   |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `render()` / `toHTML()` 里读 `document` / `window`                                   | 只在事件回调或 `renderDom()` 里访问；浏览器 API 加 `typeof` 守卫                                                    | 服务端没有 DOM，渲染路径必须 DOM-free                  |
+| 组件定义函数 / `toHTML()` 里读 `document` / `window`                                 | 只在事件回调或 `renderDom()` 里访问；浏览器 API 加 `typeof` 守卫                                                    | 服务端没有 DOM，渲染路径必须 DOM-free                  |
 | 用 `Date.now()` / `Math.random()` 影响输出（含 key、id）                             | 结构只依赖请求输入；id 用 `allocateId` 由渲染上下文分配                                                             | 两端产出的树不一致会导致 hydrate 错位                  |
 | 组件里直接 `document.addEventListener` / `window.addEventListener`                   | `bindDocumentEvent` / `bindWindowEvent`，`destroy()` 时执行返回的 unbind                                            | 服务端无 DOM；客户端要能随节点销毁解绑                 |
 | 请求相关状态、视图树或组件实例放模块级（当前用户、语言、计数器、区域节点、组件实例） | 每请求创建：`createAccess` / `createI18n` / `withContext` 经入口 `options` 注入，区域节点与组件实例在页面工厂内创建 | 模块级状态与视图树会在并发请求之间串数据、复用同一棵树 |

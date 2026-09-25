@@ -1,0 +1,116 @@
+/**
+ * 复制即用的最小 SSR 项目片段。
+ * 开发者把这些文件复制到自己的工程即可搭建 SSR 项目。
+ */
+
+export const pageSnippet = `// home-page.js —— 页面即形态 A 组件，服务端与客户端共用
+import { div } from '@yoyaflow/yoya-core';
+import { createRouter } from '@yoyaflow/yoya-ui/router';
+
+export const messages = {
+  'zh-CN': { title: 'SSR 示例', home: '首页' },
+  'en-US': { title: 'SSR Demo', home: 'Home' }
+};
+
+export function HomePage(state) {
+  const router = createRouter();
+  router.mode(state.mode || 'history');
+  router.route('/home', '首页'.s('home'));
+  router.notFound('未找到');
+  router.renderPath(state.path || '/home'); // 服务端按请求路径渲染
+
+  return div((root) => {
+    root.h1('SSR 示例'.s('title'));
+    root.child(router);
+  });
+}`;
+
+export const serverSnippet = `// server.mjs —— 服务端（node:http，无框架依赖）
+import { createServer } from 'node:http';
+import { existsSync, readFileSync } from 'node:fs';
+import { extname, join } from 'node:path';
+import { renderPage } from '@yoyaflow/yoya-ui/router';
+import { HomePage, messages } from './home-page.js';
+
+const DIST = join(import.meta.dirname, 'dist'); // npm run build 的产物
+const MIME = { '.css': 'text/css', '.js': 'text/javascript' };
+
+createServer((req, res) => {
+  const path = new URL(req.url, 'http://localhost').pathname;
+
+  // 静态资源：从 dist 目录按路径提供
+  if (path !== '/') {
+    const file = join(DIST, path.slice(1));
+    if (existsSync(file)) {
+      res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream' });
+      res.end(readFileSync(file));
+      return;
+    }
+  }
+
+  // lang 由你的服务端解析（cookie / query / 登录态都行）
+  const lang = req.headers.cookie?.includes('yoya-lang=en') ? 'en' : 'zh-CN';
+
+  const html = renderPage(
+    {
+      page: (page, state) => {
+        page.head((head) => {
+          head.title('SSR 示例'.s('title'));
+          head.meta({ charset: 'utf-8' });
+          head.link({ rel: 'stylesheet', href: '/yoya.ui.css' });
+          // 客户端入口自己引入：renderPage 不输出客户端脚本
+          head.link({ rel: 'modulepreload', href: '/client.js' });
+          head.script({ type: 'module', src: '/client.js' });
+        });
+        page.body((body) => {
+          body.div((shell) => {
+            shell.child(HomePage(state)); // state = { lang, path, mode }
+          });
+        });
+      }
+    },
+    { lang, path, mode: 'history' }, // 状态唯一来源
+    { messages }                    // 按 state.lang 建每请求 i18n，.s() 自动作用域
+  );
+
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(html);
+}).listen(3000);`;
+
+export const clientSnippet = `// client.js —— 浏览器端（由打包器构建，与 yoya-ui/core、yoya-ui/router 同一份共享模块）
+import { hydrateOrMount } from '@yoyaflow/yoya-ui/router';
+import { HomePage, messages } from './home-page.js';
+
+hydrateOrMount(HomePage, { messages });
+// 自动读 __YOYA_DATA__ → #app 有服务端 HTML 走 hydrate（收养 DOM、绑事件），否则 mount`;
+
+export const shellSnippet = `<!-- renderPage(...) 实际渲染出来的 HTML（页面 DOM 内容省略） -->
+<!doctype html>
+<html lang="zh-CN">
+      <head>
+        <title>SSR 示例</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/assets/yoya.ui.css" />
+        <!-- ③ 客户端入口：由你引入（renderPage 不输出） -->
+        <link rel="modulepreload" href="/client.js" />
+        <script type="module" src="/client.js"></script>
+      </head>
+      <body>
+        <!-- ① 容器：hydration 目标，id 由 containerId 决定（默认 app） -->
+        <div id="app"><!-- 服务端渲染的页面 DOM --></div>
+        <!-- ② 请求状态：id 由 stateId 决定（默认 __YOYA_DATA__） -->
+        <script type="application/json" id="__YOYA_DATA__">
+          {"lang":"zh-CN","path":"/home","mode":"history"}
+        </script>
+      </body>
+    </html>`;
+
+export const setupNotes = [
+  'renderPage 只生成 ① <div id="app"> 容器与 ② __YOYA_DATA__ 状态（id 用 { containerId } / { stateId } 改）；③ 客户端入口由你自己在 head DSL 里加，路径与顺序由你决定',
+  'npm run build 生成 dist（yoya.core.js / yoya.ui.js / yoya.router.js / echarts.min.js 等），把 dist 挂载为静态目录',
+  'echarts.min.js 用 script 标签全局引入，不要打进模块（避免 window.echarts 丢失）',
+  'history 模式：服务端对未匹配路径返回首页；hash 模式：只输出首页即可',
+  'client.js 用打包器构建，确保与 yoya-ui/core、yoya-ui/router 解析到同一份共享模块，避免双副本失配',
+  'render() 保持确定性、不读 document/window；超大页面用 maxNodes 回退',
+  '低层原语 renderToString / hydrate / mount 仍可用，renderPage / hydrateOrMount 只是推荐封装'
+];

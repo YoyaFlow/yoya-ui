@@ -1,0 +1,79 @@
+import { aside } from '@yoyaflow/yoya-ui';
+
+function buildImportBlock(imports = []) {
+  const yoyaNames = imports.filter((entry) => typeof entry === 'string').join(', ');
+  const importLines = [];
+
+  if (yoyaNames) {
+    importLines.push(`import { ${yoyaNames} } from '@yoyaflow/yoya-ui';`);
+  }
+
+  imports
+    .filter((entry) => typeof entry !== 'string')
+    .forEach((entry) => {
+      importLines.push(`import { ${entry.names.join(', ')} } from '${entry.from}';`);
+    });
+
+  const importSource = importLines.join('\n');
+  return importSource ? `${importSource}\n\n` : '';
+}
+
+function buildFunctionSource(Component) {
+  return dedentFunctionSource(
+    Component.toString()
+      .replace(/\(0,\s*__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)\)/g, '$1')
+      .replace(/__vite_ssr_import_\d+__\.([A-Za-z_$][\w$]*)/g, '$1')
+      .replace(/__vite_ssr_dynamic_import__\(/g, 'import(')
+      .replace(/"\/src\/examples\/([^"]+)"/g, "'./$1'")
+  );
+}
+
+export function componentSource(Component, imports = []) {
+  const importBlock = buildImportBlock(imports);
+  const functionSource = buildFunctionSource(Component);
+
+  return `${importBlock}export ${functionSource}`;
+}
+
+export function ComponentSource({
+  component,
+  sourceComponent = component,
+  source = null,
+  imports = [],
+  title = sourceComponent ? `${sourceComponent.name} 源码` : '源码',
+  extraSource = ''
+}) {
+  const importBlock = buildImportBlock(imports);
+  const functionSource = source ? '' : buildFunctionSource(sourceComponent);
+  const extraBlock = extraSource ? `${extraSource}\n\n` : '';
+  // source 用于展示真实文件的原文（如 "?raw" 导入的适配器源码）：不补 import、不补 export。
+  const fullSource = source ?? `${importBlock}${extraBlock}export ${functionSource}`;
+
+  // 形态 A 薄工厂（票 07：对象组件退场）：源码面板就是一段结构，没有状态 / 命令 / 钩子。
+  return aside((panel) => {
+    panel.className('source-panel');
+    panel.style('width', '100%');
+    panel.h2(title);
+    panel.pre((pre) => {
+      pre.className('source-code');
+      pre.code((code) => {
+        code.attr('data-source-example', title);
+        code.child(fullSource);
+      });
+    });
+  });
+}
+
+function dedentFunctionSource(source) {
+  const lines = source.replace(/\t/g, '  ').split(/\r?\n/);
+  const bodyIndents = lines
+    .slice(1)
+    .filter((line) => line.trim())
+    .map((line) => line.match(/^\s*/)[0].length);
+  const indent = bodyIndents.length ? Math.min(...bodyIndents) : 0;
+
+  return [
+    lines[0],
+    ...lines.slice(1).map((line) => line.slice(Math.min(indent, line.length)))
+  ].join('\n');
+}

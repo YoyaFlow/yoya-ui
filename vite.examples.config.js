@@ -1,21 +1,11 @@
 import { defineConfig } from 'vite';
 import { cpSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { workspaceSourcePlugin } from './scripts/vite-workspace-plugin.mjs';
 
-const echartsSource = fileURLToPath(new URL('./src/chart/echarts.min.js', import.meta.url));
-
-// 示例代码按使用者的写法 import '@yoyaflow/yoya-ui'；仓库内解析到源码入口。
-const packageAlias = [
-  {
-    find: /^@yoyaflow\/yoya-ui$/,
-    replacement: fileURLToPath(new URL('./src/index.js', import.meta.url))
-  },
-  {
-    // 子入口（/core、/api、/router …）同样解析到源码；ui.css 这类资源不在此列
-    find: /^@yoyaflow\/yoya-ui\/(?!ui\.css$)([\w.-]+)$/,
-    replacement: fileURLToPath(new URL('./src/yoya.$1.js', import.meta.url))
-  }
-];
+const echartsSource = fileURLToPath(
+  new URL('./packages/yoya-ui/src/chart/echarts.min.js', import.meta.url)
+);
 
 const injectEchartsScript = {
   name: 'yoya-examples-inject-echarts',
@@ -25,7 +15,7 @@ const injectEchartsScript = {
       return html;
     }
 
-    // dev 下 root 是 src/examples，echarts 文件在 root 之外，用 /@fs/ 绝对路径提供
+    // dev 下 root 是 examples，echarts 文件在 root 之外，用 /@fs/ 绝对路径提供
     const src = ctx.server ? `/@fs/${echartsSource.replace(/\\/g, '/')}` : './echarts.min.js';
     return html.replace('</head>', `    <script src="${src}"></script>\n  </head>`);
   },
@@ -35,15 +25,12 @@ const injectEchartsScript = {
 };
 
 export default defineConfig({
-  root: 'src/examples',
+  root: 'examples',
   base: './',
-  resolve: {
-    alias: packageAlias
-  },
   build: {
     emptyOutDir: true,
     minify: false,
-    outDir: '../../dist/examples',
+    outDir: '../dist/examples',
     rollupOptions: {
       input: {
         anchor: 'anchor.html',
@@ -65,5 +52,5 @@ export default defineConfig({
       }
     }
   },
-  plugins: [injectEchartsScript]
+  plugins: [workspaceSourcePlugin(), injectEchartsScript]
 });

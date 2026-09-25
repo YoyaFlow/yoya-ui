@@ -1,0 +1,18 @@
+{
+  // 编译器包只做"语法 + 引用"级别的把关：源码是 JS（形状规则靠测试与门禁守），
+  // 所以这里开 allowJs、关 checkJs，交给 tsc 的是"能解析、能解析到底"。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.js"]
+}

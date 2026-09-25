@@ -1,0 +1,95 @@
+import { vDialog, vNode } from '@yoyaflow/yoya-ui';
+import { fieldValue } from '../../../../shared/state.rows.js';
+import { roleOptions, statusOptions } from '../utils/options.js';
+
+const rowStyle = {
+  alignItems: 'center',
+  display: 'grid',
+  gap: '12px',
+  gridTemplateColumns: '88px minmax(0, 1fr)',
+  minWidth: '0'
+};
+
+export function MemberFormDialog({ onSubmit }) {
+  const dialog = vDialog();
+  let editingId = null;
+
+  function buildFormFields(form, member) {
+    const name = fieldValue(member?.name) ?? '';
+    const email = fieldValue(member?.email) ?? '';
+    const role = fieldValue(member?.role) ?? 'viewer';
+    const status = fieldValue(member?.status) ?? 'active';
+
+    form.styles({
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: '8px',
+      display: 'grid',
+      gap: '16px',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      padding: '16px'
+    });
+    form.vFormItem((item) => {
+      item.styles(rowStyle);
+      item.label('姓名').name('name').required({ message: '请填写姓名' });
+      item.control((editor) => editor.vInput({ name: 'name', value: name }));
+    });
+    form.vFormItem((item) => {
+      item.styles(rowStyle);
+      item.label('邮箱').name('email').required({ message: '请填写邮箱' });
+      item.control((editor) => editor.vInput({ name: 'email', value: email }));
+    });
+    form.vFormItem((item) => {
+      item.styles(rowStyle);
+      item.label('角色').name('role');
+      item.control((editor) => editor.vSelect({ name: 'role', options: roleOptions, value: role }));
+    });
+    form.vFormItem((item) => {
+      item.styles(rowStyle);
+      item.label('状态').name('status');
+      item.control((editor) =>
+        editor.vSelect({
+          name: 'status',
+          options: statusOptions,
+          value: status
+        })
+      );
+    });
+  }
+
+  function open(member = null) {
+    editingId = member?.id ?? null;
+    dialog.content((content) => {
+      content.vForm((form) => {
+        buildFormFields(form, member);
+        form.vButton('保存', (btn) => {
+          btn.variant('primary');
+          btn.style({ gridColumn: '1 / -1', justifySelf: 'end', marginTop: '16px' });
+          btn.on('click', () => save(form));
+        });
+      });
+    });
+    dialog.open(true);
+  }
+
+  async function save(form) {
+    if (!form.validate()) {
+      return;
+    }
+    await onSubmit(editingId, form.values());
+    dialog.close();
+  }
+
+  // 有对外命令方法（open / close）→ 形态 B：命令写在 api 上，视图就是自己的弹窗节点
+  return vNode((api) => {
+    api.open = (member = null) => {
+      open(member);
+      return api;
+    };
+    api.close = () => {
+      dialog.close();
+      return api;
+    };
+
+    return dialog;
+  });
+}

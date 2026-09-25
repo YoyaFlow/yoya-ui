@@ -1,0 +1,324 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { div, hasComponentIdentity, ref, vScroll } from '../index.js';
+
+const VIRTUAL_ITEM = '[vn~="VScrollVirtualItem"]';
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
+
+describe('vScroll', () => {
+  it('renders items and exposes the scroll container', () => {
+    const scroll = vScroll({
+      block: true,
+      items: ['A', 'B'],
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    expect(hasComponentIdentity(scroll, 'VScroll')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VScroll');
+    expect(element.dataset.page).toBe('0');
+    expect(element.dataset.blocked).toBe('true');
+    expect(element.dataset.virtual).toBeUndefined();
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
+    expect(element.textContent).toContain('A');
+    expect(element.textContent).toContain('B');
+  });
+
+  it('forces virtual mode when enabled explicitly', () => {
+    const scroll = vScroll({
+      items: ['A'],
+      renderItem: (item) => div(item),
+      virtual: true
+    });
+    const element = scroll.renderDom();
+
+    expect(scroll.virtual()).toBe(true);
+    expect(element.dataset.virtual).toBe('true');
+    expect(element.querySelectorAll('[vn~="VScrollVirtualItem"]')).toHaveLength(1);
+  });
+
+  it('virtualizes large item lists and keeps a real scroll height', () => {
+    const items = Array.from({ length: 1000 }, (_, index) => `项目 ${index}`);
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 40,
+      items,
+      overscan: 2,
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    let wrappers = element.querySelectorAll('[vn~="VScrollList"] > [vn~="VScrollVirtualItem"]');
+
+    expect(element.dataset.virtual).toBe('true');
+    expect(scroll.itemHeight()).toBe(40);
+    expect(scroll.overscan()).toBe(2);
+    expect(wrappers).toHaveLength(6);
+    expect(wrappers[0].dataset.index).toBe('0');
+    expect(element.querySelector('[vn~="VScrollList"]').style.height).toBe('48016px');
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 480 });
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    wrappers = element.querySelectorAll('[vn~="VScrollList"] > [vn~="VScrollVirtualItem"]');
+    expect(wrappers).toHaveLength(9);
+    expect(wrappers[0].dataset.index).toBe('7');
+    expect(wrappers[wrappers.length - 1].dataset.index).toBe('15');
+
+    const html = scroll.toHTML();
+    expect(html.match(/vn="VScrollVirtualItem"/g)).toHaveLength(9);
+    expect(html).toContain('data-index="7"');
+    expect(html).not.toContain('项目 999');
+
+    scroll.virtual(false);
+
+    expect(element.dataset.virtual).toBeUndefined();
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(1000);
+  });
+
+  it('virtualizes appended data without rendering every row', () => {
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 30,
+      items: ['A'],
+      overscan: 2,
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    scroll.append(Array.from({ length: 100 }, (_, index) => `第 ${index + 2} 项`));
+
+    expect(scroll.items()).toHaveLength(101);
+    expect(element.querySelectorAll('[vn~="VScrollVirtualItem"]')).toHaveLength(2);
+    expect(element.querySelector('[vn~="VScrollVirtualItem"]').getAttribute('aria-setsize')).toBe(
+      '101'
+    );
+    expect(element.querySelector('[vn~="VScrollList"]').style.height).toBe('3854px');
+  });
+
+  it('keeps static content non-virtualized', () => {
+    const scroll = vScroll((scroller) => {
+      scroller.content((list) => {
+        list.div('A');
+        list.div('B');
+      });
+    });
+    const element = scroll.renderDom();
+
+    expect(element.dataset.virtual).toBeUndefined();
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
+  });
+
+  it('loads more when the scroll position reaches the threshold', () => {
+    const loadMore = vi.fn(({ append, block, page }) => {
+      append([`第 ${page} 页`]);
+      block(true);
+    });
+    const scroll = vScroll({
+      block: true,
+      items: ['初始'],
+      loadMore,
+      renderItem: (item) => div(item),
+      threshold: 20
+    });
+    const element = scroll.renderDom();
+
+    scroll.block(false);
+    Object.defineProperty(element, 'scrollHeight', { configurable: true, value: 200 });
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 100 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 100 });
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+    expect(scroll.page()).toBe(1);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
+
+    scroll.block(true);
+    element.dispatchEvent(new Event('scroll', { bubbles: false }));
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+    expect(element.dataset.blocked).toBe('true');
+  });
+
+  it('switches between loop and block loading states', () => {
+    const scroll = vScroll({ block: true });
+    const element = scroll.renderDom();
+
+    expect(scroll.block()).toBe(true);
+
+    scroll.loop(true);
+
+    expect(scroll.loop()).toBe(true);
+    expect(scroll.block()).toBe(false);
+    expect(element.dataset.loop).toBe('true');
+    expect(element.dataset.blocked).toBeUndefined();
+
+    scroll.block(true);
+
+    expect(scroll.block()).toBe(true);
+    expect(scroll.loop()).toBe(false);
+    expect(element.dataset.loop).toBeUndefined();
+  });
+
+  it('appends resolved results and blocks when the handler says so', async () => {
+    const scroll = vScroll({
+      block: true,
+      items: ['A'],
+      loadMore: ({ append, block }) => {
+        append(['B']);
+        block(true);
+      },
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    scroll.block(false);
+    await scroll.load();
+
+    expect(scroll.page()).toBe(1);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > div')).toHaveLength(2);
+    expect(scroll.block()).toBe(true);
+    expect(element.querySelector('[vn~="VScrollFooter"]').textContent).toContain('没有更多了');
+  });
+
+  it('resets data, page and blocked state', () => {
+    const scroll = vScroll({
+      block: true,
+      items: ['A', 'B'],
+      renderItem: (item) => div(item)
+    });
+    const element = scroll.renderDom();
+
+    scroll.reset();
+
+    expect(scroll.page()).toBe(0);
+    expect(scroll.block()).toBe(false);
+    expect(scroll.items()).toEqual([]);
+    expect(element.querySelectorAll('[vn~="VScrollList"] > *')).toHaveLength(0);
+  });
+
+  it('keeps the item renderer after reset so later appends stay structured', () => {
+    const scroll = vScroll({
+      items: ['A', 'B'],
+      renderItem: (item) => div((row) => row.className('demo-item').child(item))
+    });
+    const element = scroll.renderDom();
+
+    // 演示里「重新加载」= reset() + check()，之后 loadMore 用 append(next) 续数据；
+    // 渲染函数属于列表配置，reset 不该把它一起丢掉，否则追加进来的是裸字符串。
+    scroll.reset();
+    scroll.append(['C', 'D']);
+
+    const rows = [...element.querySelectorAll('[vn~="VScrollList"] > *')];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].className).toBe('demo-item');
+    expect(rows[0].textContent).toBe('C');
+  });
+
+  it('registers vScroll as a parent shortcut', () => {
+    const page = div((root) => {
+      root.vScroll({
+        block: true,
+        items: ['A'],
+        renderItem: (item) => div(item)
+      });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector('[vn~="VScroll"]')).not.toBeNull();
+    expect(element.querySelector('[vn~="VScrollList"] > div').textContent).toBe('A');
+  });
+
+  it('keeps state handles live', () => {
+    const loading = ref(false);
+    const loadingText = ref('载入中');
+    const threshold = ref(20);
+    const loadMore = vi.fn();
+    const scroll = vScroll({
+      items: ['A'],
+      loading,
+      loadingText,
+      loadMore,
+      renderItem: (item) => div(item),
+      threshold
+    });
+    const element = scroll.renderDom();
+    const status = element.querySelector('[vn~="VScrollStatus"]');
+
+    expect(element.dataset.loading).toBeUndefined();
+    expect(status.textContent).toBe('');
+
+    // 句柄 props 是活值：写状态就落 DOM（页脚显隐靠 CSS 规则读 data-loading / data-blocked）
+    loading.value = true;
+
+    expect(element.dataset.loading).toBe('true');
+    expect(element.getAttribute('aria-busy')).toBe('true');
+    expect(status.textContent).toBe('载入中');
+
+    loadingText.value = '正在载入';
+
+    expect(status.textContent).toBe('正在载入');
+
+    // 阈值也是活值：写大阈值后同一次触底检查就会触发加载
+    threshold.value = 999999;
+    Object.defineProperty(element, 'scrollHeight', { configurable: true, value: 100 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 100 });
+    scroll.loading(false);
+    scroll.check();
+
+    expect(loadMore).toHaveBeenCalledTimes(1);
+
+    scroll.destroy();
+  });
+
+  it('reuses the window rows that stay in view while scrolling', () => {
+    const items = Array.from({ length: 1000 }, (_, index) => `项目 ${index}`);
+    const scroll = vScroll({
+      block: true,
+      itemHeight: 40,
+      items,
+      overscan: 2,
+      renderItem: (item) => div(item),
+      virtual: true
+    });
+    const element = scroll.renderDom();
+
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 });
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 0 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const before = new Map(
+      [...element.querySelectorAll(VIRTUAL_ITEM)].map((node) => [Number(node.dataset.index), node])
+    );
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 100 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const after = new Map(
+      [...element.querySelectorAll(VIRTUAL_ITEM)].map((node) => [Number(node.dataset.index), node])
+    );
+    const overlap = [...before.keys()].filter((index) => after.has(index));
+
+    // 窗口下移：重叠的行还是原来那个节点（只有进出窗口的行增删）
+    expect(overlap.length).toBeGreaterThan(0);
+    overlap.forEach((index) => expect(after.get(index)).toBe(before.get(index)));
+    expect([...after.keys()].some((index) => !before.has(index))).toBe(true);
+
+    Object.defineProperty(element, 'scrollTop', { configurable: true, value: 400 });
+    element.dispatchEvent(new Event('scroll'));
+
+    const later = element.querySelectorAll(VIRTUAL_ITEM);
+
+    expect(later).toHaveLength(9);
+    expect(later[0].dataset.index).toBe('6');
+
+    scroll.destroy();
+  });
+});

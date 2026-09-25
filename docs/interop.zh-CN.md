@@ -37,8 +37,8 @@ div((page) => {
 
 ## 为什么这不是魔法
 
-- `vEchart` 是一个生命周期清晰记录的薄节点类（`renderDom` → 初始化，`option()` → 更新，
-  `destroy()` → `dispose()`）；
+- `vEchart` 是一个生命周期清晰的形态 B 组件（`vNode` 闭包：`whenMount(host)` → 初始化，`option()` →
+  更新，`whenDestroy` → `dispose()`）——定义即得到组件节点，库只拿到真实 DOM 容器，不继承基础元素；
 - 同一契约适用于**任何**能挂载到 DOM 节点的库：富文本编辑器、表格、地图、树、代码编辑器……
   生命周期桥接只需写一次，之后就能像内置组件一样通过 `child()` 组合；
 - 组件还可以通过 `registerChildFactories` 注册进 DSL 本身（上面的 `page.vEchart(...)` 之所以
@@ -67,7 +67,7 @@ npm run examples:html   # 打开 http://localhost:5173/#/components
 
 另外两个独立原型同样建立在这套范式上：
 
-- [工业自动化原型](../src/examples/factory-game.html)用 `vThree` 作为 3D 视口：基于网格的工厂
+- [工业自动化原型](../examples/factory-game.html)用 `vThree` 作为 3D 视口：基于网格的工厂
   模拟（矿机、传送带、组装机），工具栏与产量统计由 yoya-ui 组件承担；
-- [SCADA 数字孪生演示](../src/examples/scada-demo.html)从操作员视角呈现同一套技术栈：全屏第一
+- [SCADA 数字孪生演示](../examples/scada-demo.html)从操作员视角呈现同一套技术栈：全屏第一
   人称行走巡厂，假数据驱动的罐体液位、泵状态、管线流量与报警，配合 yoya-ui 的游戏化 HUD 与快捷键。

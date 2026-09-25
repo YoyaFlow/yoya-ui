@@ -1,6 +1,6 @@
 # 业务模块组织规则
 
-面向 yoya-ui 使用方项目的业务代码组织方式，适配「ViewNode + 对象组件 + 手动更新」的模型。结构以 `create-yoya-ui` 的 admin 模板为准（模板内的 `RULES.md` 是同一套规则的完整版）。
+面向 yoya-ui 使用方项目的业务代码组织方式，适配「ViewNode + 组件（薄工厂 / vNode）+ 信号驱动的更新」的模型。结构以 `create-yoya-ui` 的 admin 模板为准（模板内的 `RULES.md` 是同一套规则的完整版）。
 
 ## 核心原则
 
@@ -26,12 +26,12 @@ src/
   features/                # 业务域 = 顶级菜单，下按菜单项分子模块
     <domain>/<menu-item>/
       pages/               # <名字>-page.js
-      components/          # 业务组件（形态 A 薄工厂 / 形态 B 对象组件）
+      components/          # 业务组件（形态 A 薄工厂 / 形态 B vNode）
       api/                 # <域>.mgr.js / .req.js / .views.js / .state.js / .mock.js（+ 同名 .d.ts）
       utils/               # 模块内小工具与常量
 ```
 
-- **两层 `api/` 含义不同**：`src/api/` 是全局传输层；`features/**/api/` 是域内请求命令、结果结构与状态。这是最容易看混的一处。
+- **两层 `api/` 含义不同**：`packages/yoya-ui/src/api/` 是全局传输层；`features/**/api/` 是域内请求命令、结果结构与状态。这是最容易看混的一处。
 - **模块自包含**：叶子模块只依赖自己的 api / components / pages / utils。
 - **依赖方向**：跨模块唯一允许的引用是对方的 `api/<域>.req.js`；`shared → features/<域>/api/req.js` 是允许的公开单向依赖，不 import 别域的 pages / components / state 内部。
 - **简单页只放一个文件**：无数据交互的简单/占位页只放 `pages/<名字>-page.js`（可复用 shared 的占位页组件）；有数据交互的页面才展开 api / components / pages / utils 四件套。
@@ -42,15 +42,15 @@ src/
 - **页面也是组件**：PascalCase 组件名（`MemberListPage`、`OrderListPage`），文件 `<名字>-page.js`；SSR 场景用 `createPage(requestState)` 作为服务端与客户端复用的入口
 - 页面只做编排：组合业务组件、绑定事件、调用状态动作；不写请求逻辑、不堆散落结构
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
-- **要驱动的先建后放，非必要不提前建**：只有确实需要组件句柄（`refresh()` / `update()` / `open()` 等对外命令方法）时，才在 `render()` 之外先建再 `child()` 挂载——`child()` 与 `page.vXxx()` 都返回父节点，内联创建拿不到子组件句柄。**其余一律在 `render()` 里就地组合**（`stack.div((box) => …)` / `page.vCard((card) => …)`），不要把纯结构节点提到函数作用域再挂回来：
+- **要驱动的先建后放，非必要不提前建**：只有确实需要组件句柄（`update()` / `open()` 等对外命令方法）时，才在视图表达式之前先建、再 `child()` 挂载——`child()` 与 `page.vXxx()` 返回的是**父节点**，内联创建拿不到子组件句柄。**其余一律就地组合**（`stack.div((box) => …)` / `page.vCard((card) => …)`），不要把纯结构节点提到函数作用域再挂回来：
 
   ```js
   // 反例：box 只当子节点用，却先建到外面（多一次中间变量，读者要找它挂在哪）
   const box = div((node) => node.p('内容'));
-  return { render: () => vstack((stack) => stack.child(box)) };
+  return vstack((stack) => stack.child(box));
 
   // 正例：就地组合；只有需要 box.rebuild() / box.update() 这类句柄时才提前建
-  return { render: () => vstack((stack) => stack.div((box) => box.p('内容'))) };
+  return vstack((stack) => stack.div((box) => box.p('内容')));
   ```
 
 ```js
@@ -98,29 +98,23 @@ export function MemberListPage() {
     toast.success('已保存');
   }
 
-  return {
-    render() {
-      // 纯结构直接内联，上面建好的三个句柄只负责挂载
-      return vstack({ gap: '16px' }, (page) => {
-        page.h2('成员管理');
-        page.vCard((card) => {
-          card.vCardHeader('成员列表');
-          card.vCardBody((body) => {
-            body.child(MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) }));
-            body.child(table).child(pagination);
-          });
-        });
-        page.child(dialog);
+  // 页面也是组件：没有对外命令方法 → 形态 A 薄工厂，直接返回视图节点
+  // 纯结构就地内联，上面建好的三个句柄只负责挂载
+  return vstack({ gap: '16px' }, (page) => {
+    page.h2('成员管理');
+    page.vCard((card) => {
+      card.vCardHeader('成员列表');
+      card.vCardBody((body) => {
+        body.child(MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) }));
+        body.child(table).child(pagination);
       });
-    },
-    // 页面也是组件：父级 / 路由可以调用实例方法刷新
-    refresh() {
-      return load();
-    }
-  };
+    });
+    page.child(dialog);
+  });
 }
 ```
 
+- **页面需要对外方法**（如 `refresh()`）时按形态 B 写：`return vNode((api) => { api.refresh = () => { …; return api }; return view; })`；不需要就不要加（`vDialog` / 表格这类句柄命令已经够用）
 - **信号感知的视图**（表格 / 文本 / 区域）绑句柄后自动更新；**命令式组件**（`vPagination` / `vTree`）没有绑定通道，由动作在数据到位后同步一次
 - 页面里不写 `state.subscribe(() => table.refresh())` 这类「通知 → 手动重建」接线：写入 ref 就是通知，列表按 key 对账
 
@@ -137,7 +131,7 @@ export function MemberListPage() {
 
 判据：有管理动作用 `mgr.js`；只对外提供查询/能力用 `req.js`；两者可并存（`member.mgr.js` + `member.req.js`）。
 
-通讯契约从独立入口 `@yoyaflow/yoya-ui/api` 导出（root / core 不再导出）。传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
+通讯契约从独立入口 `@yoyaflow/yoya-ui/api` 导出（root / core 不再导出）。传输分层：命令只描述请求（地址、方法、参数、映射），真正发包由库调用注册的传输层——`packages/yoya-ui/src/api/domain.api.js` 里的 `domainSubmit` 先匹配 mock、否则走 `fetch.api.js`，最后统一 `Result.from(raw, req)` 归一化；`configureRequest({ submit })` 完成注册。
 
 ## 请求命令范式
 
@@ -183,7 +177,7 @@ export default {
 
 ## 状态模块
 
-- **局部状态**：对象组件闭包或返回对象上的 `ref`；值位置直接传句柄，写入即写回（不要包 `computed(() => x.value)`，也别传 `x.value` 快照）
+- **局部状态**：组件闭包里的 `ref`（vNode 写在外层闭包、需要暴露就地挂到 `api` 上）；值位置直接传句柄，写入即写回（不要包 `computed(() => x.value)`，也别传 `x.value` 快照）
 - **页面状态类**：`api/<域>.state.js` 默认导出 `<Domain>PageState`，持有数据与筛选、暴露动作方法；**要驱动视图的字段用 `ref` 持有**（同模块的视图 / 组件直接绑句柄），`subscribe(listener)` 只留给非视图副作用
 - **跨组件共享**：共享同一组信号（在页面工厂或组件内创建后传下去），或自建状态工厂返回 `{ 数据读取, 动作 }`
 - 状态保持纯数据：动作构造请求命令并 `submit()` 后写入状态——写入 `ref` 就完成通知；需要"结构随数据变化"时用可重建区域读信号（见 core.md）
@@ -250,7 +244,7 @@ export default class MembersPageState {
 ## 业务组件
 
 - **形态 A 薄工厂**：纯展示 / 配置化组合，直接返回 ViewNode；**确定没有额外行为要定义时就用它**，不要为预留能力先包成对象组件；演示代码同理——没有对外命令方法就直接返回节点，不包 `render()`
-- **形态 B 对象组件**：确有内部状态或对外命令方法的业务组件才用它，返回 `{ render(), ... }`
+- **vNode 组件**：确有内部状态或对外命令方法的业务组件用它（`vNode((api) => 视图)`）——它是形态 B；对象组件（`{ render() }`）**0.7 起退场**（运行期直接拒收），不要写
 - **一个业务块一个文件**：`member-table.js`（表格与行操作）、`member-toolbar.js`（筛选栏）、`member-form-dialog.js`（新增/编辑弹窗）
 - 输入用 props 式参数与回调（`{ rows, onEdit, onRemove }`），**组件自己不请求数据**：数据由页面从状态取来传入
 - 命名用业务前缀（`MemberTable`），与库内 `v` 前缀区分；需要时可 `registerChildFactories` 注册为页面快捷方法
@@ -267,7 +261,7 @@ src/
     ui.buttons.js             # 通用 UI：按钮类（RowActionButton 等，无业务语义）
     ui.pages.js               # 通用 UI：页面类（PlaceholderPage 等）
     user-picker/
-      user-picker.js          # 组件（形态 B 对象组件）
+      user-picker.js          # 组件（形态 B vNode）
       user-picker-state.js    # 组件状态（查询/分页等，数据走所属域 req.js）
       user-picker.messages.js # 文案（可选）
 ```
@@ -310,7 +304,7 @@ page.vButton('选择用户', (btn) => btn.on('click', () => picker.open()));
 | 页面内部编排 / 回调  | 动词（不对外暴露为组件）          | `switchModule`、`syncPagination`                     |
 
 - 组件工厂不占 `v` 前缀（`v` 前缀保留给库组件），也不以动词/过程名命名；`pageView`、`tableNode`、`createMemberListPage` 这类产出 UI 却用动作名/工厂名的函数属于命名错误
-- 判定口诀：返回值是 ViewNode / 组件对象 → 组件工厂 → PascalCase 业务名；返回值是数据/状态 → `create` 或动词命名
+- 判定口诀：返回值是 ViewNode / 组件（薄工厂或 vNode 的返回值）→ 组件工厂 → PascalCase 业务名；返回值是数据/状态 → `create` 或动词命名
 - 组件按业务域落位 `features/<域>/components/`，页面在 `pages/`，请求 / 结果 / 状态都在 `api/`
 
 ### 结构块也用函数组件
@@ -354,7 +348,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 }
 ```
 
-- 块组件用与导出组件同一套形态（形态 A 直接返回 ViewNode，或形态 B 返回 `{ render() }`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名
+- 块组件用与导出组件同一套写法（形态 A 直接返回 ViewNode，或形态 B `vNode((api) => 视图)`），只是作用域留在文件内；不要用匿名箭头函数或 `renderTop` / `BlockA` 这类位置式命名
 - **活数据用 getter 传**：`MemberRows({ rows: () => state.members })` 而不是 `rows: state.members`——数组/对象引用在状态更新后会变陈旧，尤其配合区域重跑时 builder 读到的还是旧值；回写一律走回调（`onSelect(id)`）。不要在块组件里隐式读取外层状态，这样它才能独立阅读、单独替换，必要时直接提升为可复用组件
 - **块内的更新分工**：值变化用值绑定（信号优先：`vText(signal)`、`attr(name, signal)`），结构变化用区域——块在自己那层声明 `rebuildable()`，并在 builder 里读当前数据；区域外的输入框等节点不会因此被重建
 - 一个块只负责自己那块的 DOM；跨块共享的状态、格式化与样式 token 放在模块级 helper 或组件入口
@@ -378,7 +372,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 
 ## SSR 纪律（业务模块同样适用）
 
-- 页面工厂 `render()/toHTML()` DOM-free 且确定性：不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出
+- 页面工厂与组件定义函数 DOM-free 且确定性（`toHTML()` 同样不碰 DOM）：不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出
 - 请求状态显式传入，渲染后组件树销毁；共享状态实例不要跨请求复用
 
 ## 权限接入
@@ -395,7 +389,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 
 1. 导入并注册所有 mock（副作用导入，含 `shell.mock.js` / `auth.mock.js`）
 2. `state.load()`：内部先 `loadSession()` 加载会话并 `installAccess(...)`，再取菜单（按权限过滤）+ 创建路由 + 订阅导航
-3. `AdminShell({ state })` 装配外壳 → `shell.render().bindTo('#app')`
+3. `AdminShell({ state })` 装配外壳 → `shell.bindTo('#app')`（或 `mount(shell, '#app')`）
 4. `state.start()` 启动路由
 
 新增一个菜单项要**同步三处**：

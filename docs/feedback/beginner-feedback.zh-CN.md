@@ -107,7 +107,7 @@
 ### 11. 跨了好几层的组件要共享状态怎么办？没有 `provide/inject`，没有 Context？
 
 - 分类：②（文档缺失）
-- 现状：`provide(key, value)` / `inject(key, fallback)` 已落地（`src/core/context.js`）——声明写在构建这一帧（setup / 组件 `render()` / 页面工厂），挂在当前节点上，后代就近读取、随节点销毁；懒解析的组件沿父链上溯，异步加载的视图以 loader 节点为帧。请求级注入仍是 `withContext(providers, build)` / `installContext` + `currentContext(key)`，`inject()` 会回退到这两层，读侧可以统一用 `inject`。权限作用域 `access()` 同样就近覆盖。
+- 现状：`provide(key, value)` / `inject(key, fallback)` 已落地（`packages/yoya-core/src/core/context.js`）——声明写在构建这一帧（setup / 组件 `render()` / 页面工厂），挂在当前节点上，后代就近读取、随节点销毁；懒解析的组件沿父链上溯，异步加载的视图以 loader 节点为帧。请求级注入仍是 `withContext(providers, build)` / `installContext` + `currentContext(key)`，`inject()` 会回退到这两层，读侧可以统一用 `inject`。权限作用域 `access()` 同样就近覆盖。
 - 文档动作：`skills/yoya-ui/references/access-context.md` 已补「跨组件共享：provide / inject」与选型表。
 - 优先级：P1 ☑
 
@@ -128,8 +128,8 @@
 ### 14. 为什么组件还分"形态 A / 形态 B"？React 函数组件和 class 组件那套我还没理清，怎么又来两个形态？
 
 - 分类：②
-- 现状：三形态（薄工厂 / 对象组件 / 类节点）是同一模型的三个封装层级、按复杂度递进，不是流派之争；契约冻结在 component-authoring 文档，业务组件默认形态 B。
-- 文档动作：component-authoring 开头补一张「什么时候用哪个形态」决策表。
+- 现状：2026-09-21 起口径收敛为**两种写法**——形态 A 薄工厂（没有行为直接返回 ViewNode）与形态 B `vNode((api) => 视图)`（有状态 / 命令 / 钩子）；对象组件（`{ render() }`）**0.7 起运行期直接拒收**（票 07 硬删，见 component-authoring §7.4），`class extends HtmlElementNode` 只是引擎内部的节点类型扩展、不是第三种写法。契约冻结在 component-authoring 文档，选择判据也在那里。
+- 文档动作：component-authoring 已有「什么时候用哪个形态」的判据，skill 的 `references/core.md` 同步了同一口径。
 - 优先级：P2 ☐
 
 ### 15. 逻辑复用怎么办？没有 composables 命名约定、没有自定义 hooks？
@@ -223,8 +223,8 @@
 ### 27. CSS 怎么隔离？没有 scoped style、没有 CSS Modules，类名撞了怎么办？
 
 - 分类：③（有缓解）
-- 现状：无 scoped / Modules；库侧契约是 `yoya-` 前缀 BEM 类名 + `--yoya-*` token + `data-yoya-mode` / `data-yoya-density`，且有 className-contract / css-contract 测试锁定不漂移；业务样式完全自主，库不做运行时 CSS 注入。
-- 文档动作：theme 文档已写类名契约，FAQ 加「为什么不需要 scoped」条目。
+- 现状（2026-09-24 更新）：无 scoped / Modules；库侧契约是**身份属性 `vn`**（预设规则只从 `[vn~="VXxx"]` 起头）+ `--yoya-*` token + `data-yoya-mode` / `data-yoya-density`，类名一侧只剩能力类 `yoya-<feature>`（`yoya-component` / `yoya-v*` 随票 15 波 6 退场，基线与 CSS 均已清零）；由 attribute-migration / className-contract / css-contract 三个门禁锁定不漂移；业务样式完全自主，库不做运行时 CSS 注入。
+- 文档动作：theme 文档已写「身份与类名契约」，FAQ 加「为什么不需要 scoped」条目。
 - 优先级：P2 ☐
 
 ### 28. 路由用什么？没有 vue-router / react-router 的对应物？

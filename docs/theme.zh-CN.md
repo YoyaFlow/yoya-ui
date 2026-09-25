@@ -7,7 +7,7 @@
 
 - **CSS 文件为主**：组件样式集中在 `yoya.ui.css`，按原生 HTML 开发方式书写；行内样式仅保留实例级参数。
 - **小核心 = 标准**：核心只定义节点生命周期、属性快照、组件包装与状态机制，样式与主题全部由 token 与 CSS 契约承载。
-- **每个预定义元素有自己的 className**：类名即"预设皮肤"的挂载点，用户可用 `replaceClassName` 剥离预设并用自己的 CSS 接管。
+- **每个预定义组件带自己的身份属性**：预设皮肤挂在 `[vn="VXxx"]` 上（这就是挂载点），用户通过**换掉身份**或**为同一作用域写自己的规则**来接管（见 §6 / §7）。
 - **换肤是三维正交矩阵**：品牌主题（`data-yoya-theme`）× 明暗模式（`data-yoya-mode`）× 密度（`data-yoya-density`）。
 
 ## 2. 换肤维度
@@ -99,7 +99,7 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 
 ## 5.1 页面壳 vBody
 
-`vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。 区域级容器使用 `vThemeShell`：默认提供主题化背景（`--yoya-color-surface`）、边框（`--yoya-color-border`）、圆角（`--yoya-radius-md`）与文字色（`--yoya-color-text`），并可通过 `.background()` / `.backgroundOpacity(alpha)` / `.radius()` / `.border()` / `.borderColor()` / `.scrollable()` 单独调整单个实例。
+`vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。 区域级"面"由提供它的组件自己负责——`vCard` 是样板：背景（`--yoya-color-surface`）、边框（`--yoya-color-border`）与圆角写在皮肤的 `[vn~='VCard']` 规则里，单个实例通过该组件的 API 或行内 `styles()` 调整。想要同样观感的普通盒子，就为自己的身份写一条面规则（或用实例样式），不需要再去拿一个专门的"外壳容器"。
 
 ```js
 import { vBody } from '@yoyaflow/yoya-ui/ui';
@@ -112,14 +112,14 @@ vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 | ---- | ------------------ | ------------------------------------------------------------------------ |
 | L0   | token 覆盖（全局） | 重定义 `--yoya-*` 实现整站换肤                                           |
 | L1   | 作用域 token 覆盖  | 在任意容器上局部重定义 `--yoya-*` 实现局部换肤                           |
-| L2   | 剥离预设皮肤       | `replaceClassName(old, next, tolerate)` + 用户自己的 CSS 文件            |
+| L2   | 剥离预设皮肤       | 为身份作用域（`[vn="VXxx"] …`）写自己的规则，或换掉身份写自己的          |
 | L3   | 微调覆盖           | 库规则在 `@layer yoya` 内且基础规则用 `:where()`，未分层用户规则天然优先 |
 | L4   | 实例级             | 行内 `styles()` / `style()`                                              |
 | L5   | 业务钩子           | `className('my-x')` 追加自定义类                                         |
 | L6   | 组件 API           | `type/size/disabled/…`，禁止用 CSS 硬改组件变体                          |
 | L7   | 完全替换           | 按标准自建/包装组件                                                      |
 
-### replaceClassName
+### replaceClassName（普通类名工具）
 
 `ElementNode.replaceClassName(old, next, tolerate = false)`：
 
@@ -128,19 +128,19 @@ vBody({ children: [...], maxWidth: 1120 }).bindTo('#app');
 - `old === next`：无操作；返回 `this` 支持链式。
 
 ```js
-vCard((card) => card.replaceClassName('yoya-vcard', 'acme-card'));
+vCard((card) => card.replaceClassName('card-plain', 'card-raised'));
 ```
 
-预设样式全部从根类作用域书写（无孤儿部件选择器），因此替换根类后整棵子树与预设样式脱钩；基于根类的 `data-*` 状态选择器（如 `.yoya-vtabs .yoya-vtab-trigger[data-active]`）同样随之失效，状态钩子样式需要一并由用户 CSS 接管。
+组件身份不再挂在类名上（见 §7），所以它现在只是一个管理**用户自己类名**的普通工具——不再有"剥离预设"的作用。要接管某个组件的预设皮肤，就给它的身份作用域写自己的规则（`[vn="VXxx"] …`），或在自己的组件上写自己的身份；`replaceClassName` 是否继续留在公开 API 里仍是待定项（票 15 §3-Q8）。
 
-## 7. className 契约
+## 7. 身份与类名契约
 
-- 共享标记：所有组件根节点带 `yoya-component`。
-- 组件与部件类：`yoya-v<name>`、`yoya-v<name>-<part>`、`yoya-v<name>--<modifier>`。
-- 共享/工具类：`yoya-<feature>-<part>`（如 `yoya-icon`、`yoya-control-clear`）。
+- **身份 = 视图根上的 `vn` 属性**：`vn="VCard"`。包装型共用同一根时写多个名字、空格分隔（`vn="VTimer VInput"`），任一名字命中即命中。
+- **部件**用同一套写法带自己的名字（`vn="VCardHeader"`）；调用方投递的内容用 `vn_slot` 声明落位（写法见组件开发指南）。
+- **预设规则一律从身份作用域起头**：`yoya.ui.css` 里的选择器都是 `[vn~="VXxx"] …`（无孤儿部件选择器），所以换掉身份就一次性把整棵子树从预设样式里摘出来——状态钩子同样失效（`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` 不再命中）。
+- **类名不是身份**：旧的 `yoya-component` / `yoya-v*` 两族已随票 15 波 6 全部退场，共享基规则只认 `[vn]`；跨组件能力类保留：`yoya-<feature>`（`yoya-icon`、`yoya-layout`、`yoya-control-clear`）。
 - 状态一律 kebab-case 的 `data-*` 属性，类名不承载状态。
-- 动态类名仅允许 `yoya-v${name}-<part>` 与 `yoya-${kind}` 两种模板形态。
-- 由 `src/className-contract.test.js` 与 `src/preset-scope.test.js` 自动校验。
+- 由 `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`（类名存量已清零、只减不增）与 `packages/yoya-ui/src/testing/gates/preset-scope.test.js`（皮肤里每条规则都从库内真实声明的身份起头）把关，`packages/yoya-ui/src/testing/gates/css-contract.test.js` 逐条守具体规则。
 
 ### 主题切换 JS API（可选）
 
@@ -194,7 +194,7 @@ vThemeModeSwitch((sw) => {
 
 - `modes([...])`：可用模式，默认 `['light', 'dark', 'system']`；字符串会映射内置标签与图标，也支持传入 `{ mode, label, icon }` 自定义。
 - `persist(true | false)`：是否写入 localStorage，默认 `true`。
-- 每个按钮带 `aria-label` / `title` 与当前激活态，键盘可操作；完整交互演示见示例站主题页（`src/examples/theme-demo.js`）。
+- 每个按钮带 `aria-label` / `title` 与当前激活态，键盘可操作；完整交互演示见示例站主题页（`examples/theme-demo.js`）。
 
 ## 8. 层叠与覆盖保障
 
@@ -210,8 +210,9 @@ vThemeModeSwitch((sw) => {
 
 ## 10. 契约测试
 
-- `src/css-contract.test.js`：组件 class / 状态钩子的静态 CSS 规则覆盖。
-- `src/className-contract.test.js`：类名命名族、动态模板、`data-*` kebab 校验。
-- `src/preset-scope.test.js`：预设规则根类作用域（无孤儿选择器）。
-- `src/cascade-layer.test.js`：`@layer yoya` 层结构。
-- `src/theme-tokens.test.js`：raw 色板、变体派生、单定义、模式/密度开关、token 名稳定。
+- `packages/yoya-ui/src/testing/gates/css-contract.test.js`：组件身份（`[vn~="VXxx"] …`）/ 状态钩子的静态 CSS 规则覆盖。
+- `packages/yoya-ui/src/testing/gates/attribute-migration-baseline.test.js`：类名存量恒为 0、只减不增（`yoya-component` / `yoya-v*`）。
+- `packages/yoya-ui/src/testing/gates/className-contract.test.js`：类名字面量只能落在保留下来的族（能力类 `yoya-<feature>`）、动态模板、`data-*` kebab 校验。
+- `packages/yoya-ui/src/testing/gates/preset-scope.test.js`：预设规则必须从库内真实声明的身份起头（无孤儿选择器）。
+- `packages/yoya-ui/src/testing/gates/cascade-layer.test.js`：`@layer yoya` 层结构。
+- `packages/yoya-ui/src/testing/gates/theme-tokens.test.js`：raw 色板、变体派生、单定义、模式/密度开关、token 名稳定。

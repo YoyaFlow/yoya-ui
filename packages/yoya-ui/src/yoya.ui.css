@@ -1,0 +1,4620 @@
+@layer yoya;
+
+body {
+  margin: 0;
+}
+
+:root {
+  color-scheme: light;
+}
+
+[data-yoya-mode='light'] {
+  color-scheme: light;
+}
+
+[data-yoya-mode='dark'] {
+  color-scheme: dark;
+}
+
+[data-yoya-mode='system'] {
+  color-scheme: light dark;
+}
+
+@property --yoya-raw-primary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2563eb;
+}
+@property --yoya-raw-success {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #16a34a;
+}
+@property --yoya-raw-danger {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #dc2626;
+}
+@property --yoya-raw-warning {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f59e0b;
+}
+@property --yoya-raw-info {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0284c7;
+}
+
+:root,
+[data-yoya-theme] {
+  --yoya-raw-primary: #2563eb;
+  --yoya-raw-success: #16a34a;
+  --yoya-raw-danger: #dc2626;
+  --yoya-raw-warning: #f59e0b;
+  --yoya-raw-info: #0284c7;
+
+  --yoya-color-bg: light-dark(#f9f9f9, #171717);
+  --yoya-color-border: light-dark(#e5e5e5, #3c3c3c);
+  --yoya-color-border-faint: light-dark(#efefef, #2a2a2a);
+  --yoya-color-border-muted: light-dark(#b3b3b3, #5c5c5c);
+  --yoya-color-border-ring: light-dark(rgba(13, 13, 13, 0.14), rgba(255, 255, 255, 0.22));
+  --yoya-color-border-strong: light-dark(#d9d9d9, #484848);
+  --yoya-color-code-badge: light-dark(#ececec, #2e2e2e);
+  --yoya-color-code-badge-text: light-dark(#4b4b4b, #b9b9b9);
+  --yoya-color-code-bg: light-dark(#f7f7f8, #0f0f0f);
+  --yoya-color-code-border: light-dark(#ececec, #2c2c2c);
+  --yoya-color-code-header: light-dark(#fafafa, #191919);
+  --yoya-color-surface: light-dark(#ffffff, #212121);
+  --yoya-color-surface-active: light-dark(#e9e9e9, #2b2b2b);
+  --yoya-color-surface-hover: light-dark(#f3f3f3, #262626);
+  --yoya-color-surface-muted: light-dark(#f5f5f5, #1c1c1c);
+  --yoya-color-text: light-dark(#0d0d0d, #ececec);
+  --yoya-color-text-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary), black 20%),
+    color-mix(in srgb, var(--yoya-raw-primary), white 40%)
+  );
+  --yoya-color-text-danger: light-dark(#b91c1c, #f87171);
+  --yoya-color-text-inverse: light-dark(#ffffff, #ffffff);
+  --yoya-color-text-muted: light-dark(#8f8f8f, #8a8a8a);
+  --yoya-color-text-secondary: light-dark(#6f6f6f, #a6a6a6);
+  --yoya-color-text-strong: light-dark(#0a0a0a, #f5f5f5);
+  --yoya-color-success-text: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success), black 35%),
+    color-mix(in srgb, var(--yoya-raw-success), white 50%)
+  );
+  --yoya-color-danger-text: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger), black 35%),
+    color-mix(in srgb, var(--yoya-raw-danger), white 50%)
+  );
+  --yoya-color-warning-text: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning), black 35%),
+    color-mix(in srgb, var(--yoya-raw-warning), white 50%)
+  );
+  --yoya-color-info-text: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info), black 35%),
+    color-mix(in srgb, var(--yoya-raw-info), white 50%)
+  );
+  --yoya-color-primary: light-dark(
+    var(--yoya-raw-primary),
+    color-mix(in srgb, var(--yoya-raw-primary), white 16%)
+  );
+  --yoya-color-primary-hover: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary), black 12%),
+    color-mix(in srgb, var(--yoya-raw-primary), white 28%)
+  );
+  --yoya-color-primary-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary), black 22%),
+    color-mix(in srgb, var(--yoya-raw-primary), white 8%)
+  );
+  --yoya-color-primary-deep: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary), black 36%),
+    color-mix(in srgb, var(--yoya-raw-primary), black 40%)
+  );
+  --yoya-color-primary-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary) 12%, white),
+    color-mix(in srgb, var(--yoya-raw-primary) 26%, black)
+  );
+  --yoya-color-primary-active-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary) 20%, white),
+    color-mix(in srgb, var(--yoya-raw-primary) 34%, black)
+  );
+  --yoya-color-primary-border: light-dark(
+    color-mix(in srgb, var(--yoya-raw-primary) 30%, white),
+    color-mix(in srgb, var(--yoya-raw-primary) 40%, black)
+  );
+  --yoya-color-primary-ring: color-mix(in srgb, var(--yoya-raw-primary) 30%, transparent);
+  --yoya-color-success: light-dark(
+    var(--yoya-raw-success),
+    color-mix(in srgb, var(--yoya-raw-success), white 16%)
+  );
+  --yoya-color-success-hover: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success), black 12%),
+    color-mix(in srgb, var(--yoya-raw-success), white 28%)
+  );
+  --yoya-color-success-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success), black 22%),
+    color-mix(in srgb, var(--yoya-raw-success), white 8%)
+  );
+  --yoya-color-success-deep: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success), black 36%),
+    color-mix(in srgb, var(--yoya-raw-success), black 40%)
+  );
+  --yoya-color-success-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success) 12%, white),
+    color-mix(in srgb, var(--yoya-raw-success) 26%, black)
+  );
+  --yoya-color-success-active-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success) 20%, white),
+    color-mix(in srgb, var(--yoya-raw-success) 34%, black)
+  );
+  --yoya-color-success-border: light-dark(
+    color-mix(in srgb, var(--yoya-raw-success) 30%, white),
+    color-mix(in srgb, var(--yoya-raw-success) 40%, black)
+  );
+  --yoya-color-success-ring: color-mix(in srgb, var(--yoya-raw-success) 30%, transparent);
+  --yoya-color-danger: light-dark(
+    var(--yoya-raw-danger),
+    color-mix(in srgb, var(--yoya-raw-danger), white 16%)
+  );
+  --yoya-color-danger-hover: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger), black 12%),
+    color-mix(in srgb, var(--yoya-raw-danger), white 28%)
+  );
+  --yoya-color-danger-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger), black 22%),
+    color-mix(in srgb, var(--yoya-raw-danger), white 8%)
+  );
+  --yoya-color-danger-deep: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger), black 36%),
+    color-mix(in srgb, var(--yoya-raw-danger), black 40%)
+  );
+  --yoya-color-danger-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger) 12%, white),
+    color-mix(in srgb, var(--yoya-raw-danger) 26%, black)
+  );
+  --yoya-color-danger-active-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger) 20%, white),
+    color-mix(in srgb, var(--yoya-raw-danger) 34%, black)
+  );
+  --yoya-color-danger-border: light-dark(
+    color-mix(in srgb, var(--yoya-raw-danger) 30%, white),
+    color-mix(in srgb, var(--yoya-raw-danger) 40%, black)
+  );
+  --yoya-color-danger-ring: color-mix(in srgb, var(--yoya-raw-danger) 30%, transparent);
+  --yoya-color-warning: light-dark(
+    var(--yoya-raw-warning),
+    color-mix(in srgb, var(--yoya-raw-warning), white 16%)
+  );
+  --yoya-color-warning-hover: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning), black 12%),
+    color-mix(in srgb, var(--yoya-raw-warning), white 28%)
+  );
+  --yoya-color-warning-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning), black 22%),
+    color-mix(in srgb, var(--yoya-raw-warning), white 8%)
+  );
+  --yoya-color-warning-deep: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning), black 36%),
+    color-mix(in srgb, var(--yoya-raw-warning), black 40%)
+  );
+  --yoya-color-warning-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning) 12%, white),
+    color-mix(in srgb, var(--yoya-raw-warning) 26%, black)
+  );
+  --yoya-color-warning-active-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning) 20%, white),
+    color-mix(in srgb, var(--yoya-raw-warning) 34%, black)
+  );
+  --yoya-color-warning-border: light-dark(
+    color-mix(in srgb, var(--yoya-raw-warning) 30%, white),
+    color-mix(in srgb, var(--yoya-raw-warning) 40%, black)
+  );
+  --yoya-color-warning-ring: color-mix(in srgb, var(--yoya-raw-warning) 30%, transparent);
+  --yoya-color-info: light-dark(
+    var(--yoya-raw-info),
+    color-mix(in srgb, var(--yoya-raw-info), white 16%)
+  );
+  --yoya-color-info-hover: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info), black 12%),
+    color-mix(in srgb, var(--yoya-raw-info), white 28%)
+  );
+  --yoya-color-info-active: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info), black 22%),
+    color-mix(in srgb, var(--yoya-raw-info), white 8%)
+  );
+  --yoya-color-info-deep: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info), black 36%),
+    color-mix(in srgb, var(--yoya-raw-info), black 40%)
+  );
+  --yoya-color-info-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info) 12%, white),
+    color-mix(in srgb, var(--yoya-raw-info) 26%, black)
+  );
+  --yoya-color-info-active-subtle: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info) 20%, white),
+    color-mix(in srgb, var(--yoya-raw-info) 34%, black)
+  );
+  --yoya-color-info-border: light-dark(
+    color-mix(in srgb, var(--yoya-raw-info) 30%, white),
+    color-mix(in srgb, var(--yoya-raw-info) 40%, black)
+  );
+  --yoya-color-info-ring: color-mix(in srgb, var(--yoya-raw-info) 30%, transparent);
+  --yoya-font-family:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --yoya-font-size: 14px;
+  --yoya-line-height: 1.5;
+  --yoya-radius-sm: 4px;
+  --yoya-radius-md: 6px;
+  --yoya-radius-lg: 8px;
+  --yoya-motion-fast: 120ms;
+  --yoya-motion-base: 160ms;
+  --yoya-shadow-sm: light-dark(0 1px 2px rgb(15 23 42 / 8%), 0 1px 2px rgb(0 0 0 / 30%));
+  --yoya-shadow-md: light-dark(0 8px 18px rgb(15 23 42 / 10%), 0 8px 18px rgb(0 0 0 / 36%));
+  --yoya-shadow-lg: light-dark(0 24px 72px rgb(15 23 42 / 20%), 0 24px 72px rgb(0 0 0 / 50%));
+  --yoya-border-width: 1px;
+  --yoya-border-width-strong: 2px;
+  --yoya-space-1: 4px;
+  --yoya-space-2: 8px;
+  --yoya-space-3: 12px;
+  --yoya-space-4: 16px;
+  --yoya-space-5: 24px;
+  --yoya-space-6: 32px;
+  --yoya-space-7: 48px;
+  --yoya-space-8: 64px;
+  --yoya-font-size-xs: 12px;
+  --yoya-font-size-sm: 13px;
+  --yoya-font-size-base: 14px;
+  --yoya-font-size-lg: 15px;
+  --yoya-font-size-xl: 20px;
+  --yoya-font-weight-regular: 400;
+  --yoya-font-weight-medium: 500;
+  --yoya-font-weight-semibold: 600;
+  --yoya-font-weight-bold: 700;
+  --yoya-control-height-sm: 30px;
+  --yoya-control-height-md: 34px;
+  --yoya-control-height-lg: 38px;
+  --yoya-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --yoya-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --yoya-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --yoya-motion-slow: 220ms;
+  --yoya-z-dropdown: 110;
+  --yoya-z-popover: 120;
+  --yoya-z-overlay: 300;
+  --yoya-z-toast: 500;
+}
+
+[data-yoya-density='compact'] {
+  --yoya-space-1: 3px;
+  --yoya-space-2: 6px;
+  --yoya-space-3: 10px;
+  --yoya-space-4: 12px;
+  --yoya-space-5: 18px;
+  --yoya-space-6: 24px;
+  --yoya-space-7: 36px;
+  --yoya-space-8: 48px;
+  --yoya-control-height-sm: 26px;
+  --yoya-control-height-md: 30px;
+  --yoya-control-height-lg: 34px;
+}
+/* 兼容兜底层（票 01 / D4–D5）：不认 light-dark() 或 color-mix() 的浏览器改走这一层。
+   值由默认原始调色板烘焙而来（不跟随 --yoya-raw-* 覆写，见 D12）；其余 token 无需兜底。
+   门禁：src/testing/gates/theme-tokens.test.js（层内唯一 + 兜底键集相等 + 兜底值必须为纯值）。 */
+@supports not ((color: light-dark(#000, #fff)) and (color: color-mix(in srgb, #fff, #000))) {
+  :root,
+  [data-yoya-theme] {
+    --yoya-color-bg: #f9f9f9;
+    --yoya-color-border: #e5e5e5;
+    --yoya-color-border-faint: #efefef;
+    --yoya-color-border-muted: #b3b3b3;
+    --yoya-color-border-ring: rgba(13, 13, 13, 0.14);
+    --yoya-color-border-strong: #d9d9d9;
+    --yoya-color-code-badge: #ececec;
+    --yoya-color-code-badge-text: #4b4b4b;
+    --yoya-color-code-bg: #f7f7f8;
+    --yoya-color-code-border: #ececec;
+    --yoya-color-code-header: #fafafa;
+    --yoya-color-surface: #ffffff;
+    --yoya-color-surface-active: #e9e9e9;
+    --yoya-color-surface-hover: #f3f3f3;
+    --yoya-color-surface-muted: #f5f5f5;
+    --yoya-color-text: #0d0d0d;
+    --yoya-color-text-active: rgba(30, 79, 188, 1);
+    --yoya-color-text-danger: #b91c1c;
+    --yoya-color-text-inverse: #ffffff;
+    --yoya-color-text-muted: #8f8f8f;
+    --yoya-color-text-secondary: #6f6f6f;
+    --yoya-color-text-strong: #0a0a0a;
+    --yoya-color-success-text: rgba(14, 106, 48, 1);
+    --yoya-color-danger-text: rgba(143, 25, 25, 1);
+    --yoya-color-warning-text: rgba(159, 103, 7, 1);
+    --yoya-color-info-text: rgba(1, 86, 129, 1);
+    --yoya-color-primary: #2563eb;
+    --yoya-color-primary-hover: rgba(33, 87, 207, 1);
+    --yoya-color-primary-active: rgba(29, 77, 183, 1);
+    --yoya-color-primary-deep: rgba(24, 63, 150, 1);
+    --yoya-color-primary-subtle: rgba(229, 236, 253, 1);
+    --yoya-color-primary-active-subtle: rgba(211, 224, 251, 1);
+    --yoya-color-primary-border: rgba(190, 208, 249, 1);
+    --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+    --yoya-color-success: #16a34a;
+    --yoya-color-success-hover: rgba(19, 143, 65, 1);
+    --yoya-color-success-active: rgba(17, 127, 58, 1);
+    --yoya-color-success-deep: rgba(14, 104, 47, 1);
+    --yoya-color-success-subtle: rgba(227, 244, 233, 1);
+    --yoya-color-success-active-subtle: rgba(208, 237, 219, 1);
+    --yoya-color-success-border: rgba(185, 227, 201, 1);
+    --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+    --yoya-color-danger: #dc2626;
+    --yoya-color-danger-hover: rgba(194, 33, 33, 1);
+    --yoya-color-danger-active: rgba(172, 30, 30, 1);
+    --yoya-color-danger-deep: rgba(141, 24, 24, 1);
+    --yoya-color-danger-subtle: rgba(251, 229, 229, 1);
+    --yoya-color-danger-active-subtle: rgba(248, 212, 212, 1);
+    --yoya-color-danger-border: rgba(245, 190, 190, 1);
+    --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+    --yoya-color-warning: #f59e0b;
+    --yoya-color-warning-hover: rgba(216, 139, 10, 1);
+    --yoya-color-warning-active: rgba(191, 123, 9, 1);
+    --yoya-color-warning-deep: rgba(157, 101, 7, 1);
+    --yoya-color-warning-subtle: rgba(254, 243, 226, 1);
+    --yoya-color-warning-active-subtle: rgba(253, 236, 206, 1);
+    --yoya-color-warning-border: rgba(252, 226, 182, 1);
+    --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+    --yoya-color-info: #0284c7;
+    --yoya-color-info-hover: rgba(2, 116, 175, 1);
+    --yoya-color-info-active: rgba(2, 103, 155, 1);
+    --yoya-color-info-deep: rgba(1, 84, 127, 1);
+    --yoya-color-info-subtle: rgba(225, 240, 248, 1);
+    --yoya-color-info-active-subtle: rgba(204, 230, 244, 1);
+    --yoya-color-info-border: rgba(179, 218, 238, 1);
+    --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+    --yoya-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+    --yoya-shadow-md: 0 8px 18px rgba(15, 23, 42, 0.1);
+    --yoya-shadow-lg: 0 24px 72px rgba(15, 23, 42, 0.2);
+  }
+
+  [data-yoya-mode='dark'] {
+    --yoya-color-bg: #171717;
+    --yoya-color-border: #3c3c3c;
+    --yoya-color-border-faint: #2a2a2a;
+    --yoya-color-border-muted: #5c5c5c;
+    --yoya-color-border-ring: rgba(255, 255, 255, 0.22);
+    --yoya-color-border-strong: #484848;
+    --yoya-color-code-badge: #2e2e2e;
+    --yoya-color-code-badge-text: #b9b9b9;
+    --yoya-color-code-bg: #0f0f0f;
+    --yoya-color-code-border: #2c2c2c;
+    --yoya-color-code-header: #191919;
+    --yoya-color-surface: #212121;
+    --yoya-color-surface-active: #2b2b2b;
+    --yoya-color-surface-hover: #262626;
+    --yoya-color-surface-muted: #1c1c1c;
+    --yoya-color-text: #ececec;
+    --yoya-color-text-active: rgba(124, 161, 243, 1);
+    --yoya-color-text-danger: #f87171;
+    --yoya-color-text-inverse: #ffffff;
+    --yoya-color-text-muted: #8a8a8a;
+    --yoya-color-text-secondary: #a6a6a6;
+    --yoya-color-text-strong: #f5f5f5;
+    --yoya-color-success-text: rgba(139, 209, 165, 1);
+    --yoya-color-danger-text: rgba(238, 147, 147, 1);
+    --yoya-color-warning-text: rgba(250, 207, 133, 1);
+    --yoya-color-info-text: rgba(129, 194, 227, 1);
+    --yoya-color-primary: rgba(72, 124, 238, 1);
+    --yoya-color-primary-hover: rgba(98, 143, 241, 1);
+    --yoya-color-primary-active: rgba(54, 111, 237, 1);
+    --yoya-color-primary-deep: rgba(22, 59, 141, 1);
+    --yoya-color-primary-subtle: rgba(10, 26, 61, 1);
+    --yoya-color-primary-active-subtle: rgba(13, 34, 80, 1);
+    --yoya-color-primary-border: rgba(15, 40, 94, 1);
+    --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+    --yoya-color-success: rgba(59, 178, 103, 1);
+    --yoya-color-success-hover: rgba(87, 189, 125, 1);
+    --yoya-color-success-active: rgba(41, 170, 88, 1);
+    --yoya-color-success-deep: rgba(13, 98, 44, 1);
+    --yoya-color-success-subtle: rgba(6, 42, 19, 1);
+    --yoya-color-success-active-subtle: rgba(7, 55, 25, 1);
+    --yoya-color-success-border: rgba(9, 65, 30, 1);
+    --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+    --yoya-color-danger: rgba(226, 73, 73, 1);
+    --yoya-color-danger-hover: rgba(230, 99, 99, 1);
+    --yoya-color-danger-active: rgba(223, 55, 55, 1);
+    --yoya-color-danger-deep: rgba(132, 23, 23, 1);
+    --yoya-color-danger-subtle: rgba(57, 10, 10, 1);
+    --yoya-color-danger-active-subtle: rgba(75, 13, 13, 1);
+    --yoya-color-danger-border: rgba(88, 15, 15, 1);
+    --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+    --yoya-color-warning: rgba(247, 174, 50, 1);
+    --yoya-color-warning-hover: rgba(248, 185, 79, 1);
+    --yoya-color-warning-active: rgba(246, 166, 31, 1);
+    --yoya-color-warning-deep: rgba(147, 95, 7, 1);
+    --yoya-color-warning-subtle: rgba(64, 41, 3, 1);
+    --yoya-color-warning-active-subtle: rgba(83, 54, 4, 1);
+    --yoya-color-warning-border: rgba(98, 63, 4, 1);
+    --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+    --yoya-color-info: rgba(42, 152, 208, 1);
+    --yoya-color-info-hover: rgba(73, 166, 215, 1);
+    --yoya-color-info-active: rgba(22, 142, 203, 1);
+    --yoya-color-info-deep: rgba(1, 79, 119, 1);
+    --yoya-color-info-subtle: rgba(1, 34, 52, 1);
+    --yoya-color-info-active-subtle: rgba(1, 45, 68, 1);
+    --yoya-color-info-border: rgba(1, 53, 80, 1);
+    --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+    --yoya-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --yoya-shadow-md: 0 8px 18px rgba(0, 0, 0, 0.36);
+    --yoya-shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.5);
+  }
+
+  /* system 模式：没有 light-dark() 就只能靠媒体查询表达。 */
+  @media (prefers-color-scheme: dark) {
+    [data-yoya-mode='system'] {
+      --yoya-color-bg: #171717;
+      --yoya-color-border: #3c3c3c;
+      --yoya-color-border-faint: #2a2a2a;
+      --yoya-color-border-muted: #5c5c5c;
+      --yoya-color-border-ring: rgba(255, 255, 255, 0.22);
+      --yoya-color-border-strong: #484848;
+      --yoya-color-code-badge: #2e2e2e;
+      --yoya-color-code-badge-text: #b9b9b9;
+      --yoya-color-code-bg: #0f0f0f;
+      --yoya-color-code-border: #2c2c2c;
+      --yoya-color-code-header: #191919;
+      --yoya-color-surface: #212121;
+      --yoya-color-surface-active: #2b2b2b;
+      --yoya-color-surface-hover: #262626;
+      --yoya-color-surface-muted: #1c1c1c;
+      --yoya-color-text: #ececec;
+      --yoya-color-text-active: rgba(124, 161, 243, 1);
+      --yoya-color-text-danger: #f87171;
+      --yoya-color-text-inverse: #ffffff;
+      --yoya-color-text-muted: #8a8a8a;
+      --yoya-color-text-secondary: #a6a6a6;
+      --yoya-color-text-strong: #f5f5f5;
+      --yoya-color-success-text: rgba(139, 209, 165, 1);
+      --yoya-color-danger-text: rgba(238, 147, 147, 1);
+      --yoya-color-warning-text: rgba(250, 207, 133, 1);
+      --yoya-color-info-text: rgba(129, 194, 227, 1);
+      --yoya-color-primary: rgba(72, 124, 238, 1);
+      --yoya-color-primary-hover: rgba(98, 143, 241, 1);
+      --yoya-color-primary-active: rgba(54, 111, 237, 1);
+      --yoya-color-primary-deep: rgba(22, 59, 141, 1);
+      --yoya-color-primary-subtle: rgba(10, 26, 61, 1);
+      --yoya-color-primary-active-subtle: rgba(13, 34, 80, 1);
+      --yoya-color-primary-border: rgba(15, 40, 94, 1);
+      --yoya-color-primary-ring: rgba(37, 99, 235, 0.3);
+      --yoya-color-success: rgba(59, 178, 103, 1);
+      --yoya-color-success-hover: rgba(87, 189, 125, 1);
+      --yoya-color-success-active: rgba(41, 170, 88, 1);
+      --yoya-color-success-deep: rgba(13, 98, 44, 1);
+      --yoya-color-success-subtle: rgba(6, 42, 19, 1);
+      --yoya-color-success-active-subtle: rgba(7, 55, 25, 1);
+      --yoya-color-success-border: rgba(9, 65, 30, 1);
+      --yoya-color-success-ring: rgba(22, 163, 74, 0.3);
+      --yoya-color-danger: rgba(226, 73, 73, 1);
+      --yoya-color-danger-hover: rgba(230, 99, 99, 1);
+      --yoya-color-danger-active: rgba(223, 55, 55, 1);
+      --yoya-color-danger-deep: rgba(132, 23, 23, 1);
+      --yoya-color-danger-subtle: rgba(57, 10, 10, 1);
+      --yoya-color-danger-active-subtle: rgba(75, 13, 13, 1);
+      --yoya-color-danger-border: rgba(88, 15, 15, 1);
+      --yoya-color-danger-ring: rgba(220, 38, 38, 0.3);
+      --yoya-color-warning: rgba(247, 174, 50, 1);
+      --yoya-color-warning-hover: rgba(248, 185, 79, 1);
+      --yoya-color-warning-active: rgba(246, 166, 31, 1);
+      --yoya-color-warning-deep: rgba(147, 95, 7, 1);
+      --yoya-color-warning-subtle: rgba(64, 41, 3, 1);
+      --yoya-color-warning-active-subtle: rgba(83, 54, 4, 1);
+      --yoya-color-warning-border: rgba(98, 63, 4, 1);
+      --yoya-color-warning-ring: rgba(245, 158, 11, 0.3);
+      --yoya-color-info: rgba(42, 152, 208, 1);
+      --yoya-color-info-hover: rgba(73, 166, 215, 1);
+      --yoya-color-info-active: rgba(22, 142, 203, 1);
+      --yoya-color-info-deep: rgba(1, 79, 119, 1);
+      --yoya-color-info-subtle: rgba(1, 34, 52, 1);
+      --yoya-color-info-active-subtle: rgba(1, 45, 68, 1);
+      --yoya-color-info-border: rgba(1, 53, 80, 1);
+      --yoya-color-info-ring: rgba(2, 132, 199, 0.3);
+      --yoya-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --yoya-shadow-md: 0 8px 18px rgba(0, 0, 0, 0.36);
+      --yoya-shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+/* 属性化迁移收口（票 15 波 6）：组件身份与部件位置一律走 `vn` / `vn_slot` 属性，
+   类名一侧（`yoya-component` / `yoya-v*`）已全部退场——预设规则的起点只有身份作用域
+   `[vn~='VXxx']` 与跨组件能力类 `yoya-<feature>`。
+   门禁：src/testing/gates/preset-scope.test.js（身份作用域）+ src/testing/gates/attribute-migration-baseline.test.js（只减不增）。 */
+@layer yoya {
+  [vn] {
+    box-sizing: border-box;
+    font-family: var(--yoya-font-family);
+    font-size: var(--yoya-font-size);
+    line-height: var(--yoya-line-height);
+  }
+  :where([vn~='VAside']),
+  :where([vn~='VMain']) {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  :where([vn~='VAside'])::-webkit-scrollbar,
+  :where([vn~='VMain'])::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  :where([vn~='VField']) {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    position: relative;
+  }
+
+  [vn~='VField'] [vn~='VFieldHeader'] {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  [vn~='VField'] [vn~='VFieldLabel'] {
+    color: var(--yoya-color-text-strong, #111827);
+    flex: 1 1 auto;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VField'] [vn~='VFieldDisplay'] {
+    align-items: center;
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    display: flex;
+    min-height: var(--yoya-control-height-md, 34px);
+    padding: 0 12px;
+    width: 100%;
+  }
+
+  /* 编辑态：查看面留位、编辑面吸在它上面（位置由 JS 量测后写行内） */
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldDisplay'] {
+    visibility: hidden;
+  }
+
+  [vn~='VField'] [vn~='VFieldEditor'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    min-height: var(--yoya-control-height-md, 34px);
+    min-width: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: var(--yoya-z-overlay, 1200);
+  }
+
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldEditor'] {
+    display: block;
+  }
+
+  [vn~='VField'] [vn~='VFieldHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* 提示与报错互斥：有内容才显示（`data-hint` / `data-error` 是状态真源） */
+  [vn~='VField'][data-hint='true']:not([data-error='true']) [vn~='VFieldHint'] {
+    display: block;
+  }
+
+  [vn~='VField'] [vn~='VFieldError'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  [vn~='VField'][data-error='true'] [vn~='VFieldError'] {
+    display: block;
+  }
+
+  /* 动作按钮 / 确认 / 取消：默认收起，状态由根上的 `data-action` / `data-mode` 打开 */
+  [vn~='VField'] [vn~='VFieldAction'] {
+    flex-shrink: 0;
+    gap: 0;
+    min-width: 32px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  [vn~='VField'][data-action='true'] [vn~='VFieldAction'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [vn~='VField'] [vn~='VFieldConfirm'],
+  [vn~='VField'] [vn~='VFieldCancel'] {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.35;
+    opacity: 0;
+    padding: 0 4px;
+    pointer-events: none;
+  }
+
+  [vn~='VField'] [vn~='VFieldConfirm'] {
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  [vn~='VField'] [vn~='VFieldCancel'] {
+    color: var(--yoya-color-text-secondary, #6f6f6f);
+  }
+
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldConfirm'],
+  [vn~='VField'][data-mode='edit'] [vn~='VFieldCancel'] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 表单项：静态样式（原在 JS 里那 7 块行内样式）。三处显隐都是状态——
+     必填标记 / 提示 / 报错"有内容才显示"，真源是根上的 `data-indicator` / `data-hint` /
+     `data-error`。部件都是视图根的**直接子**（标签行的两个在标签行里），所以用子选择器：
+     表单项嵌表单项时，外层的状态不会串到里层的部件上。 */
+  :where([vn~='VFormItem']) {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemLabel'] {
+    color: var(--yoya-color-text-strong, #111827);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemLabelRow'] > [vn~='VFormItemRequiredIndicator'] {
+    color: var(--yoya-color-danger, #dc2626);
+    display: none;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VFormItem'][data-indicator='true']
+    > [vn~='VFormItemLabelRow']
+    > [vn~='VFormItemRequiredIndicator'] {
+    display: inline;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemEditor'] {
+    min-width: 0;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* 提示与报错互斥：有内容才显示 */
+  [vn~='VFormItem'][data-hint='true']:not([data-error='true']) > [vn~='VFormItemHint'] {
+    display: block;
+  }
+
+  [vn~='VFormItem'] > [vn~='VFormItemError'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  [vn~='VFormItem'][data-error='true'] > [vn~='VFormItemError'] {
+    display: block;
+  }
+
+  /* 布尔组（VRadios / VCheckboxes）：组的静态样式（原来写在 JS 行内，R5 搬进来）。
+     列数是可配置几何，走 CSS 变量（R10）：JS 只写 `--yoya-checkboxes-columns`，不拼模板字符串；
+     禁用组的观感读 `aria-disabled`（原来写行内 `opacity`）。 */
+  [vn~='VRadios'],
+  [vn~='VCheckboxes'] {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  [vn~='VCheckboxes'] {
+    grid-template-columns: repeat(var(--yoya-checkboxes-columns, 1), minmax(0, 1fr));
+  }
+
+  [vn~='VRadios'][aria-disabled='true'],
+  [vn~='VCheckboxes'][aria-disabled='true'] {
+    opacity: 0.64;
+  }
+
+  /* 下拉选择：静态样式（原在 JS 里那 4 块行内样式）。随状态变的四样——清空留白 / 禁用 / 报错 /
+     选中项——都读元素上的属性：`data-clearable`、`disabled`、`data-error`、`selected`。 */
+  :where([vn~='VSelect']) {
+    min-width: 0;
+    position: relative;
+    width: 100%;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    cursor: pointer;
+    font: inherit;
+    min-height: var(--yoya-control-height-md, 34px);
+    outline: none;
+    padding: 0 32px 0 12px;
+    width: 100%;
+  }
+
+  /* 可清空时给清空按钮留位置（`clearable` 状态由组件写在字段的 `data-clearable` 上） */
+  [vn~='VSelect'] > [vn~='VSelectField'][data-clearable='true'] {
+    padding-right: 52px;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.64;
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'][data-error='true'] {
+    border-color: var(--yoya-color-danger, #dc2626);
+    box-shadow: 0 0 0 1px var(--yoya-color-danger-ring, rgba(220, 38, 38, 0.2));
+  }
+
+  /* 选中项用正文字色；占位项压暗（写在后面，两条同权重时它赢） */
+  [vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][selected] {
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VSelect'] > [vn~='VSelectField'] > [vn~='VSelectOption'][data-placeholder='true'] {
+    color: var(--yoya-color-border-muted, #94a3b8);
+  }
+
+  /* 时间范围：外壳的网格与错误提示的静态样式（原在 JS 里写行内，R5 搬进来）；
+     错误状态是根上的 `data-error` / `aria-invalid`，行内不再有任何样式。 */
+  [vn~='VTimerRange'] {
+    align-items: center;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  [vn~='VTimerRangeError'] {
+    color: var(--yoya-color-danger, #dc2626);
+    font-size: 0.875rem;
+    grid-column: 1 / -1;
+  }
+
+  /* 级联选择：静态样式（原在 JS 里的那些行内样式）。面板显隐 / 选项高亮是状态（根上的 `data-open`、
+     选项上的 `data-active`），行悬停交给 `:hover`；定位结果（left / top / position: fixed）仍写行内。 */
+  :where([vn~='VCascader']) {
+    position: relative;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderTrigger'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 8px;
+    justify-content: space-between;
+    min-height: var(--yoya-control-height-md, 34px);
+    padding: 0 10px;
+    width: 100%;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderTrigger'] > [vn~='VCascaderArrow'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
+  [vn~='VCascader'] > [vn~='VCascaderPanel'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    box-shadow: var(--yoya-shadow-md, 0 8px 18px rgba(15, 23, 42, 0.1));
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: 4px;
+    position: absolute;
+    top: calc(100% + 6px);
+    width: 100%;
+    z-index: 110;
+  }
+
+  [vn~='VCascader'][data-open='true'] > [vn~='VCascaderPanel'] {
+    display: block;
+  }
+
+  [vn~='VCascaderPanel'] > [vn~='VCascaderColumns'] {
+    display: flex;
+    min-width: 0;
+  }
+
+  [vn~='VCascaderColumns'] > [vn~='VCascaderColumn'] {
+    box-sizing: border-box;
+    min-width: 120px;
+    padding: 2px;
+  }
+
+  /* 列之间的分隔线：最后一列不画（原来是按 level / total 现算的行内样式） */
+  [vn~='VCascaderColumns'] > [vn~='VCascaderColumn']:not(:last-child) {
+    border-right: 1px solid var(--yoya-color-border-faint, #efefef);
+  }
+
+  [vn~='VCascaderColumn'] > [vn~='VCascaderOption'] {
+    align-items: center;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    padding: 4px 8px;
+  }
+
+  [vn~='VCascaderColumn'] > [vn~='VCascaderOption']:hover {
+    background: var(--yoya-color-surface-hover, #f1f5f9);
+  }
+
+  /* 高亮写在悬停之后：选中项保持自己的底色（旧实现悬停后会把高亮抹掉） */
+  [vn~='VCascaderOption'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+  }
+
+  [vn~='VCascaderOption'] > [vn~='VCascaderOptionLabel'] {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VCascaderOption'] > [vn~='VCascaderOptionArrow'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
+  /* 路由标签视图（VRouterViews）：静态样式 + 位置 / 锁定 / 溢出 / 弹窗 / 标签高亮的规则。
+     原来这些都在 JS 里（`applyTitlePosition` / `applyLockedTitle` / `styleTitleTab` / `updateOverflow`），
+     状态真源是根上的 `data-title-position` / `data-title-locked` / `data-title-overflow` / `data-title-popup`
+     与页签上的 `data-active`；只有量测出来的 `left` / `top` 仍写行内。 */
+  :where([vn~='VRouterViews']) {
+    border: 1px solid var(--yoya-color-border, #d0d7de);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  [vn~='VRouterViews'] > [vn~='VRouterViewsTitlebar'] {
+    background: var(--yoya-color-surface-hover, #f6f8fa);
+    border-bottom: 1px solid var(--yoya-color-border, #d0d7de);
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #57606a);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    /* 页签标签走界面字体（原来这里写死等宽，标签像代码）；字号比正文小一档 */
+    font-family: inherit;
+    font-size: 12px;
+    gap: 0;
+    -ms-overflow-style: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0;
+    scrollbar-width: none;
+    width: 100%;
+  }
+
+  [vn~='VRouterViews'] > [vn~='VRouterViewsContent'] {
+    min-height: 120px;
+    padding: 16px;
+  }
+
+  /* 标题条在左右两侧：竖排，边框换朝向，宽度让内容决定 */
+  [vn~='VRouterViews'][data-title-position='left'] > [vn~='VRouterViewsTitlebar'],
+  [vn~='VRouterViews'][data-title-position='right'] > [vn~='VRouterViewsTitlebar'] {
+    border-bottom: none;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 10px 8px;
+    width: auto;
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'] > [vn~='VRouterViewsTitlebar'] {
+    border-right: 1px solid var(--yoya-color-border, #d0d7de);
+  }
+
+  [vn~='VRouterViews'][data-title-position='right'] > [vn~='VRouterViewsTitlebar'] {
+    border-left: 1px solid var(--yoya-color-border, #d0d7de);
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'] > [vn~='VRouterViewsContent'],
+  [vn~='VRouterViews'][data-title-position='right'] > [vn~='VRouterViewsContent'] {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* 标题条锁定（`lockTitle`）：根变 flex 容器、内容区自己滚 */
+  [vn~='VRouterViews'][data-title-locked='true'] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  [vn~='VRouterViews'][data-title-locked='true'][data-title-position='left'],
+  [vn~='VRouterViews'][data-title-locked='true'][data-title-position='right'] {
+    align-items: stretch;
+    display: flex;
+    flex-direction: row;
+  }
+
+  [vn~='VRouterViews'][data-title-locked='true'] > [vn~='VRouterViewsTitlebar'] {
+    flex: 0 0 auto;
+  }
+
+  [vn~='VRouterViews'][data-title-locked='true'] > [vn~='VRouterViewsContent'] {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'],
+  [vn~='VRouterViews'][data-title-position='right'] {
+    align-items: stretch;
+    display: flex;
+  }
+
+  /* 溢出按钮：常驻标题条，`data-title-overflow` 打开；不需要时 `mountable` 直接不进 DOM */
+  [vn~='VRouterViewsTitlebar'] > [vn~='VRouterViewsExpand'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--yoya-color-text-secondary, #57606a);
+    cursor: pointer;
+    display: none;
+    flex-shrink: 0;
+    font: inherit;
+    gap: 6px;
+    height: 24px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0 0 0 auto;
+    min-width: 24px;
+    padding: 0;
+    position: sticky;
+    right: 8px;
+    z-index: 2;
+  }
+
+  [vn~='VRouterViews'][data-title-overflow='true']
+    > [vn~='VRouterViewsTitlebar']
+    > [vn~='VRouterViewsExpand'] {
+    display: inline-flex;
+  }
+
+  /* 页签：静态 + 高亮（`data-active`）；负 margin / 边框朝向随 `data-title-position` 走 */
+  [vn~='VRouterViewsTitle'] {
+    align-items: center;
+    background: var(--yoya-color-surface-active, #eaeef2);
+    border: 1px solid var(--yoya-color-border, #d0d7de);
+    border-bottom-color: var(--yoya-color-border, #d0d7de);
+    border-left-color: transparent;
+    border-right-color: var(--yoya-color-border, #d0d7de);
+    color: var(--yoya-color-text-secondary, #57606a);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 400;
+    gap: 6px;
+    /* 负 margin = 下内边距 + 1px 边框：激活页签的底边正好融进内容区 */
+    margin-bottom: -7px;
+    padding: 5px 12px 6px;
+    white-space: nowrap;
+  }
+
+  [vn~='VRouterViewsTitle'][data-active='true'] {
+    background: var(--yoya-color-surface, #ffffff);
+    color: var(--yoya-color-text, #24292f);
+    font-weight: 600;
+  }
+
+  /* 上边条：激活页签的下边框融进内容区 */
+  [vn~='VRouterViews'][data-title-position='top'] [vn~='VRouterViewsTitle'][data-active='true'] {
+    border-bottom-color: var(--yoya-color-surface, #ffffff);
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'] [vn~='VRouterViewsTitle'],
+  [vn~='VRouterViews'][data-title-position='right'] [vn~='VRouterViewsTitle'] {
+    border-bottom-color: var(--yoya-color-border, #d0d7de);
+    margin-bottom: 0;
+    padding: 6px 9px;
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'] [vn~='VRouterViewsTitle'] {
+    margin-right: -9px;
+  }
+
+  [vn~='VRouterViews'][data-title-position='right'] [vn~='VRouterViewsTitle'] {
+    margin-left: -9px;
+  }
+
+  [vn~='VRouterViews'][data-title-position='left'] [vn~='VRouterViewsTitle'][data-active='true'] {
+    border-right-color: var(--yoya-color-surface, #ffffff);
+  }
+
+  [vn~='VRouterViewsTitle'] > [vn~='VRouterViewsLabel'],
+  [vn~='VRouterViewsTitle'] > [vn~='VRouterViewsClose'] {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+  }
+
+  [vn~='VRouterViewsTitle'] > [vn~='VRouterViewsClose'] {
+    line-height: 1;
+  }
+
+  /* 溢出弹窗：`data-title-popup` 打开；`left` / `top` 由量测写行内 */
+  [vn~='VRouterViews'] > [vn~='VRouterViewsPopup'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d0d7de);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    display: none;
+    max-height: 280px;
+    max-width: 260px;
+    min-width: 180px;
+    -ms-overflow-style: none;
+    overflow-y: auto;
+    padding: 6px;
+    position: fixed;
+    scrollbar-width: none;
+    z-index: 100;
+  }
+
+  [vn~='VRouterViews'][data-title-popup='true'] > [vn~='VRouterViewsPopup'] {
+    display: block;
+  }
+
+  [vn~='VRouterViewsPopup'] > [vn~='VRouterViewsPopupItem'] {
+    align-items: center;
+    border-radius: 6px;
+    color: var(--yoya-color-text, #24292f);
+    cursor: pointer;
+    display: flex;
+    font-size: 13px;
+    gap: 8px;
+    padding: 7px 8px;
+    width: 100%;
+  }
+
+  [vn~='VRouterViewsPopupItem'][aria-current='true'] {
+    background: var(--yoya-color-primary-subtle, #e8f0fe);
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  [vn~='VRouterViewsPopupItem']:hover {
+    background: var(--yoya-color-surface-hover, #eef3f9);
+  }
+
+  [vn~='VRouterViewsPopupItem'] > [vn~='VRouterViewsPopupTitle'] {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VRouterViewsPopupItem'] > [vn~='VRouterViewsPopupClose'] {
+    background: transparent;
+    border: 0;
+    color: var(--yoya-color-text-secondary, #57606a);
+    cursor: pointer;
+    flex-shrink: 0;
+    font: inherit;
+    line-height: 1;
+    opacity: 0.65;
+    padding: 2px 4px;
+  }
+
+  [vn~='VRouterViewsPopupItem']:hover [vn~='VRouterViewsPopupClose'],
+  [vn~='VRouterViewsPopupClose']:hover {
+    color: var(--yoya-color-text-danger, #b91c1c);
+    opacity: 1;
+  }
+
+  /* 标题条 / 弹窗不显示滚动条（原来靠运行时注入一份样式表） */
+  [vn~='VRouterViewsTitlebar']::-webkit-scrollbar,
+  [vn~='VRouterViewsPopup']::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  /* 页签右键菜单：只在打开时挂到 `document.body`（关掉就摘），所以默认就是显示态 */
+  :where([vn~='VRouterViewsContext']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d0d7de);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    display: block;
+    min-width: 180px;
+    padding: 6px;
+    position: fixed;
+    z-index: 100;
+  }
+
+  [vn~='VRouterViewsContext'] > [vn~='VRouterViewsContextItem'] {
+    align-items: center;
+    border-radius: 6px;
+    color: var(--yoya-color-text, #24292f);
+    cursor: pointer;
+    display: flex;
+    font-size: 13px;
+    gap: 8px;
+    padding: 7px 10px;
+    width: 100%;
+  }
+
+  [vn~='VRouterViewsContextItem'][data-danger='true'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+  }
+
+  [vn~='VRouterViewsContextItem'][aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  [vn~='VRouterViewsContextItem']:hover {
+    background: var(--yoya-color-surface-hover, #f6f8fa);
+  }
+
+  [vn~='VRouterViewsContextSeparator'] {
+    background: var(--yoya-color-border, #d0d7de);
+    height: 1px;
+    margin: 4px 6px;
+  }
+
+  :where([vn~='VSymbolButton']) {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    outline: none;
+    padding: 4px;
+  }
+
+  [vn~='VSymbolButton']:hover {
+    background: var(--yoya-color-surface-hover, rgba(15, 23, 42, 0.06));
+  }
+
+  :where([vn~='VFloatButton']) {
+    align-items: center;
+    /* 默认档 = medium */
+    border-radius: 9999px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 6px;
+    height: 48px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 48px;
+    padding: 0;
+    user-select: none;
+  }
+
+  [vn~='VFloatButton'][data-variant='primary'] {
+    background: var(--yoya-color-primary, #2563eb);
+    border: none;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VFloatButton']:not([data-variant='primary']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VFloatButton'][data-size='small'] {
+    height: 36px;
+    min-width: 36px;
+  }
+
+  [vn~='VFloatButton'][data-size='large'] {
+    height: 56px;
+    min-width: 56px;
+  }
+
+  /* 有标签时左右留白（几何归 CSS，JS 只写 data-label） */
+  [vn~='VFloatButton'][data-label='true'] {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  [vn~='VFloatButton'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.56;
+  }
+
+  /* 固定定位：`fixed()` 打开，档位由 `position()` 选 */
+  [vn~='VFloatButton'][data-fixed='true'] {
+    position: fixed;
+    z-index: 100;
+  }
+
+  [vn~='VFloatButton'][data-position='bottom-left'] {
+    bottom: 24px;
+    left: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='bottom-right'] {
+    bottom: 24px;
+    right: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='top-left'] {
+    left: 24px;
+    top: 24px;
+  }
+
+  [vn~='VFloatButton'][data-position='top-right'] {
+    right: 24px;
+    top: 24px;
+  }
+
+  :where([vn~='VButton']) {
+    align-items: center;
+    border-radius: var(--yoya-radius-md, 6px);
+    border-style: solid;
+    border-width: 1px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-weight: 600;
+    gap: 6px;
+    justify-content: center;
+    line-height: 1;
+    transition:
+      background 140ms ease,
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      opacity 140ms ease,
+      transform 140ms ease;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  [vn~='VButton'] [vn~='VButtonSpinner'] {
+    display: none;
+  }
+
+  [vn~='VButton'][data-loading='true'] {
+    cursor: progress;
+  }
+
+  [vn~='VButton'][data-loading='true'] [vn~='VButtonSpinner'] {
+    display: inline-flex;
+  }
+
+  [vn~='VButton'][data-size='large'] {
+    font-size: var(--yoya-font-size-lg);
+    min-height: var(--yoya-control-height-lg);
+    padding: 0 var(--yoya-space-4);
+  }
+
+  [vn~='VButton'][data-size='medium'] {
+    font-size: var(--yoya-font-size-base);
+    min-height: var(--yoya-control-height-md);
+    padding: 0 var(--yoya-space-3);
+  }
+
+  [vn~='VButton'][data-size='small'] {
+    font-size: var(--yoya-font-size-sm);
+    min-height: var(--yoya-control-height-sm);
+    padding: 0 var(--yoya-space-2);
+  }
+
+  [vn~='VButton'][data-variant='danger'] {
+    background: var(--yoya-color-danger, #dc2626);
+    border-color: var(--yoya-color-danger-hover, #b91c1c);
+    box-shadow: 0 1px 2px rgba(185, 28, 28, 0.16);
+    color: var(--yoya-color-text-inverse, #ffffff);
+    outline: none;
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='danger'][data-interaction='hover'] {
+    background: var(--yoya-color-danger-hover, #b91c1c);
+    border-color: var(--yoya-color-danger-active, #991b1b);
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.22);
+    transform: translateY(-1px);
+  }
+
+  [vn~='VButton'][data-variant='danger'][data-interaction='active'] {
+    background: var(--yoya-color-danger-active, #991b1b);
+    border-color: var(--yoya-color-danger-deep, #7f1d1d);
+    box-shadow: inset 0 1px 2px rgba(127, 29, 29, 0.24);
+    transform: translateY(0);
+  }
+
+  [vn~='VButton'][data-variant='danger'][data-interaction='focus'] {
+    outline: 3px solid var(--yoya-color-danger-ring, rgba(220, 38, 38, 0.24));
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='ghost'] {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--yoya-color-primary, #2563eb);
+    outline: none;
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='ghost'][data-interaction='hover'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary-border, #bfdbfe);
+    box-shadow: none;
+    transform: translateY(-1px);
+  }
+
+  [vn~='VButton'][data-variant='ghost'][data-interaction='active'] {
+    background: var(--yoya-color-primary-active-subtle, #dbeafe);
+    border-color: var(--yoya-color-primary-border, #bfdbfe);
+    box-shadow: none;
+    transform: translateY(0);
+  }
+
+  [vn~='VButton'][data-variant='ghost'][data-interaction='focus'] {
+    outline: 3px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.22));
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='primary'] {
+    background: var(--yoya-color-primary, #2563eb);
+    border-color: var(--yoya-color-primary-hover, #1d4ed8);
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18);
+    color: var(--yoya-color-text-inverse, #ffffff);
+    outline: none;
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='primary'][data-interaction='hover'] {
+    background: var(--yoya-color-primary-hover, #1d4ed8);
+    border-color: var(--yoya-color-primary-active, #1e40af);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+    transform: translateY(-1px);
+  }
+
+  [vn~='VButton'][data-variant='primary'][data-interaction='active'] {
+    background: var(--yoya-color-primary-active, #1e40af);
+    border-color: var(--yoya-color-primary-deep, #1e3a8a);
+    box-shadow: inset 0 1px 2px rgba(30, 58, 138, 0.28);
+    transform: translateY(0);
+  }
+
+  [vn~='VButton'][data-variant='primary'][data-interaction='focus'] {
+    outline: 3px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.28));
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='secondary'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border-color: var(--yoya-color-border-strong, #cbd5e1);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    color: var(--yoya-color-text, #1f2937);
+    outline: none;
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][data-variant='secondary'][data-interaction='hover'] {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    border-color: var(--yoya-color-border-muted, #94a3b8);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+  }
+
+  [vn~='VButton'][data-variant='secondary'][data-interaction='active'] {
+    background: var(--yoya-color-surface-active, #eef2f7);
+    border-color: var(--yoya-color-border-muted, #94a3b8);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+    transform: translateY(0);
+  }
+
+  [vn~='VButton'][data-variant='secondary'][data-interaction='focus'] {
+    outline: 3px solid var(--yoya-color-border-ring, rgba(100, 116, 139, 0.24));
+    outline-offset: 2px;
+  }
+
+  [vn~='VButton'][disabled],
+  [vn~='VButton'][data-interaction='disabled'] {
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.58;
+    outline: none;
+    transform: translateY(0);
+  }
+
+  /* 按钮组：容器几何与"拼接模式"（这些原来都写在 JS 行内，R5 搬进来） */
+  [vn~='VButtons'] {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    vertical-align: middle;
+  }
+
+  [vn~='VButtons'][data-joined='true'] {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton']:first-child {
+    border-radius: var(--yoya-radius-md, 6px) 0 0 var(--yoya-radius-md, 6px);
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton']:last-child {
+    border-radius: 0 var(--yoya-radius-md, 6px) var(--yoya-radius-md, 6px) 0;
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton']:not(:first-child):not(:last-child) {
+    border-radius: 0;
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton']:only-child {
+    border-radius: var(--yoya-radius-md, 6px);
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton']:not(:first-child) {
+    margin-left: -1px;
+  }
+
+  [vn~='VButtons'][data-joined='true'] > [vn~='VButton'][data-selected='true'] {
+    z-index: 1;
+  }
+
+  :where([vn~='VGlowButton']) {
+    --yoya-glow-alpha: 0.4;
+    --yoya-glow-duration: 2.8s;
+    isolation: isolate;
+    overflow: hidden;
+    position: relative;
+  }
+
+  [vn~='VGlowButton'] [vn~='VButtonLabel'],
+  [vn~='VGlowButton'] [vn~='VButtonSpinner'] {
+    position: relative;
+    z-index: 1;
+  }
+
+  [vn~='VGlowButton']::before {
+    animation: yoya-glow-button-sweep var(--yoya-glow-duration) ease-in-out infinite;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(255, 255, 255, var(--yoya-glow-alpha)) 50%,
+      transparent 100%
+    );
+    bottom: 0;
+    content: '';
+    left: -45%;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    transform: translate3d(0, 0, 0) skewX(-14deg);
+    width: 40%;
+    z-index: 0;
+  }
+
+  [vn~='VGlowButton'][data-glow-play='hover']::before,
+  [vn~='VGlowButton'][data-glow-play='off']::before,
+  [vn~='VGlowButton'][disabled]::before,
+  [vn~='VGlowButton'][data-interaction='disabled']::before {
+    animation-play-state: paused;
+    opacity: 0;
+  }
+
+  [vn~='VGlowButton'][data-glow-play='hover']:hover::before,
+  [vn~='VGlowButton'][data-glow-play='hover']:focus-visible::before {
+    animation-play-state: running;
+    opacity: 1;
+  }
+
+  [vn~='VGlowButton'][data-glow-speed='slow'] {
+    --yoya-glow-duration: 4.2s;
+  }
+
+  [vn~='VGlowButton'][data-glow-speed='fast'] {
+    --yoya-glow-duration: 1.5s;
+  }
+
+  [vn~='VGlowButton'][data-glow-strength='soft'] {
+    --yoya-glow-alpha: 0.22;
+  }
+
+  [vn~='VGlowButton']:hover::before {
+    animation-duration: calc(var(--yoya-glow-duration) * 0.6);
+  }
+
+  [vn~='VGlowButton'][data-glow-direction='rtl']::before {
+    animation-name: yoya-glow-button-sweep-rtl;
+  }
+
+  @keyframes yoya-glow-button-sweep {
+    0%,
+    45% {
+      transform: translate3d(0, 0, 0) skewX(-14deg);
+    }
+    100% {
+      transform: translate3d(420%, 0, 0) skewX(-14deg);
+    }
+  }
+
+  @keyframes yoya-glow-button-sweep-rtl {
+    0%,
+    45% {
+      transform: translate3d(420%, 0, 0) skewX(-14deg);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) skewX(-14deg);
+    }
+  }
+
+  [vn~='VGlowButton'] [vn~='VGlowButtonRipple'] {
+    animation: yoya-glow-button-ripple 520ms ease-out forwards;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 65%);
+    border-radius: 50%;
+    pointer-events: none;
+    position: absolute;
+    transform: scale(0);
+    z-index: 0;
+  }
+
+  @keyframes yoya-glow-button-ripple {
+    0% {
+      opacity: 0.9;
+      transform: scale(0);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1);
+    }
+  }
+
+  :where([vn~='VDropdownMenu']) {
+    display: inline-flex;
+    position: relative;
+  }
+
+  [vn~='VDropdownMenu'] [vn~='VDropdownPanel'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #dbe3ef);
+    border-radius: 10px;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+    display: none;
+    min-width: 192px;
+    overflow: hidden;
+    position: absolute;
+    transform-origin: top left;
+    z-index: var(--yoya-z-popover);
+  }
+
+  [vn~='VDropdownMenu'][data-open='true'] > [vn~='VDropdownPanel'] {
+    display: block;
+  }
+
+  /* 面板定位由 `data-placement` 决定（原来在 JS 里写行内 placement 样式，R5 搬成规则） */
+  [vn~='VDropdownMenu'][data-placement='bottom-start'] > [vn~='VDropdownPanel'] {
+    left: 0;
+    top: calc(100% + 6px);
+  }
+
+  [vn~='VDropdownMenu'][data-placement='bottom-end'] > [vn~='VDropdownPanel'] {
+    right: 0;
+    top: calc(100% + 6px);
+  }
+
+  [vn~='VDropdownMenu'][data-placement='top-start'] > [vn~='VDropdownPanel'] {
+    bottom: calc(100% + 6px);
+    left: 0;
+  }
+
+  [vn~='VDropdownMenu'][data-placement='top-end'] > [vn~='VDropdownPanel'] {
+    bottom: calc(100% + 6px);
+    right: 0;
+  }
+
+  :where([vn~='VContextMenu']) {
+    display: block;
+    min-width: 0;
+  }
+
+  [vn~='VContextMenu'] [vn~='VContextTarget'] {
+    min-width: 0;
+  }
+
+  [vn~='VContextMenu'] [vn~='VContextPanel'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
+    display: none;
+    min-width: 200px;
+    position: fixed;
+    z-index: var(--yoya-z-popover);
+  }
+
+  [vn~='VContextMenu'][data-open='true'] > [vn~='VContextPanel'] {
+    display: block;
+  }
+
+  /* 消息条 / 消息容器：静态样式 + 类型配色 + 状态位（原来全写在 JS 行内，R5 搬进来）。
+     状态位：根上的 `data-type`（success / error / warning / info，info 是默认）、
+     `data-closable='false'`（关闭按钮那一格隐藏）、`data-countdown='true'`（倒计时文本与进度条）。 */
+  [vn~='VMessage'] {
+    align-items: center;
+    background: var(--yoya-color-info-subtle, #eff6ff);
+    border: 1px solid var(--yoya-color-info-border, #bfdbfe);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-info-text, #1e3a8a);
+    display: flex;
+    gap: 10px;
+    line-height: 1.4;
+    overflow: hidden;
+    padding: 10px 12px;
+    position: relative;
+  }
+
+  [vn~='VMessage'][data-type='success'] {
+    background: var(--yoya-color-success-subtle, #ecfdf5);
+    border-color: var(--yoya-color-success-border, #bbf7d0);
+    color: var(--yoya-color-success-text, #166534);
+  }
+
+  [vn~='VMessage'][data-type='error'] {
+    background: var(--yoya-color-danger-subtle, #fef2f2);
+    border-color: var(--yoya-color-danger-border, #fecaca);
+    color: var(--yoya-color-danger-text, #991b1b);
+  }
+
+  [vn~='VMessage'][data-type='warning'] {
+    background: var(--yoya-color-warning-subtle, #fffbeb);
+    border-color: var(--yoya-color-warning-border, #fde68a);
+    color: var(--yoya-color-warning-text, #92400e);
+  }
+
+  [vn~='VMessageCountdown'] {
+    color: inherit;
+    display: none;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.65;
+  }
+
+  [vn~='VMessage'][data-countdown='true'] > [vn~='VMessageCountdown'] {
+    display: inline;
+  }
+
+  [vn~='VMessageClose'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: inherit;
+    cursor: pointer;
+    display: none;
+    flex-shrink: 0;
+    height: 20px;
+    justify-content: center;
+    margin-left: auto;
+    opacity: 0.72;
+    padding: 0;
+    width: 20px;
+  }
+
+  [vn~='VMessage']:not([data-closable='false']) > [vn~='VMessageClose'] {
+    display: inline-flex;
+  }
+
+  [vn~='VMessageClose'] svg {
+    height: 14px;
+    width: 14px;
+  }
+
+  [vn~='VMessageCountdownBar'] {
+    background: currentColor;
+    bottom: 0;
+    height: 2px;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    width: var(--yoya-message-countdown-progress, 100%);
+  }
+
+  [vn~='VMessage'][data-countdown='true'] > [vn~='VMessageCountdownBar'] {
+    opacity: 0.45;
+  }
+
+  [vn~='VMessageContainer'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+    position: fixed;
+    z-index: 1000;
+  }
+
+  /* placement 规则与 `placementStyles()` 一一对应（默认 top-right） */
+  [vn~='VMessageContainer'][data-placement='top-right'] {
+    right: 16px;
+    top: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='top-left'] {
+    left: 16px;
+    top: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='top'] {
+    left: 50%;
+    top: 16px;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom-right'] {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom-left'] {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  [vn~='VMessageContainer'][data-placement='bottom'] {
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* 内嵌模式：静态定位、占满宽度（原来写一整套行内样式切换） */
+  [vn~='VMessageContainer'][data-inline='true'] {
+    max-width: none;
+    position: static;
+    width: 100%;
+  }
+
+  /* 对话框：根 / 头部 / 关闭按钮的静态样式（原来都在 JS 行内，R5 搬进来）；
+     "关闭按钮那一行整体关掉"走根上的 `data-closable='false'` 规则。 */
+  [vn~='VDialog'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 24px 72px rgba(15, 23, 42, 0.2);
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #172033);
+    max-width: min(92vw, 680px);
+    padding: 16px;
+    position: relative;
+    width: 100%;
+  }
+
+  [vn~='VDialogHeader'] {
+    align-items: center;
+    display: flex;
+  }
+
+  [vn~='VDialog'][data-closable='false'] > [vn~='VDialogHeader'] {
+    display: none;
+  }
+
+  /* 关着的对话框自己藏起来（没有 `showModal` 的环境里 UA 不会帮忙，原来是在 JS 里写行内 display） */
+  [vn~='VDialog']:not([open]) {
+    display: none;
+  }
+
+  [vn~='VDialogClose'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #57606a);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin-bottom: 4px;
+    margin-left: auto;
+    padding: 0;
+    width: 28px;
+  }
+
+  [vn~='VDialog'] [vn~='VDialogClose']:hover {
+    background: var(--yoya-color-surface-hover, #eef0f3);
+    color: var(--yoya-color-text, #172033);
+  }
+
+  :where([vn~='VTooltip']) {
+    box-sizing: border-box;
+    display: inline-flex;
+    max-width: 100%;
+    position: relative;
+  }
+
+  [vn~='VTooltip'] [vn~='VTooltipTarget'] {
+    align-items: center;
+    display: inline-flex;
+    min-width: 0;
+  }
+
+  [vn~='VTooltip'] [vn~='VTooltipPanel'] {
+    background: var(--yoya-color-text-strong, #111827);
+    border: 1px solid var(--yoya-color-text-strong, #111827);
+    border-radius: var(--yoya-radius-sm, 4px);
+    box-shadow: var(--yoya-shadow-md, 0 8px 18px rgb(15 23 42 / 10%));
+    color: var(--yoya-color-surface, #ffffff);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+    max-width: min(280px, 70vw);
+    padding: 6px 9px;
+    pointer-events: none;
+    position: absolute;
+    width: max-content;
+    z-index: var(--yoya-z-popover);
+  }
+
+  [vn~='VTooltip'][data-open='true'] > [vn~='VTooltipPanel'] {
+    display: block;
+  }
+
+  /* 面板定位按 `data-placement` 定（原来在 JS 里写行内 placement 样式，R5 搬成 12 条规则） */
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    left: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel'] {
+    bottom: calc(100% + 8px);
+    right: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel'] {
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel'] {
+    left: 0;
+    top: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel'] {
+    right: 0;
+    top: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel'] {
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel'] {
+    bottom: 0;
+    right: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel'] {
+    right: calc(100% + 8px);
+    top: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel'] {
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel'] {
+    bottom: 0;
+    left: calc(100% + 8px);
+  }
+
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel'] {
+    left: calc(100% + 8px);
+    top: 0;
+  }
+
+  [vn~='VTooltip'] [vn~='VTooltipPanel']::after {
+    border: 5px solid transparent;
+    content: '';
+    height: 0;
+    position: absolute;
+    width: 0;
+  }
+
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel']::after {
+    border-top-color: var(--yoya-color-text-strong, #111827);
+    bottom: -10px;
+  }
+
+  [vn~='VTooltip'][data-placement='top'] > [vn~='VTooltipPanel']::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='top-start'] > [vn~='VTooltipPanel']::after {
+    left: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='top-end'] > [vn~='VTooltipPanel']::after {
+    right: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel']::after {
+    border-bottom-color: var(--yoya-color-text-strong, #111827);
+    top: -10px;
+  }
+
+  [vn~='VTooltip'][data-placement='bottom'] > [vn~='VTooltipPanel']::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-start'] > [vn~='VTooltipPanel']::after {
+    left: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='bottom-end'] > [vn~='VTooltipPanel']::after {
+    right: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel']::after {
+    border-left-color: var(--yoya-color-text-strong, #111827);
+    right: -10px;
+  }
+
+  [vn~='VTooltip'][data-placement='left'] > [vn~='VTooltipPanel']::after {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='left-start'] > [vn~='VTooltipPanel']::after {
+    bottom: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='left-end'] > [vn~='VTooltipPanel']::after {
+    top: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel']::after,
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel']::after {
+    border-right-color: var(--yoya-color-text-strong, #111827);
+    left: -10px;
+  }
+
+  [vn~='VTooltip'][data-placement='right'] > [vn~='VTooltipPanel']::after {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  [vn~='VTooltip'][data-placement='right-start'] > [vn~='VTooltipPanel']::after {
+    bottom: 12px;
+  }
+
+  [vn~='VTooltip'][data-placement='right-end'] > [vn~='VTooltipPanel']::after {
+    top: 12px;
+  }
+
+  :where([vn~='VMenu']) {
+    display: flex;
+    gap: 4px;
+    min-width: 180px;
+    padding: 6px;
+  }
+
+  [vn~='VMenu'][data-orientation='horizontal'] {
+    flex-direction: row;
+  }
+
+  [vn~='VMenu'][data-orientation='vertical'] {
+    flex-direction: column;
+  }
+
+  :where([vn~='VMenuItem']) {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text, #1f2937);
+    cursor: pointer;
+    display: grid;
+    font: inherit;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    line-height: 1.2;
+    min-height: 34px;
+    padding: 8px 10px;
+    text-align: left;
+    width: 100%;
+  }
+
+  [vn~='VMenu'][data-orientation='horizontal'] [vn~='VMenuItem'] {
+    display: inline-flex;
+    justify-content: center;
+    text-align: center;
+    width: auto;
+  }
+
+  [vn~='VMenuItem'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary-border, #bfdbfe);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+    font-weight: 700;
+  }
+
+  [vn~='VMenuItem'][data-danger='true'] {
+    color: var(--yoya-color-text-danger, #b91c1c);
+  }
+
+  [vn~='VMenuItem'][data-hovered='true']:not([data-active='true']) {
+    background: var(--yoya-color-surface-hover, #f1f5f9);
+    border-color: var(--yoya-color-border-faint, #e2e8f0);
+  }
+
+  [vn~='VMenuItem'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  :where([vn~='VMenuDivider']) {
+    align-self: stretch;
+    border-top: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    height: 0;
+    margin: 4px 0;
+    width: auto;
+  }
+
+  [vn~='VMenu'][data-orientation='horizontal'] [vn~='VMenuDivider'] {
+    border-left: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    border-top: 0;
+    height: auto;
+    margin: 0 4px;
+    width: 0;
+  }
+
+  :where([vn~='VMenuGroup']) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  [vn~='VMenu'][data-orientation='horizontal'] [vn~='VMenuGroup'] {
+    flex-direction: row;
+  }
+
+  [vn~='VMenuGroup'] [vn~='VMenuGroupLabel'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 10px 4px;
+  }
+
+  :where([vn~='VSubMenu']) {
+    display: inline-flex;
+    position: relative;
+    width: 100%;
+  }
+
+  [vn~='VSubMenu'][data-inline='true'] {
+    display: block;
+  }
+
+  [vn~='VSubMenu'] [vn~='VSubMenuPanel'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
+    display: none;
+    left: calc(100% + 4px);
+    min-width: 200px;
+    position: absolute;
+    top: 0;
+    z-index: var(--yoya-z-dropdown);
+  }
+
+  [vn~='VSubMenu'][data-open='true'] > [vn~='VSubMenuPanel'] {
+    display: block;
+  }
+
+  [vn~='VSubMenu'][data-inline='true'] > [vn~='VSubMenuPanel'] {
+    background: transparent;
+    border: 0;
+    border-left: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    border-radius: 0;
+    box-shadow: none;
+    display: none;
+    left: auto;
+    margin-left: 14px;
+    min-width: auto;
+    padding-left: 10px;
+    position: static;
+    top: auto;
+    width: auto;
+    z-index: auto;
+  }
+
+  [vn~='VSubMenu'][data-inline='true'][data-open='true'] > [vn~='VSubMenuPanel'] {
+    display: block;
+  }
+
+  :where([vn~='VSidebar']) {
+    align-content: start;
+    background: transparent;
+    border-radius: 8px;
+    box-sizing: border-box;
+    display: grid;
+    gap: 12px;
+    overflow: hidden;
+    padding: 12px;
+    transition: width 160ms ease;
+    width: 260px;
+  }
+
+  [vn~='VSidebar'][data-collapsed='true'] {
+    width: 72px;
+  }
+
+  [vn~='VSidebar'] [vn~='VSidebarHeader'] {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  [vn~='VSidebar'] [vn~='VSidebarMenu'] {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  [vn~='VSidebar'] [vn~='VSidebarMenu']::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  /* 菜单项：图标 / 快捷键位空着就不占地方（原来靠 JS 写行内 `display`，R5 改成 `:empty` 规则） */
+  [vn~='VMenuItemIcon']:empty,
+  [vn~='VMenuItemShortcut']:empty {
+    display: none;
+  }
+
+  /* 侧栏：折叠开关可按需隐藏；子菜单弹出时放开裁剪；折叠态里菜单文字 / 快捷键视觉隐藏（可访问性保留） */
+  [vn~='VSidebar'][data-collapsible='false'] [vn~='VSidebarToggle'] {
+    display: none;
+  }
+
+  [vn~='VSidebar'][data-overflow='visible'] {
+    overflow: visible;
+  }
+
+  [vn~='VSidebar'][data-overflow='hidden'] {
+    overflow: hidden;
+  }
+
+  [data-sidebar-hidden='true'] {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  [vn~='VTreeRanger'] [vn~='VTreeRangerList'] {
+    scrollbar-width: none;
+  }
+
+  [vn~='VTreeRanger'] [vn~='VTreeRangerList']::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  /* 树形穿梭：容器 / 列 / 状态位 / 视口 / 列表（原来都写在 JS 行内，R5 搬进来）。
+     每行的虚拟几何走 CSS 变量（`--yoya-tree-ranger-row-height` / `-row-top`），
+     视口高度走 `--yoya-tree-ranger-viewport-height`；选中 / 悬停是状态位与 `:hover`。 */
+  [vn~='VTreeRanger'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+  }
+
+  [vn~='VTreeRangerColumn'] {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  [vn~='VTreeRangerColumnStatus'] {
+    box-sizing: border-box;
+    color: var(--yoya-color-text-muted, #8b949e);
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 10px;
+  }
+
+  /* 有数据行时状态位被清空：空盒不显示（原来写行内 `display`） */
+  [vn~='VTreeRangerColumnStatus']:empty {
+    display: none;
+  }
+
+  [vn~='VTreeRangerViewport'] {
+    box-sizing: border-box;
+    height: var(--yoya-tree-ranger-viewport-height, 100%);
+    min-height: 100%;
+    position: relative;
+  }
+
+  [vn~='VTreeRangerList'] {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: relative;
+    scrollbar-width: none;
+  }
+
+  [vn~='VTreeRangerRow'] {
+    align-items: center;
+    background: transparent;
+    border-bottom: 1px solid var(--yoya-color-border-faint, #eef1f4);
+    border-left: 2px solid transparent;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    font-size: 13px;
+    height: var(--yoya-tree-ranger-row-height, 32px);
+    line-height: 1.2;
+    overflow: hidden;
+    padding: 0 10px;
+    position: absolute;
+    top: var(--yoya-tree-ranger-row-top, 0px);
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  [vn~='VTreeRangerRow'][data-selected='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-left-color: var(--yoya-color-primary, #2563eb);
+  }
+
+  [vn~='VTreeRangerRow']:not([data-selected='true']):hover {
+    background: var(--yoya-color-surface-hover, #f0f2f5);
+  }
+
+  [vn~='VTreeRangerIcon'] {
+    flex: 0 0 auto;
+    font-size: 12px;
+    margin-right: 6px;
+    opacity: 0.75;
+  }
+
+  [vn~='VTreeRangerCrumbs'] {
+    align-items: center;
+    background: var(--yoya-color-surface-hover, #f6f8fa);
+    border-bottom: 1px solid var(--yoya-color-border, #d0d7de);
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.4;
+    min-height: 32px;
+    overflow: hidden;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  [vn~='VTreeRangerCrumbSeparator'] {
+    color: var(--yoya-color-text-muted, #8b949e);
+    flex: 0 0 auto;
+    opacity: 0.7;
+  }
+
+  [vn~='VTreeRangerCrumb'] {
+    color: var(--yoya-color-text-secondary, #57606a);
+    flex: 0 0 auto;
+    font-weight: 400;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [vn~='VTreeRangerCrumb'][data-can-jump='true'] {
+    cursor: pointer;
+  }
+
+  [vn~='VTreeRangerCrumb'][data-active='true'] {
+    color: var(--yoya-color-text, #1f2328);
+    font-weight: 600;
+  }
+
+  :where([vn~='VTreeTable']) {
+    box-sizing: border-box;
+    font-family: var(--yoya-font-family, inherit);
+    font-size: var(--yoya-font-size-sm, 13px);
+    line-height: 1.5;
+    max-width: 100%;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  [vn~='VTreeTable'] [vn~='VTreeTableTable'] {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  [vn~='VTreeTable'] th,
+  [vn~='VTreeTable'] td {
+    border-bottom: 1px solid var(--yoya-color-border-faint, light-dark(#efefef, #2a2a2a));
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  [vn~='VTreeTable'] thead th {
+    background: var(--yoya-color-surface-muted, light-dark(#f5f5f5, #1c1c1c));
+    color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  [vn~='VTreeTable'] tbody tr:hover {
+    background: var(--yoya-color-surface-hover, light-dark(#f3f3f3, #262626));
+  }
+
+  /* 折叠的行走 [hidden]：行常驻、只切可见性 */
+  [vn~='VTreeTable'] tbody tr[hidden] {
+    display: none;
+  }
+
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand'] {
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--yoya-color-text-secondary, light-dark(#6f6f6f, #a6a6a6));
+    cursor: pointer;
+    font: inherit;
+    margin-left: 2px;
+    padding: 0 3px;
+  }
+
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand']:hover {
+    background: transparent;
+    color: var(--yoya-color-primary, #1f6feb);
+  }
+
+  [vn~='VTreeTable'] [vn~='VTreeTableExpand']:focus-visible {
+    outline: 2px solid var(--yoya-color-primary-ring, rgba(31, 111, 235, 0.35));
+    outline-offset: 1px;
+  }
+
+  [vn~='VTreeTable'] [vn~='VTreeTableSelect'] {
+    accent-color: var(--yoya-color-primary, #1f6feb);
+    margin: 0;
+  }
+
+  [vn~='VTreeTable'] thead th:first-child,
+  [vn~='VTreeTable'] tbody td:first-child {
+    padding-left: 10px;
+  }
+
+  [vn~='VTreeTable'] thead th:first-child,
+  [vn~='VTreeTable'] tbody td:first-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  [vn~='VNavbar'] {
+    align-items: center;
+    background: transparent;
+    border-radius: 8px;
+    box-sizing: border-box;
+    column-gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 56px;
+    row-gap: 8px;
+    transition: border-color 160ms ease;
+    width: 100%;
+  }
+
+  /* 吸顶：原来 position / top / z-index 三条写在 JS 行内 */
+  [vn~='VNavbar'][data-sticky='true'] {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  [vn~='VNavbarBrand'] {
+    align-content: center;
+    display: grid;
+    flex: 0 0 auto;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  /* 品牌分割线：有品牌内容才画（原来 border-right / padding-right 写在 JS 行内） */
+  [vn~='VNavbarBrand'][data-divider='true'] {
+    border-right: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    padding-right: 14px;
+  }
+
+  /* 标题 / 副标题以前是"CSS 默认 display: none + JS 摘掉行内 display"，于是设了内容也看不见；
+     现在按"有没有内容"条件挂载（`mountable`），默认值不再跟 JS 抢。 */
+  [vn~='VNavbarBrandTitle'] {
+    color: var(--yoya-color-text-strong, #0f172a);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  [vn~='VNavbarBrandSubtitle'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  [vn~='VNavbarBrandDefault'],
+  [vn~='VNavbarBrandCustom'] {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  [vn~='VNavbarMenuSlot'] {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    flex: 1 1 320px;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  [vn~='VNavbarActions'] {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+    min-width: 0;
+  }
+
+  :where([vn~='VSteps']) {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'] {
+    flex-direction: column;
+  }
+
+  :where([vn~='VStep']) {
+    align-items: flex-start;
+    display: grid;
+    flex: 1 1 0;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-width: 0;
+    position: relative;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'] [vn~='VStep'] {
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [vn~='VSteps'] [vn~='VStepsIndicator'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 2px solid var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-muted, #64748b);
+    display: inline-flex;
+    font-size: 14px;
+    font-weight: 700;
+    height: 30px;
+    justify-content: center;
+    line-height: 1;
+    width: 30px;
+  }
+
+  [vn~='VSteps'][data-size='small'] [vn~='VStepsIndicator'] {
+    font-size: 12px;
+    height: 24px;
+    width: 24px;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsContent'] {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'] [vn~='VStepsContent'] {
+    padding-top: 6px;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'] [vn~='VStepsContent'] {
+    padding-top: 3px;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsTitle'] {
+    color: var(--yoya-color-text, #172033);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  [vn~='VSteps'][data-size='small'] [vn~='VStepsTitle'] {
+    font-size: 13px;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsDescription'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsConnector'] {
+    background: var(--yoya-color-border, #d8dee8);
+    display: none;
+    height: 2px;
+    position: absolute;
+  }
+
+  /* 连线：非末项显示；几何随方向与尺寸（写属性会破坏"内容盒里放占位"的结构，所以走规则） */
+  [vn~='VStep']:not([data-last='true']) [vn~='VStepsConnector'] {
+    display: block;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'] [vn~='VStepsConnector'] {
+    left: 30px;
+    right: 0;
+    top: 14px;
+    width: auto;
+  }
+
+  [vn~='VSteps'][data-direction='horizontal'][data-size='small'] [vn~='VStepsConnector'] {
+    left: 24px;
+    top: 11px;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'] [vn~='VStepsConnector'] {
+    bottom: -12px;
+    height: auto;
+    left: 15px;
+    top: 30px;
+    width: 2px;
+  }
+
+  [vn~='VSteps'][data-direction='vertical'][data-size='small'] [vn~='VStepsConnector'] {
+    left: 12px;
+    top: 24px;
+  }
+
+  [vn~='VSteps'] [vn~='VStepsDescription']:empty {
+    display: none;
+  }
+
+  /* 空的内容盒不占网格行（标题 / 描述现在都是常驻内部块，没内容时靠 `:empty` 隐掉） */
+  [vn~='VSteps'] [vn~='VStepsTitle']:empty {
+    display: none;
+  }
+
+  [vn~='VStep'][data-status='finish'] [vn~='VStepsIndicator'] {
+    background: var(--yoya-color-success, #16a34a);
+    border-color: var(--yoya-color-success, #16a34a);
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VStep'][data-status='error'] [vn~='VStepsIndicator'] {
+    background: var(--yoya-color-danger, #dc2626);
+    border-color: var(--yoya-color-danger, #dc2626);
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VStep'][data-status='process'] [vn~='VStepsIndicator'] {
+    background: var(--yoya-color-primary, #2563eb);
+    border-color: var(--yoya-color-primary, #2563eb);
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VStep'][data-status='finish'] [vn~='VStepsConnector'] {
+    background: var(--yoya-color-primary, #2563eb);
+  }
+
+  :where([vn~='VTabs']) {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'] {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  [vn~='VTabs'] [vn~='VTabsNav'] {
+    align-items: stretch;
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  [vn~='VTabs'] [vn~='VTabsNav']::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'] [vn~='VTabsNav'] {
+    border-bottom: 0;
+    border-right: 1px solid var(--yoya-color-border, #d8dee8);
+    flex: 0 0 auto;
+    flex-direction: column;
+    overflow: visible;
+    padding-right: 4px;
+  }
+
+  [vn~='VTabs'] [vn~='VTabsPanels'] {
+    min-width: 0;
+    padding-top: 12px;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'] [vn~='VTabsPanels'] {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-top: 0;
+  }
+
+  :where([vn~='VTabTrigger']) {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: var(--yoya-color-text-secondary, #475569);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    gap: 6px;
+    line-height: 1.35;
+    min-height: 36px;
+    padding: 0 12px;
+    position: relative;
+    white-space: nowrap;
+  }
+
+  [vn~='VTabTrigger']:hover {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VTabTrigger']:focus-visible {
+    outline: 3px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.28));
+    outline-offset: -1px;
+  }
+
+  [vn~='VTabTrigger'][data-active='true'] {
+    border-bottom-color: var(--yoya-color-primary, #2563eb);
+    color: var(--yoya-color-text-active, #1d4ed8);
+  }
+
+  [vn~='VTabTrigger'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  [vn~='VTabs'] [vn~='VTabIcon'] {
+    align-items: center;
+    display: inline-flex;
+  }
+
+  /* 空图标块不占触发器的 gap（图标 / 标签都是常驻内部块，没内容时靠 `:empty` 隐掉） */
+  [vn~='VTabs'] [vn~='VTabIcon']:empty {
+    display: none;
+  }
+
+  [vn~='VTabs'] [vn~='VTabLabel'] {
+    min-width: 0;
+  }
+
+  [vn~='VTabs'] [vn~='VTabPanel'] {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VTabs'] [vn~='VTabPanel'][hidden] {
+    display: none;
+  }
+
+  [vn~='VTabs'][data-variant='card'] [vn~='VTabsNav'] {
+    border-bottom: 1px solid var(--yoya-color-border, #d8dee8);
+    gap: 0;
+  }
+
+  [vn~='VTabs'][data-variant='card'] [vn~='VTabTrigger'] {
+    border: 1px solid transparent;
+    border-bottom-color: var(--yoya-color-border, #d8dee8);
+    border-radius: var(--yoya-radius-md, 6px) var(--yoya-radius-md, 6px) 0 0;
+    margin-bottom: -1px;
+  }
+
+  [vn~='VTabs'][data-variant='card'] [vn~='VTabTrigger'][data-active='true'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border-color: var(--yoya-color-border-strong, #cbd5e1);
+    border-bottom-color: var(--yoya-color-surface, #ffffff);
+  }
+
+  [vn~='VTabs'][data-variant='pills'] [vn~='VTabTrigger'] {
+    border-radius: var(--yoya-radius-md, 6px);
+  }
+
+  [vn~='VTabs'][data-variant='pills'] [vn~='VTabTrigger'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    color: var(--yoya-color-text-active, #1d4ed8);
+  }
+
+  [vn~='VTabs'][data-variant='pills'] [vn~='VTabTrigger']:hover:not([data-active='true']) {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+  }
+
+  [vn~='VTabs'][data-size='small'] [vn~='VTabTrigger'] {
+    font-size: 13px;
+    min-height: 32px;
+    padding: 0 10px;
+  }
+
+  [vn~='VTabs'][data-size='large'] [vn~='VTabTrigger'] {
+    font-size: 15px;
+    min-height: 40px;
+    padding: 0 16px;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'] [vn~='VTabTrigger'] {
+    border-bottom: 0;
+    border-right: 2px solid transparent;
+    border-radius: 0;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'] [vn~='VTabTrigger'][data-active='true'] {
+    border-bottom-color: transparent;
+    border-right-color: var(--yoya-color-primary, #2563eb);
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'][data-variant='card'] [vn~='VTabTrigger'] {
+    border: 1px solid transparent;
+    border-radius: var(--yoya-radius-md, 6px);
+    margin-bottom: 0;
+  }
+
+  [vn~='VTabs'][data-orientation='vertical'][data-variant='card']
+    [vn~='VTabTrigger'][data-active='true'] {
+    background: var(--yoya-color-surface, #ffffff);
+    border-color: var(--yoya-color-border-strong, #cbd5e1);
+  }
+
+  [vn~='VBreadcrumb'] {
+    box-sizing: border-box;
+    display: flex;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VBreadcrumb'] [vn~='VBreadcrumbList'] {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VBreadcrumbItem'] {
+    align-items: center;
+    display: inline-flex;
+    min-width: 0;
+  }
+
+  [vn~='VBreadcrumbLink'],
+  [vn~='VBreadcrumbCurrent'] {
+    border-radius: 5px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 13px;
+    line-height: 1.4;
+    text-decoration: none;
+  }
+
+  [vn~='VBreadcrumbLink'] {
+    font-weight: 500;
+    padding: 3px 4px;
+    transition:
+      background 140ms ease,
+      color 140ms ease;
+  }
+
+  [vn~='VBreadcrumbLink']:hover {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+  }
+
+  [vn~='VBreadcrumbLink']:focus-visible {
+    outline: 2px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.24));
+    outline-offset: 1px;
+  }
+
+  [vn~='VBreadcrumbCurrent'] {
+    color: var(--yoya-color-text, #172033);
+    font-weight: 700;
+    max-width: min(260px, 100%);
+    overflow-wrap: anywhere;
+    padding: 3px 4px;
+  }
+
+  [vn~='VBreadcrumbItem'][data-current='true'] > [vn~='VBreadcrumbCurrent'] {
+    color: var(--yoya-color-text-strong, #0f172a);
+  }
+
+  /* 链接位 / 当前位二选一（原来这两条 display 写在行内）：有地址且不是当前项才是链接 */
+  [vn~='VBreadcrumbItem'] > [vn~='VBreadcrumbLink'] {
+    display: none;
+  }
+
+  [vn~='VBreadcrumbItem'] > [vn~='VBreadcrumbCurrent'] {
+    display: none;
+  }
+
+  [vn~='VBreadcrumbItem'][data-mode='link'] > [vn~='VBreadcrumbLink'] {
+    display: inline;
+  }
+
+  [vn~='VBreadcrumbItem'][data-mode='text'] > [vn~='VBreadcrumbCurrent'] {
+    display: inline;
+  }
+
+  [vn~='VBreadcrumbSeparator'] {
+    color: var(--yoya-color-text-muted, #94a3b8);
+    flex: 0 0 auto;
+    font-size: 13px;
+    line-height: 1;
+    margin: 0 6px;
+    user-select: none;
+  }
+
+  [vn~='VBreadcrumbItem']:last-child > [vn~='VBreadcrumbSeparator'] {
+    display: none;
+  }
+
+  :where([vn~='VAnchor']) {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorList'] {
+    display: grid;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorItem'] {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorLink'] {
+    border-left: 2px solid transparent;
+    border-radius: 0 5px 5px 0;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #475569);
+    display: block;
+    font-size: 14px;
+    line-height: 1.4;
+    min-width: 0;
+    overflow: hidden;
+    padding: 6px 10px;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    transition:
+      background 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease;
+    white-space: nowrap;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorLink']:hover {
+    background: var(--yoya-color-surface-hover, #f1f5f9);
+    color: var(--yoya-color-text, #172033);
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorLink']:focus-visible {
+    outline: 2px solid var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.24));
+    outline-offset: 1px;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorItem'][data-active='true'] > [vn~='VAnchorLink'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-left-color: var(--yoya-color-primary, #2563eb);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+    font-weight: 700;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorChildren'] {
+    display: grid;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    min-width: 0;
+    padding: 2px 0 2px 14px;
+  }
+
+  /* 空子列表不显示：位置归结构（`:empty`），不需要状态位、也不需要"恢复值" */
+  [vn~='VAnchorItem'] > [vn~='VAnchorChildren']:empty {
+    display: none;
+  }
+
+  [vn~='VAnchor'] [vn~='VAnchorChildren'] [vn~='VAnchorLink'] {
+    font-size: 13px;
+    padding: 5px 10px;
+  }
+
+  /* 主题模式切换：容器与圆形按钮的静态样式、选中态配色（原来全在 JS 行内，R5 搬进来）。
+     按钮自身的变体规则在上面（同为两条属性选择器），这几条写在后面，同权重时它赢。 */
+  [vn~='VThemeModeSwitch'] {
+    align-items: center;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  [vn~='VThemeModeSwitch'] > [vn~='VButton'] {
+    background: transparent;
+    border-color: transparent;
+    border-radius: 50%;
+    color: var(--yoya-color-text-secondary, #6f6f6f);
+    flex: 0 0 auto;
+    height: 34px;
+    padding: 0;
+    width: 34px;
+  }
+
+  [vn~='VThemeModeSwitch'] > [vn~='VButton'][data-active='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary-border, #bfdbfe);
+    color: var(--yoya-color-text-active, #1d4ed8);
+  }
+
+  [vn~='VThemeModeSwitch'] svg {
+    height: 16px;
+    width: 16px;
+  }
+
+  /* 卡片：静态样式（原在 JS 里那 4 块行内样式）。part 规则**不带祖先选择器**——part 可以
+     脱离卡片单独用（`vCardBody(…)` 常当普通容器），身份自己就够定位。 */
+  :where([vn~='VCard']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    color: var(--yoya-color-text-strong, #111827);
+    overflow: hidden;
+  }
+
+  [vn~='VCardHeader'] {
+    border-bottom: 1px solid var(--yoya-color-border-faint, #e5e7eb);
+    font-weight: 700;
+    padding: 12px 16px;
+  }
+
+  [vn~='VCardBody'] {
+    padding: 16px;
+  }
+
+  [vn~='VCardFooter'] {
+    align-items: center;
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    border-top: 1px solid var(--yoya-color-border-faint, #e5e7eb);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 16px;
+  }
+
+  /* 表格：静态样式（原在 JS 里那 4 块行内样式 + 单元格预设）。单元格只留列定义带来的数据
+     （对齐 / 换行 / 宽高 / `style`），预设的边框 / 内边距 / 字重 / 垂直对齐 / 配色都在这里。 */
+  :where([vn~='VTable']) {
+    display: block;
+    min-width: 0;
+  }
+
+  :where([vn~='VTableScroll']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  :where([vn~='VTableGrid']) {
+    border-collapse: collapse;
+    color: var(--yoya-color-text, #172033);
+    width: 100%;
+  }
+
+  /* 标题：没有内容就整条隐藏（`data-has-text` 是这份状态的真源） */
+  :where([vn~='VTableCaption']) {
+    caption-side: top;
+    color: var(--yoya-color-text-strong, #111827);
+    display: none;
+    font-weight: 700;
+    padding: 0 0 12px;
+    text-align: left;
+  }
+
+  [vn~='VTableCaption'][data-has-text='true'] {
+    display: table-caption;
+  }
+
+  [vn~='VTh'],
+  [vn~='VTd'] {
+    border-bottom: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    padding: var(--yoya-space-3, 12px) var(--yoya-space-3, 12px);
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+  }
+
+  [vn~='VTh'] {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    color: var(--yoya-color-text-secondary, #334155);
+    font-weight: 700;
+  }
+
+  [vn~='VTd'] {
+    color: var(--yoya-color-text, #172033);
+    font-weight: 400;
+  }
+
+  /* 空态格（`data-empty` 标记）：压暗 + 居中 + 更大的内边距 */
+  [vn~='VTd'][data-empty='true'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    padding: var(--yoya-space-4, 16px) var(--yoya-space-3, 12px);
+    text-align: center;
+  }
+
+  :where([vn~='VAvatar']) {
+    align-items: center;
+    background: var(--yoya-avatar-color, var(--yoya-color-primary-subtle, #eff6ff));
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-weight: 600;
+    justify-content: center;
+    line-height: 1;
+    position: relative;
+    user-select: none;
+    vertical-align: middle;
+  }
+
+  /* 自定义颜色是状态（`data-color` + `--yoya-avatar-color`）：文字自动反色 */
+  [vn~='VAvatar'][data-color] {
+    color: var(--yoya-color-text-inverse, #ffffff);
+  }
+
+  [vn~='VAvatar'][data-shape='square'] {
+    border-radius: var(--yoya-radius-md, 6px);
+  }
+
+  [vn~='VAvatar'][data-size='small'] {
+    font-size: 12px;
+    height: 28px;
+    width: 28px;
+  }
+
+  [vn~='VAvatar'][data-size='medium'] {
+    font-size: 14px;
+    height: 32px;
+    width: 32px;
+  }
+
+  [vn~='VAvatar'][data-size='large'] {
+    font-size: 16px;
+    height: 40px;
+    width: 40px;
+  }
+
+  [vn~='VAvatar'][data-size='xlarge'] {
+    font-size: 20px;
+    height: 48px;
+    width: 48px;
+  }
+
+  [vn~='VAvatar'] [vn~='VAvatarContent'] {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-width: 0;
+    padding: 2px;
+  }
+
+  [vn~='VAvatar'] [vn~='VAvatarImage'] {
+    border-radius: inherit;
+    display: none;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  [vn~='VAvatar'][data-image='true'] [vn~='VAvatarImage'] {
+    display: block;
+  }
+
+  [vn~='VAvatar'][data-image='true'] [vn~='VAvatarContent'] {
+    display: none;
+  }
+
+  [vn~='VAvatar'] [vn~='VAvatarStatus'] {
+    background: var(--yoya-color-text-muted, #64748b);
+    border: 2px solid var(--yoya-color-surface, #ffffff);
+    border-radius: 50%;
+    bottom: -3px;
+    display: none;
+    height: 10px;
+    position: absolute;
+    right: -3px;
+    width: 10px;
+  }
+
+  [vn~='VAvatar'][data-status='online'] [vn~='VAvatarStatus'] {
+    background: var(--yoya-color-success, #22c55e);
+    display: block;
+  }
+
+  [vn~='VAvatar'][data-status='busy'] [vn~='VAvatarStatus'] {
+    background: var(--yoya-color-danger, #ef4444);
+    display: block;
+  }
+
+  [vn~='VAvatar'][data-status='away'] [vn~='VAvatarStatus'] {
+    background: var(--yoya-color-warning, #f59e0b);
+    display: block;
+  }
+
+  [vn~='VAvatar'][data-status='offline'] [vn~='VAvatarStatus'] {
+    display: block;
+  }
+
+  :where([vn~='VCode']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #d8dee8);
+    border-radius: 8px;
+    color: var(--yoya-color-text, #172033);
+    overflow: hidden;
+  }
+
+  [vn~='VCode'] [vn~='VCodeToolbar'] {
+    align-items: center;
+    background: var(--yoya-color-code-header, #f8fafc);
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  /* 语言徽标：设过语言才显示（`data-language` 是这份状态的真源） */
+  [vn~='VCode'] [vn~='VCodeLanguage'] {
+    background: var(--yoya-color-code-badge, #e2e8f0);
+    border-radius: 999px;
+    color: var(--yoya-color-code-badge-text, #334155);
+    display: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 8px;
+  }
+
+  [vn~='VCode'][data-language] [vn~='VCodeLanguage'] {
+    display: inline;
+  }
+
+  /* 复制按钮：`copyable(false)` 收起 */
+  [vn~='VCode'] [vn~='VCodeCopy'] {
+    display: none;
+  }
+
+  [vn~='VCode'][data-copyable='true'] [vn~='VCodeCopy'] {
+    display: inline-block;
+  }
+
+  [vn~='VCode'] [vn~='VCodePre'] {
+    background: var(--yoya-color-code-bg, #fbfcfe);
+    margin: 0;
+    overflow: auto;
+    padding: 14px 16px;
+  }
+
+  [vn~='VCode'] [vn~='VCodeContent'] {
+    display: block;
+    font-family: 'Cascadia Code', 'Fira Code', ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    min-width: max-content;
+    white-space: pre;
+  }
+
+  :where([vn~='VChart']) {
+    display: block;
+    width: 100%;
+  }
+
+  :where([vn~='VGauge']) {
+    box-sizing: border-box;
+    height: 110px;
+    position: relative;
+    width: 220px;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeChart'] {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeTrack'] {
+    stroke: var(--yoya-color-border-faint, #e5e7eb);
+    stroke-linecap: round;
+    stroke-width: 12;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeArc'] {
+    stroke-linecap: round;
+    stroke-width: 12;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeNeedle'] {
+    fill: var(--yoya-color-text, #24292f);
+    stroke: var(--yoya-color-text, #24292f);
+    stroke-linejoin: round;
+    stroke-width: 1;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeHub'] {
+    fill: var(--yoya-color-text, #24292f);
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeHubInner'] {
+    fill: var(--yoya-color-surface, #ffffff);
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeValue'] {
+    fill: var(--yoya-color-text, #24292f);
+    font-size: 20px;
+    font-weight: 700;
+    text-anchor: middle;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeMin'] {
+    fill: var(--yoya-color-text-secondary, #64748b);
+    font-size: 10px;
+    text-anchor: start;
+  }
+
+  [vn~='VGauge'] [vn~='VGaugeMax'] {
+    fill: var(--yoya-color-text-secondary, #64748b);
+    font-size: 10px;
+    text-anchor: end;
+  }
+
+  :where([vn~='VSparkline']) {
+    display: block;
+    height: 32px;
+    width: 100%;
+  }
+
+  [vn~='VSparkline'] [vn~='VSparklineArea'] {
+    fill-opacity: 0.14;
+    pointer-events: none;
+  }
+
+  [vn~='VSparkline'] [vn~='VSparklineLine'] {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  :where([vn~='VTimeline']) {
+    position: relative;
+  }
+
+  [vn~='VTimeline'] [vn~='VTimelineLine'] {
+    background: var(--yoya-color-border, #e2e8f0);
+    bottom: 16px;
+    left: 11px;
+    position: absolute;
+    top: 8px;
+    width: 2px;
+    z-index: 0;
+  }
+
+  :where([vn~='VTimelineItem']) {
+    display: flex;
+    gap: 12px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemIndicator'] {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding-top: 6px;
+    width: 24px;
+    z-index: 1;
+  }
+
+  /* 状态色是状态（内联绑定），描边与尺寸是静态样式 */
+  [vn~='VTimelineItem'] [vn~='VTimelineItemDot'] {
+    border: 2px solid var(--yoya-color-surface, #ffffff);
+    border-radius: 50%;
+    height: 10px;
+    width: 10px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemBody'] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-bottom: 20px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemTitle'] {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemTime'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  [vn~='VTimelineItem'] [vn~='VTimelineItemContent'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 6px;
+  }
+
+  /* 评分：静态样式（原在 JS 里那 5 块行内样式）——星标几何走 `--yoya-rate-size` 变量，
+     填充比例走 `--yoya-rate-fill`（JS 只写变量，不拼样式字符串） */
+  :where([vn~='VRate']) {
+    display: inline-grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  [vn~='VRate'][data-disabled='true'] {
+    opacity: 0.64;
+  }
+
+  [vn~='VRate'] [vn~='VRateInput'] {
+    display: none;
+  }
+
+  [vn~='VRate'] [vn~='VRateStars'] {
+    align-items: center;
+    border-radius: 8px;
+    display: inline-flex;
+    gap: 2px;
+    min-width: 0;
+    outline: none;
+    padding: 4px;
+    transition: box-shadow 120ms ease;
+  }
+
+  [vn~='VRate'][data-focused='true'] [vn~='VRateStars'] {
+    box-shadow: 0 0 0 3px var(--yoya-color-primary-ring, rgba(37, 99, 235, 0.22));
+  }
+
+  [vn~='VRate'][data-error='true'] [vn~='VRateStars'] {
+    box-shadow: 0 0 0 1px var(--yoya-color-danger-ring, rgba(220, 38, 38, 0.2));
+  }
+
+  [vn~='VRate'] [vn~='VRateStar'] {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: var(--yoya-rate-size, 22px);
+    height: calc(var(--yoya-rate-size, 22px) + 8px);
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: calc(var(--yoya-rate-size, 22px) + 8px);
+  }
+
+  [vn~='VRate'][data-disabled='true'] [vn~='VRateStar'] {
+    cursor: not-allowed;
+  }
+
+  [vn~='VRate'][data-readonly='true'] [vn~='VRateStar'] {
+    cursor: default;
+  }
+
+  [vn~='VRate'] [vn~='VRateStarBase'],
+  [vn~='VRate'] [vn~='VRateStarFill'] {
+    align-items: center;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    line-height: 1;
+    position: absolute;
+  }
+
+  [vn~='VRate'] [vn~='VRateStarBase'] {
+    color: var(--yoya-color-border-muted, #94a3b8);
+  }
+
+  [vn~='VRate'] [vn~='VRateStarFill'] {
+    -webkit-clip-path: inset(0 var(--yoya-rate-fill, 100%) 0 0);
+    clip-path: inset(0 var(--yoya-rate-fill, 100%) 0 0);
+    color: transparent;
+    overflow: hidden;
+  }
+
+  [vn~='VRate'] [vn~='VRateStar'][data-filled='true'] [vn~='VRateStarFill'] {
+    color: var(--yoya-color-warning, #f59e0b);
+  }
+
+  :where([vn~='VProgress']) {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    gap: 10px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  [vn~='VProgress'] [vn~='VProgressLabel'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    display: none;
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    max-width: 160px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 标签位 / 文本位的显隐：有内容才显示（`data-has-label` / `data-show-text` 是状态真源） */
+  [vn~='VProgress'][data-has-label='true'] [vn~='VProgressLabel'] {
+    display: inline-flex;
+  }
+
+  [vn~='VProgress'][data-show-text='true'] [vn~='VProgressText'] {
+    display: inline-flex;
+  }
+
+  [vn~='VProgress'] [vn~='VProgressTrack'] {
+    background: var(--yoya-color-surface-active, #eef2f7);
+    border-radius: 999px;
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    height: 8px;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  [vn~='VProgress'] [vn~='VProgressBar'] {
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+    transition: width 160ms ease;
+  }
+
+  [vn~='VProgress'] [vn~='VProgressText'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    display: none;
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+    min-width: 34px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  [vn~='VProgress'][data-size='small'] [vn~='VProgressTrack'] {
+    height: 4px;
+  }
+
+  [vn~='VProgress'][data-size='large'] [vn~='VProgressTrack'] {
+    height: 12px;
+  }
+
+  [vn~='VProgress'][data-size='large'] [vn~='VProgressText'] {
+    font-size: 14px;
+  }
+
+  [vn~='VProgress'][data-indeterminate='true'] [vn~='VProgressBar'] {
+    animation: yoya-progress-indeterminate 1.2s ease-in-out infinite;
+  }
+
+  @keyframes yoya-progress-indeterminate {
+    0% {
+      transform: translateX(-100%);
+      width: 40%;
+    }
+    50% {
+      transform: translateX(0);
+      width: 70%;
+    }
+    100% {
+      transform: translateX(100%);
+      width: 40%;
+    }
+  }
+
+  /* 徽标：静态样式、点模式几何、"有没有内容 → 角标定位"都在这里（原在 JS 里那 27 条 style +
+     定位 / 位移两条绑定）。JS 侧只留显隐与背景两条读值绑定，加 `data-*` 与偏移变量，
+     见 src/data-display/badge.js（写法口径见 AGENTS.md「Component Writing Rules」）。 */
+  :where([vn~='VBadge']) {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+    line-height: 1;
+    position: relative;
+    vertical-align: middle;
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeContent'] {
+    align-items: center;
+    display: inline-flex;
+    min-width: 0;
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeCount'] {
+    align-items: center;
+    border-radius: 10px;
+    color: var(--yoya-color-text-inverse, #ffffff);
+    font-size: 12px;
+    font-weight: 700;
+    height: 18px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 18px;
+    padding: 0 6px;
+    position: static; /* 没有内容时跟着排版走；有内容时才浮到右上角（下一条规则） */
+    right: 0;
+    text-align: center;
+    top: 0;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  /* 点模式 / 状态模式：几何随根上的 data-dot / data-status 走 */
+  [vn~='VBadge']:is([data-dot='true'], [data-status]) [vn~='VBadgeCount'] {
+    border-radius: 999px;
+    height: 8px;
+    min-width: 8px;
+    padding: 0;
+    width: 8px;
+  }
+
+  /* 有内容（组件按数据写在 `data-standalone` 上）→ 角标浮到右上角。位置与位移归 CSS，
+     偏移量由 JS 注进来的 CSS 变量给（`--yoya-badge-offset-x/y`，没给就是 0）。
+     说明：不用 `:has(> [vn~='VBadgeContent'] > *)` —— 那个只匹配**元素**子节点，
+     纯文本内容（`children: '消息'`）不会被命中。 */
+  [vn~='VBadge']:not([data-standalone]) [vn~='VBadgeCount'] {
+    position: absolute;
+    transform: translate(
+      calc(50% + var(--yoya-badge-offset-x, 0px)),
+      calc(-50% + var(--yoya-badge-offset-y, 0px))
+    );
+  }
+
+  [vn~='VBadge'] [vn~='VBadgeText'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  /* 环形统计：静态样式（原在 JS 里那 4 块行内样式）。圆环几何是 SVG 属性，留在 JS；
+     尺寸走 CSS 变量，根与 svg 共用同一个值。 */
+  :where([vn~='VRingStat']) {
+    height: var(--yoya-ring-stat-size, 120px);
+    position: relative;
+    width: var(--yoya-ring-stat-size, 120px);
+  }
+
+  [vn~='VRingStat'] svg {
+    display: block;
+    height: var(--yoya-ring-stat-size, 120px);
+    width: var(--yoya-ring-stat-size, 120px);
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatTrack'] {
+    stroke: var(--yoya-color-border-faint, #e5e7eb);
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatCenter'] {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatValue'] {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  [vn~='VRingStat'] [vn~='VRingStatLabel'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  /* 趋势卡：静态样式（原在 JS 里那 5 块行内样式）。涨跌颜色随 `up` 变，留在 JS。 */
+  :where([vn~='VTrendCard']) {
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border, #e2e8f0);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 16px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardTitle'] {
+    color: var(--yoya-color-text-secondary, #475569);
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardValue'] {
+    align-items: baseline;
+    display: flex;
+    font-size: 26px;
+    font-weight: 700;
+    gap: 6px;
+    line-height: 1.2;
+    margin-top: 6px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardUnit'] {
+    color: var(--yoya-color-text-secondary, #64748b);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardFooter'] {
+    align-items: flex-end;
+    display: flex;
+    margin-top: 8px;
+  }
+
+  [vn~='VTrendCard'] [vn~='VTrendCardDelta'] {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+
+  :where([vn~='VScroll']) {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: relative;
+  }
+
+  [vn~='VScroll'] [vn~='VScrollList'] {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+  }
+
+  [vn~='VScroll'][data-virtual='true'] [vn~='VScrollList'] {
+    display: block;
+    gap: 0;
+    padding: 0;
+    position: relative;
+  }
+
+  [vn~='VScroll'] [vn~='VScrollVirtualItem'] {
+    box-sizing: border-box;
+    height: var(--yoya-scroll-item-height, 48px);
+    left: 0;
+    min-width: 0;
+    overflow: visible;
+    position: absolute;
+    right: 0;
+    top: calc(12px + var(--yoya-scroll-index, 0) * (var(--yoya-scroll-item-height, 48px) + 8px));
+    width: 100%;
+  }
+
+  [vn~='VScroll'] [vn~='VScrollFooter'] {
+    align-items: center;
+    border-top: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    color: var(--yoya-color-text-muted, #64748b);
+    display: none;
+    font-size: 12px;
+    justify-content: center;
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+
+  [vn~='VScroll'][data-loading='true'] > [vn~='VScrollFooter'],
+  [vn~='VScroll'][data-blocked='true'] > [vn~='VScrollFooter'] {
+    display: flex;
+  }
+
+  [vn~='VScroll'] [vn~='VScrollStatus'] {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+  }
+
+  :where([vn~='VCarousel']) {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-width: 0;
+    position: relative;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselViewport'] {
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselTrack'] {
+    display: flex;
+    height: 100%;
+    min-width: 0;
+    transition: transform 320ms ease;
+    will-change: transform;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselSlide'] {
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    height: 100%;
+    min-width: 0;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 50%;
+    box-shadow: var(--yoya-shadow-sm, 0 1px 2px rgb(15 23 42 / 8%));
+    color: var(--yoya-color-text, #172033);
+    cursor: pointer;
+    display: inline-flex;
+    height: 30px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    z-index: 2;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow']:hover:not([disabled]) {
+    background: var(--yoya-color-surface-hover, #f8fafc);
+    border-color: var(--yoya-color-primary, #2563eb);
+    color: var(--yoya-color-primary-hover, #1d4ed8);
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][disabled] {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][data-dir='prev'] {
+    left: 10px;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow'][data-dir='next'] {
+    right: 10px;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselArrow'] svg {
+    height: 16px;
+    width: 16px;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselDots'] {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    min-height: 28px;
+    padding: 8px;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselDot'] {
+    background: var(--yoya-color-border-muted, #94a3b8);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    height: 8px;
+    padding: 0;
+    transition:
+      background 140ms ease,
+      width 140ms ease;
+    width: 8px;
+  }
+
+  [vn~='VCarousel'] [vn~='VCarouselDot'][aria-selected='true'] {
+    background: var(--yoya-color-primary, #2563eb);
+    width: 18px;
+  }
+
+  :where([vn~='VUpload']) {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadDropzone'] {
+    align-items: center;
+    background: var(--yoya-color-surface-muted, #fbfcfe);
+    border: 1px dashed var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-secondary, #475569);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    min-height: 96px;
+    outline: none;
+    padding: 14px;
+    text-align: center;
+    transition:
+      border-color 140ms ease,
+      background 140ms ease;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadDropzone']:hover,
+  [vn~='VUpload'] [vn~='VUploadDropzone'][data-dragging='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary, #2563eb);
+  }
+
+  [vn~='VUpload'] [vn~='VUploadDropzone'][data-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadDropzoneTitle'] {
+    color: var(--yoya-color-text, #172033);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadDropzoneHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadList'] {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadItem'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    border-radius: 6px;
+    box-sizing: border-box;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadItemInfo'] {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadItemName'] {
+    color: var(--yoya-color-text, #172033);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadItemMeta'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadProgress'] {
+    background: var(--yoya-color-surface-active, #eef2f7);
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadProgressBar'] {
+    background: var(--yoya-color-primary, #2563eb);
+    display: block;
+    height: 100%;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadRemove'] {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 5px;
+    color: var(--yoya-color-text-muted, #64748b);
+    cursor: pointer;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    padding: 4px;
+    width: 24px;
+  }
+
+  [vn~='VUpload'] [vn~='VUploadRemove']:hover {
+    background: var(--yoya-color-danger-subtle, #fef2f2);
+    color: var(--yoya-color-text-danger, #b91c1c);
+  }
+
+  :where([vn~='VAvatarUpload']) {
+    display: inline-grid;
+    gap: 8px;
+    justify-items: center;
+    min-width: 0;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'] {
+    align-items: center;
+    background: var(--yoya-color-surface-muted, #fbfcfe);
+    border: 1px dashed var(--yoya-color-border-strong, #cbd5e1);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    outline: none;
+    position: relative;
+    transition:
+      border-color 140ms ease,
+      background 140ms ease;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview']:hover,
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'][data-dragging='true'] {
+    background: var(--yoya-color-primary-subtle, #eff6ff);
+    border-color: var(--yoya-color-primary, #2563eb);
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadPreview'][data-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadImage'] {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadFallback'] {
+    align-items: center;
+    display: grid;
+    gap: 5px;
+    justify-items: center;
+    padding: 8px;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadHint'] {
+    color: var(--yoya-color-text-muted, #64748b);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadRemove'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-faint, #e2e8f0);
+    border-radius: 50%;
+    color: var(--yoya-color-text-muted, #64748b);
+    cursor: pointer;
+    display: inline-flex;
+    height: 24px;
+    justify-content: center;
+    padding: 4px;
+    width: 24px;
+  }
+
+  [vn~='VAvatarUpload'] [vn~='VAvatarUploadRemove']:hover {
+    background: var(--yoya-color-danger-subtle, #fef2f2);
+    color: var(--yoya-color-text-danger, #b91c1c);
+  }
+
+  :where([vn~='VEChart']) {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  :where([vn~='VThree']) {
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+
+    canvas {
+      display: block;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [vn~='VGlowButton']::before {
+    animation: none !important;
+    left: 35%;
+    width: 30%;
+  }
+
+  [vn~='VGlowButton'][data-glow-motion='always']::before {
+    animation: yoya-glow-button-sweep var(--yoya-glow-duration) ease-in-out infinite !important;
+    left: -45%;
+    width: 40%;
+  }
+
+  [vn~='VGlowButton'][data-glow-direction='rtl'][data-glow-motion='always']::before {
+    animation-name: yoya-glow-button-sweep-rtl !important;
+  }
+
+  [vn~='VGlowButton'][data-glow-motion='always'] [vn~='VGlowButtonRipple'] {
+    animation: yoya-glow-button-ripple 520ms ease-out forwards !important;
+  }
+
+  [vn~='VGlowButton'][data-glow-play='hover']::before,
+  [vn~='VGlowButton'][data-glow-play='off']::before,
+  [vn~='VGlowButton'][disabled]::before,
+  [vn~='VGlowButton'][data-interaction='disabled']::before {
+    opacity: 0 !important;
+  }
+
+  [vn~='VGlowButton'][data-glow-play='hover']:hover::before,
+  [vn~='VGlowButton'][data-glow-play='hover']:focus-visible::before {
+    opacity: 1 !important;
+  }
+
+  :where([vn~='VSkeleton']) {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--yoya-skeleton-gap, 10px);
+    max-width: 100%;
+    width: 100%;
+  }
+
+  [vn~='VSkeleton'] [vn~='VSkeletonBar'],
+  [vn~='VSkeleton'] [vn~='VSkeletonAvatar'],
+  [vn~='VSkeleton'] [vn~='VSkeletonBlock'] {
+    animation: yoya-skeleton-shimmer 1.4s ease-in-out infinite;
+    background: linear-gradient(
+      90deg,
+      var(--yoya-color-surface-muted, #f5f5f5) 25%,
+      var(--yoya-color-surface-active, #e9e9e9) 37%,
+      var(--yoya-color-surface-muted, #f5f5f5) 63%
+    );
+    background-size: 400% 100%;
+  }
+
+  [vn~='VSkeleton'] [vn~='VSkeletonBar'] {
+    border-radius: 4px;
+    height: var(--yoya-skeleton-bar-height, 20px);
+    width: var(--yoya-skeleton-bar-width, 100%);
+  }
+
+  [vn~='VSkeleton'] [vn~='VSkeletonAvatar'] {
+    border-radius: 50%;
+    flex: 0 0 auto;
+    height: var(--yoya-skeleton-avatar-size, 40px);
+    width: var(--yoya-skeleton-avatar-size, 40px);
+  }
+
+  [vn~='VSkeleton'] [vn~='VSkeletonBlock'] {
+    border-radius: 8px;
+    height: 96px;
+  }
+
+  @keyframes yoya-skeleton-shimmer {
+    from {
+      background-position: 100% 50%;
+    }
+
+    to {
+      background-position: 0 50%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonBar'],
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonAvatar'],
+    [vn~='VSkeleton'][data-motion='auto'] [vn~='VSkeletonBlock'] {
+      animation: none;
+    }
+  }
+
+  :where([vn~='VLazyImage']) {
+    box-sizing: border-box;
+    display: inline-block;
+    max-width: 100%;
+    min-height: 48px;
+    min-width: 48px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImagePlaceholder'] {
+    background: var(--yoya-color-surface-muted, #f5f5f5);
+    inset: 0;
+    position: absolute;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImageImg'] {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    transition: opacity 240ms ease;
+    width: 100%;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry'] {
+    align-items: center;
+    background: var(--yoya-color-surface, #ffffff);
+    border: 1px solid var(--yoya-color-border-strong, #cbd5e1);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: var(--yoya-color-text-muted, #64748b);
+    cursor: pointer;
+    font-size: 12px;
+    gap: 6px;
+    inset: 50% auto auto 50%;
+    line-height: 1;
+    padding: 7px 10px;
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry']:hover {
+    border-color: var(--yoya-color-primary, #2563eb);
+    color: var(--yoya-color-primary, #2563eb);
+  }
+
+  /* 懒加载图片的三个部件显隐 / 透明度由根上的 `data-state` 决定（原来写在 JS 行内，R5 搬进来） */
+  [vn~='VLazyImage'] [vn~='VLazyImageImg'] {
+    opacity: 0;
+  }
+
+  [vn~='VLazyImage'][data-state='loaded'] [vn~='VLazyImageImg'] {
+    opacity: 1;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImagePlaceholder'] {
+    display: none;
+  }
+
+  [vn~='VLazyImage'][data-state='loading'] [vn~='VLazyImagePlaceholder'] {
+    display: inline-flex;
+  }
+
+  [vn~='VLazyImage'] [vn~='VLazyImageRetry'] {
+    display: none;
+  }
+
+  [vn~='VLazyImage'][data-state='error'] [vn~='VLazyImageRetry'] {
+    display: inline-flex;
+  }
+
+  :where([vn~='VTransition']) {
+    box-sizing: border-box;
+  }
+
+  /* 出场动画跑完把节点藏起来（原来在 JS 里写行内 `display`，R5 改成状态位规则） */
+  [vn~='VTransition'][data-hidden='true'] {
+    display: none;
+  }
+
+  [vn~='VTransition'][data-state='enter'] {
+    animation: yoya-transition-enter var(--yoya-transition-duration, 280ms) ease both;
+  }
+
+  [vn~='VTransition'][data-state='leave'] {
+    animation: yoya-transition-leave var(--yoya-transition-duration, 240ms) ease both;
+  }
+
+  [vn~='VTransition'][data-motion='always'] {
+    animation: none !important;
+  }
+
+  @keyframes yoya-transition-enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes yoya-transition-leave {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(-12px) scale(0.98);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [vn~='VTransition'][data-motion='auto'] {
+      animation: none;
+    }
+  }
+
+  /* 瀑布流：静态样式与列几何（列数 / 间距 / 最小列宽走 CSS 变量，JS 只写变量） */
+  :where([vn~='VMasonry']) {
+    box-sizing: border-box;
+    column-count: var(--yoya-masonry-columns, 3);
+    column-gap: var(--yoya-masonry-gap, 16px);
+    column-width: auto;
+    width: 100%;
+  }
+
+  [vn~='VMasonry'][data-column-mode='responsive'] {
+    column-count: auto;
+    column-width: var(--yoya-masonry-column-width, 240px);
+  }
+
+  [vn~='VMasonry'] > * {
+    break-inside: avoid;
+    box-sizing: border-box;
+    margin-bottom: var(--yoya-masonry-gap, 16px);
+  }
+
+  :where([vn~='VImagePreview']) {
+    box-sizing: border-box;
+    cursor: zoom-in;
+    display: inline-block;
+    line-height: 0;
+  }
+
+  [vn~='VImagePreview'] > img {
+    display: block;
+    max-width: 100%;
+  }
+
+  [vn~='VImagePreviewOverlay'] {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.72);
+    box-sizing: border-box;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 1000;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewBackdrop'] {
+    inset: 0;
+    position: absolute;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] {
+    position: relative;
+    transform-origin: center;
+    transition: transform 180ms ease;
+    z-index: 1;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewStage'] [vn~='VLazyImage'] {
+    max-height: 86vh;
+    max-width: 90vw;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewClose'] {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    box-sizing: border-box;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 22px;
+    height: 40px;
+    justify-content: center;
+    line-height: 1;
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    width: 40px;
+    z-index: 2;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewClose']:hover {
+    background: rgba(255, 255, 255, 0.26);
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewToolbar'] {
+    align-items: center;
+    bottom: 18px;
+    display: flex;
+    gap: 8px;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewTool'] {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 13px;
+    height: 32px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 44px;
+    padding: 0 10px;
+  }
+
+  [vn~='VImagePreviewOverlay'] [vn~='VImagePreviewTool']:hover {
+    background: rgba(255, 255, 255, 0.26);
+  }
+}
+/* 分隔面板：容器 / 两块面板 / 分隔条（原来都写在 JS 行内，R5 搬进来）。
+     方向走 `data-direction='vertical'`（默认横向），首面板尺寸走 `--yoya-split-first-size`。 */
+[vn~='VSplitPanel'] {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] {
+  flex-direction: column;
+}
+
+[vn~='VSplitPanelFirst'],
+[vn~='VSplitPanelSecond'] {
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+[vn~='VSplitPanelFirst'] {
+  flex: 0 0 auto;
+}
+
+[vn~='VSplitPanelSecond'] {
+  flex: 1 1 auto;
+}
+
+[vn~='VSplitPanel'][data-direction='horizontal'] > [vn~='VSplitPanelFirst'] {
+  height: 100%;
+  width: var(--yoya-split-first-size, 50%);
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] > [vn~='VSplitPanelFirst'] {
+  height: var(--yoya-split-first-size, 50%);
+  width: 100%;
+}
+
+[vn~='VSplitPanelDivider'] {
+  background: transparent;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+[vn~='VSplitPanel'][data-direction='horizontal'] > [vn~='VSplitPanelDivider'] {
+  cursor: col-resize;
+  height: 100%;
+  width: 6px;
+}
+
+[vn~='VSplitPanel'][data-direction='vertical'] > [vn~='VSplitPanelDivider'] {
+  cursor: row-resize;
+  height: 6px;
+  width: 100%;
+}
+
+[vn~='VSplitPanelDivider']:hover {
+  background: var(--yoya-color-primary-subtle, #eff6ff);
+}

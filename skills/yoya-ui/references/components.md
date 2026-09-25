@@ -2,6 +2,39 @@
 
 所有组件都可用两种写法：setup callback（`vButton('保存', (btn) => ...)`）或参数对象（`vButton({ label: '保存' })`）。示例以声明式为主。
 
+## 组件类型（TypeScript，0.7.0 起）
+
+包内 `types/*.d.ts` 的**全部组件句柄**按同一形状声明（0.7.0 齐活，81 个句柄）：
+
+```ts
+export interface VXxx extends ComponentNode {
+  /* 自己的命令面 */
+}
+export interface XxxOptions {
+  /* props：逐键类型 */ [key: string]: unknown;
+}
+export const VXxx: { (props?: XxxOptions): VXxx }; // 定义函数：收 props
+export const vXxx: ElementFactory<VXxx> & {
+  // 快捷方法：按 setup 分派调用方参数
+  (first?: XxxOptions | SetupInput<VXxx> | null, callback?: SetupCallback<VXxx>): VXxx;
+};
+```
+
+- **要逐键检查 props 就用定义函数**：`VBadge({ count: 3 })` 写错值类型当场报错；`vBadge({ … })`
+  首参含开放的 `ElementOptions`（为了 `class` / `style` / `onXxx` / `data-*` 透传），抓不住取值错——
+  或者先把字面量写成 `const props: BadgeOptions = { … }` 再传。
+- **props 值位置可以放句柄**（活值）：类型的白名单是 `PropValue<T> = T | SignalHandle<T> | ValueReader<T>`
+  （`VBadge({ count })` 传 `ref(3)` 就是活计数）；内容位置统一 `ChildInput`。
+- **props 接口带 `[key: string]: unknown`**：元素级选项照旧透传；拼错的键不报错，结构键除外
+  （容器组件运行期报错，类型也不收）。
+- **运行期定义函数没有 props 参数的组件，类型也写 `()`**：`VCard({ class })` 这类实参运行期会被静默丢掉，
+  声明里就不承诺——可派发键写在快捷方法首参（`vCard({ class })`）。
+- **没有 `new` 签名**：`instanceof VXxx` 不是承诺用法，身份判定用 `componentNameOf` /
+  `hasComponentIdentity`（`x instanceof VXxx` 收窄不到句柄，写了就红）；对象组件协议（`{ render() }`）
+  的类型联合分支也已退场。
+- 自己写组件时对应给 `XxxOptions` + 定义函数签名，并在 `types/consumer.test-d.ts` 补正/负例
+  （每个组件至少一条正例 + 一条 `@ts-expect-error` 负例）。
+
 ## 按钮与操作
 
 ### vButton
@@ -290,12 +323,26 @@ vDetail((detail) => {
 
 代码块：`content()/language()/copyable()`，内置复制按钮。
 
-### vTable / vThead / vTbody / vTr / vTh / vTd
+### vTableWrapper（数据驱动）/ vTable / vThead / vTbody / vTr / vTh / vTd
 
-表格：声明式 `<thead>/<tbody>/<tr>/<th>/<td>` 结构或 `columns()/rows()` 数据模式，`emptyText()` 空态。
+表格分两层：**数据驱动**用 `vTableWrapper`（自己管 `columns()` / `rows()` / `caption()` / `emptyText()`，
+行动作 `addRow()/updateRow()/removeRow()/clearRows()`，行状态挂在 `item(key).api` 上）；**结构**
+用 `vTable` 逐层声明 `vThead / vTbody / vTfoot / vTr / vTh / vTd`。行数据自带 `id`（或用 `rowKey()`），
+列定义支持 `key / label / align / width / render`。
 
 ```js
-vTable({ columns: ['名称', '状态'], rows: [['api-gateway', '运行中']] });
+vTableWrapper({
+  caption: '服务列表',
+  columns: [
+    { key: 'name', label: '名称' },
+    { key: 'status', label: '状态' }
+  ],
+  emptyText: '暂无服务',
+  rows: [
+    { id: 'api-gateway', name: 'api-gateway', status: '运行中' },
+    { id: 'worker', name: 'worker', status: '停止' }
+  ]
+});
 ```
 
 ### vTree
@@ -392,7 +439,8 @@ vCarousel 内置水平拖动/触摸滑动切换（垂直滚动不拦截，滑动
 
 - `vstack({ gap })`：纵向 flex；`hstack` 横向；`vRow/vCol` 栅格；`vContainer` 定宽容器
 - `vBody({ maxWidth })`：页面壳（消费主题 token），`bindTo('#app')`
-- `vThemeShell`：区域级主题容器，`background()/backgroundOpacity()/radius()/border()/borderColor()/scrollable()`
+- 区域级外观由**提供面的组件**负责（`vCard` 是样板，静态规则写在皮肤里）；要自定义面就在自己的结构上写
+  `style` / `class`，token 照旧消费（半透明用 `color-mix()`，降级见 browser-support）
 - `vSplitPanel`：分隔面板，`direction('horizontal'|'vertical')/size()/minSize()/reset()`，`first()/second()` 两个面板
 - `spacer()`：flex 占位；`divider()`：分割线
 

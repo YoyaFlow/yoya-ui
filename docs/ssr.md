@@ -167,7 +167,7 @@ The library does not depend on any framework; `node:http`, Express, Hono, or Koa
 
 ### 3.1 Minimal HTTP server
 
-See `src/examples/ssr/server-http.mjs` for a runnable example (`node src/examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
+See `examples/ssr/server-http.mjs` for a runnable example (`node examples/ssr/server-http.mjs`, run `npm run build` first). Core logic:
 
 ```js
 import { renderToString, resolveLocale, serializeState } from '@yoyaflow/yoya-ui/router';
@@ -298,8 +298,8 @@ div((root) => {
 
 ## 7. Example references
 
-- `node src/examples/ssr/server.mjs`: prints page HTML to stdout for inspecting the output.
-- `node src/examples/ssr/server-http.mjs`: full HTTP service (minimal no-bundler demo) showing request parsing, SSR rendering, static assets, and the client hydrate/mount branch. Run `npm run build` first.
+- `node examples/ssr/server.mjs`: prints page HTML to stdout for inspecting the output.
+- `node examples/ssr/server-http.mjs`: full HTTP service (minimal no-bundler demo) showing request parsing, SSR rendering, static assets, and the client hydrate/mount branch. Run `npm run build` first.
 - `dist/examples/ssr-demo.html` (after building examples): standalone SSR demo page that runs renderToString -> hydrate in the browser, exercising buttons, dialogs, forms, and zh/en switching.
 - Examples site (`npm run build:examples` + `npx vite preview`): Guides -> Server-Side Rendering page with SSR / non-SSR mode-switching demos.
 
@@ -311,7 +311,7 @@ SSR discipline reduces to one sentence: **the render path must be DOM-free and d
 
 | Avoid                                                                                                                                         | Do instead                                                                                                                                                                   | Why                                                                                     |
 | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Reading `document` / `window` inside `render()` / `toHTML()`                                                                                  | Access the DOM only in event callbacks or `renderDom()`; guard browser APIs with `typeof xxx === 'undefined'`                                                                | There is no DOM on the server, so the render path must stay DOM-free                    |
+| Reading `document` / `window` inside the view build / `toHTML()`                                                                              | Access the DOM only in event callbacks or the mount hook (`whenMount(host)` → `host.element()`); guard browser APIs with `typeof xxx === 'undefined'`                        | There is no DOM on the server, so the render path must stay DOM-free                    |
 | Letting `Date.now()` / `Math.random()` affect output (including keys and ids)                                                                 | Derive structure from request input only; allocate ids with `allocateId` from the render context                                                                             | Two different trees make hydration misalign                                             |
 | Calling `document.addEventListener` / `window.addEventListener` inside components                                                             | Use `bindDocumentEvent` / `bindWindowEvent` and run the returned unbind in `destroy()`                                                                                       | No DOM on the server; the client must unbind when nodes are destroyed                   |
 | Keeping request state, view trees, or component instances at module level (current user, locale, counters, region nodes, component instances) | Create them per request: `createAccess` / `createI18n` / `withContext` through entry `options`; build region nodes and component instances inside the page factory           | Module-level state and view trees leak between concurrent requests and share one tree   |

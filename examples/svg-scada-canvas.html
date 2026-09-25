@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>yoya-ui SCADA 画布演示</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #0b1220;
+        color: #e2e8f0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        padding: 16px;
+      }
+
+      .scada-card {
+        background: #111a2c;
+        border: 1px solid #24324d;
+        border-radius: 16px;
+        margin: 0 auto;
+        max-width: 1500px;
+        padding: 16px;
+      }
+
+      .scada-head {
+        align-items: baseline;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .scada-head h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+
+      .scada-head p {
+        color: #8fa3bf;
+        font-size: 13px;
+        margin: 0;
+      }
+
+      .scada-layout {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 300px 1fr;
+      }
+
+      .scada-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .scada-section {
+        background: #131e33;
+        border: 1px solid #24324d;
+        border-radius: 12px;
+        padding: 12px;
+      }
+
+      .scada-section h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+      }
+
+      .scada-grid {
+        display: grid;
+        gap: 6px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .scada-button {
+        background: #18233a;
+        border: 1px solid #2e3f5e;
+        border-radius: 8px;
+        color: #e2e8f0;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        padding: 8px 6px;
+      }
+
+      .scada-button:hover {
+        border-color: #4b6a9b;
+      }
+
+      .scada-button.active {
+        box-shadow: 0 0 0 2px #facc15;
+      }
+
+      .scada-canvas {
+        background: #0e1729;
+        border: 1px solid #2b3d5f;
+        border-radius: 12px;
+        display: block;
+        height: auto;
+        max-height: 720px;
+        touch-action: none;
+        width: 100%;
+      }
+
+      .scada-grid-line {
+        stroke: #1d2a42;
+        stroke-width: 1;
+      }
+
+      .scada-device {
+        cursor: grab;
+        pointer-events: all;
+      }
+
+      .scada-device.dragging {
+        cursor: grabbing;
+      }
+
+      .scada-selection {
+        fill: none;
+        stroke: #facc15;
+        stroke-width: 1.5;
+        stroke-dasharray: 4 3;
+        pointer-events: none;
+      }
+
+      .scada-connect-ring {
+        fill: none;
+        stroke: #22c55e;
+        stroke-width: 1.5;
+        pointer-events: none;
+      }
+
+      .scada-line {
+        fill: none;
+        stroke: #38bdf8;
+        stroke-linecap: round;
+        stroke-width: 2;
+        pointer-events: none;
+      }
+
+      .scada-endpoint {
+        fill: #38bdf8;
+        pointer-events: none;
+      }
+
+      .scada-label {
+        fill: #8fa3bf;
+        font-size: 11px;
+        pointer-events: none;
+        text-anchor: middle;
+      }
+
+      .dev-ring {
+        fill: #1e293b;
+        stroke: #475569;
+        stroke-width: 2;
+      }
+
+      .dev-body {
+        fill: #334155;
+        stroke: #0f172a;
+        stroke-width: 1.5;
+      }
+
+      .dev-line {
+        stroke: #e2e8f0;
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+
+      .dev-motor-rotor {
+        stroke: #facc15;
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+
+      .tank-liquid {
+        fill: rgb(56 189 248 / 65%);
+      }
+
+      .dev-lamp {
+        stroke: #0f172a;
+        stroke-width: 2;
+      }
+
+      .scada-status {
+        color: #8fa3bf;
+        font-size: 12px;
+        line-height: 1.5;
+        min-height: 18px;
+      }
+
+      .scada-json {
+        background: #0b1220;
+        border: 1px solid #22314e;
+        border-radius: 8px;
+        color: #a5b4c8;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 11px;
+        height: 140px;
+        line-height: 1.45;
+        padding: 8px;
+        resize: vertical;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script type="module">
+      import {
+        bindWindowEvent,
+        computed,
+        div,
+        ref,
+        svg,
+        SvgElementNode,
+        vNode
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.js';
+
+      /*
+       * SCADA 画布演示（编辑器闭环，不含采集/报警等工业服务）：
+       * - ScadaDevice：单个设备（ref 持有坐标/值/角度/选中态，SVG 视图直接绑定句柄）
+       * - ScadaConnection：设备间连线，设备移动后由画布控制器 sync 重算
+       * - ScadaCanvasView：SVG 画布（栅格、缩放、设备层/连线层）
+       * - ScadaHud：符号库/操作按钮/JSON 文本区（状态用 ref，对外只暴露方法与只读属性）
+       * - ScadaDemoApp：页面壳 + 交互规则（放置/拖动/连线/删除/运行模拟）
+       */
+
+      const SYMBOL_DEFS = [
+        { kind: 'motor', name: '电机' },
+        { kind: 'pump', name: '泵' },
+        { kind: 'valve', name: '阀门' },
+        { kind: 'tank', name: '罐体' },
+        { kind: 'sensor', name: '传感器' },
+        { kind: 'lamp', name: '指示灯' }
+      ];
+
+      const GRID_SIZE = 40;
+
+      function snapToGrid(value) {
+        return Math.round(value / GRID_SIZE) * GRID_SIZE;
+      }
+
+      function ScadaDevice({ id, kind, x, y, label, value = 0.5, angle = 0, onPointerDown }) {
+        const positionX = ref(x);
+        const positionY = ref(y);
+        const deviceValue = ref(value);
+        const deviceAngle = ref(angle);
+        const selected = ref(false);
+        const connectSource = ref(false);
+        const dragging = ref(false);
+
+        const transform = computed(() => `translate(${positionX.value} ${positionY.value})`);
+        const rotorTransform = computed(() => `rotate(${deviceAngle.value})`);
+        const liquidY = computed(() => 26 - deviceValue.value * 48);
+        const liquidHeight = computed(() => deviceValue.value * 48);
+        const lampFill = computed(() => (deviceValue.value > 0.5 ? '#22c55e' : '#ef4444'));
+        const selectionOpacity = computed(() => (selected.value ? '1' : '0'));
+        const connectOpacity = computed(() => (connectSource.value ? '1' : '0'));
+
+        let node = null;
+
+        function renderBody(group) {
+          if (kind === 'motor') {
+            group.circle({ class: 'dev-ring', r: 20 });
+            group.g((rotor) => {
+              rotor.className('dev-motor-rotor');
+              rotor.attr('transform', rotorTransform);
+              rotor.line({ x1: 0, y1: -12, x2: 0, y2: 12 });
+            });
+            return;
+          }
+
+          if (kind === 'pump') {
+            group.circle({ class: 'dev-body', r: 18 });
+            group.circle({ r: 6, fill: '#e2e8f0' });
+            return;
+          }
+
+          if (kind === 'valve') {
+            group.rect({ class: 'dev-body', x: -16, y: -8, width: 32, height: 16, rx: 3 });
+            group.line({ class: 'dev-line', x1: 0, y1: -18, x2: 0, y2: 18 });
+            return;
+          }
+
+          if (kind === 'tank') {
+            group.rect({ class: 'dev-body', x: -20, y: -26, width: 40, height: 52, rx: 6 });
+            group.rect((liquid) => {
+              liquid.className('tank-liquid');
+              liquid.attr({ x: -16, width: 32 });
+              liquid.attr('y', liquidY);
+              liquid.attr('height', liquidHeight);
+            });
+            return;
+          }
+
+          if (kind === 'sensor') {
+            group.rect({ class: 'dev-body', x: -12, y: -12, width: 24, height: 24, rx: 5 });
+            group.circle({ cx: 0, cy: 0, r: 4, fill: '#facc15' });
+            return;
+          }
+
+          if (kind === 'lamp') {
+            group.circle((lamp) => {
+              lamp.className('dev-lamp');
+              lamp.attr('r', '16');
+              lamp.style('fill', lampFill);
+            });
+          }
+        }
+
+        const device = vNode((api) => {
+          api.id = () => id;
+          api.kind = () => kind;
+          api.label = () => label;
+          api.x = () => positionX.value;
+          api.y = () => positionY.value;
+          api.value = () => deviceValue.value;
+          api.angle = () => deviceAngle.value;
+          api.setPosition = (nextX, nextY) => {
+            positionX.value = nextX;
+            positionY.value = nextY;
+            return api;
+          };
+          // `select` 撞 HTML `<select>` 子工厂（运行期命令会遮蔽它）：命令名改用 `setSelected`。
+          api.setSelected = (next) => {
+            selected.value = next;
+            return api;
+          };
+          api.markConnectSource = (active) => {
+            connectSource.value = active;
+            return api;
+          };
+          api.setDragging = (next) => {
+            dragging.value = next;
+            return api;
+          };
+          api.updateRuntime = (nextValue, nextAngle) => {
+            deviceValue.value = nextValue;
+            deviceAngle.value = nextAngle;
+            return api;
+          };
+
+          node = new SvgElementNode('g', (group) => {
+            group.className(['scada-device', `device--${kind}`]);
+            group.toggleClass('dragging', dragging);
+            group.attr({
+              transform,
+              'data-device-id': id
+            });
+
+            group.on('pointerdown', (event) => {
+              event.stopPropagation();
+              onPointerDown?.(device, event);
+            });
+            group.on('click', (event) => event.stopPropagation());
+
+            // 选中框 / 连线起点提示，均由信号驱动显隐。
+            group.circle((ring) => {
+              ring.className('scada-selection');
+              ring.attr('r', '28');
+              ring.style('opacity', selectionOpacity);
+            });
+            group.circle((ring) => {
+              ring.className('scada-connect-ring');
+              ring.attr('r', '30');
+              ring.style('opacity', connectOpacity);
+            });
+
+            renderBody(group);
+
+            group.text((labelNode) => {
+              labelNode.className('scada-label');
+              labelNode.attr({ x: 0, y: 40 });
+              labelNode.text(label);
+            });
+          });
+          return node;
+        });
+
+        return device;
+      }
+
+      function ScadaConnection({ fromId, toId }) {
+        const startX = ref(0);
+        const startY = ref(0);
+        const endX = ref(0);
+        const endY = ref(0);
+
+        let node = null;
+
+        return vNode((api) => {
+          api.fromId = () => fromId;
+          api.toId = () => toId;
+          api.sync = (x1, y1, x2, y2) => {
+            startX.value = x1;
+            startY.value = y1;
+            endX.value = x2;
+            endY.value = y2;
+            return api;
+          };
+
+          node = new SvgElementNode('g', (group) => {
+            group.attr('data-connection-id', `${fromId}->${toId}`);
+            group.line((line) => {
+              line.className('scada-line');
+              line.attr({
+                x1: startX,
+                y1: startY,
+                x2: endX,
+                y2: endY
+              });
+            });
+            group.circle({ class: 'scada-endpoint', cx: startX, cy: startY, r: 4 });
+            group.circle({ class: 'scada-endpoint', cx: endX, cy: endY, r: 4 });
+          });
+          return node;
+        });
+      }
+
+      function ScadaCanvasView({ onWheel, onCanvasClick }) {
+        let svgNode = null;
+        let worldNode = null;
+        let connectionHost = null;
+        let deviceHost = null;
+        let zoom = 1;
+
+        function applyZoom(nextZoom) {
+          zoom = Math.max(0.5, Math.min(2, nextZoom));
+          worldNode?.attr('transform', `scale(${zoom})`);
+        }
+
+        return vNode((api) => {
+          api.addDevice = (component) => {
+            deviceHost?.child(component);
+          };
+          api.addConnection = (component) => {
+            connectionHost?.child(component);
+          };
+          api.toWorld = (clientX, clientY) => {
+            const rect = svgNode?._el?.getBoundingClientRect?.();
+            if (!rect || rect.width === 0) {
+              return { x: 0, y: 0 };
+            }
+            const viewX = ((clientX - rect.left) / rect.width) * 1200;
+            const viewY = ((clientY - rect.top) / rect.height) * 700;
+            return { x: viewX / zoom, y: viewY / zoom };
+          };
+          api.zoomIn = () => {
+            applyZoom(zoom + 0.2);
+          };
+          api.zoomOut = () => {
+            applyZoom(zoom - 0.2);
+          };
+          api.resetZoom = () => {
+            applyZoom(1);
+          };
+
+          return svg((field) => {
+            svgNode = field;
+            field.className('scada-canvas');
+            field.attr({
+              viewBox: '0 0 1200 700',
+              role: 'img',
+              'aria-label': 'SCADA 画布'
+            });
+            field.on('wheel', (event) => {
+              event.preventDefault();
+              onWheel(event.deltaY);
+            });
+            field.on('click', (event) => onCanvasClick?.(event));
+
+            field.g((world) => {
+              worldNode = world;
+              world.attr('transform', `scale(${zoom})`);
+
+              world.rect({
+                x: 0,
+                y: 0,
+                width: 1200,
+                height: 700,
+                fill: 'transparent',
+                'data-canvas-bg': 'true'
+              });
+
+              for (let x = 0; x <= 1200; x += GRID_SIZE) {
+                world.line({ class: 'scada-grid-line', x1: x, y1: 0, x2: x, y2: 700 });
+              }
+              for (let y = 0; y <= 700; y += GRID_SIZE) {
+                world.line({ class: 'scada-grid-line', x1: 0, y1: y, x2: 1200, y2: y });
+              }
+
+              world.g((connections) => {
+                connectionHost = connections;
+                connections.className('scada-connections');
+              });
+              world.g((devices) => {
+                deviceHost = devices;
+                devices.className('scada-devices');
+              });
+            });
+          });
+        });
+      }
+
+      function ScadaHud({ callbacks }) {
+        const tool = ref(null);
+        const connectMode = ref(false);
+        const running = ref(false);
+        const statusText = ref('选择符号后点击画布放置；拖拽设备移动，连线模式连接两台设备。');
+        const jsonText = ref('');
+
+        const connectShadow = computed(() => (connectMode.value ? '0 0 0 2px #22c55e' : null));
+        const connectLabel = computed(() => (connectMode.value ? '取消连线' : '连线模式'));
+        const runLabel = computed(() => (running.value ? '停止运行' : '运行模拟'));
+
+        return vNode((api) => {
+          api.tool = () => tool.value;
+          api.connectMode = () => connectMode.value;
+          api.running = () => running.value;
+          api.json = () => jsonText.value;
+          api.update = (patch) => {
+            if (patch && 'tool' in patch) {
+              tool.value = patch.tool;
+            }
+            if (patch && 'connectMode' in patch) {
+              connectMode.value = patch.connectMode;
+            }
+            if (patch && 'running' in patch) {
+              running.value = patch.running;
+            }
+            if (patch && 'status' in patch) {
+              statusText.value = patch.status;
+            }
+            if (patch && 'json' in patch) {
+              jsonText.value = patch.json;
+            }
+            return api;
+          };
+
+          return div((sidebar) => {
+            sidebar.className('scada-sidebar');
+
+            sidebar.div((section) => {
+              section.className('scada-section');
+              section.h2('符号库');
+              section.div((grid) => {
+                grid.className('scada-grid');
+                SYMBOL_DEFS.forEach((def) => {
+                  grid.button((button) => {
+                    button.attr({ class: 'scada-button', 'data-scada-kind': def.kind });
+                    button.style(
+                      'box-shadow',
+                      computed(() => (tool.value === def.kind ? '0 0 0 2px #facc15' : null))
+                    );
+                    button.child(def.name);
+                    button.on('click', () => {
+                      tool.value = def.kind;
+                      connectMode.value = false;
+                      callbacks.onPickSymbol(def.kind);
+                    });
+                  });
+                });
+              });
+            });
+
+            sidebar.div((section) => {
+              section.className('scada-section');
+              section.h2('操作');
+              section.div((grid) => {
+                grid.className('scada-grid');
+
+                grid.button((button) => {
+                  button.attr({ class: 'scada-button', 'data-action': 'connect' });
+                  button.style('box-shadow', connectShadow);
+                  button.child(connectLabel);
+                  button.on('click', () => {
+                    const nextConnect = !connectMode.value;
+                    connectMode.value = nextConnect;
+                    tool.value = null;
+                    callbacks.onToggleConnect(nextConnect);
+                  });
+                });
+
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('删除选中');
+                  button.on('click', callbacks.onDelete);
+                });
+
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('清空画布');
+                  button.on('click', callbacks.onClear);
+                });
+
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child(runLabel);
+                  button.on('click', () => {
+                    const nextRunning = !running.value;
+                    running.value = nextRunning;
+                    callbacks.onToggleRun(nextRunning);
+                  });
+                });
+
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('放大');
+                  button.on('click', callbacks.onZoomIn);
+                });
+
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('缩小');
+                  button.on('click', callbacks.onZoomOut);
+                });
+              });
+            });
+
+            sidebar.div((section) => {
+              section.className('scada-section');
+              section.h2('工程数据（JSON）');
+
+              section.textarea((area) => {
+                area.className('scada-json');
+                area.attr('placeholder', '点击“导出 JSON”或粘贴工程数据');
+                area.child(jsonText);
+                area.on('input', (event) => {
+                  jsonText.value = event.target.value;
+                });
+              });
+
+              section.div((grid) => {
+                grid.className('scada-grid');
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('导出 JSON');
+                  button.on('click', callbacks.onExport);
+                });
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('导入 JSON');
+                  button.on('click', callbacks.onImport);
+                });
+                grid.button((button) => {
+                  button.className('scada-button');
+                  button.child('载入示例');
+                  button.on('click', callbacks.onLoadSample);
+                });
+              });
+            });
+
+            sidebar.p((status) => {
+              status.className('scada-status');
+              status.child(statusText);
+            });
+          });
+        });
+      }
+
+      function ScadaDemoApp() {
+        let devices = [];
+        let connections = [];
+        let nextId = 1;
+        let selectedDevice = null;
+        let connectFrom = null;
+        let activeDrag = null;
+        let running = false;
+        let lastRun = 0;
+
+        function handleCanvasClick(event) {
+          if (hud.connectMode()) {
+            connectFrom = null;
+            devices.forEach((device) => device.markConnectSource(false));
+            hud.update({ status: '已取消连线起点' });
+            return;
+          }
+
+          const tool = hud.tool();
+          if (!tool) {
+            devices.forEach((device) => device.setSelected(false));
+            selectedDevice = null;
+            return;
+          }
+
+          const point = canvas.toWorld(event.clientX, event.clientY);
+          addDevice(tool, snapToGrid(point.x), snapToGrid(point.y));
+          hud.update({ status: `已放置${SYMBOL_DEFS.find((def) => def.kind === tool).name}` });
+        }
+
+        const canvas = ScadaCanvasView({
+          onWheel: (delta) => (delta > 0 ? canvas.zoomOut() : canvas.zoomIn()),
+          onCanvasClick: handleCanvasClick
+        });
+
+        const hud = ScadaHud({
+          callbacks: {
+            onPickSymbol: (kind) => {
+              hud.update({
+                status: `已选择「${SYMBOL_DEFS.find((d) => d.kind === kind).name}」，点击画布放置`
+              });
+            },
+            onToggleConnect: (enabled) => {
+              connectFrom = null;
+              devices.forEach((device) => device.markConnectSource(false));
+              hud.update({
+                connectMode: enabled,
+                status: enabled ? '连线模式：依次点击两台设备' : '已退出连线模式'
+              });
+            },
+            onDelete: () => deleteSelected(),
+            onClear: () => clearAll(),
+            onToggleRun: (enabled) => {
+              running = enabled;
+              lastRun = 0;
+              hud.update({
+                running: enabled,
+                status: enabled ? '运行模拟中…' : '运行模拟已停止'
+              });
+            },
+            onZoomIn: () => canvas.zoomIn(),
+            onZoomOut: () => canvas.zoomOut(),
+            onExport: () => {
+              hud.update({
+                json: JSON.stringify(serialize(), null, 2),
+                status: '已导出 JSON 到文本框'
+              });
+            },
+            onImport: () => {
+              try {
+                rebuild(JSON.parse(hud.json || 'null'));
+                hud.update({ status: 'JSON 导入成功' });
+              } catch (error) {
+                hud.update({ status: `JSON 导入失败：${error.message}` });
+              }
+            },
+            onLoadSample: () => {
+              hud.update({ json: JSON.stringify(sampleData(), null, 2) });
+              hud.update({ status: '示例工程已写入文本框，点击“导入 JSON”使用' });
+            }
+          }
+        });
+
+        function deviceById(id) {
+          return devices.find((device) => device.id() === id);
+        }
+
+        function addDevice(kind, x, y) {
+          const id = `dev${nextId}`;
+          nextId += 1;
+          const device = ScadaDevice({
+            id,
+            kind,
+            x,
+            y,
+            label: `${kind}-${nextId - 1}`,
+            onPointerDown: (deviceApi, event) => beginDrag(deviceApi, event)
+          });
+          devices.push(device);
+          canvas.addDevice(device);
+          return device;
+        }
+
+        function connect(from, to) {
+          const connection = ScadaConnection({ fromId: from.id(), toId: to.id() });
+          connections.push(connection);
+          canvas.addConnection(connection);
+          syncConnection(connection);
+        }
+
+        function syncConnection(connection) {
+          const from = deviceById(connection.fromId());
+          const to = deviceById(connection.toId());
+          if (from && to) {
+            connection.sync(from.x(), from.y(), to.x(), to.y());
+          }
+        }
+
+        function syncConnectionsFor(deviceId) {
+          connections.forEach((connection) => {
+            if (connection.fromId() === deviceId || connection.toId() === deviceId) {
+              syncConnection(connection);
+            }
+          });
+        }
+
+        function selectOnly(device) {
+          devices.forEach((candidate) => candidate.setSelected(candidate === device));
+          selectedDevice = device;
+        }
+
+        function beginDrag(device, event) {
+          if (connectModeActive()) {
+            handleConnectClick(device);
+            return;
+          }
+
+          selectOnly(device);
+          const pointer = canvas.toWorld(event.clientX, event.clientY);
+          activeDrag = {
+            device,
+            offsetX: device.x() - pointer.x,
+            offsetY: device.y() - pointer.y
+          };
+          device.setDragging(true);
+
+          const moveHandler = (moveEvent) => {
+            if (!activeDrag) {
+              return;
+            }
+            const next = canvas.toWorld(moveEvent.clientX, moveEvent.clientY);
+            const targetX = Math.round(next.x + activeDrag.offsetX);
+            const targetY = Math.round(next.y + activeDrag.offsetY);
+            activeDrag.device.setPosition(targetX, targetY);
+            syncConnectionsFor(activeDrag.device.id());
+          };
+
+          const upHandler = () => {
+            activeDrag?.device.setDragging(false);
+            activeDrag = null;
+            unbindMove();
+            unbindUp();
+          };
+
+          const unbindMove = bindWindowEvent('pointermove', moveHandler);
+          const unbindUp = bindWindowEvent('pointerup', upHandler);
+          bindWindowEvent('pointercancel', upHandler);
+        }
+
+        function connectModeActive() {
+          return hud.connectMode;
+        }
+
+        function handleConnectClick(device) {
+          if (!connectFrom) {
+            connectFrom = device;
+            devices.forEach((candidate) => candidate.markConnectSource(candidate === device));
+            hud.update({ status: '已选起点，再点另一台设备完成连线' });
+            return;
+          }
+
+          if (connectFrom === device) {
+            return;
+          }
+          connect(connectFrom, device);
+          devices.forEach((candidate) => candidate.markConnectSource(false));
+          connectFrom = null;
+          hud.update({ status: '连线已创建' });
+        }
+
+        function deleteSelected() {
+          if (!selectedDevice) {
+            hud.update({ status: '没有选中可删除的设备' });
+            return;
+          }
+
+          const id = selectedDevice.id();
+          connections = connections.filter((connection) => {
+            const keep = connection.fromId() !== id && connection.toId() !== id;
+            if (!keep) {
+              connection.destroy();
+            }
+            return keep;
+          });
+          devices = devices.filter((device) => {
+            if (device.id() === id) {
+              device.destroy();
+              return false;
+            }
+            return true;
+          });
+          selectedDevice = null;
+          hud.update({ status: '已删除选中设备及其连线' });
+        }
+
+        function clearAll() {
+          devices.forEach((device) => device.destroy());
+          connections.forEach((connection) => connection.destroy());
+          devices = [];
+          connections = [];
+          selectedDevice = null;
+          connectFrom = null;
+          nextId = 1;
+          hud.update({ connectMode: false, status: '画布已清空' });
+        }
+
+        function serialize() {
+          return {
+            devices: devices.map((device) => ({
+              id: device.id(),
+              kind: device.kind(),
+              x: device.x(),
+              y: device.y(),
+              label: device.label(),
+              value: device.value(),
+              angle: device.angle()
+            })),
+            connections: connections.map((connection) => ({
+              fromId: connection.fromId(),
+              toId: connection.toId()
+            }))
+          };
+        }
+
+        function rebuild(data) {
+          clearAll();
+          if (!data) {
+            return;
+          }
+          (data.devices || []).forEach((entry) => {
+            const device = ScadaDevice({
+              id: entry.id || `dev${nextId}`,
+              kind: entry.kind,
+              x: entry.x,
+              y: entry.y,
+              label: entry.label || entry.kind,
+              value: entry.value ?? 0.5,
+              angle: entry.angle ?? 0,
+              onPointerDown: (deviceApi, event) => beginDrag(deviceApi, event)
+            });
+            devices.push(device);
+            canvas.addDevice(device);
+          });
+          (data.connections || []).forEach((entry) => {
+            const from = deviceById(entry.fromId);
+            const to = deviceById(entry.toId);
+            if (from && to) {
+              connect(from, to);
+            }
+          });
+          const maxId = devices.reduce((max, device) => {
+            const numeric = Number.parseInt(device.id.replace(/\D/g, ''), 10);
+            return Number.isFinite(numeric) ? Math.max(max, numeric) : max;
+          }, 0);
+          nextId = maxId + 1;
+          hud.update({ status: '工程已重建' });
+        }
+
+        function sampleData() {
+          return {
+            devices: [
+              { id: 'dev1', kind: 'tank', x: 180, y: 220, label: '储水罐', value: 0.65, angle: 0 },
+              { id: 'dev2', kind: 'pump', x: 460, y: 220, label: '给水泵', value: 0.5, angle: 0 },
+              { id: 'dev3', kind: 'motor', x: 760, y: 220, label: '主电机', value: 0.5, angle: 0 },
+              { id: 'dev4', kind: 'valve', x: 460, y: 460, label: '出口阀', value: 0.5, angle: 0 },
+              {
+                id: 'dev5',
+                kind: 'sensor',
+                x: 180,
+                y: 460,
+                label: '液位计',
+                value: 0.65,
+                angle: 0
+              },
+              { id: 'dev6', kind: 'lamp', x: 760, y: 460, label: '状态灯', value: 0.3, angle: 0 }
+            ],
+            connections: [
+              { fromId: 'dev1', toId: 'dev2' },
+              { fromId: 'dev2', toId: 'dev3' },
+              { fromId: 'dev2', toId: 'dev4' },
+              { fromId: 'dev1', toId: 'dev5' }
+            ]
+          };
+        }
+
+        function tick(now) {
+          if (running) {
+            const dt = lastRun === 0 ? 16 : now - lastRun;
+            lastRun = now;
+            devices.forEach((device, index) => {
+              const nextValue = (Math.sin(now / 900 + index) + 1) / 2;
+              const nextAngle = device.angle() + (device.kind() === 'motor' ? dt / 18 : 0);
+              device.updateRuntime(nextValue, nextAngle);
+            });
+          }
+          requestAnimationFrame(tick);
+        }
+
+        return vNode((api) => {
+          api.start = () => {
+            requestAnimationFrame(tick);
+          };
+
+          return div((page) => {
+            page.div((card) => {
+              card.className('scada-card');
+              card.div((head) => {
+                head.className('scada-head');
+                head.h1('SCADA 画布');
+                head.p('符号库 → 点击放置；拖拽移动；连线模式连接设备；运行模拟查看动态效果。');
+              });
+              card.div((layout) => {
+                layout.className('scada-layout');
+                layout.child(hud);
+                layout.child(canvas);
+              });
+            });
+          });
+        });
+      }
+
+      const root = ScadaDemoApp();
+      root.bindTo('#app');
+      root.start();
+    </script>
+  </body>
+</html>

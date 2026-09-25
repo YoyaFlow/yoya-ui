@@ -50,15 +50,15 @@ node scripts/benchmark-report-html.mjs --write \
 
 ```bash
 node scripts/benchmark-report.mjs --import D:\code\yoyaflow\js-framework-benchmark\webdriver-ts\results \
-  --yoya yoya-ui-ast-v0.6.5-ast-keyed \
+  --yoya yoya-ui-ast-v0.6.13-keyed \
   --baseline vanillajs-keyed \
-  --compare "yoya-ui-runtime-v0.6.5-runtime-keyed:yoya runtime（无编译）" \
+  --compare "yoya-ui-runtime-v0.6.13-keyed:yoya runtime（无编译）" \
   --compare "vue-v3.5.39-keyed:Vue 3.5.39" \
   --compare "react-hooks-v19.2.0-keyed:React 19.2.0" \
   --compare "solid-v1.9.3-keyed:Solid 1.9.3" \
   --compare "svelte-v5.42.1-keyed:Svelte 5.42.1" \
   --runner playwright --mode headless --browser "Chrome for Testing 152.0.7977.64" \
-  --cpu-iterations 15 --commit <提交> --version 0.6.5
+  --cpu-iterations 15 --commit <提交> --version 0.6.13
 ```
 
 对照条目的数据落在 `results.json` 的 `compare` 段（提交进仓库），因此报告页在 CI 上照样能校验。

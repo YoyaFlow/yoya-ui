@@ -31,7 +31,7 @@
 | 间距       | Space                            | ElSpace                                   | hstack / vstack（gap）+ spacer()                           |
 | 分隔线     | Divider                          | ElDivider                                 | divider()                                                  |
 | 卡片       | Card                             | ElCard                                    | vCard / vCardHeader / vCardBody / vCardFooter              |
-| 主题化容器 | —（Card 承担）                   | —（ElCard 承担）                          | vSurface、vThemeShell                                      |
+| 主题化容器 | —（Card 承担）                   | —（ElCard 承担）                          | vCard（面外观归皮肤 `[vn~='VCard']`）+ `--yoya-*` token    |
 | 分栏拖拽   | —                                | —                                         | vSplitPanel                                                |
 | 瀑布流     | —                                | —                                         | vMasonry                                                   |
 | 滚动区域   | —                                | ElScrollbar                               | vScroll                                                    |
@@ -76,28 +76,28 @@
 
 ### 数据展示
 
-| 功能         | Ant Design       | Element Plus   | yoya-ui                                             |
-| ------------ | ---------------- | -------------- | --------------------------------------------------- |
-| 表格         | Table            | ElTable        | vTable / vThead / vTbody / vTfoot / vTr / vTh / vTd |
-| 虚拟滚动表格 | Table（virtual） | ElTableV2      | —                                                   |
-| 树控件       | Tree             | ElTree         | vTree / vTreeNode                                   |
-| 树表格       | —                | —              | vTreeTable（行常驻，展开不丢 DOM 状态）             |
-| 多列层级浏览 | —                | —              | vTreeRanger（ranger 式三窗口）                      |
-| 时间线       | Timeline         | ElTimeline     | vTimeline / vTimelineItem                           |
-| 分页         | Pagination       | ElPagination   | vPagination                                         |
-| 徽标数       | Badge            | ElBadge        | vBadge                                              |
-| 标签         | Tag              | ElTag          | —                                                   |
-| 头像         | Avatar           | ElAvatar       | vAvatar                                             |
-| 轮播         | Carousel         | ElCarousel     | vCarousel                                           |
-| 描述列表     | Descriptions     | ElDescriptions | vDetail / vDetailItem                               |
-| 列表         | List             | —              | —                                                   |
-| 折叠面板     | Collapse         | ElCollapse     | —                                                   |
-| 空状态       | Empty            | ElEmpty        | —                                                   |
-| 日历         | Calendar         | ElCalendar     | —                                                   |
-| 图片         | Image            | ElImage        | vLazyImage                                          |
-| 图片预览     | Image（preview） | ElImageViewer  | vImagePreview                                       |
-| 统计数值     | Statistic        | ElStatistic    | vTrendCard、vDigitalBoard / vDigitalBoardItem       |
-| 轻量图表     | —                | —              | vChart（库无关宿主）、vSparkline、vGauge、vRingStat |
+| 功能         | Ant Design       | Element Plus   | yoya-ui                                                            |
+| ------------ | ---------------- | -------------- | ------------------------------------------------------------------ |
+| 表格         | Table            | ElTable        | vTableWrapper（columns / rows）/ vTable（vThead / vTbody / vTr …） |
+| 虚拟滚动表格 | Table（virtual） | ElTableV2      | —                                                                  |
+| 树控件       | Tree             | ElTree         | vTree / vTreeNode                                                  |
+| 树表格       | —                | —              | vTreeTable（行常驻，展开不丢 DOM 状态）                            |
+| 多列层级浏览 | —                | —              | vTreeRanger（ranger 式三窗口）                                     |
+| 时间线       | Timeline         | ElTimeline     | vTimeline / vTimelineItem                                          |
+| 分页         | Pagination       | ElPagination   | vPagination                                                        |
+| 徽标数       | Badge            | ElBadge        | vBadge                                                             |
+| 标签         | Tag              | ElTag          | —                                                                  |
+| 头像         | Avatar           | ElAvatar       | vAvatar                                                            |
+| 轮播         | Carousel         | ElCarousel     | vCarousel                                                          |
+| 描述列表     | Descriptions     | ElDescriptions | vDetail / vDetailItem                                              |
+| 列表         | List             | —              | —                                                                  |
+| 折叠面板     | Collapse         | ElCollapse     | —                                                                  |
+| 空状态       | Empty            | ElEmpty        | —                                                                  |
+| 日历         | Calendar         | ElCalendar     | —                                                                  |
+| 图片         | Image            | ElImage        | vLazyImage                                                         |
+| 图片预览     | Image（preview） | ElImageViewer  | vImagePreview                                                      |
+| 统计数值     | Statistic        | ElStatistic    | vTrendCard、vDigitalBoard / vDigitalBoardItem                      |
+| 轻量图表     | —                | —              | vChart（库无关宿主）、vSparkline、vGauge、vRingStat                |
 
 ### 反馈
 
@@ -122,7 +122,7 @@
 
 | 功能       | Ant Design               | Element Plus               | yoya-ui                               |
 | ---------- | ------------------------ | -------------------------- | ------------------------------------- |
-| 主题定制   | ConfigProvider（token）  | CSS 变量                   | 主题 token（--yoya-*）、vThemeShell   |
+| 主题定制   | ConfigProvider（token）  | CSS 变量                   | 主题 token（--yoya-*）                |
 | 国际化     | ConfigProvider（locale） | ElConfigProvider（locale） | createI18n（每请求实例）              |
 | 权限       | —                        | —                          | createAccess / installAccess 权限声明 |
 | 服务端渲染 | 依赖上层框架             | 依赖上层框架               | 内置 renderToString / hydrate         |
@@ -177,7 +177,7 @@ yoya-ui 的节点即真实 DOM，可直接操作。三方在这件事上的差�
 | PDF.js（PDF 预览）                     | react-pdf                    | vue-pdf-embed            | 渲染到 canvas 节点                                                         | —          |
 
 「示例站演示：有」的五项（ECharts、Three.js、AG Grid、CodeMirror、Quill）在
-`src/examples/` 有可运行源码，可作为接入新库的参考模板。表中未列出的库同理可接，
+`examples/` 有可运行源码，可作为接入新库的参考模板。表中未列出的库同理可接，
 不设白名单——React / Vue 侧则每个库都要各自找一套封装。
 
 > **来源说明**：本节的分析框架基于 DOM 可操作性，表格与结论由 AI 辅助整理

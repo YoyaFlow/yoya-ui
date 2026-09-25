@@ -1,0 +1,214 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { div, hasComponentIdentity, vCarousel } from '../index.js';
+
+describe('vCarousel', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders slides, dots and active slide state', () => {
+    const carousel = vCarousel({
+      height: '220px',
+      loop: false,
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+
+    expect(hasComponentIdentity(carousel, 'VCarousel')).toBe(true);
+    expect(element.getAttribute('vn')).toBe('VCarousel');
+    expect(element.querySelectorAll("[vn~='VCarouselSlide']")).toHaveLength(3);
+    expect(element.querySelectorAll("[vn~='VCarouselDot']")).toHaveLength(3);
+    expect(element.querySelector("[vn~='VCarouselTrack']").style.transform).toBe('translateX(0%)');
+    expect(element.dataset.active).toBe('0');
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='prev']").disabled).toBe(true);
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").disabled).toBe(false);
+  });
+
+  it('wraps with loop and clamps without loop', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+
+    carousel.active(2);
+    carousel.next();
+    expect(carousel.active()).toBe(0);
+
+    carousel.loop(false).active(2);
+    carousel.next();
+    expect(carousel.active()).toBe(2);
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").disabled).toBe(true);
+
+    carousel.prev();
+    expect(carousel.active()).toBe(1);
+  });
+
+  it('swipes horizontally to change slides', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 60, clientY: 24 }));
+    expect(carousel.active()).toBe(1);
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 60, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 160, clientY: 26 }));
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('does not swipe on small or vertical drags', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 100, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 90, clientY: 22 }));
+    expect(carousel.active()).toBe(0);
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 100, clientY: 20 })
+    );
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 110, clientY: 160 }));
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('pauses autoplay while swiping and resumes after', () => {
+    vi.useFakeTimers();
+    const carousel = vCarousel({
+      autoplay: true,
+      interval: 1000,
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+    const viewport = element.querySelector("[vn~='VCarouselViewport']");
+
+    viewport.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 160, clientY: 20 })
+    );
+    vi.advanceTimersByTime(2500);
+    expect(carousel.active()).toBe(0);
+
+    document.dispatchEvent(new MouseEvent('mouseup', { clientX: 60, clientY: 24 }));
+    expect(carousel.active()).toBe(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(carousel.active()).toBe(2);
+  });
+
+  it('updates slides from dots and keyboard controls', () => {
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+    const element = carousel.renderDom();
+
+    element.querySelectorAll("[vn~='VCarouselDot']")[2].click();
+    expect(carousel.active()).toBe(2);
+    expect(element.querySelector("[vn~='VCarouselTrack']").style.transform).toBe(
+      'translateX(-200%)'
+    );
+
+    element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowLeft' }));
+    expect(carousel.active()).toBe(1);
+
+    element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Home' }));
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('emits change events with the active index and count', () => {
+    const changed = vi.fn();
+    const carousel = vCarousel({
+      renderItem: (item) => div(item),
+      slides: ['A', 'B', 'C']
+    });
+
+    carousel.on('change', changed);
+    carousel.renderDom();
+    carousel.next();
+
+    expect(changed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.objectContaining({
+          count: 3,
+          index: 1
+        })
+      })
+    );
+  });
+
+  it('autoplays with the configured interval and stops on destroy', () => {
+    vi.useFakeTimers();
+    const carousel = vCarousel({
+      autoplay: true,
+      interval: 1000,
+      renderItem: (item) => div(item),
+      slides: ['A', 'B']
+    });
+    const element = carousel.renderDom();
+
+    expect(element.dataset.autoplay).toBe('true');
+
+    vi.advanceTimersByTime(1000);
+    expect(carousel.active()).toBe(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(carousel.active()).toBe(0);
+
+    carousel.destroy();
+    vi.advanceTimersByTime(3000);
+    // 迁移成 vNode 后组件节点是包装，计时器字段在视图根（节点类型）上；这里直接验行为：
+    // 销毁后再推进时间也不会再切页
+    expect(carousel.active()).toBe(0);
+  });
+
+  it('hides arrows and dots when disabled', () => {
+    const carousel = vCarousel({
+      arrows: false,
+      dots: false,
+      renderItem: (item) => div(item),
+      slides: ['A']
+    });
+    const element = carousel.renderDom();
+
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='prev']").style.display).toBe(
+      'none'
+    );
+    expect(element.querySelector("[vn~='VCarouselArrow'][data-dir='next']").style.display).toBe(
+      'none'
+    );
+    expect(element.querySelector("[vn~='VCarouselDots']").style.display).toBe('none');
+  });
+
+  it('registers vCarousel as a parent shortcut', () => {
+    const page = div((root) => {
+      root.vCarousel({
+        renderItem: (item) => div(item),
+        slides: ['A', 'B']
+      });
+    });
+    const element = page.renderDom();
+
+    expect(element.querySelector("[vn~='VCarousel']")).not.toBeNull();
+    expect(element.querySelectorAll("[vn~='VCarouselSlide']")).toHaveLength(2);
+  });
+});

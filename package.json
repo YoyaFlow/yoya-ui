@@ -1,102 +1,25 @@
 {
-  "name": "@yoyaflow/yoya-ui",
-  "version": "0.6.13",
-  "description": "A browser-native JS UI library with declarative HTML authoring: component library, router, i18n, theming and layout, works with or without a build tool, SSR-ready.",
+  "name": "yoya-ui-monorepo",
+  "version": "0.7.0",
+  "description": "Monorepo root: workspace wiring, build/report scripts and the example site. The published packages live in packages/.",
   "type": "module",
-  "private": false,
-  "main": "./dist/yoya.ui-router.full.js",
-  "module": "./dist/yoya.ui-router.full.js",
-  "style": "./dist/yoya.ui.css",
-  "types": "./types/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "import": "./dist/yoya.ui-router.full.js"
-    },
-    "./core": {
-      "types": "./types/yoya.core.d.ts",
-      "import": "./dist/yoya.core.js"
-    },
-    "./api": {
-      "types": "./types/yoya.api.d.ts",
-      "import": "./dist/yoya.api.js"
-    },
-    "./ui": {
-      "types": "./types/yoya.ui.d.ts",
-      "import": "./dist/yoya.ui.js"
-    },
-    "./actions": {
-      "types": "./types/yoya.actions.d.ts",
-      "import": "./dist/yoya.actions.js"
-    },
-    "./navigation": {
-      "types": "./types/yoya.navigation.d.ts",
-      "import": "./dist/yoya.navigation.js"
-    },
-    "./feedback": {
-      "types": "./types/yoya.feedback.d.ts",
-      "import": "./dist/yoya.feedback.js"
-    },
-    "./form": {
-      "types": "./types/yoya.form.d.ts",
-      "import": "./dist/yoya.form.js"
-    },
-    "./data-display": {
-      "types": "./types/yoya.data-display.d.ts",
-      "import": "./dist/yoya.data-display.js"
-    },
-    "./async": {
-      "types": "./types/yoya.async.d.ts",
-      "import": "./dist/yoya.async.js"
-    },
-    "./router": {
-      "types": "./types/yoya.router.d.ts",
-      "import": "./dist/yoya.router.js"
-    },
-    "./compiler-runtime": {
-      "types": "./types/yoya.compiler-runtime.d.ts",
-      "import": "./dist/yoya.compiler-runtime.js"
-    },
-    "./compiler": {
-      "types": "./types/yoya.compiler.d.ts",
-      "import": "./dist/yoya.compiler.js"
-    },
-    "./echart": {
-      "types": "./types/yoya.echart.d.ts",
-      "import": "./dist/yoya.echart.js"
-    },
-    "./three": {
-      "types": "./types/yoya.three.d.ts",
-      "import": "./dist/yoya.three.js"
-    },
-    "./devtools": {
-      "types": "./types/yoya.devtools.d.ts",
-      "import": "./dist/yoya.devtools.js"
-    },
-    "./ui.css": "./dist/yoya.ui.css",
-    "./package.json": "./package.json"
-  },
-  "bin": {
-    "yoya-compiler": "./dist/yoya.compiler.js"
-  },
-  "files": [
-    "dist",
-    "types",
-    "!types/tests",
-    "!dist/examples",
-    "LICENSES",
-    "THIRD-PARTY-NOTICES.md"
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "node scripts/build-entries.mjs && vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs && node scripts/bundle-report.mjs && node scripts/compiler-coverage.mjs",
-    "build:entries": "node scripts/build-entries.mjs",
-    "build:examples": "vite build --config vite.examples.config.js && node scripts/copy-example-modules.mjs",
+    "build": "node scripts/build-packages.mjs && node scripts/compiler-registry.mjs && vite build --config vite.examples.config.js && node scripts/bundle-report.mjs && node scripts/compiler-coverage.mjs",
+    "build:packages": "node scripts/build-packages.mjs",
+    "build:registry": "node scripts/compiler-registry.mjs",
+    "build:examples": "vite build --config vite.examples.config.js",
     "verify:dist": "node scripts/verify-dist.mjs",
+    "verify:packages": "node scripts/verify-packages.mjs",
     "report:bundle": "node scripts/bundle-report.mjs",
     "report:bundle:write": "node scripts/bundle-report.mjs --write",
     "report:compile": "node scripts/compiler-coverage.mjs",
     "report:compile:write": "node scripts/compiler-coverage.mjs --write",
     "report:bench": "node scripts/benchmark-report.mjs",
+    "report:shapes": "node scripts/benchmark-shapes.mjs",
     "report:bench:write": "node scripts/benchmark-report.mjs --write",
     "report:bench:import": "node scripts/benchmark-report.mjs --import",
     "report:bench:html": "node scripts/benchmark-report-html.mjs",
@@ -117,7 +40,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p packages/yoya-core/tsconfig.json",
     "test:types": "npm run typecheck"
   },
   "keywords": [
@@ -140,14 +63,13 @@
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
   },
-  "peerDependencies": {
-    "@babel/parser": "^7.29.0"
-  },
-  "peerDependenciesMeta": {
-    "@babel/parser": {
-      "optional": true
-    }
-  },
+  "browserslist": [
+    "chrome >= 123",
+    "edge >= 123",
+    "firefox >= 120",
+    "safari >= 17.5",
+    "ios_saf >= 17.5"
+  ],
   "devDependencies": {
     "@babel/parser": "^7.29.8",
     "@codemirror/lang-javascript": "^6.2.5",

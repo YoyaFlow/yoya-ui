@@ -93,7 +93,7 @@ renderToString(page, { state, access: createAccess({ permissions, roles }) });
 
 ## 跨组件共享：provide / inject
 
-**默认就用这一对。** 声明写在构建这一帧的代码里（setup 回调、组件 `render()`、页面工厂），后代直接读，不需要包一层闭包：
+**默认就用这一对。** 声明写在构建这一帧的代码里（setup 回调、组件定义函数、页面工厂），后代直接读，不需要包一层闭包：
 
 ```js
 import { inject, provide, div, vCard } from '@yoyaflow/yoya-ui';
@@ -120,7 +120,7 @@ provide('config', { ...parent, color: 'red' });
 
 - **只读值**：要响应式就把句柄放进去（`provide('count', ref(0))`，消费方 `inject('count')` 拿到同一个句柄）；不要指望 provider 里的普通对象变化会通知视图
 - **必须在构建帧内声明**：`provide()` 在构建帧外调用会抛 `TypeError`；`inject()` 在帧外调用只会回退到 withContext / 全局层 / fallback
-- 懒解析的组件（`{ render() }`）也读得到：解析时沿父链上溯，不依赖声明的调用栈还在不在
+- 懒解析的组件（vNode 的视图进树时才展开）也读得到：解析时沿父链上溯，不依赖声明的调用栈还在不在
 - **先挂再建**：第三方组件若在挂到树上之前就构建子树（异步加载视图那类），用 `buildInProviderScope(host, build)` 构建——子树 inject 得到 host 所在位置的祖先，自己声明的 provide 也归属产出的子树而不外溢；`vDynamicLoader` 与路由视图（`router` / `vRouterViews` 保活页的同步、异步、加载 / 出错视图）已按这个模式接入
 
 ```js

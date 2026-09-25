@@ -99,17 +99,21 @@ JS 函数，视图树里的每个节点都是真实 DOM 元素的句柄，写入
 1. **一个 script 标签。** 就是上面的快速开始：CDN、真实页面、零工具链。
 2. **渐进式增强。** `bindTo()` 把一块交互挂进已有页面 —— 静态 HTML、PHP / JSP 页面、Vue / React
    应用都行。加一块，其余部分原样不动。
-3. **npm 与模块化。** `npm install @yoyaflow/yoya-ui`，再按入口按需引入：
+3. **npm 与模块化。** `npm install @yoyaflow/yoya-ui`（会自动带上 `@yoyaflow/yoya-core`）；
+   只要引擎原语就 `npm install @yoyaflow/yoya-core`。再按入口按需引入：
 
    ```js
-   import { div, svg, createI18n } from '@yoyaflow/yoya-ui/core'; // 引擎、HTML/SVG、信号
+   import { div, svg, createI18n, vNode } from '@yoyaflow/yoya-core'; // 引擎、HTML/SVG、信号
    import { vButton, vCard, vForm, vTable } from '@yoyaflow/yoya-ui/ui'; // 官方组件
    import { vEchart } from '@yoyaflow/yoya-ui/echart'; // ECharts 扩展（自备 echarts）
    import { vThree } from '@yoyaflow/yoya-ui/three'; // Three.js 扩展（自备 three）
    import { renderPage, hydrateOrMount } from '@yoyaflow/yoya-ui/router'; // 路由 + SSR
-   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-ui/api'; // 通讯辅助
+   import { RequestBase, Result, configureRequest } from '@yoyaflow/yoya-core/api'; // 通讯辅助
    import '@yoyaflow/yoya-ui/ui.css'; // 组件皮肤与主题变量
    ```
+
+   > 要用构建期编译器：`npm i -D @yoyaflow/yoya-compiler @babel/parser`。编译产物的运行期钩子在
+   > `@yoyaflow/yoya-core/compiler-runtime`（只有编译过的项目才会加载它）。
 
 4. **完整应用：SPA 或 SSR。** 整站单页应用不需要额外一层——内置路由（`history` / `hash` 模式、
    参数、守卫、404、`vLink`、`vRouterViews`）加上组件分类与 `ref` 状态，同样不强制构建步骤；
@@ -173,7 +177,7 @@ plugins: [yoyaCompile.vite({ core })]; // 编译单元＝组件边界（返回 U
 
 列表照旧写 `tbody((body) => body.keyed(rows, Row))`：`element` 通道的 `{el, destroy}` 行与 `node`
 通道的 ViewNode 行 `keyed()` 都直接吃（运行期按产出自选对账）。目标定位按 AST 符号身份，
-**认不准就不动**（找不到 / 同名声明 ≥2 处 / 形参不是单个标识符 / 形状编不了 → 源码原样走通用路径）。
+**认不准就不动**（找不到 / 同名声明 ≥2 处 / 形状编不了 → 源码原样走通用路径）。
 改写保留 hires sourcemap，线上报错仍定位到业务源码。
 用法与契约见 [skills/yoya-ui/references/compile.md](skills/yoya-ui/references/compile.md)。
 
@@ -191,8 +195,8 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-ui/compiler';
 ## 一切是真实 DOM，第三方库直接接
 
 视图树就是 DOM 树。任何"往元素里挂"的库——图表、编辑器、表格、地图——只需要一个生命周期明确的
-薄节点类（`renderDom` → 初始化，配置更新 → 转发，`destroy` → 释放），之后就能像官方组件一样用
-`child()` 组合。`vEchart` 是参考实现：
+形态 B 组件（`vNode` 闭包：`whenMount(host)` → 初始化，配置更新 → 转发，`whenDestroy` → 释放），
+之后就能像官方组件一样用 `child()` 组合。`vEchart` 是参考实现：
 
 - 库实例一次交出（`chart.echartsLib(echarts)`）；
 - 没有 wrapper、没有适配层、不重新打包依赖；
@@ -207,14 +211,16 @@ Toast UI Viewer 与 `vThree` 工厂沙盘）。扩展写法与跨库对照见
 
 Star 数说明关注度，不说明正确性，所以下面这些都可以直接查：
 
-| 信号       | 当前值                                                       | 怎么验证                                                               |
-| ---------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| 运行时依赖 | **0**                                                        | `package.json` 无 `dependencies` 字段                                  |
-| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）       | `npm test`                                                             |
-| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试 | `npm run typecheck`                                                    |
-| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM            | `src/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md)            |
-| 产物校验   | 分类隔离、SSR 单 core 冒烟、体积预算、README 体积表          | `npm run build && npm run verify:dist`                                 |
-| 契约文档   | 组件形态、值位置、生命周期已写成规范                         | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md) |
+| 信号       | 当前值                                                            | 怎么验证                                                                                         |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 运行时依赖 | **0**                                                             | `package.json` 无 `dependencies` 字段                                                            |
+| 测试       | 1000+ 用例（DOM、状态、路由、i18n、权限、SSR/hydrate）            | `npm test`                                                                                       |
+| 类型声明   | root / core / api / ui / router / 扩展入口，含消费方类型测试      | `npm run typecheck`                                                                              |
+| SSR 确定性 | render / hydrate / mount 均有覆盖，设计上不碰 DOM                 | `packages/yoya-ui/src/testing/integration/*.ssr.test.js`、[docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) |
+| 产物校验   | exports↔dist、两包互不内联、宿主单例冒烟、`.full` 自包含、体积表  | `npm run build && npm run verify:dist`                                                           |
+| 包边界     | core 不依赖组件；快线把 core 当 peer；编译器不认识组件            | `npm run verify:packages`                                                                        |
+| 浏览器基线 | Chrome/Edge ≥ 123 · Firefox ≥ 120 · Safari/iOS ≥ 17.5，带降级兜底 | `browserslist`、[docs/browser-support.zh-CN.md](docs/browser-support.zh-CN.md)                   |
+| 契约文档   | 组件形态、值位置、生命周期已写成规范                              | [docs/component-authoring.zh-CN.md](docs/component-authoring.zh-CN.md)                           |
 
 这是一个早期项目：Star 少、没有历史生态包袱，优先级仍然可以影响。评估它时请看仓库本身——测试、
 规范文档、与 Web 标准对齐的 API。更完整的说明（包括我们接受的取舍）见
@@ -233,65 +239,77 @@ Star 数说明关注度，不说明正确性，所以下面这些都可以直接
 > 单元格格式为 `测量值（÷ 原生）`，执行项单位 ms、内存项 MB。**不是官方站点数字**，
 > 横向对比只在同一轮内有效；体积、首屏与逐项明细（含 9 项 script / paint 分解）见 [`benchmark/report.html`](benchmark/report.html)。
 
-| 基准                      | 原生 vanillajs | yoya-**0.6.12**（编译） | yoya-**0.6.12**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
+| 基准                      | 原生 vanillajs | yoya-**0.6.13**（编译） | yoya-**0.6.13**（无编译） | Vue 3.5.39    | React 19.2.0  | Solid 1.9.3   | Svelte 5.42.1 |
 | ------------------------- | -------------- | ----------------------- | ------------------------- | ------------- | ------------- | ------------- | ------------- |
-| 01 创建 1000 行           | 30.5           | 35.0 (1.15×)            | 49.7 (1.63×)              | 36.7 (1.20×)  | 37.3 (1.22×)  | 32.8 (1.08×)  | 33.4 (1.10×)  |
-| 02 替换 1000 行           | 33.4           | 37.0 (1.11×)            | 46.6 (1.40×)              | 39.7 (1.19×)  | 45.3 (1.36×)  | 36.0 (1.08×)  | 36.6 (1.10×)  |
-| 03 每 10 行改文案         | 23.0           | 21.9 (0.95×)            | 23.0 (1.00×)              | 25.8 (1.12×)  | 28.4 (1.23×)  | 23.1 (1.00×)  | 24.2 (1.05×)  |
-| 04 选中一行               | 7.5            | 7.4 (0.99×)             | 6.4 (0.85×)               | 9.0 (1.20×)   | 9.8 (1.31×)   | 8.0 (1.07×)   | 9.7 (1.29×)   |
-| 05 交换两行               | 24.1           | 27.4 (1.14×)            | 27.1 (1.12×)              | 25.9 (1.07×)  | 162.6 (6.75×) | 24.5 (1.02×)  | 25.5 (1.06×)  |
-| 06 删除一行               | 20.0           | 20.8 (1.04×)            | 18.3 (0.92×)              | 22.2 (1.11×)  | 20.1 (1.01×)  | 17.9 (0.89×)  | 18.0 (0.90×)  |
-| 07 创建 10000 行          | 337.1          | 393.5 (1.17×)           | 504.4 (1.50×)             | 415.0 (1.23×) | 572.4 (1.70×) | 360.3 (1.07×) | 368.3 (1.09×) |
-| 08 追加 1000 行           | 38.7           | 41.3 (1.07×)            | 49.3 (1.27×)              | 46.2 (1.19×)  | 42.6 (1.10×)  | 36.4 (0.94×)  | 36.2 (0.94×)  |
-| 09 清空 ×8                | 15.5           | 22.1 (1.43×)            | 30.2 (1.95×)              | 20.6 (1.33×)  | 29.2 (1.88×)  | 22.9 (1.48×)  | 17.1 (1.10×)  |
-| 九项几何平均（综合指标）  | 29.54          | 32.72 (1.11×)           | 36.90 (1.25×)             | 34.90 (1.18×) | 46.88 (1.59×) | 31.29 (1.06×) | 31.44 (1.06×) |
-| 21 就绪内存（MB）         | 1.06           | 1.36 (1.28×)            | 1.27 (1.20×)              | 1.33 (1.25×)  | 1.63 (1.54×)  | 1.09 (1.03×)  | 1.15 (1.09×)  |
-| 22 建 1000 行后内存（MB） | 2.45           | 4.08 (1.66×)            | 5.47 (2.23×)              | 4.59 (1.87×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
-| 25 建+清空后内存（MB）    | 1.09           | 1.69 (1.55×)            | 1.79 (1.64×)              | 1.60 (1.47×)  | 2.49 (2.29×)  | 1.28 (1.18×)  | 1.50 (1.38×)  |
+| 01 创建 1000 行           | 31.2           | 34.6 (1.11×)            | 44.8 (1.44×)              | 37.4 (1.20×)  | 40.7 (1.30×)  | 33.1 (1.06×)  | 33.2 (1.06×)  |
+| 02 替换 1000 行           | 32.6           | 37.9 (1.16×)            | 47.1 (1.44×)              | 41.5 (1.27×)  | 43.8 (1.34×)  | 35.5 (1.09×)  | 37.1 (1.14×)  |
+| 03 每 10 行改文案         | 24.9           | 26.5 (1.06×)            | 26.5 (1.06×)              | 28.7 (1.15×)  | 29.5 (1.18×)  | 23.8 (0.96×)  | 26.7 (1.07×)  |
+| 04 选中一行               | 8.5            | 7.5 (0.88×)             | 7.5 (0.88×)               | 10.1 (1.19×)  | 11.7 (1.38×)  | 9.5 (1.12×)   | 12.2 (1.44×)  |
+| 05 交换两行               | 24.5           | 28.1 (1.15×)            | 30.3 (1.24×)              | 27.9 (1.14×)  | 186.3 (7.60×) | 26.3 (1.07×)  | 25.7 (1.05×)  |
+| 06 删除一行               | 20.4           | 21.9 (1.07×)            | 20.6 (1.01×)              | 23.4 (1.15×)  | 22.2 (1.09×)  | 21.6 (1.06×)  | 21.2 (1.04×)  |
+| 07 创建 10000 行          | 356.0          | 400.4 (1.12×)           | 523.3 (1.47×)             | 426.8 (1.20×) | 604.6 (1.70×) | 379.9 (1.07×) | 381.2 (1.07×) |
+| 08 追加 1000 行           | 38.0           | 43.3 (1.14×)            | 55.1 (1.45×)              | 45.0 (1.18×)  | 48.8 (1.28×)  | 41.2 (1.08×)  | 44.2 (1.16×)  |
+| 09 清空 ×8                | 17.8           | 24.7 (1.39×)            | 27.9 (1.57×)              | 23.9 (1.34×)  | 31.6 (1.78×)  | 20.7 (1.16×)  | 20.4 (1.15×)  |
+| 九项几何平均（综合指标）  | 30.93          | 34.47 (1.11×)           | 39.04 (1.26×)             | 37.15 (1.20×) | 51.09 (1.65×) | 33.19 (1.07×) | 34.81 (1.13×) |
+| 21 就绪内存（MB）         | 1.05           | 1.35 (1.29×)            | 1.28 (1.23×)              | 1.33 (1.27×)  | 1.66 (1.59×)  | 1.08 (1.03×)  | 1.15 (1.10×)  |
+| 22 建 1000 行后内存（MB） | 2.45           | 4.07 (1.67×)            | 5.46 (2.23×)              | 4.59 (1.88×)  | 5.09 (2.08×)  | 3.33 (1.36×)  | 3.52 (1.44×)  |
+| 25 建+清空后内存（MB）    | 1.16           | 1.69 (1.45×)            | 1.79 (1.54×)              | 1.71 (1.48×)  | 2.49 (2.15×)  | 1.26 (1.09×)  | 1.44 (1.24×)  |
 
 <!-- benchmark:readme:end -->
 
 ## 构建产物与体积
 
 ```bash
-npm run build   # 产出 dist/，末尾打印体积表
+npm run build        # packages/*/dist（发布面 + 模块镜像）+ dist/examples/ + 体积表
+npm run verify:dist  # 产物完整性、两包互不内联、宿主单例冒烟、`.full` 自包含冒烟、README 体积表
 ```
 
-无后缀与 `.min` 是增量 ESM 入口（不含 core，运行时会自动加载共享块）；`.full` 是自包含文件
-（core 已内联），适合 CDN 与免构建单文件直用。
+仓库是 **五个包的 monorepo**（`packages/*`）：`yoya-core`（慢线：原语 + 组件作者契约）、
+`yoya-ui`（快线：组件 / layout / router / 主题 / 扩展）、`yoya-compiler`（构建期编译器）、
+`contract`（跨包契约测试）、`create-yoya-ui`（脚手架）。产物有两层：
 
-增量入口给两个数：**入口文件本身**与**实际下载量**（入口 + 它引用的公共 chunk）。只看入口文件会
-以为 core 只有几 KB——按实际下载量估算首屏。最后一列说明每个入口到底包含什么。
+- **发布面**：旧命名入口 + `.min`（`dist/yoya.ui.js`、`dist/yoya.ui-router.full.js` …）。增量入口是
+  "单行转发、core 走 peer"；`yoya.core.js` / `yoya.api.js` / 三个 `.full` 是**自包含**（core 内联成单文件）；
+- **模块镜像**：`dist/core/**`、`dist/actions/**` …（preserveModules）—— 这是 `/internal/*` 深引用的稳定落点。
 
-| 入口                               | min+gzip（入口文件 ~ 实际下载量） | 包含内容                                                                                                                                                     |
-| ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `yoya.core.js`                     | 2.5 KB ~ **28.9 KB**              | 核心节点定义、HTML 原语、SVG 原语、内置 SVG 图标集、Signals 定义与引擎、**i18n 处理器**、权限 access、context、a11y、theme helper、ClientOnly                |
-| `yoya.api.js`                      | 0.6 KB ~ **0.6 KB**               | 通讯辅助约束：`RequestBase` / `Result` / `configureRequest`（可选，独立于渲染核心）                                                                          |
-| `yoya.ui.js`（全部分类）           | 5.6 KB ~ **99.6 KB**              | 全部组件：layout / actions / navigation / feedback / form / data-display / async / effects + 语言切换组件 + theme                                            |
-| `yoya.router.js`                   | 10.4 KB ~ **30.6 KB**             | router（`createRouter` / `vRouter` / `vLink` / `vRouterViews`）+ SSR 原语（`renderToString` / `renderPage` / `hydrate` / `mount` / `serializeState`）        |
-| `yoya.compiler-runtime.js`         | 1.6 KB ~ **18.4 KB**              | 编译产物的运行期钩子（`cloneFragment` / `adopt` / `bindChild` / `bindText` / `bindClass` / `setAttr` / `pushOff` / `createElementList`）；主入口不含这些钩子 |
-| `yoya.devtools.js`（开发期）       | 0.1 KB ~ 1.6 KB                   | `enableDevtools` / `subscribeDevtools` / `getDevtoolsSnapshot` / `getDevtoolsDom` / `getDevtoolsScope`                                                       |
-| `yoya.echart.js` / `yoya.three.js` | 1.5 / 2.0 KB ~ 19.6 / 20.1 KB     | `vEchart` / `vThree` 封装                                                                                                                                    |
+单例口径：**非-full 入口**只通过 peerDependency 共享一份 core（双副本会让 `instanceof` / 身份判定失配）；
+`.full` 是自包含单文件，**不与 core 包混用**（详见 [docs/ssr.zh-CN.md](docs/ssr.zh-CN.md) 的禁忌）。
 
-自包含入口（core 已内联，单文件直用）：
+下表是各入口的**传递闭包 min+gzip**（跟着产物的 import 图重打一次并压缩）。core 那一行是自包含的；
+ui 各行量的是"在 core 之上再加多少"，所以实际下载量 = core 行 + 该行。
 
-| 产物                             | raw      | min      | min+gzip | 包含内容                       |
-| -------------------------------- | -------- | -------- | -------- | ------------------------------ |
-| `yoya.router.full.js`            | 294.3 KB | 132.5 KB | 38.9 KB  | core + router / SSR            |
-| `yoya.ui-router.full.js`（全量） | 829.4 KB | 465.7 KB | 114.1 KB | core + 全部组件 + router / SSR |
-| `yoya.ui.full.js`                | 760.2 KB | 433.6 KB | 104.3 KB | core + 全部组件                |
+<!-- bundle-sizes:start -->
 
-组件皮肤 `yoya.ui.css`：60.3 KB raw / **8.7 KB gzip**；core 层没有皮肤（与原生 HTML 一致），
-只用 core 不需要引它。
+| 入口                                 | 内容                                                                                | min+gzip |
+| ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 30.8 KB  |
+| `@yoyaflow/yoya-core/api`            | 通讯辅助约束：RequestBase / Result / configureRequest                               | 0.6 KB   |
+| `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 80.4 KB  |
+| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 72.9 KB  |
+| `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
+| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
+| `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
+| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
+| `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 22.9 KB  |
+| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
+| `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 封装，自备 echarts）                                               | 3.3 KB   |
+| `@yoyaflow/yoya-ui/three`            | vThree（Three.js 封装，自备 three）                                                 | 3.8 KB   |
+| `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 
-`npm run build` 会打印同一张表外加每个公共 chunk；`npm run verify:dist` 在表格与产物不一致时失败，
-`npm run report:bundle:write` 按当前产物刷新中英两张表。
+<!-- bundle-sizes:end -->
+
+组件皮肤：`yoya.ui.css` 126.1 KB raw / 22.1 KB gzip（core 层无皮肤）。
+
+> 自包含全量包（旧的 `yoya.ui.full.min.js` 等）已退场：拆包后 core 由 peerDependency 提供，
+> 再发一份内联副本会把"双副本失配"重新引进来。
 
 ## 文档与版本策略
 
 - [文档索引](docs/index.zh-CN.md) · [为什么是 yoya-ui](docs/why-yoya-ui.zh-CN.md) · [特性亮点](docs/highlights.zh-CN.md)
 - [AI 代码助手阅读指南](docs/agents.zh-CN.md) · [Codex Skill](skills/yoya-ui/README.md)
 - [SSR 指南](docs/ssr.zh-CN.md) · [请求辅助](docs/api.zh-CN.md) · [主题规范](docs/theme.zh-CN.md) · [权限控制](docs/access-control.zh-CN.md) · [DevTools](docs/devtools.zh-CN.md)
+- [浏览器基线与降级口径](docs/browser-support.zh-CN.md)
 - [组件开发指南](docs/component-authoring.zh-CN.md) · [第三方库接入](docs/interop.zh-CN.md) · [跨库对照](docs/component-comparison.zh-CN.md)
 - [性能基准](docs/performance.zh-CN.md)（官方 js-framework-benchmark，数字由脚本生成并受门禁校验）
 - [路线图](ROADMAP.zh-CN.md)
@@ -313,18 +331,18 @@ npm run examples:html # 示例站（http://localhost:5173）
 ```
 
 ```text
-src/
-  core/        ViewNode/ElementNode 核心、signals、i18n、theme、id 分配、SSR 辅助
-  html/ svg/   HTML/SVG 元素工厂
-  layout/      布局工厂
-  actions/ navigation/ feedback/ form/ data-display/ async/ chart/ effects/
-               官方组件分类
-  components/  组件聚合与共享逻辑
-  examples/    示例站（SSR 演示与可复制指南）
-  index.js     开发期聚合入口
-scripts/       入口构建、体积报表
-types/         随包发布的全部入口 TypeScript 声明
-docs/          公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）
+packages/
+  yoya-core/      慢线：core（节点/信号/SSR/i18n/theme/access/context/a11y）+ html + svg + 组件作者契约
+  yoya-ui/        快线：layout / actions / navigation / feedback / form / data-display / async /
+                  i18n / theme / router / chart / three + 皮肤（yoya.ui.css）+ 类型
+  yoya-compiler/  构建期编译器（形状驱动、不认识组件；bin: yoya-compiler）
+  contract/       跨包契约测试 + 全仓门禁（不进包）
+  create-yoya-ui/ 脚手架（模板依赖钉当前版本）
+examples/         示例站（SSR 演示与可复制指南）
+scripts/          构建、体积报表、包边界 / 产物门禁
+docs/             公开指南（SSR、主题、权限、DevTools、组件开发、第三方接入）
+benchmark/        基准与体积数据源
+skills/           Codex 技能（与仓库文档同步）
 ```
 
 ## 许可证
